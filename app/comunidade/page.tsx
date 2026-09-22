@@ -30,6 +30,7 @@ import { obterGrupoPublicacaoObraPorParametro } from "./components/community-pub
 import { normalizarSugestaoObraLocal } from "./components/community-related-work-local-normalizer";
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
+import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
@@ -1679,40 +1680,6 @@ type RespostaComentarioComunidade = {
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
 
-function mapearPostSupabase(
-  post: SupabasePostRow,
-  comentariosPorPost: Map<string, ComentarioComunidade[]>,
-  curtidasPorPost: Map<string, string[]>,
-  profilesPorUsuario = new Map<string, PerfilComunidadeRow>()
-): PostComunidade {
-  const profile = profilesPorUsuario.get(post.autor_id);
-  const autorNome =
-    obterNomeProfileComunidade(profile) || post.autor_nome?.trim() || "Usuário";
-  const relacaoPublicacao = separarObraECapituloRelacionados(
-    post.obra_relacionada || "",
-  );
-
-  return {
-    id: post.id,
-    autorId: post.autor_id,
-    autorNome,
-    autorAvatar: obterAvatarProfileComunidade(profile),
-    categoria: normalizarCategoria(post.categoria),
-    tipoPublicacao: normalizarTipoPublicacao(post.tipo_publicacao),
-    temSpoiler: Boolean(post.tem_spoiler),
-    texto: post.texto.trim().slice(0, 700),
-    obraRelacionada: relacaoPublicacao.obraRelacionada,
-    capituloRelacionado: relacaoPublicacao.capituloRelacionado,
-    criadoEm: post.criado_em,
-    fixado: Boolean(post.fixado),
-    fixadoEm: post.fixado_em || "",
-    fixadoPor: post.fixado_por || "",
-    curtidas: curtidasPorPost.get(post.id) || [],
-    comentarios: comentariosPorPost.get(post.id) || [],
-    visibilidade: normalizarVisibilidadePostComunidade(post.visibilidade),
-  };
-}
-
 function mapearPostsSupabase(
   postsSupabase: SupabasePostRow[],
   comentariosSupabase: SupabaseComentarioRow[],
@@ -1764,7 +1731,17 @@ function mapearPostsSupabase(
   });
 
   return postsSupabase.map((post) =>
-    mapearPostSupabase(post, comentariosPorPost, curtidasPorPost, profilesPorUsuario)
+    mapearPostSupabase(
+      post,
+      comentariosPorPost,
+      curtidasPorPost,
+      profilesPorUsuario,
+      obterNomeProfileComunidade,
+      obterAvatarProfileComunidade,
+      normalizarCategoria,
+      normalizarTipoPublicacao,
+      normalizarVisibilidadePostComunidade
+    )
   );
 }
 
@@ -4898,7 +4875,12 @@ export default function ComunidadePage() {
           postCriado as SupabasePostRow,
           new Map<string, ComentarioComunidade[]>(),
           new Map<string, string[]>(),
-          profilesPostNovo
+          profilesPostNovo,
+          obterNomeProfileComunidade,
+          obterAvatarProfileComunidade,
+          normalizarCategoria,
+          normalizarTipoPublicacao,
+          normalizarVisibilidadePostComunidade
         );
 
         setPosts((postsAtuais) => [novoPost as PostComunidade, ...postsAtuais]);
