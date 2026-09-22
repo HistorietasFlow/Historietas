@@ -1,4 +1,5 @@
 import { dataComentarioComunidade } from "./community-comment-date";
+import type { OrdenacaoComentariosComunidade } from "./community-comment-order";
 
 type ComentarioEstruturaComunidade = {
   id: string;
@@ -9,7 +10,7 @@ type ComentarioEstruturaComunidade = {
 
 export function criarEstruturaComentariosComunidade<
   T extends ComentarioEstruturaComunidade,
->(comentarios: T[], ordenacao: "relevantes" | "recentes") {
+>(comentarios: T[], ordenacao: OrdenacaoComentariosComunidade) {
   const comentariosPorId = new Map(
     comentarios.map((comentario) => [comentario.id, comentario])
   );
