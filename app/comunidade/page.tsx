@@ -54,6 +54,7 @@ import { obterPontuacaoPost } from "./components/community-post-score";
 import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { copiarTextoComFallback } from "./components/community-clipboard-copy";
 import { formatarTempoRelativoComentarioComunidade } from "./components/community-comment-relative-time";
+import type { RespostaComentarioComunidade } from "./components/community-comment-reply";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { criarEstruturaComentariosComunidade } from "./components/community-comment-tree";
 import type { ComentariosSheetProps } from "./components/community-comments-sheet-props";
@@ -1678,12 +1679,6 @@ type SupabaseCurtidaRow = {
 type SupabaseComentarioCurtidaRow = {
   comentario_id: string;
   usuario_id: string;
-};
-
-type RespostaComentarioComunidade = {
-  comentarioPaiId: string;
-  autorId: string;
-  autorNome: string;
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
