@@ -29,6 +29,7 @@ import { obterTipoPublicacaoPorParametro } from "./components/community-publicat
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
 import { normalizarSugestaoObraLocal } from "./components/community-related-work-local-normalizer";
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
+import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
@@ -1678,27 +1679,6 @@ type RespostaComentarioComunidade = {
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
 
-function mapearComentarioSupabase(
-  comentario: SupabaseComentarioRow,
-  curtidasPorComentario: Map<string, string[]>,
-  profilesPorUsuario = new Map<string, PerfilComunidadeRow>()
-): ComentarioComunidade {
-  const profile = profilesPorUsuario.get(comentario.autor_id);
-  const autorNome =
-    obterNomeProfileComunidade(profile) || comentario.autor_nome?.trim() || "Usuário";
-
-  return {
-    id: comentario.id,
-    autorId: comentario.autor_id,
-    autorNome,
-    autorAvatar: obterAvatarProfileComunidade(profile),
-    texto: comentario.texto.trim().slice(0, 420),
-    criadoEm: comentario.criado_em,
-    comentarioPaiId: comentario.comentario_pai_id?.trim() || "",
-    curtidas: curtidasPorComentario.get(comentario.id) || [],
-  };
-}
-
 function mapearPostSupabase(
   post: SupabasePostRow,
   comentariosPorPost: Map<string, ComentarioComunidade[]>,
@@ -1759,7 +1739,9 @@ function mapearPostsSupabase(
     const comentario = mapearComentarioSupabase(
       comentarioSupabase,
       curtidasPorComentario,
-      profilesPorUsuario
+      profilesPorUsuario,
+      obterNomeProfileComunidade,
+      obterAvatarProfileComunidade
     );
     const comentariosAtuais =
       comentariosPorPost.get(comentarioSupabase.post_id) || [];
@@ -5140,7 +5122,9 @@ export default function ComunidadePage() {
       const novoComentario = mapearComentarioSupabase(
         data as SupabaseComentarioRow,
         new Map<string, string[]>(),
-        profilesComentarioNovo
+        profilesComentarioNovo,
+        obterNomeProfileComunidade,
+        obterAvatarProfileComunidade
       );
 
       if (!comentarioPaiIdLimpo && postAtual?.autorId) {
