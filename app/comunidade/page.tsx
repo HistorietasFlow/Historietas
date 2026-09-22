@@ -31,6 +31,7 @@ import { normalizarSugestaoObraLocal } from "./components/community-related-work
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
+import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
@@ -1679,71 +1680,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-function mapearPostsSupabase(
-  postsSupabase: SupabasePostRow[],
-  comentariosSupabase: SupabaseComentarioRow[],
-  curtidasSupabase: SupabaseCurtidaRow[],
-  comentarioCurtidasSupabase: SupabaseComentarioCurtidaRow[],
-  profilesPorUsuario = new Map<string, PerfilComunidadeRow>()
-) {
-  const comentariosPorPost = new Map<string, ComentarioComunidade[]>();
-  const curtidasPorPost = new Map<string, string[]>();
-  const curtidasPorComentario = new Map<string, string[]>();
-
-  comentarioCurtidasSupabase.forEach((curtida) => {
-    const curtidasAtuais = curtidasPorComentario.get(curtida.comentario_id) || [];
-
-    if (!curtidasAtuais.includes(curtida.usuario_id)) {
-      curtidasPorComentario.set(curtida.comentario_id, [
-        ...curtidasAtuais,
-        curtida.usuario_id,
-      ]);
-    }
-  });
-
-  comentariosSupabase.forEach((comentarioSupabase) => {
-    const comentario = mapearComentarioSupabase(
-      comentarioSupabase,
-      curtidasPorComentario,
-      profilesPorUsuario,
-      obterNomeProfileComunidade,
-      obterAvatarProfileComunidade
-    );
-    const comentariosAtuais =
-      comentariosPorPost.get(comentarioSupabase.post_id) || [];
-
-    comentariosPorPost.set(comentarioSupabase.post_id, [
-      ...comentariosAtuais,
-      comentario,
-    ]);
-  });
-
-  curtidasSupabase.forEach((curtida) => {
-    const curtidasAtuais = curtidasPorPost.get(curtida.post_id) || [];
-
-    if (!curtidasAtuais.includes(curtida.usuario_id)) {
-      curtidasPorPost.set(curtida.post_id, [
-        ...curtidasAtuais,
-        curtida.usuario_id,
-      ]);
-    }
-  });
-
-  return postsSupabase.map((post) =>
-    mapearPostSupabase(
-      post,
-      comentariosPorPost,
-      curtidasPorPost,
-      profilesPorUsuario,
-      obterNomeProfileComunidade,
-      obterAvatarProfileComunidade,
-      normalizarCategoria,
-      normalizarTipoPublicacao,
-      normalizarVisibilidadePostComunidade
-    )
-  );
-}
 
 function formatarErroSupabase(acao: string, erro: unknown) {
   if (!erro || typeof erro !== "object") {
@@ -4551,7 +4487,12 @@ export default function ComunidadePage() {
         comentariosSupabase,
         curtidasSupabase,
         comentarioCurtidasSupabase,
-        profilesPorUsuario
+        profilesPorUsuario,
+        obterNomeProfileComunidade,
+        obterAvatarProfileComunidade,
+        normalizarCategoria,
+        normalizarTipoPublicacao,
+        normalizarVisibilidadePostComunidade
       );
 
       setPosts((postsAtuais) => {
