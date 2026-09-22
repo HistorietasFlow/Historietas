@@ -34,6 +34,7 @@ import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
 import { obterPerguntaEnquete } from "./components/community-poll-question";
 import { obterOpcoesEnquete } from "./components/community-valid-poll-options";
+import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
 import { postEhEnquete } from "./components/community-post-poll-check";
 import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
@@ -1610,29 +1611,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-function carregarVotosEnquetesLocais(userId = "") {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return {} as Record<string, string>;
-  }
-
-  try {
-    const json: unknown =
-      carregarJsonUsuarioComunidade(CHAVE_VOTOS_ENQUETES_COMUNIDADE, userId) ||
-      {};
-
-    if (!json || typeof json !== "object" || Array.isArray(json)) {
-      return {} as Record<string, string>;
-    }
-
-    return Object.fromEntries(
-      Object.entries(json).filter((entrada): entrada is [string, string] => {
-        return typeof entrada[0] === "string" && typeof entrada[1] === "string";
-      })
-    );
-  } catch {
-    return {} as Record<string, string>;
-  }
-}
 
 function salvarVotosEnquetesLocais(votos: Record<string, string>, userId = "") {
   salvarJsonUsuarioComunidade(
@@ -3396,7 +3374,7 @@ export default function ComunidadePage() {
         setPostsSalvosIds([]);
       }
 
-      setVotosEnquetes(carregarVotosEnquetesLocais(userId));
+      setVotosEnquetes(carregarVotosEnquetesLocais(carregarJsonUsuarioComunidade, userId));
 
       if (!userId) {
         return;
@@ -3448,7 +3426,10 @@ export default function ComunidadePage() {
         return;
       }
 
-      const votosLocais = carregarVotosEnquetesLocais(usuario?.id || "");
+      const votosLocais = carregarVotosEnquetesLocais(
+        carregarJsonUsuarioComunidade,
+        usuario?.id || ""
+      );
 
       window.setTimeout(() => {
         if (!cancelado) {
