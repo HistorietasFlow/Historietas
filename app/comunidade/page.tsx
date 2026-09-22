@@ -90,6 +90,7 @@ import { CommunityPostComposerRelatedWorkSuggestionButton } from "./components/c
 import { CommunityPostComposerRelatedWorkSuggestionContent } from "./components/community-post-composer-related-work-suggestion-content";
 import { CommunityPostComposerRelatedWorkSuggestionTitle } from "./components/community-post-composer-related-work-suggestion-title";
 import { CommunityPostComposerRelatedWorkSuggestionAuthor } from "./components/community-post-composer-related-work-suggestion-author";
+import { CommunityPostComposerRelatedWorkSuggestionBadge } from "./components/community-post-composer-related-work-suggestion-badge";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -7077,9 +7078,9 @@ export default function ComunidadePage() {
                                 </CommunityPostComposerRelatedWorkSuggestionAuthor>
                               </CommunityPostComposerRelatedWorkSuggestionContent>
 
-                              <span style={relatedWorkSuggestionBadgeStyle}>
+                              <CommunityPostComposerRelatedWorkSuggestionBadge>
                                 OBRA
-                              </span>
+                              </CommunityPostComposerRelatedWorkSuggestionBadge>
                             </CommunityPostComposerRelatedWorkSuggestionButton>
                           ))}
                         </CommunityPostComposerRelatedWorkSuggestions>
@@ -7415,20 +7416,6 @@ const pageStyle: CSSProperties = {
 
 
 
-
-const relatedWorkSuggestionBadgeStyle: CSSProperties = {
-  flex: "0 0 auto",
-  borderRadius: 0,
-  border: "none",
-  color: "#D4D4D8",
-  background: "transparent",
-  padding: 0,
-  fontSize: "10px",
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  whiteSpace: "nowrap",
-};
 
 
 
