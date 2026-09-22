@@ -30,6 +30,7 @@ import { obterTipoPublicacaoPorParametro } from "./components/community-publicat
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
 import { normalizarSugestaoObraLocal } from "./components/community-related-work-local-normalizer";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
+import { obterLinhasTexto } from "./components/community-text-lines";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -1598,13 +1599,6 @@ function carregarSugestoesObrasLocais(userId = "") {
   } catch {
     return [];
   }
-}
-
-function obterLinhasTexto(texto: string) {
-  return texto
-    .split("\n")
-    .map((linha) => linha.trim())
-    .filter(Boolean);
 }
 
 function obterTodasOpcoesEnquete(texto: string) {
