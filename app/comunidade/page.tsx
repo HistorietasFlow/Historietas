@@ -53,6 +53,7 @@ import { contarComentaristasUnicosPostComunidade } from "./components/community-
 import { obterPontuacaoPost } from "./components/community-post-score";
 import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { copiarTextoComFallback } from "./components/community-clipboard-copy";
+import { dataComentarioComunidade } from "./components/community-comment-date";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
@@ -1683,12 +1684,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-function dataComentarioComunidade(comentario: ComentarioComunidade) {
-  const data = new Date(comentario.criadoEm).getTime();
-
-  return Number.isNaN(data) ? 0 : data;
-}
 
 function formatarTempoRelativoComentarioComunidade(
   criadaEm: string,
