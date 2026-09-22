@@ -35,6 +35,7 @@ import { mapearPostsSupabase } from "./components/community-supabase-posts-mappe
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
+import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
@@ -1683,20 +1684,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-async function obterUsuarioAutenticadoComunidadeAtual() {
-  try {
-    const { data, error } = await supabase.auth.getUser();
-
-    if (error || !data.user?.id?.trim()) {
-      return null;
-    }
-
-    return data.user;
-  } catch {
-    return null;
-  }
-}
 
 async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
   const idsValidos = Array.from(
