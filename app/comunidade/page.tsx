@@ -19,7 +19,7 @@ import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
-import { CommunityLoadingContainer } from "./components/community-loading-container";
+import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
 import { CommunityThemeStyles } from "./components/community-theme-styles";
 import { CommunityPageContainer } from "./components/community-page-container";
@@ -6207,11 +6207,9 @@ export default function ComunidadePage() {
 
   if (carregandoFeed) {
     return (
-      <CommunityLoadingContainer style={pageThemeStyle}>
+      <CommunityFeedLoadingState style={pageThemeStyle}>
         <CommunityLanguageBridge />
-        <CommunityThemeStyles />
-        <CommunityLoadingSpinner label="Carregando Comunidade" />
-      </CommunityLoadingContainer>
+      </CommunityFeedLoadingState>
     );
   }
 
