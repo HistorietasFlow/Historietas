@@ -15,16 +15,13 @@ import type { FormEvent, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
-import {
-  historietasThemeCss,
-  useHistorietasTheme,
-} from "../../lib/historietasTheme";
+import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityLoadingContainer } from "./components/community-loading-container";
 import { communityPageStyle } from "./components/community-page-style";
-import { comunidadeThemeCss } from "./components/community-theme-css";
+import { CommunityThemeStyles } from "./components/community-theme-styles";
 import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
 import { CommunityTopWaterFade } from "./components/community-top-water-fade";
@@ -6212,7 +6209,7 @@ export default function ComunidadePage() {
     return (
       <CommunityLoadingContainer style={pageThemeStyle}>
         <CommunityLanguageBridge />
-        <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
+        <CommunityThemeStyles />
         <CommunityLoadingSpinner label="Carregando Comunidade" />
       </CommunityLoadingContainer>
     );
@@ -6221,7 +6218,7 @@ export default function ComunidadePage() {
   return (
     <CommunityPageContainer style={pageThemeStyle}>
       <CommunityLanguageBridge />
-      <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
+      <CommunityThemeStyles />
 
       <CommunityTopWaterFade isDesktop={isDesktop} />
 
