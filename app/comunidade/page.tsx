@@ -32,6 +32,7 @@ import { normalizarSugestaoObraLocal } from "./components/community-related-work
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
+import { postEhEnquete } from "./components/community-post-poll-check";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -1602,16 +1603,6 @@ function carregarSugestoesObrasLocais(userId = "") {
   }
 }
 
-function postEhEnquete(post: Pick<PostComunidade, "texto">) {
-  const linhas = obterLinhasTexto(post.texto);
-  const primeiraLinha = linhas[0] || "";
-  const totalOpcoes = obterTodasOpcoesEnquete(post.texto).length;
-
-  return (
-    /^enquete\s*[:\-]/i.test(primeiraLinha) &&
-    totalOpcoes >= MIN_OPCOES_ENQUETE
-  );
-}
 
 function obterTipoVisualPublicacao(
   post: Pick<PostComunidade, "texto" | "tipoPublicacao">
