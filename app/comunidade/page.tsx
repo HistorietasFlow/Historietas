@@ -22,6 +22,10 @@ import { CommunityLoadingSpinner } from "./components/community-loading-spinner"
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
 import {
+  CHAVE_POSTS_SALVOS_COMUNIDADE,
+  CHAVE_VOTOS_ENQUETES_COMUNIDADE,
+} from "./components/community-storage-keys";
+import {
   IDS_COMENTARIOS_POR_LOTE,
   OBRAS_RELACIONADAS_POR_PAGINA,
   POSTS_COMUNIDADE_POR_PAGINA,
@@ -335,8 +339,6 @@ const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
   "Dúvida",
 ];
 
-const CHAVE_POSTS_SALVOS_COMUNIDADE = "historietas:comunidade:posts-salvos";
-const CHAVE_VOTOS_ENQUETES_COMUNIDADE = "historietas:comunidade:votos-enquetes";
 
 type ComunidadeTranslationEntry = {
   en: string;
