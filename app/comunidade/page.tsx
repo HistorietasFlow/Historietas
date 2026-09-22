@@ -38,6 +38,7 @@ import { idSupabaseValidoComunidade } from "./components/community-supabase-id-v
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
 import { carregarProfilesComunidadePorUsuarios } from "./components/community-supabase-profiles-loader";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
+import { obterObraRelacionadaPermitida } from "./components/community-related-work-allowed-finder";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
 import { obterPerguntaEnquete } from "./components/community-poll-question";
@@ -1686,23 +1687,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-function obterObraRelacionadaPermitida(
-  titulo: string,
-  sugestoesObras: ObraRelacionadaSugestao[]
-) {
-  const tituloNormalizado = normalizarTexto(titulo);
-
-  if (!tituloNormalizado) {
-    return null;
-  }
-
-  return (
-    sugestoesObras.find((obra) => {
-      return normalizarTexto(obra.titulo) === tituloNormalizado;
-    }) || null
-  );
-}
 
 async function removerReviewComunidadeDoDiario({
   userId,
