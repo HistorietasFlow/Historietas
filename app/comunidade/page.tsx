@@ -13,8 +13,7 @@ import {
 } from "react";
 import type { FormEvent, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { criarSlugBase, normalizarTexto } from "../../lib/utils";
-import { ehClassificacao18 } from "../../lib/historietasAdultContent";
+import { normalizarTexto } from "../../lib/utils";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
@@ -29,6 +28,7 @@ import { criarLinkObraRelacionada } from "./components/community-related-work-li
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
 import { normalizarSugestaoObraLocal } from "./components/community-related-work-local-normalizer";
+import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
@@ -1633,32 +1633,6 @@ type SupabaseObraPublicaRow = {
   slug: string | null;
   link: string | null;
 };
-
-function normalizarSugestaoObraSupabase(
-  obra: SupabaseObraPublicaRow,
-  index = 0
-): ObraRelacionadaSugestao | null {
-  const titulo = obra.titulo?.trim() || "";
-
-  if (
-    !titulo ||
-    obra.publicado !== true ||
-    ehClassificacao18(obra.classificacao_indicativa)
-  ) {
-    return null;
-  }
-
-  const slug = obra.slug?.trim() || criarSlugBase(titulo);
-
-  return {
-    id: obra.id || `obra-supabase-${index}`,
-    titulo,
-    autor: obra.autor?.trim() || "Autor não informado",
-    autorId: obra.user_id?.trim() || "",
-    slug,
-    link: obra.link?.trim() || `/obra/${slug}`,
-  };
-}
 
 type SupabasePostRow = {
   id: string;
