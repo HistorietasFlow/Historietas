@@ -36,6 +36,7 @@ import { obterPerguntaEnquete } from "./components/community-poll-question";
 import { obterOpcoesEnquete } from "./components/community-valid-poll-options";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
+import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { postEhEnquete } from "./components/community-post-poll-check";
 import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
@@ -1612,15 +1613,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-
-function calcularTotalVotosEnquete(
-  resultados: ResultadoVotosEnquete,
-  postId: string
-) {
-  return Object.values(resultados[postId] || {}).reduce((total, quantidade) => {
-    return total + quantidade;
-  }, 0);
-}
 
 function calcularPorcentagemOpcaoEnquete(
   resultados: ResultadoVotosEnquete,
