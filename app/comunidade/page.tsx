@@ -36,6 +36,7 @@ import { formatarErroSupabase } from "./components/community-supabase-error-form
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
+import { carregarProfilesComunidadePorUsuarios } from "./components/community-supabase-profiles-loader";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
@@ -1541,9 +1542,10 @@ async function salvarSeguindoUsuarioComunidade(
 
 async function obterNomeSeguroUsuarioComunidade(usuario: UsuarioComunidade) {
   try {
-    const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios([
-      usuario.id,
-    ]);
+    const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios(
+      [usuario.id],
+      obterTextoProfileComunidade
+    );
     const profile = profilesPorUsuario.get(usuario.id);
     const nomeProfile = obterNomeProfileComunidade(profile);
 
@@ -1684,71 +1686,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
-  const idsValidos = Array.from(
-    new Set(
-      userIds
-        .map((id) => id.trim())
-        .filter((id) => idSupabaseValidoComunidade(id))
-    )
-  );
-  const profilesPorUsuario = new Map<string, PerfilComunidadeRow>();
-
-  if (idsValidos.length === 0) {
-    return profilesPorUsuario;
-  }
-
-  try {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id,user_id,nome,avatar_url")
-      .in("user_id", idsValidos)
-      .limit(1000);
-
-    if (Array.isArray(data)) {
-      data.forEach((profile) => {
-        const profileUserId = obterTextoProfileComunidade(profile, "user_id");
-
-        if (profileUserId) {
-          profilesPorUsuario.set(profileUserId, profile);
-        }
-      });
-    }
-  } catch {
-    // Algumas bases antigas usam id no lugar de user_id. O fallback vem abaixo.
-  }
-
-  const idsSemProfile = idsValidos.filter(
-    (userId) => !profilesPorUsuario.has(userId)
-  );
-
-  if (idsSemProfile.length > 0) {
-    try {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id,user_id,nome,avatar_url")
-        .in("id", idsSemProfile)
-        .limit(1000);
-
-      if (Array.isArray(data)) {
-        data.forEach((profile) => {
-          const profileUserId =
-            obterTextoProfileComunidade(profile, "user_id") ||
-            obterTextoProfileComunidade(profile, "id");
-
-          if (profileUserId) {
-            profilesPorUsuario.set(profileUserId, profile);
-          }
-        });
-      }
-    } catch {
-      // Profiles é complementar; a Comunidade segue com o nome salvo no post.
-    }
-  }
-
-  return profilesPorUsuario;
-}
 
 function obterObraRelacionadaPermitida(
   titulo: string,
@@ -3145,9 +3082,11 @@ export default function ComunidadePage() {
         let usuarioAdmin = false;
 
         try {
-          const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios([
-            user.id,
-          ]);
+          const profilesPorUsuario =
+            await carregarProfilesComunidadePorUsuarios(
+              [user.id],
+              obterTextoProfileComunidade
+            );
           const profile = profilesPorUsuario.get(user.id);
 
           nomeProfile = obterNomeProfileComunidade(profile);
@@ -4419,7 +4358,8 @@ export default function ComunidadePage() {
         )
       );
       const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios(
-        autoresIdsComunidade
+        autoresIdsComunidade,
+        obterTextoProfileComunidade
       );
 
       const postsSupabase = mapearPostsSupabase(
