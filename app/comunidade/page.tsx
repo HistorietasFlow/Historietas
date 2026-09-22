@@ -56,6 +56,7 @@ import { copiarTextoComFallback } from "./components/community-clipboard-copy";
 import { formatarTempoRelativoComentarioComunidade } from "./components/community-comment-relative-time";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { criarEstruturaComentariosComunidade } from "./components/community-comment-tree";
+import type { ComentariosSheetProps } from "./components/community-comments-sheet-props";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
@@ -1687,25 +1688,6 @@ type RespostaComentarioComunidade = {
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
 
-type ComentariosSheetProps = {
-  post: PostComunidade | null;
-  podeComentar: boolean;
-  usuarioId: string;
-  usuarioNome: string;
-  usuarioAvatar: string;
-  erroInteracao: string;
-  isDesktop: boolean;
-  onFechar: () => void;
-  onEnviar: (
-    postId: string,
-    texto: string,
-    comentarioPaiId: string
-  ) => boolean | Promise<boolean>;
-  onCurtirComentario: (postId: string, comentarioId: string) => void | Promise<void>;
-  onRemoverComentario: (postId: string, comentarioId: string) => void | Promise<void>;
-  onDenunciarComentario: (comentarioId: string) => void | Promise<void>;
-};
-
 const ComentariosSheet = memo(function ComentariosSheet({
   post,
   podeComentar,
@@ -1719,7 +1701,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
   onCurtirComentario,
   onRemoverComentario,
   onDenunciarComentario,
-}: ComentariosSheetProps) {
+}: ComentariosSheetProps<PostComunidade>) {
   const comentarioRef = useRef<HTMLTextAreaElement | null>(null);
   const sheetRef = useRef<HTMLElement | null>(null);
   const dragStartYRef = useRef(0);
