@@ -34,6 +34,7 @@ import { mapearPostSupabase } from "./components/community-supabase-post-mapper"
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
+import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
@@ -1682,12 +1683,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-function idSupabaseValidoComunidade(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    id.trim()
-  );
-}
 
 async function obterUsuarioAutenticadoComunidadeAtual() {
   try {
