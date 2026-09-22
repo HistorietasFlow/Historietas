@@ -39,6 +39,7 @@ import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-s
 import { carregarProfilesComunidadePorUsuarios } from "./components/community-supabase-profiles-loader";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterObraRelacionadaPermitida } from "./components/community-related-work-allowed-finder";
+import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
 import { obterPerguntaEnquete } from "./components/community-poll-question";
@@ -1687,58 +1688,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-async function removerReviewComunidadeDoDiario({
-  userId,
-  postId,
-}: {
-  userId: string;
-  postId: string;
-}) {
-  const userIdLimpo = userId.trim();
-  const postIdLimpo = postId.trim();
-
-  if (!userIdLimpo || !postIdLimpo) {
-    return false;
-  }
-
-  let removeuSemErro = false;
-
-  try {
-    const { error: erroContains } = await supabase
-      .from("diario_atividades")
-      .delete()
-      .eq("user_id", userIdLimpo)
-      .eq("tipo", "publicou_review")
-      .contains("metadata", { post_id: postIdLimpo });
-
-    if (!erroContains) {
-      removeuSemErro = true;
-    }
-
-    const { error: erroCaminhoJson } = await supabase
-      .from("diario_atividades")
-      .delete()
-      .eq("user_id", userIdLimpo)
-      .eq("tipo", "publicou_review")
-      .eq("metadata->>post_id", postIdLimpo);
-
-    if (!erroCaminhoJson) {
-      removeuSemErro = true;
-    }
-
-    if (erroContains && erroCaminhoJson) {
-      console.warn(
-        "Não consegui remover a review do Diário:",
-        erroCaminhoJson.message || erroContains.message
-      );
-    }
-  } catch (error) {
-    console.warn("Não consegui acessar o Diário para remover a review:", error);
-  }
-
-  return removeuSemErro;
-}
 
 async function registrarReviewComunidadeNoDiario({
   userId,
