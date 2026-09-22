@@ -21,7 +21,10 @@ import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
-import { SEPARADOR_CAPITULO_RELACIONADO } from "./components/community-related-chapter-constants";
+import {
+  juntarObraECapituloRelacionados,
+  separarObraECapituloRelacionados,
+} from "./components/community-related-chapter-utils";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -1573,50 +1576,6 @@ function obterVisibilidadeReviewNoDiario(
   visibilidade: VisibilidadePostComunidade,
 ): "publico" | "privado" {
   return visibilidade === "publico" ? "publico" : "privado";
-}
-
-function separarObraECapituloRelacionados(valor: string) {
-  const valorLimpo = valor.trim();
-  const separadorIndice = valorLimpo.indexOf(SEPARADOR_CAPITULO_RELACIONADO);
-
-  if (separadorIndice < 0) {
-    return {
-      obraRelacionada: valorLimpo.slice(0, 90),
-      capituloRelacionado: "",
-    };
-  }
-
-  return {
-    obraRelacionada: valorLimpo.slice(0, separadorIndice).trim().slice(0, 90),
-    capituloRelacionado: valorLimpo
-      .slice(separadorIndice + SEPARADOR_CAPITULO_RELACIONADO.length)
-      .trim()
-      .slice(0, 60),
-  };
-}
-
-function juntarObraECapituloRelacionados(obra: string, capitulo: string) {
-  const obraLimpa = obra.trim();
-  const capituloLimpo = capitulo.trim();
-
-  if (!obraLimpa) {
-    return "";
-  }
-
-  if (!capituloLimpo) {
-    return obraLimpa.slice(0, 90);
-  }
-
-  const obraCompacta = obraLimpa.slice(0, 60);
-  const limiteCapitulo = Math.max(
-    0,
-    90 - obraCompacta.length - SEPARADOR_CAPITULO_RELACIONADO.length,
-  );
-
-  return `${obraCompacta}${SEPARADOR_CAPITULO_RELACIONADO}${capituloLimpo.slice(
-    0,
-    limiteCapitulo,
-  )}`;
 }
 
 function criarLinkObraRelacionada(
