@@ -38,6 +38,7 @@ import { carregarVotosEnquetesLocais } from "./components/community-local-poll-v
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
+import { obterPontuacaoPost } from "./components/community-post-score";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
@@ -1617,13 +1618,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-
-function obterPontuacaoPost(post: PostComunidade) {
-  return (
-    contarCurtidasUnicasPostComunidade(post) * 2 +
-    contarComentaristasUnicosPostComunidade(post) * 3
-  );
-}
 
 function obterLinkPublicacaoComunidade(postId: string) {
   if (typeof window === "undefined") {
