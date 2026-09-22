@@ -36,6 +36,7 @@ import { obterPerguntaEnquete } from "./components/community-poll-question";
 import { obterOpcoesEnquete } from "./components/community-valid-poll-options";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
+import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPontuacaoPost } from "./components/community-post-score";
@@ -1619,55 +1620,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-
-async function criarNotificacaoComunidadeSupabase({
-  destinatarioId,
-  tipo,
-  titulo,
-  mensagem,
-  link,
-  notificacaoId,
-}: {
-  destinatarioId: string;
-  tipo: string;
-  titulo: string;
-  mensagem: string;
-  link: string;
-  notificacaoId: string;
-}) {
-  const destinatarioIdLimpo = destinatarioId.trim();
-  const tipoLimpo = tipo.trim();
-  const tituloLimpo = titulo.trim();
-  const mensagemLimpa = mensagem.trim();
-  const linkLimpo = link.trim();
-  const notificacaoIdLimpo = notificacaoId.trim();
-
-  if (
-    !idSupabaseValidoComunidade(destinatarioIdLimpo) ||
-    !tipoLimpo ||
-    !tituloLimpo ||
-    !mensagemLimpa ||
-    !linkLimpo ||
-    !notificacaoIdLimpo
-  ) {
-    return false;
-  }
-
-  try {
-    const { error } = await supabase.rpc("criar_notificacao_social", {
-      p_user_id: destinatarioIdLimpo,
-      p_tipo: tipoLimpo,
-      p_titulo: tituloLimpo,
-      p_mensagem: mensagemLimpa,
-      p_link: linkLimpo,
-      p_notificacao_id: notificacaoIdLimpo,
-    });
-
-    return !error;
-  } catch {
-    return false;
-  }
-}
 
 async function copiarTextoComFallback(texto: string) {
   try {
@@ -5133,7 +5085,7 @@ export default function ComunidadePage() {
             mensagem: `${usuario.nome} curtiu sua publicação.`,
             link: `/comunidade?post=${encodeURIComponent(postId)}`,
             notificacaoId: `comunidade-curtida-post:${postId}:${usuario.id}`,
-          });
+          }, idSupabaseValidoComunidade);
         }
       }
 
@@ -5265,7 +5217,7 @@ export default function ComunidadePage() {
           mensagem: `${autorNomeSeguro} comentou na sua publicação.`,
           link: `/comunidade?post=${encodeURIComponent(postId)}`,
           notificacaoId: `comunidade-comentario-post:${postId}:${novoComentario.id}`,
-        });
+        }, idSupabaseValidoComunidade);
       }
 
       setPosts((postsAtuais) =>
@@ -5521,7 +5473,7 @@ export default function ComunidadePage() {
             mensagem: `${usuario.nome} curtiu seu comentário na Comunidade.`,
             link: `/comunidade?post=${encodeURIComponent(postId)}`,
             notificacaoId: `comunidade-curtida-comentario:${comentarioId}:${usuario.id}`,
-          });
+          }, idSupabaseValidoComunidade);
         }
       }
 
