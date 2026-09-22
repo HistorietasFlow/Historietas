@@ -21,6 +21,7 @@ import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
+import { SEPARADOR_CAPITULO_RELACIONADO } from "./components/community-related-chapter-constants";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -1573,8 +1574,6 @@ function obterVisibilidadeReviewNoDiario(
 ): "publico" | "privado" {
   return visibilidade === "publico" ? "publico" : "privado";
 }
-
-const SEPARADOR_CAPITULO_RELACIONADO = "§§";
 
 function separarObraECapituloRelacionados(valor: string) {
   const valorLimpo = valor.trim();
