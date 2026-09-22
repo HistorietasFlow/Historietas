@@ -33,6 +33,7 @@ import { removerSugestoesObrasDuplicadas } from "./components/community-related-
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
 import { postEhEnquete } from "./components/community-post-poll-check";
+import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -1604,11 +1605,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 }
 
 
-function obterTipoVisualPublicacao(
-  post: Pick<PostComunidade, "texto" | "tipoPublicacao">
-): TipoPublicacaoComunidade {
-  return postEhEnquete(post) ? "Enquete" : post.tipoPublicacao;
-}
 
 function obterPerguntaEnquete(texto: string) {
   const linhas = obterLinhasTexto(texto);
