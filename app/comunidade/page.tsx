@@ -25,6 +25,7 @@ import {
   juntarObraECapituloRelacionados,
   separarObraECapituloRelacionados,
 } from "./components/community-related-chapter-utils";
+import { criarLinkObraRelacionada } from "./components/community-related-work-link";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -1576,26 +1577,6 @@ function obterVisibilidadeReviewNoDiario(
   visibilidade: VisibilidadePostComunidade,
 ): "publico" | "privado" {
   return visibilidade === "publico" ? "publico" : "privado";
-}
-
-function criarLinkObraRelacionada(
-  titulo: string,
-  sugestoesObras: ObraRelacionadaSugestao[] = []
-) {
-  const tituloNormalizado = normalizarTexto(titulo);
-  const obraRelacionada = sugestoesObras.find((obra) => {
-    return normalizarTexto(obra.titulo) === tituloNormalizado;
-  });
-
-  if (obraRelacionada?.link?.trim()) {
-    return obraRelacionada.link.trim();
-  }
-
-  if (obraRelacionada?.slug?.trim()) {
-    return `/obra/${obraRelacionada.slug.trim()}`;
-  }
-
-  return `/obra/${criarSlugBase(titulo)}`;
 }
 
 function obterTipoPublicacaoPorParametro(valor: string) {
