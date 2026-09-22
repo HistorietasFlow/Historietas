@@ -32,6 +32,7 @@ import { normalizarSugestaoObraLocal } from "./components/community-related-work
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
+import { obterPerguntaEnquete } from "./components/community-poll-question";
 import { postEhEnquete } from "./components/community-post-poll-check";
 import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
@@ -1606,15 +1607,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-function obterPerguntaEnquete(texto: string) {
-  const linhas = obterLinhasTexto(texto);
-  const primeiraLinha = linhas[0] || "Enquete da comunidade";
-
-  return (
-    primeiraLinha.replace(/^enquete\s*[:\-]\s*/i, "").trim() ||
-    "Enquete da comunidade"
-  );
-}
 
 function obterOpcoesEnquete(texto: string) {
   const opcoes = obterTodasOpcoesEnquete(texto).slice(0, MAX_OPCOES_ENQUETE);
