@@ -26,6 +26,7 @@ import {
   separarObraECapituloRelacionados,
 } from "./components/community-related-chapter-utils";
 import { criarLinkObraRelacionada } from "./components/community-related-work-link";
+import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -1577,20 +1578,6 @@ function obterVisibilidadeReviewNoDiario(
   visibilidade: VisibilidadePostComunidade,
 ): "publico" | "privado" {
   return visibilidade === "publico" ? "publico" : "privado";
-}
-
-function obterTipoPublicacaoPorParametro(valor: string) {
-  const valorNormalizado = normalizarTexto(valor);
-
-  if (!valorNormalizado) {
-    return null;
-  }
-
-  return (
-    TIPOS_PUBLICACAO_COMUNIDADE.find(
-      (tipo) => normalizarTexto(tipo) === valorNormalizado
-    ) || null
-  );
 }
 
 function obterGrupoPublicacaoObraPorParametro(
