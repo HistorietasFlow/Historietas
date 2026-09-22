@@ -36,6 +36,7 @@ import { obterPerguntaEnquete } from "./components/community-poll-question";
 import { obterOpcoesEnquete } from "./components/community-valid-poll-options";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
+import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
@@ -1615,12 +1616,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-
-function contarCurtidasUnicasPostComunidade(post: PostComunidade) {
-  return new Set(
-    post.curtidas.map((userId) => userId.trim()).filter(Boolean)
-  ).size;
-}
 
 function contarComentaristasUnicosPostComunidade(post: PostComunidade) {
   return new Set(
