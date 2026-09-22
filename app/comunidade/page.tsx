@@ -35,6 +35,7 @@ import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options
 import { obterPerguntaEnquete } from "./components/community-poll-question";
 import { obterOpcoesEnquete } from "./components/community-valid-poll-options";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
+import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { postEhEnquete } from "./components/community-post-poll-check";
 import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
@@ -44,7 +45,6 @@ import {
 } from "./components/community-poll-constants";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
-  CHAVE_VOTOS_ENQUETES_COMUNIDADE,
 } from "./components/community-storage-keys";
 import {
   IDS_COMENTARIOS_POR_LOTE,
@@ -1612,13 +1612,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-function salvarVotosEnquetesLocais(votos: Record<string, string>, userId = "") {
-  salvarJsonUsuarioComunidade(
-    CHAVE_VOTOS_ENQUETES_COMUNIDADE,
-    userId,
-    votos
-  );
-}
 
 function calcularTotalVotosEnquete(
   resultados: ResultadoVotosEnquete,
@@ -3466,7 +3459,11 @@ export default function ComunidadePage() {
             ...votosReais.meusVotos,
           };
 
-          salvarVotosEnquetesLocais(votosAtualizados, usuario.id);
+          salvarVotosEnquetesLocais(
+            salvarJsonUsuarioComunidade,
+            votosAtualizados,
+            usuario.id
+          );
 
           return votosAtualizados;
         });
@@ -4444,7 +4441,11 @@ export default function ComunidadePage() {
                 ...votosReais.meusVotos,
               };
 
-              salvarVotosEnquetesLocais(votosAtualizados, usuario.id);
+              salvarVotosEnquetesLocais(
+                salvarJsonUsuarioComunidade,
+                votosAtualizados,
+                usuario.id
+              );
 
               return votosAtualizados;
             });
@@ -4463,7 +4464,11 @@ export default function ComunidadePage() {
           [postId]: opcao,
         };
 
-        salvarVotosEnquetesLocais(votosAtualizados, usuario.id);
+        salvarVotosEnquetesLocais(
+          salvarJsonUsuarioComunidade,
+          votosAtualizados,
+          usuario.id
+        );
 
         return votosAtualizados;
       });
@@ -4485,7 +4490,11 @@ export default function ComunidadePage() {
             ...votosReais.meusVotos,
           };
 
-          salvarVotosEnquetesLocais(votosAtualizados, usuario.id);
+          salvarVotosEnquetesLocais(
+            salvarJsonUsuarioComunidade,
+            votosAtualizados,
+            usuario.id
+          );
 
           return votosAtualizados;
         });
