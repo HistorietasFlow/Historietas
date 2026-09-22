@@ -33,6 +33,7 @@ import { removerSugestoesObrasDuplicadas } from "./components/community-related-
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
 import { obterPerguntaEnquete } from "./components/community-poll-question";
+import { obterOpcoesEnquete } from "./components/community-valid-poll-options";
 import { postEhEnquete } from "./components/community-post-poll-check";
 import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
@@ -1608,11 +1609,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-function obterOpcoesEnquete(texto: string) {
-  const opcoes = obterTodasOpcoesEnquete(texto).slice(0, MAX_OPCOES_ENQUETE);
-
-  return opcoes.length >= MIN_OPCOES_ENQUETE ? opcoes : [];
-}
 
 function carregarVotosEnquetesLocais(userId = "") {
   if (typeof window === "undefined" || !userId.trim()) {
