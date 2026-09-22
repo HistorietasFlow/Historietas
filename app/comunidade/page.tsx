@@ -29,6 +29,7 @@ import { criarLinkObraRelacionada } from "./components/community-related-work-li
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
 import { normalizarSugestaoObraLocal } from "./components/community-related-work-local-normalizer";
+import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -1597,21 +1598,6 @@ function carregarSugestoesObrasLocais(userId = "") {
   } catch {
     return [];
   }
-}
-
-function removerSugestoesObrasDuplicadas(obrasBase: ObraRelacionadaSugestao[]) {
-  const titulosRegistrados = new Set<string>();
-
-  return obrasBase.filter((obra) => {
-    const chaveTitulo = normalizarTexto(obra.titulo);
-
-    if (!chaveTitulo || titulosRegistrados.has(chaveTitulo)) {
-      return false;
-    }
-
-    titulosRegistrados.add(chaveTitulo);
-    return true;
-  });
 }
 
 function obterLinhasTexto(texto: string) {
