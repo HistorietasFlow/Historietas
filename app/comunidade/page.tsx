@@ -51,6 +51,7 @@ import { criarNotificacaoComunidadeSupabase } from "./components/community-supab
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPontuacaoPost } from "./components/community-post-score";
+import type { PostComunidade as PostComunidadeBase } from "./components/community-post";
 import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { copiarTextoComFallback } from "./components/community-clipboard-copy";
 import type { ComentarioComunidade } from "./components/community-comment";
@@ -286,26 +287,6 @@ type UsuarioBuscaComunidade = {
   avatar: string;
 };
 
-type PostComunidade = {
-  id: string;
-  autorId: string;
-  autorNome: string;
-  autorAvatar: string;
-  categoria: CategoriaComunidade;
-  tipoPublicacao: TipoPublicacaoComunidade;
-  temSpoiler: boolean;
-  texto: string;
-  obraRelacionada: string;
-  capituloRelacionado: string;
-  criadoEm: string;
-  fixado: boolean;
-  fixadoEm: string;
-  fixadoPor: string;
-  curtidas: string[];
-  comentarios: ComentarioComunidade[];
-  visibilidade: VisibilidadePostComunidade;
-};
-
 type ObraRelacionadaSugestao = {
   id: string;
   titulo: string;
@@ -337,6 +318,12 @@ type VisibilidadePostComunidade =
   | "seguidores"
   | "seguindo"
   | "somente_eu";
+
+type PostComunidade = PostComunidadeBase<
+  CategoriaComunidade,
+  TipoPublicacaoComunidade,
+  VisibilidadePostComunidade
+>;
 
 const VISIBILIDADES_POST_COMUNIDADE: Array<{
   valor: VisibilidadePostComunidade;
