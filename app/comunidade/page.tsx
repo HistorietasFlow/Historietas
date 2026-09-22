@@ -39,6 +39,7 @@ import { carregarVotosEnquetesSupabase } from "./components/community-supabase-p
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPontuacaoPost } from "./components/community-post-score";
+import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
@@ -1618,19 +1619,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-
-function obterLinkPublicacaoComunidade(postId: string) {
-  if (typeof window === "undefined") {
-    return `/comunidade?post=${encodeURIComponent(postId)}`;
-  }
-
-  const url = new URL(window.location.href);
-  url.pathname = "/comunidade";
-  url.search = `?post=${encodeURIComponent(postId)}`;
-  url.hash = "";
-
-  return url.toString();
-}
 
 async function criarNotificacaoComunidadeSupabase({
   destinatarioId,
