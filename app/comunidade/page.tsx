@@ -21,6 +21,12 @@ import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
+import {
+  IDS_COMENTARIOS_POR_LOTE,
+  OBRAS_RELACIONADAS_POR_PAGINA,
+  POSTS_COMUNIDADE_POR_PAGINA,
+  REGISTROS_COMUNIDADE_POR_PAGINA,
+} from "./components/community-pagination-constants";
 import { CommunityThemeStyles } from "./components/community-theme-styles";
 import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
@@ -331,10 +337,6 @@ const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
 
 const CHAVE_POSTS_SALVOS_COMUNIDADE = "historietas:comunidade:posts-salvos";
 const CHAVE_VOTOS_ENQUETES_COMUNIDADE = "historietas:comunidade:votos-enquetes";
-const POSTS_COMUNIDADE_POR_PAGINA = 50;
-const REGISTROS_COMUNIDADE_POR_PAGINA = 500;
-const OBRAS_RELACIONADAS_POR_PAGINA = 200;
-const IDS_COMENTARIOS_POR_LOTE = 100;
 
 type ComunidadeTranslationEntry = {
   en: string;
