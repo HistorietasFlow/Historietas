@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { CSSProperties, FormEvent, TouchEvent } from "react";
+import type { FormEvent, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
@@ -23,6 +23,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityLoadingContainer } from "./components/community-loading-container";
+import { communityPageStyle } from "./components/community-page-style";
 import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
 import { CommunityTopWaterFade } from "./components/community-top-water-fade";
@@ -3528,7 +3529,7 @@ export default function ComunidadePage() {
   const [usuariosSeguidosIds, setUsuariosSeguidosIds] = useState<string[]>([]);
   const [usuarioSeguindoId, setUsuarioSeguindoId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
-  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const { pageThemeStyle } = useHistorietasTheme(communityPageStyle);
   const carregarPostsComunidadeNoEfeito = useEffectEvent(
     (mostrarCarregamento: boolean, pagina: number, obraFiltro: string) =>
       carregarPostsComunidade(mostrarCarregamento, pagina, obraFiltro),
@@ -7299,17 +7300,6 @@ const comunidadeThemeCss = `
     color: #FFFFFF !important;
   }
 `;
-
-const pageStyle: CSSProperties = {
-  position: "relative",
-  minHeight: "100vh",
-  width: "100%",
-  maxWidth: "100vw",
-  overflowX: "hidden",
-  background: "var(--historietas-comunidade-bg-page, #000000)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
 
 
 
