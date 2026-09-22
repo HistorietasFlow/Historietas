@@ -52,6 +52,7 @@ import { contarCurtidasUnicasPostComunidade } from "./components/community-uniqu
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPontuacaoPost } from "./components/community-post-score";
 import type { PostComunidade as PostComunidadeBase } from "./components/community-post";
+import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { copiarTextoComFallback } from "./components/community-clipboard-copy";
 import type { ComentarioComunidade } from "./components/community-comment";
@@ -1289,25 +1290,6 @@ function criarLoginHrefComunidade() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function criarPerfilHrefComunidade(userId: string, nomeUsuario: string) {
-  const params = new URLSearchParams();
-  const userIdLimpo = userId.trim();
-  const nomeLimpo = nomeUsuario.trim();
-
-  if (userIdLimpo) {
-    params.set("userId", userIdLimpo);
-    params.set("autorId", userIdLimpo);
-  }
-
-  if (nomeLimpo) {
-    params.set("autor", nomeLimpo);
-  }
-
-  const query = params.toString();
-
-  return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
 
 function obterUsernameProfileComunidade(
