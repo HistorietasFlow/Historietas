@@ -53,6 +53,7 @@ import { contarComentaristasUnicosPostComunidade } from "./components/community-
 import { obterPontuacaoPost } from "./components/community-post-score";
 import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { copiarTextoComFallback } from "./components/community-clipboard-copy";
+import type { ComentarioComunidade } from "./components/community-comment";
 import { formatarTempoRelativoComentarioComunidade } from "./components/community-comment-relative-time";
 import type { OrdenacaoComentariosComunidade } from "./components/community-comment-order";
 import type { RespostaComentarioComunidade } from "./components/community-comment-reply";
@@ -283,17 +284,6 @@ type UsuarioBuscaComunidade = {
   nome: string;
   username: string;
   avatar: string;
-};
-
-type ComentarioComunidade = {
-  id: string;
-  autorId: string;
-  autorNome: string;
-  autorAvatar: string;
-  texto: string;
-  criadoEm: string;
-  comentarioPaiId: string;
-  curtidas: string[];
 };
 
 type PostComunidade = {
