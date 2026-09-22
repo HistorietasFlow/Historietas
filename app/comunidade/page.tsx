@@ -83,6 +83,7 @@ import { CommunityPostComposerField } from "./components/community-post-composer
 import { CommunityPostComposerFieldLabel } from "./components/community-post-composer-field-label";
 import { CommunityPostComposerSelect } from "./components/community-post-composer-select";
 import { CommunityPostComposerInput } from "./components/community-post-composer-input";
+import { getCommunityPostComposerRelatedChapterInputStyle } from "./components/community-post-composer-related-chapter-input-style";
 import { CommunityPostComposerRelatedWorkSearch } from "./components/community-post-composer-related-work-search";
 import { CommunityPostComposerRelatedWorkSuggestions } from "./components/community-post-composer-related-work-suggestions";
 import { CommunityPostComposerRelatedWorkSuggestionButton } from "./components/community-post-composer-related-work-suggestion-button";
@@ -7099,12 +7100,9 @@ export default function ComunidadePage() {
                     autoCorrect="off"
                     spellCheck={false}
                     maxLength={60}
-                    style={{
-                      opacity: obraRelacionadaBusca.trim() ? 1 : 0.58,
-                      cursor: obraRelacionadaBusca.trim()
-                        ? "text"
-                        : "not-allowed",
-                    }}
+                    style={getCommunityPostComposerRelatedChapterInputStyle(
+                      Boolean(obraRelacionadaBusca.trim()),
+                    )}
                   />
                 </CommunityPostComposerField>
               </CommunityPostComposerFields>
