@@ -1,0 +1,1 @@
+export const SEPARADOR_CAPITULO_RELACIONADO = "§§";
