@@ -22,6 +22,11 @@ import { CommunityLoadingSpinner } from "./components/community-loading-spinner"
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
 import {
+  MAX_OPCOES_ENQUETE,
+  MIN_OPCOES_ENQUETE,
+  MODELO_ENQUETE_COMUNIDADE,
+} from "./components/community-poll-constants";
+import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
   CHAVE_VOTOS_ENQUETES_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1160,11 +1165,6 @@ async function salvarPostSalvoSupabaseComunidade(
 
   return false;
 }
-
-const MIN_OPCOES_ENQUETE = 2;
-const MAX_OPCOES_ENQUETE = 4;
-const MODELO_ENQUETE_COMUNIDADE =
-  "Enquete: qual opção você escolheria?\nOpção 1:\nOpção 2:";
 
 type SugestaoPublicacaoComunidade = {
   rotulo: string;
