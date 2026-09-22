@@ -32,6 +32,7 @@ import { normalizarSugestaoObraSupabase } from "./components/community-related-w
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
+import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
@@ -1680,31 +1681,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-function formatarErroSupabase(acao: string, erro: unknown) {
-  if (!erro || typeof erro !== "object") {
-    return `${acao}: erro desconhecido.`;
-  }
-
-  const supabaseErro = erro as {
-    message?: string;
-    code?: string;
-    details?: string;
-    hint?: string;
-  };
-
-  const detalhes = [
-    supabaseErro.message,
-    supabaseErro.code ? `código ${supabaseErro.code}` : "",
-    supabaseErro.details,
-    supabaseErro.hint,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  return detalhes ? `${acao}: ${detalhes}` : `${acao}: erro desconhecido.`;
-}
-
 
 function erroEhSessaoAusenteComunidade(error: unknown) {
   if (!error || typeof error !== "object") {
