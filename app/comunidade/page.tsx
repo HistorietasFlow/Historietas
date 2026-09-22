@@ -53,8 +53,8 @@ import { contarComentaristasUnicosPostComunidade } from "./components/community-
 import { obterPontuacaoPost } from "./components/community-post-score";
 import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { copiarTextoComFallback } from "./components/community-clipboard-copy";
-import { dataComentarioComunidade } from "./components/community-comment-date";
 import { formatarTempoRelativoComentarioComunidade } from "./components/community-comment-relative-time";
+import { criarEstruturaComentariosComunidade } from "./components/community-comment-tree";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
@@ -1685,82 +1685,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-function criarEstruturaComentariosComunidade(
-  comentarios: ComentarioComunidade[],
-  ordenacao: OrdenacaoComentariosComunidade
-) {
-  const comentariosPorId = new Map(
-    comentarios.map((comentario) => [comentario.id, comentario])
-  );
-  const respostasPorRaiz = new Map<string, ComentarioComunidade[]>();
-  const comentariosRaiz: ComentarioComunidade[] = [];
-
-  function obterRaiz(comentario: ComentarioComunidade) {
-    let atual = comentario;
-    const visitados = new Set<string>([comentario.id]);
-
-    while (atual.comentarioPaiId) {
-      const pai = comentariosPorId.get(atual.comentarioPaiId);
-
-      if (!pai || visitados.has(pai.id)) {
-        break;
-      }
-
-      visitados.add(pai.id);
-      atual = pai;
-    }
-
-    return atual;
-  }
-
-  comentarios.forEach((comentario) => {
-    const paiExiste = Boolean(
-      comentario.comentarioPaiId &&
-        comentariosPorId.has(comentario.comentarioPaiId)
-    );
-
-    if (!paiExiste) {
-      comentariosRaiz.push(comentario);
-      return;
-    }
-
-    const raiz = obterRaiz(comentario);
-    const respostasAtuais = respostasPorRaiz.get(raiz.id) || [];
-
-    respostasPorRaiz.set(raiz.id, [...respostasAtuais, comentario]);
-  });
-
-  respostasPorRaiz.forEach((respostas, raizId) => {
-    respostasPorRaiz.set(
-      raizId,
-      [...respostas].sort(
-        (a, b) => dataComentarioComunidade(a) - dataComentarioComunidade(b)
-      )
-    );
-  });
-
-  comentariosRaiz.sort((a, b) => {
-    if (ordenacao === "recentes") {
-      return dataComentarioComunidade(b) - dataComentarioComunidade(a);
-    }
-
-    const relevanciaA =
-      a.curtidas.length * 3 + (respostasPorRaiz.get(a.id)?.length || 0);
-    const relevanciaB =
-      b.curtidas.length * 3 + (respostasPorRaiz.get(b.id)?.length || 0);
-
-    return (
-      relevanciaB - relevanciaA ||
-      dataComentarioComunidade(b) - dataComentarioComunidade(a)
-    );
-  });
-
-  return {
-    comentariosRaiz,
-    respostasPorRaiz,
-  };
-}
 
 function obterIdsComentarioComRespostasComunidade(
   comentarios: ComentarioComunidade[],
