@@ -1,14 +1,6 @@
-type PerfilComunidadeRow = Record<string, unknown>;
+import type { SupabaseComentarioRow } from "./community-supabase-comment-row";
 
-type SupabaseComentarioRow = {
-  id: string;
-  post_id: string;
-  autor_id: string;
-  autor_nome: string;
-  texto: string;
-  comentario_pai_id: string | null;
-  criado_em: string;
-};
+type PerfilComunidadeRow = Record<string, unknown>;
 
 type ComentarioComunidade = {
   id: string;
