@@ -1,17 +1,11 @@
 import { mapearComentarioSupabase } from "./community-supabase-comment-mapper";
+import type { CategoriaComunidade } from "./community-category";
 import type { SupabaseComentarioRow } from "./community-supabase-comment-row";
 import type { SupabaseComentarioCurtidaRow } from "./community-supabase-comment-like-row";
 import { mapearPostSupabase } from "./community-supabase-post-mapper";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./community-supabase-like-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type CategoriaComunidade =
-  | "Geral"
-  | "Divulgação"
-  | "Recomendações"
-  | "Discussão"
-  | "Dúvidas";
 
 type TipoPublicacaoComunidade =
   | "Discussão"
