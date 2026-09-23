@@ -18,6 +18,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
+import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
@@ -231,16 +232,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-const VISIBILIDADES_POST_COMUNIDADE: Array<{
-  valor: VisibilidadePostComunidade;
-  rotulo: string;
-}> = [
-  { valor: "publico", rotulo: "Público" },
-  { valor: "seguidores", rotulo: "Seguidores" },
-  { valor: "seguindo", rotulo: "Pessoas que sigo" },
-  { valor: "somente_eu", rotulo: "Somente eu" },
-];
 
 const CATEGORIAS_COMUNIDADE: CategoriaComunidade[] = [
   "Geral",
