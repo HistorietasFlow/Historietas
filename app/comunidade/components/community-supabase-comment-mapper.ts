@@ -1,16 +1,6 @@
+import type { ComentarioComunidade } from "./community-comment";
 import type { SupabaseComentarioRow } from "./community-supabase-comment-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type ComentarioComunidade = {
-  id: string;
-  autorId: string;
-  autorNome: string;
-  autorAvatar: string;
-  texto: string;
-  criadoEm: string;
-  comentarioPaiId: string;
-  curtidas: string[];
-};
 
 type ObterDadoProfileComunidade = (
   profile: PerfilComunidadeRow | undefined
