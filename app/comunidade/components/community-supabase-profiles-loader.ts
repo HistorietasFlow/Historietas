@@ -1,11 +1,7 @@
 import { supabase } from "../../../lib/supabase/client";
+import type { ObterTextoProfileComunidade } from "./community-profile-text-getter";
 import { idSupabaseValidoComunidade } from "./community-supabase-id-validator";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type ObterTextoProfileComunidade = (
-  profile: PerfilComunidadeRow | undefined,
-  chave: string
-) => string;
 
 export async function carregarProfilesComunidadePorUsuarios(
   userIds: string[],
