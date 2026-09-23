@@ -17,6 +17,7 @@ import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
+import { CATEGORIAS_COMUNIDADE } from "./components/community-categories";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
@@ -232,15 +233,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-const CATEGORIAS_COMUNIDADE: CategoriaComunidade[] = [
-  "Geral",
-  "Divulgação",
-  "Recomendações",
-  "Discussão",
-  "Dúvidas",
-];
-
 
 const ABAS_FEED_COMUNIDADE: AbaFeedComunidade[] = [
   "Para você",
