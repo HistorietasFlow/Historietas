@@ -4,6 +4,7 @@ import type { SupabaseComentarioCurtidaRow } from "./community-supabase-comment-
 import { mapearPostSupabase } from "./community-supabase-post-mapper";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./community-supabase-like-row";
+import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
 
 type CategoriaComunidade =
   | "Geral"
@@ -27,8 +28,6 @@ type VisibilidadePostComunidade =
   | "seguidores"
   | "seguindo"
   | "somente_eu";
-
-type PerfilComunidadeRow = Record<string, unknown>;
 
 type ComentarioComunidade = {
   id: string;
