@@ -1,7 +1,6 @@
 import { supabase } from "../../../lib/supabase/client";
 import { idSupabaseValidoComunidade } from "./community-supabase-id-validator";
-
-type PerfilComunidadeRow = Record<string, unknown>;
+import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
 
 type ObterTextoProfileComunidade = (
   profile: PerfilComunidadeRow | undefined,

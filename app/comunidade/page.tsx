@@ -37,6 +37,7 @@ import type { SupabaseComentarioCurtidaRow } from "./components/community-supaba
 import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./components/community-supabase-like-row";
+import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
@@ -253,8 +254,6 @@ type ObraRelacionadaSugestao = {
   slug: string;
   link: string;
 };
-
-type PerfilComunidadeRow = Record<string, unknown>;
 
 type AlvoDenunciaComunidade = "post" | "comentario";
 
@@ -5364,7 +5363,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
