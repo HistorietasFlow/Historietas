@@ -21,6 +21,7 @@ import { CATEGORIAS_COMUNIDADE } from "./components/community-categories";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
+import { TIPOS_PUBLICACAO_COMUNIDADE } from "./components/community-publication-types";
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
@@ -234,18 +235,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
-  "Discussão",
-  "Teoria",
-  "Enquete",
-  "Pedido de indicação",
-  "Divulgação",
-  "Review",
-  "Aviso de capítulo",
-  "Dúvida",
-];
-
 
 type ComunidadeTranslationEntry = {
   en: string;
