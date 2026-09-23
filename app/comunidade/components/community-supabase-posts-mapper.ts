@@ -1,5 +1,6 @@
 import { mapearComentarioSupabase } from "./community-supabase-comment-mapper";
 import type { CategoriaComunidade } from "./community-category";
+import type { NormalizarCategoriaComunidade } from "./community-category-normalizer";
 import type { ComentarioComunidade } from "./community-comment";
 import type { PostComunidade } from "./community-post";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
@@ -11,10 +12,6 @@ import { mapearPostSupabase } from "./community-supabase-post-mapper";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./community-supabase-like-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type NormalizarCategoriaComunidade = (
-  valor: unknown
-) => CategoriaComunidade;
 
 type NormalizarTipoPublicacaoComunidade = (
   valor: unknown
