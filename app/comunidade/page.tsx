@@ -19,6 +19,7 @@ import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
+import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
@@ -253,7 +254,6 @@ type DenunciaAlvoComunidade = {
 
 type OrdenacaoComunidade = "Recentes" | "Em alta" | "Mais comentadas";
 type AbaFeedComunidade = "Para você" | "Seguindo" | "Recentes" | "Teorias" | "Reviews";
-type TipoPublicacaoFiltro = TipoPublicacaoComunidade | "Todos";
 type PostComunidade = PostComunidadeBase<
   CategoriaComunidade,
   TipoPublicacaoComunidade,
@@ -5341,7 +5341,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
