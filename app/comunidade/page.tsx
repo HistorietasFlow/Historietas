@@ -31,6 +31,7 @@ import type {
   UsuarioComunidade,
 } from "./components/community-user";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
+import type { PostComunidade } from "./components/community-post-model";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
@@ -75,7 +76,6 @@ import { criarNotificacaoComunidadeSupabase } from "./components/community-supab
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPontuacaoPost } from "./components/community-post-score";
-import type { PostComunidade as PostComunidadeBase } from "./components/community-post";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { copiarTextoComFallback } from "./components/community-clipboard-copy";
@@ -231,12 +231,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-type PostComunidade = PostComunidadeBase<
-  CategoriaComunidade,
-  TipoPublicacaoComunidade,
-  VisibilidadePostComunidade
->;
 
 const VISIBILIDADES_POST_COMUNIDADE: Array<{
   valor: VisibilidadePostComunidade;
@@ -5319,7 +5313,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
