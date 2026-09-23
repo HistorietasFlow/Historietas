@@ -17,6 +17,7 @@ import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
+import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
@@ -215,16 +216,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-type TipoPublicacaoComunidade =
-  | "Discussão"
-  | "Teoria"
-  | "Enquete"
-  | "Pedido de indicação"
-  | "Divulgação"
-  | "Review"
-  | "Aviso de capítulo"
-  | "Dúvida";
 
 type UsuarioComunidade = {
   id: string;
@@ -5357,7 +5348,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 

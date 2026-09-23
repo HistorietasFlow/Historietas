@@ -1,14 +1,5 @@
 import { normalizarTexto } from "../../../lib/utils";
-
-type TipoPublicacaoComunidade =
-  | "Discussão"
-  | "Teoria"
-  | "Enquete"
-  | "Pedido de indicação"
-  | "Divulgação"
-  | "Review"
-  | "Aviso de capítulo"
-  | "Dúvida";
+import type { TipoPublicacaoComunidade } from "./community-publication-type";
 
 const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
   "Discussão",
@@ -34,4 +25,3 @@ export function obterTipoPublicacaoPorParametro(valor: string) {
     ) || null
   );
 }
-
