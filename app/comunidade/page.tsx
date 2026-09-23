@@ -61,6 +61,7 @@ import type { SupabaseCurtidaRow } from "./components/community-supabase-like-ro
 import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
+import { erroTabelaOpcionalComunidadeIgnoravel } from "./components/community-supabase-optional-table-error-check";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
@@ -456,24 +457,6 @@ function CommunityLanguageBridge() {
   return null;
 }
 
-
-function erroTabelaOpcionalComunidadeIgnoravel(erro: unknown) {
-  if (!erro || typeof erro !== "object") {
-    return false;
-  }
-
-  const supabaseErro = erro as { code?: string; message?: string };
-  const codigo = supabaseErro.code || "";
-  const mensagem = (supabaseErro.message || "").toLowerCase();
-
-  return (
-    codigo === "42P01" ||
-    codigo === "42703" ||
-    mensagem.includes("does not exist") ||
-    mensagem.includes("schema cache") ||
-    mensagem.includes("could not find")
-  );
-}
 
 function extrairPostIdSalvoComunidade(registro: Record<string, unknown>) {
   const valor = registro.post_id ?? registro.publicacao_id ?? registro.comunidade_post_id;
