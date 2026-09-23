@@ -1,30 +1,11 @@
 import { separarObraECapituloRelacionados } from "./community-related-chapter-utils";
 import type { CategoriaComunidade } from "./community-category";
 import type { ComentarioComunidade } from "./community-comment";
+import type { PostComunidade } from "./community-post";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
 import type { TipoPublicacaoComunidade } from "./community-publication-type";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type PostComunidade = {
-  id: string;
-  autorId: string;
-  autorNome: string;
-  autorAvatar: string;
-  categoria: CategoriaComunidade;
-  tipoPublicacao: TipoPublicacaoComunidade;
-  temSpoiler: boolean;
-  texto: string;
-  obraRelacionada: string;
-  capituloRelacionado: string;
-  criadoEm: string;
-  fixado: boolean;
-  fixadoEm: string;
-  fixadoPor: string;
-  curtidas: string[];
-  comentarios: ComentarioComunidade[];
-  visibilidade: VisibilidadePostComunidade;
-};
 
 type ObterDadoProfileComunidade = (
   profile: PerfilComunidadeRow | undefined
@@ -52,7 +33,11 @@ export function mapearPostSupabase(
   normalizarCategoria: NormalizarCategoriaComunidade,
   normalizarTipoPublicacao: NormalizarTipoPublicacaoComunidade,
   normalizarVisibilidadePostComunidade: NormalizarVisibilidadeComunidade
-): PostComunidade {
+): PostComunidade<
+  CategoriaComunidade,
+  TipoPublicacaoComunidade,
+  VisibilidadePostComunidade
+> {
   const profile = profilesPorUsuario.get(post.autor_id);
   const autorNome =
     obterNomeProfileComunidade(profile) || post.autor_nome?.trim() || "Usuário";
