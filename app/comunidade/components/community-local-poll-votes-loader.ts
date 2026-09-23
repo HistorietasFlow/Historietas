@@ -1,9 +1,5 @@
 import { CHAVE_VOTOS_ENQUETES_COMUNIDADE } from "./community-storage-keys";
-
-type CarregarJsonUsuarioComunidade = (
-  chave: string,
-  userId?: string
-) => unknown;
+import type { CarregarJsonUsuarioComunidade } from "./community-user-json-loader";
 
 export function carregarVotosEnquetesLocais(
   carregarJsonUsuarioComunidade: CarregarJsonUsuarioComunidade,
