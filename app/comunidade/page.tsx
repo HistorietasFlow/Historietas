@@ -22,7 +22,10 @@ import type { TipoPublicacaoComunidade } from "./components/community-publicatio
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
-import type { AlvoDenunciaComunidade } from "./components/community-report-target";
+import type {
+  AlvoDenunciaComunidade,
+  DenunciaAlvoComunidade,
+} from "./components/community-report-target";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
@@ -245,12 +248,6 @@ type ObraRelacionadaSugestao = {
   autorId: string;
   slug: string;
   link: string;
-};
-
-type DenunciaAlvoComunidade = {
-  alvoTipo: AlvoDenunciaComunidade;
-  alvoId: string;
-  alvoTitulo: string;
 };
 
 type PostComunidade = PostComunidadeBase<
@@ -5340,7 +5337,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
