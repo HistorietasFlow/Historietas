@@ -1,10 +1,5 @@
 import { CHAVE_VOTOS_ENQUETES_COMUNIDADE } from "./community-storage-keys";
-
-type SalvarJsonUsuarioComunidade = (
-  chave: string,
-  userId: string,
-  valor: unknown
-) => void;
+import type { SalvarJsonUsuarioComunidade } from "./community-user-json-saver";
 
 export function salvarVotosEnquetesLocais(
   salvarJsonUsuarioComunidade: SalvarJsonUsuarioComunidade,
