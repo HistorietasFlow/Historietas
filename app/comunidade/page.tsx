@@ -24,6 +24,7 @@ import type { TipoPublicacaoComunidade } from "./components/community-publicatio
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
+import { ABAS_FEED_COMUNIDADE } from "./components/community-feed-tabs";
 import type {
   AlvoDenunciaComunidade,
   DenunciaAlvoComunidade,
@@ -233,14 +234,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-const ABAS_FEED_COMUNIDADE: AbaFeedComunidade[] = [
-  "Para você",
-  "Seguindo",
-  "Recentes",
-  "Teorias",
-  "Reviews",
-];
 
 const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
   "Discussão",
