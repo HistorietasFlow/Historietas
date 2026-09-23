@@ -1,13 +1,7 @@
 import { separarObraECapituloRelacionados } from "./community-related-chapter-utils";
+import type { CategoriaComunidade } from "./community-category";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type CategoriaComunidade =
-  | "Geral"
-  | "Divulgação"
-  | "Recomendações"
-  | "Discussão"
-  | "Dúvidas";
 
 type TipoPublicacaoComunidade =
   | "Discussão"
