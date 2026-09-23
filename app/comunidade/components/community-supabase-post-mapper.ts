@@ -6,12 +6,9 @@ import type { PostComunidade } from "./community-post";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
 import type { ObterDadoProfileComunidade } from "./community-profile-data-getter";
 import type { TipoPublicacaoComunidade } from "./community-publication-type";
+import type { NormalizarTipoPublicacaoComunidade } from "./community-publication-type-normalizer";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type NormalizarTipoPublicacaoComunidade = (
-  valor: unknown
-) => TipoPublicacaoComunidade;
 
 type NormalizarVisibilidadeComunidade = (
   valor: unknown
