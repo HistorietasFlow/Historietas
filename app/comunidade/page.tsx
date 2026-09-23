@@ -56,6 +56,7 @@ import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options
 import { obterPerguntaEnquete } from "./components/community-poll-question";
 import { obterOpcoesEnquete } from "./components/community-valid-poll-options";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
+import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
@@ -248,9 +249,6 @@ type DenunciaAlvoComunidade = {
   alvoId: string;
   alvoTitulo: string;
 };
-
-type ResultadoVotosEnquete = Record<string, Record<string, number>>;
-
 
 type OrdenacaoComunidade = "Recentes" | "Em alta" | "Mais comentadas";
 type AbaFeedComunidade = "Para você" | "Seguindo" | "Recentes" | "Teorias" | "Reviews";
@@ -5343,7 +5341,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 

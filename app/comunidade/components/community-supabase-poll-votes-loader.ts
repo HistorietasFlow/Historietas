@@ -1,6 +1,5 @@
 import { supabase } from "../../../lib/supabase/client";
-
-type ResultadoVotosEnquete = Record<string, Record<string, number>>;
+import type { ResultadoVotosEnquete } from "./community-poll-votes-result";
 
 export async function carregarVotosEnquetesSupabase(
   postIds: string[],
