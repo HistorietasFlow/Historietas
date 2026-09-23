@@ -1,5 +1,6 @@
 import { mapearComentarioSupabase } from "./community-supabase-comment-mapper";
 import type { CategoriaComunidade } from "./community-category";
+import type { ComentarioComunidade } from "./community-comment";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
 import type { TipoPublicacaoComunidade } from "./community-publication-type";
 import type { SupabaseComentarioRow } from "./community-supabase-comment-row";
@@ -8,17 +9,6 @@ import { mapearPostSupabase } from "./community-supabase-post-mapper";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./community-supabase-like-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type ComentarioComunidade = {
-  id: string;
-  autorId: string;
-  autorNome: string;
-  autorAvatar: string;
-  texto: string;
-  criadoEm: string;
-  comentarioPaiId: string;
-  curtidas: string[];
-};
 
 type PostComunidade = {
   id: string;
