@@ -1,14 +1,9 @@
 import { separarObraECapituloRelacionados } from "./community-related-chapter-utils";
 import type { CategoriaComunidade } from "./community-category";
+import type { VisibilidadePostComunidade } from "./community-post-visibility";
 import type { TipoPublicacaoComunidade } from "./community-publication-type";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type VisibilidadePostComunidade =
-  | "publico"
-  | "seguidores"
-  | "seguindo"
-  | "somente_eu";
 
 type ComentarioComunidade = {
   id: string;

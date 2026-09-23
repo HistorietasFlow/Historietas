@@ -17,6 +17,7 @@ import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
+import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
@@ -255,12 +256,6 @@ type OrdenacaoComunidade = "Recentes" | "Em alta" | "Mais comentadas";
 type AbaFeedComunidade = "Para você" | "Seguindo" | "Recentes" | "Teorias" | "Reviews";
 type TipoPublicacaoFiltro = TipoPublicacaoComunidade | "Todos";
 type GrupoPublicacaoObra = "" | "posts";
-type VisibilidadePostComunidade =
-  | "publico"
-  | "seguidores"
-  | "seguindo"
-  | "somente_eu";
-
 type PostComunidade = PostComunidadeBase<
   CategoriaComunidade,
   TipoPublicacaoComunidade,
@@ -5348,7 +5343,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
