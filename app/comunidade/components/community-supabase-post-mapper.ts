@@ -4,15 +4,12 @@ import type { NormalizarCategoriaComunidade } from "./community-category-normali
 import type { ComentarioComunidade } from "./community-comment";
 import type { PostComunidade } from "./community-post";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
+import type { NormalizarVisibilidadeComunidade } from "./community-post-visibility-normalizer";
 import type { ObterDadoProfileComunidade } from "./community-profile-data-getter";
 import type { TipoPublicacaoComunidade } from "./community-publication-type";
 import type { NormalizarTipoPublicacaoComunidade } from "./community-publication-type-normalizer";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type NormalizarVisibilidadeComunidade = (
-  valor: unknown
-) => VisibilidadePostComunidade;
 
 export function mapearPostSupabase(
   post: SupabasePostRow,
