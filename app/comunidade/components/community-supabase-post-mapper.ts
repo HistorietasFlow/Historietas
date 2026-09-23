@@ -1,5 +1,6 @@
 import { separarObraECapituloRelacionados } from "./community-related-chapter-utils";
 import type { CategoriaComunidade } from "./community-category";
+import type { NormalizarCategoriaComunidade } from "./community-category-normalizer";
 import type { ComentarioComunidade } from "./community-comment";
 import type { PostComunidade } from "./community-post";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
@@ -7,10 +8,6 @@ import type { ObterDadoProfileComunidade } from "./community-profile-data-getter
 import type { TipoPublicacaoComunidade } from "./community-publication-type";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type NormalizarCategoriaComunidade = (
-  valor: unknown
-) => CategoriaComunidade;
 
 type NormalizarTipoPublicacaoComunidade = (
   valor: unknown
