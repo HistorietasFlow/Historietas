@@ -1,4 +1,5 @@
 import { supabase } from "../../../lib/supabase/client";
+import type { VisibilidadePostComunidade } from "./community-post-visibility";
 import { removerReviewComunidadeDoDiario } from "./community-diary-review-remover";
 import { obterObraRelacionadaPermitida } from "./community-related-work-allowed-finder";
 import { normalizarSugestaoObraSupabase } from "./community-related-work-supabase-normalizer";
@@ -13,12 +14,6 @@ type ObraRelacionadaSugestao = {
   slug: string;
   link: string;
 };
-
-type VisibilidadePostComunidade =
-  | "publico"
-  | "seguidores"
-  | "seguindo"
-  | "somente_eu";
 
 function obterVisibilidadeReviewNoDiario(
   visibilidade: VisibilidadePostComunidade,
