@@ -30,6 +30,7 @@ import type {
   UsuarioBuscaComunidade,
   UsuarioComunidade,
 } from "./components/community-user";
+import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
@@ -230,15 +231,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-type ObraRelacionadaSugestao = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId: string;
-  slug: string;
-  link: string;
-};
 
 type PostComunidade = PostComunidadeBase<
   CategoriaComunidade,
@@ -5327,7 +5319,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
