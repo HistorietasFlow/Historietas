@@ -26,7 +26,10 @@ import type {
   AlvoDenunciaComunidade,
   DenunciaAlvoComunidade,
 } from "./components/community-report-target";
-import type { UsuarioComunidade } from "./components/community-user";
+import type {
+  UsuarioBuscaComunidade,
+  UsuarioComunidade,
+} from "./components/community-user";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
@@ -227,13 +230,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-type UsuarioBuscaComunidade = {
-  id: string;
-  nome: string;
-  username: string;
-  avatar: string;
-};
 
 type ObraRelacionadaSugestao = {
   id: string;
@@ -5331,7 +5327,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
