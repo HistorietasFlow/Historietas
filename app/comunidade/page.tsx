@@ -221,6 +221,7 @@ import { CommunityPollOptionText } from "./components/community-poll-option-text
 import { CommunityPollOptionStatus } from "./components/community-poll-option-status";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
+import type { ComunidadeTranslationEntry } from "./components/community-translation-entry";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -235,11 +236,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-type ComunidadeTranslationEntry = {
-  en: string;
-  es: string;
-};
 
 const COMUNIDADE_UI_TRANSLATIONS: Record<
   string,
