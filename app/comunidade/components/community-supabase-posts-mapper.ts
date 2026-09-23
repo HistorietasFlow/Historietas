@@ -1,5 +1,6 @@
 import { mapearComentarioSupabase } from "./community-supabase-comment-mapper";
 import { mapearPostSupabase } from "./community-supabase-post-mapper";
+import type { SupabasePostRow } from "./community-supabase-post-row";
 
 type CategoriaComunidade =
   | "Geral"
@@ -25,22 +26,6 @@ type VisibilidadePostComunidade =
   | "somente_eu";
 
 type PerfilComunidadeRow = Record<string, unknown>;
-
-type SupabasePostRow = {
-  id: string;
-  autor_id: string;
-  autor_nome: string;
-  categoria: string;
-  tipo_publicacao: string | null;
-  tem_spoiler: boolean | null;
-  texto: string;
-  obra_relacionada: string | null;
-  criado_em: string;
-  fixado: boolean | null;
-  fixado_em: string | null;
-  fixado_por: string | null;
-  visibilidade: string | null;
-};
 
 type SupabaseComentarioRow = {
   id: string;
