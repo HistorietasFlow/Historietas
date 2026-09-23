@@ -3,6 +3,7 @@ import type { CategoriaComunidade } from "./community-category";
 import type { ComentarioComunidade } from "./community-comment";
 import type { PostComunidade } from "./community-post";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
+import type { ObterDadoProfileComunidade } from "./community-profile-data-getter";
 import type { TipoPublicacaoComunidade } from "./community-publication-type";
 import type { SupabaseComentarioRow } from "./community-supabase-comment-row";
 import type { SupabaseComentarioCurtidaRow } from "./community-supabase-comment-like-row";
@@ -10,10 +11,6 @@ import { mapearPostSupabase } from "./community-supabase-post-mapper";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./community-supabase-like-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type ObterDadoProfileComunidade = (
-  profile: PerfilComunidadeRow | undefined
-) => string;
 
 type NormalizarCategoriaComunidade = (
   valor: unknown

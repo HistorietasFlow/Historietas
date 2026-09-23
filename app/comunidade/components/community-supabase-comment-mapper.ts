@@ -1,10 +1,7 @@
 import type { ComentarioComunidade } from "./community-comment";
+import type { ObterDadoProfileComunidade } from "./community-profile-data-getter";
 import type { SupabaseComentarioRow } from "./community-supabase-comment-row";
 import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
-
-type ObterDadoProfileComunidade = (
-  profile: PerfilComunidadeRow | undefined
-) => string;
 
 export function mapearComentarioSupabase(
   comentario: SupabaseComentarioRow,
