@@ -32,6 +32,7 @@ import {
   type SupabaseObraPublicaRow,
 } from "./components/community-related-work-supabase-normalizer";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
+import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
@@ -1547,16 +1548,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-
-type SupabaseComentarioRow = {
-  id: string;
-  post_id: string;
-  autor_id: string;
-  autor_nome: string;
-  texto: string;
-  comentario_pai_id: string | null;
-  criado_em: string;
-};
 
 type SupabaseCurtidaRow = {
   post_id: string;
@@ -5381,7 +5372,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
