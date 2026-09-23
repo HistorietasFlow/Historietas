@@ -224,6 +224,7 @@ import { CommunityRelatedChapterBadge } from "./components/community-related-cha
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { traduzirContagemResultadosComunidade } from "./components/community-results-count-translator";
 import { obterLocaleDocumentoComunidade } from "./components/community-document-locale";
+import { criarStorageKeyUsuarioComunidade } from "./components/community-user-storage-key";
 import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
@@ -454,12 +455,6 @@ function CommunityLanguageBridge() {
   return null;
 }
 
-
-function criarStorageKeyUsuarioComunidade(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
 
 function carregarJsonUsuarioComunidade(chave: string, userId = "") {
   const userIdLimpo = userId.trim();
