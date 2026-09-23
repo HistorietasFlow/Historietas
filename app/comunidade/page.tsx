@@ -33,6 +33,7 @@ import {
 } from "./components/community-related-work-supabase-normalizer";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
+import type { SupabaseComentarioCurtidaRow } from "./components/community-supabase-comment-like-row";
 import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./components/community-supabase-like-row";
@@ -1549,11 +1550,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-
-type SupabaseComentarioCurtidaRow = {
-  comentario_id: string;
-  usuario_id: string;
-};
 
 export default function ComunidadePage() {
   const router = useRouter();
@@ -5368,7 +5364,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
