@@ -27,7 +27,10 @@ import { criarLinkObraRelacionada } from "./components/community-related-work-li
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
 import { normalizarSugestaoObraLocal } from "./components/community-related-work-local-normalizer";
-import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
+import {
+  normalizarSugestaoObraSupabase,
+  type SupabaseObraPublicaRow,
+} from "./components/community-related-work-supabase-normalizer";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
@@ -1543,17 +1546,6 @@ function carregarSugestoesObrasLocais(userId = "") {
 
 
 
-
-type SupabaseObraPublicaRow = {
-  id: string;
-  user_id: string | null;
-  titulo: string | null;
-  autor: string | null;
-  classificacao_indicativa: string | null;
-  publicado: boolean | null;
-  slug: string | null;
-  link: string | null;
-};
 
 type SupabasePostRow = {
   id: string;
@@ -5404,7 +5396,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 

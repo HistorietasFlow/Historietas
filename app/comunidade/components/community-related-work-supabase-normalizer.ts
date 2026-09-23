@@ -1,7 +1,7 @@
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { criarSlugBase } from "../../../lib/utils";
 
-type SupabaseObraPublicaRow = {
+export type SupabaseObraPublicaRow = {
   id: string;
   user_id: string | null;
   titulo: string | null;
