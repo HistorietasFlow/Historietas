@@ -223,6 +223,7 @@ import { CommunityRelatedWorkBadge } from "./components/community-related-work-b
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { traduzirContagemResultadosComunidade } from "./components/community-results-count-translator";
+import { obterLocaleDocumentoComunidade } from "./components/community-document-locale";
 import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
@@ -236,24 +237,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-function obterLocaleDocumentoComunidade() {
-  if (typeof document === "undefined") {
-    return "pt-BR";
-  }
-
-  const idiomaDocumento = document.documentElement.lang.toLowerCase();
-
-  if (idiomaDocumento.startsWith("en")) {
-    return "en-US";
-  }
-
-  if (idiomaDocumento.startsWith("es")) {
-    return "es-ES";
-  }
-
-  return "pt-BR";
-}
 
 function CommunityLanguageBridge() {
   const { language } = useHistorietasLanguage();
