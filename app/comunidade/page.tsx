@@ -222,7 +222,7 @@ import { CommunityPollOptionStatus } from "./components/community-poll-option-st
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
-import type { HistorietasLanguage } from "../../lib/i18n";
+import { traduzirContagemResultadosComunidade } from "./components/community-results-count-translator";
 import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
@@ -236,30 +236,6 @@ import {
   deixarDeSeguirUsuario,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-
-function traduzirContagemResultadosComunidade(
-  total: number,
-  tipo: "usuarios" | "publicacoes",
-  idioma: HistorietasLanguage
-) {
-  if (idioma === "en") {
-    return `${total} found`;
-  }
-
-  if (idioma === "es") {
-    if (tipo === "publicacoes") {
-      return `${total} ${total === 1 ? "encontrada" : "encontradas"}`;
-    }
-
-    return `${total} ${total === 1 ? "encontrado" : "encontrados"}`;
-  }
-
-  if (tipo === "publicacoes") {
-    return `${total} ${total === 1 ? "encontrada" : "encontradas"}`;
-  }
-
-  return `${total} ${total === 1 ? "encontrado" : "encontrados"}`;
-}
 
 function obterLocaleDocumentoComunidade() {
   if (typeof document === "undefined") {
