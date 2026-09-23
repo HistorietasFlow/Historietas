@@ -224,8 +224,8 @@ import { CommunityRelatedChapterBadge } from "./components/community-related-cha
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { traduzirContagemResultadosComunidade } from "./components/community-results-count-translator";
 import { obterLocaleDocumentoComunidade } from "./components/community-document-locale";
-import { criarStorageKeyUsuarioComunidade } from "./components/community-user-storage-key";
 import { carregarJsonUsuarioComunidade } from "./components/community-user-json-loader";
+import { salvarJsonUsuarioComunidade } from "./components/community-user-json-saver";
 import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
@@ -456,30 +456,6 @@ function CommunityLanguageBridge() {
   return null;
 }
 
-
-function salvarJsonUsuarioComunidade(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioComunidade(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    window.localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; a Comunidade continua em memória.
-  }
-}
 
 function erroTabelaOpcionalComunidadeIgnoravel(erro: unknown) {
   if (!erro || typeof erro !== "object") {
