@@ -28,6 +28,7 @@ import {
 } from "./components/community-related-chapter-utils";
 import { criarLinkObraRelacionada } from "./components/community-related-work-link";
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
+import type { GrupoPublicacaoObra } from "./components/community-publication-group";
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
 import { normalizarSugestaoObraLocal } from "./components/community-related-work-local-normalizer";
 import {
@@ -253,7 +254,6 @@ type DenunciaAlvoComunidade = {
 type OrdenacaoComunidade = "Recentes" | "Em alta" | "Mais comentadas";
 type AbaFeedComunidade = "Para você" | "Seguindo" | "Recentes" | "Teorias" | "Reviews";
 type TipoPublicacaoFiltro = TipoPublicacaoComunidade | "Todos";
-type GrupoPublicacaoObra = "" | "posts";
 type PostComunidade = PostComunidadeBase<
   CategoriaComunidade,
   TipoPublicacaoComunidade,
@@ -5341,7 +5341,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
 
 
 
