@@ -61,8 +61,8 @@ import type { SupabaseCurtidaRow } from "./components/community-supabase-like-ro
 import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
-import { erroTabelaOpcionalComunidadeIgnoravel } from "./components/community-supabase-optional-table-error-check";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
+import { salvarPostSalvoSupabaseComunidade } from "./components/community-supabase-saved-post-saver";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
@@ -456,61 +456,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-async function salvarPostSalvoSupabaseComunidade(
-  userId: string,
-  postId: string,
-  ativo: boolean
-) {
-  const userIdLimpo = userId.trim();
-  const postIdLimpo = postId.trim();
-
-  if (!userIdLimpo || !postIdLimpo) {
-    return false;
-  }
-
-  const tabelas = ["comunidade_salvos", "comunidade_post_salvos"] as const;
-
-  for (const tabela of tabelas) {
-    try {
-      const { error: erroDelete } = await supabase
-        .from(tabela)
-        .delete()
-        .eq("user_id", userIdLimpo)
-        .eq("post_id", postIdLimpo);
-
-      if (erroDelete) {
-        if (erroTabelaOpcionalComunidadeIgnoravel(erroDelete)) {
-          continue;
-        }
-
-        return false;
-      }
-
-      if (!ativo) {
-        return true;
-      }
-
-      const { error: erroInsert } = await supabase.from(tabela).insert({
-        user_id: userIdLimpo,
-        usuario_id: userIdLimpo,
-        post_id: postIdLimpo,
-      });
-
-      if (!erroInsert) {
-        return true;
-      }
-
-      if (!erroTabelaOpcionalComunidadeIgnoravel(erroInsert)) {
-        return false;
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  return false;
 }
 
 type SugestaoPublicacaoComunidade = {
