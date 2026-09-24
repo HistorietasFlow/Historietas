@@ -21,6 +21,7 @@ import { CATEGORIAS_COMUNIDADE } from "./components/community-categories";
 import { normalizarCategoria } from "./components/community-category-normalizer";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
+import { normalizarVisibilidadePostComunidade } from "./components/community-post-visibility-normalizer";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
 import { TIPOS_PUBLICACAO_COMUNIDADE } from "./components/community-publication-types";
 import { normalizarTipoPublicacao } from "./components/community-publication-type-normalizer";
@@ -466,14 +467,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function normalizarVisibilidadePostComunidade(
-  valor: unknown,
-): VisibilidadePostComunidade {
-  return VISIBILIDADES_POST_COMUNIDADE.some((opcao) => opcao.valor === valor)
-    ? (valor as VisibilidadePostComunidade)
-    : "publico";
 }
 
 function obterRotuloVisibilidadePostComunidade(
