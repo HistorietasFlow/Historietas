@@ -35,6 +35,7 @@ import type {
   UsuarioComunidade,
 } from "./components/community-user";
 import { obterNomeUsuario } from "./components/community-user-name";
+import { obterNomeSeguroUsuarioComunidade } from "./components/community-safe-user-name";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import type { SugestaoPublicacaoComunidade } from "./components/community-publication-suggestion";
 import { SUGESTOES_PUBLICACAO_COMUNIDADE } from "./components/community-publication-suggestions";
@@ -463,24 +464,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-async function obterNomeSeguroUsuarioComunidade(usuario: UsuarioComunidade) {
-  try {
-    const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios(
-      [usuario.id],
-      obterTextoProfileComunidade
-    );
-    const profile = profilesPorUsuario.get(usuario.id);
-    const nomeProfile = obterNomeProfileComunidade(profile);
-
-    return obterNomeUsuario(usuario.email, nomeProfile || usuario.nome).slice(
-      0,
-      80
-    );
-  } catch {
-    return obterNomeUsuario(usuario.email, usuario.nome).slice(0, 80);
-  }
 }
 
 function formatarDataComunidade(dataIso: string) {
