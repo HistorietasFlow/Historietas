@@ -208,6 +208,7 @@ import { CommunityPostComposerSpoilerLabel } from "./components/community-post-c
 import { CommunityPostComposerSpoilerIndicator } from "./components/community-post-composer-spoiler-indicator";
 import { CommunityPostComposerPublishButton } from "./components/community-post-composer-publish-button";
 import { CommunityActionFeedbackToast } from "./components/community-action-feedback-toast";
+import { iniciarAcaoComunidade } from "./components/community-action-lock";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -1291,15 +1292,6 @@ export default function ComunidadePage() {
     ordenacaoAtiva !== "Recentes";
   const textoBotaoFiltrosAvancadosComunidade = "Comunidade";
 
-  function iniciarAcaoComunidade(chave: string) {
-    if (acoesComunidadeRef.current.has(chave)) {
-      return false;
-    }
-
-    acoesComunidadeRef.current.add(chave);
-    return true;
-  }
-
   function finalizarAcaoComunidade(chave: string) {
     acoesComunidadeRef.current.delete(chave);
   }
@@ -1578,7 +1570,7 @@ export default function ComunidadePage() {
   async function alternarPostSalvo(postId: string) {
     const chaveAcao = `salvar-post:${postId}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
@@ -1642,7 +1634,7 @@ export default function ComunidadePage() {
   async function compartilharPublicacao(post: PostComunidade) {
     const chaveAcao = `compartilhar-post:${post.id}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
@@ -1972,7 +1964,7 @@ export default function ComunidadePage() {
 
     const chaveAcao = `seguir-usuario:${usuarioAlvo.id}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
@@ -2040,7 +2032,7 @@ export default function ComunidadePage() {
 
     const chaveAcao = "publicar-post";
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
@@ -2269,7 +2261,7 @@ export default function ComunidadePage() {
   async function alternarCurtida(postId: string) {
     const chaveAcao = `curtir-post:${postId}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
@@ -2370,7 +2362,7 @@ export default function ComunidadePage() {
   ) {
     const chaveAcao = `comentar-post:${postId}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return false;
     }
 
@@ -2516,7 +2508,7 @@ export default function ComunidadePage() {
   async function removerComentario(postId: string, comentarioId: string) {
     const chaveAcao = `remover-comentario:${comentarioId}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
@@ -2652,7 +2644,7 @@ export default function ComunidadePage() {
   async function alternarCurtidaComentario(postId: string, comentarioId: string) {
     const chaveAcao = `curtir-comentario:${comentarioId}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
@@ -2749,7 +2741,7 @@ export default function ComunidadePage() {
   ) {
     const chaveAcao = `visibilidade-post:${post.id}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
@@ -2905,7 +2897,7 @@ export default function ComunidadePage() {
   async function removerPost(postId: string) {
     const chaveAcao = `remover-post:${postId}`;
 
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
       return;
     }
 
