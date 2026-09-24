@@ -62,6 +62,7 @@ import type { PerfilComunidadeRow } from "./components/community-supabase-profil
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { erroTabelaOpcionalComunidadeIgnoravel } from "./components/community-supabase-optional-table-error-check";
+import { extrairPostIdSalvoComunidade } from "./components/community-saved-post-id-extractor";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
@@ -457,12 +458,6 @@ function CommunityLanguageBridge() {
   return null;
 }
 
-
-function extrairPostIdSalvoComunidade(registro: Record<string, unknown>) {
-  const valor = registro.post_id ?? registro.publicacao_id ?? registro.comunidade_post_id;
-
-  return typeof valor === "string" && valor.trim() ? valor.trim() : "";
-}
 
 async function carregarPostsSalvosSupabaseComunidade(userId: string) {
   const userIdLimpo = userId.trim();
