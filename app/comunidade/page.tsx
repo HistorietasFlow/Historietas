@@ -237,7 +237,7 @@ import { CommunityRelatedWorkBadge } from "./components/community-related-work-b
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { traduzirContagemResultadosComunidade } from "./components/community-results-count-translator";
-import { obterLocaleDocumentoComunidade } from "./components/community-document-locale";
+import { formatarDataComunidade } from "./components/community-post-date-formatter";
 import { carregarJsonUsuarioComunidade } from "./components/community-user-json-loader";
 import { salvarJsonUsuarioComunidade } from "./components/community-user-json-saver";
 import {
@@ -464,20 +464,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function formatarDataComunidade(dataIso: string) {
-  const data = new Date(dataIso);
-
-  if (Number.isNaN(data.getTime())) {
-    return "Agora";
-  }
-
-  return data.toLocaleDateString(obterLocaleDocumentoComunidade(), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
 }
 
 function normalizarCategoria(valor: unknown): CategoriaComunidade {
