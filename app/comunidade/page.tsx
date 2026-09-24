@@ -65,7 +65,7 @@ import type { PerfilComunidadeRow } from "./components/community-supabase-profil
 import { obterTextoProfileComunidade } from "./components/community-profile-text";
 import { obterNomeProfileComunidade } from "./components/community-profile-name";
 import { obterAvatarProfileComunidade } from "./components/community-profile-avatar";
-import { obterUsernameProfileComunidade } from "./components/community-profile-username";
+import { normalizarUsuarioBuscaComunidade } from "./components/community-search-user-normalizer";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
@@ -479,26 +479,6 @@ function criarLoginHrefComunidade() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function normalizarUsuarioBuscaComunidade(
-  profile: PerfilComunidadeRow
-): UsuarioBuscaComunidade | null {
-  const id =
-    obterTextoProfileComunidade(profile, "user_id") ||
-    obterTextoProfileComunidade(profile, "id");
-  const nome = obterNomeProfileComunidade(profile);
-
-  if (!idSupabaseValidoComunidade(id) || !nome) {
-    return null;
-  }
-
-  return {
-    id,
-    nome: nome.slice(0, 80),
-    username: obterUsernameProfileComunidade(profile).slice(0, 80),
-    avatar: obterAvatarProfileComunidade(profile),
-  };
 }
 
 async function buscarUsuariosComunidadeSupabase(termo: string) {
