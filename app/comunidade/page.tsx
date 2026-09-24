@@ -35,6 +35,7 @@ import type {
   UsuarioComunidade,
 } from "./components/community-user";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
+import type { SugestaoPublicacaoComunidade } from "./components/community-publication-suggestion";
 import type { PostComunidade } from "./components/community-post-model";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
@@ -457,13 +458,6 @@ function CommunityLanguageBridge() {
 
   return null;
 }
-
-type SugestaoPublicacaoComunidade = {
-  rotulo: string;
-  texto: string;
-  categoria: CategoriaComunidade;
-  tipo: TipoPublicacaoComunidade;
-};
 
 const SUGESTOES_PUBLICACAO_COMUNIDADE: SugestaoPublicacaoComunidade[] = [
   {
