@@ -62,6 +62,7 @@ import { mapearPostSupabase } from "./components/community-supabase-post-mapper"
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./components/community-supabase-like-row";
 import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
+import { obterTextoProfileComunidade } from "./components/community-profile-text";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
@@ -459,27 +460,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function obterTextoProfileComunidade(
-  profile: PerfilComunidadeRow | undefined,
-  chave: string
-) {
-  if (!profile) {
-    return "";
-  }
-
-  const valor = profile[chave];
-
-  if (typeof valor === "string") {
-    return valor.trim();
-  }
-
-  if (typeof valor === "number" || typeof valor === "boolean") {
-    return String(valor);
-  }
-
-  return "";
 }
 
 function obterNomeProfileComunidade(profile: PerfilComunidadeRow | undefined) {
