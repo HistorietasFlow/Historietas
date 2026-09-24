@@ -34,6 +34,7 @@ import type {
   UsuarioBuscaComunidade,
   UsuarioComunidade,
 } from "./components/community-user";
+import { obterNomeUsuario } from "./components/community-user-name";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import type { SugestaoPublicacaoComunidade } from "./components/community-publication-suggestion";
 import { SUGESTOES_PUBLICACAO_COMUNIDADE } from "./components/community-publication-suggestions";
@@ -458,18 +459,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function obterNomeUsuario(email: string, nomeProfile = "") {
-  const nomeLimpo = nomeProfile.trim();
-
-  if (nomeLimpo) {
-    return nomeLimpo;
-  }
-
-  const nomeEmail = email.trim().split("@")[0];
-
-  return nomeEmail || "Usuário";
 }
 
 function obterTextoProfileComunidade(
