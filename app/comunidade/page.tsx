@@ -63,6 +63,7 @@ import type { SupabasePostRow } from "./components/community-supabase-post-row";
 import type { SupabaseCurtidaRow } from "./components/community-supabase-like-row";
 import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
 import { obterTextoProfileComunidade } from "./components/community-profile-text";
+import { obterNomeProfileComunidade } from "./components/community-profile-name";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
@@ -460,13 +461,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function obterNomeProfileComunidade(profile: PerfilComunidadeRow | undefined) {
-  return (
-    obterTextoProfileComunidade(profile, "nome") ||
-    obterTextoProfileComunidade(profile, "username")
-  );
 }
 
 function obterAvatarProfileComunidade(profile: PerfilComunidadeRow | undefined) {
