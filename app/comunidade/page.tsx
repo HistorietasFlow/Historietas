@@ -64,6 +64,7 @@ import type { SupabaseCurtidaRow } from "./components/community-supabase-like-ro
 import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
 import { obterTextoProfileComunidade } from "./components/community-profile-text";
 import { obterNomeProfileComunidade } from "./components/community-profile-name";
+import { obterAvatarProfileComunidade } from "./components/community-profile-avatar";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
@@ -461,16 +462,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function obterAvatarProfileComunidade(profile: PerfilComunidadeRow | undefined) {
-  return (
-    obterTextoProfileComunidade(profile, "avatar_url") ||
-    obterTextoProfileComunidade(profile, "avatar") ||
-    obterTextoProfileComunidade(profile, "foto_url") ||
-    obterTextoProfileComunidade(profile, "imagem_url") ||
-    obterTextoProfileComunidade(profile, "photo_url")
-  );
 }
 
 function criarLoginHrefComunidade() {
