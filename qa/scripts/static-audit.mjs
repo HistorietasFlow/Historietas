@@ -2076,6 +2076,13 @@ const communityPagePath = path.join(
 const communityPage = fs.existsSync(communityPagePath)
   ? fs.readFileSync(communityPagePath, "utf8")
   : "";
+const communityFollowSaverPath = path.join(
+  ROOT_DIR,
+  "app/comunidade/components/community-follow-user-saver.ts"
+);
+const communityFollowSaver = fs.existsSync(communityFollowSaverPath)
+  ? fs.readFileSync(communityFollowSaverPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2350,8 +2357,9 @@ const antiSpamContracts = [
       /revoke insert on table public\.solicitacoes_seguidores[\s\S]*?from anon, authenticated/.test(
         antiSpamMigration
       ) &&
-      communityPage.includes("solicitarOuSeguirUsuario") &&
-      communityPage.includes("deixarDeSeguirUsuario")
+      communityPage.includes("community-follow-user-saver") &&
+      communityFollowSaver.includes("solicitarOuSeguirUsuario") &&
+      communityFollowSaver.includes("deixarDeSeguirUsuario")
   },
   {
     name: "integração anti-spam usa somente Supabase local",
