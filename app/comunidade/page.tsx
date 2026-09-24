@@ -28,7 +28,7 @@ import { normalizarTipoPublicacao } from "./components/community-publication-typ
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
-import { ABAS_FEED_COMUNIDADE } from "./components/community-feed-tabs";
+import { ABAS_FEED_COMUNIDADE, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
   AlvoDenunciaComunidade,
   DenunciaAlvoComunidade,
@@ -1293,19 +1293,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  function selecionarAbaFeedComunidade(aba: AbaFeedComunidade) {
-    setAbaFeedAtiva(aba);
-    setCategoriaAtiva("Todos");
-    setTipoPublicacaoAtiva("Todos");
-    setObraRelacionadaFiltro("");
-    setGrupoPublicacaoObra("");
-    setMostrarApenasSalvos(false);
-    setOrdenacaoAtiva("Recentes");
-    setMenuAcoesRapidasComunidadeAberto(false);
-
-    window.history.replaceState(null, "", "/comunidade");
-  }
-
   function limparFiltrosComunidade() {
     setAbaFeedAtiva("Para você");
     setCategoriaAtiva("Todos");
@@ -3158,7 +3145,19 @@ export default function ComunidadePage() {
                   <CommunityFeedTabButton
                     key={aba}
                     active={ativa}
-                    onClick={() => selecionarAbaFeedComunidade(aba)}
+                    onClick={() =>
+                      selecionarAbaFeedComunidade({
+                        aba,
+                        setAbaFeedAtiva,
+                        setCategoriaAtiva,
+                        setTipoPublicacaoAtiva,
+                        setObraRelacionadaFiltro,
+                        setGrupoPublicacaoObra,
+                        setMostrarApenasSalvos,
+                        setOrdenacaoAtiva,
+                        setMenuAcoesRapidasComunidadeAberto,
+                      })
+                    }
                   >
                     {aba}
                   </CommunityFeedTabButton>
