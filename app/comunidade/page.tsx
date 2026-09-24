@@ -62,7 +62,7 @@ import type { PerfilComunidadeRow } from "./components/community-supabase-profil
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { erroTabelaOpcionalComunidadeIgnoravel } from "./components/community-supabase-optional-table-error-check";
-import { extrairPostIdSalvoComunidade } from "./components/community-saved-post-id-extractor";
+import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
@@ -454,51 +454,6 @@ function CommunityLanguageBridge() {
       });
     };
   }, [language]);
-
-  return null;
-}
-
-
-async function carregarPostsSalvosSupabaseComunidade(userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return null as string[] | null;
-  }
-
-  const tabelas = ["comunidade_salvos", "comunidade_post_salvos"] as const;
-
-  for (const tabela of tabelas) {
-    try {
-      const { data, error } = await supabase
-        .from(tabela)
-        .select("post_id")
-        .eq("user_id", userIdLimpo)
-        .limit(5000);
-
-      if (error) {
-        if (erroTabelaOpcionalComunidadeIgnoravel(error)) {
-          continue;
-        }
-
-        return null;
-      }
-
-      if (!Array.isArray(data)) {
-        return [] as string[];
-      }
-
-      return Array.from(
-        new Set(
-          (data as Record<string, unknown>[])
-            .map((registro) => extrairPostIdSalvoComunidade(registro))
-            .filter(Boolean)
-        )
-      );
-    } catch {
-      continue;
-    }
-  }
 
   return null;
 }
