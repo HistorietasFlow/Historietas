@@ -68,6 +68,7 @@ import { obterAvatarProfileComunidade } from "./components/community-profile-ava
 import { buscarUsuariosComunidadeSupabase } from "./components/community-supabase-user-search";
 import { buscarUsuariosComunidadeNosPosts } from "./components/community-post-user-search";
 import { carregarUsuariosSeguidosComunidade } from "./components/community-supabase-followed-users-loader";
+import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-user-saver";
 import { criarLoginHrefComunidade } from "./components/community-login-link";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
@@ -247,10 +248,6 @@ import {
   carregarTodasPaginasSupabase,
   dividirEmLotesSupabase,
 } from "../../lib/supabase/paginacao.mjs";
-import {
-  deixarDeSeguirUsuario,
-  solicitarOuSeguirUsuario,
-} from "../../lib/historietasPrivacy";
 
 function CommunityLanguageBridge() {
   const { language } = useHistorietasLanguage();
@@ -467,34 +464,6 @@ function CommunityLanguageBridge() {
 
   return null;
 }
-
-async function salvarSeguindoUsuarioComunidade(
-  seguidorId: string,
-  seguidoId: string,
-  ativo: boolean
-) {
-  const seguidorIdLimpo = seguidorId.trim();
-  const seguidoIdLimpo = seguidoId.trim();
-
-  if (
-    !idSupabaseValidoComunidade(seguidorIdLimpo) ||
-    !idSupabaseValidoComunidade(seguidoIdLimpo) ||
-    seguidorIdLimpo === seguidoIdLimpo
-  ) {
-    return {
-      ok: false,
-      estado: "nenhum" as const,
-      erro: "Usuário inválido.",
-    };
-  }
-
-  if (!ativo) {
-    return deixarDeSeguirUsuario(seguidoIdLimpo);
-  }
-
-  return solicitarOuSeguirUsuario(seguidoIdLimpo);
-}
-
 
 async function obterNomeSeguroUsuarioComunidade(usuario: UsuarioComunidade) {
   try {
