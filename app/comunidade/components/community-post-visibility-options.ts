@@ -9,3 +9,13 @@ export const VISIBILIDADES_POST_COMUNIDADE: Array<{
   { valor: "seguindo", rotulo: "Pessoas que sigo" },
   { valor: "somente_eu", rotulo: "Somente eu" },
 ];
+
+export function obterRotuloVisibilidadePostComunidade(
+  visibilidade: VisibilidadePostComunidade,
+) {
+  return (
+    VISIBILIDADES_POST_COMUNIDADE.find(
+      (opcao) => opcao.valor === visibilidade,
+    )?.rotulo || "Público"
+  );
+}

@@ -20,7 +20,7 @@ import type { CategoriaComunidade } from "./components/community-category";
 import { CATEGORIAS_COMUNIDADE } from "./components/community-categories";
 import { normalizarCategoria } from "./components/community-category-normalizer";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
-import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
+import { VISIBILIDADES_POST_COMUNIDADE, obterRotuloVisibilidadePostComunidade } from "./components/community-post-visibility-options";
 import { normalizarVisibilidadePostComunidade } from "./components/community-post-visibility-normalizer";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
 import { TIPOS_PUBLICACAO_COMUNIDADE } from "./components/community-publication-types";
@@ -467,16 +467,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function obterRotuloVisibilidadePostComunidade(
-  visibilidade: VisibilidadePostComunidade,
-) {
-  return (
-    VISIBILIDADES_POST_COMUNIDADE.find(
-      (opcao) => opcao.valor === visibilidade,
-    )?.rotulo || "Público"
-  );
 }
 
 function carregarSugestoesObrasLocais(userId = "") {
