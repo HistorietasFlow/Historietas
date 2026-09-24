@@ -66,6 +66,7 @@ import { obterTextoProfileComunidade } from "./components/community-profile-text
 import { obterNomeProfileComunidade } from "./components/community-profile-name";
 import { obterAvatarProfileComunidade } from "./components/community-profile-avatar";
 import { normalizarUsuarioBuscaComunidade } from "./components/community-search-user-normalizer";
+import { criarLoginHrefComunidade } from "./components/community-login-link";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
@@ -463,22 +464,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function criarLoginHrefComunidade() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/comunidade";
-  const destinoSeguro =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/comunidade";
-  const params = new URLSearchParams({
-    redirectTo: destinoSeguro,
-  });
-
-  return `/login?${params.toString()}`;
 }
 
 async function buscarUsuariosComunidadeSupabase(termo: string) {
