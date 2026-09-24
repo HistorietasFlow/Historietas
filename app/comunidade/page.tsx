@@ -36,6 +36,7 @@ import type {
 } from "./components/community-user";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import type { SugestaoPublicacaoComunidade } from "./components/community-publication-suggestion";
+import { SUGESTOES_PUBLICACAO_COMUNIDADE } from "./components/community-publication-suggestions";
 import type { PostComunidade } from "./components/community-post-model";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
@@ -458,39 +459,6 @@ function CommunityLanguageBridge() {
 
   return null;
 }
-
-const SUGESTOES_PUBLICACAO_COMUNIDADE: SugestaoPublicacaoComunidade[] = [
-  {
-    rotulo: "O que você está lendo?",
-    texto: "O que você está lendo atualmente? Eu estou lendo: ",
-    categoria: "Geral",
-    tipo: "Discussão",
-  },
-  {
-    rotulo: "Compartilhe uma teoria",
-    texto: "Minha teoria sobre esta obra é: ",
-    categoria: "Discussão",
-    tipo: "Teoria",
-  },
-  {
-    rotulo: "Personagem com história própria",
-    texto: "Qual personagem merece uma história própria? Para mim: ",
-    categoria: "Discussão",
-    tipo: "Discussão",
-  },
-  {
-    rotulo: "Mostre o próximo capítulo",
-    texto: "Autores: compartilhem um trecho do próximo capítulo. Aqui vai o meu: ",
-    categoria: "Divulgação",
-    tipo: "Aviso de capítulo",
-  },
-  {
-    rotulo: "Pedir recomendações",
-    texto: "Que tipo de história você quer encontrar no HISTORIETAS? Eu gostaria de ler: ",
-    categoria: "Recomendações",
-    tipo: "Pedido de indicação",
-  },
-];
 
 function obterNomeUsuario(email: string, nomeProfile = "") {
   const nomeLimpo = nomeProfile.trim();
