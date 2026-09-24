@@ -65,6 +65,7 @@ import type { PerfilComunidadeRow } from "./components/community-supabase-profil
 import { obterTextoProfileComunidade } from "./components/community-profile-text";
 import { obterNomeProfileComunidade } from "./components/community-profile-name";
 import { obterAvatarProfileComunidade } from "./components/community-profile-avatar";
+import { obterUsernameProfileComunidade } from "./components/community-profile-username";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
@@ -478,14 +479,6 @@ function criarLoginHrefComunidade() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function obterUsernameProfileComunidade(
-  profile: PerfilComunidadeRow | undefined
-) {
-  return obterTextoProfileComunidade(profile, "username")
-    .replace(/^@+/, "")
-    .trim();
 }
 
 function normalizarUsuarioBuscaComunidade(
