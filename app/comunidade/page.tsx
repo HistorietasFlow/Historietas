@@ -18,6 +18,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import { CATEGORIAS_COMUNIDADE } from "./components/community-categories";
+import { normalizarCategoria } from "./components/community-category-normalizer";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
@@ -464,12 +465,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function normalizarCategoria(valor: unknown): CategoriaComunidade {
-  return CATEGORIAS_COMUNIDADE.includes(valor as CategoriaComunidade)
-    ? (valor as CategoriaComunidade)
-    : "Geral";
 }
 
 function normalizarTipoPublicacao(valor: unknown): TipoPublicacaoComunidade {
