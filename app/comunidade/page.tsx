@@ -54,7 +54,7 @@ import { criarLinkObraRelacionada } from "./components/community-related-work-li
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
-import { normalizarSugestaoObraLocal } from "./components/community-related-work-local-normalizer";
+import { carregarSugestoesObrasLocais } from "./components/community-local-related-works-loader";
 import {
   normalizarSugestaoObraSupabase,
   type SupabaseObraPublicaRow,
@@ -467,23 +467,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function carregarSugestoesObrasLocais(userId = "") {
-  try {
-    const obrasJson: unknown =
-      carregarJsonUsuarioComunidade("historietas-obras", userId) || [];
-
-    if (!Array.isArray(obrasJson)) {
-      return [];
-    }
-
-    return obrasJson
-      .map((obra, index) => normalizarSugestaoObraLocal(obra, index))
-      .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
-  } catch {
-    return [];
-  }
 }
 
 
