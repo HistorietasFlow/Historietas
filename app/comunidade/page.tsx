@@ -23,6 +23,7 @@ import type { VisibilidadePostComunidade } from "./components/community-post-vis
 import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
 import { TIPOS_PUBLICACAO_COMUNIDADE } from "./components/community-publication-types";
+import { normalizarTipoPublicacao } from "./components/community-publication-type-normalizer";
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
@@ -465,12 +466,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function normalizarTipoPublicacao(valor: unknown): TipoPublicacaoComunidade {
-  return TIPOS_PUBLICACAO_COMUNIDADE.includes(valor as TipoPublicacaoComunidade)
-    ? (valor as TipoPublicacaoComunidade)
-    : "Discussão";
 }
 
 function normalizarVisibilidadePostComunidade(
