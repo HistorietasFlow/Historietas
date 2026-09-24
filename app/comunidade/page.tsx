@@ -208,7 +208,10 @@ import { CommunityPostComposerSpoilerLabel } from "./components/community-post-c
 import { CommunityPostComposerSpoilerIndicator } from "./components/community-post-composer-spoiler-indicator";
 import { CommunityPostComposerPublishButton } from "./components/community-post-composer-publish-button";
 import { CommunityActionFeedbackToast } from "./components/community-action-feedback-toast";
-import { iniciarAcaoComunidade } from "./components/community-action-lock";
+import {
+  finalizarAcaoComunidade,
+  iniciarAcaoComunidade,
+} from "./components/community-action-lock";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -1292,10 +1295,6 @@ export default function ComunidadePage() {
     ordenacaoAtiva !== "Recentes";
   const textoBotaoFiltrosAvancadosComunidade = "Comunidade";
 
-  function finalizarAcaoComunidade(chave: string) {
-    acoesComunidadeRef.current.delete(chave);
-  }
-
   function selecionarAbaFeedComunidade(aba: AbaFeedComunidade) {
     setAbaFeedAtiva(aba);
     setCategoriaAtiva("Todos");
@@ -1624,7 +1623,7 @@ export default function ComunidadePage() {
             : "Publicação salva neste navegador."
       );
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPostSalvandoId((postAtualId) =>
         postAtualId === postId ? null : postAtualId
       );
@@ -1679,7 +1678,7 @@ export default function ComunidadePage() {
         "Não consegui compartilhar nem copiar o link da publicação neste navegador."
       );
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPostCompartilhandoId((postAtualId) =>
         postAtualId === post.id ? null : postAtualId
       );
@@ -2010,7 +2009,7 @@ export default function ComunidadePage() {
           : `Você deixou de seguir ${usuarioAlvo.nome}.`
       );
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setUsuarioSeguindoId((idAtual) =>
         idAtual === usuarioAlvo.id ? null : idAtual
       );
@@ -2253,7 +2252,7 @@ export default function ComunidadePage() {
       setComposerAberto(false);
       emitirFeedbackAcao("Publicação enviada para a Comunidade.");
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPublicandoPost(false);
     }
   }
@@ -2328,7 +2327,7 @@ export default function ComunidadePage() {
       });
 
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPostCurtindoId((postAtualId) =>
         postAtualId === postId ? null : postAtualId
       );
@@ -2459,7 +2458,7 @@ export default function ComunidadePage() {
       emitirFeedbackAcao("Comentário enviado.");
       return true;
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
     }
   }
 
@@ -2637,7 +2636,7 @@ export default function ComunidadePage() {
 
       emitirFeedbackAcao("Comentário removido.");
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
     }
   }
 
@@ -2731,7 +2730,7 @@ export default function ComunidadePage() {
       );
       await carregarPostsComunidade();
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
     }
   }
 
@@ -2826,7 +2825,7 @@ export default function ComunidadePage() {
       setPostMenuAbertoId(null);
       emitirFeedbackAcao("Visibilidade da publicação atualizada.");
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPostVisibilidadeAtualizandoId((postAtualId) =>
         postAtualId === post.id ? null : postAtualId,
       );
@@ -3041,7 +3040,7 @@ export default function ComunidadePage() {
       emitirFeedbackAcao("Publicação removida.");
       await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
     } finally {
-      finalizarAcaoComunidade(chaveAcao);
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPostRemovendoId((postAtualId) =>
         postAtualId === postId ? null : postAtualId
       );
