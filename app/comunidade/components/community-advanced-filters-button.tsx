@@ -5,6 +5,8 @@ type CommunityAdvancedFiltersButtonProps = Omit<
   "style"
 >;
 
+export const textoBotaoFiltrosAvancadosComunidade = "Comunidade";
+
 export function CommunityAdvancedFiltersButton({
   children,
   ...buttonProps

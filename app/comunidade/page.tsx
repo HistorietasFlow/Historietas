@@ -142,7 +142,7 @@ import { CommunitySearchContainer } from "./components/community-search-containe
 import { CommunitySearchInput } from "./components/community-search-input";
 import { CommunitySearchToggleButton } from "./components/community-search-toggle-button";
 import { CommunitySearchIcon } from "./components/community-search-icon";
-import { CommunityAdvancedFiltersButton } from "./components/community-advanced-filters-button";
+import { CommunityAdvancedFiltersButton, textoBotaoFiltrosAvancadosComunidade } from "./components/community-advanced-filters-button";
 import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
 import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
@@ -1293,8 +1293,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  const textoBotaoFiltrosAvancadosComunidade = "Comunidade";
-
   function selecionarAbaFeedComunidade(aba: AbaFeedComunidade) {
     setAbaFeedAtiva(aba);
     setCategoriaAtiva("Todos");
