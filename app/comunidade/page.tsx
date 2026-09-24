@@ -67,6 +67,7 @@ import { obterNomeProfileComunidade } from "./components/community-profile-name"
 import { obterAvatarProfileComunidade } from "./components/community-profile-avatar";
 import { buscarUsuariosComunidadeSupabase } from "./components/community-supabase-user-search";
 import { buscarUsuariosComunidadeNosPosts } from "./components/community-post-user-search";
+import { carregarUsuariosSeguidosComunidade } from "./components/community-supabase-followed-users-loader";
 import { criarLoginHrefComunidade } from "./components/community-login-link";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
@@ -465,36 +466,6 @@ function CommunityLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-async function carregarUsuariosSeguidosComunidade(seguidorId: string) {
-  const seguidorIdLimpo = seguidorId.trim();
-
-  if (!idSupabaseValidoComunidade(seguidorIdLimpo)) {
-    return [] as string[];
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("seguindo_usuarios")
-      .select("seguido_id")
-      .eq("seguidor_id", seguidorIdLimpo)
-      .limit(5000);
-
-    if (error || !Array.isArray(data)) {
-      return [] as string[];
-    }
-
-    return Array.from(
-      new Set(
-        data
-          .map((registro) => registro.seguido_id?.trim() || "")
-          .filter((id) => idSupabaseValidoComunidade(id))
-      )
-    );
-  } catch {
-    return [] as string[];
-  }
 }
 
 async function salvarSeguindoUsuarioComunidade(
