@@ -93,6 +93,7 @@ import { criarNotificacaoComunidadeSupabase } from "./components/community-supab
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPontuacaoPost } from "./components/community-post-score";
+import { obterDataFixacaoOrdenacaoPostComunidade, obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
@@ -1123,20 +1124,22 @@ export default function ComunidadePage() {
     });
 
     return [...postsFiltrados].sort((postA, postB) => {
-      const dataA = new Date(postA.criadoEm).getTime();
-      const dataB = new Date(postB.criadoEm).getTime();
-      const dataOrdenacaoA = Number.isNaN(dataA) ? 0 : dataA;
-      const dataOrdenacaoB = Number.isNaN(dataB) ? 0 : dataB;
+      const dataOrdenacaoA = obterDataOrdenacaoPostComunidade(postA);
+      const dataOrdenacaoB = obterDataOrdenacaoPostComunidade(postB);
 
       if (postA.fixado !== postB.fixado) {
         return postA.fixado ? -1 : 1;
       }
 
       if (postA.fixado && postB.fixado) {
-        const fixadoA = new Date(postA.fixadoEm || postA.criadoEm).getTime();
-        const fixadoB = new Date(postB.fixadoEm || postB.criadoEm).getTime();
-        const fixadoOrdenacaoA = Number.isNaN(fixadoA) ? dataOrdenacaoA : fixadoA;
-        const fixadoOrdenacaoB = Number.isNaN(fixadoB) ? dataOrdenacaoB : fixadoB;
+        const fixadoOrdenacaoA = obterDataFixacaoOrdenacaoPostComunidade(
+          postA,
+          dataOrdenacaoA
+        );
+        const fixadoOrdenacaoB = obterDataFixacaoOrdenacaoPostComunidade(
+          postB,
+          dataOrdenacaoB
+        );
 
         return fixadoOrdenacaoB - fixadoOrdenacaoA;
       }
