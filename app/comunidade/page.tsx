@@ -65,7 +65,7 @@ import { buscarUsuariosComunidadeSupabase } from "./components/community-supabas
 import { buscarUsuariosComunidadeNosPosts } from "./components/community-post-user-search";
 import { carregarUsuariosSeguidosComunidade } from "./components/community-supabase-followed-users-loader";
 import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-user-saver";
-import { criarLoginHrefComunidade } from "./components/community-login-link";
+import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
@@ -1304,13 +1304,7 @@ export default function ComunidadePage() {
   }
 
   function exigirLogin() {
-    if (usuario) {
-      return true;
-    }
-
-    setErro("Entre na sua conta para participar da Comunidade.");
-    router.push(criarLoginHrefComunidade());
-    return false;
+    return exigirLoginComunidade({ usuario, setErro, router });
   }
 
   async function garantirAceiteAntesDePublicarComunidade() {
