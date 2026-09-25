@@ -91,6 +91,7 @@ import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
+import { fecharComentarios } from "./components/community-comments-closer";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
@@ -1714,10 +1715,6 @@ export default function ComunidadePage() {
     } catch {
       // Se o navegador bloquear a URL, os comentários continuam abrindo em estado local.
     }
-  }
-
-  function fecharComentarios() {
-    setComentariosPostId(null);
   }
 
   async function comentarPost(
@@ -3504,7 +3501,7 @@ export default function ComunidadePage() {
         usuarioAvatar={usuario?.avatar || ""}
         erroInteracao={erro}
         isDesktop={isDesktop}
-        onFechar={fecharComentarios}
+        onFechar={() => fecharComentarios({ setComentariosPostId })}
         onEnviar={comentarPost}
         onCurtirComentario={alternarCurtidaComentario}
         onRemoverComentario={removerComentario}
