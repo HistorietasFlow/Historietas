@@ -30,6 +30,7 @@ import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { postCombinaTermoBuscaComunidade } from "./components/community-post-search-match";
+import { normalizarTermoBuscaUsuariosComunidade } from "./components/community-user-search-term-normalizer";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
@@ -982,7 +983,7 @@ export default function ComunidadePage() {
 
   useEffect(() => {
     let cancelado = false;
-    const termoLimpo = termoBuscaAdiado.trim().replace(/^@+/, "");
+    const termoLimpo = normalizarTermoBuscaUsuariosComunidade(termoBuscaAdiado);
 
     if (!buscaComunidadeAberta || termoLimpo.length < 2) {
       const limparBuscaUsuariosTimer = window.setTimeout(() => {
@@ -2609,7 +2610,7 @@ export default function ComunidadePage() {
                   </CommunitySearchResultsCount>
                 </CommunitySearchResultsHeader>
 
-                {termoBusca.trim().replace(/^@+/, "").length < 2 ? (
+                {normalizarTermoBuscaUsuariosComunidade(termoBusca).length < 2 ? (
                   <CommunitySearchResultsEmpty>
                     Digite pelo menos 2 caracteres para encontrar usuários.
                   </CommunitySearchResultsEmpty>
