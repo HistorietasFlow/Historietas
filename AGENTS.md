@@ -22,7 +22,9 @@ Estas regras valem para todo o repositório e para todas as fases da refatoraç�
 
 ## Processo seguro
 
-- Mantenha uma fase por branch e uma responsabilidade por PR.
+- Mantenha uma fase por branch. Um PR pode reunir 2–3 extrações pequenas, simples e diretamente relacionadas quando isso não aumentar significativamente o risco nem dificultar a revisão.
+- Mantenha funções maiores, delicadas ou não relacionadas em PRs separados.
+- Inclua no próprio PR funcional de cada fase a atualização correspondente de `docs/refatoracao-comunidade.md`; não abra um PR documental separado somente para registrar a fase concluída.
 - Revise o diff completo antes de concluir e confirme que somente os arquivos previstos foram alterados.
 - Execute `git diff --check` para detectar erros de whitespace.
 - Após a autorização para iniciar uma fase, o agente pode criar a branch, implementar, validar, fazer commit, push e abrir o PR. Nunca deve fechar ou mesclar PR sem autorização explícita do usuário.
