@@ -16,7 +16,7 @@
 - A Fase 308 extraiu somente `normalizarTermoBuscaComunidade` a partir do cálculo de `termoBuscaNormalizado` e foi concluída com o PR #440 mesclado.
 - A Fase 309 extraiu somente `obterTituloDenunciaComunidade` a partir do cálculo de `alvoTitulo` em `denunciarConteudo` e foi concluída com o PR #442 mesclado.
 - A Fase 310 extraiu somente `obterDataOrdenacaoPostComunidade` e `obterDataFixacaoOrdenacaoPostComunidade` a partir dos cálculos temporais da ordenação de `postsVisiveis` e foi concluída com o PR #444 mesclado.
-- A Fase 311 extraiu somente `postCombinaTermoBuscaComunidade` a partir do trecho final da busca textual de `postsVisiveis`.
+- A Fase 311 extraiu somente `postCombinaTermoBuscaComunidade` a partir do trecho final da busca textual de `postsVisiveis`; a implementação está no PR #445.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
