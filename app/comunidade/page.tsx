@@ -115,6 +115,7 @@ import {
   prepararEnqueteComunidade,
   selecionarTipoPublicacaoPost,
 } from "./components/community-poll-preparer";
+import { votarEnquete } from "./components/community-poll-voter";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1297,128 +1298,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  async function votarEnquete(postId: string, opcao: string) {
-    if (votandoEnqueteId === postId) {
-      return;
-    }
-
-    if (votosEnquetes[postId]) {
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Você já votou nesta enquete.");
-      return;
-    }
-
-    if (!exigirLogin() || !usuario) {
-      return;
-    }
-
-    setVotandoEnqueteId(postId);
-    setErro("");
-
-    try {
-      const { error } = await supabase.from("comunidade_enquete_votos").insert({
-        post_id: postId,
-        user_id: usuario.id,
-        opcao,
-      });
-
-      if (error) {
-        const codigoErro = (error as { code?: string }).code;
-
-        if (codigoErro === "23505") {
-          emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Você já votou nesta enquete.");
-
-          const votosReais = await carregarVotosEnquetesSupabase(
-            [postId],
-            usuario.id
-          );
-
-          if (votosReais) {
-            setResultadosEnquetes((resultadosAtuais) => ({
-              ...resultadosAtuais,
-              ...votosReais.resultados,
-            }));
-
-            setVotosEnquetes((votosAtuais) => {
-              const votosAtualizados = {
-                ...votosAtuais,
-                ...votosReais.meusVotos,
-              };
-
-              salvarVotosEnquetesLocais(
-                salvarJsonUsuarioComunidade,
-                votosAtualizados,
-                usuario.id
-              );
-
-              return votosAtualizados;
-            });
-          }
-
-          return;
-        }
-
-        setErro(formatarErroSupabase("Erro ao votar na enquete", error));
-        return;
-      }
-
-      setVotosEnquetes((votosAtuais) => {
-        const votosAtualizados = {
-          ...votosAtuais,
-          [postId]: opcao,
-        };
-
-        salvarVotosEnquetesLocais(
-          salvarJsonUsuarioComunidade,
-          votosAtualizados,
-          usuario.id
-        );
-
-        return votosAtualizados;
-      });
-
-      const votosReais = await carregarVotosEnquetesSupabase(
-        [postId],
-        usuario.id
-      );
-
-      if (votosReais) {
-        setResultadosEnquetes((resultadosAtuais) => ({
-          ...resultadosAtuais,
-          ...votosReais.resultados,
-        }));
-
-        setVotosEnquetes((votosAtuais) => {
-          const votosAtualizados = {
-            ...votosAtuais,
-            ...votosReais.meusVotos,
-          };
-
-          salvarVotosEnquetesLocais(
-            salvarJsonUsuarioComunidade,
-            votosAtualizados,
-            usuario.id
-          );
-
-          return votosAtualizados;
-        });
-      } else {
-        setResultadosEnquetes((resultadosAtuais) => ({
-          ...resultadosAtuais,
-          [postId]: {
-            ...(resultadosAtuais[postId] || {}),
-            [opcao]: (resultadosAtuais[postId]?.[opcao] || 0) + 1,
-          },
-        }));
-      }
-
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Voto registrado.");
-    } finally {
-      setVotandoEnqueteId((postAtualId) =>
-        postAtualId === postId ? null : postAtualId
-      );
-    }
-  }
-
   function alternarSpoilerRevelado(postId: string) {
     setSpoilersReveladosIds((idsAtuais) =>
       idsAtuais.includes(postId)
@@ -3569,7 +3448,22 @@ export default function ComunidadePage() {
                                   return (
                                     <CommunityPollOptionButton
                                       key={opcao}
-                                      onClick={() => votarEnquete(post.id, opcao)}
+                                      onClick={() =>
+                                        votarEnquete({
+                                          postId: post.id,
+                                          opcao,
+                                          votandoEnqueteId,
+                                          votosEnquetes,
+                                          exigirLogin,
+                                          usuario,
+                                          setVotandoEnqueteId,
+                                          setErro,
+                                          setFeedbackAcao,
+                                          feedbackTimerRef,
+                                          setResultadosEnquetes,
+                                          setVotosEnquetes,
+                                        })
+                                      }
                                       disabled={Boolean(votoAtual) || votandoEnqueteId === post.id}
                                       selected={selecionada}
                                     >
