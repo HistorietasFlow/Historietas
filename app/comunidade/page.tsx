@@ -43,6 +43,7 @@ import { obterNomeSeguroUsuarioComunidade } from "./components/community-safe-us
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import { aplicarSugestaoPublicacaoComunidade, SUGESTOES_PUBLICACAO_COMUNIDADE } from "./components/community-publication-suggestions";
 import type { PostComunidade } from "./components/community-post-model";
+import { obterPostComentariosAbertoComunidade } from "./components/community-open-comments-post";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
@@ -1183,11 +1184,7 @@ export default function ComunidadePage() {
   ]);
 
   const postComentariosAberto = useMemo(() => {
-    if (!comentariosPostId) {
-      return null;
-    }
-
-    return posts.find((post) => post.id === comentariosPostId) || null;
+    return obterPostComentariosAbertoComunidade(posts, comentariosPostId);
   }, [comentariosPostId, posts]);
 
   const sugestoesObrasRelacionadasVisiveis = useMemo(() => {
