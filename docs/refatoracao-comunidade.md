@@ -5,12 +5,13 @@
 - A Fase 297 extraiu somente `compartilharPublicacao` e foi concluída com o PR #419 mesclado.
 - A Fase 298 extraiu somente `carregarPostsComunidade` e foi concluída com o PR #421 mesclado.
 - A Fase 299 extraiu somente `carregarMaisPostsComunidade` e foi concluída com o PR #422 mesclado.
+- A Fase 300 extraiu somente `selecionarObraRelacionada` e foi concluída com o PR #424 mesclado.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 300 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 301 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
