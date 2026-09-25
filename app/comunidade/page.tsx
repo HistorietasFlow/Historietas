@@ -109,6 +109,7 @@ import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-pu
 import { alternarPostSalvo } from "./components/community-saved-post-toggler";
 import { compartilharPublicacao } from "./components/community-post-sharer";
 import { carregarPostsComunidade } from "./components/community-posts-loader";
+import { carregarMaisPostsComunidade } from "./components/community-more-posts-loader";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1298,15 +1299,6 @@ export default function ComunidadePage() {
       setErro,
     });
   }
-
-  async function carregarMaisPostsComunidade() {
-    if (carregandoFeed || carregandoMaisPostsComunidade || !temMaisPostsComunidade) {
-      return;
-    }
-
-    await carregarPostsComunidadeDaPagina(false, paginaFeedComunidade + 1);
-  }
-
 
   function exigirLogin() {
     if (usuario) {
@@ -3211,7 +3203,15 @@ export default function ComunidadePage() {
             {!carregandoFeed && postsVisiveis.length > 0 && temMaisPostsComunidade && (
               <CommunityLoadMorePostsContainer>
                 <CommunityLoadMorePostsButton
-                  onClick={carregarMaisPostsComunidade}
+                  onClick={() =>
+                    carregarMaisPostsComunidade({
+                      carregandoFeed,
+                      carregandoMaisPostsComunidade,
+                      temMaisPostsComunidade,
+                      paginaFeedComunidade,
+                      carregarPostsComunidadeDaPagina,
+                    })
+                  }
                   disabled={carregandoMaisPostsComunidade}
                 >
                   {carregandoMaisPostsComunidade ? (
