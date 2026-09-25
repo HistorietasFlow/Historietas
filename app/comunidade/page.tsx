@@ -29,6 +29,7 @@ import type { TipoPublicacaoFiltro } from "./components/community-publication-fi
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
+import { postCombinaTermoBuscaComunidade } from "./components/community-post-search-match";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
@@ -1103,24 +1104,7 @@ export default function ComunidadePage() {
         return false;
       }
 
-      if (!termoBuscaNormalizado) {
-        return true;
-      }
-
-      const textoBuscaPost = normalizarTexto(
-        [
-          post.texto,
-          post.autorNome,
-          post.categoria,
-          obterTipoVisualPublicacao(post),
-          post.obraRelacionada,
-          post.capituloRelacionado,
-        ]
-          .filter(Boolean)
-          .join(" ")
-      );
-
-      return textoBuscaPost.includes(termoBuscaNormalizado);
+      return postCombinaTermoBuscaComunidade(post, termoBuscaNormalizado);
     });
 
     return [...postsFiltrados].sort((postA, postB) => {
