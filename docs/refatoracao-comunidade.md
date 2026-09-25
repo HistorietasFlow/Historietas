@@ -12,12 +12,13 @@
 - A Fase 304 extraiu somente `garantirAceiteAntesDePublicarComunidade` e foi concluída com o PR #432 mesclado.
 - A Fase 305 extraiu somente `temFiltrosAtivosComunidade` a partir do cálculo de `filtrosAtivos` e foi concluída com o PR #434 mesclado.
 - A Fase 306 extraiu somente `obterPostComentariosAbertoComunidade` a partir do cálculo de `postComentariosAberto` e foi concluída com o PR #436 mesclado.
+- A Fase 307 extraiu somente `obterSugestoesObrasRelacionadasVisiveisComunidade` a partir do cálculo de `sugestoesObrasRelacionadasVisiveis` e foi concluída com o PR #438 mesclado.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 307 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 308 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
