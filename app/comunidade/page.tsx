@@ -28,7 +28,7 @@ import { normalizarTipoPublicacao } from "./components/community-publication-typ
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
-import { ABAS_FEED_COMUNIDADE, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
+import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
   AlvoDenunciaComunidade,
   DenunciaAlvoComunidade,
@@ -1293,20 +1293,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  function limparFiltrosComunidade() {
-    setAbaFeedAtiva("Para você");
-    setCategoriaAtiva("Todos");
-    setTipoPublicacaoAtiva("Todos");
-    setObraRelacionadaFiltro("");
-    setGrupoPublicacaoObra("");
-    setTermoBusca("");
-    setOrdenacaoAtiva("Recentes");
-    setMostrarApenasSalvos(false);
-
-    window.history.replaceState(null, "", "/comunidade");
-    void carregarPostsComunidade(true, 0, "");
-  }
-
   function emitirFeedbackAcao(mensagem: string) {
     setFeedbackAcao(mensagem);
 
@@ -3195,7 +3181,17 @@ export default function ComunidadePage() {
                   <CommunitySheetFilterOption
                     active={!filtrosAtivos}
                     onClick={() => {
-                      limparFiltrosComunidade();
+                      limparFiltrosComunidade({
+                        setAbaFeedAtiva,
+                        setCategoriaAtiva,
+                        setTipoPublicacaoAtiva,
+                        setObraRelacionadaFiltro,
+                        setGrupoPublicacaoObra,
+                        setTermoBusca,
+                        setOrdenacaoAtiva,
+                        setMostrarApenasSalvos,
+                        carregarPostsComunidade,
+                      });
                       setMenuAcoesRapidasComunidadeAberto(false);
                     }}
                   >
