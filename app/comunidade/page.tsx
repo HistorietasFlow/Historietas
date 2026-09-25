@@ -76,7 +76,6 @@ import { criarLoginHrefComunidade } from "./components/community-login-link";
 import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
-import { salvarPostSalvoSupabaseComunidade } from "./components/community-supabase-saved-post-saver";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
@@ -118,6 +117,7 @@ import {
 import { votarEnquete } from "./components/community-poll-voter";
 import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed-toggler";
 import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
+import { alternarPostSalvo } from "./components/community-saved-post-toggler";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1300,70 +1300,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  async function alternarPostSalvo(postId: string) {
-    const chaveAcao = `salvar-post:${postId}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    setErro("");
-
-    try {
-      if (!exigirLogin() || !usuario) {
-        return;
-      }
-
-      setPostSalvandoId(postId);
-
-      const postJaSalvo = postsSalvosIds.includes(postId);
-      const postsSalvosAtualizados = postJaSalvo
-        ? postsSalvosIds.filter((postSalvoId) => postSalvoId !== postId)
-        : [...postsSalvosIds, postId];
-
-      setPostsSalvosIds(postsSalvosAtualizados);
-      salvarJsonUsuarioComunidade(
-        CHAVE_POSTS_SALVOS_COMUNIDADE,
-        usuario.id,
-        postsSalvosAtualizados
-      );
-
-      const salvouNoSupabase = await salvarPostSalvoSupabaseComunidade(
-        usuario.id,
-        postId,
-        !postJaSalvo
-      );
-
-      if (salvouNoSupabase) {
-        const postsSalvosReais = await carregarPostsSalvosSupabaseComunidade(
-          usuario.id
-        );
-
-        if (postsSalvosReais) {
-          setPostsSalvosIds(postsSalvosReais);
-          salvarJsonUsuarioComunidade(
-            CHAVE_POSTS_SALVOS_COMUNIDADE,
-            usuario.id,
-            postsSalvosReais
-          );
-        }
-      }
-
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
-        postJaSalvo
-          ? "Publicação removida dos salvos."
-          : salvouNoSupabase
-            ? "Publicação salva."
-            : "Publicação salva neste navegador."
-      );
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-      setPostSalvandoId((postAtualId) =>
-        postAtualId === postId ? null : postAtualId
-      );
-    }
-  }
-
   async function compartilharPublicacao(post: PostComunidade) {
     const chaveAcao = `compartilhar-post:${post.id}`;
 
@@ -3218,7 +3154,18 @@ export default function ComunidadePage() {
                             <CommunitySheetMenuAction
                               onClick={() => {
                                 setPostMenuAbertoId(null);
-                                alternarPostSalvo(post.id);
+                                alternarPostSalvo({
+                                  postId: post.id,
+                                  acoesComunidadeRef,
+                                  setErro,
+                                  exigirLogin,
+                                  usuario,
+                                  setPostSalvandoId,
+                                  postsSalvosIds,
+                                  setPostsSalvosIds,
+                                  setFeedbackAcao,
+                                  feedbackTimerRef,
+                                });
                               }}
                               disabled={postSalvando}
                             >
