@@ -25,6 +25,22 @@ type SelecionarAbaFeedComunidadeParams = {
   setMenuAcoesRapidasComunidadeAberto: Dispatch<SetStateAction<boolean>>;
 };
 
+type LimparFiltrosComunidadeParams = {
+  setAbaFeedAtiva: Dispatch<SetStateAction<AbaFeedComunidade>>;
+  setCategoriaAtiva: Dispatch<SetStateAction<CategoriaComunidade | "Todos">>;
+  setTipoPublicacaoAtiva: Dispatch<SetStateAction<TipoPublicacaoFiltro>>;
+  setObraRelacionadaFiltro: Dispatch<SetStateAction<string>>;
+  setGrupoPublicacaoObra: Dispatch<SetStateAction<GrupoPublicacaoObra>>;
+  setTermoBusca: Dispatch<SetStateAction<string>>;
+  setOrdenacaoAtiva: Dispatch<SetStateAction<OrdenacaoComunidade>>;
+  setMostrarApenasSalvos: Dispatch<SetStateAction<boolean>>;
+  carregarPostsComunidade: (
+    mostrarCarregamento: boolean,
+    pagina: number,
+    obraFiltro: string,
+  ) => Promise<void>;
+};
+
 export function selecionarAbaFeedComunidade({
   aba,
   setAbaFeedAtiva,
@@ -46,4 +62,28 @@ export function selecionarAbaFeedComunidade({
   setMenuAcoesRapidasComunidadeAberto(false);
 
   window.history.replaceState(null, "", "/comunidade");
+}
+
+export function limparFiltrosComunidade({
+  setAbaFeedAtiva,
+  setCategoriaAtiva,
+  setTipoPublicacaoAtiva,
+  setObraRelacionadaFiltro,
+  setGrupoPublicacaoObra,
+  setTermoBusca,
+  setOrdenacaoAtiva,
+  setMostrarApenasSalvos,
+  carregarPostsComunidade,
+}: LimparFiltrosComunidadeParams) {
+  setAbaFeedAtiva("Para você");
+  setCategoriaAtiva("Todos");
+  setTipoPublicacaoAtiva("Todos");
+  setObraRelacionadaFiltro("");
+  setGrupoPublicacaoObra("");
+  setTermoBusca("");
+  setOrdenacaoAtiva("Recentes");
+  setMostrarApenasSalvos(false);
+
+  window.history.replaceState(null, "", "/comunidade");
+  void carregarPostsComunidade(true, 0, "");
 }
