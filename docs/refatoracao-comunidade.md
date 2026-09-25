@@ -2,13 +2,15 @@
 
 ## Estado atual
 
-- O PR #419 está aberto e aguarda autorização.
-- A Fase 297 extraiu somente `compartilharPublicacao`.
-- Não mesclar o PR #419, nem qualquer outro PR, sem autorização explícita.
+- A Fase 297 extraiu somente `compartilharPublicacao` e foi concluída com o PR #419 mesclado.
+- A Fase 298 extraiu somente `carregarPostsComunidade` e foi concluída com o PR #421 mesclado.
+- A Fase 299 extraiu somente `carregarMaisPostsComunidade` e foi concluída com o PR #422 mesclado.
+- A `main` local está sincronizada com `origin/main` e o worktree está limpo.
+- Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 298 deve extrair somente `carregarPostsComunidade`. Não incluir outras funções, componentes, limpezas, renomeações ou melhorias no mesmo diff.
+A Fase 300 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
@@ -22,7 +24,7 @@ A extração deve preservar exatamente:
 - chaves, mensagens, interpolação e fallback de i18n;
 - whitespace significativo e formatação não relacionada ao alvo.
 
-Não alterar schema, migrations, dependências ou contratos públicos como parte da Fase 298.
+Não alterar schema, migrations, dependências ou contratos públicos sem autorização explícita e uma fase dedicada.
 
 ## Validação obrigatória
 
