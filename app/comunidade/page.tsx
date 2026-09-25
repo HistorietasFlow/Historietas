@@ -92,6 +92,7 @@ import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
 import { fecharComentarios } from "./components/community-comments-closer";
+import { abrirComentarios } from "./components/community-comments-opener";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
@@ -1701,22 +1702,6 @@ export default function ComunidadePage() {
     }
   }
 
-  function abrirComentarios(postId: string) {
-    setErro("");
-    comentarioUrlAplicadoRef.current = true;
-    setComentariosPostId(postId);
-
-    try {
-      const url = new URL(window.location.href);
-      url.pathname = "/comunidade";
-      url.search = `?post=${encodeURIComponent(postId)}`;
-      url.hash = "";
-      window.history.replaceState(null, "", url.toString());
-    } catch {
-      // Se o navegador bloquear a URL, os comentários continuam abrindo em estado local.
-    }
-  }
-
   async function comentarPost(
     postId: string,
     textoRecebido: string,
@@ -3151,7 +3136,14 @@ export default function ComunidadePage() {
                         />
 
                         <CommunityPostCommentsButton
-                          onClick={() => abrirComentarios(post.id)}
+                          onClick={() =>
+                            abrirComentarios({
+                              postId: post.id,
+                              setErro,
+                              comentarioUrlAplicadoRef,
+                              setComentariosPostId,
+                            })
+                          }
                           count={contarComentaristasUnicosPostComunidade(post)}
                           ariaLabel={`${contarComentaristasUnicosPostComunidade(post)} comentários`}
                         />
