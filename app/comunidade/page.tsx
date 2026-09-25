@@ -96,8 +96,6 @@ import { contarCurtidasUnicasPostComunidade } from "./components/community-uniqu
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPontuacaoPost } from "./components/community-post-score";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
-import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
-import { copiarTextoComFallback } from "./components/community-clipboard-copy";
 import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
@@ -118,6 +116,7 @@ import { votarEnquete } from "./components/community-poll-voter";
 import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed-toggler";
 import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
 import { alternarPostSalvo } from "./components/community-saved-post-toggler";
+import { compartilharPublicacao } from "./components/community-post-sharer";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1300,61 +1299,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  async function compartilharPublicacao(post: PostComunidade) {
-    const chaveAcao = `compartilhar-post:${post.id}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    setPostCompartilhandoId(post.id);
-
-    try {
-      const linkPublicacao = obterLinkPublicacaoComunidade(post.id);
-      const navegador = navigator as Navigator & {
-        share?: (data: ShareData) => Promise<void>;
-      };
-      const textoPublicacao =
-        post.texto.trim().slice(0, 160) ||
-        `Confira a publicação de ${post.autorNome} no HISTORIETAS.`;
-
-      if (typeof navegador.share === "function") {
-        try {
-          await navegador.share({
-            title: `${post.autorNome} na Comunidade HISTORIETAS`,
-            text: textoPublicacao,
-            url: linkPublicacao,
-          });
-          emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Compartilhamento da publicação aberto.");
-          return;
-        } catch (error) {
-          if (
-            error instanceof DOMException &&
-            error.name === "AbortError"
-          ) {
-            return;
-          }
-        }
-      }
-
-      const linkCopiado = await copiarTextoComFallback(linkPublicacao);
-
-      if (linkCopiado) {
-        emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Link da publicação copiado.");
-        return;
-      }
-
-      setErro(
-        "Não consegui compartilhar nem copiar o link da publicação neste navegador."
-      );
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-      setPostCompartilhandoId((postAtualId) =>
-        postAtualId === post.id ? null : postAtualId
-      );
-    }
-  }
-
   async function carregarPostsComunidade(
     mostrarCarregamento = false,
     pagina = 0,
@@ -3179,7 +3123,14 @@ export default function ComunidadePage() {
                             <CommunitySheetMenuAction
                               onClick={() => {
                                 setPostMenuAbertoId(null);
-                                compartilharPublicacao(post);
+                                compartilharPublicacao({
+                                  post,
+                                  acoesComunidadeRef,
+                                  setPostCompartilhandoId,
+                                  setFeedbackAcao,
+                                  feedbackTimerRef,
+                                  setErro,
+                                });
                               }}
                               disabled={postCompartilhando}
                             >
