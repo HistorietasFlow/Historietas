@@ -28,6 +28,7 @@ import { normalizarTipoPublicacao } from "./components/community-publication-typ
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
+import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
@@ -944,7 +945,7 @@ export default function ComunidadePage() {
   }, [comentariosPostId, posts]);
 
   const termoBuscaNormalizado = useMemo(
-    () => normalizarTexto(termoBuscaAdiado),
+    () => normalizarTermoBuscaComunidade(termoBuscaAdiado),
     [termoBuscaAdiado]
   );
 
