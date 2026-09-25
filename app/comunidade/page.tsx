@@ -45,25 +45,17 @@ import type { PostComunidade } from "./components/community-post-model";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
-import {
-  juntarObraECapituloRelacionados,
-  separarObraECapituloRelacionados,
-} from "./components/community-related-chapter-utils";
+import { juntarObraECapituloRelacionados } from "./components/community-related-chapter-utils";
 import { criarLinkObraRelacionada } from "./components/community-related-work-link";
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
 import { carregarSugestoesObrasLocais } from "./components/community-local-related-works-loader";
-import {
-  normalizarSugestaoObraSupabase,
-  type SupabaseObraPublicaRow,
-} from "./components/community-related-work-supabase-normalizer";
+import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
-import type { SupabaseComentarioCurtidaRow } from "./components/community-supabase-comment-like-row";
 import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
-import type { SupabaseCurtidaRow } from "./components/community-supabase-like-row";
 import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
 import { obterTextoProfileComunidade } from "./components/community-profile-text";
 import { obterNomeProfileComunidade } from "./components/community-profile-name";
@@ -73,7 +65,6 @@ import { buscarUsuariosComunidadeNosPosts } from "./components/community-post-us
 import { carregarUsuariosSeguidosComunidade } from "./components/community-supabase-followed-users-loader";
 import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-user-saver";
 import { criarLoginHrefComunidade } from "./components/community-login-link";
-import { mapearPostsSupabase } from "./components/community-supabase-posts-mapper";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
@@ -117,15 +108,10 @@ import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed
 import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
 import { alternarPostSalvo } from "./components/community-saved-post-toggler";
 import { compartilharPublicacao } from "./components/community-post-sharer";
+import { carregarPostsComunidade } from "./components/community-posts-loader";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
-import {
-  IDS_COMENTARIOS_POR_LOTE,
-  OBRAS_RELACIONADAS_POR_PAGINA,
-  POSTS_COMUNIDADE_POR_PAGINA,
-  REGISTROS_COMUNIDADE_POR_PAGINA,
-} from "./components/community-pagination-constants";
 import { CommunityThemeStyles } from "./components/community-theme-styles";
 import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
@@ -256,11 +242,6 @@ import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
 } from "../../lib/aceiteTermos";
-import {
-  calcularIntervaloPaginaSupabase,
-  carregarTodasPaginasSupabase,
-  dividirEmLotesSupabase,
-} from "../../lib/supabase/paginacao.mjs";
 
 
 
@@ -355,7 +336,7 @@ export default function ComunidadePage() {
   const { pageThemeStyle } = useHistorietasTheme(communityPageStyle);
   const carregarPostsComunidadeNoEfeito = useEffectEvent(
     (mostrarCarregamento: boolean, pagina: number, obraFiltro: string) =>
-      carregarPostsComunidade(mostrarCarregamento, pagina, obraFiltro),
+      carregarPostsComunidadeDaPagina(mostrarCarregamento, pagina, obraFiltro),
   );
 
   useEffect(() => {
@@ -1299,235 +1280,23 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  async function carregarPostsComunidade(
+  function carregarPostsComunidadeDaPagina(
     mostrarCarregamento = false,
     pagina = 0,
     obraFiltro = obraRelacionadaFiltro
   ) {
-    const carregandoPaginaInicial = mostrarCarregamento;
-    const carregandoPaginaSeguinte = pagina > 0;
-
-    if (carregandoPaginaInicial) {
-      setCarregandoFeed(true);
-    }
-
-    if (carregandoPaginaSeguinte) {
-      setCarregandoMaisPostsComunidade(true);
-    }
-
-    const { inicio, fim } = calcularIntervaloPaginaSupabase(
+    return carregarPostsComunidade({
+      mostrarCarregamento,
       pagina,
-      POSTS_COMUNIDADE_POR_PAGINA,
-    );
-
-    try {
-      let consultaPosts = supabase
-        .from("comunidade_posts")
-        .select(
-          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por, visibilidade"
-        );
-
-      const obraFiltroLimpa = obraFiltro.trim().slice(0, 90);
-
-      if (obraFiltroLimpa) {
-        const obraFiltroLike = obraFiltroLimpa.replace(/[%_]/g, "\\$&");
-
-        consultaPosts = consultaPosts.like(
-          "obra_relacionada",
-          `${obraFiltroLike}%`,
-        );
-      }
-
-      const postsResposta = await consultaPosts
-        .order("criado_em", { ascending: false })
-        .order("id", { ascending: false })
-        .range(inicio, fim);
-
-      if (postsResposta.error) {
-        throw postsResposta.error;
-      }
-
-      const postsPagina = postsResposta.data || [];
-      const postIds = postsPagina
-        .map((post) => post.id)
-        .filter((postId): postId is string => Boolean(postId));
-
-      if (postIds.length === 0) {
-        if (pagina === 0) {
-          setPosts([]);
-        }
-
-        setTemMaisPostsComunidade(false);
-        setPaginaFeedComunidade(pagina);
-        return;
-      }
-
-      const titulosObrasRelacionadasPagina = Array.from(
-        new Set(
-          postsPagina
-            .map((post) =>
-              separarObraECapituloRelacionados(post.obra_relacionada || "")
-                .obraRelacionada.trim()
-            )
-            .filter(Boolean)
-        )
-      );
-
-      if (titulosObrasRelacionadasPagina.length > 0) {
-        try {
-          const obrasRelacionadasPagina =
-            await carregarTodasPaginasSupabase<SupabaseObraPublicaRow>({
-              nomeColecao: "obras relacionadas da Comunidade",
-              tamanhoPagina: OBRAS_RELACIONADAS_POR_PAGINA,
-              buscarPagina: async (inicioPagina, fimPagina) =>
-                supabase
-                  .from("obras")
-                  .select(
-                    "id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link",
-                  )
-                  .eq("publicado", true)
-                  .in("titulo", titulosObrasRelacionadasPagina)
-                  .order("titulo", { ascending: true })
-                  .order("id", { ascending: true })
-                  .range(inicioPagina, fimPagina),
-            });
-          const sugestoesObrasRelacionadasPagina = (
-            obrasRelacionadasPagina
-          )
-            .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
-            .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
-
-          if (sugestoesObrasRelacionadasPagina.length > 0) {
-            setObrasRelacionadasSugestoes((obrasAtuais) =>
-              removerSugestoesObrasDuplicadas([
-                ...obrasAtuais,
-                ...sugestoesObrasRelacionadasPagina,
-              ])
-            );
-          }
-        } catch {
-          // A obra relacionada é complementar; os posts continuam disponíveis.
-        }
-      }
-
-      const [comentariosSupabase, curtidasSupabase] = await Promise.all([
-        carregarTodasPaginasSupabase<SupabaseComentarioRow>({
-          nomeColecao: "comentários da Comunidade",
-          tamanhoPagina: REGISTROS_COMUNIDADE_POR_PAGINA,
-          buscarPagina: async (inicioPagina, fimPagina) =>
-            supabase
-              .from("comunidade_comentarios")
-              .select(
-                "id, post_id, autor_id, autor_nome, texto, comentario_pai_id, criado_em",
-              )
-              .in("post_id", postIds)
-              .order("criado_em", { ascending: true })
-              .order("id", { ascending: true })
-              .range(inicioPagina, fimPagina),
-        }),
-        carregarTodasPaginasSupabase<SupabaseCurtidaRow>({
-          nomeColecao: "curtidas de posts da Comunidade",
-          tamanhoPagina: REGISTROS_COMUNIDADE_POR_PAGINA,
-          buscarPagina: async (inicioPagina, fimPagina) =>
-            supabase
-              .from("comunidade_curtidas")
-              .select("post_id, usuario_id")
-              .in("post_id", postIds)
-              .order("post_id", { ascending: true })
-              .order("usuario_id", { ascending: true })
-              .range(inicioPagina, fimPagina),
-        }),
-      ]);
-
-      const comentarioIds = comentariosSupabase
-        .map((comentario) => comentario.id)
-        .filter((comentarioId): comentarioId is string => Boolean(comentarioId));
-
-      const comentarioCurtidasSupabase: SupabaseComentarioCurtidaRow[] = [];
-
-      for (const loteComentarioIds of dividirEmLotesSupabase(
-        comentarioIds,
-        IDS_COMENTARIOS_POR_LOTE,
-      )) {
-        const curtidasDoLote =
-          await carregarTodasPaginasSupabase<SupabaseComentarioCurtidaRow>({
-            nomeColecao: "curtidas de comentários da Comunidade",
-            tamanhoPagina: REGISTROS_COMUNIDADE_POR_PAGINA,
-            buscarPagina: async (inicioPagina, fimPagina) =>
-              supabase
-                .from("comunidade_comentario_curtidas")
-                .select("comentario_id, usuario_id")
-                .in("comentario_id", loteComentarioIds)
-                .order("comentario_id", { ascending: true })
-                .order("usuario_id", { ascending: true })
-                .range(inicioPagina, fimPagina),
-          });
-
-        comentarioCurtidasSupabase.push(...curtidasDoLote);
-      }
-
-      const autoresIdsComunidade = Array.from(
-        new Set(
-          [
-            ...postsPagina.map((post) => post.autor_id),
-            ...comentariosSupabase.map((comentario) => comentario.autor_id),
-          ].filter((id): id is string => idSupabaseValidoComunidade(id || ""))
-        )
-      );
-      const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios(
-        autoresIdsComunidade,
-        obterTextoProfileComunidade
-      );
-
-      const postsSupabase = mapearPostsSupabase(
-        postsPagina,
-        comentariosSupabase,
-        curtidasSupabase,
-        comentarioCurtidasSupabase,
-        profilesPorUsuario,
-        obterNomeProfileComunidade,
-        obterAvatarProfileComunidade,
-        normalizarCategoria,
-        normalizarTipoPublicacao,
-        normalizarVisibilidadePostComunidade
-      );
-
-      setPosts((postsAtuais) => {
-        if (pagina === 0) {
-          return postsSupabase;
-        }
-
-        const postsPorId = new Map(
-          postsAtuais.map((postAtual) => [postAtual.id, postAtual])
-        );
-
-        postsSupabase.forEach((post) => {
-          postsPorId.set(post.id, post);
-        });
-
-        return Array.from(postsPorId.values());
-      });
-
-      setTemMaisPostsComunidade(
-        postsPagina.length === POSTS_COMUNIDADE_POR_PAGINA
-      );
-      setPaginaFeedComunidade(pagina);
-    } catch (error) {
-      setErro(formatarErroSupabase("Erro ao carregar Comunidade", error));
-
-      if (pagina === 0) {
-        setPosts([]);
-        setTemMaisPostsComunidade(false);
-      }
-    } finally {
-      if (carregandoPaginaInicial) {
-        setCarregandoFeed(false);
-      }
-
-      if (carregandoPaginaSeguinte) {
-        setCarregandoMaisPostsComunidade(false);
-      }
-    }
+      obraFiltro,
+      setCarregandoFeed,
+      setCarregandoMaisPostsComunidade,
+      setPosts,
+      setTemMaisPostsComunidade,
+      setPaginaFeedComunidade,
+      setObrasRelacionadasSugestoes,
+      setErro,
+    });
   }
 
   async function carregarMaisPostsComunidade() {
@@ -1535,7 +1304,7 @@ export default function ComunidadePage() {
       return;
     }
 
-    await carregarPostsComunidade(false, paginaFeedComunidade + 1);
+    await carregarPostsComunidadeDaPagina(false, paginaFeedComunidade + 1);
   }
 
 
@@ -1823,7 +1592,7 @@ export default function ComunidadePage() {
 
         setPosts((postsAtuais) => [novoPost as PostComunidade, ...postsAtuais]);
       } else {
-        await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
+        await carregarPostsComunidadeDaPagina(false, 0, obraRelacionadaFiltro);
       }
 
       if (
@@ -2231,7 +2000,7 @@ export default function ComunidadePage() {
         setErro(
           "O comentário não foi removido. A conta atual não possui permissão para essa ação."
         );
-        await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
+        await carregarPostsComunidadeDaPagina(false, 0, obraRelacionadaFiltro);
         return;
       }
 
@@ -2342,7 +2111,7 @@ export default function ComunidadePage() {
       emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
         jaCurtiu ? "Curtida do comentário removida." : "Comentário curtido."
       );
-      await carregarPostsComunidade();
+      await carregarPostsComunidadeDaPagina();
     } finally {
       finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
     }
@@ -2620,7 +2389,7 @@ export default function ComunidadePage() {
         setErro(
           "A publicação não foi removida. A conta atual não possui permissão para essa ação."
         );
-        await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
+        await carregarPostsComunidadeDaPagina(false, 0, obraRelacionadaFiltro);
         return;
       }
 
@@ -2652,7 +2421,7 @@ export default function ComunidadePage() {
       );
 
       emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Publicação removida.");
-      await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
+      await carregarPostsComunidadeDaPagina(false, 0, obraRelacionadaFiltro);
     } finally {
       finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPostRemovendoId((postAtualId) =>
@@ -2841,7 +2610,7 @@ export default function ComunidadePage() {
                         setTermoBusca,
                         setOrdenacaoAtiva,
                         setMostrarApenasSalvos,
-                        carregarPostsComunidade,
+                        carregarPostsComunidade: carregarPostsComunidadeDaPagina,
                       });
                       setMenuAcoesRapidasComunidadeAberto(false);
                     }}

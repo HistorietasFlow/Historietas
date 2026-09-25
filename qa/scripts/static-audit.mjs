@@ -2076,6 +2076,14 @@ const communityPagePath = path.join(
 const communityPage = fs.existsSync(communityPagePath)
   ? fs.readFileSync(communityPagePath, "utf8")
   : "";
+const communityPostsLoaderPath = path.join(
+  ROOT_DIR,
+  "app/comunidade/components/community-posts-loader.ts"
+);
+const communityPostsLoader = fs.existsSync(communityPostsLoaderPath)
+  ? fs.readFileSync(communityPostsLoaderPath, "utf8")
+  : "";
+const communityPaginationSource = `${communityPage}\n${communityPostsLoader}`;
 const communityFollowSaverPath = path.join(
   ROOT_DIR,
   "app/comunidade/components/community-follow-user-saver.ts"
@@ -2160,15 +2168,15 @@ const paginationContracts = [
     name: "Comunidade pagina posts com ordenação determinística",
     valid:
       /\.from\("comunidade_posts"\)[\s\S]*?\.order\("criado_em", \{ ascending: false \}\)[\s\S]*?\.order\("id", \{ ascending: false \}\)[\s\S]*?\.range\(inicio, fim\)/.test(
-        communityPage
+        communityPaginationSource
       )
   },
   {
     name: "Comunidade pagina comentários, curtidas e obras relacionadas",
     valid:
-      (communityPage.match(/carregarTodasPaginasSupabase</g) || []).length >= 4 &&
+      (communityPaginationSource.match(/carregarTodasPaginasSupabase</g) || []).length >= 4 &&
       /dividirEmLotesSupabase\([\s\S]*?comentarioIds[\s\S]*?IDS_COMENTARIOS_POR_LOTE/.test(
-        communityPage
+        communityPaginationSource
       )
   },
   {
