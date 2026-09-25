@@ -27,6 +27,7 @@ import { TIPOS_PUBLICACAO_COMUNIDADE } from "./components/community-publication-
 import { normalizarTipoPublicacao } from "./components/community-publication-type-normalizer";
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
+import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
@@ -1273,14 +1274,15 @@ export default function ComunidadePage() {
     };
   }, [composerAberto]);
 
-  const filtrosAtivos =
-    categoriaAtiva !== "Todos" ||
-    tipoPublicacaoAtiva !== "Todos" ||
-    Boolean(obraRelacionadaFiltro.trim()) ||
-    Boolean(grupoPublicacaoObra) ||
-    Boolean(termoBuscaNormalizado) ||
-    mostrarApenasSalvos ||
-    ordenacaoAtiva !== "Recentes";
+  const filtrosAtivos = temFiltrosAtivosComunidade({
+    categoriaAtiva,
+    tipoPublicacaoAtiva,
+    obraRelacionadaFiltro,
+    grupoPublicacaoObra,
+    termoBuscaNormalizado,
+    mostrarApenasSalvos,
+    ordenacaoAtiva,
+  });
   function carregarPostsComunidadeDaPagina(
     mostrarCarregamento = false,
     pagina = 0,
