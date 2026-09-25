@@ -116,6 +116,7 @@ import {
   selecionarTipoPublicacaoPost,
 } from "./components/community-poll-preparer";
 import { votarEnquete } from "./components/community-poll-voter";
+import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed-toggler";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1298,14 +1299,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  function alternarSpoilerRevelado(postId: string) {
-    setSpoilersReveladosIds((idsAtuais) =>
-      idsAtuais.includes(postId)
-        ? idsAtuais.filter((id) => id !== postId)
-        : [...idsAtuais, postId]
-    );
-  }
-
   async function abrirPublicacaoRapidaComunidade() {
     setMenuAcoesRapidasComunidadeAberto(false);
 
@@ -3523,7 +3516,12 @@ export default function ComunidadePage() {
 
                         {post.temSpoiler && (
                           <CommunityPostSpoilerButton
-                            onClick={() => alternarSpoilerRevelado(post.id)}
+                            onClick={() =>
+                              alternarSpoilerRevelado({
+                                postId: post.id,
+                                setSpoilersReveladosIds,
+                              })
+                            }
                           >
                             {ocultarTextoSpoiler ? "REVELAR" : "OCULTAR"}
                           </CommunityPostSpoilerButton>
