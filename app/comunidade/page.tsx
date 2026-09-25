@@ -40,8 +40,7 @@ import type {
 import { obterNomeUsuario } from "./components/community-user-name";
 import { obterNomeSeguroUsuarioComunidade } from "./components/community-safe-user-name";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
-import type { SugestaoPublicacaoComunidade } from "./components/community-publication-suggestion";
-import { SUGESTOES_PUBLICACAO_COMUNIDADE } from "./components/community-publication-suggestions";
+import { aplicarSugestaoPublicacaoComunidade, SUGESTOES_PUBLICACAO_COMUNIDADE } from "./components/community-publication-suggestions";
 import type { PostComunidade } from "./components/community-post-model";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
@@ -1295,40 +1294,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  function aplicarSugestaoPublicacaoComunidade(
-    sugestao: SugestaoPublicacaoComunidade,
-  ) {
-    if (publicandoPost) {
-      return;
-    }
-
-    setErro("");
-    setCategoriaPost(sugestao.categoria);
-    setTipoPublicacaoPost(sugestao.tipo);
-
-    window.setTimeout(() => {
-      const campoTexto = textoPostRef.current;
-
-      if (!campoTexto) {
-        return;
-      }
-
-      const textoSugestao = traduzirTextoComunidade(sugestao.texto, language);
-      const textoAtualSemEspacosFinais = campoTexto.value.replace(/\s+$/, "");
-      const proximoTexto = textoAtualSemEspacosFinais.trim()
-        ? `${textoAtualSemEspacosFinais}\n\n${textoSugestao}`
-        : textoSugestao;
-
-      // Preserva o que já foi digitado: a sugestão é acrescentada, nunca sobrescreve.
-      campoTexto.value = proximoTexto.slice(0, 700);
-      campoTexto.focus();
-      campoTexto.setSelectionRange(
-        campoTexto.value.length,
-        campoTexto.value.length,
-      );
-    }, 0);
-  }
-
   async function prepararEnqueteComunidade() {
     if (!(await garantirAceiteAntesDePublicarComunidade())) {
       return;
@@ -3958,7 +3923,15 @@ export default function ComunidadePage() {
                         key={sugestao.rotulo}
                         disabled={publicandoPost}
                         onClick={() =>
-                          aplicarSugestaoPublicacaoComunidade(sugestao)
+                          aplicarSugestaoPublicacaoComunidade({
+                            sugestao,
+                            publicandoPost,
+                            setErro,
+                            setCategoriaPost,
+                            setTipoPublicacaoPost,
+                            textoPostRef,
+                            language,
+                          })
                         }
                       >
                         {sugestao.rotulo}
