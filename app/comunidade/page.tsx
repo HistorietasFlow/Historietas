@@ -117,6 +117,7 @@ import {
 } from "./components/community-poll-preparer";
 import { votarEnquete } from "./components/community-poll-voter";
 import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed-toggler";
+import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1299,20 +1300,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  async function abrirPublicacaoRapidaComunidade() {
-    setMenuAcoesRapidasComunidadeAberto(false);
-
-    if (
-      carregandoUsuario ||
-      !(await garantirAceiteAntesDePublicarComunidade())
-    ) {
-      return;
-    }
-
-    setErro("");
-    setComposerAberto(true);
-  }
-
   async function alternarPostSalvo(postId: string) {
     const chaveAcao = `salvar-post:${postId}`;
 
@@ -2945,7 +2932,15 @@ export default function ComunidadePage() {
                   </CommunitySheetSectionLabel>
 
                   <CommunitySheetPrimaryAction
-                    onClick={abrirPublicacaoRapidaComunidade}
+                    onClick={() =>
+                      abrirPublicacaoRapidaComunidade({
+                        carregandoUsuario,
+                        garantirAceiteAntesDePublicarComunidade,
+                        setMenuAcoesRapidasComunidadeAberto,
+                        setErro,
+                        setComposerAberto,
+                      })
+                    }
                   >
                     Publicar
                   </CommunitySheetPrimaryAction>
