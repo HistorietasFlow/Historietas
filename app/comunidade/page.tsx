@@ -110,9 +110,11 @@ import { obterTipoVisualPublicacao } from "./components/community-publication-vi
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
-  MODELO_ENQUETE_COMUNIDADE,
 } from "./components/community-poll-constants";
-import { prepararEnqueteComunidade } from "./components/community-poll-preparer";
+import {
+  prepararEnqueteComunidade,
+  selecionarTipoPublicacaoPost,
+} from "./components/community-poll-preparer";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1295,33 +1297,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  function selecionarTipoPublicacaoPost(tipo: TipoPublicacaoComunidade) {
-    setTipoPublicacaoPost(tipo);
-
-    if (tipo !== "Enquete") {
-      return;
-    }
-
-    window.setTimeout(() => {
-      if (!textoPostRef.current) {
-        return;
-      }
-
-      const textoAtual = textoPostRef.current.value.trim();
-
-      if (textoAtual && !/^enquete\s*[:\-]/i.test(textoAtual)) {
-        return;
-      }
-
-      textoPostRef.current.value = MODELO_ENQUETE_COMUNIDADE;
-      textoPostRef.current.focus();
-      textoPostRef.current.setSelectionRange(
-        textoPostRef.current.value.length,
-        textoPostRef.current.value.length
-      );
-    }, 0);
-  }
-
   async function votarEnquete(postId: string, opcao: string) {
     if (votandoEnqueteId === postId) {
       return;
@@ -3748,9 +3723,11 @@ export default function ComunidadePage() {
                     disabled={publicandoPost}
                     value={tipoPublicacaoPost}
                     onChange={(event) =>
-                      selecionarTipoPublicacaoPost(
-                        event.target.value as TipoPublicacaoComunidade
-                      )
+                      selecionarTipoPublicacaoPost({
+                        tipo: event.target.value as TipoPublicacaoComunidade,
+                        setTipoPublicacaoPost,
+                        textoPostRef,
+                      })
                     }
                   >
                     {TIPOS_PUBLICACAO_COMUNIDADE.map((tipo) => (
