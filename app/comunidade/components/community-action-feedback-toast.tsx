@@ -1,4 +1,30 @@
-import type { CSSProperties, ReactNode } from "react";
+import type {
+  CSSProperties,
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+} from "react";
+
+type FeedbackTimerRef = {
+  current: number | null;
+};
+
+export function emitirFeedbackAcao(
+  setFeedbackAcao: Dispatch<SetStateAction<string>>,
+  feedbackTimerRef: FeedbackTimerRef,
+  mensagem: string,
+) {
+  setFeedbackAcao(mensagem);
+
+  if (feedbackTimerRef.current) {
+    window.clearTimeout(feedbackTimerRef.current);
+  }
+
+  feedbackTimerRef.current = window.setTimeout(() => {
+    setFeedbackAcao("");
+    feedbackTimerRef.current = null;
+  }, 2600);
+}
 
 type CommunityActionFeedbackToastProps = {
   children: ReactNode;

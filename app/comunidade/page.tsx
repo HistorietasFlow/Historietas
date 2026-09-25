@@ -207,7 +207,7 @@ import { CommunityPostComposerSpoilerButton } from "./components/community-post-
 import { CommunityPostComposerSpoilerLabel } from "./components/community-post-composer-spoiler-label";
 import { CommunityPostComposerSpoilerIndicator } from "./components/community-post-composer-spoiler-indicator";
 import { CommunityPostComposerPublishButton } from "./components/community-post-composer-publish-button";
-import { CommunityActionFeedbackToast } from "./components/community-action-feedback-toast";
+import { CommunityActionFeedbackToast, emitirFeedbackAcao } from "./components/community-action-feedback-toast";
 import {
   finalizarAcaoComunidade,
   iniciarAcaoComunidade,
@@ -433,9 +433,11 @@ export default function ComunidadePage() {
   }, [usuario?.id]);
 
   useEffect(() => {
+    const feedbackTimer = feedbackTimerRef;
+
     return () => {
-      if (feedbackTimerRef.current) {
-        window.clearTimeout(feedbackTimerRef.current);
+      if (feedbackTimer.current) {
+        window.clearTimeout(feedbackTimer.current);
       }
     };
   }, []);
@@ -1293,20 +1295,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  function emitirFeedbackAcao(mensagem: string) {
-    setFeedbackAcao(mensagem);
-
-    if (feedbackTimerRef.current) {
-      window.clearTimeout(feedbackTimerRef.current);
-    }
-
-    feedbackTimerRef.current = window.setTimeout(() => {
-      setFeedbackAcao("");
-      feedbackTimerRef.current = null;
-    }, 2600);
-  }
-
-
   function aplicarSugestaoPublicacaoComunidade(
     sugestao: SugestaoPublicacaoComunidade,
   ) {
@@ -1399,7 +1387,7 @@ export default function ComunidadePage() {
     }
 
     if (votosEnquetes[postId]) {
-      emitirFeedbackAcao("Você já votou nesta enquete.");
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Você já votou nesta enquete.");
       return;
     }
 
@@ -1421,7 +1409,7 @@ export default function ComunidadePage() {
         const codigoErro = (error as { code?: string }).code;
 
         if (codigoErro === "23505") {
-          emitirFeedbackAcao("Você já votou nesta enquete.");
+          emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Você já votou nesta enquete.");
 
           const votosReais = await carregarVotosEnquetesSupabase(
             [postId],
@@ -1507,7 +1495,7 @@ export default function ComunidadePage() {
         }));
       }
 
-      emitirFeedbackAcao("Voto registrado.");
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Voto registrado.");
     } finally {
       setVotandoEnqueteId((postAtualId) =>
         postAtualId === postId ? null : postAtualId
@@ -1586,7 +1574,7 @@ export default function ComunidadePage() {
         }
       }
 
-      emitirFeedbackAcao(
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
         postJaSalvo
           ? "Publicação removida dos salvos."
           : salvouNoSupabase
@@ -1626,7 +1614,7 @@ export default function ComunidadePage() {
             text: textoPublicacao,
             url: linkPublicacao,
           });
-          emitirFeedbackAcao("Compartilhamento da publicação aberto.");
+          emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Compartilhamento da publicação aberto.");
           return;
         } catch (error) {
           if (
@@ -1641,7 +1629,7 @@ export default function ComunidadePage() {
       const linkCopiado = await copiarTextoComFallback(linkPublicacao);
 
       if (linkCopiado) {
-        emitirFeedbackAcao("Link da publicação copiado.");
+        emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Link da publicação copiado.");
         return;
       }
 
@@ -1972,7 +1960,7 @@ export default function ComunidadePage() {
           : idsAtuais.filter((id) => id !== usuarioAlvo.id)
       );
       setErro("");
-      emitirFeedbackAcao(
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
         resultado.estado === "solicitado"
           ? `Solicitação para seguir ${usuarioAlvo.nome} enviada.`
           : seguindoAgora
@@ -2221,7 +2209,7 @@ export default function ComunidadePage() {
       setVisibilidadePost("publico");
       setTemSpoilerPost(false);
       setComposerAberto(false);
-      emitirFeedbackAcao("Publicação enviada para a Comunidade.");
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Publicação enviada para a Comunidade.");
     } finally {
       finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPublicandoPost(false);
@@ -2426,7 +2414,7 @@ export default function ComunidadePage() {
         )
       );
 
-      emitirFeedbackAcao("Comentário enviado.");
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Comentário enviado.");
       return true;
     } finally {
       finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
@@ -2605,7 +2593,7 @@ export default function ComunidadePage() {
         )
       );
 
-      emitirFeedbackAcao("Comentário removido.");
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Comentário removido.");
     } finally {
       finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
     }
@@ -2696,7 +2684,7 @@ export default function ComunidadePage() {
         })
       );
 
-      emitirFeedbackAcao(
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
         jaCurtiu ? "Curtida do comentário removida." : "Comentário curtido."
       );
       await carregarPostsComunidade();
@@ -2794,7 +2782,7 @@ export default function ComunidadePage() {
         ),
       );
       setPostMenuAbertoId(null);
-      emitirFeedbackAcao("Visibilidade da publicação atualizada.");
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Visibilidade da publicação atualizada.");
     } finally {
       finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
       setPostVisibilidadeAtualizandoId((postAtualId) =>
@@ -2852,7 +2840,7 @@ export default function ComunidadePage() {
         })
       );
 
-      emitirFeedbackAcao(
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
         novoEstadoFixado
           ? "Publicação fixada no topo."
           : "Publicação desafixada."
@@ -3008,7 +2996,7 @@ export default function ComunidadePage() {
         postsSalvosAtualizados
       );
 
-      emitirFeedbackAcao("Publicação removida.");
+      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Publicação removida.");
       await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
     } finally {
       finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
@@ -4047,7 +4035,7 @@ export default function ComunidadePage() {
         onFechar={() => setDenunciaAlvo(null)}
         onEnviada={() => {
           setErro("");
-          emitirFeedbackAcao("Denúncia enviada para análise.");
+          emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Denúncia enviada para análise.");
         }}
       />
 
