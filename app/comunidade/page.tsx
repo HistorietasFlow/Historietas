@@ -47,6 +47,7 @@ import { CommunityFeedLoadingState } from "./components/community-feed-loading-s
 import { communityPageStyle } from "./components/community-page-style";
 import { juntarObraECapituloRelacionados } from "./components/community-related-chapter-utils";
 import { criarLinkObraRelacionada } from "./components/community-related-work-link";
+import { selecionarObraRelacionada } from "./components/community-related-work-selector";
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
@@ -1388,16 +1389,6 @@ export default function ComunidadePage() {
       setUsuarioSeguindoId((idAtual) =>
         idAtual === usuarioAlvo.id ? null : idAtual
       );
-    }
-  }
-
-  function selecionarObraRelacionada(titulo: string) {
-    setObraRelacionadaBusca(titulo);
-    setSugestoesObrasAbertas(false);
-
-    if (obraRelacionadaRef.current) {
-      obraRelacionadaRef.current.value = titulo;
-      obraRelacionadaRef.current.focus();
     }
   }
 
@@ -3357,7 +3348,12 @@ export default function ComunidadePage() {
                               type="button"
                               onMouseDown={(event) => {
                                 event.preventDefault();
-                                selecionarObraRelacionada(obra.titulo);
+                                selecionarObraRelacionada({
+                                  titulo: obra.titulo,
+                                  setObraRelacionadaBusca,
+                                  setSugestoesObrasAbertas,
+                                  obraRelacionadaRef,
+                                });
                               }}
                             >
                               <CommunityPostComposerRelatedWorkSuggestionContent>
