@@ -13,6 +13,12 @@ type PrepararEnqueteComunidadeParams = {
   textoPostRef: { current: HTMLTextAreaElement | null };
 };
 
+type SelecionarTipoPublicacaoPostParams = {
+  tipo: TipoPublicacaoComunidade;
+  setTipoPublicacaoPost: Dispatch<SetStateAction<TipoPublicacaoComunidade>>;
+  textoPostRef: { current: HTMLTextAreaElement | null };
+};
+
 export async function prepararEnqueteComunidade({
   garantirAceiteAntesDePublicarComunidade,
   setErro,
@@ -34,6 +40,37 @@ export async function prepararEnqueteComunidade({
 
   window.setTimeout(() => {
     if (!textoPostRef.current) {
+      return;
+    }
+
+    textoPostRef.current.value = MODELO_ENQUETE_COMUNIDADE;
+    textoPostRef.current.focus();
+    textoPostRef.current.setSelectionRange(
+      textoPostRef.current.value.length,
+      textoPostRef.current.value.length
+    );
+  }, 0);
+}
+
+export function selecionarTipoPublicacaoPost({
+  tipo,
+  setTipoPublicacaoPost,
+  textoPostRef,
+}: SelecionarTipoPublicacaoPostParams) {
+  setTipoPublicacaoPost(tipo);
+
+  if (tipo !== "Enquete") {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (!textoPostRef.current) {
+      return;
+    }
+
+    const textoAtual = textoPostRef.current.value.trim();
+
+    if (textoAtual && !/^enquete\s*[:\-]/i.test(textoAtual)) {
       return;
     }
 
