@@ -41,6 +41,7 @@ import type {
 import { obterNomeUsuario } from "./components/community-user-name";
 import { obterNomeSeguroUsuarioComunidade } from "./components/community-safe-user-name";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
+import { obterSugestoesObrasRelacionadasVisiveisComunidade } from "./components/community-visible-related-work-suggestions";
 import { aplicarSugestaoPublicacaoComunidade, SUGESTOES_PUBLICACAO_COMUNIDADE } from "./components/community-publication-suggestions";
 import type { PostComunidade } from "./components/community-post-model";
 import { obterPostComentariosAbertoComunidade } from "./components/community-open-comments-post";
@@ -1188,19 +1189,10 @@ export default function ComunidadePage() {
   }, [comentariosPostId, posts]);
 
   const sugestoesObrasRelacionadasVisiveis = useMemo(() => {
-    const buscaNormalizada = normalizarTexto(obraRelacionadaBusca);
-
-    if (!buscaNormalizada) {
-      return [];
-    }
-
-    return obrasRelacionadasSugestoes
-      .filter((obra) => {
-        const tituloObra = normalizarTexto(obra.titulo);
-
-        return tituloObra.startsWith(buscaNormalizada);
-      })
-      .slice(0, 8);
+    return obterSugestoesObrasRelacionadasVisiveisComunidade(
+      obraRelacionadaBusca,
+      obrasRelacionadasSugestoes
+    );
   }, [obraRelacionadaBusca, obrasRelacionadasSugestoes]);
 
   useEffect(() => {
