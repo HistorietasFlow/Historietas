@@ -112,6 +112,7 @@ import {
   MIN_OPCOES_ENQUETE,
   MODELO_ENQUETE_COMUNIDADE,
 } from "./components/community-poll-constants";
+import { prepararEnqueteComunidade } from "./components/community-poll-preparer";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -1294,31 +1295,6 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  async function prepararEnqueteComunidade() {
-    if (!(await garantirAceiteAntesDePublicarComunidade())) {
-      return;
-    }
-
-    setErro("");
-    setCategoriaPost("Discussão");
-    setTipoPublicacaoPost("Enquete");
-    setTemSpoilerPost(false);
-    setComposerAberto(true);
-
-    window.setTimeout(() => {
-      if (!textoPostRef.current) {
-        return;
-      }
-
-      textoPostRef.current.value = MODELO_ENQUETE_COMUNIDADE;
-      textoPostRef.current.focus();
-      textoPostRef.current.setSelectionRange(
-        textoPostRef.current.value.length,
-        textoPostRef.current.value.length
-      );
-    }, 0);
-  }
-
   function selecionarTipoPublicacaoPost(tipo: TipoPublicacaoComunidade) {
     setTipoPublicacaoPost(tipo);
 
@@ -3901,7 +3877,17 @@ export default function ComunidadePage() {
                   <CommunityPostComposerPublicationTools>
                     <CommunityPostComposerPollTemplateButton
                       disabled={publicandoPost}
-                      onClick={prepararEnqueteComunidade}
+                      onClick={() =>
+                        prepararEnqueteComunidade({
+                          garantirAceiteAntesDePublicarComunidade,
+                          setErro,
+                          setCategoriaPost,
+                          setTipoPublicacaoPost,
+                          setTemSpoilerPost,
+                          setComposerAberto,
+                          textoPostRef,
+                        })
+                      }
                     >
                       Modelo de enquete
                     </CommunityPostComposerPollTemplateButton>
