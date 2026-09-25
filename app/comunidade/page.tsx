@@ -66,6 +66,7 @@ import { buscarUsuariosComunidadeNosPosts } from "./components/community-post-us
 import { carregarUsuariosSeguidosComunidade } from "./components/community-supabase-followed-users-loader";
 import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-user-saver";
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
+import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
@@ -242,10 +243,6 @@ import { traduzirContagemResultadosComunidade } from "./components/community-res
 import { formatarDataComunidade } from "./components/community-post-date-formatter";
 import { carregarJsonUsuarioComunidade } from "./components/community-user-json-loader";
 import { salvarJsonUsuarioComunidade } from "./components/community-user-json-saver";
-import {
-  criarHrefAceiteTermos,
-  verificarAceiteTermosPublicacao,
-} from "../../lib/aceiteTermos";
 
 
 
@@ -1308,18 +1305,11 @@ export default function ComunidadePage() {
   }
 
   async function garantirAceiteAntesDePublicarComunidade() {
-    if (!exigirLogin() || !usuario) {
-      return false;
-    }
-
-    const statusAceite = await verificarAceiteTermosPublicacao();
-
-    if (statusAceite.aceito) {
-      return true;
-    }
-
-    router.push(criarHrefAceiteTermos("/comunidade"));
-    return false;
+    return garantirAceiteAntesDePublicarComunidadeExtraido({
+      exigirLogin,
+      usuario,
+      router,
+    });
   }
 
   async function alternarSeguirUsuarioBusca(
