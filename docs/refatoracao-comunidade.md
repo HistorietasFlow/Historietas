@@ -9,12 +9,13 @@
 - A Fase 301 extraiu somente `fecharComentarios` e foi concluída com o PR #426 mesclado.
 - A Fase 302 extraiu somente `abrirComentarios` e foi concluída com o PR #428 mesclado.
 - A Fase 303 extraiu somente `exigirLogin` e foi concluída com o PR #430 mesclado.
+- A Fase 304 extraiu somente `garantirAceiteAntesDePublicarComunidade` e foi concluída com o PR #432 mesclado.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 304 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 305 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
