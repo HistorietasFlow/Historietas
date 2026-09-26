@@ -20,3 +20,24 @@ export function usuarioPodeDenunciarComentarioComunidade(
 ) {
   return Boolean(usuarioId && comentario.autorId !== usuarioId);
 }
+
+export function comentarioEstaSendoCurtidoComunidade(
+  comentarioCurtindoId: string | null,
+  comentario: ComentarioComunidade
+) {
+  return comentarioCurtindoId === comentario.id;
+}
+
+export function comentarioEstaSendoRemovidoComunidade(
+  comentarioRemovendoId: string | null,
+  comentario: ComentarioComunidade
+) {
+  return comentarioRemovendoId === comentario.id;
+}
+
+export function comentarioEstaSendoDenunciadoComunidade(
+  comentarioDenunciandoId: string | null,
+  comentario: ComentarioComunidade
+) {
+  return comentarioDenunciandoId === comentario.id;
+}
