@@ -170,6 +170,10 @@ import { CommunityFeedErrorNotice } from "./components/community-feed-error-noti
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
 import { CommunityFilterControlsRow } from "./components/community-filter-controls-row";
 import { CommunitySearchContainer } from "./components/community-search-container";
+import {
+  abrirBuscaComunidade,
+  fecharBuscaComunidade,
+} from "./components/community-search-controls-actions";
 import { deveExibirControlesBuscaComunidade } from "./components/community-search-controls-visibility";
 import { CommunitySearchInput } from "./components/community-search-input";
 import { CommunitySearchToggleButton } from "./components/community-search-toggle-button";
@@ -2471,10 +2475,12 @@ export default function ComunidadePage() {
 
                     <CommunitySearchToggleButton
                       type="button"
-                      onClick={() => {
-                        setTermoBusca("");
-                        setBuscaComunidadeAberta(false);
-                      }}
+                      onClick={() =>
+                        fecharBuscaComunidade({
+                          setTermoBusca,
+                          setBuscaComunidadeAberta,
+                        })
+                      }
                       aria-label="Fechar busca"
                       aria-expanded="true"
                     >
@@ -2484,7 +2490,9 @@ export default function ComunidadePage() {
                 ) : (
                   <CommunitySearchToggleButton
                     type="button"
-                    onClick={() => setBuscaComunidadeAberta(true)}
+                    onClick={() =>
+                      abrirBuscaComunidade({ setBuscaComunidadeAberta })
+                    }
                     aria-label="Abrir busca"
                     aria-expanded="false"
                   >
