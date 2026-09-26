@@ -27,7 +27,7 @@
 - A Fase 319 extraiu somente `compararDatasOrdenacaoPostsComunidade` a partir da comparação de datas normalizadas na ordenação de `postsVisiveis` e foi concluída com o PR #453 mesclado.
 - A Fase 320 extraiu somente `compararPrioridadesAutoresSeguidosComunidade` a partir da comparação de prioridades de autores seguidos na ordenação de `postsVisiveis` e foi concluída com o PR #454 mesclado.
 - A Fase 321 extraiu somente `devePriorizarAutoresSeguidosComunidade` a partir da condição que ativa a prioridade de autores seguidos na ordenação de `postsVisiveis` e foi concluída com o PR #455 mesclado.
-- A Fase 322 extraiu somente `deveOrdenarPostsPorComentariosComunidade` e `deveOrdenarPostsPorPontuacaoComunidade` a partir das condições dos respectivos modos de ordenação de `postsVisiveis`; a implementação está no PR a ser aberto.
+- A Fase 322 extraiu somente `deveOrdenarPostsPorComentariosComunidade` e `deveOrdenarPostsPorPontuacaoComunidade` a partir das condições dos respectivos modos de ordenação de `postsVisiveis`; a implementação está no PR #456.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
