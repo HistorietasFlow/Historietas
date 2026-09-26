@@ -5,6 +5,9 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, TouchEvent } from "react";
 import type { ComentarioComunidade } from "./community-comment";
 import {
+  comentarioEstaSendoCurtidoComunidade,
+  comentarioEstaSendoDenunciadoComunidade,
+  comentarioEstaSendoRemovidoComunidade,
   usuarioCurtiuComentarioComunidade,
   usuarioPodeDenunciarComentarioComunidade,
   usuarioPodeRemoverComentarioComunidade,
@@ -415,9 +418,18 @@ export const ComentariosSheet = memo(function ComentariosSheet({
       usuarioId,
       comentario
     );
-    const comentarioCurtindo = comentarioCurtindoId === comentario.id;
-    const comentarioRemovendo = comentarioRemovendoId === comentario.id;
-    const comentarioDenunciando = comentarioDenunciandoId === comentario.id;
+    const comentarioCurtindo = comentarioEstaSendoCurtidoComunidade(
+      comentarioCurtindoId,
+      comentario
+    );
+    const comentarioRemovendo = comentarioEstaSendoRemovidoComunidade(
+      comentarioRemovendoId,
+      comentario
+    );
+    const comentarioDenunciando = comentarioEstaSendoDenunciadoComunidade(
+      comentarioDenunciandoId,
+      comentario
+    );
     return (
       <CommunityCommentItemContainer key={comentario.id} isReply={resposta}>
         <CommunityCommentAvatar
