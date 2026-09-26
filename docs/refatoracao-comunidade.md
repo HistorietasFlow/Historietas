@@ -28,13 +28,14 @@
 - A Fase 320 extraiu somente `compararPrioridadesAutoresSeguidosComunidade` a partir da comparação de prioridades de autores seguidos na ordenação de `postsVisiveis` e foi concluída com o PR #454 mesclado.
 - A Fase 321 extraiu somente `devePriorizarAutoresSeguidosComunidade` a partir da condição que ativa a prioridade de autores seguidos na ordenação de `postsVisiveis` e foi concluída com o PR #455 mesclado.
 - A Fase 322 extraiu somente `deveOrdenarPostsPorComentariosComunidade` e `deveOrdenarPostsPorPontuacaoComunidade` a partir das condições dos respectivos modos de ordenação de `postsVisiveis` e foi concluída com o PR #456 mesclado.
-- A Fase 323 extraiu somente `postsPossuemFixacaoDiferenteComunidade` e `postsEstaoFixadosComunidade` a partir das condições dos ramos de fixação na ordenação de `postsVisiveis`; a implementação está no PR #457.
+- A Fase 323 extraiu somente `postsPossuemFixacaoDiferenteComunidade` e `postsEstaoFixadosComunidade` a partir das condições dos ramos de fixação na ordenação de `postsVisiveis` e foi concluída com o PR #457 mesclado.
+- A Fase 324 extraiu somente `prioridadesAutoresSeguidosSaoDiferentesComunidade` a partir da comparação das prioridades de autores seguidos na ordenação de `postsVisiveis`; a implementação está no PR a ser aberto.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 324 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 325 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 

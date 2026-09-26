@@ -16,6 +16,13 @@ export function compararPrioridadesAutoresSeguidosComunidade(
   return seguindoB - seguindoA;
 }
 
+export function prioridadesAutoresSeguidosSaoDiferentesComunidade(
+  seguindoA: number,
+  seguindoB: number
+) {
+  return seguindoA !== seguindoB;
+}
+
 export function devePriorizarAutoresSeguidosComunidade(
   abaFeedAtiva: AbaFeedComunidade,
   ordenacaoAtiva: OrdenacaoComunidade

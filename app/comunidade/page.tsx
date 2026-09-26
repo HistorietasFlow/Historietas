@@ -103,7 +103,7 @@ import { contarCurtidasUnicasPostComunidade } from "./components/community-uniqu
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
 import { compararDatasOrdenacaoPostsComunidade, compararPostsFixadosPorDataComunidade, compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade, deveOrdenarPostsPorComentariosComunidade, deveOrdenarPostsPorPontuacaoComunidade, obterPrioridadeFixacaoPostComunidade, postsEstaoFixadosComunidade, postsPossuemFixacaoDiferenteComunidade } from "./components/community-post-order-comparators";
-import { compararPrioridadesAutoresSeguidosComunidade, devePriorizarAutoresSeguidosComunidade, obterPrioridadeAutorSeguidoComunidade } from "./components/community-followed-post-priority";
+import { compararPrioridadesAutoresSeguidosComunidade, devePriorizarAutoresSeguidosComunidade, obterPrioridadeAutorSeguidoComunidade, prioridadesAutoresSeguidosSaoDiferentesComunidade } from "./components/community-followed-post-priority";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
@@ -1156,7 +1156,12 @@ export default function ComunidadePage() {
           usuariosSeguidosIds
         );
 
-        if (seguindoA !== seguindoB) {
+        if (
+          prioridadesAutoresSeguidosSaoDiferentesComunidade(
+            seguindoA,
+            seguindoB
+          )
+        ) {
           return compararPrioridadesAutoresSeguidosComunidade(
             seguindoA,
             seguindoB
