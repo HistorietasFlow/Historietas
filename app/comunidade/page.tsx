@@ -102,7 +102,7 @@ import { criarNotificacaoComunidadeSupabase } from "./components/community-supab
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
-import { compararPostsFixadosPorDataComunidade, compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade, obterPrioridadeFixacaoPostComunidade } from "./components/community-post-order-comparators";
+import { compararDatasOrdenacaoPostsComunidade, compararPostsFixadosPorDataComunidade, compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade, obterPrioridadeFixacaoPostComunidade } from "./components/community-post-order-comparators";
 import { obterPrioridadeAutorSeguidoComunidade } from "./components/community-followed-post-priority";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
@@ -1181,7 +1181,10 @@ export default function ComunidadePage() {
         );
       }
 
-      return dataOrdenacaoB - dataOrdenacaoA;
+      return compararDatasOrdenacaoPostsComunidade(
+        dataOrdenacaoA,
+        dataOrdenacaoB
+      );
     });
   }, [
     abaFeedAtiva,

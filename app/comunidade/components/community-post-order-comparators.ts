@@ -25,6 +25,13 @@ export function compararPostsFixadosPorDataComunidade(
   return fixadoOrdenacaoB - fixadoOrdenacaoA;
 }
 
+export function compararDatasOrdenacaoPostsComunidade(
+  dataOrdenacaoA: number,
+  dataOrdenacaoB: number
+) {
+  return dataOrdenacaoB - dataOrdenacaoA;
+}
+
 export function compararPostsPorPontuacaoComunidade(
   postA: PostComunidade,
   postB: PostComunidade,
@@ -34,7 +41,10 @@ export function compararPostsPorPontuacaoComunidade(
   const pontuacaoA = obterPontuacaoPost(postA);
   const pontuacaoB = obterPontuacaoPost(postB);
 
-  return pontuacaoB - pontuacaoA || dataOrdenacaoB - dataOrdenacaoA;
+  return (
+    pontuacaoB - pontuacaoA ||
+    compararDatasOrdenacaoPostsComunidade(dataOrdenacaoA, dataOrdenacaoB)
+  );
 }
 
 export function compararPostsPorComentariosComunidade(
@@ -47,5 +57,8 @@ export function compararPostsPorComentariosComunidade(
     contarComentaristasUnicosPostComunidade(postB) -
     contarComentaristasUnicosPostComunidade(postA);
 
-  return diferencaComentarios || dataOrdenacaoB - dataOrdenacaoA;
+  return (
+    diferencaComentarios ||
+    compararDatasOrdenacaoPostsComunidade(dataOrdenacaoA, dataOrdenacaoB)
+  );
 }
