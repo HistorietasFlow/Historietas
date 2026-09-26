@@ -42,7 +42,7 @@
 - A Fase 334 extraiu somente `obterTextoBotaoSeguirUsuarioBuscaComunidade` a partir do texto do botão de seguir no resultado da busca de usuários e foi concluída com o PR #468 mesclado.
 - A Fase 335 extraiu somente `deveExibirInstrucaoBuscaUsuariosComunidade` a partir da condição de termo mínimo da interface de busca de usuários e foi concluída com o PR #469 mesclado.
 - A Fase 336 extraiu somente `temResultadosBuscaUsuariosComunidade` a partir da condição de existência de resultados da busca de usuários e foi concluída com o PR #470 mesclado.
-- A Fase 337 extraiu somente `deveExibirControlesBuscaComunidade` a partir da condição de exibição dos controles da busca; a implementação está no PR desta fase.
+- A Fase 337 extraiu somente `deveExibirControlesBuscaComunidade` a partir da condição de exibição dos controles da busca; a implementação está no PR #471.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
