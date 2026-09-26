@@ -42,6 +42,7 @@ import {
   normalizarTermoComparacaoUsuariosComunidade,
 } from "./components/community-user-search-term-normalizer";
 import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-search-clear-check";
+import { deveExibirInstrucaoBuscaUsuariosComunidade } from "./components/community-user-search-guidance-check";
 import { ordenarUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
 import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
@@ -2646,7 +2647,7 @@ export default function ComunidadePage() {
                   </CommunitySearchResultsCount>
                 </CommunitySearchResultsHeader>
 
-                {normalizarTermoBuscaUsuariosComunidade(termoBusca).length < 2 ? (
+                {deveExibirInstrucaoBuscaUsuariosComunidade(termoBusca) ? (
                   <CommunitySearchResultsEmpty>
                     Digite pelo menos 2 caracteres para encontrar usuários.
                   </CommunitySearchResultsEmpty>
