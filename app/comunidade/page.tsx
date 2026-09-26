@@ -45,6 +45,11 @@ import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-s
 import { ordenarUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
 import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
+import {
+  usuarioBuscaEhSeguidoComunidade,
+  usuarioBuscaEhUsuarioAtualComunidade,
+  usuarioBuscaEstaAtualizandoSeguimentoComunidade,
+} from "./components/community-user-search-status";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
@@ -2650,12 +2655,20 @@ export default function ComunidadePage() {
                 ) : usuariosBuscaComunidade.length > 0 ? (
                   <CommunityUserSearchList>
                     {usuariosBuscaComunidade.map((usuarioBusca) => {
-                      const ehUsuarioAtual = usuario?.id === usuarioBusca.id;
-                      const seguindoUsuario = usuariosSeguidosIds.includes(
+                      const ehUsuarioAtual =
+                        usuarioBuscaEhUsuarioAtualComunidade(
+                          usuario?.id,
+                          usuarioBusca.id
+                        );
+                      const seguindoUsuario = usuarioBuscaEhSeguidoComunidade(
+                        usuariosSeguidosIds,
                         usuarioBusca.id
                       );
                       const atualizandoSeguindo =
-                        usuarioSeguindoId === usuarioBusca.id;
+                        usuarioBuscaEstaAtualizandoSeguimentoComunidade(
+                          usuarioSeguindoId,
+                          usuarioBusca.id
+                        );
 
                       return (
                         <CommunityUserSearchCard key={usuarioBusca.id}>
