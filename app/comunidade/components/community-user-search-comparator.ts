@@ -17,3 +17,16 @@ export function compararUsuariosBuscaComunidade(
 
   return usuarioA.nome.localeCompare(usuarioB.nome, "pt-BR");
 }
+
+export function ordenarUsuariosBuscaComunidade(
+  usuarios: UsuarioBuscaComunidade[],
+  termoNormalizado: string
+) {
+  return usuarios.sort((usuarioA, usuarioB) =>
+    compararUsuariosBuscaComunidade(
+      usuarioA,
+      usuarioB,
+      termoNormalizado
+    )
+  );
+}
