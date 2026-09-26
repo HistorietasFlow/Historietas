@@ -42,7 +42,7 @@ import {
   normalizarTermoComparacaoUsuariosComunidade,
 } from "./components/community-user-search-term-normalizer";
 import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-search-clear-check";
-import { compararUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
+import { ordenarUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
 import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
@@ -1036,15 +1036,12 @@ export default function ComunidadePage() {
           const termoNormalizado =
             normalizarTermoComparacaoUsuariosComunidade(termoLimpo);
           const usuariosOrdenados = limitarUsuariosBuscaComunidade(
-            mesclarUsuariosBuscaComunidade(
-              usuariosSupabase,
-              usuariosLocais
-            ).sort((usuarioA, usuarioB) =>
-              compararUsuariosBuscaComunidade(
-                usuarioA,
-                usuarioB,
-                termoNormalizado
-              )
+            ordenarUsuariosBuscaComunidade(
+              mesclarUsuariosBuscaComunidade(
+                usuariosSupabase,
+                usuariosLocais
+              ),
+              termoNormalizado
             )
           );
 
