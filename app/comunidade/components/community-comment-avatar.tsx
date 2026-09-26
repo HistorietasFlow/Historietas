@@ -25,9 +25,15 @@ export function CommunityCommentAvatar({
       aria-label={obterAriaLabelPerfilComunidade(authorName)}
       style={createCommentAvatarStyle(avatarBaseStyle, avatar)}
     >
-      {!avatar && (authorName.slice(0, 1).toUpperCase() || "U")}
+      {!avatar && obterInicialAvatarAutorComentarioComunidade(authorName)}
     </Link>
   );
+}
+
+export function obterInicialAvatarAutorComentarioComunidade(
+  nomeAutor: string
+) {
+  return nomeAutor.slice(0, 1).toUpperCase() || "U";
 }
 
 function createCommentAvatarStyle(

@@ -258,7 +258,10 @@ import { CommunityLoadMorePostsContainer } from "./components/community-load-mor
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
 import { CommunityPostHeader } from "./components/community-post-header";
-import { CommunityPostAuthorAvatar } from "./components/community-post-author-avatar";
+import {
+  CommunityPostAuthorAvatar,
+  obterInicialAvatarAutorPostComunidade,
+} from "./components/community-post-author-avatar";
 import { CommunityPostAuthorMeta } from "./components/community-post-author-meta";
 import { CommunityPostAuthorLink } from "./components/community-post-author-link";
 import { CommunityPostStatusLine } from "./components/community-post-status-line";
@@ -2981,7 +2984,10 @@ export default function ComunidadePage() {
                           )}
                           avatar={post.autorAvatar}
                         >
-                          {!post.autorAvatar && post.autorNome.slice(0, 1).toUpperCase()}
+                          {!post.autorAvatar &&
+                            obterInicialAvatarAutorPostComunidade(
+                              post.autorNome
+                            )}
                         </CommunityPostAuthorAvatar>
 
                         <CommunityPostAuthorMeta>

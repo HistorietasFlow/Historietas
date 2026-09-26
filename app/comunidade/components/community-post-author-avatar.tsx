@@ -25,6 +25,10 @@ export function CommunityPostAuthorAvatar({
   );
 }
 
+export function obterInicialAvatarAutorPostComunidade(nomeAutor: string) {
+  return nomeAutor.slice(0, 1).toUpperCase();
+}
+
 function createAuthorAvatarStyle(avatar: string): CSSProperties {
   const avatarLimpo = avatar.trim();
 
