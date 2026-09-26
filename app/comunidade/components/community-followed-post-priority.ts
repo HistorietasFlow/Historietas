@@ -6,3 +6,10 @@ export function obterPrioridadeAutorSeguidoComunidade(
 ) {
   return usuariosSeguidosIds.includes(post.autorId) ? 1 : 0;
 }
+
+export function compararPrioridadesAutoresSeguidosComunidade(
+  seguindoA: number,
+  seguindoB: number
+) {
+  return seguindoB - seguindoA;
+}
