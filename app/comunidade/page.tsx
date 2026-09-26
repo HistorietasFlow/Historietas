@@ -30,6 +30,11 @@ import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { postCombinaTermoBuscaComunidade } from "./components/community-post-search-match";
+import {
+  postCombinaCategoriaComunidade,
+  postCombinaObraRelacionadaComunidade,
+  postCombinaTipoPublicacaoComunidade,
+} from "./components/community-post-basic-filter-matches";
 import { normalizarTermoBuscaUsuariosComunidade } from "./components/community-user-search-term-normalizer";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
@@ -1068,16 +1073,19 @@ export default function ComunidadePage() {
 
   const postsVisiveis = useMemo(() => {
     const postsFiltrados = posts.filter((post) => {
-      const categoriaCombina =
-        categoriaAtiva === "Todos" || post.categoria === categoriaAtiva;
+      const categoriaCombina = postCombinaCategoriaComunidade(
+        post,
+        categoriaAtiva
+      );
       const tipoVisualPublicacao = obterTipoVisualPublicacao(post);
-      const tipoPublicacaoCombina =
-        tipoPublicacaoAtiva === "Todos" ||
-        tipoVisualPublicacao === tipoPublicacaoAtiva;
-      const obraRelacionadaCombina =
-        !obraRelacionadaFiltro.trim() ||
-        normalizarTexto(post.obraRelacionada) ===
-          normalizarTexto(obraRelacionadaFiltro);
+      const tipoPublicacaoCombina = postCombinaTipoPublicacaoComunidade(
+        tipoVisualPublicacao,
+        tipoPublicacaoAtiva
+      );
+      const obraRelacionadaCombina = postCombinaObraRelacionadaComunidade(
+        post,
+        obraRelacionadaFiltro
+      );
       const grupoPublicacaoCombina =
         grupoPublicacaoObra !== "posts" ||
         (tipoVisualPublicacao !== "Teoria" &&
