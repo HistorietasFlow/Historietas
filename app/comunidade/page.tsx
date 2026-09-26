@@ -31,6 +31,7 @@ import { temFiltrosAtivosComunidade } from "./components/community-active-filter
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { postCombinaTermoBuscaComunidade } from "./components/community-post-search-match";
 import {
+  deveOcultarPostPorFiltrosBasicosEContextuaisComunidade,
   postCombinaAbaFeedComunidade,
   postCombinaCategoriaComunidade,
   postCombinaGrupoPublicacaoComunidade,
@@ -1102,11 +1103,13 @@ export default function ComunidadePage() {
       );
 
       if (
-        !categoriaCombina ||
-        !tipoPublicacaoCombina ||
-        !obraRelacionadaCombina ||
-        !grupoPublicacaoCombina ||
-        !abaFeedCombina
+        deveOcultarPostPorFiltrosBasicosEContextuaisComunidade(
+          categoriaCombina,
+          tipoPublicacaoCombina,
+          obraRelacionadaCombina,
+          grupoPublicacaoCombina,
+          abaFeedCombina
+        )
       ) {
         return false;
       }

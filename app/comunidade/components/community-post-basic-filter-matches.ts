@@ -58,3 +58,19 @@ export function postCombinaAbaFeedComunidade(
         ? tipoVisualPublicacao === "Review"
         : true;
 }
+
+export function deveOcultarPostPorFiltrosBasicosEContextuaisComunidade(
+  categoriaCombina: boolean,
+  tipoPublicacaoCombina: boolean,
+  obraRelacionadaCombina: boolean,
+  grupoPublicacaoCombina: boolean,
+  abaFeedCombina: boolean
+) {
+  return (
+    !categoriaCombina ||
+    !tipoPublicacaoCombina ||
+    !obraRelacionadaCombina ||
+    !grupoPublicacaoCombina ||
+    !abaFeedCombina
+  );
+}
