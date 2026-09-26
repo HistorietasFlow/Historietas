@@ -37,7 +37,7 @@
 - A Fase 329 extraiu somente `normalizarTermoComparacaoUsuariosComunidade` a partir da normalização do termo usada no comparador da busca de usuários e foi concluída com o PR #463 mesclado.
 - A Fase 330 extraiu somente `limitarUsuariosBuscaComunidade` a partir do limite final da busca combinada de usuários e foi concluída com o PR #464 mesclado.
 - A Fase 331 extraiu somente `ordenarUsuariosBuscaComunidade` a partir do `.sort(...)` inline da busca combinada de usuários e foi concluída com o PR #465 mesclado.
-- A Fase 332 extraiu somente `usuarioBuscaEhUsuarioAtualComunidade`, `usuarioBuscaEhSeguidoComunidade` e `usuarioBuscaEstaAtualizandoSeguimentoComunidade` a partir dos estados do resultado da busca de usuários; a implementação está no PR a ser aberto.
+- A Fase 332 extraiu somente `usuarioBuscaEhUsuarioAtualComunidade`, `usuarioBuscaEhSeguidoComunidade` e `usuarioBuscaEstaAtualizandoSeguimentoComunidade` a partir dos estados do resultado da busca de usuários; a implementação está no PR #466.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
