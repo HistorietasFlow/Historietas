@@ -20,6 +20,20 @@ export function obterPrioridadeFixacaoPostComunidade(post: PostComunidade) {
   return post.fixado ? -1 : 1;
 }
 
+export function postsPossuemFixacaoDiferenteComunidade(
+  postA: PostComunidade,
+  postB: PostComunidade
+) {
+  return postA.fixado !== postB.fixado;
+}
+
+export function postsEstaoFixadosComunidade(
+  postA: PostComunidade,
+  postB: PostComunidade
+) {
+  return postA.fixado && postB.fixado;
+}
+
 export function compararPostsFixadosPorDataComunidade(
   postA: PostComunidade,
   postB: PostComunidade,
