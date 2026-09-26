@@ -46,6 +46,10 @@ import { ordenarUsuariosBuscaComunidade } from "./components/community-user-sear
 import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
 import {
+  obterInicialAvatarUsuarioBuscaComunidade,
+  obterTextoUsernameUsuarioBuscaComunidade,
+} from "./components/community-user-search-display";
+import {
   usuarioBuscaEhSeguidoComunidade,
   usuarioBuscaEhUsuarioAtualComunidade,
   usuarioBuscaEstaAtualizandoSeguimentoComunidade,
@@ -2681,8 +2685,9 @@ export default function ComunidadePage() {
                             avatar={usuarioBusca.avatar}
                           >
                             {!usuarioBusca.avatar &&
-                              (usuarioBusca.nome.slice(0, 1).toUpperCase() ||
-                                "U")}
+                              obterInicialAvatarUsuarioBuscaComunidade(
+                                usuarioBusca.nome
+                              )}
                           </CommunityUserSearchAvatar>
 
                           <CommunityUserSearchInfo>
@@ -2696,9 +2701,9 @@ export default function ComunidadePage() {
                             </CommunityUserSearchName>
 
                             <CommunityUserSearchUsername>
-                              {usuarioBusca.username
-                                ? `@${usuarioBusca.username}`
-                                : "Perfil da comunidade"}
+                              {obterTextoUsernameUsuarioBuscaComunidade(
+                                usuarioBusca.username
+                              )}
                             </CommunityUserSearchUsername>
                           </CommunityUserSearchInfo>
 
