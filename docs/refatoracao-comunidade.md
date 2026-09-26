@@ -48,7 +48,7 @@
 - A Fase 340 extraiu somente `obterTextoContagemUsuariosBuscaComunidade` a partir do texto do contador de usuários da busca e foi concluída com o PR #474 mesclado.
 - A Fase 341 extraiu somente `obterAriaLabelPerfilComunidade` a partir da construção compartilhada dos rótulos acessíveis dos avatares de perfil e foi concluída com o PR #475 mesclado.
 - A Fase 342 extraiu somente `obterInicialAvatarAutorPostComunidade` e `obterInicialAvatarAutorComentarioComunidade` a partir das iniciais dos avatares dos autores de publicações e comentários e foi concluída com o PR #476 mesclado.
-- A Fase 343 extraiu somente `usuarioCurtiuComentarioComunidade`, `usuarioPodeRemoverComentarioComunidade` e `usuarioPodeDenunciarComentarioComunidade` a partir dos estados de interação do usuário com comentários; a implementação será incluída no mesmo PR funcional desta fase.
+- A Fase 343 extraiu somente `usuarioCurtiuComentarioComunidade`, `usuarioPodeRemoverComentarioComunidade` e `usuarioPodeDenunciarComentarioComunidade` a partir dos estados de interação do usuário com comentários; a implementação está no PR #477.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
