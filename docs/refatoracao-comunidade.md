@@ -44,7 +44,7 @@
 - A Fase 336 extraiu somente `temResultadosBuscaUsuariosComunidade` a partir da condição de existência de resultados da busca de usuários e foi concluída com o PR #470 mesclado.
 - A Fase 337 extraiu somente `deveExibirControlesBuscaComunidade` a partir da condição de exibição dos controles da busca e foi concluída com o PR #471 mesclado.
 - A Fase 338 extraiu somente `abrirBuscaComunidade` e `fecharBuscaComunidade` a partir dos handlers dos controles da busca e foi concluída com o PR #472 mesclado.
-- A Fase 339 extraiu somente `deveExibirResultadosBuscaComunidade` a partir da condição compartilhada de exibição dos resultados da busca; a implementação será incluída no mesmo PR funcional desta fase.
+- A Fase 339 extraiu somente `deveExibirResultadosBuscaComunidade` a partir da condição compartilhada de exibição dos resultados da busca; a implementação está no PR #473.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
