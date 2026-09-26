@@ -1,4 +1,6 @@
 import type { PostComunidade } from "./community-post-model";
+import type { AbaFeedComunidade } from "./community-feed-tab";
+import type { OrdenacaoComunidade } from "./community-sort-order";
 
 export function obterPrioridadeAutorSeguidoComunidade(
   post: PostComunidade,
@@ -12,4 +14,11 @@ export function compararPrioridadesAutoresSeguidosComunidade(
   seguindoB: number
 ) {
   return seguindoB - seguindoA;
+}
+
+export function devePriorizarAutoresSeguidosComunidade(
+  abaFeedAtiva: AbaFeedComunidade,
+  ordenacaoAtiva: OrdenacaoComunidade
+) {
+  return abaFeedAtiva === "Para você" && ordenacaoAtiva === "Recentes";
 }
