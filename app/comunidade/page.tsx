@@ -31,7 +31,9 @@ import { temFiltrosAtivosComunidade } from "./components/community-active-filter
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { postCombinaTermoBuscaComunidade } from "./components/community-post-search-match";
 import {
+  postCombinaAbaFeedComunidade,
   postCombinaCategoriaComunidade,
+  postCombinaGrupoPublicacaoComunidade,
   postCombinaObraRelacionadaComunidade,
   postCombinaTipoPublicacaoComunidade,
 } from "./components/community-post-basic-filter-matches";
@@ -1086,18 +1088,16 @@ export default function ComunidadePage() {
         post,
         obraRelacionadaFiltro
       );
-      const grupoPublicacaoCombina =
-        grupoPublicacaoObra !== "posts" ||
-        (tipoVisualPublicacao !== "Teoria" &&
-          tipoVisualPublicacao !== "Review");
-      const abaFeedCombina =
-        abaFeedAtiva === "Seguindo"
-          ? usuariosSeguidosIds.includes(post.autorId)
-          : abaFeedAtiva === "Teorias"
-            ? tipoVisualPublicacao === "Teoria"
-            : abaFeedAtiva === "Reviews"
-              ? tipoVisualPublicacao === "Review"
-              : true;
+      const grupoPublicacaoCombina = postCombinaGrupoPublicacaoComunidade(
+        tipoVisualPublicacao,
+        grupoPublicacaoObra
+      );
+      const abaFeedCombina = postCombinaAbaFeedComunidade(
+        post,
+        tipoVisualPublicacao,
+        abaFeedAtiva,
+        usuariosSeguidosIds
+      );
 
       if (
         !categoriaCombina ||
