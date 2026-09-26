@@ -49,13 +49,14 @@
 - A Fase 341 extraiu somente `obterAriaLabelPerfilComunidade` a partir da construção compartilhada dos rótulos acessíveis dos avatares de perfil e foi concluída com o PR #475 mesclado.
 - A Fase 342 extraiu somente `obterInicialAvatarAutorPostComunidade` e `obterInicialAvatarAutorComentarioComunidade` a partir das iniciais dos avatares dos autores de publicações e comentários e foi concluída com o PR #476 mesclado.
 - A Fase 343 extraiu somente `usuarioCurtiuComentarioComunidade`, `usuarioPodeRemoverComentarioComunidade` e `usuarioPodeDenunciarComentarioComunidade` a partir dos estados de interação do usuário com comentários e foi concluída com o PR #477 mesclado.
-- A Fase 344 extraiu somente `comentarioEstaSendoCurtidoComunidade`, `comentarioEstaSendoRemovidoComunidade` e `comentarioEstaSendoDenunciadoComunidade` a partir dos estados assíncronos das ações em comentários; a implementação está no PR #478.
+- A Fase 344 extraiu somente `comentarioEstaSendoCurtidoComunidade`, `comentarioEstaSendoRemovidoComunidade` e `comentarioEstaSendoDenunciadoComunidade` a partir dos estados assíncronos das ações em comentários e foi concluída com o PR #478 mesclado.
+- A Fase 345 extraiu somente `obterTextoBotaoRemoverComentarioComunidade` e `obterTextoBotaoDenunciarComentarioComunidade` a partir dos textos dos botões de ação dos comentários; a implementação será incluída no mesmo PR funcional desta fase.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 345 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 346 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
