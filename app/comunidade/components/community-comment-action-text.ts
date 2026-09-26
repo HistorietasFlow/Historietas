@@ -9,3 +9,16 @@ export function obterTextoBotaoDenunciarComentarioComunidade(
 ) {
   return comentarioDenunciando ? "Enviando..." : "Denunciar";
 }
+
+export function obterAriaLabelCurtidaComentarioComunidade(
+  usuarioCurtiuComentario: boolean,
+  quantidadeCurtidas: number
+) {
+  return `${
+    usuarioCurtiuComentario
+      ? "Remover curtida do comentário"
+      : "Curtir comentário"
+  }. ${quantidadeCurtidas} ${
+    quantidadeCurtidas === 1 ? "curtida" : "curtidas"
+  }`;
+}
