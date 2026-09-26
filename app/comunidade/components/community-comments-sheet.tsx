@@ -37,6 +37,10 @@ import { CommunityCommentThreadContainer } from "./community-comment-thread-cont
 import { CommunityCommentItemContainer } from "./community-comment-item-container";
 import { CommunityCommentRepliesListContainer } from "./community-comment-replies-list-container";
 import { CommunityCommentRepliesToggleButton } from "./community-comment-replies-toggle-button";
+import {
+  obterTextoBotaoVerMaisRespostasComunidade,
+  obterTextoBotaoVerRespostasComunidade,
+} from "./community-comment-replies-action-text";
 import { CommunityCommentRepliesControlsContainer } from "./community-comment-replies-controls-container";
 import { CommunityCommentRepliesHideButton } from "./community-comment-replies-hide-button";
 import { CommunityCommentAvatar } from "./community-comment-avatar";
@@ -655,9 +659,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                         }))
                       }
                     >
-                      {`Ver ${respostas.length} ${
-                        respostas.length === 1 ? "resposta" : "respostas"
-                      }`}
+                      {obterTextoBotaoVerRespostasComunidade(respostas.length)}
                     </CommunityCommentRepliesToggleButton>
                   ) : null}
 
@@ -676,9 +678,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                             }))
                           }
                         >
-                          {`Ver mais ${respostasOcultas} ${
-                            respostasOcultas === 1 ? "resposta" : "respostas"
-                          }`}
+                          {obterTextoBotaoVerMaisRespostasComunidade(
+                            respostasOcultas
+                          )}
                         </CommunityCommentRepliesToggleButton>
                       ) : null}
 
