@@ -39,6 +39,7 @@ import {
   postCombinaTipoPublicacaoComunidade,
 } from "./components/community-post-basic-filter-matches";
 import { normalizarTermoBuscaUsuariosComunidade } from "./components/community-user-search-term-normalizer";
+import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-search-clear-check";
 import { compararUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
@@ -997,7 +998,7 @@ export default function ComunidadePage() {
     let cancelado = false;
     const termoLimpo = normalizarTermoBuscaUsuariosComunidade(termoBuscaAdiado);
 
-    if (!buscaComunidadeAberta || termoLimpo.length < 2) {
+    if (deveLimparBuscaUsuariosComunidade(buscaComunidadeAberta, termoLimpo)) {
       const limparBuscaUsuariosTimer = window.setTimeout(() => {
         if (!cancelado) {
           setUsuariosBuscaComunidade([]);

@@ -32,13 +32,14 @@
 - A Fase 324 extraiu somente `prioridadesAutoresSeguidosSaoDiferentesComunidade` a partir da comparação das prioridades de autores seguidos na ordenação de `postsVisiveis` e foi concluída com o PR #458 mesclado.
 - A Fase 325 extraiu somente `deveOcultarPostPorFiltrosBasicosEContextuaisComunidade` a partir da decisão combinada dos filtros básicos e contextuais de `postsVisiveis` e foi concluída com o PR #459 mesclado.
 - A Fase 326 extraiu somente `compararUsuariosBuscaComunidade` a partir do comparador inline de `usuariosOrdenados.sort(...)` e foi concluída com o PR #460 mesclado.
-- A Fase 327 extraiu somente `mesclarUsuariosBuscaComunidade` a partir do bloco de combinação e deduplicação da busca de usuários; a implementação está no PR #461.
+- A Fase 327 extraiu somente `mesclarUsuariosBuscaComunidade` a partir do bloco de combinação e deduplicação da busca de usuários e foi concluída com o PR #461 mesclado.
+- A Fase 328 extraiu somente `deveLimparBuscaUsuariosComunidade` a partir da condição de limpeza da busca de usuários; a implementação está no PR #462.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 328 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 329 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
