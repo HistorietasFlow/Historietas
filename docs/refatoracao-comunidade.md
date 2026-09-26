@@ -39,7 +39,7 @@
 - A Fase 331 extraiu somente `ordenarUsuariosBuscaComunidade` a partir do `.sort(...)` inline da busca combinada de usuários e foi concluída com o PR #465 mesclado.
 - A Fase 332 extraiu somente `usuarioBuscaEhUsuarioAtualComunidade`, `usuarioBuscaEhSeguidoComunidade` e `usuarioBuscaEstaAtualizandoSeguimentoComunidade` a partir dos estados do resultado da busca de usuários e foi concluída com o PR #466 mesclado.
 - A Fase 333 extraiu somente `obterInicialAvatarUsuarioBuscaComunidade` e `obterTextoUsernameUsuarioBuscaComunidade` a partir dos textos de apresentação do resultado da busca de usuários e foi concluída com o PR #467 mesclado.
-- A Fase 334 extraiu somente `obterTextoBotaoSeguirUsuarioBuscaComunidade` a partir do texto do botão de seguir no resultado da busca de usuários; a implementação está no PR desta fase.
+- A Fase 334 extraiu somente `obterTextoBotaoSeguirUsuarioBuscaComunidade` a partir do texto do botão de seguir no resultado da busca de usuários; a implementação está no PR #468.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
