@@ -18,7 +18,7 @@
 - A Fase 310 extraiu somente `obterDataOrdenacaoPostComunidade` e `obterDataFixacaoOrdenacaoPostComunidade` a partir dos cálculos temporais da ordenação de `postsVisiveis` e foi concluída com o PR #444 mesclado.
 - A Fase 311 extraiu somente `postCombinaTermoBuscaComunidade` a partir do trecho final da busca textual de `postsVisiveis` e foi concluída com o PR #445 mesclado.
 - A Fase 312 extraiu somente `normalizarTermoBuscaUsuariosComunidade` a partir da normalização do termo da busca de usuários e foi concluída com o PR #446 mesclado.
-- A Fase 313 extraiu somente `postCombinaCategoriaComunidade`, `postCombinaTipoPublicacaoComunidade` e `postCombinaObraRelacionadaComunidade` a partir dos filtros básicos de `postsVisiveis`.
+- A Fase 313 extraiu somente `postCombinaCategoriaComunidade`, `postCombinaTipoPublicacaoComunidade` e `postCombinaObraRelacionadaComunidade` a partir dos filtros básicos de `postsVisiveis`; a implementação está no PR #447.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
