@@ -12,7 +12,6 @@ import {
 } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { normalizarTexto } from "../../lib/utils";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
@@ -38,7 +37,10 @@ import {
   postCombinaObraRelacionadaComunidade,
   postCombinaTipoPublicacaoComunidade,
 } from "./components/community-post-basic-filter-matches";
-import { normalizarTermoBuscaUsuariosComunidade } from "./components/community-user-search-term-normalizer";
+import {
+  normalizarTermoBuscaUsuariosComunidade,
+  normalizarTermoComparacaoUsuariosComunidade,
+} from "./components/community-user-search-term-normalizer";
 import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-search-clear-check";
 import { compararUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
@@ -1030,7 +1032,8 @@ export default function ComunidadePage() {
             return;
           }
 
-          const termoNormalizado = normalizarTexto(termoLimpo);
+          const termoNormalizado =
+            normalizarTermoComparacaoUsuariosComunidade(termoLimpo);
           const usuariosOrdenados = mesclarUsuariosBuscaComunidade(
             usuariosSupabase,
             usuariosLocais
