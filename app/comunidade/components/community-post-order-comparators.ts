@@ -1,7 +1,20 @@
 import type { PostComunidade } from "./community-post-model";
+import type { OrdenacaoComunidade } from "./community-sort-order";
 import { obterDataFixacaoOrdenacaoPostComunidade } from "./community-post-order-dates";
 import { obterPontuacaoPost } from "./community-post-score";
 import { contarComentaristasUnicosPostComunidade } from "./community-unique-post-commenters-count";
+
+export function deveOrdenarPostsPorComentariosComunidade(
+  ordenacaoAtiva: OrdenacaoComunidade
+) {
+  return ordenacaoAtiva === "Mais comentadas";
+}
+
+export function deveOrdenarPostsPorPontuacaoComunidade(
+  ordenacaoAtiva: OrdenacaoComunidade
+) {
+  return ordenacaoAtiva === "Em alta";
+}
 
 export function obterPrioridadeFixacaoPostComunidade(post: PostComunidade) {
   return post.fixado ? -1 : 1;
