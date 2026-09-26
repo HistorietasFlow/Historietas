@@ -123,7 +123,10 @@ import { contarComentaristasUnicosPostComunidade } from "./components/community-
 import { obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
 import { compararDatasOrdenacaoPostsComunidade, compararPostsFixadosPorDataComunidade, compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade, deveOrdenarPostsPorComentariosComunidade, deveOrdenarPostsPorPontuacaoComunidade, obterPrioridadeFixacaoPostComunidade, postsEstaoFixadosComunidade, postsPossuemFixacaoDiferenteComunidade } from "./components/community-post-order-comparators";
 import { compararPrioridadesAutoresSeguidosComunidade, devePriorizarAutoresSeguidosComunidade, obterPrioridadeAutorSeguidoComunidade, prioridadesAutoresSeguidosSaoDiferentesComunidade } from "./components/community-followed-post-priority";
-import { criarPerfilHrefComunidade } from "./components/community-profile-link";
+import {
+  criarPerfilHrefComunidade,
+  obterAriaLabelPerfilComunidade,
+} from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
@@ -2702,7 +2705,9 @@ export default function ComunidadePage() {
                               usuarioBusca.id,
                               usuarioBusca.nome
                             )}
-                            ariaLabel={`Abrir perfil de ${usuarioBusca.nome}`}
+                            ariaLabel={obterAriaLabelPerfilComunidade(
+                              usuarioBusca.nome
+                            )}
                             avatar={usuarioBusca.avatar}
                           >
                             {!usuarioBusca.avatar &&
@@ -2971,7 +2976,9 @@ export default function ComunidadePage() {
                             post.autorId,
                             post.autorNome
                           )}
-                          ariaLabel={`Abrir perfil de ${post.autorNome}`}
+                          ariaLabel={obterAriaLabelPerfilComunidade(
+                            post.autorNome
+                          )}
                           avatar={post.autorAvatar}
                         >
                           {!post.autorAvatar && post.autorNome.slice(0, 1).toUpperCase()}

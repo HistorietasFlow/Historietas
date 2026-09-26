@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { obterAriaLabelPerfilComunidade } from "./community-profile-link";
 
 type CommunityCommentAvatarProps = {
   href: string;
@@ -21,7 +22,7 @@ export function CommunityCommentAvatar({
   return (
     <Link
       href={href}
-      aria-label={`Abrir perfil de ${authorName}`}
+      aria-label={obterAriaLabelPerfilComunidade(authorName)}
       style={createCommentAvatarStyle(avatarBaseStyle, avatar)}
     >
       {!avatar && (authorName.slice(0, 1).toUpperCase() || "U")}
