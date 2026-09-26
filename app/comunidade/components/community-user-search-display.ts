@@ -5,3 +5,10 @@ export function obterInicialAvatarUsuarioBuscaComunidade(nome: string) {
 export function obterTextoUsernameUsuarioBuscaComunidade(username: string) {
   return username ? `@${username}` : "Perfil da comunidade";
 }
+
+export function obterTextoBotaoSeguirUsuarioBuscaComunidade(
+  atualizandoSeguindo: boolean,
+  seguindoUsuario: boolean
+) {
+  return atualizandoSeguindo ? "..." : seguindoUsuario ? "Seguindo" : "Seguir";
+}
