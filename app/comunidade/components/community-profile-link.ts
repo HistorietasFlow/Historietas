@@ -19,3 +19,7 @@ export function criarPerfilHrefComunidade(
 
   return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
+
+export function obterAriaLabelPerfilComunidade(nomeUsuario: string) {
+  return `Abrir perfil de ${nomeUsuario}`;
+}
