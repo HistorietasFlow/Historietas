@@ -53,7 +53,7 @@
 - A Fase 345 extraiu somente `obterTextoBotaoRemoverComentarioComunidade` e `obterTextoBotaoDenunciarComentarioComunidade` a partir dos textos dos botões de ação dos comentários e foi concluída com o PR #479 mesclado.
 - A Fase 346 extraiu somente `obterAriaLabelCurtidaComentarioComunidade` a partir do rótulo acessível da curtida de comentários e foi concluída com o PR #480 mesclado.
 - A Fase 347 extraiu somente `obterAriaLabelExpansaoComentariosComunidade` a partir do rótulo acessível de expansão dos comentários e foi concluída com o PR #481 mesclado.
-- A Fase 348 extraiu somente `obterTextoBotaoVerRespostasComunidade` e `obterTextoBotaoVerMaisRespostasComunidade` a partir dos textos dos controles de expansão das respostas; a implementação está neste PR.
+- A Fase 348 extraiu somente `obterTextoBotaoVerRespostasComunidade` e `obterTextoBotaoVerMaisRespostasComunidade` a partir dos textos dos controles de expansão das respostas; a implementação está no PR #482.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
