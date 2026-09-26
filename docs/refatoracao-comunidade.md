@@ -40,13 +40,14 @@
 - A Fase 332 extraiu somente `usuarioBuscaEhUsuarioAtualComunidade`, `usuarioBuscaEhSeguidoComunidade` e `usuarioBuscaEstaAtualizandoSeguimentoComunidade` a partir dos estados do resultado da busca de usuários e foi concluída com o PR #466 mesclado.
 - A Fase 333 extraiu somente `obterInicialAvatarUsuarioBuscaComunidade` e `obterTextoUsernameUsuarioBuscaComunidade` a partir dos textos de apresentação do resultado da busca de usuários e foi concluída com o PR #467 mesclado.
 - A Fase 334 extraiu somente `obterTextoBotaoSeguirUsuarioBuscaComunidade` a partir do texto do botão de seguir no resultado da busca de usuários e foi concluída com o PR #468 mesclado.
-- A Fase 335 extraiu somente `deveExibirInstrucaoBuscaUsuariosComunidade` a partir da condição de termo mínimo da interface de busca de usuários; a implementação está no PR #469.
+- A Fase 335 extraiu somente `deveExibirInstrucaoBuscaUsuariosComunidade` a partir da condição de termo mínimo da interface de busca de usuários e foi concluída com o PR #469 mesclado.
+- A Fase 336 extraiu somente `temResultadosBuscaUsuariosComunidade` a partir da condição de existência de resultados da busca de usuários; a implementação está no PR #470.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 336 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 337 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
