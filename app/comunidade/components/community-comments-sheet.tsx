@@ -4,6 +4,11 @@ import { createPortal } from "react-dom";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, TouchEvent } from "react";
 import type { ComentarioComunidade } from "./community-comment";
+import {
+  usuarioCurtiuComentarioComunidade,
+  usuarioPodeDenunciarComentarioComunidade,
+  usuarioPodeRemoverComentarioComunidade,
+} from "./community-comment-interaction-status";
 import { formatarTempoRelativoComentarioComunidade } from "./community-comment-relative-time";
 import type { OrdenacaoComentariosComunidade } from "./community-comment-order";
 import type { RespostaComentarioComunidade } from "./community-comment-reply";
@@ -398,14 +403,17 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     comentarioRaizId: string,
     resposta = false
   ) {
-    const usuarioCurtiuComentario = Boolean(
-      usuarioId && comentario.curtidas.includes(usuarioId)
+    const usuarioCurtiuComentario = usuarioCurtiuComentarioComunidade(
+      usuarioId,
+      comentario
     );
-    const podeRemoverComentario = Boolean(
-      usuarioId && comentario.autorId === usuarioId
+    const podeRemoverComentario = usuarioPodeRemoverComentarioComunidade(
+      usuarioId,
+      comentario
     );
-    const podeDenunciarComentario = Boolean(
-      usuarioId && comentario.autorId !== usuarioId
+    const podeDenunciarComentario = usuarioPodeDenunciarComentarioComunidade(
+      usuarioId,
+      comentario
     );
     const comentarioCurtindo = comentarioCurtindoId === comentario.id;
     const comentarioRemovendo = comentarioRemovendoId === comentario.id;
