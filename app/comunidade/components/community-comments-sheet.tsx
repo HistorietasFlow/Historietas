@@ -48,6 +48,10 @@ import { CommunityCommentActionsRow } from "./community-comment-actions-row";
 import { CommunityCommentReplyButton } from "./community-comment-reply-button";
 import { CommunityCommentRemoveButton } from "./community-comment-remove-button";
 import { CommunityCommentReportButton } from "./community-comment-report-button";
+import {
+  obterTextoBotaoDenunciarComentarioComunidade,
+  obterTextoBotaoRemoverComentarioComunidade,
+} from "./community-comment-action-text";
 import { CommunityCommentLikeContainer } from "./community-comment-like-container";
 import { CommunityCommentLikeButton } from "./community-comment-like-button";
 import { CommunityCommentLikeCount } from "./community-comment-like-count";
@@ -480,7 +484,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                 }
                 disabled={comentarioRemovendo}
               >
-                {comentarioRemovendo ? "Removendo..." : "Remover"}
+                {obterTextoBotaoRemoverComentarioComunidade(
+                  comentarioRemovendo
+                )}
               </CommunityCommentRemoveButton>
             ) : null}
 
@@ -489,7 +495,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                 onClick={() => denunciarComentarioSeguro(comentario.id)}
                 disabled={comentarioDenunciando}
               >
-                {comentarioDenunciando ? "Enviando..." : "Denunciar"}
+                {obterTextoBotaoDenunciarComentarioComunidade(
+                  comentarioDenunciando
+                )}
               </CommunityCommentReportButton>
             ) : null}
           </CommunityCommentActionsRow>
