@@ -43,6 +43,7 @@ import {
 } from "./components/community-user-search-term-normalizer";
 import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-search-clear-check";
 import { compararUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
+import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
@@ -1034,18 +1035,18 @@ export default function ComunidadePage() {
 
           const termoNormalizado =
             normalizarTermoComparacaoUsuariosComunidade(termoLimpo);
-          const usuariosOrdenados = mesclarUsuariosBuscaComunidade(
-            usuariosSupabase,
-            usuariosLocais
-          )
-            .sort((usuarioA, usuarioB) =>
+          const usuariosOrdenados = limitarUsuariosBuscaComunidade(
+            mesclarUsuariosBuscaComunidade(
+              usuariosSupabase,
+              usuariosLocais
+            ).sort((usuarioA, usuarioB) =>
               compararUsuariosBuscaComunidade(
                 usuarioA,
                 usuarioB,
                 termoNormalizado
               )
             )
-            .slice(0, 12);
+          );
 
           setUsuariosBuscaComunidade(usuariosOrdenados);
         })

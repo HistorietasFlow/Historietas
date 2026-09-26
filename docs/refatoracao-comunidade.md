@@ -34,13 +34,14 @@
 - A Fase 326 extraiu somente `compararUsuariosBuscaComunidade` a partir do comparador inline de `usuariosOrdenados.sort(...)` e foi concluída com o PR #460 mesclado.
 - A Fase 327 extraiu somente `mesclarUsuariosBuscaComunidade` a partir do bloco de combinação e deduplicação da busca de usuários e foi concluída com o PR #461 mesclado.
 - A Fase 328 extraiu somente `deveLimparBuscaUsuariosComunidade` a partir da condição de limpeza da busca de usuários e foi concluída com o PR #462 mesclado.
-- A Fase 329 extraiu somente `normalizarTermoComparacaoUsuariosComunidade` a partir da normalização do termo usada no comparador da busca de usuários; a implementação está no PR #463.
+- A Fase 329 extraiu somente `normalizarTermoComparacaoUsuariosComunidade` a partir da normalização do termo usada no comparador da busca de usuários e foi concluída com o PR #463 mesclado.
+- A Fase 330 extraiu somente `limitarUsuariosBuscaComunidade` a partir do limite final da busca combinada de usuários; a implementação está no PR a ser aberto.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 330 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 331 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
