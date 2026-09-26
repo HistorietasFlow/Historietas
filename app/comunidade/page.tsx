@@ -101,8 +101,8 @@ import { carregarVotosEnquetesSupabase } from "./components/community-supabase-p
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
-import { obterDataFixacaoOrdenacaoPostComunidade, obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
-import { compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade } from "./components/community-post-order-comparators";
+import { obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
+import { compararPostsFixadosPorDataComunidade, compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade, obterPrioridadeFixacaoPostComunidade } from "./components/community-post-order-comparators";
 import { obterPrioridadeAutorSeguidoComunidade } from "./components/community-followed-post-priority";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
@@ -1129,20 +1129,16 @@ export default function ComunidadePage() {
       const dataOrdenacaoB = obterDataOrdenacaoPostComunidade(postB);
 
       if (postA.fixado !== postB.fixado) {
-        return postA.fixado ? -1 : 1;
+        return obterPrioridadeFixacaoPostComunidade(postA);
       }
 
       if (postA.fixado && postB.fixado) {
-        const fixadoOrdenacaoA = obterDataFixacaoOrdenacaoPostComunidade(
+        return compararPostsFixadosPorDataComunidade(
           postA,
-          dataOrdenacaoA
-        );
-        const fixadoOrdenacaoB = obterDataFixacaoOrdenacaoPostComunidade(
           postB,
+          dataOrdenacaoA,
           dataOrdenacaoB
         );
-
-        return fixadoOrdenacaoB - fixadoOrdenacaoA;
       }
 
       if (abaFeedAtiva === "Para você" && ordenacaoAtiva === "Recentes") {

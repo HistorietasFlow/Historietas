@@ -22,13 +22,14 @@
 - A Fase 314 extraiu somente `postCombinaGrupoPublicacaoComunidade` e `postCombinaAbaFeedComunidade` a partir dos filtros de contexto do feed em `postsVisiveis` e foi concluída com o PR #448 mesclado.
 - A Fase 315 extraiu somente `deveOcultarPostPorFiltroSalvosComunidade` a partir da condição do filtro de salvos em `postsVisiveis` e foi concluída com o PR #449 mesclado.
 - A Fase 316 extraiu somente `obterPrioridadeAutorSeguidoComunidade` a partir do cálculo de prioridade de autores seguidos na ordenação de `postsVisiveis` e foi concluída com o PR #450 mesclado.
-- A Fase 317 extraiu somente `compararPostsPorPontuacaoComunidade` e `compararPostsPorComentariosComunidade` a partir dos respectivos ramos da ordenação de `postsVisiveis`; a implementação está no PR #451.
+- A Fase 317 extraiu somente `compararPostsPorPontuacaoComunidade` e `compararPostsPorComentariosComunidade` a partir dos respectivos ramos da ordenação de `postsVisiveis` e foi concluída com o PR #451 mesclado.
+- A Fase 318 extraiu somente `obterPrioridadeFixacaoPostComunidade` e `compararPostsFixadosPorDataComunidade` a partir dos ramos de fixação da ordenação de `postsVisiveis`; a implementação está no PR #452.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 318 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 319 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
