@@ -102,7 +102,7 @@ import { criarNotificacaoComunidadeSupabase } from "./components/community-supab
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
-import { compararDatasOrdenacaoPostsComunidade, compararPostsFixadosPorDataComunidade, compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade, obterPrioridadeFixacaoPostComunidade } from "./components/community-post-order-comparators";
+import { compararDatasOrdenacaoPostsComunidade, compararPostsFixadosPorDataComunidade, compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade, deveOrdenarPostsPorComentariosComunidade, deveOrdenarPostsPorPontuacaoComunidade, obterPrioridadeFixacaoPostComunidade } from "./components/community-post-order-comparators";
 import { compararPrioridadesAutoresSeguidosComunidade, devePriorizarAutoresSeguidosComunidade, obterPrioridadeAutorSeguidoComunidade } from "./components/community-followed-post-priority";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
@@ -1171,7 +1171,7 @@ export default function ComunidadePage() {
         );
       }
 
-      if (ordenacaoAtiva === "Mais comentadas") {
+      if (deveOrdenarPostsPorComentariosComunidade(ordenacaoAtiva)) {
         return compararPostsPorComentariosComunidade(
           postA,
           postB,
@@ -1180,7 +1180,7 @@ export default function ComunidadePage() {
         );
       }
 
-      if (ordenacaoAtiva === "Em alta") {
+      if (deveOrdenarPostsPorPontuacaoComunidade(ordenacaoAtiva)) {
         return compararPostsPorPontuacaoComunidade(
           postA,
           postB,
