@@ -1,6 +1,29 @@
 import type { PostComunidade } from "./community-post-model";
+import { obterDataFixacaoOrdenacaoPostComunidade } from "./community-post-order-dates";
 import { obterPontuacaoPost } from "./community-post-score";
 import { contarComentaristasUnicosPostComunidade } from "./community-unique-post-commenters-count";
+
+export function obterPrioridadeFixacaoPostComunidade(post: PostComunidade) {
+  return post.fixado ? -1 : 1;
+}
+
+export function compararPostsFixadosPorDataComunidade(
+  postA: PostComunidade,
+  postB: PostComunidade,
+  dataOrdenacaoA: number,
+  dataOrdenacaoB: number
+) {
+  const fixadoOrdenacaoA = obterDataFixacaoOrdenacaoPostComunidade(
+    postA,
+    dataOrdenacaoA
+  );
+  const fixadoOrdenacaoB = obterDataFixacaoOrdenacaoPostComunidade(
+    postB,
+    dataOrdenacaoB
+  );
+
+  return fixadoOrdenacaoB - fixadoOrdenacaoA;
+}
 
 export function compararPostsPorPontuacaoComunidade(
   postA: PostComunidade,
