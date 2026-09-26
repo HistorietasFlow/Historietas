@@ -103,6 +103,7 @@ import { contarCurtidasUnicasPostComunidade } from "./components/community-uniqu
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPontuacaoPost } from "./components/community-post-score";
 import { obterDataFixacaoOrdenacaoPostComunidade, obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
+import { obterPrioridadeAutorSeguidoComunidade } from "./components/community-followed-post-priority";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
@@ -1145,8 +1146,14 @@ export default function ComunidadePage() {
       }
 
       if (abaFeedAtiva === "Para você" && ordenacaoAtiva === "Recentes") {
-        const seguindoA = usuariosSeguidosIds.includes(postA.autorId) ? 1 : 0;
-        const seguindoB = usuariosSeguidosIds.includes(postB.autorId) ? 1 : 0;
+        const seguindoA = obterPrioridadeAutorSeguidoComunidade(
+          postA,
+          usuariosSeguidosIds
+        );
+        const seguindoB = obterPrioridadeAutorSeguidoComunidade(
+          postB,
+          usuariosSeguidosIds
+        );
 
         if (seguindoA !== seguindoB) {
           return seguindoB - seguindoA;
