@@ -170,6 +170,7 @@ import { CommunityFeedErrorNotice } from "./components/community-feed-error-noti
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
 import { CommunityFilterControlsRow } from "./components/community-filter-controls-row";
 import { CommunitySearchContainer } from "./components/community-search-container";
+import { deveExibirControlesBuscaComunidade } from "./components/community-search-controls-visibility";
 import { CommunitySearchInput } from "./components/community-search-input";
 import { CommunitySearchToggleButton } from "./components/community-search-toggle-button";
 import { CommunitySearchIcon } from "./components/community-search-icon";
@@ -2449,7 +2450,10 @@ export default function ComunidadePage() {
                   </CommunityAdvancedFiltersIcon>
                 </CommunityAdvancedFiltersButton>
 
-                {buscaComunidadeAberta || Boolean(termoBusca.trim()) ? (
+                {deveExibirControlesBuscaComunidade(
+                  buscaComunidadeAberta,
+                  termoBusca
+                ) ? (
                   <>
                     <CommunitySearchContainer>
                       <CommunitySearchInput
