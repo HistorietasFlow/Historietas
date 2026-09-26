@@ -283,7 +283,10 @@ import { CommunityRelatedWorkBadge } from "./components/community-related-work-b
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { CommunityLanguageBridge } from "./components/community-language-bridge";
-import { traduzirContagemResultadosComunidade } from "./components/community-results-count-translator";
+import {
+  obterTextoContagemUsuariosBuscaComunidade,
+  traduzirContagemResultadosComunidade,
+} from "./components/community-results-count-translator";
 import { formatarDataComunidade } from "./components/community-post-date-formatter";
 import { carregarJsonUsuarioComunidade } from "./components/community-user-json-loader";
 import { salvarJsonUsuarioComunidade } from "./components/community-user-json-saver";
@@ -2653,13 +2656,11 @@ export default function ComunidadePage() {
                     Usuários
                   </CommunitySearchResultsTitle>
                   <CommunitySearchResultsCount>
-                    {carregandoUsuariosBuscaComunidade
-                      ? traduzirTextoComunidade("Buscando...", language)
-                      : traduzirContagemResultadosComunidade(
-                          usuariosBuscaComunidade.length,
-                          "usuarios",
-                          language
-                        )}
+                    {obterTextoContagemUsuariosBuscaComunidade(
+                      carregandoUsuariosBuscaComunidade,
+                      usuariosBuscaComunidade.length,
+                      language
+                    )}
                   </CommunitySearchResultsCount>
                 </CommunitySearchResultsHeader>
 

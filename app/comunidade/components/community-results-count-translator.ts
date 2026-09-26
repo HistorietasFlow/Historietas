@@ -1,4 +1,5 @@
 import type { HistorietasLanguage } from "../../../lib/i18n";
+import { traduzirTextoComunidade } from "./community-text-translator";
 
 export function traduzirContagemResultadosComunidade(
   total: number,
@@ -22,4 +23,14 @@ export function traduzirContagemResultadosComunidade(
   }
 
   return `${total} ${total === 1 ? "encontrado" : "encontrados"}`;
+}
+
+export function obterTextoContagemUsuariosBuscaComunidade(
+  carregando: boolean,
+  total: number,
+  idioma: HistorietasLanguage
+) {
+  return carregando
+    ? traduzirTextoComunidade("Buscando...", idioma)
+    : traduzirContagemResultadosComunidade(total, "usuarios", idioma);
 }
