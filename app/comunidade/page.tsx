@@ -174,7 +174,10 @@ import {
   abrirBuscaComunidade,
   fecharBuscaComunidade,
 } from "./components/community-search-controls-actions";
-import { deveExibirControlesBuscaComunidade } from "./components/community-search-controls-visibility";
+import {
+  deveExibirControlesBuscaComunidade,
+  deveExibirResultadosBuscaComunidade,
+} from "./components/community-search-controls-visibility";
 import { CommunitySearchInput } from "./components/community-search-input";
 import { CommunitySearchToggleButton } from "./components/community-search-toggle-button";
 import { CommunitySearchIcon } from "./components/community-search-icon";
@@ -2643,7 +2646,7 @@ export default function ComunidadePage() {
               </CommunitySheetOverlay>
             )}
 
-            {termoBuscaNormalizado ? (
+            {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
               <CommunityUserSearchSection ariaLabel="Usuários encontrados">
                 <CommunitySearchResultsHeader>
                   <CommunitySearchResultsTitle>
@@ -2754,7 +2757,7 @@ export default function ComunidadePage() {
               </CommunityUserSearchSection>
             ) : null}
 
-            {termoBuscaNormalizado ? (
+            {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
               <CommunitySearchResultsHeader>
                 <CommunitySearchResultsTitle>
                   Publicações
