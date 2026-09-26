@@ -47,6 +47,7 @@ import { limitarUsuariosBuscaComunidade } from "./components/community-user-sear
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
 import {
   obterInicialAvatarUsuarioBuscaComunidade,
+  obterTextoBotaoSeguirUsuarioBuscaComunidade,
   obterTextoUsernameUsuarioBuscaComunidade,
 } from "./components/community-user-search-display";
 import {
@@ -2719,11 +2720,10 @@ export default function ComunidadePage() {
                               disabled={atualizandoSeguindo}
                               following={seguindoUsuario}
                             >
-                              {atualizandoSeguindo
-                                ? "..."
-                                : seguindoUsuario
-                                  ? "Seguindo"
-                                  : "Seguir"}
+                              {obterTextoBotaoSeguirUsuarioBuscaComunidade(
+                                atualizandoSeguindo,
+                                seguindoUsuario
+                              )}
                             </CommunityUserSearchFollowButton>
                           )}
                         </CommunityUserSearchCard>
