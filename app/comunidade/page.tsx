@@ -39,6 +39,7 @@ import {
   postCombinaTipoPublicacaoComunidade,
 } from "./components/community-post-basic-filter-matches";
 import { normalizarTermoBuscaUsuariosComunidade } from "./components/community-user-search-term-normalizer";
+import { compararUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
@@ -1043,22 +1044,13 @@ export default function ComunidadePage() {
 
           const termoNormalizado = normalizarTexto(termoLimpo);
           const usuariosOrdenados = Array.from(usuariosPorId.values())
-            .sort((usuarioA, usuarioB) => {
-              const textoA = normalizarTexto(
-                `${usuarioA.nome} ${usuarioA.username}`
-              );
-              const textoB = normalizarTexto(
-                `${usuarioB.nome} ${usuarioB.username}`
-              );
-              const prefixoA = textoA.startsWith(termoNormalizado);
-              const prefixoB = textoB.startsWith(termoNormalizado);
-
-              if (prefixoA !== prefixoB) {
-                return prefixoA ? -1 : 1;
-              }
-
-              return usuarioA.nome.localeCompare(usuarioB.nome, "pt-BR");
-            })
+            .sort((usuarioA, usuarioB) =>
+              compararUsuariosBuscaComunidade(
+                usuarioA,
+                usuarioB,
+                termoNormalizado
+              )
+            )
             .slice(0, 12);
 
           setUsuariosBuscaComunidade(usuariosOrdenados);
