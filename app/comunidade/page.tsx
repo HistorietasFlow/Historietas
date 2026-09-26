@@ -101,8 +101,8 @@ import { carregarVotosEnquetesSupabase } from "./components/community-supabase-p
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
-import { obterPontuacaoPost } from "./components/community-post-score";
 import { obterDataFixacaoOrdenacaoPostComunidade, obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
+import { compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade } from "./components/community-post-order-comparators";
 import { obterPrioridadeAutorSeguidoComunidade } from "./components/community-followed-post-priority";
 import { criarPerfilHrefComunidade } from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
@@ -1159,25 +1159,30 @@ export default function ComunidadePage() {
           return seguindoB - seguindoA;
         }
 
-        const pontuacaoA = obterPontuacaoPost(postA);
-        const pontuacaoB = obterPontuacaoPost(postB);
-
-        return pontuacaoB - pontuacaoA || dataOrdenacaoB - dataOrdenacaoA;
+        return compararPostsPorPontuacaoComunidade(
+          postA,
+          postB,
+          dataOrdenacaoA,
+          dataOrdenacaoB
+        );
       }
 
       if (ordenacaoAtiva === "Mais comentadas") {
-        const diferencaComentarios =
-          contarComentaristasUnicosPostComunidade(postB) -
-          contarComentaristasUnicosPostComunidade(postA);
-
-        return diferencaComentarios || dataOrdenacaoB - dataOrdenacaoA;
+        return compararPostsPorComentariosComunidade(
+          postA,
+          postB,
+          dataOrdenacaoA,
+          dataOrdenacaoB
+        );
       }
 
       if (ordenacaoAtiva === "Em alta") {
-        const pontuacaoA = obterPontuacaoPost(postA);
-        const pontuacaoB = obterPontuacaoPost(postB);
-
-        return pontuacaoB - pontuacaoA || dataOrdenacaoB - dataOrdenacaoA;
+        return compararPostsPorPontuacaoComunidade(
+          postA,
+          postB,
+          dataOrdenacaoA,
+          dataOrdenacaoB
+        );
       }
 
       return dataOrdenacaoB - dataOrdenacaoA;
