@@ -23,6 +23,7 @@ import { CommunityCommentsSheetOverlay } from "./community-comments-sheet-overla
 import { CommunityCommentsSheetBackdrop } from "./community-comments-sheet-backdrop";
 import { CommunityCommentsSheetHandleContainer } from "./community-comments-sheet-handle-container";
 import { CommunityCommentsSheetHandleBar } from "./community-comments-sheet-handle-bar";
+import { obterAriaLabelExpansaoComentariosComunidade } from "./community-comments-sheet-expansion-label";
 import { CommunityCommentsSheetHeaderContainer } from "./community-comments-sheet-header-container";
 import { CommunityCommentsSheetHeaderSpacer } from "./community-comments-sheet-header-spacer";
 import { CommunityCommentsSheetTitle } from "./community-comments-sheet-title";
@@ -551,9 +552,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
           onTouchCancel={finalizarArraste}
           role="button"
           tabIndex={0}
-          aria-label={
-            sheetExpandido ? "Recolher comentários" : "Expandir comentários"
-          }
+          aria-label={obterAriaLabelExpansaoComentariosComunidade(
+            sheetExpandido
+          )}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
