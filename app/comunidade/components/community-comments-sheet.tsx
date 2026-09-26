@@ -49,6 +49,7 @@ import { CommunityCommentReplyButton } from "./community-comment-reply-button";
 import { CommunityCommentRemoveButton } from "./community-comment-remove-button";
 import { CommunityCommentReportButton } from "./community-comment-report-button";
 import {
+  obterAriaLabelCurtidaComentarioComunidade,
   obterTextoBotaoDenunciarComentarioComunidade,
   obterTextoBotaoRemoverComentarioComunidade,
 } from "./community-comment-action-text";
@@ -506,13 +507,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
         <CommunityCommentLikeContainer>
           <CommunityCommentLikeButton
             aria-pressed={usuarioCurtiuComentario}
-            aria-label={`${
-              usuarioCurtiuComentario
-                ? "Remover curtida do comentário"
-                : "Curtir comentário"
-            }. ${comentario.curtidas.length} ${
-              comentario.curtidas.length === 1 ? "curtida" : "curtidas"
-            }`}
+            aria-label={obterAriaLabelCurtidaComentarioComunidade(
+              usuarioCurtiuComentario,
+              comentario.curtidas.length
+            )}
             onClick={() =>
               curtirComentarioSeguro(post?.id || "", comentario.id)
             }
