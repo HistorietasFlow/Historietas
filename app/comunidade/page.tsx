@@ -40,6 +40,7 @@ import {
 } from "./components/community-post-basic-filter-matches";
 import { normalizarTermoBuscaUsuariosComunidade } from "./components/community-user-search-term-normalizer";
 import { compararUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
+import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import type {
@@ -1028,22 +1029,11 @@ export default function ComunidadePage() {
             return;
           }
 
-          const usuariosPorId = new Map<string, UsuarioBuscaComunidade>();
-
-          [...usuariosSupabase, ...usuariosLocais].forEach((usuarioBusca) => {
-            const usuarioExistente = usuariosPorId.get(usuarioBusca.id);
-
-            usuariosPorId.set(usuarioBusca.id, {
-              id: usuarioBusca.id,
-              nome: usuarioBusca.nome || usuarioExistente?.nome || "Usuário",
-              username:
-                usuarioBusca.username || usuarioExistente?.username || "",
-              avatar: usuarioBusca.avatar || usuarioExistente?.avatar || "",
-            });
-          });
-
           const termoNormalizado = normalizarTexto(termoLimpo);
-          const usuariosOrdenados = Array.from(usuariosPorId.values())
+          const usuariosOrdenados = mesclarUsuariosBuscaComunidade(
+            usuariosSupabase,
+            usuariosLocais
+          )
             .sort((usuarioA, usuarioB) =>
               compararUsuariosBuscaComunidade(
                 usuarioA,
