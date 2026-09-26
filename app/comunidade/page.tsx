@@ -126,6 +126,7 @@ import { votarEnquete } from "./components/community-poll-voter";
 import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed-toggler";
 import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
 import { alternarPostSalvo } from "./components/community-saved-post-toggler";
+import { deveOcultarPostPorFiltroSalvosComunidade } from "./components/community-saved-post-filter";
 import { compartilharPublicacao } from "./components/community-post-sharer";
 import { carregarPostsComunidade } from "./components/community-posts-loader";
 import { carregarMaisPostsComunidade } from "./components/community-more-posts-loader";
@@ -1109,7 +1110,13 @@ export default function ComunidadePage() {
         return false;
       }
 
-      if (mostrarApenasSalvos && !postsSalvosIds.includes(post.id)) {
+      if (
+        deveOcultarPostPorFiltroSalvosComunidade(
+          post,
+          mostrarApenasSalvos,
+          postsSalvosIds
+        )
+      ) {
         return false;
       }
 
