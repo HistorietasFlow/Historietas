@@ -18,13 +18,14 @@
 - A Fase 310 extraiu somente `obterDataOrdenacaoPostComunidade` e `obterDataFixacaoOrdenacaoPostComunidade` a partir dos cálculos temporais da ordenação de `postsVisiveis` e foi concluída com o PR #444 mesclado.
 - A Fase 311 extraiu somente `postCombinaTermoBuscaComunidade` a partir do trecho final da busca textual de `postsVisiveis` e foi concluída com o PR #445 mesclado.
 - A Fase 312 extraiu somente `normalizarTermoBuscaUsuariosComunidade` a partir da normalização do termo da busca de usuários e foi concluída com o PR #446 mesclado.
-- A Fase 313 extraiu somente `postCombinaCategoriaComunidade`, `postCombinaTipoPublicacaoComunidade` e `postCombinaObraRelacionadaComunidade` a partir dos filtros básicos de `postsVisiveis`; a implementação está no PR #447.
+- A Fase 313 extraiu somente `postCombinaCategoriaComunidade`, `postCombinaTipoPublicacaoComunidade` e `postCombinaObraRelacionadaComunidade` a partir dos filtros básicos de `postsVisiveis` e foi concluída com o PR #447 mesclado.
+- A Fase 314 extraiu somente `postCombinaGrupoPublicacaoComunidade` e `postCombinaAbaFeedComunidade` a partir dos filtros de contexto do feed em `postsVisiveis`; a implementação está no PR #448.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 314 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 315 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
