@@ -48,3 +48,9 @@ export function deveDesabilitarCurtidaComentarioComunidade(
 ) {
   return !podeComentar || comentarioCurtindo;
 }
+
+export function deveDesabilitarAcaoComentarioComunidade(
+  podeComentar: boolean
+) {
+  return !podeComentar;
+}
