@@ -33,6 +33,11 @@ import { CommunityCommentsSortMenuTrigger } from "./community-comments-sort-menu
 import { CommunityCommentsSortMenuPanel } from "./community-comments-sort-menu-panel";
 import { CommunityCommentsSortMenuItem } from "./community-comments-sort-menu-item";
 import { CommunityCommentsSortMenuDivider } from "./community-comments-sort-menu-divider";
+import {
+  obterAriaLabelOrdenacaoComentariosComunidade,
+  obterTextoOrdenacaoComentariosRecentesComunidade,
+  obterTextoOrdenacaoComentariosRelevantesComunidade,
+} from "./community-comments-sort-text";
 import { CommunityCommentsListContainer } from "./community-comments-list-container";
 import { CommunityCommentThreadContainer } from "./community-comment-thread-container";
 import { CommunityCommentItemContainer } from "./community-comment-item-container";
@@ -592,7 +597,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
             <CommunityCommentsSortMenuTrigger
               type="button"
               onClick={() => setMenuOrdenacaoAberto((aberto) => !aberto)}
-              aria-label="Ordenar comentários"
+              aria-label={obterAriaLabelOrdenacaoComentariosComunidade()}
               aria-haspopup="menu"
               aria-expanded={menuOrdenacaoAberto}
             >
@@ -610,7 +615,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                   active={ordenacaoComentarios === "relevantes"}
                   role="menuitem"
                 >
-                  Relevantes
+                  {obterTextoOrdenacaoComentariosRelevantesComunidade()}
                 </CommunityCommentsSortMenuItem>
 
                 <CommunityCommentsSortMenuDivider />
@@ -624,7 +629,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                   active={ordenacaoComentarios === "recentes"}
                   role="menuitem"
                 >
-                  Recentes
+                  {obterTextoOrdenacaoComentariosRecentesComunidade()}
                 </CommunityCommentsSortMenuItem>
               </CommunityCommentsSortMenuPanel>
             ) : null}
