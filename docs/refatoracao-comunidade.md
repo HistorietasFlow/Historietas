@@ -54,7 +54,7 @@
 - A Fase 346 extraiu somente `obterAriaLabelCurtidaComentarioComunidade` a partir do rótulo acessível da curtida de comentários e foi concluída com o PR #480 mesclado.
 - A Fase 347 extraiu somente `obterAriaLabelExpansaoComentariosComunidade` a partir do rótulo acessível de expansão dos comentários e foi concluída com o PR #481 mesclado.
 - A Fase 348 extraiu somente `obterTextoBotaoVerRespostasComunidade` e `obterTextoBotaoVerMaisRespostasComunidade` a partir dos textos dos controles de expansão das respostas e foi concluída com o PR #482 mesclado.
-- A Fase 349 extraiu somente `obterTituloComentariosComunidade` a partir do texto do título da folha de comentários; a implementação está neste PR.
+- A Fase 349 extraiu somente `obterTituloComentariosComunidade` a partir do texto do título da folha de comentários; a implementação está no PR #483.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
