@@ -16,6 +16,8 @@ import { formatarTempoRelativoComentarioComunidade } from "./community-comment-r
 import {
   ordenacaoComentariosEhRecentesComunidade,
   ordenacaoComentariosEhRelevantesComunidade,
+  selecionarOrdenacaoComentariosRecentesComunidade,
+  selecionarOrdenacaoComentariosRelevantesComunidade,
   type OrdenacaoComentariosComunidade,
 } from "./community-comment-order";
 import type { RespostaComentarioComunidade } from "./community-comment-reply";
@@ -633,10 +635,12 @@ export const ComentariosSheet = memo(function ComentariosSheet({
               <CommunityCommentsSortMenuPanel role="menu">
                 <CommunityCommentsSortMenuItem
                   type="button"
-                  onClick={() => {
-                    setOrdenacaoComentarios("relevantes");
-                    setMenuOrdenacaoAberto(false);
-                  }}
+                  onClick={() =>
+                    selecionarOrdenacaoComentariosRelevantesComunidade({
+                      setOrdenacaoComentarios,
+                      setMenuOrdenacaoAberto,
+                    })
+                  }
                   active={ordenacaoComentariosEhRelevantesComunidade(
                     ordenacaoComentarios
                   )}
@@ -649,10 +653,12 @@ export const ComentariosSheet = memo(function ComentariosSheet({
 
                 <CommunityCommentsSortMenuItem
                   type="button"
-                  onClick={() => {
-                    setOrdenacaoComentarios("recentes");
-                    setMenuOrdenacaoAberto(false);
-                  }}
+                  onClick={() =>
+                    selecionarOrdenacaoComentariosRecentesComunidade({
+                      setOrdenacaoComentarios,
+                      setMenuOrdenacaoAberto,
+                    })
+                  }
                   active={ordenacaoComentariosEhRecentesComunidade(
                     ordenacaoComentarios
                   )}

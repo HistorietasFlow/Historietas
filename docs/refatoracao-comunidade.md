@@ -67,13 +67,14 @@
 - A Fase 359 extraiu somente `obterQuantidadeInicialRespostasVisiveisComunidade` e `obterProximaQuantidadeRespostasVisiveisComunidade` a partir das transições de paginação visual das respostas e foi concluída com o PR #493 mesclado.
 - A Fase 360 extraiu somente `respostasEstaoExpandidasComunidade` a partir da decisão de expansão das respostas e foi concluída com o PR #494 mesclado.
 - A Fase 361 extraiu somente `obterRespostasComentarioComunidade` a partir da consulta das respostas associadas a cada comentário e foi concluída com o PR #495 mesclado.
-- A Fase 362 extraiu somente `ordenacaoComentariosEhRelevantesComunidade` e `ordenacaoComentariosEhRecentesComunidade` a partir dos estados ativos do menu de ordenação dos comentários; a implementação está no PR #496.
+- A Fase 362 extraiu somente `ordenacaoComentariosEhRelevantesComunidade` e `ordenacaoComentariosEhRecentesComunidade` a partir dos estados ativos do menu de ordenação dos comentários e foi concluída com o PR #496 mesclado.
+- A Fase 363 extraiu somente `selecionarOrdenacaoComentariosRelevantesComunidade` e `selecionarOrdenacaoComentariosRecentesComunidade` a partir dos handlers do menu de ordenação dos comentários; a implementação está no PR #497.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 363 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 364 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
