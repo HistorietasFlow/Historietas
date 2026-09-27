@@ -1,8 +1,19 @@
 import type { CSSProperties, ReactNode } from "react";
+import type { ComentarioComunidade } from "./community-comment";
 
 type CommunityCommentsEmptyMessageProps = {
   children: ReactNode;
 };
+
+export function temComentariosRaizComunidade(
+  comentariosRaiz: ComentarioComunidade[]
+) {
+  return comentariosRaiz.length > 0;
+}
+
+export function obterTextoEstadoVazioComentariosComunidade() {
+  return "Sem comentários ainda";
+}
 
 export function CommunityCommentsEmptyMessage({
   children,
