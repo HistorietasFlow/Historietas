@@ -102,7 +102,10 @@ import { CommunityCommentsErrorNotice } from "./community-comments-error-notice"
 import { CommunityCommentsToolsContainer } from "./community-comments-tools-container";
 import { CommunityCommentsQuickReactionsContainer } from "./community-comments-quick-reactions-container";
 import { CommunityCommentsQuickReactionButton } from "./community-comments-quick-reaction-button";
-import { obterAriaLabelReacaoRapidaComunidade } from "./community-comments-quick-reaction-label";
+import {
+  obterAriaLabelReacaoRapidaComunidade,
+  obterReacoesRapidasComentarioComunidade,
+} from "./community-comments-quick-reaction-label";
 import { CommunityCommentsFormContainer } from "./community-comments-form-container";
 import {
   CommunityCommentsInputAvatar,
@@ -789,7 +792,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
 
         <CommunityCommentsToolsContainer>
           <CommunityCommentsQuickReactionsContainer>
-            {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
+            {obterReacoesRapidasComentarioComunidade().map((emoji) => (
               <CommunityCommentsQuickReactionButton
                 key={emoji}
                 type="button"
