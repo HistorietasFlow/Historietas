@@ -8,6 +8,7 @@ import {
   comentarioEstaSendoCurtidoComunidade,
   comentarioEstaSendoDenunciadoComunidade,
   comentarioEstaSendoRemovidoComunidade,
+  deveDesabilitarAcaoComentarioComunidade,
   deveDesabilitarCurtidaComentarioComunidade,
   usuarioCurtiuComentarioComunidade,
   usuarioPodeDenunciarComentarioComunidade,
@@ -532,7 +533,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
               onClick={() =>
                 responderComentario(comentario, comentarioRaizId)
               }
-              disabled={!podeComentar}
+              disabled={deveDesabilitarAcaoComentarioComunidade(podeComentar)}
             >
               {obterTextoBotaoResponderComentarioComunidade()}
             </CommunityCommentReplyButton>
@@ -805,7 +806,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                 key={emoji}
                 type="button"
                 onClick={() => inserirNoComentario(emoji)}
-                disabled={!podeComentar}
+                disabled={deveDesabilitarAcaoComentarioComunidade(
+                  podeComentar
+                )}
                 aria-label={obterAriaLabelReacaoRapidaComunidade(emoji)}
               >
                 {emoji}
@@ -850,7 +853,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
           <CommunityCommentsMentionButton
             type="button"
             onClick={() => inserirNoComentario("@")}
-            disabled={!podeComentar}
+            disabled={deveDesabilitarAcaoComentarioComunidade(podeComentar)}
             aria-label={obterAriaLabelMencaoComentarioComunidade()}
           >
             @
