@@ -42,6 +42,11 @@ import {
   obterTextoBotaoVerMaisRespostasComunidade,
   obterTextoBotaoVerRespostasComunidade,
 } from "./community-comment-replies-action-text";
+import {
+  deveExibirBotaoVerRespostasComunidade,
+  temRespostasOcultasComunidade,
+  temRespostasVisiveisComunidade,
+} from "./community-comment-replies-visibility";
 import { CommunityCommentRepliesControlsContainer } from "./community-comment-replies-controls-container";
 import { CommunityCommentRepliesHideButton } from "./community-comment-replies-hide-button";
 import { CommunityCommentAvatar } from "./community-comment-avatar";
@@ -645,7 +650,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                 <CommunityCommentThreadContainer key={comentario.id}>
                   {renderizarComentario(comentario, comentario.id)}
 
-                  {respostasVisiveis.length > 0 ? (
+                  {temRespostasVisiveisComunidade(respostasVisiveis) ? (
                     <CommunityCommentRepliesListContainer>
                       {respostasVisiveis.map((resposta) =>
                         renderizarComentario(resposta, comentario.id, true)
@@ -653,7 +658,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                     </CommunityCommentRepliesListContainer>
                   ) : null}
 
-                  {respostas.length > 0 && !respostasExpandidas ? (
+                  {deveExibirBotaoVerRespostasComunidade(
+                    respostas,
+                    respostasExpandidas
+                  ) ? (
                     <CommunityCommentRepliesToggleButton
                       type="button"
                       onClick={() =>
@@ -669,7 +677,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
 
                   {respostasExpandidas ? (
                     <CommunityCommentRepliesControlsContainer>
-                      {respostasOcultas > 0 ? (
+                      {temRespostasOcultasComunidade(respostasOcultas) ? (
                         <CommunityCommentRepliesToggleButton
                           type="button"
                           onClick={() =>
