@@ -62,7 +62,7 @@
 - A Fase 354 extraiu somente `obterAriaLabelOrdenacaoComentariosComunidade`, `obterTextoOrdenacaoComentariosRelevantesComunidade` e `obterTextoOrdenacaoComentariosRecentesComunidade` a partir dos textos do menu de ordenação dos comentários e foi concluída com o PR #488 mesclado.
 - A Fase 355 extraiu somente `obterAriaLabelMencaoComentarioComunidade` e `obterAriaLabelEnvioComentarioComunidade` a partir dos rótulos acessíveis dos botões de menção e envio do formulário de comentários e foi concluída com o PR #489 mesclado.
 - A Fase 356 extraiu somente `obterAvatarFormularioComentarioComunidade` e `obterInicialAvatarFormularioComentarioComunidade` a partir da apresentação do avatar no formulário de comentários e foi concluída com o PR #490 mesclado.
-- A Fase 357 extraiu somente `temComentariosRaizComunidade` e `obterTextoEstadoVazioComentariosComunidade` a partir da decisão e do texto do estado vazio da lista de comentários; a implementação está nesta branch.
+- A Fase 357 extraiu somente `temComentariosRaizComunidade` e `obterTextoEstadoVazioComentariosComunidade` a partir da decisão e do texto do estado vazio da lista de comentários; a implementação está no PR #491.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
