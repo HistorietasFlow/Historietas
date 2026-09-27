@@ -46,6 +46,11 @@ import {
   obterLimiteInferiorArrasteComentariosComunidade,
   obterLimiteSuperiorArrasteComentariosComunidade,
 } from "./community-comments-sheet-drag-limits";
+import {
+  calcularDeslocamentoArrasteComentariosComunidade,
+  deveIgnorarCliqueAposArrasteComunidade,
+  obterPosicaoAtualArrasteComentariosComunidade,
+} from "./community-comments-sheet-drag-motion";
 import { CommunityCommentsSheetHeaderContainer } from "./community-comments-sheet-header-container";
 import { CommunityCommentsSheetHeaderSpacer } from "./community-comments-sheet-header-spacer";
 import { CommunityCommentsSheetTitle } from "./community-comments-sheet-title";
@@ -358,19 +363,24 @@ export const ComentariosSheet = memo(function ComentariosSheet({
       return;
     }
 
-    const posicaoAtual = event.touches[0]?.clientY || dragStartYRef.current;
+    const posicaoAtual = obterPosicaoAtualArrasteComentariosComunidade(
+      event.touches[0]?.clientY,
+      dragStartYRef.current
+    );
     const limiteSuperior =
       obterLimiteSuperiorArrasteComentariosComunidade(sheetExpandido);
     const limiteInferior =
       obterLimiteInferiorArrasteComentariosComunidade(sheetExpandido);
-    const deslocamento = Math.max(
+    const deslocamento = calcularDeslocamentoArrasteComentariosComunidade(
       limiteSuperior,
-      Math.min(limiteInferior, posicaoAtual - dragStartYRef.current)
+      limiteInferior,
+      posicaoAtual,
+      dragStartYRef.current
     );
 
     dragOffsetYRef.current = deslocamento;
 
-    if (Math.abs(deslocamento) > 6) {
+    if (deveIgnorarCliqueAposArrasteComunidade(deslocamento)) {
       dragIgnorarCliqueRef.current = true;
     }
 
