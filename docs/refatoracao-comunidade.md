@@ -83,13 +83,14 @@
 - A Fase 375 extraiu somente `mostrarRespostasIniciaisComunidade`, `mostrarMaisRespostasComunidade` e `ocultarRespostasComunidade` a partir das ações de paginação visual das respostas dos comentários e foi concluída com o PR #509 mesclado.
 - A Fase 376 extraiu somente `usuarioPodeRemoverPostComunidade`, `usuarioPodeDenunciarPostComunidade` e `usuarioPodeAlterarVisibilidadePostComunidade` a partir das permissões das ações de publicação e foi concluída com o PR #510 mesclado.
 - A Fase 377 extraiu somente `usuarioCurtiuPostComunidade`, `postEstaSalvoComunidade` e `spoilerPostEstaReveladoComunidade` a partir dos estados de interação com as publicações e foi concluída com o PR #511 mesclado.
-- A Fase 378 extraiu somente `postEstaSendoCurtido`, `postEstaSendoSalvo` e `postEstaSendoCompartilhado` a partir dos estados assíncronos das ações de publicação; a implementação está neste PR.
+- A Fase 378 extraiu somente `postEstaSendoCurtido`, `postEstaSendoSalvo` e `postEstaSendoCompartilhado` a partir dos estados assíncronos das ações de publicação e foi concluída com o PR #512 mesclado.
+- A Fase 379 extraiu somente `postEstaSendoRemovido`, `postEstaSendoFixado` e `postEstaAtualizandoVisibilidade` a partir dos estados assíncronos das ações administrativas de publicação; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 379 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 380 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 

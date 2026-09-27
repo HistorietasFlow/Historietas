@@ -42,3 +42,24 @@ export function postEstaSendoCompartilhado(
 ): boolean {
   return postCompartilhandoId === post.id;
 }
+
+export function postEstaSendoRemovido(
+  postRemovendoId: string | null,
+  post: PostComunidade
+): boolean {
+  return postRemovendoId === post.id;
+}
+
+export function postEstaSendoFixado(
+  postFixandoId: string | null,
+  post: PostComunidade
+): boolean {
+  return postFixandoId === post.id;
+}
+
+export function postEstaAtualizandoVisibilidade(
+  postVisibilidadeAtualizandoId: string | null,
+  post: PostComunidade
+): boolean {
+  return postVisibilidadeAtualizandoId === post.id;
+}
