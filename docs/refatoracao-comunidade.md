@@ -64,13 +64,14 @@
 - A Fase 356 extraiu somente `obterAvatarFormularioComentarioComunidade` e `obterInicialAvatarFormularioComentarioComunidade` a partir da apresentação do avatar no formulário de comentários e foi concluída com o PR #490 mesclado.
 - A Fase 357 extraiu somente `temComentariosRaizComunidade` e `obterTextoEstadoVazioComentariosComunidade` a partir da decisão e do texto do estado vazio da lista de comentários e foi concluída com o PR #491 mesclado.
 - A Fase 358 extraiu somente `obterQuantidadeRespostasVisiveisComunidade`, `obterRespostasVisiveisComunidade` e `obterQuantidadeRespostasOcultasComunidade` a partir dos cálculos da paginação visual das respostas e foi concluída com o PR #492 mesclado.
-- A Fase 359 extraiu somente `obterQuantidadeInicialRespostasVisiveisComunidade` e `obterProximaQuantidadeRespostasVisiveisComunidade` a partir das transições de paginação visual das respostas; a implementação está no PR #493.
+- A Fase 359 extraiu somente `obterQuantidadeInicialRespostasVisiveisComunidade` e `obterProximaQuantidadeRespostasVisiveisComunidade` a partir das transições de paginação visual das respostas e foi concluída com o PR #493 mesclado.
+- A Fase 360 extraiu somente `respostasEstaoExpandidasComunidade` a partir da decisão de expansão das respostas; a implementação está no PR #494.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 360 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 361 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 

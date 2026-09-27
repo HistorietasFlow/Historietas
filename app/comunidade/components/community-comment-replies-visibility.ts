@@ -16,3 +16,7 @@ export function deveExibirBotaoVerRespostasComunidade(
 export function temRespostasOcultasComunidade(respostasOcultas: number) {
   return respostasOcultas > 0;
 }
+
+export function respostasEstaoExpandidasComunidade(quantidadeVisivel: number) {
+  return quantidadeVisivel > 0;
+}
