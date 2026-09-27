@@ -71,13 +71,14 @@
 - A Fase 363 extraiu somente `selecionarOrdenacaoComentariosRelevantesComunidade` e `selecionarOrdenacaoComentariosRecentesComunidade` a partir dos handlers do menu de ordenação dos comentários e foi concluída com o PR #497 mesclado.
 - A Fase 364 extraiu somente `alternarMenuOrdenacaoComentariosComunidade` a partir do handler do gatilho do menu de ordenação dos comentários e foi concluída com o PR #498 mesclado.
 - A Fase 365 extraiu somente `obterTextoBotaoResponderComentarioComunidade` a partir do texto do botão de resposta dos comentários e foi concluída com o PR #499 mesclado.
-- A Fase 366 extraiu somente `obterReacoesRapidasComentarioComunidade` a partir da lista de reações rápidas dos comentários; a implementação está no PR #500.
+- A Fase 366 extraiu somente `obterReacoesRapidasComentarioComunidade` a partir da lista de reações rápidas dos comentários e foi concluída com o PR #500 mesclado.
+- A Fase 367 extraiu somente `deveDesabilitarInteracaoComentarioComunidade` e `envioComentarioEstaAtivoComunidade` a partir dos estados de interação do formulário de comentários; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 367 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 368 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
