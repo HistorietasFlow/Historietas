@@ -7,3 +7,11 @@ export function obterTextoBotaoEnviarComentarioComunidade(
 ) {
   return comentarioEnviando ? "..." : "↑";
 }
+
+export function obterAriaLabelMencaoComentarioComunidade() {
+  return "Adicionar menção";
+}
+
+export function obterAriaLabelEnvioComentarioComunidade() {
+  return "Enviar comentário";
+}
