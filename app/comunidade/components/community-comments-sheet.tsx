@@ -74,7 +74,11 @@ import { CommunityCommentLikeContainer } from "./community-comment-like-containe
 import { CommunityCommentLikeButton } from "./community-comment-like-button";
 import { CommunityCommentLikeCount } from "./community-comment-like-count";
 import { CommunityCommentHeartIcon } from "./community-comment-heart-icon";
-import { CommunityCommentsEmptyMessage } from "./community-comments-empty-message";
+import {
+  CommunityCommentsEmptyMessage,
+  obterTextoEstadoVazioComentariosComunidade,
+  temComentariosRaizComunidade,
+} from "./community-comments-empty-message";
 import { CommunityCommentsErrorNotice } from "./community-comments-error-notice";
 import { CommunityCommentsToolsContainer } from "./community-comments-tools-container";
 import { CommunityCommentsQuickReactionsContainer } from "./community-comments-quick-reactions-container";
@@ -643,7 +647,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
         </CommunityCommentsSheetHeaderContainer>
 
         <CommunityCommentsListContainer>
-          {estruturaComentarios.comentariosRaiz.length > 0 ? (
+          {temComentariosRaizComunidade(
+            estruturaComentarios.comentariosRaiz
+          ) ? (
             estruturaComentarios.comentariosRaiz.map((comentario) => {
               const respostas =
                 estruturaComentarios.respostasPorRaiz.get(comentario.id) || [];
@@ -726,7 +732,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
             })
           ) : (
             <CommunityCommentsEmptyMessage>
-              Sem comentários ainda
+              {obterTextoEstadoVazioComentariosComunidade()}
             </CommunityCommentsEmptyMessage>
           )}
         </CommunityCommentsListContainer>
