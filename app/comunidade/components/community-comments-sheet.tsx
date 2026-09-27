@@ -14,6 +14,7 @@ import {
 } from "./community-comment-interaction-status";
 import { formatarTempoRelativoComentarioComunidade } from "./community-comment-relative-time";
 import {
+  alternarMenuOrdenacaoComentariosComunidade,
   ordenacaoComentariosEhRecentesComunidade,
   ordenacaoComentariosEhRelevantesComunidade,
   selecionarOrdenacaoComentariosRecentesComunidade,
@@ -623,7 +624,11 @@ export const ComentariosSheet = memo(function ComentariosSheet({
           <CommunityCommentsSortMenuContainer>
             <CommunityCommentsSortMenuTrigger
               type="button"
-              onClick={() => setMenuOrdenacaoAberto((aberto) => !aberto)}
+              onClick={() =>
+                alternarMenuOrdenacaoComentariosComunidade(
+                  setMenuOrdenacaoAberto
+                )
+              }
               aria-label={obterAriaLabelOrdenacaoComentariosComunidade()}
               aria-haspopup="menu"
               aria-expanded={menuOrdenacaoAberto}
