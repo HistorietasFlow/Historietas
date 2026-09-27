@@ -71,7 +71,7 @@
 - A Fase 363 extraiu somente `selecionarOrdenacaoComentariosRelevantesComunidade` e `selecionarOrdenacaoComentariosRecentesComunidade` a partir dos handlers do menu de ordenação dos comentários e foi concluída com o PR #497 mesclado.
 - A Fase 364 extraiu somente `alternarMenuOrdenacaoComentariosComunidade` a partir do handler do gatilho do menu de ordenação dos comentários e foi concluída com o PR #498 mesclado.
 - A Fase 365 extraiu somente `obterTextoBotaoResponderComentarioComunidade` a partir do texto do botão de resposta dos comentários e foi concluída com o PR #499 mesclado.
-- A Fase 366 extraiu somente `obterReacoesRapidasComentarioComunidade` a partir da lista de reações rápidas dos comentários; a implementação integra o PR desta fase.
+- A Fase 366 extraiu somente `obterReacoesRapidasComentarioComunidade` a partir da lista de reações rápidas dos comentários; a implementação está no PR #500.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
