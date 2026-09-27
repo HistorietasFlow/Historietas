@@ -35,6 +35,11 @@ import {
   usuarioPodeRemoverPostComunidade,
 } from "./components/community-post-permissions";
 import {
+  obterTextoBotaoCompartilharPostComunidade,
+  obterTextoBotaoFixarPostComunidade,
+  obterTextoBotaoSalvarPostComunidade,
+} from "./components/community-post-action-text";
+import {
   deveOcultarTextoSpoilerComunidade,
   menuOpcoesPostEstaAbertoComunidade,
   postEstaSalvoComunidade,
@@ -2925,11 +2930,10 @@ export default function ComunidadePage() {
                               }}
                               disabled={postSalvando}
                             >
-                              {postSalvando
-                                ? "Salvando..."
-                                : postSalvo
-                                  ? "Remover dos salvos"
-                                  : "Salvar publicação"}
+                              {obterTextoBotaoSalvarPostComunidade(
+                                postSalvando,
+                                postSalvo
+                              )}
                             </CommunitySheetMenuAction>
 
                             <CommunitySheetMenuAction
@@ -2946,7 +2950,9 @@ export default function ComunidadePage() {
                               }}
                               disabled={postCompartilhando}
                             >
-                              {postCompartilhando ? "Compartilhando..." : "Compartilhar"}
+                              {obterTextoBotaoCompartilharPostComunidade(
+                                postCompartilhando
+                              )}
                             </CommunitySheetMenuAction>
 
                             {podeAlterarVisibilidade && (
@@ -2985,11 +2991,10 @@ export default function ComunidadePage() {
                                 }}
                                 disabled={postFixando}
                               >
-                                {postFixando
-                                  ? "Atualizando..."
-                                  : post.fixado
-                                    ? "Desfixar publicação"
-                                    : "Fixar publicação"}
+                                {obterTextoBotaoFixarPostComunidade(
+                                  postFixando,
+                                  post
+                                )}
                               </CommunitySheetMenuAction>
                             )}
 
