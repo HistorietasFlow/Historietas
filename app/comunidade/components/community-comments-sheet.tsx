@@ -36,6 +36,7 @@ import { CommunityCommentsSheetBackdrop } from "./community-comments-sheet-backd
 import { CommunityCommentsSheetHandleContainer } from "./community-comments-sheet-handle-container";
 import { CommunityCommentsSheetHandleBar } from "./community-comments-sheet-handle-bar";
 import { obterAriaLabelExpansaoComentariosComunidade } from "./community-comments-sheet-expansion-label";
+import { deveAlternarExpansaoComentariosPorTeclaComunidade } from "./community-comments-sheet-expansion-key";
 import { CommunityCommentsSheetHeaderContainer } from "./community-comments-sheet-header-container";
 import { CommunityCommentsSheetHeaderSpacer } from "./community-comments-sheet-header-spacer";
 import { CommunityCommentsSheetTitle } from "./community-comments-sheet-title";
@@ -619,7 +620,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
             sheetExpandido
           )}
           onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
+            if (
+              deveAlternarExpansaoComentariosPorTeclaComunidade(event.key)
+            ) {
               event.preventDefault();
               alternarExpansaoComentarios();
             }
