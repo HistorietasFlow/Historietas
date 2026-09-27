@@ -82,12 +82,15 @@ import {
   temRespostasVisiveisComunidade,
 } from "./community-comment-replies-visibility";
 import {
-  obterProximaQuantidadeRespostasVisiveisComunidade,
-  obterQuantidadeInicialRespostasVisiveisComunidade,
   obterQuantidadeRespostasOcultasComunidade,
   obterQuantidadeRespostasVisiveisComunidade,
   obterRespostasVisiveisComunidade,
 } from "./community-comment-replies-pagination";
+import {
+  mostrarMaisRespostasComunidade,
+  mostrarRespostasIniciaisComunidade,
+  ocultarRespostasComunidade,
+} from "./community-comment-replies-pagination-actions";
 import { CommunityCommentRepliesControlsContainer } from "./community-comment-replies-controls-container";
 import { CommunityCommentRepliesHideButton } from "./community-comment-replies-hide-button";
 import { CommunityCommentAvatar } from "./community-comment-avatar";
@@ -767,13 +770,11 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                     <CommunityCommentRepliesToggleButton
                       type="button"
                       onClick={() =>
-                        setRespostasVisiveisPorComentario((estadoAtual) => ({
-                          ...estadoAtual,
-                          [comentario.id]:
-                            obterQuantidadeInicialRespostasVisiveisComunidade(
-                              respostas
-                            ),
-                        }))
+                        mostrarRespostasIniciaisComunidade({
+                          respostas,
+                          comentario,
+                          setRespostasVisiveisPorComentario,
+                        })
                       }
                     >
                       {obterTextoBotaoVerRespostasComunidade(respostas.length)}
@@ -786,14 +787,11 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                         <CommunityCommentRepliesToggleButton
                           type="button"
                           onClick={() =>
-                            setRespostasVisiveisPorComentario((estadoAtual) => ({
-                              ...estadoAtual,
-                              [comentario.id]:
-                                obterProximaQuantidadeRespostasVisiveisComunidade(
-                                  respostas,
-                                  estadoAtual[comentario.id]
-                                ),
-                            }))
+                            mostrarMaisRespostasComunidade({
+                              respostas,
+                              comentario,
+                              setRespostasVisiveisPorComentario,
+                            })
                           }
                         >
                           {obterTextoBotaoVerMaisRespostasComunidade(
@@ -805,10 +803,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                       <CommunityCommentRepliesHideButton
                         type="button"
                         onClick={() =>
-                          setRespostasVisiveisPorComentario((estadoAtual) => ({
-                            ...estadoAtual,
-                            [comentario.id]: 0,
-                          }))
+                          ocultarRespostasComunidade({
+                            comentario,
+                            setRespostasVisiveisPorComentario,
+                          })
                         }
                       >
                         {obterTextoBotaoOcultarRespostasComunidade()}
