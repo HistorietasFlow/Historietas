@@ -120,6 +120,10 @@ import {
   obterTextoBotaoEnviarComentarioComunidade,
   obterTextoCampoComentarioComunidade,
 } from "./community-comments-composer-text";
+import {
+  deveDesabilitarInteracaoComentarioComunidade,
+  envioComentarioEstaAtivoComunidade,
+} from "./community-comments-composer-status";
 import { CommunityCommentsMentionButton } from "./community-comments-mention-button";
 import { CommunityCommentsSendButton } from "./community-comments-send-button";
 
@@ -825,7 +829,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
               aria-label={obterTextoCampoComentarioComunidade(podeComentar)}
               ref={comentarioRef}
               placeholder={obterTextoCampoComentarioComunidade(podeComentar)}
-              disabled={!podeComentar || comentarioEnviando}
+              disabled={deveDesabilitarInteracaoComentarioComunidade(
+                podeComentar,
+                comentarioEnviando
+              )}
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
@@ -848,8 +855,14 @@ export const ComentariosSheet = memo(function ComentariosSheet({
           <CommunityCommentsSendButton
             type="submit"
             aria-label={obterAriaLabelEnvioComentarioComunidade()}
-            disabled={!podeComentar || comentarioEnviando}
-            active={podeComentar && !comentarioEnviando}
+            disabled={deveDesabilitarInteracaoComentarioComunidade(
+              podeComentar,
+              comentarioEnviando
+            )}
+            active={envioComentarioEstaAtivoComunidade(
+              podeComentar,
+              comentarioEnviando
+            )}
           >
             {obterTextoBotaoEnviarComentarioComunidade(comentarioEnviando)}
           </CommunityCommentsSendButton>
