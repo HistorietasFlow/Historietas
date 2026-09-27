@@ -72,6 +72,10 @@ import { CommunityCommentsFormContainer } from "./community-comments-form-contai
 import { CommunityCommentsInputAvatar } from "./community-comments-input-avatar";
 import { CommunityCommentsInputBox } from "./community-comments-input-box";
 import { CommunityCommentsTextarea } from "./community-comments-textarea";
+import {
+  obterTextoBotaoEnviarComentarioComunidade,
+  obterTextoCampoComentarioComunidade,
+} from "./community-comments-composer-text";
 import { CommunityCommentsMentionButton } from "./community-comments-mention-button";
 import { CommunityCommentsSendButton } from "./community-comments-send-button";
 
@@ -738,13 +742,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
 
           <CommunityCommentsInputBox>
             <CommunityCommentsTextarea
-              aria-label={
-                podeComentar ? "Adicionar comentário..." : "Entre para comentar."
-              }
+              aria-label={obterTextoCampoComentarioComunidade(podeComentar)}
               ref={comentarioRef}
-              placeholder={
-                podeComentar ? "Adicionar comentário..." : "Entre para comentar."
-              }
+              placeholder={obterTextoCampoComentarioComunidade(podeComentar)}
               disabled={!podeComentar || comentarioEnviando}
               autoComplete="off"
               autoCorrect="off"
@@ -771,7 +771,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
             disabled={!podeComentar || comentarioEnviando}
             active={podeComentar && !comentarioEnviando}
           >
-            {comentarioEnviando ? "..." : "↑"}
+            {obterTextoBotaoEnviarComentarioComunidade(comentarioEnviando)}
           </CommunityCommentsSendButton>
         </CommunityCommentsFormContainer>
       </CommunityCommentsSheetPanel>

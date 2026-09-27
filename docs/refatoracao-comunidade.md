@@ -54,13 +54,14 @@
 - A Fase 346 extraiu somente `obterAriaLabelCurtidaComentarioComunidade` a partir do rótulo acessível da curtida de comentários e foi concluída com o PR #480 mesclado.
 - A Fase 347 extraiu somente `obterAriaLabelExpansaoComentariosComunidade` a partir do rótulo acessível de expansão dos comentários e foi concluída com o PR #481 mesclado.
 - A Fase 348 extraiu somente `obterTextoBotaoVerRespostasComunidade` e `obterTextoBotaoVerMaisRespostasComunidade` a partir dos textos dos controles de expansão das respostas e foi concluída com o PR #482 mesclado.
-- A Fase 349 extraiu somente `obterTituloComentariosComunidade` a partir do texto do título da folha de comentários; a implementação está no PR #483.
+- A Fase 349 extraiu somente `obterTituloComentariosComunidade` a partir do texto do título da folha de comentários e foi concluída com o PR #483 mesclado.
+- A Fase 350 extraiu somente `obterTextoCampoComentarioComunidade` e `obterTextoBotaoEnviarComentarioComunidade` a partir dos textos do formulário de envio de comentários; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 350 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 351 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
