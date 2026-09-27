@@ -87,6 +87,7 @@ import {
   obterAriaLabelCurtidaComentarioComunidade,
   obterTextoBotaoDenunciarComentarioComunidade,
   obterTextoBotaoRemoverComentarioComunidade,
+  obterTextoBotaoResponderComentarioComunidade,
 } from "./community-comment-action-text";
 import { CommunityCommentLikeContainer } from "./community-comment-like-container";
 import { CommunityCommentLikeButton } from "./community-comment-like-button";
@@ -525,7 +526,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
               }
               disabled={!podeComentar}
             >
-              Responder
+              {obterTextoBotaoResponderComentarioComunidade()}
             </CommunityCommentReplyButton>
 
             {podeRemoverComentario ? (
