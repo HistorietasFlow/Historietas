@@ -7,6 +7,10 @@ type SelecionarOrdenacaoComentariosComunidadeParams = {
   setMenuOrdenacaoAberto: (menuOrdenacaoAberto: boolean) => void;
 };
 
+type SetMenuOrdenacaoComentariosAberto = (
+  atualizarMenuOrdenacaoAberto: (aberto: boolean) => boolean
+) => void;
+
 export function ordenacaoComentariosEhRelevantesComunidade(
   ordenacaoComentarios: OrdenacaoComentariosComunidade
 ) {
@@ -33,4 +37,10 @@ export function selecionarOrdenacaoComentariosRecentesComunidade({
 }: SelecionarOrdenacaoComentariosComunidadeParams) {
   setOrdenacaoComentarios("recentes");
   setMenuOrdenacaoAberto(false);
+}
+
+export function alternarMenuOrdenacaoComentariosComunidade(
+  setMenuOrdenacaoAberto: SetMenuOrdenacaoComentariosAberto
+) {
+  setMenuOrdenacaoAberto((aberto) => !aberto);
 }
