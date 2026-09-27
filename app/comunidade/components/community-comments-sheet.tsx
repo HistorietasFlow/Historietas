@@ -81,7 +81,11 @@ import { CommunityCommentsQuickReactionsContainer } from "./community-comments-q
 import { CommunityCommentsQuickReactionButton } from "./community-comments-quick-reaction-button";
 import { obterAriaLabelReacaoRapidaComunidade } from "./community-comments-quick-reaction-label";
 import { CommunityCommentsFormContainer } from "./community-comments-form-container";
-import { CommunityCommentsInputAvatar } from "./community-comments-input-avatar";
+import {
+  CommunityCommentsInputAvatar,
+  obterAvatarFormularioComentarioComunidade,
+  obterInicialAvatarFormularioComentarioComunidade,
+} from "./community-comments-input-avatar";
 import { CommunityCommentsInputBox } from "./community-comments-input-box";
 import { CommunityCommentsTextarea } from "./community-comments-textarea";
 import {
@@ -751,10 +755,16 @@ export const ComentariosSheet = memo(function ComentariosSheet({
 
         <CommunityCommentsFormContainer onSubmit={enviarComentario}>
           <CommunityCommentsInputAvatar
-            avatar={podeComentar ? usuarioAvatar : ""}
+            avatar={obterAvatarFormularioComentarioComunidade(
+              podeComentar,
+              usuarioAvatar
+            )}
           >
             {!(podeComentar && usuarioAvatar) &&
-              (podeComentar ? usuarioNome : "H").slice(0, 1).toUpperCase()}
+              obterInicialAvatarFormularioComentarioComunidade(
+                podeComentar,
+                usuarioNome
+              )}
           </CommunityCommentsInputAvatar>
 
           <CommunityCommentsInputBox>

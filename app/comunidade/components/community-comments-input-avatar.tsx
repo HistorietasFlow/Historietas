@@ -5,6 +5,20 @@ type CommunityCommentsInputAvatarProps = {
   children: ReactNode;
 };
 
+export function obterAvatarFormularioComentarioComunidade(
+  podeComentar: boolean,
+  usuarioAvatar: string
+) {
+  return podeComentar ? usuarioAvatar : "";
+}
+
+export function obterInicialAvatarFormularioComentarioComunidade(
+  podeComentar: boolean,
+  usuarioNome: string
+) {
+  return (podeComentar ? usuarioNome : "H").slice(0, 1).toUpperCase();
+}
+
 export function CommunityCommentsInputAvatar({
   avatar,
   children,
