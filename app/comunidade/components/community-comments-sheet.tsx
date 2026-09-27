@@ -13,7 +13,11 @@ import {
   usuarioPodeRemoverComentarioComunidade,
 } from "./community-comment-interaction-status";
 import { formatarTempoRelativoComentarioComunidade } from "./community-comment-relative-time";
-import type { OrdenacaoComentariosComunidade } from "./community-comment-order";
+import {
+  ordenacaoComentariosEhRecentesComunidade,
+  ordenacaoComentariosEhRelevantesComunidade,
+  type OrdenacaoComentariosComunidade,
+} from "./community-comment-order";
 import type { RespostaComentarioComunidade } from "./community-comment-reply";
 import {
   criarEstruturaComentariosComunidade,
@@ -633,7 +637,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                     setOrdenacaoComentarios("relevantes");
                     setMenuOrdenacaoAberto(false);
                   }}
-                  active={ordenacaoComentarios === "relevantes"}
+                  active={ordenacaoComentariosEhRelevantesComunidade(
+                    ordenacaoComentarios
+                  )}
                   role="menuitem"
                 >
                   {obterTextoOrdenacaoComentariosRelevantesComunidade()}
@@ -647,7 +653,9 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                     setOrdenacaoComentarios("recentes");
                     setMenuOrdenacaoAberto(false);
                   }}
-                  active={ordenacaoComentarios === "recentes"}
+                  active={ordenacaoComentariosEhRecentesComunidade(
+                    ordenacaoComentarios
+                  )}
                   role="menuitem"
                 >
                   {obterTextoOrdenacaoComentariosRecentesComunidade()}
