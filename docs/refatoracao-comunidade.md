@@ -80,13 +80,14 @@
 - A Fase 372 extraiu somente `deveExpandirComentariosPorArrasteComunidade`, `deveRecolherComentariosPorArrasteComunidade` e `deveFecharComentariosPorArrasteComunidade` a partir das decisões finais do gesto de arraste dos comentários e foi concluída com o PR #506 mesclado.
 - A Fase 373 extraiu somente `obterLimiteSuperiorArrasteComentariosComunidade` e `obterLimiteInferiorArrasteComentariosComunidade` a partir dos limites do gesto de arraste dos comentários e foi concluída com o PR #507 mesclado.
 - A Fase 374 extraiu somente `obterPosicaoAtualArrasteComentariosComunidade`, `calcularDeslocamentoArrasteComentariosComunidade` e `deveIgnorarCliqueAposArrasteComunidade` a partir dos cálculos do movimento do gesto de arraste dos comentários e foi concluída com o PR #508 mesclado.
-- A Fase 375 extraiu somente `mostrarRespostasIniciaisComunidade`, `mostrarMaisRespostasComunidade` e `ocultarRespostasComunidade` a partir das ações de paginação visual das respostas dos comentários; a implementação está neste PR.
+- A Fase 375 extraiu somente `mostrarRespostasIniciaisComunidade`, `mostrarMaisRespostasComunidade` e `ocultarRespostasComunidade` a partir das ações de paginação visual das respostas dos comentários e foi concluída com o PR #509 mesclado.
+- A Fase 376 extraiu somente `usuarioPodeRemoverPostComunidade`, `usuarioPodeDenunciarPostComunidade` e `usuarioPodeAlterarVisibilidadePostComunidade` a partir das permissões das ações de publicação; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 376 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 377 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 

@@ -30,6 +30,11 @@ import { temFiltrosAtivosComunidade } from "./components/community-active-filter
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { postCombinaTermoBuscaComunidade } from "./components/community-post-search-match";
 import {
+  usuarioPodeAlterarVisibilidadePostComunidade,
+  usuarioPodeDenunciarPostComunidade,
+  usuarioPodeRemoverPostComunidade,
+} from "./components/community-post-permissions";
+import {
   deveOcultarPostPorFiltrosBasicosEContextuaisComunidade,
   postCombinaAbaFeedComunidade,
   postCombinaCategoriaComunidade,
@@ -2791,16 +2796,18 @@ export default function ComunidadePage() {
                   const postSalvo = postsSalvosIds.includes(post.id);
                   const usuarioAtualId = usuario?.id.trim() || "";
                   const autorPostId = post.autorId.trim();
-                  const podeRemover = Boolean(
-                    !carregandoUsuario &&
-                      usuarioAtualId &&
-                      (autorPostId === usuarioAtualId || usuarioEhAdmin)
+                  const podeRemover = usuarioPodeRemoverPostComunidade(
+                    carregandoUsuario,
+                    usuarioAtualId,
+                    autorPostId,
+                    usuarioEhAdmin
                   );
-                  const podeDenunciarPost = Boolean(
-                    !carregandoUsuario &&
-                      usuarioAtualId &&
-                      autorPostId !== usuarioAtualId
-                  );
+                  const podeDenunciarPost =
+                    usuarioPodeDenunciarPostComunidade(
+                      carregandoUsuario,
+                      usuarioAtualId,
+                      autorPostId
+                    );
                   const postCurtindo = postCurtindoId === post.id;
                   const postSalvando = postSalvandoId === post.id;
                   const postCompartilhando = postCompartilhandoId === post.id;
@@ -2808,11 +2815,12 @@ export default function ComunidadePage() {
                   const postFixando = postFixandoId === post.id;
                   const postVisibilidadeAtualizando =
                     postVisibilidadeAtualizandoId === post.id;
-                  const podeAlterarVisibilidade = Boolean(
-                    !carregandoUsuario &&
-                      usuarioAtualId &&
-                      autorPostId === usuarioAtualId
-                  );
+                  const podeAlterarVisibilidade =
+                    usuarioPodeAlterarVisibilidadePostComunidade(
+                      carregandoUsuario,
+                      usuarioAtualId,
+                      autorPostId
+                    );
                   const postDenunciando = Boolean(
                     denunciaAlvo?.alvoTipo === "post" &&
                       denunciaAlvo.alvoId === post.id
