@@ -82,3 +82,10 @@ export function criarEstruturaComentariosComunidade<
     respostasPorRaiz,
   };
 }
+
+export function obterRespostasComentarioComunidade<T>(
+  respostasPorRaiz: Map<string, T[]>,
+  comentarioId: string
+) {
+  return respostasPorRaiz.get(comentarioId) || [];
+}

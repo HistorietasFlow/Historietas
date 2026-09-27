@@ -15,7 +15,10 @@ import {
 import { formatarTempoRelativoComentarioComunidade } from "./community-comment-relative-time";
 import type { OrdenacaoComentariosComunidade } from "./community-comment-order";
 import type { RespostaComentarioComunidade } from "./community-comment-reply";
-import { criarEstruturaComentariosComunidade } from "./community-comment-tree";
+import {
+  criarEstruturaComentariosComunidade,
+  obterRespostasComentarioComunidade,
+} from "./community-comment-tree";
 import type { ComentariosSheetProps } from "./community-comments-sheet-props";
 import { criarPerfilHrefComunidade } from "./community-profile-link";
 import { CommunityCommentsSheetPanel } from "./community-comments-sheet-panel";
@@ -659,8 +662,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
             estruturaComentarios.comentariosRaiz
           ) ? (
             estruturaComentarios.comentariosRaiz.map((comentario) => {
-              const respostas =
-                estruturaComentarios.respostasPorRaiz.get(comentario.id) || [];
+              const respostas = obterRespostasComentarioComunidade(
+                estruturaComentarios.respostasPorRaiz,
+                comentario.id
+              );
               const quantidadeVisivel =
                 obterQuantidadeRespostasVisiveisComunidade(
                   respostas,
