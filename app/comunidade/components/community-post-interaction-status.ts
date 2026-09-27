@@ -1,3 +1,4 @@
+import type { DenunciaAlvoComunidade } from "./community-report-target";
 import type { PostComunidade } from "./community-post-model";
 import type { UsuarioComunidade } from "./community-user";
 
@@ -62,4 +63,27 @@ export function postEstaAtualizandoVisibilidade(
   post: PostComunidade
 ): boolean {
   return postVisibilidadeAtualizandoId === post.id;
+}
+
+export function postEstaSendoDenunciadoComunidade(
+  denunciaAlvo: DenunciaAlvoComunidade | null,
+  post: PostComunidade
+): boolean {
+  return Boolean(
+    denunciaAlvo?.alvoTipo === "post" && denunciaAlvo.alvoId === post.id
+  );
+}
+
+export function menuOpcoesPostEstaAbertoComunidade(
+  postMenuAbertoId: string | null,
+  post: PostComunidade
+): boolean {
+  return postMenuAbertoId === post.id;
+}
+
+export function deveOcultarTextoSpoilerComunidade(
+  post: PostComunidade,
+  spoilerRevelado: boolean
+): boolean {
+  return post.temSpoiler && !spoilerRevelado;
 }
