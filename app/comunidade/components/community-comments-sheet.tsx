@@ -111,6 +111,7 @@ import {
 import { CommunityCommentsFormContainer } from "./community-comments-form-container";
 import {
   CommunityCommentsInputAvatar,
+  deveExibirInicialAvatarFormularioComentarioComunidade,
   obterAvatarFormularioComentarioComunidade,
   obterInicialAvatarFormularioComentarioComunidade,
 } from "./community-comments-input-avatar";
@@ -824,7 +825,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
               usuarioAvatar
             )}
           >
-            {!(podeComentar && usuarioAvatar) &&
+            {deveExibirInicialAvatarFormularioComentarioComunidade(
+              podeComentar,
+              usuarioAvatar
+            ) &&
               obterInicialAvatarFormularioComentarioComunidade(
                 podeComentar,
                 usuarioNome

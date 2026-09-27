@@ -12,6 +12,13 @@ export function obterAvatarFormularioComentarioComunidade(
   return podeComentar ? usuarioAvatar : "";
 }
 
+export function deveExibirInicialAvatarFormularioComentarioComunidade(
+  podeComentar: boolean,
+  usuarioAvatar: string
+) {
+  return !(podeComentar && usuarioAvatar);
+}
+
 export function obterInicialAvatarFormularioComentarioComunidade(
   podeComentar: boolean,
   usuarioNome: string
