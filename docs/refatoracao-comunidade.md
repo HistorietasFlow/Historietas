@@ -76,13 +76,14 @@
 - A Fase 368 extraiu somente `deveDesabilitarCurtidaComentarioComunidade` a partir da condição de desabilitação da curtida de comentários e foi concluída com o PR #502 mesclado.
 - A Fase 369 extraiu somente `deveDesabilitarAcaoComentarioComunidade` a partir da condição compartilhada de desabilitação das ações de resposta, reação rápida e menção e foi concluída com o PR #503 mesclado.
 - A Fase 370 extraiu somente `deveExibirInicialAvatarFormularioComentarioComunidade` a partir da condição de exibição da inicial do avatar no formulário de comentários e foi concluída com o PR #504 mesclado.
-- A Fase 371 extraiu somente `deveAlternarExpansaoComentariosPorTeclaComunidade` a partir da condição de teclado do controle de expansão dos comentários; a implementação está neste PR.
+- A Fase 371 extraiu somente `deveAlternarExpansaoComentariosPorTeclaComunidade` a partir da condição de teclado do controle de expansão dos comentários e foi concluída com o PR #505 mesclado.
+- A Fase 372 extraiu somente `deveExpandirComentariosPorArrasteComunidade`, `deveRecolherComentariosPorArrasteComunidade` e `deveFecharComentariosPorArrasteComunidade` a partir das decisões finais do gesto de arraste dos comentários; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 372 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 373 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
