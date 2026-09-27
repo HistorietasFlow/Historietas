@@ -35,10 +35,13 @@ import {
   usuarioPodeRemoverPostComunidade,
 } from "./components/community-post-permissions";
 import {
+  deveOcultarTextoSpoilerComunidade,
+  menuOpcoesPostEstaAbertoComunidade,
   postEstaSalvoComunidade,
   postEstaAtualizandoVisibilidade,
   postEstaSendoCompartilhado,
   postEstaSendoCurtido,
+  postEstaSendoDenunciadoComunidade,
   postEstaSendoFixado,
   postEstaSendoRemovido,
   postEstaSendoSalvo,
@@ -2854,26 +2857,32 @@ export default function ComunidadePage() {
                       usuarioAtualId,
                       autorPostId
                     );
-                  const postDenunciando = Boolean(
-                    denunciaAlvo?.alvoTipo === "post" &&
-                      denunciaAlvo.alvoId === post.id
+                  const postDenunciando = postEstaSendoDenunciadoComunidade(
+                    denunciaAlvo,
+                    post
                   );
                   const spoilerRevelado = spoilerPostEstaReveladoComunidade(
                     spoilersReveladosIds,
                     post
                   );
-                  const ocultarTextoSpoiler = post.temSpoiler && !spoilerRevelado;
+                  const ocultarTextoSpoiler =
+                    deveOcultarTextoSpoilerComunidade(post, spoilerRevelado);
                   const obraRelacionadaPermitida = obterObraRelacionadaPermitida(
                     post.obraRelacionada,
                     obrasRelacionadasSugestoes
                   );
+                  const menuOpcoesAberto =
+                    menuOpcoesPostEstaAbertoComunidade(
+                      postMenuAbertoId,
+                      post
+                    );
                   const opcoesPublicacao = (
                     <CommunityPostOptionsContainer>
                       <CommunityPostOptionsButton
                         type="button"
                         aria-label="Abrir opções da publicação"
                         aria-haspopup="menu"
-                        aria-expanded={postMenuAbertoId === post.id}
+                        aria-expanded={menuOpcoesAberto}
                         onClick={() =>
                           setPostMenuAbertoId((postIdAtual) =>
                             postIdAtual === post.id ? null : post.id
@@ -2884,7 +2893,7 @@ export default function ComunidadePage() {
                         ⋮
                       </CommunityPostOptionsButton>
 
-                      {postMenuAbertoId === post.id && typeof document !== "undefined"
+                      {menuOpcoesAberto && typeof document !== "undefined"
                         ? createPortal(
                         <CommunitySheetOverlay
                           ariaLabel="Ações da publicação"
