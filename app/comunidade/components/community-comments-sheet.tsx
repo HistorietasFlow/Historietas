@@ -53,6 +53,11 @@ import {
   temRespostasOcultasComunidade,
   temRespostasVisiveisComunidade,
 } from "./community-comment-replies-visibility";
+import {
+  obterQuantidadeRespostasOcultasComunidade,
+  obterQuantidadeRespostasVisiveisComunidade,
+  obterRespostasVisiveisComunidade,
+} from "./community-comment-replies-pagination";
 import { CommunityCommentRepliesControlsContainer } from "./community-comment-replies-controls-container";
 import { CommunityCommentRepliesHideButton } from "./community-comment-replies-hide-button";
 import { CommunityCommentAvatar } from "./community-comment-avatar";
@@ -653,15 +658,21 @@ export const ComentariosSheet = memo(function ComentariosSheet({
             estruturaComentarios.comentariosRaiz.map((comentario) => {
               const respostas =
                 estruturaComentarios.respostasPorRaiz.get(comentario.id) || [];
-              const quantidadeVisivel = Math.min(
-                respostas.length,
-                respostasVisiveisPorComentario[comentario.id] || 0
+              const quantidadeVisivel =
+                obterQuantidadeRespostasVisiveisComunidade(
+                  respostas,
+                  respostasVisiveisPorComentario,
+                  comentario
+                );
+              const respostasVisiveis = obterRespostasVisiveisComunidade(
+                respostas,
+                quantidadeVisivel
               );
-              const respostasVisiveis = respostas.slice(0, quantidadeVisivel);
-              const respostasOcultas = Math.max(
-                0,
-                respostas.length - quantidadeVisivel
-              );
+              const respostasOcultas =
+                obterQuantidadeRespostasOcultasComunidade(
+                  respostas,
+                  quantidadeVisivel
+                );
               const respostasExpandidas = quantidadeVisivel > 0;
 
               return (
