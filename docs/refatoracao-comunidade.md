@@ -58,7 +58,7 @@
 - A Fase 350 extraiu somente `obterTextoCampoComentarioComunidade` e `obterTextoBotaoEnviarComentarioComunidade` a partir dos textos do formulário de envio de comentários e foi concluída com o PR #484 mesclado.
 - A Fase 351 extraiu somente `obterAriaLabelReacaoRapidaComunidade` a partir do rótulo acessível das reações rápidas dos comentários e foi concluída com o PR #485 mesclado.
 - A Fase 352 extraiu somente `temRespostasVisiveisComunidade`, `deveExibirBotaoVerRespostasComunidade` e `temRespostasOcultasComunidade` a partir das condições de visibilidade das respostas dos comentários e foi concluída com o PR #486 mesclado.
-- A Fase 353 extraiu somente `obterTextoBotaoOcultarRespostasComunidade` a partir do texto do botão de ocultar respostas dos comentários; a implementação está neste PR.
+- A Fase 353 extraiu somente `obterTextoBotaoOcultarRespostasComunidade` a partir do texto do botão de ocultar respostas dos comentários; a implementação está no PR #487.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
