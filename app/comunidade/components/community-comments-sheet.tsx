@@ -85,6 +85,8 @@ import { CommunityCommentsInputAvatar } from "./community-comments-input-avatar"
 import { CommunityCommentsInputBox } from "./community-comments-input-box";
 import { CommunityCommentsTextarea } from "./community-comments-textarea";
 import {
+  obterAriaLabelEnvioComentarioComunidade,
+  obterAriaLabelMencaoComentarioComunidade,
   obterTextoBotaoEnviarComentarioComunidade,
   obterTextoCampoComentarioComunidade,
 } from "./community-comments-composer-text";
@@ -775,14 +777,14 @@ export const ComentariosSheet = memo(function ComentariosSheet({
             type="button"
             onClick={() => inserirNoComentario("@")}
             disabled={!podeComentar}
-            aria-label="Adicionar menção"
+            aria-label={obterAriaLabelMencaoComentarioComunidade()}
           >
             @
           </CommunityCommentsMentionButton>
 
           <CommunityCommentsSendButton
             type="submit"
-            aria-label="Enviar comentário"
+            aria-label={obterAriaLabelEnvioComentarioComunidade()}
             disabled={!podeComentar || comentarioEnviando}
             active={podeComentar && !comentarioEnviando}
           >
