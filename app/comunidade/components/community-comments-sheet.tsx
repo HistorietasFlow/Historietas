@@ -8,6 +8,7 @@ import {
   comentarioEstaSendoCurtidoComunidade,
   comentarioEstaSendoDenunciadoComunidade,
   comentarioEstaSendoRemovidoComunidade,
+  deveDesabilitarCurtidaComentarioComunidade,
   usuarioCurtiuComentarioComunidade,
   usuarioPodeDenunciarComentarioComunidade,
   usuarioPodeRemoverComentarioComunidade,
@@ -572,7 +573,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
             onClick={() =>
               curtirComentarioSeguro(post?.id || "", comentario.id)
             }
-            disabled={!podeComentar || comentarioCurtindo}
+            disabled={deveDesabilitarCurtidaComentarioComunidade(
+              podeComentar,
+              comentarioCurtindo
+            )}
           >
             <CommunityCommentHeartIcon
               liked={usuarioCurtiuComentario}

@@ -41,3 +41,10 @@ export function comentarioEstaSendoDenunciadoComunidade(
 ) {
   return comentarioDenunciandoId === comentario.id;
 }
+
+export function deveDesabilitarCurtidaComentarioComunidade(
+  podeComentar: boolean,
+  comentarioCurtindo: boolean
+) {
+  return !podeComentar || comentarioCurtindo;
+}
