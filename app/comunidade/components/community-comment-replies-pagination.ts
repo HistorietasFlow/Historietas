@@ -24,3 +24,16 @@ export function obterQuantidadeRespostasOcultasComunidade(
 ) {
   return Math.max(0, respostas.length - quantidadeVisivel);
 }
+
+export function obterQuantidadeInicialRespostasVisiveisComunidade(
+  respostas: ComentarioComunidade[]
+) {
+  return Math.min(5, respostas.length);
+}
+
+export function obterProximaQuantidadeRespostasVisiveisComunidade(
+  respostas: ComentarioComunidade[],
+  quantidadeAtual: number
+) {
+  return Math.min(respostas.length, (quantidadeAtual || 0) + 5);
+}

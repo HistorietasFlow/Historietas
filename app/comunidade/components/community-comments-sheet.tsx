@@ -54,6 +54,8 @@ import {
   temRespostasVisiveisComunidade,
 } from "./community-comment-replies-visibility";
 import {
+  obterProximaQuantidadeRespostasVisiveisComunidade,
+  obterQuantidadeInicialRespostasVisiveisComunidade,
   obterQuantidadeRespostasOcultasComunidade,
   obterQuantidadeRespostasVisiveisComunidade,
   obterRespostasVisiveisComunidade,
@@ -696,7 +698,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                       onClick={() =>
                         setRespostasVisiveisPorComentario((estadoAtual) => ({
                           ...estadoAtual,
-                          [comentario.id]: Math.min(5, respostas.length),
+                          [comentario.id]:
+                            obterQuantidadeInicialRespostasVisiveisComunidade(
+                              respostas
+                            ),
                         }))
                       }
                     >
@@ -712,10 +717,11 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                           onClick={() =>
                             setRespostasVisiveisPorComentario((estadoAtual) => ({
                               ...estadoAtual,
-                              [comentario.id]: Math.min(
-                                respostas.length,
-                                (estadoAtual[comentario.id] || 0) + 5
-                              ),
+                              [comentario.id]:
+                                obterProximaQuantidadeRespostasVisiveisComunidade(
+                                  respostas,
+                                  estadoAtual[comentario.id]
+                                ),
                             }))
                           }
                         >
