@@ -37,6 +37,11 @@ import { CommunityCommentsSheetHandleContainer } from "./community-comments-shee
 import { CommunityCommentsSheetHandleBar } from "./community-comments-sheet-handle-bar";
 import { obterAriaLabelExpansaoComentariosComunidade } from "./community-comments-sheet-expansion-label";
 import { deveAlternarExpansaoComentariosPorTeclaComunidade } from "./community-comments-sheet-expansion-key";
+import {
+  deveExpandirComentariosPorArrasteComunidade,
+  deveFecharComentariosPorArrasteComunidade,
+  deveRecolherComentariosPorArrasteComunidade,
+} from "./community-comments-sheet-drag-decisions";
 import { CommunityCommentsSheetHeaderContainer } from "./community-comments-sheet-header-container";
 import { CommunityCommentsSheetHeaderSpacer } from "./community-comments-sheet-header-spacer";
 import { CommunityCommentsSheetTitle } from "./community-comments-sheet-title";
@@ -401,17 +406,24 @@ export const ComentariosSheet = memo(function ComentariosSheet({
       }, 350);
     }
 
-    if (deslocamento < -34) {
+    if (deveExpandirComentariosPorArrasteComunidade(deslocamento)) {
       setSheetExpandido(true);
       return;
     }
 
-    if (deslocamento > 52 && sheetExpandido) {
+    if (
+      deveRecolherComentariosPorArrasteComunidade(
+        deslocamento,
+        sheetExpandido
+      )
+    ) {
       setSheetExpandido(false);
       return;
     }
 
-    if (deslocamento > 118 && !sheetExpandido) {
+    if (
+      deveFecharComentariosPorArrasteComunidade(deslocamento, sheetExpandido)
+    ) {
       fecharComentarios();
     }
   }
