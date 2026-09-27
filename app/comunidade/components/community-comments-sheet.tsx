@@ -50,6 +50,7 @@ import {
 } from "./community-comment-replies-action-text";
 import {
   deveExibirBotaoVerRespostasComunidade,
+  respostasEstaoExpandidasComunidade,
   temRespostasOcultasComunidade,
   temRespostasVisiveisComunidade,
 } from "./community-comment-replies-visibility";
@@ -675,7 +676,8 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                   respostas,
                   quantidadeVisivel
                 );
-              const respostasExpandidas = quantidadeVisivel > 0;
+              const respostasExpandidas =
+                respostasEstaoExpandidasComunidade(quantidadeVisivel);
 
               return (
                 <CommunityCommentThreadContainer key={comentario.id}>
