@@ -1,3 +1,7 @@
+export function obterTextoBotaoResponderComentarioComunidade() {
+  return "Responder";
+}
+
 export function obterTextoBotaoRemoverComentarioComunidade(
   comentarioRemovendo: boolean
 ) {
