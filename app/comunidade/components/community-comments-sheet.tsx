@@ -68,6 +68,7 @@ import { CommunityCommentsErrorNotice } from "./community-comments-error-notice"
 import { CommunityCommentsToolsContainer } from "./community-comments-tools-container";
 import { CommunityCommentsQuickReactionsContainer } from "./community-comments-quick-reactions-container";
 import { CommunityCommentsQuickReactionButton } from "./community-comments-quick-reaction-button";
+import { obterAriaLabelReacaoRapidaComunidade } from "./community-comments-quick-reaction-label";
 import { CommunityCommentsFormContainer } from "./community-comments-form-container";
 import { CommunityCommentsInputAvatar } from "./community-comments-input-avatar";
 import { CommunityCommentsInputBox } from "./community-comments-input-box";
@@ -724,7 +725,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                 type="button"
                 onClick={() => inserirNoComentario(emoji)}
                 disabled={!podeComentar}
-                aria-label={`Adicionar ${emoji} ao comentário`}
+                aria-label={obterAriaLabelReacaoRapidaComunidade(emoji)}
               >
                 {emoji}
               </CommunityCommentsQuickReactionButton>
