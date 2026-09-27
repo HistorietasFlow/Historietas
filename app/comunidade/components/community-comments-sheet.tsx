@@ -39,6 +39,7 @@ import { CommunityCommentItemContainer } from "./community-comment-item-containe
 import { CommunityCommentRepliesListContainer } from "./community-comment-replies-list-container";
 import { CommunityCommentRepliesToggleButton } from "./community-comment-replies-toggle-button";
 import {
+  obterTextoBotaoOcultarRespostasComunidade,
   obterTextoBotaoVerMaisRespostasComunidade,
   obterTextoBotaoVerRespostasComunidade,
 } from "./community-comment-replies-action-text";
@@ -705,7 +706,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                           }))
                         }
                       >
-                        Ocultar respostas
+                        {obterTextoBotaoOcultarRespostasComunidade()}
                       </CommunityCommentRepliesHideButton>
                     </CommunityCommentRepliesControlsContainer>
                   ) : null}

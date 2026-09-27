@@ -13,3 +13,7 @@ export function obterTextoBotaoVerMaisRespostasComunidade(
     quantidadeRespostasOcultas === 1 ? "resposta" : "respostas"
   }`;
 }
+
+export function obterTextoBotaoOcultarRespostasComunidade() {
+  return "Ocultar respostas";
+}
