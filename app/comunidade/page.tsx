@@ -36,8 +36,11 @@ import {
 } from "./components/community-post-permissions";
 import {
   obterTextoBotaoCompartilharPostComunidade,
+  obterTextoBotaoDenunciarPostComunidade,
   obterTextoBotaoFixarPostComunidade,
+  obterTextoBotaoRemoverPostComunidade,
   obterTextoBotaoSalvarPostComunidade,
+  obterTextoBotaoSpoilerPostComunidade,
 } from "./components/community-post-action-text";
 import {
   deveOcultarTextoSpoilerComunidade,
@@ -3006,7 +3009,9 @@ export default function ComunidadePage() {
                                 }}
                                 disabled={postRemovendo}
                               >
-                                {postRemovendo ? "Removendo..." : "Remover publicação"}
+                                {obterTextoBotaoRemoverPostComunidade(
+                                  postRemovendo
+                                )}
                               </CommunitySheetDangerAction>
                             )}
 
@@ -3018,7 +3023,9 @@ export default function ComunidadePage() {
                                 }}
                                 disabled={postDenunciando}
                               >
-                                {postDenunciando ? "Enviando..." : "Denunciar"}
+                                {obterTextoBotaoDenunciarPostComunidade(
+                                  postDenunciando
+                                )}
                               </CommunitySheetDangerAction>
                             )}
                           </CommunitySheetSurface>
@@ -3245,7 +3252,9 @@ export default function ComunidadePage() {
                               })
                             }
                           >
-                            {ocultarTextoSpoiler ? "REVELAR" : "OCULTAR"}
+                            {obterTextoBotaoSpoilerPostComunidade(
+                              ocultarTextoSpoiler
+                            )}
                           </CommunityPostSpoilerButton>
                         )}
                       </CommunityPostActions>

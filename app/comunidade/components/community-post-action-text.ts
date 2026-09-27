@@ -27,3 +27,21 @@ export function obterTextoBotaoFixarPostComunidade(
       ? "Desfixar publicação"
       : "Fixar publicação";
 }
+
+export function obterTextoBotaoRemoverPostComunidade(
+  postRemovendo: boolean
+): string {
+  return postRemovendo ? "Removendo..." : "Remover publicação";
+}
+
+export function obterTextoBotaoDenunciarPostComunidade(
+  postDenunciando: boolean
+): string {
+  return postDenunciando ? "Enviando..." : "Denunciar";
+}
+
+export function obterTextoBotaoSpoilerPostComunidade(
+  ocultarTextoSpoiler: boolean
+): string {
+  return ocultarTextoSpoiler ? "REVELAR" : "OCULTAR";
+}
