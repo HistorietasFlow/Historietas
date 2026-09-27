@@ -42,6 +42,10 @@ import {
   deveFecharComentariosPorArrasteComunidade,
   deveRecolherComentariosPorArrasteComunidade,
 } from "./community-comments-sheet-drag-decisions";
+import {
+  obterLimiteInferiorArrasteComentariosComunidade,
+  obterLimiteSuperiorArrasteComentariosComunidade,
+} from "./community-comments-sheet-drag-limits";
 import { CommunityCommentsSheetHeaderContainer } from "./community-comments-sheet-header-container";
 import { CommunityCommentsSheetHeaderSpacer } from "./community-comments-sheet-header-spacer";
 import { CommunityCommentsSheetTitle } from "./community-comments-sheet-title";
@@ -355,8 +359,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     }
 
     const posicaoAtual = event.touches[0]?.clientY || dragStartYRef.current;
-    const limiteSuperior = sheetExpandido ? -46 : -58;
-    const limiteInferior = sheetExpandido ? 112 : 132;
+    const limiteSuperior =
+      obterLimiteSuperiorArrasteComentariosComunidade(sheetExpandido);
+    const limiteInferior =
+      obterLimiteInferiorArrasteComentariosComunidade(sheetExpandido);
     const deslocamento = Math.max(
       limiteSuperior,
       Math.min(limiteInferior, posicaoAtual - dragStartYRef.current)
