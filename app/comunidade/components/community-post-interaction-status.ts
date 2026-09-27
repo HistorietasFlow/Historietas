@@ -21,3 +21,24 @@ export function spoilerPostEstaReveladoComunidade(
 ): boolean {
   return spoilersReveladosIds.includes(post.id);
 }
+
+export function postEstaSendoCurtido(
+  postCurtindoId: string | null,
+  post: PostComunidade
+): boolean {
+  return postCurtindoId === post.id;
+}
+
+export function postEstaSendoSalvo(
+  postSalvandoId: string | null,
+  post: PostComunidade
+): boolean {
+  return postSalvandoId === post.id;
+}
+
+export function postEstaSendoCompartilhado(
+  postCompartilhandoId: string | null,
+  post: PostComunidade
+): boolean {
+  return postCompartilhandoId === post.id;
+}

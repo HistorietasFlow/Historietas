@@ -36,6 +36,9 @@ import {
 } from "./components/community-post-permissions";
 import {
   postEstaSalvoComunidade,
+  postEstaSendoCompartilhado,
+  postEstaSendoCurtido,
+  postEstaSendoSalvo,
   spoilerPostEstaReveladoComunidade,
   usuarioCurtiuPostComunidade,
 } from "./components/community-post-interaction-status";
@@ -2817,9 +2820,18 @@ export default function ComunidadePage() {
                       usuarioAtualId,
                       autorPostId
                     );
-                  const postCurtindo = postCurtindoId === post.id;
-                  const postSalvando = postSalvandoId === post.id;
-                  const postCompartilhando = postCompartilhandoId === post.id;
+                  const postCurtindo = postEstaSendoCurtido(
+                    postCurtindoId,
+                    post
+                  );
+                  const postSalvando = postEstaSendoSalvo(
+                    postSalvandoId,
+                    post
+                  );
+                  const postCompartilhando = postEstaSendoCompartilhado(
+                    postCompartilhandoId,
+                    post
+                  );
                   const postRemovendo = postRemovendoId === post.id;
                   const postFixando = postFixandoId === post.id;
                   const postVisibilidadeAtualizando =
