@@ -27,6 +27,7 @@ import { obterAriaLabelExpansaoComentariosComunidade } from "./community-comment
 import { CommunityCommentsSheetHeaderContainer } from "./community-comments-sheet-header-container";
 import { CommunityCommentsSheetHeaderSpacer } from "./community-comments-sheet-header-spacer";
 import { CommunityCommentsSheetTitle } from "./community-comments-sheet-title";
+import { obterTituloComentariosComunidade } from "./community-comments-title-text";
 import { CommunityCommentsSortMenuContainer } from "./community-comments-sort-menu-container";
 import { CommunityCommentsSortMenuTrigger } from "./community-comments-sort-menu-trigger";
 import { CommunityCommentsSortMenuPanel } from "./community-comments-sort-menu-panel";
@@ -573,9 +574,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
           <CommunityCommentsSheetHeaderSpacer />
 
           <CommunityCommentsSheetTitle>
-            {post.comentarios.length === 1
-              ? "1 comentário"
-              : `${post.comentarios.length} comentários`}
+            {obterTituloComentariosComunidade(post.comentarios.length)}
           </CommunityCommentsSheetTitle>
 
           <CommunityCommentsSortMenuContainer>
