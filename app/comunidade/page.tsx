@@ -35,6 +35,11 @@ import {
   usuarioPodeRemoverPostComunidade,
 } from "./components/community-post-permissions";
 import {
+  postEstaSalvoComunidade,
+  spoilerPostEstaReveladoComunidade,
+  usuarioCurtiuPostComunidade,
+} from "./components/community-post-interaction-status";
+import {
   deveOcultarPostPorFiltrosBasicosEContextuaisComunidade,
   postCombinaAbaFeedComunidade,
   postCombinaCategoriaComunidade,
@@ -2790,10 +2795,14 @@ export default function ComunidadePage() {
               {!carregandoFeed && (
                 postsVisiveis.length > 0 ? (
                 postsVisiveis.map((post) => {
-                  const usuarioCurtiu = Boolean(
-                    usuario && post.curtidas.includes(usuario.id)
+                  const usuarioCurtiu = usuarioCurtiuPostComunidade(
+                    usuario,
+                    post
                   );
-                  const postSalvo = postsSalvosIds.includes(post.id);
+                  const postSalvo = postEstaSalvoComunidade(
+                    postsSalvosIds,
+                    post
+                  );
                   const usuarioAtualId = usuario?.id.trim() || "";
                   const autorPostId = post.autorId.trim();
                   const podeRemover = usuarioPodeRemoverPostComunidade(
@@ -2825,7 +2834,10 @@ export default function ComunidadePage() {
                     denunciaAlvo?.alvoTipo === "post" &&
                       denunciaAlvo.alvoId === post.id
                   );
-                  const spoilerRevelado = spoilersReveladosIds.includes(post.id);
+                  const spoilerRevelado = spoilerPostEstaReveladoComunidade(
+                    spoilersReveladosIds,
+                    post
+                  );
                   const ocultarTextoSpoiler = post.temSpoiler && !spoilerRevelado;
                   const obraRelacionadaPermitida = obterObraRelacionadaPermitida(
                     post.obraRelacionada,
