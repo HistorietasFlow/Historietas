@@ -34,13 +34,6 @@ import {
   usuarioPodeRemoverPostComunidade,
 } from "./components/community-post-permissions";
 import {
-  obterTextoBotaoCompartilharPostComunidade,
-  obterTextoBotaoDenunciarPostComunidade,
-  obterTextoBotaoFixarPostComunidade,
-  obterTextoBotaoRemoverPostComunidade,
-  obterTextoBotaoSalvarPostComunidade,
-} from "./components/community-post-action-text";
-import {
   deveOcultarTextoSpoilerComunidade,
   menuOpcoesPostEstaAbertoComunidade,
   postEstaSalvoComunidade,
@@ -214,11 +207,6 @@ import { CommunitySheetTitle } from "./components/community-sheet-title";
 import { CommunitySheetSectionLabel } from "./components/community-sheet-section-label";
 import { CommunitySheetFilterOption } from "./components/community-sheet-filter-option";
 import { CommunitySheetPrimaryAction } from "./components/community-sheet-primary-action";
-import { CommunitySheetMenuAction } from "./components/community-sheet-menu-action";
-import { CommunitySheetDangerAction } from "./components/community-sheet-danger-action";
-import { CommunitySheetVisibilityMenu } from "./components/community-sheet-visibility-menu";
-import { CommunitySheetVisibilityTitle } from "./components/community-sheet-visibility-title";
-import { CommunitySheetVisibilityOption } from "./components/community-sheet-visibility-option";
 import { CommunityUserSearchSection } from "./components/community-user-search-section";
 import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
@@ -281,8 +269,6 @@ import { CommunityPostStatusLine } from "./components/community-post-status-line
 import { CommunityPostStatusSeparator } from "./components/community-post-status-separator";
 import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
-import { CommunityPostOptionsContainer } from "./components/community-post-options-container";
-import { CommunityPostOptionsButton } from "./components/community-post-options-button";
 import { CommunityPostPinnedBadge } from "./components/community-post-pinned-badge";
 import { CommunityPostVisibilityBadge } from "./components/community-post-visibility-badge";
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
@@ -290,6 +276,7 @@ import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidd
 import { CommunityPostText } from "./components/community-post-text";
 import { CommunityPostActionBar } from "./components/community-post-action-bar";
 import { CommunityPostPoll } from "./components/community-post-poll";
+import { CommunityPostOptionsMenu } from "./components/community-post-options-menu";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
@@ -2697,158 +2684,6 @@ export default function ComunidadePage() {
                       postMenuAbertoId,
                       post
                     );
-                  const opcoesPublicacao = (
-                    <CommunityPostOptionsContainer>
-                      <CommunityPostOptionsButton
-                        type="button"
-                        aria-label="Abrir opções da publicação"
-                        aria-haspopup="menu"
-                        aria-expanded={menuOpcoesAberto}
-                        onClick={() =>
-                          setPostMenuAbertoId((postIdAtual) =>
-                            postIdAtual === post.id ? null : post.id
-                          )
-                        }
-                        menuOpen={Boolean(postMenuAbertoId)}
-                      >
-                        ⋮
-                      </CommunityPostOptionsButton>
-
-                      {menuOpcoesAberto && typeof document !== "undefined"
-                        ? createPortal(
-                        <CommunitySheetOverlay
-                          ariaLabel="Ações da publicação"
-                          closeAriaLabel="Fechar ações da publicação"
-                          onClose={() => setPostMenuAbertoId(null)}
-                        >
-                          <CommunitySheetSurface role="menu">
-                            <CommunitySheetHandle />
-
-                            <CommunitySheetTitle>
-                              Ações da publicação
-                            </CommunitySheetTitle>
-
-                            <CommunitySheetMenuAction
-                              onClick={() => {
-                                setPostMenuAbertoId(null);
-                                alternarPostSalvo({
-                                  postId: post.id,
-                                  acoesComunidadeRef,
-                                  setErro,
-                                  exigirLogin,
-                                  usuario,
-                                  setPostSalvandoId,
-                                  postsSalvosIds,
-                                  setPostsSalvosIds,
-                                  setFeedbackAcao,
-                                  feedbackTimerRef,
-                                });
-                              }}
-                              disabled={postSalvando}
-                            >
-                              {obterTextoBotaoSalvarPostComunidade(
-                                postSalvando,
-                                postSalvo
-                              )}
-                            </CommunitySheetMenuAction>
-
-                            <CommunitySheetMenuAction
-                              onClick={() => {
-                                setPostMenuAbertoId(null);
-                                compartilharPublicacao({
-                                  post,
-                                  acoesComunidadeRef,
-                                  setPostCompartilhandoId,
-                                  setFeedbackAcao,
-                                  feedbackTimerRef,
-                                  setErro,
-                                });
-                              }}
-                              disabled={postCompartilhando}
-                            >
-                              {obterTextoBotaoCompartilharPostComunidade(
-                                postCompartilhando
-                              )}
-                            </CommunitySheetMenuAction>
-
-                            {podeAlterarVisibilidade && (
-                              <CommunitySheetVisibilityMenu>
-                                <CommunitySheetVisibilityTitle>
-                                  Quem pode ver esta publicação?
-                                </CommunitySheetVisibilityTitle>
-
-                                {VISIBILIDADES_POST_COMUNIDADE.map((opcao) => {
-                                  const ativa = post.visibilidade === opcao.valor;
-
-                                  return (
-                                    <CommunitySheetVisibilityOption
-                                      key={`${post.id}-visibilidade-${opcao.valor}`}
-                                      active={ativa}
-                                      onClick={() =>
-                                        void atualizarVisibilidadePost(
-                                          post,
-                                          opcao.valor,
-                                        )
-                                      }
-                                      disabled={postVisibilidadeAtualizando}
-                                    >
-                                      {opcao.rotulo}
-                                    </CommunitySheetVisibilityOption>
-                                  );
-                                })}
-                              </CommunitySheetVisibilityMenu>
-                            )}
-
-                            {usuarioEhAdmin && (
-                              <CommunitySheetMenuAction
-                                onClick={() => {
-                                  setPostMenuAbertoId(null);
-                                  alternarFixadoPost(post);
-                                }}
-                                disabled={postFixando}
-                              >
-                                {obterTextoBotaoFixarPostComunidade(
-                                  postFixando,
-                                  post
-                                )}
-                              </CommunitySheetMenuAction>
-                            )}
-
-                            {podeRemover && (
-                              <CommunitySheetDangerAction
-                                onClick={() => {
-                                  setPostMenuAbertoId(null);
-                                  removerPost(post.id);
-                                }}
-                                disabled={postRemovendo}
-                              >
-                                {obterTextoBotaoRemoverPostComunidade(
-                                  postRemovendo
-                                )}
-                              </CommunitySheetDangerAction>
-                            )}
-
-                            {podeDenunciarPost && (
-                              <CommunitySheetDangerAction
-                                onClick={() => {
-                                  setPostMenuAbertoId(null);
-                                  denunciarConteudo("post", post.id);
-                                }}
-                                disabled={postDenunciando}
-                              >
-                                {obterTextoBotaoDenunciarPostComunidade(
-                                  postDenunciando
-                                )}
-                              </CommunitySheetDangerAction>
-                            )}
-                          </CommunitySheetSurface>
-                        </CommunitySheetOverlay>,
-                            document.body
-                          )
-                        : null}
-                    </CommunityPostOptionsContainer>
-                  );
-
                   return (
                     <CommunityPostCard key={post.id} isDesktop={isDesktop}>
                       <CommunityPostHeader>
@@ -2902,7 +2737,71 @@ export default function ComunidadePage() {
                           </CommunityPostStatusLine>
                         </CommunityPostAuthorMeta>
 
-                        {opcoesPublicacao}
+                        <CommunityPostOptionsMenu
+                          post={post}
+                          postMenuAbertoId={postMenuAbertoId}
+                          menuOpcoesAberto={menuOpcoesAberto}
+                          postSalvo={postSalvo}
+                          postSalvando={postSalvando}
+                          postCompartilhando={postCompartilhando}
+                          podeAlterarVisibilidade={podeAlterarVisibilidade}
+                          postVisibilidadeAtualizando={
+                            postVisibilidadeAtualizando
+                          }
+                          usuarioEhAdmin={usuarioEhAdmin}
+                          postFixando={postFixando}
+                          podeRemover={podeRemover}
+                          postRemovendo={postRemovendo}
+                          podeDenunciarPost={podeDenunciarPost}
+                          postDenunciando={postDenunciando}
+                          onAlternarMenu={() =>
+                            setPostMenuAbertoId((postIdAtual) =>
+                              postIdAtual === post.id ? null : post.id
+                            )
+                          }
+                          onFecharMenu={() => setPostMenuAbertoId(null)}
+                          onSalvar={() => {
+                            setPostMenuAbertoId(null);
+                            alternarPostSalvo({
+                              postId: post.id,
+                              acoesComunidadeRef,
+                              setErro,
+                              exigirLogin,
+                              usuario,
+                              setPostSalvandoId,
+                              postsSalvosIds,
+                              setPostsSalvosIds,
+                              setFeedbackAcao,
+                              feedbackTimerRef,
+                            });
+                          }}
+                          onCompartilhar={() => {
+                            setPostMenuAbertoId(null);
+                            compartilharPublicacao({
+                              post,
+                              acoesComunidadeRef,
+                              setPostCompartilhandoId,
+                              setFeedbackAcao,
+                              feedbackTimerRef,
+                              setErro,
+                            });
+                          }}
+                          onAtualizarVisibilidade={(visibilidade) =>
+                            void atualizarVisibilidadePost(post, visibilidade)
+                          }
+                          onAlternarFixado={() => {
+                            setPostMenuAbertoId(null);
+                            alternarFixadoPost(post);
+                          }}
+                          onRemover={() => {
+                            setPostMenuAbertoId(null);
+                            removerPost(post.id);
+                          }}
+                          onDenunciar={() => {
+                            setPostMenuAbertoId(null);
+                            denunciarConteudo("post", post.id);
+                          }}
+                        />
                       </CommunityPostHeader>
 
                       <CommunityPostBadgesRow>
