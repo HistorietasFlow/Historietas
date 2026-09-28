@@ -45,6 +45,7 @@ import {
 import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
 import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
 import { mapearPostCriadoComunidade } from "./components/community-created-post-mapper";
+import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -90,10 +91,8 @@ import {
 import { carregarSugestoesObrasLocais } from "./components/community-local-related-works-loader";
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
-import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
-import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
 import { obterTextoProfileComunidade } from "./components/community-profile-text";
 import { obterNomeProfileComunidade } from "./components/community-profile-name";
 import { obterAvatarProfileComunidade } from "./components/community-profile-avatar";
@@ -1513,22 +1512,12 @@ export default function ComunidadePage() {
         return false;
       }
 
-      const profilesComentarioNovo = new Map<string, PerfilComunidadeRow>([
-        [
-          usuario.id,
-          {
-            nome: autorNomeSeguro,
-            avatar_url: usuario.avatar,
-          },
-        ],
-      ]);
-      const novoComentario = mapearComentarioSupabase(
-        data as SupabaseComentarioRow,
-        new Map<string, string[]>(),
-        profilesComentarioNovo,
-        obterNomeProfileComunidade,
-        obterAvatarProfileComunidade
-      );
+      const novoComentario = mapearComentarioCriadoComunidade({
+        comentarioCriado: data as SupabaseComentarioRow,
+        usuarioId: usuario.id,
+        autorNomeSeguro,
+        usuarioAvatar: usuario.avatar,
+      });
 
       if (!comentarioPaiIdLimpo && postAtual?.autorId) {
         await criarNotificacaoComunidadeSupabase({
