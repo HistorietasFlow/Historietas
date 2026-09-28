@@ -65,7 +65,7 @@ import { obterNomeUsuario } from "./components/community-user-name";
 import { obterNomeSeguroUsuarioComunidade } from "./components/community-safe-user-name";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import { obterSugestoesObrasRelacionadasVisiveisComunidade } from "./components/community-visible-related-work-suggestions";
-import { aplicarSugestaoPublicacaoComunidade, SUGESTOES_PUBLICACAO_COMUNIDADE } from "./components/community-publication-suggestions";
+import { aplicarSugestaoPublicacaoComunidade } from "./components/community-publication-suggestions";
 import type { PostComunidade } from "./components/community-post-model";
 import { obterPostComentariosAbertoComunidade } from "./components/community-open-comments-post";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
@@ -184,15 +184,7 @@ import { CommunityPostComposerField } from "./components/community-post-composer
 import { CommunityPostComposerFieldLabel } from "./components/community-post-composer-field-label";
 import { CommunityPostComposerSelect } from "./components/community-post-composer-select";
 import { CommunityPostComposerRelatedFields } from "./components/community-post-composer-related-fields";
-import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
-import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
-import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
-import { CommunityPostComposerCharacterCount } from "./components/community-post-composer-character-count";
-import { CommunityPostComposerSuggestionsSection } from "./components/community-post-composer-suggestions-section";
-import { CommunityPostComposerSuggestionsLabel } from "./components/community-post-composer-suggestions-label";
-import { CommunityPostComposerSuggestionsList } from "./components/community-post-composer-suggestions-list";
-import { CommunityPostComposerSuggestionButton } from "./components/community-post-composer-suggestion-button";
-import { CommunityPostComposerTextarea } from "./components/community-post-composer-textarea";
+import { CommunityPostComposerPublicationField } from "./components/community-post-composer-publication-field";
 import { CommunityPostComposerErrorMessage } from "./components/community-post-composer-error-message";
 import { CommunityPostComposerActionRow } from "./components/community-post-composer-action-row";
 import { CommunityPostComposerSpoilerButton } from "./components/community-post-composer-spoiler-button";
@@ -2712,67 +2704,32 @@ export default function ComunidadePage() {
                 />
               </CommunityPostComposerFields>
 
-              <CommunityPostComposerField>
-                <CommunityPostComposerPublicationHeader>
-                  <CommunityPostComposerFieldLabel>Publicação</CommunityPostComposerFieldLabel>
-
-                  <CommunityPostComposerPublicationTools>
-                    <CommunityPostComposerPollTemplateButton
-                      disabled={publicandoPost}
-                      onClick={() =>
-                        prepararEnqueteComunidade({
-                          garantirAceiteAntesDePublicarComunidade,
-                          setErro,
-                          setCategoriaPost,
-                          setTipoPublicacaoPost,
-                          setTemSpoilerPost,
-                          setComposerAberto,
-                          textoPostRef,
-                        })
-                      }
-                    >
-                      Modelo de enquete
-                    </CommunityPostComposerPollTemplateButton>
-
-                    <CommunityPostComposerCharacterCount>
-                      máx. 700
-                    </CommunityPostComposerCharacterCount>
-                  </CommunityPostComposerPublicationTools>
-                </CommunityPostComposerPublicationHeader>
-
-                <CommunityPostComposerSuggestionsSection>
-                  <CommunityPostComposerSuggestionsLabel>
-                    Sugestões para começar
-                  </CommunityPostComposerSuggestionsLabel>
-
-                  <CommunityPostComposerSuggestionsList>
-                    {SUGESTOES_PUBLICACAO_COMUNIDADE.map((sugestao) => (
-                      <CommunityPostComposerSuggestionButton
-                        key={sugestao.rotulo}
-                        disabled={publicandoPost}
-                        onClick={() =>
-                          aplicarSugestaoPublicacaoComunidade({
-                            sugestao,
-                            publicandoPost,
-                            setErro,
-                            setCategoriaPost,
-                            setTipoPublicacaoPost,
-                            textoPostRef,
-                            language,
-                          })
-                        }
-                      >
-                        {sugestao.rotulo}
-                      </CommunityPostComposerSuggestionButton>
-                    ))}
-                  </CommunityPostComposerSuggestionsList>
-                </CommunityPostComposerSuggestionsSection>
-
-                <CommunityPostComposerTextarea
-                  ref={textoPostRef}
-                  disabled={publicandoPost}
-                />
-              </CommunityPostComposerField>
+              <CommunityPostComposerPublicationField
+                publicandoPost={publicandoPost}
+                textoPostRef={textoPostRef}
+                onPrepararEnquete={() =>
+                  prepararEnqueteComunidade({
+                    garantirAceiteAntesDePublicarComunidade,
+                    setErro,
+                    setCategoriaPost,
+                    setTipoPublicacaoPost,
+                    setTemSpoilerPost,
+                    setComposerAberto,
+                    textoPostRef,
+                  })
+                }
+                onAplicarSugestao={(sugestao) =>
+                  aplicarSugestaoPublicacaoComunidade({
+                    sugestao,
+                    publicandoPost,
+                    setErro,
+                    setCategoriaPost,
+                    setTipoPublicacaoPost,
+                    textoPostRef,
+                    language,
+                  })
+                }
+              />
 
               {erro && (
                 <CommunityPostComposerErrorMessage>
