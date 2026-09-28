@@ -28,7 +28,6 @@ import type { TipoPublicacaoFiltro } from "./components/community-publication-fi
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
-import { postCombinaTermoBuscaComunidade } from "./components/community-post-search-match";
 import {
   usuarioPodeAlterarVisibilidadePostComunidade,
   usuarioPodeDenunciarPostComunidade,
@@ -58,14 +57,6 @@ import {
   spoilerPostEstaReveladoComunidade,
   usuarioCurtiuPostComunidade,
 } from "./components/community-post-interaction-status";
-import {
-  deveOcultarPostPorFiltrosBasicosEContextuaisComunidade,
-  postCombinaAbaFeedComunidade,
-  postCombinaCategoriaComunidade,
-  postCombinaGrupoPublicacaoComunidade,
-  postCombinaObraRelacionadaComunidade,
-  postCombinaTipoPublicacaoComunidade,
-} from "./components/community-post-basic-filter-matches";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -169,9 +160,7 @@ import { carregarVotosEnquetesSupabase } from "./components/community-supabase-p
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
 import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
-import { obterDataOrdenacaoPostComunidade } from "./components/community-post-order-dates";
-import { compararDatasOrdenacaoPostsComunidade, compararPostsFixadosPorDataComunidade, compararPostsPorComentariosComunidade, compararPostsPorPontuacaoComunidade, deveOrdenarPostsPorComentariosComunidade, deveOrdenarPostsPorPontuacaoComunidade, obterPrioridadeFixacaoPostComunidade, postsEstaoFixadosComunidade, postsPossuemFixacaoDiferenteComunidade } from "./components/community-post-order-comparators";
-import { compararPrioridadesAutoresSeguidosComunidade, devePriorizarAutoresSeguidosComunidade, obterPrioridadeAutorSeguidoComunidade, prioridadesAutoresSeguidosSaoDiferentesComunidade } from "./components/community-followed-post-priority";
+import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
 import {
   criarPerfilHrefComunidade,
   obterAriaLabelPerfilComunidade,
@@ -203,7 +192,6 @@ import { votarEnquete } from "./components/community-poll-voter";
 import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed-toggler";
 import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
 import { alternarPostSalvo } from "./components/community-saved-post-toggler";
-import { deveOcultarPostPorFiltroSalvosComunidade } from "./components/community-saved-post-filter";
 import { compartilharPublicacao } from "./components/community-post-sharer";
 import { carregarPostsComunidade } from "./components/community-posts-loader";
 import { carregarMaisPostsComunidade } from "./components/community-more-posts-loader";
@@ -1144,130 +1132,18 @@ export default function ComunidadePage() {
   }, [buscaComunidadeAberta, posts, termoBuscaAdiado]);
 
   const postsVisiveis = useMemo(() => {
-    const postsFiltrados = posts.filter((post) => {
-      const categoriaCombina = postCombinaCategoriaComunidade(
-        post,
-        categoriaAtiva
-      );
-      const tipoVisualPublicacao = obterTipoVisualPublicacao(post);
-      const tipoPublicacaoCombina = postCombinaTipoPublicacaoComunidade(
-        tipoVisualPublicacao,
-        tipoPublicacaoAtiva
-      );
-      const obraRelacionadaCombina = postCombinaObraRelacionadaComunidade(
-        post,
-        obraRelacionadaFiltro
-      );
-      const grupoPublicacaoCombina = postCombinaGrupoPublicacaoComunidade(
-        tipoVisualPublicacao,
-        grupoPublicacaoObra
-      );
-      const abaFeedCombina = postCombinaAbaFeedComunidade(
-        post,
-        tipoVisualPublicacao,
-        abaFeedAtiva,
-        usuariosSeguidosIds
-      );
-
-      if (
-        deveOcultarPostPorFiltrosBasicosEContextuaisComunidade(
-          categoriaCombina,
-          tipoPublicacaoCombina,
-          obraRelacionadaCombina,
-          grupoPublicacaoCombina,
-          abaFeedCombina
-        )
-      ) {
-        return false;
-      }
-
-      if (
-        deveOcultarPostPorFiltroSalvosComunidade(
-          post,
-          mostrarApenasSalvos,
-          postsSalvosIds
-        )
-      ) {
-        return false;
-      }
-
-      return postCombinaTermoBuscaComunidade(post, termoBuscaNormalizado);
-    });
-
-    return [...postsFiltrados].sort((postA, postB) => {
-      const dataOrdenacaoA = obterDataOrdenacaoPostComunidade(postA);
-      const dataOrdenacaoB = obterDataOrdenacaoPostComunidade(postB);
-
-      if (postsPossuemFixacaoDiferenteComunidade(postA, postB)) {
-        return obterPrioridadeFixacaoPostComunidade(postA);
-      }
-
-      if (postsEstaoFixadosComunidade(postA, postB)) {
-        return compararPostsFixadosPorDataComunidade(
-          postA,
-          postB,
-          dataOrdenacaoA,
-          dataOrdenacaoB
-        );
-      }
-
-      if (
-        devePriorizarAutoresSeguidosComunidade(
-          abaFeedAtiva,
-          ordenacaoAtiva
-        )
-      ) {
-        const seguindoA = obterPrioridadeAutorSeguidoComunidade(
-          postA,
-          usuariosSeguidosIds
-        );
-        const seguindoB = obterPrioridadeAutorSeguidoComunidade(
-          postB,
-          usuariosSeguidosIds
-        );
-
-        if (
-          prioridadesAutoresSeguidosSaoDiferentesComunidade(
-            seguindoA,
-            seguindoB
-          )
-        ) {
-          return compararPrioridadesAutoresSeguidosComunidade(
-            seguindoA,
-            seguindoB
-          );
-        }
-
-        return compararPostsPorPontuacaoComunidade(
-          postA,
-          postB,
-          dataOrdenacaoA,
-          dataOrdenacaoB
-        );
-      }
-
-      if (deveOrdenarPostsPorComentariosComunidade(ordenacaoAtiva)) {
-        return compararPostsPorComentariosComunidade(
-          postA,
-          postB,
-          dataOrdenacaoA,
-          dataOrdenacaoB
-        );
-      }
-
-      if (deveOrdenarPostsPorPontuacaoComunidade(ordenacaoAtiva)) {
-        return compararPostsPorPontuacaoComunidade(
-          postA,
-          postB,
-          dataOrdenacaoA,
-          dataOrdenacaoB
-        );
-      }
-
-      return compararDatasOrdenacaoPostsComunidade(
-        dataOrdenacaoA,
-        dataOrdenacaoB
-      );
+    return obterPostsVisiveisComunidade({
+      posts,
+      categoriaAtiva,
+      tipoPublicacaoAtiva,
+      obraRelacionadaFiltro,
+      grupoPublicacaoObra,
+      abaFeedAtiva,
+      usuariosSeguidosIds,
+      mostrarApenasSalvos,
+      postsSalvosIds,
+      termoBuscaNormalizado,
+      ordenacaoAtiva,
     });
   }, [
     abaFeedAtiva,
