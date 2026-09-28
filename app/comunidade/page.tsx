@@ -45,6 +45,7 @@ import {
   atualizarVisibilidadePostNoEstadoComunidade,
 } from "./components/community-post-metadata-state-updaters";
 import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
+import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -78,7 +79,6 @@ import type { PostComunidade } from "./components/community-post-model";
 import { obterPostComentariosAbertoComunidade } from "./components/community-open-comments-post";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
-import { juntarObraECapituloRelacionados } from "./components/community-related-chapter-utils";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
@@ -1288,26 +1288,25 @@ export default function ComunidadePage() {
 
       const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
 
-      const textoPostBanco = textoLimpo.slice(0, 700);
-      const obraPostBanco = juntarObraECapituloRelacionados(
-        obraRelacionadaPermitida?.titulo || "",
-        capituloLimpo,
-      );
+      const { textoPostBanco, dadosPostBanco } =
+        prepararDadosInsercaoPostComunidade({
+          usuarioAutenticadoId,
+          autorNomeSeguro,
+          categoriaPost,
+          tipoPublicacaoPost,
+          publicacaoEhEnquete,
+          temSpoilerPost,
+          textoLimpo,
+          obraRelacionadaTitulo: obraRelacionadaPermitida?.titulo || "",
+          capituloLimpo,
+          visibilidadeSegura,
+        });
 
       // Não use INSERT ... RETURNING aqui. O RETURNING também passa pela
       // política SELECT da tabela e pode fazer um INSERT válido ser rejeitado.
       const { error } = await supabase
         .from("comunidade_posts")
-        .insert({
-          autor_id: usuarioAutenticadoId,
-          autor_nome: autorNomeSeguro,
-          categoria: categoriaPost,
-          tipo_publicacao: publicacaoEhEnquete ? "Discussão" : tipoPublicacaoPost,
-          tem_spoiler: temSpoilerPost,
-          texto: textoPostBanco,
-          obra_relacionada: obraPostBanco,
-          visibilidade: visibilidadeSegura,
-        });
+        .insert(dadosPostBanco);
 
       if (error) {
         setErro(formatarErroSupabase("Erro ao publicar", error));
