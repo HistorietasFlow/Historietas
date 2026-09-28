@@ -158,7 +158,6 @@ import {
 import {
   deveExibirResultadosBuscaComunidade,
 } from "./components/community-search-controls-visibility";
-import { CommunitySheetHandle } from "./components/community-sheet-handle";
 import { CommunityFeedActionsSheet } from "./components/community-feed-actions-sheet";
 import { CommunityFeedControls } from "./components/community-feed-controls";
 import { CommunityUserSearchSection } from "./components/community-user-search-section";
@@ -171,17 +170,7 @@ import { CommunityUserSearchList } from "./components/community-user-search-list
 import { CommunityUserSearchResult } from "./components/community-user-search-result";
 import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-message";
-import { CommunityPostComposerOverlay } from "./components/community-post-composer-overlay";
-import { CommunityPostComposerBackdrop } from "./components/community-post-composer-backdrop";
-import { CommunityPostComposerPanel } from "./components/community-post-composer-panel";
-import { CommunityPostComposerHeader } from "./components/community-post-composer-header";
-import { CommunityPostComposerForm } from "./components/community-post-composer-form";
-import { CommunityPostComposerFields } from "./components/community-post-composer-fields";
-import { CommunityPostComposerClassificationFields } from "./components/community-post-composer-classification-fields";
-import { CommunityPostComposerRelatedFields } from "./components/community-post-composer-related-fields";
-import { CommunityPostComposerPublicationField } from "./components/community-post-composer-publication-field";
-import { CommunityPostComposerErrorMessage } from "./components/community-post-composer-error-message";
-import { CommunityPostComposerActions } from "./components/community-post-composer-actions";
+import { CommunityPostComposer } from "./components/community-post-composer";
 import { CommunityActionFeedbackToast, emitirFeedbackAcao } from "./components/community-action-feedback-toast";
 import {
   finalizarAcaoComunidade,
@@ -2574,93 +2563,67 @@ export default function ComunidadePage() {
 
       {composerAberto && usuario && typeof document !== "undefined"
         ? createPortal(
-            <CommunityPostComposerOverlay>
-          <CommunityPostComposerBackdrop
-            onClick={() => {
-              if (!publicandoPost) {
-                setErro("");
-                setComposerAberto(false);
-              }
-            }}
-          />
+            <CommunityPostComposer
+              desktop={isDesktop}
+              publicandoPost={publicandoPost}
+              erro={erro}
+              temSpoilerPost={temSpoilerPost}
+              classificacao={{
+                categoriaPost,
+                tipoPublicacaoPost,
+                visibilidadePost,
+                onAlterarCategoria: (categoria) =>
+                  setCategoriaPost(categoria),
+                onAlterarTipoPublicacao: (tipo) =>
+                  selecionarTipoPublicacaoPost({
+                    tipo,
+                    setTipoPublicacaoPost,
+                    textoPostRef,
+                  }),
+                onAlterarVisibilidade: (visibilidade) =>
+                  setVisibilidadePost(
+                    normalizarVisibilidadePostComunidade(visibilidade),
+                  ),
+              }}
+              camposRelacionados={{
+                obraRelacionadaBusca,
+                capituloRelacionadoPost,
+                sugestoesObrasAbertas,
+                sugestoesObrasRelacionadasVisiveis,
+                obraRelacionadaRef,
+                onAlterarObraRelacionada: (valorDigitado) => {
+                  setObraRelacionadaBusca(valorDigitado);
 
-          <CommunityPostComposerPanel desktop={isDesktop}>
-            <CommunitySheetHandle />
-
-            <CommunityPostComposerHeader>
-              Nova publicação
-            </CommunityPostComposerHeader>
-
-            <CommunityPostComposerForm onSubmit={publicarPost}>
-              <CommunityPostComposerFields desktop={isDesktop}>
-                <CommunityPostComposerClassificationFields
-                  publicandoPost={publicandoPost}
-                  categoriaPost={categoriaPost}
-                  tipoPublicacaoPost={tipoPublicacaoPost}
-                  visibilidadePost={visibilidadePost}
-                  onAlterarCategoria={(categoria) =>
-                    setCategoriaPost(categoria)
+                  if (!valorDigitado.trim()) {
+                    setCapituloRelacionadoPost("");
                   }
-                  onAlterarTipoPublicacao={(tipo) =>
-                    selecionarTipoPublicacaoPost({
-                      tipo,
-                      setTipoPublicacaoPost,
-                      textoPostRef,
-                    })
-                  }
-                  onAlterarVisibilidade={(visibilidade) =>
-                    setVisibilidadePost(
-                      normalizarVisibilidadePostComunidade(visibilidade),
-                    )
-                  }
-                />
 
-                <CommunityPostComposerRelatedFields
-                  publicandoPost={publicandoPost}
-                  obraRelacionadaBusca={obraRelacionadaBusca}
-                  capituloRelacionadoPost={capituloRelacionadoPost}
-                  sugestoesObrasAbertas={sugestoesObrasAbertas}
-                  sugestoesObrasRelacionadasVisiveis={
-                    sugestoesObrasRelacionadasVisiveis
-                  }
-                  obraRelacionadaRef={obraRelacionadaRef}
-                  onAlterarObraRelacionada={(valorDigitado) => {
-                    setObraRelacionadaBusca(valorDigitado);
-
-                    if (!valorDigitado.trim()) {
-                      setCapituloRelacionadoPost("");
-                    }
-
-                    setSugestoesObrasAbertas(Boolean(valorDigitado.trim()));
-                  }}
-                  onFocarObraRelacionada={() => {
-                    setSugestoesObrasAbertas(
-                      Boolean(obraRelacionadaBusca.trim())
-                    );
-                  }}
-                  onDesfocarObraRelacionada={() => {
-                    window.setTimeout(() => {
-                      setSugestoesObrasAbertas(false);
-                    }, 120);
-                  }}
-                  onSelecionarObraRelacionada={(obra) => {
-                    selecionarObraRelacionada({
-                      titulo: obra.titulo,
-                      setObraRelacionadaBusca,
-                      setSugestoesObrasAbertas,
-                      obraRelacionadaRef,
-                    });
-                  }}
-                  onAlterarCapituloRelacionado={(valor) =>
-                    setCapituloRelacionadoPost(valor)
-                  }
-                />
-              </CommunityPostComposerFields>
-
-              <CommunityPostComposerPublicationField
-                publicandoPost={publicandoPost}
-                textoPostRef={textoPostRef}
-                onPrepararEnquete={() =>
+                  setSugestoesObrasAbertas(Boolean(valorDigitado.trim()));
+                },
+                onFocarObraRelacionada: () => {
+                  setSugestoesObrasAbertas(
+                    Boolean(obraRelacionadaBusca.trim())
+                  );
+                },
+                onDesfocarObraRelacionada: () => {
+                  window.setTimeout(() => {
+                    setSugestoesObrasAbertas(false);
+                  }, 120);
+                },
+                onSelecionarObraRelacionada: (obra) => {
+                  selecionarObraRelacionada({
+                    titulo: obra.titulo,
+                    setObraRelacionadaBusca,
+                    setSugestoesObrasAbertas,
+                    obraRelacionadaRef,
+                  });
+                },
+                onAlterarCapituloRelacionado: (valor) =>
+                  setCapituloRelacionadoPost(valor),
+              }}
+              publicacao={{
+                textoPostRef,
+                onPrepararEnquete: () =>
                   prepararEnqueteComunidade({
                     garantirAceiteAntesDePublicarComunidade,
                     setErro,
@@ -2669,9 +2632,8 @@ export default function ComunidadePage() {
                     setTemSpoilerPost,
                     setComposerAberto,
                     textoPostRef,
-                  })
-                }
-                onAplicarSugestao={(sugestao) =>
+                  }),
+                onAplicarSugestao: (sugestao) =>
                   aplicarSugestaoPublicacaoComunidade({
                     sugestao,
                     publicandoPost,
@@ -2680,26 +2642,19 @@ export default function ComunidadePage() {
                     setTipoPublicacaoPost,
                     textoPostRef,
                     language,
-                  })
+                  }),
+              }}
+              onFechar={() => {
+                if (!publicandoPost) {
+                  setErro("");
+                  setComposerAberto(false);
                 }
-              />
-
-              {erro && (
-                <CommunityPostComposerErrorMessage>
-                  {erro}
-                </CommunityPostComposerErrorMessage>
-              )}
-
-              <CommunityPostComposerActions
-                publicandoPost={publicandoPost}
-                temSpoilerPost={temSpoilerPost}
-                onAlternarSpoiler={() =>
-                  setTemSpoilerPost((valorAtual) => !valorAtual)
-                }
-              />
-            </CommunityPostComposerForm>
-          </CommunityPostComposerPanel>
-            </CommunityPostComposerOverlay>,
+              }}
+              onSubmit={publicarPost}
+              onAlternarSpoiler={() =>
+                setTemSpoilerPost((valorAtual) => !valorAtual)
+              }
+            />,
             document.body
           )
         : null}
