@@ -129,12 +129,13 @@
 - A Fase 421 extraiu somente `prepararRemocaoComentarioComunidade` a partir da preparação pura da remoção de comentário e foi concluída com o PR #555 mesclado.
 - A Fase 422 extraiu somente `consultarComentarioParaRemocaoComunidade` a partir da consulta remota usada para conferir o comentário antes da remoção e foi concluída com o PR #556 mesclado.
 - A Fase 423 extraiu somente `removerComentarioSupabaseComunidade` a partir do delete remoto de comentário e foi concluída com o PR #557 mesclado.
-- A Fase 424 extraiu somente `inserirComentarioSupabaseComunidade` a partir da operação Supabase de inserção do comentário e está implementada neste PR.
+- A Fase 424 extraiu somente `inserirComentarioSupabaseComunidade` a partir da operação Supabase de inserção do comentário e foi concluída com o PR #558 mesclado.
+- A Fase 425 extraiu somente `inserirPostSupabaseComunidade` a partir do insert remoto de `comunidade_posts` e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 424 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 425 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes dessa autorização.
+A Fase 425 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 426 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
 
 ## Contrato de preservação
 
