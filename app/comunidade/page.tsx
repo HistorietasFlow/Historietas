@@ -16,13 +16,10 @@ import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
-import { CATEGORIAS_COMUNIDADE } from "./components/community-categories";
 import { normalizarCategoria } from "./components/community-category-normalizer";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
-import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
 import { normalizarVisibilidadePostComunidade } from "./components/community-post-visibility-normalizer";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
-import { TIPOS_PUBLICACAO_COMUNIDADE } from "./components/community-publication-types";
 import { normalizarTipoPublicacao } from "./components/community-publication-type-normalizer";
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
@@ -180,9 +177,7 @@ import { CommunityPostComposerPanel } from "./components/community-post-composer
 import { CommunityPostComposerHeader } from "./components/community-post-composer-header";
 import { CommunityPostComposerForm } from "./components/community-post-composer-form";
 import { CommunityPostComposerFields } from "./components/community-post-composer-fields";
-import { CommunityPostComposerField } from "./components/community-post-composer-field";
-import { CommunityPostComposerFieldLabel } from "./components/community-post-composer-field-label";
-import { CommunityPostComposerSelect } from "./components/community-post-composer-select";
+import { CommunityPostComposerClassificationFields } from "./components/community-post-composer-classification-fields";
 import { CommunityPostComposerRelatedFields } from "./components/community-post-composer-related-fields";
 import { CommunityPostComposerPublicationField } from "./components/community-post-composer-publication-field";
 import { CommunityPostComposerErrorMessage } from "./components/community-post-composer-error-message";
@@ -2602,65 +2597,27 @@ export default function ComunidadePage() {
 
             <CommunityPostComposerForm onSubmit={publicarPost}>
               <CommunityPostComposerFields desktop={isDesktop}>
-                <CommunityPostComposerField>
-                  <CommunityPostComposerFieldLabel>Categoria</CommunityPostComposerFieldLabel>
-
-                  <CommunityPostComposerSelect
-                    disabled={publicandoPost}
-                    value={categoriaPost}
-                    onChange={(event) =>
-                      setCategoriaPost(event.target.value as CategoriaComunidade)
-                    }
-                  >
-                    {CATEGORIAS_COMUNIDADE.map((categoria) => (
-                      <option key={categoria} value={categoria}>
-                        {categoria}
-                      </option>
-                    ))}
-                  </CommunityPostComposerSelect>
-                </CommunityPostComposerField>
-
-                <CommunityPostComposerField>
-                  <CommunityPostComposerFieldLabel>Tipo</CommunityPostComposerFieldLabel>
-
-                  <CommunityPostComposerSelect
-                    disabled={publicandoPost}
-                    value={tipoPublicacaoPost}
-                    onChange={(event) =>
-                      selecionarTipoPublicacaoPost({
-                        tipo: event.target.value as TipoPublicacaoComunidade,
-                        setTipoPublicacaoPost,
-                        textoPostRef,
-                      })
-                    }
-                  >
-                    {TIPOS_PUBLICACAO_COMUNIDADE.map((tipo) => (
-                      <option key={tipo} value={tipo}>
-                        {tipo}
-                      </option>
-                    ))}
-                  </CommunityPostComposerSelect>
-                </CommunityPostComposerField>
-
-                <CommunityPostComposerField>
-                  <CommunityPostComposerFieldLabel>Quem pode ver esta publicação?</CommunityPostComposerFieldLabel>
-
-                  <CommunityPostComposerSelect
-                    disabled={publicandoPost}
-                    value={visibilidadePost}
-                    onChange={(event) =>
-                      setVisibilidadePost(
-                        normalizarVisibilidadePostComunidade(event.target.value),
-                      )
-                    }
-                  >
-                    {VISIBILIDADES_POST_COMUNIDADE.map((opcao) => (
-                      <option key={opcao.valor} value={opcao.valor}>
-                        {opcao.rotulo}
-                      </option>
-                    ))}
-                  </CommunityPostComposerSelect>
-                </CommunityPostComposerField>
+                <CommunityPostComposerClassificationFields
+                  publicandoPost={publicandoPost}
+                  categoriaPost={categoriaPost}
+                  tipoPublicacaoPost={tipoPublicacaoPost}
+                  visibilidadePost={visibilidadePost}
+                  onAlterarCategoria={(categoria) =>
+                    setCategoriaPost(categoria)
+                  }
+                  onAlterarTipoPublicacao={(tipo) =>
+                    selecionarTipoPublicacaoPost({
+                      tipo,
+                      setTipoPublicacaoPost,
+                      textoPostRef,
+                    })
+                  }
+                  onAlterarVisibilidade={(visibilidade) =>
+                    setVisibilidadePost(
+                      normalizarVisibilidadePostComunidade(visibilidade),
+                    )
+                  }
+                />
 
                 <CommunityPostComposerRelatedFields
                   publicandoPost={publicandoPost}
