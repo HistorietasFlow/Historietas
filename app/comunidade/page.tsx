@@ -38,11 +38,6 @@ import { mesclarUsuariosBuscaComunidade } from "./components/community-user-sear
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
-  deveExibirCarregamentoAdicionalComunidade,
-  obterTextoEstadoVazioFeedComunidade,
-  temPostsVisiveisComunidade,
-} from "./components/community-feed-presentation";
-import {
   selecionarOrdenacaoEmAltaComunidade,
   selecionarOrdenacaoMaisComentadasComunidade,
   selecionarOrdenacaoRecentesComunidade,
@@ -63,7 +58,6 @@ import { obterSugestoesObrasRelacionadasVisiveisComunidade } from "./components/
 import { aplicarSugestaoPublicacaoComunidade } from "./components/community-publication-suggestions";
 import type { PostComunidade } from "./components/community-post-model";
 import { obterPostComentariosAbertoComunidade } from "./components/community-open-comments-post";
-import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
 import { juntarObraECapituloRelacionados } from "./components/community-related-chapter-utils";
@@ -162,16 +156,13 @@ import { CommunitySearchResultsHeader } from "./components/community-search-resu
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
 import { CommunitySearchResultsCount } from "./components/community-search-results-count";
 import { CommunityUserSearchResults } from "./components/community-user-search-results";
-import { CommunityPostsList } from "./components/community-posts-list";
-import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-message";
+import { CommunityFeedPostsSection } from "./components/community-feed-posts-section";
 import { CommunityPostComposer } from "./components/community-post-composer";
 import { CommunityActionFeedbackToast, emitirFeedbackAcao } from "./components/community-action-feedback-toast";
 import {
   finalizarAcaoComunidade,
   iniciarAcaoComunidade,
 } from "./components/community-action-lock";
-import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
-import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostItem } from "./components/community-post-item";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { CommunityLanguageBridge } from "./components/community-language-bridge";
@@ -2420,100 +2411,75 @@ export default function ComunidadePage() {
               </CommunitySearchResultsHeader>
             ) : null}
 
-            <CommunityPostsList isDesktop={isDesktop}>
-              {!carregandoFeed && (
-                temPostsVisiveisComunidade(postsVisiveis) ? (
-                postsVisiveis.map((post) => {
-                  const estadoPost = obterEstadoApresentacaoPostComunidade({
-                    post,
-                    usuario,
-                    postsSalvosIds,
-                    carregandoUsuario,
-                    usuarioEhAdmin,
-                    postCurtindoId,
-                    postSalvandoId,
-                    postCompartilhandoId,
-                    postRemovendoId,
-                    postFixandoId,
-                    postVisibilidadeAtualizandoId,
-                    denunciaAlvo,
-                    spoilersReveladosIds,
-                    obrasRelacionadasSugestoes,
-                    postMenuAbertoId,
-                  });
-                  const acoesPost = criarAcoesPostComunidade({
-                    post,
-                    onAlternarMenu: alternarMenuOpcoesPostComunidade,
-                    onFecharMenu: fecharMenuOpcoesPostComunidade,
-                    onSalvar: salvarPostComunidade,
-                    onCompartilhar: compartilharPostComunidade,
-                    onAtualizarVisibilidade: atualizarVisibilidadePost,
-                    onAlternarFixado: alternarFixadoPost,
-                    onRemover: removerPost,
-                    onDenunciar: denunciarPostComunidade,
-                    onVotar: votarEnquetePostComunidade,
-                    onAlternarCurtida: alternarCurtida,
-                    onAbrirComentarios: abrirComentariosPostComunidade,
-                    onAlternarSpoiler: alternarSpoilerPostComunidade,
-                  });
-                  return (
-                    <CommunityPostItem
-                      key={post.id}
-                      post={post}
-                      desktop={isDesktop}
-                      estadoPost={estadoPost}
-                      acoesPost={acoesPost}
-                      postMenuAbertoId={postMenuAbertoId}
-                      usuarioEhAdmin={usuarioEhAdmin}
-                      obrasRelacionadasSugestoes={obrasRelacionadasSugestoes}
-                      votosEnquetes={votosEnquetes}
-                      resultadosEnquetes={resultadosEnquetes}
-                      votandoEnqueteId={votandoEnqueteId}
-                    />
-                  );
+            <CommunityFeedPostsSection
+              desktop={isDesktop}
+              carregandoFeed={carregandoFeed}
+              postsVisiveis={postsVisiveis}
+              abaFeedAtiva={abaFeedAtiva}
+              usuario={usuario}
+              mostrarApenasSalvos={mostrarApenasSalvos}
+              filtrosAtivos={filtrosAtivos}
+              temMaisPostsComunidade={temMaisPostsComunidade}
+              carregandoMaisPostsComunidade={carregandoMaisPostsComunidade}
+              renderizarPost={(post) => {
+                const estadoPost = obterEstadoApresentacaoPostComunidade({
+                  post,
+                  usuario,
+                  postsSalvosIds,
+                  carregandoUsuario,
+                  usuarioEhAdmin,
+                  postCurtindoId,
+                  postSalvandoId,
+                  postCompartilhandoId,
+                  postRemovendoId,
+                  postFixandoId,
+                  postVisibilidadeAtualizandoId,
+                  denunciaAlvo,
+                  spoilersReveladosIds,
+                  obrasRelacionadasSugestoes,
+                  postMenuAbertoId,
+                });
+                const acoesPost = criarAcoesPostComunidade({
+                  post,
+                  onAlternarMenu: alternarMenuOpcoesPostComunidade,
+                  onFecharMenu: fecharMenuOpcoesPostComunidade,
+                  onSalvar: salvarPostComunidade,
+                  onCompartilhar: compartilharPostComunidade,
+                  onAtualizarVisibilidade: atualizarVisibilidadePost,
+                  onAlternarFixado: alternarFixadoPost,
+                  onRemover: removerPost,
+                  onDenunciar: denunciarPostComunidade,
+                  onVotar: votarEnquetePostComunidade,
+                  onAlternarCurtida: alternarCurtida,
+                  onAbrirComentarios: abrirComentariosPostComunidade,
+                  onAlternarSpoiler: alternarSpoilerPostComunidade,
+                });
+                return (
+                  <CommunityPostItem
+                    key={post.id}
+                    post={post}
+                    desktop={isDesktop}
+                    estadoPost={estadoPost}
+                    acoesPost={acoesPost}
+                    postMenuAbertoId={postMenuAbertoId}
+                    usuarioEhAdmin={usuarioEhAdmin}
+                    obrasRelacionadasSugestoes={obrasRelacionadasSugestoes}
+                    votosEnquetes={votosEnquetes}
+                    resultadosEnquetes={resultadosEnquetes}
+                    votandoEnqueteId={votandoEnqueteId}
+                  />
+                );
+              }}
+              onCarregarMais={() =>
+                carregarMaisPostsComunidade({
+                  carregandoFeed,
+                  carregandoMaisPostsComunidade,
+                  temMaisPostsComunidade,
+                  paginaFeedComunidade,
+                  carregarPostsComunidadeDaPagina,
                 })
-              ) : (
-                <CommunityFeedEmptyMessage desktop={isDesktop}>
-                  {obterTextoEstadoVazioFeedComunidade(
-                    abaFeedAtiva,
-                    usuario,
-                    mostrarApenasSalvos,
-                    filtrosAtivos
-                  )}
-                </CommunityFeedEmptyMessage>
-              )
-              )}
-            </CommunityPostsList>
-
-            {deveExibirCarregamentoAdicionalComunidade(
-              carregandoFeed,
-              postsVisiveis,
-              temMaisPostsComunidade
-            ) && (
-              <CommunityLoadMorePostsContainer>
-                <CommunityLoadMorePostsButton
-                  onClick={() =>
-                    carregarMaisPostsComunidade({
-                      carregandoFeed,
-                      carregandoMaisPostsComunidade,
-                      temMaisPostsComunidade,
-                      paginaFeedComunidade,
-                      carregarPostsComunidadeDaPagina,
-                    })
-                  }
-                  disabled={carregandoMaisPostsComunidade}
-                >
-                  {carregandoMaisPostsComunidade ? (
-                    <CommunityLoadingSpinner
-                      compacto
-                      label="Carregando mais publicações"
-                    />
-                  ) : (
-                    "Carregar mais publicações"
-                  )}
-                </CommunityLoadMorePostsButton>
-              </CommunityLoadMorePostsContainer>
-            )}
+              }
+            />
 
           </CommunityFeedColumn>
 
