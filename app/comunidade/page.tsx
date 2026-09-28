@@ -48,11 +48,6 @@ import {
   temPostsVisiveisComunidade,
 } from "./components/community-feed-presentation";
 import {
-  ordenacaoEmAltaEstaAtivaComunidade,
-  ordenacaoMaisComentadasEstaAtivaComunidade,
-  ordenacaoRecentesEstaAtivaComunidade,
-} from "./components/community-feed-order-status";
-import {
   selecionarOrdenacaoEmAltaComunidade,
   selecionarOrdenacaoMaisComentadasComunidade,
   selecionarOrdenacaoRecentesComunidade,
@@ -177,13 +172,8 @@ import { CommunityAdvancedFiltersButton, textoBotaoFiltrosAvancadosComunidade } 
 import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
 import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
-import { CommunitySheetOverlay } from "./components/community-sheet-overlay";
-import { CommunitySheetSurface } from "./components/community-sheet-surface";
 import { CommunitySheetHandle } from "./components/community-sheet-handle";
-import { CommunitySheetTitle } from "./components/community-sheet-title";
-import { CommunitySheetSectionLabel } from "./components/community-sheet-section-label";
-import { CommunitySheetFilterOption } from "./components/community-sheet-filter-option";
-import { CommunitySheetPrimaryAction } from "./components/community-sheet-primary-action";
+import { CommunityFeedActionsSheet } from "./components/community-feed-actions-sheet";
 import { CommunityUserSearchSection } from "./components/community-user-search-section";
 import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
@@ -2452,124 +2442,60 @@ export default function ComunidadePage() {
             </CommunityFeedTabsContainer>
 
             {menuAcoesRapidasComunidadeAberto && (
-              <CommunitySheetOverlay
-                ariaLabel="Filtros, ordenação e ações da comunidade"
-                closeAriaLabel="Fechar filtros e ações da comunidade"
-                onClose={() => setMenuAcoesRapidasComunidadeAberto(false)}
-              >
-                <CommunitySheetSurface>
-                  <CommunitySheetHandle />
-
-                  <CommunitySheetTitle>
-                    Filtrar e ordenar
-                  </CommunitySheetTitle>
-
-                  <CommunitySheetSectionLabel>
-                    Ações
-                  </CommunitySheetSectionLabel>
-
-                  <CommunitySheetPrimaryAction
-                    onClick={() =>
-                      abrirPublicacaoRapidaComunidade({
-                        carregandoUsuario,
-                        garantirAceiteAntesDePublicarComunidade,
-                        setMenuAcoesRapidasComunidadeAberto,
-                        setErro,
-                        setComposerAberto,
-                      })
-                    }
-                  >
-                    Publicar
-                  </CommunitySheetPrimaryAction>
-
-                  <CommunitySheetSectionLabel>
-                    Mostrar
-                  </CommunitySheetSectionLabel>
-
-                  <CommunitySheetFilterOption
-                    active={!filtrosAtivos}
-                    onClick={() => {
-                      limparFiltrosComunidade({
-                        setAbaFeedAtiva,
-                        setCategoriaAtiva,
-                        setTipoPublicacaoAtiva,
-                        setObraRelacionadaFiltro,
-                        setGrupoPublicacaoObra,
-                        setTermoBusca,
-                        setOrdenacaoAtiva,
-                        setMostrarApenasSalvos,
-                        carregarPostsComunidade: carregarPostsComunidadeDaPagina,
-                      });
-                      setMenuAcoesRapidasComunidadeAberto(false);
-                    }}
-                  >
-                    Todas
-                  </CommunitySheetFilterOption>
-
-                  <CommunitySheetFilterOption
-                    active={mostrarApenasSalvos}
-                    onClick={() => {
-                      setMostrarApenasSalvos(true);
-                      setMenuAcoesRapidasComunidadeAberto(false);
-                    }}
-                  >
-                    Posts salvos
-                  </CommunitySheetFilterOption>
-
-                  <CommunitySheetSectionLabel>
-                    Ordenar
-                  </CommunitySheetSectionLabel>
-
-                  <CommunitySheetFilterOption
-                    active={ordenacaoRecentesEstaAtivaComunidade(
-                      ordenacaoAtiva,
-                      mostrarApenasSalvos
-                    )}
-                    onClick={() =>
-                      selecionarOrdenacaoRecentesComunidade({
-                        setOrdenacaoAtiva,
-                        setMostrarApenasSalvos,
-                        setMenuAcoesRapidasComunidadeAberto,
-                      })
-                    }
-                  >
-                    Recentes
-                  </CommunitySheetFilterOption>
-
-                  <CommunitySheetFilterOption
-                    active={ordenacaoEmAltaEstaAtivaComunidade(
-                      ordenacaoAtiva,
-                      mostrarApenasSalvos
-                    )}
-                    onClick={() =>
-                      selecionarOrdenacaoEmAltaComunidade({
-                        setOrdenacaoAtiva,
-                        setMostrarApenasSalvos,
-                        setMenuAcoesRapidasComunidadeAberto,
-                      })
-                    }
-                  >
-                    Em alta
-                  </CommunitySheetFilterOption>
-
-                  <CommunitySheetFilterOption
-                    active={ordenacaoMaisComentadasEstaAtivaComunidade(
-                      ordenacaoAtiva,
-                      mostrarApenasSalvos
-                    )}
-                    onClick={() =>
-                      selecionarOrdenacaoMaisComentadasComunidade({
-                        setOrdenacaoAtiva,
-                        setMostrarApenasSalvos,
-                        setMenuAcoesRapidasComunidadeAberto,
-                      })
-                    }
-                  >
-                    Mais comentadas
-                  </CommunitySheetFilterOption>
-
-                </CommunitySheetSurface>
-              </CommunitySheetOverlay>
+              <CommunityFeedActionsSheet
+                filtrosAtivos={filtrosAtivos}
+                mostrarApenasSalvos={mostrarApenasSalvos}
+                ordenacaoAtiva={ordenacaoAtiva}
+                onFechar={() => setMenuAcoesRapidasComunidadeAberto(false)}
+                onPublicar={() =>
+                  abrirPublicacaoRapidaComunidade({
+                    carregandoUsuario,
+                    garantirAceiteAntesDePublicarComunidade,
+                    setMenuAcoesRapidasComunidadeAberto,
+                    setErro,
+                    setComposerAberto,
+                  })
+                }
+                onMostrarTodas={() => {
+                  limparFiltrosComunidade({
+                    setAbaFeedAtiva,
+                    setCategoriaAtiva,
+                    setTipoPublicacaoAtiva,
+                    setObraRelacionadaFiltro,
+                    setGrupoPublicacaoObra,
+                    setTermoBusca,
+                    setOrdenacaoAtiva,
+                    setMostrarApenasSalvos,
+                    carregarPostsComunidade: carregarPostsComunidadeDaPagina,
+                  });
+                  setMenuAcoesRapidasComunidadeAberto(false);
+                }}
+                onMostrarSalvos={() => {
+                  setMostrarApenasSalvos(true);
+                  setMenuAcoesRapidasComunidadeAberto(false);
+                }}
+                onSelecionarRecentes={() =>
+                  selecionarOrdenacaoRecentesComunidade({
+                    setOrdenacaoAtiva,
+                    setMostrarApenasSalvos,
+                    setMenuAcoesRapidasComunidadeAberto,
+                  })
+                }
+                onSelecionarEmAlta={() =>
+                  selecionarOrdenacaoEmAltaComunidade({
+                    setOrdenacaoAtiva,
+                    setMostrarApenasSalvos,
+                    setMenuAcoesRapidasComunidadeAberto,
+                  })
+                }
+                onSelecionarMaisComentadas={() =>
+                  selecionarOrdenacaoMaisComentadasComunidade({
+                    setOrdenacaoAtiva,
+                    setMostrarApenasSalvos,
+                    setMenuAcoesRapidasComunidadeAberto,
+                  })
+                }
+              />
             )}
 
             {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
