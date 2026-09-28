@@ -4,17 +4,7 @@ import { createPortal } from "react-dom";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, TouchEvent } from "react";
 import type { ComentarioComunidade } from "./community-comment";
-import {
-  comentarioEstaSendoCurtidoComunidade,
-  comentarioEstaSendoDenunciadoComunidade,
-  comentarioEstaSendoRemovidoComunidade,
-  deveDesabilitarAcaoComentarioComunidade,
-  deveDesabilitarCurtidaComentarioComunidade,
-  usuarioCurtiuComentarioComunidade,
-  usuarioPodeDenunciarComentarioComunidade,
-  usuarioPodeRemoverComentarioComunidade,
-} from "./community-comment-interaction-status";
-import { formatarTempoRelativoComentarioComunidade } from "./community-comment-relative-time";
+import { deveDesabilitarAcaoComentarioComunidade } from "./community-comment-interaction-status";
 import {
   alternarMenuOrdenacaoComentariosComunidade,
   ordenacaoComentariosEhRecentesComunidade,
@@ -29,7 +19,6 @@ import {
   obterRespostasComentarioComunidade,
 } from "./community-comment-tree";
 import type { ComentariosSheetProps } from "./community-comments-sheet-props";
-import { criarPerfilHrefComunidade } from "./community-profile-link";
 import { CommunityCommentsSheetPanel } from "./community-comments-sheet-panel";
 import { CommunityCommentsSheetOverlay } from "./community-comments-sheet-overlay";
 import { CommunityCommentsSheetBackdrop } from "./community-comments-sheet-backdrop";
@@ -67,7 +56,7 @@ import {
 } from "./community-comments-sort-text";
 import { CommunityCommentsListContainer } from "./community-comments-list-container";
 import { CommunityCommentThreadContainer } from "./community-comment-thread-container";
-import { CommunityCommentItemContainer } from "./community-comment-item-container";
+import { CommunityCommentItem } from "./community-comment-item";
 import { CommunityCommentRepliesListContainer } from "./community-comment-replies-list-container";
 import { CommunityCommentRepliesToggleButton } from "./community-comment-replies-toggle-button";
 import {
@@ -93,26 +82,6 @@ import {
 } from "./community-comment-replies-pagination-actions";
 import { CommunityCommentRepliesControlsContainer } from "./community-comment-replies-controls-container";
 import { CommunityCommentRepliesHideButton } from "./community-comment-replies-hide-button";
-import { CommunityCommentAvatar } from "./community-comment-avatar";
-import { CommunityCommentContentContainer } from "./community-comment-content-container";
-import { CommunityCommentAuthorTimeRow } from "./community-comment-author-time-row";
-import { CommunityCommentAuthorLink } from "./community-comment-author-link";
-import { CommunityCommentTime } from "./community-comment-time";
-import { CommunityCommentText } from "./community-comment-text";
-import { CommunityCommentActionsRow } from "./community-comment-actions-row";
-import { CommunityCommentReplyButton } from "./community-comment-reply-button";
-import { CommunityCommentRemoveButton } from "./community-comment-remove-button";
-import { CommunityCommentReportButton } from "./community-comment-report-button";
-import {
-  obterAriaLabelCurtidaComentarioComunidade,
-  obterTextoBotaoDenunciarComentarioComunidade,
-  obterTextoBotaoRemoverComentarioComunidade,
-  obterTextoBotaoResponderComentarioComunidade,
-} from "./community-comment-action-text";
-import { CommunityCommentLikeContainer } from "./community-comment-like-container";
-import { CommunityCommentLikeButton } from "./community-comment-like-button";
-import { CommunityCommentLikeCount } from "./community-comment-like-count";
-import { CommunityCommentHeartIcon } from "./community-comment-heart-icon";
 import {
   CommunityCommentsEmptyMessage,
   obterTextoEstadoVazioComentariosComunidade,
@@ -499,132 +468,6 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     }
   }
 
-  function renderizarComentario(
-    comentario: ComentarioComunidade,
-    comentarioRaizId: string,
-    resposta = false
-  ) {
-    const usuarioCurtiuComentario = usuarioCurtiuComentarioComunidade(
-      usuarioId,
-      comentario
-    );
-    const podeRemoverComentario = usuarioPodeRemoverComentarioComunidade(
-      usuarioId,
-      comentario
-    );
-    const podeDenunciarComentario = usuarioPodeDenunciarComentarioComunidade(
-      usuarioId,
-      comentario
-    );
-    const comentarioCurtindo = comentarioEstaSendoCurtidoComunidade(
-      comentarioCurtindoId,
-      comentario
-    );
-    const comentarioRemovendo = comentarioEstaSendoRemovidoComunidade(
-      comentarioRemovendoId,
-      comentario
-    );
-    const comentarioDenunciando = comentarioEstaSendoDenunciadoComunidade(
-      comentarioDenunciandoId,
-      comentario
-    );
-    return (
-      <CommunityCommentItemContainer key={comentario.id} isReply={resposta}>
-        <CommunityCommentAvatar
-          href={criarPerfilHrefComunidade(
-            comentario.autorId,
-            comentario.autorNome
-          )}
-          authorName={comentario.autorNome}
-          avatar={comentario.autorAvatar}
-          isReply={resposta}
-        />
-
-        <CommunityCommentContentContainer>
-          <CommunityCommentAuthorTimeRow>
-            <CommunityCommentAuthorLink
-              href={criarPerfilHrefComunidade(
-                comentario.autorId,
-                comentario.autorNome
-              )}
-            >
-              {comentario.autorNome}
-            </CommunityCommentAuthorLink>
-
-            <CommunityCommentTime>
-              {formatarTempoRelativoComentarioComunidade(
-                comentario.criadoEm,
-                agoraComentarios
-              )}
-            </CommunityCommentTime>
-          </CommunityCommentAuthorTimeRow>
-
-          <CommunityCommentText>{comentario.texto}</CommunityCommentText>
-
-          <CommunityCommentActionsRow>
-            <CommunityCommentReplyButton
-              onClick={() =>
-                responderComentario(comentario, comentarioRaizId)
-              }
-              disabled={deveDesabilitarAcaoComentarioComunidade(podeComentar)}
-            >
-              {obterTextoBotaoResponderComentarioComunidade()}
-            </CommunityCommentReplyButton>
-
-            {podeRemoverComentario ? (
-              <CommunityCommentRemoveButton
-                onClick={() =>
-                  removerComentarioSeguro(post?.id || "", comentario.id)
-                }
-                disabled={comentarioRemovendo}
-              >
-                {obterTextoBotaoRemoverComentarioComunidade(
-                  comentarioRemovendo
-                )}
-              </CommunityCommentRemoveButton>
-            ) : null}
-
-            {podeDenunciarComentario ? (
-              <CommunityCommentReportButton
-                onClick={() => denunciarComentarioSeguro(comentario.id)}
-                disabled={comentarioDenunciando}
-              >
-                {obterTextoBotaoDenunciarComentarioComunidade(
-                  comentarioDenunciando
-                )}
-              </CommunityCommentReportButton>
-            ) : null}
-          </CommunityCommentActionsRow>
-        </CommunityCommentContentContainer>
-
-        <CommunityCommentLikeContainer>
-          <CommunityCommentLikeButton
-            aria-pressed={usuarioCurtiuComentario}
-            aria-label={obterAriaLabelCurtidaComentarioComunidade(
-              usuarioCurtiuComentario,
-              comentario.curtidas.length
-            )}
-            onClick={() =>
-              curtirComentarioSeguro(post?.id || "", comentario.id)
-            }
-            disabled={deveDesabilitarCurtidaComentarioComunidade(
-              podeComentar,
-              comentarioCurtindo
-            )}
-          >
-            <CommunityCommentHeartIcon
-              liked={usuarioCurtiuComentario}
-            />
-          </CommunityCommentLikeButton>
-
-          <CommunityCommentLikeCount>
-            {comentario.curtidas.length}
-          </CommunityCommentLikeCount>
-        </CommunityCommentLikeContainer>
-      </CommunityCommentItemContainer>
-    );
-  }
-
   if (!post || typeof document === "undefined") {
     return null;
   }
@@ -753,13 +596,44 @@ export const ComentariosSheet = memo(function ComentariosSheet({
 
               return (
                 <CommunityCommentThreadContainer key={comentario.id}>
-                  {renderizarComentario(comentario, comentario.id)}
+                  <CommunityCommentItem
+                    key={comentario.id}
+                    comentario={comentario}
+                    comentarioRaizId={comentario.id}
+                    usuarioId={usuarioId}
+                    podeComentar={podeComentar}
+                    agoraComentarios={agoraComentarios}
+                    postId={post?.id || ""}
+                    comentarioCurtindoId={comentarioCurtindoId}
+                    comentarioRemovendoId={comentarioRemovendoId}
+                    comentarioDenunciandoId={comentarioDenunciandoId}
+                    onResponderComentario={responderComentario}
+                    onCurtirComentario={curtirComentarioSeguro}
+                    onRemoverComentario={removerComentarioSeguro}
+                    onDenunciarComentario={denunciarComentarioSeguro}
+                  />
 
                   {temRespostasVisiveisComunidade(respostasVisiveis) ? (
                     <CommunityCommentRepliesListContainer>
-                      {respostasVisiveis.map((resposta) =>
-                        renderizarComentario(resposta, comentario.id, true)
-                      )}
+                      {respostasVisiveis.map((resposta) => (
+                        <CommunityCommentItem
+                          key={resposta.id}
+                          comentario={resposta}
+                          comentarioRaizId={comentario.id}
+                          resposta
+                          usuarioId={usuarioId}
+                          podeComentar={podeComentar}
+                          agoraComentarios={agoraComentarios}
+                          postId={post?.id || ""}
+                          comentarioCurtindoId={comentarioCurtindoId}
+                          comentarioRemovendoId={comentarioRemovendoId}
+                          comentarioDenunciandoId={comentarioDenunciandoId}
+                          onResponderComentario={responderComentario}
+                          onCurtirComentario={curtirComentarioSeguro}
+                          onRemoverComentario={removerComentarioSeguro}
+                          onDenunciarComentario={denunciarComentarioSeguro}
+                        />
+                      ))}
                     </CommunityCommentRepliesListContainer>
                   ) : null}
 
