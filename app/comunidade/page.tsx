@@ -44,6 +44,7 @@ import {
 } from "./components/community-post-metadata-state-updaters";
 import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
 import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
+import { inserirPostSupabaseComunidade } from "./components/community-post-insert";
 import { mapearPostCriadoComunidade } from "./components/community-created-post-mapper";
 import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
 import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
@@ -1303,12 +1304,13 @@ export default function ComunidadePage() {
 
       // Não use INSERT ... RETURNING aqui. O RETURNING também passa pela
       // política SELECT da tabela e pode fazer um INSERT válido ser rejeitado.
-      const { error } = await supabase
-        .from("comunidade_posts")
-        .insert(dadosPostBanco);
+      const resultadoInsercaoPost =
+        await inserirPostSupabaseComunidade(dadosPostBanco);
 
-      if (error) {
-        setErro(formatarErroSupabase("Erro ao publicar", error));
+      if (!resultadoInsercaoPost.sucesso) {
+        setErro(
+          formatarErroSupabase("Erro ao publicar", resultadoInsercaoPost.erro)
+        );
         return;
       }
 
