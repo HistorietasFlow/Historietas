@@ -35,6 +35,8 @@ import {
   usuarioPodeRemoverPostComunidade,
 } from "./components/community-post-permissions";
 import {
+  obterAriaLabelComentariosPostComunidade,
+  obterAriaLabelCurtidaPostComunidade,
   obterTextoBotaoCompartilharPostComunidade,
   obterTextoBotaoDenunciarPostComunidade,
   obterTextoBotaoFixarPostComunidade,
@@ -3221,13 +3223,10 @@ export default function ComunidadePage() {
                           disabled={postCurtindo}
                           liked={usuarioCurtiu}
                           count={contarCurtidasUnicasPostComunidade(post)}
-                          ariaLabel={`${usuarioCurtiu
-                              ? "Remover curtida da publicação"
-                              : "Curtir publicação"
-                          }. ${contarCurtidasUnicasPostComunidade(post)} ${contarCurtidasUnicasPostComunidade(post) === 1
-                              ? "curtida"
-                              : "curtidas"
-                          }`}
+                          ariaLabel={obterAriaLabelCurtidaPostComunidade(
+                            usuarioCurtiu,
+                            contarCurtidasUnicasPostComunidade(post)
+                          )}
                         />
 
                         <CommunityPostCommentsButton
@@ -3240,7 +3239,9 @@ export default function ComunidadePage() {
                             })
                           }
                           count={contarComentaristasUnicosPostComunidade(post)}
-                          ariaLabel={`${contarComentaristasUnicosPostComunidade(post)} comentários`}
+                          ariaLabel={obterAriaLabelComentariosPostComunidade(
+                            contarComentaristasUnicosPostComunidade(post)
+                          )}
                         />
 
                         {post.temSpoiler && (

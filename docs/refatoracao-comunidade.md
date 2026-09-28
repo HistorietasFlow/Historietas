@@ -87,13 +87,14 @@
 - A Fase 379 extraiu somente `postEstaSendoRemovido`, `postEstaSendoFixado` e `postEstaAtualizandoVisibilidade` a partir dos estados assíncronos das ações administrativas de publicação e foi concluída com o PR #513 mesclado.
 - A Fase 380 extraiu somente `postEstaSendoDenunciadoComunidade`, `menuOpcoesPostEstaAbertoComunidade` e `deveOcultarTextoSpoilerComunidade` a partir dos estados visuais de cada publicação e foi concluída com o PR #514 mesclado.
 - A Fase 381 extraiu somente `obterTextoBotaoSalvarPostComunidade`, `obterTextoBotaoCompartilharPostComunidade` e `obterTextoBotaoFixarPostComunidade` a partir dos textos das ações de salvar, compartilhar e fixar publicação e foi concluída com o PR #515 mesclado.
-- A Fase 382 extraiu somente `obterTextoBotaoRemoverPostComunidade`, `obterTextoBotaoDenunciarPostComunidade` e `obterTextoBotaoSpoilerPostComunidade` a partir dos textos das ações de remover, denunciar e revelar ou ocultar spoiler; a implementação está neste PR.
+- A Fase 382 extraiu somente `obterTextoBotaoRemoverPostComunidade`, `obterTextoBotaoDenunciarPostComunidade` e `obterTextoBotaoSpoilerPostComunidade` a partir dos textos das ações de remover, denunciar e revelar ou ocultar spoiler e foi concluída com o PR #516 mesclado.
+- A Fase 383 extraiu somente `obterAriaLabelCurtidaPostComunidade` e `obterAriaLabelComentariosPostComunidade` a partir dos rótulos acessíveis das ações de curtida e comentários da publicação; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 383 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 384 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
