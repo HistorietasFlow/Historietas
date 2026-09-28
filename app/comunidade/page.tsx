@@ -47,6 +47,7 @@ import { prepararDadosInsercaoPostComunidade } from "./components/community-post
 import { mapearPostCriadoComunidade } from "./components/community-created-post-mapper";
 import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
 import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
+import { inserirComentarioSupabaseComunidade } from "./components/community-comment-insert";
 import { prepararRemocaoComentarioComunidade } from "./components/community-comment-removal-preparation";
 import { consultarComentarioParaRemocaoComunidade } from "./components/community-comment-removal-query";
 import { removerComentarioSupabaseComunidade } from "./components/community-comment-removal-delete";
@@ -1498,20 +1499,23 @@ export default function ComunidadePage() {
       const { postAtual, comentarioPaiIdLimpo, dadosComentarioBanco } =
         resultadoPreparacaoComentario;
 
-      const { data, error } = await supabase
-        .from("comunidade_comentarios")
-        .insert(dadosComentarioBanco)
-        .select(
-          "id, post_id, autor_id, autor_nome, texto, comentario_pai_id, criado_em"
-        )
-        .single();
+      const resultadoInsercaoComentario =
+        await inserirComentarioSupabaseComunidade(dadosComentarioBanco);
 
-      if (error || !data) {
+      if (!resultadoInsercaoComentario.sucesso) {
         setErro(
-          error
-            ? formatarErroSupabase("Erro ao comentar", error)
-            : "Erro ao comentar: o Supabase não retornou o comentário criado."
+          formatarErroSupabase(
+            "Erro ao comentar",
+            resultadoInsercaoComentario.erro
+          )
         );
+        return false;
+      }
+
+      const { data } = resultadoInsercaoComentario;
+
+      if (!data) {
+        setErro("Erro ao comentar: o Supabase não retornou o comentário criado.");
         return false;
       }
 
