@@ -41,7 +41,7 @@ import { ordenarUsuariosBuscaComunidade } from "./components/community-user-sear
 import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
-import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
+import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
   deveExibirCarregamentoAdicionalComunidade,
   obterTextoEstadoVazioFeedComunidade,
@@ -154,26 +154,16 @@ import { CommunityDesktopFilterButton } from "./components/community-desktop-fil
 import { CommunityMainLayout } from "./components/community-main-layout";
 import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
-import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
-import { CommunityFilterControlsRow } from "./components/community-filter-controls-row";
-import { CommunitySearchContainer } from "./components/community-search-container";
 import {
   abrirBuscaComunidade,
   fecharBuscaComunidade,
 } from "./components/community-search-controls-actions";
 import {
-  deveExibirControlesBuscaComunidade,
   deveExibirResultadosBuscaComunidade,
 } from "./components/community-search-controls-visibility";
-import { CommunitySearchInput } from "./components/community-search-input";
-import { CommunitySearchToggleButton } from "./components/community-search-toggle-button";
-import { CommunitySearchIcon } from "./components/community-search-icon";
-import { CommunityAdvancedFiltersButton, textoBotaoFiltrosAvancadosComunidade } from "./components/community-advanced-filters-button";
-import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
-import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
-import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
 import { CommunitySheetHandle } from "./components/community-sheet-handle";
 import { CommunityFeedActionsSheet } from "./components/community-feed-actions-sheet";
+import { CommunityFeedControls } from "./components/community-feed-controls";
 import { CommunityUserSearchSection } from "./components/community-user-search-section";
 import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
@@ -2348,98 +2338,43 @@ export default function ComunidadePage() {
               <CommunityFeedErrorNotice>{erro}</CommunityFeedErrorNotice>
             )}
 
-            <CommunityFeedFiltersContainer isDesktop={isDesktop}>
-              <CommunityFilterControlsRow>
-                <CommunityAdvancedFiltersButton
-                  type="button"
-                  aria-label="Abrir filtros, ordenação e ações da comunidade"
-                  aria-expanded={menuAcoesRapidasComunidadeAberto}
-                  onClick={() =>
-                    setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
-                  }
-                >
-                  <span>{textoBotaoFiltrosAvancadosComunidade}</span>
-                  <CommunityAdvancedFiltersIcon>
-                    +
-                  </CommunityAdvancedFiltersIcon>
-                </CommunityAdvancedFiltersButton>
-
-                {deveExibirControlesBuscaComunidade(
-                  buscaComunidadeAberta,
-                  termoBusca
-                ) ? (
-                  <>
-                    <CommunitySearchContainer>
-                      <CommunitySearchInput
-                        aria-label="Buscar publicações ou usuários"
-                        value={termoBusca}
-                        onChange={(event) => setTermoBusca(event.target.value)}
-                        placeholder="Buscar publicações ou usuários"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        maxLength={90}
-                        autoFocus
-                      />
-                    </CommunitySearchContainer>
-
-                    <CommunitySearchToggleButton
-                      type="button"
-                      onClick={() =>
-                        fecharBuscaComunidade({
-                          setTermoBusca,
-                          setBuscaComunidadeAberta,
-                        })
-                      }
-                      aria-label="Fechar busca"
-                      aria-expanded="true"
-                    >
-                      <CommunitySearchIcon />
-                    </CommunitySearchToggleButton>
-                  </>
-                ) : (
-                  <CommunitySearchToggleButton
-                    type="button"
-                    onClick={() =>
-                      abrirBuscaComunidade({ setBuscaComunidadeAberta })
-                    }
-                    aria-label="Abrir busca"
-                    aria-expanded="false"
-                  >
-                    <CommunitySearchIcon />
-                  </CommunitySearchToggleButton>
-                )}
-              </CommunityFilterControlsRow>
-
-            </CommunityFeedFiltersContainer>
-
-            <CommunityFeedTabsContainer isDesktop={isDesktop}>
-              {ABAS_FEED_COMUNIDADE.map((aba) => {
-                const ativa = abaFeedAtiva === aba;
-
-                return (
-                  <CommunityFeedTabButton
-                    key={aba}
-                    active={ativa}
-                    onClick={() =>
-                      selecionarAbaFeedComunidade({
-                        aba,
-                        setAbaFeedAtiva,
-                        setCategoriaAtiva,
-                        setTipoPublicacaoAtiva,
-                        setObraRelacionadaFiltro,
-                        setGrupoPublicacaoObra,
-                        setMostrarApenasSalvos,
-                        setOrdenacaoAtiva,
-                        setMenuAcoesRapidasComunidadeAberto,
-                      })
-                    }
-                  >
-                    {aba}
-                  </CommunityFeedTabButton>
-                );
-              })}
-            </CommunityFeedTabsContainer>
+            <CommunityFeedControls
+              desktop={isDesktop}
+              termoBusca={termoBusca}
+              buscaComunidadeAberta={buscaComunidadeAberta}
+              menuAcoesRapidasComunidadeAberto={
+                menuAcoesRapidasComunidadeAberto
+              }
+              abaFeedAtiva={abaFeedAtiva}
+              onAlterarTermoBusca={(termoBuscaAtualizado) =>
+                setTermoBusca(termoBuscaAtualizado)
+              }
+              onAlternarMenuAcoes={() =>
+                setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
+              }
+              onAbrirBusca={() =>
+                abrirBuscaComunidade({ setBuscaComunidadeAberta })
+              }
+              onFecharBusca={() =>
+                fecharBuscaComunidade({
+                  setTermoBusca,
+                  setBuscaComunidadeAberta,
+                })
+              }
+              onSelecionarAba={(aba) =>
+                selecionarAbaFeedComunidade({
+                  aba,
+                  setAbaFeedAtiva,
+                  setCategoriaAtiva,
+                  setTipoPublicacaoAtiva,
+                  setObraRelacionadaFiltro,
+                  setGrupoPublicacaoObra,
+                  setMostrarApenasSalvos,
+                  setOrdenacaoAtiva,
+                  setMenuAcoesRapidasComunidadeAberto,
+                })
+              }
+            />
 
             {menuAcoesRapidasComunidadeAberto && (
               <CommunityFeedActionsSheet
