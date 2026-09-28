@@ -28,25 +28,7 @@ import type { TipoPublicacaoFiltro } from "./components/community-publication-fi
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
-import {
-  usuarioPodeAlterarVisibilidadePostComunidade,
-  usuarioPodeDenunciarPostComunidade,
-  usuarioPodeRemoverPostComunidade,
-} from "./components/community-post-permissions";
-import {
-  deveOcultarTextoSpoilerComunidade,
-  menuOpcoesPostEstaAbertoComunidade,
-  postEstaSalvoComunidade,
-  postEstaAtualizandoVisibilidade,
-  postEstaSendoCompartilhado,
-  postEstaSendoCurtido,
-  postEstaSendoDenunciadoComunidade,
-  postEstaSendoFixado,
-  postEstaSendoRemovido,
-  postEstaSendoSalvo,
-  spoilerPostEstaReveladoComunidade,
-  usuarioCurtiuPostComunidade,
-} from "./components/community-post-interaction-status";
+import { obterEstadoApresentacaoPostComunidade } from "./components/community-post-presentation-state";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -2589,78 +2571,39 @@ export default function ComunidadePage() {
               {!carregandoFeed && (
                 temPostsVisiveisComunidade(postsVisiveis) ? (
                 postsVisiveis.map((post) => {
-                  const usuarioCurtiu = usuarioCurtiuPostComunidade(
+                  const {
+                    usuarioCurtiu,
+                    postSalvo,
+                    podeRemover,
+                    podeDenunciarPost,
+                    postCurtindo,
+                    postSalvando,
+                    postCompartilhando,
+                    postRemovendo,
+                    postFixando,
+                    postVisibilidadeAtualizando,
+                    podeAlterarVisibilidade,
+                    postDenunciando,
+                    ocultarTextoSpoiler,
+                    obraRelacionadaPermitida,
+                    menuOpcoesAberto,
+                  } = obterEstadoApresentacaoPostComunidade({
+                    post,
                     usuario,
-                    post
-                  );
-                  const postSalvo = postEstaSalvoComunidade(
                     postsSalvosIds,
-                    post
-                  );
-                  const usuarioAtualId = usuario?.id.trim() || "";
-                  const autorPostId = post.autorId.trim();
-                  const podeRemover = usuarioPodeRemoverPostComunidade(
                     carregandoUsuario,
-                    usuarioAtualId,
-                    autorPostId,
-                    usuarioEhAdmin
-                  );
-                  const podeDenunciarPost =
-                    usuarioPodeDenunciarPostComunidade(
-                      carregandoUsuario,
-                      usuarioAtualId,
-                      autorPostId
-                    );
-                  const postCurtindo = postEstaSendoCurtido(
+                    usuarioEhAdmin,
                     postCurtindoId,
-                    post
-                  );
-                  const postSalvando = postEstaSendoSalvo(
                     postSalvandoId,
-                    post
-                  );
-                  const postCompartilhando = postEstaSendoCompartilhado(
                     postCompartilhandoId,
-                    post
-                  );
-                  const postRemovendo = postEstaSendoRemovido(
                     postRemovendoId,
-                    post
-                  );
-                  const postFixando = postEstaSendoFixado(
                     postFixandoId,
-                    post
-                  );
-                  const postVisibilidadeAtualizando =
-                    postEstaAtualizandoVisibilidade(
-                      postVisibilidadeAtualizandoId,
-                      post
-                    );
-                  const podeAlterarVisibilidade =
-                    usuarioPodeAlterarVisibilidadePostComunidade(
-                      carregandoUsuario,
-                      usuarioAtualId,
-                      autorPostId
-                    );
-                  const postDenunciando = postEstaSendoDenunciadoComunidade(
+                    postVisibilidadeAtualizandoId,
                     denunciaAlvo,
-                    post
-                  );
-                  const spoilerRevelado = spoilerPostEstaReveladoComunidade(
                     spoilersReveladosIds,
-                    post
-                  );
-                  const ocultarTextoSpoiler =
-                    deveOcultarTextoSpoilerComunidade(post, spoilerRevelado);
-                  const obraRelacionadaPermitida = obterObraRelacionadaPermitida(
-                    post.obraRelacionada,
-                    obrasRelacionadasSugestoes
-                  );
-                  const menuOpcoesAberto =
-                    menuOpcoesPostEstaAbertoComunidade(
-                      postMenuAbertoId,
-                      post
-                    );
+                    obrasRelacionadasSugestoes,
+                    postMenuAbertoId,
+                  });
                   return (
                     <CommunityPostCard key={post.id} isDesktop={isDesktop}>
                       <CommunityPostHeader>
