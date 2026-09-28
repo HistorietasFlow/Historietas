@@ -46,6 +46,7 @@ import { validarConteudoPublicacaoComunidade } from "./components/community-post
 import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
 import { mapearPostCriadoComunidade } from "./components/community-created-post-mapper";
 import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
+import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -1476,28 +1477,27 @@ export default function ComunidadePage() {
       }
 
       const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
-      const postAtual = posts.find((post) => post.id === postId) || null;
-      const comentarioPaiIdLimpo = comentarioPaiId.trim();
-      const comentarioPai = comentarioPaiIdLimpo
-        ? postAtual?.comentarios.find(
-            (comentario) => comentario.id === comentarioPaiIdLimpo
-          ) || null
-        : null;
+      const resultadoPreparacaoComentario =
+        prepararInsercaoComentarioComunidade({
+          posts,
+          postId,
+          textoComentario,
+          comentarioPaiId,
+          usuarioId: usuario.id,
+          autorNomeSeguro,
+        });
 
-      if (comentarioPaiIdLimpo && !comentarioPai) {
-        setErro("O comentário respondido não foi encontrado.");
+      if (!resultadoPreparacaoComentario.valido) {
+        setErro(resultadoPreparacaoComentario.erro);
         return false;
       }
 
+      const { postAtual, comentarioPaiIdLimpo, dadosComentarioBanco } =
+        resultadoPreparacaoComentario;
+
       const { data, error } = await supabase
         .from("comunidade_comentarios")
-        .insert({
-          post_id: postId,
-          autor_id: usuario.id,
-          autor_nome: autorNomeSeguro,
-          texto: textoComentario.slice(0, 420),
-          comentario_pai_id: comentarioPaiIdLimpo || null,
-        })
+        .insert(dadosComentarioBanco)
         .select(
           "id, post_id, autor_id, autor_nome, texto, comentario_pai_id, criado_em"
         )

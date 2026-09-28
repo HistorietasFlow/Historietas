@@ -124,12 +124,13 @@
 - A Fase 416 extraiu somente `prepararDadosInsercaoPostComunidade` a partir da preparação pura dos dados enviados ao insert de `comunidade_posts` e foi concluída com o PR #550 mesclado.
 - A Fase 417 extraiu somente `mapearPostCriadoComunidade` a partir do mapeamento puro da linha recém-inserida para `PostComunidade` e foi concluída com o PR #551 mesclado.
 - A Fase 418 extraiu somente `obterPrimeiraSugestaoObraSupabaseComunidade` a partir da transformação pura dos resultados de busca remota de obras e foi concluída com o PR #552 mesclado.
-- A Fase 419 extraiu somente `mapearComentarioCriadoComunidade` a partir do mapeamento puro da linha recém-inserida para `ComentarioComunidade` e está implementada neste PR.
+- A Fase 419 extraiu somente `mapearComentarioCriadoComunidade` a partir do mapeamento puro da linha recém-inserida para `ComentarioComunidade` e foi concluída com o PR #553 mesclado.
+- A Fase 420 extraiu somente `prepararInsercaoComentarioComunidade` a partir da preparação pura da inserção de comentário e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 420 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 421 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
