@@ -99,13 +99,14 @@
 - A Fase 391 extraiu somente `CommunityCommentThread` a partir do corpo do `.map()` de comentários raiz e foi concluída com o PR #525 mesclado.
 - A Fase 392 extraiu somente `CommunityCommentsComposer` a partir do bloco de reações rápidas e formulário de comentários e foi concluída com o PR #526 mesclado.
 - A Fase 393 extraiu somente `CommunityUserSearchResult` a partir do conteúdo de cada resultado individual da busca de usuários e foi concluída com o PR #527 mesclado.
-- A Fase 394 extraiu somente `CommunityPostPoll` a partir do bloco visual da enquete; a implementação está neste PR.
+- A Fase 394 extraiu somente `CommunityPostPoll` a partir do bloco visual da enquete e foi concluída com o PR #528 mesclado.
+- A Fase 395 extraiu somente `CommunityPostActionBar` a partir da barra de ações da publicação; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 395 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 396 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 

@@ -34,14 +34,11 @@ import {
   usuarioPodeRemoverPostComunidade,
 } from "./components/community-post-permissions";
 import {
-  obterAriaLabelComentariosPostComunidade,
-  obterAriaLabelCurtidaPostComunidade,
   obterTextoBotaoCompartilharPostComunidade,
   obterTextoBotaoDenunciarPostComunidade,
   obterTextoBotaoFixarPostComunidade,
   obterTextoBotaoRemoverPostComunidade,
   obterTextoBotaoSalvarPostComunidade,
-  obterTextoBotaoSpoilerPostComunidade,
 } from "./components/community-post-action-text";
 import {
   deveOcultarTextoSpoilerComunidade,
@@ -147,8 +144,6 @@ import { carregarVotosEnquetesLocais } from "./components/community-local-poll-v
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
-import { contarCurtidasUnicasPostComunidade } from "./components/community-unique-post-likes-count";
-import { contarComentaristasUnicosPostComunidade } from "./components/community-unique-post-commenters-count";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
 import {
   criarPerfilHrefComunidade,
@@ -293,10 +288,7 @@ import { CommunityPostVisibilityBadge } from "./components/community-post-visibi
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPostText } from "./components/community-post-text";
-import { CommunityPostActions } from "./components/community-post-actions";
-import { CommunityPostLikeButton } from "./components/community-post-like-button";
-import { CommunityPostCommentsButton } from "./components/community-post-comments-button";
-import { CommunityPostSpoilerButton } from "./components/community-post-spoiler-button";
+import { CommunityPostActionBar } from "./components/community-post-action-bar";
 import { CommunityPostPoll } from "./components/community-post-poll";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
@@ -2983,48 +2975,28 @@ export default function ComunidadePage() {
                         </>
                       )}
 
-                      <CommunityPostActions desktop={isDesktop}>
-                        <CommunityPostLikeButton
-                          onClick={() => alternarCurtida(post.id)}
-                          disabled={postCurtindo}
-                          liked={usuarioCurtiu}
-                          count={contarCurtidasUnicasPostComunidade(post)}
-                          ariaLabel={obterAriaLabelCurtidaPostComunidade(
-                            usuarioCurtiu,
-                            contarCurtidasUnicasPostComunidade(post)
-                          )}
-                        />
-
-                        <CommunityPostCommentsButton
-                          onClick={() =>
-                            abrirComentarios({
-                              postId: post.id,
-                              setErro,
-                              comentarioUrlAplicadoRef,
-                              setComentariosPostId,
-                            })
-                          }
-                          count={contarComentaristasUnicosPostComunidade(post)}
-                          ariaLabel={obterAriaLabelComentariosPostComunidade(
-                            contarComentaristasUnicosPostComunidade(post)
-                          )}
-                        />
-
-                        {post.temSpoiler && (
-                          <CommunityPostSpoilerButton
-                            onClick={() =>
-                              alternarSpoilerRevelado({
-                                postId: post.id,
-                                setSpoilersReveladosIds,
-                              })
-                            }
-                          >
-                            {obterTextoBotaoSpoilerPostComunidade(
-                              ocultarTextoSpoiler
-                            )}
-                          </CommunityPostSpoilerButton>
-                        )}
-                      </CommunityPostActions>
+                      <CommunityPostActionBar
+                        post={post}
+                        desktop={isDesktop}
+                        usuarioCurtiu={usuarioCurtiu}
+                        postCurtindo={postCurtindo}
+                        ocultarTextoSpoiler={ocultarTextoSpoiler}
+                        onAlternarCurtida={() => alternarCurtida(post.id)}
+                        onAbrirComentarios={() =>
+                          abrirComentarios({
+                            postId: post.id,
+                            setErro,
+                            comentarioUrlAplicadoRef,
+                            setComentariosPostId,
+                          })
+                        }
+                        onAlternarSpoiler={() =>
+                          alternarSpoilerRevelado({
+                            postId: post.id,
+                            setSpoilersReveladosIds,
+                          })
+                        }
+                      />
                     </CommunityPostCard>
                   );
                 })
