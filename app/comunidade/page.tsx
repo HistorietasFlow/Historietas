@@ -98,6 +98,11 @@ import {
   ordenacaoMaisComentadasEstaAtivaComunidade,
   ordenacaoRecentesEstaAtivaComunidade,
 } from "./components/community-feed-order-status";
+import {
+  selecionarOrdenacaoEmAltaComunidade,
+  selecionarOrdenacaoMaisComentadasComunidade,
+  selecionarOrdenacaoRecentesComunidade,
+} from "./components/community-feed-order-actions";
 import type {
   AlvoDenunciaComunidade,
   DenunciaAlvoComunidade,
@@ -2661,11 +2666,13 @@ export default function ComunidadePage() {
                       ordenacaoAtiva,
                       mostrarApenasSalvos
                     )}
-                    onClick={() => {
-                      setOrdenacaoAtiva("Recentes");
-                      setMostrarApenasSalvos(false);
-                      setMenuAcoesRapidasComunidadeAberto(false);
-                    }}
+                    onClick={() =>
+                      selecionarOrdenacaoRecentesComunidade({
+                        setOrdenacaoAtiva,
+                        setMostrarApenasSalvos,
+                        setMenuAcoesRapidasComunidadeAberto,
+                      })
+                    }
                   >
                     Recentes
                   </CommunitySheetFilterOption>
@@ -2675,11 +2682,13 @@ export default function ComunidadePage() {
                       ordenacaoAtiva,
                       mostrarApenasSalvos
                     )}
-                    onClick={() => {
-                      setOrdenacaoAtiva("Em alta");
-                      setMostrarApenasSalvos(false);
-                      setMenuAcoesRapidasComunidadeAberto(false);
-                    }}
+                    onClick={() =>
+                      selecionarOrdenacaoEmAltaComunidade({
+                        setOrdenacaoAtiva,
+                        setMostrarApenasSalvos,
+                        setMenuAcoesRapidasComunidadeAberto,
+                      })
+                    }
                   >
                     Em alta
                   </CommunitySheetFilterOption>
@@ -2689,11 +2698,13 @@ export default function ComunidadePage() {
                       ordenacaoAtiva,
                       mostrarApenasSalvos
                     )}
-                    onClick={() => {
-                      setOrdenacaoAtiva("Mais comentadas");
-                      setMostrarApenasSalvos(false);
-                      setMenuAcoesRapidasComunidadeAberto(false);
-                    }}
+                    onClick={() =>
+                      selecionarOrdenacaoMaisComentadasComunidade({
+                        setOrdenacaoAtiva,
+                        setMostrarApenasSalvos,
+                        setMenuAcoesRapidasComunidadeAberto,
+                      })
+                    }
                   >
                     Mais comentadas
                   </CommunitySheetFilterOption>
