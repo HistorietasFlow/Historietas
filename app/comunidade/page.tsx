@@ -88,6 +88,11 @@ import {
 } from "./components/community-user-search-status";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
+import {
+  deveExibirCarregamentoAdicionalComunidade,
+  obterTextoEstadoVazioFeedComunidade,
+  temPostsVisiveisComunidade,
+} from "./components/community-feed-presentation";
 import type {
   AlvoDenunciaComunidade,
   DenunciaAlvoComunidade,
@@ -2817,7 +2822,7 @@ export default function ComunidadePage() {
 
             <CommunityPostsList isDesktop={isDesktop}>
               {!carregandoFeed && (
-                postsVisiveis.length > 0 ? (
+                temPostsVisiveisComunidade(postsVisiveis) ? (
                 postsVisiveis.map((post) => {
                   const usuarioCurtiu = usuarioCurtiuPostComunidade(
                     usuario,
@@ -3274,21 +3279,22 @@ export default function ComunidadePage() {
                 })
               ) : (
                 <CommunityFeedEmptyMessage desktop={isDesktop}>
-                  {abaFeedAtiva === "Seguindo"
-                    ? usuario
-                      ? "Nenhuma publicação de pessoas que você segue."
-                      : "Entre na sua conta para ver publicações de quem você segue."
-                    : mostrarApenasSalvos
-                      ? "Nenhuma publicação salva"
-                      : filtrosAtivos
-                        ? "Nenhuma publicação encontrada"
-                        : "Nenhuma publicação ainda"}
+                  {obterTextoEstadoVazioFeedComunidade(
+                    abaFeedAtiva,
+                    usuario,
+                    mostrarApenasSalvos,
+                    filtrosAtivos
+                  )}
                 </CommunityFeedEmptyMessage>
               )
               )}
             </CommunityPostsList>
 
-            {!carregandoFeed && postsVisiveis.length > 0 && temMaisPostsComunidade && (
+            {deveExibirCarregamentoAdicionalComunidade(
+              carregandoFeed,
+              postsVisiveis,
+              temMaisPostsComunidade
+            ) && (
               <CommunityLoadMorePostsContainer>
                 <CommunityLoadMorePostsButton
                   onClick={() =>
