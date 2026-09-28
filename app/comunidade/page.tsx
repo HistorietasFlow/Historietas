@@ -19,7 +19,7 @@ import type { CategoriaComunidade } from "./components/community-category";
 import { CATEGORIAS_COMUNIDADE } from "./components/community-categories";
 import { normalizarCategoria } from "./components/community-category-normalizer";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
-import { VISIBILIDADES_POST_COMUNIDADE, obterRotuloVisibilidadePostComunidade } from "./components/community-post-visibility-options";
+import { VISIBILIDADES_POST_COMUNIDADE } from "./components/community-post-visibility-options";
 import { normalizarVisibilidadePostComunidade } from "./components/community-post-visibility-normalizer";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
 import { TIPOS_PUBLICACAO_COMUNIDADE } from "./components/community-publication-types";
@@ -137,10 +137,6 @@ import type { ResultadoVotosEnquete } from "./components/community-poll-votes-re
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
-import {
-  criarPerfilHrefComunidade,
-  obterAriaLabelPerfilComunidade,
-} from "./components/community-profile-link";
 import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
@@ -257,16 +253,7 @@ import { CommunityLoadMorePostsContainer } from "./components/community-load-mor
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
 import { CommunityPostHeader } from "./components/community-post-header";
-import {
-  CommunityPostAuthorAvatar,
-  obterInicialAvatarAutorPostComunidade,
-} from "./components/community-post-author-avatar";
-import { CommunityPostAuthorMeta } from "./components/community-post-author-meta";
-import { CommunityPostAuthorLink } from "./components/community-post-author-link";
-import { CommunityPostStatusLine } from "./components/community-post-status-line";
-import { CommunityPostStatusSeparator } from "./components/community-post-status-separator";
-import { CommunityPostPinnedBadge } from "./components/community-post-pinned-badge";
-import { CommunityPostVisibilityBadge } from "./components/community-post-visibility-badge";
+import { CommunityPostHeaderMetadata } from "./components/community-post-header-metadata";
 import { CommunityPostActionBar } from "./components/community-post-action-bar";
 import { CommunityPostContent } from "./components/community-post-content";
 import { CommunityPostOptionsMenu } from "./components/community-post-options-menu";
@@ -276,7 +263,6 @@ import {
   obterTextoContagemUsuariosBuscaComunidade,
   traduzirContagemResultadosComunidade,
 } from "./components/community-results-count-translator";
-import { formatarDataComunidade } from "./components/community-post-date-formatter";
 import { carregarJsonUsuarioComunidade } from "./components/community-user-json-loader";
 import { salvarJsonUsuarioComunidade } from "./components/community-user-json-saver";
 
@@ -2678,55 +2664,7 @@ export default function ComunidadePage() {
                   return (
                     <CommunityPostCard key={post.id} isDesktop={isDesktop}>
                       <CommunityPostHeader>
-                        <CommunityPostAuthorAvatar
-                          href={criarPerfilHrefComunidade(
-                            post.autorId,
-                            post.autorNome
-                          )}
-                          ariaLabel={obterAriaLabelPerfilComunidade(
-                            post.autorNome
-                          )}
-                          avatar={post.autorAvatar}
-                        >
-                          {!post.autorAvatar &&
-                            obterInicialAvatarAutorPostComunidade(
-                              post.autorNome
-                            )}
-                        </CommunityPostAuthorAvatar>
-
-                        <CommunityPostAuthorMeta>
-                          <CommunityPostAuthorLink
-                            href={criarPerfilHrefComunidade(
-                              post.autorId,
-                              post.autorNome
-                            )}
-                          >
-                            {post.autorNome}
-                          </CommunityPostAuthorLink>
-                          <CommunityPostStatusLine>
-                            {formatarDataComunidade(post.criadoEm)}
-                            {post.fixado && (
-                              <>
-                                {" "}
-                                <CommunityPostStatusSeparator />
-                                {" "}
-                                <CommunityPostPinnedBadge>Fixado</CommunityPostPinnedBadge>
-                              </>
-                            )}
-                            {post.visibilidade !== "publico" && (
-                              <>
-                                {" "}
-                                <CommunityPostStatusSeparator />
-                                {" "}
-                                <CommunityPostVisibilityBadge>
-                                  {obterRotuloVisibilidadePostComunidade(
-                                    post.visibilidade,
-                                  )}
-                                </CommunityPostVisibilityBadge>
-                              </>
-                            )}
-                          </CommunityPostStatusLine>
-                        </CommunityPostAuthorMeta>
+                        <CommunityPostHeaderMetadata post={post} />
 
                         <CommunityPostOptionsMenu
                           post={post}
