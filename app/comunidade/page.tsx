@@ -94,7 +94,6 @@ import { CommunityLoadingSpinner } from "./components/community-loading-spinner"
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
 import { juntarObraECapituloRelacionados } from "./components/community-related-chapter-utils";
-import { criarLinkObraRelacionada } from "./components/community-related-work-link";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
@@ -149,7 +148,6 @@ import { fecharComentarios } from "./components/community-comments-closer";
 import { abrirComentarios } from "./components/community-comments-opener";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { postEhEnquete } from "./components/community-post-poll-check";
-import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
   MAX_OPCOES_ENQUETE,
   MIN_OPCOES_ENQUETE,
@@ -267,18 +265,11 @@ import { CommunityPostAuthorMeta } from "./components/community-post-author-meta
 import { CommunityPostAuthorLink } from "./components/community-post-author-link";
 import { CommunityPostStatusLine } from "./components/community-post-status-line";
 import { CommunityPostStatusSeparator } from "./components/community-post-status-separator";
-import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
-import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
 import { CommunityPostPinnedBadge } from "./components/community-post-pinned-badge";
 import { CommunityPostVisibilityBadge } from "./components/community-post-visibility-badge";
-import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
-import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
-import { CommunityPostText } from "./components/community-post-text";
 import { CommunityPostActionBar } from "./components/community-post-action-bar";
-import { CommunityPostPoll } from "./components/community-post-poll";
+import { CommunityPostContent } from "./components/community-post-content";
 import { CommunityPostOptionsMenu } from "./components/community-post-options-menu";
-import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
-import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { CommunityLanguageBridge } from "./components/community-language-bridge";
 import {
@@ -2804,75 +2795,31 @@ export default function ComunidadePage() {
                         />
                       </CommunityPostHeader>
 
-                      <CommunityPostBadgesRow>
-                        {obraRelacionadaPermitida && (
-                          <>
-                            <CommunityRelatedWorkBadge
-                              href={criarLinkObraRelacionada(
-                                obraRelacionadaPermitida.titulo,
-                                obrasRelacionadasSugestoes
-                              )}
-                            >
-                              {obraRelacionadaPermitida.titulo}
-                            </CommunityRelatedWorkBadge>
-
-                            <CommunityPostBadgeSeparator />
-                          </>
-                        )}
-
-                        {obraRelacionadaPermitida && post.capituloRelacionado && (
-                          <>
-                            <CommunityRelatedChapterBadge>
-                              {post.capituloRelacionado}
-                            </CommunityRelatedChapterBadge>
-
-                            <CommunityPostBadgeSeparator />
-                          </>
-                        )}
-
-                        <CommunityPostTypeBadge
-                          isPoll={postEhEnquete(post)}
-                        >
-                          {postEhEnquete(post)
-                            ? obterPerguntaEnquete(post.texto)
-                            : obterTipoVisualPublicacao(post)}
-                        </CommunityPostTypeBadge>
-                      </CommunityPostBadgesRow>
-
-                      {ocultarTextoSpoiler ? (
-                        <CommunitySpoilerHiddenTitle>
-                          Conteúdo com spoiler oculto
-                        </CommunitySpoilerHiddenTitle>
-                      ) : (
-                        <>
-                          {postEhEnquete(post) ? (
-                            <CommunityPostPoll
-                              post={post}
-                              votosEnquetes={votosEnquetes}
-                              resultadosEnquetes={resultadosEnquetes}
-                              votandoEnqueteId={votandoEnqueteId}
-                              onVotar={(opcao) =>
-                                votarEnquete({
-                                  postId: post.id,
-                                  opcao,
-                                  votandoEnqueteId,
-                                  votosEnquetes,
-                                  exigirLogin,
-                                  usuario,
-                                  setVotandoEnqueteId,
-                                  setErro,
-                                  setFeedbackAcao,
-                                  feedbackTimerRef,
-                                  setResultadosEnquetes,
-                                  setVotosEnquetes,
-                                })
-                              }
-                            />
-                          ) : (
-                            <CommunityPostText>{post.texto}</CommunityPostText>
-                          )}
-                        </>
-                      )}
+                      <CommunityPostContent
+                        post={post}
+                        obraRelacionadaPermitida={obraRelacionadaPermitida}
+                        obrasRelacionadasSugestoes={obrasRelacionadasSugestoes}
+                        ocultarTextoSpoiler={ocultarTextoSpoiler}
+                        votosEnquetes={votosEnquetes}
+                        resultadosEnquetes={resultadosEnquetes}
+                        votandoEnqueteId={votandoEnqueteId}
+                        onVotar={(opcao) =>
+                          votarEnquete({
+                            postId: post.id,
+                            opcao,
+                            votandoEnqueteId,
+                            votosEnquetes,
+                            exigirLogin,
+                            usuario,
+                            setVotandoEnqueteId,
+                            setErro,
+                            setFeedbackAcao,
+                            feedbackTimerRef,
+                            setResultadosEnquetes,
+                            setVotosEnquetes,
+                          })
+                        }
+                      />
 
                       <CommunityPostActionBar
                         post={post}
