@@ -2,7 +2,7 @@ import { supabase } from "../../../lib/supabase/client";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
 import { removerReviewComunidadeDoDiario } from "./community-diary-review-remover";
 import { obterObraRelacionadaPermitida } from "./community-related-work-allowed-finder";
-import { normalizarSugestaoObraSupabase } from "./community-related-work-supabase-normalizer";
+import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./community-related-work-search-result";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./community-supabase-current-user-loader";
 import { idSupabaseValidoComunidade } from "./community-supabase-id-validator";
 
@@ -73,10 +73,9 @@ export async function registrarReviewComunidadeNoDiario({
           .limit(5);
 
       if (!erroObraRelacionada) {
-        obraDiario =
-          (obrasEncontradas || [])
-            .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
-            .find((obra): obra is ObraRelacionadaSugestao => Boolean(obra)) || null;
+        obraDiario = obterPrimeiraSugestaoObraSupabaseComunidade(
+          obrasEncontradas
+        );
       }
     }
 

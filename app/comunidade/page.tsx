@@ -89,6 +89,7 @@ import {
 } from "./components/community-url-parameters";
 import { carregarSugestoesObrasLocais } from "./components/community-local-related-works-loader";
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
+import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
@@ -1249,11 +1250,8 @@ export default function ComunidadePage() {
             .limit(5);
 
         if (!erroObraRelacionada) {
-          obraRelacionadaPermitida = (
-            obrasEncontradas || []
-          )
-            .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
-            .find((obra): obra is ObraRelacionadaSugestao => Boolean(obra)) || null;
+          obraRelacionadaPermitida =
+            obterPrimeiraSugestaoObraSupabaseComunidade(obrasEncontradas);
 
           if (obraRelacionadaPermitida) {
             setObrasRelacionadasSugestoes((obrasAtuais) =>
