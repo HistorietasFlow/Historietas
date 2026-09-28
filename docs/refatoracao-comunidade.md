@@ -118,12 +118,13 @@
 - A Fase 410 extraiu somente `CommunityFeedPostsSection` a partir da lista, estado vazio e carregamento adicional do feed e foi concluída com o PR #544 mesclado.
 - A Fase 411 extraiu somente `atualizarCurtidaPostComunidade` e `atualizarCurtidaComentarioComunidade` a partir das transformações puras do estado local de curtidas e foi concluída com o PR #545 mesclado.
 - A Fase 412 extraiu somente `adicionarComentarioPostComunidade`, `removerComentarioPostComunidade` e `removerComentariosPostComunidade` a partir das transformações puras do estado local de comentários e foi concluída com o PR #546 mesclado.
-- A Fase 413 extraiu somente `removerPostDoEstadoComunidade` e `removerPostSalvoDoEstadoComunidade` a partir das transformações puras do estado local de remoção de publicações e está implementada neste PR.
+- A Fase 413 extraiu somente `removerPostDoEstadoComunidade` e `removerPostSalvoDoEstadoComunidade` a partir das transformações puras do estado local de remoção de publicações e foi concluída com o PR #547 mesclado.
+- A Fase 414 extraiu somente `atualizarVisibilidadePostNoEstadoComunidade` e `atualizarFixacaoPostNoEstadoComunidade` a partir das transformações puras dos metadados locais das publicações e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 414 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 415 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
