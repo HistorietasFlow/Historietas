@@ -45,3 +45,22 @@ export function obterTextoBotaoSpoilerPostComunidade(
 ): string {
   return ocultarTextoSpoiler ? "REVELAR" : "OCULTAR";
 }
+
+export function obterAriaLabelCurtidaPostComunidade(
+  usuarioCurtiu: boolean,
+  quantidadeCurtidas: number
+): string {
+  return `${
+    usuarioCurtiu
+      ? "Remover curtida da publicação"
+      : "Curtir publicação"
+  }. ${quantidadeCurtidas} ${
+    quantidadeCurtidas === 1 ? "curtida" : "curtidas"
+  }`;
+}
+
+export function obterAriaLabelComentariosPostComunidade(
+  quantidadeComentarios: number
+): string {
+  return `${quantidadeComentarios} comentários`;
+}
