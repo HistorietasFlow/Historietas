@@ -67,16 +67,6 @@ import { temResultadosBuscaUsuariosComunidade } from "./components/community-use
 import { ordenarUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
 import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
-import {
-  obterInicialAvatarUsuarioBuscaComunidade,
-  obterTextoBotaoSeguirUsuarioBuscaComunidade,
-  obterTextoUsernameUsuarioBuscaComunidade,
-} from "./components/community-user-search-display";
-import {
-  usuarioBuscaEhSeguidoComunidade,
-  usuarioBuscaEhUsuarioAtualComunidade,
-  usuarioBuscaEstaAtualizandoSeguimentoComunidade,
-} from "./components/community-user-search-status";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { ABAS_FEED_COMUNIDADE, limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
@@ -249,13 +239,7 @@ import { CommunitySearchResultsCount } from "./components/community-search-resul
 import { CommunitySearchResultsEmpty } from "./components/community-search-results-empty";
 import { CommunityUserSearchLoading } from "./components/community-user-search-loading";
 import { CommunityUserSearchList } from "./components/community-user-search-list";
-import { CommunityUserSearchCard } from "./components/community-user-search-card";
-import { CommunityUserSearchAvatar } from "./components/community-user-search-avatar";
-import { CommunityUserSearchInfo } from "./components/community-user-search-info";
-import { CommunityUserSearchName } from "./components/community-user-search-name";
-import { CommunityUserSearchUsername } from "./components/community-user-search-username";
-import { CommunityUserSearchFollowButton } from "./components/community-user-search-follow-button";
-import { CommunityUserSearchSelfBadge } from "./components/community-user-search-self-badge";
+import { CommunityUserSearchResult } from "./components/community-user-search-result";
 import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-message";
 import { CommunityPostComposerOverlay } from "./components/community-post-composer-overlay";
@@ -2624,78 +2608,16 @@ export default function ComunidadePage() {
                     usuariosBuscaComunidade
                   ) ? (
                   <CommunityUserSearchList>
-                    {usuariosBuscaComunidade.map((usuarioBusca) => {
-                      const ehUsuarioAtual =
-                        usuarioBuscaEhUsuarioAtualComunidade(
-                          usuario?.id,
-                          usuarioBusca.id
-                        );
-                      const seguindoUsuario = usuarioBuscaEhSeguidoComunidade(
-                        usuariosSeguidosIds,
-                        usuarioBusca.id
-                      );
-                      const atualizandoSeguindo =
-                        usuarioBuscaEstaAtualizandoSeguimentoComunidade(
-                          usuarioSeguindoId,
-                          usuarioBusca.id
-                        );
-
-                      return (
-                        <CommunityUserSearchCard key={usuarioBusca.id}>
-                          <CommunityUserSearchAvatar
-                            href={criarPerfilHrefComunidade(
-                              usuarioBusca.id,
-                              usuarioBusca.nome
-                            )}
-                            ariaLabel={obterAriaLabelPerfilComunidade(
-                              usuarioBusca.nome
-                            )}
-                            avatar={usuarioBusca.avatar}
-                          >
-                            {!usuarioBusca.avatar &&
-                              obterInicialAvatarUsuarioBuscaComunidade(
-                                usuarioBusca.nome
-                              )}
-                          </CommunityUserSearchAvatar>
-
-                          <CommunityUserSearchInfo>
-                            <CommunityUserSearchName
-                              href={criarPerfilHrefComunidade(
-                                usuarioBusca.id,
-                                usuarioBusca.nome
-                              )}
-                            >
-                              {usuarioBusca.nome}
-                            </CommunityUserSearchName>
-
-                            <CommunityUserSearchUsername>
-                              {obterTextoUsernameUsuarioBuscaComunidade(
-                                usuarioBusca.username
-                              )}
-                            </CommunityUserSearchUsername>
-                          </CommunityUserSearchInfo>
-
-                          {ehUsuarioAtual ? (
-                            <CommunityUserSearchSelfBadge>
-                              Você
-                            </CommunityUserSearchSelfBadge>
-                          ) : (
-                            <CommunityUserSearchFollowButton
-                              onClick={() =>
-                                alternarSeguirUsuarioBusca(usuarioBusca)
-                              }
-                              disabled={atualizandoSeguindo}
-                              following={seguindoUsuario}
-                            >
-                              {obterTextoBotaoSeguirUsuarioBuscaComunidade(
-                                atualizandoSeguindo,
-                                seguindoUsuario
-                              )}
-                            </CommunityUserSearchFollowButton>
-                          )}
-                        </CommunityUserSearchCard>
-                      );
-                    })}
+                    {usuariosBuscaComunidade.map((usuarioBusca) => (
+                      <CommunityUserSearchResult
+                        key={usuarioBusca.id}
+                        usuarioBusca={usuarioBusca}
+                        usuarioAtualId={usuario?.id}
+                        usuariosSeguidosIds={usuariosSeguidosIds}
+                        usuarioSeguindoId={usuarioSeguindoId}
+                        onAlternarSeguir={alternarSeguirUsuarioBusca}
+                      />
+                    ))}
                   </CommunityUserSearchList>
                 ) : (
                   <CommunitySearchResultsEmpty>
