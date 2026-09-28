@@ -47,6 +47,7 @@ import { prepararDadosInsercaoPostComunidade } from "./components/community-post
 import { mapearPostCriadoComunidade } from "./components/community-created-post-mapper";
 import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
 import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
+import { prepararRemocaoComentarioComunidade } from "./components/community-comment-removal-preparation";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -1602,19 +1603,20 @@ export default function ComunidadePage() {
         return;
       }
 
-      const comentariosDoPost =
-        posts.find((post) => post.id === postId)?.comentarios || [];
-      const comentarioAtual = comentariosDoPost.find(
-        (comentario) => comentario.id === comentarioId
-      );
+      const resultadoPreparacaoRemocaoComentario =
+        prepararRemocaoComentarioComunidade(
+          posts,
+          postId,
+          comentarioId,
+          usuarioAutenticadoId
+        );
 
-      if (
-        !comentarioAtual ||
-        comentarioAtual.autorId.trim() !== usuarioAutenticadoId
-      ) {
-        setErro("Você só pode remover seus próprios comentários.");
+      if (!resultadoPreparacaoRemocaoComentario.valido) {
+        setErro(resultadoPreparacaoRemocaoComentario.erro);
         return;
       }
+
+      const { comentariosDoPost } = resultadoPreparacaoRemocaoComentario;
 
       const { data: comentarioBanco, error: comentarioBancoError } =
         await supabase
