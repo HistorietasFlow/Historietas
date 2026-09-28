@@ -44,6 +44,7 @@ import {
   atualizarFixacaoPostNoEstadoComunidade,
   atualizarVisibilidadePostNoEstadoComunidade,
 } from "./components/community-post-metadata-state-updaters";
+import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -113,9 +114,6 @@ import { removerSugestoesObrasDuplicadas } from "./components/community-related-
 import { obterObraRelacionadaPermitida } from "./components/community-related-work-allowed-finder";
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
-import { obterLinhasTexto } from "./components/community-text-lines";
-import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
-import { obterPerguntaEnquete } from "./components/community-poll-question";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
@@ -128,10 +126,6 @@ import { fecharComentarios } from "./components/community-comments-closer";
 import { abrirComentarios } from "./components/community-comments-opener";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { postEhEnquete } from "./components/community-post-poll-check";
-import {
-  MAX_OPCOES_ENQUETE,
-  MIN_OPCOES_ENQUETE,
-} from "./components/community-poll-constants";
 import {
   prepararEnqueteComunidade,
   selecionarTipoPublicacaoPost,
@@ -1280,35 +1274,17 @@ export default function ComunidadePage() {
         return;
       }
 
-      if (textoLimpo.length < 8) {
-        setErro("Escreva uma publicação com pelo menos 8 caracteres.");
+      const resultadoValidacaoConteudo = validarConteudoPublicacaoComunidade(
+        textoLimpo,
+        tipoPublicacaoPost
+      );
+
+      if (!resultadoValidacaoConteudo.valido) {
+        setErro(resultadoValidacaoConteudo.erro);
         return;
       }
 
-      const linhasPost = obterLinhasTexto(textoLimpo);
-      const primeiraLinhaPost = linhasPost[0] || "";
-      const publicacaoEhEnquete =
-        tipoPublicacaoPost === "Enquete" || /^enquete\s*[:\-]/i.test(primeiraLinhaPost);
-
-      if (publicacaoEhEnquete) {
-        const perguntaEnquete = obterPerguntaEnquete(textoLimpo);
-        const opcoesEnquete = obterTodasOpcoesEnquete(textoLimpo);
-
-        if (!/^enquete\s*[:\-]/i.test(primeiraLinhaPost) || !perguntaEnquete.trim()) {
-          setErro("Escreva a pergunta da enquete na primeira linha.");
-          return;
-        }
-
-        if (opcoesEnquete.length < MIN_OPCOES_ENQUETE) {
-          setErro("A enquete precisa ter pelo menos 2 opções preenchidas.");
-          return;
-        }
-
-        if (opcoesEnquete.length > MAX_OPCOES_ENQUETE) {
-          setErro("A enquete pode ter no máximo 4 opções.");
-          return;
-        }
-      }
+      const { publicacaoEhEnquete } = resultadoValidacaoConteudo;
 
       const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
 
