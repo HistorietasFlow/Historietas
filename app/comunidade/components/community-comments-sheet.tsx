@@ -14,10 +14,7 @@ import {
   type OrdenacaoComentariosComunidade,
 } from "./community-comment-order";
 import type { RespostaComentarioComunidade } from "./community-comment-reply";
-import {
-  criarEstruturaComentariosComunidade,
-  obterRespostasComentarioComunidade,
-} from "./community-comment-tree";
+import { criarEstruturaComentariosComunidade } from "./community-comment-tree";
 import type { ComentariosSheetProps } from "./community-comments-sheet-props";
 import { CommunityCommentsSheetPanel } from "./community-comments-sheet-panel";
 import { CommunityCommentsSheetOverlay } from "./community-comments-sheet-overlay";
@@ -55,33 +52,7 @@ import {
   obterTextoOrdenacaoComentariosRelevantesComunidade,
 } from "./community-comments-sort-text";
 import { CommunityCommentsListContainer } from "./community-comments-list-container";
-import { CommunityCommentThreadContainer } from "./community-comment-thread-container";
-import { CommunityCommentItem } from "./community-comment-item";
-import { CommunityCommentRepliesListContainer } from "./community-comment-replies-list-container";
-import { CommunityCommentRepliesToggleButton } from "./community-comment-replies-toggle-button";
-import {
-  obterTextoBotaoOcultarRespostasComunidade,
-  obterTextoBotaoVerMaisRespostasComunidade,
-  obterTextoBotaoVerRespostasComunidade,
-} from "./community-comment-replies-action-text";
-import {
-  deveExibirBotaoVerRespostasComunidade,
-  respostasEstaoExpandidasComunidade,
-  temRespostasOcultasComunidade,
-  temRespostasVisiveisComunidade,
-} from "./community-comment-replies-visibility";
-import {
-  obterQuantidadeRespostasOcultasComunidade,
-  obterQuantidadeRespostasVisiveisComunidade,
-  obterRespostasVisiveisComunidade,
-} from "./community-comment-replies-pagination";
-import {
-  mostrarMaisRespostasComunidade,
-  mostrarRespostasIniciaisComunidade,
-  ocultarRespostasComunidade,
-} from "./community-comment-replies-pagination-actions";
-import { CommunityCommentRepliesControlsContainer } from "./community-comment-replies-controls-container";
-import { CommunityCommentRepliesHideButton } from "./community-comment-replies-hide-button";
+import { CommunityCommentThread } from "./community-comment-thread";
 import {
   CommunityCommentsEmptyMessage,
   obterTextoEstadoVazioComentariosComunidade,
@@ -571,125 +542,30 @@ export const ComentariosSheet = memo(function ComentariosSheet({
           {temComentariosRaizComunidade(
             estruturaComentarios.comentariosRaiz
           ) ? (
-            estruturaComentarios.comentariosRaiz.map((comentario) => {
-              const respostas = obterRespostasComentarioComunidade(
-                estruturaComentarios.respostasPorRaiz,
-                comentario.id
-              );
-              const quantidadeVisivel =
-                obterQuantidadeRespostasVisiveisComunidade(
-                  respostas,
-                  respostasVisiveisPorComentario,
-                  comentario
-                );
-              const respostasVisiveis = obterRespostasVisiveisComunidade(
-                respostas,
-                quantidadeVisivel
-              );
-              const respostasOcultas =
-                obterQuantidadeRespostasOcultasComunidade(
-                  respostas,
-                  quantidadeVisivel
-                );
-              const respostasExpandidas =
-                respostasEstaoExpandidasComunidade(quantidadeVisivel);
-
-              return (
-                <CommunityCommentThreadContainer key={comentario.id}>
-                  <CommunityCommentItem
-                    key={comentario.id}
-                    comentario={comentario}
-                    comentarioRaizId={comentario.id}
-                    usuarioId={usuarioId}
-                    podeComentar={podeComentar}
-                    agoraComentarios={agoraComentarios}
-                    postId={post?.id || ""}
-                    comentarioCurtindoId={comentarioCurtindoId}
-                    comentarioRemovendoId={comentarioRemovendoId}
-                    comentarioDenunciandoId={comentarioDenunciandoId}
-                    onResponderComentario={responderComentario}
-                    onCurtirComentario={curtirComentarioSeguro}
-                    onRemoverComentario={removerComentarioSeguro}
-                    onDenunciarComentario={denunciarComentarioSeguro}
-                  />
-
-                  {temRespostasVisiveisComunidade(respostasVisiveis) ? (
-                    <CommunityCommentRepliesListContainer>
-                      {respostasVisiveis.map((resposta) => (
-                        <CommunityCommentItem
-                          key={resposta.id}
-                          comentario={resposta}
-                          comentarioRaizId={comentario.id}
-                          resposta
-                          usuarioId={usuarioId}
-                          podeComentar={podeComentar}
-                          agoraComentarios={agoraComentarios}
-                          postId={post?.id || ""}
-                          comentarioCurtindoId={comentarioCurtindoId}
-                          comentarioRemovendoId={comentarioRemovendoId}
-                          comentarioDenunciandoId={comentarioDenunciandoId}
-                          onResponderComentario={responderComentario}
-                          onCurtirComentario={curtirComentarioSeguro}
-                          onRemoverComentario={removerComentarioSeguro}
-                          onDenunciarComentario={denunciarComentarioSeguro}
-                        />
-                      ))}
-                    </CommunityCommentRepliesListContainer>
-                  ) : null}
-
-                  {deveExibirBotaoVerRespostasComunidade(
-                    respostas,
-                    respostasExpandidas
-                  ) ? (
-                    <CommunityCommentRepliesToggleButton
-                      type="button"
-                      onClick={() =>
-                        mostrarRespostasIniciaisComunidade({
-                          respostas,
-                          comentario,
-                          setRespostasVisiveisPorComentario,
-                        })
-                      }
-                    >
-                      {obterTextoBotaoVerRespostasComunidade(respostas.length)}
-                    </CommunityCommentRepliesToggleButton>
-                  ) : null}
-
-                  {respostasExpandidas ? (
-                    <CommunityCommentRepliesControlsContainer>
-                      {temRespostasOcultasComunidade(respostasOcultas) ? (
-                        <CommunityCommentRepliesToggleButton
-                          type="button"
-                          onClick={() =>
-                            mostrarMaisRespostasComunidade({
-                              respostas,
-                              comentario,
-                              setRespostasVisiveisPorComentario,
-                            })
-                          }
-                        >
-                          {obterTextoBotaoVerMaisRespostasComunidade(
-                            respostasOcultas
-                          )}
-                        </CommunityCommentRepliesToggleButton>
-                      ) : null}
-
-                      <CommunityCommentRepliesHideButton
-                        type="button"
-                        onClick={() =>
-                          ocultarRespostasComunidade({
-                            comentario,
-                            setRespostasVisiveisPorComentario,
-                          })
-                        }
-                      >
-                        {obterTextoBotaoOcultarRespostasComunidade()}
-                      </CommunityCommentRepliesHideButton>
-                    </CommunityCommentRepliesControlsContainer>
-                  ) : null}
-                </CommunityCommentThreadContainer>
-              );
-            })
+            estruturaComentarios.comentariosRaiz.map((comentario) => (
+              <CommunityCommentThread
+                key={comentario.id}
+                comentario={comentario}
+                respostasPorRaiz={estruturaComentarios.respostasPorRaiz}
+                respostasVisiveisPorComentario={
+                  respostasVisiveisPorComentario
+                }
+                setRespostasVisiveisPorComentario={
+                  setRespostasVisiveisPorComentario
+                }
+                usuarioId={usuarioId}
+                podeComentar={podeComentar}
+                agoraComentarios={agoraComentarios}
+                postId={post?.id || ""}
+                comentarioCurtindoId={comentarioCurtindoId}
+                comentarioRemovendoId={comentarioRemovendoId}
+                comentarioDenunciandoId={comentarioDenunciandoId}
+                onResponderComentario={responderComentario}
+                onCurtirComentario={curtirComentarioSeguro}
+                onRemoverComentario={removerComentarioSeguro}
+                onDenunciarComentario={denunciarComentarioSeguro}
+              />
+            ))
           ) : (
             <CommunityCommentsEmptyMessage>
               {obterTextoEstadoVazioComentariosComunidade()}
