@@ -183,15 +183,7 @@ import { CommunityPostComposerFields } from "./components/community-post-compose
 import { CommunityPostComposerField } from "./components/community-post-composer-field";
 import { CommunityPostComposerFieldLabel } from "./components/community-post-composer-field-label";
 import { CommunityPostComposerSelect } from "./components/community-post-composer-select";
-import { CommunityPostComposerInput } from "./components/community-post-composer-input";
-import { getCommunityPostComposerRelatedChapterInputStyle } from "./components/community-post-composer-related-chapter-input-style";
-import { CommunityPostComposerRelatedWorkSearch } from "./components/community-post-composer-related-work-search";
-import { CommunityPostComposerRelatedWorkSuggestions } from "./components/community-post-composer-related-work-suggestions";
-import { CommunityPostComposerRelatedWorkSuggestionButton } from "./components/community-post-composer-related-work-suggestion-button";
-import { CommunityPostComposerRelatedWorkSuggestionContent } from "./components/community-post-composer-related-work-suggestion-content";
-import { CommunityPostComposerRelatedWorkSuggestionTitle } from "./components/community-post-composer-related-work-suggestion-title";
-import { CommunityPostComposerRelatedWorkSuggestionAuthor } from "./components/community-post-composer-related-work-suggestion-author";
-import { CommunityPostComposerRelatedWorkSuggestionBadge } from "./components/community-post-composer-related-work-suggestion-badge";
+import { CommunityPostComposerRelatedFields } from "./components/community-post-composer-related-fields";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -2678,98 +2670,46 @@ export default function ComunidadePage() {
                   </CommunityPostComposerSelect>
                 </CommunityPostComposerField>
 
-                <CommunityPostComposerField>
-                  <CommunityPostComposerFieldLabel>Obra relacionada</CommunityPostComposerFieldLabel>
+                <CommunityPostComposerRelatedFields
+                  publicandoPost={publicandoPost}
+                  obraRelacionadaBusca={obraRelacionadaBusca}
+                  capituloRelacionadoPost={capituloRelacionadoPost}
+                  sugestoesObrasAbertas={sugestoesObrasAbertas}
+                  sugestoesObrasRelacionadasVisiveis={
+                    sugestoesObrasRelacionadasVisiveis
+                  }
+                  obraRelacionadaRef={obraRelacionadaRef}
+                  onAlterarObraRelacionada={(valorDigitado) => {
+                    setObraRelacionadaBusca(valorDigitado);
 
-                  <CommunityPostComposerRelatedWorkSearch>
-                    <CommunityPostComposerInput
-                      ref={obraRelacionadaRef}
-                      disabled={publicandoPost}
-                      value={obraRelacionadaBusca}
-                      onChange={(event) => {
-                        const valorDigitado = event.target.value;
-
-                        setObraRelacionadaBusca(valorDigitado);
-
-                        if (!valorDigitado.trim()) {
-                          setCapituloRelacionadoPost("");
-                        }
-
-                        setSugestoesObrasAbertas(Boolean(valorDigitado.trim()));
-                      }}
-                      onFocus={() => {
-                        setSugestoesObrasAbertas(
-                          Boolean(obraRelacionadaBusca.trim())
-                        );
-                      }}
-                      onBlur={() => {
-                        window.setTimeout(() => {
-                          setSugestoesObrasAbertas(false);
-                        }, 120);
-                      }}
-                      placeholder="Opcional: nome da obra"
-                      autoComplete="off"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      maxLength={90}
-                    />
-
-                    {sugestoesObrasAbertas &&
-                      sugestoesObrasRelacionadasVisiveis.length > 0 && (
-                        <CommunityPostComposerRelatedWorkSuggestions>
-                          {sugestoesObrasRelacionadasVisiveis.map((obra) => (
-                            <CommunityPostComposerRelatedWorkSuggestionButton
-                              key={obra.id}
-                              type="button"
-                              onMouseDown={(event) => {
-                                event.preventDefault();
-                                selecionarObraRelacionada({
-                                  titulo: obra.titulo,
-                                  setObraRelacionadaBusca,
-                                  setSugestoesObrasAbertas,
-                                  obraRelacionadaRef,
-                                });
-                              }}
-                            >
-                              <CommunityPostComposerRelatedWorkSuggestionContent>
-                                <CommunityPostComposerRelatedWorkSuggestionTitle>
-                                  {obra.titulo}
-                                </CommunityPostComposerRelatedWorkSuggestionTitle>
-
-                                <CommunityPostComposerRelatedWorkSuggestionAuthor>
-                                  {obra.autor}
-                                </CommunityPostComposerRelatedWorkSuggestionAuthor>
-                              </CommunityPostComposerRelatedWorkSuggestionContent>
-
-                              <CommunityPostComposerRelatedWorkSuggestionBadge>
-                                OBRA
-                              </CommunityPostComposerRelatedWorkSuggestionBadge>
-                            </CommunityPostComposerRelatedWorkSuggestionButton>
-                          ))}
-                        </CommunityPostComposerRelatedWorkSuggestions>
-                      )}
-                  </CommunityPostComposerRelatedWorkSearch>
-                </CommunityPostComposerField>
-
-                <CommunityPostComposerField>
-                  <CommunityPostComposerFieldLabel>Capítulo relacionado</CommunityPostComposerFieldLabel>
-
-                  <CommunityPostComposerInput
-                    disabled={publicandoPost || !obraRelacionadaBusca.trim()}
-                    value={capituloRelacionadoPost}
-                    onChange={(event) =>
-                      setCapituloRelacionadoPost(event.target.value)
+                    if (!valorDigitado.trim()) {
+                      setCapituloRelacionadoPost("");
                     }
-                    placeholder="Opcional: número ou título do capítulo"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    maxLength={60}
-                    style={getCommunityPostComposerRelatedChapterInputStyle(
-                      Boolean(obraRelacionadaBusca.trim()),
-                    )}
-                  />
-                </CommunityPostComposerField>
+
+                    setSugestoesObrasAbertas(Boolean(valorDigitado.trim()));
+                  }}
+                  onFocarObraRelacionada={() => {
+                    setSugestoesObrasAbertas(
+                      Boolean(obraRelacionadaBusca.trim())
+                    );
+                  }}
+                  onDesfocarObraRelacionada={() => {
+                    window.setTimeout(() => {
+                      setSugestoesObrasAbertas(false);
+                    }, 120);
+                  }}
+                  onSelecionarObraRelacionada={(obra) => {
+                    selecionarObraRelacionada({
+                      titulo: obra.titulo,
+                      setObraRelacionadaBusca,
+                      setSugestoesObrasAbertas,
+                      obraRelacionadaRef,
+                    });
+                  }}
+                  onAlterarCapituloRelacionado={(valor) =>
+                    setCapituloRelacionadoPost(valor)
+                  }
+                />
               </CommunityPostComposerFields>
 
               <CommunityPostComposerField>
