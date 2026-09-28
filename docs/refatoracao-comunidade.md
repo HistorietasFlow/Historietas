@@ -103,13 +103,14 @@
 - A Fase 395 extraiu somente `CommunityPostActionBar` a partir da barra de ações da publicação e foi concluída com o PR #529 mesclado.
 - A Fase 396 extraiu somente `CommunityPostOptionsMenu` a partir do menu de opções da publicação e foi concluída com o PR #530 mesclado.
 - A Fase 397 extraiu somente `CommunityPostContent` a partir dos badges e do conteúdo visual da publicação e foi concluída com o PR #531 mesclado.
-- A Fase 398 extraiu somente `CommunityPostHeaderMetadata` a partir dos metadados visuais do cabeçalho da publicação; a implementação está neste PR.
+- A Fase 398 extraiu somente `CommunityPostHeaderMetadata` a partir dos metadados visuais do cabeçalho da publicação e foi concluída com o PR #532 mesclado.
+- A Fase 399 extraiu somente `obterEstadoApresentacaoPostComunidade` a partir dos estados derivados de cada publicação; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 399 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 400 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
