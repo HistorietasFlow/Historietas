@@ -29,6 +29,7 @@ import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { obterEstadoApresentacaoPostComunidade } from "./components/community-post-presentation-state";
+import { criarAcoesPostComunidade } from "./components/community-post-action-factory";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -2242,6 +2243,79 @@ export default function ComunidadePage() {
     }
   }
 
+  function alternarMenuOpcoesPostComunidade(postId: string) {
+    setPostMenuAbertoId((postIdAtual) =>
+      postIdAtual === postId ? null : postId
+    );
+  }
+
+  function fecharMenuOpcoesPostComunidade() {
+    setPostMenuAbertoId(null);
+  }
+
+  function salvarPostComunidade(postId: string) {
+    alternarPostSalvo({
+      postId,
+      acoesComunidadeRef,
+      setErro,
+      exigirLogin,
+      usuario,
+      setPostSalvandoId,
+      postsSalvosIds,
+      setPostsSalvosIds,
+      setFeedbackAcao,
+      feedbackTimerRef,
+    });
+  }
+
+  function compartilharPostComunidade(post: PostComunidade) {
+    compartilharPublicacao({
+      post,
+      acoesComunidadeRef,
+      setPostCompartilhandoId,
+      setFeedbackAcao,
+      feedbackTimerRef,
+      setErro,
+    });
+  }
+
+  function denunciarPostComunidade(postId: string) {
+    denunciarConteudo("post", postId);
+  }
+
+  function votarEnquetePostComunidade(postId: string, opcao: string) {
+    return votarEnquete({
+      postId,
+      opcao,
+      votandoEnqueteId,
+      votosEnquetes,
+      exigirLogin,
+      usuario,
+      setVotandoEnqueteId,
+      setErro,
+      setFeedbackAcao,
+      feedbackTimerRef,
+      setResultadosEnquetes,
+      setVotosEnquetes,
+    });
+  }
+
+  function abrirComentariosPostComunidade(postId: string) {
+    abrirComentarios({
+      postId,
+      setErro,
+      comentarioUrlAplicadoRef,
+      setComentariosPostId,
+    });
+  }
+
+  function alternarSpoilerPostComunidade(postId: string) {
+    alternarSpoilerRevelado({
+      postId,
+      setSpoilersReveladosIds,
+    });
+  }
+
   if (carregandoFeed) {
     return (
       <CommunityFeedLoadingState style={pageThemeStyle}>
@@ -2604,6 +2678,21 @@ export default function ComunidadePage() {
                     obrasRelacionadasSugestoes,
                     postMenuAbertoId,
                   });
+                  const acoesPost = criarAcoesPostComunidade({
+                    post,
+                    onAlternarMenu: alternarMenuOpcoesPostComunidade,
+                    onFecharMenu: fecharMenuOpcoesPostComunidade,
+                    onSalvar: salvarPostComunidade,
+                    onCompartilhar: compartilharPostComunidade,
+                    onAtualizarVisibilidade: atualizarVisibilidadePost,
+                    onAlternarFixado: alternarFixadoPost,
+                    onRemover: removerPost,
+                    onDenunciar: denunciarPostComunidade,
+                    onVotar: votarEnquetePostComunidade,
+                    onAlternarCurtida: alternarCurtida,
+                    onAbrirComentarios: abrirComentariosPostComunidade,
+                    onAlternarSpoiler: alternarSpoilerPostComunidade,
+                  });
                   return (
                     <CommunityPostCard key={post.id} isDesktop={isDesktop}>
                       <CommunityPostHeader>
@@ -2626,53 +2715,16 @@ export default function ComunidadePage() {
                           postRemovendo={postRemovendo}
                           podeDenunciarPost={podeDenunciarPost}
                           postDenunciando={postDenunciando}
-                          onAlternarMenu={() =>
-                            setPostMenuAbertoId((postIdAtual) =>
-                              postIdAtual === post.id ? null : post.id
-                            )
+                          onAlternarMenu={acoesPost.alternarMenu}
+                          onFecharMenu={acoesPost.fecharMenu}
+                          onSalvar={acoesPost.salvar}
+                          onCompartilhar={acoesPost.compartilhar}
+                          onAtualizarVisibilidade={
+                            acoesPost.atualizarVisibilidade
                           }
-                          onFecharMenu={() => setPostMenuAbertoId(null)}
-                          onSalvar={() => {
-                            setPostMenuAbertoId(null);
-                            alternarPostSalvo({
-                              postId: post.id,
-                              acoesComunidadeRef,
-                              setErro,
-                              exigirLogin,
-                              usuario,
-                              setPostSalvandoId,
-                              postsSalvosIds,
-                              setPostsSalvosIds,
-                              setFeedbackAcao,
-                              feedbackTimerRef,
-                            });
-                          }}
-                          onCompartilhar={() => {
-                            setPostMenuAbertoId(null);
-                            compartilharPublicacao({
-                              post,
-                              acoesComunidadeRef,
-                              setPostCompartilhandoId,
-                              setFeedbackAcao,
-                              feedbackTimerRef,
-                              setErro,
-                            });
-                          }}
-                          onAtualizarVisibilidade={(visibilidade) =>
-                            void atualizarVisibilidadePost(post, visibilidade)
-                          }
-                          onAlternarFixado={() => {
-                            setPostMenuAbertoId(null);
-                            alternarFixadoPost(post);
-                          }}
-                          onRemover={() => {
-                            setPostMenuAbertoId(null);
-                            removerPost(post.id);
-                          }}
-                          onDenunciar={() => {
-                            setPostMenuAbertoId(null);
-                            denunciarConteudo("post", post.id);
-                          }}
+                          onAlternarFixado={acoesPost.alternarFixado}
+                          onRemover={acoesPost.remover}
+                          onDenunciar={acoesPost.denunciar}
                         />
                       </CommunityPostHeader>
 
@@ -2684,22 +2736,7 @@ export default function ComunidadePage() {
                         votosEnquetes={votosEnquetes}
                         resultadosEnquetes={resultadosEnquetes}
                         votandoEnqueteId={votandoEnqueteId}
-                        onVotar={(opcao) =>
-                          votarEnquete({
-                            postId: post.id,
-                            opcao,
-                            votandoEnqueteId,
-                            votosEnquetes,
-                            exigirLogin,
-                            usuario,
-                            setVotandoEnqueteId,
-                            setErro,
-                            setFeedbackAcao,
-                            feedbackTimerRef,
-                            setResultadosEnquetes,
-                            setVotosEnquetes,
-                          })
-                        }
+                        onVotar={acoesPost.votar}
                       />
 
                       <CommunityPostActionBar
@@ -2708,21 +2745,9 @@ export default function ComunidadePage() {
                         usuarioCurtiu={usuarioCurtiu}
                         postCurtindo={postCurtindo}
                         ocultarTextoSpoiler={ocultarTextoSpoiler}
-                        onAlternarCurtida={() => alternarCurtida(post.id)}
-                        onAbrirComentarios={() =>
-                          abrirComentarios({
-                            postId: post.id,
-                            setErro,
-                            comentarioUrlAplicadoRef,
-                            setComentariosPostId,
-                          })
-                        }
-                        onAlternarSpoiler={() =>
-                          alternarSpoilerRevelado({
-                            postId: post.id,
-                            setSpoilersReveladosIds,
-                          })
-                        }
+                        onAlternarCurtida={acoesPost.alternarCurtida}
+                        onAbrirComentarios={acoesPost.abrirComentarios}
+                        onAlternarSpoiler={acoesPost.alternarSpoiler}
                       />
                     </CommunityPostCard>
                   );
