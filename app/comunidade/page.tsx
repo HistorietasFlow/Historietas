@@ -28,6 +28,10 @@ import { normalizarTermoBuscaComunidade } from "./components/community-search-te
 import { obterEstadoApresentacaoPostComunidade } from "./components/community-post-presentation-state";
 import { criarAcoesPostComunidade } from "./components/community-post-action-factory";
 import {
+  atualizarCurtidaComentarioComunidade,
+  atualizarCurtidaPostComunidade,
+} from "./components/community-like-state-updaters";
+import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
 } from "./components/community-user-search-term-normalizer";
@@ -1463,18 +1467,12 @@ export default function ComunidadePage() {
       }
 
       setPosts((postsAtuais) => {
-        return postsAtuais.map((post) => {
-          if (post.id !== postId) {
-            return post;
-          }
-
-          return {
-            ...post,
-            curtidas: jaCurtiu
-              ? post.curtidas.filter((curtidaId) => curtidaId !== usuario.id)
-              : Array.from(new Set([...post.curtidas, usuario.id])),
-          };
-        });
+        return atualizarCurtidaPostComunidade(
+          postsAtuais,
+          postId,
+          usuario.id,
+          jaCurtiu
+        );
       });
 
     } finally {
@@ -1821,27 +1819,13 @@ export default function ComunidadePage() {
       }
 
       setPosts((postsAtuais) =>
-        postsAtuais.map((post) => {
-          if (post.id !== postId) {
-            return post;
-          }
-
-          return {
-            ...post,
-            comentarios: post.comentarios.map((comentario) => {
-              if (comentario.id !== comentarioId) {
-                return comentario;
-              }
-
-              return {
-                ...comentario,
-                curtidas: jaCurtiu
-                  ? comentario.curtidas.filter((curtidaId) => curtidaId !== usuario.id)
-                  : Array.from(new Set([...comentario.curtidas, usuario.id])),
-              };
-            }),
-          };
-        })
+        atualizarCurtidaComentarioComunidade(
+          postsAtuais,
+          postId,
+          comentarioId,
+          usuario.id,
+          jaCurtiu
+        )
       );
 
       emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
