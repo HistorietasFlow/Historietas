@@ -32,8 +32,6 @@ import {
   normalizarTermoComparacaoUsuariosComunidade,
 } from "./components/community-user-search-term-normalizer";
 import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-search-clear-check";
-import { deveExibirInstrucaoBuscaUsuariosComunidade } from "./components/community-user-search-guidance-check";
-import { temResultadosBuscaUsuariosComunidade } from "./components/community-user-search-results-check";
 import { ordenarUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
 import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
 import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
@@ -160,14 +158,10 @@ import {
 } from "./components/community-search-controls-visibility";
 import { CommunityFeedActionsSheet } from "./components/community-feed-actions-sheet";
 import { CommunityFeedControls } from "./components/community-feed-controls";
-import { CommunityUserSearchSection } from "./components/community-user-search-section";
 import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
 import { CommunitySearchResultsCount } from "./components/community-search-results-count";
-import { CommunitySearchResultsEmpty } from "./components/community-search-results-empty";
-import { CommunityUserSearchLoading } from "./components/community-user-search-loading";
-import { CommunityUserSearchList } from "./components/community-user-search-list";
-import { CommunityUserSearchResult } from "./components/community-user-search-result";
+import { CommunityUserSearchResults } from "./components/community-user-search-results";
 import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-message";
 import { CommunityPostComposer } from "./components/community-post-composer";
@@ -182,7 +176,6 @@ import { CommunityPostItem } from "./components/community-post-item";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { CommunityLanguageBridge } from "./components/community-language-bridge";
 import {
-  obterTextoContagemUsuariosBuscaComunidade,
   traduzirContagemResultadosComunidade,
 } from "./components/community-results-count-translator";
 import { carregarJsonUsuarioComunidade } from "./components/community-user-json-loader";
@@ -2398,52 +2391,18 @@ export default function ComunidadePage() {
             )}
 
             {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
-              <CommunityUserSearchSection ariaLabel="Usuários encontrados">
-                <CommunitySearchResultsHeader>
-                  <CommunitySearchResultsTitle>
-                    Usuários
-                  </CommunitySearchResultsTitle>
-                  <CommunitySearchResultsCount>
-                    {obterTextoContagemUsuariosBuscaComunidade(
-                      carregandoUsuariosBuscaComunidade,
-                      usuariosBuscaComunidade.length,
-                      language
-                    )}
-                  </CommunitySearchResultsCount>
-                </CommunitySearchResultsHeader>
-
-                {deveExibirInstrucaoBuscaUsuariosComunidade(termoBusca) ? (
-                  <CommunitySearchResultsEmpty>
-                    Digite pelo menos 2 caracteres para encontrar usuários.
-                  </CommunitySearchResultsEmpty>
-                ) : carregandoUsuariosBuscaComunidade ? (
-                  <CommunityUserSearchLoading>
-                    <CommunityLoadingSpinner
-                      compacto
-                      label="Buscando usuários"
-                    />
-                  </CommunityUserSearchLoading>
-                ) : temResultadosBuscaUsuariosComunidade(
-                    usuariosBuscaComunidade
-                  ) ? (
-                  <CommunityUserSearchList>
-                    {usuariosBuscaComunidade.map((usuarioBusca) => (
-                      <CommunityUserSearchResult
-                        key={usuarioBusca.id}
-                        usuarioBusca={usuarioBusca}
-                        usuarioAtualId={usuario?.id}
-                        usuariosSeguidosIds={usuariosSeguidosIds}
-                        usuarioSeguindoId={usuarioSeguindoId}
-                        onAlternarSeguir={alternarSeguirUsuarioBusca}
-                      />
-                    ))}
-                  </CommunityUserSearchList>
-                ) : (
-                  <CommunitySearchResultsEmpty>
-                    Nenhum usuário encontrado.
-                  </CommunitySearchResultsEmpty>
-                )}
-              </CommunityUserSearchSection>
+              <CommunityUserSearchResults
+                termoBusca={termoBusca}
+                carregandoUsuariosBuscaComunidade={
+                  carregandoUsuariosBuscaComunidade
+                }
+                usuariosBuscaComunidade={usuariosBuscaComunidade}
+                idioma={language}
+                usuarioAtualId={usuario?.id}
+                usuariosSeguidosIds={usuariosSeguidosIds}
+                usuarioSeguindoId={usuarioSeguindoId}
+                onAlternarSeguir={alternarSeguirUsuarioBusca}
+              />
             ) : null}
 
             {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (

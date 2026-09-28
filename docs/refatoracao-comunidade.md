@@ -113,12 +113,13 @@
 - A Fase 405 extraiu somente `CommunityPostComposerPublicationField` a partir do campo principal, modelo de enquete, sugestões e textarea do composer e foi concluída com o PR #539 mesclado.
 - A Fase 406 extraiu somente `CommunityPostComposerClassificationFields` a partir dos campos de categoria, tipo e visibilidade do composer e foi concluída com o PR #540 mesclado.
 - A Fase 407 extraiu somente `CommunityPostComposerActions` a partir dos controles de spoiler e publicação do composer e foi concluída com o PR #541 mesclado.
-- A Fase 408 extraiu somente `CommunityPostComposer` a partir da composição visual completa do composer e está implementada neste PR.
+- A Fase 408 extraiu somente `CommunityPostComposer` a partir da composição visual completa do composer e foi concluída com o PR #542 mesclado.
+- A Fase 409 extraiu somente `CommunityUserSearchResults` a partir da composição visual completa dos resultados da busca de usuários e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 409 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 410 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
