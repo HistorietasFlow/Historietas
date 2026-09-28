@@ -94,13 +94,14 @@
 - A Fase 386 extraiu somente `ordenacaoRecentesEstaAtivaComunidade`, `ordenacaoEmAltaEstaAtivaComunidade` e `ordenacaoMaisComentadasEstaAtivaComunidade` a partir dos estados ativos dos controles de ordenação do feed e foi concluída com o PR #520 mesclado.
 - A Fase 387 extraiu somente `selecionarOrdenacaoRecentesComunidade`, `selecionarOrdenacaoEmAltaComunidade` e `selecionarOrdenacaoMaisComentadasComunidade` a partir dos seletores dos controles de ordenação do feed e foi concluída com o PR #521 mesclado.
 - A Fase 388 extraiu somente `obterParametroBuscaComunidade`, `obterParametroObraComunidade` e `obterParametroPostComunidade` a partir das leituras dos parâmetros `busca`, `obra` e `post` da URL e foi concluída com o PR #522 mesclado.
-- A Fase 389 extraiu somente `obterPostsVisiveisComunidade` a partir do pipeline completo de filtragem e ordenação de `postsVisiveis`; a implementação está neste PR.
+- A Fase 389 extraiu somente `obterPostsVisiveisComunidade` a partir do pipeline completo de filtragem e ordenação de `postsVisiveis` e foi concluída com o PR #523 mesclado.
+- A Fase 390 extraiu somente `CommunityCommentItem` a partir de `renderizarComentario`; a implementação está neste PR.
 - A `main` local está sincronizada com `origin/main` e o worktree está limpo.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 390 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 391 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
