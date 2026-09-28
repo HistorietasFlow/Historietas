@@ -48,6 +48,7 @@ import { mapearPostCriadoComunidade } from "./components/community-created-post-
 import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
 import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
 import { prepararRemocaoComentarioComunidade } from "./components/community-comment-removal-preparation";
+import { consultarComentarioParaRemocaoComunidade } from "./components/community-comment-removal-query";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -1618,22 +1619,20 @@ export default function ComunidadePage() {
 
       const { comentariosDoPost } = resultadoPreparacaoRemocaoComentario;
 
-      const { data: comentarioBanco, error: comentarioBancoError } =
-        await supabase
-          .from("comunidade_comentarios")
-          .select("id, post_id, autor_id")
-          .eq("id", comentarioId)
-          .maybeSingle();
+      const resultadoConsultaComentario =
+        await consultarComentarioParaRemocaoComunidade(comentarioId);
 
-      if (comentarioBancoError) {
+      if (!resultadoConsultaComentario.sucesso) {
         setErro(
           formatarErroSupabase(
             "Erro ao conferir comentário",
-            comentarioBancoError
+            resultadoConsultaComentario.erro
           )
         );
         return;
       }
+
+      const { comentarioBanco } = resultadoConsultaComentario;
 
       if (!comentarioBanco) {
         setPosts((postsAtuais) =>
