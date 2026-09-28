@@ -120,12 +120,13 @@
 - A Fase 412 extraiu somente `adicionarComentarioPostComunidade`, `removerComentarioPostComunidade` e `removerComentariosPostComunidade` a partir das transformações puras do estado local de comentários e foi concluída com o PR #546 mesclado.
 - A Fase 413 extraiu somente `removerPostDoEstadoComunidade` e `removerPostSalvoDoEstadoComunidade` a partir das transformações puras do estado local de remoção de publicações e foi concluída com o PR #547 mesclado.
 - A Fase 414 extraiu somente `atualizarVisibilidadePostNoEstadoComunidade` e `atualizarFixacaoPostNoEstadoComunidade` a partir das transformações puras dos metadados locais das publicações e foi concluída com o PR #548 mesclado.
-- A Fase 415 extraiu somente `validarConteudoPublicacaoComunidade` a partir da validação pura do conteúdo da publicação e está implementada neste PR.
+- A Fase 415 extraiu somente `validarConteudoPublicacaoComunidade` a partir da validação pura do conteúdo da publicação e foi concluída com o PR #549 mesclado.
+- A Fase 416 extraiu somente `prepararDadosInsercaoPostComunidade` a partir da preparação pura dos dados enviados ao insert de `comunidade_posts` e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 416 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 417 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
