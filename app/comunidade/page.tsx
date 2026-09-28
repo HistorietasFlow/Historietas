@@ -164,6 +164,11 @@ import { abrirComentarios } from "./components/community-comments-opener";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
 import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
+import {
+  deveDesabilitarOpcaoEnqueteComunidade,
+  obterLarguraResultadoOpcaoEnqueteComunidade,
+  obterTextoStatusOpcaoEnqueteComunidade,
+} from "./components/community-poll-option-state";
 import { postEhEnquete } from "./components/community-post-poll-check";
 import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
@@ -3156,11 +3161,12 @@ export default function ComunidadePage() {
                                       )
                                     : 0;
                                   const larguraResultado =
-                                    usuarioVotouNaEnquete && totalVotos > 0
-                                      ? `${porcentagem}%`
-                                      : usuarioVotouNaEnquete && selecionada
-                                        ? "100%"
-                                        : "0%";
+                                    obterLarguraResultadoOpcaoEnqueteComunidade(
+                                      usuarioVotouNaEnquete,
+                                      totalVotos,
+                                      selecionada,
+                                      porcentagem
+                                    );
 
                                   return (
                                     <CommunityPollOptionButton
@@ -3181,7 +3187,11 @@ export default function ComunidadePage() {
                                           setVotosEnquetes,
                                         })
                                       }
-                                      disabled={Boolean(votoAtual) || votandoEnqueteId === post.id}
+                                      disabled={deveDesabilitarOpcaoEnqueteComunidade(
+                                        votoAtual,
+                                        votandoEnqueteId,
+                                        post.id
+                                      )}
                                       selected={selecionada}
                                     >
                                       <CommunityPollResultBar
@@ -3198,13 +3208,13 @@ export default function ComunidadePage() {
                                       <CommunityPollOptionStatus
                                         selected={selecionada}
                                       >
-                                        {usuarioVotouNaEnquete
-                                          ? selecionada
-                                            ? `${totalVotos > 0 ? porcentagem : 100}%`
-                                            : `${porcentagem}%`
-                                          : votandoEnqueteId === post.id
-                                            ? "..."
-                                            : "Votar"}
+                                        {obterTextoStatusOpcaoEnqueteComunidade(
+                                          usuarioVotouNaEnquete,
+                                          selecionada,
+                                          totalVotos,
+                                          porcentagem,
+                                          votandoEnqueteId === post.id
+                                        )}
                                       </CommunityPollOptionStatus>
                                     </CommunityPollOptionButton>
                                   );
