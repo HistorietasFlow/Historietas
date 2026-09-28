@@ -107,12 +107,13 @@
 - A Fase 399 extraiu somente `obterEstadoApresentacaoPostComunidade` a partir dos estados derivados de cada publicação e foi concluída com o PR #533 mesclado.
 - A Fase 400 extraiu somente `criarAcoesPostComunidade` e o contrato `AcoesPostComunidade` a partir dos callbacks de cada publicação e foi concluída com o PR #534 mesclado.
 - A Fase 401 extraiu somente `CommunityPostItem` a partir da composição visual de cada publicação e foi concluída com o PR #535 mesclado.
-- A Fase 402 extraiu somente `CommunityFeedActionsSheet` a partir do painel de filtros, ordenação e ações da comunidade e está implementada neste PR.
+- A Fase 402 extraiu somente `CommunityFeedActionsSheet` a partir do painel de filtros, ordenação e ações da comunidade e foi concluída com o PR #536 mesclado.
+- A Fase 403 extraiu somente `CommunityFeedControls` a partir dos controles de filtros avançados, busca e abas do feed e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 403 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 404 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
