@@ -234,12 +234,7 @@ import {
 } from "./components/community-action-lock";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
-import { CommunityPostCard } from "./components/community-post-card";
-import { CommunityPostHeader } from "./components/community-post-header";
-import { CommunityPostHeaderMetadata } from "./components/community-post-header-metadata";
-import { CommunityPostActionBar } from "./components/community-post-action-bar";
-import { CommunityPostContent } from "./components/community-post-content";
-import { CommunityPostOptionsMenu } from "./components/community-post-options-menu";
+import { CommunityPostItem } from "./components/community-post-item";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { CommunityLanguageBridge } from "./components/community-language-bridge";
 import {
@@ -2645,23 +2640,7 @@ export default function ComunidadePage() {
               {!carregandoFeed && (
                 temPostsVisiveisComunidade(postsVisiveis) ? (
                 postsVisiveis.map((post) => {
-                  const {
-                    usuarioCurtiu,
-                    postSalvo,
-                    podeRemover,
-                    podeDenunciarPost,
-                    postCurtindo,
-                    postSalvando,
-                    postCompartilhando,
-                    postRemovendo,
-                    postFixando,
-                    postVisibilidadeAtualizando,
-                    podeAlterarVisibilidade,
-                    postDenunciando,
-                    ocultarTextoSpoiler,
-                    obraRelacionadaPermitida,
-                    menuOpcoesAberto,
-                  } = obterEstadoApresentacaoPostComunidade({
+                  const estadoPost = obterEstadoApresentacaoPostComunidade({
                     post,
                     usuario,
                     postsSalvosIds,
@@ -2694,62 +2673,19 @@ export default function ComunidadePage() {
                     onAlternarSpoiler: alternarSpoilerPostComunidade,
                   });
                   return (
-                    <CommunityPostCard key={post.id} isDesktop={isDesktop}>
-                      <CommunityPostHeader>
-                        <CommunityPostHeaderMetadata post={post} />
-
-                        <CommunityPostOptionsMenu
-                          post={post}
-                          postMenuAbertoId={postMenuAbertoId}
-                          menuOpcoesAberto={menuOpcoesAberto}
-                          postSalvo={postSalvo}
-                          postSalvando={postSalvando}
-                          postCompartilhando={postCompartilhando}
-                          podeAlterarVisibilidade={podeAlterarVisibilidade}
-                          postVisibilidadeAtualizando={
-                            postVisibilidadeAtualizando
-                          }
-                          usuarioEhAdmin={usuarioEhAdmin}
-                          postFixando={postFixando}
-                          podeRemover={podeRemover}
-                          postRemovendo={postRemovendo}
-                          podeDenunciarPost={podeDenunciarPost}
-                          postDenunciando={postDenunciando}
-                          onAlternarMenu={acoesPost.alternarMenu}
-                          onFecharMenu={acoesPost.fecharMenu}
-                          onSalvar={acoesPost.salvar}
-                          onCompartilhar={acoesPost.compartilhar}
-                          onAtualizarVisibilidade={
-                            acoesPost.atualizarVisibilidade
-                          }
-                          onAlternarFixado={acoesPost.alternarFixado}
-                          onRemover={acoesPost.remover}
-                          onDenunciar={acoesPost.denunciar}
-                        />
-                      </CommunityPostHeader>
-
-                      <CommunityPostContent
-                        post={post}
-                        obraRelacionadaPermitida={obraRelacionadaPermitida}
-                        obrasRelacionadasSugestoes={obrasRelacionadasSugestoes}
-                        ocultarTextoSpoiler={ocultarTextoSpoiler}
-                        votosEnquetes={votosEnquetes}
-                        resultadosEnquetes={resultadosEnquetes}
-                        votandoEnqueteId={votandoEnqueteId}
-                        onVotar={acoesPost.votar}
-                      />
-
-                      <CommunityPostActionBar
-                        post={post}
-                        desktop={isDesktop}
-                        usuarioCurtiu={usuarioCurtiu}
-                        postCurtindo={postCurtindo}
-                        ocultarTextoSpoiler={ocultarTextoSpoiler}
-                        onAlternarCurtida={acoesPost.alternarCurtida}
-                        onAbrirComentarios={acoesPost.abrirComentarios}
-                        onAlternarSpoiler={acoesPost.alternarSpoiler}
-                      />
-                    </CommunityPostCard>
+                    <CommunityPostItem
+                      key={post.id}
+                      post={post}
+                      desktop={isDesktop}
+                      estadoPost={estadoPost}
+                      acoesPost={acoesPost}
+                      postMenuAbertoId={postMenuAbertoId}
+                      usuarioEhAdmin={usuarioEhAdmin}
+                      obrasRelacionadasSugestoes={obrasRelacionadasSugestoes}
+                      votosEnquetes={votosEnquetes}
+                      resultadosEnquetes={resultadosEnquetes}
+                      votandoEnqueteId={votandoEnqueteId}
+                    />
                   );
                 })
               ) : (
