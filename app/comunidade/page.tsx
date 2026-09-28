@@ -128,6 +128,11 @@ import { selecionarObraRelacionada } from "./components/community-related-work-s
 import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
 import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
+import {
+  obterParametroBuscaComunidade,
+  obterParametroObraComunidade,
+  obterParametroPostComunidade,
+} from "./components/community-url-parameters";
 import { carregarSugestoesObrasLocais } from "./components/community-local-related-works-loader";
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
@@ -779,11 +784,9 @@ export default function ComunidadePage() {
 
         void carregarUsuario();
 
-        const obraFiltroUrl = (
-          new URLSearchParams(window.location.search).get("obra") || ""
-        )
-          .trim()
-          .slice(0, 90);
+        const obraFiltroUrl = obterParametroObraComunidade(
+          new URLSearchParams(window.location.search)
+        );
 
         void carregarPostsComunidadeNoEfeito(true, 0, obraFiltroUrl);
       }, 0);
@@ -959,7 +962,7 @@ export default function ComunidadePage() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
     const parametrosUrl = new URLSearchParams(window.location.search);
-    const obraUrl = (parametrosUrl.get("obra") || "").trim().slice(0, 90);
+    const obraUrl = obterParametroObraComunidade(parametrosUrl);
 
     const carregarFeedTimer = window.setTimeout(() => {
       void carregarPostsComunidadeNoEfeito(true, 0, obraUrl);
@@ -978,8 +981,8 @@ export default function ComunidadePage() {
     parametrosComunidadeAplicadosRef.current = true;
 
     const parametrosUrl = new URLSearchParams(window.location.search);
-    const buscaUrl = (parametrosUrl.get("busca") || "").trim();
-    const obraUrl = (parametrosUrl.get("obra") || "").trim().slice(0, 90);
+    const buscaUrl = obterParametroBuscaComunidade(parametrosUrl);
+    const obraUrl = obterParametroObraComunidade(parametrosUrl);
     const tipoUrl = obterTipoPublicacaoPorParametro(
       parametrosUrl.get("tipo") || ""
     );
@@ -1027,7 +1030,9 @@ export default function ComunidadePage() {
       return;
     }
 
-    const postIdUrl = new URLSearchParams(window.location.search).get("post");
+    const postIdUrl = obterParametroPostComunidade(
+      new URLSearchParams(window.location.search)
+    );
 
     if (postIdUrl && posts.some((post) => post.id === postIdUrl)) {
       comentarioUrlAplicadoRef.current = true;
