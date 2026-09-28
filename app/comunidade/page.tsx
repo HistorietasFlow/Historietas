@@ -41,6 +41,10 @@ import {
   removerPostSalvoDoEstadoComunidade,
 } from "./components/community-post-removal-state-updaters";
 import {
+  atualizarFixacaoPostNoEstadoComunidade,
+  atualizarVisibilidadePostNoEstadoComunidade,
+} from "./components/community-post-metadata-state-updaters";
+import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
 } from "./components/community-user-search-term-normalizer";
@@ -1903,11 +1907,11 @@ export default function ComunidadePage() {
       }
 
       setPosts((postsAtuais) =>
-        postsAtuais.map((postAtual) =>
-          postAtual.id === post.id
-            ? { ...postAtual, visibilidade: visibilidadeSegura }
-            : postAtual,
-        ),
+        atualizarVisibilidadePostNoEstadoComunidade(
+          postsAtuais,
+          post.id,
+          visibilidadeSegura,
+        )
       );
       setPostMenuAbertoId(null);
       emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Visibilidade da publicação atualizada.");
@@ -1954,18 +1958,11 @@ export default function ComunidadePage() {
       } | null;
 
       setPosts((postsAtuais) =>
-        postsAtuais.map((postAtual) => {
-          if (postAtual.id !== post.id) {
-            return postAtual;
-          }
-
-          return {
-            ...postAtual,
-            fixado: Boolean(dadosFixado?.fixado),
-            fixadoEm: dadosFixado?.fixado_em || "",
-            fixadoPor: dadosFixado?.fixado_por || "",
-          };
-        })
+        atualizarFixacaoPostNoEstadoComunidade(
+          postsAtuais,
+          post.id,
+          dadosFixado
+        )
       );
 
       emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
