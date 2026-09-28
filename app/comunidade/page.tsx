@@ -93,6 +93,11 @@ import {
   obterTextoEstadoVazioFeedComunidade,
   temPostsVisiveisComunidade,
 } from "./components/community-feed-presentation";
+import {
+  ordenacaoEmAltaEstaAtivaComunidade,
+  ordenacaoMaisComentadasEstaAtivaComunidade,
+  ordenacaoRecentesEstaAtivaComunidade,
+} from "./components/community-feed-order-status";
 import type {
   AlvoDenunciaComunidade,
   DenunciaAlvoComunidade,
@@ -2652,9 +2657,10 @@ export default function ComunidadePage() {
                   </CommunitySheetSectionLabel>
 
                   <CommunitySheetFilterOption
-                    active={
-                      ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
-                    }
+                    active={ordenacaoRecentesEstaAtivaComunidade(
+                      ordenacaoAtiva,
+                      mostrarApenasSalvos
+                    )}
                     onClick={() => {
                       setOrdenacaoAtiva("Recentes");
                       setMostrarApenasSalvos(false);
@@ -2665,9 +2671,10 @@ export default function ComunidadePage() {
                   </CommunitySheetFilterOption>
 
                   <CommunitySheetFilterOption
-                    active={
-                      ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
-                    }
+                    active={ordenacaoEmAltaEstaAtivaComunidade(
+                      ordenacaoAtiva,
+                      mostrarApenasSalvos
+                    )}
                     onClick={() => {
                       setOrdenacaoAtiva("Em alta");
                       setMostrarApenasSalvos(false);
@@ -2678,9 +2685,10 @@ export default function ComunidadePage() {
                   </CommunitySheetFilterOption>
 
                   <CommunitySheetFilterOption
-                    active={
-                      ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
-                    }
+                    active={ordenacaoMaisComentadasEstaAtivaComunidade(
+                      ordenacaoAtiva,
+                      mostrarApenasSalvos
+                    )}
                     onClick={() => {
                       setOrdenacaoAtiva("Mais comentadas");
                       setMostrarApenasSalvos(false);
