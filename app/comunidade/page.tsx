@@ -37,6 +37,10 @@ import {
   removerComentariosPostComunidade,
 } from "./components/community-comment-state-updaters";
 import {
+  removerPostDoEstadoComunidade,
+  removerPostSalvoDoEstadoComunidade,
+} from "./components/community-post-removal-state-updaters";
+import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
 } from "./components/community-user-search-term-normalizer";
@@ -2038,7 +2042,7 @@ export default function ComunidadePage() {
 
       if (!postBanco) {
         setPosts((postsAtuais) =>
-          postsAtuais.filter((post) => post.id !== postId)
+          removerPostDoEstadoComunidade(postsAtuais, postId)
         );
         setPostMenuAbertoId(null);
         setErro("Esta publicação já não existe.");
@@ -2105,11 +2109,12 @@ export default function ComunidadePage() {
 
       setUsuarioEhAdmin(usuarioAtualEhAdmin);
       setPosts((postsAtuais) =>
-        postsAtuais.filter((post) => post.id !== postId)
+        removerPostDoEstadoComunidade(postsAtuais, postId)
       );
 
-      const postsSalvosAtualizados = postsSalvosIds.filter(
-        (postSalvoId) => postSalvoId !== postId
+      const postsSalvosAtualizados = removerPostSalvoDoEstadoComunidade(
+        postsSalvosIds,
+        postId
       );
 
       setPostsSalvosIds(postsSalvosAtualizados);
