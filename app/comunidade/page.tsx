@@ -32,6 +32,11 @@ import {
   atualizarCurtidaPostComunidade,
 } from "./components/community-like-state-updaters";
 import {
+  adicionarComentarioPostComunidade,
+  removerComentarioPostComunidade,
+  removerComentariosPostComunidade,
+} from "./components/community-comment-state-updaters";
+import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
 } from "./components/community-user-search-term-normalizer";
@@ -1574,14 +1579,7 @@ export default function ComunidadePage() {
       }
 
       setPosts((postsAtuais) =>
-        postsAtuais.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                comentarios: [...post.comentarios, novoComentario],
-              }
-            : post
-        )
+        adicionarComentarioPostComunidade(postsAtuais, postId, novoComentario)
       );
 
       emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Comentário enviado.");
@@ -1685,16 +1683,7 @@ export default function ComunidadePage() {
 
       if (!comentarioBanco) {
         setPosts((postsAtuais) =>
-          postsAtuais.map((post) =>
-            post.id === postId
-              ? {
-                  ...post,
-                  comentarios: post.comentarios.filter(
-                    (comentario) => comentario.id !== comentarioId
-                  ),
-                }
-              : post
-          )
+          removerComentarioPostComunidade(postsAtuais, postId, comentarioId)
         );
         setErro("Este comentário já não existe.");
         return;
@@ -1739,16 +1728,7 @@ export default function ComunidadePage() {
       }
 
       setPosts((postsAtuais) =>
-        postsAtuais.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                comentarios: post.comentarios.filter(
-                  (comentario) => !idsParaRemover.has(comentario.id)
-                ),
-              }
-            : post
-        )
+        removerComentariosPostComunidade(postsAtuais, postId, idsParaRemover)
       );
 
       emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Comentário removido.");

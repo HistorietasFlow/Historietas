@@ -116,12 +116,13 @@
 - A Fase 408 extraiu somente `CommunityPostComposer` a partir da composição visual completa do composer e foi concluída com o PR #542 mesclado.
 - A Fase 409 extraiu somente `CommunityUserSearchResults` a partir da composição visual completa dos resultados da busca de usuários e foi concluída com o PR #543 mesclado.
 - A Fase 410 extraiu somente `CommunityFeedPostsSection` a partir da lista, estado vazio e carregamento adicional do feed e foi concluída com o PR #544 mesclado.
-- A Fase 411 extraiu somente `atualizarCurtidaPostComunidade` e `atualizarCurtidaComentarioComunidade` a partir das transformações puras do estado local de curtidas e está implementada neste PR.
+- A Fase 411 extraiu somente `atualizarCurtidaPostComunidade` e `atualizarCurtidaComentarioComunidade` a partir das transformações puras do estado local de curtidas e foi concluída com o PR #545 mesclado.
+- A Fase 412 extraiu somente `adicionarComentarioPostComunidade`, `removerComentarioPostComunidade` e `removerComentariosPostComunidade` a partir das transformações puras do estado local de comentários e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 412 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
+A Fase 413 ainda não foi iniciada e aguarda autorização explícita. Não iniciar funções, componentes, limpezas, renomeações ou melhorias antes dessa autorização.
 
 ## Contrato de preservação
 
