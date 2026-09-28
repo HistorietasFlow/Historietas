@@ -143,7 +143,6 @@ import { registrarReviewComunidadeNoDiario } from "./components/community-diary-
 import { obterLinhasTexto } from "./components/community-text-lines";
 import { obterTodasOpcoesEnquete } from "./components/community-all-poll-options";
 import { obterPerguntaEnquete } from "./components/community-poll-question";
-import { obterOpcoesEnquete } from "./components/community-valid-poll-options";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
@@ -161,13 +160,6 @@ import { ComentariosSheet } from "./components/community-comments-sheet";
 import { fecharComentarios } from "./components/community-comments-closer";
 import { abrirComentarios } from "./components/community-comments-opener";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
-import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
-import { calcularPorcentagemOpcaoEnquete } from "./components/community-poll-option-percentage";
-import {
-  deveDesabilitarOpcaoEnqueteComunidade,
-  obterLarguraResultadoOpcaoEnqueteComunidade,
-  obterTextoStatusOpcaoEnqueteComunidade,
-} from "./components/community-poll-option-state";
 import { postEhEnquete } from "./components/community-post-poll-check";
 import { obterTipoVisualPublicacao } from "./components/community-publication-visual-type";
 import {
@@ -305,12 +297,7 @@ import { CommunityPostActions } from "./components/community-post-actions";
 import { CommunityPostLikeButton } from "./components/community-post-like-button";
 import { CommunityPostCommentsButton } from "./components/community-post-comments-button";
 import { CommunityPostSpoilerButton } from "./components/community-post-spoiler-button";
-import { CommunityPollBox } from "./components/community-poll-box";
-import { CommunityPollOptions } from "./components/community-poll-options";
-import { CommunityPollOptionButton } from "./components/community-poll-option-button";
-import { CommunityPollResultBar } from "./components/community-poll-result-bar";
-import { CommunityPollOptionText } from "./components/community-poll-option-text";
-import { CommunityPollOptionStatus } from "./components/community-poll-option-status";
+import { CommunityPostPoll } from "./components/community-post-poll";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
@@ -2968,86 +2955,28 @@ export default function ComunidadePage() {
                       ) : (
                         <>
                           {postEhEnquete(post) ? (
-                            <CommunityPollBox>
-                              <CommunityPollOptions>
-                                {obterOpcoesEnquete(post.texto).map((opcao) => {
-                                  const votoAtual = votosEnquetes[post.id] || "";
-                                  const selecionada = votoAtual === opcao;
-                                  const usuarioVotouNaEnquete = Boolean(votoAtual);
-                                  const totalVotos = usuarioVotouNaEnquete
-                                    ? calcularTotalVotosEnquete(
-                                        resultadosEnquetes,
-                                        post.id
-                                      )
-                                    : 0;
-                                  const porcentagem = usuarioVotouNaEnquete
-                                    ? calcularPorcentagemOpcaoEnquete(
-                                        resultadosEnquetes,
-                                        post.id,
-                                        opcao
-                                      )
-                                    : 0;
-                                  const larguraResultado =
-                                    obterLarguraResultadoOpcaoEnqueteComunidade(
-                                      usuarioVotouNaEnquete,
-                                      totalVotos,
-                                      selecionada,
-                                      porcentagem
-                                    );
-
-                                  return (
-                                    <CommunityPollOptionButton
-                                      key={opcao}
-                                      onClick={() =>
-                                        votarEnquete({
-                                          postId: post.id,
-                                          opcao,
-                                          votandoEnqueteId,
-                                          votosEnquetes,
-                                          exigirLogin,
-                                          usuario,
-                                          setVotandoEnqueteId,
-                                          setErro,
-                                          setFeedbackAcao,
-                                          feedbackTimerRef,
-                                          setResultadosEnquetes,
-                                          setVotosEnquetes,
-                                        })
-                                      }
-                                      disabled={deveDesabilitarOpcaoEnqueteComunidade(
-                                        votoAtual,
-                                        votandoEnqueteId,
-                                        post.id
-                                      )}
-                                      selected={selecionada}
-                                    >
-                                      <CommunityPollResultBar
-                                        width={larguraResultado}
-                                        visible={usuarioVotouNaEnquete}
-                                      />
-
-                                      <CommunityPollOptionText
-                                        selected={selecionada}
-                                      >
-                                        {opcao}
-                                      </CommunityPollOptionText>
-
-                                      <CommunityPollOptionStatus
-                                        selected={selecionada}
-                                      >
-                                        {obterTextoStatusOpcaoEnqueteComunidade(
-                                          usuarioVotouNaEnquete,
-                                          selecionada,
-                                          totalVotos,
-                                          porcentagem,
-                                          votandoEnqueteId === post.id
-                                        )}
-                                      </CommunityPollOptionStatus>
-                                    </CommunityPollOptionButton>
-                                  );
-                                })}
-                              </CommunityPollOptions>
-                            </CommunityPollBox>
+                            <CommunityPostPoll
+                              post={post}
+                              votosEnquetes={votosEnquetes}
+                              resultadosEnquetes={resultadosEnquetes}
+                              votandoEnqueteId={votandoEnqueteId}
+                              onVotar={(opcao) =>
+                                votarEnquete({
+                                  postId: post.id,
+                                  opcao,
+                                  votandoEnqueteId,
+                                  votosEnquetes,
+                                  exigirLogin,
+                                  usuario,
+                                  setVotandoEnqueteId,
+                                  setErro,
+                                  setFeedbackAcao,
+                                  feedbackTimerRef,
+                                  setResultadosEnquetes,
+                                  setVotosEnquetes,
+                                })
+                              }
+                            />
                           ) : (
                             <CommunityPostText>{post.texto}</CommunityPostText>
                           )}
