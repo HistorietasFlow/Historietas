@@ -49,6 +49,7 @@ import { mapearComentarioCriadoComunidade } from "./components/community-created
 import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
 import { prepararRemocaoComentarioComunidade } from "./components/community-comment-removal-preparation";
 import { consultarComentarioParaRemocaoComunidade } from "./components/community-comment-removal-query";
+import { removerComentarioSupabaseComunidade } from "./components/community-comment-removal-delete";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -1660,17 +1661,23 @@ export default function ComunidadePage() {
         comentarioId
       );
 
-      const { data: comentariosRemovidos, error } = await supabase
-        .from("comunidade_comentarios")
-        .delete()
-        .eq("id", comentarioId)
-        .eq("autor_id", usuarioAutenticadoId)
-        .select("id");
+      const resultadoRemocaoComentario =
+        await removerComentarioSupabaseComunidade(
+          comentarioId,
+          usuarioAutenticadoId
+        );
 
-      if (error) {
-        setErro(formatarErroSupabase("Erro ao remover comentário", error));
+      if (!resultadoRemocaoComentario.sucesso) {
+        setErro(
+          formatarErroSupabase(
+            "Erro ao remover comentário",
+            resultadoRemocaoComentario.erro
+          )
+        );
         return;
       }
+
+      const { comentariosRemovidos } = resultadoRemocaoComentario;
 
       if (!Array.isArray(comentariosRemovidos) || comentariosRemovidos.length === 0) {
         setErro(
