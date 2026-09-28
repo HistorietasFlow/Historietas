@@ -181,11 +181,7 @@ import { CommunityPostComposerClassificationFields } from "./components/communit
 import { CommunityPostComposerRelatedFields } from "./components/community-post-composer-related-fields";
 import { CommunityPostComposerPublicationField } from "./components/community-post-composer-publication-field";
 import { CommunityPostComposerErrorMessage } from "./components/community-post-composer-error-message";
-import { CommunityPostComposerActionRow } from "./components/community-post-composer-action-row";
-import { CommunityPostComposerSpoilerButton } from "./components/community-post-composer-spoiler-button";
-import { CommunityPostComposerSpoilerLabel } from "./components/community-post-composer-spoiler-label";
-import { CommunityPostComposerSpoilerIndicator } from "./components/community-post-composer-spoiler-indicator";
-import { CommunityPostComposerPublishButton } from "./components/community-post-composer-publish-button";
+import { CommunityPostComposerActions } from "./components/community-post-composer-actions";
 import { CommunityActionFeedbackToast, emitirFeedbackAcao } from "./components/community-action-feedback-toast";
 import {
   finalizarAcaoComunidade,
@@ -2694,29 +2690,13 @@ export default function ComunidadePage() {
                 </CommunityPostComposerErrorMessage>
               )}
 
-              <CommunityPostComposerActionRow>
-                <CommunityPostComposerSpoilerButton
-                  active={temSpoilerPost}
-                  disabled={publicandoPost}
-                  onClick={() => setTemSpoilerPost((valorAtual) => !valorAtual)}
-                >
-                  <CommunityPostComposerSpoilerLabel>
-                    Este post contém spoiler
-                  </CommunityPostComposerSpoilerLabel>
-
-                  <CommunityPostComposerSpoilerIndicator
-                    active={temSpoilerPost}
-                  >
-                    {temSpoilerPost ? "✓" : ""}
-                  </CommunityPostComposerSpoilerIndicator>
-                </CommunityPostComposerSpoilerButton>
-
-                <CommunityPostComposerPublishButton
-                  disabled={publicandoPost}
-                >
-                  {publicandoPost ? "Publicando..." : "Publicar"}
-                </CommunityPostComposerPublishButton>
-              </CommunityPostComposerActionRow>
+              <CommunityPostComposerActions
+                publicandoPost={publicandoPost}
+                temSpoilerPost={temSpoilerPost}
+                onAlternarSpoiler={() =>
+                  setTemSpoilerPost((valorAtual) => !valorAtual)
+                }
+              />
             </CommunityPostComposerForm>
           </CommunityPostComposerPanel>
             </CommunityPostComposerOverlay>,
