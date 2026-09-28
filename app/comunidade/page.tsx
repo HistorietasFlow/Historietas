@@ -16,11 +16,9 @@ import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
-import { normalizarCategoria } from "./components/community-category-normalizer";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import { normalizarVisibilidadePostComunidade } from "./components/community-post-visibility-normalizer";
 import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
-import { normalizarTipoPublicacao } from "./components/community-publication-type-normalizer";
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
@@ -46,6 +44,7 @@ import {
 } from "./components/community-post-metadata-state-updaters";
 import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
 import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
+import { mapearPostCriadoComunidade } from "./components/community-created-post-mapper";
 import {
   normalizarTermoBuscaUsuariosComunidade,
   normalizarTermoComparacaoUsuariosComunidade,
@@ -92,7 +91,6 @@ import { carregarSugestoesObrasLocais } from "./components/community-local-relat
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { mapearComentarioSupabase } from "./components/community-supabase-comment-mapper";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
-import { mapearPostSupabase } from "./components/community-supabase-post-mapper";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
 import type { PerfilComunidadeRow } from "./components/community-supabase-profile-row";
 import { obterTextoProfileComunidade } from "./components/community-profile-text";
@@ -119,7 +117,6 @@ import type { ResultadoVotosEnquete } from "./components/community-poll-votes-re
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
-import type { ComentarioComunidade } from "./components/community-comment";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
 import { fecharComentarios } from "./components/community-comments-closer";
@@ -1328,27 +1325,12 @@ export default function ComunidadePage() {
       let novoPost: PostComunidade | null = null;
 
       if (postCriado) {
-        const profilesPostNovo = new Map<string, PerfilComunidadeRow>([
-          [
-            usuarioAutenticadoId,
-            {
-              nome: autorNomeSeguro,
-              avatar_url: usuario.avatar,
-            },
-          ],
-        ]);
-
-        novoPost = mapearPostSupabase(
-          postCriado as SupabasePostRow,
-          new Map<string, ComentarioComunidade[]>(),
-          new Map<string, string[]>(),
-          profilesPostNovo,
-          obterNomeProfileComunidade,
-          obterAvatarProfileComunidade,
-          normalizarCategoria,
-          normalizarTipoPublicacao,
-          normalizarVisibilidadePostComunidade
-        );
+        novoPost = mapearPostCriadoComunidade({
+          postCriado: postCriado as SupabasePostRow,
+          usuarioAutenticadoId,
+          autorNomeSeguro,
+          usuarioAvatar: usuario.avatar,
+        });
 
         setPosts((postsAtuais) => [novoPost as PostComunidade, ...postsAtuais]);
       } else {
