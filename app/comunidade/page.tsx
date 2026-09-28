@@ -45,6 +45,7 @@ import {
 import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
 import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
 import { inserirPostSupabaseComunidade } from "./components/community-post-insert";
+import { consultarPostCriadoComunidade } from "./components/community-created-post-query";
 import { mapearPostCriadoComunidade } from "./components/community-created-post-mapper";
 import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
 import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
@@ -1315,16 +1316,10 @@ export default function ComunidadePage() {
       }
 
       // A leitura é feita em uma consulta separada, depois que o INSERT termina.
-      const { data: postCriado } = await supabase
-        .from("comunidade_posts")
-        .select(
-          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por, visibilidade"
-        )
-        .eq("autor_id", usuarioAutenticadoId)
-        .eq("texto", textoPostBanco)
-        .order("criado_em", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const postCriado = await consultarPostCriadoComunidade(
+        usuarioAutenticadoId,
+        textoPostBanco
+      );
 
       let novoPost: PostComunidade | null = null;
 
