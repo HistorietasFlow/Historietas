@@ -21,7 +21,7 @@ export function CommunityCommentsSheetOverlay({
 const commentsSheetOverlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
-  zIndex: 2147483647,
+  zIndex: 9999,
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
