@@ -39,6 +39,7 @@ import {
   removerPostSalvoDoEstadoComunidade,
 } from "./components/community-post-removal-state-updaters";
 import { consultarPostParaRemocaoComunidade } from "./components/community-post-removal-query";
+import { removerPostSupabaseComunidade } from "./components/community-post-removal-delete";
 import { consultarUsuarioEhAdminComunidade } from "./components/community-admin-status-query";
 import {
   atualizarFixacaoPostNoEstadoComunidade,
@@ -2021,26 +2022,23 @@ export default function ComunidadePage() {
         return;
       }
 
-      let removerPostQuery = supabase
-        .from("comunidade_posts")
-        .delete()
-        .eq("id", postId);
-
-      if (!usuarioAtualEhAdmin) {
-        removerPostQuery = removerPostQuery.eq(
-          "autor_id",
-          usuarioAutenticadoId
-        );
-      }
-
-      const { data: postsRemovidos, error } = await removerPostQuery.select(
-        "id, autor_id, tipo_publicacao"
+      const resultadoRemocaoPost = await removerPostSupabaseComunidade(
+        postId,
+        usuarioAutenticadoId,
+        usuarioAtualEhAdmin
       );
 
-      if (error) {
-        setErro(formatarErroSupabase("Erro ao remover publicação", error));
+      if (!resultadoRemocaoPost.sucesso) {
+        setErro(
+          formatarErroSupabase(
+            "Erro ao remover publicação",
+            resultadoRemocaoPost.erro
+          )
+        );
         return;
       }
+
+      const postsRemovidos = resultadoRemocaoPost.postsRemovidos;
 
       if (!Array.isArray(postsRemovidos) || postsRemovidos.length === 0) {
         setErro(
