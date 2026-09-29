@@ -5,6 +5,10 @@ import {
   monitorRuntime,
 } from "./helpers.mjs";
 
+const COMMUNITY_RELATED_WORK = "Obra Pública E2E";
+const COMMUNITY_POST_TEXT = "Publicação E2E para denúncia de comentário";
+const COMMUNITY_COMMENT_TEXT = "Comentário E2E disponível para denúncia";
+
 test("modal de denúncia de comentário fica acima do comments sheet", async ({
   page,
 }) => {
@@ -16,12 +20,15 @@ test("modal de denúncia de comentário fica acima do comments sheet", async ({
   await loginAsAuthor(page);
   const runtime = monitorRuntime(page);
 
-  await page.goto("/comunidade", {
-    waitUntil: "domcontentloaded",
-  });
+  await page.goto(
+    `/comunidade?obra=${encodeURIComponent(COMMUNITY_RELATED_WORK)}`,
+    {
+      waitUntil: "domcontentloaded",
+    },
+  );
 
   const publicacao = page.locator("article").filter({
-    hasText: "QA PAGINACAO POST 000137",
+    hasText: COMMUNITY_POST_TEXT,
   });
   await expect(publicacao).toBeVisible();
   await publicacao.scrollIntoViewIfNeeded();
@@ -36,7 +43,7 @@ test("modal de denúncia de comentário fica acima do comments sheet", async ({
 
   await publicacao
     .getByRole("button", {
-      name: "1 comentário",
+      name: "1 comentários",
       exact: true,
     })
     .click();
@@ -59,12 +66,16 @@ test("modal de denúncia de comentário fica acima do comments sheet", async ({
       overscroll: "none",
     });
 
-  await sheet
+  const comentario = sheet.locator("article").filter({
+    hasText: COMMUNITY_COMMENT_TEXT,
+  });
+  await expect(comentario).toBeVisible();
+
+  await comentario
     .getByRole("button", {
       name: "Denunciar",
       exact: true,
     })
-    .first()
     .click();
 
   const dialogo = page.getByRole("dialog", {
