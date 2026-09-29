@@ -626,10 +626,15 @@ function salvarCurtidaTopFiveLocal(
 async function carregarCurtidasTopFivePerfil(
   perfilUserId: string,
   usuarioId = "",
+  operacaoAindaAtual?: () => boolean,
 ) {
   const estadoLocal = carregarCurtidasTopFiveLocais(perfilUserId, usuarioId);
   const perfilUserIdLimpo = perfilUserId.trim();
   const usuarioIdLimpo = usuarioId.trim();
+
+  if (operacaoAindaAtual && !operacaoAindaAtual()) {
+    return estadoLocal;
+  }
 
   if (!idAutorSupabaseValido(perfilUserIdLimpo)) {
     return estadoLocal;
@@ -641,6 +646,10 @@ async function carregarCurtidasTopFivePerfil(
       .select("perfil_user_id", { count: "exact", head: true })
       .eq("perfil_user_id", perfilUserIdLimpo);
 
+    if (operacaoAindaAtual && !operacaoAindaAtual()) {
+      return estadoLocal;
+    }
+
     if (error) {
       return estadoLocal;
     }
@@ -648,6 +657,10 @@ async function carregarCurtidasTopFivePerfil(
     let curtiu = estadoLocal.curtiu;
 
     if (usuarioIdLimpo && idAutorSupabaseValido(usuarioIdLimpo)) {
+      if (operacaoAindaAtual && !operacaoAindaAtual()) {
+        return estadoLocal;
+      }
+
       const { data: minhaCurtida, error: erroMinhaCurtida } = await supabase
         .from("top5_curtidas")
         .select("perfil_user_id")
@@ -655,6 +668,10 @@ async function carregarCurtidasTopFivePerfil(
         .eq("usuario_id", usuarioIdLimpo)
         .limit(1)
         .maybeSingle();
+
+      if (operacaoAindaAtual && !operacaoAindaAtual()) {
+        return estadoLocal;
+      }
 
       if (!erroMinhaCurtida) {
         curtiu = estadoLocal.curtiu || Boolean(minhaCurtida);
@@ -674,6 +691,7 @@ async function salvarCurtidaTopFiveSupabase(
   perfilUserId: string,
   usuarioId: string,
   curtir: boolean,
+  operacaoAindaAtual?: () => boolean,
 ) {
   const perfilUserIdLimpo = perfilUserId.trim();
   const usuarioIdLimpo = usuarioId.trim();
@@ -685,12 +703,20 @@ async function salvarCurtidaTopFiveSupabase(
     return false;
   }
 
+  if (operacaoAindaAtual && !operacaoAindaAtual()) {
+    return false;
+  }
+
   try {
     const { error: erroDelete } = await supabase
       .from("top5_curtidas")
       .delete()
       .eq("perfil_user_id", perfilUserIdLimpo)
       .eq("usuario_id", usuarioIdLimpo);
+
+    if (operacaoAindaAtual && !operacaoAindaAtual()) {
+      return false;
+    }
 
     if (erroDelete) {
       return false;
@@ -706,6 +732,10 @@ async function salvarCurtidaTopFiveSupabase(
         perfil_user_id: perfilUserIdLimpo,
         usuario_id: usuarioIdLimpo,
       });
+
+    if (operacaoAindaAtual && !operacaoAindaAtual()) {
+      return false;
+    }
 
     return !erroInsert;
   } catch {
@@ -3039,6 +3069,11 @@ function PerfilAutorPageContent() {
       setAvatarArquivoPerfilEditor(null);
       setAvatarErro("");
       setSalvandoEditorPerfil(false);
+      setTopFiveCurtidaSalvando(false);
+      setAvaliacaoDiario((avaliacaoAtual) => ({
+        ...avaliacaoAtual,
+        salvando: false,
+      }));
       setMensagemAcao("");
 
       if (avatarInputRef.current) {
@@ -4342,10 +4377,27 @@ function PerfilAutorPageContent() {
       : mostrarDestaquesVisitante);
 
   async function alternarCurtidaTopFivePerfil() {
+    const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
+    const usuarioIdEsperado = identidadeEsperada.usuarioId.trim();
     const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
     const usuarioId = usuarioIdLogado.trim();
 
+    function curtidaTopFiveAindaAtual() {
+      return execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaPerfilRef.current,
+      });
+    }
+
     if (!perfilAutorId) {
+      return;
+    }
+
+    if (
+      !curtidaTopFiveAindaAtual() ||
+      usuarioIdEsperado !== usuarioId
+    ) {
       return;
     }
 
@@ -4365,22 +4417,40 @@ function PerfilAutorPageContent() {
     setTopFiveCurtidasTotal((totalAtual) =>
       Math.max(0, totalAtual + (proximaCurtida ? 1 : -1)),
     );
-    salvarCurtidaTopFiveLocal(perfilAutorId, usuarioId, proximaCurtida);
+    salvarCurtidaTopFiveLocal(
+      perfilAutorId,
+      usuarioIdEsperado,
+      proximaCurtida,
+    );
 
     const salvouRemoto = await salvarCurtidaTopFiveSupabase(
       perfilAutorId,
-      usuarioId,
+      usuarioIdEsperado,
       proximaCurtida,
+      curtidaTopFiveAindaAtual,
     );
+
+    if (!curtidaTopFiveAindaAtual()) {
+      return;
+    }
 
     if (salvouRemoto) {
       const estadoAtualizado = await carregarCurtidasTopFivePerfil(
         perfilAutorId,
-        usuarioId,
+        usuarioIdEsperado,
+        curtidaTopFiveAindaAtual,
       );
+
+      if (!curtidaTopFiveAindaAtual()) {
+        return;
+      }
 
       setTopFiveCurtidasTotal(estadoAtualizado.total);
       setTopFiveCurtidoPorMim(estadoAtualizado.curtiu);
+    }
+
+    if (!curtidaTopFiveAindaAtual()) {
+      return;
     }
 
     setTopFiveCurtidaSalvando(false);
@@ -5459,11 +5529,29 @@ function PerfilAutorPageContent() {
   }
 
   async function avaliarAutor(nota: number) {
+    const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
+    const usuarioIdEsperado = identidadeEsperada.usuarioId.trim();
+
+    function avaliacaoAutorAindaAtual() {
+      return execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaPerfilRef.current,
+      });
+    }
+
     if (!perfilParaMostrar || !autorPodeReceberAvaliacao || nota < 0 || nota > 5) {
       return;
     }
 
     if (perfilPertenceAoUsuario) {
+      return;
+    }
+
+    if (
+      !avaliacaoAutorAindaAtual() ||
+      usuarioIdEsperado !== usuarioIdLogado.trim()
+    ) {
       return;
     }
 
@@ -5474,6 +5562,14 @@ function PerfilAutorPageContent() {
       userId = data.user?.id || "";
     } catch {
       userId = "";
+    }
+
+    if (!avaliacaoAutorAindaAtual()) {
+      return;
+    }
+
+    if (userId !== usuarioIdEsperado) {
+      return;
     }
 
     if (!userId) {
@@ -5501,7 +5597,7 @@ function PerfilAutorPageContent() {
     salvarAvaliacaoAutorLocal(
       perfilParaMostrar,
       notaNormalizada,
-      usuarioIdLogado,
+      usuarioIdEsperado,
     );
 
     if (!autorId || !idAutorSupabaseValido(autorId)) {
@@ -5513,12 +5609,16 @@ function PerfilAutorPageContent() {
     }
 
     try {
+      if (!avaliacaoAutorAindaAtual()) {
+        return;
+      }
+
       const resposta =
         notaNormalizada > 0
           ? await supabase.from("autor_avaliacoes").upsert(
               {
                 autor_id: autorId,
-                user_id: userId,
+                user_id: usuarioIdEsperado,
                 nota: notaNormalizada,
                 atualizado_em: new Date().toISOString(),
               },
@@ -5528,7 +5628,11 @@ function PerfilAutorPageContent() {
               .from("autor_avaliacoes")
               .delete()
               .eq("autor_id", autorId)
-              .eq("user_id", userId);
+              .eq("user_id", usuarioIdEsperado);
+
+      if (!avaliacaoAutorAindaAtual()) {
+        return;
+      }
 
       if (resposta.error) {
         throw resposta.error;
@@ -5540,6 +5644,10 @@ function PerfilAutorPageContent() {
       }));
       setMensagemAcao("");
     } catch {
+      if (!avaliacaoAutorAindaAtual()) {
+        return;
+      }
+
       setAvaliacaoAutor((avaliacaoAtual) => ({
         ...avaliacaoAtual,
         carregado: true,
@@ -5550,6 +5658,17 @@ function PerfilAutorPageContent() {
   }
 
   async function avaliarDiarioPerfil(nota: number) {
+    const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
+    const usuarioIdEsperado = identidadeEsperada.usuarioId.trim();
+
+    function avaliacaoDiarioAindaAtual() {
+      return execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaPerfilRef.current,
+      });
+    }
+
     if (
       !perfilParaMostrar ||
       !perfilUsaAvaliacaoDiario ||
@@ -5564,6 +5683,13 @@ function PerfilAutorPageContent() {
       return;
     }
 
+    if (
+      !avaliacaoDiarioAindaAtual() ||
+      usuarioIdEsperado !== usuarioIdLogado.trim()
+    ) {
+      return;
+    }
+
     let userId = "";
 
     try {
@@ -5571,6 +5697,14 @@ function PerfilAutorPageContent() {
       userId = data.user?.id || "";
     } catch {
       userId = "";
+    }
+
+    if (!avaliacaoDiarioAindaAtual()) {
+      return;
+    }
+
+    if (userId !== usuarioIdEsperado) {
+      return;
     }
 
     if (!userId) {
@@ -5623,7 +5757,16 @@ function PerfilAutorPageContent() {
               p_nota: notaNormalizada,
             }
           : { p_diario_user_id: diarioUserId };
+
+      if (!avaliacaoDiarioAindaAtual()) {
+        return;
+      }
+
       const { data, error } = await supabase.rpc(nomeRpc, parametros);
+
+      if (!avaliacaoDiarioAindaAtual()) {
+        return;
+      }
 
       if (error) {
         throw error;
@@ -5634,6 +5777,10 @@ function PerfilAutorPageContent() {
       );
       setMensagemAcao("");
     } catch {
+      if (!avaliacaoDiarioAindaAtual()) {
+        return;
+      }
+
       setAvaliacaoDiario({
         ...avaliacaoAnterior,
         carregado: true,
