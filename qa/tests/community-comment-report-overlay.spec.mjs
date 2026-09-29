@@ -66,10 +66,12 @@ test("modal de denúncia de comentário fica acima do comments sheet", async ({
       overscroll: "none",
     });
 
-  const comentario = sheet.locator("article").filter({
-    hasText: COMMUNITY_COMMENT_TEXT,
+  const textoComentario = sheet.getByText(COMMUNITY_COMMENT_TEXT, {
+    exact: true,
   });
-  await expect(comentario).toBeVisible();
+  await expect(textoComentario).toBeVisible();
+
+  const comentario = textoComentario.locator("xpath=ancestor::article[1]");
 
   await comentario
     .getByRole("button", {
