@@ -29,6 +29,7 @@ import {
   atualizarCurtidaComentarioComunidade,
   atualizarCurtidaPostComunidade,
 } from "./components/community-like-state-updaters";
+import { sincronizarCurtidaPostSupabaseComunidade } from "./components/community-post-like-sync";
 import {
   adicionarComentarioPostComunidade,
   removerComentarioPostComunidade,
@@ -1404,30 +1405,34 @@ export default function ComunidadePage() {
       const postAtual = posts.find((post) => post.id === postId);
       const jaCurtiu = Boolean(postAtual?.curtidas.includes(usuario.id));
 
-      const { error: erroLimparCurtida } = await supabase
-        .from("comunidade_curtidas")
-        .delete()
-        .eq("post_id", postId)
-        .eq("usuario_id", usuario.id);
+      const resultadoSincronizacaoCurtida =
+        await sincronizarCurtidaPostSupabaseComunidade(
+          postId,
+          usuario.id,
+          jaCurtiu
+        );
 
-      if (erroLimparCurtida) {
-        setErro(formatarErroSupabase("Erro ao atualizar curtida", erroLimparCurtida));
+      if (!resultadoSincronizacaoCurtida.sucesso) {
+        if (resultadoSincronizacaoCurtida.etapa === "remocao") {
+          setErro(
+            formatarErroSupabase(
+              "Erro ao atualizar curtida",
+              resultadoSincronizacaoCurtida.erro
+            )
+          );
+        } else {
+          setErro(
+            formatarErroSupabase(
+              "Erro ao curtir",
+              resultadoSincronizacaoCurtida.erro
+            )
+          );
+        }
+
         return;
       }
 
       if (!jaCurtiu) {
-        const { error: erroInserirCurtida } = await supabase
-          .from("comunidade_curtidas")
-          .insert({
-            post_id: postId,
-            usuario_id: usuario.id,
-          });
-
-        if (erroInserirCurtida) {
-          setErro(formatarErroSupabase("Erro ao curtir", erroInserirCurtida));
-          return;
-        }
-
         if (postAtual?.autorId) {
           await criarNotificacaoComunidadeSupabase({
             destinatarioId: postAtual.autorId,
