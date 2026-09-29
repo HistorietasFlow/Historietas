@@ -61,14 +61,9 @@ import { inserirComentarioSupabaseComunidade } from "./components/community-comm
 import { prepararRemocaoComentarioComunidade } from "./components/community-comment-removal-preparation";
 import { consultarComentarioParaRemocaoComunidade } from "./components/community-comment-removal-query";
 import { removerComentarioSupabaseComunidade } from "./components/community-comment-removal-delete";
-import {
-  normalizarTermoBuscaUsuariosComunidade,
-  normalizarTermoComparacaoUsuariosComunidade,
-} from "./components/community-user-search-term-normalizer";
+import { normalizarTermoBuscaUsuariosComunidade } from "./components/community-user-search-term-normalizer";
 import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-search-clear-check";
-import { ordenarUsuariosBuscaComunidade } from "./components/community-user-search-comparator";
-import { limitarUsuariosBuscaComunidade } from "./components/community-user-search-limit";
-import { mesclarUsuariosBuscaComunidade } from "./components/community-user-search-merger";
+import { prepararResultadosBuscaUsuariosComunidade } from "./components/community-user-search-results-preparation";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
@@ -908,17 +903,12 @@ export default function ComunidadePage() {
             return;
           }
 
-          const termoNormalizado =
-            normalizarTermoComparacaoUsuariosComunidade(termoLimpo);
-          const usuariosOrdenados = limitarUsuariosBuscaComunidade(
-            ordenarUsuariosBuscaComunidade(
-              mesclarUsuariosBuscaComunidade(
-                usuariosSupabase,
-                usuariosLocais
-              ),
-              termoNormalizado
-            )
-          );
+          const usuariosOrdenados =
+            prepararResultadosBuscaUsuariosComunidade(
+              usuariosSupabase,
+              usuariosLocais,
+              termoLimpo
+            );
 
           setUsuariosBuscaComunidade(usuariosOrdenados);
         })
