@@ -30,6 +30,7 @@ import {
   atualizarCurtidaPostComunidade,
 } from "./components/community-like-state-updaters";
 import { sincronizarCurtidaPostSupabaseComunidade } from "./components/community-post-like-sync";
+import { sincronizarCurtidaComentarioSupabaseComunidade } from "./components/community-comment-like-sync";
 import {
   adicionarComentarioPostComunidade,
   removerComentarioPostComunidade,
@@ -1728,35 +1729,34 @@ export default function ComunidadePage() {
       );
       const jaCurtiu = Boolean(comentarioAtual?.curtidas.includes(usuario.id));
 
-      const { error: erroLimparCurtida } = await supabase
-        .from("comunidade_comentario_curtidas")
-        .delete()
-        .eq("comentario_id", comentarioId)
-        .eq("usuario_id", usuario.id);
-
-      if (erroLimparCurtida) {
-        setErro(
-          formatarErroSupabase(
-            "Erro ao atualizar curtida do comentário",
-            erroLimparCurtida
-          )
+      const resultadoSincronizacaoCurtida =
+        await sincronizarCurtidaComentarioSupabaseComunidade(
+          comentarioId,
+          usuario.id,
+          jaCurtiu
         );
+
+      if (!resultadoSincronizacaoCurtida.sucesso) {
+        if (resultadoSincronizacaoCurtida.etapa === "remocao") {
+          setErro(
+            formatarErroSupabase(
+              "Erro ao atualizar curtida do comentário",
+              resultadoSincronizacaoCurtida.erro
+            )
+          );
+        } else {
+          setErro(
+            formatarErroSupabase(
+              "Erro ao curtir comentário",
+              resultadoSincronizacaoCurtida.erro
+            )
+          );
+        }
+
         return;
       }
 
       if (!jaCurtiu) {
-        const { error: erroInserirCurtida } = await supabase
-          .from("comunidade_comentario_curtidas")
-          .insert({
-            comentario_id: comentarioId,
-            usuario_id: usuario.id,
-          });
-
-        if (erroInserirCurtida) {
-          setErro(formatarErroSupabase("Erro ao curtir comentário", erroInserirCurtida));
-          return;
-        }
-
         if (comentarioAtual?.autorId) {
           await criarNotificacaoComunidadeSupabase({
             destinatarioId: comentarioAtual.autorId,
