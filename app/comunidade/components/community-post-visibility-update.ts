@@ -2,12 +2,12 @@ import { supabase } from "../../../lib/supabase/client";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
 
-export type PostVisibilidadeAtualizadaBancoComunidade = Pick<
+type PostVisibilidadeAtualizadaBancoComunidade = Pick<
   SupabasePostRow,
   "id" | "visibilidade"
 >;
 
-export type ResultadoAtualizacaoVisibilidadePostSupabaseComunidade =
+type ResultadoAtualizacaoVisibilidadePostSupabaseComunidade =
   | { sucesso: false; erro: unknown }
   | {
       sucesso: true;

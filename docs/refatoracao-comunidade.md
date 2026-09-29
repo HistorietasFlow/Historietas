@@ -146,12 +146,12 @@
 - A Fase 438 extraiu somente `prepararResultadosBuscaUsuariosComunidade` a partir do pipeline puro de preparação dos resultados finais da busca de usuários e foi concluída com o PR #572 mesclado.
 - A Fase 439 extraiu somente `carregarPostsSalvosLocaisComunidade` a partir do carregamento e da validação local dos IDs de posts salvos e foi concluída com o PR #573 mesclado.
 - A Fase 440 corrigiu exclusivamente a hierarquia visual entre o comments sheet e o modal de denúncia de comentário, preservando o contexto aberto e os fluxos atuais, e foi concluída com o PR #574 mesclado.
-- A correção final da refatoração estrutural da Comunidade moveu a marcação das Reviews pendentes para o processamento sequencial de cada item, preservando o retry após cancelamento parcial.
+- A correção final da refatoração estrutural da Comunidade moveu a marcação das Reviews pendentes para o processamento sequencial de cada item, preservando o retry após cancelamento parcial, e foi concluída com o PR #575 mesclado.
 - Não mesclar nenhum PR sem autorização explícita.
 
-## Próxima fase
+## Encerramento
 
-A correção de retry das Reviews pendentes encerra as correções funcionais identificadas pela auditoria final. Não iniciar outra fase, função, componente, limpeza, renomeação ou melhoria adicional antes da revisão final e de autorização explícita.
+A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o comments sheet foi corrigida no PR #574, e o retry das Reviews pendentes após cancelamento parcial foi corrigido no PR #575. Com essas correções, a refatoração estrutural da Comunidade está encerrada.
 
 ## Contrato de preservação
 
@@ -169,4 +169,4 @@ Não alterar schema, migrations, dependências ou contratos públicos sem autori
 
 ## Validação obrigatória
 
-Antes de considerar a fase concluída, executar todas as validações definidas no `AGENTS.md`, incluindo lint, typecheck, auditoria estática, testes unitários, integrações com Supabase local, build, E2E e verificação final de diff/whitespace. Qualquer validação não executada ou com falha deve ser registrada claramente; não declarar a fase pronta enquanto houver pendências.
+Qualquer manutenção futura deve executar as validações aplicáveis definidas no `AGENTS.md`, incluindo lint, typecheck, auditoria estática, testes unitários, integrações com Supabase local, build, E2E e verificação final de diff/whitespace. Qualquer validação não executada ou com falha deve ser registrada claramente.

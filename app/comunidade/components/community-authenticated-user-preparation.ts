@@ -4,7 +4,7 @@ import { obterNomeProfileComunidade } from "./community-profile-name";
 import { obterTextoProfileComunidade } from "./community-profile-text";
 import { carregarProfilesComunidadePorUsuarios } from "./community-supabase-profiles-loader";
 
-export type DadosPerfilEAdminComunidade = {
+type DadosPerfilEAdminComunidade = {
   nomeProfile: string;
   avatarProfile: string;
   usuarioAdmin: boolean;

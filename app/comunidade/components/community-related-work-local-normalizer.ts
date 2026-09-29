@@ -1,14 +1,6 @@
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { criarSlugBase } from "../../../lib/utils";
-
-type ObraRelacionadaSugestao = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId: string;
-  slug: string;
-  link: string;
-};
+import type { ObraRelacionadaSugestao } from "./community-related-work-suggestion";
 
 export function normalizarSugestaoObraLocal(valor: unknown, index: number) {
   if (!valor || typeof valor !== "object" || Array.isArray(valor)) {

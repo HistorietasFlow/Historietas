@@ -7,7 +7,7 @@ import { obterPerguntaEnquete } from "./community-poll-question";
 import type { TipoPublicacaoComunidade } from "./community-publication-type";
 import { obterLinhasTexto } from "./community-text-lines";
 
-export type ResultadoValidacaoConteudoPublicacaoComunidade =
+type ResultadoValidacaoConteudoPublicacaoComunidade =
   | { valido: false; erro: string }
   | { valido: true; publicacaoEhEnquete: boolean };
 

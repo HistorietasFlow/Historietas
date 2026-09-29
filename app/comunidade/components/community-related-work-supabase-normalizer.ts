@@ -1,5 +1,6 @@
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { criarSlugBase } from "../../../lib/utils";
+import type { ObraRelacionadaSugestao } from "./community-related-work-suggestion";
 
 export type SupabaseObraPublicaRow = {
   id: string;
@@ -10,15 +11,6 @@ export type SupabaseObraPublicaRow = {
   publicado: boolean | null;
   slug: string | null;
   link: string | null;
-};
-
-type ObraRelacionadaSugestao = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId: string;
-  slug: string;
-  link: string;
 };
 
 export function normalizarSugestaoObraSupabase(

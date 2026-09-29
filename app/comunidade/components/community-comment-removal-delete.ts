@@ -1,12 +1,12 @@
 import { supabase } from "../../../lib/supabase/client";
 import type { SupabaseComentarioRow } from "./community-supabase-comment-row";
 
-export type ComentarioRemovidoBancoComunidade = Pick<
+type ComentarioRemovidoBancoComunidade = Pick<
   SupabaseComentarioRow,
   "id"
 >;
 
-export type ResultadoRemocaoComentarioSupabaseComunidade =
+type ResultadoRemocaoComentarioSupabaseComunidade =
   | { sucesso: false; erro: unknown }
   | {
       sucesso: true;

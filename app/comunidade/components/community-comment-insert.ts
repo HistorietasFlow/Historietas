@@ -1,7 +1,7 @@
 import { supabase } from "../../../lib/supabase/client";
 import type { SupabaseComentarioRow } from "./community-supabase-comment-row";
 
-export type DadosInsercaoComentarioComunidade = Pick<
+type DadosInsercaoComentarioComunidade = Pick<
   SupabaseComentarioRow,
   | "post_id"
   | "autor_id"
@@ -10,7 +10,7 @@ export type DadosInsercaoComentarioComunidade = Pick<
   | "comentario_pai_id"
 >;
 
-export type ResultadoInsercaoComentarioSupabaseComunidade =
+type ResultadoInsercaoComentarioSupabaseComunidade =
   | { sucesso: false; erro: unknown }
   | { sucesso: true; data: SupabaseComentarioRow | null };
 

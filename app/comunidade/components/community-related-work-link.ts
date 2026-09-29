@@ -1,13 +1,5 @@
 import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
-
-type ObraRelacionadaSugestao = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId: string;
-  slug: string;
-  link: string;
-};
+import type { ObraRelacionadaSugestao } from "./community-related-work-suggestion";
 
 export function criarLinkObraRelacionada(
   titulo: string,

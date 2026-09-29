@@ -30,7 +30,7 @@ export function CommunityCommentAvatar({
   );
 }
 
-export function obterInicialAvatarAutorComentarioComunidade(
+function obterInicialAvatarAutorComentarioComunidade(
   nomeAutor: string
 ) {
   return nomeAutor.slice(0, 1).toUpperCase() || "U";

@@ -1,7 +1,7 @@
 import type { ComentarioComunidade } from "./community-comment";
 import type { PostComunidade } from "./community-post-model";
 
-export type ResultadoPreparacaoRemocaoComentarioComunidade =
+type ResultadoPreparacaoRemocaoComentarioComunidade =
   | { valido: false; erro: string }
   | {
       valido: true;
