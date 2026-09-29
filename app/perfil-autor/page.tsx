@@ -3030,6 +3030,20 @@ function PerfilAutorPageContent() {
       setObrasConcluidas([]);
       setObrasSeguidasBiblioteca([]);
       setPerfisAutoresSalvos({});
+      setEditorPerfilAberto(false);
+      setNomePerfilEditor("");
+      setUsernamePerfilEditor("");
+      setBioPerfilEditor("");
+      setAvatarPerfilEditor("");
+      setAvatarNomePerfilEditor("");
+      setAvatarArquivoPerfilEditor(null);
+      setAvatarErro("");
+      setSalvandoEditorPerfil(false);
+      setMensagemAcao("");
+
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
     }
 
     function aplicarIdentidadeAutenticada(usuarioId: string) {
@@ -5126,12 +5140,29 @@ function PerfilAutorPageContent() {
   async function salvarEdicaoPerfilAutor() {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
     const usuarioIdAtual = usuarioIdLogado.trim();
+    const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
+    const usuarioIdEsperado = identidadeEsperada.usuarioId.trim();
+
+    function salvamentoEditorPerfilAindaAtual() {
+      return execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaPerfilRef.current,
+      });
+    }
+
+    if (!salvamentoEditorPerfilAindaAtual()) {
+      return;
+    }
 
     if (
       !podeEditarPerfil ||
       !perfilParaMostrar ||
       !perfilUserId ||
       !usuarioIdAtual ||
+      !usuarioIdEsperado ||
+      usuarioIdEsperado.toLowerCase() !== usuarioIdAtual.toLowerCase() ||
+      perfilUserId.toLowerCase() !== usuarioIdEsperado.toLowerCase() ||
       perfilUserId.toLowerCase() !== usuarioIdAtual.toLowerCase()
     ) {
       setMensagemAcao("Não foi possível confirmar este perfil para edição.");
@@ -5185,6 +5216,10 @@ function PerfilAutorPageContent() {
         arquivo: avatarArquivoPerfilEditor,
       });
 
+      if (!salvamentoEditorPerfilAindaAtual()) {
+        return;
+      }
+
       if (resultadoUpload.ok && resultadoUpload.url) {
         avatarFinal = resultadoUpload.url;
         avatarRemotoFinal = resultadoUpload.url;
@@ -5205,6 +5240,10 @@ function PerfilAutorPageContent() {
       mostrarDestaques: perfilSalvoAutor.mostrarDestaques,
     };
 
+    if (!salvamentoEditorPerfilAindaAtual()) {
+      return;
+    }
+
     const resultadoPerfil = await salvarPerfilUsuarioSupabase({
       userId: perfilUserId,
       nome: nomeFinal,
@@ -5214,6 +5253,10 @@ function PerfilAutorPageContent() {
       },
       username: usernameFinal || null,
     });
+
+    if (!salvamentoEditorPerfilAindaAtual()) {
+      return;
+    }
 
     if (!resultadoPerfil.ok) {
       const erroPerfil = resultadoPerfil.erro.toLowerCase();
@@ -5232,6 +5275,10 @@ function PerfilAutorPageContent() {
     let avisoMetadadosAuth = "";
 
     if (resultadoPerfil.ok) {
+      if (!salvamentoEditorPerfilAindaAtual()) {
+        return;
+      }
+
       const { error: erroMetadadosAuth } = await supabase.auth.updateUser({
         data: {
           nome: nomeFinal,
@@ -5240,6 +5287,10 @@ function PerfilAutorPageContent() {
           avatar: avatarRemotoFinal || null,
         },
       });
+
+      if (!salvamentoEditorPerfilAindaAtual()) {
+        return;
+      }
 
       if (erroMetadadosAuth) {
         avisoMetadadosAuth =
@@ -5261,9 +5312,17 @@ function PerfilAutorPageContent() {
       );
 
     if (deveRemoverAvatarAnterior) {
+      if (!salvamentoEditorPerfilAindaAtual()) {
+        return;
+      }
+
       const { error: erroRemoverAvatarAnterior } = await supabase.storage
         .from(AVATAR_STORAGE_BUCKET)
         .remove([caminhoAvatarAnterior]);
+
+      if (!salvamentoEditorPerfilAindaAtual()) {
+        return;
+      }
 
       if (erroRemoverAvatarAnterior) {
         avisoAvatar +=
@@ -5275,9 +5334,26 @@ function PerfilAutorPageContent() {
       }
     }
 
-    const resultadoObras = resultadoPerfil.ok
-      ? await sincronizarNomeAutorObrasSupabase(perfilUserId, nomeFinal)
-      : { ok: false, erro: "" };
+    let resultadoObras = { ok: false, erro: "" };
+
+    if (resultadoPerfil.ok) {
+      if (!salvamentoEditorPerfilAindaAtual()) {
+        return;
+      }
+
+      resultadoObras = await sincronizarNomeAutorObrasSupabase(
+        perfilUserId,
+        nomeFinal,
+      );
+
+      if (!salvamentoEditorPerfilAindaAtual()) {
+        return;
+      }
+    }
+
+    if (!salvamentoEditorPerfilAindaAtual()) {
+      return;
+    }
 
     const novosPerfis = {
       ...perfisAutoresSalvos,
