@@ -1,19 +1,11 @@
 import { supabase } from "../../../lib/supabase/client";
+import type { ObraRelacionadaSugestao } from "./community-related-work-suggestion";
 import type { VisibilidadePostComunidade } from "./community-post-visibility";
 import { removerReviewComunidadeDoDiario } from "./community-diary-review-remover";
 import { obterObraRelacionadaPermitida } from "./community-related-work-allowed-finder";
 import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./community-related-work-search-result";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./community-supabase-current-user-loader";
 import { idSupabaseValidoComunidade } from "./community-supabase-id-validator";
-
-type ObraRelacionadaSugestao = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId: string;
-  slug: string;
-  link: string;
-};
 
 function obterVisibilidadeReviewNoDiario(
   visibilidade: VisibilidadePostComunidade,

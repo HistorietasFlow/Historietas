@@ -1,7 +1,7 @@
 import { supabase } from "../../../lib/supabase/client";
 import type { SupabaseObraPublicaRow } from "./community-related-work-supabase-normalizer";
 
-export type ResultadoConsultaObrasPublicadasComunidade =
+type ResultadoConsultaObrasPublicadasComunidade =
   | { sucesso: false; erro: unknown }
   | {
       sucesso: true;

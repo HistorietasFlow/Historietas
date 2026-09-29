@@ -9,7 +9,7 @@ type PrepararInsercaoComentarioComunidadeParams = {
   autorNomeSeguro: string;
 };
 
-export type ResultadoPreparacaoInsercaoComentarioComunidade =
+type ResultadoPreparacaoInsercaoComentarioComunidade =
   | { valido: false; erro: string }
   | {
       valido: true;

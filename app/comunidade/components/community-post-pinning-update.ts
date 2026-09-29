@@ -1,12 +1,12 @@
 import { supabase } from "../../../lib/supabase/client";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 
-export type PostFixacaoAtualizadaBancoComunidade = Pick<
+type PostFixacaoAtualizadaBancoComunidade = Pick<
   SupabasePostRow,
   "fixado" | "fixado_em" | "fixado_por"
 >;
 
-export type ResultadoAtualizacaoFixacaoPostSupabaseComunidade =
+type ResultadoAtualizacaoFixacaoPostSupabaseComunidade =
   | { sucesso: false; erro: unknown }
   | {
       sucesso: true;

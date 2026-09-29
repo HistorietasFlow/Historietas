@@ -1,6 +1,6 @@
 import { supabase } from "../../../lib/supabase/client";
 
-export type ResultadoSincronizacaoCurtidaComentarioSupabaseComunidade =
+type ResultadoSincronizacaoCurtidaComentarioSupabaseComunidade =
   | { sucesso: true }
   | { sucesso: false; etapa: "remocao"; erro: unknown }
   | { sucesso: false; etapa: "insercao"; erro: unknown };

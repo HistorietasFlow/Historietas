@@ -1,7 +1,7 @@
 import { normalizarTexto } from "../../../lib/utils";
 import type { UsuarioBuscaComunidade } from "./community-user";
 
-export function compararUsuariosBuscaComunidade(
+function compararUsuariosBuscaComunidade(
   usuarioA: UsuarioBuscaComunidade,
   usuarioB: UsuarioBuscaComunidade,
   termoNormalizado: string

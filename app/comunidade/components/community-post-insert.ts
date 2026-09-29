@@ -2,7 +2,7 @@ import { supabase } from "../../../lib/supabase/client";
 import type { TablesInsert } from "../../../lib/supabase/database.types";
 import type { SupabasePostRow } from "./community-supabase-post-row";
 
-export type DadosInsercaoPostComunidade = Pick<
+type DadosInsercaoPostComunidade = Pick<
   SupabasePostRow,
   | "autor_id"
   | "autor_nome"
@@ -14,7 +14,7 @@ export type DadosInsercaoPostComunidade = Pick<
   | "visibilidade"
 >;
 
-export type ResultadoInsercaoPostSupabaseComunidade =
+type ResultadoInsercaoPostSupabaseComunidade =
   | { sucesso: false; erro: unknown }
   | { sucesso: true };
 
