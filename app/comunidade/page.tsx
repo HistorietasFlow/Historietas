@@ -119,6 +119,7 @@ import { obterObraRelacionadaPermitida } from "./components/community-related-wo
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
+import { carregarPostsSalvosLocaisComunidade } from "./components/community-local-saved-posts-loader";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
@@ -316,23 +317,12 @@ export default function ComunidadePage() {
     let cancelado = false;
 
     const carregarLocaisTimer = window.setTimeout(() => {
-      try {
-        const postsSalvosParseados =
-          carregarJsonUsuarioComunidade(CHAVE_POSTS_SALVOS_COMUNIDADE, userId) ||
-          [];
-
-        if (Array.isArray(postsSalvosParseados)) {
-          setPostsSalvosIds(
-            postsSalvosParseados.filter(
-              (postId): postId is string => typeof postId === "string"
-            )
-          );
-        } else {
-          setPostsSalvosIds([]);
-        }
-      } catch {
-        setPostsSalvosIds([]);
-      }
+      setPostsSalvosIds(
+        carregarPostsSalvosLocaisComunidade(
+          carregarJsonUsuarioComunidade,
+          userId
+        )
+      );
 
       setVotosEnquetes(carregarVotosEnquetesLocais(carregarJsonUsuarioComunidade, userId));
 

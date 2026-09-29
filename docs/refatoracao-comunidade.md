@@ -143,12 +143,13 @@
 - A Fase 435 extraiu somente `consultarObrasPublicadasComunidade` a partir da consulta inicial das obras publicadas e foi concluída com o PR #569 mesclado.
 - A Fase 436 extraiu somente `prepararSugestoesObrasRelacionadasComunidade` a partir da preparação assíncrona das sugestões de obras relacionadas e foi concluída com o PR #570 mesclado.
 - A Fase 437 extraiu somente `prepararPerfilEStatusAdminComunidade` a partir da preparação sequencial do perfil e do status administrativo do usuário autenticado e foi concluída com o PR #571 mesclado.
-- A Fase 438 extraiu somente `prepararResultadosBuscaUsuariosComunidade` a partir do pipeline puro de preparação dos resultados finais da busca de usuários e está implementada neste PR.
+- A Fase 438 extraiu somente `prepararResultadosBuscaUsuariosComunidade` a partir do pipeline puro de preparação dos resultados finais da busca de usuários e foi concluída com o PR #572 mesclado.
+- A Fase 439 extraiu somente `carregarPostsSalvosLocaisComunidade` a partir do carregamento e da validação local dos IDs de posts salvos e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 438 está implementada neste PR. Não iniciar a Fase 439 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
+A Fase 439 está implementada neste PR. Antes de propor ou iniciar a Fase 440, realizar uma auditoria estrutural do estado atual de `app/comunidade/page.tsx` para decidir se ainda existem extrações com ganho real ou se é o momento de encerrar esta refatoração e fazer a consolidação/revisão final. Não iniciar funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
 
 ## Contrato de preservação
 
