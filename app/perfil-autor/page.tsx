@@ -138,6 +138,12 @@ import {
   obraPertenceAoUsuarioPerfilAutor,
 } from "./lib/work-normalizers";
 import {
+  atualizarIdentidadeAutenticadaPerfilAutor,
+  execucaoAutenticacaoPerfilAutorEstaAtual,
+  execucaoCarregamentoPerfilAutorEstaAtual,
+  type IdentidadeAutenticadaPerfilAutor,
+} from "./lib/profile-auth-identity";
+import {
   colecaoTemObraPerfilBiblioteca,
   converterCapitulosSalvosParaBiblioteca,
   converterItensDiarioParaBiblioteca,
@@ -1369,7 +1375,10 @@ async function carregarEstadoUsuarioSupabase() {
     const userId = data.user?.id || "";
 
     if (!userId) {
-      return null;
+      return {
+        estadoUsuario: null,
+        identidadeConfirmada: true,
+      };
     }
 
     const [favoritas, concluidas, obrasSeguidas, autoresSeguidos] =
@@ -1381,14 +1390,20 @@ async function carregarEstadoUsuarioSupabase() {
       ]);
 
     return {
-      userId,
-      favoritas,
-      concluidas,
-      obrasSeguidas,
-      autoresSeguidos,
+      estadoUsuario: {
+        userId,
+        favoritas,
+        concluidas,
+        obrasSeguidas,
+        autoresSeguidos,
+      },
+      identidadeConfirmada: true,
     };
   } catch {
-    return null;
+    return {
+      estadoUsuario: null,
+      identidadeConfirmada: false,
+    };
   }
 }
 
@@ -2959,6 +2974,12 @@ function PerfilAutorPageContent() {
   const [bloqueioPerfilSalvando, setBloqueioPerfilSalvando] =
     useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const identidadeAutenticadaPerfilRef =
+    useRef<IdentidadeAutenticadaPerfilAutor>({
+      usuarioId: "",
+      versao: 0,
+    });
+  const versaoConsultaAutenticacaoPerfilRef = useRef(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const {
@@ -3000,19 +3021,59 @@ function PerfilAutorPageContent() {
   useEffect(() => {
     let componenteAtivo = true;
 
+    function limparEstadoContaAnterior() {
+      setPerfilUsuarioRemoto(null);
+      setObras([]);
+      setTotaisInteracoesObras(totaisInteracoesObrasPerfilVazio);
+      setAutoresSeguidos([]);
+      setObrasFavoritas([]);
+      setObrasConcluidas([]);
+      setObrasSeguidasBiblioteca([]);
+      setPerfisAutoresSalvos({});
+    }
+
+    function aplicarIdentidadeAutenticada(usuarioId: string) {
+      const resultado = atualizarIdentidadeAutenticadaPerfilAutor(
+        identidadeAutenticadaPerfilRef.current,
+        usuarioId,
+      );
+
+      if (resultado.mudou) {
+        identidadeAutenticadaPerfilRef.current = resultado.identidade;
+        setCarregando(true);
+        limparEstadoContaAnterior();
+        setUsuarioIdLogado(resultado.identidade.usuarioId);
+      }
+
+      setAutenticacaoCarregada(true);
+    }
+
     async function carregarUsuarioAutenticadoPerfil() {
+      const versaoConsulta = versaoConsultaAutenticacaoPerfilRef.current + 1;
+      versaoConsultaAutenticacaoPerfilRef.current = versaoConsulta;
+
       try {
         const { data } = await supabase.auth.getUser();
         const userId = data.user?.id || "";
 
-        if (componenteAtivo) {
-          setUsuarioIdLogado(userId);
-          setAutenticacaoCarregada(true);
+        if (
+          execucaoAutenticacaoPerfilAutorEstaAtual({
+            cancelada: !componenteAtivo,
+            versaoEsperada: versaoConsulta,
+            versaoAtual: versaoConsultaAutenticacaoPerfilRef.current,
+          })
+        ) {
+          aplicarIdentidadeAutenticada(userId);
         }
       } catch {
-        if (componenteAtivo) {
-          setUsuarioIdLogado("");
-          setAutenticacaoCarregada(true);
+        if (
+          execucaoAutenticacaoPerfilAutorEstaAtual({
+            cancelada: !componenteAtivo,
+            versaoEsperada: versaoConsulta,
+            versaoAtual: versaoConsultaAutenticacaoPerfilRef.current,
+          })
+        ) {
+          aplicarIdentidadeAutenticada("");
         }
       }
     }
@@ -3023,13 +3084,14 @@ function PerfilAutorPageContent() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (componenteAtivo) {
-        setUsuarioIdLogado(session?.user?.id || "");
-        setAutenticacaoCarregada(true);
+        versaoConsultaAutenticacaoPerfilRef.current += 1;
+        aplicarIdentidadeAutenticada(session?.user?.id || "");
       }
     });
 
     return () => {
       componenteAtivo = false;
+      versaoConsultaAutenticacaoPerfilRef.current += 1;
       subscription.unsubscribe();
     };
   }, []);
@@ -3241,7 +3303,20 @@ function PerfilAutorPageContent() {
 
 
   useEffect(() => {
+    if (!autenticacaoCarregada) {
+      return;
+    }
+
     let componenteAtivo = true;
+    const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
+
+    function execucaoCarregamentoEstaAtual() {
+      return execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: !componenteAtivo,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaPerfilRef.current,
+      });
+    }
 
     async function carregarPerfilAutor() {
       const params = new URLSearchParams(queryPerfilAtual);
@@ -3263,8 +3338,25 @@ function PerfilAutorPageContent() {
       let perfilUsuarioRemotoCarregado: PerfilUsuarioRemoto | null = null;
 
       const obrasSupabase = await carregarObrasPublicadasSupabase();
-      const estadoUsuarioSupabase = await carregarEstadoUsuarioSupabase();
-      const usuarioIdAtual = estadoUsuarioSupabase?.userId || "";
+
+      if (!execucaoCarregamentoEstaAtual()) {
+        return;
+      }
+
+      const resultadoEstadoUsuario = await carregarEstadoUsuarioSupabase();
+      const estadoUsuarioSupabase = resultadoEstadoUsuario.estadoUsuario;
+      const usuarioIdConfirmado = estadoUsuarioSupabase?.userId || "";
+      const usuarioIdAtual = resultadoEstadoUsuario.identidadeConfirmada
+        ? usuarioIdConfirmado
+        : identidadeEsperada.usuarioId;
+
+      if (
+        !execucaoCarregamentoEstaAtual() ||
+        (resultadoEstadoUsuario.identidadeConfirmada &&
+          usuarioIdAtual !== identidadeEsperada.usuarioId)
+      ) {
+        return;
+      }
 
       if (usuarioIdAtual) {
         try {
@@ -3324,6 +3416,10 @@ function PerfilAutorPageContent() {
         perfilUsuarioIdParaBuscar,
         autorParam.trim(),
       );
+
+      if (!execucaoCarregamentoEstaAtual()) {
+        return;
+      }
 
       const obrasLocaisDoUsuario = filtrarObrasLocaisDoUsuarioPerfilAutor(
         obrasNormalizadas,
@@ -3385,6 +3481,10 @@ function PerfilAutorPageContent() {
               idsObrasBibliotecaFaltantes,
             );
 
+          if (!execucaoCarregamentoEstaAtual()) {
+            return;
+          }
+
           obrasMescladas = mesclarObrasPorIdSlug(
             obrasMescladas,
             obrasBibliotecaFaltantes,
@@ -3398,6 +3498,10 @@ function PerfilAutorPageContent() {
           obrasMescladas,
         );
 
+        if (!execucaoCarregamentoEstaAtual()) {
+          return;
+        }
+
         obrasMescladas = aplicarInteracoesNasObras(
           obrasMescladas,
           interacoes.curtidas,
@@ -3407,6 +3511,10 @@ function PerfilAutorPageContent() {
           interacoes.progressoCarregado,
           interacoes.capitulosComMetricas,
         );
+      }
+
+      if (!execucaoCarregamentoEstaAtual()) {
+        return;
       }
 
       if (usuarioIdAtual) {
@@ -3451,11 +3559,10 @@ function PerfilAutorPageContent() {
         }
       }
 
-      if (!componenteAtivo) {
+      if (!execucaoCarregamentoEstaAtual()) {
         return;
       }
 
-      setUsuarioIdLogado(estadoUsuarioSupabase?.userId || "");
       setPerfilUsuarioRemoto(perfilUsuarioRemotoCarregado);
       setObras(obrasMescladas);
       setAutoresSeguidos(autoresSeguidosNormalizados);
@@ -3471,7 +3578,7 @@ function PerfilAutorPageContent() {
     return () => {
       componenteAtivo = false;
     };
-  }, [queryPerfilAtual]);
+  }, [autenticacaoCarregada, queryPerfilAtual, usuarioIdLogado]);
 
   const perfisAutores = useMemo<AutorPerfil[]>(() => {
     const mapa = new Map<
@@ -5772,10 +5879,6 @@ function PerfilAutorPageContent() {
     try {
       const { data } = await supabase.auth.getUser();
       userIdAtual = data.user?.id || "";
-
-      if (userIdAtual && userIdAtual !== usuarioIdLogado) {
-        setUsuarioIdLogado(userIdAtual);
-      }
     } catch {
       userIdAtual = usuarioIdLogado;
     }
