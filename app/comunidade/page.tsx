@@ -118,6 +118,7 @@ import { removerSugestoesObrasDuplicadas } from "./components/community-related-
 import { obterObraRelacionadaPermitida } from "./components/community-related-work-allowed-finder";
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
+import { sincronizarReviewsPendentesSequencialmenteComunidade } from "./components/community-pending-reviews-sync";
 import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
 import { carregarPostsSalvosLocaisComunidade } from "./components/community-local-saved-posts-loader";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
@@ -651,17 +652,12 @@ export default function ComunidadePage() {
 
     let cancelado = false;
 
-    reviewsPendentes.forEach((post) => {
-      reviewsDiarioSincronizadasRef.current.add(post.id);
-    });
-
-    async function sincronizarReviewsPendentes() {
-      for (const post of reviewsPendentes) {
-        if (cancelado) {
-          return;
-        }
-
-        const sincronizou = await registrarReviewComunidadeNoDiario({
+    void sincronizarReviewsPendentesSequencialmenteComunidade({
+      reviewsPendentes,
+      reviewsSincronizadas: reviewsDiarioSincronizadasRef.current,
+      cancelamentoSolicitado: () => cancelado,
+      sincronizarReview: (post) =>
+        registrarReviewComunidadeNoDiario({
           userId,
           texto: post.texto,
           obraRelacionada: post.obraRelacionada,
@@ -669,15 +665,8 @@ export default function ComunidadePage() {
           criadaEm: post.criadoEm,
           sugestoesObras: obrasRelacionadasSugestoes,
           visibilidade: post.visibilidade,
-        });
-
-        if (!sincronizou) {
-          reviewsDiarioSincronizadasRef.current.delete(post.id);
-        }
-      }
-    }
-
-    void sincronizarReviewsPendentes();
+        }),
+    });
 
     return () => {
       cancelado = true;
