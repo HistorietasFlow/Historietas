@@ -43,6 +43,7 @@ import {
   atualizarVisibilidadePostNoEstadoComunidade,
 } from "./components/community-post-metadata-state-updaters";
 import { atualizarVisibilidadePostSupabaseComunidade } from "./components/community-post-visibility-update";
+import { atualizarFixacaoPostSupabaseComunidade } from "./components/community-post-pinning-update";
 import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
 import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
 import { inserirPostSupabaseComunidade } from "./components/community-post-insert";
@@ -1898,19 +1899,23 @@ export default function ComunidadePage() {
     try {
       const novoEstadoFixado = !post.fixado;
 
-      const { data, error } = await supabase
-        .from("comunidade_posts")
-        .update({ fixado: novoEstadoFixado })
-        .eq("id", post.id)
-        .select("fixado, fixado_em, fixado_por")
-        .single();
+      const resultadoAtualizacaoFixacao =
+        await atualizarFixacaoPostSupabaseComunidade(
+          post.id,
+          novoEstadoFixado
+        );
 
-      if (error) {
-        setErro(formatarErroSupabase("Erro ao atualizar fixado", error));
+      if (!resultadoAtualizacaoFixacao.sucesso) {
+        setErro(
+          formatarErroSupabase(
+            "Erro ao atualizar fixado",
+            resultadoAtualizacaoFixacao.erro
+          )
+        );
         return;
       }
 
-      const dadosFixado = data as {
+      const dadosFixado = resultadoAtualizacaoFixacao.data as {
         fixado?: boolean | null;
         fixado_em?: string | null;
         fixado_por?: string | null;
