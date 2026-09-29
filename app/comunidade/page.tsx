@@ -42,6 +42,7 @@ import {
   atualizarFixacaoPostNoEstadoComunidade,
   atualizarVisibilidadePostNoEstadoComunidade,
 } from "./components/community-post-metadata-state-updaters";
+import { atualizarVisibilidadePostSupabaseComunidade } from "./components/community-post-visibility-update";
 import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
 import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
 import { inserirPostSupabaseComunidade } from "./components/community-post-insert";
@@ -1830,22 +1831,27 @@ export default function ComunidadePage() {
         }
       }
 
-      const { data, error } = await supabase
-        .from("comunidade_posts")
-        .update({ visibilidade: visibilidadeSegura })
-        .eq("id", post.id)
-        .eq("autor_id", usuario.id)
-        .select("id, visibilidade")
-        .maybeSingle();
+      const resultadoAtualizacaoVisibilidade =
+        await atualizarVisibilidadePostSupabaseComunidade(
+          post.id,
+          usuario.id,
+          visibilidadeSegura
+        );
 
-      if (error || !data) {
+      if (
+        !resultadoAtualizacaoVisibilidade.sucesso ||
+        !resultadoAtualizacaoVisibilidade.data
+      ) {
         if (post.tipoPublicacao === "Review") {
           reviewsDiarioSincronizadasRef.current.delete(post.id);
         }
 
         setErro(
-          error
-            ? formatarErroSupabase("Erro ao atualizar visibilidade", error)
+          !resultadoAtualizacaoVisibilidade.sucesso
+            ? formatarErroSupabase(
+                "Erro ao atualizar visibilidade",
+                resultadoAtualizacaoVisibilidade.erro
+              )
             : "Erro ao atualizar visibilidade: a publicação não foi retornada.",
         );
         return;
