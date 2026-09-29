@@ -102,10 +102,8 @@ import {
   obterParametroObraComunidade,
   obterParametroPostComunidade,
 } from "./components/community-url-parameters";
-import { carregarSugestoesObrasLocais } from "./components/community-local-related-works-loader";
-import { consultarObrasPublicadasComunidade } from "./components/community-published-works-query";
-import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
+import { prepararSugestoesObrasRelacionadasComunidade } from "./components/community-related-work-suggestions-preparation";
 import { consultarObrasPorTituloComunidade } from "./components/community-related-work-title-query";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
@@ -652,31 +650,13 @@ export default function ComunidadePage() {
     let cancelado = false;
 
     async function carregarObrasRelacionadas() {
-      const obrasLocais = carregarSugestoesObrasLocais(usuario?.id || "");
+      const sugestoesObrasRelacionadas =
+        await prepararSugestoesObrasRelacionadasComunidade(
+          usuario?.id || ""
+        );
 
-      try {
-        const resultadoConsultaObras =
-          await consultarObrasPublicadasComunidade();
-
-        if (!resultadoConsultaObras.sucesso) {
-          throw resultadoConsultaObras.erro;
-        }
-
-        const obrasSupabase = (resultadoConsultaObras.obrasEncontradas || [])
-          .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
-          .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
-
-        if (!cancelado) {
-          setObrasRelacionadasSugestoes(
-            removerSugestoesObrasDuplicadas([...obrasSupabase, ...obrasLocais])
-          );
-        }
-      } catch {
-        if (!cancelado) {
-          setObrasRelacionadasSugestoes(
-            removerSugestoesObrasDuplicadas(obrasLocais)
-          );
-        }
+      if (!cancelado) {
+        setObrasRelacionadasSugestoes(sugestoesObrasRelacionadas);
       }
     }
 
