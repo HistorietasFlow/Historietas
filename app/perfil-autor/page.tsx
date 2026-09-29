@@ -2636,19 +2636,37 @@ async function sincronizarTabelaUsuario(
   }
 }
 
-async function sincronizarAutorSeguidoSupabase(autor: string, ativo: boolean) {
+async function sincronizarAutorSeguidoSupabase(
+  autor: string,
+  ativo: boolean,
+  usuarioIdEsperado: string,
+  operacaoAindaAtual: () => boolean,
+) {
+  if (!operacaoAindaAtual()) {
+    return;
+  }
+
   try {
     const { data } = await supabase.auth.getUser();
     const userId = data.user?.id || "";
 
-    if (!userId || !autor) {
+    if (
+      !operacaoAindaAtual() ||
+      userId !== usuarioIdEsperado ||
+      !userId ||
+      !autor
+    ) {
       return;
     }
 
     if (ativo) {
+      if (!operacaoAindaAtual()) {
+        return;
+      }
+
       await supabase.from("seguindo_autores").upsert(
         {
-          user_id: userId,
+          user_id: usuarioIdEsperado,
           autor_nome: autor,
         },
         { onConflict: "user_id,autor_nome" },
@@ -2656,10 +2674,14 @@ async function sincronizarAutorSeguidoSupabase(autor: string, ativo: boolean) {
       return;
     }
 
+    if (!operacaoAindaAtual()) {
+      return;
+    }
+
     await supabase
       .from("seguindo_autores")
       .delete()
-      .eq("user_id", userId)
+      .eq("user_id", usuarioIdEsperado)
       .eq("autor_nome", autor);
   } catch {
     // A ação local permanece funcionando se o Supabase falhar.
@@ -2758,6 +2780,7 @@ function avisarAtualizacaoNotificacoesPerfilAutor() {
 async function removerNotificacoesSociaisPerfilAutor(
   receptorId: string,
   notificacaoIds: string[],
+  operacaoAindaAtual: () => boolean = () => true,
 ) {
   const receptorIdLimpo = receptorId.trim();
   const idsLimpos = Array.from(
@@ -2771,7 +2794,8 @@ async function removerNotificacoesSociaisPerfilAutor(
   if (
     !receptorIdLimpo ||
     !idAutorSupabaseValido(receptorIdLimpo) ||
-    idsLimpos.length === 0
+    idsLimpos.length === 0 ||
+    !operacaoAindaAtual()
   ) {
     return false;
   }
@@ -2782,6 +2806,10 @@ async function removerNotificacoesSociaisPerfilAutor(
       .delete()
       .eq("user_id", receptorIdLimpo)
       .in("notificacao_id", idsLimpos);
+
+    if (!operacaoAindaAtual()) {
+      return false;
+    }
 
     if (error) {
       console.warn(
@@ -2794,6 +2822,10 @@ async function removerNotificacoesSociaisPerfilAutor(
     avisarAtualizacaoNotificacoesPerfilAutor();
     return true;
   } catch (error) {
+    if (!operacaoAindaAtual()) {
+      return false;
+    }
+
     console.warn(
       "Não consegui remover notificação social antiga:",
       error,
@@ -2802,14 +2834,17 @@ async function removerNotificacoesSociaisPerfilAutor(
   }
 }
 
-async function criarNotificacaoSocialPerfilAutor({
-  receptorId,
-  tipo,
-  titulo,
-  mensagem,
-  link,
-  notificacaoId,
-}: NotificacaoSocialPerfilAutorPayload) {
+async function criarNotificacaoSocialPerfilAutor(
+  {
+    receptorId,
+    tipo,
+    titulo,
+    mensagem,
+    link,
+    notificacaoId,
+  }: NotificacaoSocialPerfilAutorPayload,
+  operacaoAindaAtual: () => boolean = () => true,
+) {
   const receptorIdLimpo = receptorId.trim();
   const tipoLimpo = tipo.trim();
   const notificacaoIdLimpo = notificacaoId.trim();
@@ -2818,7 +2853,8 @@ async function criarNotificacaoSocialPerfilAutor({
     !receptorIdLimpo ||
     !idAutorSupabaseValido(receptorIdLimpo) ||
     !tipoLimpo ||
-    !notificacaoIdLimpo
+    !notificacaoIdLimpo ||
+    !operacaoAindaAtual()
   ) {
     return false;
   }
@@ -2833,6 +2869,10 @@ async function criarNotificacaoSocialPerfilAutor({
       p_notificacao_id: notificacaoIdLimpo,
     });
 
+    if (!operacaoAindaAtual()) {
+      return false;
+    }
+
     if (error) {
       console.warn("Não consegui criar notificação social:", error.message);
       return false;
@@ -2841,6 +2881,10 @@ async function criarNotificacaoSocialPerfilAutor({
     avisarAtualizacaoNotificacoesPerfilAutor();
     return true;
   } catch (error) {
+    if (!operacaoAindaAtual()) {
+      return false;
+    }
+
     console.warn("Não consegui criar notificação social:", error);
     return false;
   }
@@ -3070,6 +3114,8 @@ function PerfilAutorPageContent() {
       setAvatarErro("");
       setSalvandoEditorPerfil(false);
       setTopFiveCurtidaSalvando(false);
+      setBloqueioPerfilSalvando(false);
+      setSeguirUsuarioSalvando(false);
       setAvaliacaoDiario((avaliacaoAtual) => ({
         ...avaliacaoAtual,
         salvando: false,
@@ -5972,6 +6018,23 @@ function PerfilAutorPageContent() {
       return;
     }
 
+    const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
+    const usuarioIdEsperado = identidadeEsperada.usuarioId.trim();
+    const operacaoAindaAtual = () => {
+      return execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaPerfilRef.current,
+      });
+    };
+
+    if (
+      !operacaoAindaAtual() ||
+      usuarioIdEsperado !== usuarioIdLogado.trim()
+    ) {
+      return;
+    }
+
     const perfilUserId = perfilParaMostrar.autorId.trim();
 
     if (!perfilUserId || !idAutorSupabaseValido(perfilUserId)) {
@@ -5979,7 +6042,7 @@ function PerfilAutorPageContent() {
       return;
     }
 
-    let usuarioAtualId = usuarioIdLogado.trim();
+    let usuarioAtualId = usuarioIdEsperado;
 
     if (!usuarioAtualId) {
       try {
@@ -5987,6 +6050,13 @@ function PerfilAutorPageContent() {
         usuarioAtualId = data.user?.id?.trim() || "";
       } catch {
         usuarioAtualId = "";
+      }
+
+      if (
+        !operacaoAindaAtual() ||
+        usuarioAtualId !== usuarioIdEsperado
+      ) {
+        return;
       }
     }
 
@@ -6015,13 +6085,27 @@ function PerfilAutorPageContent() {
       return;
     }
 
+    if (!operacaoAindaAtual()) {
+      return;
+    }
+
     setMenuPerfilAberto(false);
     setMensagemAcao("");
     setBloqueioPerfilSalvando(true);
 
     const resultado = desbloquear
-      ? await desbloquearUsuario(perfilUserId)
-      : await bloquearUsuario(perfilUserId);
+      ? await desbloquearUsuario(perfilUserId, {
+          usuarioIdEsperado,
+          operacaoAindaAtual,
+        })
+      : await bloquearUsuario(perfilUserId, {
+          usuarioIdEsperado,
+          operacaoAindaAtual,
+        });
+
+    if (!operacaoAindaAtual()) {
+      return;
+    }
 
     setBloqueioPerfilSalvando(false);
 
@@ -6095,15 +6179,39 @@ function PerfilAutorPageContent() {
       return;
     }
 
+    const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
+    const usuarioIdEsperado = identidadeEsperada.usuarioId.trim();
+    const operacaoAindaAtual = () => {
+      return execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaPerfilRef.current,
+      });
+    };
+
+    if (
+      !operacaoAindaAtual() ||
+      usuarioIdEsperado !== usuarioIdLogado.trim()
+    ) {
+      return;
+    }
+
     setMensagemAcao("");
 
-    let userIdAtual = usuarioIdLogado;
+    let userIdAtual = "";
 
     try {
       const { data } = await supabase.auth.getUser();
-      userIdAtual = data.user?.id || "";
+      userIdAtual = data.user?.id?.trim() || "";
     } catch {
-      userIdAtual = usuarioIdLogado;
+      userIdAtual = "";
+    }
+
+    if (
+      !operacaoAindaAtual() ||
+      userIdAtual !== usuarioIdEsperado
+    ) {
+      return;
     }
 
     if (!userIdAtual) {
@@ -6127,19 +6235,40 @@ function PerfilAutorPageContent() {
       const seguindoAntes =
         estadoAnterior === "seguindo" || seguindoUsuarioPerfil;
       const notificacaoSolicitacaoId =
-        `solicitacao-seguidor:${userIdAtual}:${userIdPerfil}`;
+        `solicitacao-seguidor:${usuarioIdEsperado}:${userIdPerfil}`;
       const notificacaoSeguidorId =
-        `seguir-usuario:${userIdAtual}:${userIdPerfil}`;
+        `seguir-usuario:${usuarioIdEsperado}:${userIdPerfil}`;
+
+      if (!operacaoAindaAtual()) {
+        return;
+      }
 
       setSeguirUsuarioSalvando(true);
 
       try {
+        const contextoIdentidade = {
+          usuarioIdEsperado,
+          operacaoAindaAtual,
+        };
         const resultado =
           estadoAnterior === "solicitado"
-            ? await cancelarSolicitacaoSeguidor(userIdPerfil)
+            ? await cancelarSolicitacaoSeguidor(
+                userIdPerfil,
+                contextoIdentidade,
+              )
             : seguindoAntes
-              ? await deixarDeSeguirUsuario(userIdPerfil)
-              : await solicitarOuSeguirUsuario(userIdPerfil);
+              ? await deixarDeSeguirUsuario(
+                  userIdPerfil,
+                  contextoIdentidade,
+                )
+              : await solicitarOuSeguirUsuario(
+                  userIdPerfil,
+                  contextoIdentidade,
+                );
+
+        if (!operacaoAindaAtual()) {
+          return;
+        }
 
         if (!resultado.ok) {
           setMensagemAcao(
@@ -6167,50 +6296,109 @@ function PerfilAutorPageContent() {
         if (novoEstado === "seguindo" && !seguindoAntes) {
           const nomeSeguidor =
             perfilDoUsuarioLogado?.nome.trim() || "Um leitor";
-          const linkSeguidor = criarPerfilAutorHref(nomeSeguidor, userIdAtual);
+          const linkSeguidor = criarPerfilAutorHref(
+            nomeSeguidor,
+            usuarioIdEsperado,
+          );
+
+          if (!operacaoAindaAtual()) {
+            return;
+          }
 
           await removerNotificacoesSociaisPerfilAutor(
             userIdPerfil,
             [notificacaoSolicitacaoId],
+            operacaoAindaAtual,
           );
-          await criarNotificacaoSocialPerfilAutor({
-            receptorId: userIdPerfil,
-            tipo: "novo-seguidor",
-            titulo: "Novo seguidor",
-            mensagem: `${nomeSeguidor} começou a seguir você.`,
-            link: linkSeguidor,
-            notificacaoId: notificacaoSeguidorId,
-          });
+
+          if (!operacaoAindaAtual()) {
+            return;
+          }
+
+          await criarNotificacaoSocialPerfilAutor(
+            {
+              receptorId: userIdPerfil,
+              tipo: "novo-seguidor",
+              titulo: "Novo seguidor",
+              mensagem: `${nomeSeguidor} começou a seguir você.`,
+              link: linkSeguidor,
+              notificacaoId: notificacaoSeguidorId,
+            },
+            operacaoAindaAtual,
+          );
+
+          if (!operacaoAindaAtual()) {
+            return;
+          }
         } else if (novoEstado === "solicitado") {
           const nomeSolicitante =
             perfilDoUsuarioLogado?.nome.trim() || "Um leitor";
           const linkSolicitante = criarPerfilAutorHref(
             nomeSolicitante,
-            userIdAtual,
+            usuarioIdEsperado,
           );
+
+          if (!operacaoAindaAtual()) {
+            return;
+          }
 
           await removerNotificacoesSociaisPerfilAutor(
             userIdPerfil,
             [notificacaoSeguidorId],
+            operacaoAindaAtual,
           );
-          await criarNotificacaoSocialPerfilAutor({
-            receptorId: userIdPerfil,
-            tipo: "solicitacao-seguidor",
-            titulo: "Nova solicitação de seguidor",
-            mensagem: `${nomeSolicitante} pediu para seguir você.`,
-            link: linkSolicitante,
-            notificacaoId: notificacaoSolicitacaoId,
-          });
+
+          if (!operacaoAindaAtual()) {
+            return;
+          }
+
+          await criarNotificacaoSocialPerfilAutor(
+            {
+              receptorId: userIdPerfil,
+              tipo: "solicitacao-seguidor",
+              titulo: "Nova solicitação de seguidor",
+              mensagem: `${nomeSolicitante} pediu para seguir você.`,
+              link: linkSolicitante,
+              notificacaoId: notificacaoSolicitacaoId,
+            },
+            operacaoAindaAtual,
+          );
+
+          if (!operacaoAindaAtual()) {
+            return;
+          }
         } else if (estadoAnterior === "solicitado") {
+          if (!operacaoAindaAtual()) {
+            return;
+          }
+
           await removerNotificacoesSociaisPerfilAutor(
             userIdPerfil,
             [notificacaoSolicitacaoId],
+            operacaoAindaAtual,
           );
+
+          if (!operacaoAindaAtual()) {
+            return;
+          }
         } else if (seguindoAntes && !seguindoDepois) {
+          if (!operacaoAindaAtual()) {
+            return;
+          }
+
           await removerNotificacoesSociaisPerfilAutor(
             userIdPerfil,
             [notificacaoSeguidorId, notificacaoSolicitacaoId],
+            operacaoAindaAtual,
           );
+
+          if (!operacaoAindaAtual()) {
+            return;
+          }
+        }
+
+        if (!operacaoAindaAtual()) {
+          return;
         }
 
         setMensagemAcao(
@@ -6224,6 +6412,10 @@ function PerfilAutorPageContent() {
         );
         return;
       } catch (error) {
+        if (!operacaoAindaAtual()) {
+          return;
+        }
+
         setMensagemAcao(
           error instanceof Error
             ? error.message
@@ -6231,7 +6423,9 @@ function PerfilAutorPageContent() {
         );
         return;
       } finally {
-        setSeguirUsuarioSalvando(false);
+        if (operacaoAindaAtual()) {
+          setSeguirUsuarioSalvando(false);
+        }
       }
     }
 
@@ -6249,9 +6443,13 @@ function PerfilAutorPageContent() {
       ? Array.from(new Set([...autoresSeguidosSemAutorAtual, autorChaveSeguir]))
       : autoresSeguidosSemAutorAtual;
 
+    if (!operacaoAindaAtual()) {
+      return;
+    }
+
     salvarJsonUsuarioPerfilAutor(
       AUTHOR_FOLLOW_STORAGE_KEY,
-      usuarioIdLogado,
+      usuarioIdEsperado,
       novosAutoresSeguidos,
     );
 
@@ -6259,6 +6457,8 @@ function PerfilAutorPageContent() {
     void sincronizarAutorSeguidoSupabase(
       autorNormalizado,
       proximoEstadoSeguindo,
+      usuarioIdEsperado,
+      operacaoAindaAtual,
     );
   }
 
