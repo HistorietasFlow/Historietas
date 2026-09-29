@@ -103,6 +103,7 @@ import {
   obterParametroPostComunidade,
 } from "./components/community-url-parameters";
 import { carregarSugestoesObrasLocais } from "./components/community-local-related-works-loader";
+import { consultarObrasPublicadasComunidade } from "./components/community-published-works-query";
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
 import { consultarObrasPorTituloComunidade } from "./components/community-related-work-title-query";
@@ -654,18 +655,14 @@ export default function ComunidadePage() {
       const obrasLocais = carregarSugestoesObrasLocais(usuario?.id || "");
 
       try {
-        const { data, error } = await supabase
-          .from("obras")
-          .select("id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link")
-          .eq("publicado", true)
-          .order("criada_em", { ascending: false })
-          .limit(120);
+        const resultadoConsultaObras =
+          await consultarObrasPublicadasComunidade();
 
-        if (error) {
-          throw error;
+        if (!resultadoConsultaObras.sucesso) {
+          throw resultadoConsultaObras.erro;
         }
 
-        const obrasSupabase = (data || [])
+        const obrasSupabase = (resultadoConsultaObras.obrasEncontradas || [])
           .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
           .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
 

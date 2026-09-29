@@ -139,12 +139,13 @@
 - A Fase 431 extraiu somente `removerPostSupabaseComunidade` a partir do delete condicional remoto de publicação e foi concluída com o PR #565 mesclado.
 - A Fase 432 extraiu somente `sincronizarCurtidaPostSupabaseComunidade` a partir da sincronização remota da curtida de publicação e foi concluída com o PR #566 mesclado.
 - A Fase 433 extraiu somente `sincronizarCurtidaComentarioSupabaseComunidade` a partir da sincronização remota da curtida de comentário e foi concluída com o PR #567 mesclado.
-- A Fase 434 extraiu somente `consultarObrasPorTituloComunidade` a partir da consulta Supabase de obras publicadas por título e está implementada neste PR.
+- A Fase 434 extraiu somente `consultarObrasPorTituloComunidade` a partir da consulta Supabase de obras publicadas por título e foi concluída com o PR #568 mesclado.
+- A Fase 435 extraiu somente `consultarObrasPublicadasComunidade` a partir da consulta inicial das obras publicadas e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 434 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 435 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
+A Fase 435 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 436 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
 
 ## Contrato de preservação
 
