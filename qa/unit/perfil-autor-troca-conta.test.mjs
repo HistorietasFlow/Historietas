@@ -131,6 +131,155 @@ test("evento posterior da mesma identidade preserva a versao atual", () => {
   );
 });
 
+test("salvamento obsoleto do editor nao continua nem libera lock da conta seguinte", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  let editorSalvando = false;
+  const uploadControlado = criarPromessaControlada();
+  const operacoesRemotas = [];
+  const cachesPersistidos = [];
+  const estadosAplicados = [];
+  const mensagensEmitidas = [];
+
+  async function salvarEditor() {
+    const identidadeEsperada = identidadeAtual;
+    const execucaoAtual = () =>
+      execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual,
+      });
+
+    editorSalvando = true;
+    operacoesRemotas.push("upload-avatar-a");
+    await uploadControlado.promessa;
+
+    if (!execucaoAtual()) {
+      return;
+    }
+
+    operacoesRemotas.push("salvar-perfil-a");
+    await Promise.resolve();
+
+    if (!execucaoAtual()) {
+      return;
+    }
+
+    operacoesRemotas.push("auth-update-user-a");
+    await Promise.resolve();
+
+    if (!execucaoAtual()) {
+      return;
+    }
+
+    cachesPersistidos.push("cache-a");
+    estadosAplicados.push("estado-a");
+    mensagensEmitidas.push("mensagem-a");
+    editorSalvando = false;
+  }
+
+  const salvamentoA = salvarEditor();
+
+  identidadeAtual = atualizarIdentidadeAutenticadaPerfilAutor(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+  editorSalvando = false;
+  editorSalvando = true;
+
+  uploadControlado.resolver();
+  await salvamentoA;
+
+  assert.deepEqual(operacoesRemotas, ["upload-avatar-a"]);
+  assert.deepEqual(cachesPersistidos, []);
+  assert.deepEqual(estadosAplicados, []);
+  assert.deepEqual(mensagensEmitidas, []);
+  assert.equal(editorSalvando, true);
+});
+
+test("evento da mesma identidade mantem o salvamento do editor valido", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 4 };
+  const identidadeEsperada = identidadeAtual;
+  const uploadControlado = criarPromessaControlada();
+  const operacoes = [];
+
+  const salvamento = (async () => {
+    operacoes.push("upload-avatar");
+    await uploadControlado.promessa;
+
+    if (
+      !execucaoCarregamentoPerfilAutorEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual,
+      })
+    ) {
+      return;
+    }
+
+    operacoes.push(
+      "salvar-perfil",
+      "auth-update-user",
+      "persistir-cache",
+      "aplicar-estado",
+      "emitir-mensagem",
+      "liberar-lock",
+    );
+  })();
+
+  const atualizacaoMesmaIdentidade = atualizarIdentidadeAutenticadaPerfilAutor(
+    identidadeAtual,
+    "usuario-a",
+  );
+  identidadeAtual = atualizacaoMesmaIdentidade.identidade;
+  uploadControlado.resolver();
+  await salvamento;
+
+  assert.equal(atualizacaoMesmaIdentidade.mudou, false);
+  assert.equal(identidadeAtual.versao, 4);
+  assert.deepEqual(operacoes, [
+    "upload-avatar",
+    "salvar-perfil",
+    "auth-update-user",
+    "persistir-cache",
+    "aplicar-estado",
+    "emitir-mensagem",
+    "liberar-lock",
+  ]);
+});
+
+test("mantem guards do editor entre as etapas assincronas e os commits", () => {
+  const paginaPerfilAutor = readFileSync(
+    new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const inicioSalvamento = paginaPerfilAutor.indexOf(
+    "async function salvarEdicaoPerfilAutor()",
+  );
+  const fimSalvamento = paginaPerfilAutor.indexOf(
+    "function atualizarBioSobreAutor",
+    inicioSalvamento,
+  );
+  const blocoSalvamento = paginaPerfilAutor.slice(
+    inicioSalvamento,
+    fimSalvamento,
+  );
+  const guardsDepoisDeEtapas = blocoSalvamento.match(
+    /if \(!salvamentoEditorPerfilAindaAtual\(\)\)/g,
+  );
+
+  assert.ok(inicioSalvamento >= 0);
+  assert.ok(fimSalvamento > inicioSalvamento);
+  assert.ok((guardsDepoisDeEtapas?.length || 0) >= 10);
+  assert.ok(
+    blocoSalvamento.indexOf("const identidadeEsperada") <
+      blocoSalvamento.indexOf("await enviarAvatarPerfilUsuarioSupabase"),
+  );
+  assert.ok(
+    blocoSalvamento.indexOf("if (!salvamentoEditorPerfilAindaAtual())") <
+      blocoSalvamento.indexOf("await supabase.auth.updateUser"),
+  );
+});
+
 test("mantem a autenticacao como unica proprietaria de usuarioIdLogado", () => {
   const paginaPerfilAutor = readFileSync(
     new URL("../../app/perfil-autor/page.tsx", import.meta.url),
