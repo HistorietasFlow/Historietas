@@ -10,6 +10,12 @@ const DEFAULTS = Object.freeze({
   email: "e2e-author@historietas.test",
   authorName: "Autor E2E",
   username: "autor-e2e",
+  communityPostId: "e2e00000-0000-4000-8000-000000000002",
+  communityCommentId: "e2e00000-0000-4000-8000-000000000003",
+  communityCommentAuthorId: "a0000000-0000-0000-0000-000000000001",
+  communityPostText: "Publicação E2E para denúncia de comentário",
+  communityCommentText: "Comentário E2E disponível para denúncia",
+  publicWorkTitle: "Obra Pública E2E",
   publicWorkSlug: "obra-publica-e2e",
   publicChapterNumber: "1",
 });
@@ -233,7 +239,7 @@ async function preparar() {
   const { error: workError } = await authenticated.from("obras").insert({
     id: workId,
     user_id: userId,
-    titulo: "Obra Pública E2E",
+    titulo: DEFAULTS.publicWorkTitle,
     autor: DEFAULTS.authorName,
     genero: "Fantasia",
     formato: "Conto",
@@ -270,6 +276,46 @@ async function preparar() {
     .single();
   exigirSemErro(publishError, "Não foi possível publicar a obra E2E local");
   assert.equal(published?.publicado, true, "A obra E2E local não ficou pública.");
+
+  const { data: communityPost, error: communityPostError } = await admin
+    .from("comunidade_posts")
+    .insert({
+      id: DEFAULTS.communityPostId,
+      autor_id: userId,
+      autor_nome: DEFAULTS.authorName,
+      categoria: "Geral",
+      tipo_publicacao: "Discussão",
+      tem_spoiler: false,
+      texto: DEFAULTS.communityPostText,
+      obra_relacionada: DEFAULTS.publicWorkTitle,
+      criado_em: now,
+      visibilidade: "publico",
+    })
+    .select("id")
+    .single();
+  exigirSemErro(
+    communityPostError,
+    "Não foi possível criar a publicação da Comunidade E2E local",
+  );
+  assert.equal(communityPost?.id, DEFAULTS.communityPostId);
+
+  const { data: communityComment, error: communityCommentError } = await admin
+    .from("comunidade_comentarios")
+    .insert({
+      id: DEFAULTS.communityCommentId,
+      post_id: DEFAULTS.communityPostId,
+      autor_id: DEFAULTS.communityCommentAuthorId,
+      autor_nome: "QA Paginação",
+      texto: DEFAULTS.communityCommentText,
+      criado_em: now,
+    })
+    .select("id")
+    .single();
+  exigirSemErro(
+    communityCommentError,
+    "Não foi possível criar o comentário da Comunidade E2E local",
+  );
+  assert.equal(communityComment?.id, DEFAULTS.communityCommentId);
 
   await authenticated.auth.signOut();
 
