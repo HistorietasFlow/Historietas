@@ -38,6 +38,7 @@ import {
   removerPostDoEstadoComunidade,
   removerPostSalvoDoEstadoComunidade,
 } from "./components/community-post-removal-state-updaters";
+import { consultarPostParaRemocaoComunidade } from "./components/community-post-removal-query";
 import {
   atualizarFixacaoPostNoEstadoComunidade,
   atualizarVisibilidadePostNoEstadoComunidade,
@@ -1985,21 +1986,20 @@ export default function ComunidadePage() {
         usuarioAtualEhAdmin = false;
       }
 
-      const { data: postBanco, error: postBancoError } = await supabase
-        .from("comunidade_posts")
-        .select("id, autor_id, tipo_publicacao")
-        .eq("id", postId)
-        .maybeSingle();
+      const resultadoConsultaPost =
+        await consultarPostParaRemocaoComunidade(postId);
 
-      if (postBancoError) {
+      if (!resultadoConsultaPost.sucesso) {
         setErro(
           formatarErroSupabase(
             "Erro ao conferir publicação",
-            postBancoError
+            resultadoConsultaPost.erro
           )
         );
         return;
       }
+
+      const postBanco = resultadoConsultaPost.postBanco;
 
       if (!postBanco) {
         setPosts((postsAtuais) =>
