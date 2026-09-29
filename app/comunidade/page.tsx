@@ -105,6 +105,7 @@ import {
 import { carregarSugestoesObrasLocais } from "./components/community-local-related-works-loader";
 import { normalizarSugestaoObraSupabase } from "./components/community-related-work-supabase-normalizer";
 import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
+import { consultarObrasPorTituloComunidade } from "./components/community-related-work-title-query";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
 import { obterTextoProfileComunidade } from "./components/community-profile-text";
@@ -1254,17 +1255,14 @@ export default function ComunidadePage() {
       }
 
       if (obraLimpa && !obraRelacionadaPermitida) {
-        const { data: obrasEncontradas, error: erroObraRelacionada } =
-          await supabase
-            .from("obras")
-            .select("id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link")
-            .eq("publicado", true)
-            .eq("titulo", obraLimpa)
-            .limit(5);
+        const resultadoConsultaObras =
+          await consultarObrasPorTituloComunidade(obraLimpa);
 
-        if (!erroObraRelacionada) {
+        if (resultadoConsultaObras.sucesso) {
           obraRelacionadaPermitida =
-            obterPrimeiraSugestaoObraSupabaseComunidade(obrasEncontradas);
+            obterPrimeiraSugestaoObraSupabaseComunidade(
+              resultadoConsultaObras.obrasEncontradas
+            );
 
           if (obraRelacionadaPermitida) {
             setObrasRelacionadasSugestoes((obrasAtuais) =>
