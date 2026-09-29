@@ -277,7 +277,7 @@ async function preparar() {
   exigirSemErro(publishError, "Não foi possível publicar a obra E2E local");
   assert.equal(published?.publicado, true, "A obra E2E local não ficou pública.");
 
-  const { data: communityPost, error: communityPostError } = await authenticated
+  const { data: communityPost, error: communityPostError } = await admin
     .from("comunidade_posts")
     .insert({
       id: DEFAULTS.communityPostId,
