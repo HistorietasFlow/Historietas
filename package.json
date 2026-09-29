@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:static": "node qa/scripts/static-audit.mjs",
     "test:pagination": "node --test qa/unit/paginacao-alto-volume.test.mjs",
-    "test:session": "node --test qa/unit/recuperacao-sessao.test.mjs qa/unit/community-pending-reviews-retry.test.mjs qa/unit/perfil-autor-troca-conta.test.mjs qa/unit/perfil-autor-acoes-sociais-troca-conta.test.mjs",
+    "test:session": "node --test qa/unit/recuperacao-sessao.test.mjs qa/unit/community-pending-reviews-retry.test.mjs qa/unit/perfil-autor-troca-conta.test.mjs qa/unit/perfil-autor-acoes-sociais-troca-conta.test.mjs qa/unit/perfil-autor-relacionamentos-troca-conta.test.mjs",
     "test:pagination:integration": "node --test qa/integration/paginacao-supabase-real.test.mjs",
     "test:spam:integration": "node --test qa/integration/anti-spam-supabase-real.test.mjs",
     "test:e2e:prepare:local": "node qa/scripts/prepare-e2e-local.mjs",

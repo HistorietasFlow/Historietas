@@ -57,6 +57,11 @@ export type ResultadoBloqueioPerfil = ResultadoAcaoPrivacidade & {
   estado: EstadoBloqueioPerfil;
 };
 
+export type ContextoIdentidadeOperacaoPrivacidade = {
+  usuarioIdEsperado: string;
+  operacaoAindaAtual: () => boolean;
+};
+
 export const PRIVACIDADE_STORAGE_KEY = "historietas-privacidade";
 export const PRIVACIDADE_ATUALIZADA_EVENT =
   "historietas:privacidade-atualizada";
@@ -190,8 +195,13 @@ const acoesBloqueioEmAndamento = new Map<
 function executarAcaoRelacionamentoUnica(
   perfilUserId: string,
   acao: () => Promise<ResultadoRelacionamentoPerfil>,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ) {
-  const chave = perfilUserId.trim();
+  const perfilUserIdLimpo = perfilUserId.trim();
+  const usuarioIdEsperado = contextoIdentidade?.usuarioIdEsperado.trim() || "";
+  const chave = usuarioIdEsperado
+    ? `${usuarioIdEsperado}:${perfilUserIdLimpo}`
+    : perfilUserIdLimpo;
   const acaoExistente = acoesRelacionamentoEmAndamento.get(chave);
 
   if (acaoExistente) {
@@ -211,8 +221,13 @@ function executarAcaoRelacionamentoUnica(
 function executarAcaoBloqueioUnica(
   perfilUserId: string,
   acao: () => Promise<ResultadoBloqueioPerfil>,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ) {
-  const chave = perfilUserId.trim();
+  const perfilUserIdLimpo = perfilUserId.trim();
+  const usuarioIdEsperado = contextoIdentidade?.usuarioIdEsperado.trim() || "";
+  const chave = usuarioIdEsperado
+    ? `${usuarioIdEsperado}:${perfilUserIdLimpo}`
+    : perfilUserIdLimpo;
   const acaoExistente = acoesBloqueioEmAndamento.get(chave);
 
   if (acaoExistente) {
@@ -229,15 +244,35 @@ function executarAcaoBloqueioUnica(
   return novaAcao;
 }
 
-async function obterUsuarioAtualIdRelacionamento() {
+function operacaoPrivacidadeAindaAtual(
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
+) {
+  return contextoIdentidade?.operacaoAindaAtual() !== false;
+}
+
+async function obterUsuarioAtualIdRelacionamento(
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
+) {
+  if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+    return "";
+  }
+
   try {
     const { data, error } = await supabase.auth.getUser();
 
-    if (error) {
+    if (error || !operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
       return "";
     }
 
-    return data.user?.id?.trim() || "";
+    const usuarioAtualId = data.user?.id?.trim() || "";
+    const usuarioIdEsperado =
+      contextoIdentidade?.usuarioIdEsperado.trim() || "";
+
+    if (contextoIdentidade && usuarioAtualId !== usuarioIdEsperado) {
+      return "";
+    }
+
+    return usuarioAtualId;
   } catch {
     return "";
   }
@@ -246,11 +281,16 @@ async function obterUsuarioAtualIdRelacionamento() {
 async function removerSolicitacoesPendentesRelacionamento(
   solicitanteId: string,
   destinatarioId: string,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ) {
   const solicitanteIdLimpo = solicitanteId.trim();
   const destinatarioIdLimpo = destinatarioId.trim();
 
-  if (!solicitanteIdLimpo || !destinatarioIdLimpo) {
+  if (
+    !solicitanteIdLimpo ||
+    !destinatarioIdLimpo ||
+    !operacaoPrivacidadeAindaAtual(contextoIdentidade)
+  ) {
     return false;
   }
 
@@ -261,7 +301,7 @@ async function removerSolicitacoesPendentesRelacionamento(
       .eq("solicitante_id", solicitanteIdLimpo)
       .eq("destinatario_id", destinatarioIdLimpo);
 
-    return !error;
+    return !error && operacaoPrivacidadeAindaAtual(contextoIdentidade);
   } catch {
     return false;
   }
@@ -270,11 +310,16 @@ async function removerSolicitacoesPendentesRelacionamento(
 async function manterSomenteSolicitacaoMaisRecente(
   solicitanteId: string,
   destinatarioId: string,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ) {
   const solicitanteIdLimpo = solicitanteId.trim();
   const destinatarioIdLimpo = destinatarioId.trim();
 
-  if (!solicitanteIdLimpo || !destinatarioIdLimpo) {
+  if (
+    !solicitanteIdLimpo ||
+    !destinatarioIdLimpo ||
+    !operacaoPrivacidadeAindaAtual(contextoIdentidade)
+  ) {
     return;
   }
 
@@ -287,7 +332,12 @@ async function manterSomenteSolicitacaoMaisRecente(
       .order("criado_em", { ascending: false })
       .limit(50);
 
-    if (error || !Array.isArray(data) || data.length <= 1) {
+    if (
+      !operacaoPrivacidadeAindaAtual(contextoIdentidade) ||
+      error ||
+      !Array.isArray(data) ||
+      data.length <= 1
+    ) {
       return;
     }
 
@@ -296,7 +346,10 @@ async function manterSomenteSolicitacaoMaisRecente(
       .map((item) => (typeof item.id === "string" ? item.id.trim() : ""))
       .filter(Boolean);
 
-    if (idsDuplicados.length === 0) {
+    if (
+      idsDuplicados.length === 0 ||
+      !operacaoPrivacidadeAindaAtual(contextoIdentidade)
+    ) {
       return;
     }
 
@@ -735,6 +788,7 @@ export async function carregarEstadoRelacionamentoPerfil(
 
 export async function solicitarOuSeguirUsuario(
   perfilUserId: string,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ): Promise<ResultadoRelacionamentoPerfil> {
   const perfilUserIdLimpo = perfilUserId.trim();
 
@@ -744,7 +798,21 @@ export async function solicitarOuSeguirUsuario(
 
   return executarAcaoRelacionamentoUnica(perfilUserIdLimpo, async () => {
     try {
-      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "nenhum", erro: "" };
+      }
+
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento(
+        contextoIdentidade,
+      );
+
+      if (
+        !operacaoPrivacidadeAindaAtual(contextoIdentidade) ||
+        (contextoIdentidade &&
+          usuarioAtualId !== contextoIdentidade.usuarioIdEsperado.trim())
+      ) {
+        return { ok: false, estado: "nenhum", erro: "" };
+      }
 
       if (usuarioAtualId === perfilUserIdLimpo) {
         return {
@@ -755,20 +823,36 @@ export async function solicitarOuSeguirUsuario(
       }
 
       if (usuarioAtualId) {
+        if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+          return { ok: false, estado: "nenhum", erro: "" };
+        }
+
         const estadoAtual = await carregarEstadoRelacionamentoPerfil(
           perfilUserIdLimpo,
           usuarioAtualId,
         );
+
+        if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+          return { ok: false, estado: "nenhum", erro: "" };
+        }
 
         if (estadoAtual === "seguindo" || estadoAtual === "solicitado") {
           return { ok: true, estado: estadoAtual, erro: "" };
         }
       }
 
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "nenhum", erro: "" };
+      }
+
       const { data, error } = await supabase.rpc(
         "solicitar_ou_seguir_usuario",
         { p_seguido_id: perfilUserIdLimpo },
       );
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "nenhum", erro: "" };
+      }
 
       if (error) {
         return { ok: false, estado: "nenhum", erro: error.message };
@@ -780,12 +864,18 @@ export async function solicitarOuSeguirUsuario(
         await manterSomenteSolicitacaoMaisRecente(
           usuarioAtualId,
           perfilUserIdLimpo,
+          contextoIdentidade,
         );
       } else if (estado === "seguindo" && usuarioAtualId) {
         await removerSolicitacoesPendentesRelacionamento(
           usuarioAtualId,
           perfilUserIdLimpo,
+          contextoIdentidade,
         );
+      }
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "nenhum", erro: "" };
       }
 
       if (estado !== "nenhum") {
@@ -799,6 +889,10 @@ export async function solicitarOuSeguirUsuario(
           estado === "nenhum" ? "Não foi possível seguir este usuário." : "",
       };
     } catch (error) {
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "nenhum", erro: "" };
+      }
+
       return {
         ok: false,
         estado: "nenhum",
@@ -808,11 +902,12 @@ export async function solicitarOuSeguirUsuario(
         ),
       };
     }
-  });
+  }, contextoIdentidade);
 }
 
 export async function cancelarSolicitacaoSeguidor(
   perfilUserId: string,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ): Promise<ResultadoRelacionamentoPerfil> {
   const perfilUserIdLimpo = perfilUserId.trim();
 
@@ -822,11 +917,34 @@ export async function cancelarSolicitacaoSeguidor(
 
   return executarAcaoRelacionamentoUnica(perfilUserIdLimpo, async () => {
     try {
-      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "solicitado", erro: "" };
+      }
+
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento(
+        contextoIdentidade,
+      );
+
+      if (
+        !operacaoPrivacidadeAindaAtual(contextoIdentidade) ||
+        (contextoIdentidade &&
+          usuarioAtualId !== contextoIdentidade.usuarioIdEsperado.trim())
+      ) {
+        return { ok: false, estado: "solicitado", erro: "" };
+      }
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "solicitado", erro: "" };
+      }
+
       const { data, error } = await supabase.rpc(
         "cancelar_solicitacao_seguidor",
         { p_seguido_id: perfilUserIdLimpo },
       );
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "solicitado", erro: "" };
+      }
 
       if (error) {
         return {
@@ -840,12 +958,21 @@ export async function cancelarSolicitacaoSeguidor(
         await removerSolicitacoesPendentesRelacionamento(
           usuarioAtualId,
           perfilUserIdLimpo,
+          contextoIdentidade,
         );
+
+        if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+          return { ok: false, estado: "solicitado", erro: "" };
+        }
 
         const estadoAtual = await carregarEstadoRelacionamentoPerfil(
           perfilUserIdLimpo,
           usuarioAtualId,
         );
+
+        if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+          return { ok: false, estado: "solicitado", erro: "" };
+        }
 
         if (estadoAtual === "solicitado") {
           return {
@@ -873,9 +1000,17 @@ export async function cancelarSolicitacaoSeguidor(
         };
       }
 
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "solicitado", erro: "" };
+      }
+
       avisarRelacionamentoPerfilAtualizado(perfilUserIdLimpo, "nenhum");
       return { ok: true, estado: "nenhum", erro: "" };
     } catch (error) {
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "solicitado", erro: "" };
+      }
+
       return {
         ok: false,
         estado: "solicitado",
@@ -885,11 +1020,12 @@ export async function cancelarSolicitacaoSeguidor(
         ),
       };
     }
-  });
+  }, contextoIdentidade);
 }
 
 export async function deixarDeSeguirUsuario(
   perfilUserId: string,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ): Promise<ResultadoRelacionamentoPerfil> {
   const perfilUserIdLimpo = perfilUserId.trim();
 
@@ -899,10 +1035,33 @@ export async function deixarDeSeguirUsuario(
 
   return executarAcaoRelacionamentoUnica(perfilUserIdLimpo, async () => {
     try {
-      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "seguindo", erro: "" };
+      }
+
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento(
+        contextoIdentidade,
+      );
+
+      if (
+        !operacaoPrivacidadeAindaAtual(contextoIdentidade) ||
+        (contextoIdentidade &&
+          usuarioAtualId !== contextoIdentidade.usuarioIdEsperado.trim())
+      ) {
+        return { ok: false, estado: "seguindo", erro: "" };
+      }
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "seguindo", erro: "" };
+      }
+
       const { data, error } = await supabase.rpc("deixar_de_seguir_usuario", {
         p_seguido_id: perfilUserIdLimpo,
       });
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "seguindo", erro: "" };
+      }
 
       if (error || data !== true) {
         return {
@@ -916,24 +1075,34 @@ export async function deixarDeSeguirUsuario(
         await removerSolicitacoesPendentesRelacionamento(
           usuarioAtualId,
           perfilUserIdLimpo,
+          contextoIdentidade,
         );
+      }
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "seguindo", erro: "" };
       }
 
       avisarRelacionamentoPerfilAtualizado(perfilUserIdLimpo, "nenhum");
       return { ok: true, estado: "nenhum", erro: "" };
     } catch (error) {
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return { ok: false, estado: "seguindo", erro: "" };
+      }
+
       return {
         ok: false,
         estado: "seguindo",
         erro: obterMensagemErro(error, "Não foi possível deixar de seguir."),
       };
     }
-  });
+  }, contextoIdentidade);
 }
 
 
 export async function carregarEstadoBloqueioPerfil(
   perfilUserId: string,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ): Promise<EstadoBloqueioPerfil> {
   const perfilUserIdLimpo = perfilUserId.trim();
 
@@ -942,9 +1111,15 @@ export async function carregarEstadoBloqueioPerfil(
   }
 
   try {
-    const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+    const usuarioAtualId = await obterUsuarioAtualIdRelacionamento(
+      contextoIdentidade,
+    );
 
-    if (!usuarioAtualId || usuarioAtualId === perfilUserIdLimpo) {
+    if (
+      !operacaoPrivacidadeAindaAtual(contextoIdentidade) ||
+      !usuarioAtualId ||
+      usuarioAtualId === perfilUserIdLimpo
+    ) {
       return { ...estadoBloqueioPerfilPadrao };
     }
 
@@ -953,7 +1128,7 @@ export async function carregarEstadoBloqueioPerfil(
       { p_outro_user_id: perfilUserIdLimpo },
     );
 
-    if (error) {
+    if (error || !operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
       return { ...estadoBloqueioPerfilPadrao };
     }
 
@@ -965,6 +1140,7 @@ export async function carregarEstadoBloqueioPerfil(
 
 export async function bloquearUsuario(
   perfilUserId: string,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ): Promise<ResultadoBloqueioPerfil> {
   const perfilUserIdLimpo = perfilUserId.trim();
 
@@ -978,7 +1154,29 @@ export async function bloquearUsuario(
 
   return executarAcaoBloqueioUnica(perfilUserIdLimpo, async () => {
     try {
-      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento(
+        contextoIdentidade,
+      );
+
+      if (
+        !operacaoPrivacidadeAindaAtual(contextoIdentidade) ||
+        (contextoIdentidade &&
+          usuarioAtualId !== contextoIdentidade.usuarioIdEsperado.trim())
+      ) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
 
       if (!usuarioAtualId) {
         return {
@@ -996,9 +1194,25 @@ export async function bloquearUsuario(
         };
       }
 
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
       const { data, error } = await supabase.rpc("bloquear_usuario", {
         p_bloqueado_id: perfilUserIdLimpo,
       });
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
 
       if (error || data !== true) {
         return {
@@ -1015,10 +1229,27 @@ export async function bloquearUsuario(
       };
 
       avisarBloqueioUsuarioAtualizado(perfilUserIdLimpo, estado);
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
       avisarRelacionamentoPerfilAtualizado(perfilUserIdLimpo, "nenhum");
 
       return { ok: true, estado, erro: "" };
     } catch (error) {
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
       return {
         ok: false,
         estado: { ...estadoBloqueioPerfilPadrao },
@@ -1028,11 +1259,12 @@ export async function bloquearUsuario(
         ),
       };
     }
-  });
+  }, contextoIdentidade);
 }
 
 export async function desbloquearUsuario(
   perfilUserId: string,
+  contextoIdentidade?: ContextoIdentidadeOperacaoPrivacidade,
 ): Promise<ResultadoBloqueioPerfil> {
   const perfilUserIdLimpo = perfilUserId.trim();
 
@@ -1046,7 +1278,29 @@ export async function desbloquearUsuario(
 
   return executarAcaoBloqueioUnica(perfilUserIdLimpo, async () => {
     try {
-      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento(
+        contextoIdentidade,
+      );
+
+      if (
+        !operacaoPrivacidadeAindaAtual(contextoIdentidade) ||
+        (contextoIdentidade &&
+          usuarioAtualId !== contextoIdentidade.usuarioIdEsperado.trim())
+      ) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
 
       if (!usuarioAtualId) {
         return {
@@ -1056,9 +1310,25 @@ export async function desbloquearUsuario(
         };
       }
 
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
       const { data, error } = await supabase.rpc("desbloquear_usuario", {
         p_bloqueado_id: perfilUserIdLimpo,
       });
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
 
       if (error || data !== true) {
         return {
@@ -1072,11 +1342,39 @@ export async function desbloquearUsuario(
         };
       }
 
-      const estado = await carregarEstadoBloqueioPerfil(perfilUserIdLimpo);
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
+      const estado = await carregarEstadoBloqueioPerfil(
+        perfilUserIdLimpo,
+        contextoIdentidade,
+      );
+
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
       avisarBloqueioUsuarioAtualizado(perfilUserIdLimpo, estado);
 
       return { ok: true, estado, erro: "" };
     } catch (error) {
+      if (!operacaoPrivacidadeAindaAtual(contextoIdentidade)) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "",
+        };
+      }
+
       return {
         ok: false,
         estado: {
@@ -1090,7 +1388,7 @@ export async function desbloquearUsuario(
         ),
       };
     }
-  });
+  }, contextoIdentidade);
 }
 
 export async function usuariosPossuemBloqueio(
