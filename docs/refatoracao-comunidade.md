@@ -141,12 +141,13 @@
 - A Fase 433 extraiu somente `sincronizarCurtidaComentarioSupabaseComunidade` a partir da sincronização remota da curtida de comentário e foi concluída com o PR #567 mesclado.
 - A Fase 434 extraiu somente `consultarObrasPorTituloComunidade` a partir da consulta Supabase de obras publicadas por título e foi concluída com o PR #568 mesclado.
 - A Fase 435 extraiu somente `consultarObrasPublicadasComunidade` a partir da consulta inicial das obras publicadas e foi concluída com o PR #569 mesclado.
-- A Fase 436 extraiu somente `prepararSugestoesObrasRelacionadasComunidade` a partir da preparação assíncrona das sugestões de obras relacionadas e está implementada neste PR.
+- A Fase 436 extraiu somente `prepararSugestoesObrasRelacionadasComunidade` a partir da preparação assíncrona das sugestões de obras relacionadas e foi concluída com o PR #570 mesclado.
+- A Fase 437 extraiu somente `prepararPerfilEStatusAdminComunidade` a partir da preparação sequencial do perfil e do status administrativo do usuário autenticado e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 436 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 437 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
+A Fase 437 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 438 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
 
 ## Contrato de preservação
 

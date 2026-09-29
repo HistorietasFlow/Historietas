@@ -43,6 +43,7 @@ import {
 import { consultarPostParaRemocaoComunidade } from "./components/community-post-removal-query";
 import { removerPostSupabaseComunidade } from "./components/community-post-removal-delete";
 import { consultarUsuarioEhAdminComunidade } from "./components/community-admin-status-query";
+import { prepararPerfilEStatusAdminComunidade } from "./components/community-authenticated-user-preparation";
 import {
   atualizarFixacaoPostNoEstadoComunidade,
   atualizarVisibilidadePostNoEstadoComunidade,
@@ -107,9 +108,6 @@ import { prepararSugestoesObrasRelacionadasComunidade } from "./components/commu
 import { consultarObrasPorTituloComunidade } from "./components/community-related-work-title-query";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
-import { obterTextoProfileComunidade } from "./components/community-profile-text";
-import { obterNomeProfileComunidade } from "./components/community-profile-name";
-import { obterAvatarProfileComunidade } from "./components/community-profile-avatar";
 import { buscarUsuariosComunidadeSupabase } from "./components/community-supabase-user-search";
 import { buscarUsuariosComunidadeNosPosts } from "./components/community-post-user-search";
 import { carregarUsuariosSeguidosComunidade } from "./components/community-supabase-followed-users-loader";
@@ -121,7 +119,6 @@ import { carregarPostsSalvosSupabaseComunidade } from "./components/community-su
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
-import { carregarProfilesComunidadePorUsuarios } from "./components/community-supabase-profiles-loader";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
 import { obterObraRelacionadaPermitida } from "./components/community-related-work-allowed-finder";
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
@@ -531,34 +528,8 @@ export default function ComunidadePage() {
           return;
         }
 
-        let nomeProfile = "";
-        let avatarProfile = "";
-        let usuarioAdmin = false;
-
-        try {
-          const profilesPorUsuario =
-            await carregarProfilesComunidadePorUsuarios(
-              [user.id],
-              obterTextoProfileComunidade
-            );
-          const profile = profilesPorUsuario.get(user.id);
-
-          nomeProfile = obterNomeProfileComunidade(profile);
-          avatarProfile = obterAvatarProfileComunidade(profile);
-        } catch {
-          nomeProfile = "";
-          avatarProfile = "";
-        }
-
-        try {
-          const { data: adminData, error: adminError } = await supabase.rpc(
-            "usuario_e_admin"
-          );
-
-          usuarioAdmin = !adminError && adminData === true;
-        } catch {
-          usuarioAdmin = false;
-        }
+        const { nomeProfile, avatarProfile, usuarioAdmin } =
+          await prepararPerfilEStatusAdminComunidade(user.id);
 
         if (
           cancelado ||
