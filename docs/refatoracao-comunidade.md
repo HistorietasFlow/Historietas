@@ -137,12 +137,13 @@
 - A Fase 429 extraiu somente `consultarPostParaRemocaoComunidade` a partir da consulta remota usada para conferir a publicação antes da remoção e foi concluída com o PR #563 mesclado.
 - A Fase 430 extraiu somente `consultarUsuarioEhAdminComunidade` a partir da RPC administrativa usada em `removerPost` e foi concluída com o PR #564 mesclado.
 - A Fase 431 extraiu somente `removerPostSupabaseComunidade` a partir do delete condicional remoto de publicação e foi concluída com o PR #565 mesclado.
-- A Fase 432 extraiu somente `sincronizarCurtidaPostSupabaseComunidade` a partir da sincronização remota da curtida de publicação e está implementada neste PR.
+- A Fase 432 extraiu somente `sincronizarCurtidaPostSupabaseComunidade` a partir da sincronização remota da curtida de publicação e foi concluída com o PR #566 mesclado.
+- A Fase 433 extraiu somente `sincronizarCurtidaComentarioSupabaseComunidade` a partir da sincronização remota da curtida de comentário e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 432 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 433 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
+A Fase 433 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 434 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
 
 ## Contrato de preservação
 
