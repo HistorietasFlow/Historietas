@@ -39,6 +39,7 @@ import {
   removerPostSalvoDoEstadoComunidade,
 } from "./components/community-post-removal-state-updaters";
 import { consultarPostParaRemocaoComunidade } from "./components/community-post-removal-query";
+import { consultarUsuarioEhAdminComunidade } from "./components/community-admin-status-query";
 import {
   atualizarFixacaoPostNoEstadoComunidade,
   atualizarVisibilidadePostNoEstadoComunidade,
@@ -1974,17 +1975,8 @@ export default function ComunidadePage() {
         return;
       }
 
-      let usuarioAtualEhAdmin = false;
-
-      try {
-        const { data: adminData, error: adminError } = await supabase.rpc(
-          "usuario_e_admin"
-        );
-
-        usuarioAtualEhAdmin = !adminError && adminData === true;
-      } catch {
-        usuarioAtualEhAdmin = false;
-      }
+      const usuarioAtualEhAdmin =
+        await consultarUsuarioEhAdminComunidade();
 
       const resultadoConsultaPost =
         await consultarPostParaRemocaoComunidade(postId);

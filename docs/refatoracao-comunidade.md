@@ -134,12 +134,13 @@
 - A Fase 426 extraiu somente `consultarPostCriadoComunidade` a partir da consulta posterior usada para localizar o post recém-criado e foi concluída com o PR #560 mesclado.
 - A Fase 427 extraiu somente `atualizarVisibilidadePostSupabaseComunidade` a partir da operação Supabase de atualização da visibilidade da publicação e foi concluída com o PR #561 mesclado.
 - A Fase 428 extraiu somente `atualizarFixacaoPostSupabaseComunidade` a partir da operação Supabase de atualização da fixação da publicação e foi concluída com o PR #562 mesclado.
-- A Fase 429 extraiu somente `consultarPostParaRemocaoComunidade` a partir da consulta remota usada para conferir a publicação antes da remoção e está implementada neste PR.
+- A Fase 429 extraiu somente `consultarPostParaRemocaoComunidade` a partir da consulta remota usada para conferir a publicação antes da remoção e foi concluída com o PR #563 mesclado.
+- A Fase 430 extraiu somente `consultarUsuarioEhAdminComunidade` a partir da RPC administrativa usada em `removerPost` e está implementada neste PR.
 - Não mesclar nenhum PR sem autorização explícita.
 
 ## Próxima fase
 
-A Fase 429 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 430 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
+A Fase 430 está implementada neste PR e aguarda validação e autorização explícita antes de qualquer merge. Não iniciar a Fase 431 nem funções, componentes, limpezas, renomeações ou melhorias adicionais antes de autorização explícita.
 
 ## Contrato de preservação
 
