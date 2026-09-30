@@ -57,7 +57,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
-import { formatarGeneroObraPublica, obterAvatarPerfilObra, obterBioPerfilObra, obterNomePerfilObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
+import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
@@ -1825,22 +1825,6 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
     ultimoCapituloLidoId: obra.ultimoCapituloLidoId,
     ultimaLeituraEm: obra.ultimaLeituraEm,
     progressoLeitura: calcularProgressoLeitura(obra.capitulos),
-  };
-}
-
-function normalizarPerfilPublicoObra(
-  profile: Record<string, unknown> | null,
-  userIdFallback: string,
-  nomeFallback: string
-): PerfilPublicoObra {
-  return {
-    userId:
-      obterTextoPerfilObra(profile || {}, "user_id") ||
-      obterTextoPerfilObra(profile || {}, "id") ||
-      userIdFallback.trim(),
-    nome: obterNomePerfilObra(profile, nomeFallback).slice(0, 80),
-    avatar: obterAvatarPerfilObra(profile),
-    bio: obterBioPerfilObra(profile).slice(0, 160),
   };
 }
 
