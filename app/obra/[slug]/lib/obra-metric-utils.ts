@@ -34,3 +34,7 @@ export function totalComentariosObraPublica(obra: { totalComentarios?: unknown }
 export function totalVisualizacoesObraPublica(obra: { visualizacoes?: unknown }) {
   return normalizarContadorObraPublica(obra.visualizacoes);
 }
+
+export function totalCurtidasObraPublica(obra: { totalCurtidas?: unknown }) {
+  return normalizarContadorObraPublica(obra.totalCurtidas);
+}
