@@ -41,6 +41,21 @@ export function obterIndicadorConteudoObraPublica(obra: {
   };
 }
 
+
+export function obterCapitulosObraPublica<TCapitulo>(
+  obra: { capitulos: TCapitulo[] } | null,
+) {
+  if (!obra) {
+    return [];
+  }
+
+  if (obra.capitulos.length > 0) {
+    return obra.capitulos;
+  }
+
+  return [];
+}
+
 type CapituloParaContinuarLeitura = {
   id: string;
   disponivel: boolean;
