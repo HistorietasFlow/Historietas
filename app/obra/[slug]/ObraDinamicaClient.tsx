@@ -56,6 +56,7 @@ import {
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
+import { obterNumeroMetrica } from "./lib/obra-metric-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2170,19 +2171,6 @@ function criarLinkComunidadeObra(
   }
 
   return `/comunidade?${params.toString()}`;
-}
-
-function obterNumeroMetrica(valor: string) {
-  const valorNormalizado = valor.trim().toLowerCase().replace(",", ".");
-
-  if (!valorNormalizado) {
-    return 0;
-  }
-
-  const multiplicador = valorNormalizado.endsWith("k") ? 1000 : 1;
-  const numero = Number.parseFloat(valorNormalizado.replace(/[^0-9.]/g, ""));
-
-  return Number.isFinite(numero) ? Math.round(numero * multiplicador) : 0;
 }
 
 function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
