@@ -67,6 +67,7 @@ import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } f
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, obterIdsComentarioComRespostas } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
+import { decodificarCaminhoArquivoObra } from "./lib/obra-file-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1319,14 +1320,6 @@ function normalizarCategoriaArquivoSupabase(
   return "outro";
 }
 
-
-function decodificarCaminhoArquivoObra(caminho: string) {
-  try {
-    return decodeURIComponent(caminho);
-  } catch {
-    return caminho;
-  }
-}
 
 function normalizarCaminhoStorageArquivoObra(caminho: string) {
   const caminhoSemBusca = caminho.split("?")[0]?.split("#")[0] || "";
