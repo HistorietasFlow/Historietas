@@ -89,6 +89,7 @@ export function normalizarPerfilPublicoObra(
     bio: obterBioPerfilObra(profile).slice(0, 160),
   };
 }
+
 export function obterSinopseObraExibida(
   obra: { sinopse: string } | null,
 ) {
