@@ -132,11 +132,22 @@ function exigirSemErro(error, contexto) {
   }
 }
 
-async function excluirContaAnterior(admin, userId, contexto) {
-  const { error } = await admin.auth.admin.deleteUser(userId);
+async function excluirContaAnterior(admin) {
+  const { error } = await admin.auth.admin.deleteUser(DEFAULTS.userId);
 
   if (error && error.status !== 404) {
-    exigirSemErro(error, contexto);
+    exigirSemErro(error, "Não foi possível recriar a conta E2E local");
+  }
+}
+
+async function excluirVisitanteAnterior(admin) {
+  const { error } = await admin.auth.admin.deleteUser(DEFAULTS.visitorId);
+
+  if (error && error.status !== 404) {
+    exigirSemErro(
+      error,
+      "Não foi possível recriar a conta visitante E2E local",
+    );
   }
 }
 
@@ -196,16 +207,8 @@ async function preparar() {
   assert.equal(publicChapterNumber, "1", "A fixture E2E usa o capítulo público 1.");
 
   const admin = criarCliente(ambiente.url, ambiente.secretKey);
-  await excluirContaAnterior(
-    admin,
-    DEFAULTS.userId,
-    "Não foi possível recriar a conta autora E2E local",
-  );
-  await excluirContaAnterior(
-    admin,
-    DEFAULTS.visitorId,
-    "Não foi possível recriar a conta visitante E2E local",
-  );
+  await excluirContaAnterior(admin);
+  await excluirVisitanteAnterior(admin);
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     id: DEFAULTS.userId,
