@@ -97,3 +97,9 @@ export function obterSinopseObraExibida(
     ? obra.sinopse.trim()
     : "Nenhuma sinopse informada.";
 }
+export function obterNomeAutorObraExibido(
+  perfilAutor: { nome?: string } | null,
+  obra: { autor?: string } | null,
+) {
+  return perfilAutor?.nome || obra?.autor || "Autor não informado";
+}
