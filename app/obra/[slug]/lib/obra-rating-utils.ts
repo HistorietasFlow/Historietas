@@ -1,3 +1,5 @@
+import { normalizarTexto } from "../../../../lib/utils";
+
 export function formatarMediaAvaliacao(media: number) {
   if (!Number.isFinite(media) || media <= 0) {
     return "0.0";
@@ -50,4 +52,12 @@ export function obterPreenchimentoEstrela(
   }
 
   return "0%";
+}
+
+export function obterChaveAvaliacaoObra(obra: {
+  id: string;
+  slug: string;
+  titulo: string;
+}) {
+  return obra.id || obra.slug || normalizarTexto(obra.titulo);
 }
