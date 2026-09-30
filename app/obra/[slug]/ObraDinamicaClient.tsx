@@ -63,7 +63,7 @@ import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObra
 import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
-import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
+import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, obterIdsComentarioComRespostas } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
@@ -1749,7 +1749,7 @@ async function carregarObraSupabasePorSlug(
 }
 
 function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
-  const obraDisponivel = obra.publicado && (obra.capitulos.length > 0 || Boolean(obra.arquivoObra));
+  const obraDisponivel = obraLocalEstaDisponivelParaLeitura(obra);
 
   return {
     id: obra.id,
