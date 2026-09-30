@@ -51,6 +51,7 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
+const WORK_COMMENTS_PAGE_SIZE = 20;
 
 type TraducaoObraDinamica = {
   en: string;
@@ -923,6 +924,12 @@ type RespostaComentarioObra = {
   comentarioPaiId: string;
   autorId: string;
   autorNome: string;
+};
+
+type PaginaComentariosObra = {
+  comentarios: ComentarioObraPublico[];
+  temMais: boolean;
+  proximoOffset: number;
 };
 
 type OrdenacaoComentariosObra = "relevantes" | "recentes";
@@ -2930,6 +2937,91 @@ async function normalizarComentariosObraSupabase(
       (comentario): comentario is ComentarioObraPublico => Boolean(comentario)
     );
 }
+
+async function carregarPaginaComentariosObraSupabase(
+  obraId: string,
+  offset: number,
+): Promise<PaginaComentariosObra> {
+  const inicio = Math.max(0, offset);
+  const fim = inicio + WORK_COMMENTS_PAGE_SIZE;
+  const { data: comentariosRaizData, error: erroComentariosRaiz } =
+    await supabase
+      .from("comentarios_obras")
+      .select("id,obra_id,user_id,comentario,comentario_pai_id,criado_em")
+      .eq("obra_id", obraId)
+      .is("comentario_pai_id", null)
+      .order("criado_em", { ascending: false })
+      .order("id", { ascending: false })
+      .range(inicio, fim);
+
+  if (erroComentariosRaiz) {
+    throw erroComentariosRaiz;
+  }
+
+  const comentariosRaizTodos = Array.isArray(comentariosRaizData)
+    ? (comentariosRaizData as SupabaseComentarioObraRow[])
+    : [];
+  const temMais = comentariosRaizTodos.length > WORK_COMMENTS_PAGE_SIZE;
+  const comentariosRaiz = comentariosRaizTodos.slice(
+    0,
+    WORK_COMMENTS_PAGE_SIZE,
+  );
+  const comentariosDescendentes: SupabaseComentarioObraRow[] = [];
+  const idsConhecidos = new Set(
+    comentariosRaiz
+      .map((comentario) => comentario.id?.trim() || "")
+      .filter(Boolean),
+  );
+  let idsPais = Array.from(idsConhecidos);
+
+  while (idsPais.length > 0) {
+    const respostas = await carregarTodasPaginasPorLotesSupabase<
+      SupabaseComentarioObraRow,
+      string
+    >({
+      nomeColecao: "respostas dos comentários da obra",
+      itens: idsPais,
+      buscarPaginaLote: async (comentariosPaisLote, paginaInicio, paginaFim) =>
+        supabase
+          .from("comentarios_obras")
+          .select(
+            "id,obra_id,user_id,comentario,comentario_pai_id,criado_em",
+          )
+          .eq("obra_id", obraId)
+          .in("comentario_pai_id", comentariosPaisLote)
+          .order("criado_em", { ascending: true })
+          .order("id", { ascending: true })
+          .range(paginaInicio, paginaFim),
+    });
+    const proximosIdsPais: string[] = [];
+
+    respostas.forEach((resposta) => {
+      const respostaId = resposta.id?.trim() || "";
+
+      if (!respostaId || idsConhecidos.has(respostaId)) {
+        return;
+      }
+
+      idsConhecidos.add(respostaId);
+      comentariosDescendentes.push(resposta);
+      proximosIdsPais.push(respostaId);
+    });
+
+    idsPais = proximosIdsPais;
+  }
+
+  const comentarios = await normalizarComentariosObraSupabase([
+    ...comentariosRaiz,
+    ...comentariosDescendentes,
+  ]);
+
+  return {
+    comentarios,
+    temMais,
+    proximoOffset: inicio + comentariosRaiz.length,
+  };
+}
+
 
 function dataComentarioObra(comentario: ComentarioObraPublico) {
   const data = new Date(comentario.criadoEm).getTime();
