@@ -50,6 +50,12 @@ import {
   lerStorageUsuarioObraPublica,
   salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
+import {
+  formatarMediaAvaliacao,
+  formatarTotalAvaliacoes,
+  obterPreenchimentoEstrela,
+  obterProximaNotaAvaliacao,
+} from "./lib/obra-rating-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2457,51 +2463,6 @@ function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
   } catch {
     // Avaliação local é fallback e não deve travar a página.
   }
-}
-
-function formatarMediaAvaliacao(media: number) {
-  if (!Number.isFinite(media) || media <= 0) {
-    return "0.0";
-  }
-
-  return media.toFixed(1);
-}
-
-function formatarTotalAvaliacoes(total: number) {
-  if (total <= 0) {
-    return "avaliações";
-  }
-
-  return total === 1 ? "1 avaliação" : `${total} avaliações`;
-}
-
-function obterProximaNotaAvaliacao(estrela: number, notaAtual: number) {
-  const meiaNota = estrela - 0.5;
-  const notaNormalizada = Math.round(notaAtual * 2) / 2;
-
-  if (notaNormalizada === meiaNota) {
-    return estrela;
-  }
-
-  if (notaNormalizada === estrela) {
-    return 0;
-  }
-
-  return meiaNota;
-}
-
-function obterPreenchimentoEstrela(estrela: number, notaAtual: number) {
-  const notaNormalizada = Math.max(0, Math.min(5, Math.round(notaAtual * 2) / 2));
-
-  if (notaNormalizada >= estrela) {
-    return "100%";
-  }
-
-  if (notaNormalizada >= estrela - 0.5) {
-    return "50%";
-  }
-
-  return "0%";
 }
 
 function calcularProximaAvaliacao(
