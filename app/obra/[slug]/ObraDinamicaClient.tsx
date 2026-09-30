@@ -4496,6 +4496,65 @@ export default function ObraDinamicaPage() {
     }
   }
 
+  async function obterIdentidadeLogadaParaAcao(mensagem: string) {
+    const identidadeEsperada = identidadeAutenticadaObraRef.current;
+    const execucaoAtual = () =>
+      execucaoIdentidadeObraEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaObraRef.current,
+      });
+
+    try {
+      const { data } = await supabase.auth.getUser();
+
+      if (!execucaoAtual()) {
+        return null;
+      }
+
+      const userId = data.user?.id || "";
+
+      if (userId && userId === identidadeEsperada.usuarioId) {
+        return identidadeEsperada;
+      }
+
+      if (!userId && !identidadeEsperada.usuarioId) {
+        const loginHref = await criarLoginHrefObraPublica();
+
+        if (execucaoAtual()) {
+          setMensagemAcao(mensagem);
+          router.push(loginHref);
+        }
+      }
+
+      return null;
+    } catch {
+      if (!execucaoAtual()) {
+        return null;
+      }
+
+      const loginHref = await criarLoginHrefObraPublica();
+
+      if (execucaoAtual()) {
+        setMensagemAcao(mensagem);
+        router.push(loginHref);
+      }
+
+      return null;
+    }
+  }
+
+  function criarGuardIdentidadeAcao(
+    identidadeEsperada: IdentidadeAutenticadaObra,
+  ) {
+    return () =>
+      execucaoIdentidadeObraEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaObraRef.current,
+      });
+  }
+
   async function alternarSeguirObra() {
     if (!obraNormalizada) {
       return;
