@@ -175,6 +175,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 458: extrair somente `obterChaveAvaliacaoObra` para `app/obra/[slug]/lib/obra-rating-utils.ts`, preservando prioridade de `id`, depois `slug` e fallback pelo título normalizado.
 - Fase 459: extrair somente `carregarListaLocalObraPublica` para `app/obra/[slug]/lib/obra-user-storage.ts`, preservando escopo por usuário, parse do JSON, filtro de strings válidas e fallback para lista vazia.
 - Fase 460: extrair somente `obterChavesInteracaoObraPublica` para `app/obra/[slug]/lib/obra-interaction-utils.ts`, preservando `id`, `slug`, `link`, slug derivado do título, título normalizado, trim, remoção de vazios e deduplicação.
+- Fase 461: extrair somente `obraEstaEmListaLocalObraPublica` para `app/obra/[slug]/lib/obra-interaction-utils.ts`, preservando o conjunto de chaves da obra, leitura da lista local por usuário, trim dos itens e verificação por correspondência.
 
 ## Contrato de preservação
 
