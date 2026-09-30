@@ -30,3 +30,18 @@ export function criarLinkComunidadeObra(
 
   return `/comunidade?${params.toString()}`;
 }
+
+export function criarLinkPerfilAutor(autor: string, autorId?: string) {
+  const params = new URLSearchParams();
+  const autorLimpo = autor.trim() || "Autor não informado";
+  const autorIdLimpo = autorId?.trim() || "";
+
+  params.set("autor", autorLimpo);
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+    params.set("userId", autorIdLimpo);
+  }
+
+  return `/perfil-autor?${params.toString()}`;
+}
