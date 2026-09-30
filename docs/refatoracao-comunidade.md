@@ -173,6 +173,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 456: extrair somente `encontrarCapituloParaContinuarObraPublica` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando filtro de capítulos disponíveis, prioridade após o último lido, fallback para o primeiro não lido e último capítulo disponível.
 - Fase 457: extrair somente `normalizarPerfilPublicoObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando resolução de `userId`, fallbacks de nome/avatar/bio e limites de 80/160 caracteres.
 - Fase 458: extrair somente `obterChaveAvaliacaoObra` para `app/obra/[slug]/lib/obra-rating-utils.ts`, preservando prioridade de `id`, depois `slug` e fallback pelo título normalizado.
+- Fase 459: extrair somente `carregarListaLocalObraPublica` para `app/obra/[slug]/lib/obra-user-storage.ts`, preservando escopo por usuário, parse do JSON, filtro de strings válidas e fallback para lista vazia.
 
 ## Contrato de preservação
 
