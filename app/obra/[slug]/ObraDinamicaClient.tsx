@@ -58,7 +58,7 @@ import {
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
 import { formatarGeneroObraPublica } from "./lib/obra-text-utils";
-import { criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
+import { criarLinkComunidadeObra, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2109,23 +2109,6 @@ async function carregarPerfilPublicoObra(
   }
 
   return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback || "Usuário");
-}
-
-function criarLinkComunidadeObra(
-  titulo: string,
-  filtro?: "Teoria" | "Review" | "posts"
-) {
-  const params = new URLSearchParams();
-
-  params.set("obra", titulo);
-
-  if (filtro === "posts") {
-    params.set("grupo", "posts");
-  } else if (filtro) {
-    params.set("tipo", filtro);
-  }
-
-  return `/comunidade?${params.toString()}`;
 }
 
 function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
