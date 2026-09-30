@@ -4872,10 +4872,6 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    setAvaliacaoObra((avaliacaoAtual) => ({
-      ...avaliacaoAtual,
-      salvando: false,
-    }));
     setMensagemAcao("");
 
     try {
@@ -4901,6 +4897,15 @@ export default function ObraDinamicaPage() {
         error,
       );
     }
+
+    if (avaliacaoVersaoRef.current !== versaoAvaliacao) {
+      return;
+    }
+
+    setAvaliacaoObra((avaliacaoAtual) => ({
+      ...avaliacaoAtual,
+      salvando: false,
+    }));
   }
 
   async function compartilharObraAtual() {
