@@ -2413,51 +2413,63 @@ async function salvarRegistroObraPublicaSupabase(
     return;
   }
 
-  const { error: erroDelete } = await supabase
-    .from(tabela)
-    .delete()
-    .eq("user_id", userId)
-    .eq("obra_id", obraId);
-
-  if (erroDelete) {
-    throw erroDelete;
-  }
-
   if (!ativo) {
+    const { error: erroDelete } = await supabase
+      .from(tabela)
+      .delete()
+      .eq("user_id", userId)
+      .eq("obra_id", obraId);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
     return;
   }
 
-  const { error: erroInsert } = await supabase.from(tabela).insert({
-    user_id: userId,
-    obra_id: obraId,
-    visibilidade: "publico",
-  });
+  const { error: erroUpsert } = await supabase.from(tabela).upsert(
+    {
+      user_id: userId,
+      obra_id: obraId,
+      visibilidade: "publico",
+    },
+    {
+      onConflict: "user_id,obra_id",
+      ignoreDuplicates: true,
+    },
+  );
 
-  if (erroInsert) {
-    throw erroInsert;
+  if (erroUpsert) {
+    throw erroUpsert;
   }
 }
 
 async function salvarCurtidaObraPublicaSupabase(
   userId: string,
   obraId: string,
-  ativo: boolean
+  ativo: boolean,
+  execucaoAtual: () => boolean = () => true,
 ) {
-  if (!userId || !obraId || !idObraSupabaseValido(obraId)) {
+  if (
+    !userId ||
+    !obraId ||
+    !idObraSupabaseValido(obraId) ||
+    !execucaoAtual()
+  ) {
     return;
   }
 
-  const { error: erroDelete } = await supabase
-    .from("obra_curtidas")
-    .delete()
-    .eq("obra_id", obraId)
-    .eq("user_id", userId);
-
-  if (erroDelete) {
-    throw erroDelete;
-  }
-
   if (!ativo) {
+    const { error: erroDelete } = await supabase
+      .from("obra_curtidas")
+      .delete()
+      .eq("obra_id", obraId)
+      .eq("user_id", userId);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
     return;
   }
 
@@ -2476,7 +2488,14 @@ async function salvarCurtidaObraPublicaSupabase(
   let ultimoErro: unknown = null;
 
   for (const payload of tentativas) {
-    const { error } = await supabase.from("obra_curtidas").insert(payload);
+    if (!execucaoAtual()) {
+      return;
+    }
+
+    const { error } = await supabase.from("obra_curtidas").upsert(payload, {
+      onConflict: "user_id,obra_id",
+      ignoreDuplicates: true,
+    });
 
     if (!error) {
       return;
