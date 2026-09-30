@@ -63,7 +63,7 @@ import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObra
 import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
-import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura } from "./lib/obra-reading-utils";
+import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterIndicadorConteudoObraPublica } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
@@ -3367,17 +3367,13 @@ export default function ObraDinamicaPage() {
     return [];
   }, [obra]);
 
-  const obraTemCapitulos = capitulosDaObra.length > 0;
-  const indicadorConteudoIcone = obraTemCapitulos
-    ? "📚"
-    : obra?.arquivoObra
-      ? "📄"
-      : "📚";
-  const indicadorConteudoValor = obraTemCapitulos
-    ? capitulosDaObra.length
-    : obra?.arquivoObra
-      ? 1
-      : 0;
+  const {
+    icone: indicadorConteudoIcone,
+    valor: indicadorConteudoValor,
+  } = obterIndicadorConteudoObraPublica({
+    capitulos: capitulosDaObra,
+    arquivoObra: obra?.arquivoObra,
+  });
   const obraIdComentarios = obra?.id?.trim() || "";
 
 
