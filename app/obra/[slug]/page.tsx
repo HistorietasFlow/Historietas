@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import ObraDinamicaClient from "./ObraDinamicaClient";
 import { obterObraMetadataPublica } from "../../../lib/cache/obrasPublicas";
 import {
@@ -276,6 +277,18 @@ export async function generateMetadata({
   }
 }
 
-export default function ObraPage() {
+export default async function ObraPage({ params }: PageProps) {
+  const slug = await obterSlug(params);
+
+  if (!slug) {
+    notFound();
+  }
+
+  const obra = await obterObraMetadataPublica(slug);
+
+  if (!obra) {
+    notFound();
+  }
+
   return <ObraDinamicaClient />;
 }

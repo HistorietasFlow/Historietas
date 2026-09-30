@@ -61,6 +61,10 @@ const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica> = {
   "Carregando": { en: "Loading", es: "Cargando" },
   "Carregando obra": { en: "Loading work", es: "Cargando obra" },
   "Obra não encontrada": { en: "Work not found", es: "Obra no encontrada" },
+  "Não foi possível carregar a obra agora.": {
+    en: "The work could not be loaded right now.",
+    es: "No se pudo cargar la obra en este momento.",
+  },
   "Obra sem título": { en: "Untitled work", es: "Obra sin título" },
   "Capítulo sem título": { en: "Untitled chapter", es: "Capítulo sin título" },
   "Autor não informado": { en: "Author not provided", es: "Autor no informado" },
@@ -1646,6 +1650,11 @@ async function aplicarMetricasObraPublica(
     };
   });
 }
+type ResultadoCarregamentoObraPublica = {
+  obras: ObraLocal[];
+  status: "carregada" | "nao_encontrada" | "erro" | "cancelada";
+};
+
 async function carregarObraSupabasePorSlug(
   slugBusca: string,
   obrasLocais: ObraLocal[],
@@ -1669,11 +1678,17 @@ async function carregarObraSupabasePorSlug(
   }
 
   if (!slugLimpo) {
-    return aplicarMetricasSeAtual(obrasLocais);
+    return {
+      obras: obrasLocais,
+      status: "nao_encontrada",
+    } satisfies ResultadoCarregamentoObraPublica;
   }
 
   if (!execucaoAtual()) {
-    return obrasLocais;
+    return {
+      obras: obrasLocais,
+      status: "cancelada",
+    } satisfies ResultadoCarregamentoObraPublica;
   }
 
   try {
@@ -1687,7 +1702,10 @@ async function carregarObraSupabasePorSlug(
       .limit(1);
 
     if (!execucaoAtual()) {
-      return obrasLocais;
+      return {
+        obras: obrasLocais,
+        status: "cancelada",
+      } satisfies ResultadoCarregamentoObraPublica;
     }
 
     if (erroObra) {
@@ -1695,13 +1713,30 @@ async function carregarObraSupabasePorSlug(
         "Não consegui carregar a obra pública no Supabase:",
         erroObra.message
       );
-      return aplicarMetricasSeAtual(obrasLocais);
+      return {
+        obras: await aplicarMetricasSeAtual(obrasLocais),
+        status: "erro",
+      } satisfies ResultadoCarregamentoObraPublica;
     }
 
     const obraBanco = (obrasBanco || [])[0] || null;
 
     if (!obraBanco) {
-      return aplicarMetricasSeAtual(obrasLocais);
+      const obrasSemCacheObsoleto = obrasLocais.filter((obraLocalAtual) => {
+        const slugsLocais = new Set(
+          [
+            obraLocalAtual.slug?.trim() || "",
+            criarSlugBase(obraLocalAtual.titulo),
+          ].filter(Boolean),
+        );
+
+        return !slugsLocais.has(slugLimpo);
+      });
+
+      return {
+        obras: obrasSemCacheObsoleto,
+        status: "nao_encontrada",
+      } satisfies ResultadoCarregamentoObraPublica;
     }
 
     let capitulosBanco: SupabaseCapituloRow[] = [];
@@ -1728,7 +1763,10 @@ async function carregarObraSupabasePorSlug(
     }
 
     if (!execucaoAtual()) {
-      return obrasLocais;
+      return {
+        obras: obrasLocais,
+        status: "cancelada",
+      } satisfies ResultadoCarregamentoObraPublica;
     }
 
     const obraLocal = obrasLocais.find((obraLocalAtual) => {
@@ -1748,7 +1786,10 @@ async function carregarObraSupabasePorSlug(
     ]);
 
     if (!execucaoAtual()) {
-      return obrasLocais;
+      return {
+        obras: obrasLocais,
+        status: "cancelada",
+      } satisfies ResultadoCarregamentoObraPublica;
     }
 
     const obraJaExiste = obrasLocais.some(
@@ -1764,19 +1805,31 @@ async function carregarObraSupabasePorSlug(
       : [obraNormalizada, ...obrasLocais];
 
     if (!execucaoAtual()) {
-      return obrasLocais;
+      return {
+        obras: obrasLocais,
+        status: "cancelada",
+      } satisfies ResultadoCarregamentoObraPublica;
     }
 
     sincronizarBackupArquivosObras(obrasAtualizadas, userId);
 
-    return obrasAtualizadas;
+    return {
+      obras: obrasAtualizadas,
+      status: "carregada",
+    } satisfies ResultadoCarregamentoObraPublica;
   } catch (error) {
     if (!execucaoAtual()) {
-      return obrasLocais;
+      return {
+        obras: obrasLocais,
+        status: "cancelada",
+      } satisfies ResultadoCarregamentoObraPublica;
     }
 
     console.warn("Não consegui acessar o Supabase agora:", error);
-    return aplicarMetricasSeAtual(obrasLocais);
+    return {
+      obras: await aplicarMetricasSeAtual(obrasLocais),
+      status: "erro",
+    } satisfies ResultadoCarregamentoObraPublica;
   }
 }
 
@@ -3110,6 +3163,7 @@ export default function ObraDinamicaPage() {
 
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [carregandoObras, setCarregandoObras] = useState(true);
+  const [erroCarregamentoObra, setErroCarregamentoObra] = useState(false);
   const [obraSeguida, setObraSeguida] = useState(false);
   const [obraFavoritada, setObraFavoritada] = useState(false);
   const [obraConcluida, setObraConcluida] = useState(false);
@@ -3399,6 +3453,7 @@ export default function ObraDinamicaPage() {
       window.setTimeout(() => {
         if (execucaoCarregamentoEstaAtual()) {
           setCarregandoObras(true);
+          setErroCarregamentoObra(false);
         }
       }, 0);
 
@@ -3417,7 +3472,7 @@ export default function ObraDinamicaPage() {
           }
         }, 0);
 
-        const obrasComSupabase = await carregarObraSupabasePorSlug(
+        const resultadoSupabase = await carregarObraSupabasePorSlug(
           slug,
           obrasNormalizadas,
           identidadeEsperada.usuarioId,
@@ -3430,7 +3485,8 @@ export default function ObraDinamicaPage() {
 
         window.setTimeout(() => {
           if (execucaoCarregamentoEstaAtual()) {
-            setObrasLocais(obrasComSupabase);
+            setObrasLocais(resultadoSupabase.obras);
+            setErroCarregamentoObra(resultadoSupabase.status === "erro");
           }
         }, 0);
       } catch {
@@ -3440,7 +3496,7 @@ export default function ObraDinamicaPage() {
 
         window.setTimeout(() => {
           if (execucaoCarregamentoEstaAtual()) {
-            setObrasLocais([]);
+            setErroCarregamentoObra(true);
           }
         }, 0);
       } finally {
@@ -5810,7 +5866,9 @@ export default function ObraDinamicaPage() {
               textAlign: "center",
             }}
           >
-            Obra não encontrada
+            {erroCarregamentoObra
+              ? "Não foi possível carregar a obra agora."
+              : "Obra não encontrada"}
           </p>
         </section>
       </main>
