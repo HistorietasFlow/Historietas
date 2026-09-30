@@ -16,3 +16,28 @@ export function dataComentarioObra(comentario: { criadoEm: string }) {
 
   return Number.isNaN(data) ? 0 : data;
 }
+
+export function obterIdsComentarioComRespostas(
+  comentarios: Array<{ id: string; comentarioPaiId: string }>,
+  comentarioId: string,
+) {
+  const ids = new Set<string>([comentarioId]);
+  let encontrouNovos = true;
+
+  while (encontrouNovos) {
+    encontrouNovos = false;
+
+    comentarios.forEach((comentario) => {
+      if (
+        comentario.comentarioPaiId &&
+        ids.has(comentario.comentarioPaiId) &&
+        !ids.has(comentario.id)
+      ) {
+        ids.add(comentario.id);
+        encontrouNovos = true;
+      }
+    });
+  }
+
+  return ids;
+}
