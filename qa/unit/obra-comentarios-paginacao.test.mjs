@@ -37,7 +37,7 @@ test("pagina comentarios raiz e busca apenas respostas dos topicos carregados", 
     "function dataComentarioObra(",
   );
 
-  assert.match(bloco, /const WORK_COMMENTS_PAGE_SIZE = 20/);
+  assert.match(paginaObra, /const WORK_COMMENTS_PAGE_SIZE = 20/);
   assert.match(bloco, /\.is\("comentario_pai_id", null\)/);
   assert.match(bloco, /\.range\(inicio, fim\)/);
   assert.match(
