@@ -60,6 +60,7 @@ import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-me
 import { formatarGeneroObraPublica, obterAvatarPerfilObra, obterBioPerfilObra, obterNomePerfilObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
+import { calcularProgressoLeitura } from "./lib/obra-reading-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -966,16 +967,6 @@ const avaliacaoObraVazia: AvaliacaoObraPublica = {
   salvando: false,
 };
 
-
-function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  if (capitulos.length === 0) {
-    return 0;
-  }
-
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
-
-  return Math.round((capitulosLidos / capitulos.length) * 100);
-}
 
 function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
