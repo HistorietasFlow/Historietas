@@ -1,5 +1,5 @@
 import { criarSlugBase, normalizarTexto } from "../../../../lib/utils";
-import { carregarListaLocalObraPublica } from "./obra-user-storage";
+import { carregarListaLocalObraPublica, salvarStorageUsuarioObraPublica } from "./obra-user-storage";
 
 export function obterChavesInteracaoObraPublica(obra: {
   id: string;
@@ -37,4 +37,34 @@ export function obraEstaEmListaLocalObraPublica(
   return carregarListaLocalObraPublica(chaveStorage, userId).some((item) =>
     chavesObra.has(item.trim())
   );
+}
+
+export function salvarListaLocalObraPublica(
+  obra: {
+    id: string;
+    slug: string;
+    link: string;
+    titulo: string;
+  },
+  chaveStorage: string,
+  ativo: boolean,
+  userId = "",
+) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [] as string[];
+  }
+
+  const listaAtual = carregarListaLocalObraPublica(chaveStorage, userIdLimpo);
+  const chavesObra = obterChavesInteracaoObraPublica(obra);
+  const chavesSet = new Set(chavesObra);
+  const listaSemObra = listaAtual.filter((item) => !chavesSet.has(item.trim()));
+  const proximaLista = ativo
+    ? Array.from(new Set([...listaSemObra, ...chavesObra]))
+    : listaSemObra;
+
+  salvarStorageUsuarioObraPublica(chaveStorage, userIdLimpo, proximaLista);
+
+  return proximaLista;
 }
