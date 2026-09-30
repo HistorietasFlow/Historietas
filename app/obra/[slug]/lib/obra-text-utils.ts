@@ -58,3 +58,18 @@ export function obterAvatarPerfilObra(
     obterTextoPerfilObra(profile, "photo_url")
   );
 }
+
+export function obterBioPerfilObra(
+  profile: Record<string, unknown> | null,
+) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoPerfilObra(profile, "bio") ||
+    obterTextoPerfilObra(profile, "sobre_bio") ||
+    obterTextoPerfilObra(profile, "sobre") ||
+    obterTextoPerfilObra(profile, "descricao")
+  );
+}
