@@ -65,7 +65,7 @@ import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublic
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, dataComentarioObra } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, dataComentarioObra, obterIdsComentarioComRespostas } from "./lib/obra-comment-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2766,31 +2766,6 @@ function criarEstruturaComentariosObra(
     comentariosRaiz,
     respostasPorRaiz,
   };
-}
-
-function obterIdsComentarioComRespostas(
-  comentarios: ComentarioObraPublico[],
-  comentarioId: string
-) {
-  const ids = new Set<string>([comentarioId]);
-  let encontrouNovos = true;
-
-  while (encontrouNovos) {
-    encontrouNovos = false;
-
-    comentarios.forEach((comentario) => {
-      if (
-        comentario.comentarioPaiId &&
-        ids.has(comentario.comentarioPaiId) &&
-        !ids.has(comentario.id)
-      ) {
-        ids.add(comentario.id);
-        encontrouNovos = true;
-      }
-    });
-  }
-
-  return ids;
 }
 
 async function incrementarVisualizacaoObraPublicaSupabase(

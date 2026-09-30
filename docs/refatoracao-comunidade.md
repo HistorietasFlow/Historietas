@@ -180,6 +180,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 463: extrair somente `calcularProximaAvaliacao` para `app/obra/[slug]/lib/obra-rating-utils.ts`, preservando remoção de nota, atualização de média/total, substituição de nota existente e flags `carregado`/`salvando`.
 - Fase 464: extrair somente `criarComentarioObraId` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando prioridade por `crypto.randomUUID()` e fallback com `Date.now()` + `Math.random()`.
 - Fase 465: extrair somente `dataComentarioObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando conversão de `criadoEm` para timestamp e fallback zero para datas inválidas.
+- Fase 466: extrair somente `obterIdsComentarioComRespostas` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando inclusão do comentário alvo e descoberta iterativa de todos os descendentes sem duplicação.
 
 ## Contrato de preservação
 
