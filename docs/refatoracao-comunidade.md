@@ -193,6 +193,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 476: extrair somente `obterSinopseObraExibida` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando `trim()` da sinopse e o fallback literal `Nenhuma sinopse informada.`.
 - Fase 477: extrair somente `obterIndicadorConteudoObraPublica` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando o ícone e a quantidade exibidos para capítulos, arquivo da obra e ausência de conteúdo.
 - Fase 478: extrair somente `obterCapitulosObraPublica` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando o retorno da lista de capítulos quando a obra existe e o fallback para lista vazia quando não existe ou não possui capítulos.
+- Fase 479: extrair somente `obterObraIdComentarios` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando o `trim()` do identificador da obra e o fallback para string vazia quando não houver ID.
 
 ## Contrato de preservação
 
