@@ -3970,6 +3970,7 @@ export default function ObraDinamicaPage() {
     if (!obra) {
       const resetMetricasTimer = window.setTimeout(() => {
         setMetricasObra(metricasObraVazias);
+        setTotalComentariosObra(0);
       }, 0);
 
       return () => {
@@ -4041,6 +4042,7 @@ export default function ObraDinamicaPage() {
         ),
         carregado: true,
       });
+      setTotalComentariosObra(metricasBase.comentarios);
     }, 0);
 
     if (
@@ -4140,6 +4142,7 @@ export default function ObraDinamicaPage() {
           curtidaAtiva,
           carregado: true,
         });
+        setTotalComentariosObra(metrica.interacoesDiretas.comentarios);
         setMetricasComunidadeObra({
           teorias: metrica.comunidade.teorias,
           reviews: metrica.comunidade.reviews,
