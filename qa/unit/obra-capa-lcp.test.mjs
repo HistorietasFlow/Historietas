@@ -10,6 +10,10 @@ const nextConfig = readFileSync(
   new URL("../../next.config.ts", import.meta.url),
   "utf8",
 );
+const coverUtils = readFileSync(
+  new URL("../../app/obra/[slug]/lib/obra-cover-utils.ts", import.meta.url),
+  "utf8",
+);
 
 function obterBloco(texto, inicioTexto, fimTexto) {
   const inicio = texto.indexOf(inicioTexto);
@@ -67,11 +71,7 @@ test("capa nao volta a usar background image dinamico", () => {
 });
 
 test("otimizacao so aceita capa publica do Supabase configurado", () => {
-  const bloco = obterBloco(
-    paginaObra,
-    "function capaObraPodeSerOtimizada(",
-    "function normalizarPerfilPublicoObra(",
-  );
+  const bloco = coverUtils;
 
   assert.match(bloco, /NEXT_PUBLIC_SUPABASE_URL/);
   assert.match(bloco, /urlSupabase\.protocol === "https:"/);
