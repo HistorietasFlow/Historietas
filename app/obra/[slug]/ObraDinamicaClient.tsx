@@ -2510,54 +2510,35 @@ async function salvarAvaliacaoRemotaObra({
     return;
   }
 
-  // Remove qualquer registro antigo ou duplicado antes de gravar a nota nova.
-  // Isso também funciona em bancos que ainda não possuem a restrição única.
-  const { error: erroRemocao } = await supabase
-    .from("obra_avaliacoes")
-    .delete()
-    .eq("obra_id", obraId)
-    .eq("user_id", userId);
-
-  if (erroRemocao) {
-    throw erroRemocao;
-  }
-
   if (nota <= 0) {
+    const { error: erroRemocao } = await supabase
+      .from("obra_avaliacoes")
+      .delete()
+      .eq("obra_id", obraId)
+      .eq("user_id", userId);
+
+    if (erroRemocao) {
+      throw erroRemocao;
+    }
+
     return;
   }
 
-  const { error: erroInsercao } = await supabase
+  const { error: erroSalvar } = await supabase
     .from("obra_avaliacoes")
-    .insert({
-      obra_id: obraId,
-      user_id: userId,
-      nota,
-    });
+    .upsert(
+      {
+        obra_id: obraId,
+        user_id: userId,
+        nota,
+      },
+      {
+        onConflict: "obra_id,user_id",
+      },
+    );
 
-  if (erroInsercao) {
-    throw erroInsercao;
-  }
-
-  const { data: verificacao, error: erroVerificacao } = await supabase
-    .from("obra_avaliacoes")
-    .select("nota")
-    .eq("obra_id", obraId)
-    .eq("user_id", userId)
-    .limit(10);
-
-  if (erroVerificacao) {
-    throw erroVerificacao;
-  }
-
-  const notaConfirmada = Array.isArray(verificacao)
-    ? verificacao.some((registro) => {
-        const valor = Number((registro as { nota?: unknown }).nota);
-        return Number.isFinite(valor) && Math.round(valor * 2) / 2 === nota;
-      })
-    : false;
-
-  if (!notaConfirmada) {
-    throw new Error("A avaliação não foi confirmada pelo banco de dados.");
+  if (erroSalvar) {
+    throw erroSalvar;
   }
 }
 
@@ -4837,10 +4818,12 @@ export default function ObraDinamicaPage() {
     }
 
     const notaNormalizada = nota <= 0 ? 0 : Math.round(nota * 2) / 2;
-    avaliacaoVersaoRef.current += 1;
+    const avaliacaoAnterior = avaliacaoObra;
+    const versaoAvaliacao = avaliacaoVersaoRef.current + 1;
+    avaliacaoVersaoRef.current = versaoAvaliacao;
 
     const proximaAvaliacao = calcularProximaAvaliacao(
-      avaliacaoObra,
+      avaliacaoAnterior,
       notaNormalizada
     );
 
@@ -4849,10 +4832,12 @@ export default function ObraDinamicaPage() {
     salvarAvaliacaoLocal(obra, notaNormalizada, userId);
 
     if (!obra.id || !idObraSupabaseValido(obra.id)) {
-      setAvaliacaoObra((avaliacaoAtual) => ({
-        ...avaliacaoAtual,
-        salvando: false,
-      }));
+      if (avaliacaoVersaoRef.current === versaoAvaliacao) {
+        setAvaliacaoObra((avaliacaoAtual) => ({
+          ...avaliacaoAtual,
+          salvando: false,
+        }));
+      }
       return;
     }
 
@@ -4862,7 +4847,38 @@ export default function ObraDinamicaPage() {
         userId,
         nota: notaNormalizada,
       });
+    } catch (error) {
+      console.warn("Não consegui salvar a avaliação da obra:", error);
 
+      if (avaliacaoVersaoRef.current !== versaoAvaliacao) {
+        return;
+      }
+
+      salvarAvaliacaoLocal(
+        obra,
+        avaliacaoAnterior.minhaNota,
+        userId,
+      );
+      setAvaliacaoObra({
+        ...avaliacaoAnterior,
+        carregado: true,
+        salvando: false,
+      });
+      setMensagemAcao("Não foi possível salvar a avaliação agora.");
+      return;
+    }
+
+    if (avaliacaoVersaoRef.current !== versaoAvaliacao) {
+      return;
+    }
+
+    setAvaliacaoObra((avaliacaoAtual) => ({
+      ...avaliacaoAtual,
+      salvando: false,
+    }));
+    setMensagemAcao("");
+
+    try {
       if (notaNormalizada > 0) {
         await registrarAtividadeDiarioObra({
           userId,
@@ -4879,20 +4895,11 @@ export default function ObraDinamicaPage() {
           tipo: "avaliou_obra",
         });
       }
-
-      setAvaliacaoObra((avaliacaoAtual) => ({
-        ...avaliacaoAtual,
-        salvando: false,
-      }));
-      setMensagemAcao("");
     } catch (error) {
-      console.warn("Não consegui salvar a avaliação da obra:", error);
-      setAvaliacaoObra((avaliacaoAtual) => ({
-        ...avaliacaoAtual,
-        carregado: true,
-        salvando: false,
-      }));
-      setMensagemAcao("");
+      console.warn(
+        "A avaliação foi salva, mas não consegui sincronizar o Diário:",
+        error,
+      );
     }
   }
 
