@@ -81,27 +81,32 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
     'setMensagemAcao("Não foi possível salvar a avaliação agora.");',
     indiceSalvarRemoto,
   );
-  const indiceGuardSucesso = bloco.indexOf(
+  const indiceGuardAntesDiario = bloco.indexOf(
     "if (avaliacaoVersaoRef.current !== versaoAvaliacao)",
     indiceMensagemFalha,
   );
-  const indiceFinalizarAvaliacao = bloco.indexOf(
-    "setAvaliacaoObra((avaliacaoAtual) => ({",
-    indiceGuardSucesso,
-  );
   const indiceDiario = bloco.indexOf(
     "await registrarAtividadeDiarioObra({",
-    indiceFinalizarAvaliacao,
+    indiceGuardAntesDiario,
   );
   const indiceAvisoDiario = bloco.indexOf(
     '"A avaliação foi salva, mas não consegui sincronizar o Diário:"',
     indiceDiario,
   );
+  const indiceGuardFinal = bloco.indexOf(
+    "if (avaliacaoVersaoRef.current !== versaoAvaliacao)",
+    indiceAvisoDiario,
+  );
+  const indiceFinalizarAvaliacao = bloco.indexOf(
+    "setAvaliacaoObra((avaliacaoAtual) => ({",
+    indiceGuardFinal,
+  );
 
   assert.ok(indiceSalvarRemoto >= 0);
   assert.ok(indiceMensagemFalha > indiceSalvarRemoto);
-  assert.ok(indiceGuardSucesso > indiceMensagemFalha);
-  assert.ok(indiceFinalizarAvaliacao > indiceGuardSucesso);
-  assert.ok(indiceDiario > indiceFinalizarAvaliacao);
+  assert.ok(indiceGuardAntesDiario > indiceMensagemFalha);
+  assert.ok(indiceDiario > indiceGuardAntesDiario);
   assert.ok(indiceAvisoDiario > indiceDiario);
+  assert.ok(indiceGuardFinal > indiceAvisoDiario);
+  assert.ok(indiceFinalizarAvaliacao > indiceGuardFinal);
 });
