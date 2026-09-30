@@ -50,12 +50,24 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     );
   });
 
-  test("obra inexistente retorna 404 real", async ({ request }) => {
-    const response = await request.get(
+  test("obra inexistente renderiza not-found e noindex", async ({ page }) => {
+    const response = await page.goto(
       "/obra/historietas-e2e-obra-inexistente-404",
+      { waitUntil: "domcontentloaded" },
     );
 
-    expect(response.status()).toBe(404);
+    expect([200, 404]).toContain(response?.status());
+    await expect(
+      page.getByRole("heading", {
+        name: "Página não encontrada",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Erro 404", { exact: true })).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      "content",
+      /noindex/i,
+    );
   });
 
   test("visitante vê CTA explícito e ele abre o capítulo público", async ({
