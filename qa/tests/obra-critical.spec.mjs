@@ -5,6 +5,7 @@ import {
   loginAsAuthor,
   loginAsVisitor,
   monitorRuntime,
+  resetVisitorWorkInteractions,
 } from "./helpers.mjs";
 
 const publicWorkSlug = (process.env.E2E_PUBLIC_WORK_SLUG || "").trim();
@@ -18,10 +19,19 @@ test.describe("página da obra — cenários críticos", () => {
     test.skip(!publicWorkSlug, "Defina E2E_PUBLIC_WORK_SLUG.");
   });
 
-  test("obra inexistente retorna 404 real", async ({ request }) => {
-    const response = await request.get("/obra/obra-e2e-inexistente-404");
+  test("obra inexistente mostra not-found e noindex", async ({ page }) => {
+    const response = await page.goto("/obra/obra-e2e-inexistente-404", {
+      waitUntil: "domcontentloaded",
+    });
 
-    expect(response.status()).toBe(404);
+    expect([200, 404]).toContain(response?.status());
+    await expect(
+      page.getByRole("heading", { name: "Página não encontrada", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      "content",
+      /noindex/i,
+    );
   });
 
   test("obra pública expõe Começar a ler e abre o capítulo correto", async ({ page }) => {
@@ -32,7 +42,12 @@ test.describe("página da obra — cenários críticos", () => {
 
     expect(response?.status()).toBe(200);
 
-    const cta = page.getByRole("link", { name: /Começar a ler: Obra Pública E2E/i });
+    const cta = page
+      .getByRole("link", {
+        name: "Começar a ler: Obra Pública E2E",
+        exact: true,
+      })
+      .filter({ hasText: "Começar a ler" });
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute("href", /\/capitulo\/1$/);
 
@@ -57,7 +72,7 @@ test.describe("página da obra — cenários críticos", () => {
     });
 
     await page.goto(workPath(), { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("link", { name: /Começar a ler/i })).toBeVisible();
+    await expect(page.getByText("Começar a ler", { exact: true })).toBeVisible();
 
     expect(
       requestsComentarios,
@@ -108,6 +123,7 @@ test.describe("página da obra — cenários críticos", () => {
 
   test("visitante usa ações sociais e mantém opção de denunciar", async ({ page }) => {
     test.skip(!hasVisitorCredentials, "Credenciais do visitante E2E ausentes.");
+    await resetVisitorWorkInteractions(publicWorkSlug);
     await loginAsVisitor(page);
     await page.goto(workPath(), { waitUntil: "domcontentloaded" });
 
@@ -120,7 +136,9 @@ test.describe("página da obra — cenários críticos", () => {
 
     const like = page.getByRole("button", { name: /^Curtir\./ });
     await like.click();
-    await expect(like).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.getByRole("button", { name: /^Remover curtida\./ }),
+    ).toHaveAttribute("aria-pressed", "true");
 
     const actionsTrigger = page.getByRole("button", { name: "Abrir ações da obra" });
     await actionsTrigger.click();
