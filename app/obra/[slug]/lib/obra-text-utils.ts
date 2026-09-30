@@ -78,7 +78,7 @@ export function normalizarPerfilPublicoObra(
   profile: Record<string, unknown> | null,
   userIdFallback: string,
   nomeFallback: string
-): PerfilPublicoObra {
+) {
   return {
     userId:
       obterTextoPerfilObra(profile || {}, "user_id") ||
