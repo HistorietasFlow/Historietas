@@ -5164,11 +5164,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para salvar esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -5194,6 +5201,10 @@ export default function ObraDinamicaPage() {
         );
       }
 
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       if (proximoFavorito) {
         await registrarAtividadeDiarioObra({
           userId,
@@ -5201,13 +5212,19 @@ export default function ObraDinamicaPage() {
           tipo: "favoritou_obra",
           visibilidade: "parcial",
           texto: `Adicionou ${obra.titulo} à lista.`,
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       } else {
         await removerAtividadeDiarioObra({
           userId,
           obra,
           tipo: "favoritou_obra",
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
+      }
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
       }
 
       setMensagemAcao(
@@ -5215,6 +5232,11 @@ export default function ObraDinamicaPage() {
       );
     } catch (error) {
       console.warn("Não consegui salvar favorito da obra:", error);
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setObraFavoritada(favoritoAnterior);
       salvarListaLocalObraPublica(
         obra,
@@ -5231,11 +5253,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para marcar esta obra como concluída."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -5261,6 +5290,10 @@ export default function ObraDinamicaPage() {
         );
       }
 
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       if (proximaConcluida) {
         await registrarAtividadeDiarioObra({
           userId,
@@ -5268,13 +5301,19 @@ export default function ObraDinamicaPage() {
           tipo: "concluiu_obra",
           visibilidade: "parcial",
           texto: `Concluiu ${obra.titulo}.`,
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       } else {
         await removerAtividadeDiarioObra({
           userId,
           obra,
           tipo: "concluiu_obra",
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
+      }
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
       }
 
       setMensagemAcao(
@@ -5282,6 +5321,11 @@ export default function ObraDinamicaPage() {
       );
     } catch (error) {
       console.warn("Não consegui salvar conclusão da obra:", error);
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setObraConcluida(concluidaAnterior);
       salvarListaLocalObraPublica(
         obra,
