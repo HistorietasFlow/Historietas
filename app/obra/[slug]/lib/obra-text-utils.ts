@@ -89,3 +89,10 @@ export function normalizarPerfilPublicoObra(
     bio: obterBioPerfilObra(profile).slice(0, 160),
   };
 }
+export function obterSinopseObraExibida(
+  obra: { sinopse: string } | null,
+) {
+  return obra && obra.sinopse.trim()
+    ? obra.sinopse.trim()
+    : "Nenhuma sinopse informada.";
+}
