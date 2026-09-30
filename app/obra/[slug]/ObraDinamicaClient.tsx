@@ -4055,15 +4055,15 @@ export default function ObraDinamicaPage() {
         const total = metrica.avaliacao.total;
         const media = metrica.avaliacao.media;
 
-        if (userId && !usuarioEhAutorDaObraAtual) {
-          salvarAvaliacaoLocal(obraAtual, minhaNotaRemota, userId);
-        }
-
         if (
           cancelado ||
           avaliacaoVersaoRef.current !== versaoAoIniciar
         ) {
           return;
+        }
+
+        if (userId && !usuarioEhAutorDaObraAtual) {
+          salvarAvaliacaoLocal(obraAtual, minhaNotaRemota, userId);
         }
 
         setAvaliacaoObra({
