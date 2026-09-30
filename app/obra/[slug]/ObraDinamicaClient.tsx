@@ -5533,7 +5533,7 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    setAcoesObraAbertas(false);
+    fecharAcoesObra(false);
     setDenunciaAlvo({
       alvoTipo: "obra",
       alvoId: obra.id,
@@ -5785,6 +5785,10 @@ export default function ObraDinamicaPage() {
               role="dialog"
               aria-modal="true"
               aria-label={`Comentários de ${obra.titulo}`}
+              tabIndex={-1}
+              onKeyDown={(event) =>
+                manterFocoNoDialogo(event, fecharComentariosObra)
+              }
               style={
                 isDesktop
                   ? desktopCommentsSheetStyle
@@ -6139,14 +6143,19 @@ export default function ObraDinamicaPage() {
             <button
               type="button"
               aria-label={textosPainelClassificacao.fechar}
-              onClick={() => setPainelClassificacaoAberto(false)}
+              onClick={fecharPainelClassificacaoObra}
               style={classificationPanelBackdropStyle}
             />
 
             <article
+              ref={classificacaoDialogRef}
               role="dialog"
               aria-modal="true"
               aria-labelledby="historietas-classificacao-title"
+              tabIndex={-1}
+              onKeyDown={(event) =>
+                manterFocoNoDialogo(event, fecharPainelClassificacaoObra)
+              }
               style={classificationPanelStyle}
             >
               <header style={classificationPanelHeaderStyle}>
@@ -6164,7 +6173,7 @@ export default function ObraDinamicaPage() {
 
                 <button
                   type="button"
-                  onClick={() => setPainelClassificacaoAberto(false)}
+                  onClick={fecharPainelClassificacaoObra}
                   aria-label={textosPainelClassificacao.fechar}
                   style={classificationPanelCloseStyle}
                 >
@@ -6328,7 +6337,7 @@ export default function ObraDinamicaPage() {
           >
             <button
               type="button"
-              onClick={() => setPainelClassificacaoAberto(true)}
+              onClick={abrirPainelClassificacaoObra}
               aria-label={`${textosPainelClassificacao.abrir}: ${obra.classificacaoIndicativa}`}
               title={`${textosPainelClassificacao.abrir}: ${obra.classificacaoIndicativa}`}
               style={{
@@ -6517,9 +6526,7 @@ export default function ObraDinamicaPage() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setAcoesObraAbertas((menuAberto) => !menuAberto)
-                  }
+                  onClick={alternarAcoesObra}
                   style={isDesktop ? desktopObraAddButtonStyle : obraAddButtonStyle}
                   aria-label="Abrir ações da obra"
                   aria-expanded={acoesObraAbertas}
@@ -6537,12 +6544,18 @@ export default function ObraDinamicaPage() {
           <div
             style={obraActionSheetOverlayStyle}
             role="presentation"
-            onClick={() => setAcoesObraAbertas(false)}
+            onClick={() => fecharAcoesObra()}
           >
             <section
+              ref={acoesObraDialogRef}
               style={isDesktop ? desktopObraActionsMenuStyle : obraActionsMenuStyle}
               role="dialog"
+              aria-modal="true"
               aria-label={`Ações da obra ${obra.titulo}`}
+              tabIndex={-1}
+              onKeyDown={(event) =>
+                manterFocoNoDialogo(event, () => fecharAcoesObra())
+              }
               onClick={(event) => event.stopPropagation()}
             >
               <div style={obraActionSheetHandleStyle} aria-hidden="true" />
@@ -6640,7 +6653,7 @@ export default function ObraDinamicaPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setAcoesObraAbertas(false);
+                    fecharAcoesObra();
                     void alternarFavoritoObra();
                   }}
                   style={
@@ -6664,7 +6677,7 @@ export default function ObraDinamicaPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setAcoesObraAbertas(false);
+                    fecharAcoesObra();
                     void alternarConcluirObra();
                   }}
                   style={
@@ -6702,6 +6715,7 @@ export default function ObraDinamicaPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    fecharAcoesObra();
                     void compartilharObraAtual();
                   }}
                   style={
