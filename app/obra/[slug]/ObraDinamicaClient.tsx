@@ -3278,6 +3278,10 @@ export default function ObraDinamicaPage() {
   const [comentariosObra, setComentariosObra] = useState<ComentarioObraPublico[]>([]);
   const [totalComentariosObra, setTotalComentariosObra] = useState(0);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
+  const [comentariosCarregandoMais, setComentariosCarregandoMais] =
+    useState(false);
+  const [comentariosTemMais, setComentariosTemMais] = useState(false);
+  const [comentariosProximoOffset, setComentariosProximoOffset] = useState(0);
   const [comentariosAbertos, setComentariosAbertos] = useState(false);
   const [comentariosSheetExpandido, setComentariosSheetExpandido] = useState(false);
   const [comentarioTexto, setComentarioTexto] = useState("");
@@ -3308,6 +3312,7 @@ export default function ObraDinamicaPage() {
   const comentariosDragOffsetYRef = useRef(0);
   const comentariosDragIgnorarCliqueRef = useRef(false);
   const comentariosDragResetTimerRef = useRef<number | null>(null);
+  const comentariosConsultaVersaoRef = useRef(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
