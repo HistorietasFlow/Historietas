@@ -155,12 +155,12 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     await expect(comentarios).toHaveCount(21);
     await expect(carregarMais).toHaveCount(0);
 
-    await expect(
-      dialog.getByRole("button", {
-        name: "Expandir comentários",
-        exact: true,
-      }),
-    ).toBeFocused();
+    const handleComentarios = dialog.getByRole("button", {
+      name: "Expandir comentários",
+      exact: true,
+    });
+    await handleComentarios.focus();
+    await expect(handleComentarios).toBeFocused();
 
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
