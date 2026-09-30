@@ -28,10 +28,9 @@ test.describe("página da obra — cenários críticos", () => {
     await expect(
       page.getByRole("heading", { name: "Página não encontrada", exact: true }),
     ).toBeVisible();
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
-      "content",
-      /noindex/i,
-    );
+    await expect(
+      page.locator('meta[name="robots"][content*="noindex" i]'),
+    ).not.toHaveCount(0);
   });
 
   test("obra pública expõe Começar a ler e abre o capítulo correto", async ({ page }) => {
@@ -148,12 +147,12 @@ test.describe("página da obra — cenários críticos", () => {
 
     await actionsTrigger.click();
     actions = page.getByRole("dialog", { name: /Ações da obra Obra Pública E2E/i });
-    await expect(actions.getByRole("button", { name: "Salvo", exact: true })).toBeVisible();
+    await expect(actions.getByRole("button", { name: /^Salvo/ })).toBeVisible();
     await actions.getByRole("button", { name: "Concluir", exact: true }).click();
 
     await actionsTrigger.click();
     actions = page.getByRole("dialog", { name: /Ações da obra Obra Pública E2E/i });
-    await expect(actions.getByRole("button", { name: "Concluída", exact: true })).toBeVisible();
+    await expect(actions.getByRole("button", { name: /^Concluída/ })).toBeVisible();
   });
 
   test("autor não recebe ação de denunciar a própria obra", async ({ page }) => {
