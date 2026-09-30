@@ -2730,12 +2730,19 @@ async function removerAtividadeDiarioObra({
   userId,
   obra,
   tipo,
+  execucaoAtual = () => true,
 }: {
   userId: string;
   obra: ObraDinamica;
   tipo: DiarioAtividadeObraTipo;
+  execucaoAtual?: () => boolean;
 }) {
-  if (!userId || !obra.id || !idObraSupabaseValido(obra.id)) {
+  if (
+    !userId ||
+    !obra.id ||
+    !idObraSupabaseValido(obra.id) ||
+    !execucaoAtual()
+  ) {
     return;
   }
 
@@ -2762,6 +2769,7 @@ async function registrarAtividadeDiarioObra({
   nota,
   texto,
   visibilidade,
+  execucaoAtual = () => true,
 }: {
   userId: string;
   obra: ObraDinamica;
@@ -2769,8 +2777,14 @@ async function registrarAtividadeDiarioObra({
   nota?: number;
   texto?: string;
   visibilidade: DiarioAtividadeObraVisibilidade;
+  execucaoAtual?: () => boolean;
 }) {
-  if (!userId || !obra.id || !idObraSupabaseValido(obra.id)) {
+  if (
+    !userId ||
+    !obra.id ||
+    !idObraSupabaseValido(obra.id) ||
+    !execucaoAtual()
+  ) {
     return;
   }
 
@@ -2799,14 +2813,19 @@ async function registrarAtividadeDiarioObra({
       userId,
       obra,
       tipo,
+      execucaoAtual,
     });
+
+    if (!execucaoAtual()) {
+      return;
+    }
 
     const { error } = await supabase.from("diario_atividades").insert({
       ...payloadBase,
       nota: notaNormalizada,
     });
 
-    if (!error) {
+    if (!error || !execucaoAtual()) {
       return;
     }
 
