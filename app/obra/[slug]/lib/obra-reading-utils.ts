@@ -29,7 +29,6 @@ export function obraLocalEstaDisponivelParaLeitura(
   );
 }
 
-
 export function obterIndicadorConteudoObraPublica(obra: {
   capitulos: unknown[];
   arquivoObra?: unknown;
