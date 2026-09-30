@@ -34,6 +34,12 @@ import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
 } from "../../../lib/supabase/paginacao.mjs";
+import {
+  atualizarIdentidadeAutenticadaObra,
+  execucaoAutenticacaoObraEstaAtual,
+  execucaoIdentidadeObraEstaAtual,
+  type IdentidadeAutenticadaObra,
+} from "./lib/obra-auth-identity";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1643,12 +1649,31 @@ async function aplicarMetricasObraPublica(
 async function carregarObraSupabasePorSlug(
   slugBusca: string,
   obrasLocais: ObraLocal[],
-  userId = ""
+  userId = "",
+  operacaoAindaAtual?: () => boolean,
 ) {
   const slugLimpo = slugBusca.trim();
+  const execucaoAtual = () => !operacaoAindaAtual || operacaoAindaAtual();
+
+  async function aplicarMetricasSeAtual(obrasBase: ObraLocal[]) {
+    if (!execucaoAtual()) {
+      return obrasBase;
+    }
+
+    const obrasComMetricas = await aplicarMetricasObraPublica(
+      obrasBase,
+      userId,
+    );
+
+    return execucaoAtual() ? obrasComMetricas : obrasBase;
+  }
 
   if (!slugLimpo) {
-    return aplicarMetricasObraPublica(obrasLocais, userId);
+    return aplicarMetricasSeAtual(obrasLocais);
+  }
+
+  if (!execucaoAtual()) {
+    return obrasLocais;
   }
 
   try {
@@ -1661,18 +1686,22 @@ async function carregarObraSupabasePorSlug(
       .eq("publicado", true)
       .limit(1);
 
+    if (!execucaoAtual()) {
+      return obrasLocais;
+    }
+
     if (erroObra) {
       console.warn(
         "Não consegui carregar a obra pública no Supabase:",
         erroObra.message
       );
-      return aplicarMetricasObraPublica(obrasLocais, userId);
+      return aplicarMetricasSeAtual(obrasLocais);
     }
 
     const obraBanco = (obrasBanco || [])[0] || null;
 
     if (!obraBanco) {
-      return aplicarMetricasObraPublica(obrasLocais, userId);
+      return aplicarMetricasSeAtual(obrasLocais);
     }
 
     let capitulosBanco: SupabaseCapituloRow[] = [];
@@ -1698,6 +1727,10 @@ async function carregarObraSupabasePorSlug(
       );
     }
 
+    if (!execucaoAtual()) {
+      return obrasLocais;
+    }
+
     const obraLocal = obrasLocais.find((obraLocalAtual) => {
       const slugLocal = obraLocalAtual.slug || criarSlugBase(obraLocalAtual.titulo);
 
@@ -1710,10 +1743,13 @@ async function carregarObraSupabasePorSlug(
       obraLocal,
       0
     );
-    const [obraNormalizada] = await aplicarMetricasObraPublica(
-      [obraNormalizadaSemTotais],
-      userId,
-    );
+    const [obraNormalizada] = await aplicarMetricasSeAtual([
+      obraNormalizadaSemTotais,
+    ]);
+
+    if (!execucaoAtual()) {
+      return obrasLocais;
+    }
 
     const obraJaExiste = obrasLocais.some(
       (obraLocalAtual) => obraLocalAtual.id === obraNormalizada.id
@@ -1727,15 +1763,22 @@ async function carregarObraSupabasePorSlug(
         )
       : [obraNormalizada, ...obrasLocais];
 
+    if (!execucaoAtual()) {
+      return obrasLocais;
+    }
+
     sincronizarBackupArquivosObras(obrasAtualizadas, userId);
 
     return obrasAtualizadas;
   } catch (error) {
+    if (!execucaoAtual()) {
+      return obrasLocais;
+    }
+
     console.warn("Não consegui acessar o Supabase agora:", error);
-    return aplicarMetricasObraPublica(obrasLocais, userId);
+    return aplicarMetricasSeAtual(obrasLocais);
   }
 }
-
 
 function normalizarContadorObraPublica(valor: unknown) {
   if (typeof valor === "number" && Number.isFinite(valor)) {
@@ -3142,6 +3185,12 @@ export default function ObraDinamicaPage() {
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
   const avaliacaoVersaoRef = useRef(0);
+  const identidadeAutenticadaObraRef =
+    useRef<IdentidadeAutenticadaObra>({
+      usuarioId: "",
+      versao: 0,
+    });
+  const versaoConsultaAutenticacaoObraRef = useRef(0);
 
   useEffect(() => {
     if (!mensagemAcao) {
@@ -3158,20 +3207,71 @@ export default function ObraDinamicaPage() {
   }, [mensagemAcao]);
 
   useEffect(() => {
-    let cancelado = false;
+    let componenteAtivo = true;
+
+    function limparEstadoContaAnterior() {
+      setObrasLocais([]);
+      setCarregandoObras(true);
+      setObraSeguida(false);
+      setObraFavoritada(false);
+      setObraConcluida(false);
+      setMetricasObra(metricasObraVazias);
+      setAvaliacaoObra(avaliacaoObraVazia);
+      setPerfilUsuarioLogado(null);
+      setComentariosObra([]);
+      setTotalComentariosObra(0);
+      setComentarioTexto("");
+      setComentarioStatus("");
+      setComentarioEnviando(false);
+      setComentarioRemovendoId("");
+      setComentarioCurtindoId("");
+      setRespostaComentario(null);
+      setRespostasVisiveisPorComentario({});
+      setMensagemAcao("");
+      avaliacaoVersaoRef.current += 1;
+    }
+
+    function aplicarIdentidadeAutenticada(usuarioId: string) {
+      const resultado = atualizarIdentidadeAutenticadaObra(
+        identidadeAutenticadaObraRef.current,
+        usuarioId,
+      );
+
+      if (resultado.mudou) {
+        identidadeAutenticadaObraRef.current = resultado.identidade;
+        limparEstadoContaAnterior();
+        setUsuarioIdLogado(resultado.identidade.usuarioId);
+      }
+
+      setAutenticacaoCarregada(true);
+    }
 
     async function carregarUsuarioLogado() {
+      const versaoConsulta = versaoConsultaAutenticacaoObraRef.current + 1;
+      versaoConsultaAutenticacaoObraRef.current = versaoConsulta;
+
       try {
         const { data } = await supabase.auth.getUser();
+        const userId = data.user?.id || "";
 
-        if (!cancelado) {
-          setUsuarioIdLogado(data.user?.id || "");
-          setAutenticacaoCarregada(true);
+        if (
+          execucaoAutenticacaoObraEstaAtual({
+            cancelada: !componenteAtivo,
+            versaoEsperada: versaoConsulta,
+            versaoAtual: versaoConsultaAutenticacaoObraRef.current,
+          })
+        ) {
+          aplicarIdentidadeAutenticada(userId);
         }
       } catch {
-        if (!cancelado) {
-          setUsuarioIdLogado("");
-          setAutenticacaoCarregada(true);
+        if (
+          execucaoAutenticacaoObraEstaAtual({
+            cancelada: !componenteAtivo,
+            versaoEsperada: versaoConsulta,
+            versaoAtual: versaoConsultaAutenticacaoObraRef.current,
+          })
+        ) {
+          aplicarIdentidadeAutenticada("");
         }
       }
     }
@@ -3181,14 +3281,15 @@ export default function ObraDinamicaPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelado) {
-        setUsuarioIdLogado(session?.user?.id || "");
-        setAutenticacaoCarregada(true);
+      if (componenteAtivo) {
+        versaoConsultaAutenticacaoObraRef.current += 1;
+        aplicarIdentidadeAutenticada(session?.user?.id || "");
       }
     });
 
     return () => {
-      cancelado = true;
+      componenteAtivo = false;
+      versaoConsultaAutenticacaoObraRef.current += 1;
       subscription.unsubscribe();
     };
   }, []);
@@ -3294,20 +3395,43 @@ export default function ObraDinamicaPage() {
   }, []);
 
   useEffect(() => {
+    if (!autenticacaoCarregada) {
+      return;
+    }
+
     let cancelado = false;
+    const identidadeEsperada = identidadeAutenticadaObraRef.current;
+
+    if (identidadeEsperada.usuarioId !== usuarioIdLogado.trim()) {
+      return;
+    }
+
+    function execucaoCarregamentoEstaAtual() {
+      return execucaoIdentidadeObraEstaAtual({
+        cancelada,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaObraRef.current,
+      });
+    }
 
     async function carregarObraPublica() {
       window.setTimeout(() => {
-        if (!cancelado) {
+        if (execucaoCarregamentoEstaAtual()) {
           setCarregandoObras(true);
         }
       }, 0);
 
       try {
-        const obrasNormalizadas = carregarObrasLocaisComBackup(usuarioIdLogado);
+        const obrasNormalizadas = carregarObrasLocaisComBackup(
+          identidadeEsperada.usuarioId,
+        );
+
+        if (!execucaoCarregamentoEstaAtual()) {
+          return;
+        }
 
         window.setTimeout(() => {
-          if (!cancelado) {
+          if (execucaoCarregamentoEstaAtual()) {
             setObrasLocais(obrasNormalizadas);
           }
         }, 0);
@@ -3315,23 +3439,36 @@ export default function ObraDinamicaPage() {
         const obrasComSupabase = await carregarObraSupabasePorSlug(
           slug,
           obrasNormalizadas,
-          usuarioIdLogado
+          identidadeEsperada.usuarioId,
+          execucaoCarregamentoEstaAtual,
         );
 
+        if (!execucaoCarregamentoEstaAtual()) {
+          return;
+        }
+
         window.setTimeout(() => {
-          if (!cancelado) {
+          if (execucaoCarregamentoEstaAtual()) {
             setObrasLocais(obrasComSupabase);
           }
         }, 0);
       } catch {
+        if (!execucaoCarregamentoEstaAtual()) {
+          return;
+        }
+
         window.setTimeout(() => {
-          if (!cancelado) {
+          if (execucaoCarregamentoEstaAtual()) {
             setObrasLocais([]);
           }
         }, 0);
       } finally {
+        if (!execucaoCarregamentoEstaAtual()) {
+          return;
+        }
+
         window.setTimeout(() => {
-          if (!cancelado) {
+          if (execucaoCarregamentoEstaAtual()) {
             setCarregandoObras(false);
           }
         }, 0);
@@ -3343,7 +3480,7 @@ export default function ObraDinamicaPage() {
     return () => {
       cancelado = true;
     };
-  }, [slug, usuarioIdLogado]);
+  }, [autenticacaoCarregada, slug, usuarioIdLogado]);
 
   const obra = useMemo<ObraDinamica | null>(() => {
     const obraLocal = obrasLocais.find((item) => {
