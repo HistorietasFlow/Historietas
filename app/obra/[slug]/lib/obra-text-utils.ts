@@ -23,3 +23,22 @@ export function obterTextoPerfilObra(
 
   return typeof valor === "string" && valor.trim() ? valor.trim() : "";
 }
+
+export function obterNomePerfilObra(
+  profile: Record<string, unknown> | null,
+  fallback: string,
+) {
+  if (!profile) {
+    return fallback.trim() || "Autor não informado";
+  }
+
+  return (
+    obterTextoPerfilObra(profile, "nome") ||
+    obterTextoPerfilObra(profile, "nome_usuario") ||
+    obterTextoPerfilObra(profile, "username") ||
+    obterTextoPerfilObra(profile, "display_name") ||
+    obterTextoPerfilObra(profile, "apelido") ||
+    fallback.trim() ||
+    "Autor não informado"
+  );
+}
