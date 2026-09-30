@@ -161,6 +161,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 444: extrair somente `obterNumeroMetrica` para `app/obra/[slug]/lib/obra-metric-utils.ts`, preservando normalização decimal, multiplicador `k`, arredondamento e fallback para zero.
 - Fase 445: extrair somente `normalizarContadorObraPublica` para `app/obra/[slug]/lib/obra-metric-utils.ts`, preservando parsing de números e strings, normalização decimal, arredondamento, limite mínimo zero e fallback para zero.
 - Fase 446: extrair somente `formatarGeneroObraPublica` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando normalização textual e os fallbacks de gênero exibidos.
+- Fase 447: extrair somente `criarLoginHrefObraPublica` para `app/obra/[slug]/lib/obra-navigation-utils.ts`, preservando o redirect atual, validação de destino seguro e serialização de `redirectTo`.
 
 ## Contrato de preservação
 
