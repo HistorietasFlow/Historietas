@@ -52,6 +52,7 @@ import {
   salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
 import {
+  calcularProximaAvaliacao,
   formatarMediaAvaliacao,
   formatarTotalAvaliacoes,
   obterChaveAvaliacaoObra,
@@ -2171,42 +2172,6 @@ function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
   } catch {
     // Avaliação local é fallback e não deve travar a página.
   }
-}
-
-function calcularProximaAvaliacao(
-  avaliacaoAtual: AvaliacaoObraPublica,
-  novaNota: number
-): AvaliacaoObraPublica {
-  const notaAnterior = avaliacaoAtual.minhaNota;
-  const totalAtual = avaliacaoAtual.total;
-  const somaAtual = avaliacaoAtual.media * totalAtual;
-
-  if (novaNota <= 0) {
-    const totalNovo = notaAnterior > 0 ? Math.max(0, totalAtual - 1) : totalAtual;
-    const somaNova = notaAnterior > 0 ? somaAtual - notaAnterior : somaAtual;
-
-    return {
-      ...avaliacaoAtual,
-      media: totalNovo > 0 ? somaNova / totalNovo : 0,
-      total: totalNovo,
-      minhaNota: 0,
-      carregado: true,
-      salvando: true,
-    };
-  }
-
-  const totalNovo = notaAnterior > 0 ? totalAtual : totalAtual + 1;
-  const somaNova =
-    notaAnterior > 0 ? somaAtual - notaAnterior + novaNota : somaAtual + novaNota;
-
-  return {
-    ...avaliacaoAtual,
-    media: totalNovo > 0 ? somaNova / totalNovo : 0,
-    total: totalNovo,
-    minhaNota: novaNota,
-    carregado: true,
-    salvando: true,
-  };
 }
 
 async function salvarAvaliacaoRemotaObra({
