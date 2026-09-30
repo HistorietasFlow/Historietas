@@ -63,6 +63,7 @@ import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterTextoPerfi
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
+import { obterChavesInteracaoObraPublica } from "./lib/obra-interaction-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1981,22 +1982,6 @@ function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
     curtidaAtiva: false,
     carregado: false,
   };
-}
-
-function obterChavesInteracaoObraPublica(obra: ObraDinamica) {
-  return Array.from(
-    new Set(
-      [
-        obra.id,
-        obra.slug,
-        obra.link,
-        criarSlugBase(obra.titulo),
-        normalizarTexto(obra.titulo),
-      ]
-        .map((chave) => chave.trim())
-        .filter(Boolean)
-    )
-  );
 }
 
 function obraEstaEmListaLocalObraPublica(
