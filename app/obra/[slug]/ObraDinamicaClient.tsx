@@ -58,7 +58,7 @@ import {
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
 import { formatarGeneroObraPublica, obterAvatarPerfilObra, obterBioPerfilObra, obterNomePerfilObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
-import { criarLinkComunidadeObra, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
+import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1892,21 +1892,6 @@ function capaObraPodeSerOtimizada(capa: string) {
   }
 }
 
-
-function criarLinkPerfilAutor(autor: string, autorId?: string) {
-  const params = new URLSearchParams();
-  const autorLimpo = autor.trim() || "Autor não informado";
-  const autorIdLimpo = autorId?.trim() || "";
-
-  params.set("autor", autorLimpo);
-
-  if (autorIdLimpo) {
-    params.set("autorId", autorIdLimpo);
-    params.set("userId", autorIdLimpo);
-  }
-
-  return `/perfil-autor?${params.toString()}`;
-}
 
 function normalizarPerfilPublicoObra(
   profile: Record<string, unknown> | null,
