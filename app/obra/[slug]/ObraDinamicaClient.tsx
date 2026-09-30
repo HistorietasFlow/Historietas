@@ -63,7 +63,7 @@ import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObra
 import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
-import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterIndicadorConteudoObraPublica } from "./lib/obra-reading-utils";
+import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
@@ -3355,17 +3355,10 @@ export default function ObraDinamicaPage() {
             abrir: "Ver classificação indicativa",
           };
 
-  const capitulosDaObra = useMemo<CapituloDinamico[]>(() => {
-    if (!obra) {
-      return [];
-    }
-
-    if (obra.capitulos.length > 0) {
-      return obra.capitulos;
-    }
-
-    return [];
-  }, [obra]);
+  const capitulosDaObra = useMemo<CapituloDinamico[]>(
+    () => obterCapitulosObraPublica(obra),
+    [obra]
+  );
 
   const {
     icone: indicadorConteudoIcone,
