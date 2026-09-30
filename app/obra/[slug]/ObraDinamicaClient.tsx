@@ -157,6 +157,8 @@ type TraducaoObraDinamica = {
 const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica> = {
   "Carregando": { en: "Loading", es: "Cargando" },
   "Carregando obra": { en: "Loading work", es: "Cargando obra" },
+  "Começar a ler": { en: "Start reading", es: "Empezar a leer" },
+  "Continuar leitura": { en: "Continue reading", es: "Continuar leyendo" },
   "Obra não encontrada": { en: "Work not found", es: "Obra no encontrada" },
   "Não foi possível carregar a obra agora.": {
     en: "The work could not be loaded right now.",
@@ -5325,10 +5327,20 @@ export default function ObraDinamicaPage() {
     return copiado;
   }
 
+  const capituloPrincipalObra = obra
+    ? encontrarCapituloParaContinuarObraPublica(obra)
+    : null;
+  const obraTemLeituraIniciada = Boolean(
+    obra &&
+      (obra.ultimoCapituloLidoId ||
+        obra.progressoLeitura > 0 ||
+        obra.capitulos.some((capitulo) => capitulo.lido)),
+  );
+  const rotuloLeituraPrincipal = obraTemLeituraIniciada
+    ? "Continuar leitura"
+    : "Começar a ler";
   const hrefPrincipalObra = obra
-    ? encontrarCapituloParaContinuarObraPublica(obra)?.href ||
-      obra.link ||
-      `/obra/${obra.slug}`
+    ? capituloPrincipalObra?.href || obra.link || `/obra/${obra.slug}`
     : "/explorar";
 
   const resumoAvaliacaoCabecalho = (
@@ -6381,7 +6393,11 @@ export default function ObraDinamicaPage() {
             <Link
               href={hrefPrincipalObra}
               style={isDesktop ? desktopHeroCoverLinkStyle : heroCoverLinkStyle}
-              aria-label={`Abrir ${obra.titulo}`}
+              aria-label={
+                capituloPrincipalObra
+                  ? `${rotuloLeituraPrincipal}: ${obra.titulo}`
+                  : `Abrir ${obra.titulo}`
+              }
             >
               <div
                 style={
@@ -6513,6 +6529,20 @@ export default function ObraDinamicaPage() {
               </div>
 
               <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
+                {capituloPrincipalObra ? (
+                  <Link
+                    href={capituloPrincipalObra.href}
+                    style={
+                      isDesktop
+                        ? desktopPrimaryReadingButtonStyle
+                        : primaryReadingButtonStyle
+                    }
+                    aria-label={`${rotuloLeituraPrincipal}: ${obra.titulo}`}
+                  >
+                    {rotuloLeituraPrincipal}
+                  </Link>
+                ) : null}
+
                 <button
                   type="button"
                   onClick={alternarSeguirObra}
@@ -6520,7 +6550,7 @@ export default function ObraDinamicaPage() {
                     isDesktop
                       ? obraSeguida
                         ? desktopFollowedButtonStyle
-                        : desktopPrimaryFollowButtonStyle
+                        : desktopSecondaryFollowButtonStyle
                       : obraSeguida
                         ? followedButtonStyle
                         : secondaryButtonStyle
@@ -7915,7 +7945,7 @@ const descriptionStyle: CSSProperties = {
 const heroActionsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr) 50px",
-  gap: "12px",
+  gap: "10px 12px",
   marginTop: "10px",
   minWidth: 0,
   width: "100%",
@@ -7999,6 +8029,27 @@ const heroBottomMetricStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+
+const primaryReadingButtonStyle: CSSProperties = {
+  minHeight: "50px",
+  gridColumn: "1 / -1",
+  borderRadius: "999px",
+  border: "1px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#08080A",
+  textDecoration: "none",
+  fontSize: "14px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 22px",
+  boxSizing: "border-box",
+  boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
+  ...safeTextStyle,
+};
 
 const secondaryButtonStyle: CSSProperties = {
   minHeight: "50px",
@@ -9706,8 +9757,8 @@ const desktopHeroStatsStyle: CSSProperties = {
   flexWrap: "wrap",
 };
 
-const desktopPrimaryFollowButtonStyle: CSSProperties = {
-  minWidth: "164px",
+const desktopPrimaryReadingButtonStyle: CSSProperties = {
+  minWidth: "176px",
   minHeight: "50px",
   padding: "0 22px",
   borderRadius: "10px",
@@ -9720,7 +9771,7 @@ const desktopPrimaryFollowButtonStyle: CSSProperties = {
   justifyContent: "center",
   fontFamily: "inherit",
   fontSize: "14px",
-  fontWeight: 850,
+  fontWeight: 900,
   lineHeight: 1.1,
   textAlign: "center",
   boxSizing: "border-box",
@@ -9729,13 +9780,31 @@ const desktopPrimaryFollowButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const desktopFollowedButtonStyle: CSSProperties = {
-  ...desktopPrimaryFollowButtonStyle,
+const desktopSecondaryFollowButtonStyle: CSSProperties = {
   minWidth: "154px",
+  minHeight: "50px",
+  padding: "0 22px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.34)",
   background: "rgba(10,10,12,0.74)",
   color: "#FFFFFF",
-  border: "1px solid rgba(255,255,255,0.34)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  fontWeight: 850,
+  lineHeight: 1.1,
+  textAlign: "center",
+  boxSizing: "border-box",
   boxShadow: "none",
+  cursor: "pointer",
+  ...safeTextStyle,
+};
+
+const desktopFollowedButtonStyle: CSSProperties = {
+  ...desktopSecondaryFollowButtonStyle,
 };
 
 const desktopObraAddButtonStyle: CSSProperties = {
