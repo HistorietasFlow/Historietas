@@ -2038,30 +2038,29 @@ function encontrarCapituloParaContinuarObraPublica(obra: ObraDinamica) {
   );
 }
 
-function criarCoverArtStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return coverArtStyle;
+function capaObraPodeSerOtimizada(capa: string) {
+  const capaLimpa = capa.trim();
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
+
+  if (!capaLimpa || !supabaseUrl) {
+    return false;
   }
 
-  return {
-    ...coverArtStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center top",
-  };
-}
+  try {
+    const urlCapa = new URL(capaLimpa);
+    const urlSupabase = new URL(supabaseUrl);
 
-function criarDesktopCoverArtStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return desktopCoverArtStyle;
+    return (
+      urlSupabase.protocol === "https:" &&
+      urlCapa.origin === urlSupabase.origin &&
+      urlCapa.pathname.startsWith(
+        "/storage/v1/object/public/capas-obras/",
+      )
+    );
+  } catch {
+    return false;
   }
-
-  return {
-    ...desktopCoverArtStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
 }
 
 
@@ -6400,14 +6399,23 @@ export default function ObraDinamicaPage() {
               }
             >
               <div
-                style={
-                  isDesktop
-                    ? criarDesktopCoverArtStyle(obra.capa)
-                    : criarCoverArtStyle(obra.capa)
-                }
+                style={isDesktop ? desktopCoverArtStyle : coverArtStyle}
                 aria-hidden="true"
               >
-                {!obra.capa && (
+                {obra.capa ? (
+                  <Image
+                    src={obra.capa}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    preload
+                    unoptimized={!capaObraPodeSerOtimizada(obra.capa)}
+                    style={{
+                      objectFit: "cover",
+                      objectPosition: isDesktop ? "center" : "center top",
+                    }}
+                  />
+                ) : (
                   <strong style={coverTitleStyle}>
                     {obra.titulo
                       .split(" ")
