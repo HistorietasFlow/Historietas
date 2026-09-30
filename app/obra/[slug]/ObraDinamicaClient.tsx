@@ -5693,7 +5693,8 @@ export default function ObraDinamicaPage() {
                     />
                   </div>
                 ) : estruturaComentariosObra.comentariosRaiz.length > 0 ? (
-                  estruturaComentariosObra.comentariosRaiz.map((comentario) => {
+                  <>
+                    {estruturaComentariosObra.comentariosRaiz.map((comentario) => {
                     const respostas =
                       estruturaComentariosObra.respostasPorRaiz.get(
                         comentario.id
@@ -5796,7 +5797,26 @@ export default function ObraDinamicaPage() {
                         ) : null}
                       </section>
                     );
-                  })
+                    })}
+                    {comentariosTemMais ? (
+                      <button
+                        type="button"
+                        onClick={() => void carregarMaisComentariosObra()}
+                        disabled={comentariosCarregandoMais}
+                        style={{
+                          ...commentsLoadMoreStyle,
+                          opacity: comentariosCarregandoMais ? 0.62 : 1,
+                          cursor: comentariosCarregandoMais
+                            ? "not-allowed"
+                            : "pointer",
+                        }}
+                      >
+                        {comentariosCarregandoMais
+                          ? "Carregando..."
+                          : "Carregar mais comentários"}
+                      </button>
+                    ) : null}
+                  </>
                 ) : (
                   <p style={emptyCommentsStyle}>Sem comentários ainda</p>
                 )}
@@ -8372,6 +8392,20 @@ const commentsSheetListStyle: CSSProperties = {
   overflowY: "auto",
   padding: "6px 2px 9px",
   WebkitOverflowScrolling: "touch",
+};
+
+const commentsLoadMoreStyle: CSSProperties = {
+  width: "fit-content",
+  minHeight: "36px",
+  justifySelf: "center",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  borderRadius: "999px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  padding: "7px 14px",
+  fontSize: "11px",
+  fontWeight: 900,
+  fontFamily: "inherit",
 };
 
 const commentSheetItemStyle: CSSProperties = {
