@@ -59,6 +59,7 @@ import {
 import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
 import { formatarGeneroObraPublica, obterAvatarPerfilObra, obterBioPerfilObra, obterNomePerfilObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
+import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1866,32 +1867,6 @@ function encontrarCapituloParaContinuarObraPublica(obra: ObraDinamica) {
     capitulosDisponiveis[capitulosDisponiveis.length - 1]
   );
 }
-
-function capaObraPodeSerOtimizada(capa: string) {
-  const capaLimpa = capa.trim();
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
-
-  if (!capaLimpa || !supabaseUrl) {
-    return false;
-  }
-
-  try {
-    const urlCapa = new URL(capaLimpa);
-    const urlSupabase = new URL(supabaseUrl);
-
-    return (
-      urlSupabase.protocol === "https:" &&
-      urlCapa.origin === urlSupabase.origin &&
-      urlCapa.pathname.startsWith(
-        "/storage/v1/object/public/capas-obras/",
-      )
-    );
-  } catch {
-    return false;
-  }
-}
-
 
 function normalizarPerfilPublicoObra(
   profile: Record<string, unknown> | null,

@@ -168,6 +168,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 451: extrair somente `obterAvatarPerfilObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a ordem dos campos de avatar e fallback vazio.
 - Fase 452: extrair somente `obterBioPerfilObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a ordem dos campos de bio e fallback vazio.
 - Fase 453: extrair somente `criarLinkPerfilAutor` para `app/obra/[slug]/lib/obra-navigation-utils.ts`, preservando os parâmetros `autor`, `autorId` e `userId`, trim e fallback `Autor não informado`.
+- Fase 454: extrair somente `capaObraPodeSerOtimizada` para `app/obra/[slug]/lib/obra-cover-utils.ts`, preservando validação do host/protocolo Supabase, caminho público do bucket de capas e fallback `false`.
 
 ## Contrato de preservação
 
