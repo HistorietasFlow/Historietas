@@ -3843,17 +3843,6 @@ export default function ObraDinamicaPage() {
     const metricasBase = criarMetricasBaseObra(obraAtual);
     let curtidaLocalAtiva = false;
     let seguindoLocalAtivo = false;
-    const favoritadaLocalAtiva = obraEstaEmListaLocalObraPublica(
-      obraAtual,
-      FAVORITES_STORAGE_KEY,
-      usuarioIdLogado,
-    );
-    const concluidaLocalAtiva = obraEstaEmListaLocalObraPublica(
-      obraAtual,
-      COMPLETED_STORAGE_KEY,
-      usuarioIdLogado,
-    );
-
     try {
       const curtidasTexto = lerStorageUsuarioObraPublica(
         LIKED_WORKS_STORAGE_KEY,
