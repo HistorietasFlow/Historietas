@@ -154,11 +154,12 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     inicioCarregador,
   );
   const blocoCarregador = paginaObra.slice(inicioCarregador, fimCarregador);
-  const indiceGuardBackup = blocoCarregador.lastIndexOf(
-    "if (!execucaoAtual())",
-  );
   const indiceBackup = blocoCarregador.indexOf(
     "sincronizarBackupArquivosObras(obrasAtualizadas, userId);",
+  );
+  const indiceGuardBackup = blocoCarregador.lastIndexOf(
+    "if (!execucaoAtual())",
+    indiceBackup,
   );
 
   assert.ok(inicioCarregador >= 0);
