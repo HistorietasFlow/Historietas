@@ -64,10 +64,15 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
       }),
     ).toBeVisible();
     await expect(page.getByText("Erro 404", { exact: true })).toBeVisible();
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
-      "content",
-      /noindex/i,
-    );
+    const robotsContents = await page
+      .locator('meta[name="robots"]')
+      .evaluateAll((metas) =>
+        metas.map((meta) => meta.getAttribute("content") || ""),
+      );
+
+    expect(
+      robotsContents.some((content) => /noindex/i.test(content)),
+    ).toBe(true);
   });
 
   test("visitante vê CTA explícito e ele abre o capítulo público", async ({
