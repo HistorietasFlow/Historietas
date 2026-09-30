@@ -78,6 +78,7 @@ export function formatarTempoRelativoComentarioObra(
 
   return `há ${dias} ${dias === 1 ? "dia" : "dias"}`;
 }
+
 export function obterObraIdComentarios(
   obra: { id?: string } | null,
 ) {
