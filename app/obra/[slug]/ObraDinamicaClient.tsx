@@ -10,6 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import type {
   CSSProperties,
   FormEvent,
+  KeyboardEvent,
   MouseEvent,
   ReactNode,
   TouchEvent,
@@ -52,6 +53,101 @@ const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const WORK_COMMENTS_PAGE_SIZE = 20;
+const DIALOG_FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+function obterElementosFocaveisDialogo(dialogo: HTMLElement) {
+  return Array.from(
+    dialogo.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR),
+  ).filter(
+    (elemento) =>
+      elemento.getAttribute("aria-hidden") !== "true" &&
+      elemento.getClientRects().length > 0,
+  );
+}
+
+function focarInicioDialogo(dialogo: HTMLElement | null) {
+  if (!dialogo) {
+    return;
+  }
+
+  const focoPreferido = dialogo.querySelector<HTMLElement>(
+    '[data-dialog-initial-focus="true"]',
+  );
+  const primeiroFocavel = obterElementosFocaveisDialogo(dialogo)[0];
+
+  (focoPreferido || primeiroFocavel || dialogo).focus();
+}
+
+function obterElementoComFocoAtual() {
+  return document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null;
+}
+
+function restaurarFocoAnterior(elemento: HTMLElement | null) {
+  if (!elemento) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elemento.isConnected) {
+      elemento.focus();
+    }
+  }, 0);
+}
+
+function manterFocoNoDialogo(
+  event: KeyboardEvent<HTMLElement>,
+  fecharDialogo: () => void,
+) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    fecharDialogo();
+    return;
+  }
+
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const dialogo = event.currentTarget;
+  const focaveis = obterElementosFocaveisDialogo(dialogo);
+
+  if (focaveis.length === 0) {
+    event.preventDefault();
+    dialogo.focus();
+    return;
+  }
+
+  const primeiro = focaveis[0];
+  const ultimo = focaveis[focaveis.length - 1];
+  const elementoAtivo = document.activeElement;
+
+  if (elementoAtivo === dialogo) {
+    event.preventDefault();
+    (event.shiftKey ? ultimo : primeiro).focus();
+    return;
+  }
+
+  if (event.shiftKey && elementoAtivo === primeiro) {
+    event.preventDefault();
+    ultimo.focus();
+    return;
+  }
+
+  if (!event.shiftKey && elementoAtivo === ultimo) {
+    event.preventDefault();
+    primeiro.focus();
+  }
+}
 
 type TraducaoObraDinamica = {
   en: string;
@@ -3319,6 +3415,11 @@ export default function ObraDinamicaPage() {
     useState<PerfilPublicoObra | null>(null);
   const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
   const comentariosSheetRef = useRef<HTMLElement | null>(null);
+  const classificacaoDialogRef = useRef<HTMLElement | null>(null);
+  const acoesObraDialogRef = useRef<HTMLElement | null>(null);
+  const focoAntesComentariosRef = useRef<HTMLElement | null>(null);
+  const focoAntesClassificacaoRef = useRef<HTMLElement | null>(null);
+  const focoAntesAcoesObraRef = useRef<HTMLElement | null>(null);
   const comentariosDragStartYRef = useRef(0);
   const comentariosDragOffsetYRef = useRef(0);
   const comentariosDragIgnorarCliqueRef = useRef(false);
@@ -3506,6 +3607,48 @@ export default function ObraDinamicaPage() {
       window.clearInterval(relogioComentarios);
     };
   }, [comentariosAbertos]);
+
+  useEffect(() => {
+    if (!comentariosAbertos) {
+      return;
+    }
+
+    const focoTimer = window.setTimeout(() => {
+      focarInicioDialogo(comentariosSheetRef.current);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focoTimer);
+    };
+  }, [comentariosAbertos]);
+
+  useEffect(() => {
+    if (!painelClassificacaoAberto) {
+      return;
+    }
+
+    const focoTimer = window.setTimeout(() => {
+      focarInicioDialogo(classificacaoDialogRef.current);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focoTimer);
+    };
+  }, [painelClassificacaoAberto]);
+
+  useEffect(() => {
+    if (!acoesObraAbertas) {
+      return;
+    }
+
+    const focoTimer = window.setTimeout(() => {
+      focarInicioDialogo(acoesObraDialogRef.current);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focoTimer);
+    };
+  }, [acoesObraAbertas]);
 
 
   useEffect(() => {
@@ -5227,18 +5370,58 @@ export default function ObraDinamicaPage() {
   );
 
 
+  function abrirPainelClassificacaoObra() {
+    focoAntesClassificacaoRef.current = obterElementoComFocoAtual();
+    setPainelClassificacaoAberto(true);
+  }
+
+  function fecharPainelClassificacaoObra() {
+    const focoAnterior = focoAntesClassificacaoRef.current;
+    focoAntesClassificacaoRef.current = null;
+    setPainelClassificacaoAberto(false);
+    restaurarFocoAnterior(focoAnterior);
+  }
+
+  function abrirAcoesObra() {
+    focoAntesAcoesObraRef.current = obterElementoComFocoAtual();
+    setAcoesObraAbertas(true);
+  }
+
+  function fecharAcoesObra(restaurarFoco = true) {
+    const focoAnterior = focoAntesAcoesObraRef.current;
+    focoAntesAcoesObraRef.current = null;
+    setAcoesObraAbertas(false);
+
+    if (restaurarFoco) {
+      restaurarFocoAnterior(focoAnterior);
+    }
+  }
+
+  function alternarAcoesObra() {
+    if (acoesObraAbertas) {
+      fecharAcoesObra();
+      return;
+    }
+
+    abrirAcoesObra();
+  }
+
   function abrirComentariosObra() {
+    focoAntesComentariosRef.current = obterElementoComFocoAtual();
     setComentariosSheetExpandido(false);
     setMenuOrdenacaoComentariosAberto(false);
     setComentariosAbertos(true);
   }
 
   function fecharComentariosObra() {
+    const focoAnterior = focoAntesComentariosRef.current;
+    focoAntesComentariosRef.current = null;
     setComentariosAbertos(false);
     setComentariosSheetExpandido(false);
     setMenuOrdenacaoComentariosAberto(false);
     setRespostaComentario(null);
     comentariosDragOffsetYRef.current = 0;
+    restaurarFocoAnterior(focoAnterior);
   }
 
   function iniciarArrasteComentariosObra(
@@ -5353,7 +5536,7 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    setAcoesObraAbertas(false);
+    fecharAcoesObra(false);
     setDenunciaAlvo({
       alvoTipo: "obra",
       alvoId: obra.id,
@@ -5605,6 +5788,10 @@ export default function ObraDinamicaPage() {
               role="dialog"
               aria-modal="true"
               aria-label={`Comentários de ${obra.titulo}`}
+              tabIndex={-1}
+              onKeyDown={(event) =>
+                manterFocoNoDialogo(event, fecharComentariosObra)
+              }
               style={
                 isDesktop
                   ? desktopCommentsSheetStyle
@@ -5618,6 +5805,7 @@ export default function ObraDinamicaPage() {
             >
               <div
                 data-comments-sheet-handle="true"
+                data-dialog-initial-focus="true"
                 style={commentsSheetHandleWrapStyle}
                 onClick={alternarExpansaoComentariosObra}
                 onTouchStart={iniciarArrasteComentariosObra}
@@ -5959,14 +6147,19 @@ export default function ObraDinamicaPage() {
             <button
               type="button"
               aria-label={textosPainelClassificacao.fechar}
-              onClick={() => setPainelClassificacaoAberto(false)}
+              onClick={fecharPainelClassificacaoObra}
               style={classificationPanelBackdropStyle}
             />
 
             <article
+              ref={classificacaoDialogRef}
               role="dialog"
               aria-modal="true"
               aria-labelledby="historietas-classificacao-title"
+              tabIndex={-1}
+              onKeyDown={(event) =>
+                manterFocoNoDialogo(event, fecharPainelClassificacaoObra)
+              }
               style={classificationPanelStyle}
             >
               <header style={classificationPanelHeaderStyle}>
@@ -5984,7 +6177,8 @@ export default function ObraDinamicaPage() {
 
                 <button
                   type="button"
-                  onClick={() => setPainelClassificacaoAberto(false)}
+                  data-dialog-initial-focus="true"
+                  onClick={fecharPainelClassificacaoObra}
                   aria-label={textosPainelClassificacao.fechar}
                   style={classificationPanelCloseStyle}
                 >
@@ -6148,7 +6342,7 @@ export default function ObraDinamicaPage() {
           >
             <button
               type="button"
-              onClick={() => setPainelClassificacaoAberto(true)}
+              onClick={abrirPainelClassificacaoObra}
               aria-label={`${textosPainelClassificacao.abrir}: ${obra.classificacaoIndicativa}`}
               title={`${textosPainelClassificacao.abrir}: ${obra.classificacaoIndicativa}`}
               style={{
@@ -6337,9 +6531,7 @@ export default function ObraDinamicaPage() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setAcoesObraAbertas((menuAberto) => !menuAberto)
-                  }
+                  onClick={alternarAcoesObra}
                   style={isDesktop ? desktopObraAddButtonStyle : obraAddButtonStyle}
                   aria-label="Abrir ações da obra"
                   aria-expanded={acoesObraAbertas}
@@ -6357,12 +6549,18 @@ export default function ObraDinamicaPage() {
           <div
             style={obraActionSheetOverlayStyle}
             role="presentation"
-            onClick={() => setAcoesObraAbertas(false)}
+            onClick={() => fecharAcoesObra()}
           >
             <section
+              ref={acoesObraDialogRef}
               style={isDesktop ? desktopObraActionsMenuStyle : obraActionsMenuStyle}
               role="dialog"
+              aria-modal="true"
               aria-label={`Ações da obra ${obra.titulo}`}
+              tabIndex={-1}
+              onKeyDown={(event) =>
+                manterFocoNoDialogo(event, () => fecharAcoesObra())
+              }
               onClick={(event) => event.stopPropagation()}
             >
               <div style={obraActionSheetHandleStyle} aria-hidden="true" />
@@ -6459,8 +6657,9 @@ export default function ObraDinamicaPage() {
               <div style={obraMenuActionsStyle}>
                 <button
                   type="button"
+                  data-dialog-initial-focus="true"
                   onClick={() => {
-                    setAcoesObraAbertas(false);
+                    fecharAcoesObra();
                     void alternarFavoritoObra();
                   }}
                   style={
@@ -6484,7 +6683,7 @@ export default function ObraDinamicaPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setAcoesObraAbertas(false);
+                    fecharAcoesObra();
                     void alternarConcluirObra();
                   }}
                   style={
@@ -6522,6 +6721,7 @@ export default function ObraDinamicaPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    fecharAcoesObra();
                     void compartilharObraAtual();
                   }}
                   style={
@@ -8304,7 +8504,7 @@ const commentsSheetHandleWrapStyle: CSSProperties = {
   touchAction: "none",
   cursor: "grab",
   willChange: "transform",
-  outline: "none",
+  outlineOffset: "3px",
 };
 
 const commentsSheetHandleStyle: CSSProperties = {
