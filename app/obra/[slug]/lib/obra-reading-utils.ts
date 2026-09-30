@@ -41,7 +41,6 @@ export function obterIndicadorConteudoObraPublica(obra: {
   };
 }
 
-
 export function obterCapitulosObraPublica<TCapitulo>(
   obra: { capitulos: TCapitulo[] } | null,
 ) {
