@@ -70,7 +70,7 @@ test("otimizacao so aceita capa publica do Supabase configurado", () => {
   const bloco = obterBloco(
     paginaObra,
     "function capaObraPodeSerOtimizada(",
-    "function criarLinkPerfilAutor(",
+    "function normalizarPerfilPublicoObra(",
   );
 
   assert.match(bloco, /NEXT_PUBLIC_SUPABASE_URL/);

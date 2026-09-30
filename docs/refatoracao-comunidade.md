@@ -167,6 +167,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 450: extrair somente `obterNomePerfilObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a ordem dos campos de nome, trim e fallback `Autor não informado`.
 - Fase 451: extrair somente `obterAvatarPerfilObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a ordem dos campos de avatar e fallback vazio.
 - Fase 452: extrair somente `obterBioPerfilObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a ordem dos campos de bio e fallback vazio.
+- Fase 453: extrair somente `criarLinkPerfilAutor` para `app/obra/[slug]/lib/obra-navigation-utils.ts`, preservando os parâmetros `autor`, `autorId` e `userId`, trim e fallback `Autor não informado`.
 
 ## Contrato de preservação
 
