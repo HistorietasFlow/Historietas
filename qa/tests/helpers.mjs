@@ -80,6 +80,68 @@ export async function loginAsVisitor(page) {
   await loginWithCredentials(page, visitorEmail, visitorPassword, "visitante");
 }
 
+export async function resetVisitorWorkInteractions(workSlug) {
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+  const key = (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    ""
+  ).trim();
+
+  if (!url || !key || !hasVisitorCredentials || !workSlug) {
+    return;
+  }
+
+  const supabase = createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+
+  const { data: authData, error: authError } =
+    await supabase.auth.signInWithPassword({
+      email: visitorEmail,
+      password: visitorPassword,
+    });
+
+  if (authError || !authData.user?.id) {
+    throw authError || new Error("Visitante E2E não autenticado.");
+  }
+
+  const { data: work, error: workError } = await supabase
+    .from("obras")
+    .select("id")
+    .eq("slug", workSlug)
+    .single();
+
+  if (workError || !work?.id) {
+    throw workError || new Error("Obra E2E não encontrada.");
+  }
+
+  const userId = authData.user.id;
+
+  for (const tabela of [
+    "seguindo_obras",
+    "obra_curtidas",
+    "favoritos",
+    "concluidas",
+  ]) {
+    const { error } = await supabase
+      .from(tabela)
+      .delete()
+      .eq("user_id", userId)
+      .eq("obra_id", work.id);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  await supabase.auth.signOut({ scope: "local" });
+}
+
 export async function openWorkActions(page, title) {
   await page.getByRole("button", { name: `Abrir opções de ${title}` }).click();
   const sheet = page.locator('[aria-label^="Ações de "]').filter({ hasText: title });
