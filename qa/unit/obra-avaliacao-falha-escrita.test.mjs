@@ -77,12 +77,17 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
     "async function compartilharObraAtual()",
   );
   const indiceSalvarRemoto = bloco.indexOf("await salvarAvaliacaoRemotaObra({");
+  const indiceMensagemFalha = bloco.indexOf(
+    'setMensagemAcao("Não foi possível salvar a avaliação agora.");',
+    indiceSalvarRemoto,
+  );
+  const indiceGuardSucesso = bloco.indexOf(
+    "if (avaliacaoVersaoRef.current !== versaoAvaliacao)",
+    indiceMensagemFalha,
+  );
   const indiceFinalizarAvaliacao = bloco.indexOf(
-    "salvando: false",
-    bloco.indexOf(
-      "if (avaliacaoVersaoRef.current !== versaoAvaliacao)",
-      indiceSalvarRemoto,
-    ),
+    "setAvaliacaoObra((avaliacaoAtual) => ({",
+    indiceGuardSucesso,
   );
   const indiceDiario = bloco.indexOf(
     "await registrarAtividadeDiarioObra({",
@@ -94,7 +99,9 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
   );
 
   assert.ok(indiceSalvarRemoto >= 0);
-  assert.ok(indiceFinalizarAvaliacao > indiceSalvarRemoto);
+  assert.ok(indiceMensagemFalha > indiceSalvarRemoto);
+  assert.ok(indiceGuardSucesso > indiceMensagemFalha);
+  assert.ok(indiceFinalizarAvaliacao > indiceGuardSucesso);
   assert.ok(indiceDiario > indiceFinalizarAvaliacao);
   assert.ok(indiceAvisoDiario > indiceDiario);
 });
