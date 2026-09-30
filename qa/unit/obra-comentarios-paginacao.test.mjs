@@ -34,7 +34,7 @@ test("comentarios remotos so carregam quando o painel esta aberto", () => {
 test("pagina comentarios raiz e busca apenas respostas dos topicos carregados", () => {
   const bloco = obterBloco(
     "async function carregarPaginaComentariosObraSupabase(",
-    "function dataComentarioObra(",
+    "function formatarTempoRelativoComentarioObra(",
   );
 
   assert.match(paginaObra, /const WORK_COMMENTS_PAGE_SIZE = 20/);
