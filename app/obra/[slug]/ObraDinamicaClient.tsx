@@ -65,7 +65,7 @@ import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublic
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, dataComentarioObra } from "./lib/obra-comment-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2657,12 +2657,6 @@ async function carregarPaginaComentariosObraSupabase(
   };
 }
 
-
-function dataComentarioObra(comentario: ComentarioObraPublico) {
-  const data = new Date(comentario.criadoEm).getTime();
-
-  return Number.isNaN(data) ? 0 : data;
-}
 
 function formatarTempoRelativoComentarioObra(
   criadaEm: string,
