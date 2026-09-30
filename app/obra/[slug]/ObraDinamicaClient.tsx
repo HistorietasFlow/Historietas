@@ -65,7 +65,7 @@ import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublic
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { decodificarCaminhoArquivoObra, normalizarCategoriaArquivoSupabase, obterChavesBackupObra } from "./lib/obra-file-utils";
 
@@ -3367,7 +3367,7 @@ export default function ObraDinamicaPage() {
     capitulos: capitulosDaObra,
     arquivoObra: obra?.arquivoObra,
   });
-  const obraIdComentarios = obra?.id?.trim() || "";
+  const obraIdComentarios = obterObraIdComentarios(obra);
 
 
   useEffect(() => {
