@@ -2473,7 +2473,18 @@ const ciContracts = [
       /E2E_PUBLIC_WORK_SLUG:\s*obra-publica-e2e/.test(ciWorkflow) &&
       localE2ePreparation.includes("auth.admin.createUser") &&
       localE2ePreparation.includes('id: DEFAULTS.userId') &&
-      localE2ePreparation.includes("auth.admin.deleteUser(DEFAULTS.userId)") &&
+      (
+        localE2ePreparation.includes("auth.admin.deleteUser(DEFAULTS.userId)") ||
+        (
+          localE2ePreparation.includes(
+            "async function excluirContaAnterior(admin, userId)"
+          ) &&
+          localE2ePreparation.includes("auth.admin.deleteUser(userId)") &&
+          localE2ePreparation.includes(
+            "excluirContaAnterior(admin, DEFAULTS.userId)"
+          )
+        )
+      ) &&
       !localE2ePreparation.includes("auth.admin.listUsers") &&
       localE2ePreparation.includes("email_confirm: true") &&
       localE2ePreparation.includes('from("profiles").insert') &&
