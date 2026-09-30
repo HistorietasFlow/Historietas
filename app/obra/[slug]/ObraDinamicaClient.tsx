@@ -4620,6 +4620,11 @@ export default function ObraDinamicaPage() {
         salvarComentariosObraLocais(userId, obra.id, proximosComentarios);
         return proximosComentarios;
       });
+
+      if (!comentarioSincronizado.comentarioPaiId) {
+        setComentariosProximoOffset((offsetAtual) => offsetAtual + 1);
+      }
+
       setComentarioStatus("");
     } catch {
       setComentariosObra((comentariosAtuais) =>
@@ -4719,6 +4724,12 @@ export default function ObraDinamicaPage() {
       setTotalComentariosObra((totalAtual) =>
         Math.max(0, totalAtual - idsParaRemover.size)
       );
+
+      if (!comentario.comentarioPaiId) {
+        setComentariosProximoOffset((offsetAtual) =>
+          Math.max(0, offsetAtual - 1),
+        );
+      }
 
       if (
         respostaComentario &&
