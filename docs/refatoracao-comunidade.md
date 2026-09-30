@@ -153,6 +153,10 @@
 
 A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o comments sheet foi corrigida no PR #574, e o retry das Reviews pendentes após cancelamento parcial foi corrigido no PR #575. Com essas correções, a refatoração estrutural da Comunidade está encerrada.
 
+## Refatoração estrutural da página da obra
+
+- Fase 441: extrair somente os utilitários de foco dos dialogs de `ObraDinamicaClient.tsx` para `app/obra/[slug]/lib/obra-dialog-focus.ts`, preservando foco inicial, ciclo de Tab/Shift+Tab, Escape e restauração de foco sem alterar comportamento visual ou de dados.
+
 ## Contrato de preservação
 
 A extração deve preservar exatamente:
