@@ -57,7 +57,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
-import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterAvatarPerfilObra, obterBioPerfilObra, obterNomePerfilObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
+import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
