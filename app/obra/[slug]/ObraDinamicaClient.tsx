@@ -60,7 +60,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
-import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
+import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica } from "./lib/obra-reading-utils";
@@ -3318,7 +3318,7 @@ export default function ObraDinamicaPage() {
   const generoObraFormatado = obra
     ? formatarGeneroObraPublica(obra.genero)
     : "Não informado";
-  const autorObraNome = perfilAutorObra?.nome || obra?.autor || "Autor não informado";
+  const autorObraNome = obterNomeAutorObraExibido(perfilAutorObra, obra);
   const autorObraId = perfilAutorObra?.userId || obra?.autorId || "";
   const usuarioEhAutorDaObra = Boolean(
     usuarioIdLogado &&
