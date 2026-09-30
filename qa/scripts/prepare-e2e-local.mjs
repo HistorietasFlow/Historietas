@@ -10,6 +10,10 @@ const DEFAULTS = Object.freeze({
   email: "e2e-author@historietas.test",
   authorName: "Autor E2E",
   username: "autor-e2e",
+  visitorUserId: "e2e00000-0000-4000-8000-000000000004",
+  visitorEmail: "e2e-reader@historietas.test",
+  visitorName: "Leitor E2E",
+  visitorUsername: "leitor-e2e",
   communityPostId: "e2e00000-0000-4000-8000-000000000002",
   communityCommentId: "e2e00000-0000-4000-8000-000000000003",
   communityCommentAuthorId: "a0000000-0000-0000-0000-000000000001",
@@ -128,8 +132,8 @@ function exigirSemErro(error, contexto) {
   }
 }
 
-async function excluirContaAnterior(admin) {
-  const { error } = await admin.auth.admin.deleteUser(DEFAULTS.userId);
+async function excluirContaAnterior(admin, userId) {
+  const { error } = await admin.auth.admin.deleteUser(userId);
 
   if (error && error.status !== 404) {
     exigirSemErro(error, "Não foi possível recriar a conta E2E local");
@@ -171,6 +175,11 @@ async function preparar() {
   const email = (process.env.E2E_USER_EMAIL || DEFAULTS.email).trim();
   const password =
     process.env.E2E_USER_PASSWORD || randomBytes(24).toString("base64url");
+  const visitorEmail = (
+    process.env.E2E_VISITOR_EMAIL || DEFAULTS.visitorEmail
+  ).trim();
+  const visitorPassword =
+    process.env.E2E_VISITOR_PASSWORD || randomBytes(24).toString("base64url");
   const publicWorkSlug = (
     process.env.E2E_PUBLIC_WORK_SLUG || DEFAULTS.publicWorkSlug
   ).trim();
@@ -179,11 +188,16 @@ async function preparar() {
   ).trim();
 
   assert.ok(email && password.length >= 8, "A conta E2E precisa de e-mail e senha forte.");
+  assert.ok(
+    visitorEmail && visitorPassword.length >= 8,
+    "A conta visitante E2E precisa de e-mail e senha forte.",
+  );
   assert.match(publicWorkSlug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
   assert.equal(publicChapterNumber, "1", "A fixture E2E usa o capítulo público 1.");
 
   const admin = criarCliente(ambiente.url, ambiente.secretKey);
-  await excluirContaAnterior(admin);
+  await excluirContaAnterior(admin, DEFAULTS.userId);
+  await excluirContaAnterior(admin, DEFAULTS.visitorUserId);
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     id: DEFAULTS.userId,
@@ -233,6 +247,58 @@ async function preparar() {
   );
   exigirSemErro(acceptanceError, "Não foi possível registrar o aceite E2E local");
   assert.equal(accepted, true, "O aceite E2E local não foi confirmado.");
+
+  const { data: visitorCreated, error: visitorCreateError } =
+    await admin.auth.admin.createUser({
+      id: DEFAULTS.visitorUserId,
+      email: visitorEmail,
+      password: visitorPassword,
+      email_confirm: true,
+      user_metadata: {
+        name: DEFAULTS.visitorName,
+        nome: DEFAULTS.visitorName,
+      },
+    });
+  exigirSemErro(
+    visitorCreateError,
+    "Não foi possível criar a conta visitante E2E local",
+  );
+
+  const visitorUserId = visitorCreated.user?.id || "";
+  assert.equal(
+    visitorUserId,
+    DEFAULTS.visitorUserId,
+    "O Supabase alterou o ID fixo da conta visitante E2E.",
+  );
+
+  const visitorAuthenticated = criarCliente(ambiente.url, ambiente.publicKey);
+  const { error: visitorSignInError } =
+    await visitorAuthenticated.auth.signInWithPassword({
+      email: visitorEmail,
+      password: visitorPassword,
+    });
+  exigirSemErro(
+    visitorSignInError,
+    "A conta visitante E2E local não conseguiu autenticar",
+  );
+
+  const { error: visitorProfileError } =
+    await visitorAuthenticated.from("profiles").insert({
+      id: visitorUserId,
+      user_id: visitorUserId,
+      nome: DEFAULTS.visitorName,
+      avatar_url: "",
+      bio: "",
+      tipo: "leitor",
+      criado_em: now,
+      atualizado_em: now,
+      sobre_bio: "Conta visitante descartável dos testes E2E locais.",
+      username: DEFAULTS.visitorUsername,
+    });
+  exigirSemErro(
+    visitorProfileError,
+    "Não foi possível criar o perfil visitante E2E local",
+  );
 
   const workId = randomUUID();
   const chapterId = randomUUID();
@@ -318,6 +384,7 @@ async function preparar() {
   assert.equal(communityComment?.id, DEFAULTS.communityCommentId);
 
   await authenticated.auth.signOut();
+  await visitorAuthenticated.auth.signOut();
 
   const anonymous = criarCliente(ambiente.url, ambiente.publicKey);
   const { data: publicWork, error: publicWorkError } = await anonymous
@@ -345,6 +412,8 @@ async function preparar() {
     SUPABASE_SERVICE_ROLE_KEY: ambiente.secretKey,
     E2E_USER_EMAIL: email,
     E2E_USER_PASSWORD: password,
+    E2E_VISITOR_EMAIL: visitorEmail,
+    E2E_VISITOR_PASSWORD: visitorPassword,
     E2E_ALLOW_DESTRUCTIVE: "true",
     E2E_PUBLIC_WORK_SLUG: publicWorkSlug,
     E2E_PUBLIC_CHAPTER_NUMBER: publicChapterNumber,
