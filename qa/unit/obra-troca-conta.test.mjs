@@ -150,7 +150,7 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     "async function carregarObraSupabasePorSlug(",
   );
   const fimCarregador = paginaObra.indexOf(
-    "function totalCurtidasObraPublica(",
+    "function converterObraLocalParaDinamica(",
     inicioCarregador,
   );
   const blocoCarregador = paginaObra.slice(inicioCarregador, fimCarregador);
