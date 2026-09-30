@@ -8498,7 +8498,7 @@ const commentsSheetHandleWrapStyle: CSSProperties = {
   touchAction: "none",
   cursor: "grab",
   willChange: "transform",
-  outline: "none",
+  outlineOffset: "3px",
 };
 
 const commentsSheetHandleStyle: CSSProperties = {
