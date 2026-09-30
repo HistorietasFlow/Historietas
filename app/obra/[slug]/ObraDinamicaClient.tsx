@@ -5349,6 +5349,70 @@ export default function ObraDinamicaPage() {
     });
   }
 
+  async function carregarMaisComentariosObra() {
+    if (
+      !comentariosAbertos ||
+      comentariosCarregando ||
+      comentariosCarregandoMais ||
+      !comentariosTemMais ||
+      !obraIdComentarios ||
+      !idObraSupabaseValido(obraIdComentarios)
+    ) {
+      return;
+    }
+
+    const versaoConsulta = comentariosConsultaVersaoRef.current;
+    const identidadeEsperada = identidadeAutenticadaObraRef.current;
+    const execucaoAtual = () =>
+      comentariosConsultaVersaoRef.current === versaoConsulta &&
+      execucaoIdentidadeObraEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaObraRef.current,
+      });
+
+    setComentariosCarregandoMais(true);
+    setComentarioStatus("");
+
+    try {
+      const pagina = await carregarPaginaComentariosObraSupabase(
+        obraIdComentarios,
+        comentariosProximoOffset,
+      );
+
+      if (!execucaoAtual()) {
+        return;
+      }
+
+      setComentariosObra((comentariosAtuais) => {
+        const comentariosPorId = new Map(
+          comentariosAtuais.map((comentario) => [comentario.id, comentario]),
+        );
+
+        pagina.comentarios.forEach((comentario) => {
+          comentariosPorId.set(comentario.id, comentario);
+        });
+
+        return Array.from(comentariosPorId.values());
+      });
+      setComentariosTemMais(pagina.temMais);
+      setComentariosProximoOffset(pagina.proximoOffset);
+      setTotalComentariosObra((totalAtual) =>
+        Math.max(totalAtual, pagina.proximoOffset),
+      );
+    } catch {
+      if (execucaoAtual()) {
+        setComentarioStatus(
+          "Não foi possível carregar mais comentários agora.",
+        );
+      }
+    } finally {
+      if (execucaoAtual()) {
+        setComentariosCarregandoMais(false);
+      }
+    }
+  }
+
 
   const estruturaComentariosObra = useMemo(
     () => criarEstruturaComentariosObra(comentariosObra, ordenacaoComentarios),
