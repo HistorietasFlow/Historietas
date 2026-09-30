@@ -3843,17 +3843,6 @@ export default function ObraDinamicaPage() {
     const metricasBase = criarMetricasBaseObra(obraAtual);
     let curtidaLocalAtiva = false;
     let seguindoLocalAtivo = false;
-    const favoritadaLocalAtiva = obraEstaEmListaLocalObraPublica(
-      obraAtual,
-      FAVORITES_STORAGE_KEY,
-      usuarioIdLogado,
-    );
-    const concluidaLocalAtiva = obraEstaEmListaLocalObraPublica(
-      obraAtual,
-      COMPLETED_STORAGE_KEY,
-      usuarioIdLogado,
-    );
-
     try {
       const curtidasTexto = lerStorageUsuarioObraPublica(
         LIKED_WORKS_STORAGE_KEY,
@@ -3938,20 +3927,72 @@ export default function ObraDinamicaPage() {
           throw new Error("Métricas da obra indisponíveis.");
         }
 
-        const curtidaAtiva = metrica.usuario.curtiu || curtidaLocalAtiva;
-        const seguindoAtivo = metrica.usuario.seguiu || seguindoLocalAtivo;
+        const curtidaAtiva = metrica.usuario.curtiu;
+        const seguindoAtivo = metrica.usuario.seguiu;
+        const favoritadaAtiva = metrica.usuario.favoritou;
+        const concluidaAtiva = metrica.usuario.concluiu;
 
         if (cancelado) {
           return;
         }
 
+        if (usuarioIdLogado) {
+          const obrasCurtidas = carregarListaLocalObraPublica(
+            LIKED_WORKS_STORAGE_KEY,
+            usuarioIdLogado,
+          );
+          const novasObrasCurtidas = curtidaAtiva
+            ? Array.from(new Set([...obrasCurtidas, obraNormalizada]))
+            : obrasCurtidas.filter((titulo) => titulo !== obraNormalizada);
+
+          salvarStorageUsuarioObraPublica(
+            LIKED_WORKS_STORAGE_KEY,
+            usuarioIdLogado,
+            novasObrasCurtidas,
+          );
+
+          const obrasSeguidas = carregarListaLocalObraPublica(
+            FOLLOWED_WORKS_STORAGE_KEY,
+            usuarioIdLogado,
+          );
+          const chavesObraAtual = Array.from(
+            new Set(
+              [
+                obraNormalizada,
+                obraAtual.id || "",
+                obraAtual.slug || "",
+                obraAtual.link || "",
+              ].filter((chave) => Boolean(chave.trim())),
+            ),
+          );
+          const novasObrasSeguidas = seguindoAtivo
+            ? Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]))
+            : obrasSeguidas.filter(
+                (chave) => !chavesObraAtual.includes(chave),
+              );
+
+          salvarStorageUsuarioObraPublica(
+            FOLLOWED_WORKS_STORAGE_KEY,
+            usuarioIdLogado,
+            novasObrasSeguidas,
+          );
+          salvarListaLocalObraPublica(
+            obraAtual,
+            FAVORITES_STORAGE_KEY,
+            favoritadaAtiva,
+            usuarioIdLogado,
+          );
+          salvarListaLocalObraPublica(
+            obraAtual,
+            COMPLETED_STORAGE_KEY,
+            concluidaAtiva,
+            usuarioIdLogado,
+          );
+        }
+
         setObraSeguida(seguindoAtivo);
-        setObraFavoritada(
-          metrica.usuario.favoritou || favoritadaLocalAtiva,
-        );
-        setObraConcluida(
-          metrica.usuario.concluiu || concluidaLocalAtiva,
-        );
+        setObraFavoritada(favoritadaAtiva);
+        setObraConcluida(concluidaAtiva);
         setMetricasObra({
           visualizacoes: metrica.visualizacoes,
           curtidas: metrica.interacoesDiretas.curtidas,
