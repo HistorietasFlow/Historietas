@@ -3408,7 +3408,7 @@ export default function ObraDinamicaPage() {
 
     function execucaoCarregamentoEstaAtual() {
       return execucaoIdentidadeObraEstaAtual({
-        cancelada,
+        cancelada: cancelado,
         identidadeEsperada,
         identidadeAtual: identidadeAutenticadaObraRef.current,
       });
