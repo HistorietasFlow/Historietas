@@ -46,11 +46,11 @@ test("comentarios classificacao e acoes recebem foco inicial ao abrir", () => {
     /focarInicioDialogo\(acoesObraDialogRef\.current\)/,
   );
 
-  const marcadores = paginaObra.match(
-    /data-dialog-initial-focus="true"/g,
+  const marcadoresJsx = paginaObra.match(
+    /\sdata-dialog-initial-focus="true"/g,
   ) || [];
 
-  assert.equal(marcadores.length, 3);
+  assert.equal(marcadoresJsx.length, 3);
 });
 
 test("os tres dialogs usam aria modal tabIndex e controle de teclado", () => {
