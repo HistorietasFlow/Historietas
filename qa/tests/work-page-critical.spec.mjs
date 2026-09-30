@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 import {
   hasAuthorCredentials,
+  hasVisitorCredentials,
   loginAsAuthor,
+  loginAsVisitor,
   monitorRuntime,
 } from "./helpers.mjs";
 
@@ -194,6 +196,167 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     await page.keyboard.press("Escape");
     await expect(acoes).toBeHidden();
     await expect(abrirAcoes).toBeFocused();
+
+    runtime.assertClean();
+  });
+
+  test("ações sociais remotas sobrevivem sem cache local", async ({
+    page,
+  }) => {
+    test.skip(
+      !hasVisitorCredentials,
+      "Defina E2E_VISITOR_EMAIL e E2E_VISITOR_PASSWORD.",
+    );
+
+    const runtime = monitorRuntime(page);
+
+    await loginAsVisitor(page);
+    await page.goto(workPath(), {
+      waitUntil: "domcontentloaded",
+    });
+
+    const seguir = page.getByRole("button", {
+      name: "Seguir obra",
+      exact: true,
+    });
+
+    await expect(seguir).toBeVisible();
+    await seguir.click();
+    await expect(
+      page.getByRole("button", {
+        name: "✓ Seguindo",
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    let abrirAcoes = page.getByRole("button", {
+      name: "Abrir ações da obra",
+      exact: true,
+    });
+
+    await abrirAcoes.click();
+    let acoes = page.getByRole("dialog", {
+      name: `Ações da obra ${workTitle}`,
+      exact: true,
+    });
+    await acoes.getByRole("button", { name: "Salvar", exact: true }).click();
+
+    await abrirAcoes.click();
+    acoes = page.getByRole("dialog", {
+      name: `Ações da obra ${workTitle}`,
+      exact: true,
+    });
+    await expect(
+      acoes.getByRole("button", { name: "Salvo", exact: true }),
+    ).toBeVisible();
+    await acoes.getByRole("button", { name: "Concluir", exact: true }).click();
+
+    await abrirAcoes.click();
+    acoes = page.getByRole("dialog", {
+      name: `Ações da obra ${workTitle}`,
+      exact: true,
+    });
+    await expect(
+      acoes.getByRole("button", { name: "Concluída", exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.evaluate(() => {
+      const prefixos = [
+        "historietas-obras-seguidas",
+        "historietas-obras-favoritas",
+        "historietas-obras-concluidas",
+      ];
+
+      Object.keys(localStorage).forEach((chave) => {
+        if (prefixos.some((prefixo) => chave.startsWith(prefixo))) {
+          localStorage.removeItem(chave);
+        }
+      });
+    });
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+
+    await expect(
+      page.getByRole("button", {
+        name: "✓ Seguindo",
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    abrirAcoes = page.getByRole("button", {
+      name: "Abrir ações da obra",
+      exact: true,
+    });
+    await abrirAcoes.click();
+
+    acoes = page.getByRole("dialog", {
+      name: `Ações da obra ${workTitle}`,
+      exact: true,
+    });
+
+    await expect(
+      acoes.getByRole("button", { name: "Salvo", exact: true }),
+    ).toBeVisible();
+    await expect(
+      acoes.getByRole("button", { name: "Concluída", exact: true }),
+    ).toBeVisible();
+
+    runtime.assertClean();
+  });
+
+  test("avaliação remota prevalece depois de apagar cache local", async ({
+    page,
+  }) => {
+    test.skip(
+      !hasVisitorCredentials,
+      "Defina E2E_VISITOR_EMAIL e E2E_VISITOR_PASSWORD.",
+    );
+
+    const runtime = monitorRuntime(page);
+
+    await loginAsVisitor(page);
+    await page.goto(workPath(), {
+      waitUntil: "domcontentloaded",
+    });
+
+    await page
+      .getByRole("button", {
+        name: "Avaliar com 4,5 estrelas",
+        exact: true,
+      })
+      .click();
+
+    await page
+      .getByRole("button", {
+        name: "Avaliar com 5 estrelas",
+        exact: true,
+      })
+      .click();
+
+    await expect(
+      page.getByRole("button", {
+        name: "Avaliar com 0 estrelas",
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    await page.evaluate(() => {
+      Object.keys(localStorage).forEach((chave) => {
+        if (chave.startsWith("historietas-obras-avaliacoes")) {
+          localStorage.removeItem(chave);
+        }
+      });
+    });
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+
+    await expect(
+      page.getByRole("button", {
+        name: "Avaliar com 0 estrelas",
+        exact: true,
+      }),
+    ).toBeVisible();
 
     runtime.assertClean();
   });
