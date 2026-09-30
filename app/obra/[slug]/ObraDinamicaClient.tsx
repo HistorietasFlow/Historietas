@@ -59,7 +59,7 @@ import {
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
-import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
+import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
 import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
@@ -1746,10 +1746,6 @@ async function carregarObraSupabasePorSlug(
       status: "erro",
     } satisfies ResultadoCarregamentoObraPublica;
   }
-}
-
-function totalCurtidasObraPublica(obra: ObraLocal) {
-  return normalizarContadorObraPublica(obra.totalCurtidas);
 }
 
 function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
