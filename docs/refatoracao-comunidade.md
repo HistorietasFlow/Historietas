@@ -183,6 +183,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 466: extrair somente `obterIdsComentarioComRespostas` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando inclusão do comentário alvo e descoberta iterativa de todos os descendentes sem duplicação.
 - Fase 467: extrair somente `copiarTextoComFallback` para `app/obra/[slug]/lib/obra-share-utils.ts`, preservando criação do textarea temporário, seleção, `document.execCommand("copy")`, tratamento de falha e remoção do elemento.
 - Fase 468: extrair somente `decodificarCaminhoArquivoObra` para `app/obra/[slug]/lib/obra-file-utils.ts`, preservando `decodeURIComponent` e fallback para o caminho original em caso de erro.
+- Fase 469: extrair somente `normalizarCategoriaArquivoSupabase` para `app/obra/[slug]/lib/obra-file-utils.ts`, preservando as categorias válidas `texto`, `documento`, `imagem`, `outro` e fallback para `outro`.
 
 ## Contrato de preservação
 

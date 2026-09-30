@@ -5,3 +5,16 @@ export function decodificarCaminhoArquivoObra(caminho: string) {
     return caminho;
   }
 }
+
+export function normalizarCategoriaArquivoSupabase(categoria: string | null) {
+  if (
+    categoria === "texto" ||
+    categoria === "documento" ||
+    categoria === "imagem" ||
+    categoria === "outro"
+  ) {
+    return categoria;
+  }
+
+  return "outro";
+}
