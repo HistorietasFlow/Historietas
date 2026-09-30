@@ -14,6 +14,21 @@ export function calcularProgressoLeitura(
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
+type ObraLocalParaDisponibilidadeLeitura = {
+  publicado: boolean;
+  capitulos: unknown[];
+  arquivoObra?: unknown;
+};
+
+export function obraLocalEstaDisponivelParaLeitura(
+  obra: ObraLocalParaDisponibilidadeLeitura,
+) {
+  return (
+    obra.publicado &&
+    (obra.capitulos.length > 0 || Boolean(obra.arquivoObra))
+  );
+}
+
 type CapituloParaContinuarLeitura = {
   id: string;
   disponivel: boolean;
