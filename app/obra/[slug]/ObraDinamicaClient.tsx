@@ -4038,10 +4038,6 @@ export default function ObraDinamicaPage() {
             autorIdObraAtual &&
             userId === autorIdObraAtual
         );
-        const avaliacaoLocal = usuarioEhAutorDaObraAtual
-          ? { encontrada: false, nota: 0 }
-          : obterAvaliacaoLocalDetalhada(obraAtual, userId);
-
         const contrato = await carregarMetricasConteudos({
           obraIds: [obraAtual.id],
         });
@@ -4055,56 +4051,19 @@ export default function ObraDinamicaPage() {
           userId && !usuarioEhAutorDaObraAtual
             ? metrica.avaliacao.minhaNota
             : 0;
-        const minhaNota = usuarioEhAutorDaObraAtual
-          ? 0
-          : avaliacaoLocal.encontrada
-            ? avaliacaoLocal.nota
-            : minhaNotaRemota;
-        let total = metrica.avaliacao.total;
-        let soma = metrica.avaliacao.media * total;
-
-        if (
-          userId &&
-          !usuarioEhAutorDaObraAtual &&
-          avaliacaoLocal.encontrada
-        ) {
-          if (minhaNotaRemota > 0) {
-            soma -= minhaNotaRemota;
-            total = Math.max(0, total - 1);
-          }
-
-          if (avaliacaoLocal.nota > 0) {
-            soma += avaliacaoLocal.nota;
-            total += 1;
-          }
-
-          if (minhaNotaRemota !== avaliacaoLocal.nota) {
-            void salvarAvaliacaoRemotaObra({
-              obraId: obraAtual.id,
-              userId,
-              nota: avaliacaoLocal.nota,
-            }).catch((error) => {
-              console.warn(
-                "Não consegui reconciliar a avaliação local com o Supabase:",
-                error
-              );
-            });
-          }
-        } else if (
-          userId &&
-          !usuarioEhAutorDaObraAtual &&
-          minhaNotaRemota > 0
-        ) {
-          salvarAvaliacaoLocal(obraAtual, minhaNotaRemota, userId);
-        }
-
-        const media = total > 0 ? Math.max(0, soma) / total : 0;
+        const minhaNota = usuarioEhAutorDaObraAtual ? 0 : minhaNotaRemota;
+        const total = metrica.avaliacao.total;
+        const media = metrica.avaliacao.media;
 
         if (
           cancelado ||
           avaliacaoVersaoRef.current !== versaoAoIniciar
         ) {
           return;
+        }
+
+        if (userId && !usuarioEhAutorDaObraAtual) {
+          salvarAvaliacaoLocal(obraAtual, minhaNotaRemota, userId);
         }
 
         setAvaliacaoObra({
