@@ -26,6 +26,22 @@ function chapterPath() {
   return `${workPath()}/capitulo/${numero}`;
 }
 
+function esperarGravacaoDataApi(page, tabela) {
+  return page.waitForResponse(
+    (response) => {
+      const url = new URL(response.url());
+      const metodo = response.request().method();
+
+      return (
+        url.pathname.endsWith(`/rest/v1/${tabela}`) &&
+        ["POST", "PATCH", "DELETE"].includes(metodo) &&
+        response.ok()
+      );
+    },
+    { timeout: 20_000 },
+  );
+}
+
 test.describe.serial("página pública da obra — cenários críticos", () => {
   test.beforeEach(() => {
     test.skip(
@@ -221,7 +237,10 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     });
 
     await expect(seguir).toBeVisible();
-    await seguir.click();
+    await Promise.all([
+      esperarGravacaoDataApi(page, "seguindo_obras"),
+      seguir.click(),
+    ]);
     await expect(
       page.getByRole("button", {
         name: "✓ Seguindo",
@@ -239,7 +258,10 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
       name: `Ações da obra ${workTitle}`,
       exact: true,
     });
-    await acoes.getByRole("button", { name: "Salvar", exact: true }).click();
+    await Promise.all([
+      esperarGravacaoDataApi(page, "favoritos"),
+      acoes.getByRole("button", { name: "Salvar", exact: true }).click(),
+    ]);
 
     await abrirAcoes.click();
     acoes = page.getByRole("dialog", {
@@ -249,7 +271,10 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     await expect(
       acoes.getByRole("button", { name: "Salvo", exact: true }),
     ).toBeVisible();
-    await acoes.getByRole("button", { name: "Concluir", exact: true }).click();
+    await Promise.all([
+      esperarGravacaoDataApi(page, "concluidas"),
+      acoes.getByRole("button", { name: "Concluir", exact: true }).click(),
+    ]);
 
     await abrirAcoes.click();
     acoes = page.getByRole("dialog", {
@@ -320,19 +345,25 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
       waitUntil: "domcontentloaded",
     });
 
-    await page
-      .getByRole("button", {
-        name: "Avaliar com 4,5 estrelas",
-        exact: true,
-      })
-      .click();
+    await Promise.all([
+      esperarGravacaoDataApi(page, "obra_avaliacoes"),
+      page
+        .getByRole("button", {
+          name: "Avaliar com 4,5 estrelas",
+          exact: true,
+        })
+        .click(),
+    ]);
 
-    await page
-      .getByRole("button", {
-        name: "Avaliar com 5 estrelas",
-        exact: true,
-      })
-      .click();
+    await Promise.all([
+      esperarGravacaoDataApi(page, "obra_avaliacoes"),
+      page
+        .getByRole("button", {
+          name: "Avaliar com 5 estrelas",
+          exact: true,
+        })
+        .click(),
+    ]);
 
     await expect(
       page.getByRole("button", {
