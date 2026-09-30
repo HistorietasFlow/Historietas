@@ -9803,36 +9803,8 @@ const desktopSecondaryFollowButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const desktopPrimaryFollowButtonStyle: CSSProperties = {
-  minWidth: "164px",
-  minHeight: "50px",
-  padding: "0 22px",
-  borderRadius: "10px",
-  border: "1px solid #FFFFFF",
-  background: "#FFFFFF",
-  color: "#08080A",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontFamily: "inherit",
-  fontSize: "14px",
-  fontWeight: 850,
-  lineHeight: 1.1,
-  textAlign: "center",
-  boxSizing: "border-box",
-  boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
-  cursor: "pointer",
-  ...safeTextStyle,
-};
-
 const desktopFollowedButtonStyle: CSSProperties = {
-  ...desktopPrimaryFollowButtonStyle,
-  minWidth: "154px",
-  background: "rgba(10,10,12,0.74)",
-  color: "#FFFFFF",
-  border: "1px solid rgba(255,255,255,0.34)",
-  boxShadow: "none",
+  ...desktopSecondaryFollowButtonStyle,
 };
 
 const desktopObraAddButtonStyle: CSSProperties = {
