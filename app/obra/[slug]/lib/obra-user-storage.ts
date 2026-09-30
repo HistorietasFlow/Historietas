@@ -49,3 +49,28 @@ export function salvarStorageUsuarioObraPublica(
     // localStorage é fallback; a página continua com o estado em memória.
   }
 }
+
+export function carregarListaLocalObraPublica(
+  chaveStorage: string,
+  userId = "",
+) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [] as string[];
+  }
+
+  try {
+    const texto = lerStorageUsuarioObraPublica(chaveStorage, userIdLimpo);
+    const json: unknown = texto ? JSON.parse(texto) : [];
+
+    return Array.isArray(json)
+      ? json.filter(
+          (item): item is string =>
+            typeof item === "string" && Boolean(item.trim()),
+        )
+      : [];
+  } catch {
+    return [] as string[];
+  }
+}
