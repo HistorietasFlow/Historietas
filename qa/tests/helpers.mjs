@@ -5,6 +5,9 @@ export const authorEmail = (process.env.E2E_USER_EMAIL || "").trim();
 export const authorPassword = process.env.E2E_USER_PASSWORD || "";
 export const destructiveEnabled = process.env.E2E_ALLOW_DESTRUCTIVE === "true";
 export const hasAuthorCredentials = Boolean(authorEmail && authorPassword);
+export const visitorEmail = (process.env.E2E_VISITOR_EMAIL || "").trim();
+export const visitorPassword = process.env.E2E_VISITOR_PASSWORD || "";
+export const hasVisitorCredentials = Boolean(visitorEmail && visitorPassword);
 const supabasePublicoConfigurado = Boolean(
   (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim() &&
     (
@@ -44,19 +47,37 @@ export function monitorRuntime(page) {
   };
 }
 
+async function loginWithCredentials(page, email, password, descricao) {
+  if (!email || !password) {
+    throw new Error(`Credenciais E2E ausentes para ${descricao}.`);
+  }
+
+  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  const form = page.locator("form");
+  await form.getByPlaceholder("seuemail@email.com").fill(email);
+  await form.getByPlaceholder("Mínimo de 6 caracteres").fill(password);
+  await Promise.all([
+    page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 }),
+    form.getByRole("button", { name: "ENTRAR", exact: true }).click()
+  ]);
+}
+
 export async function loginAsAuthor(page) {
   if (!hasAuthorCredentials) {
     throw new Error("Defina E2E_USER_EMAIL e E2E_USER_PASSWORD em qa/.env.e2e.");
   }
 
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  const form = page.locator("form");
-  await form.getByPlaceholder("seuemail@email.com").fill(authorEmail);
-  await form.getByPlaceholder("Mínimo de 6 caracteres").fill(authorPassword);
-  await Promise.all([
-    page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 }),
-    form.getByRole("button", { name: "ENTRAR", exact: true }).click()
-  ]);
+  await loginWithCredentials(page, authorEmail, authorPassword, "autor");
+}
+
+export async function loginAsVisitor(page) {
+  if (!hasVisitorCredentials) {
+    throw new Error(
+      "Defina E2E_VISITOR_EMAIL e E2E_VISITOR_PASSWORD em qa/.env.e2e.",
+    );
+  }
+
+  await loginWithCredentials(page, visitorEmail, visitorPassword, "visitante");
 }
 
 export async function openWorkActions(page, title) {
