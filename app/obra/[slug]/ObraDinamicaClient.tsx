@@ -51,6 +51,7 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
+const WORK_COMMENTS_PAGE_SIZE = 20;
 
 type TraducaoObraDinamica = {
   en: string;
@@ -923,6 +924,12 @@ type RespostaComentarioObra = {
   comentarioPaiId: string;
   autorId: string;
   autorNome: string;
+};
+
+type PaginaComentariosObra = {
+  comentarios: ComentarioObraPublico[];
+  temMais: boolean;
+  proximoOffset: number;
 };
 
 type OrdenacaoComentariosObra = "relevantes" | "recentes";
@@ -2931,6 +2938,102 @@ async function normalizarComentariosObraSupabase(
     );
 }
 
+async function carregarPaginaComentariosObraSupabase(
+  obraId: string,
+  offset: number,
+): Promise<PaginaComentariosObra> {
+  const inicio = Math.max(0, offset);
+  const fim = inicio + WORK_COMMENTS_PAGE_SIZE;
+  const { data: comentariosRaizData, error: erroComentariosRaiz } =
+    await supabase
+      .from("comentarios_obras")
+      .select("id,obra_id,user_id,comentario,comentario_pai_id,criado_em")
+      .eq("obra_id", obraId)
+      .is("comentario_pai_id", null)
+      .order("criado_em", { ascending: false })
+      .order("id", { ascending: false })
+      .range(inicio, fim);
+
+  if (erroComentariosRaiz) {
+    throw erroComentariosRaiz;
+  }
+
+  const comentariosRaizTodos = Array.isArray(comentariosRaizData)
+    ? (comentariosRaizData as SupabaseComentarioObraRow[])
+    : [];
+  const temMais = comentariosRaizTodos.length > WORK_COMMENTS_PAGE_SIZE;
+  const comentariosRaiz = comentariosRaizTodos.slice(
+    0,
+    WORK_COMMENTS_PAGE_SIZE,
+  );
+  const idsConhecidos = new Set(
+    comentariosRaiz
+      .map((comentario) => comentario.id?.trim() || "")
+      .filter(Boolean),
+  );
+
+  async function carregarDescendentes(
+    idsPais: string[],
+  ): Promise<SupabaseComentarioObraRow[]> {
+    if (idsPais.length === 0) {
+      return [];
+    }
+
+    const respostas = await carregarTodasPaginasPorLotesSupabase<
+      SupabaseComentarioObraRow,
+      string
+    >({
+      nomeColecao: "respostas dos comentários da obra",
+      itens: idsPais,
+      buscarPaginaLote: async (comentariosPaisLote, paginaInicio, paginaFim) =>
+        supabase
+          .from("comentarios_obras")
+          .select(
+            "id,obra_id,user_id,comentario,comentario_pai_id,criado_em",
+          )
+          .eq("obra_id", obraId)
+          .in("comentario_pai_id", comentariosPaisLote)
+          .order("criado_em", { ascending: true })
+          .order("id", { ascending: true })
+          .range(paginaInicio, paginaFim),
+    });
+    const respostasNovas: SupabaseComentarioObraRow[] = [];
+    const proximosIdsPais: string[] = [];
+
+    respostas.forEach((resposta) => {
+      const respostaId = resposta.id?.trim() || "";
+
+      if (!respostaId || idsConhecidos.has(respostaId)) {
+        return;
+      }
+
+      idsConhecidos.add(respostaId);
+      respostasNovas.push(resposta);
+      proximosIdsPais.push(respostaId);
+    });
+
+    return [
+      ...respostasNovas,
+      ...(await carregarDescendentes(proximosIdsPais)),
+    ];
+  }
+
+  const comentariosDescendentes = await carregarDescendentes(
+    Array.from(idsConhecidos),
+  );
+  const comentarios = await normalizarComentariosObraSupabase([
+    ...comentariosRaiz,
+    ...comentariosDescendentes,
+  ]);
+
+  return {
+    comentarios,
+    temMais,
+    proximoOffset: inicio + comentariosRaiz.length,
+  };
+}
+
+
 function dataComentarioObra(comentario: ComentarioObraPublico) {
   const data = new Date(comentario.criadoEm).getTime();
 
@@ -3186,6 +3289,10 @@ export default function ObraDinamicaPage() {
   const [comentariosObra, setComentariosObra] = useState<ComentarioObraPublico[]>([]);
   const [totalComentariosObra, setTotalComentariosObra] = useState(0);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
+  const [comentariosCarregandoMais, setComentariosCarregandoMais] =
+    useState(false);
+  const [comentariosTemMais, setComentariosTemMais] = useState(false);
+  const [comentariosProximoOffset, setComentariosProximoOffset] = useState(0);
   const [comentariosAbertos, setComentariosAbertos] = useState(false);
   const [comentariosSheetExpandido, setComentariosSheetExpandido] = useState(false);
   const [comentarioTexto, setComentarioTexto] = useState("");
@@ -3216,6 +3323,7 @@ export default function ObraDinamicaPage() {
   const comentariosDragOffsetYRef = useRef(0);
   const comentariosDragIgnorarCliqueRef = useRef(false);
   const comentariosDragResetTimerRef = useRef<number | null>(null);
+  const comentariosConsultaVersaoRef = useRef(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
@@ -3713,17 +3821,28 @@ export default function ObraDinamicaPage() {
     : obra?.arquivoObra
       ? 1
       : 0;
+  const obraIdComentarios = obra?.id?.trim() || "";
 
 
   useEffect(() => {
+    const versaoConsulta = comentariosConsultaVersaoRef.current + 1;
+    comentariosConsultaVersaoRef.current = versaoConsulta;
+
+    if (!comentariosAbertos) {
+      return;
+    }
+
     let cancelado = false;
+    const execucaoAtual = () =>
+      !cancelado && comentariosConsultaVersaoRef.current === versaoConsulta;
 
     async function carregarComentariosObra() {
-      const obraId = obra?.id?.trim() || "";
-
       setComentarioStatus("");
+      setComentariosCarregandoMais(false);
+      setComentariosTemMais(false);
+      setComentariosProximoOffset(0);
 
-      if (!obraId) {
+      if (!obraIdComentarios) {
         setComentariosObra([]);
         setTotalComentariosObra(0);
         setComentariosCarregando(false);
@@ -3731,10 +3850,10 @@ export default function ObraDinamicaPage() {
       }
 
       const comentariosLocais = usuarioIdLogado
-        ? carregarComentariosObraLocais(usuarioIdLogado, obraId)
+        ? carregarComentariosObraLocais(usuarioIdLogado, obraIdComentarios)
         : [];
 
-      if (!idObraSupabaseValido(obraId)) {
+      if (!idObraSupabaseValido(obraIdComentarios)) {
         setComentariosObra(comentariosLocais);
         setTotalComentariosObra(comentariosLocais.length);
         setComentariosCarregando(false);
@@ -3745,47 +3864,41 @@ export default function ObraDinamicaPage() {
       setComentariosObra([]);
 
       try {
-        const data =
-          await carregarTodasPaginasSupabase<SupabaseComentarioObraRow>({
-            nomeColecao: "comentários da obra",
-            buscarPagina: async (inicio, fim) =>
-              supabase
-                .from("comentarios_obras")
-                .select("id,obra_id,user_id,comentario,comentario_pai_id,criado_em")
-                .eq("obra_id", obraId)
-                .order("criado_em", { ascending: false })
-                .order("id", { ascending: false })
-                .range(inicio, fim),
-          });
-
-        const comentariosRemotos = await normalizarComentariosObraSupabase(
-          data
+        const pagina = await carregarPaginaComentariosObraSupabase(
+          obraIdComentarios,
+          0,
         );
 
-        if (cancelado) {
+        if (!execucaoAtual()) {
           return;
         }
 
-        setComentariosObra(comentariosRemotos);
-        setTotalComentariosObra(comentariosRemotos.length);
+        setComentariosObra(pagina.comentarios);
+        setComentariosTemMais(pagina.temMais);
+        setComentariosProximoOffset(pagina.proximoOffset);
+        setTotalComentariosObra((totalAtual) =>
+          Math.max(totalAtual, pagina.comentarios.length),
+        );
 
         if (usuarioIdLogado) {
           salvarComentariosObraLocais(
             usuarioIdLogado,
-            obraId,
-            comentariosRemotos
+            obraIdComentarios,
+            pagina.comentarios,
           );
         }
       } catch {
-        if (!cancelado) {
+        if (execucaoAtual()) {
           setComentariosObra(comentariosLocais);
-          setTotalComentariosObra(comentariosLocais.length);
+          setTotalComentariosObra((totalAtual) =>
+            Math.max(totalAtual, comentariosLocais.length),
+          );
           setComentarioStatus(
-            "Não foi possível carregar os comentários agora."
+            "Não foi possível carregar os comentários agora.",
           );
         }
       } finally {
-        if (!cancelado) {
+        if (execucaoAtual()) {
           setComentariosCarregando(false);
         }
       }
@@ -3796,7 +3909,7 @@ export default function ObraDinamicaPage() {
     return () => {
       cancelado = true;
     };
-  }, [obra, usuarioIdLogado]);
+  }, [comentariosAbertos, obraIdComentarios, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obraNormalizada) {
@@ -3868,6 +3981,7 @@ export default function ObraDinamicaPage() {
     if (!obra) {
       const resetMetricasTimer = window.setTimeout(() => {
         setMetricasObra(metricasObraVazias);
+        setTotalComentariosObra(0);
       }, 0);
 
       return () => {
@@ -3939,6 +4053,7 @@ export default function ObraDinamicaPage() {
         ),
         carregado: true,
       });
+      setTotalComentariosObra(metricasBase.comentarios);
     }, 0);
 
     if (
@@ -4038,6 +4153,7 @@ export default function ObraDinamicaPage() {
           curtidaAtiva,
           carregado: true,
         });
+        setTotalComentariosObra(metrica.interacoesDiretas.comentarios);
         setMetricasComunidadeObra({
           teorias: metrica.comunidade.teorias,
           reviews: metrica.comunidade.reviews,
@@ -4515,6 +4631,11 @@ export default function ObraDinamicaPage() {
         salvarComentariosObraLocais(userId, obra.id, proximosComentarios);
         return proximosComentarios;
       });
+
+      if (!comentarioSincronizado.comentarioPaiId) {
+        setComentariosProximoOffset((offsetAtual) => offsetAtual + 1);
+      }
+
       setComentarioStatus("");
     } catch {
       setComentariosObra((comentariosAtuais) =>
@@ -4614,6 +4735,12 @@ export default function ObraDinamicaPage() {
       setTotalComentariosObra((totalAtual) =>
         Math.max(0, totalAtual - idsParaRemover.size)
       );
+
+      if (!comentario.comentarioPaiId) {
+        setComentariosProximoOffset((offsetAtual) =>
+          Math.max(0, offsetAtual - 1),
+        );
+      }
 
       if (
         respostaComentario &&
@@ -5244,6 +5371,70 @@ export default function ObraDinamicaPage() {
     });
   }
 
+  async function carregarMaisComentariosObra() {
+    if (
+      !comentariosAbertos ||
+      comentariosCarregando ||
+      comentariosCarregandoMais ||
+      !comentariosTemMais ||
+      !obraIdComentarios ||
+      !idObraSupabaseValido(obraIdComentarios)
+    ) {
+      return;
+    }
+
+    const versaoConsulta = comentariosConsultaVersaoRef.current;
+    const identidadeEsperada = identidadeAutenticadaObraRef.current;
+    const execucaoAtual = () =>
+      comentariosConsultaVersaoRef.current === versaoConsulta &&
+      execucaoIdentidadeObraEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaObraRef.current,
+      });
+
+    setComentariosCarregandoMais(true);
+    setComentarioStatus("");
+
+    try {
+      const pagina = await carregarPaginaComentariosObraSupabase(
+        obraIdComentarios,
+        comentariosProximoOffset,
+      );
+
+      if (!execucaoAtual()) {
+        return;
+      }
+
+      setComentariosObra((comentariosAtuais) => {
+        const comentariosPorId = new Map(
+          comentariosAtuais.map((comentario) => [comentario.id, comentario]),
+        );
+
+        pagina.comentarios.forEach((comentario) => {
+          comentariosPorId.set(comentario.id, comentario);
+        });
+
+        return Array.from(comentariosPorId.values());
+      });
+      setComentariosTemMais(pagina.temMais);
+      setComentariosProximoOffset(pagina.proximoOffset);
+      setTotalComentariosObra((totalAtual) =>
+        Math.max(totalAtual, pagina.proximoOffset),
+      );
+    } catch {
+      if (execucaoAtual()) {
+        setComentarioStatus(
+          "Não foi possível carregar mais comentários agora.",
+        );
+      }
+    } finally {
+      if (execucaoAtual()) {
+        setComentariosCarregandoMais(false);
+      }
+    }
+  }
+
 
   const estruturaComentariosObra = useMemo(
     () => criarEstruturaComentariosObra(comentariosObra, ordenacaoComentarios),
@@ -5524,7 +5715,8 @@ export default function ObraDinamicaPage() {
                     />
                   </div>
                 ) : estruturaComentariosObra.comentariosRaiz.length > 0 ? (
-                  estruturaComentariosObra.comentariosRaiz.map((comentario) => {
+                  <>
+                    {estruturaComentariosObra.comentariosRaiz.map((comentario) => {
                     const respostas =
                       estruturaComentariosObra.respostasPorRaiz.get(
                         comentario.id
@@ -5627,7 +5819,26 @@ export default function ObraDinamicaPage() {
                         ) : null}
                       </section>
                     );
-                  })
+                    })}
+                    {comentariosTemMais ? (
+                      <button
+                        type="button"
+                        onClick={() => void carregarMaisComentariosObra()}
+                        disabled={comentariosCarregandoMais}
+                        style={{
+                          ...commentsLoadMoreStyle,
+                          opacity: comentariosCarregandoMais ? 0.62 : 1,
+                          cursor: comentariosCarregandoMais
+                            ? "not-allowed"
+                            : "pointer",
+                        }}
+                      >
+                        {comentariosCarregandoMais
+                          ? "Carregando..."
+                          : "Carregar mais comentários"}
+                      </button>
+                    ) : null}
+                  </>
                 ) : (
                   <p style={emptyCommentsStyle}>Sem comentários ainda</p>
                 )}
@@ -8203,6 +8414,20 @@ const commentsSheetListStyle: CSSProperties = {
   overflowY: "auto",
   padding: "6px 2px 9px",
   WebkitOverflowScrolling: "touch",
+};
+
+const commentsLoadMoreStyle: CSSProperties = {
+  width: "fit-content",
+  minHeight: "36px",
+  justifySelf: "center",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  borderRadius: "999px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  padding: "7px 14px",
+  fontSize: "11px",
+  fontWeight: 900,
+  fontFamily: "inherit",
 };
 
 const commentSheetItemStyle: CSSProperties = {
