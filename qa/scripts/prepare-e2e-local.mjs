@@ -343,6 +343,22 @@ async function preparar() {
   exigirSemErro(publishError, "Não foi possível publicar a obra E2E local");
   assert.equal(published?.publicado, true, "A obra E2E local não ficou pública.");
 
+  const comentariosObraE2E = Array.from({ length: 21 }, (_, indice) => ({
+    id: randomUUID(),
+    obra_id: workId,
+    user_id: visitorUserId,
+    comentario: `Comentário E2E obra ${String(indice + 1).padStart(2, "0")}`,
+    comentario_pai_id: null,
+    criado_em: new Date(Date.now() + indice * 1000).toISOString(),
+  }));
+  const { error: workCommentsError } = await admin
+    .from("comentarios_obras")
+    .insert(comentariosObraE2E);
+  exigirSemErro(
+    workCommentsError,
+    "Não foi possível criar comentários E2E da obra",
+  );
+
   const { data: communityPost, error: communityPostError } = await admin
     .from("comunidade_posts")
     .insert({
