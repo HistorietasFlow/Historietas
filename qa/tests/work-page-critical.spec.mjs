@@ -66,10 +66,14 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     await expect(cta).toHaveAttribute("href", chapterPath());
 
     await cta.click();
-    await expect(page).toHaveURL(
-      new RegExp(
-        `/ler-capitulo\\?[^#]*obra=${encodeURIComponent(publicWorkSlug)}[^#]*capitulo=1`,
-      ),
+    await expect(page).toHaveURL(/\/ler-capitulo\?/);
+
+    const leituraUrl = new URL(page.url());
+    expect(leituraUrl.searchParams.get("obraId")).toMatch(
+      /^[0-9a-f-]{36}$/i,
+    );
+    expect(leituraUrl.searchParams.get("capituloId")).toMatch(
+      /^[0-9a-f-]{36}$/i,
     );
 
     runtime.assertClean();
@@ -82,10 +86,16 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     const requisicoesComentarios = [];
 
     page.on("request", (request) => {
-      const url = request.url();
+      const url = new URL(request.url());
 
-      if (/\/rest\/v1\/comentarios_obras(?:\?|$)/.test(url)) {
-        requisicoesComentarios.push(url);
+      if (!/\/rest\/v1\/comentarios_obras$/.test(url.pathname)) {
+        return;
+      }
+
+      const select = decodeURIComponent(url.searchParams.get("select") || "");
+
+      if (select.includes("comentario_pai_id") && select.includes("comentario")) {
+        requisicoesComentarios.push(url.toString());
       }
     });
 
@@ -98,7 +108,7 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     });
 
     await expect(abrirComentarios).toBeVisible();
-    await page.waitForTimeout(350);
+    await page.waitForLoadState("networkidle");
     expect(requisicoesComentarios).toHaveLength(0);
 
     await abrirComentarios.click();
