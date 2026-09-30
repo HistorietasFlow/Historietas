@@ -42,3 +42,19 @@ export function obterNomePerfilObra(
     "Autor não informado"
   );
 }
+
+export function obterAvatarPerfilObra(
+  profile: Record<string, unknown> | null,
+) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoPerfilObra(profile, "avatar_url") ||
+    obterTextoPerfilObra(profile, "avatar") ||
+    obterTextoPerfilObra(profile, "foto_url") ||
+    obterTextoPerfilObra(profile, "imagem_url") ||
+    obterTextoPerfilObra(profile, "photo_url")
+  );
+}
