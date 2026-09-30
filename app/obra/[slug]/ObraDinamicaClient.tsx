@@ -57,7 +57,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
-import { formatarGeneroObraPublica } from "./lib/obra-text-utils";
+import { formatarGeneroObraPublica, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
@@ -1906,12 +1906,6 @@ function criarLinkPerfilAutor(autor: string, autorId?: string) {
   }
 
   return `/perfil-autor?${params.toString()}`;
-}
-
-function obterTextoPerfilObra(registro: Record<string, unknown>, chave: string) {
-  const valor = registro[chave];
-
-  return typeof valor === "string" && valor.trim() ? valor.trim() : "";
 }
 
 function obterNomePerfilObra(profile: Record<string, unknown> | null, fallback: string) {

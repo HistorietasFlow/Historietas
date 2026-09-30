@@ -14,3 +14,12 @@ export function formatarGeneroObraPublica(genero: string) {
 
   return generoLimpo || "Não informado";
 }
+
+export function obterTextoPerfilObra(
+  registro: Record<string, unknown>,
+  chave: string,
+) {
+  const valor = registro[chave];
+
+  return typeof valor === "string" && valor.trim() ? valor.trim() : "";
+}

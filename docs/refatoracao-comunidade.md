@@ -163,6 +163,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 446: extrair somente `formatarGeneroObraPublica` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando normalização textual e os fallbacks de gênero exibidos.
 - Fase 447: extrair somente `criarLoginHrefObraPublica` para `app/obra/[slug]/lib/obra-navigation-utils.ts`, preservando o redirect atual, validação de destino seguro e serialização de `redirectTo`.
 - Fase 448: extrair somente `criarLinkComunidadeObra` para `app/obra/[slug]/lib/obra-navigation-utils.ts`, preservando os parâmetros `obra`, `grupo` e `tipo` e seus filtros atuais.
+- Fase 449: extrair somente `obterTextoPerfilObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando leitura de strings, trim e fallback vazio.
 
 ## Contrato de preservação
 
