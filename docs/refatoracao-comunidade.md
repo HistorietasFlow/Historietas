@@ -191,6 +191,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 474: extrair somente `obraLocalEstaDisponivelParaLeitura` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando a exigência de obra publicada e a disponibilidade por capítulos ou arquivo da obra.
 - Fase 475: extrair somente `formatarTempoRelativoComentarioObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando parsing da data, limiares de segundos/minutos/horas/dias, singular/plural e fallback `agora`, atualizando apenas o marcador estrutural do teste afetado.
 - Fase 476: extrair somente `obterSinopseObraExibida` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando `trim()` da sinopse e o fallback literal `Nenhuma sinopse informada.`.
+- Fase 477: extrair somente `obterIndicadorConteudoObraPublica` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando o ícone e a quantidade exibidos para capítulos, arquivo da obra e ausência de conteúdo.
 
 ## Contrato de preservação
 
