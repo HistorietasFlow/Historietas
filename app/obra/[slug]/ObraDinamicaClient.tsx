@@ -4179,7 +4179,7 @@ export default function ObraDinamicaPage() {
     try {
       const curtidasTexto = lerStorageUsuarioObraPublica(
         LIKED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
+        userId
       );
       const curtidasJson: unknown = curtidasTexto
         ? JSON.parse(curtidasTexto)
@@ -4707,11 +4707,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para curtir esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -4751,6 +4758,10 @@ export default function ObraDinamicaPage() {
           novasObrasCurtidas
         );
       } catch {
+        if (!execucaoAcaoEstaAtual()) {
+          return;
+        }
+
         setMetricasObra((metricasAtuais) => ({
           ...metricasAtuais,
           curtidaAtiva: !proximaCurtidaAtiva,
@@ -4771,11 +4782,18 @@ export default function ObraDinamicaPage() {
       await salvarCurtidaObraPublicaSupabase(
         userId,
         obraId,
-        proximaCurtidaAtiva
+        proximaCurtidaAtiva,
+        execucaoAcaoEstaAtual,
       );
 
-      setMensagemAcao("");
+      if (execucaoAcaoEstaAtual()) {
+        setMensagemAcao("");
+      }
     } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setMetricasObra((metricasAtuais) => ({
         ...metricasAtuais,
         curtidaAtiva: !proximaCurtidaAtiva,
