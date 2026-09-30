@@ -6,6 +6,10 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const helperFocoDialogo = readFileSync(
+  new URL("../../app/obra/[slug]/lib/obra-dialog-focus.ts", import.meta.url),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -18,18 +22,13 @@ function obterBloco(inicioTexto, fimTexto) {
 }
 
 test("helper de dialog trata Escape e prende Tab nos limites focaveis", () => {
-  const bloco = obterBloco(
-    "function manterFocoNoDialogo(",
-    "type TraducaoObraDinamica",
-  );
-
-  assert.match(bloco, /event\.key === "Escape"/);
-  assert.match(bloco, /fecharDialogo\(\)/);
-  assert.match(bloco, /event\.key !== "Tab"/);
-  assert.match(bloco, /event\.shiftKey && elementoAtivo === primeiro/);
-  assert.match(bloco, /!event\.shiftKey && elementoAtivo === ultimo/);
-  assert.match(bloco, /ultimo\.focus\(\)/);
-  assert.match(bloco, /primeiro\.focus\(\)/);
+  assert.match(helperFocoDialogo, /event\.key === "Escape"/);
+  assert.match(helperFocoDialogo, /fecharDialogo\(\)/);
+  assert.match(helperFocoDialogo, /event\.key !== "Tab"/);
+  assert.match(helperFocoDialogo, /event\.shiftKey && elementoAtivo === primeiro/);
+  assert.match(helperFocoDialogo, /!event\.shiftKey && elementoAtivo === ultimo/);
+  assert.match(helperFocoDialogo, /ultimo\.focus\(\)/);
+  assert.match(helperFocoDialogo, /primeiro\.focus\(\)/);
 });
 
 test("comentarios classificacao e acoes recebem foco inicial ao abrir", () => {
