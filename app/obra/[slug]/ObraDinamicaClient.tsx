@@ -61,6 +61,10 @@ const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica> = {
   "Carregando": { en: "Loading", es: "Cargando" },
   "Carregando obra": { en: "Loading work", es: "Cargando obra" },
   "Obra não encontrada": { en: "Work not found", es: "Obra no encontrada" },
+  "Não foi possível carregar a obra agora.": {
+    en: "The work could not be loaded right now.",
+    es: "No se pudo cargar la obra en este momento.",
+  },
   "Obra sem título": { en: "Untitled work", es: "Obra sin título" },
   "Capítulo sem título": { en: "Untitled chapter", es: "Capítulo sin título" },
   "Autor não informado": { en: "Author not provided", es: "Autor no informado" },
@@ -1719,10 +1723,14 @@ async function carregarObraSupabasePorSlug(
 
     if (!obraBanco) {
       const obrasSemCacheObsoleto = obrasLocais.filter((obraLocalAtual) => {
-        const slugLocal =
-          obraLocalAtual.slug || criarSlugBase(obraLocalAtual.titulo);
+        const slugsLocais = new Set(
+          [
+            obraLocalAtual.slug?.trim() || "",
+            criarSlugBase(obraLocalAtual.titulo),
+          ].filter(Boolean),
+        );
 
-        return slugLocal !== slugLimpo;
+        return !slugsLocais.has(slugLimpo);
       });
 
       return {
