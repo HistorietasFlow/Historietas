@@ -3810,17 +3810,28 @@ export default function ObraDinamicaPage() {
     : obra?.arquivoObra
       ? 1
       : 0;
+  const obraIdComentarios = obra?.id?.trim() || "";
 
 
   useEffect(() => {
+    const versaoConsulta = comentariosConsultaVersaoRef.current + 1;
+    comentariosConsultaVersaoRef.current = versaoConsulta;
+
+    if (!comentariosAbertos) {
+      return;
+    }
+
     let cancelado = false;
+    const execucaoAtual = () =>
+      !cancelado && comentariosConsultaVersaoRef.current === versaoConsulta;
 
     async function carregarComentariosObra() {
-      const obraId = obra?.id?.trim() || "";
-
       setComentarioStatus("");
+      setComentariosCarregandoMais(false);
+      setComentariosTemMais(false);
+      setComentariosProximoOffset(0);
 
-      if (!obraId) {
+      if (!obraIdComentarios) {
         setComentariosObra([]);
         setTotalComentariosObra(0);
         setComentariosCarregando(false);
@@ -3828,10 +3839,10 @@ export default function ObraDinamicaPage() {
       }
 
       const comentariosLocais = usuarioIdLogado
-        ? carregarComentariosObraLocais(usuarioIdLogado, obraId)
+        ? carregarComentariosObraLocais(usuarioIdLogado, obraIdComentarios)
         : [];
 
-      if (!idObraSupabaseValido(obraId)) {
+      if (!idObraSupabaseValido(obraIdComentarios)) {
         setComentariosObra(comentariosLocais);
         setTotalComentariosObra(comentariosLocais.length);
         setComentariosCarregando(false);
@@ -3842,47 +3853,41 @@ export default function ObraDinamicaPage() {
       setComentariosObra([]);
 
       try {
-        const data =
-          await carregarTodasPaginasSupabase<SupabaseComentarioObraRow>({
-            nomeColecao: "comentários da obra",
-            buscarPagina: async (inicio, fim) =>
-              supabase
-                .from("comentarios_obras")
-                .select("id,obra_id,user_id,comentario,comentario_pai_id,criado_em")
-                .eq("obra_id", obraId)
-                .order("criado_em", { ascending: false })
-                .order("id", { ascending: false })
-                .range(inicio, fim),
-          });
-
-        const comentariosRemotos = await normalizarComentariosObraSupabase(
-          data
+        const pagina = await carregarPaginaComentariosObraSupabase(
+          obraIdComentarios,
+          0,
         );
 
-        if (cancelado) {
+        if (!execucaoAtual()) {
           return;
         }
 
-        setComentariosObra(comentariosRemotos);
-        setTotalComentariosObra(comentariosRemotos.length);
+        setComentariosObra(pagina.comentarios);
+        setComentariosTemMais(pagina.temMais);
+        setComentariosProximoOffset(pagina.proximoOffset);
+        setTotalComentariosObra((totalAtual) =>
+          Math.max(totalAtual, pagina.comentarios.length),
+        );
 
         if (usuarioIdLogado) {
           salvarComentariosObraLocais(
             usuarioIdLogado,
-            obraId,
-            comentariosRemotos
+            obraIdComentarios,
+            pagina.comentarios,
           );
         }
       } catch {
-        if (!cancelado) {
+        if (execucaoAtual()) {
           setComentariosObra(comentariosLocais);
-          setTotalComentariosObra(comentariosLocais.length);
+          setTotalComentariosObra((totalAtual) =>
+            Math.max(totalAtual, comentariosLocais.length),
+          );
           setComentarioStatus(
-            "Não foi possível carregar os comentários agora."
+            "Não foi possível carregar os comentários agora.",
           );
         }
       } finally {
-        if (!cancelado) {
+        if (execucaoAtual()) {
           setComentariosCarregando(false);
         }
       }
@@ -3893,7 +3898,7 @@ export default function ObraDinamicaPage() {
     return () => {
       cancelado = true;
     };
-  }, [obra, usuarioIdLogado]);
+  }, [comentariosAbertos, obraIdComentarios, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obraNormalizada) {
