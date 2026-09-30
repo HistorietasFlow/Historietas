@@ -30,3 +30,7 @@ export function normalizarContadorObraPublica(valor: unknown) {
 export function totalComentariosObraPublica(obra: { totalComentarios?: unknown }) {
   return normalizarContadorObraPublica(obra.totalComentarios);
 }
+
+export function totalVisualizacoesObraPublica(obra: { visualizacoes?: unknown }) {
+  return normalizarContadorObraPublica(obra.visualizacoes);
+}
