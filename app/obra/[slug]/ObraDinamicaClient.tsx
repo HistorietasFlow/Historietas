@@ -47,6 +47,7 @@ import {
   restaurarFocoAnterior,
 } from "./lib/obra-dialog-focus";
 import {
+  carregarListaLocalObraPublica,
   lerStorageUsuarioObraPublica,
   salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
@@ -1996,25 +1997,6 @@ function obterChavesInteracaoObraPublica(obra: ObraDinamica) {
         .filter(Boolean)
     )
   );
-}
-
-function carregarListaLocalObraPublica(chaveStorage: string, userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [] as string[];
-  }
-
-  try {
-    const texto = lerStorageUsuarioObraPublica(chaveStorage, userIdLimpo);
-    const json: unknown = texto ? JSON.parse(texto) : [];
-
-    return Array.isArray(json)
-      ? json.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
-      : [];
-  } catch {
-    return [] as string[];
-  }
 }
 
 function obraEstaEmListaLocalObraPublica(
