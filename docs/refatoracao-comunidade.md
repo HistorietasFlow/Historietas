@@ -156,6 +156,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 ## Refatoração estrutural da página da obra
 
 - Fase 441: extrair somente os utilitários de foco dos dialogs de `ObraDinamicaClient.tsx` para `app/obra/[slug]/lib/obra-dialog-focus.ts`, preservando foco inicial, ciclo de Tab/Shift+Tab, Escape e restauração de foco sem alterar comportamento visual ou de dados.
+- Fase 442: extrair somente `criarStorageKeyUsuarioObraPublica`, `lerStorageUsuarioObraPublica` e `salvarStorageUsuarioObraPublica` para `app/obra/[slug]/lib/obra-user-storage.ts`, preservando exatamente chaves, serialização JSON, leitura, escrita e fallbacks de `localStorage`.
 
 ## Contrato de preservação
 

@@ -46,6 +46,10 @@ import {
   obterElementoComFocoAtual,
   restaurarFocoAnterior,
 } from "./lib/obra-dialog-focus";
+import {
+  lerStorageUsuarioObraPublica,
+  salvarStorageUsuarioObraPublica,
+} from "./lib/obra-user-storage";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -716,52 +720,6 @@ function ObraDinamicaLanguageBridge() {
   return null;
 }
 
-
-function criarStorageKeyUsuarioObraPublica(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function lerStorageUsuarioObraPublica(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioObraPublica(chave, userIdLimpo);
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarStorageUsuarioObraPublica(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioObraPublica(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; a página continua com o estado em memória.
-  }
-}
 
 type CapituloLocal = {
   id: string;
