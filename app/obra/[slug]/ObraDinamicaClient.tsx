@@ -4179,7 +4179,7 @@ export default function ObraDinamicaPage() {
     try {
       const curtidasTexto = lerStorageUsuarioObraPublica(
         LIKED_WORKS_STORAGE_KEY,
-        userId
+        usuarioIdLogado
       );
       const curtidasJson: unknown = curtidasTexto
         ? JSON.parse(curtidasTexto)
@@ -4738,7 +4738,7 @@ export default function ObraDinamicaPage() {
       try {
         const curtidasTexto = lerStorageUsuarioObraPublica(
         LIKED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
+        userId
       );
         const curtidasJson: unknown = curtidasTexto ? JSON.parse(curtidasTexto) : [];
         const obrasCurtidas = Array.isArray(curtidasJson)
