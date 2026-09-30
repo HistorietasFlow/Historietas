@@ -141,6 +141,20 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
       .poll(() => requisicoesComentarios.length)
       .toBeGreaterThan(0);
 
+    const comentarios = dialog.getByText(
+      /^Comentário E2E obra \d{2}$/,
+    );
+    await expect(comentarios).toHaveCount(20);
+
+    const carregarMais = dialog.getByRole("button", {
+      name: "Carregar mais comentários",
+      exact: true,
+    });
+    await expect(carregarMais).toBeVisible();
+    await carregarMais.click();
+    await expect(comentarios).toHaveCount(21);
+    await expect(carregarMais).toHaveCount(0);
+
     await expect(
       dialog.getByRole("button", {
         name: "Expandir comentários",
