@@ -24,7 +24,7 @@ test.describe("página da obra — cenários críticos", () => {
       waitUntil: "domcontentloaded",
     });
 
-    expect([200, 404]).toContain(response?.status());
+    expect(response?.status()).toBe(404);
     await expect(
       page.getByRole("heading", { name: "Página não encontrada", exact: true }),
     ).toBeVisible();
@@ -72,6 +72,7 @@ test.describe("página da obra — cenários críticos", () => {
 
     await page.goto(workPath(), { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Começar a ler", { exact: true })).toBeVisible();
+    await page.waitForLoadState("networkidle");
 
     expect(
       requestsComentarios,
