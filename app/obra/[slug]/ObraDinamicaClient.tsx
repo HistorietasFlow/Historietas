@@ -4560,11 +4560,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para seguir esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -4627,43 +4634,66 @@ export default function ObraDinamicaPage() {
 
       const obraId = obraAtual.id;
 
-      const removerResposta = await supabase
-        .from("seguindo_obras")
-        .delete()
-        .eq("obra_id", obraId)
-        .eq("user_id", userId);
-
-      if (removerResposta.error) {
-        throw removerResposta.error;
+      if (!execucaoAcaoEstaAtual()) {
+        return;
       }
 
       if (seguindo) {
-        const inserirResposta = await supabase.from("seguindo_obras").insert({
-          obra_id: obraId,
-          user_id: userId,
-          visibilidade: "publico",
-        });
+        const inserirResposta = await supabase.from("seguindo_obras").upsert(
+          {
+            obra_id: obraId,
+            user_id: userId,
+            visibilidade: "publico",
+          },
+          {
+            onConflict: "user_id,obra_id",
+            ignoreDuplicates: true,
+          },
+        );
 
         if (inserirResposta.error) {
           throw inserirResposta.error;
         }
+      } else {
+        const removerResposta = await supabase
+          .from("seguindo_obras")
+          .delete()
+          .eq("obra_id", obraId)
+          .eq("user_id", userId);
 
+        if (removerResposta.error) {
+          throw removerResposta.error;
+        }
+      }
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      if (seguindo) {
         await registrarAtividadeDiarioObra({
           userId,
           obra: obraAtual,
           tipo: "salvou_obra",
           visibilidade: "publico",
           texto: `Adicionou ${obraAtual.titulo} para acompanhar.`,
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       } else {
         await removerAtividadeDiarioObra({
           userId,
           obra: obraAtual,
           tipo: "salvou_obra",
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       }
     } catch (error) {
       console.warn("Não consegui salvar seguimento da obra no Supabase:", error);
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setMensagemAcao(
         seguindo
           ? "Obra salva no navegador. Verifique o Supabase/RLS se não sincronizar online."
