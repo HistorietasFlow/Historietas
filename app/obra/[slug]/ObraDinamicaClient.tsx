@@ -2413,51 +2413,63 @@ async function salvarRegistroObraPublicaSupabase(
     return;
   }
 
-  const { error: erroDelete } = await supabase
-    .from(tabela)
-    .delete()
-    .eq("user_id", userId)
-    .eq("obra_id", obraId);
-
-  if (erroDelete) {
-    throw erroDelete;
-  }
-
   if (!ativo) {
+    const { error: erroDelete } = await supabase
+      .from(tabela)
+      .delete()
+      .eq("user_id", userId)
+      .eq("obra_id", obraId);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
     return;
   }
 
-  const { error: erroInsert } = await supabase.from(tabela).insert({
-    user_id: userId,
-    obra_id: obraId,
-    visibilidade: "publico",
-  });
+  const { error: erroUpsert } = await supabase.from(tabela).upsert(
+    {
+      user_id: userId,
+      obra_id: obraId,
+      visibilidade: "publico",
+    },
+    {
+      onConflict: "user_id,obra_id",
+      ignoreDuplicates: true,
+    },
+  );
 
-  if (erroInsert) {
-    throw erroInsert;
+  if (erroUpsert) {
+    throw erroUpsert;
   }
 }
 
 async function salvarCurtidaObraPublicaSupabase(
   userId: string,
   obraId: string,
-  ativo: boolean
+  ativo: boolean,
+  execucaoAtual: () => boolean = () => true,
 ) {
-  if (!userId || !obraId || !idObraSupabaseValido(obraId)) {
+  if (
+    !userId ||
+    !obraId ||
+    !idObraSupabaseValido(obraId) ||
+    !execucaoAtual()
+  ) {
     return;
   }
 
-  const { error: erroDelete } = await supabase
-    .from("obra_curtidas")
-    .delete()
-    .eq("obra_id", obraId)
-    .eq("user_id", userId);
-
-  if (erroDelete) {
-    throw erroDelete;
-  }
-
   if (!ativo) {
+    const { error: erroDelete } = await supabase
+      .from("obra_curtidas")
+      .delete()
+      .eq("obra_id", obraId)
+      .eq("user_id", userId);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
     return;
   }
 
@@ -2476,7 +2488,14 @@ async function salvarCurtidaObraPublicaSupabase(
   let ultimoErro: unknown = null;
 
   for (const payload of tentativas) {
-    const { error } = await supabase.from("obra_curtidas").insert(payload);
+    if (!execucaoAtual()) {
+      return;
+    }
+
+    const { error } = await supabase.from("obra_curtidas").upsert(payload, {
+      onConflict: "user_id,obra_id",
+      ignoreDuplicates: true,
+    });
 
     if (!error) {
       return;
@@ -2711,12 +2730,19 @@ async function removerAtividadeDiarioObra({
   userId,
   obra,
   tipo,
+  execucaoAtual = () => true,
 }: {
   userId: string;
   obra: ObraDinamica;
   tipo: DiarioAtividadeObraTipo;
+  execucaoAtual?: () => boolean;
 }) {
-  if (!userId || !obra.id || !idObraSupabaseValido(obra.id)) {
+  if (
+    !userId ||
+    !obra.id ||
+    !idObraSupabaseValido(obra.id) ||
+    !execucaoAtual()
+  ) {
     return;
   }
 
@@ -2743,6 +2769,7 @@ async function registrarAtividadeDiarioObra({
   nota,
   texto,
   visibilidade,
+  execucaoAtual = () => true,
 }: {
   userId: string;
   obra: ObraDinamica;
@@ -2750,8 +2777,14 @@ async function registrarAtividadeDiarioObra({
   nota?: number;
   texto?: string;
   visibilidade: DiarioAtividadeObraVisibilidade;
+  execucaoAtual?: () => boolean;
 }) {
-  if (!userId || !obra.id || !idObraSupabaseValido(obra.id)) {
+  if (
+    !userId ||
+    !obra.id ||
+    !idObraSupabaseValido(obra.id) ||
+    !execucaoAtual()
+  ) {
     return;
   }
 
@@ -2780,14 +2813,19 @@ async function registrarAtividadeDiarioObra({
       userId,
       obra,
       tipo,
+      execucaoAtual,
     });
+
+    if (!execucaoAtual()) {
+      return;
+    }
 
     const { error } = await supabase.from("diario_atividades").insert({
       ...payloadBase,
       nota: notaNormalizada,
     });
 
-    if (!error) {
+    if (!error || !execucaoAtual()) {
       return;
     }
 
@@ -4458,16 +4496,82 @@ export default function ObraDinamicaPage() {
     }
   }
 
+  async function obterIdentidadeLogadaParaAcao(mensagem: string) {
+    const identidadeEsperada = identidadeAutenticadaObraRef.current;
+    const execucaoAtual = () =>
+      execucaoIdentidadeObraEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaObraRef.current,
+      });
+
+    try {
+      const { data } = await supabase.auth.getUser();
+
+      if (!execucaoAtual()) {
+        return null;
+      }
+
+      const userId = data.user?.id || "";
+
+      if (userId && userId === identidadeEsperada.usuarioId) {
+        return identidadeEsperada;
+      }
+
+      if (!userId && !identidadeEsperada.usuarioId) {
+        const loginHref = await criarLoginHrefObraPublica();
+
+        if (execucaoAtual()) {
+          setMensagemAcao(mensagem);
+          router.push(loginHref);
+        }
+      }
+
+      return null;
+    } catch {
+      if (!execucaoAtual()) {
+        return null;
+      }
+
+      const loginHref = await criarLoginHrefObraPublica();
+
+      if (execucaoAtual()) {
+        setMensagemAcao(mensagem);
+        router.push(loginHref);
+      }
+
+      return null;
+    }
+  }
+
+  function criarGuardIdentidadeAcao(
+    identidadeEsperada: IdentidadeAutenticadaObra,
+  ) {
+    return () =>
+      execucaoIdentidadeObraEstaAtual({
+        cancelada: false,
+        identidadeEsperada,
+        identidadeAtual: identidadeAutenticadaObraRef.current,
+      });
+  }
+
   async function alternarSeguirObra() {
     if (!obraNormalizada) {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para seguir esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -4530,43 +4634,66 @@ export default function ObraDinamicaPage() {
 
       const obraId = obraAtual.id;
 
-      const removerResposta = await supabase
-        .from("seguindo_obras")
-        .delete()
-        .eq("obra_id", obraId)
-        .eq("user_id", userId);
-
-      if (removerResposta.error) {
-        throw removerResposta.error;
+      if (!execucaoAcaoEstaAtual()) {
+        return;
       }
 
       if (seguindo) {
-        const inserirResposta = await supabase.from("seguindo_obras").insert({
-          obra_id: obraId,
-          user_id: userId,
-          visibilidade: "publico",
-        });
+        const inserirResposta = await supabase.from("seguindo_obras").upsert(
+          {
+            obra_id: obraId,
+            user_id: userId,
+            visibilidade: "publico",
+          },
+          {
+            onConflict: "user_id,obra_id",
+            ignoreDuplicates: true,
+          },
+        );
 
         if (inserirResposta.error) {
           throw inserirResposta.error;
         }
+      } else {
+        const removerResposta = await supabase
+          .from("seguindo_obras")
+          .delete()
+          .eq("obra_id", obraId)
+          .eq("user_id", userId);
 
+        if (removerResposta.error) {
+          throw removerResposta.error;
+        }
+      }
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      if (seguindo) {
         await registrarAtividadeDiarioObra({
           userId,
           obra: obraAtual,
           tipo: "salvou_obra",
           visibilidade: "publico",
           texto: `Adicionou ${obraAtual.titulo} para acompanhar.`,
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       } else {
         await removerAtividadeDiarioObra({
           userId,
           obra: obraAtual,
           tipo: "salvou_obra",
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       }
     } catch (error) {
       console.warn("Não consegui salvar seguimento da obra no Supabase:", error);
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setMensagemAcao(
         seguindo
           ? "Obra salva no navegador. Verifique o Supabase/RLS se não sincronizar online."
@@ -4580,11 +4707,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para curtir esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -4604,7 +4738,7 @@ export default function ObraDinamicaPage() {
       try {
         const curtidasTexto = lerStorageUsuarioObraPublica(
         LIKED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
+        userId
       );
         const curtidasJson: unknown = curtidasTexto ? JSON.parse(curtidasTexto) : [];
         const obrasCurtidas = Array.isArray(curtidasJson)
@@ -4624,6 +4758,10 @@ export default function ObraDinamicaPage() {
           novasObrasCurtidas
         );
       } catch {
+        if (!execucaoAcaoEstaAtual()) {
+          return;
+        }
+
         setMetricasObra((metricasAtuais) => ({
           ...metricasAtuais,
           curtidaAtiva: !proximaCurtidaAtiva,
@@ -4644,11 +4782,18 @@ export default function ObraDinamicaPage() {
       await salvarCurtidaObraPublicaSupabase(
         userId,
         obraId,
-        proximaCurtidaAtiva
+        proximaCurtidaAtiva,
+        execucaoAcaoEstaAtual,
       );
 
-      setMensagemAcao("");
+      if (execucaoAcaoEstaAtual()) {
+        setMensagemAcao("");
+      }
     } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setMetricasObra((metricasAtuais) => ({
         ...metricasAtuais,
         curtidaAtiva: !proximaCurtidaAtiva,
@@ -4676,19 +4821,26 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       respostaComentario
         ? "Entre na sua conta para responder este comentário."
         : "Entre na sua conta para comentar esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
       return;
     }
 
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
     const respostaAnterior = respostaComentario;
     const textoFinal = textoDigitado.slice(0, 600);
     const perfil = await carregarPerfilPublicoObra(userId, "Você");
+
+    if (!execucaoAcaoEstaAtual()) {
+      return;
+    }
+
     const comentarioTemporario: ComentarioObraPublico = {
       id: criarComentarioObraId(),
       obraId: obra.id,
@@ -4757,9 +4909,17 @@ export default function ObraDinamicaPage() {
         throw error || new Error("Comentário não retornado pelo Supabase.");
       }
 
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       const [comentarioSincronizado] = await normalizarComentariosObraSupabase([
         data,
       ]);
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
 
       if (!comentarioSincronizado) {
         throw new Error("Comentário inválido retornado pelo Supabase.");
@@ -4782,6 +4942,10 @@ export default function ObraDinamicaPage() {
 
       setComentarioStatus("");
     } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setComentariosObra((comentariosAtuais) =>
         comentariosAtuais.filter(
           (comentario) => comentario.id !== comentarioTemporario.id
@@ -4798,7 +4962,9 @@ export default function ObraDinamicaPage() {
           : "Não foi possível enviar o comentário agora."
       );
     } finally {
-      setComentarioEnviando(false);
+      if (execucaoAcaoEstaAtual()) {
+        setComentarioEnviando(false);
+      }
     }
   }
 
@@ -4998,11 +5164,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para salvar esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -5028,6 +5201,10 @@ export default function ObraDinamicaPage() {
         );
       }
 
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       if (proximoFavorito) {
         await registrarAtividadeDiarioObra({
           userId,
@@ -5035,13 +5212,19 @@ export default function ObraDinamicaPage() {
           tipo: "favoritou_obra",
           visibilidade: "parcial",
           texto: `Adicionou ${obra.titulo} à lista.`,
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       } else {
         await removerAtividadeDiarioObra({
           userId,
           obra,
           tipo: "favoritou_obra",
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
+      }
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
       }
 
       setMensagemAcao(
@@ -5049,6 +5232,11 @@ export default function ObraDinamicaPage() {
       );
     } catch (error) {
       console.warn("Não consegui salvar favorito da obra:", error);
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setObraFavoritada(favoritoAnterior);
       salvarListaLocalObraPublica(
         obra,
@@ -5065,11 +5253,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para marcar esta obra como concluída."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -5095,6 +5290,10 @@ export default function ObraDinamicaPage() {
         );
       }
 
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       if (proximaConcluida) {
         await registrarAtividadeDiarioObra({
           userId,
@@ -5102,13 +5301,19 @@ export default function ObraDinamicaPage() {
           tipo: "concluiu_obra",
           visibilidade: "parcial",
           texto: `Concluiu ${obra.titulo}.`,
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       } else {
         await removerAtividadeDiarioObra({
           userId,
           obra,
           tipo: "concluiu_obra",
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
+      }
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
       }
 
       setMensagemAcao(
@@ -5116,6 +5321,11 @@ export default function ObraDinamicaPage() {
       );
     } catch (error) {
       console.warn("Não consegui salvar conclusão da obra:", error);
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setObraConcluida(concluidaAnterior);
       salvarListaLocalObraPublica(
         obra,
