@@ -60,7 +60,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
-import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
+import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura } from "./lib/obra-reading-utils";
@@ -3326,10 +3326,7 @@ export default function ObraDinamicaPage() {
       usuarioIdLogado === autorObraId
   );
   const obraDisponivel = Boolean(obra?.disponivel);
-  const sinopseObraExibida =
-    obra && obra.sinopse.trim()
-      ? obra.sinopse.trim()
-      : "Nenhuma sinopse informada.";
+  const sinopseObraExibida = obterSinopseObraExibida(obra);
   const textosPainelClassificacao =
     language === "en"
       ? {
