@@ -77,9 +77,12 @@ function focarInicioDialogo(dialogo: HTMLElement | null) {
     return;
   }
 
+  const focoPreferido = dialogo.querySelector<HTMLElement>(
+    '[data-dialog-initial-focus="true"]',
+  );
   const primeiroFocavel = obterElementosFocaveisDialogo(dialogo)[0];
 
-  (primeiroFocavel || dialogo).focus();
+  (focoPreferido || primeiroFocavel || dialogo).focus();
 }
 
 function obterElementoComFocoAtual() {
@@ -5802,6 +5805,7 @@ export default function ObraDinamicaPage() {
             >
               <div
                 data-comments-sheet-handle="true"
+                data-dialog-initial-focus="true"
                 style={commentsSheetHandleWrapStyle}
                 onClick={alternarExpansaoComentariosObra}
                 onTouchStart={iniciarArrasteComentariosObra}
@@ -6173,6 +6177,7 @@ export default function ObraDinamicaPage() {
 
                 <button
                   type="button"
+                  data-dialog-initial-focus="true"
                   onClick={fecharPainelClassificacaoObra}
                   aria-label={textosPainelClassificacao.fechar}
                   style={classificationPanelCloseStyle}
@@ -6652,6 +6657,7 @@ export default function ObraDinamicaPage() {
               <div style={obraMenuActionsStyle}>
                 <button
                   type="button"
+                  data-dialog-initial-focus="true"
                   onClick={() => {
                     fecharAcoesObra();
                     void alternarFavoritoObra();
