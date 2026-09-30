@@ -56,7 +56,7 @@ import {
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
-import { obterNumeroMetrica } from "./lib/obra-metric-utils";
+import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1810,22 +1810,6 @@ async function carregarObraSupabasePorSlug(
       status: "erro",
     } satisfies ResultadoCarregamentoObraPublica;
   }
-}
-
-function normalizarContadorObraPublica(valor: unknown) {
-  if (typeof valor === "number" && Number.isFinite(valor)) {
-    return Math.max(0, Math.round(valor));
-  }
-
-  if (typeof valor === "string" && valor.trim()) {
-    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
-
-    if (Number.isFinite(numero)) {
-      return Math.max(0, Math.round(numero));
-    }
-  }
-
-  return 0;
 }
 
 function totalCurtidasObraPublica(obra: ObraLocal) {
