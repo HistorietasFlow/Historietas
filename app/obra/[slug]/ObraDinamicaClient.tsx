@@ -58,6 +58,7 @@ import {
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
 import { formatarGeneroObraPublica } from "./lib/obra-text-utils";
+import { criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -964,22 +965,6 @@ const avaliacaoObraVazia: AvaliacaoObraPublica = {
   salvando: false,
 };
 
-
-async function criarLoginHrefObraPublica() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/obra";
-  const destinoSeguro =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/obra";
-  const params = new URLSearchParams({
-    redirectTo: destinoSeguro,
-  });
-
-  return `/login?${params.toString()}`;
-}
 
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   if (capitulos.length === 0) {
