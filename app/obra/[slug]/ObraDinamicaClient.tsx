@@ -4821,19 +4821,26 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       respostaComentario
         ? "Entre na sua conta para responder este comentário."
         : "Entre na sua conta para comentar esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
       return;
     }
 
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
     const respostaAnterior = respostaComentario;
     const textoFinal = textoDigitado.slice(0, 600);
     const perfil = await carregarPerfilPublicoObra(userId, "Você");
+
+    if (!execucaoAcaoEstaAtual()) {
+      return;
+    }
+
     const comentarioTemporario: ComentarioObraPublico = {
       id: criarComentarioObraId(),
       obraId: obra.id,
@@ -4902,9 +4909,17 @@ export default function ObraDinamicaPage() {
         throw error || new Error("Comentário não retornado pelo Supabase.");
       }
 
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       const [comentarioSincronizado] = await normalizarComentariosObraSupabase([
         data,
       ]);
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
 
       if (!comentarioSincronizado) {
         throw new Error("Comentário inválido retornado pelo Supabase.");
@@ -4927,6 +4942,10 @@ export default function ObraDinamicaPage() {
 
       setComentarioStatus("");
     } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setComentariosObra((comentariosAtuais) =>
         comentariosAtuais.filter(
           (comentario) => comentario.id !== comentarioTemporario.id
@@ -4943,7 +4962,9 @@ export default function ObraDinamicaPage() {
           : "Não foi possível enviar o comentário agora."
       );
     } finally {
-      setComentarioEnviando(false);
+      if (execucaoAcaoEstaAtual()) {
+        setComentarioEnviando(false);
+      }
     }
   }
 
