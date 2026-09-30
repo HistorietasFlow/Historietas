@@ -66,6 +66,7 @@ import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, obterIdsComentarioComRespostas } from "./lib/obra-comment-utils";
+import { copiarTextoComFallback } from "./lib/obra-share-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -4969,29 +4970,6 @@ export default function ObraDinamicaPage() {
         "Não consegui compartilhar nem copiar o link da obra neste navegador.",
       );
     }
-  }
-
-  function copiarTextoComFallback(texto: string) {
-    const campoTemporario = document.createElement("textarea");
-
-    campoTemporario.value = texto;
-    campoTemporario.setAttribute("readonly", "true");
-    campoTemporario.style.position = "fixed";
-    campoTemporario.style.left = "-9999px";
-    document.body.appendChild(campoTemporario);
-    campoTemporario.select();
-
-    let copiado = false;
-
-    try {
-      copiado = document.execCommand("copy");
-    } catch {
-      copiado = false;
-    }
-
-    document.body.removeChild(campoTemporario);
-
-    return copiado;
   }
 
   const capituloPrincipalObra = obra
