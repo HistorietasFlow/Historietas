@@ -65,6 +65,7 @@ import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublic
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
+import { criarComentarioObraId } from "./lib/obra-comment-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2342,19 +2343,6 @@ async function registrarAtividadeDiarioObra({
   }
 }
 
-
-function criarComentarioObraId() {
-  const cryptoGlobal =
-    typeof globalThis !== "undefined" && "crypto" in globalThis
-      ? globalThis.crypto
-      : null;
-
-  if (cryptoGlobal && typeof cryptoGlobal.randomUUID === "function") {
-    return cryptoGlobal.randomUUID();
-  }
-
-  return `comentario-obra-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
 
 function carregarComentariosObraLocais(userId: string, obraId: string) {
   const userIdLimpo = userId.trim();

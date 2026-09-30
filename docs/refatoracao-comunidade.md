@@ -178,6 +178,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 461: extrair somente `obraEstaEmListaLocalObraPublica` para `app/obra/[slug]/lib/obra-interaction-utils.ts`, preservando o conjunto de chaves da obra, leitura da lista local por usuário, trim dos itens e verificação por correspondência.
 - Fase 462: extrair somente `salvarListaLocalObraPublica` para `app/obra/[slug]/lib/obra-interaction-utils.ts`, preservando escopo por usuário, remoção das chaves atuais, deduplicação ao ativar, persistência no storage e retorno da lista resultante.
 - Fase 463: extrair somente `calcularProximaAvaliacao` para `app/obra/[slug]/lib/obra-rating-utils.ts`, preservando remoção de nota, atualização de média/total, substituição de nota existente e flags `carregado`/`salvando`.
+- Fase 464: extrair somente `criarComentarioObraId` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando prioridade por `crypto.randomUUID()` e fallback com `Date.now()` + `Math.random()`.
 
 ## Contrato de preservação
 
