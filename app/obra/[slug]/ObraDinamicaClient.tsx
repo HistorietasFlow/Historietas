@@ -3587,6 +3587,48 @@ export default function ObraDinamicaPage() {
     };
   }, [comentariosAbertos]);
 
+  useEffect(() => {
+    if (!comentariosAbertos) {
+      return;
+    }
+
+    const focoTimer = window.setTimeout(() => {
+      focarInicioDialogo(comentariosSheetRef.current);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focoTimer);
+    };
+  }, [comentariosAbertos]);
+
+  useEffect(() => {
+    if (!painelClassificacaoAberto) {
+      return;
+    }
+
+    const focoTimer = window.setTimeout(() => {
+      focarInicioDialogo(classificacaoDialogRef.current);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focoTimer);
+    };
+  }, [painelClassificacaoAberto]);
+
+  useEffect(() => {
+    if (!acoesObraAbertas) {
+      return;
+    }
+
+    const focoTimer = window.setTimeout(() => {
+      focarInicioDialogo(acoesObraDialogRef.current);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focoTimer);
+    };
+  }, [acoesObraAbertas]);
+
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
