@@ -26,3 +26,7 @@ export function normalizarContadorObraPublica(valor: unknown) {
 
   return 0;
 }
+
+export function totalComentariosObraPublica(obra: { totalComentarios?: unknown }) {
+  return normalizarContadorObraPublica(obra.totalComentarios);
+}
