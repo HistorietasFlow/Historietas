@@ -5367,18 +5367,58 @@ export default function ObraDinamicaPage() {
   );
 
 
+  function abrirPainelClassificacaoObra() {
+    focoAntesClassificacaoRef.current = obterElementoComFocoAtual();
+    setPainelClassificacaoAberto(true);
+  }
+
+  function fecharPainelClassificacaoObra() {
+    const focoAnterior = focoAntesClassificacaoRef.current;
+    focoAntesClassificacaoRef.current = null;
+    setPainelClassificacaoAberto(false);
+    restaurarFocoAnterior(focoAnterior);
+  }
+
+  function abrirAcoesObra() {
+    focoAntesAcoesObraRef.current = obterElementoComFocoAtual();
+    setAcoesObraAbertas(true);
+  }
+
+  function fecharAcoesObra(restaurarFoco = true) {
+    const focoAnterior = focoAntesAcoesObraRef.current;
+    focoAntesAcoesObraRef.current = null;
+    setAcoesObraAbertas(false);
+
+    if (restaurarFoco) {
+      restaurarFocoAnterior(focoAnterior);
+    }
+  }
+
+  function alternarAcoesObra() {
+    if (acoesObraAbertas) {
+      fecharAcoesObra();
+      return;
+    }
+
+    abrirAcoesObra();
+  }
+
   function abrirComentariosObra() {
+    focoAntesComentariosRef.current = obterElementoComFocoAtual();
     setComentariosSheetExpandido(false);
     setMenuOrdenacaoComentariosAberto(false);
     setComentariosAbertos(true);
   }
 
   function fecharComentariosObra() {
+    const focoAnterior = focoAntesComentariosRef.current;
+    focoAntesComentariosRef.current = null;
     setComentariosAbertos(false);
     setComentariosSheetExpandido(false);
     setMenuOrdenacaoComentariosAberto(false);
     setRespostaComentario(null);
     comentariosDragOffsetYRef.current = 0;
+    restaurarFocoAnterior(focoAnterior);
   }
 
   function iniciarArrasteComentariosObra(
