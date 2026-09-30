@@ -57,6 +57,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
+import { formatarGeneroObraPublica } from "./lib/obra-text-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -978,21 +979,6 @@ async function criarLoginHrefObraPublica() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function formatarGeneroObraPublica(genero: string) {
-  const generoLimpo = genero.trim();
-  const generoNormalizado = normalizarTexto(generoLimpo);
-
-  if (generoNormalizado === "fantasia sombria") {
-    return "Fantasia";
-  }
-
-  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
-    return "Ficção";
-  }
-
-  return generoLimpo || "Não informado";
 }
 
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {

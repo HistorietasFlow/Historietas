@@ -160,6 +160,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 443: extrair somente `formatarMediaAvaliacao`, `formatarTotalAvaliacoes`, `obterProximaNotaAvaliacao` e `obterPreenchimentoEstrela` para `app/obra/[slug]/lib/obra-rating-utils.ts`, preservando textos, arredondamento, limites e preenchimento visual das estrelas.
 - Fase 444: extrair somente `obterNumeroMetrica` para `app/obra/[slug]/lib/obra-metric-utils.ts`, preservando normalização decimal, multiplicador `k`, arredondamento e fallback para zero.
 - Fase 445: extrair somente `normalizarContadorObraPublica` para `app/obra/[slug]/lib/obra-metric-utils.ts`, preservando parsing de números e strings, normalização decimal, arredondamento, limite mínimo zero e fallback para zero.
+- Fase 446: extrair somente `formatarGeneroObraPublica` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando normalização textual e os fallbacks de gênero exibidos.
 
 ## Contrato de preservação
 
