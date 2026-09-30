@@ -1,3 +1,5 @@
+import { criarSlugBase } from "../../../../lib/utils";
+
 export function decodificarCaminhoArquivoObra(caminho: string) {
   try {
     return decodeURIComponent(caminho);
@@ -17,4 +19,18 @@ export function normalizarCategoriaArquivoSupabase(categoria: string | null) {
   }
 
   return "outro";
+}
+
+export function obterChavesBackupObra(obra: {
+  id: string;
+  slug: string;
+  titulo: string;
+}) {
+  return Array.from(
+    new Set(
+      [obra.id, obra.slug, criarSlugBase(obra.titulo)].filter((chave) =>
+        Boolean(chave.trim())
+      )
+    )
+  );
 }

@@ -67,7 +67,7 @@ import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } f
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, obterIdsComentarioComRespostas } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
-import { decodificarCaminhoArquivoObra, normalizarCategoriaArquivoSupabase } from "./lib/obra-file-utils";
+import { decodificarCaminhoArquivoObra, normalizarCategoriaArquivoSupabase, obterChavesBackupObra } from "./lib/obra-file-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1048,16 +1048,6 @@ function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   } catch {
     return {};
   }
-}
-
-function obterChavesBackupObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
-  return Array.from(
-    new Set(
-      [obra.id, obra.slug, criarSlugBase(obra.titulo)].filter((chave) =>
-        Boolean(chave.trim())
-      )
-    )
-  );
 }
 
 function sincronizarBackupArquivosObras(obrasLocais: ObraLocal[], userId = "") {
