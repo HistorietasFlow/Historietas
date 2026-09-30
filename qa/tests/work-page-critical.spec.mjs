@@ -92,10 +92,12 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
       }),
     ).toBeVisible();
 
-    const cta = page.getByRole("link", {
-      name: `Começar a ler: ${workTitle}`,
-      exact: true,
-    });
+    const cta = page
+      .getByRole("link", {
+        name: `Começar a ler: ${workTitle}`,
+        exact: true,
+      })
+      .filter({ hasText: "Começar a ler" });
 
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute("href", chapterPath());
@@ -536,10 +538,12 @@ test.describe.serial("página pública da obra — cenários críticos", () => {
     });
 
     await expect(
-      page.getByRole("link", {
-        name: `Continuar leitura: ${workTitle}`,
-        exact: true,
-      }),
+      page
+        .getByRole("link", {
+          name: `Continuar leitura: ${workTitle}`,
+          exact: true,
+        })
+        .filter({ hasText: "Continuar leitura" }),
     ).toBeVisible();
 
     runtime.assertClean();
