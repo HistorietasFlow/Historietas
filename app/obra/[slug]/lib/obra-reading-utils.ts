@@ -29,6 +29,18 @@ export function obraLocalEstaDisponivelParaLeitura(
   );
 }
 
+export function obterIndicadorConteudoObraPublica(obra: {
+  capitulos: unknown[];
+  arquivoObra?: unknown;
+}) {
+  const temCapitulos = obra.capitulos.length > 0;
+
+  return {
+    icone: temCapitulos ? "📚" : obra.arquivoObra ? "📄" : "📚",
+    valor: temCapitulos ? obra.capitulos.length : obra.arquivoObra ? 1 : 0,
+  };
+}
+
 type CapituloParaContinuarLeitura = {
   id: string;
   disponivel: boolean;
