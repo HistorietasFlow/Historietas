@@ -82,6 +82,24 @@ function focarInicioDialogo(dialogo: HTMLElement | null) {
   (primeiroFocavel || dialogo).focus();
 }
 
+function obterElementoComFocoAtual() {
+  return document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null;
+}
+
+function restaurarFocoAnterior(elemento: HTMLElement | null) {
+  if (!elemento) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elemento.isConnected) {
+      elemento.focus();
+    }
+  }, 0);
+}
+
 function manterFocoNoDialogo(
   event: KeyboardEvent<HTMLElement>,
   fecharDialogo: () => void,
