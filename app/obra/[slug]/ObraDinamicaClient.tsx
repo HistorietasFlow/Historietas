@@ -59,7 +59,7 @@ import {
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
-import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-metric-utils";
+import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica } from "./lib/obra-metric-utils";
 import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
@@ -1760,10 +1760,6 @@ async function carregarObraSupabasePorSlug(
 
 function totalCurtidasObraPublica(obra: ObraLocal) {
   return normalizarContadorObraPublica(obra.totalCurtidas);
-}
-
-function totalComentariosObraPublica(obra: ObraLocal) {
-  return normalizarContadorObraPublica(obra.totalComentarios);
 }
 
 function totalVisualizacoesObraPublica(obra: ObraLocal) {
