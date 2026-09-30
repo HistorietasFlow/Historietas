@@ -6407,7 +6407,7 @@ export default function ObraDinamicaPage() {
                     src={obra.capa}
                     alt=""
                     fill
-                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    sizes="(min-width: 1300px) 650px, (min-width: 1024px) 50vw, 100vw"
                     preload
                     unoptimized={!capaObraPodeSerOtimizada(obra.capa)}
                     style={{
