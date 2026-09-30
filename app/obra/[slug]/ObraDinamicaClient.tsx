@@ -2966,15 +2966,19 @@ async function carregarPaginaComentariosObraSupabase(
     0,
     WORK_COMMENTS_PAGE_SIZE,
   );
-  const comentariosDescendentes: SupabaseComentarioObraRow[] = [];
   const idsConhecidos = new Set(
     comentariosRaiz
       .map((comentario) => comentario.id?.trim() || "")
       .filter(Boolean),
   );
-  let idsPais = Array.from(idsConhecidos);
 
-  while (idsPais.length > 0) {
+  async function carregarDescendentes(
+    idsPais: string[],
+  ): Promise<SupabaseComentarioObraRow[]> {
+    if (idsPais.length === 0) {
+      return [];
+    }
+
     const respostas = await carregarTodasPaginasPorLotesSupabase<
       SupabaseComentarioObraRow,
       string
@@ -2993,6 +2997,7 @@ async function carregarPaginaComentariosObraSupabase(
           .order("id", { ascending: true })
           .range(paginaInicio, paginaFim),
     });
+    const respostasNovas: SupabaseComentarioObraRow[] = [];
     const proximosIdsPais: string[] = [];
 
     respostas.forEach((resposta) => {
@@ -3003,13 +3008,19 @@ async function carregarPaginaComentariosObraSupabase(
       }
 
       idsConhecidos.add(respostaId);
-      comentariosDescendentes.push(resposta);
+      respostasNovas.push(resposta);
       proximosIdsPais.push(respostaId);
     });
 
-    idsPais = proximosIdsPais;
+    return [
+      ...respostasNovas,
+      ...(await carregarDescendentes(proximosIdsPais)),
+    ];
   }
 
+  const comentariosDescendentes = await carregarDescendentes(
+    Array.from(idsConhecidos),
+  );
   const comentarios = await normalizarComentariosObraSupabase([
     ...comentariosRaiz,
     ...comentariosDescendentes,
