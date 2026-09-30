@@ -63,7 +63,7 @@ import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterTextoPerfi
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
-import { obraEstaEmListaLocalObraPublica, obterChavesInteracaoObraPublica } from "./lib/obra-interaction-utils";
+import { obraEstaEmListaLocalObraPublica, obterChavesInteracaoObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1982,31 +1982,6 @@ function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
     curtidaAtiva: false,
     carregado: false,
   };
-}
-
-function salvarListaLocalObraPublica(
-  obra: ObraDinamica,
-  chaveStorage: string,
-  ativo: boolean,
-  userId = ""
-) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [] as string[];
-  }
-
-  const listaAtual = carregarListaLocalObraPublica(chaveStorage, userIdLimpo);
-  const chavesObra = obterChavesInteracaoObraPublica(obra);
-  const chavesSet = new Set(chavesObra);
-  const listaSemObra = listaAtual.filter((item) => !chavesSet.has(item.trim()));
-  const proximaLista = ativo
-    ? Array.from(new Set([...listaSemObra, ...chavesObra]))
-    : listaSemObra;
-
-  salvarStorageUsuarioObraPublica(chaveStorage, userIdLimpo, proximaLista);
-
-  return proximaLista;
 }
 
 async function salvarRegistroObraPublicaSupabase(
