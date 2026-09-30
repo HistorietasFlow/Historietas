@@ -171,6 +171,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 454: extrair somente `capaObraPodeSerOtimizada` para `app/obra/[slug]/lib/obra-cover-utils.ts`, preservando validação do host/protocolo Supabase, caminho público do bucket de capas e fallback `false`.
 - Fase 455: extrair somente `calcularProgressoLeitura` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando contagem de capítulos lidos, arredondamento percentual e fallback zero quando não há capítulos.
 - Fase 456: extrair somente `encontrarCapituloParaContinuarObraPublica` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando filtro de capítulos disponíveis, prioridade após o último lido, fallback para o primeiro não lido e último capítulo disponível.
+- Fase 457: extrair somente `normalizarPerfilPublicoObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando resolução de `userId`, fallbacks de nome/avatar/bio e limites de 80/160 caracteres.
 
 ## Contrato de preservação
 
