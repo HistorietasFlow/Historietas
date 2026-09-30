@@ -3394,6 +3394,11 @@ export default function ObraDinamicaPage() {
     useState<PerfilPublicoObra | null>(null);
   const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
   const comentariosSheetRef = useRef<HTMLElement | null>(null);
+  const classificacaoDialogRef = useRef<HTMLElement | null>(null);
+  const acoesObraDialogRef = useRef<HTMLElement | null>(null);
+  const focoAntesComentariosRef = useRef<HTMLElement | null>(null);
+  const focoAntesClassificacaoRef = useRef<HTMLElement | null>(null);
+  const focoAntesAcoesObraRef = useRef<HTMLElement | null>(null);
   const comentariosDragStartYRef = useRef(0);
   const comentariosDragOffsetYRef = useRef(0);
   const comentariosDragIgnorarCliqueRef = useRef(false);
