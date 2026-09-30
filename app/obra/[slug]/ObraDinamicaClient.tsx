@@ -60,7 +60,7 @@ import { normalizarContadorObraPublica, obterNumeroMetrica } from "./lib/obra-me
 import { formatarGeneroObraPublica, obterAvatarPerfilObra, obterBioPerfilObra, obterNomePerfilObra, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
-import { calcularProgressoLeitura } from "./lib/obra-reading-utils";
+import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica } from "./lib/obra-reading-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1826,37 +1826,6 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
     ultimaLeituraEm: obra.ultimaLeituraEm,
     progressoLeitura: calcularProgressoLeitura(obra.capitulos),
   };
-}
-
-function encontrarCapituloParaContinuarObraPublica(obra: ObraDinamica) {
-  const capitulosDisponiveis = obra.capitulos.filter(
-    (capitulo) => capitulo.disponivel
-  );
-
-  if (capitulosDisponiveis.length === 0) {
-    return null;
-  }
-
-  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
-    ? capitulosDisponiveis.findIndex(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
-      )
-    : -1;
-
-  if (indiceUltimoCapituloLido >= 0) {
-    const proximoCapituloNaoLido = capitulosDisponiveis
-      .slice(indiceUltimoCapituloLido + 1)
-      .find((capitulo) => !capitulo.lido);
-
-    if (proximoCapituloNaoLido) {
-      return proximoCapituloNaoLido;
-    }
-  }
-
-  return (
-    capitulosDisponiveis.find((capitulo) => !capitulo.lido) ||
-    capitulosDisponiveis[capitulosDisponiveis.length - 1]
-  );
 }
 
 function normalizarPerfilPublicoObra(
