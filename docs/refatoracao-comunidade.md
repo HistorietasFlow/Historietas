@@ -189,6 +189,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 472: extrair somente `obterChavesBackupObra` para `app/obra/[slug]/lib/obra-file-utils.ts`, preservando as chaves `id`, `slug`, slug do título, filtragem de valores vazios e deduplicação.
 - Fase 473: extrair somente `totalCurtidasObraPublica` para `app/obra/[slug]/lib/obra-metric-utils.ts`, preservando a normalização de `totalCurtidas` pelo helper `normalizarContadorObraPublica` e atualizando apenas marcadores estruturais dos testes afetados.
 - Fase 474: extrair somente `obraLocalEstaDisponivelParaLeitura` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando a exigência de obra publicada e a disponibilidade por capítulos ou arquivo da obra.
+- Fase 475: extrair somente `formatarTempoRelativoComentarioObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando parsing da data, limiares de segundos/minutos/horas/dias, singular/plural e fallback `agora`, atualizando apenas o marcador estrutural do teste afetado.
 
 ## Contrato de preservação
 
