@@ -53,6 +53,7 @@ import {
 import {
   formatarMediaAvaliacao,
   formatarTotalAvaliacoes,
+  obterChaveAvaliacaoObra,
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
@@ -1979,10 +1980,6 @@ function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
     curtidaAtiva: false,
     carregado: false,
   };
-}
-
-function obterChaveAvaliacaoObra(obra: ObraDinamica) {
-  return obra.id || obra.slug || normalizarTexto(obra.titulo);
 }
 
 function obterChavesInteracaoObraPublica(obra: ObraDinamica) {
