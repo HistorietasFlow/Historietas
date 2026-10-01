@@ -207,6 +207,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 490: extrair `MetricasObraPublica`, `metricasObraVazias` e `criarMetricasBaseObra` para `app/obra/[slug]/lib/obra-metric-utils.ts`, preservando o mesmo objeto-base vazio e a conversão atual de views, curtidas e comentários.
 - Fase 491: extrair `MetricasComunidadeObra` e `metricasComunidadeObraVazias` para `app/obra/[slug]/lib/obra-metric-utils.ts`, preservando o mesmo objeto-base com teorias, reviews, posts zerados e `carregado: false`.
 - Fase 492: extrair `AvaliacaoObraPublica` e `avaliacaoObraVazia` para `app/obra/[slug]/lib/obra-rating-utils.ts`, preservando o mesmo objeto-base com média, total e nota zerados e `carregado`/`salvando` falsos.
+- Fase 493: extrair somente `NOTAS_AVALIACAO_OBRA` para `app/obra/[slug]/lib/obra-rating-utils.ts`, preservando exatamente a tupla fixa `[1, 2, 3, 4, 5]` usada na exibição e interação de avaliação.
 
 ## Contrato de preservação
 
