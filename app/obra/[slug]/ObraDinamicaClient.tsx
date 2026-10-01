@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { heroTitleOutlineStyle, safeTextStyle } from "./lib/obra-style-utils";
+import { desktopTopWaterFadeStyle, heroTitleOutlineStyle, mobileTopWaterFadeStyle, safeTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -6193,30 +6193,6 @@ const obraPageCss = `
 
 
 `;
-
-const mobileTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(340px, 48vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  opacity: 0,
-};
-
-const desktopTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(620px, 68vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  opacity: 0,
-};
 
 // Teste: tipografia do card principal igual à usada no card principal da Home.
 const homeMainTitleTypographyStyle: CSSProperties = {
