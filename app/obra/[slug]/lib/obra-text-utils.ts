@@ -162,3 +162,8 @@ export type TraducaoObraDinamica = {
   en: string;
   es: string;
 };
+
+export type EstadoTraducaoObraDinamica = {
+  original: string;
+  traduzido: string;
+};
