@@ -68,7 +68,7 @@ import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublic
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type CapituloLocal, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
@@ -2034,79 +2034,6 @@ async function carregarPaginaComentariosObraSupabase(
   };
 }
 
-
-function criarEstruturaComentariosObra(
-  comentarios: ComentarioObraPublico[],
-  ordenacao: OrdenacaoComentariosObra
-) {
-  const comentariosPorId = new Map(
-    comentarios.map((comentario) => [comentario.id, comentario])
-  );
-  const respostasPorRaiz = new Map<string, ComentarioObraPublico[]>();
-  const comentariosRaiz: ComentarioObraPublico[] = [];
-
-  function obterRaiz(comentario: ComentarioObraPublico) {
-    let atual = comentario;
-    const visitados = new Set<string>([comentario.id]);
-
-    while (atual.comentarioPaiId) {
-      const pai = comentariosPorId.get(atual.comentarioPaiId);
-
-      if (!pai || visitados.has(pai.id)) {
-        break;
-      }
-
-      visitados.add(pai.id);
-      atual = pai;
-    }
-
-    return atual;
-  }
-
-  comentarios.forEach((comentario) => {
-    const paiExiste = Boolean(
-      comentario.comentarioPaiId &&
-        comentariosPorId.has(comentario.comentarioPaiId)
-    );
-
-    if (!paiExiste) {
-      comentariosRaiz.push(comentario);
-      return;
-    }
-
-    const raiz = obterRaiz(comentario);
-    const respostasAtuais = respostasPorRaiz.get(raiz.id) || [];
-
-    respostasPorRaiz.set(raiz.id, [...respostasAtuais, comentario]);
-  });
-
-  respostasPorRaiz.forEach((respostas, raizId) => {
-    respostasPorRaiz.set(
-      raizId,
-      [...respostas].sort(
-        (a, b) => dataComentarioObra(a) - dataComentarioObra(b)
-      )
-    );
-  });
-
-  comentariosRaiz.sort((a, b) => {
-    if (ordenacao === "recentes") {
-      return dataComentarioObra(b) - dataComentarioObra(a);
-    }
-
-    const relevanciaA =
-      a.curtidas.length * 3 + (respostasPorRaiz.get(a.id)?.length || 0);
-    const relevanciaB =
-      b.curtidas.length * 3 + (respostasPorRaiz.get(b.id)?.length || 0);
-
-    return relevanciaB - relevanciaA || dataComentarioObra(b) - dataComentarioObra(a);
-  });
-
-  return {
-    comentariosRaiz,
-    respostasPorRaiz,
-  };
-}
 
 async function incrementarVisualizacaoObraPublicaSupabase(
   obraId: string
