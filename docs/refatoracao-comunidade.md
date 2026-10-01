@@ -240,6 +240,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 523: extrair somente `safeTextStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente `overflowWrap: "anywhere"` e `wordBreak: "break-word"` usados pelos estilos da página da obra.
 - Fase 524: extrair `CommunityItem` e seus estilos exclusivos para `app/obra/[slug]/ObraCommunityItem.tsx`, preservando exatamente o link, rótulo acessível, número, texto e visual dos atalhos da Comunidade.
 - Fase 525: extrair `MetricCard` e seus estilos exclusivos para `app/obra/[slug]/ObraMetricCard.tsx`, preservando exatamente estados ativo/inativo, coração, ARIA, rótulo, número e visual das métricas da obra.
+- Fase 526: extrair somente `heroTitleOutlineStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente o `textShadow` usado no título principal da obra.
 
 ## Contrato de preservação
 
