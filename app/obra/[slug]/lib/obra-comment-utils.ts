@@ -114,3 +114,9 @@ export type ComentarioObraPublico = {
   local: boolean;
   curtidas: string[];
 };
+
+export type PaginaComentariosObra = {
+  comentarios: ComentarioObraPublico[];
+  temMais: boolean;
+  proximoOffset: number;
+};
