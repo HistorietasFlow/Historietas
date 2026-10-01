@@ -71,6 +71,7 @@ import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
+import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -819,12 +820,6 @@ type ObraDinamica = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
-};
-
-type AlvoDenunciaObraDinamica = {
-  alvoTipo: "obra" | "comentario_obra";
-  alvoId: string;
-  alvoTitulo: string;
 };
 
 
