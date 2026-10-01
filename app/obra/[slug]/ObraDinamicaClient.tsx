@@ -63,7 +63,7 @@ import {
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
 import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
-import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
+import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra } from "./lib/obra-reading-utils";
@@ -875,13 +875,6 @@ type ObraDinamica = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
-};
-
-type PerfilPublicoObra = {
-  userId: string;
-  nome: string;
-  avatar: string;
-  bio: string;
 };
 
 type AlvoDenunciaObraDinamica = {
