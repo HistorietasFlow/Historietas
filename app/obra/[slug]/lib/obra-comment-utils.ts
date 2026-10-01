@@ -84,3 +84,5 @@ export function obterObraIdComentarios(
 ) {
   return obra?.id?.trim() || "";
 }
+
+export type OrdenacaoComentariosObra = "relevantes" | "recentes";
