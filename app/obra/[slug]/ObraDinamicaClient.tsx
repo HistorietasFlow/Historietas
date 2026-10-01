@@ -67,7 +67,7 @@ import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, ob
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
-import { decodificarCaminhoArquivoObra, normalizarCaminhoStorageArquivoObra, normalizarCategoriaArquivoSupabase, obterChavesBackupObra } from "./lib/obra-file-utils";
+import { normalizarCaminhoStorageArquivoObra, normalizarCategoriaArquivoSupabase, obterChavesBackupObra } from "./lib/obra-file-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
