@@ -1,4 +1,14 @@
 import type { AvisoConteudo18 } from "../../../../lib/historietasAdultContent";
+import { criarSlugBase } from "../../../../lib/utils";
+import {
+  totalComentariosObraPublica,
+  totalCurtidasObraPublica,
+  totalVisualizacoesObraPublica,
+} from "./obra-metric-utils";
+import {
+  calcularProgressoLeitura,
+  obraLocalEstaDisponivelParaLeitura,
+} from "./obra-reading-utils";
 import type { ArquivoObraLocal } from "./obra-file-utils";
 import type { CapituloDinamico, CapituloLocal } from "./obra-reading-utils";
 
@@ -90,3 +100,46 @@ export type ObraDinamica = {
   ultimaLeituraEm: string;
   progressoLeitura: number;
 };
+
+
+export function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
+  const obraDisponivel = obraLocalEstaDisponivelParaLeitura(obra);
+
+  return {
+    id: obra.id,
+    origem: "local",
+    titulo: obra.titulo,
+    autor: obra.autor,
+    autorId: obra.autorId || "",
+    genero: obra.genero,
+    formato: obra.formato,
+    classificacaoIndicativa: obra.classificacaoIndicativa,
+    avisosConteudo: obra.avisosConteudo,
+    status: obra.publicado ? "Publicado" : "Rascunho",
+    views: String(totalVisualizacoesObraPublica(obra)),
+    likes: String(totalCurtidasObraPublica(obra)),
+    comentarios: String(totalComentariosObraPublica(obra)),
+    disponivel: obraDisponivel,
+    slug: obra.slug,
+    link: obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`,
+    sinopse: obra.sinopse,
+    tags: obra.tags,
+    capa: obra.capa,
+    arquivoObra: obra.arquivoObra || null,
+    capitulos: obra.capitulos.map((capitulo, index) => ({
+      id: capitulo.id,
+      numero: String(index + 1).padStart(2, "0"),
+      titulo: capitulo.titulo,
+      descricao: "",
+      href: `/obra/${encodeURIComponent(
+        obra.slug || criarSlugBase(obra.titulo)
+      )}/capitulo/${index + 1}`,
+      disponivel: obraDisponivel,
+      lido: capitulo.lido,
+      lidoEm: capitulo.lidoEm,
+    })),
+    ultimoCapituloLidoId: obra.ultimoCapituloLidoId,
+    ultimaLeituraEm: obra.ultimaLeituraEm,
+    progressoLeitura: calcularProgressoLeitura(obra.capitulos),
+  };
+}
