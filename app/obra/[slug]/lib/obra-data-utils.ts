@@ -11,8 +11,8 @@ import {
   normalizarCapituloLocal,
   obraLocalEstaDisponivelParaLeitura,
 } from "./obra-reading-utils";
-import { normalizarArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./obra-file-utils";
-import type { CapituloDinamico, CapituloLocal } from "./obra-reading-utils";
+import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./obra-file-utils";
+import type { CapituloDinamico, CapituloLocal, SupabaseCapituloRow } from "./obra-reading-utils";
 
 export type SupabaseObraRow = {
   id: string;
@@ -234,6 +234,123 @@ export function normalizarObraLocal(
       typeof obra.link === "string" && obra.link.trim()
         ? obra.link
         : `/obra/${slug}`,
+  };
+}
+
+export function normalizarObraSupabase(
+  obra: SupabaseObraRow,
+  capitulosSupabase: SupabaseCapituloRow[],
+  obraLocal: ObraLocal | undefined,
+  index: number
+): ObraLocal {
+  const capitulosLocaisPorId = new Map(
+    (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
+  );
+
+  const capitulosRemotos = capitulosSupabase.map((capitulo, capituloIndex) => {
+    const capituloLocal = capitulosLocaisPorId.get(capitulo.id);
+
+    return {
+      id: capitulo.id,
+      titulo:
+        capitulo.titulo?.trim() ||
+        capituloLocal?.titulo ||
+        `Capítulo ${capituloIndex + 1}`,
+      texto: "",
+      curtiu: Boolean(capituloLocal?.curtiu),
+      salvo: Boolean(capituloLocal?.salvo),
+      comentario: capituloLocal?.comentario || "",
+      criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
+      lido: Boolean(capituloLocal?.lido),
+      lidoEm: capituloLocal?.lidoEm || "",
+      publicado: true,
+      totalCurtidas: normalizarContadorObraPublica(capituloLocal?.totalCurtidas),
+      totalComentarios: normalizarContadorObraPublica(capituloLocal?.totalComentarios),
+      totalSalvos: normalizarContadorObraPublica(capituloLocal?.totalSalvos),
+      totalLidos: normalizarContadorObraPublica(capituloLocal?.totalLidos),
+    } satisfies CapituloLocal;
+  });
+
+  const capitulosMesclados = capitulosRemotos;
+  const tituloObra = obra.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
+  const slugObra =
+    obra.slug?.trim() ||
+    obraLocal?.slug ||
+    criarSlugBase(tituloObra || `obra-${index + 1}`);
+  const arquivoUrl = obra.arquivo_url?.trim() || "";
+  const arquivoCategoria = normalizarCategoriaArquivoSupabase(
+    obra.arquivo_categoria
+  );
+  const arquivoTipo =
+    obra.arquivo_tipo?.trim() ||
+    obraLocal?.arquivoObra?.tipo ||
+    (arquivoCategoria === "documento"
+      ? "application/pdf"
+      : arquivoCategoria === "imagem"
+      ? "image/*"
+      : arquivoCategoria === "texto"
+      ? "text/plain"
+      : "");
+
+  return {
+    id: obra.id || obraLocal?.id || `obra-${index + 1}`,
+    titulo: tituloObra,
+    autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
+    genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
+    formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
+    classificacaoIndicativa:
+      obra.classificacao_indicativa?.trim() ||
+      obraLocal?.classificacaoIndicativa ||
+      "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisos_conteudo ?? obraLocal?.avisosConteudo,
+      obra.classificacao_indicativa ?? obraLocal?.classificacaoIndicativa,
+    ),
+    sinopse:
+      obra.sinopse?.trim() ||
+      obraLocal?.sinopse ||
+      "Nenhuma sinopse informada.",
+    tags:
+      Array.isArray(obra.tags) && obra.tags.length > 0
+        ? obra.tags.filter((tag) => typeof tag === "string" && Boolean(tag.trim()))
+        : obraLocal?.tags || ["sem tags"],
+    capa: obra.capa_url?.trim() || obraLocal?.capa || "",
+    capaNome: obra.capa_nome?.trim() || obraLocal?.capaNome || "",
+    arquivoObra: arquivoUrl
+      ? {
+          nome:
+            obra.arquivo_nome?.trim() ||
+            obraLocal?.arquivoObra?.nome ||
+            "Arquivo da obra",
+          tipo: arquivoTipo,
+          tamanho:
+            typeof obra.arquivo_tamanho === "number" &&
+            Number.isFinite(obra.arquivo_tamanho)
+              ? obra.arquivo_tamanho
+              : obraLocal?.arquivoObra?.tamanho || 0,
+          conteudo: arquivoUrl,
+          categoria: arquivoCategoria,
+          criadoEm: obra.criada_em || obraLocal?.arquivoObra?.criadoEm || "",
+        }
+      : obraLocal?.arquivoObra || null,
+    publicado: Boolean(obra.publicado),
+    capitulos: capitulosMesclados,
+    criadaEm: obra.criada_em || obraLocal?.criadaEm || "",
+    ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
+    ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
+    progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
+    visualizacoes: normalizarContadorObraPublica(
+      obra.visualizacoes ?? obra.views ?? obra.total_visualizacoes ?? obraLocal?.visualizacoes
+    ),
+    totalCurtidas: normalizarContadorObraPublica(obraLocal?.totalCurtidas),
+    totalComentarios: normalizarContadorObraPublica(
+      obraLocal?.totalComentarios
+    ),
+    totalFavoritos: normalizarContadorObraPublica(obraLocal?.totalFavoritos),
+    totalConcluidas: normalizarContadorObraPublica(obraLocal?.totalConcluidas),
+    slug: slugObra,
+    link: obra.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
   };
 }
 
