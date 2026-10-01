@@ -1,4 +1,4 @@
-import { criarSlugBase } from "../../../../lib/utils";
+import { criarSlugBase, idObraSupabaseValido } from "../../../../lib/utils";
 
 export function decodificarCaminhoArquivoObra(caminho: string) {
   try {
@@ -6,6 +6,38 @@ export function decodificarCaminhoArquivoObra(caminho: string) {
   } catch {
     return caminho;
   }
+}
+
+export function normalizarCaminhoStorageArquivoObra(caminho: string) {
+  const caminhoSemBusca = caminho.split("?")[0]?.split("#")[0] || "";
+  const caminhoDecodificado = decodificarCaminhoArquivoObra(caminhoSemBusca)
+    .replace(/^\/+/, "")
+    .trim();
+  const prefixos = [
+    "storage/v1/object/sign/arquivos-obras/",
+    "storage/v1/object/public/arquivos-obras/",
+    "storage/v1/object/authenticated/arquivos-obras/",
+    "storage/v1/object/arquivos-obras/",
+    "arquivos-obras/",
+  ];
+
+  let caminhoObjeto = caminhoDecodificado;
+
+  for (const prefixo of prefixos) {
+    const indicePrefixo = caminhoDecodificado.indexOf(prefixo);
+
+    if (indicePrefixo >= 0) {
+      caminhoObjeto = caminhoDecodificado.slice(
+        indicePrefixo + prefixo.length
+      );
+      break;
+    }
+  }
+
+  const caminhoLimpo = caminhoObjeto.replace(/^\/+/, "").trim();
+  const pastaProprietario = caminhoLimpo.split("/")[0] || "";
+
+  return idObraSupabaseValido(pastaProprietario) ? caminhoLimpo : "";
 }
 
 export function normalizarCategoriaArquivoSupabase(categoria: string | null) {

@@ -67,7 +67,7 @@ import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, ob
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
-import { decodificarCaminhoArquivoObra, normalizarCategoriaArquivoSupabase, obterChavesBackupObra } from "./lib/obra-file-utils";
+import { normalizarCaminhoStorageArquivoObra, normalizarCategoriaArquivoSupabase, obterChavesBackupObra } from "./lib/obra-file-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1293,38 +1293,6 @@ function carregarObrasLocaisComBackup(userId = "") {
   sincronizarBackupArquivosObras(obrasNormalizadas, userIdLimpo);
 
   return obrasPublicasLocais;
-}
-
-function normalizarCaminhoStorageArquivoObra(caminho: string) {
-  const caminhoSemBusca = caminho.split("?")[0]?.split("#")[0] || "";
-  const caminhoDecodificado = decodificarCaminhoArquivoObra(caminhoSemBusca)
-    .replace(/^\/+/, "")
-    .trim();
-  const prefixos = [
-    "storage/v1/object/sign/arquivos-obras/",
-    "storage/v1/object/public/arquivos-obras/",
-    "storage/v1/object/authenticated/arquivos-obras/",
-    "storage/v1/object/arquivos-obras/",
-    "arquivos-obras/",
-  ];
-
-  let caminhoObjeto = caminhoDecodificado;
-
-  for (const prefixo of prefixos) {
-    const indicePrefixo = caminhoDecodificado.indexOf(prefixo);
-
-    if (indicePrefixo >= 0) {
-      caminhoObjeto = caminhoDecodificado.slice(
-        indicePrefixo + prefixo.length
-      );
-      break;
-    }
-  }
-
-  const caminhoLimpo = caminhoObjeto.replace(/^\/+/, "").trim();
-  const pastaProprietario = caminhoLimpo.split("/")[0] || "";
-
-  return idObraSupabaseValido(pastaProprietario) ? caminhoLimpo : "";
 }
 
 function obterCaminhoStorageArquivoObra(conteudo: string) {
