@@ -62,7 +62,7 @@ import {
 import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
-import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
+import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios } from "./lib/obra-comment-utils";
@@ -5941,12 +5941,7 @@ export default function ObraDinamicaPage() {
                   />
                 ) : (
                   <strong style={coverTitleStyle}>
-                    {obra.titulo
-                      .split(" ")
-                      .map((parte) => parte[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase()}
+                    {obterIniciaisCapaObra(obra.titulo)}
                   </strong>
                 )}
               </div>

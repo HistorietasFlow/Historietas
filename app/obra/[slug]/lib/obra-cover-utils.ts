@@ -22,3 +22,12 @@ export function capaObraPodeSerOtimizada(capa: string) {
     return false;
   }
 }
+
+export function obterIniciaisCapaObra(titulo: string) {
+  return titulo
+    .split(" ")
+    .map((parte) => parte[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
