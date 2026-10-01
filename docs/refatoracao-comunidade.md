@@ -200,6 +200,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 483: extrair somente `obterTextoDisponibilidadeCapitulosObra` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando a contagem de capítulos e os literais `disponíveis`/`em breve` usados na apresentação e no i18n existente.
 - Fase 484: extrair somente `obterTextosPainelClassificacaoObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando integralmente os textos e fallbacks do painel de classificação em português, inglês e espanhol.
 - Fase 485: extrair somente `obterClassificacaoIndicativaCompactaObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a detecção normalizada de `Livre`, o texto compacto `L` e o valor original para todas as demais classificações.
+- Fase 486: extrair somente `obterIniciaisCapaObra` para `app/obra/[slug]/lib/obra-cover-utils.ts`, preservando exatamente a geração atual de até duas iniciais maiúsculas do título quando a obra não possui capa.
 
 ## Contrato de preservação
 
