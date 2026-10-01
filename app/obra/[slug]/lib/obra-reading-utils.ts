@@ -104,3 +104,12 @@ export function obterObraDisponivelExibida(
 ) {
   return Boolean(obra?.disponivel);
 }
+
+export function obterTextoDisponibilidadeCapitulosObra(
+  quantidadeCapitulos: number,
+  obraDisponivel: boolean,
+) {
+  return obraDisponivel
+    ? `${quantidadeCapitulos} disponíveis`
+    : `${quantidadeCapitulos} em breve`;
+}

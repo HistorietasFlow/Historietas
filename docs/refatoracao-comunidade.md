@@ -197,6 +197,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 480: extrair somente `obterNomeAutorObraExibido` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a prioridade do nome do perfil público, o fallback para o autor da obra e o literal `Autor não informado`.
 - Fase 481: extrair somente `obterGeneroObraExibido` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a formatação atual do gênero e o fallback literal `Não informado` quando não houver obra.
 - Fase 482: extrair somente `obterObraDisponivelExibida` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando exatamente `Boolean(obra?.disponivel)` usado na apresentação da disponibilidade dos capítulos.
+- Fase 483: extrair somente `obterTextoDisponibilidadeCapitulosObra` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando a contagem de capítulos e os literais `disponíveis`/`em breve` usados na apresentação e no i18n existente.
 
 ## Contrato de preservação
 
