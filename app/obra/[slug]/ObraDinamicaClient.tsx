@@ -70,7 +70,7 @@ import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, ob
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
-import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra } from "./lib/obra-file-utils";
+import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -752,15 +752,6 @@ type CapituloLocal = {
   totalComentarios?: number;
   totalSalvos?: number;
   totalLidos?: number;
-};
-
-type ArquivoObraLocal = {
-  nome: string;
-  tipo: string;
-  tamanho: number;
-  conteudo: string;
-  categoria: "texto" | "documento" | "imagem" | "outro";
-  criadoEm: string;
 };
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
