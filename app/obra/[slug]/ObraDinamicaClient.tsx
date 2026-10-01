@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { safeTextStyle } from "./lib/obra-style-utils";
+import { heroTitleOutlineStyle, safeTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -6193,14 +6193,6 @@ const obraPageCss = `
 
 
 `;
-
-const heroTitleOutlineStyle: CSSProperties = {
-  textShadow:
-    "-1px -1px 0 rgba(0,0,0,0.86), 1px -1px 0 rgba(0,0,0,0.86), -1px 1px 0 rgba(0,0,0,0.86), 1px 1px 0 rgba(0,0,0,0.86)",
-};
-
-
-
 
 const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
