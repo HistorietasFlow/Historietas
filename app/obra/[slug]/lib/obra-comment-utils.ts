@@ -92,3 +92,12 @@ export type RespostaComentarioObra = {
   autorId: string;
   autorNome: string;
 };
+
+export type SupabaseComentarioObraRow = {
+  id: string;
+  obra_id: string;
+  user_id: string;
+  comentario: string | null;
+  comentario_pai_id: string | null;
+  criado_em: string | null;
+};
