@@ -223,6 +223,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 506: extrair somente o tipo `AlvoDenunciaObraDinamica` para `app/obra/[slug]/lib/obra-report-utils.ts`, preservando os mesmos tipos de alvo, identificador e título usados no modal de denúncia.
 - Fase 507: extrair somente o tipo `SupabaseObraRow` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente os campos remotos usados no carregamento e normalização da obra pública.
 - Fase 508: extrair somente o tipo `ObraLocal` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente os campos locais, métricas, arquivo e capítulos usados na normalização e persistência da obra.
+- Fase 509: extrair somente o tipo `ObraDinamica` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente os campos exibidos, métricas formatadas, arquivo e capítulos usados na página pública.
 
 ## Contrato de preservação
 
