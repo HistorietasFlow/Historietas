@@ -26,7 +26,6 @@ import {
   ehClassificacao18,
   normalizarAvisosConteudo18,
   traduzirAvisoConteudo18,
-  type AvisoConteudo18,
 } from "../../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../../lib/arquivosObras";
