@@ -101,7 +101,6 @@ export type ObraDinamica = {
   progressoLeitura: number;
 };
 
-
 export function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
   const obraDisponivel = obraLocalEstaDisponivelParaLeitura(obra);
 
