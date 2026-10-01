@@ -136,3 +136,20 @@ export type SupabaseCapituloRow = {
   criado_em: string | null;
   atualizado_em: string | null;
 };
+
+export type CapituloLocal = {
+  id: string;
+  titulo: string;
+  texto: string;
+  publicado?: boolean;
+  curtiu: boolean;
+  salvo: boolean;
+  comentario: string;
+  criadoEm: string;
+  lido: boolean;
+  lidoEm: string;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalSalvos?: number;
+  totalLidos?: number;
+};
