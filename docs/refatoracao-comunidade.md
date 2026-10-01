@@ -235,6 +235,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 518: extrair somente `restaurarArquivoObraComBackup` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente a prioridade do arquivo já presente, a busca pelas chaves de backup e o fallback para a obra original.
 - Fase 519: extrair somente `criarEstruturaComentariosObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando exatamente a resolução da raiz, ordenação cronológica das respostas e ordenação relevante/recente dos comentários raiz.
 - Fase 520: extrair somente `normalizarObraSupabase` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente a mesclagem de dados remotos/locais, capítulos, arquivo, classificação, métricas, progresso, slug e link da obra pública.
+- Fase 521: extrair somente `incrementarVisualizacaoObraPublicaSupabase` para `app/obra/[slug]/lib/obra-metric-utils.ts`, preservando exatamente a validação do ID, chamada ao endpoint de visualizações, normalização do total e fallback silencioso em caso de falha.
 
 ## Contrato de preservação
 

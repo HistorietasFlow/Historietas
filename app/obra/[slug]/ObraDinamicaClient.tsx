@@ -19,7 +19,7 @@ import type { TablesInsert } from "../../../lib/supabase/database.types";
 import DenunciaModal from "../../../components/DenunciaModal";
 import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
-import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../../lib/utils";
+import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto } from "../../../lib/utils";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   acessoConteudo18Confirmado,
@@ -61,7 +61,7 @@ import {
   type AvaliacaoLocalObra,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
-import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
+import { criarMetricasBaseObra, incrementarVisualizacaoObraPublicaSupabase, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type EstadoTraducaoObraDinamica, type PerfilPublicoObra, type TraducaoObraDinamica } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
@@ -1916,40 +1916,6 @@ async function carregarPaginaComentariosObraSupabase(
   };
 }
 
-
-async function incrementarVisualizacaoObraPublicaSupabase(
-  obraId: string
-): Promise<number | null> {
-  const obraIdLimpo = obraId.trim();
-
-  if (!idObraSupabaseValido(obraIdLimpo)) {
-    return null;
-  }
-
-  try {
-    const response = await fetch("/api/visualizacoes", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tipo: "obra",
-        conteudoId: obraIdLimpo,
-      }),
-    });
-    const data = (await response.json().catch(() => null)) as
-      | { ok?: boolean; total?: unknown }
-      | null;
-
-    if (!response.ok || !data?.ok || typeof data.total !== "number") {
-      return null;
-    }
-
-    return Math.max(0, obterNumeroSeguro(data.total, 0));
-  } catch {
-    // A página da obra continua funcionando mesmo se a contagem falhar.
-    return null;
-  }
-}
 
 function LoadingSpinner({
   label = "Carregando",

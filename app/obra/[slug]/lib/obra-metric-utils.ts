@@ -1,3 +1,39 @@
+import { idObraSupabaseValido, obterNumeroSeguro } from "../../../../lib/utils";
+
+export async function incrementarVisualizacaoObraPublicaSupabase(
+  obraId: string
+): Promise<number | null> {
+  const obraIdLimpo = obraId.trim();
+
+  if (!idObraSupabaseValido(obraIdLimpo)) {
+    return null;
+  }
+
+  try {
+    const response = await fetch("/api/visualizacoes", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo: "obra",
+        conteudoId: obraIdLimpo,
+      }),
+    });
+    const data = (await response.json().catch(() => null)) as
+      | { ok?: boolean; total?: unknown }
+      | null;
+
+    if (!response.ok || !data?.ok || typeof data.total !== "number") {
+      return null;
+    }
+
+    return Math.max(0, obterNumeroSeguro(data.total, 0));
+  } catch {
+    // A página da obra continua funcionando mesmo se a contagem falhar.
+    return null;
+  }
+}
+
 export function obterNumeroMetrica(valor: string) {
   const valorNormalizado = valor.trim().toLowerCase().replace(",", ".");
 
