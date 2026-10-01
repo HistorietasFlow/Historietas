@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { desktopTopWaterFadeStyle, heroTitleOutlineStyle, mobileTopWaterFadeStyle, safeTextStyle } from "./lib/obra-style-utils";
+import { desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, safeTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -6193,27 +6193,6 @@ const obraPageCss = `
 
 
 `;
-
-// Teste: tipografia do card principal igual à usada no card principal da Home.
-const homeMainTitleTypographyStyle: CSSProperties = {
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 500,
-  letterSpacing: "-0.01em",
-};
-
-const homeMainMetaTypographyStyle: CSSProperties = {
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 450,
-  lineHeight: 1.25,
-};
-
-const homeMainStatsTypographyStyle: CSSProperties = {
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 850,
-};
 
 const pageStyle: CSSProperties = {
   position: "relative",
