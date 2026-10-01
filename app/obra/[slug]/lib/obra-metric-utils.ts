@@ -72,4 +72,17 @@ export function criarMetricasBaseObra(
     carregado: false,
   };
 }
+export type MetricasComunidadeObra = {
+  teorias: number;
+  reviews: number;
+  posts: number;
+  carregado: boolean;
+};
+
+export const metricasComunidadeObraVazias: MetricasComunidadeObra = {
+  teorias: 0,
+  reviews: 0,
+  posts: 0,
+  carregado: false,
+};
 
