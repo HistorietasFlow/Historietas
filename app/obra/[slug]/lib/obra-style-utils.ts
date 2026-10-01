@@ -54,3 +54,10 @@ export const homeMainStatsTypographyStyle: CSSProperties = {
     'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   fontWeight: 850,
 };
+
+export const communityGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "6px",
+  minWidth: 0,
+};
