@@ -104,6 +104,7 @@ export function obterNomeAutorObraExibido(
 ) {
   return perfilAutor?.nome || obra?.autor || "Autor não informado";
 }
+
 export function obterGeneroObraExibido(
   obra: { genero: string } | null,
 ) {
