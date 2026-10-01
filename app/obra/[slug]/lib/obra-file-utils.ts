@@ -40,6 +40,26 @@ export function normalizarCaminhoStorageArquivoObra(caminho: string) {
   return idObraSupabaseValido(pastaProprietario) ? caminhoLimpo : "";
 }
 
+export function obterCaminhoStorageArquivoObra(conteudo: string) {
+  const valor = conteudo.trim();
+
+  if (!valor || /^(?:data|blob):/i.test(valor)) {
+    return "";
+  }
+
+  try {
+    const url = new URL(valor);
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return "";
+    }
+
+    return normalizarCaminhoStorageArquivoObra(url.pathname);
+  } catch {
+    return normalizarCaminhoStorageArquivoObra(valor);
+  }
+}
+
 export function normalizarCategoriaArquivoSupabase(categoria: string | null) {
   if (
     categoria === "texto" ||
