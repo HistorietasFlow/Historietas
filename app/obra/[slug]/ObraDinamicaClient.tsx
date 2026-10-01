@@ -62,17 +62,17 @@ import {
   type AvaliacaoLocalObra,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
-import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
+import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type EstadoTraducaoObraDinamica, type PerfilPublicoObra, type TraducaoObraDinamica } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
-import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type CapituloLocal, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
+import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type CapituloLocal, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import type { ObraDinamica, ObraLocal, ResultadoCarregamentoObraPublica, SupabaseObraRow } from "./lib/obra-data-utils";
+import { converterObraLocalParaDinamica, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica, type SupabaseObraRow } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
@@ -1411,48 +1411,6 @@ async function carregarObraSupabasePorSlug(
       status: "erro",
     } satisfies ResultadoCarregamentoObraPublica;
   }
-}
-
-function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
-  const obraDisponivel = obraLocalEstaDisponivelParaLeitura(obra);
-
-  return {
-    id: obra.id,
-    origem: "local",
-    titulo: obra.titulo,
-    autor: obra.autor,
-    autorId: obra.autorId || "",
-    genero: obra.genero,
-    formato: obra.formato,
-    classificacaoIndicativa: obra.classificacaoIndicativa,
-    avisosConteudo: obra.avisosConteudo,
-    status: obra.publicado ? "Publicado" : "Rascunho",
-    views: String(totalVisualizacoesObraPublica(obra)),
-    likes: String(totalCurtidasObraPublica(obra)),
-    comentarios: String(totalComentariosObraPublica(obra)),
-    disponivel: obraDisponivel,
-    slug: obra.slug,
-    link: obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`,
-    sinopse: obra.sinopse,
-    tags: obra.tags,
-    capa: obra.capa,
-    arquivoObra: obra.arquivoObra || null,
-    capitulos: obra.capitulos.map((capitulo, index) => ({
-      id: capitulo.id,
-      numero: String(index + 1).padStart(2, "0"),
-      titulo: capitulo.titulo,
-      descricao: "",
-      href: `/obra/${encodeURIComponent(
-        obra.slug || criarSlugBase(obra.titulo)
-      )}/capitulo/${index + 1}`,
-      disponivel: obraDisponivel,
-      lido: capitulo.lido,
-      lidoEm: capitulo.lidoEm,
-    })),
-    ultimoCapituloLidoId: obra.ultimoCapituloLidoId,
-    ultimaLeituraEm: obra.ultimaLeituraEm,
-    progressoLeitura: calcularProgressoLeitura(obra.capitulos),
-  };
 }
 
 async function carregarPerfisPublicosObra(userIds: string[]) {
