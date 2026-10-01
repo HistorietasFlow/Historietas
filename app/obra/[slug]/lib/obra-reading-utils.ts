@@ -98,6 +98,7 @@ export function encontrarCapituloParaContinuarObraPublica<
     capitulosDisponiveis[capitulosDisponiveis.length - 1]
   );
 }
+
 export function obterObraDisponivelExibida(
   obra: { disponivel?: boolean } | null,
 ) {
