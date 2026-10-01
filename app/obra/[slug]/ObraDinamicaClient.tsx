@@ -67,7 +67,7 @@ import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, ob
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
-import { normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra } from "./lib/obra-file-utils";
+import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra } from "./lib/obra-file-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -974,46 +974,6 @@ const avaliacaoObraVazia: AvaliacaoObraPublica = {
   salvando: false,
 };
 
-
-function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return null;
-  }
-
-  const arquivo = valor as Partial<ArquivoObraLocal>;
-
-  if (
-    typeof arquivo.nome !== "string" ||
-    !arquivo.nome.trim() ||
-    typeof arquivo.conteudo !== "string" ||
-    !arquivo.conteudo.trim()
-  ) {
-    return null;
-  }
-
-  let categoria: ArquivoObraLocal["categoria"] = "outro";
-
-  if (
-    arquivo.categoria === "texto" ||
-    arquivo.categoria === "documento" ||
-    arquivo.categoria === "imagem" ||
-    arquivo.categoria === "outro"
-  ) {
-    categoria = arquivo.categoria;
-  }
-
-  return {
-    nome: arquivo.nome,
-    tipo: typeof arquivo.tipo === "string" ? arquivo.tipo : "",
-    tamanho:
-      typeof arquivo.tamanho === "number" && Number.isFinite(arquivo.tamanho)
-        ? arquivo.tamanho
-        : 0,
-    conteudo: arquivo.conteudo,
-    categoria,
-    criadoEm: typeof arquivo.criadoEm === "string" ? arquivo.criadoEm : "",
-  };
-}
 
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   if (typeof window === "undefined" || !userId.trim()) {
