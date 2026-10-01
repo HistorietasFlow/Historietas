@@ -139,3 +139,14 @@ export function obterTextosPainelClassificacaoObra(language: string) {
           abrir: "Ver classificação indicativa",
         };
 }
+
+export function obterClassificacaoIndicativaCompactaObra(
+  classificacaoIndicativa: string,
+) {
+  const livre = normalizarTexto(classificacaoIndicativa) === "livre";
+
+  return {
+    livre,
+    texto: livre ? "L" : classificacaoIndicativa,
+  };
+}

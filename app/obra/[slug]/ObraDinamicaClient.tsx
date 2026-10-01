@@ -60,7 +60,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
-import { normalizarPerfilPublicoObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
+import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra } from "./lib/obra-reading-utils";
@@ -5849,6 +5849,9 @@ export default function ObraDinamicaPage() {
     );
   }
 
+  const classificacaoIndicativaCompacta =
+    obterClassificacaoIndicativaCompactaObra(obra.classificacaoIndicativa);
+
   return (
     <>
       <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
@@ -5889,14 +5892,12 @@ export default function ObraDinamicaPage() {
               <span
                 data-historietas-i18n-ignore="true"
                 style={
-                  normalizarTexto(obra.classificacaoIndicativa) === "livre"
+                  classificacaoIndicativaCompacta.livre
                     ? classificationTriggerTextLivreStyle
                     : classificationTriggerTextStyle
                 }
               >
-                {normalizarTexto(obra.classificacaoIndicativa) === "livre"
-                  ? "L"
-                  : obra.classificacaoIndicativa}
+                {classificacaoIndicativaCompacta.texto}
               </span>
             </button>
 
