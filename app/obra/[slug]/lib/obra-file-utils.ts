@@ -9,6 +9,8 @@ export type ArquivoObraLocal = {
   criadoEm: string;
 };
 
+export type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
+
 type ArquivoObraNormalizado = {
   nome: string;
   tipo: string;
