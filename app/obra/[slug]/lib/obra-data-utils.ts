@@ -1,6 +1,6 @@
 import type { AvisoConteudo18 } from "../../../../lib/historietasAdultContent";
 import type { ArquivoObraLocal } from "./obra-file-utils";
-import type { CapituloLocal } from "./obra-reading-utils";
+import type { CapituloDinamico, CapituloLocal } from "./obra-reading-utils";
 
 export type SupabaseObraRow = {
   id: string;
@@ -57,4 +57,31 @@ export type ObraLocal = {
   totalConcluidas?: number;
   slug: string;
   link: string;
+};
+
+export type ObraDinamica = {
+  id: string;
+  origem: "local";
+  titulo: string;
+  autor: string;
+  autorId?: string;
+  genero: string;
+  formato: string;
+  classificacaoIndicativa: string;
+  avisosConteudo: AvisoConteudo18[];
+  status: string;
+  views: string;
+  likes: string;
+  comentarios: string;
+  disponivel: boolean;
+  slug: string;
+  link: string;
+  sinopse: string;
+  tags: string[];
+  capa: string;
+  arquivoObra: ArquivoObraLocal | null;
+  capitulos: CapituloDinamico[];
+  ultimoCapituloLidoId: string;
+  ultimaLeituraEm: string;
+  progressoLeitura: number;
 };
