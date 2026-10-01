@@ -202,6 +202,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 485: extrair somente `obterClassificacaoIndicativaCompactaObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando a detecção normalizada de `Livre`, o texto compacto `L` e o valor original para todas as demais classificações.
 - Fase 486: extrair somente `obterIniciaisCapaObra` para `app/obra/[slug]/lib/obra-cover-utils.ts`, preservando exatamente a geração atual de até duas iniciais maiúsculas do título quando a obra não possui capa.
 - Fase 487: extrair somente `normalizarCaminhoStorageArquivoObra` para `app/obra/[slug]/lib/obra-file-utils.ts`, preservando remoção de query/hash, decodificação tolerante, prefixos aceitos de `arquivos-obras`, limpeza de barras e validação da pasta proprietária por UUID.
+- Fase 488: extrair somente `obterCaminhoStorageArquivoObra` para `app/obra/[slug]/lib/obra-file-utils.ts`, preservando `trim()`, rejeição de `data:`/`blob:`, aceitação exclusiva de URLs HTTP/HTTPS e fallback para normalização de caminho bruto.
 
 ## Contrato de preservação
 
