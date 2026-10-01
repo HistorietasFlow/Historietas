@@ -113,3 +113,14 @@ export function obterTextoDisponibilidadeCapitulosObra(
     ? `${quantidadeCapitulos} disponíveis`
     : `${quantidadeCapitulos} em breve`;
 }
+
+export type CapituloDinamico = {
+  id: string;
+  numero: string;
+  titulo: string;
+  descricao: string;
+  href: string;
+  disponivel: boolean;
+  lido: boolean;
+  lidoEm: string;
+};
