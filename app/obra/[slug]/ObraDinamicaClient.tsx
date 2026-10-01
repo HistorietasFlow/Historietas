@@ -60,7 +60,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
-import { normalizarPerfilPublicoObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
+import { normalizarPerfilPublicoObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra } from "./lib/obra-reading-utils";
@@ -3325,33 +3325,7 @@ export default function ObraDinamicaPage() {
   );
   const obraDisponivel = obterObraDisponivelExibida(obra);
   const sinopseObraExibida = obterSinopseObraExibida(obra);
-  const textosPainelClassificacao =
-    language === "en"
-      ? {
-          titulo: "Age rating",
-          descricao: "This work is rated",
-          avisos: "Content warnings",
-          semAvisos: "No additional content warnings were provided.",
-          fechar: "Close age rating",
-          abrir: "View age rating",
-        }
-      : language === "es"
-        ? {
-            titulo: "Clasificación por edad",
-            descricao: "Esta obra está clasificada como",
-            avisos: "Advertencias de contenido",
-            semAvisos: "No se indicaron advertencias de contenido adicionales.",
-            fechar: "Cerrar clasificación por edad",
-            abrir: "Ver clasificación por edad",
-          }
-        : {
-            titulo: "Classificação indicativa",
-            descricao: "Esta obra é classificada como",
-            avisos: "Avisos de conteúdo",
-            semAvisos: "Nenhum aviso adicional foi informado.",
-            fechar: "Fechar classificação indicativa",
-            abrir: "Ver classificação indicativa",
-          };
+  const textosPainelClassificacao = obterTextosPainelClassificacaoObra(language);
 
   const capitulosDaObra = useMemo<CapituloDinamico[]>(
     () => obterCapitulosObraPublica(obra),
