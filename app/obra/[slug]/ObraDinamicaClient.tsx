@@ -52,12 +52,14 @@ import {
   salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
 import {
+  avaliacaoObraVazia,
   calcularProximaAvaliacao,
   formatarMediaAvaliacao,
   formatarTotalAvaliacoes,
   obterChaveAvaliacaoObra,
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
+  type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
 import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
@@ -924,23 +926,7 @@ type AlvoDenunciaObraDinamica = {
 };
 
 
-type AvaliacaoObraPublica = {
-  media: number;
-  total: number;
-  minhaNota: number;
-  carregado: boolean;
-  salvando: boolean;
-};
-
 const NOTAS_AVALIACAO_OBRA = [1, 2, 3, 4, 5] as const;
-
-const avaliacaoObraVazia: AvaliacaoObraPublica = {
-  media: 0,
-  total: 0,
-  minhaNota: 0,
-  carregado: false,
-  salvando: false,
-};
 
 
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
