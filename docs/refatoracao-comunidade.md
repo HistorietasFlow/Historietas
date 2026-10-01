@@ -212,6 +212,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 495: extrair somente o tipo `RespostaComentarioObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando os campos `comentarioPaiId`, `autorId` e `autorNome` usados no estado de resposta dos comentários.
 - Fase 496: extrair somente o tipo `SupabaseComentarioObraRow` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando os campos `id`, `obra_id`, `user_id`, `comentario`, `comentario_pai_id` e `criado_em` usados na leitura e paginação dos comentários remotos.
 - Fase 497: extrair somente o tipo `ComentarioObraPublico` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando os mesmos campos de identidade, autoria, conteúdo, hierarquia, origem local e curtidas usados em toda a camada de comentários.
+- Fase 498: extrair somente o tipo `PaginaComentariosObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando os campos `comentarios`, `temMais` e `proximoOffset` usados no retorno da paginação de comentários.
 
 ## Contrato de preservação
 
