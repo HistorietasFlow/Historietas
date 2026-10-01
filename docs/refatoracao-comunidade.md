@@ -245,6 +245,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 528: extrair `homeMainTitleTypographyStyle`, `homeMainMetaTypographyStyle` e `homeMainStatsTypographyStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente família tipográfica, pesos, espaçamento e altura de linha usados no card principal.
 - Fase 529: extrair somente `communityGridStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente as três colunas responsivas, espaçamento e largura mínima do grid da Comunidade.
 - Fase 530: extrair somente `ratingSummaryStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, alinhamento, transparência e comportamento visual do resumo de avaliação.
+- Fase 531: extrair somente `ratingNumberStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tamanho, peso, sombra e quebra segura do número principal da avaliação.
 
 ## Contrato de preservação
 
