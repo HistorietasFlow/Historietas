@@ -85,6 +85,79 @@ export function obterObraIdComentarios(
   return obra?.id?.trim() || "";
 }
 
+export function criarEstruturaComentariosObra(
+  comentarios: ComentarioObraPublico[],
+  ordenacao: OrdenacaoComentariosObra
+) {
+  const comentariosPorId = new Map(
+    comentarios.map((comentario) => [comentario.id, comentario])
+  );
+  const respostasPorRaiz = new Map<string, ComentarioObraPublico[]>();
+  const comentariosRaiz: ComentarioObraPublico[] = [];
+
+  function obterRaiz(comentario: ComentarioObraPublico) {
+    let atual = comentario;
+    const visitados = new Set<string>([comentario.id]);
+
+    while (atual.comentarioPaiId) {
+      const pai = comentariosPorId.get(atual.comentarioPaiId);
+
+      if (!pai || visitados.has(pai.id)) {
+        break;
+      }
+
+      visitados.add(pai.id);
+      atual = pai;
+    }
+
+    return atual;
+  }
+
+  comentarios.forEach((comentario) => {
+    const paiExiste = Boolean(
+      comentario.comentarioPaiId &&
+        comentariosPorId.has(comentario.comentarioPaiId)
+    );
+
+    if (!paiExiste) {
+      comentariosRaiz.push(comentario);
+      return;
+    }
+
+    const raiz = obterRaiz(comentario);
+    const respostasAtuais = respostasPorRaiz.get(raiz.id) || [];
+
+    respostasPorRaiz.set(raiz.id, [...respostasAtuais, comentario]);
+  });
+
+  respostasPorRaiz.forEach((respostas, raizId) => {
+    respostasPorRaiz.set(
+      raizId,
+      [...respostas].sort(
+        (a, b) => dataComentarioObra(a) - dataComentarioObra(b)
+      )
+    );
+  });
+
+  comentariosRaiz.sort((a, b) => {
+    if (ordenacao === "recentes") {
+      return dataComentarioObra(b) - dataComentarioObra(a);
+    }
+
+    const relevanciaA =
+      a.curtidas.length * 3 + (respostasPorRaiz.get(a.id)?.length || 0);
+    const relevanciaB =
+      b.curtidas.length * 3 + (respostasPorRaiz.get(b.id)?.length || 0);
+
+    return relevanciaB - relevanciaA || dataComentarioObra(b) - dataComentarioObra(a);
+  });
+
+  return {
+    comentariosRaiz,
+    respostasPorRaiz,
+  };
+}
+
 export type OrdenacaoComentariosObra = "relevantes" | "recentes";
 
 export type RespostaComentarioObra = {
