@@ -1,3 +1,5 @@
+import { criarSlugBase, idObraSupabaseValido } from "../../../../lib/utils";
+
 export type ArquivoObraLocal = {
   nome: string;
   tipo: string;
@@ -6,8 +8,6 @@ export type ArquivoObraLocal = {
   categoria: "texto" | "documento" | "imagem" | "outro";
   criadoEm: string;
 };
-
-import { criarSlugBase, idObraSupabaseValido } from "../../../../lib/utils";
 
 type ArquivoObraNormalizado = {
   nome: string;
