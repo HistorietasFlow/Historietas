@@ -20,7 +20,7 @@ function obterBloco(inicioTexto, fimTexto) {
 test("troca de nota usa upsert sem apagar previamente a avaliacao existente", () => {
   const bloco = obterBloco(
     "async function salvarAvaliacaoRemotaObra(",
-    "type DiarioAtividadeObraTipo",
+    "async function removerAtividadeDiarioObra(",
   );
   const indiceRemocaoCondicional = bloco.indexOf("if (nota <= 0)");
   const indiceDelete = bloco.indexOf(".delete()", indiceRemocaoCondicional);
