@@ -72,7 +72,7 @@ import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComenta
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import type { ObraLocal, SupabaseObraRow } from "./lib/obra-data-utils";
+import type { ObraDinamica, ObraLocal, SupabaseObraRow } from "./lib/obra-data-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -738,33 +738,6 @@ function ObraDinamicaLanguageBridge() {
   return null;
 }
 
-
-type ObraDinamica = {
-  id: string;
-  origem: "local";
-  titulo: string;
-  autor: string;
-  autorId?: string;
-  genero: string;
-  formato: string;
-  classificacaoIndicativa: string;
-  avisosConteudo: AvisoConteudo18[];
-  status: string;
-  views: string;
-  likes: string;
-  comentarios: string;
-  disponivel: boolean;
-  slug: string;
-  link: string;
-  sinopse: string;
-  tags: string[];
-  capa: string;
-  arquivoObra: ArquivoObraLocal | null;
-  capitulos: CapituloDinamico[];
-  ultimoCapituloLidoId: string;
-  ultimaLeituraEm: string;
-  progressoLeitura: number;
-};
 
 
 
