@@ -68,7 +68,7 @@ import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublic
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type OrdenacaoComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra } from "./lib/obra-file-utils";
 
@@ -882,19 +882,6 @@ type PerfilPublicoObra = {
   nome: string;
   avatar: string;
   bio: string;
-};
-
-type ComentarioObraPublico = {
-  id: string;
-  obraId: string;
-  userId: string;
-  nome: string;
-  avatar: string;
-  texto: string;
-  criadoEm: string;
-  comentarioPaiId: string;
-  local: boolean;
-  curtidas: string[];
 };
 
 type PaginaComentariosObra = {

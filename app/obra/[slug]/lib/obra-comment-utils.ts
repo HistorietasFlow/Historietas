@@ -101,3 +101,16 @@ export type SupabaseComentarioObraRow = {
   comentario_pai_id: string | null;
   criado_em: string | null;
 };
+
+export type ComentarioObraPublico = {
+  id: string;
+  obraId: string;
+  userId: string;
+  nome: string;
+  avatar: string;
+  texto: string;
+  criadoEm: string;
+  comentarioPaiId: string;
+  local: boolean;
+  curtidas: string[];
+};
