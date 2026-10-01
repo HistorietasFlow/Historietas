@@ -215,6 +215,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 498: extrair somente o tipo `PaginaComentariosObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando os campos `comentarios`, `temMais` e `proximoOffset` usados no retorno da paginação de comentários.
 - Fase 499: extrair somente o tipo `PerfilPublicoObra` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando os campos `userId`, `nome`, `avatar` e `bio` produzidos pela normalização e usados nos perfis público, do autor e do usuário logado.
 - Fase 500: extrair somente o tipo `TraducaoObraDinamica` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando exatamente os campos `en` e `es` usados no mapa de traduções da interface da obra.
+- Fase 501: extrair somente o tipo `CapituloDinamico` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando exatamente os campos de identificação, exibição, navegação, disponibilidade e estado de leitura usados na página da obra.
 
 ## Contrato de preservação
 
