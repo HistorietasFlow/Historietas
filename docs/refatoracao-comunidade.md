@@ -229,6 +229,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 512: extrair somente o tipo `DiarioAtividadeObraTipo` para `app/obra/[slug]/lib/obra-activity-utils.ts`, preservando exatamente os tipos `"salvou_obra" | "favoritou_obra" | "concluiu_obra" | "avaliou_obra"` usados no Diário.
 - Fase 513: extrair somente o tipo `ResultadoCarregamentoObraPublica` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente `obras: ObraLocal[]` e os status `"carregada" | "nao_encontrada" | "erro" | "cancelada"` usados no carregamento da obra pública.
 - Fase 514: extrair somente o tipo `EstadoTraducaoObraDinamica` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando exatamente os campos `original` e `traduzido` usados pelo bridge de idioma da página da obra.
+- Fase 515: extrair somente `converterObraLocalParaDinamica` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente a conversão de status, métricas, disponibilidade, links de capítulos e progresso de leitura.
 
 ## Contrato de preservação
 
