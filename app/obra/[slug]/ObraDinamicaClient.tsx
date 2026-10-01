@@ -66,7 +66,7 @@ import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type EstadoTraducaoObraDinamica, type PerfilPublicoObra, type TraducaoObraDinamica } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
-import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type CapituloLocal, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
+import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, normalizarCapituloLocal, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type CapituloLocal, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
@@ -815,47 +815,6 @@ function restaurarArquivoObraComBackup(
   return {
     ...obraLocal,
     arquivoObra: arquivoBackup,
-  };
-}
-
-function normalizarCapituloLocal(
-  capitulo: Partial<CapituloLocal>,
-  index: number
-): CapituloLocal {
-  return {
-    id:
-      typeof capitulo.id === "string" && capitulo.id.trim()
-        ? capitulo.id
-        : `capitulo-${index + 1}`,
-    titulo:
-      typeof capitulo.titulo === "string" && capitulo.titulo.trim()
-        ? capitulo.titulo
-        : "Capítulo sem título",
-    texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
-    publicado: capitulo.publicado !== false,
-    curtiu: Boolean(capitulo.curtiu),
-    salvo: Boolean(capitulo.salvo),
-    comentario:
-      typeof capitulo.comentario === "string" ? capitulo.comentario : "",
-    criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
-    lido: Boolean(capitulo.lido),
-    lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
-    totalCurtidas: normalizarContadorObraPublica(
-      (capitulo as Record<string, unknown>).totalCurtidas ??
-        (capitulo as Record<string, unknown>).total_curtidas
-    ),
-    totalComentarios: normalizarContadorObraPublica(
-      (capitulo as Record<string, unknown>).totalComentarios ??
-        (capitulo as Record<string, unknown>).total_comentarios
-    ),
-    totalSalvos: normalizarContadorObraPublica(
-      (capitulo as Record<string, unknown>).totalSalvos ??
-        (capitulo as Record<string, unknown>).total_salvos
-    ),
-    totalLidos: normalizarContadorObraPublica(
-      (capitulo as Record<string, unknown>).totalLidos ??
-        (capitulo as Record<string, unknown>).total_lidos
-    ),
   };
 }
 
