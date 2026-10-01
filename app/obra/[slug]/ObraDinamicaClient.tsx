@@ -72,6 +72,7 @@ import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComenta
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
+import type { SupabaseObraRow } from "./lib/obra-data-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -765,34 +766,6 @@ type ObraLocal = {
   totalConcluidas?: number;
   slug: string;
   link: string;
-};
-
-type SupabaseObraRow = {
-  id: string;
-  user_id: string | null;
-  titulo: string | null;
-  autor: string | null;
-  genero: string | null;
-  formato: string | null;
-  classificacao_indicativa: string | null;
-  avisos_conteudo: string[] | null;
-  sinopse: string | null;
-  tags: string[] | null;
-  capa_url: string | null;
-  capa_nome: string | null;
-  arquivo_url: string | null;
-  arquivo_nome: string | null;
-  arquivo_tipo: string | null;
-  arquivo_tamanho: number | null;
-  arquivo_categoria: string | null;
-  visualizacoes: number | null;
-  views?: number | null;
-  total_visualizacoes?: number | null;
-  publicado: boolean | null;
-  slug: string | null;
-  link: string | null;
-  criada_em: string | null;
-  atualizado_em: string | null;
 };
 
 type ObraDinamica = {
