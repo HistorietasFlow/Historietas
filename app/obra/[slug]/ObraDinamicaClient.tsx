@@ -59,7 +59,7 @@ import {
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
-import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
+import { criarMetricasBaseObra, metricasObraVazias, normalizarContadorObraPublica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
@@ -924,15 +924,6 @@ type AlvoDenunciaObraDinamica = {
 };
 
 
-type MetricasObraPublica = {
-  visualizacoes: number;
-  curtidas: number;
-  comentarios: number;
-  seguidores: number;
-  curtidaAtiva: boolean;
-  carregado: boolean;
-};
-
 type MetricasComunidadeObra = {
   teorias: number;
   reviews: number;
@@ -949,15 +940,6 @@ type AvaliacaoObraPublica = {
 };
 
 const NOTAS_AVALIACAO_OBRA = [1, 2, 3, 4, 5] as const;
-
-const metricasObraVazias: MetricasObraPublica = {
-  visualizacoes: 0,
-  curtidas: 0,
-  comentarios: 0,
-  seguidores: 0,
-  curtidaAtiva: false,
-  carregado: false,
-};
 
 const metricasComunidadeObraVazias: MetricasComunidadeObra = {
   teorias: 0,
@@ -1834,21 +1816,6 @@ async function carregarPerfilPublicoObra(
   }
 
   return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback || "Usuário");
-}
-
-function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
-  if (!obra) {
-    return metricasObraVazias;
-  }
-
-  return {
-    visualizacoes: obterNumeroMetrica(obra.views),
-    curtidas: obterNumeroMetrica(obra.likes),
-    comentarios: obterNumeroMetrica(obra.comentarios),
-    seguidores: 0,
-    curtidaAtiva: false,
-    carregado: false,
-  };
 }
 
 async function salvarRegistroObraPublicaSupabase(
