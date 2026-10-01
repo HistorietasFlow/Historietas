@@ -12,7 +12,7 @@ import {
   obraLocalEstaDisponivelParaLeitura,
 } from "./obra-reading-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./obra-file-utils";
-import type { CapituloDinamico, CapituloLocal } from "./obra-reading-utils";
+import type { CapituloDinamico, CapituloLocal, SupabaseCapituloRow } from "./obra-reading-utils";
 
 export type SupabaseObraRow = {
   id: string;
