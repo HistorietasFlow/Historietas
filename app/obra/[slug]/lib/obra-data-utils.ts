@@ -1,0 +1,27 @@
+export type SupabaseObraRow = {
+  id: string;
+  user_id: string | null;
+  titulo: string | null;
+  autor: string | null;
+  genero: string | null;
+  formato: string | null;
+  classificacao_indicativa: string | null;
+  avisos_conteudo: string[] | null;
+  sinopse: string | null;
+  tags: string[] | null;
+  capa_url: string | null;
+  capa_nome: string | null;
+  arquivo_url: string | null;
+  arquivo_nome: string | null;
+  arquivo_tipo: string | null;
+  arquivo_tamanho: number | null;
+  arquivo_categoria: string | null;
+  visualizacoes: number | null;
+  views?: number | null;
+  total_visualizacoes?: number | null;
+  publicado: boolean | null;
+  slug: string | null;
+  link: string | null;
+  criada_em: string | null;
+  atualizado_em: string | null;
+};
