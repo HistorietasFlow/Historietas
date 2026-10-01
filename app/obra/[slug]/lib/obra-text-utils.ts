@@ -139,6 +139,7 @@ export function obterTextosPainelClassificacaoObra(language: string) {
           abrir: "Ver classificação indicativa",
         };
 }
+
 export function obterClassificacaoIndicativaCompactaObra(
   classificacaoIndicativa: string,
 ) {
