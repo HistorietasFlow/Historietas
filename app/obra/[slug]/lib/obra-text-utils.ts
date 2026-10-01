@@ -110,6 +110,7 @@ export function obterGeneroObraExibido(
 ) {
   return obra ? formatarGeneroObraPublica(obra.genero) : "Não informado";
 }
+
 export function obterTextosPainelClassificacaoObra(language: string) {
   return language === "en"
     ? {
