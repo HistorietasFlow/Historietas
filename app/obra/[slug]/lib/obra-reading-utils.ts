@@ -156,7 +156,6 @@ export type CapituloLocal = {
   totalLidos?: number;
 };
 
-
 export function normalizarCapituloLocal(
   capitulo: Partial<CapituloLocal>,
   index: number
