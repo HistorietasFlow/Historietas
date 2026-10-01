@@ -63,7 +63,7 @@ import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObra
 import { normalizarPerfilPublicoObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
-import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica } from "./lib/obra-reading-utils";
+import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
@@ -3323,7 +3323,7 @@ export default function ObraDinamicaPage() {
       autorObraId &&
       usuarioIdLogado === autorObraId
   );
-  const obraDisponivel = Boolean(obra?.disponivel);
+  const obraDisponivel = obterObraDisponivelExibida(obra);
   const sinopseObraExibida = obterSinopseObraExibida(obra);
   const textosPainelClassificacao =
     language === "en"
