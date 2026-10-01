@@ -1,3 +1,12 @@
+export type ArquivoObraLocal = {
+  nome: string;
+  tipo: string;
+  tamanho: number;
+  conteudo: string;
+  categoria: "texto" | "documento" | "imagem" | "outro";
+  criadoEm: string;
+};
+
 import { criarSlugBase, idObraSupabaseValido } from "../../../../lib/utils";
 
 type ArquivoObraNormalizado = {
