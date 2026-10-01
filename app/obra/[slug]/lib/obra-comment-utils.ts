@@ -86,3 +86,9 @@ export function obterObraIdComentarios(
 }
 
 export type OrdenacaoComentariosObra = "relevantes" | "recentes";
+
+export type RespostaComentarioObra = {
+  comentarioPaiId: string;
+  autorId: string;
+  autorNome: string;
+};
