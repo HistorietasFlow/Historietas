@@ -72,7 +72,7 @@ import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComenta
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import { converterObraLocalParaDinamica, normalizarObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica, type SupabaseObraRow } from "./lib/obra-data-utils";
+import { converterObraLocalParaDinamica, normalizarObraLocal, restaurarArquivoObraComBackup, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica, type SupabaseObraRow } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
@@ -794,28 +794,6 @@ function sincronizarBackupArquivosObras(obrasLocais: ObraLocal[], userId = "") {
   } catch {
     // Backup é apenas proteção extra. Não deve travar a página pública.
   }
-}
-
-function restaurarArquivoObraComBackup(
-  obraLocal: ObraLocal,
-  backup: ArquivosObrasBackup
-): ObraLocal {
-  if (obraLocal.arquivoObra) {
-    return obraLocal;
-  }
-
-  const arquivoBackup = obterChavesBackupObra(obraLocal)
-    .map((chave) => normalizarArquivoObra(backup[chave]))
-    .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo));
-
-  if (!arquivoBackup) {
-    return obraLocal;
-  }
-
-  return {
-    ...obraLocal,
-    arquivoObra: arquivoBackup,
-  };
 }
 
 function carregarObrasLocaisComBackup(userId = "") {
