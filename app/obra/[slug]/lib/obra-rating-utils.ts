@@ -103,3 +103,19 @@ export function calcularProximaAvaliacao(
     salvando: true,
   };
 }
+export type AvaliacaoObraPublica = {
+  media: number;
+  total: number;
+  minhaNota: number;
+  carregado: boolean;
+  salvando: boolean;
+};
+
+export const avaliacaoObraVazia: AvaliacaoObraPublica = {
+  media: 0,
+  total: 0,
+  minhaNota: 0,
+  carregado: false,
+  salvando: false,
+};
+
