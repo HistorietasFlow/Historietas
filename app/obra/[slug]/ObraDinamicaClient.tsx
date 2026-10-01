@@ -73,7 +73,7 @@ import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import type { ObraDinamica, ObraLocal, SupabaseObraRow } from "./lib/obra-data-utils";
-import type { DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
+import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1831,12 +1831,6 @@ async function salvarAvaliacaoRemotaObra({
     throw erroSalvar;
   }
 }
-
-type DiarioAtividadeObraTipo =
-  | "salvou_obra"
-  | "favoritou_obra"
-  | "concluiu_obra"
-  | "avaliou_obra";
 
 async function removerAtividadeDiarioObra({
   userId,
