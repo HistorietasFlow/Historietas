@@ -157,3 +157,8 @@ export type PerfilPublicoObra = {
   avatar: string;
   bio: string;
 };
+
+export type TraducaoObraDinamica = {
+  en: string;
+  es: string;
+};
