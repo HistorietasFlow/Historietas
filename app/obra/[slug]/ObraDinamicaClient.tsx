@@ -63,7 +63,7 @@ import {
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
 import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
-import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
+import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type PerfilPublicoObra, type TraducaoObraDinamica } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra } from "./lib/obra-reading-utils";
@@ -83,11 +83,6 @@ const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const WORK_COMMENTS_PAGE_SIZE = 20;
-type TraducaoObraDinamica = {
-  en: string;
-  es: string;
-};
-
 const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica> = {
   "Carregando": { en: "Loading", es: "Cargando" },
   "Carregando obra": { en: "Loading work", es: "Cargando obra" },
