@@ -74,6 +74,7 @@ import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraLocal, normalizarObraSupabase, restaurarArquivoObraComBackup, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
+import CommunityItem from "./ObraCommunityItem";
 import { safeTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
@@ -6052,27 +6053,6 @@ function MetricCard({
   );
 }
 
-function CommunityItem({
-  numero,
-  rotulo,
-  href,
-}: {
-  numero: string;
-  rotulo: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      style={communityItemStyle}
-      aria-label={`Abrir ${rotulo} desta obra na Comunidade`}
-    >
-      <strong style={communityNumberStyle}>{numero}</strong>
-      <span style={communityLabelStyle}>{rotulo}</span>
-    </Link>
-  );
-}
-
 const classificationPanelOverlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
@@ -7951,44 +7931,6 @@ const communityGridStyle: CSSProperties = {
   gap: "6px",
   minWidth: 0,
 };
-
-const communityItemStyle: CSSProperties = {
-  padding: "8px 6px",
-  borderRadius: "14px",
-  background: "var(--historietas-obra-bg-deep, #000000)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  display: "grid",
-  gap: "3px",
-  justifyItems: "center",
-  textAlign: "center",
-  minWidth: 0,
-  color: "inherit",
-  textDecoration: "none",
-  cursor: "pointer",
-  boxShadow: "none",
-  filter: "none",
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-};
-
-const communityNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "18px",
-  lineHeight: 1,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const communityLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8.5px",
-  fontWeight: 900,
-  textTransform: "uppercase",
-  letterSpacing: "0.035em",
-  ...safeTextStyle,
-};
-
-
 
 const ratingSummaryStyle: CSSProperties = {
   flex: "0 0 auto",
