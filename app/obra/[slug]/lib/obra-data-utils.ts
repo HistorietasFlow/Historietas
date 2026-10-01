@@ -11,7 +11,7 @@ import {
   normalizarCapituloLocal,
   obraLocalEstaDisponivelParaLeitura,
 } from "./obra-reading-utils";
-import { normalizarArquivoObra, type ArquivoObraLocal } from "./obra-file-utils";
+import { normalizarArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./obra-file-utils";
 import type { CapituloDinamico, CapituloLocal } from "./obra-reading-utils";
 
 export type SupabaseObraRow = {
@@ -102,6 +102,28 @@ export type ObraDinamica = {
   ultimaLeituraEm: string;
   progressoLeitura: number;
 };
+
+export function restaurarArquivoObraComBackup(
+  obraLocal: ObraLocal,
+  backup: ArquivosObrasBackup
+): ObraLocal {
+  if (obraLocal.arquivoObra) {
+    return obraLocal;
+  }
+
+  const arquivoBackup = obterChavesBackupObra(obraLocal)
+    .map((chave) => normalizarArquivoObra(backup[chave]))
+    .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo));
+
+  if (!arquivoBackup) {
+    return obraLocal;
+  }
+
+  return {
+    ...obraLocal,
+    arquivoObra: arquivoBackup,
+  };
+}
 
 export function normalizarObraLocal(
   obra: Partial<ObraLocal> & Record<string, unknown>,
