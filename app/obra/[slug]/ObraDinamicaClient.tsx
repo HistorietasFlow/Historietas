@@ -56,6 +56,7 @@ import {
   calcularProximaAvaliacao,
   formatarMediaAvaliacao,
   formatarTotalAvaliacoes,
+  NOTAS_AVALIACAO_OBRA,
   obterChaveAvaliacaoObra,
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
@@ -925,8 +926,6 @@ type AlvoDenunciaObraDinamica = {
   alvoTitulo: string;
 };
 
-
-const NOTAS_AVALIACAO_OBRA = [1, 2, 3, 4, 5] as const;
 
 
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {

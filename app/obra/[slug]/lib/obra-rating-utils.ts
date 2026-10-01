@@ -1,5 +1,7 @@
 import { normalizarTexto } from "../../../../lib/utils";
 
+export const NOTAS_AVALIACAO_OBRA = [1, 2, 3, 4, 5] as const;
+
 export function formatarMediaAvaliacao(media: number) {
   if (!Number.isFinite(media) || media <= 0) {
     return "0.0";
