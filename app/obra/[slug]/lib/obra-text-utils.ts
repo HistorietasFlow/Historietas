@@ -110,3 +110,31 @@ export function obterGeneroObraExibido(
 ) {
   return obra ? formatarGeneroObraPublica(obra.genero) : "Não informado";
 }
+export function obterTextosPainelClassificacaoObra(language: string) {
+  return language === "en"
+    ? {
+        titulo: "Age rating",
+        descricao: "This work is rated",
+        avisos: "Content warnings",
+        semAvisos: "No additional content warnings were provided.",
+        fechar: "Close age rating",
+        abrir: "View age rating",
+      }
+    : language === "es"
+      ? {
+          titulo: "Clasificación por edad",
+          descricao: "Esta obra está clasificada como",
+          avisos: "Advertencias de contenido",
+          semAvisos: "No se indicaron advertencias de contenido adicionales.",
+          fechar: "Cerrar clasificación por edad",
+          abrir: "Ver clasificación por edad",
+        }
+      : {
+          titulo: "Classificação indicativa",
+          descricao: "Esta obra é classificada como",
+          avisos: "Avisos de conteúdo",
+          semAvisos: "Nenhum aviso adicional foi informado.",
+          fechar: "Fechar classificação indicativa",
+          abrir: "Ver classificação indicativa",
+        };
+}
