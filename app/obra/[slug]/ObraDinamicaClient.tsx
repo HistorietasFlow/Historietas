@@ -60,7 +60,7 @@ import {
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
 import { normalizarContadorObraPublica, obterNumeroMetrica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica } from "./lib/obra-metric-utils";
-import { formatarGeneroObraPublica, normalizarPerfilPublicoObra, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
+import { normalizarPerfilPublicoObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica } from "./lib/obra-reading-utils";
@@ -3315,9 +3315,7 @@ export default function ObraDinamicaPage() {
   }, [obra?.autorId, obra?.autor]);
 
   const obraNormalizada = obra ? normalizarTexto(obra.titulo) : "";
-  const generoObraFormatado = obra
-    ? formatarGeneroObraPublica(obra.genero)
-    : "Não informado";
+  const generoObraFormatado = obterGeneroObraExibido(obra);
   const autorObraNome = obterNomeAutorObraExibido(perfilAutorObra, obra);
   const autorObraId = perfilAutorObra?.userId || obra?.autorId || "";
   const usuarioEhAutorDaObra = Boolean(
