@@ -1,15 +1,17 @@
-import type { AvisoConteudo18 } from "../../../../lib/historietasAdultContent";
+import { normalizarAvisosConteudo18, type AvisoConteudo18 } from "../../../../lib/historietasAdultContent";
 import { criarSlugBase } from "../../../../lib/utils";
 import {
+  normalizarContadorObraPublica,
   totalComentariosObraPublica,
   totalCurtidasObraPublica,
   totalVisualizacoesObraPublica,
 } from "./obra-metric-utils";
 import {
   calcularProgressoLeitura,
+  normalizarCapituloLocal,
   obraLocalEstaDisponivelParaLeitura,
 } from "./obra-reading-utils";
-import type { ArquivoObraLocal } from "./obra-file-utils";
+import { normalizarArquivoObra, type ArquivoObraLocal } from "./obra-file-utils";
 import type { CapituloDinamico, CapituloLocal } from "./obra-reading-utils";
 
 export type SupabaseObraRow = {
@@ -100,6 +102,118 @@ export type ObraDinamica = {
   ultimaLeituraEm: string;
   progressoLeitura: number;
 };
+
+export function normalizarObraLocal(
+  obra: Partial<ObraLocal> & Record<string, unknown>,
+  index: number
+): ObraLocal {
+  const capitulosNormalizadosTodos: CapituloLocal[] = Array.isArray(obra.capitulos)
+    ? obra.capitulos.map((capitulo, capituloIndex) =>
+        normalizarCapituloLocal(
+          capitulo as Partial<CapituloLocal>,
+          capituloIndex
+        )
+      )
+    : [];
+  const capitulosNormalizados = capitulosNormalizadosTodos.filter(
+    (capitulo) => capitulo.publicado !== false
+  );
+
+  const titulo =
+    typeof obra.titulo === "string" && obra.titulo.trim()
+      ? obra.titulo.trim()
+      : "Obra sem título";
+
+  const slug =
+    typeof obra.slug === "string" && obra.slug.trim()
+      ? obra.slug.trim()
+      : criarSlugBase(titulo || `obra-${index + 1}`);
+
+  const tagsNormalizadas = Array.isArray(obra.tags)
+    ? obra.tags
+        .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
+        .map((tag) => tag.trim())
+    : [];
+
+  return {
+    id:
+      typeof obra.id === "string" && obra.id.trim()
+        ? obra.id
+        : `obra-${index + 1}`,
+    titulo,
+    autor:
+      typeof obra.autor === "string" && obra.autor.trim()
+        ? obra.autor
+        : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : typeof obra.user_id === "string" && obra.user_id.trim()
+          ? obra.user_id.trim()
+          : typeof obra.userId === "string" && obra.userId.trim()
+            ? obra.userId.trim()
+            : "",
+    genero:
+      typeof obra.genero === "string" && obra.genero.trim()
+        ? obra.genero
+        : "Não informado",
+    formato:
+      typeof obra.formato === "string" && obra.formato.trim()
+        ? obra.formato
+        : "Não informado",
+    classificacaoIndicativa:
+      typeof obra.classificacaoIndicativa === "string" &&
+      obra.classificacaoIndicativa.trim()
+        ? obra.classificacaoIndicativa
+        : "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisosConteudo,
+      obra.classificacaoIndicativa,
+    ),
+    sinopse:
+      typeof obra.sinopse === "string" && obra.sinopse.trim()
+        ? obra.sinopse
+        : "Nenhuma sinopse informada.",
+    tags: tagsNormalizadas.length > 0 ? tagsNormalizadas : ["sem tags"],
+    capa: typeof obra.capa === "string" ? obra.capa : "",
+    capaNome: typeof obra.capaNome === "string" ? obra.capaNome : "",
+    arquivoObra: normalizarArquivoObra(obra.arquivoObra),
+    publicado: Boolean(obra.publicado),
+    capitulos: capitulosNormalizados,
+    criadaEm: typeof obra.criadaEm === "string" ? obra.criadaEm : "",
+    ultimoCapituloLidoId:
+      typeof obra.ultimoCapituloLidoId === "string"
+        ? obra.ultimoCapituloLidoId
+        : "",
+    ultimaLeituraEm:
+      typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
+    progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: normalizarContadorObraPublica(
+      obra.visualizacoes ??
+        obra.views ??
+        obra.visualizacoesTotal ??
+        obra.totalVisualizacoes ??
+        obra.total_visualizacoes
+    ),
+    totalCurtidas: normalizarContadorObraPublica(
+      obra.totalCurtidas ?? obra.total_curtidas
+    ),
+    totalComentarios: normalizarContadorObraPublica(
+      obra.totalComentarios ?? obra.total_comentarios
+    ),
+    totalFavoritos: normalizarContadorObraPublica(
+      obra.totalFavoritos ?? obra.total_favoritos
+    ),
+    totalConcluidas: normalizarContadorObraPublica(
+      obra.totalConcluidas ?? obra.total_concluidas
+    ),
+    slug,
+    link:
+      typeof obra.link === "string" && obra.link.trim()
+        ? obra.link
+        : `/obra/${slug}`,
+  };
+}
 
 export function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
   const obraDisponivel = obraLocalEstaDisponivelParaLeitura(obra);
