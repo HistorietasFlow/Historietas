@@ -61,3 +61,20 @@ export const communityGridStyle: CSSProperties = {
   gap: "6px",
   minWidth: 0,
 };
+
+export const ratingSummaryStyle: CSSProperties = {
+  flex: "0 0 auto",
+  width: "fit-content",
+  maxWidth: "132px",
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "center",
+  rowGap: "1px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  boxShadow: "none",
+  boxSizing: "border-box",
+  textAlign: "center",
+};
