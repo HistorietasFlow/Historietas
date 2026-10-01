@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, safeTextStyle } from "./lib/obra-style-utils";
+import { communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingSummaryStyle, safeTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -7716,23 +7716,6 @@ const communityTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-
-const ratingSummaryStyle: CSSProperties = {
-  flex: "0 0 auto",
-  width: "fit-content",
-  maxWidth: "132px",
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "center",
-  rowGap: "1px",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  boxShadow: "none",
-  boxSizing: "border-box",
-  textAlign: "center",
-};
 
 const ratingNumberStyle: CSSProperties = {
   color: "var(--historietas-obra-rating-strong, #FFFFFF)",
