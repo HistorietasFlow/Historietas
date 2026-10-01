@@ -59,6 +59,7 @@ import {
   obterChaveAvaliacaoObra,
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
+  type AvaliacaoLocalObra,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
 import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
@@ -1734,11 +1735,6 @@ function carregarAvaliacoesLocais(userId = "") {
     return {};
   }
 }
-
-type AvaliacaoLocalObra = {
-  encontrada: boolean;
-  nota: number;
-};
 
 function obterAvaliacaoLocalDetalhada(
   obra: ObraDinamica,
