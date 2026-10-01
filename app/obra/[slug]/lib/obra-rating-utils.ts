@@ -121,3 +121,7 @@ export const avaliacaoObraVazia: AvaliacaoObraPublica = {
   salvando: false,
 };
 
+export type AvaliacaoLocalObra = {
+  encontrada: boolean;
+  nota: number;
+};
