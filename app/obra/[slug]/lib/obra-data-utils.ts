@@ -59,6 +59,11 @@ export type ObraLocal = {
   link: string;
 };
 
+export type ResultadoCarregamentoObraPublica = {
+  obras: ObraLocal[];
+  status: "carregada" | "nao_encontrada" | "erro" | "cancelada";
+};
+
 export type ObraDinamica = {
   id: string;
   origem: "local";

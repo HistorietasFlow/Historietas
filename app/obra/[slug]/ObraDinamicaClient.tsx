@@ -72,7 +72,7 @@ import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComenta
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import type { ObraDinamica, ObraLocal, SupabaseObraRow } from "./lib/obra-data-utils";
+import type { ObraDinamica, ObraLocal, ResultadoCarregamentoObraPublica, SupabaseObraRow } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
@@ -1240,11 +1240,6 @@ async function aplicarMetricasObraPublica(
     };
   });
 }
-type ResultadoCarregamentoObraPublica = {
-  obras: ObraLocal[];
-  status: "carregada" | "nao_encontrada" | "erro" | "cancelada";
-};
-
 async function carregarObraSupabasePorSlug(
   slugBusca: string,
   obrasLocais: ObraLocal[],
