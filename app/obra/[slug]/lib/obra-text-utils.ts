@@ -150,3 +150,10 @@ export function obterClassificacaoIndicativaCompactaObra(
     texto: livre ? "L" : classificacaoIndicativa,
   };
 }
+
+export type PerfilPublicoObra = {
+  userId: string;
+  nome: string;
+  avatar: string;
+  bio: string;
+};
