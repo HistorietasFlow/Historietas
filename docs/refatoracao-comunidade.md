@@ -218,6 +218,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 501: extrair somente o tipo `CapituloDinamico` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando exatamente os campos de identificação, exibição, navegação, disponibilidade e estado de leitura usados na página da obra.
 - Fase 502: extrair somente o tipo `SupabaseCapituloRow` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando exatamente os campos usados na leitura, paginação e normalização dos capítulos publicados.
 - Fase 503: extrair somente o tipo `ArquivoObraLocal` para `app/obra/[slug]/lib/obra-file-utils.ts`, preservando exatamente os campos e categorias usados no backup, restauração e exibição do arquivo da obra.
+- Fase 504: extrair somente o tipo `ArquivosObrasBackup` para `app/obra/[slug]/lib/obra-file-utils.ts`, preservando o mesmo mapa `Record<string, ArquivoObraLocal>` usado no backup e restauração dos arquivos.
 
 ## Contrato de preservação
 
