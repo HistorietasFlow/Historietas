@@ -73,6 +73,7 @@ import { normalizarArquivoObra, obterCaminhoStorageArquivoObra, obterChavesBacku
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraLocal, normalizarObraSupabase, restaurarArquivoObraComBackup, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
+import LoadingSpinner from "./ObraLoadingSpinner";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1916,46 +1917,6 @@ async function carregarPaginaComentariosObraSupabase(
   };
 }
 
-
-function LoadingSpinner({
-  label = "Carregando",
-  compacto = false,
-}: {
-  label?: string;
-  compacto?: boolean;
-}) {
-  if (compacto) {
-    return (
-      <span
-        role="status"
-        aria-live="polite"
-        aria-label={label}
-        style={loadingInlineStyle}
-      >
-        <span
-          className="historietas-loading-spinner"
-          style={loadingSpinnerCompactStyle}
-          aria-hidden="true"
-        />
-      </span>
-    );
-  }
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={label}
-      style={loadingPageStyle}
-    >
-      <span
-        className="historietas-loading-spinner"
-        style={loadingSpinnerStyle}
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
 
 export default function ObraDinamicaPage() {
   const router = useRouter();
@@ -6366,46 +6327,6 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   zIndex: 0,
   background: "transparent",
   opacity: 0,
-};
-
-const loadingPageStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 2,
-  width: "100%",
-  minHeight: "100dvh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-};
-
-const loadingInlineStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "18px",
-  height: "18px",
-  lineHeight: 1,
-  verticalAlign: "middle",
-  boxSizing: "border-box",
-};
-
-const loadingSpinnerStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "999px",
-  border: "3px solid rgba(255,255,255,0.20)",
-  borderTopColor: "#FFFFFF",
-  boxSizing: "border-box",
-  animation: "historietas-loading-spin 0.78s linear infinite",
-  flex: "0 0 auto",
-};
-
-const loadingSpinnerCompactStyle: CSSProperties = {
-  ...loadingSpinnerStyle,
-  width: "18px",
-  height: "18px",
-  borderWidth: "2px",
 };
 
 // Teste: tipografia do card principal igual à usada no card principal da Home.
