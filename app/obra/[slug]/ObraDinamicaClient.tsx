@@ -68,7 +68,7 @@ import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublic
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obraLocalEstaDisponivelParaLeitura, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, dataComentarioObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type OrdenacaoComentariosObra } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { normalizarArquivoObra, normalizarCategoriaArquivoSupabase, obterCaminhoStorageArquivoObra, obterChavesBackupObra } from "./lib/obra-file-utils";
 
@@ -917,8 +917,6 @@ type PaginaComentariosObra = {
   temMais: boolean;
   proximoOffset: number;
 };
-
-type OrdenacaoComentariosObra = "relevantes" | "recentes";
 
 type AlvoDenunciaObraDinamica = {
   alvoTipo: "obra" | "comentario_obra";
