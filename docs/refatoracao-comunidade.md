@@ -231,6 +231,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 514: extrair somente o tipo `EstadoTraducaoObraDinamica` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando exatamente os campos `original` e `traduzido` usados pelo bridge de idioma da página da obra.
 - Fase 515: extrair somente `converterObraLocalParaDinamica` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente a conversão de status, métricas, disponibilidade, links de capítulos e progresso de leitura.
 - Fase 516: extrair somente `normalizarCapituloLocal` para `app/obra/[slug]/lib/obra-reading-utils.ts`, preservando exatamente os fallbacks de identificação, título, texto, flags e normalização das métricas locais do capítulo.
+- Fase 517: extrair somente `normalizarObraLocal` para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando exatamente os fallbacks de identidade, metadados, classificação, tags, arquivo, capítulos, progresso, métricas, slug e link da obra local.
 
 ## Contrato de preservação
 
