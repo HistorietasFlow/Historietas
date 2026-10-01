@@ -59,7 +59,7 @@ import {
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
 } from "./lib/obra-rating-utils";
-import { criarMetricasBaseObra, metricasObraVazias, normalizarContadorObraPublica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica, type MetricasObraPublica } from "./lib/obra-metric-utils";
+import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, totalComentariosObraPublica, totalCurtidasObraPublica, totalVisualizacoesObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
@@ -924,13 +924,6 @@ type AlvoDenunciaObraDinamica = {
 };
 
 
-type MetricasComunidadeObra = {
-  teorias: number;
-  reviews: number;
-  posts: number;
-  carregado: boolean;
-};
-
 type AvaliacaoObraPublica = {
   media: number;
   total: number;
@@ -940,13 +933,6 @@ type AvaliacaoObraPublica = {
 };
 
 const NOTAS_AVALIACAO_OBRA = [1, 2, 3, 4, 5] as const;
-
-const metricasComunidadeObraVazias: MetricasComunidadeObra = {
-  teorias: 0,
-  reviews: 0,
-  posts: 0,
-  carregado: false,
-};
 
 const avaliacaoObraVazia: AvaliacaoObraPublica = {
   media: 0,
