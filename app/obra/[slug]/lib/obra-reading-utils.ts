@@ -124,3 +124,15 @@ export type CapituloDinamico = {
   lido: boolean;
   lidoEm: string;
 };
+
+export type SupabaseCapituloRow = {
+  id: string;
+  obra_id: string;
+  user_id: string;
+  titulo: string | null;
+  texto?: string | null;
+  ordem: number | null;
+  publicado: boolean | null;
+  criado_em: string | null;
+  atualizado_em: string | null;
+};
