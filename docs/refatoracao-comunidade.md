@@ -242,6 +242,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 525: extrair `MetricCard` e seus estilos exclusivos para `app/obra/[slug]/ObraMetricCard.tsx`, preservando exatamente estados ativo/inativo, coração, ARIA, rótulo, número e visual das métricas da obra.
 - Fase 526: extrair somente `heroTitleOutlineStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente o `textShadow` usado no título principal da obra.
 - Fase 527: extrair `mobileTopWaterFadeStyle` e `desktopTopWaterFadeStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posição, altura, transparência e comportamento decorativo dos fades superiores.
+- Fase 528: extrair `homeMainTitleTypographyStyle`, `homeMainMetaTypographyStyle` e `homeMainStatsTypographyStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente família tipográfica, pesos, espaçamento e altura de linha usados no card principal.
 
 ## Contrato de preservação
 

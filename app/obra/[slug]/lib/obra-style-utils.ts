@@ -33,3 +33,24 @@ export const desktopTopWaterFadeStyle: CSSProperties = {
   background: "transparent",
   opacity: 0,
 };
+
+// Teste: tipografia do card principal igual à usada no card principal da Home.
+export const homeMainTitleTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+};
+
+export const homeMainMetaTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+};
+
+export const homeMainStatsTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 850,
+};
