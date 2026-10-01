@@ -210,6 +210,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 493: extrair somente `NOTAS_AVALIACAO_OBRA` para `app/obra/[slug]/lib/obra-rating-utils.ts`, preservando exatamente a tupla fixa `[1, 2, 3, 4, 5]` usada na exibição e interação de avaliação.
 - Fase 494: extrair somente o tipo `OrdenacaoComentariosObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando exatamente as opções `"relevantes" | "recentes"` usadas no estado e na organização dos comentários.
 - Fase 495: extrair somente o tipo `RespostaComentarioObra` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando os campos `comentarioPaiId`, `autorId` e `autorNome` usados no estado de resposta dos comentários.
+- Fase 496: extrair somente o tipo `SupabaseComentarioObraRow` para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando os campos `id`, `obra_id`, `user_id`, `comentario`, `comentario_pai_id` e `criado_em` usados na leitura e paginação dos comentários remotos.
 
 ## Contrato de preservação
 
