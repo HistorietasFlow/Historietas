@@ -1,3 +1,7 @@
+import type { AvisoConteudo18 } from "../../../../lib/historietasAdultContent";
+import type { ArquivoObraLocal } from "./obra-file-utils";
+import type { CapituloLocal } from "./obra-reading-utils";
+
 export type SupabaseObraRow = {
   id: string;
   user_id: string | null;
@@ -24,4 +28,33 @@ export type SupabaseObraRow = {
   link: string | null;
   criada_em: string | null;
   atualizado_em: string | null;
+};
+
+export type ObraLocal = {
+  id: string;
+  titulo: string;
+  autor: string;
+  autorId?: string;
+  genero: string;
+  formato: string;
+  classificacaoIndicativa: string;
+  avisosConteudo: AvisoConteudo18[];
+  sinopse: string;
+  tags: string[];
+  capa: string;
+  capaNome: string;
+  arquivoObra?: ArquivoObraLocal | null;
+  publicado: boolean;
+  capitulos: CapituloLocal[];
+  criadaEm: string;
+  ultimoCapituloLidoId: string;
+  ultimaLeituraEm: string;
+  progressoLeitura: number;
+  visualizacoes?: number;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalFavoritos?: number;
+  totalConcluidas?: number;
+  slug: string;
+  link: string;
 };
