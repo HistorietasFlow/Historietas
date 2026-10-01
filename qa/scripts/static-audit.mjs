@@ -775,6 +775,10 @@ const workPage = fs.readFileSync(
   path.join(ROOT_DIR, "app/obra/[slug]/ObraDinamicaClient.tsx"),
   "utf8"
 );
+const workMetricUtils = fs.readFileSync(
+  path.join(ROOT_DIR, "app/obra/[slug]/lib/obra-metric-utils.ts"),
+  "utf8"
+);
 const chapterPage = fs.readFileSync(
   path.join(ROOT_DIR, "app/ler-capitulo/page.tsx"),
   "utf8"
@@ -784,9 +788,10 @@ if (
   /criarChaveProtecao\(\s*"visualizacao_visitante"/m.test(viewRoute) &&
   viewRoute.includes('"registrar_visualizacao_obra"') &&
   viewRoute.includes('"registrar_visualizacao_capitulo"') &&
-  workPage.includes('fetch("/api/visualizacoes"') &&
+  workMetricUtils.includes('fetch("/api/visualizacoes"') &&
   chapterPage.includes('fetch("/api/visualizacoes"') &&
   !workPage.includes('rpc("incrementar_visualizacao_obra"') &&
+  !workMetricUtils.includes('rpc("incrementar_visualizacao_obra"') &&
   !chapterPage.includes('"incrementar_visualizacao_capitulo"')
 ) {
   pass(
