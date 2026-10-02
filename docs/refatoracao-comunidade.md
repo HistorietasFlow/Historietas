@@ -252,6 +252,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 535: extrair somente `synopsisCardStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente transparência, ausência de borda, largura mínima e box-sizing do contêiner da sinopse.
 - Fase 536: extrair somente `synopsisTextStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, espaçamento, alinhamento e quebra segura do texto da sinopse.
 - Fase 537: extrair somente `chaptersListStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, espaçamento e largura mínima da lista de capítulos.
+- Fase 538: extrair somente `chapterCountBadgeStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, transparência, tipografia, alinhamento e quebra segura do contador de capítulos.
 
 ## Contrato de preservação
 
