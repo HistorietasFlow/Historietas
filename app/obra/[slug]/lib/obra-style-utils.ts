@@ -389,3 +389,13 @@ export const descriptionStyle: CSSProperties = {
   transform: "translateY(6px)",
   ...safeTextStyle,
 };
+
+export const heroActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) 50px",
+  gap: "10px 12px",
+  marginTop: "10px",
+  minWidth: 0,
+  width: "100%",
+  maxWidth: "428px",
+};
