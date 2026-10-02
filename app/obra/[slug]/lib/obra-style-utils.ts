@@ -721,3 +721,17 @@ export const obraMenuMetricsStyle: CSSProperties = {
 export const obraMenuMetricStyle: CSSProperties = {
   color: "#FFFFFF",
 };
+
+export const obraMenuTagsStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "nowrap",
+  justifyContent: "center",
+  gap: 0,
+  minWidth: 0,
+  maxWidth: "100%",
+  color: "#FFFFFF",
+  overflowX: "auto",
+  overflowY: "hidden",
+  whiteSpace: "nowrap",
+  scrollbarWidth: "none",
+};
