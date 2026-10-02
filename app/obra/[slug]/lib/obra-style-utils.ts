@@ -280,3 +280,17 @@ export const heroStyle: CSSProperties = {
 export const heroGlowStyle: CSSProperties = {
   display: "none",
 };
+
+export const heroContentStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  minHeight: "min(460px, 68vh)",
+  display: "block",
+  padding: 0,
+  overflow: "hidden",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  borderBottomLeftRadius: "28px",
+  borderBottomRightRadius: "28px",
+};
