@@ -138,3 +138,12 @@ export const ratingTotalStyle: CSSProperties = {
   textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.2)",
   ...safeTextStyle,
 };
+
+export const synopsisCardStyle: CSSProperties = {
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  minWidth: 0,
+  boxSizing: "border-box",
+};

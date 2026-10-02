@@ -249,6 +249,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 532: extrair somente `ratingStarsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente alinhamento, cor, tamanho, espaçamento, sombra e quebra segura da linha de estrelas da avaliação.
 - Fase 533: extrair `ratingTopStarVisualStyle`, `ratingTopStarBaseStyle` e `ratingTopStarFillStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posição, cores, preenchimento parcial e comportamento visual da estrela superior de avaliação.
 - Fase 534: extrair somente `ratingTotalStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, alinhamento, sombra e quebra segura do total de avaliações.
+- Fase 535: extrair somente `synopsisCardStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente transparência, ausência de borda, largura mínima e box-sizing do contêiner da sinopse.
 
 ## Contrato de preservação
 
