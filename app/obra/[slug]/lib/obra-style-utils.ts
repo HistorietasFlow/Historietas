@@ -474,3 +474,24 @@ export const heroBottomMetricStyle: CSSProperties = {
   textShadow: "0 1px 0 rgba(0,0,0,0.28)",
   ...safeTextStyle,
 };
+
+export const primaryReadingButtonStyle: CSSProperties = {
+  minHeight: "50px",
+  gridColumn: "1 / -1",
+  borderRadius: "999px",
+  border: "1px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#08080A",
+  textDecoration: "none",
+  fontSize: "14px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 22px",
+  boxSizing: "border-box",
+  boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
+  ...safeTextStyle,
+};
