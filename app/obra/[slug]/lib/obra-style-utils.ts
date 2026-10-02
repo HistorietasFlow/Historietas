@@ -442,3 +442,16 @@ export const heroBottomMetaBarStyle: CSSProperties = {
   boxSizing: "border-box",
   transform: "translateY(6px)",
 };
+
+export const heroBottomAuthorLinkStyle: CSSProperties = {
+  minWidth: 0,
+  color: "rgba(255,255,255,0.95)",
+  textDecoration: "none",
+  fontSize: "14.1px",
+  ...homeMainMetaTypographyStyle,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
+  ...safeTextStyle,
+};
