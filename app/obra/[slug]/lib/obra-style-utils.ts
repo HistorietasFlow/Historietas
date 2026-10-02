@@ -78,3 +78,12 @@ export const ratingSummaryStyle: CSSProperties = {
   boxSizing: "border-box",
   textAlign: "center",
 };
+
+export const ratingNumberStyle: CSSProperties = {
+  color: "var(--historietas-obra-rating-strong, #FFFFFF)",
+  fontSize: "28px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 10px rgba(0,0,0,0.22)",
+  ...safeTextStyle,
+};
