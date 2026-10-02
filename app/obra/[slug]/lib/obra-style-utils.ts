@@ -399,3 +399,12 @@ export const heroActionsStyle: CSSProperties = {
   width: "100%",
   maxWidth: "428px",
 };
+
+export const metricInlineContentStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+  minWidth: 0,
+  whiteSpace: "nowrap",
+};
