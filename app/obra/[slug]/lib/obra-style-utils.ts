@@ -184,3 +184,8 @@ export const chapterContentStyle: CSSProperties = {
   gap: "6px",
   minWidth: 0,
 };
+
+export const chaptersSectionStyle: CSSProperties = {
+  marginTop: "14px",
+  minWidth: 0,
+};
