@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, communityGridStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, safeTextStyle, sectionHeaderStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, communityGridStyle, coverArtStyle, coverTitleStyle, descriptionStyle, desktopTopWaterFadeStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, safeTextStyle, sectionHeaderStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -6300,24 +6300,6 @@ const classificationTriggerAdultStyle: CSSProperties = {
   color: "#FFF5F6",
   boxShadow:
     "0 0 0 1px rgba(120, 15, 32, 0.62), 0 0 16px rgba(244, 63, 94, 0.44)",
-};
-
-const descriptionStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  fontSize: "15.4px",
-  ...homeMainMetaTypographyStyle,
-  lineHeight: 1.35,
-  maxWidth: "620px",
-  textAlign: "center",
-  display: "block",
-  overflow: "visible",
-  opacity: 1,
-  textShadow:
-    "0 1px 0 rgba(0,0,0,0.32), 0 2px 10px rgba(0,0,0,0.30)",
-  transform: "translateY(6px)",
-  ...safeTextStyle,
 };
 
 const heroActionsStyle: CSSProperties = {
