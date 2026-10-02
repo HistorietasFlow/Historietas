@@ -87,3 +87,18 @@ export const ratingNumberStyle: CSSProperties = {
   textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 10px rgba(0,0,0,0.22)",
   ...safeTextStyle,
 };
+
+export const ratingStarsStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  color: "var(--historietas-obra-rating, #FFFFFF)",
+  fontSize: "12px",
+  lineHeight: 1,
+  letterSpacing: "-0.02em",
+  marginTop: "-4px",
+  marginBottom: "1px",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.2)",
+  ...safeTextStyle,
+};
