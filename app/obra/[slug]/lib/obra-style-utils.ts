@@ -165,3 +165,16 @@ export const chaptersListStyle: CSSProperties = {
   gap: "8px",
   minWidth: 0,
 };
+
+export const chapterCountBadgeStyle: CSSProperties = {
+  width: "fit-content",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10px",
+  fontWeight: 950,
+  textAlign: "center",
+  ...safeTextStyle,
+};
