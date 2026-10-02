@@ -630,3 +630,25 @@ export const obraActionToastStyle: CSSProperties = {
   textAlign: "center",
   pointerEvents: "none",
 };
+
+export const obraActionsMenuStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  width: "min(820px, 100%)",
+  maxHeight: "calc(100dvh - 116px)",
+  overflowX: "hidden",
+  overflowY: "auto",
+  overscrollBehavior: "none",
+  borderRadius: "24px 24px 0 0",
+  background: "#000000",
+  border: "none",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
+  padding: "8px 0 calc(12px + env(safe-area-inset-bottom))",
+  display: "grid",
+  gap: 0,
+  boxSizing: "border-box",
+  touchAction: "none",
+  zIndex: 9999,
+};
