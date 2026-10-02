@@ -735,3 +735,20 @@ export const obraMenuTagsStyle: CSSProperties = {
   whiteSpace: "nowrap",
   scrollbarWidth: "none",
 };
+
+export const obraMenuTagStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "none",
+  flex: "0 0 auto",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "10px",
+  fontWeight: 800,
+  lineHeight: 1.2,
+  whiteSpace: "nowrap",
+  ...safeTextStyle,
+};
