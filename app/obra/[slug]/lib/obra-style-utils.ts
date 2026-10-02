@@ -553,3 +553,18 @@ export const followedButtonStyle: CSSProperties = {
   color: "#FFFFFF",
   boxShadow: "none",
 };
+
+export const obraAddButtonStyle: CSSProperties = {
+  ...copyLinkButtonStyle,
+  width: "50px",
+  minHeight: "50px",
+  height: "50px",
+  padding: 0,
+  borderRadius: "999px",
+  background: "rgba(0, 0, 0, 0.54)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  color: "#FFFFFF",
+  fontSize: "26px",
+  lineHeight: 1,
+  fontWeight: 900,
+};
