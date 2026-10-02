@@ -222,3 +222,19 @@ export const chapterCardStyle: CSSProperties = {
   textDecoration: "none",
   cursor: "pointer",
 };
+
+export const chapterNumberStyle: CSSProperties = {
+  width: "38px",
+  height: "38px",
+  borderRadius: "13px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#FFFFFF",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "15px",
+  fontWeight: 950,
+  boxShadow: "none",
+  ...safeTextStyle,
+};
