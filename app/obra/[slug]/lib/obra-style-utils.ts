@@ -717,3 +717,7 @@ export const obraMenuMetricsStyle: CSSProperties = {
   whiteSpace: "nowrap",
   ...safeTextStyle,
 };
+
+export const obraMenuMetricStyle: CSSProperties = {
+  color: "#FFFFFF",
+};
