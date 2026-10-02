@@ -520,3 +520,28 @@ export const secondaryButtonStyle: CSSProperties = {
   WebkitBackdropFilter: "none",
   ...safeTextStyle,
 };
+
+export const copyLinkButtonStyle: CSSProperties = {
+  minHeight: "42px",
+  borderRadius: "999px",
+  background: "var(--historietas-obra-bg-deep, #000000)",
+  border: "1px solid rgba(255,255,255,0.28)",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "11px",
+  fontWeight: 900,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 8px",
+  boxShadow: "none",
+  boxSizing: "border-box",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  ...safeTextStyle,
+};
