@@ -408,3 +408,12 @@ export const metricInlineContentStyle: CSSProperties = {
   minWidth: 0,
   whiteSpace: "nowrap",
 };
+
+export const metricEmojiIconStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  fontSize: "1em",
+  lineHeight: 1,
+};
