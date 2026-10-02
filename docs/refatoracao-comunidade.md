@@ -257,6 +257,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 540: extrair somente `chaptersSectionStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem superior e largura mínima compartilhadas pela seção de capítulos e pela base da sinopse.
 - Fase 541: extrair somente `synopsisSectionStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a base visual compartilhada com capítulos e a animação de revelação da sinopse.
 - Fase 542: extrair somente `sectionHeaderStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, alinhamento, espaçamento, largura mínima e margem inferior dos cabeçalhos de seção.
+- Fase 543: extrair somente `chapterCardStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, grid, superfície, borda, alinhamento, overflow e comportamento visual/interativo do card de capítulo.
 
 ## Contrato de preservação
 
