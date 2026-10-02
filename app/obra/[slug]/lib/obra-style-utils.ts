@@ -261,3 +261,18 @@ export const chapterMetaStyle: CSSProperties = {
   overflow: "hidden",
   ...safeTextStyle,
 };
+
+export const heroStyle: CSSProperties = {
+  position: "relative",
+  overflow: "hidden",
+  width: "100vw",
+  marginLeft: "calc(50% - 50vw)",
+  marginRight: "calc(50% - 50vw)",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  boxShadow: "none",
+  minWidth: 0,
+  maxWidth: "100vw",
+  boxSizing: "border-box",
+};
