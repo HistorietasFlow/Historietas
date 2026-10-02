@@ -6,15 +6,19 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const estilosObra = readFileSync(
+  new URL("../../app/obra/[slug]/lib/obra-style-utils.ts", import.meta.url),
+  "utf8",
+);
 
-function obterBloco(inicioTexto, fimTexto) {
-  const inicio = paginaObra.indexOf(inicioTexto);
-  const fim = paginaObra.indexOf(fimTexto, inicio);
+function obterBloco(inicioTexto, fimTexto, fonte = paginaObra) {
+  const inicio = fonte.indexOf(inicioTexto);
+  const fim = fimTexto ? fonte.indexOf(fimTexto, inicio) : fonte.length;
 
   assert.ok(inicio >= 0);
   assert.ok(fim > inicio);
 
-  return paginaObra.slice(inicio, fim);
+  return fonte.slice(inicio, fim);
 }
 
 test("cta principal reutiliza a logica existente de continuar leitura", () => {
@@ -55,8 +59,9 @@ test("cta de leitura aparece antes de seguir e so existe com capitulo disponivel
 
 test("cta de leitura e visualmente primario e seguir fica secundario", () => {
   const mobile = obterBloco(
-    "const primaryReadingButtonStyle",
-    "const secondaryButtonStyle",
+    "export const primaryReadingButtonStyle",
+    null,
+    estilosObra,
   );
   const desktop = obterBloco(
     "const desktopPrimaryReadingButtonStyle",
