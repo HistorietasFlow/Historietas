@@ -246,6 +246,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 529: extrair somente `communityGridStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente as três colunas responsivas, espaçamento e largura mínima do grid da Comunidade.
 - Fase 530: extrair somente `ratingSummaryStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, alinhamento, transparência e comportamento visual do resumo de avaliação.
 - Fase 531: extrair somente `ratingNumberStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tamanho, peso, sombra e quebra segura do número principal da avaliação.
+- Fase 532: extrair somente `ratingStarsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente alinhamento, cor, tamanho, espaçamento, sombra e quebra segura da linha de estrelas da avaliação.
 
 ## Contrato de preservação
 
