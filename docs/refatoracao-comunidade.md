@@ -279,6 +279,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 562: extrair somente `heroBottomMetricsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flex fixo, alinhamento, justificação, espaçamento e largura mínima do agrupamento de métricas na barra inferior do hero.
 - Fase 563: extrair somente `heroBottomMetricStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tamanho, line-height, tipografia estatística, nowrap, text-shadow e composição text-safe de cada métrica na barra inferior do hero.
 - Fase 564: extrair somente `primaryReadingButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, grid, superfície, tipografia, alinhamento, espaçamento, box-sizing, sombra e composição text-safe do botão principal de leitura.
+- Fase 565: extrair somente `secondaryButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, superfície, tipografia, cursor, alinhamento, espaçamento, box-sizing, ausência de efeitos visuais e composição text-safe do botão secundário.
 
 ## Contrato de preservação
 

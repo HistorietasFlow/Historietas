@@ -495,3 +495,28 @@ export const primaryReadingButtonStyle: CSSProperties = {
   boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
   ...safeTextStyle,
 };
+
+export const secondaryButtonStyle: CSSProperties = {
+  minHeight: "50px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(0, 0, 0, 0.54)",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "14px",
+  fontWeight: 900,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 22px",
+  boxShadow: "none",
+  boxSizing: "border-box",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  ...safeTextStyle,
+};
