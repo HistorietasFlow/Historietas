@@ -371,3 +371,21 @@ export const titleStyle: CSSProperties = {
   transform: "translateY(6px)",
   ...safeTextStyle,
 };
+
+export const descriptionStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "15.4px",
+  ...homeMainMetaTypographyStyle,
+  lineHeight: 1.35,
+  maxWidth: "620px",
+  textAlign: "center",
+  display: "block",
+  overflow: "visible",
+  opacity: 1,
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.32), 0 2px 10px rgba(0,0,0,0.30)",
+  transform: "translateY(6px)",
+  ...safeTextStyle,
+};
