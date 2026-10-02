@@ -281,6 +281,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 564: extrair somente `primaryReadingButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, grid, superfície, tipografia, alinhamento, espaçamento, box-sizing, sombra e composição text-safe do botão principal de leitura.
 - Fase 565: extrair somente `secondaryButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, superfície, tipografia, cursor, alinhamento, espaçamento, box-sizing, ausência de efeitos visuais e composição text-safe do botão secundário.
 - Fase 566: extrair somente `copyLinkButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, superfície profunda, borda, tipografia, cursor, alinhamento, espaçamento, ausência de efeitos visuais e composição text-safe do botão de copiar link.
+- Fase 567: extrair somente `followedButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `secondaryButtonStyle`, borda, superfície, cor e ausência de sombra do estado seguido.
 
 ## Contrato de preservação
 
