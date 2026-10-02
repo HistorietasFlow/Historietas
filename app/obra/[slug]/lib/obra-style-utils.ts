@@ -605,3 +605,28 @@ export const obraMenuActionsStyle: CSSProperties = {
   background: "transparent",
   overflow: "hidden",
 };
+
+export const obraActionToastStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: "calc(92px + env(safe-area-inset-bottom))",
+  transform: "translateX(-50%)",
+  zIndex: 12000,
+  width: "max-content",
+  maxWidth: "calc(100vw - 32px)",
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  background: "var(--historietas-surface-strong, #0A0A0A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "0 14px 34px rgba(0,0,0,0.38)",
+  padding: "9px 14px",
+  fontSize: "11px",
+  lineHeight: 1.3,
+  fontWeight: 900,
+  textAlign: "center",
+  pointerEvents: "none",
+};
