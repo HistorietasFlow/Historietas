@@ -178,3 +178,9 @@ export const chapterCountBadgeStyle: CSSProperties = {
   textAlign: "center",
   ...safeTextStyle,
 };
+
+export const chapterContentStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  minWidth: 0,
+};
