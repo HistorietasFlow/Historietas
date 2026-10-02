@@ -102,3 +102,28 @@ export const ratingStarsStyle: CSSProperties = {
   textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.2)",
   ...safeTextStyle,
 };
+
+export const ratingTopStarVisualStyle: CSSProperties = {
+  position: "relative",
+  width: "1em",
+  height: "1em",
+  display: "inline-block",
+  lineHeight: 1,
+  flex: "0 0 auto",
+};
+
+export const ratingTopStarBaseStyle: CSSProperties = {
+  color: "var(--historietas-obra-rating-muted, rgba(251, 191, 36, 0.34))",
+  position: "absolute",
+  inset: 0,
+  lineHeight: 1,
+};
+
+export const ratingTopStarFillStyle: CSSProperties = {
+  color: "var(--historietas-obra-rating, #FFFFFF)",
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+};
