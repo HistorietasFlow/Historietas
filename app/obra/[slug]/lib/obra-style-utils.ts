@@ -417,3 +417,9 @@ export const metricEmojiIconStyle: CSSProperties = {
   fontSize: "1em",
   lineHeight: 1,
 };
+
+export const metricWhiteNumberStyle: CSSProperties = {
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  lineHeight: 1,
+};
