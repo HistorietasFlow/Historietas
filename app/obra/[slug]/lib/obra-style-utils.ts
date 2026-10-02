@@ -545,3 +545,11 @@ export const copyLinkButtonStyle: CSSProperties = {
   WebkitBackdropFilter: "none",
   ...safeTextStyle,
 };
+
+export const followedButtonStyle: CSSProperties = {
+  ...secondaryButtonStyle,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(0, 0, 0, 0.54)",
+  color: "#FFFFFF",
+  boxShadow: "none",
+};
