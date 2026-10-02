@@ -147,3 +147,15 @@ export const synopsisCardStyle: CSSProperties = {
   minWidth: 0,
   boxSizing: "border-box",
 };
+
+export const synopsisTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  lineHeight: 1.62,
+  fontWeight: 650,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+  textAlign: "left",
+  ...safeTextStyle,
+};
