@@ -296,6 +296,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 579: extrair somente `obraMenuMetricStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a cor branca aplicada a cada métrica individual do menu da obra.
 - Fase 580: extrair somente `obraMenuTagsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, nowrap, alinhamento, espaçamento, largura, cor, overflow horizontal e ocultação da barra de rolagem do agrupamento de tags do menu da obra.
 - Fase 581: extrair somente `obraMenuTagStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões flexíveis, espaçamento, superfície, borda, cor, tipografia, nowrap e composição text-safe de cada tag individual do menu da obra.
+- Fase 582: extrair somente `obraMenuTagSeparatorStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente display inline-block, espaçamento lateral e cor translúcida do separador entre tags do menu da obra.
 
 ## Contrato de preservação
 
