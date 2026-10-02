@@ -189,3 +189,8 @@ export const chaptersSectionStyle: CSSProperties = {
   marginTop: "14px",
   minWidth: 0,
 };
+
+export const synopsisSectionStyle: CSSProperties = {
+  ...chaptersSectionStyle,
+  animation: "historietas-synopsis-reveal 220ms ease-out",
+};
