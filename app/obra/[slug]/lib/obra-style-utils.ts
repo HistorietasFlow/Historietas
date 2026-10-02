@@ -595,3 +595,13 @@ export const obraActionSheetHandleStyle: CSSProperties = {
   justifySelf: "center",
   margin: "0 auto 14px",
 };
+
+export const obraMenuActionsStyle: CSSProperties = {
+  display: "grid",
+  gap: 0,
+  borderRadius: 0,
+  border: "none",
+  borderTop: "none",
+  background: "transparent",
+  overflow: "hidden",
+};
