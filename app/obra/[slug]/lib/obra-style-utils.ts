@@ -423,3 +423,22 @@ export const metricWhiteNumberStyle: CSSProperties = {
   WebkitTextFillColor: "#FFFFFF",
   lineHeight: 1,
 };
+
+export const heroBottomMetaBarStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 3,
+  width: "100%",
+  maxWidth: "380px",
+  marginTop: "6px",
+  padding: 0,
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  minWidth: 0,
+  boxSizing: "border-box",
+  transform: "translateY(6px)",
+};
