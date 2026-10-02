@@ -204,3 +204,21 @@ export const sectionHeaderStyle: CSSProperties = {
   minWidth: 0,
   marginBottom: "9px",
 };
+
+export const chapterCardStyle: CSSProperties = {
+  padding: "9px",
+  borderRadius: "17px",
+  background:
+    "linear-gradient(135deg, var(--historietas-obra-surface, #050505) 0%, var(--historietas-obra-bg-deep, #000000) 100%)",
+  border: "1px solid rgba(255,255,255,0.07)",
+  display: "grid",
+  gridTemplateColumns: "38px minmax(0, 1fr)",
+  gap: "8px",
+  alignItems: "center",
+  minWidth: 0,
+  overflow: "hidden",
+  boxShadow: "none",
+  color: "inherit",
+  textDecoration: "none",
+  cursor: "pointer",
+};
