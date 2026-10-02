@@ -323,3 +323,19 @@ export const heroCoverLinkStyle: CSSProperties = {
   borderRadius: "0 0 28px 28px",
   overflow: "hidden",
 };
+
+export const heroOverlayContentStyle: CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: "0px",
+  zIndex: 2,
+  padding: "0 16px 4px",
+  display: "grid",
+  justifyItems: "center",
+  gap: "8px",
+  background: "transparent",
+  minWidth: 0,
+  boxSizing: "border-box",
+  textAlign: "center",
+};
