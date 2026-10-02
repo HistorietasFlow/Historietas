@@ -758,3 +758,15 @@ export const obraMenuTagSeparatorStyle: CSSProperties = {
   margin: "0 4px",
   color: "rgba(255,255,255,0.34)",
 };
+
+export const obraMenuSectionLabelStyle: CSSProperties = {
+  display: "block",
+  padding: "11px 30px 5px",
+  color: "rgba(244,244,245,0.56)",
+  fontSize: "11px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  ...safeTextStyle,
+};
