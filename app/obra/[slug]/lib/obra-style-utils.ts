@@ -311,3 +311,15 @@ export const coverArtStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
 };
+
+export const heroCoverLinkStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  zIndex: 1,
+  display: "block",
+  color: "inherit",
+  textDecoration: "none",
+  minWidth: 0,
+  borderRadius: "0 0 28px 28px",
+  overflow: "hidden",
+};
