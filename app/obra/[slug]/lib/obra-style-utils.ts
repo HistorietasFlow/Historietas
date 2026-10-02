@@ -685,3 +685,19 @@ export const obraMenuAuthorMetricsRowStyle: CSSProperties = {
   justifyContent: "center",
   gap: "6px",
 };
+
+export const obraMenuAuthorLinkStyle: CSSProperties = {
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textDecoration: "none",
+  textAlign: "center",
+  fontSize: "12px",
+  lineHeight: 1.15,
+  fontWeight: 850,
+  ...safeTextStyle,
+};

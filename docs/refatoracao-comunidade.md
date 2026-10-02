@@ -291,6 +291,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 574: extrair somente `obraMenuHeaderStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, alinhamento, espaçamento, largura mínima, padding, box-sizing e ausência de borda inferior do cabeçalho do menu da obra.
 - Fase 575: extrair somente `obraMenuTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, alinhamento, truncamento, largura máxima e composição text-safe do título do menu da obra.
 - Fase 576: extrair somente `obraMenuAuthorMetricsRowStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, largura mínima, flexbox, alinhamento e espaçamento da linha de autor e métricas do menu da obra.
+- Fase 577: extrair somente `obraMenuAuthorLinkStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, truncamento, cor, decoração, alinhamento, tipografia e composição text-safe do link do autor no menu da obra.
 
 ## Contrato de preservação
 
