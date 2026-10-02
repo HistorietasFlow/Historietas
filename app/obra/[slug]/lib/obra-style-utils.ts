@@ -294,3 +294,20 @@ export const heroContentStyle: CSSProperties = {
   borderBottomLeftRadius: "28px",
   borderBottomRightRadius: "28px",
 };
+
+export const coverArtStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "min(460px, 68vh)",
+  height: "100%",
+  borderRadius: "0 0 28px 28px",
+  position: "relative",
+  overflow: "hidden",
+  backgroundImage: "linear-gradient(145deg, var(--historietas-obra-surface, #050505) 0%, var(--historietas-obra-bg-deep, #000000) 58%, var(--historietas-obra-bg-deeper, #000000) 100%)",
+  backgroundSize: "cover",
+  backgroundPosition: "center top",
+  border: "none",
+  boxShadow: "none",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};

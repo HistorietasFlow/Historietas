@@ -264,6 +264,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 547: extrair somente `heroStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, largura full-bleed, margens compensatórias, overflow, superfície e box-sizing do hero base.
 - Fase 548: extrair somente `heroGlowStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente o estado oculto atual do glow do hero.
 - Fase 549: extrair somente `heroContentStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, altura mínima, overflow, largura, box-sizing e raios inferiores do conteúdo do hero.
+- Fase 550: extrair somente `coverArtStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raios, posicionamento, overflow, gradiente, enquadramento, borda, sombra e box-sizing da arte de capa.
 
 ## Contrato de preservação
 
