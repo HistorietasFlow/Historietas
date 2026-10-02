@@ -274,6 +274,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 557: extrair somente `metricInlineContentStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente inline-flex, alinhamento central, espaçamento, largura mínima e nowrap do conteúdo inline das métricas.
 - Fase 558: extrair somente `metricEmojiIconStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente inline-flex, alinhamento central, flex fixo, tamanho e line-height do ícone emoji das métricas.
 - Fase 559: extrair somente `metricWhiteNumberStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor branca, WebkitTextFillColor branco e line-height do valor numérico das métricas.
+- Fase 560: extrair somente `heroBottomMetaBarStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, empilhamento, largura, espaçamento, superfície transparente, flex layout, box-sizing e deslocamento vertical da barra inferior do hero.
 
 ## Contrato de preservação
 
