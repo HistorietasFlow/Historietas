@@ -568,3 +568,21 @@ export const obraAddButtonStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 900,
 };
+
+export const obraActionSheetOverlayStyle: CSSProperties = {
+  position: "fixed",
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  height: "100dvh",
+  zIndex: 9998,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
+  boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
+};
