@@ -260,6 +260,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 543: extrair somente `chapterCardStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, grid, superfície, borda, alinhamento, overflow e comportamento visual/interativo do card de capítulo.
 - Fase 544: extrair somente `chapterNumberStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, superfície, borda, cor, alinhamento, tipografia e quebra segura do número do capítulo.
 - Fase 545: extrair somente `chapterTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, espaçamento e quebra segura do título do capítulo.
+- Fase 546: extrair somente `chapterMetaStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, limitação em duas linhas, overflow e quebra segura dos metadados do capítulo.
 
 ## Contrato de preservação
 
