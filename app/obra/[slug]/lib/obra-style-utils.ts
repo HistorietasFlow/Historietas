@@ -676,3 +676,12 @@ export const obraMenuTitleStyle: CSSProperties = {
   maxWidth: "100%",
   ...safeTextStyle,
 };
+
+export const obraMenuAuthorMetricsRowStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "6px",
+};
