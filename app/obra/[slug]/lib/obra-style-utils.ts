@@ -464,3 +464,13 @@ export const heroBottomMetricsStyle: CSSProperties = {
   gap: "11px",
   minWidth: 0,
 };
+
+export const heroBottomMetricStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "13.5px",
+  lineHeight: 1.15,
+  ...homeMainStatsTypographyStyle,
+  whiteSpace: "nowrap",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
+  ...safeTextStyle,
+};
