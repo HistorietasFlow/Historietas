@@ -339,3 +339,17 @@ export const heroOverlayContentStyle: CSSProperties = {
   boxSizing: "border-box",
   textAlign: "center",
 };
+
+export const coverTitleStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#FFFFFF",
+  fontSize: "68px",
+  lineHeight: 1,
+  ...homeMainTitleTypographyStyle,
+  ...heroTitleOutlineStyle,
+  ...safeTextStyle,
+};
