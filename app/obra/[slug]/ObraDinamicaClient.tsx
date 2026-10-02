@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, safeTextStyle, sectionHeaderStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, safeTextStyle, sectionHeaderStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -7724,19 +7724,6 @@ const communityTitleStyle: CSSProperties = {
 
 
 
-
-const chapterMetaStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.5px",
-  lineHeight: 1.42,
-  fontWeight: 650,
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
