@@ -127,3 +127,14 @@ export const ratingTopStarFillStyle: CSSProperties = {
   whiteSpace: "nowrap",
   lineHeight: 1,
 };
+
+export const ratingTotalStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.95)",
+  fontSize: "10px",
+  lineHeight: 1.1,
+  fontWeight: 900,
+  textTransform: "uppercase",
+  textAlign: "center",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.2)",
+  ...safeTextStyle,
+};
