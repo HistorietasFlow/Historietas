@@ -455,3 +455,12 @@ export const heroBottomAuthorLinkStyle: CSSProperties = {
   textShadow: "0 1px 0 rgba(0,0,0,0.28)",
   ...safeTextStyle,
 };
+
+export const heroBottomMetricsStyle: CSSProperties = {
+  flex: "0 0 auto",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "11px",
+  minWidth: 0,
+};
