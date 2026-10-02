@@ -287,6 +287,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 570: extrair somente `obraActionSheetHandleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, altura, raio, superfície, alinhamento e margem do handle do menu de ações.
 - Fase 571: extrair somente `obraMenuActionsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, espaçamento, bordas, superfície transparente e overflow do agrupamento de ações do menu da obra.
 - Fase 572: extrair somente `obraActionToastStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, dimensões, superfície, borda, sombra, espaçamento, tipografia, alinhamento e ausência de interação do toast de ações da obra.
+- Fase 573: extrair somente `obraActionsMenuStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, dimensões, rolagem, superfície, sombra, espaçamento, grid, box-sizing, touch-action e empilhamento do menu de ações da obra, mantendo `desktopObraActionsMenuStyle` composto sobre o mesmo estilo via import.
 
 ## Contrato de preservação
 
