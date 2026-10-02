@@ -652,3 +652,13 @@ export const obraActionsMenuStyle: CSSProperties = {
   touchAction: "none",
   zIndex: 9999,
 };
+
+export const obraMenuHeaderStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "stretch",
+  gap: "8px",
+  minWidth: 0,
+  padding: "0 30px 10px",
+  boxSizing: "border-box",
+  borderBottom: "none",
+};
