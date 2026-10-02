@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterContentStyle, chapterCountBadgeStyle, chaptersListStyle, chaptersSectionStyle, communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, safeTextStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle } from "./lib/obra-style-utils";
+import { chapterContentStyle, chapterCountBadgeStyle, chaptersListStyle, chaptersSectionStyle, communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, safeTextStyle, sectionHeaderStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -7721,16 +7721,6 @@ const communityTitleStyle: CSSProperties = {
 
 
 
-
-const sectionHeaderStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  alignItems: "center",
-  justifyItems: "center",
-  textAlign: "center",
-  minWidth: 0,
-  marginBottom: "9px",
-};
 
 const chapterCardStyle: CSSProperties = {
   padding: "9px",

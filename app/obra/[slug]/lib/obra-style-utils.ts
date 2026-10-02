@@ -194,3 +194,13 @@ export const synopsisSectionStyle: CSSProperties = {
   ...chaptersSectionStyle,
   animation: "historietas-synopsis-reveal 220ms ease-out",
 };
+
+export const sectionHeaderStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  alignItems: "center",
+  justifyItems: "center",
+  textAlign: "center",
+  minWidth: 0,
+  marginBottom: "9px",
+};
