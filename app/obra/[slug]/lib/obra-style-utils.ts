@@ -701,3 +701,19 @@ export const obraMenuAuthorLinkStyle: CSSProperties = {
   fontWeight: 850,
   ...safeTextStyle,
 };
+
+export const obraMenuMetricsStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexWrap: "wrap",
+  gap: "7px",
+  color: "#FFFFFF",
+  fontSize: "10.5px",
+  lineHeight: 1.1,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+  ...safeTextStyle,
+};
