@@ -752,3 +752,9 @@ export const obraMenuTagStyle: CSSProperties = {
   whiteSpace: "nowrap",
   ...safeTextStyle,
 };
+
+export const obraMenuTagSeparatorStyle: CSSProperties = {
+  display: "inline-block",
+  margin: "0 4px",
+  color: "rgba(255,255,255,0.34)",
+};
