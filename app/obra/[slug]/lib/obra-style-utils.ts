@@ -276,3 +276,7 @@ export const heroStyle: CSSProperties = {
   maxWidth: "100vw",
   boxSizing: "border-box",
 };
+
+export const heroGlowStyle: CSSProperties = {
+  display: "none",
+};
