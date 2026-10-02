@@ -248,3 +248,16 @@ export const chapterTitleStyle: CSSProperties = {
   letterSpacing: "-0.045em",
   ...safeTextStyle,
 };
+
+export const chapterMetaStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11.5px",
+  lineHeight: 1.42,
+  fontWeight: 650,
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
