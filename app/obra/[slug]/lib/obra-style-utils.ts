@@ -662,3 +662,17 @@ export const obraMenuHeaderStyle: CSSProperties = {
   boxSizing: "border-box",
   borderBottom: "none",
 };
+
+export const obraMenuTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+  textAlign: "center",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  maxWidth: "100%",
+  ...safeTextStyle,
+};
