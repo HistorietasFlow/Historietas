@@ -268,6 +268,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 551: extrair somente `heroCoverLinkStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento absoluto, preenchimento total, empilhamento, aparência do link, largura mínima, raio inferior e overflow.
 - Fase 552: extrair somente `heroOverlayContentStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, ancoragem inferior, empilhamento, padding, grid, alinhamento, espaçamento, fundo, largura mínima, box-sizing e centralização do overlay do hero.
 - Fase 553: extrair somente `coverTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento absoluto, centralização flex, cor, tamanho, line-height e composições tipográficas/outline/text-safe do título da capa.
+- Fase 554: extrair somente `titleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margens, tipografia responsiva, line-height, alinhamento, cor, text-shadow, transformação e composição text-safe do título principal.
 
 ## Contrato de preservação
 
