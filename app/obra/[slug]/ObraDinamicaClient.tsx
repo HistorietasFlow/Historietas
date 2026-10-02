@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, safeTextStyle } from "./lib/obra-style-utils";
+import { communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, safeTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -7716,31 +7716,6 @@ const communityTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-
-const ratingTopStarVisualStyle: CSSProperties = {
-  position: "relative",
-  width: "1em",
-  height: "1em",
-  display: "inline-block",
-  lineHeight: 1,
-  flex: "0 0 auto",
-};
-
-const ratingTopStarBaseStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating-muted, rgba(251, 191, 36, 0.34))",
-  position: "absolute",
-  inset: 0,
-  lineHeight: 1,
-};
-
-const ratingTopStarFillStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating, #FFFFFF)",
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  lineHeight: 1,
-};
 
 const ratingTotalStyle: CSSProperties = {
   color: "rgba(255,255,255,0.95)",
