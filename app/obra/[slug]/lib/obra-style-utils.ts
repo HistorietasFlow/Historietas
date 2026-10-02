@@ -238,3 +238,13 @@ export const chapterNumberStyle: CSSProperties = {
   boxShadow: "none",
   ...safeTextStyle,
 };
+
+export const chapterTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "17px",
+  lineHeight: 1.12,
+  fontWeight: 950,
+  letterSpacing: "-0.045em",
+  ...safeTextStyle,
+};
