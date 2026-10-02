@@ -159,3 +159,9 @@ export const synopsisTextStyle: CSSProperties = {
   textAlign: "left",
   ...safeTextStyle,
 };
+
+export const chaptersListStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+};
