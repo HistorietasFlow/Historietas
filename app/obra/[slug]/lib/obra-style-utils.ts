@@ -353,3 +353,21 @@ export const coverTitleStyle: CSSProperties = {
   ...heroTitleOutlineStyle,
   ...safeTextStyle,
 };
+
+export const titleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: "clamp(36px, 9.6vw, 58px)",
+  lineHeight: 0.94,
+  ...homeMainTitleTypographyStyle,
+  maxWidth: "100%",
+  textAlign: "center",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.34), 0 2px 12px rgba(0,0,0,0.34)",
+  transform: "translateY(6px)",
+  ...safeTextStyle,
+};
