@@ -75,7 +75,7 @@ import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from ".
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, safeTextStyle } from "./lib/obra-style-utils";
+import { communityGridStyle, desktopTopWaterFadeStyle, heroTitleOutlineStyle, homeMainMetaTypographyStyle, homeMainStatsTypographyStyle, homeMainTitleTypographyStyle, mobileTopWaterFadeStyle, ratingNumberStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, safeTextStyle } from "./lib/obra-style-utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -7716,17 +7716,6 @@ const communityTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-
-const ratingTotalStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.95)",
-  fontSize: "10px",
-  lineHeight: 1.1,
-  fontWeight: 900,
-  textTransform: "uppercase",
-  textAlign: "center",
-  textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.2)",
-  ...safeTextStyle,
-};
 
 
 
