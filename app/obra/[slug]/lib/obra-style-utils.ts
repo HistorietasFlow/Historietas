@@ -586,3 +586,12 @@ export const obraActionSheetOverlayStyle: CSSProperties = {
   overscrollBehavior: "none",
   touchAction: "none",
 };
+
+export const obraActionSheetHandleStyle: CSSProperties = {
+  width: "72px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(244,244,245,0.62)",
+  justifySelf: "center",
+  margin: "0 auto 14px",
+};
