@@ -360,6 +360,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 643: extrair somente `commentStatusStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente display, cor, tipografia, line-height, alinhamento e composição com `safeTextStyle` do status dos comentários.
 - Fase 644: extrair somente `sectionTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem, cor, tipografia, line-height, peso, letter-spacing, largura máxima, alinhamento e composição com `safeTextStyle` dos títulos de seção.
 - Fase 645: extrair somente `accentSectionTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente composição com `sectionTitleStyle`, cor e transformação para uppercase do título de seção com destaque.
+- Fase 646: extrair somente `fileBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem, padding, raio, gradiente, borda, grid, espaçamento, largura mínima, overflow e sombra da caixa de arquivo.
 
 ## Contrato de preservação
 
