@@ -69,8 +69,9 @@ test("cta de leitura e visualmente primario e seguir fica secundario", () => {
     estilosObra,
   );
   const desktopSecondary = obterBloco(
-    "const desktopSecondaryFollowButtonStyle",
-    "const desktopObraAddButtonStyle",
+    "export const desktopSecondaryFollowButtonStyle",
+    null,
+    estilosObra,
   );
 
   assert.match(mobile, /gridColumn: "1 \/ -1"/);
@@ -79,7 +80,7 @@ test("cta de leitura e visualmente primario e seguir fica secundario", () => {
 
   assert.match(desktopPrimary, /export const desktopPrimaryReadingButtonStyle/);
   assert.match(desktopPrimary, /background: "#FFFFFF"/);
-  assert.match(desktopSecondary, /const desktopSecondaryFollowButtonStyle/);
+  assert.match(desktopSecondary, /export const desktopSecondaryFollowButtonStyle/);
   assert.match(desktopSecondary, /background: "rgba\(10,10,12,0\.74\)"/);
   assert.doesNotMatch(paginaObra, /desktopPrimaryFollowButtonStyle/);
 });
