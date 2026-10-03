@@ -1842,3 +1842,12 @@ export const desktopHeroMetaDividerStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
+export const desktopHeroMetaTextStyle: CSSProperties = {
+  color: "#D2D2D5",
+  fontSize: "13.5px",
+  fontWeight: 650,
+  lineHeight: 1.25,
+  textShadow: "0 2px 12px rgba(0,0,0,0.62)",
+  ...safeTextStyle,
+};
+
