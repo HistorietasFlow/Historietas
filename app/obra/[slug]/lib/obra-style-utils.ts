@@ -1113,3 +1113,9 @@ export const commentRepliesHideButtonStyle: CSSProperties = {
   padding: "1px 0",
   cursor: "pointer",
 };
+
+export const commentRepliesLineStyle: CSSProperties = {
+  width: "22px",
+  height: "1px",
+  background: "rgba(255,255,255,0.22)",
+};
