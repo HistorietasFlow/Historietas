@@ -1478,3 +1478,15 @@ export const fileInfoTextStyle: CSSProperties = {
   overflow: "hidden",
 };
 
+export const fileMetaStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "11px",
+  lineHeight: 1.35,
+  fontWeight: 900,
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
