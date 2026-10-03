@@ -1594,3 +1594,14 @@ export const workRatingStarButtonStyle: CSSProperties = {
   justifyContent: "center",
 };
 
+export const workRatingStarActiveStyle: CSSProperties = {
+  ...workRatingStarButtonStyle,
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-obra-rating, #FFFFFF)",
+  boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+};
+
