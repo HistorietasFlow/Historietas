@@ -307,6 +307,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 590: extrair somente `statsGridStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid de quatro colunas, espaçamento, margem superior e largura mínima da grade de estatísticas da obra.
 - Fase 591: extrair somente `commentsSheetOverlayStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento fixo, cobertura da viewport, empilhamento máximo, flexbox, alinhamento, pointer-events e isolamento do overlay da folha de comentários.
 - Fase 592: extrair somente `commentsSheetBackdropStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento absoluto, cobertura, empilhamento, borda, superfície, blur, pointer-events, cursor e padding do backdrop da folha de comentários.
+- Fase 593: extrair somente `commentsSheetStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, empilhamento, dimensões, grid, espaçamento, superfície, bordas, sombra, interação, overflow, box-sizing e transição da folha de comentários.
 
 ## Contrato de preservação
 
