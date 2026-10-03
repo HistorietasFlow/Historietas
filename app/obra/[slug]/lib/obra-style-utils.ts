@@ -1803,3 +1803,13 @@ export const desktopDescriptionStyle: CSSProperties = {
   transform: "none",
 };
 
+export const desktopHeroKickerStyle: CSSProperties = {
+  color: "#D7D7DA",
+  fontSize: "12px",
+  fontWeight: 800,
+  lineHeight: 1,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  textShadow: "0 2px 12px rgba(0,0,0,0.70)",
+};
+
