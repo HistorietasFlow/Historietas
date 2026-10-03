@@ -1911,3 +1911,7 @@ export const desktopSecondaryFollowButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const desktopFollowedButtonStyle: CSSProperties = {
+  ...desktopSecondaryFollowButtonStyle,
+};
+
