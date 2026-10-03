@@ -1100,3 +1100,16 @@ export const commentRepliesControlsStyle: CSSProperties = {
   flexWrap: "wrap",
   minWidth: 0,
 };
+
+export const commentRepliesHideButtonStyle: CSSProperties = {
+  width: "fit-content",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
