@@ -1183,3 +1183,10 @@ export const commentSheetTextStyle: CSSProperties = {
   whiteSpace: "pre-wrap",
   ...safeTextStyle,
 };
+
+export const commentSheetActionsRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+};
