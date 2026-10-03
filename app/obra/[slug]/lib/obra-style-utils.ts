@@ -1076,3 +1076,19 @@ export const commentSheetReplyItemStyle: CSSProperties = {
   alignItems: "start",
   minWidth: 0,
 };
+
+export const commentRepliesToggleStyle: CSSProperties = {
+  width: "fit-content",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
