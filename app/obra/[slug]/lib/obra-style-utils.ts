@@ -1010,3 +1010,8 @@ export const commentsSortMenuItemStyle: CSSProperties = {
   fontFamily: "inherit",
   cursor: "pointer",
 };
+
+export const commentsSortMenuItemActiveStyle: CSSProperties = {
+  ...commentsSortMenuItemStyle,
+  color: "#FFFFFF",
+};
