@@ -1521,3 +1521,8 @@ export const filePrimaryButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const fileSecondaryButtonStyle: CSSProperties = {
+  ...filePrimaryButtonStyle,
+  color: "#FFFFFF",
+};
+
