@@ -1151,3 +1151,10 @@ export const commentSheetContentStyle: CSSProperties = {
   gap: "3px",
   minWidth: 0,
 };
+
+export const commentSheetTopLineStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  gap: "6px",
+  minWidth: 0,
+};
