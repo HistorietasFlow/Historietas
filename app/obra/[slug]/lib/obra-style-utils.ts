@@ -943,3 +943,11 @@ export const commentsSheetHeaderSpacerStyle: CSSProperties = {
   width: "40px",
   height: "1px",
 };
+
+export const commentsSheetTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "14.5px",
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.02em",
+};
