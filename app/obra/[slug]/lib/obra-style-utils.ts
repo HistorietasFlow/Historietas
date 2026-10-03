@@ -1215,3 +1215,11 @@ export const commentSheetRemoveButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+export const commentSheetLikeWrapStyle: CSSProperties = {
+  minWidth: "28px",
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "start",
+  gap: "2px",
+};
+
