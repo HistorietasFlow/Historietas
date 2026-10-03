@@ -1349,3 +1349,16 @@ export const commentsSheetInputStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const commentsInputIconButtonStyle: CSSProperties = {
+  width: "26px",
+  height: "30px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "16px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+};
+
