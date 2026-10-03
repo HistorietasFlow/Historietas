@@ -1629,3 +1629,16 @@ export const workRatingStarFillStyle: CSSProperties = {
   lineHeight: 1,
 };
 
+export const communityBoxStyle: CSSProperties = {
+  marginTop: "8px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+  overflow: "visible",
+  boxShadow: "none",
+};
+
