@@ -911,3 +911,14 @@ export const desktopCommentsSheetStyle: CSSProperties = {
   width: "min(800px, calc(100% - 40px))",
   height: "min(76dvh, 720px)",
 };
+
+export const commentsSheetHandleWrapStyle: CSSProperties = {
+  minHeight: "24px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  touchAction: "none",
+  cursor: "grab",
+  willChange: "transform",
+  outlineOffset: "3px",
+};

@@ -10,6 +10,10 @@ const helperFocoDialogo = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-dialog-focus.ts", import.meta.url),
   "utf8",
 );
+const obraStyleUtils = readFileSync(
+  new URL("../../app/obra/[slug]/lib/obra-style-utils.ts", import.meta.url),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -108,10 +112,15 @@ test("abrir denuncia pelo menu nao rouba foco do modal seguinte", () => {
 });
 
 test("handle dos comentarios preserva indicacao visual de foco", () => {
-  const bloco = obterBloco(
-    "const commentsSheetHandleWrapStyle",
-    "const commentsSheetHandleStyle",
+  const inicio = obraStyleUtils.indexOf(
+    "export const commentsSheetHandleWrapStyle",
   );
+  const fim = obraStyleUtils.indexOf("};", inicio);
+
+  assert.ok(inicio >= 0);
+  assert.ok(fim > inicio);
+
+  const bloco = obraStyleUtils.slice(inicio, fim);
 
   assert.doesNotMatch(bloco, /outline:\s*"none"/);
   assert.match(bloco, /outlineOffset:\s*"3px"/);
