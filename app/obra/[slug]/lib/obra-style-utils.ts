@@ -1245,3 +1245,9 @@ export const commentSheetLikeCountStyle: CSSProperties = {
   textAlign: "center",
 };
 
+export const commentSheetHeartIconStyle: CSSProperties = {
+  width: "19px",
+  height: "19px",
+  display: "block",
+};
+
