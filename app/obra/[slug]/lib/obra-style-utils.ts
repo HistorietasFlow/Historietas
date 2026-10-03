@@ -1666,3 +1666,15 @@ export const communityTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const desktopHeroStyle: CSSProperties = {
+  ...heroStyle,
+  width: "100%",
+  maxWidth: "100%",
+  margin: "-4px 0 0",
+  overflow: "visible",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  boxShadow: "none",
+};
+
