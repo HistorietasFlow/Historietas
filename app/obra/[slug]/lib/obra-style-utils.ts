@@ -1748,3 +1748,23 @@ export const desktopHeroOverlayContentStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const desktopHeroBottomMetaBarStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 3,
+  order: 6,
+  width: "100%",
+  maxWidth: "100%",
+  marginTop: "3px",
+  padding: 0,
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "22px",
+  minWidth: 0,
+  boxSizing: "border-box",
+  transform: "none",
+};
+
