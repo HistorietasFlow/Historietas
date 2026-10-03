@@ -384,6 +384,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 667: extrair somente `communityHeaderStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento, centralização, espaçamento, limites de largura e alinhamento de texto do cabeçalho da seção Comunidade.
 - Fase 668: extrair somente `communityTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem, largura, cor, text fill, tipografia, line-height, peso, letter-spacing, uppercase, alinhamento e composição com `safeTextStyle` do título da seção Comunidade.
 - Fase 669: extrair somente `desktopHeroStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente composição com `heroStyle`, larguras, margem, overflow, raio, borda, superfície e sombra do hero desktop.
+- Fase 670: extrair somente `desktopHeroContentStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, z-index, largura, grid, colunas, alinhamento, espaçamento, altura mínima, padding, overflow, limites de largura e box-sizing do conteúdo do hero desktop.
 
 ## Contrato de preservação
 
