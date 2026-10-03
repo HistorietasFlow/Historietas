@@ -312,6 +312,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 595: extrair somente `commentsSheetExpandedStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a altura responsiva do estado expandido da folha de comentários.
 - Fase 596: extrair somente `desktopCommentsSheetStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `commentsSheetStyle`, largura e altura responsivas da folha de comentários no desktop.
 - Fase 597: extrair somente `commentsSheetHandleWrapStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente altura mínima, flexbox, alinhamento, touch-action, cursor, will-change e outline-offset do contêiner do handle da folha de comentários.
+- Fase 598: extrair somente `commentsSheetHandleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, altura, raio e superfície do handle da folha de comentários.
 
 ## Contrato de preservação
 
