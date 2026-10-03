@@ -1398,3 +1398,9 @@ export const sectionTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const accentSectionTitleStyle: CSSProperties = {
+  ...sectionTitleStyle,
+  color: "#FFFFFF",
+  textTransform: "uppercase",
+};
+
