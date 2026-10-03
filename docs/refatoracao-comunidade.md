@@ -348,6 +348,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 631: extrair somente `commentSheetHeartIconStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões e display do ícone de coração dos comentários.
 - Fase 632: extrair somente `commentsLoadingStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, altura mínima, flexbox, alinhamento e box-sizing do estado de carregamento dos comentários.
 - Fase 633: extrair somente `emptyCommentsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem, cor, tipografia e alinhamento do estado vazio dos comentários.
+- Fase 634: extrair somente `commentsToolsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, espaçamento e padding da área de ferramentas dos comentários.
 
 ## Contrato de preservação
 
