@@ -1173,3 +1173,13 @@ export const commentSheetTimeStyle: CSSProperties = {
   fontWeight: 750,
   whiteSpace: "nowrap",
 };
+
+export const commentSheetTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12.5px",
+  lineHeight: 1.38,
+  fontWeight: 750,
+  whiteSpace: "pre-wrap",
+  ...safeTextStyle,
+};
