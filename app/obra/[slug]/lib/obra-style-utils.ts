@@ -1605,3 +1605,11 @@ export const workRatingStarActiveStyle: CSSProperties = {
   WebkitBackdropFilter: "none",
 };
 
+export const workRatingStarVisualStyle: CSSProperties = {
+  position: "relative",
+  width: "1em",
+  height: "1em",
+  display: "inline-block",
+  lineHeight: 1,
+};
+
