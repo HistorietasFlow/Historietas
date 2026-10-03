@@ -897,3 +897,7 @@ export const commentsSheetStyle: CSSProperties = {
   willChange: "height",
   transition: "height 220ms ease",
 };
+
+export const commentsSheetCompactStyle: CSSProperties = {
+  height: "min(64dvh, 540px)",
+};
