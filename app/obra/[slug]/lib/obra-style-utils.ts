@@ -1236,3 +1236,12 @@ export const commentSheetLikeButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+export const commentSheetLikeCountStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  lineHeight: 1,
+  minHeight: "10px",
+  textAlign: "center",
+};
+
