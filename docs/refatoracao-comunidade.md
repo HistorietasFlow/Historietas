@@ -325,6 +325,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 608: extrair somente `commentsSheetListStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, alinhamento, espaçamento, altura mínima, rolagem vertical, padding e rolagem suave da lista da folha de comentários.
 - Fase 609: extrair somente `commentsLoadMoreStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, alinhamento, borda, raio, superfície, cor, padding e tipografia do botão de carregar mais comentários.
 - Fase 610: extrair somente `commentSheetItemStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, colunas, espaçamento, alinhamento e largura mínima do item da folha de comentários.
+- Fase 611: extrair somente `commentThreadStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, espaçamento e largura mínima da thread de comentários.
 
 ## Contrato de preservação
 

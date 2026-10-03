@@ -1053,3 +1053,9 @@ export const commentSheetItemStyle: CSSProperties = {
   alignItems: "start",
   minWidth: 0,
 };
+
+export const commentThreadStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+};
