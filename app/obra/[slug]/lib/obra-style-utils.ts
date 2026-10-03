@@ -1498,3 +1498,26 @@ export const fileActionsStyle: CSSProperties = {
   maxWidth: "100%",
 };
 
+export const filePrimaryButtonStyle: CSSProperties = {
+  minHeight: "42px",
+  borderRadius: "999px",
+  background: "var(--historietas-obra-bg-deep-72, rgba(4, 0, 10, 0.72))",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "12px",
+  fontWeight: 950,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 10px",
+  boxShadow: "none",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  WebkitAppearance: "none",
+  appearance: "none",
+  WebkitTapHighlightColor: "transparent",
+  ...safeTextStyle,
+};
+
