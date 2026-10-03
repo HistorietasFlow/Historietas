@@ -922,3 +922,10 @@ export const commentsSheetHandleWrapStyle: CSSProperties = {
   willChange: "transform",
   outlineOffset: "3px",
 };
+
+export const commentsSheetHandleStyle: CSSProperties = {
+  width: "44px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "var(--historietas-border-soft, rgba(255,255,255,0.34))",
+};
