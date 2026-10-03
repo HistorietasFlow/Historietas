@@ -1865,3 +1865,26 @@ export const desktopHeroStatsStyle: CSSProperties = {
   flexWrap: "wrap",
 };
 
+export const desktopPrimaryReadingButtonStyle: CSSProperties = {
+  minWidth: "176px",
+  minHeight: "50px",
+  padding: "0 22px",
+  borderRadius: "10px",
+  border: "1px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#08080A",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  fontWeight: 900,
+  lineHeight: 1.1,
+  textAlign: "center",
+  boxSizing: "border-box",
+  boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
+  cursor: "pointer",
+  ...safeTextStyle,
+};
+
