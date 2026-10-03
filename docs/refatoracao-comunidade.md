@@ -317,6 +317,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 600: extrair somente `commentsSheetHeaderSpacerStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura e altura do espaçador lateral do cabeçalho da folha de comentários.
 - Fase 601: extrair somente `commentsSheetTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tamanho, peso, alinhamento e espaçamento de letras do título da folha de comentários.
 - Fase 602: extrair somente `commentsSortMenuWrapStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento relativo, dimensões, alinhamento no grid e flexbox do contêiner do menu de ordenação dos comentários.
+- Fase 603: extrair somente `commentsSortMenuTriggerStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, borda, superfície, cor, tipografia, padding e cursor do gatilho do menu de ordenação dos comentários.
 
 ## Contrato de preservação
 
