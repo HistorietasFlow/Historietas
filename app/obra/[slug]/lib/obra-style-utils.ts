@@ -1543,3 +1543,11 @@ export const desktopWorkRatingBoxStyle: CSSProperties = {
   marginTop: "12px",
 };
 
+export const workRatingHeaderStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  gap: "4px",
+  minWidth: 0,
+  textAlign: "center",
+};
+
