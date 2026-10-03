@@ -352,6 +352,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 635: extrair somente `commentsQuickReactionsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento, distribuição, espaçamento, largura, overflow horizontal, padding e comportamento de rolagem das reações rápidas dos comentários.
 - Fase 636: extrair somente `commentsQuickReactionButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, borda, raio, superfície, tipografia, line-height, padding, cursor e flex do botão de reação rápida dos comentários.
 - Fase 637: extrair somente `commentsSheetFormStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, colunas, alinhamento, espaçamento, padding e largura mínima do formulário dos comentários.
+- Fase 638: extrair somente `commentsInputAvatarStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, flexbox, alinhamento, superfície, borda, cor, tipografia e overflow do avatar do campo de comentários.
 
 ## Contrato de preservação
 
