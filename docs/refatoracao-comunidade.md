@@ -302,6 +302,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 585: extrair somente `obraMenuItemActiveStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `obraMenuItemButtonStyle`, peso tipográfico, superfície transparente e cor branca do item ativo do menu da obra.
 - Fase 586: extrair somente `obraMenuItemCopiedStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `obraMenuItemButtonStyle`, peso tipográfico, superfície transparente e cor branca do estado copiado do menu da obra.
 - Fase 587: extrair somente `obraMenuItemDotStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, borda, superfície, cor, flexbox, alinhamento, box-sizing e tipografia do indicador circular dos itens do menu da obra.
+- Fase 588: extrair somente `obraMenuItemDotActiveStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `obraMenuItemDotStyle`, borda branca, superfície branca e cor escura do indicador circular ativo do menu da obra.
 
 ## Contrato de preservação
 

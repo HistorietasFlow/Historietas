@@ -829,3 +829,10 @@ export const obraMenuItemDotStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 900,
 };
+
+export const obraMenuItemDotActiveStyle: CSSProperties = {
+  ...obraMenuItemDotStyle,
+  border: "2px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#111111",
+};
