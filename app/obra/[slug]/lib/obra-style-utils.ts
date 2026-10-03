@@ -1404,3 +1404,17 @@ export const accentSectionTitleStyle: CSSProperties = {
   textTransform: "uppercase",
 };
 
+export const fileBoxStyle: CSSProperties = {
+  marginTop: "12px",
+  padding: "15px",
+  borderRadius: "22px",
+  background:
+    "linear-gradient(135deg, var(--historietas-obra-surface, #050505) 0%, var(--historietas-obra-bg-deep, #000000) 58%, var(--historietas-obra-bg-deeper, #000000) 100%)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  display: "grid",
+  gap: "11px",
+  minWidth: 0,
+  overflow: "hidden",
+  boxShadow: "none",
+};
+
