@@ -1268,3 +1268,9 @@ export const emptyCommentsStyle: CSSProperties = {
   textAlign: "center",
 };
 
+export const commentsToolsStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  padding: "5px 0 0",
+};
+
