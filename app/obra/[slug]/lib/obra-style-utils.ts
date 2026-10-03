@@ -1782,3 +1782,24 @@ export const desktopTitleStyle: CSSProperties = {
   transform: "none",
 };
 
+export const desktopDescriptionStyle: CSSProperties = {
+  ...descriptionStyle,
+  width: "100%",
+  maxWidth: "620px",
+  minHeight: 0,
+  margin: 0,
+  color: "#D5D5D8",
+  WebkitTextFillColor: "#D5D5D8",
+  fontSize: "15.5px",
+  lineHeight: 1.58,
+  display: "-webkit-box",
+  WebkitLineClamp: 4,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
+  textAlign: "left",
+  textShadow: "0 2px 14px rgba(0,0,0,0.74)",
+  transform: "none",
+};
+
