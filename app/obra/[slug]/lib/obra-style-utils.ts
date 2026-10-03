@@ -1433,3 +1433,17 @@ export const fileInfoCardStyle: CSSProperties = {
   overflow: "hidden",
 };
 
+export const filePreviewLinkStyle: CSSProperties = {
+  width: "74px",
+  height: "74px",
+  borderRadius: "18px",
+  background: "rgba(0,0,0,0.24)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  overflow: "hidden",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textDecoration: "none",
+  flex: "0 0 auto",
+};
+
