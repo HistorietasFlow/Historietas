@@ -1566,3 +1566,10 @@ export const workRatingTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const workRatingStarsRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "6px",
+  minWidth: 0,
+};
+
