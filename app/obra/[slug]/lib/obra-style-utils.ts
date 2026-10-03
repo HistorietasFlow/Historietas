@@ -1119,3 +1119,20 @@ export const commentRepliesLineStyle: CSSProperties = {
   height: "1px",
   background: "rgba(255,255,255,0.22)",
 };
+
+export const commentSheetAvatarLinkStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--historietas-obra-bg-deep, #000000)",
+  color: "#FFFFFF",
+  fontSize: "12.5px",
+  fontWeight: 950,
+  textDecoration: "none",
+  border: "1px solid var(--historietas-obra-purple-58, rgba(59, 7, 100, 0.58))",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
