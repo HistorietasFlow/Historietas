@@ -308,6 +308,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 591: extrair somente `commentsSheetOverlayStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento fixo, cobertura da viewport, empilhamento máximo, flexbox, alinhamento, pointer-events e isolamento do overlay da folha de comentários.
 - Fase 592: extrair somente `commentsSheetBackdropStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento absoluto, cobertura, empilhamento, borda, superfície, blur, pointer-events, cursor e padding do backdrop da folha de comentários.
 - Fase 593: extrair somente `commentsSheetStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, empilhamento, dimensões, grid, espaçamento, superfície, bordas, sombra, interação, overflow, box-sizing e transição da folha de comentários.
+- Fase 594: extrair somente `commentsSheetCompactStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a altura responsiva do estado compacto da folha de comentários.
 
 ## Contrato de preservação
 
