@@ -1678,3 +1678,19 @@ export const desktopHeroStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+export const desktopHeroContentStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "minmax(340px, 1.03fr) minmax(0, 0.97fr)",
+  alignItems: "center",
+  gap: "clamp(34px, 4.5vw, 78px)",
+  minHeight: "clamp(440px, 40vw, 590px)",
+  padding: "clamp(18px, 2vw, 32px) 0",
+  overflow: "visible",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
