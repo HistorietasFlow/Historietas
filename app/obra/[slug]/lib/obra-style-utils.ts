@@ -1274,3 +1274,15 @@ export const commentsToolsStyle: CSSProperties = {
   padding: "5px 0 0",
 };
 
+export const commentsQuickReactionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "6px",
+  width: "100%",
+  overflowX: "auto",
+  padding: "0 1px",
+  scrollbarWidth: "none",
+  WebkitOverflowScrolling: "touch",
+};
+
