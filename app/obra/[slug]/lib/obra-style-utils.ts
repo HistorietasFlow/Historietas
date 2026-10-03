@@ -1068,3 +1068,11 @@ export const commentRepliesListStyle: CSSProperties = {
   borderLeft: "1px solid rgba(255,255,255,0.08)",
   minWidth: 0,
 };
+
+export const commentSheetReplyItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
+  gap: "8px",
+  alignItems: "start",
+  minWidth: 0,
+};
