@@ -332,6 +332,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 615: extrair somente `commentRepliesControlsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento, espaçamento, quebra de linha e largura mínima dos controles de respostas dos comentários.
 - Fase 616: extrair somente `commentRepliesHideButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, recuo, borda, superfície, cor, tipografia, padding e cursor do botão de ocultar respostas dos comentários.
 - Fase 617: extrair somente `commentRepliesLineStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, altura e superfície da linha visual do controle de respostas dos comentários.
+- Fase 618: extrair somente `commentSheetAvatarLinkStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, flexbox, alinhamento, superfície, cor, tipografia, decoração, borda, overflow e box-sizing do avatar dos comentários.
 
 ## Contrato de preservação
 
