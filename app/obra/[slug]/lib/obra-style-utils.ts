@@ -1031,3 +1031,17 @@ export const commentsSheetListStyle: CSSProperties = {
   padding: "6px 2px 9px",
   WebkitOverflowScrolling: "touch",
 };
+
+export const commentsLoadMoreStyle: CSSProperties = {
+  width: "fit-content",
+  minHeight: "36px",
+  justifySelf: "center",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  borderRadius: "999px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  padding: "7px 14px",
+  fontSize: "11px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+};
