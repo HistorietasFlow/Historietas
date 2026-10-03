@@ -1158,3 +1158,11 @@ export const commentSheetTopLineStyle: CSSProperties = {
   gap: "6px",
   minWidth: 0,
 };
+
+export const commentSheetAuthorLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12px",
+  fontWeight: 950,
+  textDecoration: "none",
+  ...safeTextStyle,
+};
