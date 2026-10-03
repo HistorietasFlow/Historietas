@@ -1015,3 +1015,9 @@ export const commentsSortMenuItemActiveStyle: CSSProperties = {
   ...commentsSortMenuItemStyle,
   color: "#FFFFFF",
 };
+
+export const commentsSortMenuDividerStyle: CSSProperties = {
+  width: "100%",
+  height: "1px",
+  background: "rgba(255,255,255,0.12)",
+};
