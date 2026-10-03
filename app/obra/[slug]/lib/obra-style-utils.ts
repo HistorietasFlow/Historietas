@@ -1813,3 +1813,16 @@ export const desktopHeroKickerStyle: CSSProperties = {
   textShadow: "0 2px 12px rgba(0,0,0,0.70)",
 };
 
+export const desktopHeroMetaStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+  maxWidth: "100%",
+  minWidth: 0,
+  color: "#D2D2D5",
+  fontSize: "13.5px",
+  fontWeight: 650,
+  lineHeight: 1.25,
+};
+
