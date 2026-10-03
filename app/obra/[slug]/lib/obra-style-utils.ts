@@ -1223,3 +1223,16 @@ export const commentSheetLikeWrapStyle: CSSProperties = {
   gap: "2px",
 };
 
+export const commentSheetLikeButtonStyle: CSSProperties = {
+  width: "28px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  cursor: "pointer",
+};
+
