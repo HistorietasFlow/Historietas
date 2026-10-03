@@ -1694,3 +1694,14 @@ export const desktopHeroContentStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const desktopCoverArtStyle: CSSProperties = {
+  ...coverArtStyle,
+  width: "100%",
+  height: "100%",
+  minHeight: 0,
+  borderRadius: "22px",
+  backgroundPosition: "center",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
+};
+
