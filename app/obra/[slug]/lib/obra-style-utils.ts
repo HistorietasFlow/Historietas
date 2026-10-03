@@ -1728,3 +1728,23 @@ export const desktopHeroCoverLinkStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const desktopHeroOverlayContentStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 3,
+  gridColumn: "2",
+  width: "100%",
+  maxWidth: "650px",
+  minWidth: 0,
+  justifySelf: "center",
+  alignSelf: "stretch",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  justifyContent: "center",
+  gap: "15px",
+  padding: "clamp(8px, 1vw, 18px) clamp(12px, 1.5vw, 28px)",
+  textAlign: "left",
+  background: "transparent",
+  boxSizing: "border-box",
+};
+
