@@ -1620,3 +1620,12 @@ export const workRatingStarBaseStyle: CSSProperties = {
   lineHeight: 1,
 };
 
+export const workRatingStarFillStyle: CSSProperties = {
+  color: "var(--historietas-obra-rating, #FFFFFF)",
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+};
+
