@@ -1136,3 +1136,11 @@ export const commentSheetAvatarLinkStyle: CSSProperties = {
   overflow: "hidden",
   boxSizing: "border-box",
 };
+
+export const commentSheetReplyAvatarLinkStyle: CSSProperties = {
+  ...commentSheetAvatarLinkStyle,
+  width: "28px",
+  height: "28px",
+  borderRadius: "10px",
+  fontSize: "10.5px",
+};
