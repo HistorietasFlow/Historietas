@@ -382,6 +382,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 665: extrair somente `workRatingStarFillStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor ativa, posicionamento absoluto, inset, overflow, white-space e line-height da camada preenchida da estrela da avaliação da obra.
 - Fase 666: extrair somente `communityBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem superior, padding, raio, superfície, borda, grid, espaçamento, largura mínima, overflow e sombra da caixa da seção Comunidade.
 - Fase 667: extrair somente `communityHeaderStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento, centralização, espaçamento, limites de largura e alinhamento de texto do cabeçalho da seção Comunidade.
+- Fase 668: extrair somente `communityTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem, largura, cor, text fill, tipografia, line-height, peso, letter-spacing, uppercase, alinhamento e composição com `safeTextStyle` do título da seção Comunidade.
 
 ## Contrato de preservação
 
