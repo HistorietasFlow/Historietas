@@ -1144,3 +1144,10 @@ export const commentSheetReplyAvatarLinkStyle: CSSProperties = {
   borderRadius: "10px",
   fontSize: "10.5px",
 };
+
+export const commentSheetContentStyle: CSSProperties = {
+  position: "relative",
+  display: "grid",
+  gap: "3px",
+  minWidth: 0,
+};
