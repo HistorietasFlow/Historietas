@@ -1768,3 +1768,17 @@ export const desktopHeroBottomMetaBarStyle: CSSProperties = {
   transform: "none",
 };
 
+export const desktopTitleStyle: CSSProperties = {
+  ...titleStyle,
+  width: "100%",
+  maxWidth: "700px",
+  margin: 0,
+  fontSize: "clamp(46px, 5.2vw, 78px)",
+  lineHeight: 0.98,
+  textAlign: "left",
+  color: "#FFFFFF",
+  textShadow:
+    "0 2px 0 rgba(0,0,0,0.40), 0 8px 28px rgba(0,0,0,0.62)",
+  transform: "none",
+};
+
