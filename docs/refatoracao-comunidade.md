@@ -336,6 +336,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 619: extrair somente `commentSheetReplyAvatarLinkStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `commentSheetAvatarLinkStyle`, dimensões, raio e tipografia do avatar das respostas dos comentários.
 - Fase 620: extrair somente `commentSheetContentStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento relativo, grid, espaçamento e largura mínima do conteúdo dos comentários.
 - Fase 621: extrair somente `commentSheetTopLineStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento por baseline, espaçamento e largura mínima da linha superior dos comentários.
+- Fase 622: extrair somente `commentSheetAuthorLinkStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, decoração e composição text-safe do link do autor nos comentários.
 
 ## Contrato de preservação
 
