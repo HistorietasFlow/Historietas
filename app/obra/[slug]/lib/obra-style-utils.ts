@@ -1059,3 +1059,12 @@ export const commentThreadStyle: CSSProperties = {
   gap: "8px",
   minWidth: 0,
 };
+
+export const commentRepliesListStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  marginLeft: "34px",
+  paddingLeft: "10px",
+  borderLeft: "1px solid rgba(255,255,255,0.08)",
+  minWidth: 0,
+};
