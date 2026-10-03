@@ -1251,3 +1251,12 @@ export const commentSheetHeartIconStyle: CSSProperties = {
   display: "block",
 };
 
+export const commentsLoadingStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "58px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
