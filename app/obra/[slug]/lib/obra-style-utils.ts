@@ -1323,3 +1323,10 @@ export const commentsInputAvatarStyle: CSSProperties = {
   overflow: "hidden",
 };
 
+export const commentsInputBoxStyle: CSSProperties = {
+  minWidth: 0,
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+};
+
