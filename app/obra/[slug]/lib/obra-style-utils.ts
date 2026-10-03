@@ -1851,3 +1851,17 @@ export const desktopHeroMetaTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const desktopHeroStatsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "22px",
+  color: "#E4E4E7",
+  fontSize: "12.5px",
+  fontWeight: 750,
+  width: "auto",
+  maxWidth: "100%",
+  minWidth: 0,
+  flexWrap: "wrap",
+};
+
