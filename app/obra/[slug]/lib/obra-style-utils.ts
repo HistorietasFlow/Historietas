@@ -1490,3 +1490,11 @@ export const fileMetaStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const fileActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "8px",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
