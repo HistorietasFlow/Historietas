@@ -836,3 +836,11 @@ export const obraMenuItemDotActiveStyle: CSSProperties = {
   background: "#FFFFFF",
   color: "#111111",
 };
+
+export const synopsisToggleIconStyle: CSSProperties = {
+  display: "inline-block",
+  fontSize: "clamp(22px, 5.6vw, 28px)",
+  lineHeight: 0.72,
+  transformOrigin: "center",
+  transition: "transform 220ms ease",
+};
