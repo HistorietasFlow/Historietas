@@ -339,6 +339,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 622: extrair somente `commentSheetAuthorLinkStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, decoração e composição text-safe do link do autor nos comentários.
 - Fase 623: extrair somente `commentSheetTimeStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia e nowrap do tempo exibido nos comentários.
 - Fase 624: extrair somente `commentSheetTextStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem, cor, tipografia, line-height, pre-wrap e composição text-safe do texto dos comentários.
+- Fase 625: extrair somente `commentSheetActionsRowStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento, espaçamento e quebra de linha da linha de ações dos comentários.
 
 ## Contrato de preservação
 
