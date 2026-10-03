@@ -340,6 +340,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 623: extrair somente `commentSheetTimeStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia e nowrap do tempo exibido nos comentários.
 - Fase 624: extrair somente `commentSheetTextStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem, cor, tipografia, line-height, pre-wrap e composição text-safe do texto dos comentários.
 - Fase 625: extrair somente `commentSheetActionsRowStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento, espaçamento e quebra de linha da linha de ações dos comentários.
+- Fase 626: extrair somente `commentSheetReplyButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, borda, superfície, cor, tipografia, padding e cursor do botão de resposta dos comentários.
 
 ## Contrato de preservação
 

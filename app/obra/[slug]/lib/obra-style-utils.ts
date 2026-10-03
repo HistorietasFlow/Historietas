@@ -1190,3 +1190,15 @@ export const commentSheetActionsRowStyle: CSSProperties = {
   gap: "10px",
   flexWrap: "wrap",
 };
+
+export const commentSheetReplyButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
