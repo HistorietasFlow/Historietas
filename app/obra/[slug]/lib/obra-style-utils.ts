@@ -938,3 +938,8 @@ export const commentsSheetHeaderStyle: CSSProperties = {
   gap: "6px",
   minWidth: 0,
 };
+
+export const commentsSheetHeaderSpacerStyle: CSSProperties = {
+  width: "40px",
+  height: "1px",
+};
