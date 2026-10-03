@@ -322,6 +322,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 605: extrair somente `commentsSortMenuItemStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, borda, superfície, cor, padding, alinhamento, tipografia e cursor dos itens do menu de ordenação dos comentários.
 - Fase 606: extrair somente `commentsSortMenuItemActiveStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `commentsSortMenuItemStyle` e a cor do estado ativo dos itens do menu de ordenação dos comentários.
 - Fase 607: extrair somente `commentsSortMenuDividerStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, altura e superfície do divisor do menu de ordenação dos comentários.
+- Fase 608: extrair somente `commentsSheetListStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, alinhamento, espaçamento, altura mínima, rolagem vertical, padding e rolagem suave da lista da folha de comentários.
 
 ## Contrato de preservação
 

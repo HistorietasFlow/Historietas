@@ -1021,3 +1021,13 @@ export const commentsSortMenuDividerStyle: CSSProperties = {
   height: "1px",
   background: "rgba(255,255,255,0.12)",
 };
+
+export const commentsSheetListStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "start",
+  gap: "12px",
+  minHeight: 0,
+  overflowY: "auto",
+  padding: "6px 2px 9px",
+  WebkitOverflowScrolling: "touch",
+};
