@@ -1092,3 +1092,11 @@ export const commentRepliesToggleStyle: CSSProperties = {
   padding: "1px 0",
   cursor: "pointer",
 };
+
+export const commentRepliesControlsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
