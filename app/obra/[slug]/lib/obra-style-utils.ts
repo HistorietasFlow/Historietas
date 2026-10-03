@@ -1166,3 +1166,10 @@ export const commentSheetAuthorLinkStyle: CSSProperties = {
   textDecoration: "none",
   ...safeTextStyle,
 };
+
+export const commentSheetTimeStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 750,
+  whiteSpace: "nowrap",
+};
