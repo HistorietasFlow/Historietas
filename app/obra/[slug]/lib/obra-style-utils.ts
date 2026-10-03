@@ -1260,3 +1260,11 @@ export const commentsLoadingStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const emptyCommentsStyle: CSSProperties = {
+  margin: "10px 0 0",
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 800,
+  textAlign: "center",
+};
+
