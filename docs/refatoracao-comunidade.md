@@ -397,6 +397,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 680: extrair somente `desktopHeroMetaDividerStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, background e flex do divisor visual dos metadados do hero desktop.
 - Fase 681: extrair somente `desktopHeroMetaTextStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, line-height, sombra e composição com `safeTextStyle` do texto de metadados do hero desktop.
 - Fase 682: extrair somente `desktopHeroStatsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento, espaçamento, cor, tipografia, larguras e quebra das estatísticas do hero desktop.
+- Fase 683: extrair somente `desktopPrimaryReadingButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões mínimas, padding, borda, superfície, cor, decoração, flexbox, tipografia, alinhamento, box-sizing, sombra, cursor e composição com `safeTextStyle` do botão principal de leitura no desktop.
 
 ## Contrato de preservação
 
