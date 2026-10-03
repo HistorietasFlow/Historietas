@@ -1299,3 +1299,12 @@ export const commentsQuickReactionButtonStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
+export const commentsSheetFormStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "30px minmax(0, 1fr) 28px 38px",
+  alignItems: "center",
+  gap: "7px",
+  padding: "7px 0 0",
+  minWidth: 0,
+};
+
