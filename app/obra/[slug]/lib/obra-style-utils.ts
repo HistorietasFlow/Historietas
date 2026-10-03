@@ -1447,3 +1447,10 @@ export const filePreviewLinkStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
+export const fileImagePreviewStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
+
