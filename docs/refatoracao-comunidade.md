@@ -386,6 +386,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 669: extrair somente `desktopHeroStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente composição com `heroStyle`, larguras, margem, overflow, raio, borda, superfície e sombra do hero desktop.
 - Fase 670: extrair somente `desktopHeroContentStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, z-index, largura, grid, colunas, alinhamento, espaçamento, altura mínima, padding, overflow, limites de largura e box-sizing do conteúdo do hero desktop.
 - Fase 671: extrair somente `desktopCoverArtStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente composição com `coverArtStyle`, dimensões, altura mínima, raio, posição do background, borda e sombra da arte de capa no desktop.
+- Fase 672: extrair somente `desktopHeroCoverLinkStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, z-index, coluna do grid, dimensões, alinhamento, display, padding, raio, overflow, borda, background, sombra, cor, decoração de texto e box-sizing do link da capa no hero desktop.
 
 ## Contrato de preservação
 
