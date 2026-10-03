@@ -1826,3 +1826,11 @@ export const desktopHeroMetaStyle: CSSProperties = {
   lineHeight: 1.25,
 };
 
+export const desktopHeroAuthorStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontWeight: 750,
+  textDecoration: "none",
+  textShadow: "0 2px 12px rgba(0,0,0,0.62)",
+  ...safeTextStyle,
+};
+
