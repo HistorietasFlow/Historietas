@@ -1386,3 +1386,15 @@ export const commentStatusStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const sectionTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "clamp(24px, 4vw, 30px)",
+  lineHeight: 1.05,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  maxWidth: "100%",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
