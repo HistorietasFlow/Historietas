@@ -346,6 +346,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 629: extrair somente `commentSheetLikeButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, borda, raio, superfície, flexbox, alinhamento, padding e cursor do botão de curtida dos comentários.
 - Fase 630: extrair somente `commentSheetLikeCountStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, line-height, altura mínima e alinhamento do contador de curtidas dos comentários.
 - Fase 631: extrair somente `commentSheetHeartIconStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões e display do ícone de coração dos comentários.
+- Fase 632: extrair somente `commentsLoadingStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, altura mínima, flexbox, alinhamento e box-sizing do estado de carregamento dos comentários.
 
 ## Contrato de preservação
 
