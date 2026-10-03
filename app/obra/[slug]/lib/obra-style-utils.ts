@@ -1286,3 +1286,16 @@ export const commentsQuickReactionsStyle: CSSProperties = {
   WebkitOverflowScrolling: "touch",
 };
 
+export const commentsQuickReactionButtonStyle: CSSProperties = {
+  width: "30px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  fontSize: "18px",
+  lineHeight: 1,
+  padding: 0,
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
