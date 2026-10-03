@@ -1834,3 +1834,11 @@ export const desktopHeroAuthorStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const desktopHeroMetaDividerStyle: CSSProperties = {
+  width: "4px",
+  height: "4px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.50)",
+  flex: "0 0 auto",
+};
+
