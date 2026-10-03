@@ -1915,3 +1915,13 @@ export const desktopFollowedButtonStyle: CSSProperties = {
   ...desktopSecondaryFollowButtonStyle,
 };
 
+export const desktopObraAddButtonStyle: CSSProperties = {
+  ...desktopFollowedButtonStyle,
+  minWidth: "50px",
+  width: "50px",
+  height: "50px",
+  padding: 0,
+  fontSize: "26px",
+  lineHeight: 1,
+};
+

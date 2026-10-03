@@ -400,6 +400,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 683: extrair somente `desktopPrimaryReadingButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões mínimas, padding, borda, superfície, cor, decoração, flexbox, tipografia, alinhamento, box-sizing, sombra, cursor e composição com `safeTextStyle` do botão principal de leitura no desktop.
 - Fase 684: extrair somente `desktopSecondaryFollowButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões mínimas, padding, borda, superfície, cor, decoração, flexbox, tipografia, alinhamento, box-sizing, sombra, cursor e composição com `safeTextStyle` do botão secundário de seguir no desktop.
 - Fase 685: extrair somente `desktopFollowedButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `desktopSecondaryFollowButtonStyle` do estado seguido no desktop.
+- Fase 686: extrair somente `desktopObraAddButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `desktopFollowedButtonStyle`, dimensões, padding e tipografia do botão de adicionar obra no desktop.
 
 ## Contrato de preservação
 
