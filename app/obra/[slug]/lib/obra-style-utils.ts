@@ -1613,3 +1613,10 @@ export const workRatingStarVisualStyle: CSSProperties = {
   lineHeight: 1,
 };
 
+export const workRatingStarBaseStyle: CSSProperties = {
+  color: "var(--historietas-obra-rating-muted, rgba(251, 191, 36, 0.34))",
+  position: "absolute",
+  inset: 0,
+  lineHeight: 1,
+};
+
