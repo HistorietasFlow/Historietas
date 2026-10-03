@@ -367,6 +367,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 650: extrair somente `fileIconBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, gradiente, cor, tipografia, flexbox, alinhamento e sombra do ícone do arquivo.
 - Fase 651: extrair somente `fileInfoTextStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, alinhamento de conteúdo, espaçamento, limites de largura e overflow do texto de informações do arquivo.
 - Fase 652: extrair somente `fileMetaStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor, tipografia, line-height, peso, clamp em duas linhas, orientação, overflow e composição com `safeTextStyle` dos metadados do arquivo.
+- Fase 653: extrair somente `fileActionsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, colunas, espaçamento e limites de largura da área de ações do arquivo.
 
 ## Contrato de preservação
 
