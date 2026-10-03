@@ -929,3 +929,12 @@ export const commentsSheetHandleStyle: CSSProperties = {
   borderRadius: "999px",
   background: "var(--historietas-border-soft, rgba(255,255,255,0.34))",
 };
+
+export const commentsSheetHeaderStyle: CSSProperties = {
+  minHeight: "32px",
+  display: "grid",
+  gridTemplateColumns: "40px minmax(0, 1fr) 40px",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+};
