@@ -1642,3 +1642,13 @@ export const communityBoxStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+export const communityHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  minWidth: 0,
+  maxWidth: "100%",
+  textAlign: "center",
+};
+
