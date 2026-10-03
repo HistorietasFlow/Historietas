@@ -1551,3 +1551,18 @@ export const workRatingHeaderStyle: CSSProperties = {
   textAlign: "center",
 };
 
+export const workRatingTitleStyle: CSSProperties = {
+  margin: 0,
+  width: "100%",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "clamp(22px, 6.5vw, 31px)",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.045em",
+  textTransform: "uppercase",
+  maxWidth: "100%",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
