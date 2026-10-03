@@ -1418,3 +1418,18 @@ export const fileBoxStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+export const fileInfoCardStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "74px minmax(0, 1fr)",
+  gap: "12px",
+  alignItems: "center",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "hidden",
+};
+
