@@ -901,3 +901,7 @@ export const commentsSheetStyle: CSSProperties = {
 export const commentsSheetCompactStyle: CSSProperties = {
   height: "min(64dvh, 540px)",
 };
+
+export const commentsSheetExpandedStyle: CSSProperties = {
+  height: "min(90dvh, 760px)",
+};
