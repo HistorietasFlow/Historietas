@@ -1454,3 +1454,18 @@ export const fileImagePreviewStyle: CSSProperties = {
   display: "block",
 };
 
+export const fileIconBoxStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  borderRadius: "18px",
+  background:
+    "linear-gradient(135deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)",
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 950,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxShadow: "none",
+};
+

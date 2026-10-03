@@ -364,6 +364,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 647: extrair somente `fileInfoCardStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, colunas, espaçamento, alinhamento, padding, raio, superfície, borda, limites de largura, box-sizing e overflow do cartão de informações do arquivo.
 - Fase 648: extrair somente `filePreviewLinkStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, superfície, borda, overflow, flexbox, alinhamento, decoração de texto e flex do link de prévia do arquivo.
 - Fase 649: extrair somente `fileImagePreviewStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, object-fit e display da imagem de prévia do arquivo.
+- Fase 650: extrair somente `fileIconBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, gradiente, cor, tipografia, flexbox, alinhamento e sombra do ícone do arquivo.
 
 ## Contrato de preservação
 
