@@ -1469,3 +1469,12 @@ export const fileIconBoxStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+export const fileInfoTextStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "center",
+  gap: "8px",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+};
+
