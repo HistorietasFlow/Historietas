@@ -306,6 +306,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 589: extrair somente `synopsisToggleIconStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente display, tipografia responsiva, line-height, origem de transformação e transição do ícone de alternância da sinopse.
 - Fase 590: extrair somente `statsGridStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid de quatro colunas, espaçamento, margem superior e largura mínima da grade de estatísticas da obra.
 - Fase 591: extrair somente `commentsSheetOverlayStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento fixo, cobertura da viewport, empilhamento máximo, flexbox, alinhamento, pointer-events e isolamento do overlay da folha de comentários.
+- Fase 592: extrair somente `commentsSheetBackdropStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento absoluto, cobertura, empilhamento, borda, superfície, blur, pointer-events, cursor e padding do backdrop da folha de comentários.
 
 ## Contrato de preservação
 
