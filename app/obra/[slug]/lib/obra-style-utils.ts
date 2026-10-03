@@ -812,3 +812,20 @@ export const obraMenuItemCopiedStyle: CSSProperties = {
   background: "transparent",
   color: "#FFFFFF",
 };
+
+export const obraMenuItemDotStyle: CSSProperties = {
+  width: "20px",
+  height: "20px",
+  borderRadius: "999px",
+  border: "2.25px solid rgba(161,161,170,0.72)",
+  background: "transparent",
+  color: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  boxSizing: "border-box",
+  fontSize: "13px",
+  lineHeight: 1,
+  fontWeight: 900,
+};
