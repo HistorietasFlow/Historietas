@@ -1573,3 +1573,24 @@ export const workRatingStarsRowStyle: CSSProperties = {
   minWidth: 0,
 };
 
+export const workRatingStarButtonStyle: CSSProperties = {
+  minHeight: "34px",
+  borderRadius: "999px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-obra-rating-muted, rgba(251, 191, 36, 0.34))",
+  fontSize: "22px",
+  fontWeight: 950,
+  lineHeight: 1,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  padding: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
