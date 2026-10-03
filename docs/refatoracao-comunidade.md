@@ -300,6 +300,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 583: extrair somente `obraMenuSectionLabelStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente display, padding, cor, tipografia, transformação uppercase, espaçamento de letras e composição text-safe dos rótulos de seção do menu da obra.
 - Fase 584: extrair somente `obraMenuItemButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente aparência, dimensões, flexbox, bordas, superfície, cor, espaçamento, tipografia, cursor, box-sizing, nowrap e composição text-safe dos itens acionáveis do menu da obra.
 - Fase 585: extrair somente `obraMenuItemActiveStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `obraMenuItemButtonStyle`, peso tipográfico, superfície transparente e cor branca do item ativo do menu da obra.
+- Fase 586: extrair somente `obraMenuItemCopiedStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `obraMenuItemButtonStyle`, peso tipográfico, superfície transparente e cor branca do estado copiado do menu da obra.
 
 ## Contrato de preservação
 

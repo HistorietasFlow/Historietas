@@ -805,3 +805,10 @@ export const obraMenuItemActiveStyle: CSSProperties = {
   background: "transparent",
   color: "#FFFFFF",
 };
+
+export const obraMenuItemCopiedStyle: CSSProperties = {
+  ...obraMenuItemButtonStyle,
+  fontWeight: 900,
+  background: "transparent",
+  color: "#FFFFFF",
+};
