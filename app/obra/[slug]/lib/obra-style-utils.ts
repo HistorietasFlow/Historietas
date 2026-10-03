@@ -798,3 +798,10 @@ export const obraMenuItemButtonStyle: CSSProperties = {
   whiteSpace: "nowrap",
   ...safeTextStyle,
 };
+
+export const obraMenuItemActiveStyle: CSSProperties = {
+  ...obraMenuItemButtonStyle,
+  fontWeight: 900,
+  background: "transparent",
+  color: "#FFFFFF",
+};
