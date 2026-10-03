@@ -1308,3 +1308,18 @@ export const commentsSheetFormStyle: CSSProperties = {
   minWidth: 0,
 };
 
+export const commentsInputAvatarStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "11px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--historietas-obra-bg-deep, #000000)",
+  border: "1px solid var(--historietas-obra-purple-58, rgba(59, 7, 100, 0.58))",
+  color: "#FFFFFF",
+  fontSize: "11.5px",
+  fontWeight: 950,
+  overflow: "hidden",
+};
+
