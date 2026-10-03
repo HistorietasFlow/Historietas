@@ -376,6 +376,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 659: extrair somente `workRatingTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem, largura, cor, text fill, tipografia, line-height, peso, letter-spacing, uppercase, largura máxima, alinhamento e composição com `safeTextStyle` do título de avaliação da obra.
 - Fase 660: extrair somente `workRatingStarsRowStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente grid, cinco colunas, espaçamento e largura mínima da linha de estrelas da avaliação da obra.
 - Fase 661: extrair somente `workRatingStarButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente altura mínima, raio, borda, superfície, cor, tipografia, cursor, sombra/filtros, padding e alinhamento flex do botão de estrela da avaliação da obra.
+- Fase 662: extrair somente `workRatingStarActiveStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente composição com `workRatingStarButtonStyle`, borda, superfície, cor ativa, sombra e filtros da estrela ativa da avaliação da obra.
 
 ## Contrato de preservação
 
