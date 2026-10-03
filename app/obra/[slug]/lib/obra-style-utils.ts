@@ -1202,3 +1202,16 @@ export const commentSheetReplyButtonStyle: CSSProperties = {
   padding: "1px 0 0",
   cursor: "pointer",
 };
+
+export const commentSheetRemoveButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-danger-button-text, #FFFFFF)",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
+
