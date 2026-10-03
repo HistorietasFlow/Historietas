@@ -1376,3 +1376,13 @@ export const commentsSheetSendStyle: CSSProperties = {
   padding: 0,
 };
 
+export const commentStatusStyle: CSSProperties = {
+  display: "block",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10.5px",
+  lineHeight: 1.35,
+  fontWeight: 800,
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
