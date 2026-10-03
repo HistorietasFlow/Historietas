@@ -1526,3 +1526,15 @@ export const fileSecondaryButtonStyle: CSSProperties = {
   color: "#FFFFFF",
 };
 
+export const workRatingBoxStyle: CSSProperties = {
+  marginTop: "10px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
