@@ -1538,3 +1538,8 @@ export const workRatingBoxStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const desktopWorkRatingBoxStyle: CSSProperties = {
+  ...workRatingBoxStyle,
+  marginTop: "12px",
+};
+
