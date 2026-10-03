@@ -1705,3 +1705,26 @@ export const desktopCoverArtStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+export const desktopHeroCoverLinkStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  gridColumn: "1",
+  width: "100%",
+  maxWidth: "650px",
+  height: "clamp(400px, 35vw, 530px)",
+  minHeight: "400px",
+  justifySelf: "start",
+  display: "block",
+  padding: "5px",
+  borderRadius: "28px",
+  overflow: "hidden",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background:
+    "linear-gradient(145deg, #050505 0%, #000000 58%, #000000 100%)",
+  boxShadow:
+    "0 24px 64px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(255,255,255,0.025)",
+  color: "inherit",
+  textDecoration: "none",
+  boxSizing: "border-box",
+};
+
