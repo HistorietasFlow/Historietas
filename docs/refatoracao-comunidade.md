@@ -380,6 +380,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 663: extrair somente `workRatingStarVisualStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento relativo, largura, altura, display e line-height do contêiner visual da estrela da avaliação da obra.
 - Fase 664: extrair somente `workRatingStarBaseStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor base, posicionamento absoluto, inset e line-height da camada base da estrela da avaliação da obra.
 - Fase 665: extrair somente `workRatingStarFillStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente cor ativa, posicionamento absoluto, inset, overflow, white-space e line-height da camada preenchida da estrela da avaliação da obra.
+- Fase 666: extrair somente `communityBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente margem superior, padding, raio, superfície, borda, grid, espaçamento, largura mínima, overflow e sombra da caixa da seção Comunidade.
 
 ## Contrato de preservação
 
