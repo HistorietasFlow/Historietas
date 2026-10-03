@@ -951,3 +951,13 @@ export const commentsSheetTitleStyle: CSSProperties = {
   textAlign: "center",
   letterSpacing: "-0.02em",
 };
+
+export const commentsSortMenuWrapStyle: CSSProperties = {
+  position: "relative",
+  width: "40px",
+  height: "34px",
+  justifySelf: "end",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+};
