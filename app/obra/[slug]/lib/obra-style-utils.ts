@@ -1888,3 +1888,26 @@ export const desktopPrimaryReadingButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const desktopSecondaryFollowButtonStyle: CSSProperties = {
+  minWidth: "154px",
+  minHeight: "50px",
+  padding: "0 22px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.34)",
+  background: "rgba(10,10,12,0.74)",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  fontWeight: 850,
+  lineHeight: 1.1,
+  textAlign: "center",
+  boxSizing: "border-box",
+  boxShadow: "none",
+  cursor: "pointer",
+  ...safeTextStyle,
+};
+
