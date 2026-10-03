@@ -356,6 +356,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 639: extrair somente `commentsInputBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura mínima, altura mínima, flexbox e alinhamento do contêiner do campo de comentários.
 - Fase 640: extrair somente `commentsSheetInputStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente largura, alturas, raio, borda, superfície, cor, padding, outline, tipografia, resize, overflow, fonte e box-sizing do campo de texto dos comentários.
 - Fase 641: extrair somente `commentsInputIconButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, borda, superfície, cor, tipografia, fonte, padding e cursor do botão de ícone do campo de comentários.
+- Fase 642: extrair somente `commentsSheetSendStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente dimensões, raio, borda, superfície, cor, tipografia, line-height, fonte e padding do botão de envio dos comentários.
 
 ## Contrato de preservação
 

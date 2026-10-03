@@ -1362,3 +1362,17 @@ export const commentsInputIconButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+export const commentsSheetSendStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-bottom-nav-publish-border, var(--historietas-obra-secondary-soft-34, rgba(167, 139, 250, 0.34)))",
+  background: "var(--historietas-bottom-nav-publish-bg, var(--historietas-obra-purple-72, rgba(59, 7, 100, 0.72)))",
+  color: "#FFFFFF",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+};
+
