@@ -1045,3 +1045,11 @@ export const commentsLoadMoreStyle: CSSProperties = {
   fontWeight: 900,
   fontFamily: "inherit",
 };
+
+export const commentSheetItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
+  gap: "10px",
+  alignItems: "start",
+  minWidth: 0,
+};
