@@ -844,3 +844,11 @@ export const synopsisToggleIconStyle: CSSProperties = {
   transformOrigin: "center",
   transition: "transform 220ms ease",
 };
+
+export const statsGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: "6px",
+  marginTop: "8px",
+  minWidth: 0,
+};
