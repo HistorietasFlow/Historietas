@@ -410,6 +410,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 693: extrair somente `desktopCommunityBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `communityBoxStyle`, margem superior, padding, raio da borda e espaçamento da seção Comunidade no desktop.
 - Fase 694: extrair somente `desktopChaptersListStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `chaptersListStyle` e o espaçamento da lista de capítulos no desktop.
 - Fase 695: extrair somente `desktopChapterCardStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `chapterCardStyle`, as colunas da grade, o padding e o espaçamento do card de capítulo no desktop.
+- Fase 696: extrair somente `classificationPanelOverlayStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento fixo, inset, z-index, grid, centralização e padding do overlay do painel de classificação.
 
 ## Contrato de preservação
 
