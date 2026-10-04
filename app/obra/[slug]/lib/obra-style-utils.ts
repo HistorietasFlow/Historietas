@@ -2079,3 +2079,10 @@ export const classificationPanelIntroStyle: CSSProperties = {
   gap: "6px",
 };
 
+export const classificationPanelTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "17px",
+  fontWeight: 950,
+  letterSpacing: "-0.02em",
+};
+
