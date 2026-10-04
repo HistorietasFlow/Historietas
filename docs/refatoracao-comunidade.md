@@ -415,6 +415,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 698: extrair somente `classificationPanelStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente posicionamento, z-index, largura, overflow, raio, borda, fundo, sombra e cor do painel de classificação.
 - Fase 699: extrair somente `classificationPanelHeaderStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente flexbox, alinhamento, espaçamento e padding do cabeçalho do painel de classificação.
 - Fase 700: extrair somente `classificationPanelBadgeStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente dimensões, padding, raio, flexbox, alinhamento, borda, fundo, cor, tipografia, box-sizing e a ordem de composição antes de `classificationPanelBadgeAdultStyle`.
+- Fase 701: extrair somente `classificationPanelBadgeAdultStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente borda, fundo, cor, sombra e a composição condicional depois de `classificationPanelBadgeStyle` apenas para classificação 18.
 
 ## Contrato de preservação
 
