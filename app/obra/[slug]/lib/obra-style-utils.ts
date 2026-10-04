@@ -1988,3 +1988,12 @@ export const desktopChapterCardStyle: CSSProperties = {
   gap: "10px",
 };
 
+export const classificationPanelOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 1300,
+  display: "grid",
+  placeItems: "center",
+  padding: "20px",
+};
+
