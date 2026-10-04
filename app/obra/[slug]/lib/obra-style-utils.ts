@@ -2086,3 +2086,11 @@ export const classificationPanelTitleStyle: CSSProperties = {
   letterSpacing: "-0.02em",
 };
 
+export const classificationPanelDescriptionStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12px",
+  fontWeight: 700,
+  lineHeight: 1.55,
+};
+
