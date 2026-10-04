@@ -1981,3 +1981,10 @@ export const desktopChaptersListStyle: CSSProperties = {
   gap: "9px",
 };
 
+export const desktopChapterCardStyle: CSSProperties = {
+  ...chapterCardStyle,
+  gridTemplateColumns: "50px minmax(0, 1fr) 126px",
+  padding: "10px",
+  gap: "10px",
+};
+
