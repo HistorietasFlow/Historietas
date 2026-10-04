@@ -2068,3 +2068,9 @@ export const classificationPanelCloseStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+export const classificationPanelContentStyle: CSSProperties = {
+  display: "grid",
+  gap: "14px",
+  padding: "14px 16px 18px",
+};
+
