@@ -2094,3 +2094,10 @@ export const classificationPanelDescriptionStyle: CSSProperties = {
   lineHeight: 1.55,
 };
 
+export const classificationWarningsStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  paddingTop: "12px",
+  borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+};
+
