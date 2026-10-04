@@ -2028,3 +2028,20 @@ export const classificationPanelHeaderStyle: CSSProperties = {
   padding: "14px 14px 0",
 };
 
+export const classificationPanelBadgeStyle: CSSProperties = {
+  minWidth: "40px",
+  height: "34px",
+  padding: "0 10px",
+  borderRadius: "12px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "1px solid var(--historietas-obra-secondary-72, rgba(124, 58, 237, 0.72))",
+  background: "var(--historietas-obra-bg-deep-96, rgba(4, 0, 10, 0.96))",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1,
+  boxSizing: "border-box",
+};
+
