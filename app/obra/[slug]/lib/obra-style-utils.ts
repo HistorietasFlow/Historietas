@@ -1968,3 +1968,11 @@ export const desktopFileActionsStyle: CSSProperties = {
   justifyContent: "start",
 };
 
+export const desktopCommunityBoxStyle: CSSProperties = {
+  ...communityBoxStyle,
+  marginTop: "12px",
+  padding: 0,
+  borderRadius: 0,
+  gap: "10px",
+};
+
