@@ -1976,3 +1976,8 @@ export const desktopCommunityBoxStyle: CSSProperties = {
   gap: "10px",
 };
 
+export const desktopChaptersListStyle: CSSProperties = {
+  ...chaptersListStyle,
+  gap: "9px",
+};
+
