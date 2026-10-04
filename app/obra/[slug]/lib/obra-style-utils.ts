@@ -2074,3 +2074,8 @@ export const classificationPanelContentStyle: CSSProperties = {
   padding: "14px 16px 18px",
 };
 
+export const classificationPanelIntroStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+};
+
