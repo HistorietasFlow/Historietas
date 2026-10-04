@@ -2101,3 +2101,11 @@ export const classificationWarningsStyle: CSSProperties = {
   borderTop: "1px solid rgba(255, 255, 255, 0.08)",
 };
 
+export const classificationWarningsTitleStyle: CSSProperties = {
+  color: "var(--historietas-obra-logo-mid, #FFFFFF)",
+  fontSize: "10px",
+  fontWeight: 950,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+
