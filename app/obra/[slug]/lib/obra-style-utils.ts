@@ -1938,3 +1938,8 @@ export const desktopHeroActionsStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const desktopObraActionsMenuStyle: CSSProperties = {
+  ...obraActionsMenuStyle,
+  width: "min(820px, calc(100% - 24px))",
+};
+
