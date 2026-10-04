@@ -1949,3 +1949,10 @@ export const desktopStatsGridStyle: CSSProperties = {
   marginTop: "14px",
 };
 
+export const desktopFileBoxStyle: CSSProperties = {
+  ...fileBoxStyle,
+  padding: "20px",
+  borderRadius: "26px",
+  marginTop: "18px",
+};
+
