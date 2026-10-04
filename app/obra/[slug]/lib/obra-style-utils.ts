@@ -1956,3 +1956,9 @@ export const desktopFileBoxStyle: CSSProperties = {
   marginTop: "18px",
 };
 
+export const desktopFileInfoCardStyle: CSSProperties = {
+  ...fileInfoCardStyle,
+  gridTemplateColumns: "96px minmax(0, 1fr)",
+  padding: "14px",
+};
+
