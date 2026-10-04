@@ -1962,3 +1962,9 @@ export const desktopFileInfoCardStyle: CSSProperties = {
   padding: "14px",
 };
 
+export const desktopFileActionsStyle: CSSProperties = {
+  ...fileActionsStyle,
+  gridTemplateColumns: "180px 180px",
+  justifyContent: "start",
+};
+
