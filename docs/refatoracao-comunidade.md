@@ -407,6 +407,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 690: extrair somente `desktopFileBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `fileBoxStyle`, padding, raio da borda e margem superior da caixa de arquivo no desktop.
 - Fase 691: extrair somente `desktopFileInfoCardStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `fileInfoCardStyle`, as colunas da grade e o padding do card de informações do arquivo no desktop.
 - Fase 692: extrair somente `desktopFileActionsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `fileActionsStyle`, as colunas da grade e o alinhamento das ações do arquivo no desktop.
+- Fase 693: extrair somente `desktopCommunityBoxStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `communityBoxStyle`, margem superior, padding, raio da borda e espaçamento da seção Comunidade no desktop.
 
 ## Contrato de preservação
 
