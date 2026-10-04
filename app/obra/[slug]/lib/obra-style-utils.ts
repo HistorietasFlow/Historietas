@@ -1925,3 +1925,16 @@ export const desktopObraAddButtonStyle: CSSProperties = {
   lineHeight: 1,
 };
 
+export const desktopHeroActionsStyle: CSSProperties = {
+  order: 5,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "10px",
+  width: "auto",
+  maxWidth: "100%",
+  minWidth: 0,
+  marginTop: "5px",
+  boxSizing: "border-box",
+};
+
