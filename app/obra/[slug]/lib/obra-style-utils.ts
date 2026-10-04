@@ -2007,3 +2007,16 @@ export const classificationPanelBackdropStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+export const classificationPanelStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  width: "min(100%, 360px)",
+  overflow: "hidden",
+  borderRadius: "22px",
+  border: "1px solid var(--historietas-obra-secondary-42, rgba(124, 58, 237, 0.42))",
+  background: "var(--historietas-obra-bg-deep-98, rgba(4, 0, 10, 0.98))",
+  boxShadow:
+    "0 24px 70px rgba(0, 0, 0, 0.62), 0 0 24px var(--historietas-obra-secondary-12, rgba(124, 58, 237, 0.12))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+};
+
