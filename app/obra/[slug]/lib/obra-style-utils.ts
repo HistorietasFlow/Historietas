@@ -2045,3 +2045,11 @@ export const classificationPanelBadgeStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const classificationPanelBadgeAdultStyle: CSSProperties = {
+  borderColor: "rgba(248, 86, 110, 0.9)",
+  background: "rgba(34, 3, 10, 0.96)",
+  color: "#FFF5F6",
+  boxShadow:
+    "0 0 0 1px rgba(120, 15, 32, 0.55), 0 0 18px rgba(244, 63, 94, 0.38)",
+};
+
