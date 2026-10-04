@@ -2020,3 +2020,11 @@ export const classificationPanelStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
 };
 
+export const classificationPanelHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  padding: "14px 14px 0",
+};
+
