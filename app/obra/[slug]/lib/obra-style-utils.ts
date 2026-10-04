@@ -1943,3 +1943,9 @@ export const desktopObraActionsMenuStyle: CSSProperties = {
   width: "min(820px, calc(100% - 24px))",
 };
 
+export const desktopStatsGridStyle: CSSProperties = {
+  ...statsGridStyle,
+  gap: "10px",
+  marginTop: "14px",
+};
+
