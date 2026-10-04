@@ -1997,3 +1997,13 @@ export const classificationPanelOverlayStyle: CSSProperties = {
   padding: "20px",
 };
 
+export const classificationPanelBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  border: 0,
+  background: "rgba(2, 0, 6, 0.72)",
+  backdropFilter: "blur(4px)",
+  WebkitBackdropFilter: "blur(4px)",
+  cursor: "pointer",
+};
+
