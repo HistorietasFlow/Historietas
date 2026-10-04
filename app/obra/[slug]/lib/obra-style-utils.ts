@@ -2053,3 +2053,18 @@ export const classificationPanelBadgeAdultStyle: CSSProperties = {
     "0 0 0 1px rgba(120, 15, 32, 0.55), 0 0 18px rgba(244, 63, 94, 0.38)",
 };
 
+export const classificationPanelCloseStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  border: "1px solid rgba(255, 255, 255, 0.1)",
+  background: "rgba(255, 255, 255, 0.035)",
+  color: "#FFFFFF",
+  display: "grid",
+  placeItems: "center",
+  fontFamily: "inherit",
+  fontSize: "24px",
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
