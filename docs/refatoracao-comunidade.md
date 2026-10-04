@@ -402,6 +402,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 685: extrair somente `desktopFollowedButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `desktopSecondaryFollowButtonStyle` do estado seguido no desktop.
 - Fase 686: extrair somente `desktopObraAddButtonStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `desktopFollowedButtonStyle`, dimensões, padding e tipografia do botão de adicionar obra no desktop.
 - Fase 687: extrair somente `desktopHeroActionsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente ordem, flexbox, alinhamento, espaçamento, larguras, margem e box-sizing das ações do hero desktop.
+- Fase 688: extrair somente `desktopObraActionsMenuStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando exatamente a composição com `obraActionsMenuStyle` e a largura do menu de ações da obra no desktop.
 
 ## Contrato de preservação
 
