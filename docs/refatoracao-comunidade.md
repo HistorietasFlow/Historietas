@@ -420,6 +420,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 703: extrair somente `classificationPanelContentStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `display`, `gap`, `padding` e o uso atual no conteúdo do painel de classificação.
 - Fase 704: extrair somente `classificationPanelIntroStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `display: "grid"`, `gap: "6px"` e o uso atual no JSX.
 - Fase 705: extrair somente `classificationPanelTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `color`, `fontSize`, `fontWeight`, `letterSpacing` e o uso atual no JSX.
+- Fase 706: extrair somente `classificationPanelDescriptionStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `margin`, `color`, `fontSize`, `fontWeight`, `lineHeight` e o uso atual no JSX.
 
 ## Contrato de preservação
 
