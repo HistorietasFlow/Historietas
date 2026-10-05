@@ -48,7 +48,7 @@ import {
 } from "./lib/obra-user-storage";
 import {
   carregarBackupArquivosObras,
-  FILE_BACKUP_STORAGE_KEY,
+  sincronizarBackupArquivosObras,
 } from "./lib/obra-file-backup-utils";
 import {
   avaliacaoObraVazia,
@@ -71,7 +71,7 @@ import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, ob
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
-import { obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
+import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraLocal, normalizarObraSupabase, restaurarArquivoObraComBackup, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
@@ -90,30 +90,6 @@ const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const WORK_COMMENTS_PAGE_SIZE = 20;
-function sincronizarBackupArquivosObras(obrasLocais: ObraLocal[], userId = "") {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return;
-  }
-
-  try {
-    const backupAtual = carregarBackupArquivosObras(userId);
-
-    obrasLocais.forEach((obraLocal) => {
-      if (!obraLocal.arquivoObra) {
-        return;
-      }
-
-      obterChavesBackupObra(obraLocal).forEach((chave) => {
-        backupAtual[chave] = obraLocal.arquivoObra as ArquivoObraLocal;
-      });
-    });
-
-    salvarStorageUsuarioObraPublica(FILE_BACKUP_STORAGE_KEY, userId, backupAtual);
-  } catch {
-    // Backup é apenas proteção extra. Não deve travar a página pública.
-  }
-}
-
 function carregarObrasLocaisComBackup(userId = "") {
   const userIdLimpo = userId.trim();
 
