@@ -2140,3 +2140,11 @@ export const classificationWarningDotStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
+export const classificationNoWarningsStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  fontWeight: 700,
+  lineHeight: 1.5,
+};
+
