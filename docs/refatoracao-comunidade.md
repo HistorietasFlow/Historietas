@@ -437,6 +437,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 720: extrair somente `containerStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente suas sete propriedades, os usos atuais no JSX e `desktopContainerStyle` local com o spread da base antes das sobrescritas de `width` e `padding`.
 - Fase 721: extrair somente `desktopContainerStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando `...containerStyle` como primeira entrada, as sobrescritas atuais de `width` e `padding` e os dois ternários do JSX inalterados.
 - Fase 722: extrair somente `pageStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente suas nove propriedades na mesma ordem, `useHistorietasTheme(pageStyle)`, os quatro usos de `pageThemeStyle` e os valores atuais de `background` e `color`.
+- Fase 723: extrair somente `OBRA_DINAMICA_UI_TRANSLATIONS` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando literalmente todas as chaves, textos em português, inglês e espanhol, ordem, estrutura e o tipo `Record<string, TraducaoObraDinamica>`.
 
 ## Contrato de preservação
 

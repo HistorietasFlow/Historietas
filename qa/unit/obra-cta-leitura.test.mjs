@@ -10,6 +10,10 @@ const estilosObra = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-style-utils.ts", import.meta.url),
   "utf8",
 );
+const textosObra = readFileSync(
+  new URL("../../app/obra/[slug]/lib/obra-text-utils.ts", import.meta.url),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto, fonte = paginaObra) {
   const inicio = fonte.indexOf(inicioTexto);
@@ -98,11 +102,11 @@ test("capa comunica a mesma acao principal de leitura", () => {
 
 test("rotulos principais de leitura possuem traducoes", () => {
   assert.match(
-    paginaObra,
+    textosObra,
     /"Começar a ler": \{ en: "Start reading", es: "Empezar a leer" \}/,
   );
   assert.match(
-    paginaObra,
+    textosObra,
     /"Continuar leitura": \{ en: "Continue reading", es: "Continuar leyendo" \}/,
   );
 });
