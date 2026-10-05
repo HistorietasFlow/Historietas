@@ -55,6 +55,7 @@ import {
   salvarCurtidaObraPublicaSupabase,
   salvarRegistroObraPublicaSupabase,
 } from "./lib/obra-supabase-interaction-persistence";
+import { salvarAvaliacaoRemotaObra } from "./lib/obra-supabase-rating-persistence";
 import {
   avaliacaoObraVazia,
   calcularProximaAvaliacao,
@@ -345,51 +346,6 @@ async function carregarPerfilPublicoObra(
   }
 
   return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback || "Usuário");
-}
-
-async function salvarAvaliacaoRemotaObra({
-  obraId,
-  userId,
-  nota,
-}: {
-  obraId: string;
-  userId: string;
-  nota: number;
-}) {
-  if (!obraId.trim() || !userId.trim()) {
-    return;
-  }
-
-  if (nota <= 0) {
-    const { error: erroRemocao } = await supabase
-      .from("obra_avaliacoes")
-      .delete()
-      .eq("obra_id", obraId)
-      .eq("user_id", userId);
-
-    if (erroRemocao) {
-      throw erroRemocao;
-    }
-
-    return;
-  }
-
-  const { error: erroSalvar } = await supabase
-    .from("obra_avaliacoes")
-    .upsert(
-      {
-        obra_id: obraId,
-        user_id: userId,
-        nota,
-      },
-      {
-        onConflict: "obra_id,user_id",
-      },
-    );
-
-  if (erroSalvar) {
-    throw erroSalvar;
-  }
 }
 
 async function removerAtividadeDiarioObra({
