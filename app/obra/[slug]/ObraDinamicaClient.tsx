@@ -26,7 +26,6 @@ import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../../lib/arquivosObras";
 import {
   carregarTodasPaginasPorLotesSupabase,
-  carregarTodasPaginasSupabase,
 } from "../../../lib/supabase/paginacao.mjs";
 import {
   atualizarIdentidadeAutenticadaObra,
@@ -50,6 +49,7 @@ import {
 } from "./lib/obra-file-backup-utils";
 import { carregarObrasLocaisComBackup } from "./lib/obra-local-works-utils";
 import { aplicarMetricasObraPublica } from "./lib/obra-metrics-application-utils";
+import { carregarCapitulosPublicadosObraSupabase } from "./lib/obra-supabase-chapters-utils";
 import {
   avaliacaoObraVazia,
   calcularProximaAvaliacao,
@@ -176,19 +176,9 @@ async function carregarObraSupabasePorSlug(
     let capitulosBanco: SupabaseCapituloRow[] = [];
 
     try {
-      capitulosBanco =
-        await carregarTodasPaginasSupabase<SupabaseCapituloRow>({
-          nomeColecao: "capítulos da obra pública",
-          buscarPagina: async (inicio, fim) =>
-            supabase
-              .from("capitulos")
-              .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
-              .eq("obra_id", obraBanco.id)
-              .eq("publicado", true)
-              .order("ordem", { ascending: true })
-              .order("id", { ascending: true })
-              .range(inicio, fim),
-        });
+      capitulosBanco = await carregarCapitulosPublicadosObraSupabase(
+        obraBanco.id,
+      );
     } catch (error) {
       console.warn(
         "Não consegui carregar capítulos da obra pública no Supabase:",

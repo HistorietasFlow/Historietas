@@ -2096,6 +2096,13 @@ const communityFollowSaverPath = path.join(
 const communityFollowSaver = fs.existsSync(communityFollowSaverPath)
   ? fs.readFileSync(communityFollowSaverPath, "utf8")
   : "";
+const publicWorkChaptersQueryPath = path.join(
+  ROOT_DIR,
+  "app/obra/[slug]/lib/obra-supabase-chapters-utils.ts"
+);
+const publicWorkChaptersQuery = fs.existsSync(publicWorkChaptersQueryPath)
+  ? fs.readFileSync(publicWorkChaptersQueryPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2111,7 +2118,11 @@ const contentPaginationFiles = [
 ];
 const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   relativePath,
-  source: fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8")
+  source: `${fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8")}${
+    relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"
+      ? `\n${publicWorkChaptersQuery}`
+      : ""
+  }`
 }));
 
 const paginationContracts = [
