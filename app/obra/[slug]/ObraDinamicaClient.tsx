@@ -18,7 +18,6 @@ import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto } from "../../../lib/utils";
 import {
-  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   acessoConteudo18Confirmado,
   ehClassificacao18,
   traduzirAvisoConteudo18,
@@ -47,9 +46,9 @@ import {
   salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
 import {
-  carregarBackupArquivosObras,
   sincronizarBackupArquivosObras,
 } from "./lib/obra-file-backup-utils";
+import { carregarObrasLocaisComBackup } from "./lib/obra-local-works-utils";
 import {
   avaliacaoObraVazia,
   calcularProximaAvaliacao,
@@ -73,7 +72,7 @@ import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRela
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import { converterObraLocalParaDinamica, normalizarObraLocal, normalizarObraSupabase, restaurarArquivoObraComBackup, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
+import { converterObraLocalParaDinamica, normalizarObraSupabase, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
@@ -85,57 +84,10 @@ const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
 const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const LOCAL_WORKS_STORAGE_KEY = "historietas-obras";
 const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const WORK_COMMENTS_PAGE_SIZE = 20;
-function carregarObrasLocaisComBackup(userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [];
-  }
-
-  const obrasLocaisTexto = lerStorageUsuarioObraPublica(
-    LOCAL_WORKS_STORAGE_KEY,
-    userIdLimpo
-  );
-  const obrasLocaisJson: unknown = obrasLocaisTexto
-    ? JSON.parse(obrasLocaisTexto)
-    : [];
-
-  const backupArquivosObras = carregarBackupArquivosObras(userIdLimpo);
-
-  const obrasNormalizadas = Array.isArray(obrasLocaisJson)
-    ? obrasLocaisJson
-        .map((obra, index) =>
-          normalizarObraLocal(
-            obra as Partial<ObraLocal> & Record<string, unknown>,
-            index
-          )
-        )
-        .map((obraLocal) =>
-          restaurarArquivoObraComBackup(obraLocal, backupArquivosObras)
-        )
-    : [];
-
-  const obrasPublicasLocais = obrasNormalizadas.filter((obraLocal) => {
-    if (
-      ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
-      ehClassificacao18(obraLocal.classificacaoIndicativa)
-    ) {
-      return false;
-    }
-
-    return obraLocal.publicado && obraLocal.capitulos.length > 0;
-  });
-
-  sincronizarBackupArquivosObras(obrasNormalizadas, userIdLimpo);
-
-  return obrasPublicasLocais;
-}
-
 async function aplicarMetricasObraPublica(
   obrasParaAtualizar: ObraLocal[],
   userId: string,
