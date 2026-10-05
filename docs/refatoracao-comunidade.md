@@ -440,6 +440,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 723: extrair somente `OBRA_DINAMICA_UI_TRANSLATIONS` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando literalmente todas as chaves, textos em português, inglês e espanhol, ordem, estrutura e o tipo `Record<string, TraducaoObraDinamica>`.
 - Fase 724: extrair somente `traduzirTextoObraDinamica` para `app/obra/[slug]/lib/obra-text-utils.ts`, preservando literalmente a ordem dos regex, whitespace inicial/final, consulta à tabela antes dos regex, pluralização, interpolações, comportamento EN/ES e o fallback final.
 - Fase 725: extrair somente o componente completo `ObraDinamicaLanguageBridge` para `app/obra/[slug]/components/obra-dinamica-language-bridge.tsx`, preservando literalmente o efeito, seletor das raízes da obra e comentários, `WeakMap`, `Set`, observer, cleanup e restauração condicional.
+- Fase 726: extrair somente `FILE_BACKUP_STORAGE_KEY` e `carregarBackupArquivosObras` para `app/obra/[slug]/lib/obra-file-backup-utils.ts`, preservando a proteção SSR, leitura e escrita por usuário, parse e fallback de JSON, validação, normalização e regravação canônica do backup de arquivos.
 
 ## Contrato de preservação
 

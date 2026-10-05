@@ -47,6 +47,10 @@ import {
   salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
 import {
+  carregarBackupArquivosObras,
+  FILE_BACKUP_STORAGE_KEY,
+} from "./lib/obra-file-backup-utils";
+import {
   avaliacaoObraVazia,
   calcularProximaAvaliacao,
   formatarMediaAvaliacao,
@@ -67,7 +71,7 @@ import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, ob
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
-import { normalizarArquivoObra, obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal, type ArquivosObrasBackup } from "./lib/obra-file-utils";
+import { obterCaminhoStorageArquivoObra, obterChavesBackupObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraLocal, normalizarObraSupabase, restaurarArquivoObraComBackup, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
@@ -82,46 +86,10 @@ const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const LOCAL_WORKS_STORAGE_KEY = "historietas-obras";
-const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const WORK_COMMENTS_PAGE_SIZE = 20;
-function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return {};
-  }
-
-  try {
-    const backupTexto = lerStorageUsuarioObraPublica(FILE_BACKUP_STORAGE_KEY, userId);
-    const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
-
-    if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
-      return {};
-    }
-
-    const backupNormalizado: ArquivosObrasBackup = {};
-
-    Object.entries(backupJson as Record<string, unknown>).forEach(([chave, arquivo]) => {
-      const arquivoNormalizado = normalizarArquivoObra(arquivo);
-
-      if (chave.trim() && arquivoNormalizado) {
-        backupNormalizado[chave] = arquivoNormalizado;
-      }
-    });
-
-    salvarStorageUsuarioObraPublica(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupNormalizado
-    );
-
-    return backupNormalizado;
-  } catch {
-    return {};
-  }
-}
-
 function sincronizarBackupArquivosObras(obrasLocais: ObraLocal[], userId = "") {
   if (typeof window === "undefined" || !userId.trim()) {
     return;
