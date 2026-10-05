@@ -293,6 +293,14 @@ export const heroTopOverlayStyle: CSSProperties = {
   pointerEvents: "auto",
 };
 
+export const desktopHeroTopOverlayStyle: CSSProperties = {
+  ...heroTopOverlayStyle,
+  top: "22px",
+  left: "24px",
+  right: "24px",
+  maxWidth: "calc(100% - 48px)",
+};
+
 export const heroGlowStyle: CSSProperties = {
   display: "none",
 };
