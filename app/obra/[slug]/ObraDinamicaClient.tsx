@@ -49,6 +49,7 @@ import {
   sincronizarBackupArquivosObras,
 } from "./lib/obra-file-backup-utils";
 import { carregarObrasLocaisComBackup } from "./lib/obra-local-works-utils";
+import { aplicarMetricasObraPublica } from "./lib/obra-metrics-application-utils";
 import {
   avaliacaoObraVazia,
   calcularProximaAvaliacao,
@@ -61,12 +62,12 @@ import {
   type AvaliacaoLocalObra,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
-import { criarMetricasBaseObra, incrementarVisualizacaoObraPublicaSupabase, metricasComunidadeObraVazias, metricasObraVazias, normalizarContadorObraPublica, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
+import { criarMetricasBaseObra, incrementarVisualizacaoObraPublicaSupabase, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
-import { calcularProgressoLeitura, encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
+import { encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
@@ -88,107 +89,6 @@ const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const WORK_COMMENTS_PAGE_SIZE = 20;
-async function aplicarMetricasObraPublica(
-  obrasParaAtualizar: ObraLocal[],
-  userId: string,
-) {
-  const obraIds = Array.from(
-    new Set(obrasParaAtualizar.map((obra) => obra.id.trim()).filter(Boolean)),
-  );
-  const capituloIds = Array.from(
-    new Set(
-      obrasParaAtualizar.flatMap((obra) =>
-        obra.capitulos.map((capitulo) => capitulo.id.trim()).filter(Boolean),
-      ),
-    ),
-  );
-
-  if (obraIds.length === 0 && capituloIds.length === 0) {
-    return obrasParaAtualizar;
-  }
-
-  const metricas = await carregarMetricasConteudos({ obraIds, capituloIds });
-
-  if (!metricas.carregado) {
-    return obrasParaAtualizar;
-  }
-
-  const aplicarProgresso = Boolean(userId.trim());
-
-  return obrasParaAtualizar.map((obra) => {
-    const metricaObra = metricas.obras.get(obra.id);
-    let ultimoCapituloLidoId = aplicarProgresso
-      ? ""
-      : obra.ultimoCapituloLidoId;
-    let ultimaLeituraEm = aplicarProgresso ? "" : obra.ultimaLeituraEm;
-
-    const capitulos = obra.capitulos.map((capitulo) => {
-      const metrica = metricas.capitulos.get(capitulo.id);
-      const progressoRemotoDisponivel = aplicarProgresso && Boolean(metrica);
-      const lido = progressoRemotoDisponivel
-        ? Boolean(metrica?.usuario.leu)
-        : capitulo.lido;
-      const lidoEm = progressoRemotoDisponivel && lido
-        ? metrica?.usuario.lidoEm || ""
-        : capitulo.lidoEm;
-
-      if (lido) {
-        const tempoAtual = new Date(lidoEm).getTime();
-        const tempoUltimo = new Date(ultimaLeituraEm).getTime();
-        const tempoAtualSeguro = Number.isNaN(tempoAtual) ? 0 : tempoAtual;
-        const tempoUltimoSeguro = Number.isNaN(tempoUltimo) ? 0 : tempoUltimo;
-
-        if (!ultimoCapituloLidoId || tempoAtualSeguro >= tempoUltimoSeguro) {
-          ultimoCapituloLidoId = capitulo.id;
-          ultimaLeituraEm = lidoEm;
-        }
-      }
-
-      return {
-        ...capitulo,
-        curtiu: Boolean(capitulo.curtiu || metrica?.usuario.curtiu),
-        salvo: Boolean(capitulo.salvo || metrica?.usuario.salvou),
-        lido,
-        lidoEm,
-        totalCurtidas:
-          metrica?.interacoes.curtidas ??
-          normalizarContadorObraPublica(capitulo.totalCurtidas),
-        totalComentarios:
-          metrica?.interacoes.comentarios ??
-          normalizarContadorObraPublica(capitulo.totalComentarios),
-        totalSalvos:
-          metrica?.interacoes.salvos ??
-          normalizarContadorObraPublica(capitulo.totalSalvos),
-        // Progresso de leitura é privado; o contrato fornece apenas o estado
-        // do usuário atual, não um contador público de leitores.
-        totalLidos: normalizarContadorObraPublica(capitulo.totalLidos),
-      };
-    });
-
-    return {
-      ...obra,
-      capitulos,
-      ultimoCapituloLidoId,
-      ultimaLeituraEm,
-      progressoLeitura: calcularProgressoLeitura(capitulos),
-      visualizacoes:
-        metricaObra?.visualizacoes ??
-        normalizarContadorObraPublica(obra.visualizacoes),
-      totalCurtidas:
-        metricaObra?.interacoesDiretas.curtidas ??
-        normalizarContadorObraPublica(obra.totalCurtidas),
-      totalComentarios:
-        metricaObra?.interacoesDiretas.comentarios ??
-        normalizarContadorObraPublica(obra.totalComentarios),
-      totalFavoritos:
-        metricaObra?.interacoesDiretas.favoritos ??
-        normalizarContadorObraPublica(obra.totalFavoritos),
-      totalConcluidas:
-        metricaObra?.interacoesDiretas.concluidas ??
-        normalizarContadorObraPublica(obra.totalConcluidas),
-    };
-  });
-}
 async function carregarObraSupabasePorSlug(
   slugBusca: string,
   obrasLocais: ObraLocal[],
