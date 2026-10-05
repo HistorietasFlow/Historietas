@@ -2148,3 +2148,12 @@ export const classificationNoWarningsStyle: CSSProperties = {
   lineHeight: 1.5,
 };
 
+export const desktopHeaderRightStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "12px",
+  flex: "0 0 auto",
+  minWidth: 0,
+};
+
