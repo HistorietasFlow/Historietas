@@ -6,6 +6,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const consultaRaizesComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/lib/obra-supabase-root-comments-query.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -38,8 +45,10 @@ test("pagina comentarios raiz e busca apenas respostas dos topicos carregados", 
   );
 
   assert.match(paginaObra, /const WORK_COMMENTS_PAGE_SIZE = 20/);
-  assert.match(bloco, /\.is\("comentario_pai_id", null\)/);
-  assert.match(bloco, /\.range\(inicio, fim\)/);
+  assert.match(
+    bloco,
+    /await consultarPaginaRaizesComentariosObraSupabase\(obraId, inicio, fim\)/,
+  );
   assert.match(
     bloco,
     /const temMais = comentariosRaizTodos\.length > WORK_COMMENTS_PAGE_SIZE/,
@@ -49,6 +58,11 @@ test("pagina comentarios raiz e busca apenas respostas dos topicos carregados", 
     /nomeColecao: "respostas dos comentários da obra"/,
   );
   assert.match(bloco, /\.in\("comentario_pai_id", comentariosPaisLote\)/);
+  assert.match(
+    consultaRaizesComentarios,
+    /\.is\("comentario_pai_id", null\)/,
+  );
+  assert.match(consultaRaizesComentarios, /\.range\(inicio, fim\)/);
 });
 
 test("painel oferece carregamento incremental sem perder protecao de versao", () => {

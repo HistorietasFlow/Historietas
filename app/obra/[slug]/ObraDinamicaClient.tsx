@@ -59,6 +59,7 @@ import {
   carregarCurtidasComentariosObraSupabase,
   WORK_COMMENT_LIKES_TABLE,
 } from "./lib/obra-supabase-comment-likes-query";
+import { consultarPaginaRaizesComentariosObraSupabase } from "./lib/obra-supabase-root-comments-query";
 import {
   salvarCurtidaObraPublicaSupabase,
   salvarRegistroObraPublicaSupabase,
@@ -442,14 +443,7 @@ async function carregarPaginaComentariosObraSupabase(
   const inicio = Math.max(0, offset);
   const fim = inicio + WORK_COMMENTS_PAGE_SIZE;
   const { data: comentariosRaizData, error: erroComentariosRaiz } =
-    await supabase
-      .from("comentarios_obras")
-      .select("id,obra_id,user_id,comentario,comentario_pai_id,criado_em")
-      .eq("obra_id", obraId)
-      .is("comentario_pai_id", null)
-      .order("criado_em", { ascending: false })
-      .order("id", { ascending: false })
-      .range(inicio, fim);
+    await consultarPaginaRaizesComentariosObraSupabase(obraId, inicio, fim);
 
   if (erroComentariosRaiz) {
     throw erroComentariosRaiz;
