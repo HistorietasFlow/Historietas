@@ -272,6 +272,12 @@ export const containerStyle: CSSProperties = {
   minWidth: 0,
 };
 
+export const desktopContainerStyle: CSSProperties = {
+  ...containerStyle,
+  width: "min(1180px, calc(100% - 64px))",
+  padding: "22px 0 24px",
+};
+
 export const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
