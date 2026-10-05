@@ -278,6 +278,18 @@ export const desktopContainerStyle: CSSProperties = {
   padding: "22px 0 24px",
 };
 
+export const pageStyle: CSSProperties = {
+  position: "relative",
+  minHeight: "100vh",
+  width: "100%",
+  maxWidth: "100vw",
+  overflowX: "clip",
+  boxSizing: "border-box",
+  background: "var(--historietas-bg-start, #000000)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+};
+
 export const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
