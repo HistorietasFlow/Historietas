@@ -452,6 +452,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 735: extrair juntas as persistências remotas de favoritos, concluídas e curtidas de obra para `app/obra/[slug]/lib/obra-supabase-interaction-persistence.ts`, preservando guards, tabelas, filtros, upserts, fallback da curtida e propagação de erros.
 - Fase 736: extrair juntas a chave e a persistência local de avaliações de obra para `app/obra/[slug]/lib/obra-local-rating-storage-utils.ts`, preservando isolamento por usuário, parse/fallback de JSON, chave de avaliação, arredondamento em passos de 0,5 e remoção lógica pela nota zero.
 - Fase 737: extrair somente a persistência remota de avaliações de obra para `app/obra/[slug]/lib/obra-supabase-rating-persistence.ts`, preservando guards, delete condicional, upsert, conflito e propagação bruta de erros.
+- Fase 738: extrair juntas as persistências remotas de remoção e registro de atividades do Diário da obra para `app/obra/[slug]/lib/obra-supabase-diary-activity-persistence.ts`, preservando guards, delete, normalização, payload, fallback, avisos e erros absorvidos.
 
 ## Contrato de preservação
 

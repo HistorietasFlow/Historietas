@@ -13,6 +13,13 @@ const persistenciaAvaliacao = readFileSync(
   ),
   "utf8",
 );
+const persistenciaDiario = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/lib/obra-supabase-diary-activity-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -110,6 +117,10 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
   assert.ok(indiceMensagemFalha > indiceSalvarRemoto);
   assert.ok(indiceGuardAntesDiario > indiceMensagemFalha);
   assert.ok(indiceDiario > indiceGuardAntesDiario);
+  assert.match(
+    persistenciaDiario,
+    /export async function registrarAtividadeDiarioObra/,
+  );
   assert.ok(indiceAvisoDiario > indiceDiario);
   assert.ok(indiceGuardFinal > indiceAvisoDiario);
   assert.ok(indiceFinalizarAvaliacao > indiceGuardFinal);
