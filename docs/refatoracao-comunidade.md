@@ -435,6 +435,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 718: extrair somente `heroTopOverlayStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente suas 13 propriedades e `desktopHeroTopOverlayStyle` local com `...heroTopOverlayStyle` como primeira entrada.
 - Fase 719: extrair somente `desktopHeroTopOverlayStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando `...heroTopOverlayStyle` como primeira entrada e as quatro sobrescritas atuais, sem alterar o ternário do JSX.
 - Fase 720: extrair somente `containerStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente suas sete propriedades, os usos atuais no JSX e `desktopContainerStyle` local com o spread da base antes das sobrescritas de `width` e `padding`.
+- Fase 721: extrair somente `desktopContainerStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando `...containerStyle` como primeira entrada, as sobrescritas atuais de `width` e `padding` e os dois ternários do JSX inalterados.
 
 ## Contrato de preservação
 
