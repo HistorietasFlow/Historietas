@@ -2115,3 +2115,18 @@ export const classificationWarningsGridStyle: CSSProperties = {
   gap: "7px",
 };
 
+export const classificationWarningItemStyle: CSSProperties = {
+  minWidth: 0,
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "8px",
+  padding: "9px 10px",
+  borderRadius: "13px",
+  border: "1px solid rgba(255, 255, 255, 0.07)",
+  background: "rgba(255, 255, 255, 0.035)",
+  color: "#F5F3F7",
+  fontSize: "11px",
+  fontWeight: 750,
+  lineHeight: 1.35,
+};
+
