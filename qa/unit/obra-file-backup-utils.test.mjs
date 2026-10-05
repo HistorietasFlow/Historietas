@@ -27,7 +27,7 @@ const arquivoObraJavascript = transpilarModuloTypescript(
   [
     [
       /import \{ criarSlugBase, idObraSupabaseValido \} from "\.\.\/\.\.\/\.\.\/\.\.\/lib\/utils";/,
-      "const criarSlugBase = () => \"\"; const idObraSupabaseValido = () => false;",
+      "const criarSlugBase = (texto) => String(texto).normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\").toLowerCase().trim().replace(/\\s+/g, \"-\"); const idObraSupabaseValido = () => false;",
     ],
   ],
 );
@@ -46,6 +46,7 @@ const backupArquivosJavascript = transpilarModuloTypescript(
 const {
   carregarBackupArquivosObras,
   FILE_BACKUP_STORAGE_KEY,
+  sincronizarBackupArquivosObras,
 } = await import(criarUrlModulo(backupArquivosJavascript));
 
 function criarLocalStorage(valoresIniciais = {}) {
@@ -192,6 +193,79 @@ test("isola a leitura e a regravação do backup por usuário", () => {
         localStorage.getItem(`${FILE_BACKUP_STORAGE_KEY}:usuario-a`),
         /Arquivo A/,
       );
+      assert.match(
+        localStorage.getItem(`${FILE_BACKUP_STORAGE_KEY}:usuario-b`),
+        /Arquivo B/,
+      );
+    },
+  );
+});
+
+test("preserva entradas existentes e cria aliases por id, slug e título", () => {
+  executarComStorageNavegador(
+    {
+      [`${FILE_BACKUP_STORAGE_KEY}:usuario-a`]: JSON.stringify({
+        "obra-antiga": {
+          nome: "Arquivo antigo",
+          tipo: "text/plain",
+          tamanho: 1,
+          conteudo: "antigo",
+          categoria: "texto",
+          criadoEm: "",
+        },
+      }),
+      [`${FILE_BACKUP_STORAGE_KEY}:usuario-b`]: JSON.stringify({
+        "obra-b": {
+          nome: "Arquivo B",
+          tipo: "text/plain",
+          tamanho: 1,
+          conteudo: "B",
+          categoria: "texto",
+          criadoEm: "",
+        },
+      }),
+    },
+    (localStorage) => {
+      sincronizarBackupArquivosObras(
+        [
+          {
+            id: "obra-nova",
+            slug: "obra-nova-slug",
+            titulo: "Título Novo",
+            arquivoObra: {
+              nome: "Arquivo novo",
+              tipo: "text/plain",
+              tamanho: 2,
+              conteudo: "novo",
+              categoria: "texto",
+              criadoEm: "",
+            },
+          },
+          {
+            id: "obra-sem-arquivo",
+            slug: "obra-sem-arquivo",
+            titulo: "Obra sem arquivo",
+            arquivoObra: null,
+          },
+        ],
+        "usuario-a",
+      );
+
+      const backupUsuarioA = JSON.parse(
+        localStorage.getItem(`${FILE_BACKUP_STORAGE_KEY}:usuario-a`),
+      );
+
+      assert.deepEqual(Object.keys(backupUsuarioA), [
+        "obra-antiga",
+        "obra-nova",
+        "obra-nova-slug",
+        "titulo-novo",
+      ]);
+      assert.equal(backupUsuarioA["obra-antiga"].conteudo, "antigo");
+      assert.equal(backupUsuarioA["obra-nova"].conteudo, "novo");
+      assert.equal(backupUsuarioA["obra-nova-slug"].conteudo, "novo");
+      assert.equal(backupUsuarioA["titulo-novo"].conteudo, "novo");
+      assert.equal(backupUsuarioA["obra-sem-arquivo"], undefined);
       assert.match(
         localStorage.getItem(`${FILE_BACKUP_STORAGE_KEY}:usuario-b`),
         /Arquivo B/,
