@@ -61,12 +61,14 @@ import {
   formatarMediaAvaliacao,
   formatarTotalAvaliacoes,
   NOTAS_AVALIACAO_OBRA,
-  obterChaveAvaliacaoObra,
   obterPreenchimentoEstrela,
   obterProximaNotaAvaliacao,
-  type AvaliacaoLocalObra,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
+import {
+  obterAvaliacaoLocalDetalhada,
+  salvarAvaliacaoLocal,
+} from "./lib/obra-local-rating-storage-utils";
 import { criarMetricasBaseObra, incrementarVisualizacaoObraPublicaSupabase, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
@@ -87,7 +89,6 @@ import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterM
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
-const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
@@ -344,86 +345,6 @@ async function carregarPerfilPublicoObra(
   }
 
   return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback || "Usuário");
-}
-
-function carregarAvaliacoesLocais(userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return {};
-  }
-
-  try {
-    const avaliacoesTexto = lerStorageUsuarioObraPublica(
-      RATED_WORKS_STORAGE_KEY,
-      userIdLimpo
-    );
-    const avaliacoesJson: unknown = avaliacoesTexto
-      ? JSON.parse(avaliacoesTexto)
-      : {};
-
-    if (
-      !avaliacoesJson ||
-      typeof avaliacoesJson !== "object" ||
-      Array.isArray(avaliacoesJson)
-    ) {
-      return {};
-    }
-
-    return avaliacoesJson as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
-
-function obterAvaliacaoLocalDetalhada(
-  obra: ObraDinamica,
-  userId = ""
-): AvaliacaoLocalObra {
-  const chaveAvaliacao = obterChaveAvaliacaoObra(obra);
-  const avaliacoesLocais = carregarAvaliacoesLocais(userId);
-  const encontrada = Object.prototype.hasOwnProperty.call(
-    avaliacoesLocais,
-    chaveAvaliacao
-  );
-  const nota = Number(avaliacoesLocais[chaveAvaliacao]);
-
-  return {
-    encontrada,
-    nota:
-      Number.isFinite(nota) && nota >= 0.5 && nota <= 5
-        ? Math.round(nota * 2) / 2
-        : 0,
-  };
-}
-
-
-function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveAvaliacao = obterChaveAvaliacaoObra(obra);
-
-    if (!chaveAvaliacao) {
-      return;
-    }
-
-    const avaliacoesLocais = carregarAvaliacoesLocais(userIdLimpo);
-    avaliacoesLocais[chaveAvaliacao] =
-      nota <= 0 ? 0 : Math.round(nota * 2) / 2;
-
-    salvarStorageUsuarioObraPublica(
-      RATED_WORKS_STORAGE_KEY,
-      userIdLimpo,
-      avaliacoesLocais
-    );
-  } catch {
-    // Avaliação local é fallback e não deve travar a página.
-  }
 }
 
 async function salvarAvaliacaoRemotaObra({
