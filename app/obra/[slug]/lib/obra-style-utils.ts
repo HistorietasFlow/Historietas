@@ -277,6 +277,22 @@ export const heroStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+export const heroTopOverlayStyle: CSSProperties = {
+  position: "absolute",
+  top: "16px",
+  left: "18px",
+  right: "18px",
+  zIndex: 4,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  minWidth: 0,
+  maxWidth: "calc(100vw - 36px)",
+  marginBottom: 0,
+  pointerEvents: "auto",
+};
+
 export const heroGlowStyle: CSSProperties = {
   display: "none",
 };
