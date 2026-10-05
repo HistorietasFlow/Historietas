@@ -2148,6 +2148,13 @@ export const classificationNoWarningsStyle: CSSProperties = {
   lineHeight: 1.5,
 };
 
+export const classificationTriggerTextStyle: CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 950,
+  lineHeight: 1,
+  letterSpacing: "-0.03em",
+};
+
 export const classificationTriggerAdultStyle: CSSProperties = {
   borderColor: "rgba(248, 86, 110, 0.92)",
   background: "rgba(34, 3, 10, 0.96)",
