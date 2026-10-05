@@ -444,6 +444,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 727: extrair somente `sincronizarBackupArquivosObras` para `app/obra/[slug]/lib/obra-file-backup-utils.ts`, preservando guards, ordem de carregamento e escrita, aliases por obra e o fallback silencioso do backup.
 - Fase 728: extrair somente `LOCAL_WORKS_STORAGE_KEY` e `carregarObrasLocaisComBackup` para `app/obra/[slug]/lib/obra-local-works-utils.ts`, preservando leitura por usuário, parse sem fallback adicional, normalização, restauração por backup, filtragem e sincronização da coleção normalizada completa.
 - Fase 729: extrair somente `aplicarMetricasObraPublica` para `app/obra/[slug]/lib/obra-metrics-application-utils.ts`, preservando coleta de IDs, contrato de métricas, fallbacks locais, progresso privado e todas as normalizações.
+- Fase 730: extrair somente a paginação/consulta dos capítulos públicos da obra para `app/obra/[slug]/lib/obra-supabase-chapters-utils.ts`, preservando tabela, colunas, filtros, ordenação, ranges e propagação de erros.
 
 ## Contrato de preservação
 
