@@ -423,6 +423,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 706: extrair somente `classificationPanelDescriptionStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `margin`, `color`, `fontSize`, `fontWeight`, `lineHeight` e o uso atual no JSX.
 - Fase 707: extrair somente `classificationWarningsStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `display`, `gap`, `paddingTop`, `borderTop` e o uso atual no JSX.
 - Fase 708: extrair somente `classificationWarningsTitleStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `color`, `fontSize`, `fontWeight`, `letterSpacing`, `textTransform` e o uso atual no JSX.
+- Fase 709: extrair somente `classificationWarningsGridStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `display`, `gridTemplateColumns`, `gap` e o uso atual no JSX.
 
 ## Contrato de preservação
 
