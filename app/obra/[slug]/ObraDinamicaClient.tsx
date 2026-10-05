@@ -74,7 +74,7 @@ import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRela
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
+import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
@@ -200,17 +200,10 @@ async function carregarObraSupabasePorSlug(
       } satisfies ResultadoCarregamentoObraPublica;
     }
 
-    const obraJaExiste = obrasLocais.some(
-      (obraLocalAtual) => obraLocalAtual.id === obraNormalizada.id
+    const obrasAtualizadas = substituirOuInserirObraLocal(
+      obrasLocais,
+      obraNormalizada,
     );
-
-    const obrasAtualizadas = obraJaExiste
-      ? obrasLocais.map((obraLocalAtual) =>
-          obraLocalAtual.id === obraNormalizada.id
-            ? obraNormalizada
-            : obraLocalAtual
-        )
-      : [obraNormalizada, ...obrasLocais];
 
     if (!execucaoAtual()) {
       return {
