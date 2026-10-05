@@ -1,4 +1,5 @@
 import { normalizarTexto } from "../../../../lib/utils";
+import type { HistorietasLanguage } from "../../../../lib/i18n";
 
 export function formatarGeneroObraPublica(genero: string) {
   const generoLimpo = genero.trim();
@@ -327,6 +328,253 @@ export const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica>
   "Vingança": { en: "Revenge", es: "Venganza" },
   "Sobrevivência": { en: "Survival", es: "Supervivencia" },
 };
+
+export function traduzirTextoObraDinamica(
+  texto: string,
+  idioma: HistorietasLanguage,
+) {
+  if (idioma === "pt-BR" || !texto) {
+    return texto;
+  }
+
+  const partes = /^(\s*)([\s\S]*?)(\s*)$/.exec(texto);
+  const inicio = partes?.[1] || "";
+  const conteudo = partes?.[2] || texto;
+  const fim = partes?.[3] || "";
+  const traducaoExata = OBRA_DINAMICA_UI_TRANSLATIONS[conteudo];
+
+  if (traducaoExata) {
+    return `${inicio}${idioma === "en" ? traducaoExata.en : traducaoExata.es}${fim}`;
+  }
+
+  let correspondencia = /^Notificações:\s*(\d+)\s*não lidas$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Notifications: ${correspondencia[1]} unread${fim}`
+      : `${inicio}Notificaciones: ${correspondencia[1]} sin leer${fim}`;
+  }
+
+  correspondencia = /^Por\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}By ${correspondencia[1]}${fim}`
+      : `${inicio}Por ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Comentários de\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Comments on ${correspondencia[1]}${fim}`
+      : `${inicio}Comentarios de ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Abrir perfil do autor\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open author profile for ${correspondencia[1]}${fim}`
+      : `${inicio}Abrir perfil del autor ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Abrir perfil de\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open ${correspondencia[1]}'s profile${fim}`
+      : `${inicio}Abrir perfil de ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Ações da obra\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Actions for ${correspondencia[1]}${fim}`
+      : `${inicio}Acciones de la obra ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^(\d+)\s+comentários$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} comments${fim}`
+      : `${inicio}${correspondencia[1]} comentarios${fim}`;
+  }
+
+  correspondencia = /^(\d+)\s+avaliações$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} ratings${fim}`
+      : `${inicio}${correspondencia[1]} valoraciones${fim}`;
+  }
+
+  correspondencia = /^(\d+)\s+(disponíveis|em breve)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const quantidade = correspondencia[1];
+    const disponivel = correspondencia[2].toLowerCase() === "disponíveis";
+
+    return idioma === "en"
+      ? `${inicio}${quantidade} ${disponivel ? "available" : "coming soon"}${fim}`
+      : `${inicio}${quantidade} ${disponivel ? "disponibles" : "próximamente"}${fim}`;
+  }
+
+  correspondencia = /^Ver\s+(\d+)\s+(resposta|respostas)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const quantidade = Number(correspondencia[1]);
+
+    return idioma === "en"
+      ? `${inicio}View ${quantidade} ${quantidade === 1 ? "reply" : "replies"}${fim}`
+      : `${inicio}Ver ${quantidade} ${quantidade === 1 ? "respuesta" : "respuestas"}${fim}`;
+  }
+
+  correspondencia = /^Adicionar\s+(.+)\s+ao comentário$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Add ${correspondencia[1]} to comment${fim}`
+      : `${inicio}Añadir ${correspondencia[1]} al comentario${fim}`;
+  }
+
+  correspondencia = /^Avaliar com\s+([\d,.]+)\s+estrela(s)?$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const plural = Boolean(correspondencia[2]);
+
+    return idioma === "en"
+      ? `${inicio}Rate ${correspondencia[1]} ${plural ? "stars" : "star"}${fim}`
+      : `${inicio}Valorar con ${correspondencia[1]} ${plural ? "estrellas" : "estrella"}${fim}`;
+  }
+
+  correspondencia = /^Média\s+(.+)\s+de\s+5$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Average ${correspondencia[1]} out of 5${fim}`
+      : `${inicio}Media de ${correspondencia[1]} sobre 5${fim}`;
+  }
+
+  correspondencia = /^há\s+(\d+)\s+(segundo|segundos|minuto|minutos|hora|horas|dia|dias)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const quantidade = Number(correspondencia[1]);
+    const unidade = correspondencia[2].toLowerCase();
+    const unidadesEn: Record<string, string> = {
+      segundo: "second",
+      segundos: "seconds",
+      minuto: "minute",
+      minutos: "minutes",
+      hora: "hour",
+      horas: "hours",
+      dia: "day",
+      dias: "days",
+    };
+    const unidadesEs: Record<string, string> = {
+      segundo: "segundo",
+      segundos: "segundos",
+      minuto: "minuto",
+      minutos: "minutos",
+      hora: "hora",
+      horas: "horas",
+      dia: "día",
+      dias: "días",
+    };
+    const unidadeTraduzida =
+      idioma === "en" ? unidadesEn[unidade] : unidadesEs[unidade];
+
+    return idioma === "en"
+      ? `${inicio}${quantidade} ${unidadeTraduzida} ago${fim}`
+      : `${inicio}hace ${quantidade} ${unidadeTraduzida}${fim}`;
+  }
+
+  correspondencia = /^Abrir arquivo\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open file ${correspondencia[1]}${fim}`
+      : `${inicio}Abrir archivo ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Prévia do arquivo\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Preview of file ${correspondencia[1]}${fim}`
+      : `${inicio}Vista previa del archivo ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Abrir\s+(.+)\.\s+Total:\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open ${correspondencia[1]}. Total: ${correspondencia[2]}${fim}`
+      : `${inicio}Abrir ${correspondencia[1]}. Total: ${correspondencia[2]}${fim}`;
+  }
+
+  correspondencia = /^Abrir\s+(.+)\s+desta obra na Comunidade$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open this work's ${correspondencia[1]} in Community${fim}`
+      : `${inicio}Abrir ${correspondencia[1]} de esta obra en la Comunidad${fim}`;
+  }
+
+  correspondencia = /^(Remover curtida|Curtir)\.\s+(.+)\s+curtidas$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const remover = correspondencia[1].toLowerCase().startsWith("remover");
+
+    return idioma === "en"
+      ? `${inicio}${remover ? "Unlike" : "Like"}. ${correspondencia[2]} likes${fim}`
+      : `${inicio}${remover ? "Quitar Me gusta" : "Me gusta"}. ${correspondencia[2]} Me gusta${fim}`;
+  }
+
+  correspondencia = /^Adicionou\s+(.+)\s+à lista\.$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Added ${correspondencia[1]} to the list.${fim}`
+      : `${inicio}Añadió ${correspondencia[1]} a la lista.${fim}`;
+  }
+
+  correspondencia = /^Concluiu\s+(.+)\.$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Completed ${correspondencia[1]}.${fim}`
+      : `${inicio}Completó ${correspondencia[1]}.${fim}`;
+  }
+
+  correspondencia = /^Avaliou\s+(.+)\s+com\s+([\d,.]+)\s+estrelas\.$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Rated ${correspondencia[1]} ${correspondencia[2]} stars.${fim}`
+      : `${inicio}Valoró ${correspondencia[1]} con ${correspondencia[2]} estrellas.${fim}`;
+  }
+
+  correspondencia = /^([\d.,]+)\s+mil$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1].replace(",", ".")}K${fim}`
+      : `${inicio}${correspondencia[1]} mil${fim}`;
+  }
+
+  correspondencia = /^Abrir\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open ${correspondencia[1]}${fim}`
+      : `${inicio}Abrir ${correspondencia[1]}${fim}`;
+  }
+
+  return texto;
+}
 
 export type EstadoTraducaoObraDinamica = {
   original: string;
