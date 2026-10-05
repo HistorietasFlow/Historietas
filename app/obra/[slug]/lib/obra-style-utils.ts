@@ -262,6 +262,16 @@ export const chapterMetaStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const containerStyle: CSSProperties = {
+  position: "relative",
+  width: "min(860px, calc(100% - 24px))",
+  maxWidth: "100%",
+  margin: "0 auto",
+  padding: "0 0 calc(52px + env(safe-area-inset-bottom))",
+  boxSizing: "border-box",
+  minWidth: 0,
+};
+
 export const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
