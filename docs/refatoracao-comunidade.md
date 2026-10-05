@@ -430,6 +430,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 713: extrair somente `desktopHeaderRightStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `display`, `alignItems`, `justifyContent`, `gap`, `flex`, `minWidth` e o uso atual no JSX.
 - Fase 714: extrair somente `classificationTriggerAdultStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `borderColor`, `background`, `color`, `boxShadow` e a composição condicional depois de `classificationTriggerStyle` somente para classificação 18, com fallback `{}`.
 - Fase 715: extrair somente `classificationTriggerTextStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando literalmente `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, o uso direto no JSX e o spread local em `classificationTriggerTextLivreStyle`.
+- Fase 716: extrair somente `classificationTriggerTextLivreStyle` para `app/obra/[slug]/lib/obra-style-utils.ts`, preservando `...classificationTriggerTextStyle` primeiro, `fontSize: "19px"`, `letterSpacing: 0` e o ternário atual no JSX.
 
 ## Contrato de preservação
 
