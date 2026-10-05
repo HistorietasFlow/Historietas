@@ -10,6 +10,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const persistenciaInteracoesObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/lib/obra-supabase-interaction-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function criarPromessaControlada() {
   let resolver;
@@ -28,6 +35,16 @@ function obterBloco(inicioTexto, fimTexto) {
   assert.ok(fim > inicio);
 
   return paginaObra.slice(inicio, fim);
+}
+
+function obterBlocoPersistencia(inicioTexto, fimTexto) {
+  const inicio = persistenciaInteracoesObra.indexOf(inicioTexto);
+  const fim = persistenciaInteracoesObra.indexOf(fimTexto, inicio);
+
+  assert.ok(inicio >= 0);
+  assert.ok(fim > inicio);
+
+  return persistenciaInteracoesObra.slice(inicio, fim);
 }
 
 test("resultado social da conta A nao e aplicado depois da troca para B", async () => {
@@ -151,13 +168,13 @@ test("comentario revalida identidade depois dos awaits e antes de rollback", () 
 });
 
 test("ativacao social nao apaga registro antes de inserir", () => {
-  const registro = obterBloco(
-    "async function salvarRegistroObraPublicaSupabase(",
-    "async function salvarCurtidaObraPublicaSupabase(",
+  const registro = obterBlocoPersistencia(
+    "export async function salvarRegistroObraPublicaSupabase(",
+    "export async function salvarCurtidaObraPublicaSupabase(",
   );
-  const curtida = obterBloco(
-    "async function salvarCurtidaObraPublicaSupabase(",
-    "function carregarAvaliacoesLocais(",
+  const curtida = obterBlocoPersistencia(
+    "export async function salvarCurtidaObraPublicaSupabase(",
+    "throw ultimoErro || new Error",
   );
   const seguir = obterBloco(
     "async function alternarSeguirObra()",
