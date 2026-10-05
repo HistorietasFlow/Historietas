@@ -50,6 +50,7 @@ import {
 import { carregarObrasLocaisComBackup } from "./lib/obra-local-works-utils";
 import { aplicarMetricasObraPublica } from "./lib/obra-metrics-application-utils";
 import { carregarCapitulosPublicadosObraSupabase } from "./lib/obra-supabase-chapters-utils";
+import { consultarObraPublicaPorSlug } from "./lib/obra-supabase-work-utils";
 import {
   avaliacaoObraVazia,
   calcularProximaAvaliacao,
@@ -126,14 +127,8 @@ async function carregarObraSupabasePorSlug(
   }
 
   try {
-    const { data: obrasBanco, error: erroObra } = await supabase
-      .from("obras")
-      .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em"
-      )
-      .eq("slug", slugLimpo)
-      .eq("publicado", true)
-      .limit(1);
+    const { data: obrasBanco, error: erroObra } =
+      await consultarObraPublicaPorSlug(slugLimpo);
 
     if (!execucaoAtual()) {
       return {
