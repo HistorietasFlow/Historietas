@@ -2130,3 +2130,13 @@ export const classificationWarningItemStyle: CSSProperties = {
   lineHeight: 1.35,
 };
 
+export const classificationWarningDotStyle: CSSProperties = {
+  width: "6px",
+  height: "6px",
+  marginTop: "4px",
+  borderRadius: "50%",
+  background: "#FFFFFF",
+  boxShadow: "0 0 8px rgba(244, 63, 94, 0.55)",
+  flex: "0 0 auto",
+};
+
