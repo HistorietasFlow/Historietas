@@ -2148,6 +2148,14 @@ export const classificationNoWarningsStyle: CSSProperties = {
   lineHeight: 1.5,
 };
 
+export const classificationTriggerAdultStyle: CSSProperties = {
+  borderColor: "rgba(248, 86, 110, 0.92)",
+  background: "rgba(34, 3, 10, 0.96)",
+  color: "#FFF5F6",
+  boxShadow:
+    "0 0 0 1px rgba(120, 15, 32, 0.62), 0 0 16px rgba(244, 63, 94, 0.44)",
+};
+
 export const desktopHeaderRightStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
