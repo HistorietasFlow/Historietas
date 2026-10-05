@@ -448,6 +448,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 731: extrair somente a consulta inicial da obra pública por slug para `app/obra/[slug]/lib/obra-supabase-work-utils.ts`, preservando tabela, colunas, filtros, limite e retorno bruto de dados e erro.
 - Fase 732: extrair somente a transformação que remove do cache local a obra confirmada como ausente remotamente para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando aliases por slug explícito e título, ordem e retorno `nao_encontrada` no carregador.
 - Fase 733: extrair somente a transformação que substitui ou insere a obra normalizada na coleção local para `app/obra/[slug]/lib/obra-data-utils.ts`, preservando igualdade estrita de IDs, ordem, referências não correspondentes e inserção no início.
+- Fase 734: extrair somente a consulta de perfis públicos com fallback progressivo de colunas para `app/obra/[slug]/lib/obra-public-profile-query.ts`, preservando tabela, seleções, filtro, limite e retorno bruto das linhas válidas.
 
 ## Contrato de preservação
 

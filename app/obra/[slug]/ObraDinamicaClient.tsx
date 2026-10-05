@@ -51,6 +51,7 @@ import { carregarObrasLocaisComBackup } from "./lib/obra-local-works-utils";
 import { aplicarMetricasObraPublica } from "./lib/obra-metrics-application-utils";
 import { carregarCapitulosPublicadosObraSupabase } from "./lib/obra-supabase-chapters-utils";
 import { consultarObraPublicaPorSlug } from "./lib/obra-supabase-work-utils";
+import { consultarPerfisPublicosObraPorCampo } from "./lib/obra-public-profile-query";
 import {
   avaliacaoObraVazia,
   calcularProximaAvaliacao,
@@ -248,74 +249,44 @@ async function carregarPerfisPublicosObra(userIds: string[]) {
     return perfis;
   }
 
-  const selecoesPerfis = [
-    "id,user_id,nome,avatar_url,bio",
-    "id,user_id,nome,avatar_url",
-    "id,user_id,nome",
-  ];
+  const perfisPorUsuario = await consultarPerfisPublicosObraPorCampo(
+    ids,
+    "user_id",
+  );
 
-  for (const campos of selecoesPerfis) {
-    try {
-      const { data, error } = await supabase
-        .from("profiles_publicos")
-        .select(campos)
-        .in("user_id", ids)
-        .limit(1000);
+  perfisPorUsuario.forEach((profile) => {
+    const userId =
+      obterTextoPerfilObra(profile, "user_id") ||
+      obterTextoPerfilObra(profile, "id");
 
-      if (error || !Array.isArray(data)) {
-        continue;
-      }
-
-      (data as unknown as Record<string, unknown>[]).forEach((profile) => {
-        const userId =
-          obterTextoPerfilObra(profile, "user_id") ||
-          obterTextoPerfilObra(profile, "id");
-
-        if (userId) {
-          perfis.set(
-            userId,
-            normalizarPerfilPublicoObra(profile, userId, "Usuário")
-          );
-        }
-      });
-      break;
-    } catch {
-      // Tenta uma seleção menor abaixo.
+    if (userId) {
+      perfis.set(
+        userId,
+        normalizarPerfilPublicoObra(profile, userId, "Usuário")
+      );
     }
-  }
+  });
 
   const idsFaltantes = ids.filter((userId) => !perfis.has(userId));
 
   if (idsFaltantes.length > 0) {
-    for (const campos of selecoesPerfis) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles_publicos")
-          .select(campos)
-          .in("id", idsFaltantes)
-          .limit(1000);
+    const perfisPorId = await consultarPerfisPublicosObraPorCampo(
+      idsFaltantes,
+      "id",
+    );
 
-        if (error || !Array.isArray(data)) {
-          continue;
-        }
+    perfisPorId.forEach((profile) => {
+      const userId =
+        obterTextoPerfilObra(profile, "user_id") ||
+        obterTextoPerfilObra(profile, "id");
 
-        (data as unknown as Record<string, unknown>[]).forEach((profile) => {
-          const userId =
-            obterTextoPerfilObra(profile, "user_id") ||
-            obterTextoPerfilObra(profile, "id");
-
-          if (userId) {
-            perfis.set(
-              userId,
-              normalizarPerfilPublicoObra(profile, userId, "Usuário")
-            );
-          }
-        });
-        break;
-      } catch {
-        // Tenta uma seleção menor abaixo.
+      if (userId) {
+        perfis.set(
+          userId,
+          normalizarPerfilPublicoObra(profile, userId, "Usuário")
+        );
       }
-    }
+    });
   }
 
   return perfis;
