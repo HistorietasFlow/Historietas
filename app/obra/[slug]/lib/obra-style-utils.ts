@@ -2109,3 +2109,9 @@ export const classificationWarningsTitleStyle: CSSProperties = {
   textTransform: "uppercase",
 };
 
+export const classificationWarningsGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
+  gap: "7px",
+};
+
