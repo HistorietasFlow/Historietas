@@ -2155,6 +2155,12 @@ export const classificationTriggerTextStyle: CSSProperties = {
   letterSpacing: "-0.03em",
 };
 
+export const classificationTriggerTextLivreStyle: CSSProperties = {
+  ...classificationTriggerTextStyle,
+  fontSize: "19px",
+  letterSpacing: 0,
+};
+
 export const classificationTriggerAdultStyle: CSSProperties = {
   borderColor: "rgba(248, 86, 110, 0.92)",
   background: "rgba(34, 3, 10, 0.96)",
