@@ -74,7 +74,7 @@ import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRela
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import { converterObraLocalParaDinamica, normalizarObraSupabase, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
+import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import type { DiarioAtividadeObraTipo, DiarioAtividadeObraVisibilidade } from "./lib/obra-activity-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
@@ -151,19 +151,8 @@ async function carregarObraSupabasePorSlug(
     const obraBanco = (obrasBanco || [])[0] || null;
 
     if (!obraBanco) {
-      const obrasSemCacheObsoleto = obrasLocais.filter((obraLocalAtual) => {
-        const slugsLocais = new Set(
-          [
-            obraLocalAtual.slug?.trim() || "",
-            criarSlugBase(obraLocalAtual.titulo),
-          ].filter(Boolean),
-        );
-
-        return !slugsLocais.has(slugLimpo);
-      });
-
       return {
-        obras: obrasSemCacheObsoleto,
+        obras: removerObraLocalAusentePorSlug(obrasLocais, slugLimpo),
         status: "nao_encontrada",
       } satisfies ResultadoCarregamentoObraPublica;
     }

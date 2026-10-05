@@ -103,6 +103,22 @@ export type ObraDinamica = {
   progressoLeitura: number;
 };
 
+export function removerObraLocalAusentePorSlug(
+  obrasLocais: ObraLocal[],
+  slugLimpo: string,
+): ObraLocal[] {
+  return obrasLocais.filter((obraLocalAtual) => {
+    const slugsLocais = new Set(
+      [
+        obraLocalAtual.slug?.trim() || "",
+        criarSlugBase(obraLocalAtual.titulo),
+      ].filter(Boolean),
+    );
+
+    return !slugsLocais.has(slugLimpo);
+  });
+}
+
 export function restaurarArquivoObraComBackup(
   obraLocal: ObraLocal,
   backup: ArquivosObrasBackup

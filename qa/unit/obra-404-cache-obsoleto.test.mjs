@@ -1,6 +1,26 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import typescript from "typescript";
+
+function transpilarModuloTypescript(caminho, substituicoes = []) {
+  let texto = readFileSync(new URL(caminho, import.meta.url), "utf8");
+
+  substituicoes.forEach(([padrao, substituicao]) => {
+    texto = texto.replace(padrao, substituicao);
+  });
+
+  return typescript.transpileModule(texto, {
+    compilerOptions: {
+      module: typescript.ModuleKind.ESNext,
+      target: typescript.ScriptTarget.ES2022,
+    },
+  }).outputText;
+}
+
+function criarUrlModulo(codigo) {
+  return `data:text/javascript;base64,${Buffer.from(codigo).toString("base64")}`;
+}
 
 const paginaServidor = readFileSync(
   new URL("../../app/obra/[slug]/page.tsx", import.meta.url),
@@ -9,6 +29,45 @@ const paginaServidor = readFileSync(
 const paginaCliente = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
+);
+
+const adultoUrl = criarUrlModulo(
+  "export const normalizarAvisosConteudo18 = () => [];",
+);
+const utilsUrl = criarUrlModulo([
+  "export const criarSlugBase = (texto) => String(texto)",
+  '.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")',
+  '.toLowerCase().trim().replace(/\\s+/g, "-");',
+].join(" "));
+const metricasUrl = criarUrlModulo([
+  "export const normalizarContadorObraPublica = () => 0;",
+  "export const totalComentariosObraPublica = () => 0;",
+  "export const totalCurtidasObraPublica = () => 0;",
+  "export const totalVisualizacoesObraPublica = () => 0;",
+].join("\n"));
+const leituraUrl = criarUrlModulo([
+  "export const calcularProgressoLeitura = () => 0;",
+  "export const normalizarCapituloLocal = () => ({});",
+  "export const obraLocalEstaDisponivelParaLeitura = () => false;",
+].join("\n"));
+const arquivoUrl = criarUrlModulo([
+  "export const normalizarArquivoObra = (arquivo) => arquivo || null;",
+  "export const normalizarCategoriaArquivoSupabase = () => \"\";",
+  "export const obterChavesBackupObra = () => [];",
+].join("\n"));
+const dadosObraJavascript = transpilarModuloTypescript(
+  "../../app/obra/[slug]/lib/obra-data-utils.ts",
+)
+  .replace(
+    'from "../../../../lib/historietasAdultContent";',
+    `from "${adultoUrl}";`,
+  )
+  .replace('from "../../../../lib/utils";', `from "${utilsUrl}";`)
+  .replace('from "./obra-metric-utils";', `from "${metricasUrl}";`)
+  .replace('from "./obra-reading-utils";', `from "${leituraUrl}";`)
+  .replace('from "./obra-file-utils";', `from "${arquivoUrl}";`);
+const { removerObraLocalAusentePorSlug } = await import(
+  criarUrlModulo(dadosObraJavascript),
 );
 
 function obterBloco(texto, inicioTexto, fimTexto) {
@@ -48,12 +107,58 @@ test("ausencia confirmada no Supabase descarta somente cache da obra atual", () 
     "let capitulosBanco",
   );
 
-  assert.match(bloco, /const obrasSemCacheObsoleto = obrasLocais\.filter/);
-  assert.match(bloco, /obraLocalAtual\.slug\?\.trim\(\)/);
-  assert.match(bloco, /criarSlugBase\(obraLocalAtual\.titulo\)/);
-  assert.match(bloco, /return !slugsLocais\.has\(slugLimpo\);/);
+  assert.match(
+    bloco,
+    /obras: removerObraLocalAusentePorSlug\(obrasLocais, slugLimpo\)/,
+  );
   assert.match(bloco, /status: "nao_encontrada"/);
   assert.doesNotMatch(bloco, /aplicarMetricasSeAtual/);
+});
+
+test("remove somente a obra local ausente, por slug explicito ou derivado", () => {
+  const obrasLocais = [
+    {
+      id: "obra-slug-explicito",
+      slug: "  obra-explicita  ",
+      titulo: "Titulo diferente",
+    },
+    {
+      id: "obra-slug-derivado",
+      slug: "",
+      titulo: "Obra Derivada",
+    },
+    {
+      id: "obra-preservada",
+      slug: "obra-preservada",
+      titulo: "Obra Preservada",
+    },
+  ];
+
+  const semSlugExplicito = removerObraLocalAusentePorSlug(
+    obrasLocais,
+    "obra-explicita",
+  );
+  assert.deepEqual(
+    semSlugExplicito.map((obra) => obra.id),
+    ["obra-slug-derivado", "obra-preservada"],
+  );
+  assert.equal(semSlugExplicito[0], obrasLocais[1]);
+  assert.equal(semSlugExplicito[1], obrasLocais[2]);
+
+  const semSlugDerivado = removerObraLocalAusentePorSlug(
+    obrasLocais,
+    "obra-derivada",
+  );
+  assert.deepEqual(
+    semSlugDerivado.map((obra) => obra.id),
+    ["obra-slug-explicito", "obra-preservada"],
+  );
+
+  const semCorrespondencia = removerObraLocalAusentePorSlug(
+    obrasLocais,
+    "obra-inexistente",
+  );
+  assert.deepEqual(semCorrespondencia, obrasLocais);
 });
 
 test("erro do Supabase preserva fallback local e e tratado como erro", () => {
