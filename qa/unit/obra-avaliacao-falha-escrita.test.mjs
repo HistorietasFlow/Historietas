@@ -6,6 +6,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const persistenciaAvaliacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/lib/obra-supabase-rating-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -18,10 +25,7 @@ function obterBloco(inicioTexto, fimTexto) {
 }
 
 test("troca de nota usa upsert sem apagar previamente a avaliacao existente", () => {
-  const bloco = obterBloco(
-    "async function salvarAvaliacaoRemotaObra(",
-    "async function removerAtividadeDiarioObra(",
-  );
+  const bloco = persistenciaAvaliacao;
   const indiceRemocaoCondicional = bloco.indexOf("if (nota <= 0)");
   const indiceDelete = bloco.indexOf(".delete()", indiceRemocaoCondicional);
   const indiceRetornoRemocao = bloco.indexOf("return;", indiceDelete);
