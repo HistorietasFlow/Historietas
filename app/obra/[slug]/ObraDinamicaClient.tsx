@@ -56,6 +56,10 @@ import { carregarCapitulosPublicadosObraSupabase } from "./lib/obra-supabase-cha
 import { consultarObraPublicaPorSlug } from "./lib/obra-supabase-work-utils";
 import { consultarPerfisPublicosObraPorCampo } from "./lib/obra-public-profile-query";
 import {
+  carregarCurtidasComentariosObraSupabase,
+  WORK_COMMENT_LIKES_TABLE,
+} from "./lib/obra-supabase-comment-likes-query";
+import {
   salvarCurtidaObraPublicaSupabase,
   salvarRegistroObraPublicaSupabase,
 } from "./lib/obra-supabase-interaction-persistence";
@@ -100,7 +104,6 @@ const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
-const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const WORK_COMMENTS_PAGE_SIZE = 20;
 async function carregarObraSupabasePorSlug(
   slugBusca: string,
@@ -376,21 +379,9 @@ async function normalizarComentariosObraSupabase(
 
   if (comentariosIds.length > 0) {
     try {
-      const curtidas = await carregarTodasPaginasPorLotesSupabase<
-        { comentario_id: string; usuario_id: string },
-        string
-      >({
-        nomeColecao: "curtidas dos comentários da obra",
-        itens: comentariosIds,
-        buscarPaginaLote: async (comentarioIdsLote, inicio, fim) =>
-          supabase
-            .from(WORK_COMMENT_LIKES_TABLE)
-            .select("comentario_id,usuario_id")
-            .in("comentario_id", comentarioIdsLote)
-            .order("comentario_id", { ascending: true })
-            .order("usuario_id", { ascending: true })
-            .range(inicio, fim),
-      });
+      const curtidas = await carregarCurtidasComentariosObraSupabase(
+        comentariosIds
+      );
 
       curtidas.forEach(
         (curtida) => {
