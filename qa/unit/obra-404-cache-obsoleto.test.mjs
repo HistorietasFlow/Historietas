@@ -66,9 +66,10 @@ const dadosObraJavascript = transpilarModuloTypescript(
   .replace('from "./obra-metric-utils";', `from "${metricasUrl}";`)
   .replace('from "./obra-reading-utils";', `from "${leituraUrl}";`)
   .replace('from "./obra-file-utils";', `from "${arquivoUrl}";`);
-const { removerObraLocalAusentePorSlug } = await import(
-  criarUrlModulo(dadosObraJavascript),
-);
+const {
+  removerObraLocalAusentePorSlug,
+  substituirOuInserirObraLocal,
+} = await import(criarUrlModulo(dadosObraJavascript));
 
 function obterBloco(texto, inicioTexto, fimTexto) {
   const inicio = texto.indexOf(inicioTexto);
@@ -159,6 +160,39 @@ test("remove somente a obra local ausente, por slug explicito ou derivado", () =
     "obra-inexistente",
   );
   assert.deepEqual(semCorrespondencia, obrasLocais);
+});
+
+test("substitui no mesmo indice ou insere a obra normalizada no inicio", () => {
+  const obraPrimeira = { id: "obra-primeira", titulo: "Primeira" };
+  const obraSubstituida = { id: "obra-substituida", titulo: "Antiga" };
+  const obraUltima = { id: "obra-ultima", titulo: "Ultima" };
+  const obrasLocais = [obraPrimeira, obraSubstituida, obraUltima];
+  const obraNormalizada = { id: "obra-substituida", titulo: "Nova" };
+
+  const obrasSubstituidas = substituirOuInserirObraLocal(
+    obrasLocais,
+    obraNormalizada,
+  );
+  assert.deepEqual(obrasSubstituidas, [
+    obraPrimeira,
+    obraNormalizada,
+    obraUltima,
+  ]);
+  assert.equal(obrasSubstituidas[0], obraPrimeira);
+  assert.equal(obrasSubstituidas[1], obraNormalizada);
+  assert.equal(obrasSubstituidas[2], obraUltima);
+
+  const obraNova = { id: "obra-nova", titulo: "Nova" };
+  const obrasInseridas = substituirOuInserirObraLocal(obrasLocais, obraNova);
+  assert.deepEqual(obrasInseridas, [
+    obraNova,
+    obraPrimeira,
+    obraSubstituida,
+    obraUltima,
+  ]);
+  assert.equal(obrasInseridas[1], obraPrimeira);
+  assert.equal(obrasInseridas[2], obraSubstituida);
+  assert.equal(obrasInseridas[3], obraUltima);
 });
 
 test("erro do Supabase preserva fallback local e e tratado como erro", () => {

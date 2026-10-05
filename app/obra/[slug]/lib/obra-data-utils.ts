@@ -119,6 +119,23 @@ export function removerObraLocalAusentePorSlug(
   });
 }
 
+export function substituirOuInserirObraLocal(
+  obrasLocais: ObraLocal[],
+  obraNormalizada: ObraLocal,
+): ObraLocal[] {
+  const obraJaExiste = obrasLocais.some(
+    (obraLocalAtual) => obraLocalAtual.id === obraNormalizada.id
+  );
+
+  return obraJaExiste
+    ? obrasLocais.map((obraLocalAtual) =>
+        obraLocalAtual.id === obraNormalizada.id
+          ? obraNormalizada
+          : obraLocalAtual
+      )
+    : [obraNormalizada, ...obrasLocais];
+}
+
 export function restaurarArquivoObraComBackup(
   obraLocal: ObraLocal,
   backup: ArquivosObrasBackup
