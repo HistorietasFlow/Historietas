@@ -2148,6 +2148,31 @@ export const classificationNoWarningsStyle: CSSProperties = {
   lineHeight: 1.5,
 };
 
+export const classificationTriggerStyle: CSSProperties = {
+  width: "34px",
+  minWidth: "34px",
+  height: "34px",
+  padding: 0,
+  borderRadius: "12px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transform: "translate(4px, -5px)",
+  border: "1px solid var(--historietas-obra-secondary-72, rgba(124, 58, 237, 0.72))",
+  background: "var(--historietas-obra-bg-deep-96, rgba(4, 0, 10, 0.96))",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontWeight: 950,
+  lineHeight: 1,
+  flex: "0 0 auto",
+  boxSizing: "border-box",
+  cursor: "pointer",
+  overflow: "hidden",
+  boxShadow:
+    "0 0 0 1px var(--historietas-obra-purple-48, rgba(59, 7, 100, 0.48)), 0 0 14px var(--historietas-obra-secondary-22, rgba(124, 58, 237, 0.22))",
+  ...safeTextStyle,
+};
+
 export const classificationTriggerTextStyle: CSSProperties = {
   fontSize: "11px",
   fontWeight: 950,
