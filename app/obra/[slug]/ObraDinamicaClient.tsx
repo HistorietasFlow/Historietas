@@ -1302,28 +1302,6 @@ export default function ObraDinamicaPage() {
     usuarioIdLogado,
   ]);
 
-  async function obterUsuarioLogadoParaAcao(mensagem: string) {
-    try {
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id || "";
-
-      if (!userId) {
-        setMensagemAcao(mensagem);
-        router.push(await criarLoginHrefObraPublica());
-        return "";
-      }
-
-      return userId;
-    } catch {
-      setMensagemAcao(mensagem);
-      router.push(await criarLoginHrefObraPublica());
-      return "";
-    }
-  }
-
-  // Mantido até a fase dedicada de remoção do helper legado.
-  void obterUsuarioLogadoParaAcao;
-
   async function obterIdentidadeLogadaParaAcao(mensagem: string) {
     const identidadeEsperada = identidadeAutenticadaObraRef.current;
     const execucaoAtual = () =>
