@@ -51,7 +51,7 @@ import { carregarObrasLocaisComBackup } from "./lib/obra-local-works-utils";
 import { aplicarMetricasObraPublica } from "./lib/obra-metrics-application-utils";
 import { carregarCapitulosPublicadosObraSupabase } from "./lib/obra-supabase-chapters-utils";
 import { consultarObraPublicaPorSlug } from "./lib/obra-supabase-work-utils";
-import { carregarPerfisPublicosObra } from "./lib/obra-public-profile-loader";
+import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
 import { carregarPaginaComentariosObraSupabase } from "./lib/obra-supabase-comments-page-loader";
 import { normalizarComentariosObraSupabase } from "./lib/obra-supabase-comment-normalizer";
 import {
@@ -81,7 +81,7 @@ import {
   salvarAvaliacaoLocal,
 } from "./lib/obra-local-rating-storage-utils";
 import { criarMetricasBaseObra, incrementarVisualizacaoObraPublicaSupabase, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
-import { normalizarPerfilPublicoObra, obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextoPerfilObra, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
+import { obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
@@ -244,57 +244,6 @@ async function carregarObraSupabasePorSlug(
       status: "erro",
     } satisfies ResultadoCarregamentoObraPublica;
   }
-}
-
-async function carregarPerfilPublicoObra(
-  userId: string,
-  nomeFallback: string
-): Promise<PerfilPublicoObra | null> {
-  const userIdLimpo = userId.trim();
-
-  if (!idObraSupabaseValido(userIdLimpo)) {
-    return null;
-  }
-
-  const perfis = await carregarPerfisPublicosObra([userIdLimpo]);
-  const perfil = perfis.get(userIdLimpo);
-
-  if (perfil) {
-    return perfil;
-  }
-
-  try {
-    const { data } = await supabase.auth.getUser();
-    const usuario = data.user;
-
-    if (usuario?.id === userIdLimpo) {
-      const metadata =
-        usuario.user_metadata && typeof usuario.user_metadata === "object"
-          ? (usuario.user_metadata as Record<string, unknown>)
-          : {};
-      const nomeMetadata =
-        obterTextoPerfilObra(metadata, "nome") ||
-        obterTextoPerfilObra(metadata, "name") ||
-        obterTextoPerfilObra(metadata, "full_name") ||
-        usuario.email?.split("@")[0]?.trim() ||
-        nomeFallback;
-      const avatarMetadata =
-        obterTextoPerfilObra(metadata, "avatar_url") ||
-        obterTextoPerfilObra(metadata, "avatar") ||
-        obterTextoPerfilObra(metadata, "picture");
-
-      return {
-        userId: userIdLimpo,
-        nome: (nomeMetadata || "Usuário").slice(0, 80),
-        avatar: avatarMetadata,
-        bio: "",
-      };
-    }
-  } catch {
-    // O fallback de autenticação não deve bloquear o perfil.
-  }
-
-  return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback || "Usuário");
 }
 
 export default function ObraDinamicaPage() {
