@@ -102,8 +102,8 @@ import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLoca
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, commentRepliesControlsStyle, commentRepliesHideButtonStyle, commentRepliesLineStyle, commentRepliesListStyle, commentRepliesToggleStyle, commentsLoadingStyle, emptyCommentsStyle, commentsToolsStyle, commentsQuickReactionsStyle, commentsQuickReactionButtonStyle, commentsSheetFormStyle, commentsInputAvatarStyle, commentsInputBoxStyle, commentsSheetInputStyle, commentsInputIconButtonStyle, commentsSheetSendStyle, commentStatusStyle, commentThreadStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, commentsLoadMoreStyle, commentsSheetBackdropStyle, commentsSheetCompactStyle, commentsSheetExpandedStyle, commentsSheetHandleStyle, commentsSheetHandleWrapStyle, commentsSheetHeaderSpacerStyle, commentsSheetHeaderStyle, commentsSheetOverlayStyle, commentsSheetTitleStyle, commentsSheetListStyle, commentsSheetStyle, commentsSortMenuDividerStyle, commentsSortMenuItemActiveStyle, commentsSortMenuItemStyle, commentsSortMenuStyle, commentsSortMenuTriggerStyle, commentsSortMenuWrapStyle, desktopCommentsSheetStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
-import ObraCommentItem from "./components/obra-comment-item";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, commentsLoadingStyle, emptyCommentsStyle, commentsToolsStyle, commentsQuickReactionsStyle, commentsQuickReactionButtonStyle, commentsSheetFormStyle, commentsInputAvatarStyle, commentsInputBoxStyle, commentsSheetInputStyle, commentsInputIconButtonStyle, commentsSheetSendStyle, commentStatusStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, commentsLoadMoreStyle, commentsSheetBackdropStyle, commentsSheetCompactStyle, commentsSheetExpandedStyle, commentsSheetHandleStyle, commentsSheetHandleWrapStyle, commentsSheetHeaderSpacerStyle, commentsSheetHeaderStyle, commentsSheetOverlayStyle, commentsSheetTitleStyle, commentsSheetListStyle, commentsSheetStyle, commentsSortMenuDividerStyle, commentsSortMenuItemActiveStyle, commentsSortMenuItemStyle, commentsSortMenuStyle, commentsSortMenuTriggerStyle, commentsSortMenuWrapStyle, desktopCommentsSheetStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import ObraCommentThread from "./components/obra-comment-thread";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2789,6 +2789,36 @@ export default function ObraDinamicaPage() {
     [comentariosObra, ordenacaoComentarios]
   );
 
+  const mostrarRespostasComentario = (
+    comentarioId: string,
+    totalRespostas: number,
+  ) => {
+    setRespostasVisiveisPorComentario((estadoAtual) => ({
+      ...estadoAtual,
+      [comentarioId]: Math.min(5, totalRespostas),
+    }));
+  };
+
+  const mostrarMaisRespostasComentario = (
+    comentarioId: string,
+    totalRespostas: number,
+  ) => {
+    setRespostasVisiveisPorComentario((estadoAtual) => ({
+      ...estadoAtual,
+      [comentarioId]: Math.min(
+        totalRespostas,
+        (estadoAtual[comentarioId] || 0) + 5,
+      ),
+    }));
+  };
+
+  const ocultarRespostasComentario = (comentarioId: string) => {
+    setRespostasVisiveisPorComentario((estadoAtual) => ({
+      ...estadoAtual,
+      [comentarioId]: 0,
+    }));
+  };
+
   const painelComentariosObra =
     obra && comentariosAbertos && typeof document !== "undefined"
       ? createPortal(
@@ -2926,29 +2956,19 @@ export default function ObraDinamicaPage() {
                 ) : estruturaComentariosObra.comentariosRaiz.length > 0 ? (
                   <>
                     {estruturaComentariosObra.comentariosRaiz.map((comentario) => {
-                    const respostas =
-                      estruturaComentariosObra.respostasPorRaiz.get(
-                        comentario.id
-                      ) || [];
-                    const quantidadeVisivel = Math.min(
-                      respostas.length,
-                      respostasVisiveisPorComentario[comentario.id] || 0
-                    );
-                    const respostasVisiveis = respostas.slice(
-                      0,
-                      quantidadeVisivel
-                    );
-                    const respostasOcultas = Math.max(
-                      0,
-                      respostas.length - quantidadeVisivel
-                    );
-                    const respostasExpandidas = quantidadeVisivel > 0;
+                      const respostas =
+                        estruturaComentariosObra.respostasPorRaiz.get(
+                          comentario.id,
+                        ) || [];
 
-                    return (
-                      <section key={comentario.id} style={commentThreadStyle}>
-                        <ObraCommentItem
+                      return (
+                        <ObraCommentThread
+                          key={comentario.id}
                           comentario={comentario}
-                          comentarioRaizId={comentario.id}
+                          respostas={respostas}
+                          quantidadeVisivelAtual={
+                            respostasVisiveisPorComentario[comentario.id] || 0
+                          }
                           usuarioIdLogado={usuarioIdLogado}
                           comentarioRemovendoId={comentarioRemovendoId}
                           comentarioCurtindoId={comentarioCurtindoId}
@@ -2957,94 +2977,11 @@ export default function ObraDinamicaPage() {
                           onRemover={removerComentarioObra}
                           onDenunciar={abrirDenunciaComentarioObra}
                           onCurtir={alternarCurtidaComentarioObra}
+                          onMostrarRespostas={mostrarRespostasComentario}
+                          onMostrarMaisRespostas={mostrarMaisRespostasComentario}
+                          onOcultarRespostas={ocultarRespostasComentario}
                         />
-
-                        {respostasVisiveis.length > 0 ? (
-                          <div style={commentRepliesListStyle}>
-                            {respostasVisiveis.map((resposta) => (
-                              <ObraCommentItem
-                                key={resposta.id}
-                                comentario={resposta}
-                                comentarioRaizId={comentario.id}
-                                resposta
-                                usuarioIdLogado={usuarioIdLogado}
-                                comentarioRemovendoId={comentarioRemovendoId}
-                                comentarioCurtindoId={comentarioCurtindoId}
-                                agoraComentarios={agoraComentarios}
-                                onResponder={responderComentarioObra}
-                                onRemover={removerComentarioObra}
-                                onDenunciar={abrirDenunciaComentarioObra}
-                                onCurtir={alternarCurtidaComentarioObra}
-                              />
-                            ))}
-                          </div>
-                        ) : null}
-
-                        {respostas.length > 0 && !respostasExpandidas ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRespostasVisiveisPorComentario(
-                                (estadoAtual) => ({
-                                  ...estadoAtual,
-                                  [comentario.id]: Math.min(5, respostas.length),
-                                })
-                              )
-                            }
-                            style={commentRepliesToggleStyle}
-                          >
-                            <span style={commentRepliesLineStyle} />
-                            {`Ver ${respostas.length} ${
-                              respostas.length === 1 ? "resposta" : "respostas"
-                            }`}
-                          </button>
-                        ) : null}
-
-                        {respostasExpandidas ? (
-                          <div style={commentRepliesControlsStyle}>
-                            {respostasOcultas > 0 ? (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setRespostasVisiveisPorComentario(
-                                    (estadoAtual) => ({
-                                      ...estadoAtual,
-                                      [comentario.id]: Math.min(
-                                        respostas.length,
-                                        (estadoAtual[comentario.id] || 0) + 5
-                                      ),
-                                    })
-                                  )
-                                }
-                                style={commentRepliesToggleStyle}
-                              >
-                                <span style={commentRepliesLineStyle} />
-                                {`Ver mais ${respostasOcultas} ${
-                                  respostasOcultas === 1
-                                    ? "resposta"
-                                    : "respostas"
-                                }`}
-                              </button>
-                            ) : null}
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setRespostasVisiveisPorComentario(
-                                  (estadoAtual) => ({
-                                    ...estadoAtual,
-                                    [comentario.id]: 0,
-                                  })
-                                )
-                              }
-                              style={commentRepliesHideButtonStyle}
-                            >
-                              Ocultar respostas
-                            </button>
-                          </div>
-                        ) : null}
-                      </section>
-                    );
+                      );
                     })}
                     {comentariosTemMais ? (
                       <button
