@@ -27,6 +27,13 @@ const normalizadorComentarios = readFileSync(
   ),
   "utf8",
 );
+const carregadorPaginaComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/lib/obra-supabase-comments-page-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -53,12 +60,13 @@ test("comentarios remotos so carregam quando o painel esta aberto", () => {
 });
 
 test("pagina comentarios raiz e busca apenas respostas dos topicos carregados", () => {
-  const bloco = obterBloco(
-    "async function carregarPaginaComentariosObraSupabase(",
-    "export default function ObraDinamicaPage()",
-  );
+  const bloco = carregadorPaginaComentarios;
 
-  assert.match(paginaObra, /const WORK_COMMENTS_PAGE_SIZE = 20/);
+  assert.match(
+    paginaObra,
+    /from "\.\/lib\/obra-supabase-comments-page-loader"/,
+  );
+  assert.match(bloco, /const WORK_COMMENTS_PAGE_SIZE = 20/);
   assert.match(
     bloco,
     /await consultarPaginaRaizesComentariosObraSupabase\(obraId, inicio, fim\)/,

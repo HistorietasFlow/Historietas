@@ -52,12 +52,11 @@ import { aplicarMetricasObraPublica } from "./lib/obra-metrics-application-utils
 import { carregarCapitulosPublicadosObraSupabase } from "./lib/obra-supabase-chapters-utils";
 import { consultarObraPublicaPorSlug } from "./lib/obra-supabase-work-utils";
 import { carregarPerfisPublicosObra } from "./lib/obra-public-profile-loader";
+import { carregarPaginaComentariosObraSupabase } from "./lib/obra-supabase-comments-page-loader";
 import { normalizarComentariosObraSupabase } from "./lib/obra-supabase-comment-normalizer";
 import {
   WORK_COMMENT_LIKES_TABLE,
 } from "./lib/obra-supabase-comment-likes-query";
-import { consultarPaginaRaizesComentariosObraSupabase } from "./lib/obra-supabase-root-comments-query";
-import { carregarRespostasComentariosObraSupabase } from "./lib/obra-supabase-comment-replies-query";
 import {
   salvarCurtidaObraPublicaSupabase,
   salvarRegistroObraPublicaSupabase,
@@ -88,7 +87,7 @@ import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type PaginaComentariosObra, type RespostaComentarioObra, type SupabaseComentarioObraRow } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
@@ -103,7 +102,6 @@ const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
-const WORK_COMMENTS_PAGE_SIZE = 20;
 async function carregarObraSupabasePorSlug(
   slugBusca: string,
   obrasLocais: ObraLocal[],
@@ -298,81 +296,6 @@ async function carregarPerfilPublicoObra(
 
   return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback || "Usuário");
 }
-
-async function carregarPaginaComentariosObraSupabase(
-  obraId: string,
-  offset: number,
-): Promise<PaginaComentariosObra> {
-  const inicio = Math.max(0, offset);
-  const fim = inicio + WORK_COMMENTS_PAGE_SIZE;
-  const { data: comentariosRaizData, error: erroComentariosRaiz } =
-    await consultarPaginaRaizesComentariosObraSupabase(obraId, inicio, fim);
-
-  if (erroComentariosRaiz) {
-    throw erroComentariosRaiz;
-  }
-
-  const comentariosRaizTodos = Array.isArray(comentariosRaizData)
-    ? (comentariosRaizData as SupabaseComentarioObraRow[])
-    : [];
-  const temMais = comentariosRaizTodos.length > WORK_COMMENTS_PAGE_SIZE;
-  const comentariosRaiz = comentariosRaizTodos.slice(
-    0,
-    WORK_COMMENTS_PAGE_SIZE,
-  );
-  const idsConhecidos = new Set(
-    comentariosRaiz
-      .map((comentario) => comentario.id?.trim() || "")
-      .filter(Boolean),
-  );
-
-  async function carregarDescendentes(
-    idsPais: string[],
-  ): Promise<SupabaseComentarioObraRow[]> {
-    if (idsPais.length === 0) {
-      return [];
-    }
-
-    const respostas = await carregarRespostasComentariosObraSupabase(
-      obraId,
-      idsPais,
-    );
-    const respostasNovas: SupabaseComentarioObraRow[] = [];
-    const proximosIdsPais: string[] = [];
-
-    respostas.forEach((resposta) => {
-      const respostaId = resposta.id?.trim() || "";
-
-      if (!respostaId || idsConhecidos.has(respostaId)) {
-        return;
-      }
-
-      idsConhecidos.add(respostaId);
-      respostasNovas.push(resposta);
-      proximosIdsPais.push(respostaId);
-    });
-
-    return [
-      ...respostasNovas,
-      ...(await carregarDescendentes(proximosIdsPais)),
-    ];
-  }
-
-  const comentariosDescendentes = await carregarDescendentes(
-    Array.from(idsConhecidos),
-  );
-  const comentarios = await normalizarComentariosObraSupabase([
-    ...comentariosRaiz,
-    ...comentariosDescendentes,
-  ]);
-
-  return {
-    comentarios,
-    temMais,
-    proximoOffset: inicio + comentariosRaiz.length,
-  };
-}
-
 
 export default function ObraDinamicaPage() {
   const router = useRouter();
