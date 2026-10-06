@@ -45,6 +45,26 @@ function obterBloco(inicioTexto, fimTexto) {
   return paginaObra.slice(inicio, fim);
 }
 
+function extrairCallbackUpdater(bloco, setter) {
+  const prefixo = `${setter}((`;
+  const inicio = bloco.indexOf(prefixo);
+  const fim = bloco.indexOf("\n      });", inicio);
+
+  assert.ok(inicio >= 0);
+  assert.ok(fim > inicio);
+
+  const callback = bloco
+    .slice(inicio + setter.length + 1, fim + "\n      }".length)
+    .trim();
+
+  return new Function(
+    "execucaoAtual",
+    "mesclarComentariosObraPorId",
+    "pagina",
+    `return (${callback});`,
+  );
+}
+
 test("comentarios remotos so carregam quando o painel esta aberto", () => {
   const bloco = obterBloco(
     "const versaoConsulta = comentariosConsultaVersaoRef.current + 1;",
@@ -122,7 +142,11 @@ test("painel oferece carregamento incremental sem perder protecao de versao", ()
   assert.match(bloco, /execucaoIdentidadeObraEstaAtual/);
   assert.match(
     bloco,
-    /setComentariosObra\(\(comentariosAtuais\) =>\s*mesclarComentariosObraPorId\(\s*comentariosAtuais,\s*pagina\.comentarios,\s*\)/,
+    /setComentariosObra\(\(comentariosAtuais\) => \{\s*if \(!execucaoAtual\(\)\) \{\s*return comentariosAtuais;\s*\}\s*return mesclarComentariosObraPorId\(\s*comentariosAtuais,\s*pagina\.comentarios,\s*\);\s*\}\);/,
+  );
+  assert.match(
+    bloco,
+    /setTotalComentariosObra\(\(totalAtual\) => \{\s*if \(!execucaoAtual\(\)\) \{\s*return totalAtual;\s*\}\s*return Math\.max\(totalAtual, pagina\.proximoOffset\);\s*\}\);/,
   );
   assert.doesNotMatch(bloco, /const comentariosPorId = new Map/);
 
@@ -130,6 +154,61 @@ test("painel oferece carregamento incremental sem perder protecao de versao", ()
     paginaObra,
     /Carregar mais comentários/,
   );
+});
+
+test("updaters enfileirados de carregar mais ignoram execucao obsoleta", () => {
+  const bloco = obterBloco(
+    "async function carregarMaisComentariosObra()",
+    "const estruturaComentariosObra = useMemo(",
+  );
+  const criarUpdaterComentarios = extrairCallbackUpdater(
+    bloco,
+    "setComentariosObra",
+  );
+  const criarUpdaterTotal = extrairCallbackUpdater(
+    bloco,
+    "setTotalComentariosObra",
+  );
+  const pagina = {
+    comentarios: [{ id: "comentario-da-consulta-antiga" }],
+    proximoOffset: 40,
+  };
+  const comentariosDaNovaExecucao = [{ id: "comentario-da-nova-execucao" }];
+  const totalDaNovaExecucao = 12;
+
+  const atualizarComentariosObsoleta = criarUpdaterComentarios(
+    () => false,
+    () => {
+      throw new Error("nao deve mesclar execucao obsoleta");
+    },
+    pagina,
+  );
+  const atualizarTotalObsoleto = criarUpdaterTotal(
+    () => false,
+    () => {
+      throw new Error("nao deve mesclar execucao obsoleta");
+    },
+    pagina,
+  );
+
+  assert.equal(
+    atualizarComentariosObsoleta(comentariosDaNovaExecucao),
+    comentariosDaNovaExecucao,
+  );
+  assert.equal(atualizarTotalObsoleto(totalDaNovaExecucao), totalDaNovaExecucao);
+
+  const atualizarComentariosAtual = criarUpdaterComentarios(
+    () => true,
+    (comentariosAtuais, novosComentarios) => [
+      ...comentariosAtuais,
+      ...novosComentarios,
+    ],
+    pagina,
+  );
+  const atualizarTotalAtual = criarUpdaterTotal(() => true, () => [], pagina);
+
+  assert.deepEqual(atualizarComentariosAtual([]), pagina.comentarios);
+  assert.equal(atualizarTotalAtual(12), 40);
 });
 
 test("total de comentarios e alimentado pelas metricas sem abrir o painel", () => {
