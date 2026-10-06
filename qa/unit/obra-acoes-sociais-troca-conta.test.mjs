@@ -991,6 +991,14 @@ test("avaliacao usa identidade versionada nos limites de persistencia, Diario e 
   assert.ok(indiceGuardAposDiario > indiceDiario);
   assert.ok(indiceFinalizacao > indiceGuardAposDiario);
   assert.match(
+    bloco.slice(indiceGuardAposDiario),
+    /setAvaliacaoObra\(\(avaliacaoAtual\) => \{\s*if \(!execucaoAvaliacaoEstaAtual\(\)\) \{\s*return avaliacaoAtual;/,
+  );
+  assert.match(
+    bloco,
+    /if \(!obra\.id \|\| !idObraSupabaseValido\(obra\.id\)\) \{\s*if \(execucaoAvaliacaoEstaAtual\(\)\) \{\s*setAvaliacaoObra\(\(avaliacaoAtual\) => \{\s*if \(!execucaoAvaliacaoEstaAtual\(\)\) \{\s*return avaliacaoAtual;/,
+  );
+  assert.match(
     bloco,
     /registrarAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
   );

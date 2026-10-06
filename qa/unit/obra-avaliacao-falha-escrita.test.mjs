@@ -113,7 +113,7 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
     indiceAvisoDiario,
   );
   const indiceFinalizarAvaliacao = bloco.indexOf(
-    "setAvaliacaoObra((avaliacaoAtual) => ({",
+    "setAvaliacaoObra((avaliacaoAtual) => {",
     indiceGuardFinal,
   );
 
@@ -136,4 +136,12 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
   assert.ok(indiceAvisoDiario > indiceDiario);
   assert.ok(indiceGuardFinal > indiceAvisoDiario);
   assert.ok(indiceFinalizarAvaliacao > indiceGuardFinal);
+  assert.match(
+    bloco.slice(indiceFinalizarAvaliacao),
+    /setAvaliacaoObra\(\(avaliacaoAtual\) => \{\s*if \(!execucaoAvaliacaoEstaAtual\(\)\) \{\s*return avaliacaoAtual;/,
+  );
+  assert.match(
+    bloco,
+    /if \(!obra\.id \|\| !idObraSupabaseValido\(obra\.id\)\) \{\s*if \(execucaoAvaliacaoEstaAtual\(\)\) \{\s*setAvaliacaoObra\(\(avaliacaoAtual\) => \{\s*if \(!execucaoAvaliacaoEstaAtual\(\)\) \{\s*return avaliacaoAtual;/,
+  );
 });

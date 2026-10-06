@@ -2327,10 +2327,16 @@ export default function ObraDinamicaPage() {
 
     if (!obra.id || !idObraSupabaseValido(obra.id)) {
       if (execucaoAvaliacaoEstaAtual()) {
-        setAvaliacaoObra((avaliacaoAtual) => ({
-          ...avaliacaoAtual,
-          salvando: false,
-        }));
+        setAvaliacaoObra((avaliacaoAtual) => {
+          if (!execucaoAvaliacaoEstaAtual()) {
+            return avaliacaoAtual;
+          }
+
+          return {
+            ...avaliacaoAtual,
+            salvando: false,
+          };
+        });
       }
       return;
     }
@@ -2418,10 +2424,16 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    setAvaliacaoObra((avaliacaoAtual) => ({
-      ...avaliacaoAtual,
-      salvando: false,
-    }));
+    setAvaliacaoObra((avaliacaoAtual) => {
+      if (!execucaoAvaliacaoEstaAtual()) {
+        return avaliacaoAtual;
+      }
+
+      return {
+        ...avaliacaoAtual,
+        salvando: false,
+      };
+    });
   }
 
   async function compartilharObraAtual() {
