@@ -457,6 +457,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 740: extrair somente a consulta paginada de curtidas dos comentários para `app/obra/[slug]/lib/obra-supabase-comment-likes-query.ts`, preservando tabela, seleção, filtro, ordenação, ranges e propagação de erros.
 - Fase 741: extrair somente a consulta Supabase dos comentários raiz para `app/obra/[slug]/lib/obra-supabase-root-comments-query.ts`, preservando tabela, seleção, filtros, ordenações, range e retorno bruto de dados e erro.
 - Fase 742: extrair somente a consulta paginada das respostas dos comentários para `app/obra/[slug]/lib/obra-supabase-comment-replies-query.ts`, preservando tabela, seleção, filtro, ordenações, ranges, lotes e propagação de erros.
+- Fase 743: extrair somente `carregarPerfisPublicosObra` para `app/obra/[slug]/lib/obra-public-profile-loader.ts`, preservando validação, deduplicação, consultas por `user_id` e `id`, normalização, fallback e ordem do `Map`.
 
 ## Contrato de preservação
 
