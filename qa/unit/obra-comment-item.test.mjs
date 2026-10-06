@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const listaComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/components/obra-comments-list.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("item preserva estilos distintos de comentario raiz e resposta", () => {
   assert.match(
@@ -81,12 +88,13 @@ test("item preserva as regras de acoes e os argumentos dos callbacks", () => {
   assert.match(componenteComentario, /\{comentario\.curtidas\.length\}/);
 });
 
-test("chave da thread e handlers permanecem no cliente", () => {
+test("chave da thread fica na lista e handlers permanecem no cliente", () => {
   assert.doesNotMatch(componenteComentario, /key=\{comentario\.id\}/);
   assert.match(
-    paginaObra,
+    listaComentarios,
     /<ObraCommentThread\s*key=\{comentario\.id\}/,
   );
+  assert.match(paginaObra, /<ObraCommentsList/);
   assert.match(paginaObra, /onResponder=\{responderComentarioObra\}/);
   assert.match(paginaObra, /onRemover=\{removerComentarioObra\}/);
   assert.match(paginaObra, /onDenunciar=\{abrirDenunciaComentarioObra\}/);

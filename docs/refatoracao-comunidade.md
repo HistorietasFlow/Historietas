@@ -476,6 +476,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 759: extrair somente a apresentação do compositor de comentários da obra para `app/obra/[slug]/components/obra-comment-composer.tsx`, preservando estado, ref, foco, handlers e persistência no cliente.
 - Fase 760: extrair somente a apresentação do cabeçalho do painel de comentários da obra para `app/obra/[slug]/components/obra-comments-header.tsx`, preservando estado, ordenação e fechamento do menu no cliente.
 - Fase 761: extrair somente a apresentação do handle de expansão e arraste do painel de comentários da obra para `app/obra/[slug]/components/obra-comments-handle.tsx`, preservando drag, foco e estado no cliente.
+- Fase 762: extrair somente a apresentação da lista de comentários da obra para `app/obra/[slug]/components/obra-comments-list.tsx`, preservando estrutura, paginação, handlers e guards no cliente.
 
 ## Contrato de preservação
 
