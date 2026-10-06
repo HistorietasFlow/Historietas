@@ -57,13 +57,13 @@ test("falha de escrita restaura avaliacao e cache anteriores", () => {
   const indiceFalha = bloco.indexOf(
     'console.warn("Não consegui salvar a avaliação da obra:", error);',
   );
-  const indiceGuard = bloco.indexOf(
-    "avaliacaoVersaoRef.current !== versaoAvaliacao",
-    indiceFalha,
-  );
   const indiceRollbackCache = bloco.indexOf(
     "avaliacaoAnterior.minhaNota",
-    indiceGuard,
+    indiceFalha,
+  );
+  const indiceGuard = bloco.lastIndexOf(
+    "if (!execucaoAvaliacaoEstaAtual())",
+    indiceRollbackCache,
   );
   const indiceRollbackEstado = bloco.indexOf(
     "...avaliacaoAnterior",
@@ -76,10 +76,14 @@ test("falha de escrita restaura avaliacao e cache anteriores", () => {
 
   assert.ok(indiceAnterior >= 0);
   assert.ok(indiceFalha > indiceAnterior);
-  assert.ok(indiceGuard > indiceFalha);
+  assert.ok(indiceGuard < indiceFalha);
   assert.ok(indiceRollbackCache > indiceGuard);
   assert.ok(indiceRollbackEstado > indiceRollbackCache);
   assert.ok(indiceMensagem > indiceRollbackEstado);
+  assert.match(
+    bloco,
+    /const execucaoAvaliacaoEstaAtual = \(\) =>\s*execucaoAcaoEstaAtual\(\) &&\s*avaliacaoVersaoRef\.current === versaoAvaliacao/,
+  );
 });
 
 test("falha do Diario nao reverte avaliacao remota ja salva", () => {
@@ -93,7 +97,7 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
     indiceSalvarRemoto,
   );
   const indiceGuardAntesDiario = bloco.indexOf(
-    "if (avaliacaoVersaoRef.current !== versaoAvaliacao)",
+    "if (!execucaoAvaliacaoEstaAtual())",
     indiceMensagemFalha,
   );
   const indiceDiario = bloco.indexOf(
@@ -105,11 +109,11 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
     indiceDiario,
   );
   const indiceGuardFinal = bloco.indexOf(
-    "if (avaliacaoVersaoRef.current !== versaoAvaliacao)",
+    "if (!execucaoAvaliacaoEstaAtual())",
     indiceAvisoDiario,
   );
   const indiceFinalizarAvaliacao = bloco.indexOf(
-    "setAvaliacaoObra((avaliacaoAtual) => ({",
+    "setAvaliacaoObra((avaliacaoAtual) => {",
     indiceGuardFinal,
   );
 
@@ -121,7 +125,23 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
     persistenciaDiario,
     /export async function registrarAtividadeDiarioObra/,
   );
+  assert.match(
+    bloco,
+    /registrarAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
+  );
+  assert.match(
+    bloco,
+    /removerAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
+  );
   assert.ok(indiceAvisoDiario > indiceDiario);
   assert.ok(indiceGuardFinal > indiceAvisoDiario);
   assert.ok(indiceFinalizarAvaliacao > indiceGuardFinal);
+  assert.match(
+    bloco.slice(indiceFinalizarAvaliacao),
+    /setAvaliacaoObra\(\(avaliacaoAtual\) => \{\s*if \(!execucaoAvaliacaoEstaAtual\(\)\) \{\s*return avaliacaoAtual;/,
+  );
+  assert.match(
+    bloco,
+    /if \(!obra\.id \|\| !idObraSupabaseValido\(obra\.id\)\) \{\s*if \(execucaoAvaliacaoEstaAtual\(\)\) \{\s*setAvaliacaoObra\(\(avaliacaoAtual\) => \{\s*if \(!execucaoAvaliacaoEstaAtual\(\)\) \{\s*return avaliacaoAtual;/,
+  );
 });

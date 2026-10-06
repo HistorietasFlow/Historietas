@@ -116,7 +116,7 @@ test("helper de acao valida versao e user id apos getUser", () => {
   assert.match(bloco, /userId === identidadeEsperada\.usuarioId/);
 });
 
-test("sete acoes sociais usam identidade versionada", () => {
+test("oito acoes sociais usam identidade versionada", () => {
   const handlers = [
     ["async function alternarSeguirObra()", "async function alternarCurtidaObra()"],
     ["async function alternarCurtidaObra()", "async function enviarComentarioObra("],
@@ -125,6 +125,7 @@ test("sete acoes sociais usam identidade versionada", () => {
     ["async function alternarCurtidaComentarioObra(", "async function alternarFavoritoObra()"],
     ["async function alternarFavoritoObra()", "async function alternarConcluirObra()"],
     ["async function alternarConcluirObra()", "async function avaliarObra("],
+    ["async function avaliarObra(", "async function compartilharObraAtual()"],
   ];
 
   for (const [inicio, fim] of handlers) {
@@ -719,5 +720,290 @@ test("curtida local usa o user id capturado pela acao", () => {
   assert.doesNotMatch(
     bloco,
     /lerStorageUsuarioObraPublica\(\s*LIKED_WORKS_STORAGE_KEY,\s*usuarioIdLogado/,
+  );
+});
+
+test("avaliacao obsoleta nao altera estado, cache, mensagem nem inicia Diario da conta B", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const remotoControlado = criarPromessaControlada();
+  let versaoAvaliacaoAtual = 0;
+  let avaliacao = { usuarioId: "usuario-a", salvando: true };
+  let mensagem = "estado-a";
+  const cachesDepoisDaTroca = [];
+  let sincronizacoesDiario = 0;
+  let trocaConcluida = false;
+  const versaoAvaliacao = versaoAvaliacaoAtual + 1;
+  versaoAvaliacaoAtual = versaoAvaliacao;
+  const execucaoAvaliacaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    }) && versaoAvaliacaoAtual === versaoAvaliacao;
+
+  async function avaliar() {
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
+
+    avaliacao = { usuarioId: "usuario-a", salvando: true };
+    mensagem = "";
+
+    await remotoControlado.promessa;
+
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
+
+    if (trocaConcluida) {
+      cachesDepoisDaTroca.push("cache-a");
+    }
+    sincronizacoesDiario += 1;
+  }
+
+  const avaliacaoA = avaliar();
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+  versaoAvaliacaoAtual += 1;
+  trocaConcluida = true;
+  avaliacao = { usuarioId: "usuario-b", salvando: true };
+  mensagem = "estado-b";
+
+  remotoControlado.resolver();
+  await avaliacaoA;
+
+  assert.deepEqual(avaliacao, { usuarioId: "usuario-b", salvando: true });
+  assert.equal(mensagem, "estado-b");
+  assert.deepEqual(cachesDepoisDaTroca, []);
+  assert.equal(sincronizacoesDiario, 0);
+});
+
+test("falha remota obsoleta da avaliacao nao faz rollback nem mostra mensagem da conta A", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const remotoControlado = criarPromessaControlada();
+  let versaoAvaliacaoAtual = 1;
+  const versaoAvaliacao = versaoAvaliacaoAtual;
+  let avaliacao = { usuarioId: "usuario-a", salvando: true };
+  let mensagem = "estado-a";
+  let rollbackExecutado = false;
+  const execucaoAvaliacaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    }) && versaoAvaliacaoAtual === versaoAvaliacao;
+
+  async function avaliar() {
+    try {
+      await remotoControlado.promessa;
+    } catch {
+      if (!execucaoAvaliacaoEstaAtual()) {
+        return;
+      }
+
+      rollbackExecutado = true;
+      avaliacao = { usuarioId: "usuario-a", salvando: false };
+      mensagem = "Não foi possível salvar a avaliação agora.";
+    }
+  }
+
+  const avaliacaoA = avaliar();
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+  versaoAvaliacaoAtual += 1;
+  avaliacao = { usuarioId: "usuario-b", salvando: true };
+  mensagem = "estado-b";
+
+  remotoControlado.rejeitar(new Error("falha remota"));
+  await avaliacaoA;
+
+  assert.equal(rollbackExecutado, false);
+  assert.deepEqual(avaliacao, { usuarioId: "usuario-b", salvando: true });
+  assert.equal(mensagem, "estado-b");
+});
+
+test("Diario pendente da avaliacao A nao finaliza estado da conta B", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const diarioControlado = criarPromessaControlada();
+  let versaoAvaliacaoAtual = 1;
+  const versaoAvaliacao = versaoAvaliacaoAtual;
+  let avaliacao = { usuarioId: "usuario-a", salvando: true };
+  let diarioRecebeuGuard = null;
+  const execucaoAvaliacaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    }) && versaoAvaliacaoAtual === versaoAvaliacao;
+
+  async function sincronizarDiario(execucaoAtual) {
+    diarioRecebeuGuard = execucaoAtual;
+    await diarioControlado.promessa;
+
+    if (!execucaoAtual()) {
+      return;
+    }
+  }
+
+  async function avaliar() {
+    await sincronizarDiario(execucaoAvaliacaoEstaAtual);
+
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
+
+    avaliacao = { usuarioId: "usuario-a", salvando: false };
+  }
+
+  const avaliacaoA = avaliar();
+  await Promise.resolve();
+
+  assert.equal(diarioRecebeuGuard, execucaoAvaliacaoEstaAtual);
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+  versaoAvaliacaoAtual += 1;
+  avaliacao = { usuarioId: "usuario-b", salvando: true };
+
+  diarioControlado.resolver();
+  await avaliacaoA;
+
+  assert.deepEqual(avaliacao, { usuarioId: "usuario-b", salvando: true });
+  assert.equal(diarioRecebeuGuard(), false);
+});
+
+test("avaliacao valida para a mesma identidade finaliza e uma versao mais nova bloqueia a anterior", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const remotoControlado = criarPromessaControlada();
+  const diarioAntigoControlado = criarPromessaControlada();
+  let versaoAvaliacaoAtual = 1;
+  const versaoAvaliacao = versaoAvaliacaoAtual;
+  let salvando = true;
+  let diarioIniciado = 0;
+  let diarioAntigoSincronizado = 0;
+  let guardDiarioAntigo = null;
+  const execucaoAvaliacaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    }) && versaoAvaliacaoAtual === versaoAvaliacao;
+
+  async function avaliar() {
+    await remotoControlado.promessa;
+
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
+
+    diarioIniciado += 1;
+    salvando = false;
+  }
+
+  const avaliacaoA = avaliar();
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-a",
+  ).identidade;
+  remotoControlado.resolver();
+  await avaliacaoA;
+
+  assert.equal(diarioIniciado, 1);
+  assert.equal(salvando, false);
+
+  const remotoAntigo = criarPromessaControlada();
+  salvando = true;
+  const avaliacaoAntiga = (async () => {
+    await remotoAntigo.promessa;
+
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
+
+    guardDiarioAntigo = execucaoAvaliacaoEstaAtual;
+    await diarioAntigoControlado.promessa;
+
+    if (!guardDiarioAntigo()) {
+      return;
+    }
+
+    diarioAntigoSincronizado += 1;
+    salvando = false;
+  })();
+
+  remotoAntigo.resolver();
+  await Promise.resolve();
+
+  assert.equal(guardDiarioAntigo, execucaoAvaliacaoEstaAtual);
+
+  versaoAvaliacaoAtual += 1;
+  salvando = true;
+  diarioAntigoControlado.resolver();
+  await avaliacaoAntiga;
+
+  assert.equal(diarioAntigoSincronizado, 0);
+  assert.equal(salvando, true);
+});
+
+test("avaliacao usa identidade versionada nos limites de persistencia, Diario e finalizacao", () => {
+  const bloco = obterBloco(
+    "async function avaliarObra(nota: number)",
+    "async function compartilharObraAtual()",
+  );
+  const indiceIdentidade = bloco.indexOf("await obterIdentidadeLogadaParaAcao");
+  const indiceOtimista = bloco.indexOf("setAvaliacaoObra(proximaAvaliacao)");
+  const indiceRemoto = bloco.indexOf("await salvarAvaliacaoRemotaObra");
+  const indiceGuardAposRemoto = bloco.indexOf(
+    "if (!execucaoAvaliacaoEstaAtual())",
+    indiceRemoto,
+  );
+  const indiceDiario = bloco.indexOf("await registrarAtividadeDiarioObra");
+  const indiceGuardAposDiario = bloco.indexOf(
+    "if (!execucaoAvaliacaoEstaAtual())",
+    indiceDiario,
+  );
+  const indiceFinalizacao = bloco.lastIndexOf("salvando: false");
+
+  assert.doesNotMatch(bloco, /obterUsuarioLogadoParaAcao/);
+  assert.ok(indiceIdentidade >= 0);
+  assert.match(bloco, /const userId = identidadeAcao\.usuarioId/);
+  assert.match(bloco, /criarGuardIdentidadeAcao\(identidadeAcao\)/);
+  assert.match(
+    bloco,
+    /const execucaoAvaliacaoEstaAtual = \(\) =>\s*execucaoAcaoEstaAtual\(\) &&\s*avaliacaoVersaoRef\.current === versaoAvaliacao/,
+  );
+  assert.ok(indiceOtimista > indiceIdentidade);
+  assert.ok(indiceRemoto > indiceOtimista);
+  assert.ok(indiceGuardAposRemoto > indiceRemoto);
+  assert.ok(indiceDiario > indiceGuardAposRemoto);
+  assert.ok(indiceGuardAposDiario > indiceDiario);
+  assert.ok(indiceFinalizacao > indiceGuardAposDiario);
+  assert.match(
+    bloco.slice(indiceGuardAposDiario),
+    /setAvaliacaoObra\(\(avaliacaoAtual\) => \{\s*if \(!execucaoAvaliacaoEstaAtual\(\)\) \{\s*return avaliacaoAtual;/,
+  );
+  assert.match(
+    bloco,
+    /if \(!obra\.id \|\| !idObraSupabaseValido\(obra\.id\)\) \{\s*if \(execucaoAvaliacaoEstaAtual\(\)\) \{\s*setAvaliacaoObra\(\(avaliacaoAtual\) => \{\s*if \(!execucaoAvaliacaoEstaAtual\(\)\) \{\s*return avaliacaoAtual;/,
+  );
+  assert.match(
+    bloco,
+    /registrarAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
+  );
+  assert.match(
+    bloco,
+    /removerAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
   );
 });
