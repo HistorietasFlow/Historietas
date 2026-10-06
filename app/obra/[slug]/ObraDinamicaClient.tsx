@@ -54,7 +54,10 @@ import { consultarObraPublicaPorSlug } from "./lib/obra-supabase-work-utils";
 import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
 import { carregarPaginaComentariosObraSupabase } from "./lib/obra-supabase-comments-page-loader";
 import { normalizarComentariosObraSupabase } from "./lib/obra-supabase-comment-normalizer";
-import { inserirComentarioObraSupabase } from "./lib/obra-supabase-comment-persistence";
+import {
+  inserirComentarioObraSupabase,
+  removerComentarioObraSupabase,
+} from "./lib/obra-supabase-comment-persistence";
 import {
   WORK_COMMENT_LIKES_TABLE,
 } from "./lib/obra-supabase-comment-likes-query";
@@ -1846,12 +1849,11 @@ export default function ObraDinamicaPage() {
       }
 
       if (!comentario.local && idObraSupabaseValido(obra.id)) {
-        const { error } = await supabase
-          .from("comentarios_obras")
-          .delete()
-          .eq("id", comentario.id)
-          .eq("obra_id", obra.id)
-          .eq("user_id", userId);
+        const { error } = await removerComentarioObraSupabase(
+          comentario.id,
+          obra.id,
+          userId,
+        );
 
         if (!execucaoAcaoEstaAtual()) {
           return;
