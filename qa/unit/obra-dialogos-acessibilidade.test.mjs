@@ -21,6 +21,13 @@ const handleComentarios = readFileSync(
   ),
   "utf8",
 );
+const commentsSheet = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/components/obra-comments-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -65,10 +72,6 @@ test("comentarios classificacao e acoes recebem foco inicial ao abrir", () => {
 });
 
 test("os tres dialogs usam aria modal tabIndex e controle de teclado", () => {
-  const comentarios = obterBloco(
-    'ref={comentariosSheetRef}',
-    "<ObraCommentsHandle",
-  );
   const classificacao = obterBloco(
     'ref={classificacaoDialogRef}',
     '<header style={classificationPanelHeaderStyle}>',
@@ -78,7 +81,16 @@ test("os tres dialogs usam aria modal tabIndex e controle de teclado", () => {
     '<div style={obraActionSheetHandleStyle}',
   );
 
-  for (const bloco of [comentarios, classificacao, acoes]) {
+  assert.match(commentsSheet, /role="dialog"/);
+  assert.match(commentsSheet, /aria-modal="true"/);
+  assert.match(commentsSheet, /tabIndex=\{-1\}/);
+  assert.match(commentsSheet, /onKeyDown=\{onKeyDown\}/);
+  assert.match(
+    paginaObra,
+    /onKeyDown=\{\(event\) =>\s*manterFocoNoDialogo\(event, fecharComentariosObra\)\s*\}/,
+  );
+
+  for (const bloco of [classificacao, acoes]) {
     assert.match(bloco, /role="dialog"/);
     assert.match(bloco, /aria-modal="true"/);
     assert.match(bloco, /tabIndex=\{-1\}/);
