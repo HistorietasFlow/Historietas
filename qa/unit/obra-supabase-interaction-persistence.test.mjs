@@ -16,6 +16,7 @@ const supabaseUrl = criarUrlModulo([
   "        const chamada = { tipo: 'delete', tabela, filtros: [], error: resposta.error };",
   "        globalThis.chamadasPersistencia.push(chamada);",
   "        const query = {",
+  "          data: resposta.data,",
   "          error: chamada.error,",
   "          eq(campo, valor) {",
   "            chamada.filtros.push([campo, valor]);",
@@ -29,7 +30,7 @@ const supabaseUrl = criarUrlModulo([
   "        globalThis.chamadasPersistencia.push({ tipo: 'upsert', tabela, payload, opcoes });",
   "        if (resposta.cancelar) globalThis.execucaoPermitida = false;",
   "        if (resposta.excecao) throw resposta.excecao;",
-  "        return Promise.resolve({ error: resposta.error });",
+  "        return Promise.resolve({ data: resposta.data, error: resposta.error });",
   "      },",
   "    };",
   "  },",
@@ -63,6 +64,8 @@ const moduloJavascript = typescript
     `from "${utilsUrl}";`,
   );
 const {
+  inserirSeguimentoObraPublicaSupabase,
+  removerSeguimentoObraPublicaSupabase,
   salvarCurtidaObraPublicaSupabase,
   salvarRegistroObraPublicaSupabase,
 } = await import(criarUrlModulo(moduloJavascript));
@@ -159,6 +162,52 @@ test("registro preserva delete, upsert e propagacao de erro", async () => {
     ),
     (erro) => erro === erroDelete,
   );
+});
+
+test("seguimento preserva queries e retorna respostas brutas", async () => {
+  const dadosInsercao = { id: "seguimento-1" };
+  const erroRemocao = new Error("remocao falhou");
+  prepararRespostas({
+    deletes: [{ data: null, error: erroRemocao }],
+    upserts: [{ data: dadosInsercao, error: null }],
+  });
+
+  const respostaInsercao = await inserirSeguimentoObraPublicaSupabase(
+    "obra-valida",
+    "usuario-a",
+  );
+  const respostaRemocao = await removerSeguimentoObraPublicaSupabase(
+    "obra-valida",
+    "usuario-a",
+  );
+
+  assert.deepEqual(respostaInsercao, { data: dadosInsercao, error: null });
+  assert.equal(respostaRemocao.data, null);
+  assert.equal(respostaRemocao.error, erroRemocao);
+  assert.deepEqual(globalThis.chamadasPersistencia, [
+    {
+      tipo: "upsert",
+      tabela: "seguindo_obras",
+      payload: {
+        obra_id: "obra-valida",
+        user_id: "usuario-a",
+        visibilidade: "publico",
+      },
+      opcoes: {
+        onConflict: "user_id,obra_id",
+        ignoreDuplicates: true,
+      },
+    },
+    {
+      tipo: "delete",
+      tabela: "seguindo_obras",
+      filtros: [
+        ["obra_id", "obra-valida"],
+        ["user_id", "usuario-a"],
+      ],
+      error: erroRemocao,
+    },
+  ]);
 });
 
 test("curtida preserva delete e fallback de payload", async () => {

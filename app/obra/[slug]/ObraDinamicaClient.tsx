@@ -63,6 +63,8 @@ import {
   removerCurtidaComentarioObraSupabase,
 } from "./lib/obra-supabase-comment-like-persistence";
 import {
+  inserirSeguimentoObraPublicaSupabase,
+  removerSeguimentoObraPublicaSupabase,
   salvarCurtidaObraPublicaSupabase,
   salvarRegistroObraPublicaSupabase,
 } from "./lib/obra-supabase-interaction-persistence";
@@ -1445,27 +1447,19 @@ export default function ObraDinamicaPage() {
       }
 
       if (seguindo) {
-        const inserirResposta = await supabase.from("seguindo_obras").upsert(
-          {
-            obra_id: obraId,
-            user_id: userId,
-            visibilidade: "publico",
-          },
-          {
-            onConflict: "user_id,obra_id",
-            ignoreDuplicates: true,
-          },
+        const inserirResposta = await inserirSeguimentoObraPublicaSupabase(
+          obraId,
+          userId,
         );
 
         if (inserirResposta.error) {
           throw inserirResposta.error;
         }
       } else {
-        const removerResposta = await supabase
-          .from("seguindo_obras")
-          .delete()
-          .eq("obra_id", obraId)
-          .eq("user_id", userId);
+        const removerResposta = await removerSeguimentoObraPublicaSupabase(
+          obraId,
+          userId,
+        );
 
         if (removerResposta.error) {
           throw removerResposta.error;

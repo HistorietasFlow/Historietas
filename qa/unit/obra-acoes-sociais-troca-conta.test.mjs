@@ -704,7 +704,32 @@ test("ativacao social nao apaga registro antes de inserir", () => {
   assert.match(registro, /\.upsert\([\s\S]*?ignoreDuplicates: true/);
   assert.match(curtida, /if \(!ativo\)[\s\S]*?\.delete\(\)/);
   assert.match(curtida, /\.upsert\([\s\S]*?ignoreDuplicates: true/);
-  assert.match(seguir, /if \(seguindo\)[\s\S]*?\.upsert\(/);
+  assert.match(
+    seguir,
+    /if \(seguindo\)[\s\S]*?await inserirSeguimentoObraPublicaSupabase\(/,
+  );
+  assert.match(
+    seguir,
+    /else \{[\s\S]*?await removerSeguimentoObraPublicaSupabase\(/,
+  );
+
+  const indiceInsercao = seguir.indexOf(
+    "await inserirSeguimentoObraPublicaSupabase(",
+  );
+  const indiceRemocao = seguir.indexOf(
+    "await removerSeguimentoObraPublicaSupabase(",
+  );
+  const indiceGuardPosterior = seguir.indexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    Math.max(indiceInsercao, indiceRemocao),
+  );
+  const indiceDiario = seguir.indexOf(
+    "await registrarAtividadeDiarioObra",
+    indiceGuardPosterior,
+  );
+
+  assert.ok(indiceGuardPosterior > Math.max(indiceInsercao, indiceRemocao));
+  assert.ok(indiceDiario > indiceGuardPosterior);
 });
 
 test("curtida local usa o user id capturado pela acao", () => {
