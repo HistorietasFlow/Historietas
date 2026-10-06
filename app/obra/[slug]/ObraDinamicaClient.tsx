@@ -1321,6 +1321,9 @@ export default function ObraDinamicaPage() {
     }
   }
 
+  // Mantido até a fase dedicada de remoção do helper legado.
+  void obterUsuarioLogadoParaAcao;
+
   async function obterIdentidadeLogadaParaAcao(mensagem: string) {
     const identidadeEsperada = identidadeAutenticadaObraRef.current;
     const execucaoAtual = () =>
@@ -2264,11 +2267,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para avaliar esta obra."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
@@ -2276,22 +2286,47 @@ export default function ObraDinamicaPage() {
       return;
     }
 
+    if (!execucaoAcaoEstaAtual()) {
+      return;
+    }
+
     const notaNormalizada = nota <= 0 ? 0 : Math.round(nota * 2) / 2;
     const avaliacaoAnterior = avaliacaoObra;
     const versaoAvaliacao = avaliacaoVersaoRef.current + 1;
     avaliacaoVersaoRef.current = versaoAvaliacao;
+    const execucaoAvaliacaoEstaAtual = () =>
+      execucaoAcaoEstaAtual() &&
+      avaliacaoVersaoRef.current === versaoAvaliacao;
+
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
 
     const proximaAvaliacao = calcularProximaAvaliacao(
       avaliacaoAnterior,
       notaNormalizada
     );
 
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
+
     setAvaliacaoObra(proximaAvaliacao);
+
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
+
     setMensagemAcao("");
+
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
+    }
+
     salvarAvaliacaoLocal(obra, notaNormalizada, userId);
 
     if (!obra.id || !idObraSupabaseValido(obra.id)) {
-      if (avaliacaoVersaoRef.current === versaoAvaliacao) {
+      if (execucaoAvaliacaoEstaAtual()) {
         setAvaliacaoObra((avaliacaoAtual) => ({
           ...avaliacaoAtual,
           salvando: false,
@@ -2301,17 +2336,25 @@ export default function ObraDinamicaPage() {
     }
 
     try {
+      if (!execucaoAvaliacaoEstaAtual()) {
+        return;
+      }
+
       await salvarAvaliacaoRemotaObra({
         obraId: obra.id,
         userId,
         nota: notaNormalizada,
       });
-    } catch (error) {
-      console.warn("Não consegui salvar a avaliação da obra:", error);
 
-      if (avaliacaoVersaoRef.current !== versaoAvaliacao) {
+      if (!execucaoAvaliacaoEstaAtual()) {
         return;
       }
+    } catch (error) {
+      if (!execucaoAvaliacaoEstaAtual()) {
+        return;
+      }
+
+      console.warn("Não consegui salvar a avaliação da obra:", error);
 
       salvarAvaliacaoLocal(
         obra,
@@ -2327,13 +2370,17 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    if (avaliacaoVersaoRef.current !== versaoAvaliacao) {
+    if (!execucaoAvaliacaoEstaAtual()) {
       return;
     }
 
     setMensagemAcao("");
 
     try {
+      if (!execucaoAvaliacaoEstaAtual()) {
+        return;
+      }
+
       if (notaNormalizada > 0) {
         await registrarAtividadeDiarioObra({
           userId,
@@ -2342,22 +2389,32 @@ export default function ObraDinamicaPage() {
           nota: notaNormalizada,
           visibilidade: "publico",
           texto: `Avaliou ${obra.titulo} com ${notaNormalizada.toFixed(1).replace(".", ",")} estrelas.`,
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       } else {
         await removerAtividadeDiarioObra({
           userId,
           obra,
           tipo: "avaliou_obra",
+          execucaoAtual: execucaoAcaoEstaAtual,
         });
       }
+
+      if (!execucaoAvaliacaoEstaAtual()) {
+        return;
+      }
     } catch (error) {
+      if (!execucaoAvaliacaoEstaAtual()) {
+        return;
+      }
+
       console.warn(
         "A avaliação foi salva, mas não consegui sincronizar o Diário:",
         error,
       );
     }
 
-    if (avaliacaoVersaoRef.current !== versaoAvaliacao) {
+    if (!execucaoAvaliacaoEstaAtual()) {
       return;
     }
 
