@@ -20,11 +20,13 @@ const persistenciaInteracoesObra = readFileSync(
 
 function criarPromessaControlada() {
   let resolver;
-  const promessa = new Promise((resolve) => {
+  let rejeitar;
+  const promessa = new Promise((resolve, reject) => {
     resolver = resolve;
+    rejeitar = reject;
   });
 
-  return { promessa, resolver };
+  return { promessa, resolver, rejeitar };
 }
 
 function obterBloco(inicioTexto, fimTexto) {
@@ -114,11 +116,12 @@ test("helper de acao valida versao e user id apos getUser", () => {
   assert.match(bloco, /userId === identidadeEsperada\.usuarioId/);
 });
 
-test("cinco acoes sociais usam identidade versionada", () => {
+test("seis acoes sociais usam identidade versionada", () => {
   const handlers = [
     ["async function alternarSeguirObra()", "async function alternarCurtidaObra()"],
     ["async function alternarCurtidaObra()", "async function enviarComentarioObra("],
     ["async function enviarComentarioObra(", "function inserirNoComentarioObra("],
+    ["async function removerComentarioObra(", "async function alternarCurtidaComentarioObra("],
     ["async function alternarFavoritoObra()", "async function alternarConcluirObra()"],
     ["async function alternarConcluirObra()", "async function avaliarObra("],
   ];
@@ -130,6 +133,219 @@ test("cinco acoes sociais usam identidade versionada", () => {
     assert.match(bloco, /criarGuardIdentidadeAcao/);
     assert.match(bloco, /execucaoAcaoEstaAtual/);
   }
+});
+
+test("remocao de comentario obsoleta nao altera dados nem libera lock da conta B", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const remotoControlado = criarPromessaControlada();
+  const idsParaRemover = new Set(["comentario-a", "resposta-a"]);
+  let comentarios = [{ id: "comentario-a" }];
+  let total = 2;
+  let proximoOffset = 1;
+  let resposta = { comentarioPaiId: "comentario-a" };
+  let status = "";
+  let lock = "comentario-a";
+  const cachesSalvos = [];
+  const execucaoAcaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    });
+
+  async function removerComentario() {
+    try {
+      await remotoControlado.promessa;
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      const proximosComentarios = comentarios.filter(
+        (comentario) => !idsParaRemover.has(comentario.id),
+      );
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      cachesSalvos.push(proximosComentarios);
+      comentarios = proximosComentarios;
+      total = Math.max(0, total - idsParaRemover.size);
+      proximoOffset = Math.max(0, proximoOffset - 1);
+      resposta = null;
+    } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      status = "Não foi possível remover o comentário agora.";
+    } finally {
+      if (execucaoAcaoEstaAtual()) {
+        lock = "";
+      }
+    }
+  }
+
+  const remocaoA = removerComentario();
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+  comentarios = [{ id: "comentario-b" }];
+  total = 7;
+  proximoOffset = 4;
+  resposta = { comentarioPaiId: "comentario-b" };
+  status = "estado-b";
+  lock = "comentario-b";
+
+  remotoControlado.resolver();
+  await remocaoA;
+
+  assert.deepEqual(comentarios, [{ id: "comentario-b" }]);
+  assert.equal(total, 7);
+  assert.equal(proximoOffset, 4);
+  assert.deepEqual(resposta, { comentarioPaiId: "comentario-b" });
+  assert.equal(status, "estado-b");
+  assert.deepEqual(cachesSalvos, []);
+  assert.equal(lock, "comentario-b");
+});
+
+test("remocao de comentario valida aplica o fluxo normal", async () => {
+  const identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const remotoControlado = criarPromessaControlada();
+  const idsParaRemover = new Set(["comentario-a", "resposta-a"]);
+  let comentarios = [{ id: "comentario-a" }, { id: "comentario-b" }];
+  let total = 3;
+  let proximoOffset = 2;
+  let resposta = { comentarioPaiId: "comentario-a" };
+  let lock = "comentario-a";
+  const cachesSalvos = [];
+  const execucaoAcaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    });
+
+  async function removerComentario() {
+    try {
+      await remotoControlado.promessa;
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      const proximosComentarios = comentarios.filter(
+        (comentario) => !idsParaRemover.has(comentario.id),
+      );
+      cachesSalvos.push(proximosComentarios);
+      comentarios = proximosComentarios;
+      total = Math.max(0, total - idsParaRemover.size);
+      proximoOffset = Math.max(0, proximoOffset - 1);
+      resposta = null;
+    } finally {
+      if (execucaoAcaoEstaAtual()) {
+        lock = "";
+      }
+    }
+  }
+
+  const remocao = removerComentario();
+  remotoControlado.resolver();
+  await remocao;
+
+  assert.deepEqual(comentarios, [{ id: "comentario-b" }]);
+  assert.deepEqual(cachesSalvos, [[{ id: "comentario-b" }]]);
+  assert.equal(total, 1);
+  assert.equal(proximoOffset, 1);
+  assert.equal(resposta, null);
+  assert.equal(lock, "");
+});
+
+test("falha obsoleta de remocao de comentario nao mostra erro nem libera lock de B", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const remotoControlado = criarPromessaControlada();
+  let status = "estado-b";
+  let lock = "comentario-a";
+  const execucaoAcaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    });
+
+  async function removerComentario() {
+    try {
+      await remotoControlado.promessa;
+    } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      status = "Não foi possível remover o comentário agora.";
+    } finally {
+      if (execucaoAcaoEstaAtual()) {
+        lock = "";
+      }
+    }
+  }
+
+  const remocaoA = removerComentario();
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+  lock = "comentario-b";
+
+  remotoControlado.rejeitar(new Error("falha remota"));
+  await remocaoA;
+
+  assert.equal(status, "estado-b");
+  assert.equal(lock, "comentario-b");
+});
+
+test("remocao de comentario revalida identidade apos o delete e antes dos efeitos", () => {
+  const bloco = obterBloco(
+    "async function removerComentarioObra(",
+    "async function alternarCurtidaComentarioObra(",
+  );
+  const indiceDelete = bloco.indexOf('.from("comentarios_obras")');
+  const indiceGuardAposDelete = bloco.indexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceDelete,
+  );
+  const indiceComentarios = bloco.indexOf("setComentariosObra");
+  const indiceCache = bloco.indexOf("salvarComentariosObraLocais");
+  const indiceTotal = bloco.indexOf("setTotalComentariosObra");
+  const indiceOffset = bloco.indexOf("setComentariosProximoOffset");
+  const indiceResposta = bloco.indexOf("setRespostaComentario(null)");
+  const indiceCatch = bloco.indexOf("} catch {");
+  const indiceGuardCatch = bloco.indexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceCatch,
+  );
+  const indiceFinally = bloco.indexOf("} finally {");
+  const indiceGuardFinally = bloco.indexOf(
+    "if (execucaoAcaoEstaAtual())",
+    indiceFinally,
+  );
+
+  assert.match(bloco, /const userId = identidadeAcao\.usuarioId/);
+  assert.ok(indiceDelete >= 0);
+  assert.ok(indiceGuardAposDelete > indiceDelete);
+  assert.ok(indiceComentarios > indiceGuardAposDelete);
+  assert.ok(indiceCache > indiceComentarios);
+  assert.ok(indiceTotal > indiceCache);
+  assert.ok(indiceOffset > indiceTotal);
+  assert.ok(indiceResposta > indiceOffset);
+  assert.ok(indiceGuardCatch > indiceCatch);
+  assert.ok(indiceGuardFinally > indiceFinally);
 });
 
 test("comentario revalida identidade depois dos awaits e antes de rollback", () => {

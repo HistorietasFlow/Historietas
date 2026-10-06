@@ -1817,11 +1817,18 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para remover este comentário."
     );
 
-    if (!userId || comentario.userId !== userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual() || comentario.userId !== userId) {
       return;
     }
 
@@ -1834,6 +1841,10 @@ export default function ObraDinamicaPage() {
     setComentarioStatus("");
 
     try {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       if (!comentario.local && idObraSupabaseValido(obra.id)) {
         const { error } = await supabase
           .from("comentarios_obras")
@@ -1842,29 +1853,61 @@ export default function ObraDinamicaPage() {
           .eq("obra_id", obra.id)
           .eq("user_id", userId);
 
+        if (!execucaoAcaoEstaAtual()) {
+          return;
+        }
+
         if (error) {
           throw error;
         }
       }
 
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setComentariosObra((comentariosAtuais) => {
+        if (!execucaoAcaoEstaAtual()) {
+          return comentariosAtuais;
+        }
+
         const proximosComentarios = comentariosAtuais.filter(
           (comentarioAtual) => !idsParaRemover.has(comentarioAtual.id)
         );
+
+        if (!execucaoAcaoEstaAtual()) {
+          return comentariosAtuais;
+        }
 
         salvarComentariosObraLocais(userId, obra.id, proximosComentarios);
 
         return proximosComentarios;
       });
 
-      setTotalComentariosObra((totalAtual) =>
-        Math.max(0, totalAtual - idsParaRemover.size)
-      );
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      setTotalComentariosObra((totalAtual) => {
+        if (!execucaoAcaoEstaAtual()) {
+          return totalAtual;
+        }
+
+        return Math.max(0, totalAtual - idsParaRemover.size);
+      });
 
       if (!comentario.comentarioPaiId) {
-        setComentariosProximoOffset((offsetAtual) =>
-          Math.max(0, offsetAtual - 1),
-        );
+        if (!execucaoAcaoEstaAtual()) {
+          return;
+        }
+
+        setComentariosProximoOffset((offsetAtual) => {
+          if (!execucaoAcaoEstaAtual()) {
+            return offsetAtual;
+          }
+
+          return Math.max(0, offsetAtual - 1);
+        });
       }
 
       if (
@@ -1872,12 +1915,22 @@ export default function ObraDinamicaPage() {
         (idsParaRemover.has(respostaComentario.comentarioPaiId) ||
           idsParaRemover.has(comentario.id))
       ) {
+        if (!execucaoAcaoEstaAtual()) {
+          return;
+        }
+
         setRespostaComentario(null);
       }
     } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setComentarioStatus("Não foi possível remover o comentário agora.");
     } finally {
-      setComentarioRemovendoId("");
+      if (execucaoAcaoEstaAtual()) {
+        setComentarioRemovendoId("");
+      }
     }
   }
 
