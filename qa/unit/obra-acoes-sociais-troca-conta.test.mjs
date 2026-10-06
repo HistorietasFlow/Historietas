@@ -584,7 +584,10 @@ test("curtida de comentario revalida identidade nos limites remoto, local, rollb
     indiceUpdaterLocal,
   );
   const indiceCache = bloco.indexOf("salvarComentariosObraLocais");
-  const indiceDelete = bloco.indexOf("await supabase", indiceLocal);
+  const indiceDelete = bloco.indexOf(
+    "await removerCurtidaComentarioObraSupabase",
+    indiceLocal,
+  );
   const indiceGuardAntesDelete = bloco.lastIndexOf(
     "if (!execucaoAcaoEstaAtual())",
     indiceDelete,
@@ -594,7 +597,10 @@ test("curtida de comentario revalida identidade nos limites remoto, local, rollb
     indiceDelete,
   );
   const indiceErroDelete = bloco.indexOf("if (erroRemoverCurtida)");
-  const indiceInsert = bloco.indexOf("await supabase", indiceErroDelete);
+  const indiceInsert = bloco.indexOf(
+    "await inserirCurtidaComentarioObraSupabase",
+    indiceErroDelete,
+  );
   const indiceGuardAntesInsert = bloco.lastIndexOf(
     "if (!execucaoAcaoEstaAtual())",
     indiceInsert,

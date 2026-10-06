@@ -59,8 +59,9 @@ import {
   removerComentarioObraSupabase,
 } from "./lib/obra-supabase-comment-persistence";
 import {
-  WORK_COMMENT_LIKES_TABLE,
-} from "./lib/obra-supabase-comment-likes-query";
+  inserirCurtidaComentarioObraSupabase,
+  removerCurtidaComentarioObraSupabase,
+} from "./lib/obra-supabase-comment-like-persistence";
 import {
   salvarCurtidaObraPublicaSupabase,
   salvarRegistroObraPublicaSupabase,
@@ -2013,11 +2014,8 @@ export default function ObraDinamicaPage() {
         return;
       }
 
-      const { error: erroRemoverCurtida } = await supabase
-        .from(WORK_COMMENT_LIKES_TABLE)
-        .delete()
-        .eq("comentario_id", comentario.id)
-        .eq("usuario_id", userId);
+      const { error: erroRemoverCurtida } =
+        await removerCurtidaComentarioObraSupabase(comentario.id, userId);
 
       if (!execucaoAcaoEstaAtual()) {
         return;
@@ -2032,12 +2030,8 @@ export default function ObraDinamicaPage() {
           return;
         }
 
-        const { error: erroInserirCurtida } = await supabase
-          .from(WORK_COMMENT_LIKES_TABLE)
-          .insert({
-            comentario_id: comentario.id,
-            usuario_id: userId,
-          });
+        const { error: erroInserirCurtida } =
+          await inserirCurtidaComentarioObraSupabase(comentario.id, userId);
 
         if (!execucaoAcaoEstaAtual()) {
           return;
