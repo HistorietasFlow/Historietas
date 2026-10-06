@@ -127,11 +127,11 @@ test("falha do Diario nao reverte avaliacao remota ja salva", () => {
   );
   assert.match(
     bloco,
-    /registrarAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAcaoEstaAtual/,
+    /registrarAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
   );
   assert.match(
     bloco,
-    /removerAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAcaoEstaAtual/,
+    /removerAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
   );
   assert.ok(indiceAvisoDiario > indiceDiario);
   assert.ok(indiceGuardFinal > indiceAvisoDiario);

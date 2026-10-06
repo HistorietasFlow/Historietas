@@ -2389,14 +2389,14 @@ export default function ObraDinamicaPage() {
           nota: notaNormalizada,
           visibilidade: "publico",
           texto: `Avaliou ${obra.titulo} com ${notaNormalizada.toFixed(1).replace(".", ",")} estrelas.`,
-          execucaoAtual: execucaoAcaoEstaAtual,
+          execucaoAtual: execucaoAvaliacaoEstaAtual,
         });
       } else {
         await removerAtividadeDiarioObra({
           userId,
           obra,
           tipo: "avaliou_obra",
-          execucaoAtual: execucaoAcaoEstaAtual,
+          execucaoAtual: execucaoAvaliacaoEstaAtual,
         });
       }
 

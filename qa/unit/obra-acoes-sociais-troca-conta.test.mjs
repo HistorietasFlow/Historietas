@@ -887,10 +887,13 @@ test("avaliacao valida para a mesma identidade finaliza e uma versao mais nova b
   let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
   const identidadeAcao = identidadeAtual;
   const remotoControlado = criarPromessaControlada();
+  const diarioAntigoControlado = criarPromessaControlada();
   let versaoAvaliacaoAtual = 1;
   const versaoAvaliacao = versaoAvaliacaoAtual;
   let salvando = true;
   let diarioIniciado = 0;
+  let diarioAntigoSincronizado = 0;
+  let guardDiarioAntigo = null;
   const execucaoAvaliacaoEstaAtual = () =>
     execucaoIdentidadeObraEstaAtual({
       cancelada: false,
@@ -925,16 +928,32 @@ test("avaliacao valida para a mesma identidade finaliza e uma versao mais nova b
   const avaliacaoAntiga = (async () => {
     await remotoAntigo.promessa;
 
-    if (execucaoAvaliacaoEstaAtual()) {
-      salvando = false;
+    if (!execucaoAvaliacaoEstaAtual()) {
+      return;
     }
+
+    guardDiarioAntigo = execucaoAvaliacaoEstaAtual;
+    await diarioAntigoControlado.promessa;
+
+    if (!guardDiarioAntigo()) {
+      return;
+    }
+
+    diarioAntigoSincronizado += 1;
+    salvando = false;
   })();
+
+  remotoAntigo.resolver();
+  await Promise.resolve();
+
+  assert.equal(guardDiarioAntigo, execucaoAvaliacaoEstaAtual);
 
   versaoAvaliacaoAtual += 1;
   salvando = true;
-  remotoAntigo.resolver();
+  diarioAntigoControlado.resolver();
   await avaliacaoAntiga;
 
+  assert.equal(diarioAntigoSincronizado, 0);
   assert.equal(salvando, true);
 });
 
@@ -973,10 +992,10 @@ test("avaliacao usa identidade versionada nos limites de persistencia, Diario e 
   assert.ok(indiceFinalizacao > indiceGuardAposDiario);
   assert.match(
     bloco,
-    /registrarAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAcaoEstaAtual/,
+    /registrarAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
   );
   assert.match(
     bloco,
-    /removerAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAcaoEstaAtual/,
+    /removerAtividadeDiarioObra\(\{[\s\S]*?execucaoAtual: execucaoAvaliacaoEstaAtual/,
   );
 });
