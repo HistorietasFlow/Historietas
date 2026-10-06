@@ -13,6 +13,13 @@ const consultaRaizesComentarios = readFileSync(
   ),
   "utf8",
 );
+const consultaRespostasComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/lib/obra-supabase-comment-replies-query.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -55,9 +62,16 @@ test("pagina comentarios raiz e busca apenas respostas dos topicos carregados", 
   );
   assert.match(
     bloco,
+    /await carregarRespostasComentariosObraSupabase\(\s*obraId,\s*idsPais,\s*\)/,
+  );
+  assert.match(
+    consultaRespostasComentarios,
     /nomeColecao: "respostas dos comentários da obra"/,
   );
-  assert.match(bloco, /\.in\("comentario_pai_id", comentariosPaisLote\)/);
+  assert.match(
+    consultaRespostasComentarios,
+    /\.in\("comentario_pai_id", comentariosPaisLote\)/,
+  );
   assert.match(
     consultaRaizesComentarios,
     /\.is\("comentario_pai_id", null\)/,

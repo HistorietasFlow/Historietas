@@ -24,9 +24,6 @@ import {
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../../lib/arquivosObras";
 import {
-  carregarTodasPaginasPorLotesSupabase,
-} from "../../../lib/supabase/paginacao.mjs";
-import {
   atualizarIdentidadeAutenticadaObra,
   execucaoAutenticacaoObraEstaAtual,
   execucaoIdentidadeObraEstaAtual,
@@ -60,6 +57,7 @@ import {
   WORK_COMMENT_LIKES_TABLE,
 } from "./lib/obra-supabase-comment-likes-query";
 import { consultarPaginaRaizesComentariosObraSupabase } from "./lib/obra-supabase-root-comments-query";
+import { carregarRespostasComentariosObraSupabase } from "./lib/obra-supabase-comment-replies-query";
 import {
   salvarCurtidaObraPublicaSupabase,
   salvarRegistroObraPublicaSupabase,
@@ -470,24 +468,10 @@ async function carregarPaginaComentariosObraSupabase(
       return [];
     }
 
-    const respostas = await carregarTodasPaginasPorLotesSupabase<
-      SupabaseComentarioObraRow,
-      string
-    >({
-      nomeColecao: "respostas dos comentários da obra",
-      itens: idsPais,
-      buscarPaginaLote: async (comentariosPaisLote, paginaInicio, paginaFim) =>
-        supabase
-          .from("comentarios_obras")
-          .select(
-            "id,obra_id,user_id,comentario,comentario_pai_id,criado_em",
-          )
-          .eq("obra_id", obraId)
-          .in("comentario_pai_id", comentariosPaisLote)
-          .order("criado_em", { ascending: true })
-          .order("id", { ascending: true })
-          .range(paginaInicio, paginaFim),
-    });
+    const respostas = await carregarRespostasComentariosObraSupabase(
+      obraId,
+      idsPais,
+    );
     const respostasNovas: SupabaseComentarioObraRow[] = [];
     const proximosIdsPais: string[] = [];
 
