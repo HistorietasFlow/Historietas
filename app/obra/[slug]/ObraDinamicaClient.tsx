@@ -1943,20 +1943,35 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const userId = await obterUsuarioLogadoParaAcao(
+    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
       "Entre na sua conta para curtir comentários."
     );
 
-    if (!userId) {
+    if (!identidadeAcao) {
+      return;
+    }
+
+    const userId = identidadeAcao.usuarioId;
+    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
+
+    if (!execucaoAcaoEstaAtual()) {
       return;
     }
 
     const jaCurtiu = comentario.curtidas.includes(userId);
 
+    if (!execucaoAcaoEstaAtual()) {
+      return;
+    }
+
     setComentarioCurtindoId(comentario.id);
     setComentarioStatus("");
-    setComentariosObra((comentariosAtuais) =>
-      comentariosAtuais.map((comentarioAtual) =>
+    setComentariosObra((comentariosAtuais) => {
+      if (!execucaoAcaoEstaAtual()) {
+        return comentariosAtuais;
+      }
+
+      return comentariosAtuais.map((comentarioAtual) =>
         comentarioAtual.id === comentario.id
           ? {
               ...comentarioAtual,
@@ -1969,30 +1984,54 @@ export default function ObraDinamicaPage() {
                   ),
             }
           : comentarioAtual
-      )
-    );
+      );
+    });
 
     if (comentario.local || !idObraSupabaseValido(obra.id)) {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setComentariosObra((comentariosAtuais) => {
+        if (!execucaoAcaoEstaAtual()) {
+          return comentariosAtuais;
+        }
+
         salvarComentariosObraLocais(userId, obra.id, comentariosAtuais);
         return comentariosAtuais;
       });
-      setComentarioCurtindoId("");
+
+      if (execucaoAcaoEstaAtual()) {
+        setComentarioCurtindoId("");
+      }
+
       return;
     }
 
     try {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       const { error: erroRemoverCurtida } = await supabase
         .from(WORK_COMMENT_LIKES_TABLE)
         .delete()
         .eq("comentario_id", comentario.id)
         .eq("usuario_id", userId);
 
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       if (erroRemoverCurtida) {
         throw erroRemoverCurtida;
       }
 
       if (!jaCurtiu) {
+        if (!execucaoAcaoEstaAtual()) {
+          return;
+        }
+
         const { error: erroInserirCurtida } = await supabase
           .from(WORK_COMMENT_LIKES_TABLE)
           .insert({
@@ -2000,13 +2039,25 @@ export default function ObraDinamicaPage() {
             usuario_id: userId,
           });
 
+        if (!execucaoAcaoEstaAtual()) {
+          return;
+        }
+
         if (erroInserirCurtida) {
           throw erroInserirCurtida;
         }
       }
     } catch {
-      setComentariosObra((comentariosAtuais) =>
-        comentariosAtuais.map((comentarioAtual) =>
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      setComentariosObra((comentariosAtuais) => {
+        if (!execucaoAcaoEstaAtual()) {
+          return comentariosAtuais;
+        }
+
+        return comentariosAtuais.map((comentarioAtual) =>
           comentarioAtual.id === comentario.id
             ? {
                 ...comentarioAtual,
@@ -2019,13 +2070,20 @@ export default function ObraDinamicaPage() {
                     ),
               }
             : comentarioAtual
-        )
-      );
+        );
+      });
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
       setComentarioStatus(
         "Não foi possível atualizar a curtida do comentário agora."
       );
     } finally {
-      setComentarioCurtindoId("");
+      if (execucaoAcaoEstaAtual()) {
+        setComentarioCurtindoId("");
+      }
     }
   }
 

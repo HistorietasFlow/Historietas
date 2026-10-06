@@ -116,12 +116,13 @@ test("helper de acao valida versao e user id apos getUser", () => {
   assert.match(bloco, /userId === identidadeEsperada\.usuarioId/);
 });
 
-test("seis acoes sociais usam identidade versionada", () => {
+test("sete acoes sociais usam identidade versionada", () => {
   const handlers = [
     ["async function alternarSeguirObra()", "async function alternarCurtidaObra()"],
     ["async function alternarCurtidaObra()", "async function enviarComentarioObra("],
     ["async function enviarComentarioObra(", "function inserirNoComentarioObra("],
     ["async function removerComentarioObra(", "async function alternarCurtidaComentarioObra("],
+    ["async function alternarCurtidaComentarioObra(", "async function alternarFavoritoObra()"],
     ["async function alternarFavoritoObra()", "async function alternarConcluirObra()"],
     ["async function alternarConcluirObra()", "async function avaliarObra("],
   ];
@@ -345,6 +346,301 @@ test("remocao de comentario revalida identidade apos o delete e antes dos efeito
   assert.ok(indiceOffset > indiceTotal);
   assert.ok(indiceResposta > indiceOffset);
   assert.ok(indiceGuardCatch > indiceCatch);
+  assert.ok(indiceGuardFinally > indiceFinally);
+});
+
+test("curtida de comentario obsoleta nao altera dados, cache, mensagem ou lock da conta B", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const deleteControlado = criarPromessaControlada();
+  let comentarios = [{ id: "comentario-b", curtidas: ["usuario-b"] }];
+  let status = "estado-b";
+  let lock = "comentario-a";
+  let insercoes = 0;
+  const cachesSalvos = [];
+  const execucaoAcaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    });
+
+  async function curtirComentario() {
+    try {
+      await deleteControlado.promessa;
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      insercoes += 1;
+    } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      comentarios = comentarios.map((comentario) =>
+        comentario.id === "comentario-a"
+          ? { ...comentario, curtidas: [] }
+          : comentario,
+      );
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      status = "Não foi possível atualizar a curtida do comentário agora.";
+    } finally {
+      if (execucaoAcaoEstaAtual()) {
+        lock = "";
+      }
+    }
+  }
+
+  const curtidaA = curtirComentario();
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+  comentarios = [{ id: "comentario-b", curtidas: ["usuario-b"] }];
+  status = "estado-b";
+  lock = "comentario-b";
+
+  deleteControlado.resolver();
+  await curtidaA;
+
+  assert.deepEqual(comentarios, [
+    { id: "comentario-b", curtidas: ["usuario-b"] },
+  ]);
+  assert.deepEqual(cachesSalvos, []);
+  assert.equal(status, "estado-b");
+  assert.equal(insercoes, 0);
+  assert.equal(lock, "comentario-b");
+});
+
+test("erro tardio da curtida de comentario nao faz rollback, mensagem ou unlock da conta B", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const deleteControlado = criarPromessaControlada();
+  let comentarios = [{ id: "comentario-b", curtidas: ["usuario-b"] }];
+  let status = "estado-b";
+  let lock = "comentario-a";
+  const execucaoAcaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    });
+
+  async function curtirComentario() {
+    try {
+      await deleteControlado.promessa;
+    } catch {
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      comentarios = comentarios.map((comentario) =>
+        comentario.id === "comentario-a"
+          ? { ...comentario, curtidas: [] }
+          : comentario,
+      );
+      status = "Não foi possível atualizar a curtida do comentário agora.";
+    } finally {
+      if (execucaoAcaoEstaAtual()) {
+        lock = "";
+      }
+    }
+  }
+
+  const curtidaA = curtirComentario();
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+  lock = "comentario-b";
+
+  deleteControlado.rejeitar(new Error("falha remota"));
+  await curtidaA;
+
+  assert.deepEqual(comentarios, [
+    { id: "comentario-b", curtidas: ["usuario-b"] },
+  ]);
+  assert.equal(status, "estado-b");
+  assert.equal(lock, "comentario-b");
+});
+
+test("curtida de comentario valida insere e libera o lock", async () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const deleteControlado = criarPromessaControlada();
+  const insertControlado = criarPromessaControlada();
+  const operacoes = [];
+  let lock = "comentario-a";
+  const execucaoAcaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    });
+
+  async function curtirComentario() {
+    try {
+      operacoes.push("delete");
+      await deleteControlado.promessa;
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+
+      operacoes.push("insert");
+      await insertControlado.promessa;
+
+      if (!execucaoAcaoEstaAtual()) {
+        return;
+      }
+    } finally {
+      if (execucaoAcaoEstaAtual()) {
+        lock = "";
+      }
+    }
+  }
+
+  const curtida = curtirComentario();
+  deleteControlado.resolver();
+  await Promise.resolve();
+
+  assert.deepEqual(operacoes, ["delete", "insert"]);
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-a",
+  ).identidade;
+  insertControlado.resolver();
+  await curtida;
+
+  assert.deepEqual(operacoes, ["delete", "insert"]);
+  assert.equal(lock, "");
+});
+
+test("updater local tardio da curtida nao grava cache da conta A depois da troca", () => {
+  let identidadeAtual = { usuarioId: "usuario-a", versao: 1 };
+  const identidadeAcao = identidadeAtual;
+  const cachesSalvos = [];
+  const execucaoAcaoEstaAtual = () =>
+    execucaoIdentidadeObraEstaAtual({
+      cancelada: false,
+      identidadeEsperada: identidadeAcao,
+      identidadeAtual,
+    });
+  const atualizarComentariosLocais = (comentariosAtuais) => {
+    if (!execucaoAcaoEstaAtual()) {
+      return comentariosAtuais;
+    }
+
+    cachesSalvos.push({ usuarioId: "usuario-a", comentarios: comentariosAtuais });
+    return comentariosAtuais;
+  };
+
+  identidadeAtual = atualizarIdentidadeAutenticadaObra(
+    identidadeAtual,
+    "usuario-b",
+  ).identidade;
+
+  const comentariosB = [{ id: "comentario-b", curtidas: ["usuario-b"] }];
+
+  assert.deepEqual(atualizarComentariosLocais(comentariosB), comentariosB);
+  assert.deepEqual(cachesSalvos, []);
+});
+
+test("curtida de comentario revalida identidade nos limites remoto, local, rollback e finally", () => {
+  const bloco = obterBloco(
+    "async function alternarCurtidaComentarioObra(",
+    "async function alternarFavoritoObra()",
+  );
+  const indiceIdentidade = bloco.indexOf("await obterIdentidadeLogadaParaAcao");
+  const indiceOtimista = bloco.indexOf("setComentariosObra((comentariosAtuais) =>");
+  const indiceGuardOtimista = bloco.indexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceOtimista,
+  );
+  const indiceLocal = bloco.indexOf("if (comentario.local");
+  const indiceUpdaterLocal = bloco.indexOf(
+    "setComentariosObra((comentariosAtuais) => {",
+    indiceLocal,
+  );
+  const indiceGuardUpdaterLocal = bloco.indexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceUpdaterLocal,
+  );
+  const indiceCache = bloco.indexOf("salvarComentariosObraLocais");
+  const indiceDelete = bloco.indexOf("await supabase", indiceLocal);
+  const indiceGuardAntesDelete = bloco.lastIndexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceDelete,
+  );
+  const indiceGuardAposDelete = bloco.indexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceDelete,
+  );
+  const indiceErroDelete = bloco.indexOf("if (erroRemoverCurtida)");
+  const indiceInsert = bloco.indexOf("await supabase", indiceErroDelete);
+  const indiceGuardAntesInsert = bloco.lastIndexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceInsert,
+  );
+  const indiceGuardAposInsert = bloco.indexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceInsert,
+  );
+  const indiceErroInsert = bloco.indexOf("if (erroInserirCurtida)");
+  const indiceCatch = bloco.indexOf("} catch {");
+  const indiceRollback = bloco.indexOf("setComentariosObra", indiceCatch);
+  const indiceGuardRollback = bloco.indexOf(
+    "if (!execucaoAcaoEstaAtual())",
+    indiceRollback,
+  );
+  const indiceStatus = bloco.indexOf("setComentarioStatus", indiceCatch);
+  const indiceFinally = bloco.indexOf("} finally {");
+  const indiceGuardFinally = bloco.indexOf(
+    "if (execucaoAcaoEstaAtual())",
+    indiceFinally,
+  );
+
+  assert.doesNotMatch(bloco, /obterUsuarioLogadoParaAcao/);
+  assert.ok(indiceIdentidade >= 0);
+  assert.match(bloco, /const userId = identidadeAcao\.usuarioId/);
+  assert.match(bloco, /criarGuardIdentidadeAcao\(identidadeAcao\)/);
+  assert.match(
+    bloco,
+    /setComentariosObra\(\(comentariosAtuais\) => \{\s*if \(!execucaoAcaoEstaAtual\(\)\)/,
+  );
+  assert.ok(indiceOtimista > indiceIdentidade);
+  assert.ok(indiceGuardOtimista > indiceOtimista);
+  assert.ok(indiceCache > indiceLocal);
+  assert.ok(indiceGuardUpdaterLocal > indiceUpdaterLocal);
+  assert.ok(indiceCache > indiceGuardUpdaterLocal);
+  assert.ok(indiceDelete > indiceCache);
+  assert.ok(indiceGuardAntesDelete < indiceDelete);
+  assert.ok(indiceGuardAposDelete > indiceDelete);
+  assert.ok(indiceErroDelete > indiceGuardAposDelete);
+  assert.ok(indiceInsert > indiceErroDelete);
+  assert.ok(indiceGuardAntesInsert < indiceInsert);
+  assert.ok(indiceGuardAposInsert > indiceInsert);
+  assert.ok(indiceErroInsert > indiceGuardAposInsert);
+  assert.ok(indiceRollback > indiceCatch);
+  assert.ok(indiceGuardRollback > indiceRollback);
+  assert.ok(indiceStatus > indiceRollback);
   assert.ok(indiceGuardFinally > indiceFinally);
 });
 
