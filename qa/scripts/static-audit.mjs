@@ -2103,6 +2103,15 @@ const publicWorkChaptersQueryPath = path.join(
 const publicWorkChaptersQuery = fs.existsSync(publicWorkChaptersQueryPath)
   ? fs.readFileSync(publicWorkChaptersQueryPath, "utf8")
   : "";
+const publicWorkCommentRepliesQueryPath = path.join(
+  ROOT_DIR,
+  "app/obra/[slug]/lib/obra-supabase-comment-replies-query.ts"
+);
+const publicWorkCommentRepliesQuery = fs.existsSync(
+  publicWorkCommentRepliesQueryPath
+)
+  ? fs.readFileSync(publicWorkCommentRepliesQueryPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2120,7 +2129,7 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   relativePath,
   source: `${fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8")}${
     relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"
-      ? `\n${publicWorkChaptersQuery}`
+      ? `\n${publicWorkChaptersQuery}\n${publicWorkCommentRepliesQuery}`
       : ""
   }`
 }));
