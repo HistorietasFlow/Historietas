@@ -468,6 +468,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 751: extrair somente as persistências remotas de remoção e inserção da curtida de comentário para `app/obra/[slug]/lib/obra-supabase-comment-like-persistence.ts`, preservando tabela, filtros, payload, retorno bruto e guards de identidade no cliente.
 - Fase 752: migrar somente `avaliarObra` para identidade autenticada versionada, preservando `avaliacaoVersaoRef`, o fluxo otimista, cache, persistência remota, rollback e a sincronização do Diário.
 - Fase 753: remover somente o helper legado `obterUsuarioLogadoParaAcao`, já sem consumidores, e o marcador temporário correspondente, preservando a autenticação versionada atual.
+- Fase 754: extrair somente as queries remotas de inserção e remoção do seguimento de obra para `app/obra/[slug]/lib/obra-supabase-interaction-persistence.ts`, preservando guards, efeitos locais, Diário e tratamento de erro no cliente.
 
 ## Contrato de preservação
 

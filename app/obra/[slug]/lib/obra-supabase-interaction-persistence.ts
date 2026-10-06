@@ -43,6 +43,34 @@ export async function salvarRegistroObraPublicaSupabase(
   }
 }
 
+export async function inserirSeguimentoObraPublicaSupabase(
+  obraId: string,
+  userId: string,
+) {
+  return supabase.from("seguindo_obras").upsert(
+    {
+      obra_id: obraId,
+      user_id: userId,
+      visibilidade: "publico",
+    },
+    {
+      onConflict: "user_id,obra_id",
+      ignoreDuplicates: true,
+    },
+  );
+}
+
+export async function removerSeguimentoObraPublicaSupabase(
+  obraId: string,
+  userId: string,
+) {
+  return supabase
+    .from("seguindo_obras")
+    .delete()
+    .eq("obra_id", obraId)
+    .eq("user_id", userId);
+}
+
 export async function salvarCurtidaObraPublicaSupabase(
   userId: string,
   obraId: string,
