@@ -199,7 +199,7 @@ test("erro do Supabase preserva fallback local e e tratado como erro", () => {
   const blocoCarregador = obterBloco(
     paginaCliente,
     "async function carregarObraSupabasePorSlug(",
-    "async function carregarPerfilPublicoObra(",
+    "export default function ObraDinamicaPage()",
   );
 
   assert.match(
