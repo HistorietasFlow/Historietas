@@ -94,7 +94,7 @@ import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
@@ -2750,17 +2750,12 @@ export default function ObraDinamicaPage() {
         return;
       }
 
-      setComentariosObra((comentariosAtuais) => {
-        const comentariosPorId = new Map(
-          comentariosAtuais.map((comentario) => [comentario.id, comentario]),
-        );
-
-        pagina.comentarios.forEach((comentario) => {
-          comentariosPorId.set(comentario.id, comentario);
-        });
-
-        return Array.from(comentariosPorId.values());
-      });
+      setComentariosObra((comentariosAtuais) =>
+        mesclarComentariosObraPorId(
+          comentariosAtuais,
+          pagina.comentarios,
+        )
+      );
       setComentariosTemMais(pagina.temMais);
       setComentariosProximoOffset(pagina.proximoOffset);
       setTotalComentariosObra((totalAtual) =>
