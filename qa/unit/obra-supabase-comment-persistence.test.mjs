@@ -37,6 +37,18 @@ const supabaseJavascript = [
   "          },",
   "        };",
   "      },",
+  "      delete() {",
+  "        globalThis.consultasPersistenciaComentarios.push([\"delete\"]);",
+  "        let filtros = 0;",
+  "        const consulta = {",
+  "          eq(campo, valor) {",
+  "            globalThis.consultasPersistenciaComentarios.push([\"eq\", campo, valor]);",
+  "            filtros += 1;",
+  "            return filtros === 3 ? globalThis.respostaPersistenciaComentarios : consulta;",
+  "          },",
+  "        };",
+  "        return consulta;",
+  "      },",
   "    };",
   "  },",
   "};",
@@ -45,7 +57,7 @@ const supabaseUrl = criarUrlModulo(supabaseJavascript);
 const persistenciaComentariosJavascript = transpilarModuloTypescript(
   "../../app/obra/[slug]/lib/obra-supabase-comment-persistence.ts",
 ).replace('from "../../../../lib/supabase/client";', `from "${supabaseUrl}";`);
-const { inserirComentarioObraSupabase } = await import(
+const { inserirComentarioObraSupabase, removerComentarioObraSupabase } = await import(
   criarUrlModulo(persistenciaComentariosJavascript),
 );
 
@@ -95,6 +107,42 @@ test("retorna o erro bruto sem transformação", async () => {
     ...payload,
     comentario_pai_id: null,
   });
+
+  assert.equal(resultado, resposta);
+  assert.equal(resultado.data, null);
+  assert.equal(resultado.error, erro);
+});
+
+test("remove comentário com tabela, delete e filtros na ordem atual", async () => {
+  const resposta = { data: null, error: null };
+  prepararConsulta(resposta);
+
+  const resultado = await removerComentarioObraSupabase(
+    "comentario-1",
+    "obra-1",
+    "usuario-1",
+  );
+
+  assert.equal(resultado, resposta);
+  assert.deepEqual(globalThis.consultasPersistenciaComentarios, [
+    ["from", "comentarios_obras"],
+    ["delete"],
+    ["eq", "id", "comentario-1"],
+    ["eq", "obra_id", "obra-1"],
+    ["eq", "user_id", "usuario-1"],
+  ]);
+});
+
+test("retorna o erro bruto da remoção sem transformação", async () => {
+  const erro = new Error("falha ao remover comentário");
+  const resposta = { data: null, error: erro };
+  prepararConsulta(resposta);
+
+  const resultado = await removerComentarioObraSupabase(
+    "comentario-1",
+    "obra-1",
+    "usuario-1",
+  );
 
   assert.equal(resultado, resposta);
   assert.equal(resultado.data, null);

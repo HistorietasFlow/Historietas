@@ -315,7 +315,7 @@ test("remocao de comentario revalida identidade apos o delete e antes dos efeito
     "async function removerComentarioObra(",
     "async function alternarCurtidaComentarioObra(",
   );
-  const indiceDelete = bloco.indexOf('.from("comentarios_obras")');
+  const indiceDelete = bloco.indexOf("await removerComentarioObraSupabase");
   const indiceGuardAposDelete = bloco.indexOf(
     "if (!execucaoAcaoEstaAtual())",
     indiceDelete,
