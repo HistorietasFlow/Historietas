@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const listaComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/components/obra-comments-list.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("thread preserva os calculos de respostas visiveis e ocultas", () => {
   assert.match(
@@ -95,17 +102,21 @@ test("estado e updaters de visibilidade permanecem no cliente", () => {
     /setRespostasVisiveisPorComentario/,
   );
   assert.match(
-    paginaObra,
+    listaComentarios,
     /<ObraCommentThread\s*key=\{comentario\.id\}\s*comentario=\{comentario\}\s*respostas=\{respostas\}/,
   );
   assert.match(
-    paginaObra,
+    listaComentarios,
     /quantidadeVisivelAtual=\{\s*respostasVisiveisPorComentario\[comentario\.id\] \|\| 0\s*\}/,
   );
-  assert.match(paginaObra, /onMostrarRespostas=\{mostrarRespostasComentario\}/);
   assert.match(
     paginaObra,
-    /onMostrarMaisRespostas=\{mostrarMaisRespostasComentario\}/,
+    /<ObraCommentsList\s*comentariosCarregando=\{comentariosCarregando\}/,
   );
-  assert.match(paginaObra, /onOcultarRespostas=\{ocultarRespostasComentario\}/);
+  assert.match(listaComentarios, /onMostrarRespostas=\{onMostrarRespostas\}/);
+  assert.match(
+    listaComentarios,
+    /onMostrarMaisRespostas=\{onMostrarMaisRespostas\}/,
+  );
+  assert.match(listaComentarios, /onOcultarRespostas=\{onOcultarRespostas\}/);
 });

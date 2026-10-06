@@ -6,6 +6,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const listaComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/components/obra-comments-list.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const consultaRaizesComentarios = readFileSync(
   new URL(
     "../../app/obra/[slug]/lib/obra-supabase-root-comments-query.ts",
@@ -151,9 +158,10 @@ test("painel oferece carregamento incremental sem perder protecao de versao", ()
   assert.doesNotMatch(bloco, /const comentariosPorId = new Map/);
 
   assert.match(
-    paginaObra,
+    listaComentarios,
     /Carregar mais comentários/,
   );
+  assert.match(paginaObra, /onCarregarMais=\{carregarMaisComentariosObra\}/);
 });
 
 test("updaters enfileirados de carregar mais ignoram execucao obsoleta", () => {
