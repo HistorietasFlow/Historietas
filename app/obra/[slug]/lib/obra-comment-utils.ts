@@ -85,6 +85,21 @@ export function obterObraIdComentarios(
   return obra?.id?.trim() || "";
 }
 
+export function mesclarComentariosObraPorId(
+  comentariosAtuais: ComentarioObraPublico[],
+  novosComentarios: ComentarioObraPublico[],
+) {
+  const comentariosPorId = new Map(
+    comentariosAtuais.map((comentario) => [comentario.id, comentario]),
+  );
+
+  novosComentarios.forEach((comentario) => {
+    comentariosPorId.set(comentario.id, comentario);
+  });
+
+  return Array.from(comentariosPorId.values());
+}
+
 export function criarEstruturaComentariosObra(
   comentarios: ComentarioObraPublico[],
   ordenacao: OrdenacaoComentariosObra

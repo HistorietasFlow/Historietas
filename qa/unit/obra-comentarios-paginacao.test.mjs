@@ -120,6 +120,11 @@ test("painel oferece carregamento incremental sem perder protecao de versao", ()
     /comentariosConsultaVersaoRef\.current === versaoConsulta/,
   );
   assert.match(bloco, /execucaoIdentidadeObraEstaAtual/);
+  assert.match(
+    bloco,
+    /setComentariosObra\(\(comentariosAtuais\) =>\s*mesclarComentariosObraPorId\(\s*comentariosAtuais,\s*pagina\.comentarios,\s*\)/,
+  );
+  assert.doesNotMatch(bloco, /const comentariosPorId = new Map/);
 
   assert.match(
     paginaObra,
