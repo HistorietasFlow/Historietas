@@ -102,8 +102,9 @@ import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLoca
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, commentsLoadingStyle, emptyCommentsStyle, commentsToolsStyle, commentsQuickReactionsStyle, commentsQuickReactionButtonStyle, commentsSheetFormStyle, commentsInputAvatarStyle, commentsInputBoxStyle, commentsSheetInputStyle, commentsInputIconButtonStyle, commentsSheetSendStyle, commentStatusStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, commentsLoadMoreStyle, commentsSheetBackdropStyle, commentsSheetCompactStyle, commentsSheetExpandedStyle, commentsSheetHandleStyle, commentsSheetHandleWrapStyle, commentsSheetHeaderSpacerStyle, commentsSheetHeaderStyle, commentsSheetOverlayStyle, commentsSheetTitleStyle, commentsSheetListStyle, commentsSheetStyle, commentsSortMenuDividerStyle, commentsSortMenuItemActiveStyle, commentsSortMenuItemStyle, commentsSortMenuStyle, commentsSortMenuTriggerStyle, commentsSortMenuWrapStyle, desktopCommentsSheetStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, commentsLoadingStyle, emptyCommentsStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, commentsLoadMoreStyle, commentsSheetBackdropStyle, commentsSheetCompactStyle, commentsSheetExpandedStyle, commentsSheetHandleStyle, commentsSheetHandleWrapStyle, commentsSheetHeaderSpacerStyle, commentsSheetHeaderStyle, commentsSheetOverlayStyle, commentsSheetTitleStyle, commentsSheetListStyle, commentsSheetStyle, commentsSortMenuDividerStyle, commentsSortMenuItemActiveStyle, commentsSortMenuItemStyle, commentsSortMenuStyle, commentsSortMenuTriggerStyle, commentsSortMenuWrapStyle, desktopCommentsSheetStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentThread from "./components/obra-comment-thread";
+import ObraCommentComposer from "./components/obra-comment-composer";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1768,6 +1769,11 @@ export default function ObraDinamicaPage() {
     setComentarioStatus("");
   }
 
+  function alterarTextoComentarioObra(valor: string) {
+    setComentarioTexto(valor.slice(0, 600));
+    setComentarioStatus("");
+  }
+
   function responderComentarioObra(
     comentario: ComentarioObraPublico,
     comentarioRaizId: string
@@ -3007,104 +3013,18 @@ export default function ObraDinamicaPage() {
                 )}
               </section>
 
-              <section style={commentsToolsStyle}>
-                <div style={commentsQuickReactionsStyle}>
-                  {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => inserirNoComentarioObra(emoji)}
-                      style={commentsQuickReactionButtonStyle}
-                      aria-label={`Adicionar ${emoji} ao comentário`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <form
+              <ObraCommentComposer
+                comentarioTexto={comentarioTexto}
+                comentarioStatus={comentarioStatus}
+                comentarioEnviando={comentarioEnviando}
+                usuarioIdLogado={usuarioIdLogado}
+                avatarUsuario={perfilUsuarioLogado?.avatar || ""}
+                nomeUsuario={perfilUsuarioLogado?.nome || ""}
+                comentarioInputRef={comentarioInputRef}
                 onSubmit={enviarComentarioObra}
-                style={commentsSheetFormStyle}
-              >
-                <div
-                  style={
-                    perfilUsuarioLogado?.avatar
-                      ? {
-                          ...commentsInputAvatarStyle,
-                          backgroundImage: `url(${perfilUsuarioLogado.avatar})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }
-                      : commentsInputAvatarStyle
-                  }
-                >
-                  {!perfilUsuarioLogado?.avatar
-                    ? usuarioIdLogado
-                      ? perfilUsuarioLogado?.nome.slice(0, 1).toUpperCase() || "V"
-                      : "H"
-                    : null}
-                </div>
-
-                <div style={commentsInputBoxStyle}>
-                  <textarea
-                    aria-label={
-                      usuarioIdLogado
-                        ? "Adicionar comentário..."
-                        : "Entre para comentar."
-                    }
-                    ref={comentarioInputRef}
-                    value={comentarioTexto}
-                    onChange={(event) => {
-                      setComentarioTexto(event.target.value.slice(0, 600));
-                      setComentarioStatus("");
-                    }}
-                    style={commentsSheetInputStyle}
-                    placeholder={
-                      usuarioIdLogado
-                        ? "Adicionar comentário..."
-                        : "Entre para comentar."
-                    }
-                    maxLength={600}
-                    rows={1}
-                    disabled={comentarioEnviando}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => inserirNoComentarioObra("@")}
-                  disabled={comentarioEnviando}
-                  style={commentsInputIconButtonStyle}
-                  aria-label="Adicionar menção"
-                >
-                  @
-                </button>
-
-                <button
-                  type="submit"
-                  aria-label="Enviar comentário"
-                  disabled={comentarioEnviando}
-                  style={{
-                    ...commentsSheetSendStyle,
-                    opacity: comentarioEnviando ? 0.58 : 1,
-                    cursor: comentarioEnviando ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {comentarioEnviando ? (
-                    <LoadingSpinner
-                      compacto
-                      label="Enviando comentário"
-                    />
-                  ) : (
-                    "↑"
-                  )}
-                </button>
-              </form>
-
-              {comentarioStatus ? (
-                <span style={commentStatusStyle}>{comentarioStatus}</span>
-              ) : null}
+                onAlterarTexto={alterarTextoComentarioObra}
+                onInserirNoComentario={inserirNoComentarioObra}
+              />
             </article>
           </section>,
           document.body
