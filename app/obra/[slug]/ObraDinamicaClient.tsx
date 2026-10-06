@@ -2750,17 +2750,25 @@ export default function ObraDinamicaPage() {
         return;
       }
 
-      setComentariosObra((comentariosAtuais) =>
-        mesclarComentariosObraPorId(
+      setComentariosObra((comentariosAtuais) => {
+        if (!execucaoAtual()) {
+          return comentariosAtuais;
+        }
+
+        return mesclarComentariosObraPorId(
           comentariosAtuais,
           pagina.comentarios,
-        )
-      );
+        );
+      });
       setComentariosTemMais(pagina.temMais);
       setComentariosProximoOffset(pagina.proximoOffset);
-      setTotalComentariosObra((totalAtual) =>
-        Math.max(totalAtual, pagina.proximoOffset),
-      );
+      setTotalComentariosObra((totalAtual) => {
+        if (!execucaoAtual()) {
+          return totalAtual;
+        }
+
+        return Math.max(totalAtual, pagina.proximoOffset);
+      });
     } catch {
       if (execucaoAtual()) {
         setComentarioStatus(

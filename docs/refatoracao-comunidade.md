@@ -470,6 +470,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 753: remover somente o helper legado `obterUsuarioLogadoParaAcao`, já sem consumidores, e o marcador temporário correspondente, preservando a autenticação versionada atual.
 - Fase 754: extrair somente as queries remotas de inserção e remoção do seguimento de obra para `app/obra/[slug]/lib/obra-supabase-interaction-persistence.ts`, preservando guards, efeitos locais, Diário e tratamento de erro no cliente.
 - Fase 755: extrair somente a mesclagem pura de comentários paginados por ID para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando ordem, substituição, duplicatas e guards no cliente.
+- Fase 756: proteger somente os updaters funcionais de carregamento incremental de comentários contra execuções obsoletas, revalidando versão e identidade dentro dos callbacks antes de mesclar comentários ou atualizar o total.
 
 ## Contrato de preservação
 
