@@ -143,7 +143,7 @@ test("comentario revalida identidade depois dos awaits e antes de rollback", () 
     "if (!execucaoAcaoEstaAtual())",
     indicePerfil,
   );
-  const indiceInsert = bloco.indexOf('.from("comentarios_obras")');
+  const indiceInsert = bloco.indexOf("await inserirComentarioObraSupabase");
   const indiceGuardInsert = bloco.indexOf(
     "if (!execucaoAcaoEstaAtual())",
     indiceInsert,

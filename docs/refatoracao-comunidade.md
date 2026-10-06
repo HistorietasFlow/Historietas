@@ -461,6 +461,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 744: extrair integralmente `normalizarComentariosObraSupabase` para `app/obra/[slug]/lib/obra-supabase-comment-normalizer.ts`, preservando deduplicação, ordem perfis → curtidas, fallback silencioso de curtidas, normalização e validação dos comentários públicos.
 - Fase 745: extrair integralmente o carregador paginado de comentários da obra para `app/obra/[slug]/lib/obra-supabase-comments-page-loader.ts`, preservando sentinela, recursão, deduplicação, normalização e offsets.
 - Fase 746: extrair integralmente `carregarPerfilPublicoObra` para `app/obra/[slug]/lib/obra-public-profile-resolver.ts`, preservando prioridade do perfil público, fallback autenticado e normalização final.
+- Fase 747: extrair somente a persistência remota de criação de comentário para `app/obra/[slug]/lib/obra-supabase-comment-persistence.ts`, preservando payload preparado no cliente, tabela, seleção, retorno bruto, guard de identidade e orquestração do envio.
 
 ## Contrato de preservação
 

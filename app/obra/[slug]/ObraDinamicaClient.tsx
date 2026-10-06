@@ -54,6 +54,7 @@ import { consultarObraPublicaPorSlug } from "./lib/obra-supabase-work-utils";
 import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
 import { carregarPaginaComentariosObraSupabase } from "./lib/obra-supabase-comments-page-loader";
 import { normalizarComentariosObraSupabase } from "./lib/obra-supabase-comment-normalizer";
+import { inserirComentarioObraSupabase } from "./lib/obra-supabase-comment-persistence";
 import {
   WORK_COMMENT_LIKES_TABLE,
 } from "./lib/obra-supabase-comment-likes-query";
@@ -1712,18 +1713,12 @@ export default function ObraDinamicaPage() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from("comentarios_obras")
-        .insert({
-          obra_id: obra.id,
-          user_id: userId,
-          comentario: comentarioTemporario.texto,
-          comentario_pai_id: comentarioTemporario.comentarioPaiId || null,
-        })
-        .select(
-          "id,obra_id,user_id,comentario,comentario_pai_id,criado_em"
-        )
-        .single();
+      const { data, error } = await inserirComentarioObraSupabase({
+        obra_id: obra.id,
+        user_id: userId,
+        comentario: comentarioTemporario.texto,
+        comentario_pai_id: comentarioTemporario.comentarioPaiId || null,
+      });
 
       if (error || !data) {
         throw error || new Error("Comentário não retornado pelo Supabase.");
