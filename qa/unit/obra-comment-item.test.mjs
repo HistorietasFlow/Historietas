@@ -81,15 +81,11 @@ test("item preserva as regras de acoes e os argumentos dos callbacks", () => {
   assert.match(componenteComentario, /\{comentario\.curtidas\.length\}/);
 });
 
-test("chaves permanecem no cliente ao criar listas de comentarios", () => {
+test("chave da thread e handlers permanecem no cliente", () => {
   assert.doesNotMatch(componenteComentario, /key=\{comentario\.id\}/);
   assert.match(
     paginaObra,
-    /<section key=\{comentario\.id\} style=\{commentThreadStyle\}>/,
-  );
-  assert.match(
-    paginaObra,
-    /respostasVisiveis\.map\(\(resposta\) => \(\s*<ObraCommentItem\s*key=\{resposta\.id\}/,
+    /<ObraCommentThread\s*key=\{comentario\.id\}/,
   );
   assert.match(paginaObra, /onResponder=\{responderComentarioObra\}/);
   assert.match(paginaObra, /onRemover=\{removerComentarioObra\}/);

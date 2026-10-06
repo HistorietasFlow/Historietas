@@ -472,6 +472,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 755: extrair somente a mesclagem pura de comentários paginados por ID para `app/obra/[slug]/lib/obra-comment-utils.ts`, preservando ordem, substituição, duplicatas e guards no cliente.
 - Fase 756: proteger somente os updaters funcionais de carregamento incremental de comentários contra execuções obsoletas, revalidando versão e identidade dentro dos callbacks antes de mesclar comentários ou atualizar o total.
 - Fase 757: extrair somente a apresentação de cada comentário da obra para `app/obra/[slug]/components/obra-comment-item.tsx`, preservando estilos, acessibilidade, chaves nas listas e handlers no cliente.
+- Fase 758: extrair somente a apresentação de cada thread de comentários da obra para `app/obra/[slug]/components/obra-comment-thread.tsx`, preservando cálculos, controles de respostas, chaves e estado de visibilidade no cliente.
 
 ## Contrato de preservação
 
