@@ -94,7 +94,7 @@ import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, criarEstruturaComentariosObra, formatarTempoRelativoComentarioObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, criarEstruturaComentariosObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obra-file-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
@@ -102,7 +102,8 @@ import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLoca
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, commentRepliesControlsStyle, commentRepliesHideButtonStyle, commentRepliesLineStyle, commentRepliesListStyle, commentRepliesToggleStyle, commentSheetActionsRowStyle, commentSheetAvatarLinkStyle, commentSheetAuthorLinkStyle, commentSheetContentStyle, commentSheetTimeStyle, commentSheetTextStyle, commentSheetItemStyle, commentSheetTopLineStyle, commentSheetReplyAvatarLinkStyle, commentSheetReplyButtonStyle, commentSheetRemoveButtonStyle, commentSheetLikeWrapStyle, commentSheetLikeButtonStyle, commentSheetLikeCountStyle, commentSheetHeartIconStyle, commentsLoadingStyle, emptyCommentsStyle, commentsToolsStyle, commentsQuickReactionsStyle, commentsQuickReactionButtonStyle, commentsSheetFormStyle, commentsInputAvatarStyle, commentsInputBoxStyle, commentsSheetInputStyle, commentsInputIconButtonStyle, commentsSheetSendStyle, commentStatusStyle, commentSheetReplyItemStyle, commentThreadStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, commentsLoadMoreStyle, commentsSheetBackdropStyle, commentsSheetCompactStyle, commentsSheetExpandedStyle, commentsSheetHandleStyle, commentsSheetHandleWrapStyle, commentsSheetHeaderSpacerStyle, commentsSheetHeaderStyle, commentsSheetOverlayStyle, commentsSheetTitleStyle, commentsSheetListStyle, commentsSheetStyle, commentsSortMenuDividerStyle, commentsSortMenuItemActiveStyle, commentsSortMenuItemStyle, commentsSortMenuStyle, commentsSortMenuTriggerStyle, commentsSortMenuWrapStyle, desktopCommentsSheetStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, commentRepliesControlsStyle, commentRepliesHideButtonStyle, commentRepliesLineStyle, commentRepliesListStyle, commentRepliesToggleStyle, commentsLoadingStyle, emptyCommentsStyle, commentsToolsStyle, commentsQuickReactionsStyle, commentsQuickReactionButtonStyle, commentsSheetFormStyle, commentsInputAvatarStyle, commentsInputBoxStyle, commentsSheetInputStyle, commentsInputIconButtonStyle, commentsSheetSendStyle, commentStatusStyle, commentThreadStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, commentsLoadMoreStyle, commentsSheetBackdropStyle, commentsSheetCompactStyle, commentsSheetExpandedStyle, commentsSheetHandleStyle, commentsSheetHandleWrapStyle, commentsSheetHeaderSpacerStyle, commentsSheetHeaderStyle, commentsSheetOverlayStyle, commentsSheetTitleStyle, commentsSheetListStyle, commentsSheetStyle, commentsSortMenuDividerStyle, commentsSortMenuItemActiveStyle, commentsSortMenuItemStyle, commentsSortMenuStyle, commentsSortMenuTriggerStyle, commentsSortMenuWrapStyle, desktopCommentsSheetStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import ObraCommentItem from "./components/obra-comment-item";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2788,150 +2789,6 @@ export default function ObraDinamicaPage() {
     [comentariosObra, ordenacaoComentarios]
   );
 
-  function renderizarComentarioObra(
-    comentario: ComentarioObraPublico,
-    comentarioRaizId: string,
-    resposta = false
-  ) {
-    const podeRemover = Boolean(
-      usuarioIdLogado && comentario.userId === usuarioIdLogado
-    );
-    const removendo = comentarioRemovendoId === comentario.id;
-    const curtindo = comentarioCurtindoId === comentario.id;
-    const usuarioCurtiu = Boolean(
-      usuarioIdLogado && comentario.curtidas.includes(usuarioIdLogado)
-    );
-    const avatarStyle = comentario.avatar
-      ? {
-          ...(resposta
-            ? commentSheetReplyAvatarLinkStyle
-            : commentSheetAvatarLinkStyle),
-          backgroundImage: `url(${comentario.avatar})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }
-      : resposta
-        ? commentSheetReplyAvatarLinkStyle
-        : commentSheetAvatarLinkStyle;
-
-    return (
-      <article
-        key={comentario.id}
-        style={
-          resposta ? commentSheetReplyItemStyle : commentSheetItemStyle
-        }
-      >
-        <Link
-          href={criarLinkPerfilAutor(comentario.nome, comentario.userId)}
-          aria-label={`Abrir perfil de ${comentario.nome}`}
-          style={avatarStyle}
-        >
-          {!comentario.avatar
-            ? comentario.nome.slice(0, 1).toUpperCase() || "U"
-            : null}
-        </Link>
-
-        <div style={commentSheetContentStyle}>
-          <div style={commentSheetTopLineStyle}>
-            <Link
-              href={criarLinkPerfilAutor(comentario.nome, comentario.userId)}
-              data-historietas-i18n-ignore="true"
-              style={commentSheetAuthorLinkStyle}
-            >
-              {comentario.nome}
-            </Link>
-
-            <span style={commentSheetTimeStyle}>
-              {formatarTempoRelativoComentarioObra(
-                comentario.criadoEm,
-                agoraComentarios
-              )}
-            </span>
-          </div>
-
-          <p data-historietas-i18n-ignore="true" style={commentSheetTextStyle}>{comentario.texto}</p>
-
-          <div style={commentSheetActionsRowStyle}>
-            <button
-              type="button"
-              onClick={() =>
-                responderComentarioObra(comentario, comentarioRaizId)
-              }
-              style={commentSheetReplyButtonStyle}
-            >
-              Responder
-            </button>
-
-            {podeRemover ? (
-              <button
-                type="button"
-                onClick={() => void removerComentarioObra(comentario)}
-                disabled={removendo}
-                style={{
-                  ...commentSheetRemoveButtonStyle,
-                  opacity: removendo ? 0.58 : 1,
-                  cursor: removendo ? "not-allowed" : "pointer",
-                }}
-              >
-                {removendo ? "Removendo..." : "Remover"}
-              </button>
-            ) : !comentario.local ? (
-              <button
-                type="button"
-                onClick={() => abrirDenunciaComentarioObra(comentario)}
-                style={commentSheetRemoveButtonStyle}
-              >
-                Denunciar
-              </button>
-            ) : null}
-          </div>
-        </div>
-
-        <div style={commentSheetLikeWrapStyle}>
-          <button
-            type="button"
-            aria-label={
-              usuarioCurtiu
-                ? "Remover curtida do comentário"
-                : "Curtir comentário"
-            }
-            onClick={() => void alternarCurtidaComentarioObra(comentario)}
-            disabled={curtindo}
-            style={{
-              ...commentSheetLikeButtonStyle,
-              opacity: curtindo ? 0.58 : 1,
-              cursor: curtindo ? "not-allowed" : "pointer",
-            }}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              style={commentSheetHeartIconStyle}
-            >
-              <path
-                d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                fill={usuarioCurtiu ? "var(--historietas-obra-heart, #FFFFFF)" : "none"}
-                stroke={
-                  usuarioCurtiu
-                    ? "var(--historietas-obra-heart, #FFFFFF)"
-                    : "var(--historietas-text-secondary, #D4D4D8)"
-                }
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-
-          <span style={commentSheetLikeCountStyle}>
-            {comentario.curtidas.length}
-          </span>
-        </div>
-      </article>
-    );
-  }
-
-
   const painelComentariosObra =
     obra && comentariosAbertos && typeof document !== "undefined"
       ? createPortal(
@@ -3089,20 +2946,37 @@ export default function ObraDinamicaPage() {
 
                     return (
                       <section key={comentario.id} style={commentThreadStyle}>
-                        {renderizarComentarioObra(
-                          comentario,
-                          comentario.id
-                        )}
+                        <ObraCommentItem
+                          comentario={comentario}
+                          comentarioRaizId={comentario.id}
+                          usuarioIdLogado={usuarioIdLogado}
+                          comentarioRemovendoId={comentarioRemovendoId}
+                          comentarioCurtindoId={comentarioCurtindoId}
+                          agoraComentarios={agoraComentarios}
+                          onResponder={responderComentarioObra}
+                          onRemover={removerComentarioObra}
+                          onDenunciar={abrirDenunciaComentarioObra}
+                          onCurtir={alternarCurtidaComentarioObra}
+                        />
 
                         {respostasVisiveis.length > 0 ? (
                           <div style={commentRepliesListStyle}>
-                            {respostasVisiveis.map((resposta) =>
-                              renderizarComentarioObra(
-                                resposta,
-                                comentario.id,
-                                true
-                              )
-                            )}
+                            {respostasVisiveis.map((resposta) => (
+                              <ObraCommentItem
+                                key={resposta.id}
+                                comentario={resposta}
+                                comentarioRaizId={comentario.id}
+                                resposta
+                                usuarioIdLogado={usuarioIdLogado}
+                                comentarioRemovendoId={comentarioRemovendoId}
+                                comentarioCurtindoId={comentarioCurtindoId}
+                                agoraComentarios={agoraComentarios}
+                                onResponder={responderComentarioObra}
+                                onRemover={removerComentarioObra}
+                                onDenunciar={abrirDenunciaComentarioObra}
+                                onCurtir={alternarCurtidaComentarioObra}
+                              />
+                            ))}
                           </div>
                         ) : null}
 
