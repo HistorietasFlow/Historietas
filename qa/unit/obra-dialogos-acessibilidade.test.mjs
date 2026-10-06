@@ -14,6 +14,13 @@ const obraStyleUtils = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-style-utils.ts", import.meta.url),
   "utf8",
 );
+const handleComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/components/obra-comments-handle.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -49,17 +56,18 @@ test("comentarios classificacao e acoes recebem foco inicial ao abrir", () => {
     /focarInicioDialogo\(acoesObraDialogRef\.current\)/,
   );
 
-  const marcadoresJsx = paginaObra.match(
+  const marcadoresPagina = paginaObra.match(
     /\sdata-dialog-initial-focus="true"/g,
   ) || [];
 
-  assert.equal(marcadoresJsx.length, 3);
+  assert.equal(marcadoresPagina.length, 2);
+  assert.match(handleComentarios, /data-dialog-initial-focus="true"/);
 });
 
 test("os tres dialogs usam aria modal tabIndex e controle de teclado", () => {
   const comentarios = obterBloco(
     'ref={comentariosSheetRef}',
-    'data-comments-sheet-handle="true"',
+    "<ObraCommentsHandle",
   );
   const classificacao = obterBloco(
     'ref={classificacaoDialogRef}',

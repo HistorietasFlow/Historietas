@@ -102,10 +102,11 @@ import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLoca
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, commentsLoadingStyle, emptyCommentsStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, commentsLoadMoreStyle, commentsSheetBackdropStyle, commentsSheetCompactStyle, commentsSheetExpandedStyle, commentsSheetHandleStyle, commentsSheetHandleWrapStyle, commentsSheetOverlayStyle, commentsSheetListStyle, commentsSheetStyle, desktopCommentsSheetStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, commentsLoadingStyle, emptyCommentsStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, commentsLoadMoreStyle, commentsSheetBackdropStyle, commentsSheetCompactStyle, commentsSheetExpandedStyle, commentsSheetOverlayStyle, commentsSheetListStyle, commentsSheetStyle, desktopCommentsSheetStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentThread from "./components/obra-comment-thread";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
+import ObraCommentsHandle from "./components/obra-comments-handle";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2875,31 +2876,14 @@ export default function ObraDinamicaPage() {
                     }
               }
             >
-              <div
-                data-comments-sheet-handle="true"
-                data-dialog-initial-focus="true"
-                style={commentsSheetHandleWrapStyle}
-                onClick={alternarExpansaoComentariosObra}
+              <ObraCommentsHandle
+                expandido={comentariosSheetExpandido}
+                onAlternarExpansao={alternarExpansaoComentariosObra}
                 onTouchStart={iniciarArrasteComentariosObra}
                 onTouchMove={moverArrasteComentariosObra}
                 onTouchEnd={finalizarArrasteComentariosObra}
                 onTouchCancel={finalizarArrasteComentariosObra}
-                role="button"
-                tabIndex={0}
-                aria-label={
-                  comentariosSheetExpandido
-                    ? "Recolher comentários"
-                    : "Expandir comentários"
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    alternarExpansaoComentariosObra();
-                  }
-                }}
-              >
-                <div style={commentsSheetHandleStyle} />
-              </div>
+              />
 
               <ObraCommentsHeader
                 totalComentarios={totalComentariosObra}
