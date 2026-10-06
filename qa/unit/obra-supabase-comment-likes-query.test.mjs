@@ -47,6 +47,10 @@ const paginacaoJavascript = [
 ].join("\n");
 const supabaseUrl = criarUrlModulo(supabaseJavascript);
 const paginacaoUrl = criarUrlModulo(paginacaoJavascript);
+const persistenciaCurtidasJavascript = transpilarModuloTypescript(
+  "../../app/obra/[slug]/lib/obra-supabase-comment-like-persistence.ts",
+).replace('from "../../../../lib/supabase/client";', `from "${supabaseUrl}";`);
+const persistenciaCurtidasUrl = criarUrlModulo(persistenciaCurtidasJavascript);
 const curtidasJavascript = transpilarModuloTypescript(
   "../../app/obra/[slug]/lib/obra-supabase-comment-likes-query.ts",
 )
@@ -54,11 +58,14 @@ const curtidasJavascript = transpilarModuloTypescript(
   .replace(
     'from "../../../../lib/supabase/paginacao.mjs";',
     `from "${paginacaoUrl}";`,
+  )
+  .replace(
+    'from "./obra-supabase-comment-like-persistence";',
+    `from "${persistenciaCurtidasUrl}";`,
   );
-const {
-  WORK_COMMENT_LIKES_TABLE,
-  carregarCurtidasComentariosObraSupabase,
-} = await import(criarUrlModulo(curtidasJavascript));
+const { carregarCurtidasComentariosObraSupabase } = await import(
+  criarUrlModulo(curtidasJavascript),
+);
 
 function prepararConsulta({
   data = [],
@@ -83,7 +90,6 @@ test("pagina curtidas dos comentarios com tabela, query, ordenacao e ranges pres
     "comentario-3",
   ]);
 
-  assert.equal(WORK_COMMENT_LIKES_TABLE, "comentarios_obras_curtidas");
   assert.deepEqual(resultado, [...curtidas, ...curtidas]);
   assert.equal(
     globalThis.opcoesPaginacaoCurtidasComentarios.nomeColecao,

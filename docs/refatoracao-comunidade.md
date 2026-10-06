@@ -465,6 +465,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 748: proteger somente `removerComentarioObra` contra troca de identidade durante a remoção, preservando a query inline, a ordem dos filtros, a remoção local, o cache, contadores, resposta, mensagens e o lock para execuções ainda atuais.
 - Fase 749: extrair somente a persistência remota de remoção de comentário para `app/obra/[slug]/lib/obra-supabase-comment-persistence.ts`, preservando tabela, delete, ordem dos filtros, retorno bruto e os guards de identidade no cliente.
 - Fase 750: proteger somente `alternarCurtidaComentarioObra` contra troca de identidade durante a curtida, preservando atualização otimista, cache local, delete antes de insert, rollback, mensagens e lock para execuções ainda atuais.
+- Fase 751: extrair somente as persistências remotas de remoção e inserção da curtida de comentário para `app/obra/[slug]/lib/obra-supabase-comment-like-persistence.ts`, preservando tabela, filtros, payload, retorno bruto e guards de identidade no cliente.
 
 ## Contrato de preservação
 

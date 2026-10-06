@@ -1,7 +1,6 @@
 import { supabase } from "../../../../lib/supabase/client";
 import { carregarTodasPaginasPorLotesSupabase } from "../../../../lib/supabase/paginacao.mjs";
-
-export const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
+import { WORK_COMMENT_LIKES_TABLE } from "./obra-supabase-comment-like-persistence";
 
 export async function carregarCurtidasComentariosObraSupabase(
   comentariosIds: string[]
