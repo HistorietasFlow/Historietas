@@ -30,6 +30,7 @@ import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
 import { useObraCommentRepliesVisibility } from "./hooks/use-obra-comment-replies-visibility";
+import { useObraCommentsOrdering } from "./hooks/use-obra-comments-ordering";
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
 import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
@@ -82,7 +83,7 @@ import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { obterAcaoLeituraPrincipalObra, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, criarEstruturaComentariosObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, criarEstruturaComentariosObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarLinkComFallback } from "./lib/obra-share-utils";
 import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
@@ -173,10 +174,14 @@ export default function ObraDinamicaPage() {
     mostrarMaisRespostas,
     ocultarRespostas,
   } = useObraCommentRepliesVisibility();
-  const [ordenacaoComentarios, setOrdenacaoComentarios] =
-    useState<OrdenacaoComentariosObra>("relevantes");
-  const [menuOrdenacaoComentariosAberto, setMenuOrdenacaoComentariosAberto] =
-    useState(false);
+  const {
+    ordenacaoComentarios,
+    menuOrdenacaoComentariosAberto,
+    alternarMenuOrdenacaoComentarios,
+    selecionarComentariosRelevantes,
+    selecionarComentariosRecentes,
+    fecharMenuOrdenacaoComentarios,
+  } = useObraCommentsOrdering();
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [perfilUsuarioLogado, setPerfilUsuarioLogado] =
@@ -2207,7 +2212,7 @@ export default function ObraDinamicaPage() {
   function abrirComentariosObra() {
     focoAntesComentariosRef.current = obterElementoComFocoAtual();
     setComentariosSheetExpandido(false);
-    setMenuOrdenacaoComentariosAberto(false);
+    fecharMenuOrdenacaoComentarios();
     setComentariosAbertos(true);
   }
 
@@ -2220,25 +2225,11 @@ export default function ObraDinamicaPage() {
     focoAntesComentariosRef.current = null;
     setComentariosAbertos(false);
     setComentariosSheetExpandido(false);
-    setMenuOrdenacaoComentariosAberto(false);
+    fecharMenuOrdenacaoComentarios();
     setRespostaComentario(null);
     comentariosDragOffsetYRef.current = 0;
     restaurarFocoAnterior(focoAnterior);
   }
-
-  const alternarMenuOrdenacaoComentarios = () => {
-    setMenuOrdenacaoComentariosAberto((aberto) => !aberto);
-  };
-
-  const selecionarComentariosRelevantes = () => {
-    setOrdenacaoComentarios("relevantes");
-    setMenuOrdenacaoComentariosAberto(false);
-  };
-
-  const selecionarComentariosRecentes = () => {
-    setOrdenacaoComentarios("recentes");
-    setMenuOrdenacaoComentariosAberto(false);
-  };
 
   function iniciarArrasteComentariosObra(
     event: TouchEvent<HTMLDivElement>

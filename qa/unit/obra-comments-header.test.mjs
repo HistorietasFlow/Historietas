@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const hookOrdenacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-ordering.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("cabecalho preserva contador singular plural e trigger acessivel", () => {
   assert.match(
@@ -58,27 +65,36 @@ test("cabecalho preserva menu, opcoes, estados ARIA e estilos", () => {
   );
 });
 
-test("estado e selecao do menu permanecem no cliente", () => {
+test("hook centraliza estado e selecao do menu sem mover o cabecalho", () => {
   assert.match(
-    paginaObra,
+    hookOrdenacao,
     /const \[ordenacaoComentarios, setOrdenacaoComentarios\] =\s*useState<OrdenacaoComentariosObra>\("relevantes"\);/,
   );
   assert.match(
-    paginaObra,
+    hookOrdenacao,
     /const \[menuOrdenacaoComentariosAberto, setMenuOrdenacaoComentariosAberto\] =\s*useState\(false\);/,
   );
   assert.match(
-    paginaObra,
-    /const alternarMenuOrdenacaoComentarios = \(\) => \{\s*setMenuOrdenacaoComentariosAberto\(\(aberto\) => !aberto\);\s*\};/,
+    hookOrdenacao,
+    /const alternarMenuOrdenacaoComentarios = useCallback\(\(\) => \{\s*setMenuOrdenacaoComentariosAberto\(\(aberto\) => !aberto\);\s*\}, \[\]\);/,
+  );
+  assert.match(
+    hookOrdenacao,
+    /const selecionarComentariosRelevantes = useCallback\(\(\) => \{\s*setOrdenacaoComentarios\("relevantes"\);\s*setMenuOrdenacaoComentariosAberto\(false\);\s*\}, \[\]\);/,
+  );
+  assert.match(
+    hookOrdenacao,
+    /const selecionarComentariosRecentes = useCallback\(\(\) => \{\s*setOrdenacaoComentarios\("recentes"\);\s*setMenuOrdenacaoComentariosAberto\(false\);\s*\}, \[\]\);/,
+  );
+  assert.match(
+    hookOrdenacao,
+    /const fecharMenuOrdenacaoComentarios = useCallback\(\(\) => \{\s*setMenuOrdenacaoComentariosAberto\(false\);\s*\}, \[\]\);/,
   );
   assert.match(
     paginaObra,
-    /const selecionarComentariosRelevantes = \(\) => \{\s*setOrdenacaoComentarios\("relevantes"\);\s*setMenuOrdenacaoComentariosAberto\(false\);\s*\};/,
+    /import \{ useObraCommentsOrdering \} from "\.\/hooks\/use-obra-comments-ordering";/,
   );
-  assert.match(
-    paginaObra,
-    /const selecionarComentariosRecentes = \(\) => \{\s*setOrdenacaoComentarios\("recentes"\);\s*setMenuOrdenacaoComentariosAberto\(false\);\s*\};/,
-  );
+  assert.match(paginaObra, /\} = useObraCommentsOrdering\(\);/);
   assert.match(
     paginaObra,
     /<ObraCommentsHeader\s*totalComentarios=\{totalComentariosObra\}\s*ordenacao=\{ordenacaoComentarios\}\s*menuAberto=\{menuOrdenacaoComentariosAberto\}\s*onAlternarMenu=\{alternarMenuOrdenacaoComentarios\}\s*onSelecionarRelevantes=\{selecionarComentariosRelevantes\}\s*onSelecionarRecentes=\{selecionarComentariosRecentes\}/,
@@ -98,6 +114,6 @@ test("abertura e fechamento do sheet continuam zerando o menu", () => {
   const abertura = paginaObra.slice(aberturaInicio, fechamentoInicio);
   const fechamento = paginaObra.slice(fechamentoInicio, fim);
 
-  assert.match(abertura, /setMenuOrdenacaoComentariosAberto\(false\);/);
-  assert.match(fechamento, /setMenuOrdenacaoComentariosAberto\(false\);/);
+  assert.match(abertura, /fecharMenuOrdenacaoComentarios\(\);/);
+  assert.match(fechamento, /fecharMenuOrdenacaoComentarios\(\);/);
 });
