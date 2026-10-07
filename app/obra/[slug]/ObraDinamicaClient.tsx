@@ -29,6 +29,7 @@ import {
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
+import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
 import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
 import {
@@ -327,27 +328,10 @@ export default function ObraDinamicaPage() {
   }, [usuarioIdLogado]);
 
 
-  useEffect(() => {
-    if (!comentariosAbertos) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.overflow;
-    const overscrollAnterior = document.body.style.overscrollBehavior;
-
-    document.body.style.overflow = "hidden";
-    document.body.style.overscrollBehavior = "none";
-
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      document.body.style.overscrollBehavior = overscrollAnterior;
-
-      if (comentariosDragResetTimerRef.current !== null) {
-        window.clearTimeout(comentariosDragResetTimerRef.current);
-        comentariosDragResetTimerRef.current = null;
-      }
-    };
-  }, [comentariosAbertos]);
+  useObraCommentsSheetBodyLock(
+    comentariosAbertos,
+    comentariosDragResetTimerRef,
+  );
   useObraDialogInitialFocus(comentariosAbertos, comentariosSheetRef);
   useObraDialogInitialFocus(
     painelClassificacaoAberto,
