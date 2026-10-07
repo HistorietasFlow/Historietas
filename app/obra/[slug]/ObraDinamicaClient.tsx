@@ -97,7 +97,7 @@ import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obr
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, titleStyle } from "./lib/obra-style-utils";
+import { classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -109,6 +109,7 @@ import ObraRatingBox from "./components/obra-rating-box";
 import ObraCommunitySection from "./components/obra-community-section";
 import ObraStatsGrid from "./components/obra-stats-grid";
 import ObraSynopsisSection from "./components/obra-synopsis-section";
+import ObraChaptersSection from "./components/obra-chapters-section";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -3354,39 +3355,14 @@ export default function ObraDinamicaPage() {
           <ObraSynopsisSection texto={sinopseObraExibida} />
         ) : (
           capitulosDaObra.length > 0 && (
-            <section id="capitulos" style={chaptersSectionStyle}>
-              <div style={sectionHeaderStyle}>
-                <h2 style={accentSectionTitleStyle}>CAPÍTULOS</h2>
-
-                <span style={chapterCountBadgeStyle}>
-                  {obterTextoDisponibilidadeCapitulosObra(
-                    capitulosDaObra.length,
-                    obraDisponivel,
-                  )}
-                </span>
-              </div>
-
-              <div style={isDesktop ? desktopChaptersListStyle : chaptersListStyle}>
-                {capitulosDaObra.map((capitulo) => (
-                  <Link
-                    key={capitulo.id || capitulo.numero}
-                    href={capitulo.href}
-                    style={isDesktop ? desktopChapterCardStyle : chapterCardStyle}
-                    aria-label={`Abrir ${capitulo.titulo}`}
-                  >
-                    <div style={chapterNumberStyle}>{capitulo.numero}</div>
-
-                    <div style={chapterContentStyle}>
-                      <h3 data-historietas-i18n-ignore="true" style={chapterTitleStyle}>{capitulo.titulo}</h3>
-
-                      {capitulo.descricao ? (
-                        <p style={chapterMetaStyle}>{capitulo.descricao}</p>
-                      ) : null}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
+            <ObraChaptersSection
+              isDesktop={isDesktop}
+              capitulos={capitulosDaObra}
+              textoDisponibilidade={obterTextoDisponibilidadeCapitulosObra(
+                capitulosDaObra.length,
+                obraDisponivel,
+              )}
+            />
           )
         )}
 
