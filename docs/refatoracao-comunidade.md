@@ -496,6 +496,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 779: extrair somente o toast de ação para `app/obra/[slug]/components/obra-action-toast.tsx`, preservando estado, expiração e fluxos de mensagem no cliente.
 - Fase 780: remover os fades superiores transparentes e inertes da página da obra, sem criar nova abstração.
 - Fase 781: extrair integralmente `carregarObraSupabasePorSlug` para `app/obra/[slug]/lib/obra-public-work-loader.ts`, preservando consultas, guards, fallbacks, métricas, normalização e backup.
+- Fase 782: extrair somente a estratégia de cópia do compartilhamento para `app/obra/[slug]/lib/obra-share-utils.ts`, preservando no cliente a ordem da chamada nativa, fechamento do menu, `await`, `AbortError`, setters, mensagens e timer.
 
 ## Contrato de preservação
 

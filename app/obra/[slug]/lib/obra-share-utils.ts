@@ -20,3 +20,20 @@ export function copiarTextoComFallback(texto: string) {
 
   return copiado;
 }
+
+export async function copiarLinkComFallback(texto: string): Promise<boolean> {
+  if (
+    window.isSecureContext &&
+    navigator.clipboard &&
+    typeof navigator.clipboard.writeText === "function"
+  ) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      return true;
+    } catch {
+      return copiarTextoComFallback(texto);
+    }
+  }
+
+  return copiarTextoComFallback(texto);
+}
