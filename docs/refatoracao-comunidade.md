@@ -482,6 +482,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 765: extrair somente a apresentação do menu de ações da obra para `app/obra/[slug]/components/obra-actions-sheet.tsx`, preservando estado, foco e handlers no cliente.
 - Fase 766: extrair somente a apresentação do bloco de avaliação da obra para `app/obra/[slug]/components/obra-rating-box.tsx`, preservando estado, identidade, persistência e Diário no cliente.
 - Fase 767: extrair somente a apresentação da seção Comunidade da obra para `app/obra/[slug]/components/obra-community-section.tsx`, preservando métricas, carregamento e links no cliente.
+- Fase 768: extrair somente a apresentação do grid de métricas da obra para `app/obra/[slug]/components/obra-stats-grid.tsx`, preservando estado, handlers, identidade e persistência no cliente.
 
 ## Contrato de preservação
 
