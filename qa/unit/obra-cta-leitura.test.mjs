@@ -14,6 +14,13 @@ const textosObra = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-text-utils.ts", import.meta.url),
   "utf8",
 );
+const acoesHero = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/components/obra-hero-actions.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto, fonte = paginaObra) {
   const inicio = fonte.indexOf(inicioTexto);
@@ -46,19 +53,23 @@ test("cta principal reutiliza a logica existente de continuar leitura", () => {
 
 test("cta de leitura aparece antes de seguir e so existe com capitulo disponivel", () => {
   const bloco = obterBloco(
-    '<div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>',
-    "</div>\n            </div>\n          </div>",
+    "<ObraHeroActions",
+    "/>\n            </div>",
   );
 
-  const indiceCta = bloco.indexOf("{capituloPrincipalObra ? (");
-  const indiceSeguir = bloco.indexOf("onClick={alternarSeguirObra}");
-  const indiceAcoes = bloco.indexOf("onClick={alternarAcoesObra}");
+  const indiceCta = acoesHero.indexOf("{leituraHref ? (");
+  const indiceSeguir = acoesHero.indexOf("onClick={onAlternarSeguir}");
+  const indiceAcoes = acoesHero.indexOf("onClick={onAlternarAcoes}");
 
   assert.ok(indiceCta >= 0);
   assert.ok(indiceSeguir > indiceCta);
   assert.ok(indiceAcoes > indiceSeguir);
-  assert.match(bloco, /href=\{capituloPrincipalObra\.href\}/);
-  assert.match(bloco, /\{rotuloLeituraPrincipal\}/);
+  assert.match(acoesHero, /href=\{leituraHref\}/);
+  assert.match(acoesHero, /\{leituraRotulo\}/);
+  assert.match(bloco, /leituraHref=\{capituloPrincipalObra\?\.href\}/);
+  assert.match(bloco, /leituraRotulo=\{rotuloLeituraPrincipal\}/);
+  assert.match(bloco, /onAlternarSeguir=\{alternarSeguirObra\}/);
+  assert.match(bloco, /onAlternarAcoes=\{alternarAcoesObra\}/);
 });
 
 test("cta de leitura e visualmente primario e seguir fica secundario", () => {

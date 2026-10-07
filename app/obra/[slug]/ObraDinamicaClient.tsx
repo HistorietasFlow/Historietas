@@ -90,7 +90,7 @@ import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, secondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
+import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, mobileTopWaterFadeStyle, obraActionToastStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -108,6 +108,7 @@ import ObraRatingSummary from "./components/obra-rating-summary";
 import ObraHeroHeader from "./components/obra-hero-header";
 import ObraHeroCover from "./components/obra-hero-cover";
 import ObraHeroMetaBar from "./components/obra-hero-meta-bar";
+import ObraHeroActions from "./components/obra-hero-actions";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -3110,48 +3111,16 @@ export default function ObraDinamicaPage() {
                 comentarios={formatarNumeroCompacto(totalComentariosObra)}
               />
 
-              <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
-                {capituloPrincipalObra ? (
-                  <Link
-                    href={capituloPrincipalObra.href}
-                    style={
-                      isDesktop
-                        ? desktopPrimaryReadingButtonStyle
-                        : primaryReadingButtonStyle
-                    }
-                    aria-label={`${rotuloLeituraPrincipal}: ${obra.titulo}`}
-                  >
-                    {rotuloLeituraPrincipal}
-                  </Link>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={alternarSeguirObra}
-                  style={
-                    isDesktop
-                      ? obraSeguida
-                        ? desktopFollowedButtonStyle
-                        : desktopSecondaryFollowButtonStyle
-                      : obraSeguida
-                        ? followedButtonStyle
-                        : secondaryButtonStyle
-                  }
-                >
-                  {obraSeguida ? "✓ Seguindo" : "Seguir obra"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={alternarAcoesObra}
-                  style={isDesktop ? desktopObraAddButtonStyle : obraAddButtonStyle}
-                  aria-label="Abrir ações da obra"
-                  aria-expanded={acoesObraAbertas}
-                  aria-haspopup="dialog"
-                >
-                  +
-                </button>
-              </div>
+              <ObraHeroActions
+                isDesktop={isDesktop}
+                leituraHref={capituloPrincipalObra?.href}
+                leituraRotulo={rotuloLeituraPrincipal}
+                leituraAriaLabel={`${rotuloLeituraPrincipal}: ${obra.titulo}`}
+                seguindo={obraSeguida}
+                acoesAbertas={acoesObraAbertas}
+                onAlternarSeguir={alternarSeguirObra}
+                onAlternarAcoes={alternarAcoesObra}
+              />
             </div>
           </div>
 
