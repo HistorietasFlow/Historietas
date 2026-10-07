@@ -26,7 +26,10 @@ test("hook preserva o lock do body somente com comentarios abertos", () => {
   );
   assert.match(hook, /document\.body\.style\.overflow = "hidden";/);
   assert.match(hook, /document\.body\.style\.overscrollBehavior = "none";/);
-  assert.match(hook, /\}, \[comentariosAbertos\]\);/);
+  assert.match(
+    hook,
+    /\}, \[comentariosAbertos, comentariosDragResetTimerRef\]\);/,
+  );
 });
 
 test("hook preserva a ordem de cleanup do body e do timer de drag", () => {

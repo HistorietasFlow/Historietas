@@ -25,5 +25,5 @@ export function useObraCommentsSheetBodyLock(
         comentariosDragResetTimerRef.current = null;
       }
     };
-  }, [comentariosAbertos]);
+  }, [comentariosAbertos, comentariosDragResetTimerRef]);
 }
