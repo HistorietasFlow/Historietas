@@ -6,6 +6,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const loaderAvaliacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/lib/obra-supabase-rating-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBlocoCarregamentoAvaliacao() {
   const inicio = paginaObra.indexOf(
@@ -28,11 +35,15 @@ test("Supabase prevalece sobre cache local quando a avaliacao remota carrega", (
   assert.doesNotMatch(bloco, /avaliacaoLocal\.encontrada/);
   assert.doesNotMatch(bloco, /salvarAvaliacaoRemotaObra\(/);
   assert.match(
-    bloco,
+    loaderAvaliacao,
     /const minhaNota = usuarioEhAutorDaObraAtual \? 0 : minhaNotaRemota;/,
   );
-  assert.match(bloco, /const total = metrica\.avaliacao\.total;/);
-  assert.match(bloco, /const media = metrica\.avaliacao\.media;/);
+  assert.match(loaderAvaliacao, /total: metrica\.avaliacao\.total,/);
+  assert.match(loaderAvaliacao, /media: metrica\.avaliacao\.media,/);
+  assert.match(
+    bloco,
+    /const snapshotRemoto = await carregarSnapshotRemotoAvaliacaoObra\(/,
+  );
 });
 
 test("cache de avaliacao so e sincronizado depois do guard da execucao atual", () => {
@@ -41,7 +52,7 @@ test("cache de avaliacao so e sincronizado depois do guard da execucao atual", (
     "avaliacaoVersaoRef.current !== versaoAoIniciar",
   );
   const indiceCache = bloco.indexOf(
-    "salvarAvaliacaoLocal(obraAtual, minhaNotaRemota, userId);",
+    "salvarAvaliacaoLocal(\n            obraAtual,\n            snapshotRemoto.minhaNotaRemota,",
   );
   const indiceEstado = bloco.indexOf("setAvaliacaoObra({");
 

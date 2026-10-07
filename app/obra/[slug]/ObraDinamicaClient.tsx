@@ -17,6 +17,7 @@ import {
   ehClassificacao18,
 } from "../../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
+import { carregarSnapshotRemotoAvaliacaoObra } from "./lib/obra-supabase-rating-loader";
 import {
   atualizarIdentidadeAutenticadaObra,
   execucaoAutenticacaoObraEstaAtual,
@@ -1055,30 +1056,14 @@ export default function ObraDinamicaPage() {
 
     async function carregarAvaliacaoRealObra() {
       try {
-        const { data: usuarioData } = await supabase.auth.getUser();
-        const userId = usuarioData.user?.id || usuarioIdLogado || "";
-        const autorIdObraAtual = obraAtual.autorId?.trim() || "";
-        const usuarioEhAutorDaObraAtual = Boolean(
-          userId &&
-            autorIdObraAtual &&
-            userId === autorIdObraAtual
-        );
-        const contrato = await carregarMetricasConteudos({
-          obraIds: [obraAtual.id],
+        const snapshotRemoto = await carregarSnapshotRemotoAvaliacaoObra({
+          obra: obraAtual,
+          usuarioIdLogado,
         });
-        const metrica = contrato.obras.get(obraAtual.id);
 
-        if (!contrato.carregado || !metrica) {
+        if (!snapshotRemoto) {
           return;
         }
-
-        const minhaNotaRemota =
-          userId && !usuarioEhAutorDaObraAtual
-            ? metrica.avaliacao.minhaNota
-            : 0;
-        const minhaNota = usuarioEhAutorDaObraAtual ? 0 : minhaNotaRemota;
-        const total = metrica.avaliacao.total;
-        const media = metrica.avaliacao.media;
 
         if (
           cancelado ||
@@ -1087,14 +1072,21 @@ export default function ObraDinamicaPage() {
           return;
         }
 
-        if (userId && !usuarioEhAutorDaObraAtual) {
-          salvarAvaliacaoLocal(obraAtual, minhaNotaRemota, userId);
+        if (
+          snapshotRemoto.userId &&
+          !snapshotRemoto.usuarioEhAutorDaObraAtual
+        ) {
+          salvarAvaliacaoLocal(
+            obraAtual,
+            snapshotRemoto.minhaNotaRemota,
+            snapshotRemoto.userId,
+          );
         }
 
         setAvaliacaoObra({
-          media,
-          total,
-          minhaNota,
+          media: snapshotRemoto.media,
+          total: snapshotRemoto.total,
+          minhaNota: snapshotRemoto.minhaNota,
           carregado: true,
           salvando: false,
         });
