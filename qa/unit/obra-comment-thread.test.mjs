@@ -20,6 +20,13 @@ const listaComentarios = readFileSync(
   ),
   "utf8",
 );
+const hookVisibilidade = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comment-replies-visibility.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("thread preserva os calculos de respostas visiveis e ocultas", () => {
   assert.match(
@@ -83,23 +90,38 @@ test("thread preserva textos, singular plural e callbacks dos controles", () => 
   assert.match(componenteThread, />\s*Ocultar respostas\s*<\/button>/);
 });
 
-test("estado e updaters de visibilidade permanecem no cliente", () => {
+test("hook centraliza estado e updaters de visibilidade sem mover a composicao", () => {
   assert.match(
-    paginaObra,
-    /const \[respostasVisiveisPorComentario, setRespostasVisiveisPorComentario\]/,
+    hookVisibilidade,
+    /const \[respostasVisiveisPorComentario, setRespostasVisiveisPorComentario\] =\s*useState<Record<string, number>>\(\{\}\);/,
   );
   assert.match(
-    paginaObra,
+    hookVisibilidade,
     /\[comentarioId\]: Math\.min\(5, totalRespostas\)/,
   );
   assert.match(
-    paginaObra,
+    hookVisibilidade,
     /\[comentarioId\]: Math\.min\(\s*totalRespostas,\s*\(estadoAtual\[comentarioId\] \|\| 0\) \+ 5,\s*\)/,
   );
-  assert.match(paginaObra, /\[comentarioId\]: 0,/);
+  assert.match(hookVisibilidade, /\[comentarioId\]: 0,/);
+  assert.match(
+    hookVisibilidade,
+    /\[comentarioPaiId\]: Math\.max\(\s*5,\s*estadoAtual\[comentarioPaiId\] \|\| 0,\s*\)/,
+  );
+  assert.match(hookVisibilidade, /setRespostasVisiveisPorComentario\(\{\}\);/);
   assert.doesNotMatch(
     componenteThread,
     /setRespostasVisiveisPorComentario/,
+  );
+  assert.match(
+    paginaObra,
+    /import \{ useObraCommentRepliesVisibility \} from "\.\/hooks\/use-obra-comment-replies-visibility";/,
+  );
+  assert.match(paginaObra, /\} = useObraCommentRepliesVisibility\(\);/);
+  assert.match(paginaObra, /resetarRespostasVisiveis\(\);/);
+  assert.match(
+    paginaObra,
+    /garantirRespostaVisivel\(comentarioTemporario\.comentarioPaiId\);/,
   );
   assert.match(
     listaComentarios,

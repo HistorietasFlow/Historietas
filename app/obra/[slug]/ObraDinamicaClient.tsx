@@ -29,6 +29,7 @@ import {
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
+import { useObraCommentRepliesVisibility } from "./hooks/use-obra-comment-replies-visibility";
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
 import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
@@ -164,8 +165,14 @@ export default function ObraDinamicaPage() {
   const [comentarioCurtindoId, setComentarioCurtindoId] = useState("");
   const [respostaComentario, setRespostaComentario] =
     useState<RespostaComentarioObra | null>(null);
-  const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
-    useState<Record<string, number>>({});
+  const {
+    respostasVisiveisPorComentario,
+    resetarRespostasVisiveis,
+    garantirRespostaVisivel,
+    mostrarRespostas,
+    mostrarMaisRespostas,
+    ocultarRespostas,
+  } = useObraCommentRepliesVisibility();
   const [ordenacaoComentarios, setOrdenacaoComentarios] =
     useState<OrdenacaoComentariosObra>("relevantes");
   const [menuOrdenacaoComentariosAberto, setMenuOrdenacaoComentariosAberto] =
@@ -232,7 +239,7 @@ export default function ObraDinamicaPage() {
       setComentarioRemovendoId("");
       setComentarioCurtindoId("");
       setRespostaComentario(null);
-      setRespostasVisiveisPorComentario({});
+      resetarRespostasVisiveis();
       setMensagemAcao("");
       avaliacaoVersaoRef.current += 1;
     }
@@ -298,7 +305,7 @@ export default function ObraDinamicaPage() {
       versaoConsultaAutenticacaoObraRef.current += 1;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [resetarRespostasVisiveis]);
 
 
   useEffect(() => {
@@ -1336,13 +1343,7 @@ export default function ObraDinamicaPage() {
     setRespostaComentario(null);
 
     if (comentarioTemporario.comentarioPaiId) {
-      setRespostasVisiveisPorComentario((estadoAtual) => ({
-        ...estadoAtual,
-        [comentarioTemporario.comentarioPaiId]: Math.max(
-          5,
-          estadoAtual[comentarioTemporario.comentarioPaiId] || 0
-        ),
-      }));
+      garantirRespostaVisivel(comentarioTemporario.comentarioPaiId);
     }
 
     setComentariosObra((comentariosAtuais) => [
@@ -2442,36 +2443,6 @@ export default function ObraDinamicaPage() {
     [comentariosObra, ordenacaoComentarios]
   );
 
-  const mostrarRespostasComentario = (
-    comentarioId: string,
-    totalRespostas: number,
-  ) => {
-    setRespostasVisiveisPorComentario((estadoAtual) => ({
-      ...estadoAtual,
-      [comentarioId]: Math.min(5, totalRespostas),
-    }));
-  };
-
-  const mostrarMaisRespostasComentario = (
-    comentarioId: string,
-    totalRespostas: number,
-  ) => {
-    setRespostasVisiveisPorComentario((estadoAtual) => ({
-      ...estadoAtual,
-      [comentarioId]: Math.min(
-        totalRespostas,
-        (estadoAtual[comentarioId] || 0) + 5,
-      ),
-    }));
-  };
-
-  const ocultarRespostasComentario = (comentarioId: string) => {
-    setRespostasVisiveisPorComentario((estadoAtual) => ({
-      ...estadoAtual,
-      [comentarioId]: 0,
-    }));
-  };
-
   const painelComentariosObra =
     obra && comentariosAbertos && typeof document !== "undefined"
       ? (
@@ -2518,9 +2489,9 @@ export default function ObraDinamicaPage() {
                 onRemover={removerComentarioObra}
                 onDenunciar={abrirDenunciaComentarioObra}
                 onCurtir={alternarCurtidaComentarioObra}
-                onMostrarRespostas={mostrarRespostasComentario}
-                onMostrarMaisRespostas={mostrarMaisRespostasComentario}
-                onOcultarRespostas={ocultarRespostasComentario}
+                onMostrarRespostas={mostrarRespostas}
+                onMostrarMaisRespostas={mostrarMaisRespostas}
+                onOcultarRespostas={ocultarRespostas}
                 onCarregarMais={carregarMaisComentariosObra}
               />
 
