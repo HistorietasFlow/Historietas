@@ -30,6 +30,7 @@ import {
   restaurarFocoAnterior,
 } from "./lib/obra-dialog-focus";
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
+import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
 import {
   carregarListaLocalObraPublica,
@@ -139,8 +140,6 @@ export default function ObraDinamicaPage() {
     useState<MetricasComunidadeObra>(metricasComunidadeObraVazias);
   const [avaliacaoObra, setAvaliacaoObra] =
     useState<AvaliacaoObraPublica>(avaliacaoObraVazia);
-  const [perfilAutorObra, setPerfilAutorObra] =
-    useState<PerfilPublicoObra | null>(null);
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [acoesObraAbertas, setAcoesObraAbertas] = useState(false);
@@ -567,37 +566,10 @@ export default function ObraDinamicaPage() {
     void registrarVisualizacaoObraAtual();
   }, [obra, statusAcesso18]);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarPerfilAutorDaObra() {
-      if (!obra?.autorId) {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setPerfilAutorObra(null);
-          }
-        }, 0);
-        return;
-      }
-
-      const perfilAutor = await carregarPerfilPublicoObra(
-        obra.autorId,
-        obra.autor
-      );
-
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setPerfilAutorObra(perfilAutor);
-        }
-      }, 0);
-    }
-
-    void carregarPerfilAutorDaObra();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [obra?.autorId, obra?.autor]);
+  const perfilAutorObra = useObraAuthorPublicProfile(
+    obra?.autorId,
+    obra?.autor ?? "",
+  );
 
   const obraNormalizada = obra ? normalizarTexto(obra.titulo) : "";
   const generoObraFormatado = obterGeneroObraExibido(obra);

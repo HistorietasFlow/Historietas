@@ -74,7 +74,7 @@ test("barra inferior preserva exatamente as tres metricas na ordem e seus estilo
   assert.ok(metaBarHero.includes("{comentarios}"));
 });
 
-test("cliente preserva estado, formatacao e preparacao da barra de metadados", () => {
+test("cliente preserva dados, formatacao e preparacao da barra de metadados", () => {
   for (const trecho of [
     "const [metricasObra, setMetricasObra]",
     "const [totalComentariosObra, setTotalComentariosObra]",
@@ -82,7 +82,7 @@ test("cliente preserva estado, formatacao e preparacao da barra de metadados", (
     "criarLinkPerfilAutor",
     "const autorObraNome =",
     "const autorObraId =",
-    "const [perfilAutorObra, setPerfilAutorObra]",
+    "const perfilAutorObra = useObraAuthorPublicProfile(",
     "<ObraHeroMetaBar",
     "autorNome={autorObraNome}",
     "autorHref={criarLinkPerfilAutor(autorObraNome, autorObraId)}",
