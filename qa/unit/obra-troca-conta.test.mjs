@@ -138,6 +138,13 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
     "utf8",
   );
+  const carregadorObra = readFileSync(
+    new URL(
+      "../../app/obra/[slug]/lib/obra-public-work-loader.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
   const escritasUsuarioIdLogado = paginaObra.split("setUsuarioIdLogado(").length - 1;
 
   assert.equal(escritasUsuarioIdLogado, 1);
@@ -146,14 +153,7 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     /carregarObraSupabasePorSlug\([\s\S]*?execucaoCarregamentoEstaAtual,[\s\S]*?\);/,
   );
 
-  const inicioCarregador = paginaObra.indexOf(
-    "async function carregarObraSupabasePorSlug(",
-  );
-  const fimCarregador = paginaObra.indexOf(
-    "export default function ObraDinamicaPage()",
-    inicioCarregador,
-  );
-  const blocoCarregador = paginaObra.slice(inicioCarregador, fimCarregador);
+  const blocoCarregador = carregadorObra;
   const indiceBackup = blocoCarregador.indexOf(
     "sincronizarBackupArquivosObras(obrasAtualizadas, userId);",
   );
@@ -162,8 +162,10 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     indiceBackup,
   );
 
-  assert.ok(inicioCarregador >= 0);
-  assert.ok(fimCarregador > inicioCarregador);
+  assert.match(
+    carregadorObra,
+    /export async function carregarObraSupabasePorSlug\(/,
+  );
   assert.ok(indiceGuardBackup >= 0);
   assert.ok(indiceBackup > indiceGuardBackup);
 });
