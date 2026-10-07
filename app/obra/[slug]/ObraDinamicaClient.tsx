@@ -38,13 +38,8 @@ import {
   carregarComentariosObraLocais,
   salvarComentariosObraLocais,
 } from "./lib/obra-local-comment-storage-utils";
-import {
-  sincronizarBackupArquivosObras,
-} from "./lib/obra-file-backup-utils";
 import { carregarObrasLocaisComBackup } from "./lib/obra-local-works-utils";
-import { aplicarMetricasObraPublica } from "./lib/obra-metrics-application-utils";
-import { carregarCapitulosPublicadosObraSupabase } from "./lib/obra-supabase-chapters-utils";
-import { consultarObraPublicaPorSlug } from "./lib/obra-supabase-work-utils";
+import { carregarObraSupabasePorSlug } from "./lib/obra-public-work-loader";
 import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
 import { carregarPaginaComentariosObraSupabase } from "./lib/obra-supabase-comments-page-loader";
 import { normalizarComentariosObraSupabase } from "./lib/obra-supabase-comment-normalizer";
@@ -81,13 +76,13 @@ import { obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obter
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
-import { encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico, type SupabaseCapituloRow } from "./lib/obra-reading-utils";
+import { encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, criarEstruturaComentariosObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarTextoComFallback } from "./lib/obra-share-utils";
 import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
+import { converterObraLocalParaDinamica, type ObraDinamica, type ObraLocal } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
 import { containerStyle, desktopContainerStyle, pageStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
@@ -115,150 +110,6 @@ const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-async function carregarObraSupabasePorSlug(
-  slugBusca: string,
-  obrasLocais: ObraLocal[],
-  userId = "",
-  operacaoAindaAtual?: () => boolean,
-) {
-  const slugLimpo = slugBusca.trim();
-  const execucaoAtual = () => !operacaoAindaAtual || operacaoAindaAtual();
-
-  async function aplicarMetricasSeAtual(obrasBase: ObraLocal[]) {
-    if (!execucaoAtual()) {
-      return obrasBase;
-    }
-
-    const obrasComMetricas = await aplicarMetricasObraPublica(
-      obrasBase,
-      userId,
-    );
-
-    return execucaoAtual() ? obrasComMetricas : obrasBase;
-  }
-
-  if (!slugLimpo) {
-    return {
-      obras: obrasLocais,
-      status: "nao_encontrada",
-    } satisfies ResultadoCarregamentoObraPublica;
-  }
-
-  if (!execucaoAtual()) {
-    return {
-      obras: obrasLocais,
-      status: "cancelada",
-    } satisfies ResultadoCarregamentoObraPublica;
-  }
-
-  try {
-    const { data: obrasBanco, error: erroObra } =
-      await consultarObraPublicaPorSlug(slugLimpo);
-
-    if (!execucaoAtual()) {
-      return {
-        obras: obrasLocais,
-        status: "cancelada",
-      } satisfies ResultadoCarregamentoObraPublica;
-    }
-
-    if (erroObra) {
-      console.warn(
-        "Não consegui carregar a obra pública no Supabase:",
-        erroObra.message
-      );
-      return {
-        obras: await aplicarMetricasSeAtual(obrasLocais),
-        status: "erro",
-      } satisfies ResultadoCarregamentoObraPublica;
-    }
-
-    const obraBanco = (obrasBanco || [])[0] || null;
-
-    if (!obraBanco) {
-      return {
-        obras: removerObraLocalAusentePorSlug(obrasLocais, slugLimpo),
-        status: "nao_encontrada",
-      } satisfies ResultadoCarregamentoObraPublica;
-    }
-
-    let capitulosBanco: SupabaseCapituloRow[] = [];
-
-    try {
-      capitulosBanco = await carregarCapitulosPublicadosObraSupabase(
-        obraBanco.id,
-      );
-    } catch (error) {
-      console.warn(
-        "Não consegui carregar capítulos da obra pública no Supabase:",
-        error,
-      );
-    }
-
-    if (!execucaoAtual()) {
-      return {
-        obras: obrasLocais,
-        status: "cancelada",
-      } satisfies ResultadoCarregamentoObraPublica;
-    }
-
-    const obraLocal = obrasLocais.find((obraLocalAtual) => {
-      const slugLocal = obraLocalAtual.slug || criarSlugBase(obraLocalAtual.titulo);
-
-      return obraLocalAtual.id === obraBanco.id || slugLocal === slugLimpo;
-    });
-
-    const obraNormalizadaSemTotais = normalizarObraSupabase(
-      obraBanco,
-      capitulosBanco,
-      obraLocal,
-      0
-    );
-    const [obraNormalizada] = await aplicarMetricasSeAtual([
-      obraNormalizadaSemTotais,
-    ]);
-
-    if (!execucaoAtual()) {
-      return {
-        obras: obrasLocais,
-        status: "cancelada",
-      } satisfies ResultadoCarregamentoObraPublica;
-    }
-
-    const obrasAtualizadas = substituirOuInserirObraLocal(
-      obrasLocais,
-      obraNormalizada,
-    );
-
-    if (!execucaoAtual()) {
-      return {
-        obras: obrasLocais,
-        status: "cancelada",
-      } satisfies ResultadoCarregamentoObraPublica;
-    }
-
-    sincronizarBackupArquivosObras(obrasAtualizadas, userId);
-
-    return {
-      obras: obrasAtualizadas,
-      status: "carregada",
-    } satisfies ResultadoCarregamentoObraPublica;
-  } catch (error) {
-    if (!execucaoAtual()) {
-      return {
-        obras: obrasLocais,
-        status: "cancelada",
-      } satisfies ResultadoCarregamentoObraPublica;
-    }
-
-    console.warn("Não consegui acessar o Supabase agora:", error);
-    return {
-      obras: await aplicarMetricasSeAtual(obrasLocais),
-      status: "erro",
-    } satisfies ResultadoCarregamentoObraPublica;
-  }
-}
-
 export default function ObraDinamicaPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();

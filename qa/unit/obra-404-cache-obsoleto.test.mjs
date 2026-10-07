@@ -30,6 +30,13 @@ const paginaCliente = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const carregadorObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/lib/obra-public-work-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const adultoUrl = criarUrlModulo(
   "export const normalizarAvisosConteudo18 = () => [];",
@@ -103,7 +110,7 @@ test("rota da obra usa 404 real apenas para slug invalido ou obra ausente", () =
 
 test("ausencia confirmada no Supabase descarta somente cache da obra atual", () => {
   const bloco = obterBloco(
-    paginaCliente,
+    carregadorObra,
     "if (!obraBanco) {",
     "let capitulosBanco",
   );
@@ -196,10 +203,11 @@ test("substitui no mesmo indice ou insere a obra normalizada no inicio", () => {
 });
 
 test("erro do Supabase preserva fallback local e e tratado como erro", () => {
-  const blocoCarregador = obterBloco(
-    paginaCliente,
-    "async function carregarObraSupabasePorSlug(",
-    "export default function ObraDinamicaPage()",
+  const blocoCarregador = carregadorObra;
+
+  assert.match(
+    blocoCarregador,
+    /export async function carregarObraSupabasePorSlug\(/,
   );
 
   assert.match(
