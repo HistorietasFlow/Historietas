@@ -428,3 +428,18 @@ export function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
     progressoLeitura: calcularProgressoLeitura(obra.capitulos),
   };
 }
+
+export function obterObraDinamicaPorSlug(
+  obrasLocais: ObraLocal[],
+  slug: string,
+): ObraDinamica | null {
+  const obraLocal = obrasLocais.find((item) => {
+    return item.slug === slug || criarSlugBase(item.titulo) === slug;
+  });
+
+  if (obraLocal) {
+    return converterObraLocalParaDinamica(obraLocal);
+  }
+
+  return null;
+}

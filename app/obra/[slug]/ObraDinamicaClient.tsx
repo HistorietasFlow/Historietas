@@ -11,7 +11,7 @@ import { supabase } from "../../../lib/supabase/client";
 import DenunciaModal from "../../../components/DenunciaModal";
 import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
-import { criarSlugBase, formatarNumeroCompacto, idObraSupabaseValido, normalizarTexto } from "../../../lib/utils";
+import { formatarNumeroCompacto, idObraSupabaseValido, normalizarTexto } from "../../../lib/utils";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { carregarSnapshotRemotoAvaliacaoObra } from "./lib/obra-supabase-rating-loader";
@@ -85,7 +85,7 @@ import { criarComentarioObraId, criarEstruturaComentariosObra, mesclarComentario
 import { copiarLinkComFallback } from "./lib/obra-share-utils";
 import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
-import { converterObraLocalParaDinamica, type ObraDinamica, type ObraLocal } from "./lib/obra-data-utils";
+import { obterObraDinamicaPorSlug, type ObraLocal } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
 import { containerStyle, desktopContainerStyle, pageStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
@@ -429,17 +429,10 @@ export default function ObraDinamicaPage() {
     };
   }, [autenticacaoCarregada, slug, usuarioIdLogado]);
 
-  const obra = useMemo<ObraDinamica | null>(() => {
-    const obraLocal = obrasLocais.find((item) => {
-      return item.slug === slug || criarSlugBase(item.titulo) === slug;
-    });
-
-    if (obraLocal) {
-      return converterObraLocalParaDinamica(obraLocal);
-    }
-
-    return null;
-  }, [slug, obrasLocais]);
+  const obra = useMemo(
+    () => obterObraDinamicaPorSlug(obrasLocais, slug),
+    [slug, obrasLocais]
+  );
 
   useEffect(() => {
     const fecharPaineisTimer = window.setTimeout(() => {

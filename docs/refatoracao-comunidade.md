@@ -505,6 +505,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 788: extrair somente `useObraCommentsNow`, preservando estado inicial, timeout de 0 ms, intervalo de 1000 ms, cleanup e consumidores do relógio de comentários.
 - Fase 789: extrair somente `useObraContent18Access`, preservando estado indexado por obra, reavaliação agendada, confirmação manual e o consumo do status pela página.
 - Fase 790: extrair somente `useObraCommentsSheetBodyLock`, preservando o lock/restauração do body e o cleanup ordenado do timer de drag do painel de comentários.
+- Fase 791: extrair somente `obterObraDinamicaPorSlug`, preservando a busca por slug explícito ou derivado, primeira ocorrência, conversão e fallback nulo.
 
 ## Contrato de preservação
 

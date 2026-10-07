@@ -74,6 +74,7 @@ const dadosObraJavascript = transpilarModuloTypescript(
   .replace('from "./obra-reading-utils";', `from "${leituraUrl}";`)
   .replace('from "./obra-file-utils";', `from "${arquivoUrl}";`);
 const {
+  obterObraDinamicaPorSlug,
   removerObraLocalAusentePorSlug,
   substituirOuInserirObraLocal,
 } = await import(criarUrlModulo(dadosObraJavascript));
@@ -200,6 +201,61 @@ test("substitui no mesmo indice ou insere a obra normalizada no inicio", () => {
   assert.equal(obrasInseridas[1], obraPrimeira);
   assert.equal(obrasInseridas[2], obraSubstituida);
   assert.equal(obrasInseridas[3], obraUltima);
+});
+
+test("resolve a primeira obra local por slug explicito ou derivado", () => {
+  const criarObraLocal = (id, slug, titulo) => ({
+    id,
+    slug,
+    titulo,
+    autor: "Autor",
+    autorId: "autor-id",
+    genero: "Genero",
+    formato: "Formato",
+    classificacaoIndicativa: "Livre",
+    avisosConteudo: [],
+    sinopse: "",
+    tags: [],
+    capa: "",
+    publicado: true,
+    capitulos: [],
+    criadaEm: "",
+    ultimoCapituloLidoId: "",
+    ultimaLeituraEm: "",
+    progressoLeitura: 0,
+    link: "",
+  });
+  const primeira = criarObraLocal(
+    "primeira",
+    "slug-explicito",
+    "Titulo diferente",
+  );
+  const derivada = criarObraLocal("derivada", "", "Obra Derivada");
+  const repetida = criarObraLocal("repetida", "slug-explicito", "Outra");
+  const obrasLocais = [primeira, derivada, repetida];
+
+  assert.equal(
+    obterObraDinamicaPorSlug(obrasLocais, "slug-explicito")?.id,
+    "primeira",
+  );
+  assert.equal(
+    obterObraDinamicaPorSlug(obrasLocais, "obra-derivada")?.id,
+    "derivada",
+  );
+  assert.equal(obterObraDinamicaPorSlug(obrasLocais, "ausente"), null);
+});
+
+test("cliente preserva o useMemo e delega somente a resolucao da obra por slug", () => {
+  assert.match(
+    paginaCliente,
+    /import \{ obterObraDinamicaPorSlug, type ObraLocal \} from "\.\/lib\/obra-data-utils";/,
+  );
+  assert.match(
+    paginaCliente,
+    /const obra = useMemo\(\s*\(\) => obterObraDinamicaPorSlug\(obrasLocais, slug\),\s*\[slug, obrasLocais\]\s*\);/,
+  );
+  assert.doesNotMatch(paginaCliente, /criarSlugBase\(item\.titulo\)/);
+  assert.doesNotMatch(paginaCliente, /converterObraLocalParaDinamica\(obraLocal\)/);
 });
 
 test("erro do Supabase preserva fallback local e e tratado como erro", () => {
