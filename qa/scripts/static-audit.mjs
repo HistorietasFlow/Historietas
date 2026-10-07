@@ -1639,7 +1639,7 @@ if (!fs.existsSync(privateFileClientPath)) {
 }
 
 for (const relative of [
-  "app/obra/[slug]/ObraDinamicaClient.tsx",
+  "app/obra/[slug]/components/arquivo-obra-publico.tsx",
   "app/painel-autor/page.tsx"
 ]) {
   const content = fs.readFileSync(path.join(ROOT_DIR, relative), "utf8");
@@ -1654,19 +1654,19 @@ for (const relative of [
   }
 }
 
-const publicWorkClient = fs.readFileSync(
-  path.join(ROOT_DIR, "app/obra/[slug]/ObraDinamicaClient.tsx"),
+const publicWorkFile = fs.readFileSync(
+  path.join(ROOT_DIR, "app/obra/[slug]/components/arquivo-obra-publico.tsx"),
   "utf8"
 );
 
 if (
   /arquivo\.categoria !== "imagem"[\s\S]*?arquivoAssinado\.expiraEm > Date\.now\(\)[\s\S]*?solicitarUrlTemporariaArquivoObra\(obraId\)[\s\S]*?onClick=\{abrirArquivo\}/i.test(
-    publicWorkClient
+    publicWorkFile
   )
 ) {
   pass(
     "cliente assina documentos e renova URLs apenas sob demanda",
-    "app/obra/[slug]/ObraDinamicaClient.tsx"
+    "app/obra/[slug]/components/arquivo-obra-publico.tsx"
   );
 } else {
   fail(
