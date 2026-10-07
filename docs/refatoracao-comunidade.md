@@ -501,6 +501,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 784: extrair a derivação pura da ação principal de leitura, preservando seleção de capítulo, rótulos, fallback da capa e CTA condicional.
 - Fase 785: extrair somente `carregarSnapshotRemotoAvaliacaoObra` para concentrar consulta de sessão e métricas remotas da avaliação, preservando no cliente efeito, fallback local, guards de versão/cancelamento, cache, setters, erro visual e cleanup.
 - Fase 786: extrair somente `useObraDesktopMode`, preservando estado inicial, breakpoint, agendamento inicial, listeners moderno/legado, cleanup e todos os consumidores visuais no cliente.
+- Fase 787: extrair somente `useObraAuthorPublicProfile`, preservando estado inicial, cancelamento e os agendamentos de perfil público do autor.
 
 ## Contrato de preservação
 
