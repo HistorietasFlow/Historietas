@@ -91,7 +91,7 @@ import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, secondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
+import { containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, secondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -106,6 +106,7 @@ import ObraSynopsisSection from "./components/obra-synopsis-section";
 import ObraChaptersSection from "./components/obra-chapters-section";
 import ArquivoObraPublico from "./components/arquivo-obra-publico";
 import ObraRatingSummary from "./components/obra-rating-summary";
+import ObraHeroHeader from "./components/obra-hero-header";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -3016,41 +3017,16 @@ export default function ObraDinamicaPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
-          <header
-            style={isDesktop ? desktopHeroTopOverlayStyle : heroTopOverlayStyle}
-          >
-            <button
-              type="button"
-              onClick={abrirPainelClassificacaoObra}
-              aria-label={`${textosPainelClassificacao.abrir}: ${obra.classificacaoIndicativa}`}
-              title={`${textosPainelClassificacao.abrir}: ${obra.classificacaoIndicativa}`}
-              style={{
-                ...classificationTriggerStyle,
-                ...(ehClassificacao18(obra.classificacaoIndicativa)
-                  ? classificationTriggerAdultStyle
-                  : {}),
-              }}
-            >
-              <span
-                data-historietas-i18n-ignore="true"
-                style={
-                  classificacaoIndicativaCompacta.livre
-                    ? classificationTriggerTextLivreStyle
-                    : classificationTriggerTextStyle
-                }
-              >
-                {classificacaoIndicativaCompacta.texto}
-              </span>
-            </button>
-
-            {isDesktop ? (
-              <div style={desktopHeaderRightStyle}>
-                {resumoAvaliacaoCabecalho}
-              </div>
-            ) : (
-              resumoAvaliacaoCabecalho
-            )}
-          </header>
+          <ObraHeroHeader
+            isDesktop={isDesktop}
+            classificacaoIndicativa={obra.classificacaoIndicativa}
+            classificacaoTexto={classificacaoIndicativaCompacta.texto}
+            classificacaoLivre={classificacaoIndicativaCompacta.livre}
+            classificacaoAdulto={ehClassificacao18(obra.classificacaoIndicativa)}
+            rotuloAbrirClassificacao={textosPainelClassificacao.abrir}
+            resumoAvaliacao={resumoAvaliacaoCabecalho}
+            onAbrirClassificacao={abrirPainelClassificacaoObra}
+          />
 
           <div style={heroGlowStyle} />
 
