@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { useParams, useRouter } from "next/navigation";
@@ -91,7 +90,7 @@ import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, secondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
+import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, secondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -107,6 +106,7 @@ import ObraChaptersSection from "./components/obra-chapters-section";
 import ArquivoObraPublico from "./components/arquivo-obra-publico";
 import ObraRatingSummary from "./components/obra-rating-summary";
 import ObraHeroHeader from "./components/obra-hero-header";
+import ObraHeroCover from "./components/obra-hero-cover";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2994,6 +2994,9 @@ export default function ObraDinamicaPage() {
 
   const classificacaoIndicativaCompacta =
     obterClassificacaoIndicativaCompactaObra(obra.classificacaoIndicativa);
+  const ariaLabelCapaObra = capituloPrincipalObra
+    ? `${rotuloLeituraPrincipal}: ${obra.titulo}`
+    : `Abrir ${obra.titulo}`;
 
   return (
     <>
@@ -3031,39 +3034,14 @@ export default function ObraDinamicaPage() {
           <div style={heroGlowStyle} />
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <Link
+            <ObraHeroCover
+              isDesktop={isDesktop}
               href={hrefPrincipalObra}
-              style={isDesktop ? desktopHeroCoverLinkStyle : heroCoverLinkStyle}
-              aria-label={
-                capituloPrincipalObra
-                  ? `${rotuloLeituraPrincipal}: ${obra.titulo}`
-                  : `Abrir ${obra.titulo}`
-              }
-            >
-              <div
-                style={isDesktop ? desktopCoverArtStyle : coverArtStyle}
-                aria-hidden="true"
-              >
-                {obra.capa ? (
-                  <Image
-                    src={obra.capa}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1300px) 650px, (min-width: 1024px) 50vw, 100vw"
-                    preload
-                    unoptimized={!capaObraPodeSerOtimizada(obra.capa)}
-                    style={{
-                      objectFit: "cover",
-                      objectPosition: isDesktop ? "center" : "center top",
-                    }}
-                  />
-                ) : (
-                  <strong style={coverTitleStyle}>
-                    {obterIniciaisCapaObra(obra.titulo)}
-                  </strong>
-                )}
-              </div>
-            </Link>
+              ariaLabel={ariaLabelCapaObra}
+              capa={obra.capa}
+              capaOtimizada={capaObraPodeSerOtimizada(obra.capa)}
+              iniciais={obterIniciaisCapaObra(obra.titulo)}
+            />
 
             <div
               style={
