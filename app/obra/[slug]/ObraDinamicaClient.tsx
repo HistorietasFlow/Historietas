@@ -30,6 +30,7 @@ import {
   restaurarFocoAnterior,
 } from "./lib/obra-dialog-focus";
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
+import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
 import {
   carregarListaLocalObraPublica,
   lerStorageUsuarioObraPublica,
@@ -191,7 +192,7 @@ export default function ObraDinamicaPage() {
   const comentariosDragIgnorarCliqueRef = useRef(false);
   const comentariosDragResetTimerRef = useRef<number | null>(null);
   const comentariosConsultaVersaoRef = useRef(0);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useObraDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
   const avaliacaoVersaoRef = useRef(0);
@@ -380,36 +381,6 @@ export default function ObraDinamicaPage() {
     classificacaoDialogRef,
   );
   useObraDialogInitialFocus(acoesObraAbertas, acoesObraDialogRef);
-
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     if (!autenticacaoCarregada) {
