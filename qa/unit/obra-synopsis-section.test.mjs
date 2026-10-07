@@ -29,16 +29,15 @@ test("secao Sinopse preserva estrutura, estilos e texto ignorado pela traducao",
   }
 });
 
-test("cliente preserva condicao, derivacao e ramo de Capitulos fora do componente", () => {
+test("cliente preserva condicao, derivacao e ramo de Capitulos via componente", () => {
   for (const trecho of [
     "sinopseAberta ? (",
     "<ObraSynopsisSection texto={sinopseObraExibida} />",
     "sinopseObraExibida",
     "obterSinopseObraExibida(obra)",
     "capitulosDaObra.length > 0",
-    '<section id="capitulos" style={chaptersSectionStyle}>',
-    "sectionHeaderStyle",
-    "accentSectionTitleStyle",
+    "<ObraChaptersSection",
+    "capitulos={capitulosDaObra}",
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
   }
