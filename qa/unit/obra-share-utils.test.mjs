@@ -128,7 +128,7 @@ test("cliente preserva a ordem nativa antes da estrategia de copia", () => {
     "utf8",
   );
   const inicio = pagina.indexOf("async function compartilharObraAtual()");
-  const fim = pagina.indexOf("const capituloPrincipalObra", inicio);
+  const fim = pagina.indexOf("const acaoLeituraPrincipal", inicio);
   const bloco = pagina.slice(inicio, fim);
   const indiceShare = bloco.indexOf("navigator.share(dadosCompartilhamento)");
   const indiceFecharNativo = bloco.indexOf(

@@ -45,16 +45,14 @@ test("capa do hero preserva props, link, arte e acessibilidade", () => {
 
 test("cliente preserva decisao de leitura e prepara os valores da capa", () => {
   for (const trecho of [
-    "const capituloPrincipalObra = obra",
-    "const rotuloLeituraPrincipal = obraTemLeituraIniciada",
-    "const hrefPrincipalObra = obra",
-    "const ariaLabelCapaObra = capituloPrincipalObra",
-    "? `${rotuloLeituraPrincipal}: ${obra.titulo}`",
+    "const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obra)",
+    "const ariaLabelCapaObra = acaoLeituraPrincipal.capituloPrincipal",
+    "? `${acaoLeituraPrincipal.rotulo}: ${obra.titulo}`",
     ": `Abrir ${obra.titulo}`",
     "capaObraPodeSerOtimizada(obra.capa)",
     "obterIniciaisCapaObra(obra.titulo)",
     "<ObraHeroCover",
-    "href={hrefPrincipalObra}",
+    "href={acaoLeituraPrincipal.hrefPrincipal}",
     "ariaLabel={ariaLabelCapaObra}",
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
