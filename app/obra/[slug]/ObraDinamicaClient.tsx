@@ -89,7 +89,7 @@ import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, mobileTopWaterFadeStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle } from "./lib/obra-style-utils";
+import { containerStyle, desktopContainerStyle, pageStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -2923,9 +2923,6 @@ export default function ObraDinamicaPage() {
 
         <ObraDinamicaLanguageBridge />
 
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
         <LoadingSpinner label="Carregando obra" />
       </main>
     );
@@ -2937,9 +2934,6 @@ export default function ObraDinamicaPage() {
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
         <ObraDinamicaLanguageBridge />
-
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <p
@@ -3007,9 +3001,6 @@ export default function ObraDinamicaPage() {
       <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
         <ObraDinamicaLanguageBridge />
-
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <ObraActionToast mensagem={mensagemAcao} />
 
