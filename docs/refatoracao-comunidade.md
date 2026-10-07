@@ -493,6 +493,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 776: extrair somente a barra inferior de metadados do hero para `app/obra/[slug]/components/obra-hero-meta-bar.tsx`, preservando autor, métricas e formatação preparados no cliente.
 - Fase 777: extrair somente as ações do hero para `app/obra/[slug]/components/obra-hero-actions.tsx`, preservando decisão de leitura, seguimento, foco e handlers no cliente.
 - Fase 778: extrair somente os detalhes textuais do hero para `app/obra/[slug]/components/obra-hero-details.tsx`, preservando container, estado e dados preparados no cliente.
+- Fase 779: extrair somente o toast de ação para `app/obra/[slug]/components/obra-action-toast.tsx`, preservando estado, expiração e fluxos de mensagem no cliente.
 
 ## Contrato de preservação
 

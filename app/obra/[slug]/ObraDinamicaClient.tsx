@@ -89,7 +89,7 @@ import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, mobileTopWaterFadeStyle, obraActionToastStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle } from "./lib/obra-style-utils";
+import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, mobileTopWaterFadeStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -109,6 +109,7 @@ import ObraHeroCover from "./components/obra-hero-cover";
 import ObraHeroMetaBar from "./components/obra-hero-meta-bar";
 import ObraHeroActions from "./components/obra-hero-actions";
 import ObraHeroDetails from "./components/obra-hero-details";
+import ObraActionToast from "./components/obra-action-toast";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -3010,15 +3011,7 @@ export default function ObraDinamicaPage() {
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
-      {mensagemAcao ? (
-        <div
-          style={obraActionToastStyle}
-          role="status"
-          aria-live="polite"
-        >
-          {mensagemAcao}
-        </div>
-      ) : null}
+      <ObraActionToast mensagem={mensagemAcao} />
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
