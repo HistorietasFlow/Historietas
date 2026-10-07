@@ -72,10 +72,6 @@ import {
 import {
   avaliacaoObraVazia,
   calcularProximaAvaliacao,
-  formatarMediaAvaliacao,
-  formatarTotalAvaliacoes,
-  NOTAS_AVALIACAO_OBRA,
-  obterPreenchimentoEstrela,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
 import {
@@ -95,7 +91,7 @@ import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
+import { classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, secondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -109,6 +105,7 @@ import ObraStatsGrid from "./components/obra-stats-grid";
 import ObraSynopsisSection from "./components/obra-synopsis-section";
 import ObraChaptersSection from "./components/obra-chapters-section";
 import ArquivoObraPublico from "./components/arquivo-obra-publico";
+import ObraRatingSummary from "./components/obra-rating-summary";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2503,41 +2500,10 @@ export default function ObraDinamicaPage() {
     : "/explorar";
 
   const resumoAvaliacaoCabecalho = (
-    <div style={ratingSummaryStyle}>
-      <strong style={ratingNumberStyle}>
-        {formatarMediaAvaliacao(avaliacaoObra.media)}
-      </strong>
-      <span
-        style={ratingStarsStyle}
-        aria-label={`Média ${formatarMediaAvaliacao(
-          avaliacaoObra.media
-        )} de 5`}
-      >
-        {NOTAS_AVALIACAO_OBRA.map((estrela) => (
-          <span
-            key={`media-obra-${estrela}`}
-            style={ratingTopStarVisualStyle}
-            aria-hidden="true"
-          >
-            <span style={ratingTopStarBaseStyle}>★</span>
-            <span
-              style={{
-                ...ratingTopStarFillStyle,
-                width: obterPreenchimentoEstrela(
-                  estrela,
-                  avaliacaoObra.media
-                ),
-              }}
-            >
-              ★
-            </span>
-          </span>
-        ))}
-      </span>
-      <span style={ratingTotalStyle}>
-        {formatarTotalAvaliacoes(avaliacaoObra.total)}
-      </span>
-    </div>
+    <ObraRatingSummary
+      media={avaliacaoObra.media}
+      total={avaliacaoObra.total}
+    />
   );
 
 
