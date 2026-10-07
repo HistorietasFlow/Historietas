@@ -503,6 +503,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 786: extrair somente `useObraDesktopMode`, preservando estado inicial, breakpoint, agendamento inicial, listeners moderno/legado, cleanup e todos os consumidores visuais no cliente.
 - Fase 787: extrair somente `useObraAuthorPublicProfile`, preservando estado inicial, cancelamento e os agendamentos de perfil público do autor.
 - Fase 788: extrair somente `useObraCommentsNow`, preservando estado inicial, timeout de 0 ms, intervalo de 1000 ms, cleanup e consumidores do relógio de comentários.
+- Fase 789: extrair somente `useObraContent18Access`, preservando estado indexado por obra, reavaliação agendada, confirmação manual e o consumo do status pela página.
 
 ## Contrato de preservação
 

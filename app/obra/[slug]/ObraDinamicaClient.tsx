@@ -12,10 +12,7 @@ import DenunciaModal from "../../../components/DenunciaModal";
 import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 import { criarSlugBase, formatarNumeroCompacto, idObraSupabaseValido, normalizarTexto } from "../../../lib/utils";
-import {
-  acessoConteudo18Confirmado,
-  ehClassificacao18,
-} from "../../../lib/historietasAdultContent";
+import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { carregarSnapshotRemotoAvaliacaoObra } from "./lib/obra-supabase-rating-loader";
 import {
@@ -32,6 +29,7 @@ import {
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
+import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
 import {
   carregarListaLocalObraPublica,
@@ -173,10 +171,6 @@ export default function ObraDinamicaPage() {
     useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
-  const [controleAcesso18, setControleAcesso18] = useState<{
-    obraId: string;
-    status: "verificando" | "permitido" | "bloqueado";
-  }>({ obraId: "", status: "verificando" });
   const [perfilUsuarioLogado, setPerfilUsuarioLogado] =
     useState<PerfilPublicoObra | null>(null);
   const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -474,40 +468,8 @@ export default function ObraDinamicaPage() {
     };
   }, [obra?.id]);
 
-  const statusAcesso18 =
-    obra && controleAcesso18.obraId === obra.id
-      ? controleAcesso18.status
-      : "verificando";
-
-  useEffect(() => {
-    const atualizarAcessoTimer = window.setTimeout(() => {
-      if (!obra) {
-        setControleAcesso18({ obraId: "", status: "verificando" });
-        return;
-      }
-
-      const proximoStatus = !ehClassificacao18(obra.classificacaoIndicativa)
-        ? "permitido"
-        : acessoConteudo18Confirmado()
-          ? "permitido"
-          : "bloqueado";
-
-      setControleAcesso18((controleAtual) => {
-        if (
-          controleAtual.obraId === obra.id &&
-          controleAtual.status === proximoStatus
-        ) {
-          return controleAtual;
-        }
-
-        return { obraId: obra.id, status: proximoStatus };
-      });
-    }, 0);
-
-    return () => {
-      window.clearTimeout(atualizarAcessoTimer);
-    };
-  }, [obra]);
+  const { statusAcesso18, permitirAcesso18Atual } =
+    useObraContent18Access(obra);
 
   useEffect(() => {
     if (
@@ -2677,9 +2639,7 @@ export default function ObraDinamicaPage() {
         titulo={obra.titulo}
         avisos={obra.avisosConteudo}
         language={language}
-        onConfirmar={() =>
-          setControleAcesso18({ obraId: obra.id, status: "permitido" })
-        }
+        onConfirmar={permitirAcesso18Atual}
         onVoltar={() => {
           if (window.history.length > 1) {
             router.back();
