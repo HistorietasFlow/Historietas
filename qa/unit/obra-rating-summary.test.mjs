@@ -51,13 +51,10 @@ test("cliente preserva a variável, o estado e a posição do resumo no hero", (
     "total={avaliacaoObra.total}",
     "const [avaliacaoObra, setAvaliacaoObra]",
     "async function avaliarObra",
-    "<div style={desktopHeaderRightStyle}>",
     "{resumoAvaliacaoCabecalho}",
+    "<ObraHeroHeader",
+    "resumoAvaliacao={resumoAvaliacaoCabecalho}",
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
   }
-  assert.match(
-    paginaObra,
-    /\) : \(\r?\n\s+resumoAvaliacaoCabecalho\r?\n\s+\)\}/,
-  );
 });

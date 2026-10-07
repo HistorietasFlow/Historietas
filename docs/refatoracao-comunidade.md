@@ -488,6 +488,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 771: mover integralmente o componente `ArquivoObraPublico` para `app/obra/[slug]/components/arquivo-obra-publico.tsx`, preservando URLs assinadas, cancelamento, abertura, download e estados locais.
 - Fase 772: mover literalmente a constante `obraPageCss` para `app/obra/[slug]/lib/obra-page-css.ts`, preservando keyframes, redução de movimento, custom properties e todos os consumidores de estilo no cliente.
 - Fase 773: extrair somente a apresentação do resumo de avaliação do cabeçalho para `app/obra/[slug]/components/obra-rating-summary.tsx`, preservando estado, persistência e hero no cliente.
+- Fase 774: extrair somente o header do hero para `app/obra/[slug]/components/obra-hero-header.tsx`, preservando classificação, foco e resumo de avaliação preparados no cliente.
 
 ## Contrato de preservação
 
