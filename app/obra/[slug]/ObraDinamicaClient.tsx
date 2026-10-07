@@ -31,6 +31,7 @@ import {
 } from "./lib/obra-dialog-focus";
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
+import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
 import {
   carregarListaLocalObraPublica,
@@ -170,7 +171,6 @@ export default function ObraDinamicaPage() {
     useState<OrdenacaoComentariosObra>("relevantes");
   const [menuOrdenacaoComentariosAberto, setMenuOrdenacaoComentariosAberto] =
     useState(false);
-  const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [controleAcesso18, setControleAcesso18] = useState<{
@@ -191,6 +191,7 @@ export default function ObraDinamicaPage() {
   const comentariosDragIgnorarCliqueRef = useRef(false);
   const comentariosDragResetTimerRef = useRef<number | null>(null);
   const comentariosConsultaVersaoRef = useRef(0);
+  const agoraComentarios = useObraCommentsNow(comentariosAbertos);
   const isDesktop = useObraDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
@@ -353,27 +354,6 @@ export default function ObraDinamicaPage() {
       }
     };
   }, [comentariosAbertos]);
-
-
-  useEffect(() => {
-    if (!comentariosAbertos) {
-      return;
-    }
-
-    const inicioRelogioComentarios = window.setTimeout(() => {
-      setAgoraComentarios(Date.now());
-    }, 0);
-
-    const relogioComentarios = window.setInterval(() => {
-      setAgoraComentarios(Date.now());
-    }, 1000);
-
-    return () => {
-      window.clearTimeout(inicioRelogioComentarios);
-      window.clearInterval(relogioComentarios);
-    };
-  }, [comentariosAbertos]);
-
   useObraDialogInitialFocus(comentariosAbertos, comentariosSheetRef);
   useObraDialogInitialFocus(
     painelClassificacaoAberto,
