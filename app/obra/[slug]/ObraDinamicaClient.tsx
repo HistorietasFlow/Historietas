@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { useParams, useRouter } from "next/navigation";
@@ -90,7 +89,7 @@ import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, mobileTopWaterFadeStyle, obraActionToastStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, mobileTopWaterFadeStyle, obraActionToastStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -109,6 +108,7 @@ import ObraHeroHeader from "./components/obra-hero-header";
 import ObraHeroCover from "./components/obra-hero-cover";
 import ObraHeroMetaBar from "./components/obra-hero-meta-bar";
 import ObraHeroActions from "./components/obra-hero-actions";
+import ObraHeroDetails from "./components/obra-hero-details";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -3052,54 +3052,16 @@ export default function ObraDinamicaPage() {
                   : heroOverlayContentStyle
               }
             >
-              {isDesktop ? (
-                <span style={desktopHeroKickerStyle}>Obra em destaque</span>
-              ) : null}
-
-              <h1
-                data-historietas-i18n-ignore="true"
-                className="historietas-theme-title"
-                style={isDesktop ? desktopTitleStyle : titleStyle}
-              >
-                {obra.titulo}
-              </h1>
-
-              {isDesktop ? (
-                <>
-                  <div style={desktopHeroMetaStyle}>
-                    <Link
-                      href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
-                      style={desktopHeroAuthorStyle}
-                      aria-label={`Abrir perfil do autor ${autorObraNome}`}
-                      title={perfilAutorObra?.bio || undefined}
-                    >
-                      Por{" "}
-                      <span data-historietas-i18n-ignore="true">
-                        {autorObraNome}
-                      </span>
-                    </Link>
-
-                    <span style={desktopHeroMetaDividerStyle} aria-hidden="true" />
-
-                    <span style={desktopHeroMetaTextStyle}>
-                      {generoObraFormatado}
-                    </span>
-
-                    <span style={desktopHeroMetaDividerStyle} aria-hidden="true" />
-
-                    <span style={desktopHeroMetaTextStyle}>
-                      {obra.classificacaoIndicativa}
-                    </span>
-                  </div>
-
-                  <p
-                    data-historietas-i18n-ignore="true"
-                    style={desktopDescriptionStyle}
-                  >
-                    {obra.sinopse || "Nenhuma sinopse informada."}
-                  </p>
-                </>
-              ) : null}
+              <ObraHeroDetails
+                isDesktop={isDesktop}
+                titulo={obra.titulo}
+                autorNome={autorObraNome}
+                autorHref={criarLinkPerfilAutor(autorObraNome, autorObraId)}
+                autorBio={perfilAutorObra?.bio || ""}
+                genero={generoObraFormatado}
+                classificacaoIndicativa={obra.classificacaoIndicativa}
+                sinopse={obra.sinopse}
+              />
 
               <ObraHeroMetaBar
                 isDesktop={isDesktop}
