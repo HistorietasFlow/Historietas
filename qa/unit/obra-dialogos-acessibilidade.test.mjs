@@ -10,6 +10,13 @@ const helperFocoDialogo = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-dialog-focus.ts", import.meta.url),
   "utf8",
 );
+const hookFocoInicialDialogo = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-dialog-initial-focus.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const obraStyleUtils = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-style-utils.ts", import.meta.url),
   "utf8",
@@ -65,16 +72,28 @@ test("helper de dialog trata Escape e prende Tab nos limites focaveis", () => {
 
 test("comentarios classificacao e acoes recebem foco inicial ao abrir", () => {
   assert.match(
-    paginaObra,
-    /focarInicioDialogo\(comentariosSheetRef\.current\)/,
+    hookFocoInicialDialogo,
+    /if \(!aberto\) \{\s*return;\s*\}/,
+  );
+  assert.match(
+    hookFocoInicialDialogo,
+    /window\.setTimeout\(\(\) => \{\s*focarInicioDialogo\(dialogRef\.current\);\s*\}, 0\)/,
+  );
+  assert.match(
+    hookFocoInicialDialogo,
+    /window\.clearTimeout\(focoTimer\)/,
   );
   assert.match(
     paginaObra,
-    /focarInicioDialogo\(classificacaoDialogRef\.current\)/,
+    /useObraDialogInitialFocus\(comentariosAbertos, comentariosSheetRef\)/,
   );
   assert.match(
     paginaObra,
-    /focarInicioDialogo\(acoesObraDialogRef\.current\)/,
+    /useObraDialogInitialFocus\(\s*painelClassificacaoAberto,\s*classificacaoDialogRef,\s*\)/,
+  );
+  assert.match(
+    paginaObra,
+    /useObraDialogInitialFocus\(acoesObraAbertas, acoesObraDialogRef\)/,
   );
 
   const marcadoresPagina = paginaObra.match(
