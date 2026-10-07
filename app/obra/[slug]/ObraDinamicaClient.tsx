@@ -97,8 +97,7 @@ import { obterCaminhoStorageArquivoObra, type ArquivoObraLocal } from "./lib/obr
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -108,6 +107,7 @@ import ObraClassificationPanel from "./components/obra-classification-panel";
 import ObraActionsSheet from "./components/obra-actions-sheet";
 import ObraRatingBox from "./components/obra-rating-box";
 import ObraCommunitySection from "./components/obra-community-section";
+import ObraStatsGrid from "./components/obra-stats-grid";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2599,6 +2599,10 @@ export default function ObraDinamicaPage() {
     setComentariosAbertos(true);
   }
 
+  const alternarSinopseObra = () => {
+    setSinopseAberta((aberta) => !aberta);
+  };
+
   function fecharComentariosObra() {
     const focoAnterior = focoAntesComentariosRef.current;
     focoAntesComentariosRef.current = null;
@@ -3333,41 +3337,17 @@ export default function ObraDinamicaPage() {
           hrefPosts={criarLinkComunidadeObra(obra.titulo, "posts")}
         />
 
-        <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
-          <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.seguidores)}
-            rotulo="seguidores"
-          />
-          <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.curtidas)}
-            rotulo="curtidas"
-            ativo={metricasObra.curtidaAtiva}
-            mostrarCoracao
-            onClick={alternarCurtidaObra}
-          />
-          <MetricCard
-            numero={formatarNumeroCompacto(totalComentariosObra)}
-            rotulo="comentários"
-            onClick={abrirComentariosObra}
-          />
-          <MetricCard
-            numero={
-              <span
-                aria-hidden="true"
-                style={{
-                  ...synopsisToggleIconStyle,
-                  transform: sinopseAberta ? "rotate(180deg)" : "rotate(0deg)",
-                }}
-              >
-                ⌄
-              </span>
-            }
-            rotulo={sinopseAberta ? "Capítulos" : "Sinopse"}
-            onClick={() => setSinopseAberta((aberta) => !aberta)}
-            ariaLabel={sinopseAberta ? "Mostrar capítulos" : "Mostrar sinopse"}
-            ariaExpanded={sinopseAberta}
-          />
-        </section>
+        <ObraStatsGrid
+          isDesktop={isDesktop}
+          seguidores={formatarNumeroCompacto(metricasObra.seguidores)}
+          curtidas={formatarNumeroCompacto(metricasObra.curtidas)}
+          curtidaAtiva={metricasObra.curtidaAtiva}
+          comentarios={formatarNumeroCompacto(totalComentariosObra)}
+          sinopseAberta={sinopseAberta}
+          onCurtir={alternarCurtidaObra}
+          onAbrirComentarios={abrirComentariosObra}
+          onAlternarSinopse={alternarSinopseObra}
+        />
 
         {sinopseAberta ? (
           <section id="sinopse" style={synopsisSectionStyle}>
