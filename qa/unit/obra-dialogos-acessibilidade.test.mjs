@@ -28,6 +28,13 @@ const commentsSheet = readFileSync(
   ),
   "utf8",
 );
+const classificationPanel = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/components/obra-classification-panel.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBloco(inicioTexto, fimTexto) {
   const inicio = paginaObra.indexOf(inicioTexto);
@@ -67,15 +74,12 @@ test("comentarios classificacao e acoes recebem foco inicial ao abrir", () => {
     /\sdata-dialog-initial-focus="true"/g,
   ) || [];
 
-  assert.equal(marcadoresPagina.length, 2);
+  assert.equal(marcadoresPagina.length, 1);
   assert.match(handleComentarios, /data-dialog-initial-focus="true"/);
+  assert.match(classificationPanel, /data-dialog-initial-focus="true"/);
 });
 
 test("os tres dialogs usam aria modal tabIndex e controle de teclado", () => {
-  const classificacao = obterBloco(
-    'ref={classificacaoDialogRef}',
-    '<header style={classificationPanelHeaderStyle}>',
-  );
   const acoes = obterBloco(
     'ref={acoesObraDialogRef}',
     '<div style={obraActionSheetHandleStyle}',
@@ -90,7 +94,16 @@ test("os tres dialogs usam aria modal tabIndex e controle de teclado", () => {
     /onKeyDown=\{\(event\) =>\s*manterFocoNoDialogo\(event, fecharComentariosObra\)\s*\}/,
   );
 
-  for (const bloco of [classificacao, acoes]) {
+  assert.match(classificationPanel, /role="dialog"/);
+  assert.match(classificationPanel, /aria-modal="true"/);
+  assert.match(classificationPanel, /tabIndex=\{-1\}/);
+  assert.match(classificationPanel, /onKeyDown=\{onKeyDown\}/);
+  assert.match(
+    paginaObra,
+    /onKeyDown=\{\(event\) =>\s*manterFocoNoDialogo\(event, fecharPainelClassificacaoObra\)\s*\}/,
+  );
+
+  for (const bloco of [acoes]) {
     assert.match(bloco, /role="dialog"/);
     assert.match(bloco, /aria-modal="true"/);
     assert.match(bloco, /tabIndex=\{-1\}/);

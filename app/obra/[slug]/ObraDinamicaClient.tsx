@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
-import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import type {
   FormEvent,
@@ -19,7 +18,6 @@ import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArq
 import {
   acessoConteudo18Confirmado,
   ehClassificacao18,
-  traduzirAvisoConteudo18,
 } from "../../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../../lib/arquivosObras";
@@ -102,12 +100,13 @@ import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLoca
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationPanelOverlayStyle, classificationPanelBackdropStyle, classificationPanelStyle, classificationPanelHeaderStyle, classificationPanelBadgeStyle, classificationPanelBadgeAdultStyle, classificationPanelCloseStyle, classificationPanelContentStyle, classificationPanelIntroStyle, classificationPanelTitleStyle, classificationPanelDescriptionStyle, classificationWarningsStyle, classificationWarningsTitleStyle, classificationWarningsGridStyle, classificationWarningItemStyle, classificationWarningDotStyle, classificationNoWarningsStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
 import ObraCommentsList from "./components/obra-comments-list";
 import ObraCommentsSheet from "./components/obra-comments-sheet";
+import ObraClassificationPanel from "./components/obra-classification-panel";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2912,101 +2911,18 @@ export default function ObraDinamicaPage() {
 
   const painelClassificacao =
     obra && painelClassificacaoAberto && typeof document !== "undefined"
-      ? createPortal(
-          <section
-            data-historietas-obra-classificacao-root="true"
-            style={classificationPanelOverlayStyle}
-            aria-label={textosPainelClassificacao.titulo}
-          >
-            <button
-              type="button"
-              aria-label={textosPainelClassificacao.fechar}
-              onClick={fecharPainelClassificacaoObra}
-              style={classificationPanelBackdropStyle}
-            />
-
-            <article
-              ref={classificacaoDialogRef}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="historietas-classificacao-title"
-              tabIndex={-1}
-              onKeyDown={(event) =>
-                manterFocoNoDialogo(event, fecharPainelClassificacaoObra)
-              }
-              style={classificationPanelStyle}
-            >
-              <header style={classificationPanelHeaderStyle}>
-                <span
-                  data-historietas-i18n-ignore="true"
-                  style={{
-                    ...classificationPanelBadgeStyle,
-                    ...(ehClassificacao18(obra.classificacaoIndicativa)
-                      ? classificationPanelBadgeAdultStyle
-                      : {}),
-                  }}
-                >
-                  {obra.classificacaoIndicativa}
-                </span>
-
-                <button
-                  type="button"
-                  data-dialog-initial-focus="true"
-                  onClick={fecharPainelClassificacaoObra}
-                  aria-label={textosPainelClassificacao.fechar}
-                  style={classificationPanelCloseStyle}
-                >
-                  ×
-                </button>
-              </header>
-
-              <div style={classificationPanelContentStyle}>
-                <div style={classificationPanelIntroStyle}>
-                  <strong
-                    id="historietas-classificacao-title"
-                    style={classificationPanelTitleStyle}
-                  >
-                    {textosPainelClassificacao.titulo}
-                  </strong>
-
-                  <p style={classificationPanelDescriptionStyle}>
-                    {textosPainelClassificacao.descricao}{" "}
-                    <strong data-historietas-i18n-ignore="true">
-                      {obra.classificacaoIndicativa}
-                    </strong>
-                    .
-                  </p>
-                </div>
-
-                {ehClassificacao18(obra.classificacaoIndicativa) ? (
-                  <section style={classificationWarningsStyle}>
-                    <span style={classificationWarningsTitleStyle}>
-                      {textosPainelClassificacao.avisos}
-                    </span>
-
-                    {obra.avisosConteudo.length > 0 ? (
-                      <div style={classificationWarningsGridStyle}>
-                        {obra.avisosConteudo.map((aviso) => (
-                          <div key={aviso} style={classificationWarningItemStyle}>
-                            <span
-                              style={classificationWarningDotStyle}
-                              aria-hidden="true"
-                            />
-                            <span>{traduzirAvisoConteudo18(aviso, language)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p style={classificationNoWarningsStyle}>
-                        {textosPainelClassificacao.semAvisos}
-                      </p>
-                    )}
-                  </section>
-                ) : null}
-              </div>
-            </article>
-          </section>,
-          document.body
+      ? (
+          <ObraClassificationPanel
+            classificacaoIndicativa={obra.classificacaoIndicativa}
+            avisosConteudo={obra.avisosConteudo}
+            language={language}
+            textos={textosPainelClassificacao}
+            dialogRef={classificacaoDialogRef}
+            onFechar={fecharPainelClassificacaoObra}
+            onKeyDown={(event) =>
+              manterFocoNoDialogo(event, fecharPainelClassificacaoObra)
+            }
+          />
         )
       : null;
 
