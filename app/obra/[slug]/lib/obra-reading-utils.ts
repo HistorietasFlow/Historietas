@@ -101,6 +101,47 @@ export function encontrarCapituloParaContinuarObraPublica<
   );
 }
 
+type CapituloParaAcaoLeitura = CapituloParaContinuarLeitura & {
+  href: string;
+};
+
+type ObraParaAcaoLeitura<
+  TCapitulo extends CapituloParaAcaoLeitura,
+> = ObraParaContinuarLeitura<TCapitulo> & {
+  link: string;
+  progressoLeitura: number;
+  slug: string;
+};
+
+export function obterAcaoLeituraPrincipalObra<
+  TCapitulo extends CapituloParaAcaoLeitura,
+>(obra: ObraParaAcaoLeitura<TCapitulo> | null) {
+  if (!obra) {
+    return {
+      capituloPrincipal: null,
+      rotulo: "Começar a ler",
+      hrefPrincipal: "/explorar",
+      hrefCta: undefined,
+    };
+  }
+
+  const capituloPrincipal = encontrarCapituloParaContinuarObraPublica(obra);
+  const leituraIniciada = Boolean(
+    obra.ultimoCapituloLidoId ||
+      obra.progressoLeitura > 0 ||
+      obra.capitulos.some((capitulo) => capitulo.lido),
+  );
+  const rotulo = leituraIniciada ? "Continuar leitura" : "Começar a ler";
+
+  return {
+    capituloPrincipal,
+    rotulo,
+    hrefPrincipal:
+      capituloPrincipal?.href || obra.link || `/obra/${obra.slug}`,
+    hrefCta: capituloPrincipal?.href,
+  };
+}
+
 export function obterObraDisponivelExibida(
   obra: { disponivel?: boolean } | null,
 ) {

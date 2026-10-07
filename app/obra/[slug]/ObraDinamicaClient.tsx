@@ -76,7 +76,7 @@ import { obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obter
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
-import { encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
+import { obterAcaoLeituraPrincipalObra, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, criarEstruturaComentariosObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarLinkComFallback } from "./lib/obra-share-utils";
@@ -2288,21 +2288,7 @@ export default function ObraDinamicaPage() {
     }
   }
 
-  const capituloPrincipalObra = obra
-    ? encontrarCapituloParaContinuarObraPublica(obra)
-    : null;
-  const obraTemLeituraIniciada = Boolean(
-    obra &&
-      (obra.ultimoCapituloLidoId ||
-        obra.progressoLeitura > 0 ||
-        obra.capitulos.some((capitulo) => capitulo.lido)),
-  );
-  const rotuloLeituraPrincipal = obraTemLeituraIniciada
-    ? "Continuar leitura"
-    : "Começar a ler";
-  const hrefPrincipalObra = obra
-    ? capituloPrincipalObra?.href || obra.link || `/obra/${obra.slug}`
-    : "/explorar";
+  const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obra);
 
   const resumoAvaliacaoCabecalho = (
     <ObraRatingSummary
@@ -2792,8 +2778,8 @@ export default function ObraDinamicaPage() {
 
   const classificacaoIndicativaCompacta =
     obterClassificacaoIndicativaCompactaObra(obra.classificacaoIndicativa);
-  const ariaLabelCapaObra = capituloPrincipalObra
-    ? `${rotuloLeituraPrincipal}: ${obra.titulo}`
+  const ariaLabelCapaObra = acaoLeituraPrincipal.capituloPrincipal
+    ? `${acaoLeituraPrincipal.rotulo}: ${obra.titulo}`
     : `Abrir ${obra.titulo}`;
 
   return (
@@ -2823,7 +2809,7 @@ export default function ObraDinamicaPage() {
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
             <ObraHeroCover
               isDesktop={isDesktop}
-              href={hrefPrincipalObra}
+              href={acaoLeituraPrincipal.hrefPrincipal}
               ariaLabel={ariaLabelCapaObra}
               capa={obra.capa}
               capaOtimizada={capaObraPodeSerOtimizada(obra.capa)}
@@ -2860,9 +2846,9 @@ export default function ObraDinamicaPage() {
 
               <ObraHeroActions
                 isDesktop={isDesktop}
-                leituraHref={capituloPrincipalObra?.href}
-                leituraRotulo={rotuloLeituraPrincipal}
-                leituraAriaLabel={`${rotuloLeituraPrincipal}: ${obra.titulo}`}
+                leituraHref={acaoLeituraPrincipal.hrefCta}
+                leituraRotulo={acaoLeituraPrincipal.rotulo}
+                leituraAriaLabel={`${acaoLeituraPrincipal.rotulo}: ${obra.titulo}`}
                 seguindo={obraSeguida}
                 acoesAbertas={acoesObraAbertas}
                 onAlternarSeguir={alternarSeguirObra}

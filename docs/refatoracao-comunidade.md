@@ -498,6 +498,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 781: extrair integralmente `carregarObraSupabasePorSlug` para `app/obra/[slug]/lib/obra-public-work-loader.ts`, preservando consultas, guards, fallbacks, métricas, normalização e backup.
 - Fase 782: extrair somente a estratégia de cópia do compartilhamento para `app/obra/[slug]/lib/obra-share-utils.ts`, preservando no cliente a ordem da chamada nativa, fechamento do menu, `await`, `AbortError`, setters, mensagens e timer.
 - Fase 783: extrair o hook de foco inicial dos diálogos da obra, preservando o agendamento de 0 ms, cleanup, refs, fechamento, restauração de foco e trap de teclado no cliente.
+- Fase 784: extrair a derivação pura da ação principal de leitura, preservando seleção de capítulo, rótulos, fallback da capa e CTA condicional.
 
 ## Contrato de preservação
 

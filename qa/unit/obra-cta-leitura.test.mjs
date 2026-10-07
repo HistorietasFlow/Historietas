@@ -14,6 +14,10 @@ const textosObra = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-text-utils.ts", import.meta.url),
   "utf8",
 );
+const leituraUtils = readFileSync(
+  new URL("../../app/obra/[slug]/lib/obra-reading-utils.ts", import.meta.url),
+  "utf8",
+);
 const acoesHero = readFileSync(
   new URL(
     "../../app/obra/[slug]/components/obra-hero-actions.tsx",
@@ -34,21 +38,28 @@ function obterBloco(inicioTexto, fimTexto, fonte = paginaObra) {
 
 test("cta principal reutiliza a logica existente de continuar leitura", () => {
   const bloco = obterBloco(
-    "const capituloPrincipalObra = obra",
-    "const resumoAvaliacaoCabecalho",
+    "export function obterAcaoLeituraPrincipalObra",
+    "export function obterObraDisponivelExibida",
+    leituraUtils,
   );
 
   assert.match(
     bloco,
-    /encontrarCapituloParaContinuarObraPublica\(obra\)/,
+    /const capituloPrincipal = encontrarCapituloParaContinuarObraPublica\(obra\)/,
   );
   assert.match(bloco, /obra\.ultimoCapituloLidoId/);
   assert.match(bloco, /obra\.progressoLeitura > 0/);
   assert.match(bloco, /obra\.capitulos\.some\(\(capitulo\) => capitulo\.lido\)/);
   assert.match(
     bloco,
-    /obraTemLeituraIniciada[\s\S]*?"Continuar leitura"[\s\S]*?: "Começar a ler"/,
+    /leituraIniciada \? "Continuar leitura" : "Começar a ler"/,
   );
+  assert.match(bloco, /hrefPrincipal: "\/explorar"/);
+  assert.match(
+    bloco,
+    /capituloPrincipal\?\.href \|\| obra\.link \|\| `\/obra\/\$\{obra\.slug\}`/,
+  );
+  assert.match(bloco, /hrefCta: capituloPrincipal\?\.href/);
 });
 
 test("cta de leitura aparece antes de seguir e so existe com capitulo disponivel", () => {
@@ -66,8 +77,8 @@ test("cta de leitura aparece antes de seguir e so existe com capitulo disponivel
   assert.ok(indiceAcoes > indiceSeguir);
   assert.match(acoesHero, /href=\{leituraHref\}/);
   assert.match(acoesHero, /\{leituraRotulo\}/);
-  assert.match(bloco, /leituraHref=\{capituloPrincipalObra\?\.href\}/);
-  assert.match(bloco, /leituraRotulo=\{rotuloLeituraPrincipal\}/);
+  assert.match(bloco, /leituraHref=\{acaoLeituraPrincipal\.hrefCta\}/);
+  assert.match(bloco, /leituraRotulo=\{acaoLeituraPrincipal\.rotulo\}/);
   assert.match(bloco, /onAlternarSeguir=\{alternarSeguirObra\}/);
   assert.match(bloco, /onAlternarAcoes=\{alternarAcoesObra\}/);
 });
@@ -102,15 +113,15 @@ test("cta de leitura e visualmente primario e seguir fica secundario", () => {
 
 test("capa comunica a mesma acao principal de leitura", () => {
   const bloco = obterBloco(
-    "const ariaLabelCapaObra = capituloPrincipalObra",
+    "const ariaLabelCapaObra = acaoLeituraPrincipal.capituloPrincipal",
     "return (",
   );
 
-  assert.match(bloco, /capituloPrincipalObra/);
-  assert.match(bloco, /rotuloLeituraPrincipal/);
+  assert.match(bloco, /acaoLeituraPrincipal\.capituloPrincipal/);
+  assert.match(bloco, /acaoLeituraPrincipal\.rotulo/);
   assert.match(bloco, /Abrir \$\{obra\.titulo\}/);
   assert.match(paginaObra, /<ObraHeroCover/);
-  assert.match(paginaObra, /href=\{hrefPrincipalObra\}/);
+  assert.match(paginaObra, /href=\{acaoLeituraPrincipal\.hrefPrincipal\}/);
   assert.match(paginaObra, /ariaLabel=\{ariaLabelCapaObra\}/);
 });
 
