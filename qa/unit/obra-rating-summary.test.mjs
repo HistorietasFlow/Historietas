@@ -41,10 +41,10 @@ test("resumo preserva média, estrelas, total e acessibilidade", () => {
 
 test("cliente preserva a variável, o estado e a posição do resumo no hero", () => {
   const resumo = paginaObra.indexOf("const resumoAvaliacaoCabecalho = (");
-  const hero = paginaObra.indexOf("{isDesktop ? (", resumo);
+  const heroHeader = paginaObra.indexOf("<ObraHeroHeader", resumo);
 
   assert.ok(resumo >= 0);
-  assert.ok(hero > resumo);
+  assert.ok(heroHeader > resumo);
   for (const trecho of [
     "<ObraRatingSummary",
     "media={avaliacaoObra.media}",
