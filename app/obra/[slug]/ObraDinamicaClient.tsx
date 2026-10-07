@@ -100,13 +100,14 @@ import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLoca
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionSheetHandleStyle, obraActionSheetOverlayStyle, obraActionToastStyle, obraActionsMenuStyle, obraAddButtonStyle, obraMenuActionsStyle, obraMenuAuthorLinkStyle, obraMenuAuthorMetricsRowStyle, obraMenuHeaderStyle, obraMenuItemActiveStyle, obraMenuItemButtonStyle, obraMenuItemCopiedStyle, obraMenuItemDotActiveStyle, obraMenuItemDotStyle, obraMenuMetricStyle, obraMenuMetricsStyle, obraMenuSectionLabelStyle, obraMenuTagSeparatorStyle, obraMenuTagStyle, obraMenuTagsStyle, obraMenuTitleStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopObraActionsMenuStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
 import ObraCommentsList from "./components/obra-comments-list";
 import ObraCommentsSheet from "./components/obra-comments-sheet";
 import ObraClassificationPanel from "./components/obra-classification-panel";
+import ObraActionsSheet from "./components/obra-actions-sheet";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -2567,6 +2568,21 @@ export default function ObraDinamicaPage() {
     }
   }
 
+  const salvarObraPeloMenu = () => {
+    fecharAcoesObra();
+    void alternarFavoritoObra();
+  };
+
+  const concluirObraPeloMenu = () => {
+    fecharAcoesObra();
+    void alternarConcluirObra();
+  };
+
+  const compartilharObraPeloMenu = () => {
+    fecharAcoesObra();
+    void compartilharObraAtual();
+  };
+
   function alternarAcoesObra() {
     if (acoesObraAbertas) {
       fecharAcoesObra();
@@ -3259,196 +3275,42 @@ export default function ObraDinamicaPage() {
         </section>
 
         {acoesObraAbertas && (
-          <div
-            style={obraActionSheetOverlayStyle}
-            role="presentation"
-            onClick={() => fecharAcoesObra()}
-          >
-            <section
-              ref={acoesObraDialogRef}
-              style={isDesktop ? desktopObraActionsMenuStyle : obraActionsMenuStyle}
-              role="dialog"
-              aria-modal="true"
-              aria-label={`Ações da obra ${obra.titulo}`}
-              tabIndex={-1}
-              onKeyDown={(event) =>
-                manterFocoNoDialogo(event, () => fecharAcoesObra())
-              }
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div style={obraActionSheetHandleStyle} aria-hidden="true" />
-
-              <div style={obraMenuHeaderStyle}>
-                <strong data-historietas-i18n-ignore="true" style={obraMenuTitleStyle}>{obra.titulo}</strong>
-
-                <div style={obraMenuAuthorMetricsRowStyle}>
-                  <Link
-                    href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
-                    style={obraMenuAuthorLinkStyle}
-                    aria-label={`Abrir perfil do autor ${autorObraNome}`}
-                    title={perfilAutorObra?.bio || undefined}
-                  >
-                    Por <span data-historietas-i18n-ignore="true">{autorObraNome}</span>
-                  </Link>
-                </div>
-
-                <div style={obraMenuTagsStyle}>
-                  {[
-                    obra.formato,
-                    generoObraFormatado,
-                    ...obra.tags,
-                    obra.classificacaoIndicativa,
-                    obra.arquivoObra ? "Arquivo anexado" : "",
-                  ]
-                    .filter((tag) => tag.trim())
-                    .slice(0, 10)
-                    .map((tag, index) => (
-                      <span
-                        key={`${obra.id}-menu-tag-${tag}-${index}`}
-                        style={obraMenuTagStyle}
-                      >
-                        {index > 0 ? (
-                          <span style={obraMenuTagSeparatorStyle}>•</span>
-                        ) : null}
-                        {tag}
-                      </span>
-                    ))}
-                </div>
-
-                <div style={obraMenuMetricsStyle}>
-                  <span style={obraMenuMetricStyle}>
-                    <span style={metricInlineContentStyle}>
-                      <span style={metricEmojiIconStyle}>👁</span>
-                      <span style={metricWhiteNumberStyle}>
-                        {formatarNumeroCompacto(metricasObra.visualizacoes)}
-                      </span>
-                    </span>
-                  </span>
-
-                  <span style={obraMenuMetricStyle}>
-                    <span style={metricInlineContentStyle}>
-                      <span style={metricEmojiIconStyle}>❤️</span>
-                      <span style={metricWhiteNumberStyle}>
-                        {formatarNumeroCompacto(metricasObra.curtidas)}
-                      </span>
-                    </span>
-                  </span>
-
-                  <span style={obraMenuMetricStyle}>
-                    <span style={metricInlineContentStyle}>
-                      <span style={metricEmojiIconStyle}>💬</span>
-                      <span style={metricWhiteNumberStyle}>
-                        {formatarNumeroCompacto(totalComentariosObra)}
-                      </span>
-                    </span>
-                  </span>
-
-                  <span style={obraMenuMetricStyle}>
-                    <span style={metricInlineContentStyle}>
-                      <span style={metricEmojiIconStyle}>🔖</span>
-                      <span style={metricWhiteNumberStyle}>
-                        {formatarNumeroCompacto(metricasObra.seguidores)}
-                      </span>
-                    </span>
-                  </span>
-
-                  <span style={obraMenuMetricStyle}>
-                    <span style={metricInlineContentStyle}>
-                      <span style={metricEmojiIconStyle}>
-                        {indicadorConteudoIcone}
-                      </span>
-                      <span style={metricWhiteNumberStyle}>
-                        {indicadorConteudoValor}
-                      </span>
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              <span style={obraMenuSectionLabelStyle}>Ações</span>
-
-              <div style={obraMenuActionsStyle}>
-                <button
-                  type="button"
-                  data-dialog-initial-focus="true"
-                  onClick={() => {
-                    fecharAcoesObra();
-                    void alternarFavoritoObra();
-                  }}
-                  style={
-                    obraFavoritada
-                      ? obraMenuItemActiveStyle
-                      : obraMenuItemButtonStyle
-                  }
-                >
-                  <span>{obraFavoritada ? "Salvo" : "Salvar"}</span>
-                  <span
-                    style={
-                      obraFavoritada
-                        ? obraMenuItemDotActiveStyle
-                        : obraMenuItemDotStyle
-                    }
-                  >
-                    {obraFavoritada ? "✓" : ""}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    fecharAcoesObra();
-                    void alternarConcluirObra();
-                  }}
-                  style={
-                    obraConcluida
-                      ? obraMenuItemActiveStyle
-                      : obraMenuItemButtonStyle
-                  }
-                >
-                  <span>{obraConcluida ? "Concluída" : "Concluir"}</span>
-                  <span
-                    style={
-                      obraConcluida
-                        ? obraMenuItemDotActiveStyle
-                        : obraMenuItemDotStyle
-                    }
-                  >
-                    {obraConcluida ? "✓" : ""}
-                  </span>
-                </button>
-
-                {!(
-                  usuarioIdLogado &&
-                  autorObraId &&
-                  usuarioIdLogado === autorObraId
-                ) ? (
-                  <button
-                    type="button"
-                    onClick={abrirDenunciaObraAtual}
-                    style={obraMenuItemButtonStyle}
-                  >
-                    <span>Denunciar</span>
-                  </button>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    fecharAcoesObra();
-                    void compartilharObraAtual();
-                  }}
-                  style={
-                    linkCopiado
-                      ? obraMenuItemCopiedStyle
-                      : obraMenuItemButtonStyle
-                  }
-                >
-                  <span>{linkCopiado ? "Link copiado!" : "Compartilhar"}</span>
-                </button>
-
-              </div>
-            </section>
-          </div>
+          <ObraActionsSheet
+            titulo={obra.titulo}
+            obraId={obra.id}
+            autorNome={autorObraNome}
+            autorHref={criarLinkPerfilAutor(autorObraNome, autorObraId)}
+            autorBio={perfilAutorObra?.bio || ""}
+            tags={[
+              obra.formato,
+              generoObraFormatado,
+              ...obra.tags,
+              obra.classificacaoIndicativa,
+              obra.arquivoObra ? "Arquivo anexado" : "",
+            ]}
+            metricas={[
+              formatarNumeroCompacto(metricasObra.visualizacoes),
+              formatarNumeroCompacto(metricasObra.curtidas),
+              formatarNumeroCompacto(totalComentariosObra),
+              formatarNumeroCompacto(metricasObra.seguidores),
+            ]}
+            indicadorIcone={indicadorConteudoIcone}
+            indicadorValor={indicadorConteudoValor}
+            isDesktop={isDesktop}
+            dialogRef={acoesObraDialogRef}
+            obraFavoritada={obraFavoritada}
+            obraConcluida={obraConcluida}
+            linkCopiado={linkCopiado}
+            mostrarDenuncia={!usuarioEhAutorDaObra}
+            onFechar={fecharAcoesObra}
+            onKeyDown={(event) =>
+              manterFocoNoDialogo(event, () => fecharAcoesObra())
+            }
+            onSalvar={salvarObraPeloMenu}
+            onConcluir={concluirObraPeloMenu}
+            onDenunciar={abrirDenunciaObraAtual}
+            onCompartilhar={compartilharObraPeloMenu}
+          />
         )}
 
         {autenticacaoCarregada && !usuarioEhAutorDaObra ? (
