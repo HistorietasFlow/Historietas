@@ -24,11 +24,11 @@ import {
   type IdentidadeAutenticadaObra,
 } from "./lib/obra-auth-identity";
 import {
-  focarInicioDialogo,
   manterFocoNoDialogo,
   obterElementoComFocoAtual,
   restaurarFocoAnterior,
 } from "./lib/obra-dialog-focus";
+import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
 import {
   carregarListaLocalObraPublica,
   lerStorageUsuarioObraPublica,
@@ -373,47 +373,12 @@ export default function ObraDinamicaPage() {
     };
   }, [comentariosAbertos]);
 
-  useEffect(() => {
-    if (!comentariosAbertos) {
-      return;
-    }
-
-    const focoTimer = window.setTimeout(() => {
-      focarInicioDialogo(comentariosSheetRef.current);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(focoTimer);
-    };
-  }, [comentariosAbertos]);
-
-  useEffect(() => {
-    if (!painelClassificacaoAberto) {
-      return;
-    }
-
-    const focoTimer = window.setTimeout(() => {
-      focarInicioDialogo(classificacaoDialogRef.current);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(focoTimer);
-    };
-  }, [painelClassificacaoAberto]);
-
-  useEffect(() => {
-    if (!acoesObraAbertas) {
-      return;
-    }
-
-    const focoTimer = window.setTimeout(() => {
-      focarInicioDialogo(acoesObraDialogRef.current);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(focoTimer);
-    };
-  }, [acoesObraAbertas]);
+  useObraDialogInitialFocus(comentariosAbertos, comentariosSheetRef);
+  useObraDialogInitialFocus(
+    painelClassificacaoAberto,
+    classificacaoDialogRef,
+  );
+  useObraDialogInitialFocus(acoesObraAbertas, acoesObraDialogRef);
 
 
   useEffect(() => {
