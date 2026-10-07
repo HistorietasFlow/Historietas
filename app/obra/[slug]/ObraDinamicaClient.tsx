@@ -90,7 +90,7 @@ import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLocalAusentePorSlug, substituirOuInserirObraLocal, type ObraDinamica, type ObraLocal, type ResultadoCarregamentoObraPublica } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
-import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, secondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
+import { containerStyle, desktopContainerStyle, pageStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroContentStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, secondaryButtonStyle, desktopHeroStyle, desktopHeroContentStyle, desktopHeroOverlayContentStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -107,6 +107,7 @@ import ArquivoObraPublico from "./components/arquivo-obra-publico";
 import ObraRatingSummary from "./components/obra-rating-summary";
 import ObraHeroHeader from "./components/obra-hero-header";
 import ObraHeroCover from "./components/obra-hero-cover";
+import ObraHeroMetaBar from "./components/obra-hero-meta-bar";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -3099,57 +3100,15 @@ export default function ObraDinamicaPage() {
                 </>
               ) : null}
 
-              <div
-                style={
-                  isDesktop ? desktopHeroBottomMetaBarStyle : heroBottomMetaBarStyle
-                }
-              >
-                {!isDesktop ? (
-                  <Link
-                    href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
-                    style={heroBottomAuthorLinkStyle}
-                    aria-label={`Abrir perfil do autor ${autorObraNome}`}
-                    title={perfilAutorObra?.bio || undefined}
-                  >
-                    Por{" "}
-                    <span data-historietas-i18n-ignore="true">
-                      {autorObraNome}
-                    </span>
-                  </Link>
-                ) : null}
-
-                <div
-                  style={isDesktop ? desktopHeroStatsStyle : heroBottomMetricsStyle}
-                >
-                  <span style={heroBottomMetricStyle}>
-                    <span style={metricInlineContentStyle}>
-                      <span style={metricEmojiIconStyle}>👁</span>
-                      <span style={metricWhiteNumberStyle}>
-                        {formatarNumeroCompacto(metricasObra.visualizacoes)}
-                      </span>
-                    </span>
-                  </span>
-
-                  <span style={heroBottomMetricStyle}>
-                    <span style={metricInlineContentStyle}>
-                      <span style={metricEmojiIconStyle}>❤️</span>
-                      <span style={metricWhiteNumberStyle}>
-                        {formatarNumeroCompacto(metricasObra.curtidas)}
-                      </span>
-                    </span>
-                  </span>
-
-                  <span style={heroBottomMetricStyle}>
-                    <span style={metricInlineContentStyle}>
-                      <span style={metricEmojiIconStyle}>💬</span>
-                      <span style={metricWhiteNumberStyle}>
-                        {formatarNumeroCompacto(totalComentariosObra)}
-                      </span>
-                    </span>
-                  </span>
-
-                </div>
-              </div>
+              <ObraHeroMetaBar
+                isDesktop={isDesktop}
+                autorNome={autorObraNome}
+                autorHref={criarLinkPerfilAutor(autorObraNome, autorObraId)}
+                autorBio={perfilAutorObra?.bio || ""}
+                visualizacoes={formatarNumeroCompacto(metricasObra.visualizacoes)}
+                curtidas={formatarNumeroCompacto(metricasObra.curtidas)}
+                comentarios={formatarNumeroCompacto(totalComentariosObra)}
+              />
 
               <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
                 {capituloPrincipalObra ? (
