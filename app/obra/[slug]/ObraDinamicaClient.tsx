@@ -31,6 +31,7 @@ import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profi
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
 import { useObraCommentRepliesVisibility } from "./hooks/use-obra-comment-replies-visibility";
 import { useObraCommentsOrdering } from "./hooks/use-obra-comments-ordering";
+import { useObraActionsSheet } from "./hooks/use-obra-actions-sheet";
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
 import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
@@ -144,7 +145,6 @@ export default function ObraDinamicaPage() {
     useState<AvaliacaoObraPublica>(avaliacaoObraVazia);
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
-  const [acoesObraAbertas, setAcoesObraAbertas] = useState(false);
   const [denunciaAlvo, setDenunciaAlvo] =
     useState<AlvoDenunciaObraDinamica | null>(null);
   const [sinopseAberta, setSinopseAberta] = useState(false);
@@ -182,6 +182,13 @@ export default function ObraDinamicaPage() {
     selecionarComentariosRecentes,
     fecharMenuOrdenacaoComentarios,
   } = useObraCommentsOrdering();
+  const {
+    acoesObraAbertas,
+    setAcoesObraAbertas,
+    acoesObraDialogRef,
+    fecharAcoesObra,
+    alternarAcoesObra,
+  } = useObraActionsSheet();
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [perfilUsuarioLogado, setPerfilUsuarioLogado] =
@@ -189,10 +196,8 @@ export default function ObraDinamicaPage() {
   const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
   const comentariosSheetRef = useRef<HTMLElement | null>(null);
   const classificacaoDialogRef = useRef<HTMLElement | null>(null);
-  const acoesObraDialogRef = useRef<HTMLElement | null>(null);
   const focoAntesComentariosRef = useRef<HTMLElement | null>(null);
   const focoAntesClassificacaoRef = useRef<HTMLElement | null>(null);
-  const focoAntesAcoesObraRef = useRef<HTMLElement | null>(null);
   const comentariosDragStartYRef = useRef(0);
   const comentariosDragOffsetYRef = useRef(0);
   const comentariosDragIgnorarCliqueRef = useRef(false);
@@ -349,8 +354,6 @@ export default function ObraDinamicaPage() {
     painelClassificacaoAberto,
     classificacaoDialogRef,
   );
-  useObraDialogInitialFocus(acoesObraAbertas, acoesObraDialogRef);
-
   useEffect(() => {
     if (!autenticacaoCarregada) {
       return;
@@ -2170,21 +2173,6 @@ export default function ObraDinamicaPage() {
     restaurarFocoAnterior(focoAnterior);
   }
 
-  function abrirAcoesObra() {
-    focoAntesAcoesObraRef.current = obterElementoComFocoAtual();
-    setAcoesObraAbertas(true);
-  }
-
-  function fecharAcoesObra(restaurarFoco = true) {
-    const focoAnterior = focoAntesAcoesObraRef.current;
-    focoAntesAcoesObraRef.current = null;
-    setAcoesObraAbertas(false);
-
-    if (restaurarFoco) {
-      restaurarFocoAnterior(focoAnterior);
-    }
-  }
-
   const salvarObraPeloMenu = () => {
     fecharAcoesObra();
     void alternarFavoritoObra();
@@ -2199,15 +2187,6 @@ export default function ObraDinamicaPage() {
     fecharAcoesObra();
     void compartilharObraAtual();
   };
-
-  function alternarAcoesObra() {
-    if (acoesObraAbertas) {
-      fecharAcoesObra();
-      return;
-    }
-
-    abrirAcoesObra();
-  }
 
   function abrirComentariosObra() {
     focoAntesComentariosRef.current = obterElementoComFocoAtual();

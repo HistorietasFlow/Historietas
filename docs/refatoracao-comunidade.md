@@ -508,6 +508,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 791: extrair somente `obterObraDinamicaPorSlug`, preservando a busca por slug explícito ou derivado, primeira ocorrência, conversão e fallback nulo.
 - Fase 792: extrair somente `useObraCommentRepliesVisibility`, preservando reset, visibilidade de resposta enviada e controles em blocos de cinco.
 - Fase 793: extrair somente `useObraCommentsOrdering`, preservando seleção, abertura e fechamento do menu de ordenação dos comentários.
+- Fase 794: extrair somente `useObraActionsSheet`, preservando lifecycle, foco inicial e restauração de foco do diálogo de ações.
 
 ## Contrato de preservação
 

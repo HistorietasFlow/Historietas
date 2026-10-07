@@ -66,13 +66,13 @@ test("acoes do hero preservam seguir, estilos na ordem atual e menu acessivel", 
   assert.match(acoesHero, />\s*\+\s*<\/button>/);
 });
 
-test("cliente preserva a decisao de leitura, estado e callbacks do hero", () => {
+test("cliente preserva a decisao de leitura, hook e callbacks do hero", () => {
   for (const trecho of [
     "const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obra)",
     "const [obraSeguida, setObraSeguida]",
     "async function alternarSeguirObra()",
-    "const [acoesObraAbertas, setAcoesObraAbertas]",
-    "function alternarAcoesObra()",
+    'import { useObraActionsSheet } from "./hooks/use-obra-actions-sheet"',
+    "} = useObraActionsSheet();",
     "<ObraHeroActions",
     "leituraHref={acaoLeituraPrincipal.hrefCta}",
     "leituraRotulo={acaoLeituraPrincipal.rotulo}",
