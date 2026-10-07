@@ -78,7 +78,6 @@ import {
   formatarTotalAvaliacoes,
   NOTAS_AVALIACAO_OBRA,
   obterPreenchimentoEstrela,
-  obterProximaNotaAvaliacao,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
 import {
@@ -100,7 +99,7 @@ import { converterObraLocalParaDinamica, normalizarObraSupabase, removerObraLoca
 import LoadingSpinner from "./ObraLoadingSpinner";
 import CommunityItem from "./ObraCommunityItem";
 import MetricCard from "./ObraMetricCard";
-import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, workRatingBoxStyle, desktopWorkRatingBoxStyle, workRatingHeaderStyle, workRatingTitleStyle, workRatingStarsRowStyle, workRatingStarButtonStyle, workRatingStarActiveStyle, workRatingStarVisualStyle, workRatingStarBaseStyle, workRatingStarFillStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
+import { chapterCardStyle, chapterContentStyle, chapterCountBadgeStyle, chapterMetaStyle, chapterNumberStyle, chapterTitleStyle, chaptersListStyle, chaptersSectionStyle, classificationTriggerStyle, classificationTriggerTextStyle, classificationTriggerTextLivreStyle, classificationTriggerAdultStyle, communityGridStyle, containerStyle, desktopContainerStyle, pageStyle, coverArtStyle, coverTitleStyle, desktopTopWaterFadeStyle, followedButtonStyle, heroActionsStyle, heroBottomAuthorLinkStyle, heroBottomMetaBarStyle, heroBottomMetricStyle, heroBottomMetricsStyle, heroContentStyle, heroCoverLinkStyle, heroGlowStyle, heroOverlayContentStyle, heroStyle, heroTopOverlayStyle, desktopHeroTopOverlayStyle, metricEmojiIconStyle, metricInlineContentStyle, metricWhiteNumberStyle, mobileTopWaterFadeStyle, obraActionToastStyle, obraAddButtonStyle, primaryReadingButtonStyle, ratingNumberStyle, secondaryButtonStyle, ratingStarsStyle, ratingSummaryStyle, ratingTopStarBaseStyle, ratingTopStarFillStyle, ratingTopStarVisualStyle, ratingTotalStyle, accentSectionTitleStyle, fileBoxStyle, fileInfoCardStyle, filePreviewLinkStyle, fileImagePreviewStyle, fileIconBoxStyle, fileInfoTextStyle, fileMetaStyle, fileActionsStyle, filePrimaryButtonStyle, fileSecondaryButtonStyle, communityBoxStyle, communityHeaderStyle, communityTitleStyle, desktopHeroStyle, desktopHeroContentStyle, desktopCoverArtStyle, desktopHeroCoverLinkStyle, desktopHeroOverlayContentStyle, desktopHeroBottomMetaBarStyle, desktopHeaderRightStyle, desktopTitleStyle, desktopDescriptionStyle, desktopHeroKickerStyle, desktopHeroMetaStyle, desktopHeroAuthorStyle, desktopHeroMetaDividerStyle, desktopHeroMetaTextStyle, desktopHeroStatsStyle, desktopPrimaryReadingButtonStyle, desktopSecondaryFollowButtonStyle, desktopFollowedButtonStyle, desktopObraAddButtonStyle, desktopHeroActionsStyle, desktopStatsGridStyle, desktopFileBoxStyle, desktopFileInfoCardStyle, desktopFileActionsStyle, desktopCommunityBoxStyle, desktopChaptersListStyle, desktopChapterCardStyle, sectionHeaderStyle, statsGridStyle, synopsisToggleIconStyle, synopsisCardStyle, synopsisSectionStyle, synopsisTextStyle, titleStyle } from "./lib/obra-style-utils";
 import ObraCommentComposer from "./components/obra-comment-composer";
 import ObraCommentsHeader from "./components/obra-comments-header";
 import ObraCommentsHandle from "./components/obra-comments-handle";
@@ -108,6 +107,7 @@ import ObraCommentsList from "./components/obra-comments-list";
 import ObraCommentsSheet from "./components/obra-comments-sheet";
 import ObraClassificationPanel from "./components/obra-classification-panel";
 import ObraActionsSheet from "./components/obra-actions-sheet";
+import ObraRatingBox from "./components/obra-rating-box";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -3314,53 +3314,12 @@ export default function ObraDinamicaPage() {
         )}
 
         {autenticacaoCarregada && !usuarioEhAutorDaObra ? (
-          <section style={isDesktop ? desktopWorkRatingBoxStyle : workRatingBoxStyle}>
-            <div style={workRatingHeaderStyle}>
-              <span style={workRatingTitleStyle}>AVALIE ESTA OBRA</span>
-            </div>
-
-            <div style={workRatingStarsRowStyle}>
-              {NOTAS_AVALIACAO_OBRA.map((estrela) => {
-                const preenchimentoEstrela = obterPreenchimentoEstrela(
-                  estrela,
-                  avaliacaoObra.minhaNota
-                );
-                const proximaNota = obterProximaNotaAvaliacao(
-                  estrela,
-                  avaliacaoObra.minhaNota
-                );
-
-                return (
-                  <button
-                    key={`avaliacao-obra-${estrela}`}
-                    type="button"
-                    onClick={() => void avaliarObra(proximaNota)}
-                    disabled={avaliacaoObra.salvando}
-                    style={
-                      preenchimentoEstrela === "0%"
-                        ? workRatingStarButtonStyle
-                        : workRatingStarActiveStyle
-                    }
-                    aria-label={`Avaliar com ${proximaNota
-                      .toString()
-                      .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
-                  >
-                    <span style={workRatingStarVisualStyle} aria-hidden="true">
-                      <span style={workRatingStarBaseStyle}>★</span>
-                      <span
-                        style={{
-                          ...workRatingStarFillStyle,
-                          width: preenchimentoEstrela,
-                        }}
-                      >
-                        ★
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+          <ObraRatingBox
+            isDesktop={isDesktop}
+            minhaNota={avaliacaoObra.minhaNota}
+            salvando={avaliacaoObra.salvando}
+            onAvaliar={avaliarObra}
+          />
         ) : null}
 
         <section style={isDesktop ? desktopCommunityBoxStyle : communityBoxStyle}>
