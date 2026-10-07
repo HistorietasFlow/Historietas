@@ -91,13 +91,16 @@ test("cta de leitura e visualmente primario e seguir fica secundario", () => {
 
 test("capa comunica a mesma acao principal de leitura", () => {
   const bloco = obterBloco(
-    "<Link\n              href={hrefPrincipalObra}",
-    "<div\n                style={",
+    "const ariaLabelCapaObra = capituloPrincipalObra",
+    "return (",
   );
 
   assert.match(bloco, /capituloPrincipalObra/);
   assert.match(bloco, /rotuloLeituraPrincipal/);
   assert.match(bloco, /Abrir \$\{obra\.titulo\}/);
+  assert.match(paginaObra, /<ObraHeroCover/);
+  assert.match(paginaObra, /href=\{hrefPrincipalObra\}/);
+  assert.match(paginaObra, /ariaLabel=\{ariaLabelCapaObra\}/);
 });
 
 test("rotulos principais de leitura possuem traducoes", () => {

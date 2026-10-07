@@ -6,6 +6,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const capaHero = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/components/obra-hero-cover.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const nextConfig = readFileSync(
   new URL("../../next.config.ts", import.meta.url),
   "utf8",
@@ -15,25 +22,11 @@ const coverUtils = readFileSync(
   "utf8",
 );
 
-function obterBloco(texto, inicioTexto, fimTexto) {
-  const inicio = texto.indexOf(inicioTexto);
-  const fim = texto.indexOf(fimTexto, inicio);
-
-  assert.ok(inicio >= 0);
-  assert.ok(fim > inicio);
-
-  return texto.slice(inicio, fim);
-}
-
 test("capa principal usa next image responsivo e priorizado para LCP", () => {
-  const bloco = obterBloco(
-    paginaObra,
-    "<Link\n              href={hrefPrincipalObra}",
-    "<div\n              style={",
-  );
+  const bloco = capaHero;
 
   assert.match(bloco, /<Image/);
-  assert.match(bloco, /src=\{obra\.capa\}/);
+  assert.match(bloco, /src=\{capa\}/);
   assert.match(bloco, /fill/);
   assert.match(
     bloco,
@@ -42,23 +35,28 @@ test("capa principal usa next image responsivo e priorizado para LCP", () => {
   assert.match(bloco, /preload/);
   assert.match(
     bloco,
-    /unoptimized=\{!capaObraPodeSerOtimizada\(obra\.capa\)\}/,
+    /unoptimized=\{!capaOtimizada\}/,
+  );
+  assert.match(paginaObra, /capa=\{obra\.capa\}/);
+  assert.match(
+    paginaObra,
+    /capaOtimizada=\{capaObraPodeSerOtimizada\(obra\.capa\)\}/,
   );
 });
 
 test("capa preserva crop mobile desktop e fallback sem imagem", () => {
-  const bloco = obterBloco(
-    paginaObra,
-    "{obra.capa ? (",
-    "</div>\n            </Link>",
-  );
+  const bloco = capaHero;
 
   assert.match(
     bloco,
     /objectPosition: isDesktop \? "center" : "center top"/,
   );
   assert.match(bloco, /<strong style=\{coverTitleStyle\}>/);
-  assert.match(bloco, /obra\.titulo/);
+  assert.match(bloco, /\{iniciais\}/);
+  assert.match(
+    paginaObra,
+    /iniciais=\{obterIniciaisCapaObra\(obra\.titulo\)\}/,
+  );
 });
 
 test("capa nao volta a usar background image dinamico", () => {
@@ -66,6 +64,10 @@ test("capa nao volta a usar background image dinamico", () => {
   assert.doesNotMatch(paginaObra, /function criarDesktopCoverArtStyle/);
   assert.doesNotMatch(
     paginaObra,
+    /backgroundImage: `url\(\$\{capa\}\)`/,
+  );
+  assert.doesNotMatch(
+    capaHero,
     /backgroundImage: `url\(\$\{capa\}\)`/,
   );
 });
