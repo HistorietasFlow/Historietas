@@ -79,7 +79,7 @@ import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cove
 import { encontrarCapituloParaContinuarObraPublica, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarComentarioObraId, criarEstruturaComentariosObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type OrdenacaoComentariosObra, type RespostaComentarioObra } from "./lib/obra-comment-utils";
-import { copiarTextoComFallback } from "./lib/obra-share-utils";
+import { copiarLinkComFallback } from "./lib/obra-share-utils";
 import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { converterObraLocalParaDinamica, type ObraDinamica, type ObraLocal } from "./lib/obra-data-utils";
@@ -2303,22 +2303,7 @@ export default function ObraDinamicaPage() {
     setAcoesObraAbertas(false);
 
     try {
-      let linkFoiCopiado = false;
-
-      if (
-        window.isSecureContext &&
-        navigator.clipboard &&
-        typeof navigator.clipboard.writeText === "function"
-      ) {
-        try {
-          await navigator.clipboard.writeText(linkAtual);
-          linkFoiCopiado = true;
-        } catch {
-          linkFoiCopiado = copiarTextoComFallback(linkAtual);
-        }
-      } else {
-        linkFoiCopiado = copiarTextoComFallback(linkAtual);
-      }
+      const linkFoiCopiado = await copiarLinkComFallback(linkAtual);
 
       if (!linkFoiCopiado) {
         throw new Error("Não foi possível copiar o link.");
