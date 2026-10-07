@@ -568,7 +568,7 @@ export default function ObraDinamicaPage() {
 
   const perfilAutorObra = useObraAuthorPublicProfile(
     obra?.autorId,
-    obra?.autor!,
+    obra?.autor ?? "",
   );
 
   const obraNormalizada = obra ? normalizarTexto(obra.titulo) : "";
