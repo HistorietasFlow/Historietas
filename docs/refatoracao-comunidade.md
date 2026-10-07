@@ -485,6 +485,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 768: extrair somente a apresentação do grid de métricas da obra para `app/obra/[slug]/components/obra-stats-grid.tsx`, preservando estado, handlers, identidade e persistência no cliente.
 - Fase 769: extrair somente a apresentação do ramo de Sinopse da obra para `app/obra/[slug]/components/obra-synopsis-section.tsx`, preservando estado, derivação e o ramo de Capítulos no cliente.
 - Fase 770: extrair somente a apresentação do ramo de Capítulos da obra para `app/obra/[slug]/components/obra-chapters-section.tsx`, preservando guard, derivação, disponibilidade, carregamento, filtro e ordenação no cliente.
+- Fase 771: mover integralmente o componente `ArquivoObraPublico` para `app/obra/[slug]/components/arquivo-obra-publico.tsx`, preservando URLs assinadas, cancelamento, abertura, download e estados locais.
 
 ## Contrato de preservação
 
