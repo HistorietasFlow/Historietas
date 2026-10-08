@@ -10,6 +10,7 @@ import HomeCarouselRow from "../components/HomeCarouselRow";
 import HomeHeroCarouselDots from "../components/HomeHeroCarouselDots";
 import HomeSectionHeader from "../components/HomeSectionHeader";
 import useHomeDesktopMode from "./hooks/use-home-desktop-mode";
+import useHomeHeroCarousel from "./hooks/use-home-hero-carousel";
 import useHomePageTranslations from "./hooks/use-home-page-translations";
 import { themePageCss } from "./lib/home-page-css";
 import type { HistorietasLanguage } from "../lib/i18n";
@@ -2088,7 +2089,6 @@ export default function Home() {
   const [avaliacoesAutoresHome, setAvaliacoesAutoresHome] =
     useState<AvaliacoesAutoresHome>({});
   const { notificacoesNaoLidas } = useNotificacoes();
-  const [heroIndex, setHeroIndex] = useState(0);
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const isDesktop = useHomeDesktopMode();
   const [usuarioLogado, setUsuarioLogado] = useState(false);
@@ -2372,43 +2372,10 @@ export default function Home() {
       .map(({ obra }) => criarObraHeroLocalHome(obra));
   }, [obrasPublicadas, termoBusca]);
 
-  useEffect(() => {
-    const redefinirHeroTimer = window.setTimeout(() => {
-      setHeroIndex(0);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(redefinirHeroTimer);
-    };
-  }, [termoBusca]);
-
-  useEffect(() => {
-    if (obrasHero.length === 0) {
-      return;
-    }
-
-    const ajustarHeroTimer = window.setTimeout(() => {
-      setHeroIndex((indexAtual) =>
-        indexAtual >= obrasHero.length ? 0 : indexAtual
-      );
-    }, 0);
-
-    return () => {
-      window.clearTimeout(ajustarHeroTimer);
-    };
-  }, [obrasHero.length]);
-
-  useEffect(() => {
-    if (obrasHero.length <= 1) {
-      return;
-    }
-
-    const intervalo = window.setInterval(() => {
-      setHeroIndex((indexAtual) => (indexAtual + 1) % obrasHero.length);
-    }, 9000);
-
-    return () => window.clearInterval(intervalo);
-  }, [obrasHero.length]);
+  const { heroIndex, setHeroIndex } = useHomeHeroCarousel(
+    termoBusca,
+    obrasHero.length,
+  );
 
   const usandoHeroInicial = obrasHero.length === 0;
   const heroObra = obrasHero[heroIndex] || obrasHero[0] || HERO_INICIAL_HOME;
