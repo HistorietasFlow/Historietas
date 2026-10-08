@@ -9,6 +9,14 @@ import {
   acessoConteudo18Confirmado,
   ehClassificacao18,
 } from "../../lib/historietasAdultContent";
+import {
+  dataNotificacao,
+  filtrarEOrdenarNotificacoes,
+  notificacaoEhCapitulo,
+  notificacaoEhComunidade,
+  type FiltroNotificacao,
+  type OrdenacaoNotificacao,
+} from "./lib/notificacoes-filter-utils";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
@@ -83,10 +91,6 @@ type NotificacaoLocal = {
   autorAvatar?: string;
   solicitacaoId?: string;
 };
-
-type FiltroNotificacao = "todas" | "nao-lidas" | "lidas" | "capitulos" | "comunidade";
-type OrdenacaoNotificacao = "recentes" | "antigas" | "obra" | "capitulo";
-
 
 type TraducaoNotificacoes = {
   en: string;
@@ -1087,12 +1091,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
-function dataNotificacao(notificacao: NotificacaoLocal) {
-  const data = new Date(notificacao.criadaEm).getTime();
-
-  return Number.isNaN(data) ? 0 : data;
-}
-
 function normalizarCapitulo(
   capitulo: Partial<CapituloLocal>,
   index: number
@@ -1577,25 +1575,12 @@ function montarLinkNotificacao(
   return notificacaoEhCapitulo(notificacao) ? "/perfil-autor?aba=biblioteca" : "/comunidade";
 }
 
-function notificacaoEhCapitulo(notificacao: NotificacaoLocal) {
-  return (
-    notificacao.tipo === "novo-capitulo" ||
-    notificacao.tipo === "comentario-capitulo" ||
-    notificacao.tipo === "curtida-capitulo" ||
-    notificacao.tipo === "curtida-comentario-capitulo"
-  );
-}
-
 function notificacaoEhInteracaoCapitulo(notificacao: NotificacaoLocal) {
   return (
     notificacao.tipo === "comentario-capitulo" ||
     notificacao.tipo === "curtida-capitulo" ||
     notificacao.tipo === "curtida-comentario-capitulo"
   );
-}
-
-function notificacaoEhComunidade(notificacao: NotificacaoLocal) {
-  return !notificacaoEhCapitulo(notificacao);
 }
 
 function notificacaoUsaCardSocial(notificacao: NotificacaoLocal) {
@@ -4740,87 +4725,13 @@ export default function NotificacoesPage() {
   const acessoConteudo18Liberado = acessoConteudo18Confirmado();
 
   const notificacoesFiltradas = useMemo(() => {
-    const filtradas = notificacoes.filter((notificacao) => {
-      const obraId = notificacao.obraId.trim();
-      const obra = obrasPorId.get(obraId) || null;
-
-      if (!acessoConteudo18Liberado && obraId) {
-        const classificacaoNormalizada = normalizarTexto(
-          obra?.classificacaoIndicativa || ""
-        );
-        const classificacaoDesconhecida =
-          !obra ||
-          !classificacaoNormalizada ||
-          classificacaoNormalizada.startsWith("nao informad");
-
-        if (
-          classificacaoDesconhecida ||
-          ehClassificacao18(obra?.classificacaoIndicativa || "")
-        ) {
-          return false;
-        }
-      }
-
-      const capitulo =
-        obra?.capitulos.find((item) => item.id === notificacao.capituloId) ||
-        null;
-
-      const passaFiltro =
-        filtro === "todas" ||
-        (filtro === "nao-lidas" && !notificacao.lida) ||
-        (filtro === "lidas" && notificacao.lida) ||
-        (filtro === "capitulos" && notificacaoEhCapitulo(notificacao)) ||
-        (filtro === "comunidade" && notificacaoEhComunidade(notificacao));
-
-      const textoBusca = normalizarTexto(
-        [
-          notificacao.titulo,
-          notificacao.mensagem,
-          notificacao.tipo,
-          notificacao.link,
-          notificacao.autorNome || "",
-          obra?.titulo || "",
-          obra?.autor || "",
-          obra?.genero || "",
-          obra?.formato || "",
-          obra?.classificacaoIndicativa || "",
-          capitulo?.titulo || "",
-          formatarData(notificacao.criadaEm),
-        ].join(" ")
-      );
-
-      const passaBusca = termoBusca ? textoBusca.includes(termoBusca) : true;
-
-      return passaFiltro && passaBusca;
-    });
-
-    return [...filtradas].sort((notificacaoA, notificacaoB) => {
-      const obraA = obrasPorId.get(notificacaoA.obraId) || null;
-      const obraB = obrasPorId.get(notificacaoB.obraId) || null;
-      const capituloA =
-        obraA?.capitulos.find(
-          (capitulo) => capitulo.id === notificacaoA.capituloId
-        ) || null;
-      const capituloB =
-        obraB?.capitulos.find(
-          (capitulo) => capitulo.id === notificacaoB.capituloId
-        ) || null;
-
-      if (ordenacao === "antigas") {
-        return dataNotificacao(notificacaoA) - dataNotificacao(notificacaoB);
-      }
-
-      if (ordenacao === "obra") {
-        return (obraA?.titulo || "zzz").localeCompare(obraB?.titulo || "zzz");
-      }
-
-      if (ordenacao === "capitulo") {
-        return (capituloA?.titulo || "zzz").localeCompare(
-          capituloB?.titulo || "zzz"
-        );
-      }
-
-      return dataNotificacao(notificacaoB) - dataNotificacao(notificacaoA);
+    return filtrarEOrdenarNotificacoes({
+      notificacoes,
+      obrasPorId,
+      termoBusca,
+      filtro,
+      ordenacao,
+      acessoConteudo18Liberado,
     });
   }, [
     notificacoes,
