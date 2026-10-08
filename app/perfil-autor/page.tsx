@@ -46,6 +46,7 @@ import {
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
+import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -2941,7 +2942,7 @@ function PerfilAutorPageContent() {
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
-  const [mensagemAcao, setMensagemAcao] = useState("");
+  const { mensagemAcao, setMensagemAcao } = usePerfilAutorActionMessage();
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
@@ -3021,20 +3022,6 @@ function PerfilAutorPageContent() {
     useState<number | null>(null);
   const notificacoesNaoLidas =
     notificacoesNaoLidasPerfil ?? notificacoesNaoLidasContexto;
-
-  useEffect(() => {
-    if (!mensagemAcao) {
-      return;
-    }
-
-    const timerMensagemAcao = window.setTimeout(() => {
-      setMensagemAcao("");
-    }, 3000);
-
-    return () => {
-      window.clearTimeout(timerMensagemAcao);
-    };
-  }, [mensagemAcao]);
 
   useEffect(() => {
     let componenteAtivo = true;
@@ -3131,7 +3118,7 @@ function PerfilAutorPageContent() {
       versaoConsultaAutenticacaoPerfilRef.current += 1;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [setMensagemAcao]);
 
   useEffect(() => {
     const userIdSeguro = (
