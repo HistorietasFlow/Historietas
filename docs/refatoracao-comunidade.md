@@ -510,6 +510,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 793: extrair somente `useObraCommentsOrdering`, preservando seleção, abertura e fechamento do menu de ordenação dos comentários.
 - Fase 794: extrair somente `useObraActionsSheet`, preservando lifecycle, foco inicial e restauração de foco do diálogo de ações.
 - Fase 795: extrair somente `useObraClassificationPanel`, preservando lifecycle, foco inicial, restauração de foco e reset silencioso do painel de classificação.
+- Fase 796: extrair somente `obterContextoAutorObra`, preservando a prioridade de perfil público, fallback de autor/ID da obra e a autoria por igualdade estrita de IDs não vazios.
 
 ## Contrato de preservação
 

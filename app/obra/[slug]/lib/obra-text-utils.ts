@@ -106,6 +106,23 @@ export function obterNomeAutorObraExibido(
   return perfilAutor?.nome || obra?.autor || "Autor não informado";
 }
 
+export function obterContextoAutorObra(
+  perfilAutor: { userId?: string; nome?: string } | null,
+  obra: { autor?: string; autorId?: string } | null,
+  usuarioIdLogado: string,
+) {
+  const autorNome = obterNomeAutorObraExibido(perfilAutor, obra);
+  const autorId = perfilAutor?.userId || obra?.autorId || "";
+
+  return {
+    autorNome,
+    autorId,
+    usuarioEhAutor: Boolean(
+      usuarioIdLogado && autorId && usuarioIdLogado === autorId,
+    ),
+  };
+}
+
 export function obterGeneroObraExibido(
   obra: { genero: string } | null,
 ) {

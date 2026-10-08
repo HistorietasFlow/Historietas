@@ -79,7 +79,7 @@ import {
   salvarAvaliacaoLocal,
 } from "./lib/obra-local-rating-storage-utils";
 import { criarMetricasBaseObra, incrementarVisualizacaoObraPublicaSupabase, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
-import { obterClassificacaoIndicativaCompactaObra, obterGeneroObraExibido, obterNomeAutorObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
+import { obterClassificacaoIndicativaCompactaObra, obterContextoAutorObra, obterGeneroObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
@@ -507,13 +507,11 @@ export default function ObraDinamicaPage() {
 
   const obraNormalizada = obra ? normalizarTexto(obra.titulo) : "";
   const generoObraFormatado = obterGeneroObraExibido(obra);
-  const autorObraNome = obterNomeAutorObraExibido(perfilAutorObra, obra);
-  const autorObraId = perfilAutorObra?.userId || obra?.autorId || "";
-  const usuarioEhAutorDaObra = Boolean(
-    usuarioIdLogado &&
-      autorObraId &&
-      usuarioIdLogado === autorObraId
-  );
+  const {
+    autorNome: autorObraNome,
+    autorId: autorObraId,
+    usuarioEhAutor: usuarioEhAutorDaObra,
+  } = obterContextoAutorObra(perfilAutorObra, obra, usuarioIdLogado);
   const obraDisponivel = obterObraDisponivelExibida(obra);
   const sinopseObraExibida = obterSinopseObraExibida(obra);
   const textosPainelClassificacao = obterTextosPainelClassificacaoObra(language);
