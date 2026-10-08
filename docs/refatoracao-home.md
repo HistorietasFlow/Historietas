@@ -29,3 +29,9 @@
 - Extraiu `useHomePageTranslations` para `app/hooks/use-home-page-translations.ts` com tabela, `WeakMap`s e traversal do DOM.
 - Preservou a execução do efeito após cada render, o `MutationObserver`, os atributos traduzíveis e o cleanup somente por `disconnect()`.
 - Manteve na Home a ref raiz, o idioma, as traduções semânticas de cards e todos os consumidores visuais.
+
+## Fase 813 — Indicadores do carrossel do hero
+
+- Extraiu `HomeHeroCarouselDots` para `components/HomeHeroCarouselDots.tsx`.
+- Preservou os dois consumidores desktop/mobile, labels, chaves, callback por índice e todos os estilos dos indicadores.
+- Manteve na Home o estado, a rotação automática, dados, métricas, favoritos e a composição do hero.

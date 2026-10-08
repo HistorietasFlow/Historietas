@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
 import HomeCarouselRow from "../components/HomeCarouselRow";
+import HomeHeroCarouselDots from "../components/HomeHeroCarouselDots";
 import HomeSectionHeader from "../components/HomeSectionHeader";
 import useHomeDesktopMode from "./hooks/use-home-desktop-mode";
 import useHomePageTranslations from "./hooks/use-home-page-translations";
@@ -3348,21 +3349,12 @@ export default function Home() {
                       ))}
                     </div>
 
-                    <div style={desktopHeroDotsStyle} aria-label="Obras em destaque">
-                      {obrasHero.map((obra, index) => (
-                        <button
-                          key={`${obra.titulo}-${index}`}
-                          type="button"
-                          onClick={() => setHeroIndex(index)}
-                          aria-label={`Mostrar ${obra.titulo}`}
-                          style={
-                            index === heroIndex
-                              ? desktopHeroDotActiveStyle
-                              : desktopHeroDotStyle
-                          }
-                        />
-                      ))}
-                    </div>
+                    <HomeHeroCarouselDots
+                      obras={obrasHero}
+                      activeIndex={heroIndex}
+                      onSelect={setHeroIndex}
+                      isDesktop={true}
+                    />
                   </div>
                 )}
               </div>
@@ -3436,21 +3428,12 @@ export default function Home() {
                     ))}
                   </div>
 
-                  <div style={mobileHeroDotsStyle} aria-label="Obras em destaque">
-                    {obrasHero.map((obra, index) => (
-                      <button
-                        key={`${obra.titulo}-${index}`}
-                        type="button"
-                        onClick={() => setHeroIndex(index)}
-                        aria-label={`Mostrar ${obra.titulo}`}
-                        style={
-                          index === heroIndex
-                            ? mobileHeroDotActiveStyle
-                            : mobileHeroDotStyle
-                        }
-                      />
-                    ))}
-                  </div>
+                  <HomeHeroCarouselDots
+                    obras={obrasHero}
+                    activeIndex={heroIndex}
+                    onSelect={setHeroIndex}
+                    isDesktop={false}
+                  />
                 </div>
               )}
             </div>
@@ -5195,25 +5178,6 @@ const heroLoginNoticeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const heroDotsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  marginTop: "4px",
-  flexWrap: "wrap",
-  maxWidth: "100%",
-};
-
-const heroDotStyle: CSSProperties = {
-  width: "18px",
-  height: "5px",
-  borderRadius: "999px",
-  border: "0",
-  background: "color-mix(in srgb, var(--historietas-text-secondary, #FFFFFF) 24%, transparent)",
-  cursor: "pointer",
-};
-
-
 const desktopHeroFooterStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
@@ -5268,34 +5232,6 @@ const desktopHeroStatValueStyle: CSSProperties = {
   overflow: "visible",
   textOverflow: "clip",
   whiteSpace: "nowrap",
-};
-
-const desktopHeroDotsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  gap: "7px",
-  width: "auto",
-  maxWidth: "100%",
-  minWidth: 0,
-  marginTop: 0,
-  flexWrap: "nowrap",
-};
-
-const desktopHeroDotStyle: CSSProperties = {
-  width: "28px",
-  height: "4px",
-  borderRadius: "999px",
-  border: 0,
-  padding: 0,
-  background: "rgba(255,255,255,0.28)",
-  cursor: "pointer",
-};
-
-const desktopHeroDotActiveStyle: CSSProperties = {
-  ...desktopHeroDotStyle,
-  width: "46px",
-  background: "#FFFFFF",
 };
 
 const mobileHeroContentStyle: CSSProperties = {
@@ -5430,25 +5366,6 @@ const mobileHeroStatValueStyle: CSSProperties = {
   overflow: "visible",
   textOverflow: "clip",
   whiteSpace: "nowrap",
-};
-
-const mobileHeroDotsStyle: CSSProperties = {
-  ...heroDotsStyle,
-  justifyContent: "flex-end",
-  marginTop: 0,
-  marginLeft: 0,
-  gap: "6px",
-};
-
-const mobileHeroDotStyle: CSSProperties = {
-  ...heroDotStyle,
-  width: "16px",
-};
-
-const mobileHeroDotActiveStyle: CSSProperties = {
-  ...mobileHeroDotStyle,
-  width: "34px",
-  background: "rgba(255,255,255,0.58)",
 };
 
 const summaryStripStyle: CSSProperties = {
