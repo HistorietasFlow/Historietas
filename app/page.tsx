@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
 import HomeCarouselRow from "../components/HomeCarouselRow";
+import useHomeDesktopMode from "./hooks/use-home-desktop-mode";
 import type { HistorietasLanguage } from "../lib/i18n";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
@@ -2811,7 +2812,7 @@ export default function Home() {
   const { notificacoesNaoLidas } = useNotificacoes();
   const [heroIndex, setHeroIndex] = useState(0);
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useHomeDesktopMode();
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [dadosHomeCarregados, setDadosHomeCarregados] = useState(false);
@@ -2862,35 +2863,6 @@ export default function Home() {
     return () => {
       cancelado = true;
       subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
 
