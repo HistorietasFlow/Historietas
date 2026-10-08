@@ -46,7 +46,11 @@ test("Leitor consome somente o CSS extraído na ordem original", () => {
     4,
   );
   assert.doesNotMatch(pagina, /\$\{leitorPageCss\}\$\{historietasThemeCss\}/);
-  assert.match(pagina, /const focusBottomNavigationCss = `/);
+  assert.match(
+    pagina,
+    /import \{ focusBottomNavigationCss \} from "\.\/lib\/ler-capitulo-focus-bottom-navigation-css";/,
+  );
+  assert.doesNotMatch(pagina, /const focusBottomNavigationCss = `/);
   assert.match(pagina, /<style>\{focusBottomNavigationCss\}<\/style>/);
   assert.match(pagina, /const pageStyle: CSSProperties = \{/);
   assert.match(pagina, /const commentsSheetStyle: CSSProperties = \{/);

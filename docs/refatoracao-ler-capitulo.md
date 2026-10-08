@@ -20,3 +20,8 @@
 
 - Extraiu `LoadingSpinner` e seus quatro estilos exclusivos para `app/ler-capitulo/components/ler-capitulo-loading-spinner.tsx`.
 - Manteve os quatro consumidores, a animação global e todos os fluxos de carregamento na página.
+
+## Fase 827 — CSS de foco da navegação inferior
+
+- Extraiu `focusBottomNavigationCss` para `app/ler-capitulo/lib/ler-capitulo-focus-bottom-navigation-css.ts` sem alterar o template CSS.
+- Manteve o único consumidor na renderização normal, após `LerCapituloLanguageBridge`, e separado de `leitorPageCss`.
