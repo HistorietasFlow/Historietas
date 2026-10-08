@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, TouchEvent } from "react";
 import { createPortal } from "react-dom";
+import { useListasActionMessage } from "./hooks/use-listas-action-message";
 import { useListasDesktopMode } from "./hooks/use-listas-desktop-mode";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import {
@@ -2553,7 +2554,7 @@ function ListasUniversaisContent() {
     useState<AvaliacaoDiarioListasEstado>(AVALIACAO_DIARIO_LISTAS_VAZIA);
   const [comentarioCurtindoId, setComentarioCurtindoId] = useState("");
   const [comentarioRemovendoId, setComentarioRemovendoId] = useState("");
-  const [mensagemAcao, setMensagemAcao] = useState("");
+  const { mensagemAcao, setMensagemAcao } = useListasActionMessage();
   const [alvoDenunciaDiario, setAlvoDenunciaDiario] =
     useState<AlvoDenunciaDiarioListas | null>(null);
   const [comentariosDiarioItem, setComentariosDiarioItem] =
@@ -2807,16 +2808,6 @@ function ListasUniversaisContent() {
       cancelado = true;
     };
   }, [modo, origemPerfil, userIdUrl, secao, genero]);
-
-
-  useEffect(() => {
-    if (!mensagemAcao) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => setMensagemAcao(""), 2600);
-    return () => window.clearTimeout(timer);
-  }, [mensagemAcao]);
 
   useEffect(() => {
     if (!comentariosDiarioItem) {
