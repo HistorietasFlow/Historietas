@@ -18,3 +18,8 @@
 - Extraiu `HomeSectionHeader` para `components/HomeSectionHeader.tsx`.
 - Preservou o contrato de `title` e `subtitle`, sem renderizar o subtítulo como já ocorria.
 - Manteve na Home os 18 consumidores, as seções e os estilos tipográficos compartilhados.
+
+## Fase 811 — CSS global da Home
+
+- Extraiu `themePageCss` para `app/lib/home-page-css.ts` sem alterar seu conteúdo.
+- Manteve na Home os dois consumidores e a ordem de precedência `themePageCss` → `historietasThemeCss`.
