@@ -62,7 +62,15 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 76);
   assert.match(
     pagina,
-    /useEffect\(\(\) => \{[\s\S]*?mostrarFiltrosAvancados[\s\S]*?document\.body\.style\.overflow = "hidden";[\s\S]*?document\.documentElement\.style\.overflow = "hidden";/,
+    /import \{ useExplorarAdvancedFiltersBodyLock \} from "\.\/hooks\/use-explorar-advanced-filters-body-lock";/,
+  );
+  assert.match(
+    pagina,
+    /useExplorarAdvancedFiltersBodyLock\(mostrarFiltrosAvancados\);/,
+  );
+  assert.match(
+    pagina,
+    /const \[mostrarFiltrosAvancados, setMostrarFiltrosAvancados\] = useState\(false\);/,
   );
   assert.match(pagina, /async function carregarExplorar\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);

@@ -33,6 +33,7 @@ import {
   carregarTodasPaginasSupabase,
 } from "../../lib/supabase/paginacao.mjs";
 import { LoadingSpinner } from "./components/explorar-loading-spinner";
+import { useExplorarAdvancedFiltersBodyLock } from "./hooks/use-explorar-advanced-filters-body-lock";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 import { themePageCss } from "./lib/explorar-page-css";
 
@@ -2212,22 +2213,7 @@ export default function ExplorarPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!mostrarFiltrosAvancados || typeof document === "undefined") {
-      return;
-    }
-
-    const bodyOverflowAnterior = document.body.style.overflow;
-    const htmlOverflowAnterior = document.documentElement.style.overflow;
-
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = bodyOverflowAnterior;
-      document.documentElement.style.overflow = htmlOverflowAnterior;
-    };
-  }, [mostrarFiltrosAvancados]);
+  useExplorarAdvancedFiltersBodyLock(mostrarFiltrosAvancados);
 
   useEffect(() => {
     let cancelado = false;
