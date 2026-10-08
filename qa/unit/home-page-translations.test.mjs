@@ -11,7 +11,8 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
-const hookExecutavel = hook
+const hookNormalizado = hook.replace(/\r\n/g, "\n");
+const hookExecutavel = hookNormalizado
   .replace('"use client";\n\n', "")
   .replace('import { useEffect } from "react";\n', "const useEffect = () => {};\n")
   .replace('import type { HistorietasLanguage } from "../../lib/i18n";\n', "");
