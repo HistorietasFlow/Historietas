@@ -32,6 +32,7 @@ import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
 } from "../../lib/supabase/paginacao.mjs";
+import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 
 type CapituloLocal = {
   id: string;
@@ -2171,7 +2172,7 @@ export default function ExplorarPage() {
     useState(false);
   const [confirmouIdadeConteudo18, setConfirmouIdadeConteudo18] =
     useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useExplorarDesktopMode();
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [mensagemLogin, setMensagemLogin] = useState("");
   const [dadosExplorarCarregados, setDadosExplorarCarregados] = useState(false);
@@ -2223,30 +2224,6 @@ export default function ExplorarPage() {
     return () => {
       componenteAtivo = false;
       subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    atualizarModoDesktop();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
 
