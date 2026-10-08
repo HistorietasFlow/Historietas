@@ -23,3 +23,9 @@
 
 - Extraiu `themePageCss` para `app/lib/home-page-css.ts` sem alterar seu conteúdo.
 - Manteve na Home os dois consumidores e a ordem de precedência `themePageCss` → `historietasThemeCss`.
+
+## Fase 812 — Bridge de tradução dinâmica da Home
+
+- Extraiu `useHomePageTranslations` para `app/hooks/use-home-page-translations.ts` com tabela, `WeakMap`s e traversal do DOM.
+- Preservou a execução do efeito após cada render, o `MutationObserver`, os atributos traduzíveis e o cleanup somente por `disconnect()`.
+- Manteve na Home a ref raiz, o idioma, as traduções semânticas de cards e todos os consumidores visuais.
