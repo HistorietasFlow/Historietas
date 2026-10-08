@@ -41,3 +41,9 @@
 - Extraiu `useHomeHeroCarousel` para `app/hooks/use-home-hero-carousel.ts`.
 - Preservou o estado inicial, os timers de 0 ms para reset e ajuste, e a rotação por intervalo de 9 segundos.
 - Manteve na Home a busca, derivação de obras, dados, métricas, favoritos e a composição do hero.
+
+## Fase 815 — Avaliações dos autores da Home
+
+- Extraiu `useHomeAuthorRatings` para `app/hooks/use-home-author-ratings.ts`.
+- Preservou a extração, normalização, validação e deduplicação dos IDs de autores, o lifecycle assíncrono e os resets do mapa de avaliações.
+- Manteve na Home a lista de autores, sua ordenação, a apresentação dos cards e o restante do carregamento de dados.
