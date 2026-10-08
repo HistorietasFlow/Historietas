@@ -61,6 +61,21 @@ export function obterAvaliacaoLocalDetalhada(
   };
 }
 
+export function obterAvaliacaoLocalInicialObra(
+  obraAtual: ObraDinamica,
+  usuarioIdLogado: string,
+): AvaliacaoLocalObra {
+  const usuarioLogadoEhAutorInicial = Boolean(
+    usuarioIdLogado &&
+      obraAtual.autorId &&
+      usuarioIdLogado === obraAtual.autorId,
+  );
+
+  return usuarioLogadoEhAutorInicial
+    ? { encontrada: false, nota: 0 }
+    : obterAvaliacaoLocalDetalhada(obraAtual, usuarioIdLogado);
+}
+
 export function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
   const userIdLimpo = userId.trim();
 

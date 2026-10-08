@@ -64,7 +64,7 @@ test("cache de avaliacao so e sincronizado depois do guard da execucao atual", (
 test("localStorage continua disponivel apenas como fallback inicial", () => {
   assert.match(
     paginaObra,
-    /const avaliacaoLocalInicial = usuarioLogadoEhAutorInicial[\s\S]*?obterAvaliacaoLocalDetalhada\(obraAtual, usuarioIdLogado\);/,
+    /const avaliacaoLocalInicial = obterAvaliacaoLocalInicialObra\(\s*obraAtual,\s*usuarioIdLogado,\s*\);/,
   );
   assert.match(
     paginaObra,
