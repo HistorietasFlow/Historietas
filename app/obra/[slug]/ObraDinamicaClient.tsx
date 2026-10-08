@@ -36,6 +36,7 @@ import { useObraClassificationPanel } from "./hooks/use-obra-classification-pane
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
 import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
+import { useObraViewRegistration } from "./hooks/use-obra-view-registration";
 import {
   carregarListaLocalObraPublica,
   lerStorageUsuarioObraPublica,
@@ -78,7 +79,7 @@ import {
   obterAvaliacaoLocalInicialObra,
   salvarAvaliacaoLocal,
 } from "./lib/obra-local-rating-storage-utils";
-import { criarMetricasBaseObra, incrementarVisualizacaoObraPublicaSupabase, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
+import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { obterClassificacaoIndicativaCompactaObra, obterContextoAutorObra, obterGeneroObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
@@ -210,7 +211,6 @@ export default function ObraDinamicaPage() {
   const agoraComentarios = useObraCommentsNow(comentariosAbertos);
   const isDesktop = useObraDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const visualizacaoObraRegistradaRef = useRef("");
   const avaliacaoVersaoRef = useRef(0);
   const identidadeAutenticadaObraRef =
     useRef<IdentidadeAutenticadaObra>({
@@ -463,42 +463,7 @@ export default function ObraDinamicaPage() {
   const { statusAcesso18, permitirAcesso18Atual } =
     useObraContent18Access(obra);
 
-  useEffect(() => {
-    if (
-      !obra ||
-      statusAcesso18 !== "permitido" ||
-      !idObraSupabaseValido(obra.id)
-    ) {
-      return;
-    }
-
-    const obraIdAtual = obra.id;
-
-    if (visualizacaoObraRegistradaRef.current === obraIdAtual) {
-      return;
-    }
-
-    visualizacaoObraRegistradaRef.current = obraIdAtual;
-
-    async function registrarVisualizacaoObraAtual() {
-      const totalVisualizacoes =
-        await incrementarVisualizacaoObraPublicaSupabase(obraIdAtual);
-
-      if (totalVisualizacoes === null) {
-        return;
-      }
-
-      setMetricasObra((metricasAtuais) => ({
-        ...metricasAtuais,
-        visualizacoes: Math.max(
-          metricasAtuais.visualizacoes,
-          totalVisualizacoes
-        ),
-      }));
-    }
-
-    void registrarVisualizacaoObraAtual();
-  }, [obra, statusAcesso18]);
+  useObraViewRegistration(obra, statusAcesso18, setMetricasObra);
 
   const perfilAutorObra = useObraAuthorPublicProfile(
     obra?.autorId,
