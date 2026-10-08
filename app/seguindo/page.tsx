@@ -20,6 +20,7 @@ import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
 } from "../../lib/supabase/paginacao.mjs";
+import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 
 type CapituloLocal = {
   id: string;
@@ -2949,7 +2950,7 @@ export default function SeguindoPage() {
   const [abaConteudo, setAbaConteudo] =
     useState<AbaConteudoSeguindo>("obras");
   const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useSeguindoDesktopMode();
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const [, setAbaSeguimento] =
@@ -2957,35 +2958,6 @@ export default function SeguindoPage() {
   const [perfilSocialId, setPerfilSocialId] = useState("");
   const [perfilSocialNome, setPerfilSocialNome] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     if (!mostrarPainelOrdenacao || typeof document === "undefined") {
