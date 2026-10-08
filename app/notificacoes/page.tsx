@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 import NotificacoesLanguageBridge from "./components/notificacoes-language-bridge";
 import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal";
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
+import { useNotificacoesOverlayBodyLock } from "./hooks/use-notificacoes-overlay-body-lock";
 import {
   notificacaoTemAutorSocial,
   notificacaoUsaCardSocial,
@@ -3612,36 +3613,7 @@ export default function NotificacoesPage() {
   const menuOverlayAberto = Boolean(
     mostrarPainelOrdenacao || notificacaoMenuAberta
   );
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const raiz = document.documentElement;
-    const corpo = document.body;
-
-    if (!menuOverlayAberto) {
-      raiz.removeAttribute("data-historietas-notificacoes-overlay-aberto");
-      corpo.removeAttribute("data-historietas-notificacoes-overlay-aberto");
-      return;
-    }
-
-    const overflowAnterior = corpo.style.overflow;
-    const htmlOverflowAnterior = raiz.style.overflow;
-
-    raiz.setAttribute("data-historietas-notificacoes-overlay-aberto", "true");
-    corpo.setAttribute("data-historietas-notificacoes-overlay-aberto", "true");
-    raiz.style.overflow = "hidden";
-    corpo.style.overflow = "hidden";
-
-    return () => {
-      raiz.removeAttribute("data-historietas-notificacoes-overlay-aberto");
-      corpo.removeAttribute("data-historietas-notificacoes-overlay-aberto");
-      raiz.style.overflow = htmlOverflowAnterior;
-      corpo.style.overflow = overflowAnterior;
-    };
-  }, [menuOverlayAberto]);
+  useNotificacoesOverlayBodyLock(menuOverlayAberto);
 
   if (carregando) {
     return (
