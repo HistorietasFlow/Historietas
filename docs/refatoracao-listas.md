@@ -15,3 +15,8 @@
 
 - Extraiu os helpers puros de data, número e nota para `app/listas/lib/listas-format-utils.ts`.
 - Manteve todos os consumidores, ordenações, agrupamentos e JSX em `app/listas/page.tsx`.
+
+## Fase 819 — Parâmetros de rota de Listas
+
+- Extraiu os normalizadores puros de modo, origem, categoria e ordenação para `app/listas/lib/listas-route-utils.ts`.
+- Manteve os tipos locais, `useSearchParams`, consumidores e todos os fluxos da página em `app/listas/page.tsx`.

@@ -15,6 +15,12 @@ import {
   timestampData,
 } from "./lib/listas-format-utils";
 import { listasPageCss } from "./lib/listas-page-css";
+import {
+  normalizarCategoriaPerfil,
+  normalizarModoLista,
+  normalizarOrdenacao,
+  normalizarOrigemPerfil,
+} from "./lib/listas-route-utils";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import {
@@ -608,34 +614,6 @@ async function sincronizarQueroLerListas(
     console.warn("Não consegui sincronizar Quero ler na Lista Page:", error);
     // Assim como no perfil, a ação local permanece funcionando.
   }
-}
-
-function normalizarModoLista(valor: string | null): ModoLista {
-  return valor === "perfil" || valor === "autores" ? valor : "obras";
-}
-
-function normalizarOrigemPerfil(valor: string | null): OrigemPerfil {
-  return valor === "biblioteca" ? "biblioteca" : "diario";
-}
-
-function normalizarCategoriaPerfil(valor: string | null): CategoriaPerfil {
-  return valor === "lendo" ||
-    valor === "quero-ler" ||
-    valor === "favoritas" ||
-    valor === "concluidas" ||
-    valor === "avaliacoes" ||
-    valor === "historico" ||
-    valor === "tudo"
-    ? valor
-    : "tudo";
-}
-
-function normalizarOrdenacao(valor: string | null): OrdenacaoLista {
-  return valor === "titulo" ||
-    valor === "avaliacao" ||
-    valor === "popularidade"
-    ? valor
-    : "recentes";
 }
 
 function normalizarQuemPodeComentarAnotacaoListas(
@@ -2582,8 +2560,10 @@ function ListasUniversaisContent() {
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const queryAtual = searchParams.toString();
 
-  const modo = normalizarModoLista(searchParams.get("modo"));
-  const origemPerfil = normalizarOrigemPerfil(searchParams.get("origem"));
+  const modo: ModoLista = normalizarModoLista(searchParams.get("modo"));
+  const origemPerfil: OrigemPerfil = normalizarOrigemPerfil(
+    searchParams.get("origem"),
+  );
   const categoriaUrl = normalizarCategoriaPerfil(searchParams.get("categoria"));
   const userIdUrl =
     searchParams.get("usuario") ||
@@ -2607,7 +2587,9 @@ function ListasUniversaisContent() {
   const [autores, setAutores] = useState<AutorLista[]>([]);
   const [categoria, setCategoria] = useState<CategoriaPerfil>(categoriaUrl);
   const busca = "";
-  const ordenacao = normalizarOrdenacao(searchParams.get("ordem"));
+  const ordenacao: OrdenacaoLista = normalizarOrdenacao(
+    searchParams.get("ordem"),
+  );
   const [quantidadeVisivel, setQuantidadeVisivel] = useState(40);
   const [carregando, setCarregando] = useState(true);
   const [bloqueado, setBloqueado] = useState(false);
