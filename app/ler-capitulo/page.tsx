@@ -31,6 +31,7 @@ import {
   normalizarAvisosConteudo18,
   type AvisoConteudo18,
 } from "../../lib/historietasAdultContent";
+import { useLerCapituloDesktopMode } from "./hooks/use-ler-capitulo-desktop-mode";
 
 type CapituloLocal = {
   id: string;
@@ -3439,7 +3440,7 @@ export default function LerCapituloPage() {
   const [mostrarLinhaProgresso, setMostrarLinhaProgresso] = useState(false);
   const [mostrarComentario, setMostrarComentario] = useState(false);
   const [progressoRolagem, setProgressoRolagem] = useState(0);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useLerCapituloDesktopMode();
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
   const [controleAcesso18, setControleAcesso18] = useState<{
     obraId: string;
@@ -3581,35 +3582,6 @@ export default function LerCapituloPage() {
       usuarioIdLogado
     );
   }, [preferenciasCarregadas, tamanhoFonte, mostrarLinhaProgresso, usuarioIdLogado]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     let cancelado = false;
