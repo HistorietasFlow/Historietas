@@ -9,6 +9,7 @@ import { useHistorietasLanguage } from "../components/HistorietasLanguageProvide
 import HomeCarouselRow from "../components/HomeCarouselRow";
 import HomeHeroCarouselDots from "../components/HomeHeroCarouselDots";
 import HomeSectionHeader from "../components/HomeSectionHeader";
+import useHomeAuthorRatings from "./hooks/use-home-author-ratings";
 import useHomeDesktopMode from "./hooks/use-home-desktop-mode";
 import useHomeHeroCarousel from "./hooks/use-home-hero-carousel";
 import useHomePageTranslations from "./hooks/use-home-page-translations";
@@ -180,8 +181,6 @@ type AvaliacaoAutorHome = {
   media: number;
   total: number;
 };
-
-type AvaliacoesAutoresHome = Record<string, AvaliacaoAutorHome>;
 
 const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
@@ -2086,8 +2085,6 @@ export default function Home() {
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [perfisAutores, setPerfisAutores] = useState<PerfisAutoresSalvos>({});
-  const [avaliacoesAutoresHome, setAvaliacoesAutoresHome] =
-    useState<AvaliacoesAutoresHome>({});
   const { notificacoesNaoLidas } = useNotificacoes();
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const isDesktop = useHomeDesktopMode();
@@ -2815,69 +2812,7 @@ export default function Home() {
       .slice(0, 12);
   }, [obrasPublicadas, obrasFiltradas, perfisAutores, termoBusca]);
 
-  useEffect(() => {
-    const autorIds = Array.from(
-      new Set(
-        autoresParaConhecer
-          .map((autor) => autor.autorId.trim())
-          .filter((autorId) => idObraSupabaseValido(autorId))
-      )
-    );
-    let cancelado = false;
-
-    async function carregarAvaliacoesAutoresHome() {
-      if (autorIds.length === 0) {
-        await Promise.resolve();
-
-        if (!cancelado) {
-          setAvaliacoesAutoresHome({});
-        }
-
-        return;
-      }
-
-      try {
-        const contrato = await carregarMetricasConteudos({ autorIds });
-
-        if (!contrato.carregado) {
-          if (!cancelado) {
-            setAvaliacoesAutoresHome({});
-          }
-          return;
-        }
-
-        const avaliacoesAtualizadas = autorIds.reduce<AvaliacoesAutoresHome>(
-          (resultado, autorId) => {
-            const avaliacao = contrato.autores.get(autorId)?.avaliacao;
-
-            if (avaliacao && avaliacao.total > 0) {
-              resultado[autorId] = {
-                media: avaliacao.media,
-                total: avaliacao.total,
-              };
-            }
-
-            return resultado;
-          },
-          {}
-        );
-
-        if (!cancelado) {
-          setAvaliacoesAutoresHome(avaliacoesAtualizadas);
-        }
-      } catch {
-        if (!cancelado) {
-          setAvaliacoesAutoresHome({});
-        }
-      }
-    }
-
-    void carregarAvaliacoesAutoresHome();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [autoresParaConhecer]);
+  const avaliacoesAutoresHome = useHomeAuthorRatings(autoresParaConhecer);
 
   const obrasFantasiaPoderes = useMemo(() => {
     return obrasFiltradas.filter((obra) =>
