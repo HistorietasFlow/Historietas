@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const hookClassificacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-classification-panel.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("header do hero preserva classificacao, acessibilidade e estilos", () => {
   for (const trecho of [
@@ -72,9 +79,7 @@ test("header preserva o resumo no desktop e no mobile", () => {
 
 test("cliente preserva calculos, foco e integracao do header", () => {
   for (const trecho of [
-    "function abrirPainelClassificacaoObra()",
-    "focoAntesClassificacaoRef.current = obterElementoComFocoAtual();",
-    "setPainelClassificacaoAberto(true);",
+    "useObraClassificationPanel()",
     "const classificacaoIndicativaCompacta =",
     "ehClassificacao18(obra.classificacaoIndicativa)",
     "textosPainelClassificacao.abrir",
@@ -87,5 +92,13 @@ test("cliente preserva calculos, foco e integracao do header", () => {
     "onAbrirClassificacao={abrirPainelClassificacaoObra}",
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
+  }
+
+  for (const trecho of [
+    "function abrirPainelClassificacaoObra()",
+    "focoAntesClassificacaoRef.current = obterElementoComFocoAtual();",
+    "setPainelClassificacaoAberto(true);",
+  ]) {
+    assert.ok(hookClassificacao.includes(trecho), trecho);
   }
 });

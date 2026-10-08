@@ -24,6 +24,13 @@ const hookAcoes = readFileSync(
   ),
   "utf8",
 );
+const hookClassificacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-classification-panel.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const obraStyleUtils = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-style-utils.ts", import.meta.url),
   "utf8",
@@ -95,7 +102,7 @@ test("comentarios classificacao e acoes recebem foco inicial ao abrir", () => {
     /useObraDialogInitialFocus\(comentariosAbertos, comentariosSheetRef\)/,
   );
   assert.match(
-    paginaObra,
+    hookClassificacao,
     /useObraDialogInitialFocus\(\s*painelClassificacaoAberto,\s*classificacaoDialogRef,\s*\)/,
   );
   assert.match(
@@ -144,12 +151,12 @@ test("os tres dialogs usam aria modal tabIndex e controle de teclado", () => {
 
 test("fechamento normal restaura foco ao elemento que abriu o dialog", () => {
   const bloco = obterBloco(
-    "function abrirPainelClassificacaoObra()",
+    "function abrirComentariosObra()",
     "function iniciarArrasteComentariosObra(",
   );
 
   assert.match(
-    bloco,
+    hookClassificacao,
     /focoAntesClassificacaoRef\.current = obterElementoComFocoAtual\(\)/,
   );
   assert.match(
@@ -162,7 +169,11 @@ test("fechamento normal restaura foco ao elemento que abriu o dialog", () => {
   );
 
   const restauracoes = bloco.match(/restaurarFocoAnterior\(focoAnterior\)/g) || [];
-  assert.equal(restauracoes.length, 2);
+  assert.equal(restauracoes.length, 1);
+  assert.match(
+    hookClassificacao,
+    /const focoAnterior = focoAntesClassificacaoRef\.current;\s*focoAntesClassificacaoRef\.current = null;\s*setPainelClassificacaoAberto\(false\);\s*restaurarFocoAnterior\(focoAnterior\);/,
+  );
   assert.match(
     hookAcoes,
     /const focoAnterior = focoAntesAcoesObraRef\.current;\s*focoAntesAcoesObraRef\.current = null;\s*setAcoesObraAbertas\(false\);\s*if \(restaurarFoco\) \{\s*restaurarFocoAnterior\(focoAnterior\);/,
