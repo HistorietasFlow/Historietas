@@ -10,3 +10,8 @@
 
 - Extraiu `leitorPageCss` para `app/ler-capitulo/lib/ler-capitulo-page-css.ts` sem alterar o template CSS.
 - Manteve na página os quatro consumidores, a ordem `historietasThemeCss` → `leitorPageCss` e `focusBottomNavigationCss` independente.
+
+## Fase 825 — Bridge de idioma do leitor
+
+- Extraiu `LerCapituloLanguageBridge`, a tabela de traduções e as regras dinâmicas para `app/ler-capitulo/components/ler-capitulo-language-bridge.tsx`.
+- Preservou os três mounts, o idioma da página e o lifecycle de tradução/observação do DOM.
