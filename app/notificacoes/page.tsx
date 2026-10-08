@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createPortal } from "react-dom";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import {
@@ -21,7 +20,8 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import NotificacoesLanguageBridge from "./components/notificacoes-language-bridge";
-import type { CSSProperties, ReactNode } from "react";
+import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal";
+import type { CSSProperties } from "react";
 
 type CapituloLocal = {
   id: string;
@@ -95,26 +95,6 @@ const CHAVE_OBRAS = "historietas-obras";
 const CHAVE_NOTIFICACOES = "historietas-notificacoes";
 const CHAVE_OBRAS_SEGUIDAS = "historietas-obras-seguidas";
 const CHAVE_NOTIFICACOES_APAGADAS = "historietas-notificacoes-apagadas";
-
-function NotificacoesOverlayPortal({ children }: { children: ReactNode }) {
-  const [montado, setMontado] = useState(false);
-
-  useEffect(() => {
-    const montarPortalTimer = window.setTimeout(() => {
-      setMontado(true);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(montarPortalTimer);
-    };
-  }, []);
-
-  if (!montado || typeof document === "undefined") {
-    return null;
-  }
-
-  return createPortal(children, document.body);
-}
 
 function corrigirTextoQuebrado(texto: string) {
   let textoCorrigido = texto;

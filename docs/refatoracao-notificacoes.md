@@ -11,3 +11,9 @@
 - Extraiu `NotificacoesLanguageBridge` para `app/notificacoes/components/notificacoes-language-bridge.tsx`.
 - Preservou a tabela de traduções, padrões dinâmicos, escopos do DOM, atributos traduzíveis, observador e restauração condicional do conteúdo original.
 - Manteve em `app/notificacoes/page.tsx` os dois pontos de montagem da ponte e toda a lógica de dados, autenticação, filtros, paginação e overlays.
+
+## Fase 801 — Portal dos overlays de notificações
+
+- Extraiu `NotificacoesOverlayPortal` para `app/notificacoes/components/notificacoes-overlay-portal.tsx`.
+- Preservou a montagem adiada de `0ms`, o cleanup e o guard de DOM antes de criar o portal em `document.body`.
+- Manteve na página os dois conteúdos dos overlays, seus estados, handlers, estilos e o lifecycle de overflow.
