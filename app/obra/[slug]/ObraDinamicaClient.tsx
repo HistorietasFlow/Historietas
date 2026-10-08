@@ -75,7 +75,7 @@ import {
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
 import {
-  obterAvaliacaoLocalDetalhada,
+  obterAvaliacaoLocalInicialObra,
   salvarAvaliacaoLocal,
 } from "./lib/obra-local-rating-storage-utils";
 import { criarMetricasBaseObra, incrementarVisualizacaoObraPublicaSupabase, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
@@ -898,14 +898,10 @@ export default function ObraDinamicaPage() {
 
     const obraAtual = obra;
     const versaoAoIniciar = avaliacaoVersaoRef.current;
-    const usuarioLogadoEhAutorInicial = Boolean(
-      usuarioIdLogado &&
-        obraAtual.autorId &&
-        usuarioIdLogado === obraAtual.autorId
+    const avaliacaoLocalInicial = obterAvaliacaoLocalInicialObra(
+      obraAtual,
+      usuarioIdLogado,
     );
-    const avaliacaoLocalInicial = usuarioLogadoEhAutorInicial
-      ? { encontrada: false, nota: 0 }
-      : obterAvaliacaoLocalDetalhada(obraAtual, usuarioIdLogado);
 
     const aplicarAvaliacaoLocalTimer = window.setTimeout(() => {
       if (avaliacaoVersaoRef.current !== versaoAoIniciar) {

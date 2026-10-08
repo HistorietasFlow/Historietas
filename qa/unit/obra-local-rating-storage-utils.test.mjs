@@ -46,6 +46,7 @@ const {
   RATED_WORKS_STORAGE_KEY,
   carregarAvaliacoesLocais,
   obterAvaliacaoLocalDetalhada,
+  obterAvaliacaoLocalInicialObra,
   salvarAvaliacaoLocal,
 } = await import(criarUrlModulo(avaliacaoLocalJavascript));
 
@@ -104,8 +105,13 @@ function executarComStorageNavegador(valoresIniciais, executar, opcoes = {}) {
   }
 }
 
-function criarObra({ id = "", slug = "", titulo = "Obra de teste" } = {}) {
-  return { id, slug, titulo };
+function criarObra({
+  id = "",
+  slug = "",
+  titulo = "Obra de teste",
+  autorId = "",
+} = {}) {
+  return { id, slug, titulo, autorId };
 }
 
 test("ignora JSON invalido e valores que nao sao objetos sem regravar o cache", () => {
@@ -199,6 +205,56 @@ test("le somente a faixa valida, arredonda em meios pontos e preserva zero como 
       assert.equal(persistidas.removida, 0);
       assert.equal(Object.hasOwn(persistidas, "removida"), true);
       assert.equal(persistidas.nova, 3.5);
+    },
+  );
+});
+
+test("autor recebe avaliacao local inicial vazia e os demais delegam para a leitura detalhada", () => {
+  executarComStorageNavegador(
+    {
+      [`${RATED_WORKS_STORAGE_KEY}:usuario-a`]: JSON.stringify({
+        "obra-do-autor": 4,
+        "obra-de-terceiro": 3.5,
+        "obra-sem-autor": 2.5,
+        "obra-diferente": 4.5,
+      }),
+    },
+    () => {
+      assert.deepEqual(
+        obterAvaliacaoLocalInicialObra(
+          criarObra({ id: "obra-do-autor", autorId: "usuario-a" }),
+          "usuario-a",
+        ),
+        { encontrada: false, nota: 0 },
+      );
+      assert.deepEqual(
+        obterAvaliacaoLocalInicialObra(
+          criarObra({ id: "obra-de-terceiro", autorId: "outro-autor" }),
+          "usuario-a",
+        ),
+        { encontrada: true, nota: 3.5 },
+      );
+      assert.deepEqual(
+        obterAvaliacaoLocalInicialObra(
+          criarObra({ id: "obra-sem-autor", autorId: "" }),
+          "usuario-a",
+        ),
+        { encontrada: true, nota: 2.5 },
+      );
+      assert.deepEqual(
+        obterAvaliacaoLocalInicialObra(
+          criarObra({ id: "obra-diferente", autorId: "usuario-a" }),
+          "usuario-a ",
+        ),
+        { encontrada: true, nota: 4.5 },
+      );
+      assert.deepEqual(
+        obterAvaliacaoLocalInicialObra(
+          criarObra({ id: "obra-de-terceiro", autorId: "usuario-a" }),
+          "",
+        ),
+        { encontrada: false, nota: 0 },
+      );
     },
   );
 });
