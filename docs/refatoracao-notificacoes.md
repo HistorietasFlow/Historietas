@@ -29,3 +29,8 @@
 - Extraiu `useNotificacoesDesktopMode` para `app/notificacoes/hooks/use-notificacoes-desktop-mode.ts`.
 - Preservou a atualização inicial imediata por `matchMedia`, o listener moderno e o fallback legado.
 - Manteve na página todos os consumidores visuais de `isDesktop`, estilos, overlays e dados.
+
+## Fase 804 — CSS estático das notificações
+
+- Moveu `notificacoesPageCss` para `app/notificacoes/lib/notificacoes-page-css.ts` sem alterar o conteúdo do template literal.
+- Manteve os dois consumidores `<style>` e `historietasThemeCss` na página.
