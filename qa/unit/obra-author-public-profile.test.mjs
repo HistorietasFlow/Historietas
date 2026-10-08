@@ -13,6 +13,10 @@ const cliente = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const textos = readFileSync(
+  new URL("../../app/obra/[slug]/lib/obra-text-utils.ts", import.meta.url),
+  "utf8",
+);
 
 test("hook preserva estado, cancelamento e timers do perfil publico do autor", () => {
   assert.match(hook, /useState<PerfilPublicoObra \| null>\(null\)/);
@@ -48,10 +52,11 @@ test("cliente delega somente o perfil do autor e preserva seus dados preparados"
   assert.doesNotMatch(cliente, /setPerfilAutorObra/);
   assert.match(
     cliente,
-    /obterNomeAutorObraExibido\(perfilAutorObra, obra\)/,
+    /obterContextoAutorObra\(perfilAutorObra, obra, usuarioIdLogado\)/,
   );
+  assert.match(textos, /obterNomeAutorObraExibido\(perfilAutor, obra\)/);
   assert.match(
-    cliente,
-    /perfilAutorObra\?\.userId \|\| obra\?\.autorId \|\| ""/,
+    textos,
+    /perfilAutor\?\.userId \|\| obra\?\.autorId \|\| ""/,
   );
 });
