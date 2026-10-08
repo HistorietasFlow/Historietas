@@ -21,6 +21,7 @@ import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obt
 import { useEffect, useMemo, useState } from "react";
 import NotificacoesLanguageBridge from "./components/notificacoes-language-bridge";
 import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal";
+import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
 import {
   corrigirTextoQuebrado,
   limparTextoExibicao,
@@ -3612,7 +3613,6 @@ export default function NotificacoesPage() {
   const [buscaTopoAberta, setBuscaTopoAberta] = useState(false);
   const [filtro, setFiltro] = useState<FiltroNotificacao>("todas");
   const [ordenacao, setOrdenacao] = useState<OrdenacaoNotificacao>("recentes");
-  const [isDesktop, setIsDesktop] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("");
   const [menuNotificacaoAbertoId, setMenuNotificacaoAbertoId] = useState("");
@@ -3620,30 +3620,7 @@ export default function NotificacoesPage() {
   const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
   const { definirNotificacoesNaoLidas } = useNotificacoes();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    atualizarModoDesktop();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
+  const isDesktop = useNotificacoesDesktopMode();
 
   useEffect(() => {
     let componenteAtivo = true;
