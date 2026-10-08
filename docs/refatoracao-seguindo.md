@@ -14,3 +14,8 @@
 
 - Extraiu o componente visual de carregamento e seus quatro estilos exclusivos.
 - Preservou os dois consumidores, os modos normal e compacto e os keyframes no CSS global de Seguindo.
+
+## Fase 831 — SeguindoLanguageBridge
+
+- Extraiu o bridge de traduções dinâmicas, incluindo tabela, helpers e lifecycle do MutationObserver.
+- Preservou os dois mounts, a raiz exclusiva de Seguindo e os guards/restaurações do DOM.

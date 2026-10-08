@@ -44,7 +44,10 @@ test("Seguindo consome o CSS extraído sem mover responsabilidades da página", 
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/seguindo-loading-spinner";/,
   );
-  assert.match(pagina, /function SeguindoLanguageBridge\(/);
+  assert.match(
+    pagina,
+    /import \{ SeguindoLanguageBridge \} from "\.\/components\/seguindo-language-bridge";/,
+  );
   assert.match(pagina, /useSeguindoDesktopMode/);
   assert.match(pagina, /carregarAtividadesSeguindoSupabase/);
   assert.match(pagina, /lerJsonStorageUsuarioSeguindo/);
