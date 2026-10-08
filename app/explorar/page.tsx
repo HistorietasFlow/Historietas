@@ -32,6 +32,7 @@ import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
 } from "../../lib/supabase/paginacao.mjs";
+import { LoadingSpinner } from "./components/explorar-loading-spinner";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 import { themePageCss } from "./lib/explorar-page-css";
 
@@ -2128,23 +2129,6 @@ function criarTemaPaginaVisualExplorar(): TemaCategoriaExplorar {
 }
 
 
-
-function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={label}
-      style={loadingPageStyle}
-    >
-      <span
-        className="historietas-loading-spinner"
-        style={loadingSpinnerStyle}
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
 
 export default function ExplorarPage() {
   const router = useRouter();
@@ -4418,28 +4402,6 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   zIndex: 0,
   background: "transparent",
   opacity: 0,
-};
-
-const loadingPageStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 2,
-  width: "100%",
-  minHeight: "100dvh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-};
-
-const loadingSpinnerStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "999px",
-  border: "3px solid rgba(255,255,255,0.20)",
-  borderTopColor: "#FFFFFF",
-  boxSizing: "border-box",
-  animation: "historietas-loading-spin 0.78s linear infinite",
-  flex: "0 0 auto",
 };
 
 // Teste: mesma identidade tipográfica aplicada anteriormente na Home.
