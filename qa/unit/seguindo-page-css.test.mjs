@@ -40,7 +40,10 @@ test("Seguindo consome o CSS extraído sem mover responsabilidades da página", 
   );
   assert.match(pagina, /const mobileTopWaterFadeStyle: CSSProperties =/);
   assert.match(pagina, /const desktopTopWaterFadeStyle: CSSProperties =/);
-  assert.match(pagina, /function LoadingSpinner\(/);
+  assert.match(
+    pagina,
+    /import \{ LoadingSpinner \} from "\.\/components\/seguindo-loading-spinner";/,
+  );
   assert.match(pagina, /function SeguindoLanguageBridge\(/);
   assert.match(pagina, /useSeguindoDesktopMode/);
   assert.match(pagina, /carregarAtividadesSeguindoSupabase/);

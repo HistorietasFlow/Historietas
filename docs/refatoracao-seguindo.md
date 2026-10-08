@@ -9,3 +9,8 @@
 
 - Extraiu `seguindoPageCss` para um módulo dedicado.
 - Preservou literalmente o CSS e os dois consumidores com a ordem `historietasThemeCss` seguida de `seguindoPageCss`.
+
+## Fase 830 — LoadingSpinner
+
+- Extraiu o componente visual de carregamento e seus quatro estilos exclusivos.
+- Preservou os dois consumidores, os modos normal e compacto e os keyframes no CSS global de Seguindo.
