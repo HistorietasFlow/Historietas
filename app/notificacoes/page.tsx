@@ -24,6 +24,12 @@ import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal"
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
 import { notificacoesPageCss } from "./lib/notificacoes-page-css";
 import {
+  criarDiarioPerfilHrefNotificacao,
+  criarHrefLeituraCapitulo,
+  criarPerfilHrefNotificacao,
+  montarLinkNotificacao,
+} from "./lib/notificacoes-navigation-utils";
+import {
   corrigirTextoQuebrado,
   limparTextoExibicao,
 } from "./lib/notificacoes-text-utils";
@@ -154,28 +160,6 @@ function criarLoginHrefNotificacoes() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function criarHrefLeituraCapitulo(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
-  capituloId: string,
-  numeroCapitulo: number
-) {
-  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  if (
-    obra.publicado &&
-    idObraSupabaseValido(obra.id) &&
-    slugSeguro &&
-    Number.isInteger(numeroCapitulo) &&
-    numeroCapitulo > 0
-  ) {
-    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
-  }
-
-  return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id
-  )}&capituloId=${encodeURIComponent(capituloId)}`;
 }
 
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
@@ -558,118 +542,12 @@ function filtrarNotificacoesApagadas(
   );
 }
 
-function linkDiretoValido(link: string) {
-  const linkLimpo = link.trim();
-
-  return (
-    linkLimpo.startsWith("/") &&
-    !linkLimpo.startsWith("//") &&
-    !linkLimpo.includes("\\")
-  );
-}
-
-function criarPerfilHrefNotificacao(userId: string, nomeUsuario: string) {
-  const params = new URLSearchParams();
-  const userIdLimpo = userId.trim();
-  const nomeLimpo = nomeUsuario.trim();
-
-  if (userIdLimpo) {
-    params.set("userId", userIdLimpo);
-    params.set("autorId", userIdLimpo);
-  }
-
-  if (nomeLimpo) {
-    params.set("autor", nomeLimpo);
-  }
-
-  const query = params.toString();
-
-  return query ? `/perfil-autor?${query}` : "/perfil-autor";
-}
-
-function criarDiarioPerfilHrefNotificacao(
-  userId: string,
-  nomeUsuario = ""
-) {
-  const params = new URLSearchParams();
-  const userIdLimpo = userId.trim();
-  const nomeLimpo = nomeUsuario.trim();
-
-  if (userIdLimpo) {
-    params.set("userId", userIdLimpo);
-    params.set("autorId", userIdLimpo);
-  }
-
-  if (nomeLimpo) {
-    params.set("autor", nomeLimpo);
-  }
-
-  params.set("aba", "diario");
-
-  return `/perfil-autor?${params.toString()}`;
-}
-
 function notificacaoEhDiario(notificacao: NotificacaoLocal) {
   return (
     notificacao.tipo === "curtida-diario" ||
     notificacao.tipo === "comentario-diario" ||
     notificacao.tipo === "atividade-diario"
   );
-}
-
-function montarLinkNotificacao(
-  notificacao: NotificacaoLocal,
-  obra?: ObraLocal | null
-) {
-  if (notificacao.tipo === "solicitacao-seguidor") {
-    return "/seguindo?aba=seguidores&conteudo=seguidores";
-  }
-
-  if (notificacao.tipo === "novo-seguidor" && notificacao.autorId) {
-    return criarPerfilHrefNotificacao(notificacao.autorId, notificacao.autorNome || "Usuário");
-  }
-
-  const linkDireto = notificacao.link.trim();
-
-  if (linkDireto && linkDiretoValido(linkDireto)) {
-    return linkDireto;
-  }
-
-  if (
-    (notificacao.tipo === "comentario-obra" ||
-      notificacao.tipo === "curtida-obra") &&
-    obra
-  ) {
-    const slugObra = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-    return obra.link?.trim() || `/obra/${encodeURIComponent(slugObra)}`;
-  }
-
-  if (
-    notificacaoEhCapitulo(notificacao) &&
-    obra &&
-    notificacao.obraId &&
-    notificacao.capituloId
-  ) {
-    const indiceCapitulo = obra.capitulos.findIndex(
-      (capitulo) => capitulo.id === notificacao.capituloId
-    );
-    const numeroCapitulo = indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
-
-    return criarHrefLeituraCapitulo(
-      obra,
-      notificacao.capituloId,
-      numeroCapitulo
-    );
-  }
-
-  if (notificacao.obraId && notificacao.capituloId) {
-    return `/ler-capitulo?obraId=${encodeURIComponent(
-      notificacao.obraId
-    )}&capituloId=${encodeURIComponent(notificacao.capituloId)}`;
-  }
-
-  return notificacaoEhCapitulo(notificacao) ? "/perfil-autor?aba=biblioteca" : "/comunidade";
 }
 
 function notificacaoEhInteracaoCapitulo(notificacao: NotificacaoLocal) {
