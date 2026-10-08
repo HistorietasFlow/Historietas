@@ -19,3 +19,8 @@
 
 - Extraiu o lifecycle de lock e restauração de overflow para `useExplorarAdvancedFiltersBodyLock`.
 - Manteve na página o estado, os handlers, o painel e todos os fluxos de dados.
+
+## Fase 837 — CSS dos controles de busca
+
+- Extraiu `explorarBuscaToggleCss` para `app/explorar/lib/explorar-search-toggle-css.ts`.
+- Manteve na página o único consumidor, os controles de busca e todas as fronteiras de dados.

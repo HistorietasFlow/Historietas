@@ -46,7 +46,10 @@ test("Explorar consome themePageCss sem alterar as fronteiras da página", () =>
     pagina,
     /\$\{historietasThemeCss\}\$\{themePageCss\}/,
   );
-  assert.match(pagina, /const explorarBuscaToggleCss = `/);
+  assert.match(
+    pagina,
+    /import \{ explorarBuscaToggleCss \} from "\.\/lib\/explorar-search-toggle-css";/,
+  );
   assert.match(pagina, /<style>\{explorarBuscaToggleCss\}<\/style>/);
   assert.match(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(
