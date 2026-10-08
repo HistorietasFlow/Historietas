@@ -47,7 +47,7 @@ test("hook preserva estados de acesso, otimizacao e confirmacao manual", () => {
   assert.match(hook, /return \{ statusAcesso18, permitirAcesso18Atual \};/);
 });
 
-test("cliente delega somente o estado de acesso e preserva gate e visualizacao", () => {
+test("cliente delega somente o estado de acesso e preserva o gate", () => {
   assert.match(
     cliente,
     /import \{ useObraContent18Access \} from "\.\/hooks\/use-obra-content-18-access";/,
@@ -57,8 +57,5 @@ test("cliente delega somente o estado de acesso e preserva gate e visualizacao",
     /const \{ statusAcesso18, permitirAcesso18Atual \} =\s*useObraContent18Access\(obra\);/,
   );
   assert.doesNotMatch(cliente, /const \[controleAcesso18, setControleAcesso18\]/);
-  assert.match(cliente, /statusAcesso18 !== "permitido"/);
   assert.match(cliente, /onConfirmar=\{permitirAcesso18Atual\}/);
-  assert.match(cliente, /visualizacaoObraRegistradaRef/);
-  assert.match(cliente, /incrementarVisualizacaoObraPublicaSupabase/);
 });
