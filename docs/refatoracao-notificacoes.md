@@ -17,3 +17,9 @@
 - Extraiu `NotificacoesOverlayPortal` para `app/notificacoes/components/notificacoes-overlay-portal.tsx`.
 - Preservou a montagem adiada de `0ms`, o cleanup e o guard de DOM antes de criar o portal em `document.body`.
 - Manteve na página os dois conteúdos dos overlays, seus estados, handlers, estilos e o lifecycle de overflow.
+
+## Fase 802 — Utilitários de texto das notificações
+
+- Extraiu `corrigirTextoQuebrado` e `limparTextoExibicao` para `app/notificacoes/lib/notificacoes-text-utils.ts`.
+- Preservou literalmente as duas tentativas de correção, o fallback em erro e a remoção de espaços por `replace(/ /g, "")`.
+- Manteve na página todos os consumidores de normalização de capítulos, obras, notificações, perfis, tags e dados do Supabase.
