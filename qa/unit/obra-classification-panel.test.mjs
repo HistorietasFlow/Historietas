@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const hookClassificacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-classification-panel.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("painel preserva portal raiz backdrop e dialogo", () => {
   assert.match(classificationPanel, /createPortal\(/);
@@ -88,13 +95,54 @@ test("painel preserva avisos 18 mais fallback e traducao", () => {
   assert.match(classificationPanel, /\{textos\.semAvisos\}/);
 });
 
+test("hook preserva estado refs foco e lifecycle do painel de classificacao", () => {
+  assert.match(
+    hookClassificacao,
+    /export function useObraClassificationPanel\(\)/,
+  );
+  assert.match(hookClassificacao, /useState\(false\)/);
+  assert.match(
+    hookClassificacao,
+    /useRef<HTMLElement \| null>\(null\)/,
+  );
+  assert.match(
+    hookClassificacao,
+    /useObraDialogInitialFocus\(\s*painelClassificacaoAberto,\s*classificacaoDialogRef,\s*\)/,
+  );
+  assert.match(
+    hookClassificacao,
+    /function abrirPainelClassificacaoObra\(\) \{\s*focoAntesClassificacaoRef\.current = obterElementoComFocoAtual\(\);\s*setPainelClassificacaoAberto\(true\);/,
+  );
+  assert.match(
+    hookClassificacao,
+    /function fecharPainelClassificacaoObra\(\) \{\s*const focoAnterior = focoAntesClassificacaoRef\.current;\s*focoAntesClassificacaoRef\.current = null;\s*setPainelClassificacaoAberto\(false\);\s*restaurarFocoAnterior\(focoAnterior\);/,
+  );
+  assert.match(
+    hookClassificacao,
+    /const resetarPainelClassificacaoObra = useCallback\(\(\) => \{\s*setPainelClassificacaoAberto\(false\);\s*\}, \[\]\);/,
+  );
+});
+
 test("cliente preserva condicao ref foco e composicao do painel", () => {
   assert.match(
     paginaObra,
     /obra && painelClassificacaoAberto && typeof document !== "undefined"/,
   );
-  assert.match(paginaObra, /const classificacaoDialogRef = useRef<HTMLElement \| null>\(null\)/);
-  assert.match(paginaObra, /function fecharPainelClassificacaoObra\(\)/);
+  assert.match(
+    paginaObra,
+    /import \{ useObraClassificationPanel \} from "\.\/hooks\/use-obra-classification-panel";/,
+  );
+  assert.match(paginaObra, /\} = useObraClassificationPanel\(\);/);
+  assert.match(hookClassificacao, /const classificacaoDialogRef = useRef<HTMLElement \| null>\(null\)/);
+  assert.match(hookClassificacao, /function fecharPainelClassificacaoObra\(\)/);
+  assert.match(
+    paginaObra,
+    /const fecharPaineisTimer = window\.setTimeout\(\(\) => \{\s*setSinopseAberta\(false\);\s*resetarPainelClassificacaoObra\(\);\s*\}, 0\);/,
+  );
+  assert.match(
+    paginaObra,
+    /\}, \[obra\?\.id, resetarPainelClassificacaoObra\]\);/,
+  );
   assert.match(
     paginaObra,
     /<ObraClassificationPanel\s*classificacaoIndicativa=\{obra\.classificacaoIndicativa\}\s*avisosConteudo=\{obra\.avisosConteudo\}\s*language=\{language\}\s*textos=\{textosPainelClassificacao\}\s*dialogRef=\{classificacaoDialogRef\}\s*onFechar=\{fecharPainelClassificacaoObra\}/,
