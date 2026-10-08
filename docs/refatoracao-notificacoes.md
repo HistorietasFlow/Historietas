@@ -46,3 +46,9 @@
 - Moveu os helpers puros de rótulos, ícones, autores e cartões sociais para `app/notificacoes/lib/notificacoes-display-utils.ts`.
 - Preservou as heurísticas de comunidade, as prioridades visuais e todos os textos de apresentação.
 - Manteve na página a normalização, o avatar, JSX, estados, filtros, autenticação, carregadores e mutações Supabase.
+
+## Fase 807 — Lifecycle global do overlay de notificações
+
+- Extraiu o lock de `html` e `body` para `useNotificacoesOverlayBodyLock`.
+- Preservou os atributos globais, a restauração dos overflows anteriores e o cleanup do overlay.
+- Manteve na página a derivação de `menuOverlayAberto`, menus, handlers, JSX, CSS e dados.
