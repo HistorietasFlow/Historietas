@@ -62,7 +62,15 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 97);
   assert.match(
     pagina,
-    /useEffect\(\(\) => \{[\s\S]*?mostrarPainelOrdenacao[\s\S]*?document\.body\.style\.overflow = "hidden"/,
+    /import \{ useSeguindoSortingSheetBodyLock \} from "\.\/hooks\/use-seguindo-sorting-sheet-body-lock";/,
+  );
+  assert.match(
+    pagina,
+    /useSeguindoSortingSheetBodyLock\(mostrarPainelOrdenacao\);/,
+  );
+  assert.match(
+    pagina,
+    /const \[mostrarPainelOrdenacao, setMostrarPainelOrdenacao\] = useState\(false\);/,
   );
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /carregarAtividadesSeguindoSupabase/);
