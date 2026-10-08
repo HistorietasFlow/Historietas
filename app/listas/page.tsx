@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, TouchEvent } from "react";
 import { createPortal } from "react-dom";
+import { useListasDesktopMode } from "./hooks/use-listas-desktop-mode";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import {
@@ -2712,7 +2713,7 @@ function ListasUniversaisContent() {
   const comentariosDragOffsetYRef = useRef(0);
   const comentariosDragIgnorarCliqueRef = useRef(false);
   const comentariosDragResetTimerRef = useRef<number | null>(null);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useListasDesktopMode();
   const [obraDestacadaId, setObraDestacadaId] = useState("");
 
   useEffect(() => {
@@ -2960,32 +2961,6 @@ function ListasUniversaisContent() {
     const timer = window.setTimeout(() => setMensagemAcao(""), 2600);
     return () => window.clearTimeout(timer);
   }, [mensagemAcao]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const timer = window.setTimeout(atualizarModoDesktop, 0);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(timer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(timer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     if (!comentariosDiarioItem) {
