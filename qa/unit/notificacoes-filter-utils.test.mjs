@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import typescript from "typescript";
 
 const filtroUtils = readFileSync(
   new URL(
@@ -13,6 +14,286 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const filtroUtilsExecutavel = filtroUtils
+  .replace(
+    'import { ehClassificacao18 } from "../../../lib/historietasAdultContent";',
+    'const ehClassificacao18 = (classificacao) => classificacao.trim().startsWith("18");',
+  )
+  .replace(
+    'import { formatarData, normalizarTexto } from "../../../lib/utils";',
+    [
+      "const formatarData = (data) => data;",
+      'const normalizarTexto = (texto) => String(texto ?? "")',
+      '  .normalize("NFD")',
+      '  .replace(/[\\u0300-\\u036f]/g, "")',
+      "  .toLowerCase();",
+    ].join("\n"),
+  );
+const filtroUtilsJavascript = typescript.transpileModule(
+  filtroUtilsExecutavel,
+  {
+    compilerOptions: {
+      module: typescript.ModuleKind.ESNext,
+      target: typescript.ScriptTarget.ES2022,
+    },
+  },
+).outputText;
+const {
+  filtrarEOrdenarNotificacoes,
+  notificacaoEhCapitulo,
+} = await import(
+  `data:text/javascript;base64,${Buffer.from(filtroUtilsJavascript).toString("base64")}`,
+);
+
+function criarObra(id, overrides = {}) {
+  return {
+    id,
+    titulo: `Obra ${id}`,
+    autor: "Autora",
+    genero: "Fantasia",
+    formato: "Webtoon",
+    classificacaoIndicativa: "12 anos",
+    capitulos: [],
+    ...overrides,
+  };
+}
+
+function criarNotificacao(id, overrides = {}) {
+  return {
+    id,
+    obraId: "obra-1",
+    capituloId: "",
+    link: `/notificacoes/${id}`,
+    titulo: `Notificacao ${id}`,
+    mensagem: `Mensagem ${id}`,
+    tipo: "curtida-obra",
+    lida: false,
+    criadaEm: "2026-01-01T00:00:00.000Z",
+    autorNome: "Leitora",
+    ...overrides,
+  };
+}
+
+function consultar({
+  notificacoes,
+  obras = [],
+  termoBusca = "",
+  filtro = "todas",
+  ordenacao = "recentes",
+  acessoConteudo18Liberado = false,
+}) {
+  return filtrarEOrdenarNotificacoes({
+    notificacoes,
+    obrasPorId: new Map(obras.map((obra) => [obra.id, obra])),
+    termoBusca,
+    filtro,
+    ordenacao,
+    acessoConteudo18Liberado,
+  });
+}
+
+function ids(notificacoes) {
+  return notificacoes.map((notificacao) => notificacao.id);
+}
+
+test("executa filtros todas, lidas, nao lidas, capitulos e comunidade", () => {
+  const notificacoes = [
+    criarNotificacao("nao-lida"),
+    criarNotificacao("lida", { lida: true }),
+    criarNotificacao("capitulo", { tipo: "novo-capitulo" }),
+    criarNotificacao("comentario-capitulo", {
+      tipo: "comentario-capitulo",
+    }),
+    criarNotificacao("comunidade", { tipo: "comentario-comunidade" }),
+  ];
+  const obras = [criarObra("obra-1")];
+
+  assert.deepEqual(
+    ids(
+      consultar({
+        notificacoes,
+        obras,
+        ordenacao: "antigas",
+        acessoConteudo18Liberado: true,
+      }),
+    ).sort(),
+    ids(notificacoes).sort(),
+  );
+  assert.deepEqual(
+    ids(
+      consultar({
+        notificacoes,
+        obras,
+        filtro: "nao-lidas",
+        ordenacao: "antigas",
+        acessoConteudo18Liberado: true,
+      }),
+    ).sort(),
+    ["capitulo", "comentario-capitulo", "comunidade", "nao-lida"],
+  );
+  assert.deepEqual(
+    ids(
+      consultar({
+        notificacoes,
+        obras,
+        filtro: "lidas",
+        acessoConteudo18Liberado: true,
+      }),
+    ),
+    ["lida"],
+  );
+  assert.deepEqual(
+    ids(
+      consultar({
+        notificacoes,
+        obras,
+        filtro: "capitulos",
+        ordenacao: "antigas",
+        acessoConteudo18Liberado: true,
+      }),
+    ).sort(),
+    ["capitulo", "comentario-capitulo"],
+  );
+  assert.deepEqual(
+    ids(
+      consultar({
+        notificacoes,
+        obras,
+        filtro: "comunidade",
+        ordenacao: "antigas",
+        acessoConteudo18Liberado: true,
+      }),
+    ).sort(),
+    notificacoes
+      .filter((notificacao) => !notificacaoEhCapitulo(notificacao))
+      .map((notificacao) => notificacao.id)
+      .sort(),
+  );
+});
+
+test("executa a busca pela notificacao, pela obra e pelo capitulo", () => {
+  const obra = criarObra("obra-busca", {
+    titulo: "Aurora Distante",
+    genero: "Fantasia lunar",
+    capitulos: [{ id: "capitulo-eclipse", titulo: "Capitulo Eclipse" }],
+  });
+  const notificacao = criarNotificacao("busca", {
+    obraId: obra.id,
+    capituloId: "capitulo-eclipse",
+    mensagem: "Mensagem propria buscavel",
+  });
+
+  for (const termoBusca of [
+    "propria buscavel",
+    "aurora distante",
+    "fantasia lunar",
+    "capitulo eclipse",
+  ]) {
+    assert.deepEqual(
+      ids(
+        consultar({
+          notificacoes: [notificacao],
+          obras: [obra],
+          termoBusca,
+        }),
+      ),
+      ["busca"],
+      `busca deveria encontrar ${termoBusca}`,
+    );
+  }
+});
+
+test("executa ordenacao recente, antiga, por obra e por capitulo", () => {
+  const obraAlfa = criarObra("obra-alfa", {
+    titulo: "Alfa",
+    capitulos: [{ id: "capitulo-zeta", titulo: "Zeta" }],
+  });
+  const obraBeta = criarObra("obra-beta", {
+    titulo: "Beta",
+    capitulos: [{ id: "capitulo-alfa", titulo: "Alfa" }],
+  });
+  const notificacoes = [
+    criarNotificacao("antiga", {
+      obraId: obraAlfa.id,
+      capituloId: "capitulo-zeta",
+      criadaEm: "2026-01-01T00:00:00.000Z",
+    }),
+    criarNotificacao("recente", {
+      obraId: obraBeta.id,
+      capituloId: "capitulo-alfa",
+      criadaEm: "2026-01-03T00:00:00.000Z",
+    }),
+    criarNotificacao("sem-dados", {
+      obraId: "obra-ausente",
+      capituloId: "capitulo-ausente",
+      criadaEm: "2026-01-02T00:00:00.000Z",
+    }),
+  ];
+  const parametros = {
+    notificacoes,
+    obras: [obraAlfa, obraBeta],
+    acessoConteudo18Liberado: true,
+  };
+
+  assert.deepEqual(ids(consultar(parametros)), ["recente", "sem-dados", "antiga"]);
+  assert.deepEqual(ids(consultar({ ...parametros, ordenacao: "antigas" })), [
+    "antiga",
+    "sem-dados",
+    "recente",
+  ]);
+  assert.deepEqual(ids(consultar({ ...parametros, ordenacao: "obra" })), [
+    "antiga",
+    "recente",
+    "sem-dados",
+  ]);
+  assert.deepEqual(ids(consultar({ ...parametros, ordenacao: "capitulo" })), [
+    "recente",
+    "antiga",
+    "sem-dados",
+  ]);
+});
+
+test("executa a politica de acesso 18+ sem remover notificacoes sem obra", () => {
+  const obras = [
+    criarObra("obra-livre"),
+    criarObra("obra-18", { classificacaoIndicativa: "18 anos" }),
+    criarObra("obra-vazia", { classificacaoIndicativa: "" }),
+    criarObra("obra-desconhecida", { classificacaoIndicativa: "Nao informado" }),
+  ];
+  const notificacoes = [
+    criarNotificacao("livre", { obraId: "obra-livre" }),
+    criarNotificacao("adulto", { obraId: "obra-18" }),
+    criarNotificacao("obra-ausente", { obraId: "obra-inexistente" }),
+    criarNotificacao("classificacao-vazia", { obraId: "obra-vazia" }),
+    criarNotificacao("classificacao-desconhecida", {
+      obraId: "obra-desconhecida",
+    }),
+    criarNotificacao("sem-obra", { obraId: "" }),
+  ];
+
+  assert.deepEqual(
+    ids(consultar({ notificacoes, obras, ordenacao: "antigas" })),
+    ["livre", "sem-obra"],
+  );
+  assert.deepEqual(
+    ids(
+      consultar({
+        notificacoes,
+        obras,
+        ordenacao: "antigas",
+        acessoConteudo18Liberado: true,
+      }),
+    ),
+    [
+      "livre",
+      "adulto",
+      "obra-ausente",
+      "classificacao-vazia",
+      "classificacao-desconhecida",
+      "sem-obra",
+    ],
+  );
+});
 
 test("consulta preserva todos os filtros de notificacao", () => {
   assert.match(filtroUtils, /filtro === "todas"/);
