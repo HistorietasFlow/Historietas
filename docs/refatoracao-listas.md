@@ -25,3 +25,8 @@
 
 - Extraiu o detalhe visual de estrelas, nota e data para `app/listas/components/listas-rating-detail.tsx`.
 - Manteve na página a decisão de exibir avaliação, os dados do item e todos os fluxos persistidos.
+
+## Fase 821 — Mídia das linhas de Listas
+
+- Extraiu os helpers puros de estilo para capa de obra e avatar de autor para `app/listas/lib/listas-row-media-utils.ts`.
+- Manteve na página o JSX, as iniciais, os links e os avatares específicos do Diário e dos comentários.
