@@ -14,3 +14,8 @@
 
 - Extraiu `LoadingSpinner` e seus estilos exclusivos para `app/explorar/components/explorar-loading-spinner.tsx`.
 - Manteve na página a condição de carregamento, o label traduzido e o CSS global da animação.
+
+## Fase 836 — body lock dos filtros avançados
+
+- Extraiu o lifecycle de lock e restauração de overflow para `useExplorarAdvancedFiltersBodyLock`.
+- Manteve na página o estado, os handlers, o painel e todos os fluxos de dados.
