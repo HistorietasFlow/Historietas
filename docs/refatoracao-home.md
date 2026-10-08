@@ -35,3 +35,9 @@
 - Extraiu `HomeHeroCarouselDots` para `components/HomeHeroCarouselDots.tsx`.
 - Preservou os dois consumidores desktop/mobile, labels, chaves, callback por índice e todos os estilos dos indicadores.
 - Manteve na Home o estado, a rotação automática, dados, métricas, favoritos e a composição do hero.
+
+## Fase 814 — Lifecycle do carrossel do hero
+
+- Extraiu `useHomeHeroCarousel` para `app/hooks/use-home-hero-carousel.ts`.
+- Preservou o estado inicial, os timers de 0 ms para reset e ajuste, e a rotação por intervalo de 9 segundos.
+- Manteve na Home a busca, derivação de obras, dados, métricas, favoritos e a composição do hero.

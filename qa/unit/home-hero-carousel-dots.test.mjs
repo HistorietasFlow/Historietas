@@ -54,7 +54,7 @@ test("HomeHeroCarouselDots preserva os indicadores desktop e mobile", () => {
   );
 });
 
-test("Home delega os dois indicadores sem mover o lifecycle do hero", () => {
+test("Home delega os dois indicadores e preserva o lifecycle do hero no hook", () => {
   assert.match(
     pagina,
     /import HomeHeroCarouselDots from "\.\.\/components\/HomeHeroCarouselDots";/,
@@ -84,9 +84,16 @@ test("Home delega os dois indicadores sem mover o lifecycle do hero", () => {
 
   assert.doesNotMatch(pagina, /<div style=\{desktopHeroDotsStyle\}/);
   assert.doesNotMatch(pagina, /<div style=\{mobileHeroDotsStyle\}/);
-  assert.match(pagina, /const \[heroIndex, setHeroIndex\] = useState\(0\);/);
+  assert.match(
+    pagina,
+    /import useHomeHeroCarousel from "\.\/hooks\/use-home-hero-carousel";/,
+  );
+  assert.match(
+    pagina,
+    /const \{ heroIndex, setHeroIndex \} = useHomeHeroCarousel\(\s*termoBusca,\s*obrasHero\.length,?\s*\);/,
+  );
+  assert.doesNotMatch(pagina, /const \[heroIndex, setHeroIndex\] = useState\(0\);/);
   assert.match(pagina, /const obrasHero = useMemo/);
-  assert.match(pagina, /setHeroIndex\(\(indexAtual\) => \(indexAtual \+ 1\) % obrasHero\.length\)/);
   assert.match(pagina, /const desktopHeroFooterStyle: CSSProperties/);
   assert.match(pagina, /const mobileHeroFooterStyle: CSSProperties/);
   assert.match(pagina, /alternarHeroFavorito/);
