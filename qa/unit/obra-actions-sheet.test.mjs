@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const hookAcoes = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-actions-sheet.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("sheet preserva dialogo, tags, metricas e estados visuais", () => {
   for (const trecho of [
@@ -61,13 +68,24 @@ test("sheet preserva dialogo, tags, metricas e estados visuais", () => {
   );
 });
 
-test("cliente preserva estado, foco, wrappers e denuncia", () => {
+test("hook preserva lifecycle e cliente preserva wrappers e denuncia", () => {
   for (const trecho of [
     "acoesObraAbertas",
     "acoesObraDialogRef",
+    "focoAntesAcoesObraRef",
+    "useObraDialogInitialFocus(acoesObraAbertas, acoesObraDialogRef)",
+    "function abrirAcoesObra()",
+    "function fecharAcoesObra(restaurarFoco = true)",
+    "function alternarAcoesObra()",
+  ]) {
+    assert.ok(hookAcoes.includes(trecho), trecho);
+  }
+
+  for (const trecho of [
     "manterFocoNoDialogo",
     "abrirDenunciaObraAtual",
     "fecharAcoesObra(false)",
+    "useObraActionsSheet()",
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
   }

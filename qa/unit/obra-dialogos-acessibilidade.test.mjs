@@ -17,6 +17,13 @@ const hookFocoInicialDialogo = readFileSync(
   ),
   "utf8",
 );
+const hookAcoes = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-actions-sheet.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const obraStyleUtils = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-style-utils.ts", import.meta.url),
   "utf8",
@@ -92,7 +99,7 @@ test("comentarios classificacao e acoes recebem foco inicial ao abrir", () => {
     /useObraDialogInitialFocus\(\s*painelClassificacaoAberto,\s*classificacaoDialogRef,\s*\)/,
   );
   assert.match(
-    paginaObra,
+    hookAcoes,
     /useObraDialogInitialFocus\(acoesObraAbertas, acoesObraDialogRef\)/,
   );
 
@@ -146,7 +153,7 @@ test("fechamento normal restaura foco ao elemento que abriu o dialog", () => {
     /focoAntesClassificacaoRef\.current = obterElementoComFocoAtual\(\)/,
   );
   assert.match(
-    bloco,
+    hookAcoes,
     /focoAntesAcoesObraRef\.current = obterElementoComFocoAtual\(\)/,
   );
   assert.match(
@@ -155,7 +162,11 @@ test("fechamento normal restaura foco ao elemento que abriu o dialog", () => {
   );
 
   const restauracoes = bloco.match(/restaurarFocoAnterior\(focoAnterior\)/g) || [];
-  assert.equal(restauracoes.length, 3);
+  assert.equal(restauracoes.length, 2);
+  assert.match(
+    hookAcoes,
+    /const focoAnterior = focoAntesAcoesObraRef\.current;\s*focoAntesAcoesObraRef\.current = null;\s*setAcoesObraAbertas\(false\);\s*if \(restaurarFoco\) \{\s*restaurarFocoAnterior\(focoAnterior\);/,
+  );
 });
 
 test("abrir denuncia pelo menu nao rouba foco do modal seguinte", () => {
