@@ -34,3 +34,9 @@
 
 - Moveu `notificacoesPageCss` para `app/notificacoes/lib/notificacoes-page-css.ts` sem alterar o conteúdo do template literal.
 - Manteve os dois consumidores `<style>` e `historietasThemeCss` na página.
+
+## Fase 805 — Helpers de navegação das notificações
+
+- Moveu os helpers puros de links de leitura, perfil, diário e notificação para `app/notificacoes/lib/notificacoes-navigation-utils.ts`.
+- Preservou a ordem de fallbacks, a validação de links internos e os encodings de parâmetros de rota.
+- Manteve em `app/notificacoes/page.tsx` router, JSX, handlers, dados resolvidos, autenticação, loaders, estados e Supabase.
