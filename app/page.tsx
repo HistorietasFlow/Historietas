@@ -3,9 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Children, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
+import HomeCarouselRow from "../components/HomeCarouselRow";
 import type { HistorietasLanguage } from "../lib/i18n";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
@@ -4228,7 +4229,7 @@ export default function Home() {
               subtitle="Continue do ponto em que parou."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasParaContinuar.map((obra) => (
                 <MobileObraLocalCard
                   key={`continuar-${obra.id}`}
@@ -4237,7 +4238,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4248,7 +4249,7 @@ export default function Home() {
               subtitle={`${totalMinhaListaHome} na lista para acessar rápido.`}
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasMinhaLista.map((obra) => (
                 <MobileObraLocalCard
                   key={`minha-lista-${obra.id}`}
@@ -4265,7 +4266,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4276,7 +4277,7 @@ export default function Home() {
               subtitle="Perfis que dão vida ao catálogo."
             />
 
-            <CarouselRow isDesktop={isDesktop} variant="autor">
+            <HomeCarouselRow isDesktop={isDesktop} variant="autor">
               {autoresParaConhecer.map((autor) => (
                 <MobileAutorCard
                   key={`autor-${autor.chave}`}
@@ -4285,7 +4286,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4300,7 +4301,7 @@ export default function Home() {
               }
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasRecomendadas.map((obra) => (
                 <MobileObraLocalCard
                   key={`recomendadas-${obra.id}`}
@@ -4317,7 +4318,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4332,7 +4333,7 @@ export default function Home() {
               }`}
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasPublicadasFiltradas.map((obra) => (
                 <MobileObraLocalCard
                   key={obra.id}
@@ -4341,7 +4342,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4352,7 +4353,7 @@ export default function Home() {
               subtitle="Capítulos novos para acompanhar sem perder o ritmo."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasComNovosCapitulos.map((obra) => (
                 <MobileObraLocalCard
                   key={`novos-capitulos-${obra.id}`}
@@ -4361,7 +4362,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4372,7 +4373,7 @@ export default function Home() {
               subtitle="Na lista da comunidade nesta fase."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasMaisCurtidas.map((obra) => (
                 <MobileObraLocalCard
                   key={`mais-curtidas-${obra.id}`}
@@ -4381,7 +4382,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4392,7 +4393,7 @@ export default function Home() {
               subtitle="Histórias que estão puxando conversa."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasMaisComentadas.map((obra) => (
                 <MobileObraLocalCard
                   key={`mais-comentadas-${obra.id}`}
@@ -4401,7 +4402,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4412,7 +4413,7 @@ export default function Home() {
               subtitle="Histórias com material extra para abrir depois."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasComArquivoAnexado.map((obra) => (
                 <MobileObraLocalCard
                   key={`arquivo-anexado-${obra.id}`}
@@ -4421,7 +4422,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4432,7 +4433,7 @@ export default function Home() {
               subtitle="Obras curtas para entrar rápido no universo."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {leiturasRapidas.map((obra) => (
                 <MobileObraLocalCard
                   key={`leituras-rapidas-${obra.id}`}
@@ -4441,7 +4442,7 @@ export default function Home() {
                   isDesktop={isDesktop}
                 />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4450,11 +4451,11 @@ export default function Home() {
             <SectionHeader title="Catálogo" subtitle="Obras reais publicadas na plataforma." />
 
             {obrasFiltradas.length > 0 ? (
-              <CarouselRow isDesktop={isDesktop}>
+              <HomeCarouselRow isDesktop={isDesktop}>
                 {obrasFiltradas.map((obra) => (
                   <MobileObraCard key={obra.titulo} obra={obra} isDesktop={isDesktop} />
                 ))}
-              </CarouselRow>
+              </HomeCarouselRow>
             ) : (
               <EmptySearch />
             )}
@@ -4468,11 +4469,11 @@ export default function Home() {
               subtitle="Mundos, poderes e mistérios para explorar."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasFantasiaPoderes.map((obra) => (
                 <MobileObraCard key={`fantasia-${obra.titulo}`} obra={obra} isDesktop={isDesktop} />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4483,11 +4484,11 @@ export default function Home() {
               subtitle="Atmosfera sombria, tensão e mistério."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasTerrorSuspense.map((obra) => (
                 <MobileObraCard key={`terror-${obra.titulo}`} obra={obra} isDesktop={isDesktop} />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4498,11 +4499,11 @@ export default function Home() {
               subtitle="Relações intensas e escolhas difíceis."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasRomanceDrama.map((obra) => (
                 <MobileObraCard key={`romance-${obra.titulo}`} obra={obra} isDesktop={isDesktop} />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4513,11 +4514,11 @@ export default function Home() {
               subtitle="Conflitos, disputas e personagens intensos."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasAcaoRivalidades.map((obra) => (
                 <MobileObraCard key={`acao-${obra.titulo}`} obra={obra} isDesktop={isDesktop} />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4528,11 +4529,11 @@ export default function Home() {
               subtitle="Futuro, sistemas e universos alternativos."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasScifiCodigo.map((obra) => (
                 <MobileObraCard key={`scifi-${obra.titulo}`} obra={obra} isDesktop={isDesktop} />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4543,11 +4544,11 @@ export default function Home() {
               subtitle="Obras chegando ao catálogo em breve."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasEmBreve.map((obra) => (
                 <MobileObraCard key={`em-breve-${obra.titulo}`} obra={obra} isDesktop={isDesktop} />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
 
@@ -4558,11 +4559,11 @@ export default function Home() {
               subtitle="Obras reais disponíveis para leitura."
             />
 
-            <CarouselRow isDesktop={isDesktop}>
+            <HomeCarouselRow isDesktop={isDesktop}>
               {obrasFiltradas.map((obra) => (
                 <MobileObraCard key={`destaque-${obra.titulo}`} obra={obra} isDesktop={isDesktop} />
               ))}
-            </CarouselRow>
+            </HomeCarouselRow>
           </section>
         )}
       </div>
@@ -5010,101 +5011,6 @@ function EmptySearch() {
     >
       Nenhuma obra encontrada
     </p>
-  );
-}
-
-function CarouselRow({
-  children,
-  isDesktop,
-  variant = "obra",
-}: {
-  children: ReactNode;
-  isDesktop: boolean;
-  variant?: "obra" | "autor";
-}) {
-  const rowRef = useRef<HTMLDivElement | null>(null);
-  const totalItems = Children.count(children);
-  const precisaDeCarrossel = isDesktop && totalItems > 3;
-
-  const listStyle = !isDesktop
-    ? variant === "autor"
-      ? authorListStyle
-      : storyListStyle
-    : precisaDeCarrossel
-      ? variant === "autor"
-        ? desktopAuthorListStyle
-        : desktopStoryListStyle
-      : variant === "autor"
-        ? desktopStaticAuthorListStyle
-        : desktopStaticStoryListStyle;
-
-  useEffect(() => {
-    const row = rowRef.current;
-
-    if (!row) {
-      return;
-    }
-
-    const voltarParaInicio = () => {
-      row.scrollLeft = 0;
-    };
-
-    voltarParaInicio();
-
-    const frame = window.requestAnimationFrame(voltarParaInicio);
-    const timer = window.setTimeout(voltarParaInicio, 90);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
-    };
-  }, [isDesktop, precisaDeCarrossel, totalItems, variant]);
-
-  function rolarCarrossel(direcao: -1 | 1) {
-    rowRef.current?.scrollBy({
-      left: direcao * 450,
-      behavior: "smooth",
-    });
-  }
-
-  if (!isDesktop || !precisaDeCarrossel) {
-    return (
-      <div ref={rowRef} style={listStyle}>
-        {children}
-      </div>
-    );
-  }
-
-  return (
-    <div style={desktopCarouselShellStyle}>
-      <button
-        type="button"
-        onClick={() => rolarCarrossel(-1)}
-        style={desktopCarouselArrowLeftStyle}
-        aria-label="Rolar carrossel para a esquerda"
-      >
-        <span
-          aria-hidden="true"
-          style={desktopCarouselArrowLeftIconStyle}
-        />
-      </button>
-
-      <div ref={rowRef} style={listStyle}>
-        {children}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => rolarCarrossel(1)}
-        style={desktopCarouselArrowRightStyle}
-        aria-label="Rolar carrossel para a direita"
-      >
-        <span
-          aria-hidden="true"
-          style={desktopCarouselArrowRightIconStyle}
-        />
-      </button>
-    </div>
   );
 }
 
@@ -6620,141 +6526,6 @@ const sectionTitleStyle: CSSProperties = {
   maxWidth: "100%",
   textAlign: "center",
   ...safeTextStyle,
-};
-
-const storyListStyle: CSSProperties = {
-  display: "flex",
-  gap: "14px",
-  width: "calc(100% + 24px)",
-  maxWidth: "calc(100% + 24px)",
-  minWidth: 0,
-  boxSizing: "border-box",
-  overflowX: "auto",
-  overflowY: "hidden",
-  padding: "2px 12px 8px",
-  margin: "0 -12px",
-  scrollSnapType: "x mandatory",
-  scrollPaddingLeft: "12px",
-  scrollPaddingRight: "12px",
-  scrollbarWidth: "none",
-  msOverflowStyle: "none",
-};
-
-const desktopCarouselShellStyle: CSSProperties = {
-  position: "relative",
-  width: "100%",
-  maxWidth: "100%",
-  overflow: "visible",
-  boxSizing: "border-box",
-};
-
-const desktopStoryListStyle: CSSProperties = {
-  ...storyListStyle,
-  gap: "18px",
-  width: "100vw",
-  maxWidth: "100vw",
-  marginLeft: "calc(50% - 50vw)",
-  marginRight: "calc(50% - 50vw)",
-  padding:
-    "6px max(24px, calc((100vw - 1760px) / 2)) 20px",
-  scrollPaddingLeft: "max(24px, calc((100vw - 1760px) / 2))",
-  scrollPaddingRight: "max(24px, calc((100vw - 1760px) / 2))",
-};
-
-const desktopStaticStoryListStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, 360px)",
-  justifyContent: "space-between",
-  gap: "18px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "6px 0 10px",
-  margin: 0,
-  boxSizing: "border-box",
-  overflow: "visible",
-};
-
-const desktopCarouselArrowBaseStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  transform: "translateY(-50%)",
-  zIndex: 4,
-  width: "52px",
-  height: "96px",
-  padding: 0,
-  borderRadius: 0,
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  boxShadow: "none",
-  outline: "none",
-  WebkitTapHighlightColor: "transparent",
-};
-
-const desktopCarouselArrowLeftStyle: CSSProperties = {
-  ...desktopCarouselArrowBaseStyle,
-  left: "-10px",
-};
-
-const desktopCarouselArrowRightStyle: CSSProperties = {
-  ...desktopCarouselArrowBaseStyle,
-  right: "-10px",
-};
-
-const desktopCarouselArrowIconBaseStyle: CSSProperties = {
-  display: "block",
-  width: "18px",
-  height: "18px",
-  borderTop: "4px solid #FFFFFF",
-  borderRight: "4px solid #FFFFFF",
-  filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.92))",
-  pointerEvents: "none",
-  boxSizing: "border-box",
-};
-
-const desktopCarouselArrowLeftIconStyle: CSSProperties = {
-  ...desktopCarouselArrowIconBaseStyle,
-  transform: "rotate(-135deg)",
-};
-
-const desktopCarouselArrowRightIconStyle: CSSProperties = {
-  ...desktopCarouselArrowIconBaseStyle,
-  transform: "rotate(45deg)",
-};
-
-const authorListStyle: CSSProperties = {
-  ...storyListStyle,
-  gap: "12px",
-  padding: "2px 12px 8px",
-};
-
-const desktopAuthorListStyle: CSSProperties = {
-  ...authorListStyle,
-  gap: "16px",
-  width: "100vw",
-  maxWidth: "100vw",
-  marginLeft: "calc(50% - 50vw)",
-  marginRight: "calc(50% - 50vw)",
-  padding:
-    "6px max(24px, calc((100vw - 1760px) / 2)) 18px",
-  scrollPaddingLeft: "max(24px, calc((100vw - 1760px) / 2))",
-  scrollPaddingRight: "max(24px, calc((100vw - 1760px) / 2))",
-};
-
-const desktopStaticAuthorListStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(310px, 1fr))",
-  gap: "16px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "6px 0 8px",
-  margin: 0,
-  boxSizing: "border-box",
-  overflow: "visible",
 };
 
 const authorCardStyle: CSSProperties = {
