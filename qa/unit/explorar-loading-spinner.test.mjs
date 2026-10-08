@@ -54,7 +54,10 @@ test("Explorar delega somente o spinner e preserva suas fronteiras", () => {
     /<LoadingSpinner label=\{traduzirTextoExplorar\("Carregando Explorar", language\)\} \/>/,
   );
   assert.match(pagina, /if \(!dadosExplorarCarregados\) \{/);
-  assert.match(pagina, /const explorarBuscaToggleCss = `/);
+  assert.match(
+    pagina,
+    /import \{ explorarBuscaToggleCss \} from "\.\/lib\/explorar-search-toggle-css";/,
+  );
   assert.match(
     pagina,
     /import \{ themePageCss \} from "\.\/lib\/explorar-page-css";/,
