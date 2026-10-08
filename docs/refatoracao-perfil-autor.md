@@ -4,3 +4,8 @@
 
 - Extraiu o estado e o lifecycle responsivo para `usePerfilAutorDesktopMode`.
 - Preservou estado inicial, atualização síncrona, breakpoint e listener de `resize`.
+
+## Fase 839 — mensagem de ação
+
+- Extraiu o estado e lifecycle de expiração para `usePerfilAutorActionMessage`.
+- Manteve as mensagens de domínio, limpezas manuais e o toast na página.
