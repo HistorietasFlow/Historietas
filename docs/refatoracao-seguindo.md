@@ -19,3 +19,8 @@
 
 - Extraiu o bridge de traduções dinâmicas, incluindo tabela, helpers e lifecycle do MutationObserver.
 - Preservou os dois mounts, a raiz exclusiva de Seguindo e os guards/restaurações do DOM.
+
+## Fase 832 — lock do painel de ordenação
+
+- Extraiu o lifecycle de lock/restauração do `document.body` para `useSeguindoSortingSheetBodyLock`.
+- Preservou guard, valores anteriores, ordem de lock/restauração e dependência do painel de ordenação.
