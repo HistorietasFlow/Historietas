@@ -71,9 +71,16 @@ test("Explorar mantém o único consumidor e as fronteiras da busca", () => {
   );
 
   const inicioLoading = pagina.indexOf("if (!dadosExplorarCarregados) {");
-  const fimLoading = pagina.indexOf("return (", inicioLoading);
+  const inicioRenderNormal = pagina.indexOf(
+    '<main style={criarExplorarPageStyle(pageThemeStyle)}>',
+    inicioLoading,
+  );
+
+  assert.notEqual(inicioLoading, -1);
+  assert.notEqual(inicioRenderNormal, -1);
+
   assert.doesNotMatch(
-    pagina.slice(inicioLoading, fimLoading),
+    pagina.slice(inicioLoading, inicioRenderNormal),
     /explorarBuscaToggleCss/,
   );
 
