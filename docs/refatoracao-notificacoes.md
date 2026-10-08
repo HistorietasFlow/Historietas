@@ -40,3 +40,9 @@
 - Moveu os helpers puros de links de leitura, perfil, diário e notificação para `app/notificacoes/lib/notificacoes-navigation-utils.ts`.
 - Preservou a ordem de fallbacks, a validação de links internos e os encodings de parâmetros de rota.
 - Manteve em `app/notificacoes/page.tsx` router, JSX, handlers, dados resolvidos, autenticação, loaders, estados e Supabase.
+
+## Fase 806 — Helpers de apresentação semântica das notificações
+
+- Moveu os helpers puros de rótulos, ícones, autores e cartões sociais para `app/notificacoes/lib/notificacoes-display-utils.ts`.
+- Preservou as heurísticas de comunidade, as prioridades visuais e todos os textos de apresentação.
+- Manteve na página a normalização, o avatar, JSX, estados, filtros, autenticação, carregadores e mutações Supabase.
