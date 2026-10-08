@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
 import HomeCarouselRow from "../components/HomeCarouselRow";
+import HomeSectionHeader from "../components/HomeSectionHeader";
 import useHomeDesktopMode from "./hooks/use-home-desktop-mode";
 import type { HistorietasLanguage } from "../lib/i18n";
 import { supabase } from "../lib/supabase/client";
@@ -4196,7 +4197,7 @@ export default function Home() {
 
         {obrasParaContinuar.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Continuar lendo"
               subtitle="Continue do ponto em que parou."
             />
@@ -4216,7 +4217,7 @@ export default function Home() {
 
         {totalMinhaListaHome > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Minha lista"
               subtitle={`${totalMinhaListaHome} na lista para acessar rápido.`}
             />
@@ -4244,7 +4245,7 @@ export default function Home() {
 
         {autoresParaConhecer.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Autores para conhecer"
               subtitle="Perfis que dão vida ao catálogo."
             />
@@ -4264,7 +4265,7 @@ export default function Home() {
 
         {totalRecomendacoesHome > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Recomendações para você"
               subtitle={
                 temasRecomendadosUsuario.size > 0
@@ -4296,7 +4297,7 @@ export default function Home() {
 
         {obrasPublicadasFiltradas.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Publicações recentes"
               subtitle={`${obrasPublicadasFiltradas.length} ${
                 obrasPublicadasFiltradas.length === 1
@@ -4320,7 +4321,7 @@ export default function Home() {
 
         {obrasComNovosCapitulos.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Novos capítulos"
               subtitle="Capítulos novos para acompanhar sem perder o ritmo."
             />
@@ -4340,7 +4341,7 @@ export default function Home() {
 
         {obrasMaisCurtidas.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Mais curtidas"
               subtitle="Na lista da comunidade nesta fase."
             />
@@ -4360,7 +4361,7 @@ export default function Home() {
 
         {obrasMaisComentadas.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Mais comentadas"
               subtitle="Histórias que estão puxando conversa."
             />
@@ -4380,7 +4381,7 @@ export default function Home() {
 
         {obrasComArquivoAnexado.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Extras e arquivos"
               subtitle="Histórias com material extra para abrir depois."
             />
@@ -4400,7 +4401,7 @@ export default function Home() {
 
         {leiturasRapidas.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Para ler agora"
               subtitle="Obras curtas para entrar rápido no universo."
             />
@@ -4420,7 +4421,7 @@ export default function Home() {
 
         {(obrasFiltradas.length > 0 || Boolean(termoBusca)) && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader title="Catálogo" subtitle="Obras reais publicadas na plataforma." />
+            <HomeSectionHeader title="Catálogo" subtitle="Obras reais publicadas na plataforma." />
 
             {obrasFiltradas.length > 0 ? (
               <HomeCarouselRow isDesktop={isDesktop}>
@@ -4436,7 +4437,7 @@ export default function Home() {
 
         {obrasFantasiaPoderes.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Fantasia e poderes"
               subtitle="Mundos, poderes e mistérios para explorar."
             />
@@ -4451,7 +4452,7 @@ export default function Home() {
 
         {obrasTerrorSuspense.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Terror e suspense"
               subtitle="Atmosfera sombria, tensão e mistério."
             />
@@ -4466,7 +4467,7 @@ export default function Home() {
 
         {obrasRomanceDrama.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Romance e drama"
               subtitle="Relações intensas e escolhas difíceis."
             />
@@ -4481,7 +4482,7 @@ export default function Home() {
 
         {obrasAcaoRivalidades.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Ação e rivalidades"
               subtitle="Conflitos, disputas e personagens intensos."
             />
@@ -4496,7 +4497,7 @@ export default function Home() {
 
         {obrasScifiCodigo.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Sci-fi e códigos"
               subtitle="Futuro, sistemas e universos alternativos."
             />
@@ -4511,7 +4512,7 @@ export default function Home() {
 
         {obrasEmBreve.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Em breve na Historietas"
               subtitle="Obras chegando ao catálogo em breve."
             />
@@ -4526,7 +4527,7 @@ export default function Home() {
 
         {obrasFiltradas.length > 0 && (
           <section style={isDesktop ? desktopLastSectionStyle : lastSectionStyle}>
-            <SectionHeader
+            <HomeSectionHeader
               title="Obras em destaque"
               subtitle="Obras reais disponíveis para leitura."
             />
@@ -4540,19 +4541,6 @@ export default function Home() {
         )}
       </div>
     </main>
-  );
-}
-
-function SectionHeader({
-  title,
-}: {
-  title: string;
-  subtitle?: string;
-}) {
-  return (
-    <div style={sectionHeaderStyle}>
-      <h2 style={sectionTitleStyle}>{title}</h2>
-    </div>
   );
 }
 
@@ -6476,28 +6464,6 @@ const desktopLastSectionStyle: CSSProperties = {
   ...lastSectionStyle,
   marginTop: "30px",
   paddingBottom: "76px",
-};
-
-const sectionHeaderStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  justifyItems: "center",
-  gap: "6px",
-  marginBottom: "14px",
-  maxWidth: "100%",
-  minWidth: 0,
-  textAlign: "center",
-};
-
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "clamp(24px, 4vw, 30px)",
-  lineHeight: 1.05,
-  ...listaPageTitleTypographyStyle,
-  maxWidth: "100%",
-  textAlign: "center",
-  ...safeTextStyle,
 };
 
 const authorCardStyle: CSSProperties = {

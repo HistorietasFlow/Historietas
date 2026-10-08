@@ -12,3 +12,9 @@
 - Extraiu `useHomeDesktopMode` para `app/hooks/use-home-desktop-mode.ts`.
 - Preservou o estado inicial `false`, o breakpoint de 1024 px, o timer inicial de 0 ms e os listeners moderno e legado.
 - Manteve na Home todos os consumidores visuais de `isDesktop`.
+
+## Fase 810 — Cabeçalho de seção da Home
+
+- Extraiu `HomeSectionHeader` para `components/HomeSectionHeader.tsx`.
+- Preservou o contrato de `title` e `subtitle`, sem renderizar o subtítulo como já ocorria.
+- Manteve na Home os 18 consumidores, as seções e os estilos tipográficos compartilhados.
