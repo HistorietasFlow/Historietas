@@ -45,6 +45,7 @@ import {
 } from "../../lib/storageUploads";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
+import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -3010,7 +3011,7 @@ function PerfilAutorPageContent() {
       versao: 0,
     });
   const versaoConsultaAutenticacaoPerfilRef = useRef(0);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = usePerfilAutorDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const {
     usuarioId: usuarioNotificacoesId,
@@ -3034,19 +3035,6 @@ function PerfilAutorPageContent() {
       window.clearTimeout(timerMensagemAcao);
     };
   }, [mensagemAcao]);
-
-  useEffect(() => {
-    function atualizarTelaDesktop() {
-      setIsDesktop(window.innerWidth >= 1024);
-    }
-
-    atualizarTelaDesktop();
-    window.addEventListener("resize", atualizarTelaDesktop);
-
-    return () => {
-      window.removeEventListener("resize", atualizarTelaDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     let componenteAtivo = true;
