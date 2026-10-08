@@ -30,3 +30,8 @@
 
 - Extraiu os helpers puros de estilo para capa de obra e avatar de autor para `app/listas/lib/listas-row-media-utils.ts`.
 - Manteve na página o JSX, as iniciais, os links e os avatares específicos do Diário e dos comentários.
+
+## Fase 822 — Mensagem de ação de Listas
+
+- Extraiu `useListasActionMessage` para `app/listas/hooks/use-listas-action-message.ts`.
+- Preservou o estado inicial vazio, o timer de 2600 ms, o cleanup e o setter real; mensagens, handlers e o status visual permanecem na página.
