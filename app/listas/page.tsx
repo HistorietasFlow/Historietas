@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, TouchEvent } from "react";
 import { createPortal } from "react-dom";
 import { useListasDesktopMode } from "./hooks/use-listas-desktop-mode";
+import ListasRatingDetail from "./components/listas-rating-detail";
 import {
   compactarNumero,
   formatarDataCurta,
@@ -2425,50 +2426,6 @@ function textoCategorias(categorias: CategoriaPerfil[]) {
     .join(" • ");
 }
 
-function renderizarEstrelasAvaliacao(nota: number, data: string) {
-  const notaNormalizada = Math.max(
-    0,
-    Math.min(5, Math.round(nota * 2) / 2),
-  );
-
-  return (
-    <span
-      style={ratingDetailStyle}
-      aria-label={`${formatarNotaListas(notaNormalizada)} de 5 estrelas`}
-    >
-      <span style={ratingStarsStyle} aria-hidden="true">
-        {Array.from({ length: 5 }, (_, indice) => {
-          const preenchimento = Math.max(
-            0,
-            Math.min(1, notaNormalizada - indice),
-          );
-
-          return (
-            <span key={indice} style={ratingStarSlotStyle}>
-              <span style={ratingStarEmptyStyle}>★</span>
-
-              {preenchimento > 0 && (
-                <span
-                  style={{
-                    ...ratingStarFillClipStyle,
-                    width: `${preenchimento * 100}%`,
-                  }}
-                >
-                  <span style={ratingStarFilledStyle}>★</span>
-                </span>
-              )}
-            </span>
-          );
-        })}
-      </span>
-
-      <span>
-        {formatarNotaListas(notaNormalizada)} • {formatarDataCurta(data)}
-      </span>
-    </span>
-  );
-}
-
 function textoSecundarioItem(
   item: ItemObraLista,
   categoria: CategoriaPerfil,
@@ -4349,7 +4306,7 @@ function ListasUniversaisContent() {
     const obra = item.obra;
     const detalheVisivel =
       categoriaAtual === "avaliacoes"
-        ? renderizarEstrelasAvaliacao(item.nota, item.data)
+        ? <ListasRatingDetail nota={item.nota} data={item.data} />
         : categoriaAtual === "tudo"
           ? formatarLeituraMesAno(item.ultimaLeituraEm || "")
           : textoSecundarioItem(item, categoriaAtual);
@@ -5989,54 +5946,6 @@ const rowDetailStyle: CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-};
-
-const ratingDetailStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "7px",
-  maxWidth: "100%",
-};
-
-const ratingStarsStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "1px",
-  flex: "0 0 auto",
-  fontSize: "14px",
-  lineHeight: 1,
-};
-
-const ratingStarSlotStyle: CSSProperties = {
-  position: "relative",
-  display: "inline-block",
-  width: "1em",
-  height: "1em",
-  lineHeight: 1,
-};
-
-const ratingStarEmptyStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  color: "rgba(255,255,255,0.22)",
-  lineHeight: 1,
-};
-
-const ratingStarFillClipStyle: CSSProperties = {
-  position: "absolute",
-  left: 0,
-  top: 0,
-  height: "100%",
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  lineHeight: 1,
-};
-
-const ratingStarFilledStyle: CSSProperties = {
-  display: "block",
-  width: "1em",
-  color: "#F6C453",
-  lineHeight: 1,
 };
 
 const rowOptionsButtonStyle: CSSProperties = {

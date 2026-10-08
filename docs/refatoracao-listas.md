@@ -20,3 +20,8 @@
 
 - Extraiu os normalizadores puros de modo, origem, categoria e ordenação para `app/listas/lib/listas-route-utils.ts`.
 - Manteve os tipos locais, `useSearchParams`, consumidores e todos os fluxos da página em `app/listas/page.tsx`.
+
+## Fase 820 — Detalhe de avaliação de Listas
+
+- Extraiu o detalhe visual de estrelas, nota e data para `app/listas/components/listas-rating-detail.tsx`.
+- Manteve na página a decisão de exibir avaliação, os dados do item e todos os fluxos persistidos.
