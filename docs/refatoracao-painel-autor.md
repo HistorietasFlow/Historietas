@@ -5,6 +5,10 @@
 - Extraído `usePainelAutorDesktopMode` para lifecycle responsivo próprio.
 - A página mantém todos os consumidores visuais de `isDesktop` e as responsabilidades de autenticação, dados, storage e filtros.
 
+## Fase 855 — CSS global
+
+- Extraído `painelAutorPageCss` para módulo próprio, preservando os dois consumidores e a ordem `historietasThemeCss → painelAutorPageCss`.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
