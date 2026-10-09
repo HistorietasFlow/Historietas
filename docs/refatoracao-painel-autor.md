@@ -57,6 +57,10 @@
 
 - Extraídos `lerListaIdsStoragePainel` e `salvarColecaoAposExcluirPainel`, preservando parâmetro padrão, JSON, normalização, erros e consumidores.
 
+## Fase 868 — identificação de obras e coleções
+
+- Extraídos `obterIdentificadoresObraPainel`, `colecaoTemObraPainel` e `removerObraDaColecaoPainel`, preservando normalização, deduplicação e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

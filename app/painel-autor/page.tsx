@@ -37,6 +37,11 @@ import {
   salvarJsonStorageUsuarioPainel,
   salvarListaIdsUsuarioPainel,
 } from "./lib/painel-autor-storage-utils";
+import {
+  colecaoTemObraPainel,
+  obterIdentificadoresObraPainel,
+  removerObraDaColecaoPainel,
+} from "./lib/painel-autor-collection-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
@@ -722,48 +727,6 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
         ? Math.max(0, Math.round(obra.totalLidosPainel))
         : undefined,
   };
-}
-
-function obterIdentificadoresObraPainel(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
-) {
-  return Array.from(
-    new Set(
-      [
-        obra.id,
-        obra.slug,
-        criarSlugBase(obra.titulo),
-        normalizarTexto(obra.titulo),
-      ]
-        .map((valor) => valor.trim())
-        .filter(Boolean)
-    )
-  );
-}
-
-function colecaoTemObraPainel(
-  colecao: string[],
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
-) {
-  const itens = new Set(
-    colecao
-      .map((item) => item.trim())
-      .filter(Boolean)
-  );
-
-  return obterIdentificadoresObraPainel(obra).some((identificador) =>
-    itens.has(identificador)
-  );
-}
-
-
-function removerObraDaColecaoPainel(
-  colecao: string[],
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
-) {
-  const identificadoresObra = new Set(obterIdentificadoresObraPainel(obra));
-
-  return colecao.filter((id) => !identificadoresObra.has(id.trim()));
 }
 
 function limparReferenciasLocaisObraExcluidaPainel(
