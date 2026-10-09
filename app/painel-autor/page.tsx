@@ -15,6 +15,8 @@ import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
 import {
+  filtrarObrasDoUsuarioPainel,
+  marcarObrasComDonoPainel,
   normalizarIdUsuarioPainel,
   obraPertenceAoUsuarioPainel,
 } from "./lib/painel-autor-ownership-utils";
@@ -732,27 +734,6 @@ async function removerReferenciasSupabaseObraExcluidaPainel(
   } catch {
     // A exclusão principal da obra continua mesmo se a limpeza social falhar.
   }
-}
-
-function filtrarObrasDoUsuarioPainel(obras: ObraLocal[], userId: string) {
-  if (!userId.trim()) {
-    return [] as ObraLocal[];
-  }
-
-  return obras.filter((obra) => obraPertenceAoUsuarioPainel(obra, userId));
-}
-
-function marcarObrasComDonoPainel(obras: ObraLocal[], userId: string) {
-  const usuarioId = userId.trim();
-
-  if (!usuarioId) {
-    return [] as ObraLocal[];
-  }
-
-  return obras.map((obra) => ({
-    ...obra,
-    autorId: obra.autorId?.trim() || usuarioId,
-  }));
 }
 
 function filtrarListaPorObrasDoUsuario(listaIds: string[], obrasUsuario: ObraLocal[]) {
