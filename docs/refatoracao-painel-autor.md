@@ -77,6 +77,10 @@
 
 - Extraído `criarHrefLeituraCapituloPainel`, preservando validações, encoding, URLs e fallbacks.
 
+## Fase 873 — categoria de arquivo Supabase
+
+- Extraído `normalizarCategoriaArquivoSupabase`, preservando categorias explícitas, verificações de MIME, ordem e fallback `outro`.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

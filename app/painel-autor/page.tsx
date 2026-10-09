@@ -14,6 +14,7 @@ import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
+import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import {
   formatarGeneroPainelAutor,
   obterTimestamp,
@@ -770,40 +771,6 @@ function filtrarListaPorObrasDoUsuario(listaIds: string[], obrasUsuario: ObraLoc
   });
 }
 
-
-function normalizarCategoriaArquivoSupabase(
-  categoria: string | null,
-  tipo: string | null
-): ArquivoObraLocal["categoria"] {
-  if (
-    categoria === "texto" ||
-    categoria === "documento" ||
-    categoria === "imagem" ||
-    categoria === "outro"
-  ) {
-    return categoria;
-  }
-
-  const tipoNormalizado = (tipo || "").toLowerCase();
-
-  if (tipoNormalizado.startsWith("image/")) {
-    return "imagem";
-  }
-
-  if (
-    tipoNormalizado.includes("pdf") ||
-    tipoNormalizado.includes("document") ||
-    tipoNormalizado.includes("word")
-  ) {
-    return "documento";
-  }
-
-  if (tipoNormalizado.startsWith("text/") || tipoNormalizado.includes("markdown")) {
-    return "texto";
-  }
-
-  return "outro";
-}
 
 function criarChaveInteracao(obraId: string, capituloId: string) {
   return `${obraId}::${capituloId}`;
