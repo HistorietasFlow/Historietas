@@ -46,3 +46,16 @@ export function removerObraDaColecaoPainel(
 
   return colecao.filter((id) => !identificadoresObra.has(id.trim()));
 }
+
+export function filtrarListaPorObrasDoUsuario(
+  listaIds: string[],
+  obrasUsuario: ObraPainelIdentificavel[]
+) {
+  return listaIds.filter((id) => {
+    const idLimpo = id.trim();
+
+    return obrasUsuario.some((obra) =>
+      obterIdentificadoresObraPainel(obra).includes(idLimpo)
+    );
+  });
+}

@@ -93,6 +93,10 @@
 
 - Extraídos `filtrarObrasDoUsuarioPainel` e `marcarObrasComDonoPainel`, preservando guardas, propriedade, preenchimento de autor e identidade dos objetos.
 
+## Fase 877 — listas de obras do usuário
+
+- Extraído `filtrarListaPorObrasDoUsuario`, preservando trim, comparação por identificadores, ordem e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
