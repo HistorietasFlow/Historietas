@@ -47,7 +47,11 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
   );
 
   assert.match(pagina, /const safeTextStyle: CSSProperties/);
-  assert.match(pagina, /function LoadingSpinner\(/);
+  assert.match(
+    pagina,
+    /import \{ LoadingSpinner \} from "\.\/components\/em-alta-loading-spinner";/,
+  );
+  assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.match(pagina, /function EmAltaLanguageBridge\(\)/);
   assert.equal((pagina.match(/<EmAltaLanguageBridge \/>/g) || []).length, 2);
   assert.match(pagina, /if \(carregandoRanking\)/);

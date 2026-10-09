@@ -72,7 +72,11 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /localStorage\.getItem/);
   assert.match(pagina, /function EmAltaLanguageBridge\(\)/);
-  assert.match(pagina, /function LoadingSpinner\(/);
+  assert.match(
+    pagina,
+    /import \{ LoadingSpinner \} from "\.\/components\/em-alta-loading-spinner";/,
+  );
+  assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.match(pagina, /function RankingSection\(/);
   assert.match(pagina, /function AutoresEmAltaSection\(/);
 });
