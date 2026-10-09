@@ -40,5 +40,8 @@ test("Painel do Autor delega somente o modo desktop", () => {
   assert.doesNotMatch(pagina, /addEventListener\("resize", atualizarLayoutDesktop\)/);
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 25);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /function PainelAutorLanguageBridge\(\)/);
+  assert.match(
+    pagina,
+    /import \{ PainelAutorLanguageBridge \} from "\.\/components\/painel-autor-language-bridge";/,
+  );
 });

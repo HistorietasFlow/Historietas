@@ -25,6 +25,10 @@
 
 - Extraídos `PainelAutorTranslationEntry`, `PAINEL_AUTOR_UI_TRANSLATIONS` e `traduzirTextoPainelAutor` para módulo puro, mantendo o bridge, observer e consumidores na página.
 
+## Fase 860 — bridge de idioma
+
+- Extraído `PainelAutorLanguageBridge`, preservando observer, tradução de textos e atributos, e restauração no cleanup.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

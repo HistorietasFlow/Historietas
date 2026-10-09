@@ -58,7 +58,10 @@ test("Painel do Autor mantém o único consumidor e as fronteiras", () => {
     pagina,
     /if \(verificandoUsuario \|\| !usuarioLogado \|\| carregandoDados\)/,
   );
-  assert.match(pagina, /function PainelAutorLanguageBridge\(\)/);
+  assert.match(
+    pagina,
+    /import \{ PainelAutorLanguageBridge \} from "\.\/components\/painel-autor-language-bridge";/,
+  );
   assert.match(pagina, /const isDesktop = usePainelAutorDesktopMode\(\);/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
 });
