@@ -42,7 +42,11 @@ test("Configurações mantém os dois consumidores e suas fronteiras", () => {
     /\$\{configuracoesPageCss\}\$\{historietasThemeCss\}/,
   );
   assert.match(pagina, /const safeTextStyle: CSSProperties =/);
-  assert.match(pagina, /function LoadingSpinner\(/);
+  assert.match(
+    pagina,
+    /import \{ LoadingSpinner \} from "\.\/components\/configuracoes-loading-spinner";/,
+  );
+  assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.match(pagina, /if \(verificandoAcesso\) \{/);
   assert.match(pagina, /useEffect\(/);
 });

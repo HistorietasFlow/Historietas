@@ -14,6 +14,7 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
+import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
 type TipoMensagemAcaoConfiguracoes = "sucesso" | "erro" | "aviso";
 
@@ -1543,46 +1544,6 @@ function SvgIcon({
     >
       {paths[name]}
     </svg>
-  );
-}
-
-function LoadingSpinner({
-  label = "Carregando",
-  compacto = false,
-}: {
-  label?: string;
-  compacto?: boolean;
-}) {
-  if (compacto) {
-    return (
-      <span
-        role="status"
-        aria-live="polite"
-        aria-label={label}
-        style={loadingInlineStyle}
-      >
-        <span
-          className="historietas-loading-spinner"
-          style={loadingSpinnerCompactStyle}
-          aria-hidden="true"
-        />
-      </span>
-    );
-  }
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={label}
-      style={loadingPageStyle}
-    >
-      <span
-        className="historietas-loading-spinner"
-        style={loadingSpinnerStyle}
-        aria-hidden="true"
-      />
-    </div>
   );
 }
 
@@ -4563,43 +4524,6 @@ const pageStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily:
     "Inter, Poppins, Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-};
-
-const loadingPageStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "100dvh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-};
-
-const loadingInlineStyle: CSSProperties = {
-  width: "24px",
-  height: "24px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-  flex: "0 0 auto",
-};
-
-const loadingSpinnerStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "999px",
-  border: "3px solid rgba(255,255,255,0.20)",
-  borderTopColor: "#FFFFFF",
-  boxSizing: "border-box",
-  animation: "historietas-loading-spin 0.78s linear infinite",
-  flex: "0 0 auto",
-};
-
-const loadingSpinnerCompactStyle: CSSProperties = {
-  ...loadingSpinnerStyle,
-  width: "22px",
-  height: "22px",
-  borderWidth: "2.5px",
 };
 
 const containerStyle: CSSProperties = {
