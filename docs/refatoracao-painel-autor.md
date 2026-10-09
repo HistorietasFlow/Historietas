@@ -65,6 +65,10 @@
 
 - Extraídos `calcularCurtidas`, `calcularComentarios` e `calcularSalvos`, preservando contagens, tratamento de comentários e consumidores.
 
+## Fase 870 — progresso de leitura
+
+- Extraídos `obterCapitulosPublicadosPainel` e `calcularProgressoLeitura`, preservando o filtro de publicação, identidades, contagem de lidos, arredondamento e fallback zero.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

@@ -47,6 +47,10 @@ import {
   calcularCurtidas,
   calcularSalvos,
 } from "./lib/painel-autor-chapter-metrics-utils";
+import {
+  calcularProgressoLeitura,
+  obterCapitulosPublicadosPainel,
+} from "./lib/painel-autor-reading-progress-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
@@ -199,25 +203,6 @@ function criarHrefLeituraCapituloPainel(
     obra.id
   )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
-
-function obterCapitulosPublicadosPainel(capitulos: CapituloLocal[]) {
-  return capitulos.filter((capitulo) => capitulo.publicado !== false);
-}
-
-function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  const capitulosPublicados = obterCapitulosPublicadosPainel(capitulos);
-
-  if (capitulosPublicados.length === 0) {
-    return 0;
-  }
-
-  const capitulosLidos = capitulosPublicados.filter(
-    (capitulo) => capitulo.lido
-  ).length;
-
-  return Math.round((capitulosLidos / capitulosPublicados.length) * 100);
-}
-
 
 function obraPublicadaComConteudoPainel(
   obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
