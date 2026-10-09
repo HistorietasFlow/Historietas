@@ -61,6 +61,10 @@
 
 - Extraídos `obterIdentificadoresObraPainel`, `colecaoTemObraPainel` e `removerObraDaColecaoPainel`, preservando normalização, deduplicação e consumidores.
 
+## Fase 869 — métricas de capítulos
+
+- Extraídos `calcularCurtidas`, `calcularComentarios` e `calcularSalvos`, preservando contagens, tratamento de comentários e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
