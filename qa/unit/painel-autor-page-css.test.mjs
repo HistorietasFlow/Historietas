@@ -51,7 +51,10 @@ test("Painel do Autor mantém os mounts e as fronteiras fora do CSS extraído", 
     /import \{ LoadingSpinner \} from "\.\/components\/painel-autor-loading-spinner";/,
   );
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
-  assert.match(pagina, /function PainelAutorLanguageBridge\(\)/);
+  assert.match(
+    pagina,
+    /import \{ PainelAutorLanguageBridge \} from "\.\/components\/painel-autor-language-bridge";/,
+  );
   assert.match(pagina, /const isDesktop = usePainelAutorDesktopMode\(\);/);
   assert.match(pagina, /async function carregarDadosPainelAutor\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);

@@ -109,7 +109,7 @@ test("preserva expressões regulares e textos dinâmicos", () => {
   );
 });
 
-test("mantém o bridge e os consumidores na página", () => {
+test("mantém os consumidores de tradução e delega o bridge na página", () => {
   assert.match(
     pagina,
     /import \{ traduzirTextoPainelAutor \} from "\.\/lib\/painel-autor-translations";/,
@@ -117,9 +117,11 @@ test("mantém o bridge e os consumidores na página", () => {
   assert.doesNotMatch(pagina, /type PainelAutorTranslationEntry = \{/);
   assert.doesNotMatch(pagina, /const PAINEL_AUTOR_UI_TRANSLATIONS/);
   assert.doesNotMatch(pagina, /function traduzirTextoPainelAutor\(/);
-  assert.match(pagina, /function PainelAutorLanguageBridge\(\)/);
-  assert.match(pagina, /new MutationObserver/);
-  assert.match(pagina, /\}, \[language\]\);/);
+  assert.match(
+    pagina,
+    /import \{ PainelAutorLanguageBridge \} from "\.\/components\/painel-autor-language-bridge";/,
+  );
+  assert.doesNotMatch(pagina, /function PainelAutorLanguageBridge\(\)/);
   assert.equal((pagina.match(/<PainelAutorLanguageBridge \/>/g) || []).length, 2);
-  assert.ok((pagina.match(/traduzirTextoPainelAutor\(/g) || []).length >= 8);
+  assert.ok((pagina.match(/traduzirTextoPainelAutor\(/g) || []).length >= 7);
 });
