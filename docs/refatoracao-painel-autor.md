@@ -33,6 +33,10 @@
 
 - Extraídos `criarLoginHrefPainelAutor` e `criarPerfilAutorHref` para módulo puro, preservando URLs, parâmetros, encoding e fallbacks.
 
+## Fase 862 — helpers de formatação
+
+- Extraídos `formatarGeneroPainelAutor` e `obterTimestamp`, preservando normalização, fallbacks e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

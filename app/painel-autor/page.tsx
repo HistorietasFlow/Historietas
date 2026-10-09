@@ -15,6 +15,10 @@ import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
 import {
+  formatarGeneroPainelAutor,
+  obterTimestamp,
+} from "./lib/painel-autor-format-utils";
+import {
   criarLoginHrefPainelAutor,
   criarPerfilAutorHref,
 } from "./lib/painel-autor-route-utils";
@@ -205,27 +209,6 @@ function criarHrefLeituraCapituloPainel(
   return `/ler-capitulo?obraId=${encodeURIComponent(
     obra.id
   )}&capituloId=${encodeURIComponent(capitulo.id)}`;
-}
-
-function formatarGeneroPainelAutor(genero: string) {
-  const generoLimpo = genero.trim();
-  const generoNormalizado = normalizarTexto(generoLimpo);
-
-  if (generoNormalizado === "fantasia sombria") {
-    return "Fantasia";
-  }
-
-  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
-    return "Ficção";
-  }
-
-  return generoLimpo || "Não informado";
-}
-
-function obterTimestamp(dataIso: string) {
-  const timestamp = new Date(dataIso).getTime();
-
-  return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
 function calcularCurtidas(obra: ObraLocal) {
