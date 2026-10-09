@@ -15,14 +15,8 @@ import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
+import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
-type TipoMensagemAcaoConfiguracoes = "sucesso" | "erro" | "aviso";
-
-type MensagemAcaoConfiguracoes = {
-  id: number;
-  tipo: TipoMensagemAcaoConfiguracoes;
-  texto: string;
-};
 
 type QuemPodeComentarDiario =
   | "todos"
@@ -1745,8 +1739,11 @@ export default function ConfiguracoesPage() {
   const [confirmacaoExclusaoConta, setConfirmacaoExclusaoConta] = useState("");
   const [excluindoConta, setExcluindoConta] = useState(false);
   const [erroExclusaoConta, setErroExclusaoConta] = useState("");
-  const [mensagemAcao, setMensagemAcao] =
-    useState<MensagemAcaoConfiguracoes | null>(null);
+  const {
+    mensagemAcao,
+    setMensagemAcao,
+    mostrarMensagemAcao,
+  } = useConfiguracoesActionMessage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
   const { language } = useHistorietasLanguage();
@@ -1755,17 +1752,6 @@ export default function ConfiguracoesPage() {
 
   function t(portugues: string, ingles: string, espanhol: string) {
     return textoIdioma(language, portugues, ingles, espanhol);
-  }
-
-  function mostrarMensagemAcao(
-    tipo: TipoMensagemAcaoConfiguracoes,
-    texto: string,
-  ) {
-    setMensagemAcao((mensagemAtual) => ({
-      id: (mensagemAtual?.id ?? 0) + 1,
-      tipo,
-      texto,
-    }));
   }
 
   useEffect(() => {
@@ -1933,23 +1919,6 @@ export default function ConfiguracoesPage() {
       window.removeEventListener("keydown", fecharComEscape);
     };
   }, [mostrarSeguranca, salvandoSenha]);
-
-  useEffect(() => {
-    if (!mensagemAcao) {
-      return;
-    }
-
-    const mensagemId = mensagemAcao.id;
-    const timer = window.setTimeout(() => {
-      setMensagemAcao((mensagemAtual) =>
-        mensagemAtual?.id === mensagemId ? null : mensagemAtual,
-      );
-    }, 5000);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [mensagemAcao]);
 
   const buscaNormalizada = normalizarTextoBuscaConfiguracoes(busca);
 
