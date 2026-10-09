@@ -11,6 +11,7 @@ import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties } from "react";
 import { LoadingSpinner } from "./components/painel-autor-loading-spinner";
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
+import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
@@ -2050,6 +2051,8 @@ export default function PainelAutorPage() {
 
   const isDesktop = usePainelAutorDesktopMode();
 
+  usePainelAutorFiltersBodyLock(mostrarFiltrosPainel);
+
   useEffect(() => {
     let componenteAtivo = true;
 
@@ -2126,38 +2129,6 @@ export default function PainelAutorPage() {
       window.clearTimeout(aplicarPreferenciaTimer);
     };
   }, [usuarioIdLogado]);
-
-  useEffect(() => {
-    if (!mostrarFiltrosPainel) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.getPropertyValue("overflow");
-    const overscrollAnterior = document.documentElement.style.getPropertyValue(
-      "overscroll-behavior"
-    );
-
-    document.body.style.setProperty("overflow", "hidden");
-    document.documentElement.style.setProperty("overscroll-behavior", "none");
-
-    return () => {
-      if (overflowAnterior) {
-        document.body.style.setProperty("overflow", overflowAnterior);
-      } else {
-        document.body.style.removeProperty("overflow");
-      }
-
-      if (overscrollAnterior) {
-        document.documentElement.style.setProperty(
-          "overscroll-behavior",
-          overscrollAnterior
-        );
-      } else {
-        document.documentElement.style.removeProperty("overscroll-behavior");
-      }
-    };
-  }, [mostrarFiltrosPainel]);
-
 
   useEffect(() => {
     if (verificandoUsuario || !usuarioIdLogado) {
