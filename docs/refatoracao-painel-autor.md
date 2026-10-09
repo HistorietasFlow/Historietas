@@ -1,0 +1,11 @@
+# Refatoração do Painel do Autor
+
+## Fase 854 — modo desktop
+
+- Extraído `usePainelAutorDesktopMode` para lifecycle responsivo próprio.
+- A página mantém todos os consumidores visuais de `isDesktop` e as responsabilidades de autenticação, dados, storage e filtros.
+
+## Contrato de preservação
+
+- Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
+- Não alterar autenticação, Supabase, loaders, métricas, localStorage, filtros, ordenação, bridge de idioma ou cards fora de uma fase dedicada.

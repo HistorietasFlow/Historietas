@@ -9,6 +9,7 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties } from "react";
+import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
 import {
@@ -2053,7 +2054,6 @@ export default function PainelAutorPage() {
   const [buscaPainelAberta, setBuscaPainelAberta] = useState(false);
   const [filtro, setFiltro] = useState<FiltroPainel>("todas");
   const [ordenacao, setOrdenacao] = useState<OrdenacaoPainel>("pontuacao");
-  const [isDesktop, setIsDesktop] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [verificandoUsuario, setVerificandoUsuario] = useState(true);
   const [carregandoDados, setCarregandoDados] = useState(true);
@@ -2063,18 +2063,7 @@ export default function PainelAutorPage() {
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
 
-  useEffect(() => {
-    function atualizarLayoutDesktop() {
-      setIsDesktop(window.innerWidth >= 1024);
-    }
-
-    atualizarLayoutDesktop();
-    window.addEventListener("resize", atualizarLayoutDesktop);
-
-    return () => {
-      window.removeEventListener("resize", atualizarLayoutDesktop);
-    };
-  }, []);
+  const isDesktop = usePainelAutorDesktopMode();
 
   useEffect(() => {
     let componenteAtivo = true;
