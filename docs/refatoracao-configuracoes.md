@@ -19,3 +19,8 @@
 
 - Extraiu o renderer `SvgIcon`, a união `IconName` e o mapa literal de paths para componente visual dedicado.
 - Preservou as primitives, consumidores, estilos e fluxos de Configurações na página.
+
+## Fase 844 — Toggle
+
+- Extraiu a primitive visual `Toggle` e seus seis estilos exclusivos para componente dedicado.
+- Preservou os três consumidores, handlers, traduções e fluxos de preferências na página.
