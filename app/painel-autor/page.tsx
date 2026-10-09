@@ -29,9 +29,11 @@ import {
   type OrdenacaoPainel,
 } from "./lib/painel-autor-filter-options";
 import {
+  carregarListaIdsPainel,
   lerStorageUsuarioPainel,
   normalizarListaIds,
   salvarJsonStorageUsuarioPainel,
+  salvarListaIdsUsuarioPainel,
 } from "./lib/painel-autor-storage-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { carregarMetricasConteudos } from "../../lib/metricas";
@@ -718,33 +720,6 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
         ? Math.max(0, Math.round(obra.totalLidosPainel))
         : undefined,
   };
-}
-
-function carregarListaIdsPainel(chave: string, userId: string) {
-  try {
-    const listaUsuarioTexto = lerStorageUsuarioPainel(chave, userId);
-    const listaUsuarioJson: unknown = listaUsuarioTexto
-      ? JSON.parse(listaUsuarioTexto)
-      : [];
-
-    return normalizarListaIds(listaUsuarioJson);
-  } catch {
-    return [] as string[];
-  }
-}
-
-function salvarListaIdsUsuarioPainel(
-  chave: string,
-  userId: string,
-  listaUsuario: string[]
-) {
-  if (!userId.trim()) {
-    return;
-  }
-
-  const listaUsuarioNormalizada = normalizarListaIds(listaUsuario);
-
-  salvarJsonStorageUsuarioPainel(chave, userId, listaUsuarioNormalizada);
 }
 
 function obterIdentificadoresObraPainel(

@@ -25,6 +25,8 @@ const {
   criarStorageKeyUsuarioPainel,
   lerStorageUsuarioPainel,
   salvarJsonStorageUsuarioPainel,
+  carregarListaIdsPainel,
+  salvarListaIdsUsuarioPainel,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -59,16 +61,36 @@ test("helpers de leitura e gravação preservam guards e localStorage", () => {
   assert.match(utilsSource, /catch \{[\s\S]*?return null;/);
 });
 
+test("helpers de listas preservam JSON, normalização e fallbacks", () => {
+  assert.deepEqual(carregarListaIdsPainel("historietas-obras", "usuario-1"), []);
+  assert.equal(
+    salvarListaIdsUsuarioPainel("historietas-obras", "", ["obra-1"]),
+    undefined,
+  );
+  assert.match(utilsSource, /JSON\.parse\(listaUsuarioTexto\)/);
+  assert.match(utilsSource, /return \[\] as string\[\];/);
+  assert.match(
+    utilsSource,
+    /const listaUsuarioNormalizada = normalizarListaIds\(listaUsuario\);/,
+  );
+  assert.match(
+    utilsSource,
+    /salvarJsonStorageUsuarioPainel\(chave, userId, listaUsuarioNormalizada\)/,
+  );
+});
+
 test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?lerStorageUsuarioPainel,[\s\S]*?normalizarListaIds,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
+    /import \{[\s\S]*?carregarListaIdsPainel,[\s\S]*?lerStorageUsuarioPainel,[\s\S]*?normalizarListaIds,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?salvarListaIdsUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
   );
   assert.doesNotMatch(pagina, /function normalizarListaIds\(/);
   assert.doesNotMatch(pagina, /function criarStorageKeyUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function lerStorageUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function salvarJsonStorageUsuarioPainel\(/);
-  assert.equal((pagina.match(/\bnormalizarListaIds\b/g) || []).length, 7);
+  assert.doesNotMatch(pagina, /function carregarListaIdsPainel\(/);
+  assert.doesNotMatch(pagina, /function salvarListaIdsUsuarioPainel\(/);
+  assert.equal((pagina.match(/\bnormalizarListaIds\b/g) || []).length, 5);
   assert.equal((pagina.match(/\bcriarStorageKeyUsuarioPainel\b/g) || []).length, 0);
   assert.match(
     utilsSource,
