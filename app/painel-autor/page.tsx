@@ -28,6 +28,10 @@ import {
   type FiltroPainel,
   type OrdenacaoPainel,
 } from "./lib/painel-autor-filter-options";
+import {
+  criarStorageKeyUsuarioPainel,
+  normalizarListaIds,
+} from "./lib/painel-autor-storage-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
@@ -713,27 +717,6 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
         ? Math.max(0, Math.round(obra.totalLidosPainel))
         : undefined,
   };
-}
-
-function normalizarListaIds(valor: unknown): string[] {
-  if (!Array.isArray(valor)) {
-    return [];
-  }
-
-  return Array.from(
-    new Set(
-      valor
-        .filter((id): id is string => typeof id === "string")
-        .map((id) => id.trim())
-        .filter(Boolean)
-    )
-  );
-}
-
-function criarStorageKeyUsuarioPainel(chave: string, userId: string) {
-  const usuarioId = userId.trim();
-
-  return usuarioId ? `${chave}:${usuarioId}` : "";
 }
 
 function lerStorageUsuarioPainel(chave: string, userId: string) {

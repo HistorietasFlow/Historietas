@@ -41,6 +41,10 @@
 
 - Extraídos `FiltroPainel`, `OrdenacaoPainel`, `FILTROS_PAINEL` e `ORDENACOES_PAINEL`, preservando tipos, valores, rótulos, ordem e consumidores.
 
+## Fase 864 — helpers de armazenamento
+
+- Extraídos `normalizarListaIds` e `criarStorageKeyUsuarioPainel`, preservando normalização, deduplicação, fallbacks, chaves e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
