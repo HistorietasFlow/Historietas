@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
+import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -1580,7 +1581,7 @@ export default function PublicarPage() {
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
   const [verificandoAutenticacao, setVerificandoAutenticacao] = useState(true);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = usePublicarDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { language: idioma } = useHistorietasLanguage();
   const t = (chave: ChaveTextoPublicar) => obterTextoPublicar(idioma, chave);
@@ -1649,35 +1650,6 @@ export default function PublicarPage() {
       cancelado = true;
     };
   }, [router]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   const jaSalvouRef = useRef(false);
   const capaInputRef = useRef<HTMLInputElement | null>(null);
