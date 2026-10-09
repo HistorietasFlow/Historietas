@@ -89,6 +89,10 @@
 
 - Extraídos `normalizarIdUsuarioPainel` e `obraPertenceAoUsuarioPainel`, preservando normalização, comparação de IDs e fallbacks.
 
+## Fase 876 — obras do usuário
+
+- Extraídos `filtrarObrasDoUsuarioPainel` e `marcarObrasComDonoPainel`, preservando guardas, propriedade, preenchimento de autor e identidade dos objetos.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
