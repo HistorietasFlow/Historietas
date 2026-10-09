@@ -4,7 +4,7 @@ import test from "node:test";
 
 const hook = readFileSync(
   new URL(
-    "../../app/painel-autor/hooks/use-painel-autor-filters-body-lock.ts",
+    "../../app/painel-autor/hooks/use-painel-autor-work-actions-body-lock.ts",
     import.meta.url,
   ),
   "utf8",
@@ -14,16 +14,16 @@ const pagina = readFileSync(
   "utf8",
 );
 
-test("usePainelAutorFiltersBodyLock preserva o lifecycle do painel de filtros", () => {
+test("usePainelAutorWorkActionsBodyLock preserva o lifecycle do action sheet", () => {
   assert.match(hook, /^"use client";/);
   assert.match(
     hook,
-    /export function usePainelAutorFiltersBodyLock\(\s*mostrarFiltrosPainel: boolean,?\s*\)/,
+    /export function usePainelAutorWorkActionsBodyLock\(acoesAbertas: boolean\)/,
   );
   assert.match(hook, /useEffect\(\(\) => \{/);
   assert.match(
     hook,
-    /if \(!mostrarFiltrosPainel\) \{\s*return;\s*\}/,
+    /if \(!acoesAbertas \|\| typeof document === "undefined"\) \{\s*return;\s*\}/,
   );
   assert.match(
     hook,
@@ -33,10 +33,7 @@ test("usePainelAutorFiltersBodyLock preserva o lifecycle do painel de filtros", 
     hook,
     /const overscrollAnterior = document\.documentElement\.style\.getPropertyValue\(\s*"overscroll-behavior",?\s*\);/,
   );
-  assert.match(
-    hook,
-    /document\.body\.style\.setProperty\("overflow", "hidden"\);/,
-  );
+  assert.match(hook, /document\.body\.style\.setProperty\("overflow", "hidden"\);/);
   assert.match(
     hook,
     /document\.documentElement\.style\.setProperty\("overscroll-behavior", "none"\);/,
@@ -49,38 +46,29 @@ test("usePainelAutorFiltersBodyLock preserva o lifecycle do painel de filtros", 
     hook,
     /if \(overscrollAnterior\) \{\s*document\.documentElement\.style\.setProperty\(\s*"overscroll-behavior",\s*overscrollAnterior,?\s*\);\s*\} else \{\s*document\.documentElement\.style\.removeProperty\("overscroll-behavior"\);\s*\}/,
   );
-  assert.match(hook, /\}, \[mostrarFiltrosPainel\]\);/);
-  assert.doesNotMatch(hook, /return \{/);
-  assert.doesNotMatch(hook, /useState/);
+  assert.match(hook, /\}, \[acoesAbertas\]\);/);
+  assert.doesNotMatch(hook, /return \{|useState/);
 });
 
-test("Painel do Autor delega somente o body lock e preserva o painel", () => {
+test("Painel do Autor delega somente o body lock do action sheet", () => {
   assert.match(
     pagina,
-    /import \{ usePainelAutorFiltersBodyLock \} from "\.\/hooks\/use-painel-autor-filters-body-lock";/,
+    /import \{ usePainelAutorWorkActionsBodyLock \} from "\.\/hooks\/use-painel-autor-work-actions-body-lock";/,
   );
-  assert.match(
+  assert.match(pagina, /usePainelAutorWorkActionsBodyLock\(acoesAbertas\);/);
+  assert.doesNotMatch(
     pagina,
-    /usePainelAutorFiltersBodyLock\(mostrarFiltrosPainel\);/,
-  );
-  assert.equal(
-    (
-      pagina.match(
-        /document\.body\.style\.getPropertyValue\("overflow"\)/g,
-      ) || []
-    ).length,
-    0,
+    /useEffect\(\(\) => \{[\s\S]*?!acoesAbertas \|\| typeof document === "undefined"/,
   );
   assert.match(
     pagina,
-    /const \[mostrarFiltrosPainel, setMostrarFiltrosPainel\] = useState\(false\);/,
+    /const \[acoesAbertas, setAcoesAbertas\] = useState\(false\);/,
   );
-  assert.match(pagina, /\{mostrarFiltrosPainel && \(/);
-  assert.match(pagina, /onClick=\{\(\) => setMostrarFiltrosPainel\(false\)\}/);
+  assert.match(pagina, /aria-expanded=\{acoesAbertas\}/);
+  assert.match(pagina, /\{acoesAbertas && \(/);
+  assert.match(pagina, /setAcoesAbertas\(false\)/);
   assert.match(pagina, /stopPropagation\(\)/);
-  assert.match(pagina, /const \[filtro, setFiltro\] = useState<FiltroPainel>/);
-  assert.match(pagina, /const \[ordenacao, setOrdenacao\] = useState<OrdenacaoPainel>/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /const obraHref =/);
   assert.match(pagina, /async function carregarDadosPainelAutor\(\)/);
-  assert.match(pagina, /import \{ useEffect, useMemo, useState \} from "react";/);
+  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
 });

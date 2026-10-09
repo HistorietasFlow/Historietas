@@ -12,6 +12,7 @@ import type { CSSProperties } from "react";
 import { LoadingSpinner } from "./components/painel-autor-loading-spinner";
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
+import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
@@ -3174,36 +3175,7 @@ function ObraPainelCard({
   const indicadorPrimarioIcone = obraTemCapitulos ? "📚" : obra.arquivoObra ? "📄" : "📚";
   const indicadorPrimarioValor = obraTemCapitulos ? obra.capitulos.length : obra.arquivoObra ? 1 : 0;
 
-  useEffect(() => {
-    if (!acoesAbertas || typeof document === "undefined") {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.getPropertyValue("overflow");
-    const overscrollAnterior = document.documentElement.style.getPropertyValue(
-      "overscroll-behavior"
-    );
-
-    document.body.style.setProperty("overflow", "hidden");
-    document.documentElement.style.setProperty("overscroll-behavior", "none");
-
-    return () => {
-      if (overflowAnterior) {
-        document.body.style.setProperty("overflow", overflowAnterior);
-      } else {
-        document.body.style.removeProperty("overflow");
-      }
-
-      if (overscrollAnterior) {
-        document.documentElement.style.setProperty(
-          "overscroll-behavior",
-          overscrollAnterior
-        );
-      } else {
-        document.documentElement.style.removeProperty("overscroll-behavior");
-      }
-    };
-  }, [acoesAbertas]);
+  usePainelAutorWorkActionsBodyLock(acoesAbertas);
 
   return (
     <>

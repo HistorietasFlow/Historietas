@@ -17,6 +17,10 @@
 
 - Extraído `usePainelAutorFiltersBodyLock`, preservando o lock e a restauração de `overflow` e `overscroll-behavior`.
 
+## Fase 858 — body lock do action sheet de obra
+
+- Extraído `usePainelAutorWorkActionsBodyLock`, preservando o guard de documento e a restauração de propriedades do viewport.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
