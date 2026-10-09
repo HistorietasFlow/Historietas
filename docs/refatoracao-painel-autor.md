@@ -85,6 +85,10 @@
 
 - Extraído `criarChaveInteracao`, preservando assinatura, formato `obraId::capituloId` e consumidores.
 
+## Fase 875 — identificação e propriedade de obras
+
+- Extraídos `normalizarIdUsuarioPainel` e `obraPertenceAoUsuarioPainel`, preservando normalização, comparação de IDs e fallbacks.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
