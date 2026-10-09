@@ -23,6 +23,7 @@ import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
 } from "../../lib/supabase/paginacao.mjs";
+import { useEmAltaDesktopMode } from "./hooks/use-em-alta-desktop-mode";
 
 type CapituloLocal = {
   id: string;
@@ -1812,40 +1813,11 @@ export default function EmAltaPage() {
   >({});
   const [avaliacoesLocaisRegistradas, setAvaliacoesLocaisRegistradas] =
     useState<Record<string, number>>({});
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useEmAltaDesktopMode();
   const [carregandoRanking, setCarregandoRanking] = useState(true);
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0,
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     let ativo = true;
