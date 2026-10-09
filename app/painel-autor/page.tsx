@@ -14,6 +14,7 @@ import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
+import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import {
   formatarGeneroPainelAutor,
@@ -771,10 +772,6 @@ function filtrarListaPorObrasDoUsuario(listaIds: string[], obrasUsuario: ObraLoc
   });
 }
 
-
-function criarChaveInteracao(obraId: string, capituloId: string) {
-  return `${obraId}::${capituloId}`;
-}
 
 async function carregarComentariosCapitulosUsuarioPainel(
   userId: string,

@@ -81,6 +81,10 @@
 
 - Extraído `normalizarCategoriaArquivoSupabase`, preservando categorias explícitas, verificações de MIME, ordem e fallback `outro`.
 
+## Fase 874 — chave de interação
+
+- Extraído `criarChaveInteracao`, preservando assinatura, formato `obraId::capituloId` e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
