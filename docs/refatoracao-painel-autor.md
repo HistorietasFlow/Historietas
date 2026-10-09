@@ -29,6 +29,10 @@
 
 - Extraído `PainelAutorLanguageBridge`, preservando observer, tradução de textos e atributos, e restauração no cleanup.
 
+## Fase 861 — helpers de navegação
+
+- Extraídos `criarLoginHrefPainelAutor` e `criarPerfilAutorHref` para módulo puro, preservando URLs, parâmetros, encoding e fallbacks.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
