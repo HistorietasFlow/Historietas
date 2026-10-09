@@ -29,8 +29,9 @@ import {
   type OrdenacaoPainel,
 } from "./lib/painel-autor-filter-options";
 import {
-  criarStorageKeyUsuarioPainel,
+  lerStorageUsuarioPainel,
   normalizarListaIds,
+  salvarJsonStorageUsuarioPainel,
 } from "./lib/painel-autor-storage-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { carregarMetricasConteudos } from "../../lib/metricas";
@@ -717,46 +718,6 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
         ? Math.max(0, Math.round(obra.totalLidosPainel))
         : undefined,
   };
-}
-
-function lerStorageUsuarioPainel(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioPainel(chave, userIdLimpo);
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioPainel(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioPainel(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; o painel continua com estado em memória.
-  }
 }
 
 function carregarListaIdsPainel(chave: string, userId: string) {
