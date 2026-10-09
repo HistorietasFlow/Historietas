@@ -21,6 +21,10 @@
 
 - Extraído `usePainelAutorWorkActionsBodyLock`, preservando o guard de documento e a restauração de propriedades do viewport.
 
+## Fase 859 — traduções de interface
+
+- Extraídos `PainelAutorTranslationEntry`, `PAINEL_AUTOR_UI_TRANSLATIONS` e `traduzirTextoPainelAutor` para módulo puro, mantendo o bridge, observer e consumidores na página.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
