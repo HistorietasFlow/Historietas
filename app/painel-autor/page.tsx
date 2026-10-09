@@ -31,7 +31,9 @@ import {
 import {
   carregarListaIdsPainel,
   lerStorageUsuarioPainel,
+  lerListaIdsStoragePainel,
   normalizarListaIds,
+  salvarColecaoAposExcluirPainel,
   salvarJsonStorageUsuarioPainel,
   salvarListaIdsUsuarioPainel,
 } from "./lib/painel-autor-storage-utils";
@@ -762,33 +764,6 @@ function removerObraDaColecaoPainel(
   const identificadoresObra = new Set(obterIdentificadoresObraPainel(obra));
 
   return colecao.filter((id) => !identificadoresObra.has(id.trim()));
-}
-
-function lerListaIdsStoragePainel(chave: string, userId = "") {
-  try {
-    const listaTexto = lerStorageUsuarioPainel(chave, userId);
-    const listaJson: unknown = listaTexto ? JSON.parse(listaTexto) : [];
-
-    return normalizarListaIds(listaJson);
-  } catch {
-    return [] as string[];
-  }
-}
-
-function salvarColecaoAposExcluirPainel(
-  chave: string,
-  userId: string,
-  listaUsuario: string[]
-) {
-  if (!userId.trim()) {
-    return;
-  }
-
-  salvarJsonStorageUsuarioPainel(
-    chave,
-    userId,
-    normalizarListaIds(listaUsuario)
-  );
 }
 
 function limparReferenciasLocaisObraExcluidaPainel(
