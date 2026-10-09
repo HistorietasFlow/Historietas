@@ -49,6 +49,7 @@ import {
 } from "./lib/painel-autor-chapter-metrics-utils";
 import {
   calcularProgressoLeitura,
+  encontrarCapituloParaContinuar,
   obterCapitulosPublicadosPainel,
 } from "./lib/painel-autor-reading-progress-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
@@ -231,39 +232,6 @@ function obterStatusPainelAutor(
   }
 
   return obra.publicado ? "Sem conteúdo" : "Rascunho";
-}
-
-function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const capitulosPublicados = obterCapitulosPublicadosPainel(obra.capitulos);
-  const temCapituloLido = capitulosPublicados.some(
-    (capitulo) => capitulo.lido
-  );
-
-  if (!temCapituloLido) {
-    return null;
-  }
-
-  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
-    ? capitulosPublicados.findIndex(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
-      )
-    : -1;
-
-  if (indiceUltimoCapituloLido >= 0) {
-    const proximoCapituloNaoLido = capitulosPublicados
-      .slice(indiceUltimoCapituloLido + 1)
-      .find((capitulo) => !capitulo.lido);
-
-    if (proximoCapituloNaoLido) {
-      return proximoCapituloNaoLido;
-    }
-  }
-
-  return (
-    capitulosPublicados.find((capitulo) => !capitulo.lido) ||
-    capitulosPublicados[capitulosPublicados.length - 1] ||
-    null
-  );
 }
 
 function criarPainelCoverStyle(capa: string): CSSProperties {

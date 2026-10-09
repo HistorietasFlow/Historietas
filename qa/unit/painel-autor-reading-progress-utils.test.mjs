@@ -20,7 +20,11 @@ const utilsJavascript = typescript.transpileModule(utilsSource, {
     target: typescript.ScriptTarget.ES2022,
   },
 }).outputText;
-const { obterCapitulosPublicadosPainel, calcularProgressoLeitura } = await import(
+const {
+  obterCapitulosPublicadosPainel,
+  calcularProgressoLeitura,
+  encontrarCapituloParaContinuar,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
 
@@ -51,16 +55,58 @@ test("calcula progresso com capitulos publicados, lidos, arredondamento e fallba
   assert.equal(calcularProgressoLeitura([]), 0);
 });
 
+test("encontra o proximo capitulo nao lido apos o ultimo lido", () => {
+  const primeiro = { id: "1", publicado: true, lido: true };
+  const segundo = { id: "2", publicado: true, lido: false };
+  const terceiro = { id: "3", publicado: true, lido: false };
+
+  assert.equal(
+    encontrarCapituloParaContinuar({
+      capitulos: [primeiro, segundo, terceiro],
+      ultimoCapituloLidoId: "1",
+    }),
+    segundo,
+  );
+});
+
+test("preserva fallbacks do capitulo para continuar", () => {
+  const primeiro = { id: "1", publicado: true, lido: false };
+  const ultimo = { id: "2", publicado: true, lido: true };
+
+  assert.equal(
+    encontrarCapituloParaContinuar({
+      capitulos: [primeiro, ultimo],
+      ultimoCapituloLidoId: "inexistente",
+    }),
+    primeiro,
+  );
+  assert.equal(
+    encontrarCapituloParaContinuar({
+      capitulos: [ultimo, { id: "3", publicado: false, lido: false }],
+      ultimoCapituloLidoId: "2",
+    }),
+    ultimo,
+  );
+  assert.equal(
+    encontrarCapituloParaContinuar({
+      capitulos: [{ id: "1", publicado: true, lido: false }],
+      ultimoCapituloLidoId: "",
+    }),
+    null,
+  );
+});
+
 test("Painel do Autor delega somente helpers puros de progresso", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?obterCapitulosPublicadosPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-reading-progress-utils";/,
+    /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?encontrarCapituloParaContinuar,[\s\S]*?obterCapitulosPublicadosPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-reading-progress-utils";/,
   );
   assert.doesNotMatch(pagina, /function obterCapitulosPublicadosPainel\(/);
   assert.doesNotMatch(pagina, /function calcularProgressoLeitura\(/);
-  assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 4);
+  assert.doesNotMatch(pagina, /function encontrarCapituloParaContinuar\(/);
+  assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 4);
-  assert.match(pagina, /function encontrarCapituloParaContinuar\(/);
+  assert.equal((pagina.match(/\bencontrarCapituloParaContinuar\b/g) || []).length, 2);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect/);
 });
