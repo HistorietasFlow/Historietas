@@ -8,3 +8,7 @@
 ## Fase 846 — CSS global da página
 
 - Extraiu literalmente `emAltaPageCss` para um módulo local, preservando os dois consumidores e a ordem com `historietasThemeCss`.
+
+## Fase 847 — LoadingSpinner
+
+- Extraiu o spinner de carregamento e seus estilos exclusivos, preservando o único consumidor no branch de ranking.
