@@ -49,6 +49,10 @@
 
 - Extraídos `lerStorageUsuarioPainel` e `salvarJsonStorageUsuarioPainel`, preservando guardas, trim, chaves, JSON, tratamento de erros e consumidores.
 
+## Fase 866 — helpers de listas do storage
+
+- Extraídos `carregarListaIdsPainel` e `salvarListaIdsUsuarioPainel`, preservando JSON, normalização, fallbacks, erros e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

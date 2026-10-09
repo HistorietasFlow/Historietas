@@ -58,3 +58,30 @@ export function salvarJsonStorageUsuarioPainel(
     // localStorage é fallback; o painel continua com estado em memória.
   }
 }
+
+export function carregarListaIdsPainel(chave: string, userId: string) {
+  try {
+    const listaUsuarioTexto = lerStorageUsuarioPainel(chave, userId);
+    const listaUsuarioJson: unknown = listaUsuarioTexto
+      ? JSON.parse(listaUsuarioTexto)
+      : [];
+
+    return normalizarListaIds(listaUsuarioJson);
+  } catch {
+    return [] as string[];
+  }
+}
+
+export function salvarListaIdsUsuarioPainel(
+  chave: string,
+  userId: string,
+  listaUsuario: string[]
+) {
+  if (!userId.trim()) {
+    return;
+  }
+
+  const listaUsuarioNormalizada = normalizarListaIds(listaUsuario);
+
+  salvarJsonStorageUsuarioPainel(chave, userId, listaUsuarioNormalizada);
+}
