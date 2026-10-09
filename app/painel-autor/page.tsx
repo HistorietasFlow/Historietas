@@ -42,6 +42,11 @@ import {
   obterIdentificadoresObraPainel,
   removerObraDaColecaoPainel,
 } from "./lib/painel-autor-collection-utils";
+import {
+  calcularComentarios,
+  calcularCurtidas,
+  calcularSalvos,
+} from "./lib/painel-autor-chapter-metrics-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
@@ -193,18 +198,6 @@ function criarHrefLeituraCapituloPainel(
   return `/ler-capitulo?obraId=${encodeURIComponent(
     obra.id
   )}&capituloId=${encodeURIComponent(capitulo.id)}`;
-}
-
-function calcularCurtidas(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
-}
-
-function calcularComentarios(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
-}
-
-function calcularSalvos(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.salvo).length;
 }
 
 function obterCapitulosPublicadosPainel(capitulos: CapituloLocal[]) {
