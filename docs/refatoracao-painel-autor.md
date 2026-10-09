@@ -69,6 +69,10 @@
 
 - Extraídos `obterCapitulosPublicadosPainel` e `calcularProgressoLeitura`, preservando o filtro de publicação, identidades, contagem de lidos, arredondamento e fallback zero.
 
+## Fase 871 — continuar leitura
+
+- Extraído `encontrarCapituloParaContinuar`, preservando seleção de capítulos publicados, avanço após o último lido, fallbacks, retornos nulos e identidade dos capítulos.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
