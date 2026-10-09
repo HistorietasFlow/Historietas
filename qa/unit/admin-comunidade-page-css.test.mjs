@@ -45,7 +45,11 @@ test("Admin Comunidade mantém os quatro consumidores e as fronteiras sensíveis
     /\$\{adminComunidadePageCss\}\$\{historietasThemeCss\}/,
   );
   assert.match(pagina, /const safeTextStyle: CSSProperties =/);
-  assert.match(pagina, /function AdminComunidadeLanguageBridge\(\)/);
+  assert.match(
+    pagina,
+    /import \{ AdminComunidadeLanguageBridge \} from "\.\/components\/admin-comunidade-language-bridge";/,
+  );
+  assert.doesNotMatch(pagina, /function AdminComunidadeLanguageBridge\(\)/);
   assert.match(pagina, /useAdminComunidadeDesktopMode\(\)/);
   assert.match(pagina, /async function iniciarModeracao\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);

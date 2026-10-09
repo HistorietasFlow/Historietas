@@ -515,6 +515,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 798: extrair somente `useObraViewRegistration`, preservando guards de acesso, deduplicação por ref string, registro assíncrono e atualização monotônica de visualizações.
 - Fase 851: extrair somente `useAdminComunidadeDesktopMode`, preservando o estado inicial, breakpoint, atualização síncrona, listeners moderno/legado e todos os consumidores visuais no cliente.
 - Fase 852: mover literalmente `adminComunidadePageCss` para módulo local, preservando os quatro consumidores e a ordem de precedência do CSS no cliente.
+- Fase 853: extrair `AdminComunidadeLanguageBridge`, sua tabela de traduções e helpers exclusivos para componente local, preservando observer, cleanup e os quatro mounts na página.
 
 ## Contrato de preservação
 
