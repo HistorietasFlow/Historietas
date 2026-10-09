@@ -14,3 +14,8 @@
 
 - Extraiu estado, geração de ID e expiração segura da mensagem de ação para um hook dedicado.
 - Preservou os handlers, limpezas manuais e toast na página.
+
+## Fase 843 — ícones SVG
+
+- Extraiu o renderer `SvgIcon`, a união `IconName` e o mapa literal de paths para componente visual dedicado.
+- Preservou as primitives, consumidores, estilos e fluxos de Configurações na página.
