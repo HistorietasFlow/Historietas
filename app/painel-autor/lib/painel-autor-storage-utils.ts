@@ -85,3 +85,30 @@ export function salvarListaIdsUsuarioPainel(
 
   salvarJsonStorageUsuarioPainel(chave, userId, listaUsuarioNormalizada);
 }
+
+export function lerListaIdsStoragePainel(chave: string, userId = "") {
+  try {
+    const listaTexto = lerStorageUsuarioPainel(chave, userId);
+    const listaJson: unknown = listaTexto ? JSON.parse(listaTexto) : [];
+
+    return normalizarListaIds(listaJson);
+  } catch {
+    return [] as string[];
+  }
+}
+
+export function salvarColecaoAposExcluirPainel(
+  chave: string,
+  userId: string,
+  listaUsuario: string[]
+) {
+  if (!userId.trim()) {
+    return;
+  }
+
+  salvarJsonStorageUsuarioPainel(
+    chave,
+    userId,
+    normalizarListaIds(listaUsuario)
+  );
+}

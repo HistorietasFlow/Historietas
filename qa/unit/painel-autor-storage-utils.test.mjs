@@ -27,6 +27,8 @@ const {
   salvarJsonStorageUsuarioPainel,
   carregarListaIdsPainel,
   salvarListaIdsUsuarioPainel,
+  lerListaIdsStoragePainel,
+  salvarColecaoAposExcluirPainel,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -79,10 +81,22 @@ test("helpers de listas preservam JSON, normalização e fallbacks", () => {
   );
 });
 
+test("helpers de coleção preservam parâmetro padrão, JSON e normalização", () => {
+  assert.deepEqual(lerListaIdsStoragePainel("historietas-obras"), []);
+  assert.equal(
+    salvarColecaoAposExcluirPainel("historietas-obras", "", ["obra-1"]),
+    undefined,
+  );
+  assert.match(utilsSource, /function lerListaIdsStoragePainel\(chave: string, userId = ""\)/);
+  assert.match(utilsSource, /const listaTexto = lerStorageUsuarioPainel\(chave, userId\);/);
+  assert.match(utilsSource, /const listaJson: unknown = listaTexto \? JSON\.parse\(listaTexto\) : \[\];/);
+  assert.match(utilsSource, /normalizarListaIds\(listaUsuario\)/);
+});
+
 test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?carregarListaIdsPainel,[\s\S]*?lerStorageUsuarioPainel,[\s\S]*?normalizarListaIds,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?salvarListaIdsUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
+    /import \{[\s\S]*?carregarListaIdsPainel,[\s\S]*?lerStorageUsuarioPainel,[\s\S]*?lerListaIdsStoragePainel,[\s\S]*?normalizarListaIds,[\s\S]*?salvarColecaoAposExcluirPainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?salvarListaIdsUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
   );
   assert.doesNotMatch(pagina, /function normalizarListaIds\(/);
   assert.doesNotMatch(pagina, /function criarStorageKeyUsuarioPainel\(/);
@@ -90,7 +104,9 @@ test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.doesNotMatch(pagina, /function salvarJsonStorageUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function carregarListaIdsPainel\(/);
   assert.doesNotMatch(pagina, /function salvarListaIdsUsuarioPainel\(/);
-  assert.equal((pagina.match(/\bnormalizarListaIds\b/g) || []).length, 5);
+  assert.doesNotMatch(pagina, /function lerListaIdsStoragePainel\(/);
+  assert.doesNotMatch(pagina, /function salvarColecaoAposExcluirPainel\(/);
+  assert.equal((pagina.match(/\bnormalizarListaIds\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bcriarStorageKeyUsuarioPainel\b/g) || []).length, 0);
   assert.match(
     utilsSource,

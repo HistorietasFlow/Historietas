@@ -53,6 +53,10 @@
 
 - Extraídos `carregarListaIdsPainel` e `salvarListaIdsUsuarioPainel`, preservando JSON, normalização, fallbacks, erros e consumidores.
 
+## Fase 867 — helpers de coleção do storage
+
+- Extraídos `lerListaIdsStoragePainel` e `salvarColecaoAposExcluirPainel`, preservando parâmetro padrão, JSON, normalização, erros e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
