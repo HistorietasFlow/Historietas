@@ -48,7 +48,7 @@ import {
 } from "./lib/painel-autor-storage-utils";
 import {
   colecaoTemObraPainel,
-  obterIdentificadoresObraPainel,
+  filtrarListaPorObrasDoUsuario,
   removerObraDaColecaoPainel,
 } from "./lib/painel-autor-collection-utils";
 import {
@@ -735,17 +735,6 @@ async function removerReferenciasSupabaseObraExcluidaPainel(
     // A exclusão principal da obra continua mesmo se a limpeza social falhar.
   }
 }
-
-function filtrarListaPorObrasDoUsuario(listaIds: string[], obrasUsuario: ObraLocal[]) {
-  return listaIds.filter((id) => {
-    const idLimpo = id.trim();
-
-    return obrasUsuario.some((obra) =>
-      obterIdentificadoresObraPainel(obra).includes(idLimpo)
-    );
-  });
-}
-
 
 async function carregarComentariosCapitulosUsuarioPainel(
   userId: string,

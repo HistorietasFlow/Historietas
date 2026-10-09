@@ -34,6 +34,7 @@ const normalizarTexto = (texto) => texto
 const {
   obterIdentificadoresObraPainel,
   colecaoTemObraPainel,
+  filtrarListaPorObrasDoUsuario,
   removerObraDaColecaoPainel,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
@@ -68,17 +69,33 @@ test("remocao preserva itens nao relacionados e remove todos os identificadores"
   );
 });
 
+test("filtragem preserva ordem, valores e trim dos identificadores", () => {
+  assert.deepEqual(
+    filtrarListaPorObrasDoUsuario(
+      [" outra-obra ", " obra-1 ", "fantasia sombria", "inexistente"],
+      [obra],
+    ),
+    [" obra-1 ", "fantasia sombria"],
+  );
+});
+
 test("Painel do Autor delega somente helpers puros de colecao", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?colecaoTemObraPainel,[\s\S]*?obterIdentificadoresObraPainel,[\s\S]*?removerObraDaColecaoPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-collection-utils";/,
+    /import \{[\s\S]*?colecaoTemObraPainel,[\s\S]*?filtrarListaPorObrasDoUsuario,[\s\S]*?removerObraDaColecaoPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-collection-utils";/,
   );
   assert.doesNotMatch(pagina, /function obterIdentificadoresObraPainel\(/);
   assert.doesNotMatch(pagina, /function colecaoTemObraPainel\(/);
   assert.doesNotMatch(pagina, /function removerObraDaColecaoPainel\(/);
-  assert.equal((pagina.match(/\bobterIdentificadoresObraPainel\b/g) || []).length, 2);
+  assert.doesNotMatch(pagina, /function filtrarListaPorObrasDoUsuario\(/);
+  assert.equal((pagina.match(/\bobterIdentificadoresObraPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bcolecaoTemObraPainel\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 4);
+  assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 5);
+  assert.match(
+    utilsSource,
+    /export function filtrarListaPorObrasDoUsuario[\s\S]*?obterIdentificadoresObraPainel\(obra\)\.includes\(idLimpo\)/,
+  );
   assert.match(pagina, /function limparReferenciasLocaisObraExcluidaPainel\(/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
