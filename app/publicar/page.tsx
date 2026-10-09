@@ -7,6 +7,15 @@ import type { ChangeEvent, CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { publicarPageCss } from "./lib/publicar-page-css";
+import {
+  calcularMinutosLeitura,
+  campoValido,
+  contarCaracteresValidos,
+  contarPalavras,
+  limparTextoPersonalizado,
+  nomeArquivoParaTitulo,
+  textoPersonalizadoValido,
+} from "./lib/publicar-text-utils";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -1459,55 +1468,6 @@ async function registrarDiarioPublicacao({
   } catch (error) {
     console.warn("Não consegui registrar a publicação no Diário:", error);
   }
-}
-
-function contarCaracteresValidos(texto: string) {
-  return texto.match(/[\p{L}\p{N}]/gu)?.length || 0;
-}
-
-function limparTextoPersonalizado(texto: string, limite: number) {
-  return texto
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
-    .replace(/\s+/g, " ")
-    .trimStart()
-    .slice(0, limite);
-}
-
-function textoPersonalizadoValido(texto: string, minimo: number, limite: number) {
-  const textoLimpo = texto.trim().replace(/\s+/g, " ");
-
-  if (textoLimpo.length > limite) {
-    return false;
-  }
-
-  if (contarCaracteresValidos(textoLimpo) < minimo) {
-    return false;
-  }
-
-  return /^[\p{L}\p{N}][\p{L}\p{N}\s-]*$/u.test(textoLimpo);
-}
-
-
-function campoValido(texto: string, minimo: number) {
-  return contarCaracteresValidos(texto.trim()) >= minimo;
-}
-
-function contarPalavras(texto: string) {
-  return texto.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function calcularMinutosLeitura(texto: string) {
-  const palavras = contarPalavras(texto);
-
-  return palavras > 0 ? Math.max(1, Math.ceil(palavras / 220)) : 0;
-}
-
-function nomeArquivoParaTitulo(nomeArquivo: string) {
-  return nomeArquivo
-    .replace(/\.(txt|md)$/i, "")
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function arquivoTextoAceito(arquivo: File) {
