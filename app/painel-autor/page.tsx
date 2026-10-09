@@ -19,6 +19,7 @@ import {
   obterTimestamp,
 } from "./lib/painel-autor-format-utils";
 import {
+  criarHrefLeituraCapituloPainel,
   criarLoginHrefPainelAutor,
   criarPerfilAutorHref,
 } from "./lib/painel-autor-route-utils";
@@ -182,28 +183,6 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
-function criarHrefLeituraCapituloPainel(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
-  capitulo: Pick<CapituloLocal, "id">,
-  numeroCapitulo: number
-) {
-  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  if (
-    obra.publicado &&
-    idObraSupabaseValido(obra.id) &&
-    slugSeguro &&
-    Number.isInteger(numeroCapitulo) &&
-    numeroCapitulo > 0
-  ) {
-    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
-  }
-
-  return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id
-  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
-}
 
 function obraPublicadaComConteudoPainel(
   obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">

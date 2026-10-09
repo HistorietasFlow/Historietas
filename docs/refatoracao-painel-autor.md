@@ -73,6 +73,10 @@
 
 - Extraído `encontrarCapituloParaContinuar`, preservando seleção de capítulos publicados, avanço após o último lido, fallbacks, retornos nulos e identidade dos capítulos.
 
+## Fase 872 — rota de leitura de capítulo
+
+- Extraído `criarHrefLeituraCapituloPainel`, preservando validações, encoding, URLs e fallbacks.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
