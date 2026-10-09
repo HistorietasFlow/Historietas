@@ -14,6 +14,10 @@ import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
+import {
+  criarLoginHrefPainelAutor,
+  criarPerfilAutorHref,
+} from "./lib/painel-autor-route-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
@@ -180,14 +184,6 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
-function criarLoginHrefPainelAutor() {
-  const params = new URLSearchParams({
-    redirectTo: "/painel-autor",
-  });
-
-  return `/login?${params.toString()}`;
-}
 
 function criarHrefLeituraCapituloPainel(
   obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
@@ -2656,25 +2652,6 @@ export default function PainelAutorPage() {
       </section>
     </main>
   );
-}
-
-function criarPerfilAutorHref(autor: string, autorId?: string, userId?: string) {
-  const autorLimpo = autor.trim() || "Autor não informado";
-  const autorIdLimpo = autorId?.trim() || "";
-  const userIdLimpo = userId?.trim() || autorIdLimpo;
-  const params = new URLSearchParams();
-
-  params.set("autor", autorLimpo);
-
-  if (autorIdLimpo) {
-    params.set("autorId", autorIdLimpo);
-  }
-
-  if (userIdLimpo) {
-    params.set("userId", userIdLimpo);
-  }
-
-  return `/perfil-autor?${params.toString()}`;
 }
 
 function PainelSecao({
