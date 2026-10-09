@@ -50,6 +50,9 @@ test("Painel do Autor delega somente os formatadores", () => {
   assert.doesNotMatch(pagina, /function obterTimestamp\(/);
   assert.equal((pagina.match(/\bformatarGeneroPainelAutor\b/g) || []).length, 2);
   assert.equal((pagina.match(/\bobterTimestamp\b/g) || []).length, 5);
-  assert.match(pagina, /function criarHrefLeituraCapituloPainel\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?criarHrefLeituraCapituloPainel[\s\S]*?\} from "\.\/lib\/painel-autor-route-utils";/,
+  );
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
 });

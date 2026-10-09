@@ -70,7 +70,10 @@ test("Painel do Autor delega somente tipos e opções de filtro e ordenação", 
     pagina,
     /const \[ordenacao, setOrdenacao\] = useState<OrdenacaoPainel>\("pontuacao"\);/,
   );
-  assert.match(pagina, /function criarHrefLeituraCapituloPainel\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?criarHrefLeituraCapituloPainel[\s\S]*?\} from "\.\/lib\/painel-autor-route-utils";/,
+  );
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(optionsSource, /supabase|useState|useEffect|localStorage/);
 });

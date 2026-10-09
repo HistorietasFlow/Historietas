@@ -1,3 +1,5 @@
+import { criarSlugBase, idObraSupabaseValido } from "../../../lib/utils";
+
 export function criarLoginHrefPainelAutor() {
   const params = new URLSearchParams({
     redirectTo: "/painel-autor",
@@ -27,4 +29,26 @@ export function criarPerfilAutorHref(
   }
 
   return `/perfil-autor?${params.toString()}`;
+}
+
+export function criarHrefLeituraCapituloPainel(
+  obra: { id: string; slug?: string; titulo: string; publicado: boolean },
+  capitulo: { id: string },
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }

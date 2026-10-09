@@ -14,13 +14,22 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
-const utilsJavascript = typescript.transpileModule(utilsSource, {
-  compilerOptions: {
-    module: typescript.ModuleKind.ESNext,
-    target: typescript.ScriptTarget.ES2022,
-  },
-}).outputText;
-const { criarLoginHrefPainelAutor, criarPerfilAutorHref } = await import(
+const utilsJavascript = typescript
+  .transpileModule(utilsSource, {
+    compilerOptions: {
+      module: typescript.ModuleKind.ESNext,
+      target: typescript.ScriptTarget.ES2022,
+    },
+  })
+  .outputText.replace(
+    'import { criarSlugBase, idObraSupabaseValido } from "../../../lib/utils";',
+    'const criarSlugBase = (texto) => texto.trim().toLowerCase().replace(/\\s+/g, "-");\nconst idObraSupabaseValido = (id) => id === "obra-valida";',
+  );
+const {
+  criarHrefLeituraCapituloPainel,
+  criarLoginHrefPainelAutor,
+  criarPerfilAutorHref,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
 
@@ -47,16 +56,35 @@ test("criarPerfilAutorHref preserva limpeza, fallbacks e parâmetros", () => {
   );
 });
 
+test("criarHrefLeituraCapituloPainel preserva URL publica e fallback", () => {
+  assert.equal(
+    criarHrefLeituraCapituloPainel(
+      { id: "obra-valida", slug: " obra teste ", titulo: "Ignorado", publicado: true },
+      { id: "capitulo-1" },
+      2,
+    ),
+    "/obra/obra%20teste/capitulo/2",
+  );
+  assert.equal(
+    criarHrefLeituraCapituloPainel(
+      { id: "obra local", titulo: "Titulo da Obra", publicado: false },
+      { id: "capitulo especial" },
+      0,
+    ),
+    "/ler-capitulo?obraId=obra%20local&capituloId=capitulo%20especial",
+  );
+});
+
 test("Painel do Autor delega somente os helpers de navegação", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarLoginHrefPainelAutor,[\s\S]*?criarPerfilAutorHref,[\s\S]*?\} from "\.\/lib\/painel-autor-route-utils";/,
+    /import \{[\s\S]*?criarHrefLeituraCapituloPainel,[\s\S]*?criarLoginHrefPainelAutor,[\s\S]*?criarPerfilAutorHref,[\s\S]*?\} from "\.\/lib\/painel-autor-route-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarLoginHrefPainelAutor\(/);
   assert.doesNotMatch(pagina, /function criarPerfilAutorHref\(/);
   assert.equal((pagina.match(/\bcriarLoginHrefPainelAutor\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bcriarPerfilAutorHref\b/g) || []).length, 2);
-  assert.match(pagina, /function criarHrefLeituraCapituloPainel\(/);
+  assert.doesNotMatch(pagina, /function criarHrefLeituraCapituloPainel\(/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /const STORAGE_KEY/);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
