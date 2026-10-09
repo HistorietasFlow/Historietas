@@ -20,7 +20,12 @@ const utilsJavascript = typescript.transpileModule(utilsSource, {
     target: typescript.ScriptTarget.ES2022,
   },
 }).outputText;
-const { normalizarListaIds, criarStorageKeyUsuarioPainel } = await import(
+const {
+  normalizarListaIds,
+  criarStorageKeyUsuarioPainel,
+  lerStorageUsuarioPainel,
+  salvarJsonStorageUsuarioPainel,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
 
@@ -42,18 +47,33 @@ test("criarStorageKeyUsuarioPainel preserva chave, trim e fallback", () => {
   assert.equal(criarStorageKeyUsuarioPainel("", "usuario-1"), ":usuario-1");
 });
 
+test("helpers de leitura e gravação preservam guards e localStorage", () => {
+  assert.equal(lerStorageUsuarioPainel("historietas-obras", "usuario-1"), null);
+  assert.equal(salvarJsonStorageUsuarioPainel("historietas-obras", "usuario-1", {}), undefined);
+  assert.match(
+    utilsSource,
+    /if \(typeof window === "undefined" \|\| !userIdLimpo\) \{[\s\S]*?return null;/,
+  );
+  assert.match(utilsSource, /localStorage\.getItem\(chaveStorage\)/);
+  assert.match(utilsSource, /localStorage\.setItem\(chaveStorage, JSON\.stringify\(valor\)\)/);
+  assert.match(utilsSource, /catch \{[\s\S]*?return null;/);
+});
+
 test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarStorageKeyUsuarioPainel,[\s\S]*?normalizarListaIds,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
+    /import \{[\s\S]*?lerStorageUsuarioPainel,[\s\S]*?normalizarListaIds,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
   );
   assert.doesNotMatch(pagina, /function normalizarListaIds\(/);
   assert.doesNotMatch(pagina, /function criarStorageKeyUsuarioPainel\(/);
+  assert.doesNotMatch(pagina, /function lerStorageUsuarioPainel\(/);
+  assert.doesNotMatch(pagina, /function salvarJsonStorageUsuarioPainel\(/);
   assert.equal((pagina.match(/\bnormalizarListaIds\b/g) || []).length, 7);
-  assert.equal((pagina.match(/\bcriarStorageKeyUsuarioPainel\b/g) || []).length, 3);
-  assert.match(pagina, /function lerStorageUsuarioPainel\(/);
-  assert.match(pagina, /localStorage\.getItem\(chaveStorage\)/);
-  assert.match(pagina, /localStorage\.setItem\(chaveStorage, JSON\.stringify\(valor\)\)/);
+  assert.equal((pagina.match(/\bcriarStorageKeyUsuarioPainel\b/g) || []).length, 0);
+  assert.match(
+    utilsSource,
+    /criarStorageKeyUsuarioPainel\(chave, userIdLimpo\)/,
+  );
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.doesNotMatch(utilsSource, /localStorage|supabase|useState|useEffect/);
+  assert.doesNotMatch(utilsSource, /supabase|useState|useEffect/);
 });

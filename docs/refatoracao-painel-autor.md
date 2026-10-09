@@ -45,6 +45,10 @@
 
 - Extraídos `normalizarListaIds` e `criarStorageKeyUsuarioPainel`, preservando normalização, deduplicação, fallbacks, chaves e consumidores.
 
+## Fase 865 — leitura e gravação de armazenamento
+
+- Extraídos `lerStorageUsuarioPainel` e `salvarJsonStorageUsuarioPainel`, preservando guardas, trim, chaves, JSON, tratamento de erros e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
