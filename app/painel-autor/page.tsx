@@ -9,6 +9,7 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties } from "react";
+import { LoadingSpinner } from "./components/painel-autor-loading-spinner";
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
 import { carregarMetricasConteudos } from "../../lib/metricas";
@@ -2027,23 +2028,6 @@ async function carregarPainelAutorSupabase(
   }
 }
 
-function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={label}
-      style={loadingPageStyle}
-    >
-      <span
-        className="historietas-loading-spinner"
-        style={loadingSpinnerStyle}
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
-
 export default function PainelAutorPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
@@ -3476,28 +3460,6 @@ const desktopTopWaterFadeStyle: CSSProperties = {
 };
 
 const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)";
-
-const loadingPageStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 2,
-  width: "100%",
-  minHeight: "100dvh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-};
-
-const loadingSpinnerStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "999px",
-  border: "3px solid rgba(255,255,255,0.20)",
-  borderTopColor: "#FFFFFF",
-  boxSizing: "border-box",
-  animation: "historietas-loading-spin 0.78s linear infinite",
-  flex: "0 0 auto",
-};
 
 const pageStyle: CSSProperties = {
   position: "relative",
