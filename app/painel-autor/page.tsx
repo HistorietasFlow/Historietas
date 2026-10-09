@@ -22,6 +22,12 @@ import {
   criarLoginHrefPainelAutor,
   criarPerfilAutorHref,
 } from "./lib/painel-autor-route-utils";
+import {
+  FILTROS_PAINEL,
+  ORDENACOES_PAINEL,
+  type FiltroPainel,
+  type OrdenacaoPainel,
+} from "./lib/painel-autor-filter-options";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
@@ -144,42 +150,6 @@ type ObraComMetricas = ObraLocal & {
   ultimoCapituloLido: CapituloLocal | null;
   pontuacao: number;
 };
-
-
-type FiltroPainel =
-  | "todas"
-  | "publicadas"
-  | "rascunhos"
-  | "sem-capitulos"
-  | "favoritas"
-  | "concluidas"
-  | "em-leitura";
-
-type OrdenacaoPainel =
-  | "pontuacao"
-  | "recentes"
-  | "titulo"
-  | "capitulos"
-  | "progresso";
-
-const FILTROS_PAINEL: { valor: FiltroPainel; rotulo: string }[] = [
-  { valor: "todas", rotulo: "Todas as obras" },
-  { valor: "publicadas", rotulo: "Publicadas" },
-  { valor: "rascunhos", rotulo: "Rascunhos" },
-  { valor: "sem-capitulos", rotulo: "Sem capítulos" },
-  { valor: "favoritas", rotulo: "Na lista" },
-  { valor: "concluidas", rotulo: "Concluídas" },
-  { valor: "em-leitura", rotulo: "Em leitura" },
-];
-
-const ORDENACOES_PAINEL: { valor: OrdenacaoPainel; rotulo: string }[] = [
-  { valor: "pontuacao", rotulo: "Melhor desempenho" },
-  { valor: "recentes", rotulo: "Mais recentes" },
-  { valor: "titulo", rotulo: "Título" },
-  { valor: "capitulos", rotulo: "Mais capítulos" },
-  { valor: "progresso", rotulo: "Maior progresso" },
-];
-
 
 
 const STORAGE_KEY = "historietas-obras";

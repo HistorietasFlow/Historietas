@@ -37,6 +37,10 @@
 
 - Extraídos `formatarGeneroPainelAutor` e `obterTimestamp`, preservando normalização, fallbacks e consumidores.
 
+## Fase 863 — opções de filtros e ordenação
+
+- Extraídos `FiltroPainel`, `OrdenacaoPainel`, `FILTROS_PAINEL` e `ORDENACOES_PAINEL`, preservando tipos, valores, rótulos, ordem e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
