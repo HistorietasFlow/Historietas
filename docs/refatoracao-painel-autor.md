@@ -13,6 +13,10 @@
 
 - Extraído `LoadingSpinner` com seus estilos exclusivos; keyframe e reduced-motion permanecem em `painelAutorPageCss`.
 
+## Fase 857 — body lock do painel de filtros
+
+- Extraído `usePainelAutorFiltersBodyLock`, preservando o lock e a restauração de `overflow` e `overscroll-behavior`.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
