@@ -513,6 +513,7 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 796: extrair somente `obterContextoAutorObra`, preservando a prioridade de perfil público, fallback de autor/ID da obra e a autoria por igualdade estrita de IDs não vazios.
 - Fase 797: extrair somente `obterAvaliacaoLocalInicialObra`, preservando o bloqueio local de avaliação do autor e o fallback detalhado para os demais usuários.
 - Fase 798: extrair somente `useObraViewRegistration`, preservando guards de acesso, deduplicação por ref string, registro assíncrono e atualização monotônica de visualizações.
+- Fase 851: extrair somente `useAdminComunidadeDesktopMode`, preservando o estado inicial, breakpoint, atualização síncrona, listeners moderno/legado e todos os consumidores visuais no cliente.
 
 ## Contrato de preservação
 

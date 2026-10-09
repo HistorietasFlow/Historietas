@@ -13,6 +13,7 @@ import {
 import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../../lib/i18n";
+import { useAdminComunidadeDesktopMode } from "./hooks/use-admin-comunidade-desktop-mode";
 
 type TipoAlvoDenuncia =
   | "post"
@@ -1302,35 +1303,11 @@ export default function AdminComunidadePage() {
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [observacoes, setObservacoes] = useState<Record<string, string>>({});
   const [menuDenunciaAbertoId, setMenuDenunciaAbertoId] = useState("");
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useAdminComunidadeDesktopMode();
   const router = useRouter();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
 
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    atualizarModoDesktop();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
 
   async function carregarDenuncias() {
