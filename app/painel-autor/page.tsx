@@ -23,6 +23,10 @@ import {
 import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import {
+  caminhoStoragePertenceAoUsuarioPainel,
+  obterCaminhoStoragePainel,
+} from "./lib/painel-autor-file-storage-path-utils";
+import {
   formatarGeneroPainelAutor,
   obterTimestamp,
 } from "./lib/painel-autor-format-utils";
@@ -295,57 +299,6 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
-
-function obterCaminhoStoragePainel(
-  bucket: "capas-obras" | "arquivos-obras",
-  referencia: string
-) {
-  const referenciaLimpa = referencia.trim();
-
-  if (!referenciaLimpa || referenciaLimpa.startsWith("data:")) {
-    return "";
-  }
-
-  if (!/^https?:\/\//i.test(referenciaLimpa)) {
-    return referenciaLimpa
-      .replace(new RegExp(`^${bucket}/`), "")
-      .replace(/^\/+/, "");
-  }
-
-  try {
-    const url = new URL(referenciaLimpa);
-    const prefixos = [
-      `/storage/v1/object/public/${bucket}/`,
-      `/storage/v1/object/sign/${bucket}/`,
-      `/storage/v1/object/authenticated/${bucket}/`,
-    ];
-    const prefixo = prefixos.find((valor) => url.pathname.includes(valor));
-
-    if (!prefixo) {
-      return "";
-    }
-
-    const indice = url.pathname.indexOf(prefixo);
-    const caminhoCodificado = url.pathname.slice(indice + prefixo.length);
-
-    return decodeURIComponent(caminhoCodificado).replace(/^\/+/, "");
-  } catch {
-    return "";
-  }
-}
-
-function caminhoStoragePertenceAoUsuarioPainel(
-  caminho: string,
-  userId: string
-) {
-  const primeiraPasta = caminho.trim().split("/")[0] || "";
-
-  return Boolean(
-    primeiraPasta &&
-      userId.trim() &&
-      primeiraPasta.toLowerCase() === userId.trim().toLowerCase()
-  );
-}
 
 async function criarUrlAssinadaArquivoObraPainel(
   obraId: string,
