@@ -14,6 +14,10 @@ import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
+import {
+  normalizarIdUsuarioPainel,
+  obraPertenceAoUsuarioPainel,
+} from "./lib/painel-autor-ownership-utils";
 import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import {
@@ -728,17 +732,6 @@ async function removerReferenciasSupabaseObraExcluidaPainel(
   } catch {
     // A exclusão principal da obra continua mesmo se a limpeza social falhar.
   }
-}
-
-function normalizarIdUsuarioPainel(valor: string) {
-  return valor.trim().toLowerCase();
-}
-
-function obraPertenceAoUsuarioPainel(obra: Pick<ObraLocal, "autorId">, userId: string) {
-  const autorIdObra = normalizarIdUsuarioPainel(obra.autorId || "");
-  const usuarioId = normalizarIdUsuarioPainel(userId);
-
-  return Boolean(usuarioId && autorIdObra && autorIdObra === usuarioId);
 }
 
 function filtrarObrasDoUsuarioPainel(obras: ObraLocal[], userId: string) {
