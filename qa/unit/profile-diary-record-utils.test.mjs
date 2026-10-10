@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const itemUtilsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-diary-item-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(
   utilsSource.replace(
     'import { pegarTexto } from "./data-normalizers";',
@@ -117,7 +124,18 @@ test("Perfil de Autor delega somente os helpers puros de registros do diário", 
   }
 
   assert.match(pagina, /registroDiarioPodeAparecer\(registro, incluirItensDoDiario, "privado"\)/);
-  assert.match(pagina, /const data = obterDataRegistroDiario\(registro\);/);
+  assert.match(
+    itemUtilsSource,
+    /export function criarItemAtividadeDiarioPerfil\([\s\S]*?const data = obterDataRegistroDiario\(registro\);/,
+  );
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?criarItemAtividadeDiarioPerfil,[\s\S]*?\} from "\.\/lib\/profile-diary-item-utils";/,
+  );
+  assert.match(
+    pagina,
+    /criarItemAtividadeDiarioPerfil\(registro, obrasPorId, obrasPorCapituloId\)/,
+  );
   assert.match(pagina, /: criarEstadoDiarioPerfilVazio\(\);/);
   assert.match(pagina, /supabase\s*\.from\("diario_atividades"\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);

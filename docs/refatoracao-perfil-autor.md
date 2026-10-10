@@ -24,3 +24,8 @@
 
 - Extraiu ordenação, chaves de deduplicação e mesclagem de itens para `profile-diary-merge-utils`.
 - Manteve as consultas Supabase, regras de privacidade e todos os consumidores do Diário na página.
+
+## Fase 898 — helpers de construção e resolução de itens do diário
+
+- Extraiu a construção de itens, metadados, URLs, mapas e resolução de obras para `profile-diary-item-utils`.
+- Manteve as consultas Supabase, regras de privacidade e todos os consumidores do Diário na página.
