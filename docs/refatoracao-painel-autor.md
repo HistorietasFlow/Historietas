@@ -157,6 +157,10 @@
 
 - Extraídos os estilos de informação e métricas dos cards, preservando `safeTextStyle`, consumidores e a composição desktop das estatísticas.
 
+## Fase 893 — botões e painel de ações das obras
+
+- Extraídos os estilos dos botões e do painel de ações, preservando `safeTextStyle`, consumidores e a composição desktop das ações na página.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

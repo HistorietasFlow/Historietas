@@ -99,6 +99,25 @@ import {
   sheetStatValueStyle,
   sheetStatsRowStyle,
 } from "./lib/painel-autor-work-card-stats-style-utils";
+import {
+  actionsGridStyle,
+  chapterButtonStyle,
+  deleteButtonStyle,
+  editButtonStyle,
+  fileButtonStyle,
+  openButtonStyle,
+  readButtonStyle,
+  shareButtonStyle,
+  workCardDotsButtonStyle,
+} from "./lib/painel-autor-work-actions-style-utils";
+import {
+  workActionSheetHandleStyle,
+  workActionSheetHeaderStyle,
+  workActionSheetOverlayStyle,
+  workActionSheetStyle,
+  workActionSheetTextBlockStyle,
+  workActionSheetTitleStyle,
+} from "./lib/painel-autor-work-action-sheet-style-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
@@ -2404,176 +2423,6 @@ function ObraPainelCard({
 }
 
 const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)";
-
-const actionsGridStyle: CSSProperties = {
-  display: "grid",
-  gap: 0,
-  borderRadius: 0,
-  border: "none",
-  background: "transparent",
-  overflow: "hidden",
-};
-
-const openButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "100%",
-  minHeight: "44px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  gap: "16px",
-  border: "none",
-  borderRadius: 0,
-  background: "transparent",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  padding: "0 30px",
-  fontSize: "18px",
-  fontWeight: 650,
-  lineHeight: 1,
-  letterSpacing: "-0.035em",
-  fontFamily: "inherit",
-  textAlign: "left",
-  cursor: "pointer",
-  boxSizing: "border-box",
-  whiteSpace: "nowrap",
-  ...safeTextStyle,
-};
-
-const readButtonStyle: CSSProperties = {
-  ...openButtonStyle,
-  fontWeight: 900,
-};
-
-
-const editButtonStyle: CSSProperties = {
-  ...openButtonStyle,
-};
-
-const chapterButtonStyle: CSSProperties = {
-  ...openButtonStyle,
-};
-
-const fileButtonStyle: CSSProperties = {
-  ...openButtonStyle,
-};
-
-const shareButtonStyle: CSSProperties = {
-  ...openButtonStyle,
-};
-
-const deleteButtonStyle: CSSProperties = {
-  ...openButtonStyle,
-  color: "var(--historietas-danger-button-text, #FFFFFF)",
-};
-
-const workCardDotsButtonStyle: CSSProperties = {
-  position: "absolute",
-  right: "8px",
-  bottom: "8px",
-  zIndex: 4,
-  width: "24px",
-  height: "24px",
-  border: "none",
-  borderRadius: 0,
-  background: "transparent",
-  color: "#FFFFFF",
-  fontSize: "21px",
-  lineHeight: 1,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-  margin: 0,
-  textShadow: "none",
-};
-
-const workActionSheetOverlayStyle: CSSProperties = {
-  position: "fixed",
-  left: 0,
-  right: 0,
-  top: 0,
-  bottom: 0,
-  height: "100dvh",
-  zIndex: 9998,
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "center",
-  background: "rgba(0,0,0,0.68)",
-  padding: 0,
-  boxSizing: "border-box",
-  overscrollBehavior: "none",
-  touchAction: "none",
-};
-
-const workActionSheetStyle: CSSProperties = {
-  position: "fixed",
-  left: "50%",
-  bottom: 0,
-  transform: "translateX(-50%)",
-  width: "min(820px, 100%)",
-  maxHeight: "calc(100dvh - 190px)",
-  overflowX: "hidden",
-  overflowY: "auto",
-  overscrollBehavior: "contain",
-  borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-painel-bg, #000000)",
-  border: "none",
-  borderBottom: "0",
-  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
-  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
-  display: "grid",
-  gap: 0,
-  boxSizing: "border-box",
-  touchAction: "none",
-};
-
-const workActionSheetHandleStyle: CSSProperties = {
-  width: "72px",
-  height: "5px",
-  borderRadius: "999px",
-  background: "rgba(244,244,245,0.62)",
-  justifySelf: "center",
-  margin: "0 auto 12px",
-};
-
-const workActionSheetHeaderStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  padding: "0 24px 10px",
-  boxSizing: "border-box",
-  borderBottom: "none",
-};
-
-const workActionSheetTextBlockStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  width: "100%",
-};
-
-const workActionSheetTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "21px",
-  fontWeight: 950,
-  lineHeight: 1.1,
-  letterSpacing: "-0.04em",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  textAlign: "center",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
