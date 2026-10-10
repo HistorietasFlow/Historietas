@@ -49,3 +49,8 @@
 
 - Extraiu a coleta de IDs, a formatação de datas e a montagem local do Diário para `profile-diary-local-utils`.
 - Manteve as coleções, visibilidades, ordenação, limite de atividades e todos os consumidores na página.
+
+## Fase 903 — carregadores de obras publicadas
+
+- Extraiu os carregadores de obras publicadas e por IDs para `profile-published-works-loader`.
+- Manteve consultas Supabase, paginação, capítulos, fallbacks e todos os consumidores na página.
