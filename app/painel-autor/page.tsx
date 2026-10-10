@@ -23,6 +23,7 @@ import {
 import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
+import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
 import {
   obraPublicadaComConteudoPainel,
   obraRascunhoOuSemConteudoPainel,
@@ -295,26 +296,6 @@ async function removerArquivosStorageObraExcluidaPainel(
       );
     }
   });
-}
-
-function obterChavesBackupArquivoPainel(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo"> &
-    Partial<Pick<ObraLocal, "link">>
-) {
-  return Array.from(
-    new Set(
-      [
-        obra.id ? `id:${obra.id}` : "",
-        obra.id || "",
-        obra.slug ? `slug:${obra.slug}` : "",
-        `slug:${obra.slug || criarSlugBase(obra.titulo)}`,
-        `titulo:${normalizarTexto(obra.titulo)}`,
-        obra.link ? `link:${obra.link}` : "",
-      ]
-        .map((chave) => chave.trim())
-        .filter(Boolean)
-    )
-  );
 }
 
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
