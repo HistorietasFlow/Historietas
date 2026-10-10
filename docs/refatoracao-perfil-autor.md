@@ -84,3 +84,8 @@
 
 - Extraiu `carregarComunidadePerfilSupabase` para `profile-community-loader`.
 - Manteve consultas, contagens, normalização, filtro de classificação e consumidores.
+
+## Fase 910 — sincronização de coleções do usuário
+
+- Extraiu `sincronizarTabelaUsuario` e `sincronizarAutorSeguidoSupabase` para `profile-user-collections-sync`.
+- Manteve autenticação, ordem delete/insert, payloads, visibilidade, upsert/delete de autores e fallbacks locais.
