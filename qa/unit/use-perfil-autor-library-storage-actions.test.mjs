@@ -16,12 +16,13 @@ const pagina = readFileSync(
 );
 let indiceModulo = 0;
 
-async function carregarModulo({ falharStorage = false } = {}) {
+async function carregarModulo({ falharStorage = false, onSalvar = null } = {}) {
   const chamadas = [];
   globalThis.__profileLibraryStorageDependencies = {
     storageKey: "historietas-obras",
     salvarJsonUsuarioPerfilAutor(chave, userId, valor) {
       chamadas.push(["salvar", chave, userId, valor]);
+      onSalvar?.(chave, userId, valor);
       if (falharStorage) {
         throw new Error("localStorage indisponível");
       }
@@ -55,15 +56,13 @@ async function carregarModulo({ falharStorage = false } = {}) {
 }
 
 test("atualiza o estado antes de persistir a Biblioteca", async () => {
-  const modulo = await carregarModulo();
   const ordem = [];
   const obras = [{ id: "obra-1" }];
-
-  globalThis.__profileLibraryStorageDependencies.salvarJsonUsuarioPerfilAutor =
-    (chave, userId, valor) => {
+  const modulo = await carregarModulo({
+    onSalvar(chave, userId, valor) {
       ordem.push(["salvar", chave, userId, valor]);
-      modulo.chamadas.push(["salvar", chave, userId, valor]);
-    };
+    },
+  });
 
   const { salvarObrasBibliotecaPerfil } =
     modulo.usePerfilAutorLibraryStorageActions({
