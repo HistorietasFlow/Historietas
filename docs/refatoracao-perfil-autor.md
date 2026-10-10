@@ -99,3 +99,8 @@
 
 - Extraiu `carregarPerfilUsuarioSupabase` para `profile-public-profile-loader`.
 - Manteve validação de ID, consulta por `user_id` com fallback por `id`, campos, normalização e propagação de erros.
+
+## Fase 913 — rota de login do perfil
+
+- Extraiu `criarLoginHrefPerfilAutor` para `profile-login-route-utils`.
+- Manteve pathname, query string, validação contra destino iniciado por `//`, fallback para `/perfil-autor` e serialização de `redirectTo`.
