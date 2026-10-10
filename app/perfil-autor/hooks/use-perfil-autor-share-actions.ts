@@ -9,8 +9,10 @@ import {
 } from "../lib/profile-sharing-utils";
 
 export function usePerfilAutorShareActions({
+  autorHandlePerfil,
   setMensagemAcao,
 }: {
+  autorHandlePerfil: string;
   setMensagemAcao: (mensagem: string) => void;
 }) {
   async function compartilharLinkPerfilAutor({
@@ -59,5 +61,16 @@ export function usePerfilAutorShareActions({
     setMensagemAcao(linkCopiado ? mensagemCopiado : mensagemErro);
   }
 
-  return { compartilharLinkPerfilAutor };
+  async function copiarUsernameCabecalho() {
+    const usernameCompleto = autorHandlePerfil.startsWith("@")
+      ? autorHandlePerfil
+      : `@${autorHandlePerfil}`;
+    const copiado = await copiarTextoComFallbackPerfilAutor(usernameCompleto);
+
+    if (!copiado) {
+      setMensagemAcao("Não foi possível copiar o username agora.");
+    }
+  }
+
+  return { compartilharLinkPerfilAutor, copiarUsernameCabecalho };
 }
