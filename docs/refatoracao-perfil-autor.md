@@ -9,3 +9,8 @@
 
 - Extraiu o estado e lifecycle de expiração para `usePerfilAutorActionMessage`.
 - Manteve as mensagens de domínio, limpezas manuais e o toast na página.
+
+## Fase 895 — helpers de publicações da comunidade
+
+- Extraiu a normalização, URL, análise de enquetes e resumo das publicações para `profile-community-publication-utils`.
+- Manteve as consultas Supabase e todos os consumidores de comunidade na página.
