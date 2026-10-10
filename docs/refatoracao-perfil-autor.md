@@ -124,3 +124,8 @@
 
 - Extraiu `carregarDiarioPerfilSupabase` para `profile-diary-loader`.
 - Manteve coleções, resolução de capítulos sem obra, carregamento de obras faltantes, classificação 18+, privacidade, progresso, avaliações, reviews e limite de atividades.
+
+## Fase 918 — verificação da sessão autenticada
+
+- Extraiu `usuarioEstaLogado` para `profile-auth-session-utils`.
+- Manteve `supabase.auth.getUser()`, retorno booleano e fallback `false` em falhas.
