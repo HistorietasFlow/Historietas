@@ -149,6 +149,10 @@
 
 - Extraídos os estilos e helpers visuais do painel de filtros, preservando a composição desktop, os spreads e todos os consumidores da página.
 
+## Fase 891 — estilos estruturais dos cards de obras
+
+- Extraídos os estilos estruturais dos cards, preservando `safeTextStyle`, os consumidores e as composições desktop na página.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
