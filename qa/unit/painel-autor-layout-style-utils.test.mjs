@@ -18,5 +18,9 @@ test("Painel do Autor delega somente os estilos básicos de layout", () => {
   assert.match(pagina, /const desktopContainerStyle: CSSProperties = \{\s*\.\.\.containerStyle,/);
   assert.match(pagina, /useHistorietasTheme\(pageStyle\)/);
   assert.match(pagina, /const themeGradient =/);
-  assert.match(pagina, /const safeTextStyle: CSSProperties = \{/);
+  assert.match(
+    pagina,
+    /safeTextStyle,\s*\} from "\.\/lib\/painel-autor-desktop-header-style-utils";/,
+  );
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties = \{/);
 });

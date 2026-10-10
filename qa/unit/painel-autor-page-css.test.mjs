@@ -45,7 +45,11 @@ test("Painel do Autor mantém os mounts e as fronteiras fora do CSS extraído", 
     /\$\{painelAutorPageCss\}\$\{historietasThemeCss\}/,
   );
 
-  assert.match(pagina, /const safeTextStyle: CSSProperties/);
+  assert.match(
+    pagina,
+    /safeTextStyle,\s*\} from "\.\/lib\/painel-autor-desktop-header-style-utils";/,
+  );
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/painel-autor-loading-spinner";/,
