@@ -137,6 +137,10 @@
 
 - Extraídos os fades, página, container e topo, preservando tema, container desktop e consumidores.
 
+## Fase 888 — cabeçalho desktop e busca
+
+- Extraídos estilos do cabeçalho desktop, busca e `safeTextStyle`, preservando spreads e consumidores compartilhados.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
