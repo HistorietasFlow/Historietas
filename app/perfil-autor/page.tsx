@@ -79,7 +79,6 @@ import type {
 import {
   AUTHOR_FOLLOW_STORAGE_KEY,
   AUTHOR_PROFILE_STORAGE_KEY,
-  AUTHOR_RATINGS_STORAGE_KEY,
   AVATAR_MAX_SIZE,
   AVATAR_STORAGE_BUCKET,
   BIO_MAX_LENGTH,
@@ -91,9 +90,7 @@ import {
   PERMISSOES_ABAS_PERFIL_PROPRIO,
   SOBRE_BIO_MAX_LENGTH,
   STORAGE_KEY,
-  TOP_FIVE_LIKES_STORAGE_KEY,
   TOP_FIVE_MAXIMO,
-  TOP_FIVE_STORAGE_KEY,
   avaliacaoAutorVazia,
   avaliacaoDiarioVazia,
   comunidadePerfilVazia,
@@ -123,7 +120,6 @@ import {
   normalizarNomeAutor,
   normalizarNumeroPerfilAutor,
   normalizarUsernamePerfilAutor,
-  obterChaveAvaliacaoAutor,
   obterTagPrincipalPerfilAutor,
   obterTimestampData,
 } from "./lib/profile-formatters";
@@ -135,7 +131,6 @@ import {
   mesclarObrasLocalStoragePerfilAutor,
   mostrarClassificacao,
   normalizarObra,
-  normalizarPerfisAutores,
   obraPertenceAoUsuarioPerfilAutor,
 } from "./lib/work-normalizers";
 import {
@@ -148,10 +143,8 @@ import {
   colecaoTemObraPerfilBiblioteca,
   converterCapitulosSalvosParaBiblioteca,
   converterItensDiarioParaBiblioteca,
-  criarChaveCurtidaTopFivePerfil,
   encontrarObraPorIdentificadorTopFivePerfil,
   mesclarItensBibliotecaPerfil,
-  normalizarCurtidasTopFiveLocais,
   removerObraDaColecaoPerfilBiblioteca,
 } from "./lib/library-normalizers";
 import {
@@ -198,6 +191,16 @@ import {
   salvarJsonUsuarioPerfilAutor,
   salvarListaIdsPerfilBiblioteca,
 } from "./lib/profile-local-storage-utils";
+import {
+  carregarPerfisAutores,
+  obterAvaliacaoAutorLocal,
+  salvarAvaliacaoAutorLocal,
+} from "./lib/profile-local-author-utils";
+import {
+  carregarCurtidasTopFiveLocais,
+  carregarTopFivePerfilAutor,
+  salvarCurtidaTopFiveLocal,
+} from "./lib/profile-top-five-local-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -372,195 +375,6 @@ function criarLoginHrefPerfilAutor() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function carregarAvaliacoesAutoresLocais(userId = "") {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  try {
-    const avaliacoesJson: unknown =
-      carregarJsonUsuarioPerfilAutor(AUTHOR_RATINGS_STORAGE_KEY, userId) || {};
-
-    if (
-      !avaliacoesJson ||
-      typeof avaliacoesJson !== "object" ||
-      Array.isArray(avaliacoesJson)
-    ) {
-      return {};
-    }
-
-    return avaliacoesJson as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
-
-function obterAvaliacaoAutorLocal(
-  perfil: Pick<AutorPerfil, "autorId" | "nome">,
-  userId = "",
-) {
-  const chaveAvaliacao = obterChaveAvaliacaoAutor(perfil);
-  const avaliacoesLocais = carregarAvaliacoesAutoresLocais(userId);
-  const nota = Number(avaliacoesLocais[chaveAvaliacao]);
-
-  return Number.isFinite(nota) && nota >= 0.5 && nota <= 5
-    ? Math.round(nota * 2) / 2
-    : 0;
-}
-
-function salvarAvaliacaoAutorLocal(
-  perfil: Pick<AutorPerfil, "autorId" | "nome">,
-  nota: number,
-  userId = "",
-) {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return;
-  }
-
-  try {
-    const chaveAvaliacao = obterChaveAvaliacaoAutor(perfil);
-
-    if (!chaveAvaliacao) {
-      return;
-    }
-
-    const avaliacoesLocais = carregarAvaliacoesAutoresLocais(userId);
-
-    if (nota <= 0) {
-      delete avaliacoesLocais[chaveAvaliacao];
-    } else {
-      avaliacoesLocais[chaveAvaliacao] = nota;
-    }
-
-    salvarJsonUsuarioPerfilAutor(
-      AUTHOR_RATINGS_STORAGE_KEY,
-      userId,
-      avaliacoesLocais,
-    );
-  } catch {
-    // Avaliação local é fallback e não deve travar o perfil.
-  }
-}
-
-function carregarPerfisAutores(userId = ""): PerfisAutoresSalvos {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return {};
-  }
-
-  try {
-    const perfis =
-      carregarJsonUsuarioPerfilAutor(AUTHOR_PROFILE_STORAGE_KEY, userIdLimpo) ||
-      {};
-    const perfisNormalizados = normalizarPerfisAutores(perfis);
-
-    salvarJsonUsuarioPerfilAutor(
-      AUTHOR_PROFILE_STORAGE_KEY,
-      userIdLimpo,
-      perfisNormalizados,
-    );
-
-    return perfisNormalizados;
-  } catch {
-    salvarJsonUsuarioPerfilAutor(AUTHOR_PROFILE_STORAGE_KEY, userIdLimpo, {});
-    return {};
-  }
-}
-
-function carregarTopFivePerfilAutor(userId = "") {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return [] as string[];
-  }
-
-  try {
-    const topFiveSalvo = carregarJsonUsuarioPerfilAutor(
-      TOP_FIVE_STORAGE_KEY,
-      userId,
-    );
-
-    return Array.isArray(topFiveSalvo)
-      ? Array.from(
-          new Set(
-            topFiveSalvo.filter(
-              (id): id is string =>
-                typeof id === "string" && Boolean(id.trim()),
-            ),
-          ),
-        ).slice(0, TOP_FIVE_MAXIMO)
-      : [];
-  } catch {
-    return [] as string[];
-  }
-}
-
-function carregarCurtidasTopFiveLocais(
-  perfilUserId: string,
-  usuarioId = "",
-) {
-  const chavePerfil = criarChaveCurtidaTopFivePerfil(perfilUserId);
-  const usuarioIdNormalizado = usuarioId.trim().toLowerCase();
-
-  if (!chavePerfil || !usuarioIdNormalizado) {
-    return { total: 0, curtiu: false };
-  }
-
-  try {
-    const curtidasJson = carregarJsonUsuarioPerfilAutor(
-      TOP_FIVE_LIKES_STORAGE_KEY,
-      usuarioIdNormalizado,
-    );
-    const curtidasPorPerfil = normalizarCurtidasTopFiveLocais(curtidasJson);
-    const curtidasPerfil = curtidasPorPerfil[chavePerfil] || [];
-
-    return {
-      total: curtidasPerfil.length,
-      curtiu: Boolean(
-        usuarioIdNormalizado && curtidasPerfil.includes(usuarioIdNormalizado),
-      ),
-    };
-  } catch {
-    return { total: 0, curtiu: false };
-  }
-}
-
-function salvarCurtidaTopFiveLocal(
-  perfilUserId: string,
-  usuarioId: string,
-  curtir: boolean,
-) {
-  const chavePerfil = criarChaveCurtidaTopFivePerfil(perfilUserId);
-  const usuarioIdNormalizado = usuarioId.trim().toLowerCase();
-
-  if (!chavePerfil || !usuarioIdNormalizado) {
-    return;
-  }
-
-  try {
-    const curtidasJson = carregarJsonUsuarioPerfilAutor(
-      TOP_FIVE_LIKES_STORAGE_KEY,
-      usuarioIdNormalizado,
-    );
-    const curtidasPorPerfil = normalizarCurtidasTopFiveLocais(curtidasJson);
-    const curtidasAtuais = curtidasPorPerfil[chavePerfil] || [];
-    const curtidasSemUsuario = curtidasAtuais.filter(
-      (curtidaUsuarioId) => curtidaUsuarioId !== usuarioIdNormalizado,
-    );
-
-    curtidasPorPerfil[chavePerfil] = curtir
-      ? [...curtidasSemUsuario, usuarioIdNormalizado]
-      : curtidasSemUsuario;
-
-    salvarJsonUsuarioPerfilAutor(
-      TOP_FIVE_LIKES_STORAGE_KEY,
-      usuarioIdNormalizado,
-      curtidasPorPerfil,
-    );
-  } catch {
-    // Curtida local é fallback e não deve travar o perfil.
-  }
 }
 
 async function carregarCurtidasTopFivePerfil(
