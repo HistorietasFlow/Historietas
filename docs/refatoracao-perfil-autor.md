@@ -64,3 +64,8 @@
 
 - Extraiu os carregadores de totais de métricas e interações de capítulos para `profile-interactions-loader`.
 - Manteve deduplicação, métricas, paginação por lotes, filtros por usuário, fallbacks e consumidores na página.
+
+## Fase 906 — carregadores do estado de seguidores
+
+- Extraiu as contagens e a leitura do estado de seguimento para `profile-follow-state-loader`.
+- Manteve as consultas `seguindo_usuarios`, os fallbacks, o perfil próprio e o consumidor na página.
