@@ -152,6 +152,7 @@ import {
 import { carregarComunidadePerfilSupabase } from "./lib/profile-community-loader";
 import { carregarPerfilUsuarioSupabase } from "./lib/profile-public-profile-loader";
 import { usuarioEstaLogado } from "./lib/profile-auth-session-utils";
+import { criarLoginHrefPerfilAutor } from "./lib/profile-login-route-utils";
 import { sincronizarNomeAutorObrasSupabase } from "./lib/profile-author-works-sync";
 import { enviarAvatarPerfilUsuarioSupabase } from "./lib/profile-avatar-upload";
 import { salvarPerfilUsuarioSupabase } from "./lib/profile-profile-persistence";
