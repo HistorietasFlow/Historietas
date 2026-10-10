@@ -59,16 +59,30 @@ async function carregarModulo({ copiarResultado = true, cancelado = false } = {}
   return { ...modulo, chamadas };
 }
 
-function criarAcoes(modulo, autorHandlePerfil = "@ana") {
+function criarAcoes(
+  modulo,
+  {
+    autorHandlePerfil = "@ana",
+    perfilParaMostrar = { nome: "Ana" },
+    perfilUsuarioRemotoAtivo = { username: "ana" },
+  } = {},
+) {
   const mensagens = [];
+  const menus = [];
   return {
     ...modulo.usePerfilAutorShareActions({
       autorHandlePerfil,
+      perfilParaMostrar,
+      perfilUsuarioRemotoAtivo,
       setMensagemAcao(mensagem) {
         mensagens.push(mensagem);
       },
+      setMenuPerfilAberto(aberto) {
+        menus.push(aberto);
+      },
     }),
     mensagens,
+    menus,
   };
 }
 
@@ -161,6 +175,66 @@ test("adiciona @ ao username e preserva mensagem de erro na falha", async () => 
   ]);
 });
 
+test("compartilha o perfil fechando o menu e preservando nome e username", async () => {
+  const modulo = await carregarModulo();
+  const acoes = criarAcoes(modulo);
+  const compartilhados = [];
+  const windowOriginal = globalThis.window;
+
+  globalThis.window = {
+    location: { href: "https://historietas.app/perfil/ana" },
+  };
+
+  try {
+    await comNavigator({
+      async share(payload) {
+        compartilhados.push(payload);
+      },
+    }, () => acoes.copiarLinkPerfil());
+  } finally {
+    if (windowOriginal === undefined) delete globalThis.window;
+    else globalThis.window = windowOriginal;
+  }
+
+  assert.deepEqual(acoes.menus, [false]);
+  assert.equal(compartilhados[0].title, "Ana no HISTORIETAS");
+  assert.equal(
+    compartilhados[0].text,
+    "Confira o perfil de Ana (@ana) no HISTORIETAS.",
+  );
+});
+
+test("usa fallback de nome quando o perfil não está disponível", async () => {
+  const modulo = await carregarModulo();
+  const acoes = criarAcoes(modulo, {
+    perfilParaMostrar: null,
+    perfilUsuarioRemotoAtivo: null,
+  });
+  const compartilhados = [];
+  const windowOriginal = globalThis.window;
+
+  globalThis.window = {
+    location: { href: "https://historietas.app/perfil-autor" },
+  };
+
+  try {
+    await comNavigator({
+      async share(payload) {
+        compartilhados.push(payload);
+      },
+    }, () => acoes.copiarLinkPerfil());
+  } finally {
+    if (windowOriginal === undefined) delete globalThis.window;
+    else globalThis.window = windowOriginal;
+  }
+
+  assert.equal(compartilhados[0].title, "este autor no HISTORIETAS");
+  assert.equal(
+    compartilhados[0].text,
+    "Confira o perfil de este autor no HISTORIETAS.",
+  );
+});
+
 test("Perfil de Autor delega o fluxo genérico de compartilhamento para o hook", () => {
   assert.match(
     pagina,
@@ -168,10 +242,12 @@ test("Perfil de Autor delega o fluxo genérico de compartilhamento para o hook",
   );
   assert.match(
     pagina,
-    /const \{ compartilharLinkPerfilAutor, copiarUsernameCabecalho \} =[\s\S]*?usePerfilAutorShareActions\(\{[\s\S]*?autorHandlePerfil,[\s\S]*?setMensagemAcao,[\s\S]*?\}\);/,
+    /const \{[\s\S]*?compartilharLinkPerfilAutor,[\s\S]*?copiarLinkPerfil,[\s\S]*?copiarUsernameCabecalho,[\s\S]*?\} = usePerfilAutorShareActions\(\{[\s\S]*?autorHandlePerfil,[\s\S]*?perfilParaMostrar,[\s\S]*?perfilUsuarioRemotoAtivo,[\s\S]*?setMensagemAcao,[\s\S]*?setMenuPerfilAberto,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /async function compartilharLinkPerfilAutor\(/);
+  assert.doesNotMatch(pagina, /async function copiarLinkPerfil\(/);
   assert.doesNotMatch(pagina, /async function copiarUsernameCabecalho\(/);
   assert.match(source, /await copiarTextoComFallbackPerfilAutor\(urlFinal\)/);
   assert.match(source, /await copiarTextoComFallbackPerfilAutor\(usernameCompleto\)/);
+  assert.match(source, /setMenuPerfilAberto\(false\)/);
 });
