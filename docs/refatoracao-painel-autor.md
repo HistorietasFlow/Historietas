@@ -117,6 +117,10 @@
 
 - Extraído `normalizarCapitulo`, preservando IDs, títulos, textos, datas, booleanos, fallbacks, numeração e consumidores.
 
+## Fase 883 — helpers de perfil do autor
+
+- Extraídos `obterNomeProfilePainelAutor` e `aplicarNomeProfileNasObrasPainel`, preservando validação, trim, identidade, ordem, propriedade, fallback de autor e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

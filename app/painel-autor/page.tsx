@@ -26,6 +26,10 @@ import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import {
+  aplicarNomeProfileNasObrasPainel,
+  obterNomeProfilePainelAutor,
+} from "./lib/painel-autor-profile-utils";
+import {
   obraPublicadaComConteudoPainel,
   obraRascunhoOuSemConteudoPainel,
   obterStatusPainelAutor,
@@ -848,12 +852,6 @@ function mesclarObrasPainelAutor(
   return obrasMescladas;
 }
 
-function obterNomeProfilePainelAutor(profile: ProfilePainelAutorRow | null | undefined) {
-  return typeof profile?.nome === "string" && profile.nome.trim()
-    ? profile.nome.trim()
-    : "";
-}
-
 async function carregarProfilePainelAutor(userId: string) {
   const userIdLimpo = userId.trim();
 
@@ -889,30 +887,6 @@ async function carregarProfilePainelAutor(userId: string) {
   }
 
   return null;
-}
-
-function aplicarNomeProfileNasObrasPainel(
-  obrasParaAtualizar: ObraLocal[],
-  userId: string,
-  nomeProfile: string
-) {
-  const nomeLimpo = nomeProfile.trim();
-
-  if (!nomeLimpo) {
-    return obrasParaAtualizar;
-  }
-
-  return obrasParaAtualizar.map((obra) => {
-    if (!obraPertenceAoUsuarioPainel(obra, userId)) {
-      return obra;
-    }
-
-    return {
-      ...obra,
-      autor: nomeLimpo,
-      autorId: obra.autorId || userId,
-    };
-  });
 }
 
 async function carregarPainelAutorSupabase(
