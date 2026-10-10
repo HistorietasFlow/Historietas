@@ -79,3 +79,8 @@
 
 - Extraiu o carregamento e a persistência de curtidas para `profile-top-five-supabase-utils`.
 - Manteve o fallback local, consultas, ordem de escrita e guardas de troca de identidade.
+
+## Fase 909 — carregador da comunidade
+
+- Extraiu `carregarComunidadePerfilSupabase` para `profile-community-loader`.
+- Manteve consultas, contagens, normalização, filtro de classificação e consumidores.
