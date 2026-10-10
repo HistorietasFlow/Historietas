@@ -25,6 +25,7 @@ import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-cate
 import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
+import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
   aplicarNomeProfileNasObrasPainel,
   obterNomeProfilePainelAutor,
@@ -822,34 +823,6 @@ function converterObraSupabaseParaLocalPainel({
     slug: slugObra,
     link: obraBanco.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
   };
-}
-
-function mesclarObrasPainelAutor(
-  obrasLocais: ObraLocal[],
-  obrasSupabase: ObraLocal[]
-) {
-  const obrasMescladas: ObraLocal[] = [...obrasLocais];
-
-  obrasSupabase.forEach((obraSupabase) => {
-    const indiceExistente = obrasMescladas.findIndex((obraLocal) => {
-      const slugLocal = obraLocal.slug || criarSlugBase(obraLocal.titulo);
-      const slugSupabase = obraSupabase.slug || criarSlugBase(obraSupabase.titulo);
-
-      return obraLocal.id === obraSupabase.id || slugLocal === slugSupabase;
-    });
-
-    if (indiceExistente >= 0) {
-      obrasMescladas[indiceExistente] = {
-        ...obrasMescladas[indiceExistente],
-        ...obraSupabase,
-      };
-      return;
-    }
-
-    obrasMescladas.unshift(obraSupabase);
-  });
-
-  return obrasMescladas;
 }
 
 async function carregarProfilePainelAutor(userId: string) {

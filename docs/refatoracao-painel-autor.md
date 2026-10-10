@@ -121,6 +121,10 @@
 
 - Extraídos `obterNomeProfilePainelAutor` e `aplicarNomeProfileNasObrasPainel`, preservando validação, trim, identidade, ordem, propriedade, fallback de autor e consumidores.
 
+## Fase 884 — mesclagem de obras
+
+- Extraído `mesclarObrasPainelAutor`, preservando correspondência por ID ou slug, fallback com `criarSlugBase`, prioridade Supabase, ordem, substituição e inserção de novas obras.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
