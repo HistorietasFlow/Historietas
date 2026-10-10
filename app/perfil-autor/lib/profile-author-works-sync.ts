@@ -1,10 +1,7 @@
 import { supabase } from "../../../lib/supabase/client";
 import { idAutorSupabaseValido } from "./profile-formatters";
 
-export async function sincronizarNomeAutorObrasSupabase(
-  userId: string,
-  nome: string,
-) {
+export async function sincronizarNomeAutorObrasSupabase(userId: string, nome: string) {
   const userIdLimpo = userId.trim();
   const nomeLimpo = nome.trim();
 
