@@ -39,3 +39,8 @@
 
 - Extraiu avaliações e perfis locais para `profile-local-author-utils` e o Top 5 local para `profile-top-five-local-utils`.
 - Manteve o isolamento por usuário, as chaves de armazenamento, as curtidas e todos os consumidores na página.
+
+## Fase 901 — helpers de compartilhamento
+
+- Extraiu a construção de URL, a cópia com fallback e a identificação de cancelamento para `profile-sharing-utils`.
+- Manteve o fluxo de compartilhamento, os consumidores e os fallbacks de navegador na página.
