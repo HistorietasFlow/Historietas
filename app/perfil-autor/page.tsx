@@ -39,6 +39,7 @@ import type { ChangeEvent } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
+import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-actions";
 import {
   copiarTextoComFallbackPerfilAutor,
   criarUrlAbsolutaCompartilhamentoPerfilAutor,
@@ -150,7 +151,6 @@ import {
 } from "./lib/profile-community-publication-utils";
 import { carregarComunidadePerfilSupabase } from "./lib/profile-community-loader";
 import { carregarPerfilUsuarioSupabase } from "./lib/profile-public-profile-loader";
-import { criarLoginHrefPerfilAutor } from "./lib/profile-login-route-utils";
 import { usuarioEstaLogado } from "./lib/profile-auth-session-utils";
 import { sincronizarNomeAutorObrasSupabase } from "./lib/profile-author-works-sync";
 import { enviarAvatarPerfilUsuarioSupabase } from "./lib/profile-avatar-upload";
@@ -408,6 +408,12 @@ function PerfilAutorPageContent() {
   const { selecionarAbaPerfil } = usePerfilAutorTabNavigation({
     setAbaPerfil,
   });
+  const { avisarLoginNecessario, sairDaConta } =
+    usePerfilAutorSessionActions({
+      router,
+      setMensagemAcao,
+      setMenuPerfilAberto,
+    });
   const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
     useState<AbaBibliotecaPerfil>("tudo");
   const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
@@ -2492,11 +2498,6 @@ function PerfilAutorPageContent() {
     ? `${comunidadeAutorHref}&tipo=Review`
     : "/comunidade?tipo=Review";
 
-  function avisarLoginNecessario(mensagem: string) {
-    setMensagemAcao(mensagem);
-    router.push(criarLoginHrefPerfilAutor());
-  }
-
   function abrirEditorPerfil() {
     if (!podeEditarPerfil || !perfilParaMostrar) {
       return;
@@ -3462,23 +3463,6 @@ function PerfilAutorPageContent() {
       mensagemCopiado: "Link da obra copiado.",
       mensagemErro: "Não consegui compartilhar nem copiar o link da obra neste navegador.",
     });
-  }
-
-  async function sairDaConta() {
-    setMenuPerfilAberto(false);
-
-    try {
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        setMensagemAcao("N\u00e3o foi poss\u00edvel sair da conta agora. Tente novamente.");
-        return;
-      }
-
-      router.push("/login");
-    } catch {
-      setMensagemAcao("N\u00e3o foi poss\u00edvel sair da conta agora. Tente novamente.");
-    }
   }
 
   async function alternarSeguirAutor() {

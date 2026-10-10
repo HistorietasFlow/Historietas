@@ -10,6 +10,13 @@ const source = readFileSync(
   ),
   "utf8",
 );
+const sessionActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-session-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
@@ -94,9 +101,13 @@ test("rejeita destino iniciado por // e mantém fallback seguro", async () => {
 });
 
 test("Perfil de Autor delega a rota de login para o helper", () => {
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /import \{ criarLoginHrefPerfilAutor \} from "\.\/lib\/profile-login-route-utils";/,
+  );
+  assert.match(
+    sessionActionsSource,
+    /import \{ criarLoginHrefPerfilAutor \} from "\.\.\/lib\/profile-login-route-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarLoginHrefPerfilAutor\(/);
   assert.match(source, /export function criarLoginHrefPerfilAutor\(/);

@@ -134,3 +134,8 @@
 
 - Extraiu `selecionarAbaPerfil` para `usePerfilAutorTabNavigation`.
 - Manteve atualização do estado, query string, pathname, hash e `history.replaceState`.
+
+## Fase 920 — ações de sessão do perfil
+
+- Extraiu `avisarLoginNecessario` e `sairDaConta` para `usePerfilAutorSessionActions`.
+- Manteve mensagem e redirect de login, fechamento do menu, `supabase.auth.signOut()`, redirect para `/login` e fallback de erro.
