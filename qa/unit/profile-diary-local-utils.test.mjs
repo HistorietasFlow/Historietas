@@ -154,6 +154,36 @@ test("monta coleções locais, preserva visibilidades e limita atividades a oito
   assert.deepEqual(diario.reviews, []);
 });
 
+test("mantém somente as oito atividades locais mais recentes", () => {
+  const obras = Array.from({ length: 12 }, (_, indice) => criarObra(indice + 1));
+  const diario = montarDiarioPerfilLocal(
+    criarPerfil(obras),
+    obras.map((obra) => obra.id),
+    [],
+    [],
+  );
+
+  assert.equal(diario.favoritas.length, 12);
+  assert.equal(diario.atividades.length, 8);
+  assert.deepEqual(
+    diario.atividades.map((item) => item.obra.id),
+    ["obra-12", "obra-11", "obra-10", "obra-9", "obra-8", "obra-7", "obra-6", "obra-5"],
+  );
+  assert.deepEqual(
+    diario.atividades.map((item) => item.data),
+    [
+      "2026-01-12T12:00:00.000Z",
+      "2026-01-11T12:00:00.000Z",
+      "2026-01-10T12:00:00.000Z",
+      "2026-01-09T12:00:00.000Z",
+      "2026-01-08T12:00:00.000Z",
+      "2026-01-07T12:00:00.000Z",
+      "2026-01-06T12:00:00.000Z",
+      "2026-01-05T12:00:00.000Z",
+    ],
+  );
+});
+
 test("usa obras do perfil quando a coleção disponível está vazia", () => {
   const obra = criarObra(1, { progressoLeitura: 20 });
   const diario = montarDiarioPerfilLocal(
