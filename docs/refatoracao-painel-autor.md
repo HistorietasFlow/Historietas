@@ -109,6 +109,10 @@
 
 - Extraídos `obraPublicadaComConteudoPainel`, `obraRascunhoOuSemConteudoPainel` e `obterStatusPainelAutor`, preservando publicação, capítulos, normalização de arquivo, fallbacks e consumidores.
 
+## Fase 881 — chaves de backup de arquivo
+
+- Extraído `obterChavesBackupArquivoPainel`, preservando as chaves, ordem, deduplicação, trim, normalização e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
