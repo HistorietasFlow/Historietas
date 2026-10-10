@@ -97,6 +97,10 @@
 
 - Extraído `filtrarListaPorObrasDoUsuario`, preservando trim, comparação por identificadores, ordem e consumidores.
 
+## Fase 878 — caminhos do Storage
+
+- Extraídos `obterCaminhoStoragePainel` e `caminhoStoragePertenceAoUsuarioPainel`, preservando buckets, URLs, regexes, decodificação, normalização, comparação de IDs e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
