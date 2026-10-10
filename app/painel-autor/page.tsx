@@ -46,6 +46,21 @@ import {
   desktopCommunityTopTitleStyle,
   safeTextStyle,
 } from "./lib/painel-autor-desktop-header-style-utils";
+import {
+  topFilterButtonStyle,
+  topFilterIconStyle,
+  topSearchButtonStyle,
+  topSearchInputStyle,
+  topSearchShellStyle,
+} from "./lib/painel-autor-top-controls-style-utils";
+import {
+  statCardStyle,
+  statLabelStyle,
+  statNumberStyle,
+  statsBoxStyle,
+  studioClearButtonStyle,
+  studioControlsStyle,
+} from "./lib/painel-autor-summary-style-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
@@ -2351,176 +2366,6 @@ function ObraPainelCard({
 }
 
 const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)";
-
-const topFilterButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  padding: 0,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "none",
-  flex: "0 0 auto",
-  whiteSpace: "nowrap",
-  fontSize: "16px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  textAlign: "left",
-  letterSpacing: "-0.04em",
-  boxShadow: "none",
-  outline: "none",
-  WebkitTapHighlightColor: "transparent",
-  ...safeTextStyle,
-};
-
-const topFilterIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "21px",
-  lineHeight: 1,
-  fontWeight: 700,
-  flex: "0 0 auto",
-};
-
-const topSearchButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "34px",
-  height: "34px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "24px",
-  lineHeight: 1,
-  fontWeight: 950,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  padding: 0,
-  boxShadow: "none",
-  flex: "0 0 auto",
-  outline: "none",
-  WebkitTapHighlightColor: "transparent",
-};
-
-const topSearchShellStyle: CSSProperties = {
-  flex: "1 1 auto",
-  width: "auto",
-  minWidth: "110px",
-  maxWidth: "none",
-  height: "36px",
-  marginLeft: "0",
-  marginRight: "-4px",
-  borderRadius: "999px",
-  border: "none",
-  background: "#000000",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  overflow: "hidden",
-  padding: "0 0 0 13px",
-  boxSizing: "border-box",
-  boxShadow: "none",
-  transformOrigin: "right center",
-};
-
-
-const topSearchInputStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  flex: "1 1 auto",
-  width: "100%",
-  minWidth: 0,
-  height: "34px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  outline: "none",
-  fontFamily: "inherit",
-  fontSize: "14px",
-  fontWeight: 800,
-  letterSpacing: "-0.025em",
-  boxSizing: "border-box",
-};
-
-const statsBoxStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "5px",
-  marginTop: "0",
-  alignItems: "stretch",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const statCardStyle: CSSProperties = {
-  flex: "1 1 calc(25% - 5px)",
-  borderRadius: "12px",
-  background: "var(--historietas-painel-card-bg, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  padding: "6px 4px",
-  display: "grid",
-  gap: "2px",
-  alignContent: "center",
-  justifyItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  minHeight: "43px",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const statNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "15px",
-  lineHeight: 1,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const statLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "7px",
-  lineHeight: 1.15,
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const studioControlsStyle: CSSProperties = {
-  marginTop: "8px",
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const studioClearButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.055)",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 900,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 12px",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 const filterSheetOverlayStyle: CSSProperties = {
   position: "fixed",
