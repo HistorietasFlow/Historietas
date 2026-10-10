@@ -24,6 +24,7 @@ import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
+import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import {
   obraPublicadaComConteudoPainel,
   obraRascunhoOuSemConteudoPainel,
@@ -384,33 +385,6 @@ function restaurarArquivoObraComBackup(
   return {
     ...obra,
     arquivoObra: arquivoBackup,
-  };
-}
-
-function normalizarCapitulo(
-  capitulo: CapituloSalvo,
-  capituloIndex: number,
-  obraIndex: number
-): CapituloLocal {
-  return {
-    id:
-      typeof capitulo.id === "string" && capitulo.id.trim()
-        ? capitulo.id
-        : `capitulo-${obraIndex + 1}-${capituloIndex + 1}`,
-    titulo:
-      typeof capitulo.titulo === "string" && capitulo.titulo.trim()
-        ? capitulo.titulo
-        : `Capítulo ${capituloIndex + 1}`,
-    texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
-    curtiu: Boolean(capitulo.curtiu),
-    salvo: Boolean(capitulo.salvo),
-    comentario:
-      typeof capitulo.comentario === "string" ? capitulo.comentario : "",
-    criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
-    lido: Boolean(capitulo.lido),
-    lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
-    publicado:
-      typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
   };
 }
 
