@@ -104,3 +104,8 @@
 
 - Extraiu `criarLoginHrefPerfilAutor` para `profile-login-route-utils`.
 - Manteve pathname, query string, validação contra destino iniciado por `//`, fallback para `/perfil-autor` e serialização de `redirectTo`.
+
+## Fase 914 — sincronização do nome do autor nas obras
+
+- Extraiu `sincronizarNomeAutorObrasSupabase` para `profile-author-works-sync`.
+- Manteve trim, validação de ID, atualização de `autor`/`atualizado_em`, filtro por `user_id` e tratamento de erros.
