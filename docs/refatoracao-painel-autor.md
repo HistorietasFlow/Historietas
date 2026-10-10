@@ -145,6 +145,10 @@
 
 - Extraídos os estilos dos controles superiores e do resumo, preservando `safeTextStyle` compartilhado e as composições desktop na página.
 
+## Fase 890 — painel de filtros
+
+- Extraídos os estilos e helpers visuais do painel de filtros, preservando a composição desktop, os spreads e todos os consumidores da página.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
