@@ -133,6 +133,10 @@
 
 - Extraídos `criarPainelCoverStyle`, `criarPainelCoverDesktopStyle` e a base privada `coverStyle`, preservando fallbacks, URL da imagem, dimensões, bordas e consumidores.
 
+## Fase 887 — estilos básicos de layout
+
+- Extraídos os fades, página, container e topo, preservando tema, container desktop e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

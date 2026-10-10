@@ -29,6 +29,13 @@ import {
   criarPainelCoverDesktopStyle,
   criarPainelCoverStyle,
 } from "./lib/painel-autor-cover-style-utils";
+import {
+  containerStyle,
+  desktopTopWaterFadeStyle,
+  mobileTopWaterFadeStyle,
+  pageStyle,
+  topStyle,
+} from "./lib/painel-autor-layout-style-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
@@ -2338,68 +2345,7 @@ const safeTextStyle: CSSProperties = {
   wordBreak: "break-word",
 };
 
-const mobileTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(340px, 48vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-  opacity: 0,
-};
-
-const desktopTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(620px, 68vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-  opacity: 0,
-};
-
 const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)";
-
-const pageStyle: CSSProperties = {
-  position: "relative",
-  minHeight: "100vh",
-  width: "100%",
-  maxWidth: "100vw",
-  overflowX: "hidden",
-  background: "var(--historietas-painel-bg, #000000)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const containerStyle: CSSProperties = {
-  position: "relative",
-  width: "min(860px, calc(100% - 24px))",
-  maxWidth: "100%",
-  margin: "0 auto",
-  padding: "10px 0 18px",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "6px",
-  flexWrap: "nowrap",
-  marginBottom: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
 const desktopCommunityTopStyle: CSSProperties = {
   width: "100%",
