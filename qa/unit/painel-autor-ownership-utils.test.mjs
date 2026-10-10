@@ -70,6 +70,6 @@ test("Painel do Autor delega somente identificação e propriedade ao helper ext
   assert.doesNotMatch(pagina, /function filtrarObrasDoUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function marcarObrasComDonoPainel\(/);
   assert.equal((pagina.match(/\bnormalizarIdUsuarioPainel\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\bobraPertenceAoUsuarioPainel\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bobraPertenceAoUsuarioPainel\b/g) || []).length, 2);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
 });
