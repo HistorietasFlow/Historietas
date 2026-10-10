@@ -22,6 +22,7 @@ import {
 } from "./lib/painel-autor-ownership-utils";
 import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
+import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import {
   caminhoStoragePertenceAoUsuarioPainel,
   obterCaminhoStoragePainel,
@@ -258,47 +259,6 @@ type CapituloSalvo = Partial<CapituloLocal> & Record<string, unknown>;
 type ObraSalva = Partial<ObraLocal> & {
   capitulos?: CapituloSalvo[];
 } & Record<string, unknown>;
-
-function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return null;
-  }
-
-  const arquivo = valor as Partial<ArquivoObraLocal>;
-
-  if (
-    typeof arquivo.nome !== "string" ||
-    !arquivo.nome.trim() ||
-    typeof arquivo.conteudo !== "string" ||
-    !arquivo.conteudo.trim()
-  ) {
-    return null;
-  }
-
-  let categoria: ArquivoObraLocal["categoria"] = "outro";
-
-  if (
-    arquivo.categoria === "texto" ||
-    arquivo.categoria === "documento" ||
-    arquivo.categoria === "imagem" ||
-    arquivo.categoria === "outro"
-  ) {
-    categoria = arquivo.categoria;
-  }
-
-  return {
-    nome: arquivo.nome,
-    tipo: typeof arquivo.tipo === "string" ? arquivo.tipo : "",
-    tamanho:
-      typeof arquivo.tamanho === "number" && Number.isFinite(arquivo.tamanho)
-        ? arquivo.tamanho
-        : 0,
-    conteudo: arquivo.conteudo,
-    categoria,
-    criadoEm: typeof arquivo.criadoEm === "string" ? arquivo.criadoEm : "",
-  };
-}
-
 
 async function criarUrlAssinadaArquivoObraPainel(
   obraId: string,
