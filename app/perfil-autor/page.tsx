@@ -170,6 +170,12 @@ import {
   pegarTexto,
 } from "./lib/data-normalizers";
 import {
+  criarEstadoDiarioPerfilVazio,
+  obterDataRegistroDiario,
+  obterVisibilidadeRegistroDiario,
+  registroDiarioPodeAparecer,
+} from "./lib/profile-diary-record-utils";
+import {
   analisarEnquetePublicacaoComunidadePerfil,
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
@@ -1446,58 +1452,6 @@ async function carregarEstadoUsuarioSupabase() {
       identidadeConfirmada: false,
     };
   }
-}
-
-function obterDataRegistroDiario(registro: Record<string, unknown>) {
-  return pegarTexto(
-    registro.atualizado_em ??
-      registro.updated_at ??
-      registro.criado_em ??
-      registro.created_at,
-  );
-}
-
-function obterVisibilidadeRegistroDiario(
-  registro: Record<string, unknown>,
-  fallback: VisibilidadeDiarioPerfil,
-) {
-  const visibilidade = pegarTexto(registro.visibilidade, fallback);
-
-  if (
-    visibilidade === "publico" ||
-    visibilidade === "parcial" ||
-    visibilidade === "privado"
-  ) {
-    return visibilidade;
-  }
-
-  return fallback;
-}
-
-function registroDiarioPodeAparecer(
-  registro: Record<string, unknown>,
-  incluirPrivados: boolean,
-  fallback: VisibilidadeDiarioPerfil,
-) {
-  if (incluirPrivados) {
-    return true;
-  }
-
-  const visibilidade = obterVisibilidadeRegistroDiario(registro, fallback);
-
-  return visibilidade === "publico" || visibilidade === "parcial";
-}
-
-function criarEstadoDiarioPerfilVazio(): Omit<DiarioPerfilEstado, "carregando"> {
-  return {
-    lendoAgora: [],
-    queroLer: [],
-    favoritas: [],
-    concluidas: [],
-    avaliacoes: [],
-    reviews: [],
-    atividades: [],
-  };
 }
 
 async function carregarComunidadePerfilSupabase(
