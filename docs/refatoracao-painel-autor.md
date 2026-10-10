@@ -101,6 +101,10 @@
 
 - Extraídos `obterCaminhoStoragePainel` e `caminhoStoragePertenceAoUsuarioPainel`, preservando buckets, URLs, regexes, decodificação, normalização, comparação de IDs e consumidores.
 
+## Fase 879 — normalização de arquivo de obra
+
+- Extraído `normalizarArquivoObra`, preservando validação, trim, categorias permitidas, fallbacks, valores padrão e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
