@@ -54,3 +54,8 @@
 
 - Extraiu os carregadores de obras publicadas e por IDs para `profile-published-works-loader`.
 - Manteve consultas Supabase, paginação, capítulos, fallbacks e todos os consumidores na página.
+
+## Fase 904 — carregadores de coleções do usuário
+
+- Extraiu os carregadores de IDs de obras, autores seguidos e registros do Diário para `profile-user-collections-loader`.
+- Manteve filtros por usuário, paginação, normalização, fallbacks e consumidores na página.
