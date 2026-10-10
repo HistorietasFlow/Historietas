@@ -109,3 +109,8 @@
 
 - Extraiu `sincronizarNomeAutorObrasSupabase` para `profile-author-works-sync`.
 - Manteve trim, validação de ID, atualização de `autor`/`atualizado_em`, filtro por `user_id` e tratamento de erros.
+
+## Fase 915 — upload do avatar do perfil
+
+- Extraiu `enviarAvatarPerfilUsuarioSupabase` para `profile-avatar-upload`.
+- Manteve validação de ID, tipo MIME, caminho, bucket, cache, upsert, URL pública versionada e tratamento de erros do Storage.
