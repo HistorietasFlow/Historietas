@@ -114,3 +114,8 @@
 
 - Extraiu `enviarAvatarPerfilUsuarioSupabase` para `profile-avatar-upload`.
 - Manteve validação de ID, tipo MIME, caminho, bucket, cache, upsert, URL pública versionada e tratamento de erros do Storage.
+
+## Fase 916 — persistência do perfil do usuário
+
+- Extraiu `salvarPerfilUsuarioSupabase` para `profile-profile-persistence`.
+- Manteve validação de ID, normalização de username, truncamento de bios, sanitização de avatar local, busca por `user_id`/`id`, update/insert e tratamento de erros.
