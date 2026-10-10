@@ -85,6 +85,20 @@ import {
   workContentStyle,
   worksGridStyle,
 } from "./lib/painel-autor-work-card-layout-style-utils";
+import {
+  authorStyle,
+  workCardCommentMetaStyle,
+  workCardHeartMetaStyle,
+  workMetaLineStyle,
+  workTitleStyle,
+} from "./lib/painel-autor-work-card-info-style-utils";
+import {
+  sheetStatHeartIconStyle,
+  sheetStatIconStyle,
+  sheetStatInlineStyle,
+  sheetStatValueStyle,
+  sheetStatsRowStyle,
+} from "./lib/painel-autor-work-card-stats-style-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
@@ -2390,113 +2404,6 @@ function ObraPainelCard({
 }
 
 const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)";
-
-const workTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "13px",
-  lineHeight: 1.06,
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 500,
-  letterSpacing: "-0.01em",
-  textShadow: "none",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  minWidth: 0,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const authorStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.76)",
-  textDecoration: "none",
-  fontSize: "12px",
-  lineHeight: 1.2,
-  fontWeight: 850,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  textAlign: "center",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const workMetaLineStyle: CSSProperties = {
-  width: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  gap: "10px",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1.18,
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 850,
-  letterSpacing: "-0.01em",
-  textShadow: "none",
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  minWidth: 0,
-};
-
-const workCardHeartMetaStyle: CSSProperties = {
-  color: "var(--historietas-painel-heart-meta, #FFFFFF)",
-  fontWeight: 950,
-};
-
-const workCardCommentMetaStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontWeight: 950,
-};
-
-const sheetStatsRowStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "12px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  padding: "8px 22px 14px",
-};
-
-const sheetStatInlineStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "4px",
-  minWidth: 0,
-  color: "#FFFFFF",
-};
-
-const sheetStatIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 900,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  ...safeTextStyle,
-};
-
-const sheetStatHeartIconStyle: CSSProperties = {
-  ...sheetStatIconStyle,
-  color: "var(--historietas-painel-heart-icon, #F43F5E)",
-};
-
-const sheetStatValueStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
 const actionsGridStyle: CSSProperties = {
   display: "grid",
