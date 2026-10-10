@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diaryLoaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-diary-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(
   utilsSource
     .replace(
@@ -198,7 +205,7 @@ test("usa obras do perfil quando a coleção disponível está vazia", () => {
   assert.equal(diario.atividades[0].obra, obra);
 });
 
-test("Perfil de Autor delega os helpers locais do Diário sem fluxo Supabase", () => {
+test("Perfil de Autor mantém helpers locais e delega coleta de IDs ao carregador remoto", () => {
   assert.match(
     utilsSource,
     /import \{ obterLocaleDocumentoPerfilAutor \} from "\.\.\/translations";/,
@@ -216,7 +223,11 @@ test("Perfil de Autor delega os helpers locais do Diário sem fluxo Supabase", (
   assert.match(utilsSource, /import \{ ordenarItensDiarioPerfil \} from "\.\/profile-diary-merge-utils";/);
   assert.match(
     pagina,
-    /import \{[\s\S]*?coletarObraIdsRegistrosDiarioPerfil,[\s\S]*?dataDiarioPerfilFormatada,[\s\S]*?montarDiarioPerfilLocal,[\s\S]*?\} from "\.\/lib\/profile-diary-local-utils";/,
+    /import \{[\s\S]*?dataDiarioPerfilFormatada,[\s\S]*?montarDiarioPerfilLocal,[\s\S]*?\} from "\.\/lib\/profile-diary-local-utils";/,
+  );
+  assert.match(
+    diaryLoaderSource,
+    /import \{ coletarObraIdsRegistrosDiarioPerfil \} from "\.\/profile-diary-local-utils";/,
   );
 
   for (const helper of [
@@ -228,8 +239,11 @@ test("Perfil de Autor delega os helpers locais do Diário sem fluxo Supabase", (
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
+  assert.match(
+    diaryLoaderSource,
+    /coletarObraIdsRegistrosDiarioPerfil\(diarioAtividades\)/,
+  );
   assert.match(pagina, /montarDiarioPerfilLocal\([\s\S]*?obrasSeguidasBiblioteca,[\s\S]*?obras,/);
   assert.match(pagina, /formattedDate=\{dataDiarioPerfilFormatada\(item\.data\)\}/);
-  assert.match(pagina, /supabase\s*\.from\("diario_atividades"\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });

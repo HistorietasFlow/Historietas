@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diaryLoaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-diary-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profilePersistenceSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-profile-persistence.ts",
@@ -314,7 +321,7 @@ test("mantém obras paginadas quando capítulos falham e retorna vazio na falha 
   assert.deepEqual(await moduloFalhaObras.carregarObrasPublicadasSupabase(), []);
 });
 
-test("Perfil de Autor delega somente os carregadores publicados ao módulo extraído", () => {
+test("Perfil de Autor delega carregadores publicados entre página e Diário", () => {
   assert.match(
     loaderSource,
     /import \{ supabase \} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/client";/,
@@ -327,6 +334,10 @@ test("Perfil de Autor delega somente os carregadores publicados ao módulo extra
     pagina,
     /import \{[\s\S]*?carregarObrasPublicadasPorIdsSupabase,[\s\S]*?carregarObrasPublicadasSupabase,[\s\S]*?\} from "\.\/lib\/profile-published-works-loader";/,
   );
+  assert.match(
+    diaryLoaderSource,
+    /import \{ carregarObrasPublicadasPorIdsSupabase \} from "\.\/profile-published-works-loader";/,
+  );
 
   for (const helper of [
     "carregarObrasPublicadasSupabase",
@@ -337,7 +348,10 @@ test("Perfil de Autor delega somente os carregadores publicados ao módulo extra
   }
 
   assert.match(pagina, /await carregarObrasPublicadasSupabase\(\)/);
-  assert.match(pagina, /await carregarObrasPublicadasPorIdsSupabase\([\s\S]*?idsObrasFaltantes/);
+  assert.match(
+    diaryLoaderSource,
+    /await carregarObrasPublicadasPorIdsSupabase\([\s\S]*?idsObrasFaltantes/,
+  );
   assert.doesNotMatch(pagina, /supabase\s*\.from\("profiles"\)/);
   assert.match(profilePersistenceSource, /supabase\s*\.from\("profiles"\)/);
   assert.doesNotMatch(loaderSource, /useState|useEffect|localStorage/);
