@@ -29,10 +29,7 @@ export async function sincronizarNomeAutorObrasSupabase(
   } catch (error) {
     return {
       ok: false,
-      erro:
-        error instanceof Error
-          ? error.message
-          : "Erro inesperado ao sincronizar obras.",
+      erro: error instanceof Error ? error.message : "Erro inesperado ao sincronizar obras.",
     };
   }
 }
