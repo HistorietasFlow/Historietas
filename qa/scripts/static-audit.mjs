@@ -2121,6 +2121,13 @@ const profileUserCollectionsLoader = fs.existsSync(
 )
   ? fs.readFileSync(profileUserCollectionsLoaderPath, "utf8")
   : "";
+const profileInteractionsLoaderPath = path.join(
+  ROOT_DIR,
+  "app/perfil-autor/lib/profile-interactions-loader.ts"
+);
+const profileInteractionsLoader = fs.existsSync(profileInteractionsLoaderPath)
+  ? fs.readFileSync(profileInteractionsLoaderPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2138,7 +2145,7 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   relativePath,
   source: `${fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8")}${
     relativePath === "app/perfil-autor/page.tsx"
-      ? `\n${profileUserCollectionsLoader}`
+      ? `\n${profileUserCollectionsLoader}\n${profileInteractionsLoader}`
       : ""
   }${
     relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"

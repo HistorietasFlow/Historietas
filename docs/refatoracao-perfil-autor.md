@@ -59,3 +59,8 @@
 
 - Extraiu os carregadores de IDs de obras, autores seguidos e registros do Diário para `profile-user-collections-loader`.
 - Manteve filtros por usuário, paginação, normalização, fallbacks e consumidores na página.
+
+## Fase 905 — carregadores de métricas e interações
+
+- Extraiu os carregadores de totais de métricas e interações de capítulos para `profile-interactions-loader`.
+- Manteve deduplicação, métricas, paginação por lotes, filtros por usuário, fallbacks e consumidores na página.
