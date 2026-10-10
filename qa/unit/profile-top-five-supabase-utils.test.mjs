@@ -22,6 +22,22 @@ test("carrega total remoto, curtida e fallback local", async () => {
   assert.deepEqual(await carregarCurtidasTopFivePerfil("invalido", "usuario-1"), { total: 2, curtiu: false });
 });
 
+test("preserva fallbacks em falhas das consultas Supabase", async () => {
+  const falhaContagem = await modulo((d) => d.respostas.push({ count: null, error: new Error("contagem indisponível") }));
+  assert.deepEqual(await falhaContagem.carregarCurtidasTopFivePerfil("usuario-2", "usuario-1"), { total: 2, curtiu: false });
+  assert.equal(falhaContagem.deps.chamadas.length, 1);
+  const falhaCurtida = await modulo((d) => d.respostas.push({ count: 7, error: null }, { data: null, error: new Error("curtida indisponível") }));
+  assert.deepEqual(await falhaCurtida.carregarCurtidasTopFivePerfil("usuario-2", "usuario-1"), { total: 7, curtiu: false });
+  assert.equal(falhaCurtida.deps.chamadas.length, 2);
+});
+
+test("cancela a leitura após a consulta individual pendente", async () => {
+  const leitura = await modulo((d) => d.respostas.push({ count: 8, error: null }, { data: { perfil_user_id: "usuario-2" }, error: null }));
+  let verificacoes = 0;
+  assert.deepEqual(await leitura.carregarCurtidasTopFivePerfil("usuario-2", "usuario-1", () => ++verificacoes < 4), { total: 2, curtiu: false });
+  assert.equal(leitura.deps.chamadas.length, 2);
+});
+
 test("preserva cancelamento antes e após awaits", async () => {
   const leitura = await modulo((d) => d.respostas.push({ count: 9, error: null })); let verificacoesLeitura = 0;
   assert.deepEqual(await leitura.carregarCurtidasTopFivePerfil("usuario-2", "", () => ++verificacoesLeitura < 2), { total: 2, curtiu: false });
@@ -40,6 +56,19 @@ test("remove e insere na ordem original, preservando erros", async () => {
   assert.equal(deps.chamadas[0].delete, true);
   assert.deepEqual(deps.chamadas[1].insert, { perfil_user_id: "usuario-2", usuario_id: "usuario-1" });
   assert.equal(await salvarCurtidaTopFiveSupabase("invalido", "usuario-1", true), false);
+});
+
+test("preserva retornos de falhas de escrita e remoção sem inserção", async () => {
+  const falhaDelete = await modulo((d) => d.respostas.push({ error: new Error("delete indisponível") }));
+  assert.equal(await falhaDelete.salvarCurtidaTopFiveSupabase("usuario-2", "usuario-1", true), false);
+  assert.equal(falhaDelete.deps.chamadas.length, 1);
+  const falhaInsert = await modulo((d) => d.respostas.push({ error: null }, { error: new Error("insert indisponível") }));
+  assert.equal(await falhaInsert.salvarCurtidaTopFiveSupabase("usuario-2", "usuario-1", true), false);
+  assert.deepEqual(falhaInsert.deps.chamadas[1].insert, { perfil_user_id: "usuario-2", usuario_id: "usuario-1" });
+  const removerCurtida = await modulo((d) => d.respostas.push({ error: null }));
+  assert.equal(await removerCurtida.salvarCurtidaTopFiveSupabase("usuario-2", "usuario-1", false), true);
+  assert.equal(removerCurtida.deps.chamadas.length, 1);
+  assert.equal(removerCurtida.deps.chamadas[0].delete, true);
 });
 
 test("Página delega os helpers Top 5 e preserva as guardas", () => {
