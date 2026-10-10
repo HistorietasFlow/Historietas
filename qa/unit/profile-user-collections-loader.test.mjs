@@ -295,10 +295,10 @@ test("preserva fallbacks de falhas de paginação e de consultas", async () => {
   }
 });
 
-test("Perfil de Autor delega somente os três carregadores de coleções", () => {
+test("Perfil de Autor mantém somente o carregador de registros do Diário como dependência direta", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?carregarAutoresSeguidosSupabase,[\s\S]*?carregarIdsObrasTabelaUsuario,[\s\S]*?carregarRegistrosDiarioPerfil,[\s\S]*?\} from "\.\/lib\/profile-user-collections-loader";/,
+    /import \{ carregarRegistrosDiarioPerfil \} from "\.\/lib\/profile-user-collections-loader";/,
   );
 
   for (const helper of [
@@ -310,15 +310,15 @@ test("Perfil de Autor delega somente os três carregadores de coleções", () =>
     assert.doesNotMatch(pagina, new RegExp(`async function ${helper}\\(`));
   }
 
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /carregarIdsObrasTabelaUsuario\("favoritos", userId\)/,
   );
-  assert.match(pagina, /carregarAutoresSeguidosSupabase\(userId\)/);
+  assert.doesNotMatch(pagina, /carregarAutoresSeguidosSupabase\(userId\)/);
   assert.match(
     pagina,
     /carregarRegistrosDiarioPerfil\("diario_atividades", userId\)/,
   );
-  assert.match(pagina, /async function carregarEstadoUsuarioSupabase/);
+  assert.doesNotMatch(pagina, /async function carregarEstadoUsuarioSupabase/);
   assert.doesNotMatch(loaderSource, /useState|useEffect|localStorage/);
 });

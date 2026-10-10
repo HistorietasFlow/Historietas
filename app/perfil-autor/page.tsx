@@ -171,11 +171,8 @@ import {
   carregarObrasPublicadasPorIdsSupabase,
   carregarObrasPublicadasSupabase,
 } from "./lib/profile-published-works-loader";
-import {
-  carregarAutoresSeguidosSupabase,
-  carregarIdsObrasTabelaUsuario,
-  carregarRegistrosDiarioPerfil,
-} from "./lib/profile-user-collections-loader";
+import { carregarRegistrosDiarioPerfil } from "./lib/profile-user-collections-loader";
+import { carregarEstadoUsuarioSupabase } from "./lib/profile-user-state-loader";
 import {
   sincronizarAutorSeguidoSupabase,
   sincronizarTabelaUsuario,
@@ -664,44 +661,6 @@ async function enviarAvatarPerfilUsuarioSupabase({
       url: "",
       caminho: "",
       erro: error instanceof Error ? error.message : "Erro inesperado ao enviar avatar.",
-    };
-  }
-}
-
-async function carregarEstadoUsuarioSupabase() {
-  try {
-    const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id || "";
-
-    if (!userId) {
-      return {
-        estadoUsuario: null,
-        identidadeConfirmada: true,
-      };
-    }
-
-    const [favoritas, concluidas, obrasSeguidas, autoresSeguidos] =
-      await Promise.all([
-        carregarIdsObrasTabelaUsuario("favoritos", userId),
-        carregarIdsObrasTabelaUsuario("concluidas", userId),
-        carregarIdsObrasTabelaUsuario("seguindo_obras", userId),
-        carregarAutoresSeguidosSupabase(userId),
-      ]);
-
-    return {
-      estadoUsuario: {
-        userId,
-        favoritas,
-        concluidas,
-        obrasSeguidas,
-        autoresSeguidos,
-      },
-      identidadeConfirmada: true,
-    };
-  } catch {
-    return {
-      estadoUsuario: null,
-      identidadeConfirmada: false,
     };
   }
 }
