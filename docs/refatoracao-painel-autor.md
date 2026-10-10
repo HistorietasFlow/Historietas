@@ -125,6 +125,10 @@
 
 - Extraído `mesclarObrasPainelAutor`, preservando correspondência por ID ou slug, fallback com `criarSlugBase`, prioridade Supabase, ordem, substituição e inserção de novas obras.
 
+## Fase 885 — restauração de arquivo por backup
+
+- Extraído `restaurarArquivoObraComBackup`, preservando prioridade de arquivo existente, chaves de backup, normalização, primeiro arquivo válido, identidade e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

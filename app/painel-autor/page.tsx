@@ -24,6 +24,7 @@ import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
+import { restaurarArquivoObraComBackup } from "./lib/painel-autor-file-backup-restore-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
@@ -369,28 +370,6 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
   } catch {
     // Se o backup falhar, o painel continua funcionando normalmente.
   }
-}
-
-function restaurarArquivoObraComBackup(
-  obra: ObraLocal,
-  backup: ArquivosObrasBackup
-): ObraLocal {
-  if (obra.arquivoObra) {
-    return obra;
-  }
-
-  const arquivoBackup = obterChavesBackupArquivoPainel(obra)
-    .map((chave) => normalizarArquivoObra(backup[chave]))
-    .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo));
-
-  if (!arquivoBackup) {
-    return obra;
-  }
-
-  return {
-    ...obra,
-    arquivoObra: arquivoBackup,
-  };
 }
 
 function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {

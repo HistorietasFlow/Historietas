@@ -79,7 +79,7 @@ test("Painel do Autor delega somente as chaves de backup ao módulo extraído", 
   assert.doesNotMatch(pagina, /function obterChavesBackupArquivoPainel\(/);
   assert.equal(
     (pagina.match(/\bobterChavesBackupArquivoPainel\b/g) || []).length,
-    4,
+    3,
   );
   assert.match(
     utilsSource,
