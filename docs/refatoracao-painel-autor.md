@@ -105,6 +105,10 @@
 
 - Extraído `normalizarArquivoObra`, preservando validação, trim, categorias permitidas, fallbacks, valores padrão e consumidores.
 
+## Fase 880 — status de obras
+
+- Extraídos `obraPublicadaComConteudoPainel`, `obraRascunhoOuSemConteudoPainel` e `obterStatusPainelAutor`, preservando publicação, capítulos, normalização de arquivo, fallbacks e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
