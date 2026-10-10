@@ -30,17 +30,14 @@ import {
   type PermissoesAbasPerfil,
 } from "../../lib/historietasPrivacy";
 import { carregarMetricasConteudos } from "../../lib/metricas";
-import {
-  obterCaminhoObjetoStorage,
-  obterTipoMimeUploadStorage,
-} from "../../lib/storageUploads";
+import { obterCaminhoObjetoStorage } from "../../lib/storageUploads";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
 import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-actions";
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
+import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avatar-editor-actions";
 import {
   copiarTextoComFallbackPerfilAutor,
   criarUrlAbsolutaCompartilhamentoPerfilAutor,
@@ -70,7 +67,6 @@ import type {
 import {
   AUTHOR_FOLLOW_STORAGE_KEY,
   AUTHOR_PROFILE_STORAGE_KEY,
-  AVATAR_MAX_SIZE,
   AVATAR_STORAGE_BUCKET,
   BIO_MAX_LENGTH,
   COMPLETED_STORAGE_KEY,
@@ -463,6 +459,14 @@ function PerfilAutorPageContent() {
   const [bloqueioPerfilSalvando, setBloqueioPerfilSalvando] =
     useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const { selecionarAvatarAutor, removerAvatarAutor } =
+    usePerfilAutorAvatarEditorActions({
+      avatarInputRef,
+      setAvatarErro,
+      setAvatarPerfilEditor,
+      setAvatarNomePerfilEditor,
+      setAvatarArquivoPerfilEditor,
+    });
   const identidadeAutenticadaPerfilRef =
     useRef<IdentidadeAutenticadaPerfilAutor>({
       usuarioId: "",
@@ -3186,61 +3190,6 @@ function PerfilAutorPageContent() {
         salvando: false,
       });
       setMensagemAcao("Este Diário não está disponível para avaliação.");
-    }
-  }
-
-  function selecionarAvatarAutor(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0];
-
-    setAvatarErro("");
-
-    if (!arquivo) {
-      return;
-    }
-
-    if (!obterTipoMimeUploadStorage("avatars", arquivo)) {
-      setAvatarErro("Escolha PNG, JPG, WEBP ou GIF.");
-      event.target.value = "";
-      return;
-    }
-
-    if (arquivo.size > AVATAR_MAX_SIZE) {
-      setAvatarErro("A imagem precisa ter no máximo 1 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-
-      if (!resultado) {
-        setAvatarErro("Não consegui carregar essa imagem.");
-        return;
-      }
-
-      setAvatarPerfilEditor(resultado);
-      setAvatarNomePerfilEditor(arquivo.name);
-      setAvatarArquivoPerfilEditor(arquivo);
-      setAvatarErro("");
-    };
-
-    leitor.onerror = () => {
-      setAvatarErro("Não consegui carregar essa imagem.");
-    };
-
-    leitor.readAsDataURL(arquivo);
-  }
-
-  function removerAvatarAutor() {
-    setAvatarPerfilEditor("");
-    setAvatarNomePerfilEditor("");
-    setAvatarArquivoPerfilEditor(null);
-    setAvatarErro("");
-
-    if (avatarInputRef.current) {
-      avatarInputRef.current.value = "";
     }
   }
 

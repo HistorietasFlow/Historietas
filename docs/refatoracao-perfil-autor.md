@@ -144,3 +144,8 @@
 
 - Extraiu `salvarObrasBibliotecaPerfil` para `usePerfilAutorLibraryStorageActions`.
 - Manteve atualização imediata do estado, persistência por usuário e fallback em memória quando o localStorage falha.
+
+## Fase 922 — ações do editor de avatar
+
+- Extraiu `selecionarAvatarAutor` e `removerAvatarAutor` para `usePerfilAutorAvatarEditorActions`.
+- Manteve validação de formato/tamanho, preview via FileReader, estados do editor, mensagens e limpeza do input.
