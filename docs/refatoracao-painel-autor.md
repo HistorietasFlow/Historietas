@@ -153,6 +153,10 @@
 
 - Extraídos os estilos estruturais dos cards, preservando `safeTextStyle`, os consumidores e as composições desktop na página.
 
+## Fase 892 — informações e métricas dos cards de obras
+
+- Extraídos os estilos de informação e métricas dos cards, preservando `safeTextStyle`, consumidores e a composição desktop das estatísticas.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
