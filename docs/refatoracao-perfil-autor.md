@@ -89,3 +89,8 @@
 
 - Extraiu `sincronizarTabelaUsuario` e `sincronizarAutorSeguidoSupabase` para `profile-user-collections-sync`.
 - Manteve autenticação, ordem delete/insert, payloads, visibilidade, upsert/delete de autores e fallbacks locais.
+
+## Fase 911 — carregador do estado do usuário
+
+- Extraiu `carregarEstadoUsuarioSupabase` para `profile-user-state-loader`.
+- Manteve autenticação, carregamento paralelo das coleções, contrato de identidade confirmada e fallback de falha.
