@@ -94,3 +94,8 @@
 
 - Extraiu `carregarEstadoUsuarioSupabase` para `profile-user-state-loader`.
 - Manteve autenticação, carregamento paralelo das coleções, contrato de identidade confirmada e fallback de falha.
+
+## Fase 912 — carregador do perfil público
+
+- Extraiu `carregarPerfilUsuarioSupabase` para `profile-public-profile-loader`.
+- Manteve validação de ID, consulta por `user_id` com fallback por `id`, campos, normalização e propagação de erros.
