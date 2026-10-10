@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profilePersistenceSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-profile-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 function criarNormalizadores() {
@@ -331,6 +338,7 @@ test("Perfil de Autor delega somente os carregadores publicados ao módulo extra
 
   assert.match(pagina, /await carregarObrasPublicadasSupabase\(\)/);
   assert.match(pagina, /await carregarObrasPublicadasPorIdsSupabase\([\s\S]*?idsObrasFaltantes/);
-  assert.match(pagina, /supabase\s*\.from\("profiles"\)/);
+  assert.doesNotMatch(pagina, /supabase\s*\.from\("profiles"\)/);
+  assert.match(profilePersistenceSource, /supabase\s*\.from\("profiles"\)/);
   assert.doesNotMatch(loaderSource, /useState|useEffect|localStorage/);
 });
