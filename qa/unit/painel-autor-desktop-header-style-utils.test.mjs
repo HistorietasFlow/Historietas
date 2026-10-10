@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 const source = readFileSync(new URL("../../app/painel-autor/lib/painel-autor-desktop-header-style-utils.ts", import.meta.url), "utf8");
+const emptyStateSource = readFileSync(new URL("../../app/painel-autor/lib/painel-autor-empty-state-style-utils.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../../app/painel-autor/page.tsx", import.meta.url), "utf8");
 test("estilos de cabeçalho desktop preservam contratos", () => {
   for (const name of ["safeTextStyle", "desktopCommunityTopStyle", "desktopCommunityTopTitleStyle", "desktopCommunityTopActionsStyle", "desktopCommunitySearchShellStyle", "desktopCommunitySearchIconStyle", "desktopCommunitySearchInputStyle", "desktopCommunityFilterButtonStyle"]) assert.match(source, new RegExp(`export const ${name}`));
@@ -12,6 +13,12 @@ test("estilos de cabeçalho desktop preservam contratos", () => {
 test("página importa o cabeçalho e mantém consumidores compartilhados", () => {
   assert.match(page, /painel-autor-desktop-header-style-utils/);
   assert.doesNotMatch(page, /const safeTextStyle: CSSProperties/);
-  assert.match(page, /\.\.\.safeTextStyle/);
+  assert.doesNotMatch(page, /\.\.\.safeTextStyle/);
+  assert.match(source, /export const safeTextStyle: CSSProperties = \{/);
+  assert.match(
+    emptyStateSource,
+    /import \{ safeTextStyle \} from "\.\/painel-autor-desktop-header-style-utils";/,
+  );
+  assert.match(emptyStateSource, /\.\.\.safeTextStyle/);
   assert.match(page, /style=\{desktopCommunityTopStyle\}/);
 });

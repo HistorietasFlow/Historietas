@@ -13,6 +13,20 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const headerStyles = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-desktop-header-style-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const emptyStateStyles = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-empty-state-style-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("painelAutorPageCss preserva o CSS global do Painel do Autor", () => {
   assert.match(css, /export const painelAutorPageCss = `/);
@@ -45,7 +59,13 @@ test("Painel do Autor mantém os mounts e as fronteiras fora do CSS extraído", 
     /\$\{painelAutorPageCss\}\$\{historietasThemeCss\}/,
   );
 
+  assert.match(headerStyles, /export const safeTextStyle: CSSProperties = \{/);
   assert.match(
+    emptyStateStyles,
+    /import \{ safeTextStyle \} from "\.\/painel-autor-desktop-header-style-utils";/,
+  );
+  assert.match(emptyStateStyles, /\.\.\.safeTextStyle/);
+  assert.doesNotMatch(
     pagina,
     /safeTextStyle,\s*\} from "\.\/lib\/painel-autor-desktop-header-style-utils";/,
   );

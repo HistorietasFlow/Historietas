@@ -161,6 +161,10 @@
 
 - Extraídos os estilos dos botões e do painel de ações, preservando `safeTextStyle`, consumidores e a composição desktop das ações na página.
 
+## Fase 894 — estilos desktop e estados vazios
+
+- Extraídos as composições desktop e os estilos de estados vazios, preservando os estilos-base, spreads e consumidores da página.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.

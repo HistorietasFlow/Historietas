@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const desktopCompositionsSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-desktop-compositions-style-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estilos estruturais dos cards preservam o contrato visual", () => {
   for (const name of [
@@ -64,10 +71,22 @@ test("página delega os estilos e mantém composições desktop e consumidores",
     assert.doesNotMatch(page, new RegExp(`const ${name}: CSSProperties`));
   }
 
-  assert.match(page, /const desktopSectionStyle: CSSProperties = \{\s*\.\.\.sectionStyle,/);
-  assert.match(page, /const desktopWorksGridStyle: CSSProperties = \{\s*\.\.\.worksGridStyle,/);
-  assert.match(page, /const desktopWorkCardStyle: CSSProperties = \{\s*\.\.\.workCardStyle,/);
-  assert.match(page, /const desktopWorkContentStyle: CSSProperties = \{\s*\.\.\.workContentStyle,/);
+  assert.match(
+    page,
+    /from "\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
+  );
+  for (const [name, baseStyle] of [
+    ["desktopSectionStyle", "sectionStyle"],
+    ["desktopWorksGridStyle", "worksGridStyle"],
+    ["desktopWorkCardStyle", "workCardStyle"],
+    ["desktopWorkContentStyle", "workContentStyle"],
+  ]) {
+    assert.match(
+      desktopCompositionsSource,
+      new RegExp(`export const ${name}: CSSProperties = \\{\\s*\\.\\.\\.${baseStyle},`),
+    );
+    assert.doesNotMatch(page, new RegExp(`const ${name}: CSSProperties = \\{`));
+  }
   assert.match(page, /style=\{isDesktop \? desktopSectionStyle : sectionStyle\}/);
   assert.match(page, /style=\{isDesktop \? desktopWorksGridStyle : worksGridStyle\}/);
   assert.match(page, /style=\{isDesktop \? desktopWorkCardStyle : workCardStyle\}/);
