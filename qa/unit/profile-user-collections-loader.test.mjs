@@ -12,6 +12,13 @@ const loaderSource = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url), "utf8");
+const diaryLoaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-diary-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 function criarConsulta(resposta, chamadas, tabela) {
@@ -295,10 +302,14 @@ test("preserva fallbacks de falhas de paginação e de consultas", async () => {
   }
 });
 
-test("Perfil de Autor mantém somente o carregador de registros do Diário como dependência direta", () => {
-  assert.match(
+test("Perfil de Autor delega registros do Diário ao novo carregador remoto", () => {
+  assert.doesNotMatch(
     pagina,
-    /import \{ carregarRegistrosDiarioPerfil \} from "\.\/lib\/profile-user-collections-loader";/,
+    /from "\.\/lib\/profile-user-collections-loader";/,
+  );
+  assert.match(
+    diaryLoaderSource,
+    /import \{ carregarRegistrosDiarioPerfil \} from "\.\/profile-user-collections-loader";/,
   );
 
   for (const helper of [
@@ -316,7 +327,7 @@ test("Perfil de Autor mantém somente o carregador de registros do Diário como 
   );
   assert.doesNotMatch(pagina, /carregarAutoresSeguidosSupabase\(userId\)/);
   assert.match(
-    pagina,
+    diaryLoaderSource,
     /carregarRegistrosDiarioPerfil\("diario_atividades", userId\)/,
   );
   assert.doesNotMatch(pagina, /async function carregarEstadoUsuarioSupabase/);

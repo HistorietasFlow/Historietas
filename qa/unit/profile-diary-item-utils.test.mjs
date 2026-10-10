@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diaryLoaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-diary-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(
   utilsSource
     .replace(
@@ -215,7 +222,7 @@ test("atividades preservam tipos, avaliações, reviews, URLs e visibilidade", (
   assert.equal(lista.visibilidade, "privado");
 });
 
-test("Perfil de Autor delega a construção e resolução de itens do Diário", () => {
+test("Perfil de Autor delega construção e resolução de itens ao carregador do Diário", () => {
   assert.match(
     utilsSource,
     /import type \{ DiarioPerfilItem, ObraLocal \} from "\.\.\/types";/,
@@ -226,7 +233,11 @@ test("Perfil de Autor delega a construção e resolução de itens do Diário", 
   assert.match(utilsSource, /obterDataRegistroDiario,[\s\S]*?obterVisibilidadeRegistroDiario/);
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarItemAtividadeDiarioPerfil,[\s\S]*?criarItemDiarioPerfil,[\s\S]*?montarMapaObrasDiario,[\s\S]*?obterHrefItemDiarioPerfil,[\s\S]*?obterObraRegistroDiario,[\s\S]*?\} from "\.\/lib\/profile-diary-item-utils";/,
+    /import \{ obterHrefItemDiarioPerfil \} from "\.\/lib\/profile-diary-item-utils";/,
+  );
+  assert.match(
+    diaryLoaderSource,
+    /import \{[\s\S]*?criarItemAtividadeDiarioPerfil,[\s\S]*?criarItemDiarioPerfil,[\s\S]*?montarMapaObrasDiario,[\s\S]*?obterObraRegistroDiario,[\s\S]*?\} from "\.\/profile-diary-item-utils";/,
   );
 
   for (const helper of [
@@ -241,8 +252,7 @@ test("Perfil de Autor delega a construção e resolução de itens do Diário", 
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(pagina, /criarItemDiarioPerfil\(\s*"lendo",/);
+  assert.match(diaryLoaderSource, /criarItemDiarioPerfil\(\s*"lendo",/);
   assert.match(pagina, /obterHrefItemDiarioPerfil\(item\)/);
-  assert.match(pagina, /supabase\s*\.from\("diario_atividades"\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });
