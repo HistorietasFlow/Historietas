@@ -159,3 +159,8 @@
 
 - Moveu `copiarUsernameCabecalho` para `usePerfilAutorShareActions`.
 - Manteve normalização com `@`, cópia com fallback e mensagem apenas quando a cópia falha.
+
+## Fase 925 — compartilhamento do perfil
+
+- Moveu `copiarLinkPerfil` para `usePerfilAutorShareActions`.
+- Manteve fechamento do menu, nome/username do perfil, URL atual e mensagens do fluxo de compartilhamento.
