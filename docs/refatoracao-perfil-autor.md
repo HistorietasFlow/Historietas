@@ -164,3 +164,8 @@
 
 - Moveu `copiarLinkPerfil` para `usePerfilAutorShareActions`.
 - Manteve fechamento do menu, nome/username do perfil, URL atual e mensagens do fluxo de compartilhamento.
+
+## Fase 926 — compartilhamento de obras no perfil
+
+- Moveu `compartilharObraPerfilAutor` para `usePerfilAutorShareActions`.
+- Manteve fechamento do menu da obra, link existente ou fallback por slug, textos e mensagens do compartilhamento.

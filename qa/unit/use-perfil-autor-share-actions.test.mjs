@@ -34,7 +34,12 @@ async function carregarModulo({ copiarResultado = true, cancelado = false } = {}
   };
 
   const javascript = typescript.transpileModule(
-    source.replace(
+    source
+      .replace(
+        'import { criarSlugBase } from "../../../lib/utils";',
+        'const criarSlugBase = (titulo) => String(titulo).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");',
+      )
+      .replace(
       /import \{[\s\S]*?\} from "\.\.\/lib\/profile-sharing-utils";/,
       [
         "const {",
@@ -69,6 +74,7 @@ function criarAcoes(
 ) {
   const mensagens = [];
   const menus = [];
+  const menusObra = [];
   return {
     ...modulo.usePerfilAutorShareActions({
       autorHandlePerfil,
@@ -80,9 +86,13 @@ function criarAcoes(
       setMenuPerfilAberto(aberto) {
         menus.push(aberto);
       },
+      setObraMenuAbertoId(obraId) {
+        menusObra.push(obraId);
+      },
     }),
     mensagens,
     menus,
+    menusObra,
   };
 }
 
@@ -235,6 +245,44 @@ test("usa fallback de nome quando o perfil não está disponível", async () => 
   );
 });
 
+test("compartilha obra fechando o menu e preservando link existente", async () => {
+  const modulo = await carregarModulo();
+  const acoes = criarAcoes(modulo);
+  const compartilhados = [];
+
+  await comNavigator({
+    async share(payload) {
+      compartilhados.push(payload);
+    },
+  }, () => acoes.compartilharObraPerfilAutor({
+    id: "obra-1",
+    titulo: "Minha Obra",
+    link: "/obra/minha-obra",
+    slug: "ignorar",
+  }));
+
+  assert.deepEqual(acoes.menusObra, [""]);
+  assert.equal(compartilhados[0].title, "Minha Obra");
+  assert.equal(compartilhados[0].text, "Veja Minha Obra na Historietas.");
+});
+
+test("monta href da obra por slug quando link não existe", async () => {
+  const modulo = await carregarModulo();
+  const acoes = criarAcoes(modulo);
+
+  await comNavigator({}, () => acoes.compartilharObraPerfilAutor({
+    id: "obra-2",
+    titulo: "Outra Obra",
+    link: "",
+    slug: "outra-obra",
+  }));
+
+  assert.deepEqual(
+    modulo.chamadas.filter((chamada) => chamada[0] === "url").at(-1),
+    ["url", "/obra/outra-obra"],
+  );
+});
+
 test("Perfil de Autor delega o fluxo genérico de compartilhamento para o hook", () => {
   assert.match(
     pagina,
@@ -242,9 +290,10 @@ test("Perfil de Autor delega o fluxo genérico de compartilhamento para o hook",
   );
   assert.match(
     pagina,
-    /const \{[\s\S]*?compartilharLinkPerfilAutor,[\s\S]*?copiarLinkPerfil,[\s\S]*?copiarUsernameCabecalho,[\s\S]*?\} = usePerfilAutorShareActions\(\{[\s\S]*?autorHandlePerfil,[\s\S]*?perfilParaMostrar,[\s\S]*?perfilUsuarioRemotoAtivo,[\s\S]*?setMensagemAcao,[\s\S]*?setMenuPerfilAberto,[\s\S]*?\}\);/,
+    /const \{[\s\S]*?compartilharLinkPerfilAutor,[\s\S]*?compartilharObraPerfilAutor,[\s\S]*?copiarLinkPerfil,[\s\S]*?copiarUsernameCabecalho,[\s\S]*?\} = usePerfilAutorShareActions\(\{[\s\S]*?autorHandlePerfil,[\s\S]*?perfilParaMostrar,[\s\S]*?perfilUsuarioRemotoAtivo,[\s\S]*?setMensagemAcao,[\s\S]*?setMenuPerfilAberto,[\s\S]*?setObraMenuAbertoId,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /async function compartilharLinkPerfilAutor\(/);
+  assert.doesNotMatch(pagina, /async function compartilharObraPerfilAutor\(/);
   assert.doesNotMatch(pagina, /async function copiarLinkPerfil\(/);
   assert.doesNotMatch(pagina, /async function copiarUsernameCabecalho\(/);
   assert.match(source, /await copiarTextoComFallbackPerfilAutor\(urlFinal\)/);

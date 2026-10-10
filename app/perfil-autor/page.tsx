@@ -1709,6 +1709,7 @@ function PerfilAutorPageContent() {
     : "@autor.historietas";
   const {
     compartilharLinkPerfilAutor,
+    compartilharObraPerfilAutor,
     copiarLinkPerfil,
     copiarUsernameCabecalho,
   } = usePerfilAutorShareActions({
@@ -1717,6 +1718,7 @@ function PerfilAutorPageContent() {
     perfilUsuarioRemotoAtivo,
     setMensagemAcao,
     setMenuPerfilAberto,
+    setObraMenuAbertoId,
   });
   const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
   const entradaHistorietasPerfil = formatarEntradaHistorietasPerfilAutor(
@@ -3332,22 +3334,6 @@ function PerfilAutorPageContent() {
         ? `${nomePerfil} foi desbloqueado.`
         : `${nomePerfil} foi bloqueado.`,
     );
-  }
-
-  async function compartilharObraPerfilAutor(obra: ObraLocal) {
-    setObraMenuAbertoId("");
-
-    const obraHref =
-      obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-
-    await compartilharLinkPerfilAutor({
-      url: obraHref,
-      titulo: obra.titulo || "Obra na Historietas",
-      texto: `Veja ${obra.titulo} na Historietas.`,
-      mensagemCompartilhado: "Compartilhamento da obra aberto.",
-      mensagemCopiado: "Link da obra copiado.",
-      mensagemErro: "Não consegui compartilhar nem copiar o link da obra neste navegador.",
-    });
   }
 
   async function alternarSeguirAutor() {
