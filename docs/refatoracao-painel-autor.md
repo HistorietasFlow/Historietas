@@ -129,6 +129,10 @@
 
 - Extraído `restaurarArquivoObraComBackup`, preservando prioridade de arquivo existente, chaves de backup, normalização, primeiro arquivo válido, identidade e consumidores.
 
+## Fase 886 — estilos das capas
+
+- Extraídos `criarPainelCoverStyle`, `criarPainelCoverDesktopStyle` e a base privada `coverStyle`, preservando fallbacks, URL da imagem, dimensões, bordas e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
