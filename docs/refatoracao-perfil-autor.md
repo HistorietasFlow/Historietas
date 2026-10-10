@@ -44,3 +44,8 @@
 
 - Extraiu a construção de URL, a cópia com fallback e a identificação de cancelamento para `profile-sharing-utils`.
 - Manteve o fluxo de compartilhamento, os consumidores e os fallbacks de navegador na página.
+
+## Fase 902 — helpers locais de montagem do Diário
+
+- Extraiu a coleta de IDs, a formatação de datas e a montagem local do Diário para `profile-diary-local-utils`.
+- Manteve as coleções, visibilidades, ordenação, limite de atividades e todos os consumidores na página.

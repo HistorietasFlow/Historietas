@@ -104,7 +104,6 @@ import {
 } from "./constants";
 import {
   PerfilAutorLanguageBridge,
-  obterLocaleDocumentoPerfilAutor,
   traduzirTextoPerfilAutor,
 } from "./translations";
 import {
@@ -190,6 +189,11 @@ import {
   obterHrefItemDiarioPerfil,
   obterObraRegistroDiario,
 } from "./lib/profile-diary-item-utils";
+import {
+  coletarObraIdsRegistrosDiarioPerfil,
+  dataDiarioPerfilFormatada,
+  montarDiarioPerfilLocal,
+} from "./lib/profile-diary-local-utils";
 import {
   carregarJsonUsuarioPerfilAutor,
   carregarListaIdsPerfilBiblioteca,
@@ -910,14 +914,6 @@ async function carregarObrasPublicadasSupabase() {
   }
 }
 
-function coletarObraIdsRegistrosDiarioPerfil(
-  registros: Record<string, unknown>[],
-) {
-  return registros
-    .map((registro) => pegarTexto(registro.obra_id ?? registro.obraId))
-    .filter(Boolean);
-}
-
 async function carregarObrasPublicadasPorIdsSupabase(obraIds: string[]) {
   const idsUnicos = Array.from(
     new Set(obraIds.map((obraId) => obraId.trim()).filter(Boolean)),
@@ -1322,24 +1318,6 @@ async function carregarComunidadePerfilSupabase(
   };
 }
 
-function dataDiarioPerfilFormatada(dataIso: string) {
-  if (!dataIso) {
-    return "Data não informada";
-  }
-
-  const data = new Date(dataIso);
-
-  if (Number.isNaN(data.getTime())) {
-    return "Data não informada";
-  }
-
-  return data.toLocaleDateString(obterLocaleDocumentoPerfilAutor(), {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 async function carregarRegistrosDiarioPerfil(
   tabela: TabelaRegistrosDiarioPerfil,
   userId: string,
@@ -1416,97 +1394,6 @@ async function carregarRegistrosDiarioPerfil(
   } catch {
     return [] as Record<string, unknown>[];
   }
-}
-
-function montarDiarioPerfilLocal(
-  perfil: AutorPerfil,
-  obrasFavoritasIds: string[],
-  obrasConcluidasIds: string[],
-  obrasSeguidasIds: string[],
-  obrasDisponiveis: ObraLocal[] = perfil.obras,
-): Omit<DiarioPerfilEstado, "carregando"> {
-  const obrasBiblioteca = obrasDisponiveis.length > 0 ? obrasDisponiveis : perfil.obras;
-
-  const lendoAgora = ordenarItensDiarioPerfil(
-    obrasBiblioteca
-      .filter(
-        (obra) =>
-          obra.progressoLeitura > 0 &&
-          !colecaoTemObraPerfilBiblioteca(obrasConcluidasIds, obra),
-      )
-      .map((obra) =>
-        criarItemDiarioPerfil(
-          "lendo",
-          obra,
-          obra.ultimaLeituraEm || obra.criadaEm,
-          `Leitura em andamento • ${obra.progressoLeitura}% concluída`,
-          { progresso: obra.progressoLeitura, visibilidade: "privado" },
-        ),
-      ),
-  );
-
-  const favoritas = ordenarItensDiarioPerfil(
-    obrasBiblioteca
-      .filter((obra) => colecaoTemObraPerfilBiblioteca(obrasFavoritasIds, obra))
-      .map((obra) =>
-        criarItemDiarioPerfil(
-          "favorita",
-          obra,
-          obra.ultimaLeituraEm || obra.criadaEm,
-          "Obra favoritada no perfil",
-          { visibilidade: "parcial" },
-        ),
-      ),
-  );
-
-  const concluidas = ordenarItensDiarioPerfil(
-    obrasBiblioteca
-      .filter((obra) => colecaoTemObraPerfilBiblioteca(obrasConcluidasIds, obra))
-      .map((obra) =>
-        criarItemDiarioPerfil(
-          "concluida",
-          obra,
-          obra.ultimaLeituraEm || obra.criadaEm,
-          "Obra marcada como concluída",
-          { visibilidade: "parcial" },
-        ),
-      ),
-  );
-
-  const queroLer = ordenarItensDiarioPerfil(
-    obrasBiblioteca
-      .filter(
-        (obra) =>
-          colecaoTemObraPerfilBiblioteca(obrasSeguidasIds, obra) &&
-          !colecaoTemObraPerfilBiblioteca(obrasConcluidasIds, obra),
-      )
-      .map((obra) =>
-        criarItemDiarioPerfil(
-          "quero_ler",
-          obra,
-          obra.ultimaLeituraEm || obra.criadaEm,
-          "Adicionada para acompanhar depois",
-          { visibilidade: "publico" },
-        ),
-      ),
-  );
-
-  const atividades = ordenarItensDiarioPerfil([
-    ...lendoAgora,
-    ...favoritas,
-    ...concluidas,
-    ...queroLer,
-  ]).slice(0, 8);
-
-  return {
-    lendoAgora,
-    queroLer,
-    favoritas,
-    concluidas,
-    avaliacoes: [],
-    reviews: [],
-    atividades,
-  };
 }
 
 async function carregarDiarioPerfilSupabase(
