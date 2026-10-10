@@ -2112,6 +2112,15 @@ const publicWorkCommentRepliesQuery = fs.existsSync(
 )
   ? fs.readFileSync(publicWorkCommentRepliesQueryPath, "utf8")
   : "";
+const profileUserCollectionsLoaderPath = path.join(
+  ROOT_DIR,
+  "app/perfil-autor/lib/profile-user-collections-loader.ts"
+);
+const profileUserCollectionsLoader = fs.existsSync(
+  profileUserCollectionsLoaderPath
+)
+  ? fs.readFileSync(profileUserCollectionsLoaderPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2128,6 +2137,10 @@ const contentPaginationFiles = [
 const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   relativePath,
   source: `${fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8")}${
+    relativePath === "app/perfil-autor/page.tsx"
+      ? `\n${profileUserCollectionsLoader}`
+      : ""
+  }${
     relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"
       ? `\n${publicWorkChaptersQuery}\n${publicWorkCommentRepliesQuery}`
       : ""
