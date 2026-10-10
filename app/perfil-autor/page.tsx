@@ -150,6 +150,7 @@ import {
 import { carregarComunidadePerfilSupabase } from "./lib/profile-community-loader";
 import { carregarPerfilUsuarioSupabase } from "./lib/profile-public-profile-loader";
 import { criarLoginHrefPerfilAutor } from "./lib/profile-login-route-utils";
+import { usuarioEstaLogado } from "./lib/profile-auth-session-utils";
 import { sincronizarNomeAutorObrasSupabase } from "./lib/profile-author-works-sync";
 import { enviarAvatarPerfilUsuarioSupabase } from "./lib/profile-avatar-upload";
 import { salvarPerfilUsuarioSupabase } from "./lib/profile-profile-persistence";
@@ -2503,16 +2504,6 @@ function PerfilAutorPageContent() {
     }${window.location.hash}`;
 
     window.history.replaceState(window.history.state, "", novaUrl);
-  }
-
-  async function usuarioEstaLogado() {
-    try {
-      const { data } = await supabase.auth.getUser();
-
-      return Boolean(data.user);
-    } catch {
-      return false;
-    }
   }
 
   function avisarLoginNecessario(mensagem: string) {
