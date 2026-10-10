@@ -34,3 +34,8 @@
 
 - Extraiu chaves por usuário, normalização, leitura e gravação de listas e JSON para `profile-local-storage-utils`.
 - Manteve autenticação, identidade, consultas Supabase e todos os consumidores na página.
+
+## Fase 900 — avaliações, perfis e Top 5 locais
+
+- Extraiu avaliações e perfis locais para `profile-local-author-utils` e o Top 5 local para `profile-top-five-local-utils`.
+- Manteve o isolamento por usuário, as chaves de armazenamento, as curtidas e todos os consumidores na página.
