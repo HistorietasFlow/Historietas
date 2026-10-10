@@ -7,7 +7,6 @@ import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import type { CSSProperties } from "react";
 import { PainelAutorLanguageBridge } from "./components/painel-autor-language-bridge";
 import { LoadingSpinner } from "./components/painel-autor-loading-spinner";
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
@@ -44,7 +43,6 @@ import {
   desktopCommunityTopActionsStyle,
   desktopCommunityTopStyle,
   desktopCommunityTopTitleStyle,
-  safeTextStyle,
 } from "./lib/painel-autor-desktop-header-style-utils";
 import {
   topFilterButtonStyle,
@@ -118,6 +116,23 @@ import {
   workActionSheetTextBlockStyle,
   workActionSheetTitleStyle,
 } from "./lib/painel-autor-work-action-sheet-style-utils";
+import {
+  desktopCardActionsGridStyle,
+  desktopContainerStyle,
+  desktopSectionStyle,
+  desktopSheetStatsRowStyle,
+  desktopStatsBoxStyle,
+  desktopStudioControlsStyle,
+  desktopWorkCardStyle,
+  desktopWorkContentStyle,
+  desktopWorksGridStyle,
+} from "./lib/painel-autor-desktop-compositions-style-utils";
+import {
+  emptyMiniBoxStyle,
+  emptyMiniButtonStyle,
+  emptyMiniTextStyle,
+  emptyMiniTitleStyle,
+} from "./lib/painel-autor-empty-state-style-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
@@ -330,7 +345,6 @@ async function criarUrlAssinadaArquivoObraPainel(
 
   return solicitarUrlTemporariaArquivoObra(obraId);
 }
-
 async function removerArquivosStorageObraExcluidaPainel(
   arquivos: ArquivoStoragePainel[]
 ) {
@@ -2421,107 +2435,3 @@ function ObraPainelCard({
     </>
   );
 }
-
-const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)";
-
-const desktopContainerStyle: CSSProperties = {
-  ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  padding: "34px 0 36px",
-};
-
-const desktopStatsBoxStyle: CSSProperties = {
-  ...statsBoxStyle,
-  display: "grid",
-  gridTemplateColumns: "repeat(8, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "0",
-};
-
-const desktopStudioControlsStyle: CSSProperties = {
-  ...studioControlsStyle,
-  width: "min(860px, 100%)",
-  margin: "10px auto 0",
-  gap: "8px",
-};
-
-
-const desktopSectionStyle: CSSProperties = {
-  ...sectionStyle,
-  marginTop: "12px",
-};
-
-
-const desktopWorksGridStyle: CSSProperties = {
-  ...worksGridStyle,
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-  columnGap: "12px",
-  rowGap: "18px",
-};
-
-const desktopWorkCardStyle: CSSProperties = {
-  ...workCardStyle,
-};
-
-const desktopWorkContentStyle: CSSProperties = {
-  ...workContentStyle,
-  padding: "28px 42px 9px 10px",
-};
-
-const desktopSheetStatsRowStyle: CSSProperties = {
-  ...sheetStatsRowStyle,
-  padding: "10px 22px 16px",
-  gap: "14px",
-};
-
-const desktopCardActionsGridStyle: CSSProperties = {
-  ...actionsGridStyle,
-};
-
-
-const emptyMiniBoxStyle: CSSProperties = {
-  marginTop: "18px",
-  padding: "18px",
-  borderRadius: "20px",
-  background: "var(--historietas-painel-card-bg, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  fontWeight: 800,
-  lineHeight: 1.6,
-  display: "grid",
-  gap: "10px",
-  minWidth: 0,
-  boxShadow: "none",
-};
-
-const emptyMiniTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "18px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
-  ...safeTextStyle,
-};
-
-const emptyMiniTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "13px",
-  lineHeight: 1.5,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const emptyMiniButtonStyle: CSSProperties = {
-  width: "fit-content",
-  minHeight: "34px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background: themeGradient,
-  border: "0",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  cursor: "pointer",
-};

@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const desktopCompositionsSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-desktop-compositions-style-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estilos dos botões de ações preservam o contrato visual", () => {
   for (const name of [
@@ -65,8 +72,13 @@ test("página delega ações mantendo composição desktop e consumidores", () =
 
   assert.match(
     page,
-    /const desktopCardActionsGridStyle: CSSProperties = \{\s*\.\.\.actionsGridStyle,/,
+    /from "\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
   );
+  assert.match(
+    desktopCompositionsSource,
+    /export const desktopCardActionsGridStyle: CSSProperties = \{\s*\.\.\.actionsGridStyle,/,
+  );
+  assert.doesNotMatch(page, /const desktopCardActionsGridStyle: CSSProperties = \{/);
   assert.match(page, /style=\{workCardDotsButtonStyle\}/);
   assert.match(
     page,

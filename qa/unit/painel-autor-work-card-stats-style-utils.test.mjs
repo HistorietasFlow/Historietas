@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const desktopCompositionsSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-desktop-compositions-style-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estilos de métricas dos cards preservam o contrato visual", () => {
   for (const name of [
@@ -55,8 +62,13 @@ test("página delega métricas e preserva a composição desktop", () => {
 
   assert.match(
     page,
-    /const desktopSheetStatsRowStyle: CSSProperties = \{\s*\.\.\.sheetStatsRowStyle,/,
+    /from "\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
   );
+  assert.match(
+    desktopCompositionsSource,
+    /export const desktopSheetStatsRowStyle: CSSProperties = \{\s*\.\.\.sheetStatsRowStyle,/,
+  );
+  assert.doesNotMatch(page, /const desktopSheetStatsRowStyle: CSSProperties = \{/);
   assert.match(
     page,
     /style=\{isDesktop \? desktopSheetStatsRowStyle : sheetStatsRowStyle\}/,
