@@ -1708,7 +1708,6 @@ function PerfilAutorPageContent() {
       )
     : "@autor.historietas";
   const {
-    compartilharLinkPerfilAutor,
     compartilharObraPerfilAutor,
     copiarLinkPerfil,
     copiarUsernameCabecalho,

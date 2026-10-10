@@ -290,7 +290,7 @@ test("Perfil de Autor delega o fluxo genérico de compartilhamento para o hook",
   );
   assert.match(
     pagina,
-    /const \{[\s\S]*?compartilharLinkPerfilAutor,[\s\S]*?compartilharObraPerfilAutor,[\s\S]*?copiarLinkPerfil,[\s\S]*?copiarUsernameCabecalho,[\s\S]*?\} = usePerfilAutorShareActions\(\{[\s\S]*?autorHandlePerfil,[\s\S]*?perfilParaMostrar,[\s\S]*?perfilUsuarioRemotoAtivo,[\s\S]*?setMensagemAcao,[\s\S]*?setMenuPerfilAberto,[\s\S]*?setObraMenuAbertoId,[\s\S]*?\}\);/,
+    /const \{[\s\S]*?compartilharObraPerfilAutor,[\s\S]*?copiarLinkPerfil,[\s\S]*?copiarUsernameCabecalho,[\s\S]*?\} = usePerfilAutorShareActions\(\{[\s\S]*?autorHandlePerfil,[\s\S]*?perfilParaMostrar,[\s\S]*?perfilUsuarioRemotoAtivo,[\s\S]*?setMensagemAcao,[\s\S]*?setMenuPerfilAberto,[\s\S]*?setObraMenuAbertoId,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /async function compartilharLinkPerfilAutor\(/);
   assert.doesNotMatch(pagina, /async function compartilharObraPerfilAutor\(/);
