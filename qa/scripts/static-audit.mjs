@@ -1717,13 +1717,23 @@ const profilePage = fs.readFileSync(
   path.join(ROOT_DIR, "app/perfil-autor/page.tsx"),
   "utf8"
 );
+const profilePersistence = fs.readFileSync(
+  path.join(
+    ROOT_DIR,
+    "app/perfil-autor/lib/profile-profile-persistence.ts"
+  ),
+  "utf8"
+);
 
 if (
   /avatar_url:[\s\S]*?avatarRemoto\.startsWith\("data:"\)[\s\S]*?avatarRemoto\.startsWith\("blob:"\)[\s\S]*?\? ""/i.test(
-    profilePage
+    profilePersistence
   )
 ) {
-  pass("fallback Base64 do avatar não vai para o Postgres", "app/perfil-autor/page.tsx");
+  pass(
+    "fallback Base64 do avatar não vai para o Postgres",
+    "app/perfil-autor/lib/profile-profile-persistence.ts"
+  );
 } else {
   fail(
     "fallback Base64 do avatar não vai para o Postgres",
