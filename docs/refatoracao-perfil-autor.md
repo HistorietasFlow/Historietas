@@ -14,3 +14,8 @@
 
 - Extraiu a normalização, URL, análise de enquetes e resumo das publicações para `profile-community-publication-utils`.
 - Manteve as consultas Supabase e todos os consumidores de comunidade na página.
+
+## Fase 897 — helpers de ordenação e mesclagem do diário
+
+- Extraiu ordenação, chaves de deduplicação e mesclagem de itens para `profile-diary-merge-utils`.
+- Manteve as consultas Supabase, regras de privacidade e todos os consumidores do Diário na página.
