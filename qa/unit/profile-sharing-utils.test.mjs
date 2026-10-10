@@ -248,9 +248,9 @@ test("identifica apenas o cancelamento AbortError", () => {
 });
 
 test("helpers de compartilhamento permanecem centralizados após extrair o fluxo", () => {
-  assert.match(
+  assert.doesNotMatch(
     pagina,
-    /import \{ copiarTextoComFallbackPerfilAutor \} from "\.\/lib\/profile-sharing-utils";/,
+    /from "\.\/lib\/profile-sharing-utils";/,
   );
   assert.match(
     shareActionsSource,

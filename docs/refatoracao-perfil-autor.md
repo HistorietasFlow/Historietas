@@ -154,3 +154,8 @@
 
 - Extraiu `compartilharLinkPerfilAutor` para `usePerfilAutorShareActions`.
 - Manteve URL absoluta, Web Share, cancelamento, fallback de cópia e mensagens de sucesso/erro.
+
+## Fase 924 — cópia do username do cabeçalho
+
+- Moveu `copiarUsernameCabecalho` para `usePerfilAutorShareActions`.
+- Manteve normalização com `@`, cópia com fallback e mensagem apenas quando a cópia falha.
