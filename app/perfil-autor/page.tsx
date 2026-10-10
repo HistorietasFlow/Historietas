@@ -38,11 +38,8 @@ import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-naviga
 import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-actions";
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
 import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avatar-editor-actions";
-import {
-  copiarTextoComFallbackPerfilAutor,
-  criarUrlAbsolutaCompartilhamentoPerfilAutor,
-  erroCompartilhamentoFoiCanceladoPerfilAutor,
-} from "./lib/profile-sharing-utils";
+import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actions";
+import { copiarTextoComFallbackPerfilAutor } from "./lib/profile-sharing-utils";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -51,12 +48,10 @@ import type {
   AvaliacaoAutorPublica,
   AvaliacaoDiarioPublica,
   ComunidadePerfilEstado,
-  DadosCompartilhamentoPerfilAutor,
   DiarioPerfilEstado,
   DiarioPerfilItem,
   DiarioPerfilResumoItem,
   ItemBibliotecaPerfil,
-  NavegadorCompartilhamentoPerfilAutor,
   ObraLocal,
   ObraSalva,
   PerfilAutorSalvo,
@@ -382,6 +377,9 @@ function PerfilAutorPageContent() {
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
   const { mensagemAcao, setMensagemAcao } = usePerfilAutorActionMessage();
+  const { compartilharLinkPerfilAutor } = usePerfilAutorShareActions({
+    setMensagemAcao,
+  });
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
@@ -3191,52 +3189,6 @@ function PerfilAutorPageContent() {
       });
       setMensagemAcao("Este Diário não está disponível para avaliação.");
     }
-  }
-
-  async function compartilharLinkPerfilAutor({
-    url,
-    titulo,
-    texto,
-    mensagemCompartilhado,
-    mensagemCopiado,
-    mensagemErro,
-  }: {
-    url: string;
-    titulo: string;
-    texto: string;
-    mensagemCompartilhado: string;
-    mensagemCopiado: string;
-    mensagemErro: string;
-  }) {
-    const urlFinal = criarUrlAbsolutaCompartilhamentoPerfilAutor(url);
-    const dadosCompartilhamento: DadosCompartilhamentoPerfilAutor = {
-      title: titulo,
-      text: texto,
-      url: urlFinal,
-    };
-    const navegadorCompartilhamento =
-      navigator as NavegadorCompartilhamentoPerfilAutor;
-
-    if (typeof navegadorCompartilhamento.share === "function") {
-      try {
-        if (
-          !navegadorCompartilhamento.canShare ||
-          navegadorCompartilhamento.canShare(dadosCompartilhamento)
-        ) {
-          await navegadorCompartilhamento.share(dadosCompartilhamento);
-          setMensagemAcao(mensagemCompartilhado);
-          return;
-        }
-      } catch (error) {
-        if (erroCompartilhamentoFoiCanceladoPerfilAutor(error)) {
-          return;
-        }
-      }
-    }
-
-    const linkCopiado = await copiarTextoComFallbackPerfilAutor(urlFinal);
-
-    setMensagemAcao(linkCopiado ? mensagemCopiado : mensagemErro);
   }
 
   async function copiarLinkPerfil() {
