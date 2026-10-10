@@ -113,6 +113,10 @@
 
 - Extraído `obterChavesBackupArquivoPainel`, preservando as chaves, ordem, deduplicação, trim, normalização e consumidores.
 
+## Fase 882 — normalização de capítulo
+
+- Extraído `normalizarCapitulo`, preservando IDs, títulos, textos, datas, booleanos, fallbacks, numeração e consumidores.
+
 ## Contrato de preservação
 
 - Estado inicial `false`, atualização síncrona por `window.innerWidth >= 1024`, listener `resize` e cleanup permanecem equivalentes.
