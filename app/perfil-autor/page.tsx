@@ -32,12 +32,8 @@ import {
 } from "../../lib/historietasPrivacy";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import {
-  criarCaminhoAvatarStorage,
-  mensagemAmigavelErroUploadStorage,
-  obterCacheControlUploadStorage,
   obterCaminhoObjetoStorage,
   obterTipoMimeUploadStorage,
-  versionarUrlPublicaStorage,
 } from "../../lib/storageUploads";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
@@ -165,6 +161,7 @@ import { carregarComunidadePerfilSupabase } from "./lib/profile-community-loader
 import { carregarPerfilUsuarioSupabase } from "./lib/profile-public-profile-loader";
 import { criarLoginHrefPerfilAutor } from "./lib/profile-login-route-utils";
 import { sincronizarNomeAutorObrasSupabase } from "./lib/profile-author-works-sync";
+import { enviarAvatarPerfilUsuarioSupabase } from "./lib/profile-avatar-upload";
 import {
   mesclarDiarioPerfilComLocal,
   ordenarItensDiarioPerfil,
@@ -498,85 +495,6 @@ async function salvarPerfilUsuarioSupabase({
         error instanceof Error
           ? error.message
           : "Erro inesperado ao salvar perfil.",
-    };
-  }
-}
-
-async function enviarAvatarPerfilUsuarioSupabase({
-  userId,
-  arquivo,
-}: {
-  userId: string;
-  arquivo: File;
-}) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo || !idAutorSupabaseValido(userIdLimpo)) {
-    return {
-      ok: false,
-      url: "",
-      caminho: "",
-      erro: "ID de usuário inválido para enviar avatar.",
-    };
-  }
-
-  try {
-    const contentType = obterTipoMimeUploadStorage("avatars", arquivo);
-    const caminho = criarCaminhoAvatarStorage(userIdLimpo, arquivo);
-
-    if (!contentType || !caminho) {
-      return {
-        ok: false,
-        url: "",
-        caminho: "",
-        erro: "Tipo de imagem não permitido para avatar.",
-      };
-    }
-
-    const versaoUrl = Date.now();
-
-    const { error } = await supabase.storage
-      .from(AVATAR_STORAGE_BUCKET)
-      .upload(caminho, arquivo, {
-        cacheControl: obterCacheControlUploadStorage("avatars"),
-        contentType,
-        upsert: true,
-      });
-
-    if (error) {
-      return {
-        ok: false,
-        url: "",
-        caminho: "",
-        erro: mensagemAmigavelErroUploadStorage(error.message),
-      };
-    }
-
-    const { data } = supabase.storage
-      .from(AVATAR_STORAGE_BUCKET)
-      .getPublicUrl(caminho);
-
-    const publicUrl = versionarUrlPublicaStorage(
-      data.publicUrl || "",
-      versaoUrl,
-    );
-
-    if (!publicUrl) {
-      return {
-        ok: false,
-        url: "",
-        caminho: "",
-        erro: "Storage não retornou URL pública do avatar.",
-      };
-    }
-
-    return { ok: true, url: publicUrl, caminho, erro: "" };
-  } catch (error) {
-    return {
-      ok: false,
-      url: "",
-      caminho: "",
-      erro: error instanceof Error ? error.message : "Erro inesperado ao enviar avatar.",
     };
   }
 }
