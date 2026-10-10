@@ -149,3 +149,8 @@
 
 - Extraiu `selecionarAvatarAutor` e `removerAvatarAutor` para `usePerfilAutorAvatarEditorActions`.
 - Manteve validação de formato/tamanho, preview via FileReader, estados do editor, mensagens e limpeza do input.
+
+## Fase 923 — fluxo genérico de compartilhamento
+
+- Extraiu `compartilharLinkPerfilAutor` para `usePerfilAutorShareActions`.
+- Manteve URL absoluta, Web Share, cancelamento, fallback de cópia e mensagens de sucesso/erro.

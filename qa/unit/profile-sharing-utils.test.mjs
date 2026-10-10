@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const shareActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-share-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(modulo, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -240,15 +247,26 @@ test("identifica apenas o cancelamento AbortError", () => {
   assert.equal(erroCompartilhamentoFoiCanceladoPerfilAutor("AbortError"), false);
 });
 
-test("a página delega os três helpers sem alterar o fluxo de compartilhamento", () => {
+test("helpers de compartilhamento permanecem centralizados após extrair o fluxo", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?copiarTextoComFallbackPerfilAutor,[\s\S]*?criarUrlAbsolutaCompartilhamentoPerfilAutor,[\s\S]*?erroCompartilhamentoFoiCanceladoPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-sharing-utils";/,
+    /import \{ copiarTextoComFallbackPerfilAutor \} from "\.\/lib\/profile-sharing-utils";/,
   );
-  assert.doesNotMatch(pagina, /function criarUrlAbsolutaCompartilhamentoPerfilAutor\(/);
-  assert.doesNotMatch(pagina, /async function copiarTextoComFallbackPerfilAutor\(/);
-  assert.doesNotMatch(pagina, /function erroCompartilhamentoFoiCanceladoPerfilAutor\(/);
-  assert.match(pagina, /const urlFinal = criarUrlAbsolutaCompartilhamentoPerfilAutor\(url\);/);
-  assert.match(pagina, /await copiarTextoComFallbackPerfilAutor\(urlFinal\)/);
-  assert.match(pagina, /erroCompartilhamentoFoiCanceladoPerfilAutor\(error\)/);
+  assert.match(
+    shareActionsSource,
+    /import \{[\s\S]*?copiarTextoComFallbackPerfilAutor,[\s\S]*?criarUrlAbsolutaCompartilhamentoPerfilAutor,[\s\S]*?erroCompartilhamentoFoiCanceladoPerfilAutor,[\s\S]*?\} from "\.\.\/lib\/profile-sharing-utils";/,
+  );
+  assert.doesNotMatch(pagina, /async function compartilharLinkPerfilAutor\(/);
+  assert.match(
+    shareActionsSource,
+    /const urlFinal = criarUrlAbsolutaCompartilhamentoPerfilAutor\(url\);/,
+  );
+  assert.match(
+    shareActionsSource,
+    /await copiarTextoComFallbackPerfilAutor\(urlFinal\)/,
+  );
+  assert.match(
+    shareActionsSource,
+    /erroCompartilhamentoFoiCanceladoPerfilAutor\(error\)/,
+  );
 });
