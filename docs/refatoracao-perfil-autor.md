@@ -139,3 +139,8 @@
 
 - Extraiu `avisarLoginNecessario` e `sairDaConta` para `usePerfilAutorSessionActions`.
 - Manteve mensagem e redirect de login, fechamento do menu, `supabase.auth.signOut()`, redirect para `/login` e fallback de erro.
+
+## Fase 921 — persistência local das obras da Biblioteca
+
+- Extraiu `salvarObrasBibliotecaPerfil` para `usePerfilAutorLibraryStorageActions`.
+- Manteve atualização imediata do estado, persistência por usuário e fallback em memória quando o localStorage falha.

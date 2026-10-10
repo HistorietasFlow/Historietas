@@ -40,6 +40,7 @@ import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
 import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-actions";
+import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
 import {
   copiarTextoComFallbackPerfilAutor,
   criarUrlAbsolutaCompartilhamentoPerfilAutor,
@@ -388,6 +389,11 @@ function PerfilAutorPageContent() {
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const { salvarObrasBibliotecaPerfil } =
+    usePerfilAutorLibraryStorageActions({
+      usuarioIdLogado,
+      setObras,
+    });
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [menuPerfilAberto, setMenuPerfilAberto] = useState(false);
@@ -3718,20 +3724,6 @@ function PerfilAutorPageContent() {
     setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
   }
 
-
-  function salvarObrasBibliotecaPerfil(novasObras: ObraLocal[]) {
-    setObras(novasObras);
-
-    try {
-      salvarJsonUsuarioPerfilAutor(
-        STORAGE_KEY,
-        usuarioIdLogado,
-        novasObras,
-      );
-    } catch {
-      // A tela continua usando o estado em memória se o localStorage falhar.
-    }
-  }
 
   async function alternarSalvoCapituloBibliotecaPerfil(
     obraId: string,
