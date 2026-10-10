@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diaryLoaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-diary-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const itemUtilsSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-diary-item-utils.ts",
@@ -103,7 +110,7 @@ test("criarEstadoDiarioPerfilVazio preserva todas as listas vazias e novas refer
   assert.notEqual(estado.lendoAgora, novoEstado.lendoAgora);
 });
 
-test("Perfil de Autor delega somente os helpers puros de registros do diário", () => {
+test("Perfil de Autor delega os helpers de registros do Diário para o carregador", () => {
   assert.match(
     utilsSource,
     /import type \{ DiarioPerfilEstado, VisibilidadeDiarioPerfil \} from "\.\.\/types";/,
@@ -111,7 +118,11 @@ test("Perfil de Autor delega somente os helpers puros de registros do diário", 
   assert.match(utilsSource, /import \{ pegarTexto \} from "\.\/data-normalizers";/);
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarEstadoDiarioPerfilVazio,[\s\S]*?obterDataRegistroDiario,[\s\S]*?obterVisibilidadeRegistroDiario,[\s\S]*?registroDiarioPodeAparecer,[\s\S]*?\} from "\.\/lib\/profile-diary-record-utils";/,
+    /import \{ criarEstadoDiarioPerfilVazio \} from "\.\/lib\/profile-diary-record-utils";/,
+  );
+  assert.match(
+    diaryLoaderSource,
+    /import \{[\s\S]*?obterDataRegistroDiario,[\s\S]*?obterVisibilidadeRegistroDiario,[\s\S]*?registroDiarioPodeAparecer,[\s\S]*?\} from "\.\/profile-diary-record-utils";/,
   );
 
   for (const helper of [
@@ -123,20 +134,18 @@ test("Perfil de Autor delega somente os helpers puros de registros do diário", 
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(pagina, /registroDiarioPodeAparecer\(registro, incluirItensDoDiario, "privado"\)/);
+  assert.match(
+    diaryLoaderSource,
+    /registroDiarioPodeAparecer\(registro, incluirItensDoDiario, "privado"\)/,
+  );
   assert.match(
     itemUtilsSource,
     /export function criarItemAtividadeDiarioPerfil\([\s\S]*?const data = obterDataRegistroDiario\(registro\);/,
   );
   assert.match(
-    pagina,
-    /import \{[\s\S]*?criarItemAtividadeDiarioPerfil,[\s\S]*?\} from "\.\/lib\/profile-diary-item-utils";/,
-  );
-  assert.match(
-    pagina,
+    diaryLoaderSource,
     /criarItemAtividadeDiarioPerfil\(registro, obrasPorId, obrasPorCapituloId\)/,
   );
   assert.match(pagina, /: criarEstadoDiarioPerfilVazio\(\);/);
-  assert.match(pagina, /supabase\s*\.from\("diario_atividades"\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });

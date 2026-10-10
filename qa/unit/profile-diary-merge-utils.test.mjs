@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diaryLoaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-diary-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const collectionsSyncSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-user-collections-sync.ts",
@@ -181,7 +188,7 @@ test("mesclarDiarioPerfilComLocal preserva listas, atividades únicas e limite o
   );
 });
 
-test("Perfil de Autor delega somente os helpers puros de ordenação e mesclagem", () => {
+test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carregador", () => {
   assert.match(
     utilsSource,
     /import type \{ DiarioPerfilItem, DiarioPerfilSemCarregando \} from "\.\.\/types";/,
@@ -192,7 +199,11 @@ test("Perfil de Autor delega somente os helpers puros de ordenação e mesclagem
   );
   assert.match(
     pagina,
-    /import \{[\s\S]*?mesclarDiarioPerfilComLocal,[\s\S]*?ordenarItensDiarioPerfil,[\s\S]*?\} from "\.\/lib\/profile-diary-merge-utils";/,
+    /import \{ mesclarDiarioPerfilComLocal \} from "\.\/lib\/profile-diary-merge-utils";/,
+  );
+  assert.match(
+    diaryLoaderSource,
+    /import \{ ordenarItensDiarioPerfil \} from "\.\/profile-diary-merge-utils";/,
   );
 
   for (const helper of [
@@ -206,6 +217,10 @@ test("Perfil de Autor delega somente os helpers puros de ordenação e mesclagem
   }
 
   assert.match(pagina, /mesclarDiarioPerfilComLocal\(diarioSupabase, diarioLocal\)/);
+  assert.match(
+    diaryLoaderSource,
+    /ordenarItensDiarioPerfil\(Array\.from\(lendoPorObra\.values\(\)\)\)/,
+  );
   assert.doesNotMatch(pagina, /supabase\s*\.from\("seguindo_obras"\)/);
   assert.match(
     collectionsSyncSource,
