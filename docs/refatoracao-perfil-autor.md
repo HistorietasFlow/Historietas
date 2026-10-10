@@ -129,3 +129,8 @@
 
 - Extraiu `usuarioEstaLogado` para `profile-auth-session-utils`.
 - Manteve `supabase.auth.getUser()`, retorno booleano e fallback `false` em falhas.
+
+## Fase 919 — navegação das abas do perfil
+
+- Extraiu `selecionarAbaPerfil` para `usePerfilAutorTabNavigation`.
+- Manteve atualização do estado, query string, pathname, hash e `history.replaceState`.

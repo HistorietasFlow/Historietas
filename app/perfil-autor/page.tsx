@@ -38,6 +38,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
+import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
 import {
   copiarTextoComFallbackPerfilAutor,
   criarUrlAbsolutaCompartilhamentoPerfilAutor,
@@ -404,6 +405,9 @@ function PerfilAutorPageContent() {
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>(() =>
     normalizarAbaPerfilAutor(searchParams.get("aba")),
   );
+  const { selecionarAbaPerfil } = usePerfilAutorTabNavigation({
+    setAbaPerfil,
+  });
   const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
     useState<AbaBibliotecaPerfil>("tudo");
   const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
@@ -2487,24 +2491,6 @@ function PerfilAutorPageContent() {
   const comunidadeAutorReviewsHref = comunidadeAutorBusca
     ? `${comunidadeAutorHref}&tipo=Review`
     : "/comunidade?tipo=Review";
-
-  function selecionarAbaPerfil(novaAba: AbaPerfilAutor) {
-    setAbaPerfil(novaAba);
-
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    params.set("aba", novaAba);
-
-    const query = params.toString();
-    const novaUrl = `${window.location.pathname}${
-      query ? `?${query}` : ""
-    }${window.location.hash}`;
-
-    window.history.replaceState(window.history.state, "", novaUrl);
-  }
 
   function avisarLoginNecessario(mensagem: string) {
     setMensagemAcao(mensagem);
