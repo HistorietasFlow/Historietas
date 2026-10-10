@@ -69,3 +69,8 @@
 
 - Extraiu as contagens e a leitura do estado de seguimento para `profile-follow-state-loader`.
 - Manteve as consultas `seguindo_usuarios`, os fallbacks, o perfil próprio e o consumidor na página.
+
+## Fase 907 — helpers de notificações sociais
+
+- Extraiu a atualização local, remoção e criação de notificações para `profile-social-notifications-utils`.
+- Manteve consultas, RPC, filtros, fallbacks, eventos e consumidores da página.
