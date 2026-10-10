@@ -25,6 +25,10 @@ import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-cate
 import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
 import { restaurarArquivoObraComBackup } from "./lib/painel-autor-file-backup-restore-utils";
+import {
+  criarPainelCoverDesktopStyle,
+  criarPainelCoverStyle,
+} from "./lib/painel-autor-cover-style-utils";
 import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
@@ -209,34 +213,6 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
-function criarPainelCoverStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return {
-      ...coverStyle,
-      background: "#000000",
-      backgroundImage: "linear-gradient(135deg, #050505 0%, #000000 100%)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
-  }
-
-  return {
-    ...coverStyle,
-    background: "#000000",
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarPainelCoverDesktopStyle(capa: string): CSSProperties {
-  return {
-    ...criarPainelCoverStyle(capa),
-    minHeight: "240px",
-    borderRadius: "20px",
-  };
-}
 
 type CapituloSalvo = Partial<CapituloLocal> & Record<string, unknown>;
 
@@ -2895,25 +2871,6 @@ const coverLinkStyle: CSSProperties = {
   boxShadow: "none",
   background: "transparent",
   boxSizing: "border-box",
-};
-
-const coverStyle: CSSProperties = {
-  width: "100%",
-  aspectRatio: "3 / 4",
-  minHeight: "208px",
-  borderRadius: "18px",
-  position: "relative",
-  overflow: "hidden",
-  background: "var(--historietas-painel-surface, #050505)",
-  backgroundImage: "linear-gradient(135deg, var(--historietas-painel-surface, #050505) 0%, var(--historietas-painel-bg-deep, #000000) 100%)",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  border: "0",
-  outline: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  boxShadow: "none",
 };
 
 const coverGlowStyle: CSSProperties = {
