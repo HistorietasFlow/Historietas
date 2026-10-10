@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardLayoutSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-work-card-layout-style-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -73,7 +80,13 @@ test("Painel do Autor delega exclusivamente os estilos de capa ao m√≥dulo extra√
   assert.doesNotMatch(pagina, /const coverStyle: CSSProperties = \{/);
   assert.equal((pagina.match(/\bcriarPainelCoverStyle\b/g) || []).length, 2);
   assert.equal((pagina.match(/\bcriarPainelCoverDesktopStyle\b/g) || []).length, 2);
-  assert.match(pagina, /const coverGlowStyle: CSSProperties = \{/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?coverGlowStyle[\s\S]*?\} from "\.\/lib\/painel-autor-work-card-layout-style-utils";/,
+  );
+  assert.doesNotMatch(pagina, /const coverGlowStyle: CSSProperties = \{/);
+  assert.match(workCardLayoutSource, /export const coverGlowStyle: CSSProperties = \{/);
+  assert.match(pagina, /style=\{coverGlowStyle\}/);
   assert.match(
     pagina,
     /isDesktop\s*\? criarPainelCoverDesktopStyle\(obra\.capa\)\s*: criarPainelCoverStyle\(obra\.capa\)/,
