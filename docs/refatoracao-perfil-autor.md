@@ -74,3 +74,8 @@
 
 - Extraiu a atualização local, remoção e criação de notificações para `profile-social-notifications-utils`.
 - Manteve consultas, RPC, filtros, fallbacks, eventos e consumidores da página.
+
+## Fase 908 — curtidas Supabase do Top 5
+
+- Extraiu o carregamento e a persistência de curtidas para `profile-top-five-supabase-utils`.
+- Manteve o fallback local, consultas, ordem de escrita e guardas de troca de identidade.
