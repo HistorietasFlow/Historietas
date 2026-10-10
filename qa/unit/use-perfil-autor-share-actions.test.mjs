@@ -59,10 +59,11 @@ async function carregarModulo({ copiarResultado = true, cancelado = false } = {}
   return { ...modulo, chamadas };
 }
 
-function criarAcoes(modulo) {
+function criarAcoes(modulo, autorHandlePerfil = "@ana") {
   const mensagens = [];
   return {
     ...modulo.usePerfilAutorShareActions({
+      autorHandlePerfil,
       setMensagemAcao(mensagem) {
         mensagens.push(mensagem);
       },
@@ -132,6 +133,34 @@ test("cancelamento do Web Share não mostra mensagem nem copia", async () => {
   assert.equal(modulo.chamadas.some((chamada) => chamada[0] === "copiar"), false);
 });
 
+test("copia username preservando @ e não exibe mensagem no sucesso", async () => {
+  const modulo = await carregarModulo({ copiarResultado: true });
+  const acoes = criarAcoes(modulo, "@ana");
+
+  await acoes.copiarUsernameCabecalho();
+
+  assert.deepEqual(
+    modulo.chamadas.filter((chamada) => chamada[0] === "copiar"),
+    [["copiar", "@ana"]],
+  );
+  assert.deepEqual(acoes.mensagens, []);
+});
+
+test("adiciona @ ao username e preserva mensagem de erro na falha", async () => {
+  const modulo = await carregarModulo({ copiarResultado: false });
+  const acoes = criarAcoes(modulo, "ana");
+
+  await acoes.copiarUsernameCabecalho();
+
+  assert.deepEqual(
+    modulo.chamadas.filter((chamada) => chamada[0] === "copiar"),
+    [["copiar", "@ana"]],
+  );
+  assert.deepEqual(acoes.mensagens, [
+    "Não foi possível copiar o username agora.",
+  ]);
+});
+
 test("Perfil de Autor delega o fluxo genérico de compartilhamento para o hook", () => {
   assert.match(
     pagina,
@@ -139,8 +168,10 @@ test("Perfil de Autor delega o fluxo genérico de compartilhamento para o hook",
   );
   assert.match(
     pagina,
-    /const \{ compartilharLinkPerfilAutor \} = usePerfilAutorShareActions\(\{[\s\S]*?setMensagemAcao,[\s\S]*?\}\);/,
+    /const \{ compartilharLinkPerfilAutor, copiarUsernameCabecalho \} =[\s\S]*?usePerfilAutorShareActions\(\{[\s\S]*?autorHandlePerfil,[\s\S]*?setMensagemAcao,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /async function compartilharLinkPerfilAutor\(/);
+  assert.doesNotMatch(pagina, /async function copiarUsernameCabecalho\(/);
   assert.match(source, /await copiarTextoComFallbackPerfilAutor\(urlFinal\)/);
+  assert.match(source, /await copiarTextoComFallbackPerfilAutor\(usernameCompleto\)/);
 });

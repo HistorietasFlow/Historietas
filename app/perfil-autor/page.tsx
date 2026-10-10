@@ -39,7 +39,6 @@ import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-a
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
 import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avatar-editor-actions";
 import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actions";
-import { copiarTextoComFallbackPerfilAutor } from "./lib/profile-sharing-utils";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -377,9 +376,6 @@ function PerfilAutorPageContent() {
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
   const { mensagemAcao, setMensagemAcao } = usePerfilAutorActionMessage();
-  const { compartilharLinkPerfilAutor } = usePerfilAutorShareActions({
-    setMensagemAcao,
-  });
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
@@ -1711,6 +1707,11 @@ function PerfilAutorPageContent() {
         perfilUsuarioRemotoAtivo?.username || "",
       )
     : "@autor.historietas";
+  const { compartilharLinkPerfilAutor, copiarUsernameCabecalho } =
+    usePerfilAutorShareActions({
+      autorHandlePerfil,
+      setMensagemAcao,
+    });
   const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
   const entradaHistorietasPerfil = formatarEntradaHistorietasPerfilAutor(
     perfilUsuarioRemotoAtivo?.criadoEm || "",
@@ -3210,16 +3211,6 @@ function PerfilAutorPageContent() {
     });
   }
 
-  async function copiarUsernameCabecalho() {
-    const usernameCompleto = autorHandlePerfil.startsWith("@")
-      ? autorHandlePerfil
-      : `@${autorHandlePerfil}`;
-    const copiado = await copiarTextoComFallbackPerfilAutor(usernameCompleto);
-
-    if (!copiado) {
-      setMensagemAcao("Não foi possível copiar o username agora.");
-    }
-  }
 
   function abrirDenunciaPerfil() {
     if (podeEditarPerfil || !perfilParaMostrar) {
