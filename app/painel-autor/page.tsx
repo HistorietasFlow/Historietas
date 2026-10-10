@@ -24,6 +24,11 @@ import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import {
+  obraPublicadaComConteudoPainel,
+  obraRascunhoOuSemConteudoPainel,
+  obterStatusPainelAutor,
+} from "./lib/painel-autor-work-status-utils";
+import {
   caminhoStoragePertenceAoUsuarioPainel,
   obterCaminhoStoragePainel,
 } from "./lib/painel-autor-file-storage-path-utils";
@@ -196,35 +201,6 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
-function obraPublicadaComConteudoPainel(
-  obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
-) {
-  const temCapituloPublicado = obra.capitulos.some(
-    (capitulo) => capitulo.publicado !== false
-  );
-
-  return (
-    obra.publicado &&
-    (temCapituloPublicado || Boolean(normalizarArquivoObra(obra.arquivoObra)))
-  );
-}
-
-function obraRascunhoOuSemConteudoPainel(
-  obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
-) {
-  return !obraPublicadaComConteudoPainel(obra);
-}
-
-function obterStatusPainelAutor(
-  obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
-) {
-  if (obraPublicadaComConteudoPainel(obra)) {
-    return "Publicado";
-  }
-
-  return obra.publicado ? "Sem conteúdo" : "Rascunho";
-}
 
 function criarPainelCoverStyle(capa: string): CSSProperties {
   if (!capa) {
