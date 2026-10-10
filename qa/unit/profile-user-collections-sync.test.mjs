@@ -34,16 +34,16 @@ function criarSupabase({ userId = "usuario-1", respostas = [] } = {}) {
         },
       },
       from(tabela) {
+        const filtros = [];
+        let registroDelete = null;
         const consulta = {
-          operacao: "",
-          eq: [],
           delete() {
-            consulta.operacao = "delete";
-            chamadas.push({ tipo: "delete", tabela, eq: consulta.eq });
+            registroDelete = { tipo: "delete", tabela, eq: filtros };
+            chamadas.push(registroDelete);
             return consulta;
           },
           eq(campo, valor) {
-            consulta.eq.push([campo, valor]);
+            filtros.push([campo, valor]);
             return consulta;
           },
           insert(payload) {
@@ -55,14 +55,8 @@ function criarSupabase({ userId = "usuario-1", respostas = [] } = {}) {
             return Promise.resolve(proximaResposta());
           },
           then(resolve, reject) {
-            const registro = chamadas.findLast(
-              (chamada) =>
-                chamada.tipo === consulta.operacao &&
-                chamada.tabela === tabela &&
-                chamada.eq === consulta.eq,
-            );
-            if (registro) {
-              registro.eq = [...consulta.eq];
+            if (registroDelete) {
+              registroDelete.eq = [...filtros];
             }
             return Promise.resolve(proximaResposta()).then(resolve, reject);
           },

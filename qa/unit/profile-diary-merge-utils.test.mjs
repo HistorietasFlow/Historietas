@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const collectionsSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-user-collections-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(
   utilsSource.replace(
     'import { obterTimestampData } from "./profile-formatters";',
@@ -199,6 +206,10 @@ test("Perfil de Autor delega somente os helpers puros de ordenação e mesclagem
   }
 
   assert.match(pagina, /mesclarDiarioPerfilComLocal\(diarioSupabase, diarioLocal\)/);
-  assert.match(pagina, /supabase\s*\.from\("seguindo_obras"\)/);
+  assert.doesNotMatch(pagina, /supabase\s*\.from\("seguindo_obras"\)/);
+  assert.match(
+    collectionsSyncSource,
+    /supabase\s*\.from\("seguindo_obras"\)/,
+  );
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });
