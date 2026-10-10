@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const communityLoaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-community-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(
   utilsSource.replace(
     'import { pegarTexto } from "./data-normalizers";',
@@ -137,7 +144,15 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
   );
   assert.match(
     pagina,
-    /import \{[\s\S]*?analisarEnquetePublicacaoComunidadePerfil,[\s\S]*?criarHrefPublicacaoComunidadePerfil,[\s\S]*?criarResumoPublicacaoComunidadePerfil,[\s\S]*?normalizarPublicacaoComunidadePerfil,[\s\S]*?\} from "\.\/lib\/profile-community-publication-utils";/,
+    /import \{[\s\S]*?analisarEnquetePublicacaoComunidadePerfil,[\s\S]*?criarHrefPublicacaoComunidadePerfil,[\s\S]*?criarResumoPublicacaoComunidadePerfil,[\s\S]*?\} from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /normalizarPublicacaoComunidadePerfil[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.match(
+    communityLoaderSource,
+    /import \{ normalizarPublicacaoComunidadePerfil \} from "\.\/profile-community-publication-utils";/,
   );
 
   for (const helper of [
@@ -149,10 +164,17 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(pagina, /\.map\(\(registro\) => normalizarPublicacaoComunidadePerfil\(registro\)\)/);
+  assert.match(
+    communityLoaderSource,
+    /\.map\(\(registro\) => normalizarPublicacaoComunidadePerfil\(registro\)\)/,
+  );
   assert.match(pagina, /href=\{criarHrefPublicacaoComunidadePerfil\(/);
   assert.match(pagina, /criarResumoPublicacaoComunidadePerfil\(/);
   assert.match(pagina, /analisarEnquetePublicacaoComunidadePerfil\(/);
-  assert.match(pagina, /supabase\s*\.from\("comunidade_posts"\)/);
+  assert.doesNotMatch(pagina, /supabase\s*\.from\("comunidade_posts"\)/);
+  assert.match(
+    communityLoaderSource,
+    /supabase\s*\.from\("comunidade_posts"\)/,
+  );
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });
