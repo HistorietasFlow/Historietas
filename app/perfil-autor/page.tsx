@@ -1707,11 +1707,17 @@ function PerfilAutorPageContent() {
         perfilUsuarioRemotoAtivo?.username || "",
       )
     : "@autor.historietas";
-  const { compartilharLinkPerfilAutor, copiarUsernameCabecalho } =
-    usePerfilAutorShareActions({
-      autorHandlePerfil,
-      setMensagemAcao,
-    });
+  const {
+    compartilharLinkPerfilAutor,
+    copiarLinkPerfil,
+    copiarUsernameCabecalho,
+  } = usePerfilAutorShareActions({
+    autorHandlePerfil,
+    perfilParaMostrar,
+    perfilUsuarioRemotoAtivo,
+    setMensagemAcao,
+    setMenuPerfilAberto,
+  });
   const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
   const entradaHistorietasPerfil = formatarEntradaHistorietasPerfilAutor(
     perfilUsuarioRemotoAtivo?.criadoEm || "",
@@ -3191,26 +3197,6 @@ function PerfilAutorPageContent() {
       setMensagemAcao("Este Diário não está disponível para avaliação.");
     }
   }
-
-  async function copiarLinkPerfil() {
-    setMenuPerfilAberto(false);
-
-    const nomePerfil = perfilParaMostrar?.nome || "este autor";
-    const usernamePerfil = perfilUsuarioRemotoAtivo?.username
-      ? ` (@${perfilUsuarioRemotoAtivo.username})`
-      : "";
-
-    await compartilharLinkPerfilAutor({
-      url: window.location.href,
-      titulo: `${nomePerfil} no HISTORIETAS`,
-      texto: `Confira o perfil de ${nomePerfil}${usernamePerfil} no HISTORIETAS.`,
-      mensagemCompartilhado: "Compartilhamento do perfil aberto.",
-      mensagemCopiado: "",
-      mensagemErro:
-        "Não consegui compartilhar nem copiar o link do perfil neste navegador.",
-    });
-  }
-
 
   function abrirDenunciaPerfil() {
     if (podeEditarPerfil || !perfilParaMostrar) {
