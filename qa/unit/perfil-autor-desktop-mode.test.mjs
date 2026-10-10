@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const storageUtils = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-local-storage-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("usePerfilAutorDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -54,6 +61,13 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 54);
   assert.match(pagina, /useEffect\(\(\) => \{[\s\S]*?mensagemAcao/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /localStorage\.getItem/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?carregarJsonUsuarioPerfilAutor,[\s\S]*?carregarListaIdsPerfilBiblioteca,[\s\S]*?salvarJsonUsuarioPerfilAutor,[\s\S]*?salvarListaIdsPerfilBiblioteca,[\s\S]*?\} from "\.\/lib\/profile-local-storage-utils";/,
+  );
+  assert.match(
+    storageUtils,
+    /localStorage\.getItem\(chaveParaLer\)/,
+  );
   assert.match(pagina, /onAuthStateChange/);
 });

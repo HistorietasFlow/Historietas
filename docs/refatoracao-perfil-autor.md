@@ -29,3 +29,8 @@
 
 - Extraiu a construção de itens, metadados, URLs, mapas e resolução de obras para `profile-diary-item-utils`.
 - Manteve as consultas Supabase, regras de privacidade e todos os consumidores do Diário na página.
+
+## Fase 899 — helpers de armazenamento local
+
+- Extraiu chaves por usuário, normalização, leitura e gravação de listas e JSON para `profile-local-storage-utils`.
+- Manteve autenticação, identidade, consultas Supabase e todos os consumidores na página.
