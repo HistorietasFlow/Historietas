@@ -84,7 +84,7 @@ test("Painel do Autor delega somente a normalização de arquivo ao helper extra
   );
   assert.match(pagina, /type ArquivoObraLocal = \{/);
   assert.doesNotMatch(pagina, /function normalizarArquivoObra\(/);
-  assert.equal((pagina.match(/\bnormalizarArquivoObra\b/g) || []).length, 5);
+  assert.equal((pagina.match(/\bnormalizarArquivoObra\b/g) || []).length, 4);
   assert.match(
     pagina,
     /arquivoObra: normalizarArquivoObra\(obra\.arquivoObra\)/,
