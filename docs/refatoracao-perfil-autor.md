@@ -376,3 +376,10 @@
 - Extraiu a resolução por ID, nome, usuário logado e perfil remoto para `resolverEstadoPerfilAutor`.
 - Preservou autor não encontrado, ausência de parâmetros, redirecionamento para login e identificação de perfil próprio.
 - Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 964 — estado derivado de seguimento
+
+- Extraiu a composição de chaves, fallback local, estado remoto, contagens e links de seguimento para `obterEstadoSeguimentoPerfilAutor`.
+- Preservou o comportamento para IDs válidos, perfis locais, solicitações pendentes e perfil próprio.
+- Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
