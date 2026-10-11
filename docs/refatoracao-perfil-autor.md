@@ -240,3 +240,9 @@
 
 - Extraiu `alternarCurtidaTopFivePerfil` para `usePerfilAutorTopFiveLikeActions`.
 - Manteve identidade da sessão, estado otimista, persistência local, escrita Supabase, recarga do estado remoto e proteção contra trocas de conta.
+
+
+## Fase 940 — persistência do perfil
+
+- Extraiu `salvarPerfilAutor` para `usePerfilAutorProfileSaveActions`.
+- Manteve limites de bio/sobre, persistência local por usuário, atualização do perfil remoto e fallback de mensagem quando o Supabase falha.
