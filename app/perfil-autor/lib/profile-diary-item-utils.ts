@@ -158,3 +158,27 @@ export function obterObraRegistroDiario(
 
   return null;
 }
+
+
+export function criarHrefListaDiarioPerfilAutor(
+  perfilAutorId: string,
+  obraId = "",
+) {
+  const parametros = new URLSearchParams({
+    modo: "perfil",
+    origem: "diario",
+    categoria: "tudo",
+  });
+
+  if (obraId) {
+    parametros.set("obra", obraId);
+  }
+
+  const perfilIdLimpo = perfilAutorId.trim();
+
+  if (perfilIdLimpo) {
+    parametros.set("usuario", perfilIdLimpo);
+  }
+
+  return `/listas?${parametros.toString()}`;
+}
