@@ -701,3 +701,10 @@
 - Preservou valores até 99 e o teto visual `99+` acima desse limite.
 - Reutilizou a mesma contagem no conteúdo e no `aria-label`, removendo a lógica duplicada de `page.tsx`.
 - Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+## Fase 1008 — mensagem vazia do Diário
+
+- Extraiu a escolha da mensagem de estado vazio do Diário para `obterMensagemDiarioVazioPerfilAutor`.
+- Preservou o texto do próprio perfil e o texto exibido para visitantes.
+- Removeu o ternário correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
