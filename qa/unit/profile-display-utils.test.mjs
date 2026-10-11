@@ -7,6 +7,10 @@ const source = readFileSync(
   new URL("../../app/perfil-autor/lib/profile-display-utils.ts", import.meta.url),
   "utf8",
 );
+const pagina = readFileSync(
+  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  "utf8",
+);
 
 globalThis.__profileDisplayDependencies = {
   SOBRE_BIO_MAX_LENGTH: 160,
@@ -48,7 +52,10 @@ const javascript = typescript.transpileModule(
   },
 ).outputText;
 
-const { obterDadosExibicaoPerfilAutor } = await import(
+const {
+  obterBioSobreExibicaoPerfilAutor,
+  obterDadosExibicaoPerfilAutor,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
 
@@ -181,4 +188,49 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
   assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
   assert.equal(vazio.caracteresRestantesBioSobre, 160);
+});
+
+
+test("bio Sobre traduz apenas o texto padrão e marca conteúdo personalizado", () => {
+  const padrao = obterBioSobreExibicaoPerfilAutor({
+    bioSobreAutor: "Perfil de leitor no Historietas.",
+    bioSobreAutorEhPadrao: true,
+    traduzirTexto: (texto) => `Traduzido: ${texto}`,
+  });
+
+  assert.deepEqual(padrao, {
+    bioSobreAutorExibido:
+      "Traduzido: Perfil de leitor no Historietas.",
+    bioSobreAutorUserContent: undefined,
+  });
+
+  const personalizada = obterBioSobreExibicaoPerfilAutor({
+    bioSobreAutor: "Minha bio personalizada",
+    bioSobreAutorEhPadrao: false,
+    traduzirTexto: () => "não deve ser usado",
+  });
+
+  assert.deepEqual(personalizada, {
+    bioSobreAutorExibido: "Minha bio personalizada",
+    bioSobreAutorUserContent: "true",
+  });
+});
+
+test("página delega a exibição da bio Sobre ao helper", () => {
+  assert.match(
+    pagina,
+    /obterBioSobreExibicaoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterBioSobreExibicaoPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /userContent=\{bioSobreAutorUserContent\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /bioSobreAutorEhPadrao \? undefined : "true"/,
+  );
 });
