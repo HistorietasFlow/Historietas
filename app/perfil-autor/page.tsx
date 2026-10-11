@@ -101,6 +101,7 @@ import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-u
 import {
   obterBioSobreExibicaoPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
@@ -1004,11 +1005,9 @@ function PerfilAutorPageContent() {
                 setUsernameCabecalhoVisivel((visivel) => !visivel)
               }
               style={logoMarkButtonStyle}
-              aria-label={
-                usernameCabecalhoVisivel
-                  ? "Esconder username"
-                  : "Mostrar username"
-              }
+              aria-label={obterRotuloVisibilidadeUsernamePerfilAutor(
+                usernameCabecalhoVisivel,
+              )}
               aria-expanded={usernameCabecalhoVisivel}
             >
               <span style={logoMarkStyle} aria-hidden="true">

@@ -86,6 +86,13 @@ export function obterDadosExibicaoPerfilAutor({
 }
 
 
+export function obterRotuloVisibilidadeUsernamePerfilAutor(
+  usernameVisivel: boolean,
+) {
+  return usernameVisivel ? "Esconder username" : "Mostrar username";
+}
+
+
 export function obterRotulosAcoesEditorPerfilAutor({
   temAvatar,
   salvando,

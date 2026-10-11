@@ -673,3 +673,10 @@
 - Preservou exatamente `Colocar imagem`/`Trocar imagem` e `Salvar`/`Salvando...`.
 - Removeu os dois ternários de texto correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1004 — rótulo de visibilidade do username
+
+- Extraiu o rótulo de acessibilidade do botão `@` do cabeçalho para `obterRotuloVisibilidadeUsernamePerfilAutor`.
+- Preservou exatamente `Mostrar username` quando oculto e `Esconder username` quando visível.
+- Removeu o ternário correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

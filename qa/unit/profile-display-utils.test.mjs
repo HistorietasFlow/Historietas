@@ -55,6 +55,7 @@ const javascript = typescript.transpileModule(
 const {
   obterBioSobreExibicaoPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
@@ -189,6 +190,34 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
   assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
   assert.equal(vazio.caracteresRestantesBioSobre, 160);
+});
+
+
+test("rótulo do botão de username acompanha a visibilidade do cabeçalho", () => {
+  assert.equal(
+    obterRotuloVisibilidadeUsernamePerfilAutor(false),
+    "Mostrar username",
+  );
+  assert.equal(
+    obterRotuloVisibilidadeUsernamePerfilAutor(true),
+    "Esconder username",
+  );
+});
+
+
+test("página delega o rótulo de visibilidade do username ao helper", () => {
+  assert.match(
+    pagina,
+    /obterRotuloVisibilidadeUsernamePerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterRotuloVisibilidadeUsernamePerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /usernameCabecalhoVisivel[\s\S]{0,80}\? "Esconder username"[\s\S]{0,80}: "Mostrar username"/,
+  );
 });
 
 
