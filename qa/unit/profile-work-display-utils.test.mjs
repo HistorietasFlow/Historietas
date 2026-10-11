@@ -24,6 +24,12 @@ globalThis.__profileWorkDisplayDependencies = {
     }
     return [...mapa.values()];
   },
+  obterTotalConcluidasObraPerfilAutor(obra, totais) {
+    return totais?.concluidasPorObra?.[obra.id] || 0;
+  },
+  colecaoTemObraPerfilBiblioteca(colecao, obra) {
+    return colecao.includes(obra.id) || colecao.includes(obra.slug);
+  },
   encontrarObraPorIdentificadorTopFivePerfil(obras, identificador) {
     return (
       obras.find(
@@ -56,12 +62,12 @@ const javascript = typescript.transpileModule(
       "const { TOP_FIVE_MAXIMO } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
-      'import { mesclarObrasPorIdSlug } from "./data-normalizers";',
-      "const { mesclarObrasPorIdSlug } = globalThis.__profileWorkDisplayDependencies;",
+      /import \{[\s\S]*?mesclarObrasPorIdSlug,[\s\S]*?obterTotalConcluidasObraPerfilAutor,[\s\S]*?\} from "\.\/data-normalizers";/,
+      "const { mesclarObrasPorIdSlug, obterTotalConcluidasObraPerfilAutor } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
-      'import { encontrarObraPorIdentificadorTopFivePerfil } from "./library-normalizers";',
-      "const { encontrarObraPorIdentificadorTopFivePerfil } = globalThis.__profileWorkDisplayDependencies;",
+      /import \{[\s\S]*?colecaoTemObraPerfilBiblioteca,[\s\S]*?encontrarObraPorIdentificadorTopFivePerfil,[\s\S]*?\} from "\.\/library-normalizers";/,
+      "const { colecaoTemObraPerfilBiblioteca, encontrarObraPorIdentificadorTopFivePerfil } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
       'import { obterTimestampData } from "./profile-formatters";',
@@ -78,6 +84,7 @@ const javascript = typescript.transpileModule(
 const {
   obterObrasVisiveisPerfilAutor,
   obterObrasDestaquePerfilAutor,
+  obterTotalObrasConcluidasPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
@@ -196,5 +203,37 @@ test("TOP 5 vazio retorna lista vazia sem depender das obras carregadas", () => 
       perfilPertenceAoUsuario: false,
     }),
     [],
+  );
+});
+
+
+test("total de concluídas combina fonte remota e fallback local sem duplicar a mesma obra", () => {
+  const obraA = obra("a");
+  const obraB = obra("b");
+  const obraC = obra("c");
+
+  const total = obterTotalObrasConcluidasPerfilAutor({
+    perfilParaMostrar: perfil([obraA, obraB, obraC]),
+    totaisInteracoesObras: {
+      concluidasPorObra: {
+        a: 3,
+        b: 0,
+        c: 2,
+      },
+    },
+    obrasConcluidas: ["b", "c"],
+  });
+
+  assert.equal(total, 6);
+});
+
+test("total de concluídas retorna zero sem perfil", () => {
+  assert.equal(
+    obterTotalObrasConcluidasPerfilAutor({
+      perfilParaMostrar: null,
+      totaisInteracoesObras: { concluidasPorObra: { a: 9 } },
+      obrasConcluidas: ["a"],
+    }),
+    0,
   );
 });
