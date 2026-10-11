@@ -328,3 +328,18 @@ export function obterHrefLeituraItemBibliotecaPerfilAutor(
       )
     : obraHref;
 }
+
+
+export function obterDadosCardObraPerfilAutor(
+  obra: ObraLocal,
+  totaisInteracoesObras: Parameters<
+    typeof obterTotalCurtidasObraPerfilAutor
+  >[1],
+  obraMenuAbertoId: string,
+) {
+  return {
+    obraHref: obterHrefObraPerfilAutor(obra),
+    ...obterMetricasResumoObraPerfilAutor(obra, totaisInteracoesObras),
+    menuObraAberto: obraMenuAbertoId === obra.id,
+  };
+}

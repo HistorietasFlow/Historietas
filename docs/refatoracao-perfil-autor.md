@@ -613,3 +613,11 @@
 - Preservou prioridade do capítulo e fallback para o href da obra.
 - Removeu duas montagens duplicadas e o uso direto de `criarHrefLeituraCapituloPerfilAutor` de `page.tsx`.
 - Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 996 — dados derivados do card de obra
+
+- Centralizou href, curtidas, comentários, visualizações formatadas e estado do menu em `obterDadosCardObraPerfilAutor`.
+- Removeu três derivações separadas de dentro do `.map()` de obras.
+- Preservou a reutilização dos helpers de href e métricas já existentes.
+- Atualizou testes estruturais de contagem e ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.

@@ -106,6 +106,7 @@ import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-ut
 import {
   formatarMetaSheetObraPerfilAutor,
   formatarMetricasSheetObraPerfilAutor,
+  obterDadosCardObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
@@ -2095,16 +2096,17 @@ function PerfilAutorPageContent() {
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {obrasDoPerfilFiltradas.map((obra) => {
-                  const obraHref = obterHrefObraPerfilAutor(obra);
                   const {
+                    obraHref,
                     totalCurtidas,
                     totalComentarios,
                     visualizacoesFormatadas: visualizacoesObra,
-                  } = obterMetricasResumoObraPerfilAutor(
+                    menuObraAberto,
+                  } = obterDadosCardObraPerfilAutor(
                     obra,
                     totaisInteracoesObras,
+                    obraMenuAbertoId,
                   );
-                  const menuObraAberto = obraMenuAbertoId === obra.id;
 
                   return (
                     <ProfileWorkCard key={obra.id}>
