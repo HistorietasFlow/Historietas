@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
   historietasThemeCss,
@@ -72,7 +72,6 @@ import {
   BIO_MAX_LENGTH,
   PERMISSOES_ABAS_PERFIL_PADRAO,
   SOBRE_BIO_MAX_LENGTH,
-  STORAGE_KEY,
   TOP_FIVE_MAXIMO,
   avaliacaoAutorVazia,
   avaliacaoDiarioVazia,
