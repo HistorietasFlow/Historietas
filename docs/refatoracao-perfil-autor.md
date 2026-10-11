@@ -274,3 +274,8 @@
 
 - Extraiu o `useEffect` que corrige a aba ativa quando ela deixa de estar visível para `usePerfilAutorVisibleTabSync`.
 - Manteve a validação das cinco abas, o fallback para a primeira aba permitida, o timer assíncrono e a limpeza no unmount.
+
+## Fase 946 — sincronização da Comunidade do perfil
+
+- Extraiu o `useEffect` de carregamento da Comunidade para `usePerfilAutorCommunitySync`.
+- Manteve fallback para aba oculta ou ID inválido, estado de carregamento, leitura Supabase, tratamento de erro, timer inicial e cancelamento no unmount.

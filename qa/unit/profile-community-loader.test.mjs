@@ -5,6 +5,7 @@ import typescript from "typescript";
 
 const source = readFileSync(new URL("../../app/perfil-autor/lib/profile-community-loader.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/perfil-autor/page.tsx", import.meta.url), "utf8");
+const communitySyncSource = readFileSync(new URL("../../app/perfil-autor/hooks/use-perfil-autor-community-sync.ts", import.meta.url), "utf8");
 let indice = 0;
 
 async function modulo(respostas) {
@@ -61,8 +62,18 @@ test("preserva dados da publicação e fallback quando a consulta de obras falha
 });
 
 test("página delega o carregador à nova fronteira", () => {
-  assert.match(pagina, /import \{ carregarComunidadePerfilSupabase \} from "\.\/lib\/profile-community-loader";/);
-  assert.match(pagina, /carregarComunidadePerfilSupabase\(\s*userIdPerfil,/);
+  assert.match(
+    communitySyncSource,
+    /import \{ carregarComunidadePerfilSupabase \} from "\.\.\/lib\/profile-community-loader";/,
+  );
+  assert.match(
+    communitySyncSource,
+    /carregarComunidadePerfilSupabase\(\s*userIdPerfil,/,
+  );
   assert.doesNotMatch(pagina, /async function carregarComunidadePerfilSupabase\(/);
+  assert.doesNotMatch(
+    pagina,
+    /import \{ carregarComunidadePerfilSupabase \} from "\.\/lib\/profile-community-loader";/,
+  );
   assert.match(source, /export async function carregarComunidadePerfilSupabase\(/);
 });

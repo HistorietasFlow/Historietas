@@ -42,6 +42,7 @@ import { usePerfilAutorTopFiveStorageSync } from "./hooks/use-perfil-autor-top-f
 import { usePerfilAutorTopFiveLikesSync } from "./hooks/use-perfil-autor-top-five-likes-sync";
 import { usePerfilAutorPrivacySync } from "./hooks/use-perfil-autor-privacy-sync";
 import { usePerfilAutorVisibleTabSync } from "./hooks/use-perfil-autor-visible-tab-sync";
+import { usePerfilAutorCommunitySync } from "./hooks/use-perfil-autor-community-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
 import type {
@@ -138,7 +139,6 @@ import {
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
 } from "./lib/profile-community-publication-utils";
-import { carregarComunidadePerfilSupabase } from "./lib/profile-community-loader";
 import { carregarPerfilUsuarioSupabase } from "./lib/profile-public-profile-loader";
 import { criarLoginHrefPerfilAutor } from "./lib/profile-login-route-utils";
 import { carregarDiarioPerfilSupabase } from "./lib/profile-diary-loader";
@@ -1308,66 +1308,12 @@ function PerfilAutorPageContent() {
     setPrivacidadePerfilCarregando,
   });
 
-  useEffect(() => {
-    const userIdPerfil = perfilParaMostrar?.autorId.trim() || "";
-    let cancelado = false;
-
-    async function carregarComunidadePerfil() {
-      if (
-        !comunidadePerfilVisivel ||
-        !userIdPerfil ||
-        !idAutorSupabaseValido(userIdPerfil)
-      ) {
-        setComunidadePerfil(comunidadePerfilVazia);
-        return;
-      }
-
-      setComunidadePerfil({
-        ...comunidadePerfilVazia,
-        carregando: true,
-      });
-
-      try {
-        const comunidadeCarregada = await carregarComunidadePerfilSupabase(
-          userIdPerfil,
-          perfilPertenceAoUsuario,
-        );
-
-        if (!cancelado) {
-          setComunidadePerfil({
-            carregando: false,
-            erro: "",
-            ...comunidadeCarregada,
-          });
-        }
-      } catch (error) {
-        console.warn(
-          "Não consegui carregar as publicações da Comunidade deste perfil:",
-          error,
-        );
-
-        if (!cancelado) {
-          setComunidadePerfil({
-            ...comunidadePerfilVazia,
-            erro: "Não foi possível carregar as publicações deste perfil agora.",
-          });
-        }
-      }
-    }
-
-    const carregarComunidadeTimer = window.setTimeout(() => {
-      void carregarComunidadePerfil();
-    }, 0);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(carregarComunidadeTimer);
-    };
-  }, [
-    perfilParaMostrar?.autorId,
+  usePerfilAutorCommunitySync({
+    perfilAutorId: perfilParaMostrar?.autorId || "",
     comunidadePerfilVisivel,
     perfilPertenceAoUsuario,
-  ]);
+    setComunidadePerfil,
+  });
 
   usePerfilAutorVisibleTabSync({
     abaPerfil,
