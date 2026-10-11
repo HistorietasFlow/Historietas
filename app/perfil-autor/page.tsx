@@ -106,6 +106,7 @@ import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-ut
 import {
   formatarMetaSheetObraPerfilAutor,
   formatarMetricasSheetObraPerfilAutor,
+  obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefLeituraItemBibliotecaPerfilAutor,
@@ -1718,15 +1719,16 @@ function PerfilAutorPageContent() {
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {itensBibliotecaAtivos.map((item) => {
-                  const capituloHref =
-                    obterHrefLeituraItemBibliotecaPerfilAutor(item);
                   const {
+                    capituloHref,
                     totalCurtidas: totalCurtidasBiblioteca,
                     totalComentarios: totalComentariosBiblioteca,
                     visualizacoesFormatadas: visualizacoesBiblioteca,
-                  } = obterMetricasResumoObraPerfilAutor(
-                    item.obra,
+                    menuAberto,
+                  } = obterDadosCardBibliotecaPerfilAutor(
+                    item,
                     totaisInteracoesObras,
+                    bibliotecaMenuAbertoChave,
                   );
 
                   return (
@@ -1735,7 +1737,7 @@ function PerfilAutorPageContent() {
                       item={item}
                       href={capituloHref}
                       isDesktop={isDesktop}
-                      menuAberto={bibliotecaMenuAbertoChave === item.chave}
+                      menuAberto={menuAberto}
                       totalComentarios={totalComentariosBiblioteca}
                       totalCurtidas={totalCurtidasBiblioteca}
                       visualizacoes={visualizacoesBiblioteca}
