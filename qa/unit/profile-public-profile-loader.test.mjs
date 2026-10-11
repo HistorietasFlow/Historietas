@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileLoadSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 function criarConsulta(respostas, chamadas, tabela) {
@@ -193,8 +200,8 @@ test("propaga erro de consulta e não normaliza dados inválidos", async () => {
 
 test("Perfil de Autor delega o carregamento público para o novo módulo", () => {
   assert.match(
-    pagina,
-    /import \{ carregarPerfilUsuarioSupabase \} from "\.\/lib\/profile-public-profile-loader";/,
+    profileLoadSyncSource,
+    /import \{ carregarPerfilUsuarioSupabase \} from "\.\.\/lib\/profile-public-profile-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarPerfilUsuarioSupabase\(/);
   assert.doesNotMatch(pagina, /normalizarPerfilUsuarioSupabase/);

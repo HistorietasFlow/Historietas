@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileLoadSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const ratingSyncSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
@@ -211,8 +218,8 @@ test("storage indisponível preserva retornos seguros das avaliações e perfis"
 
 test("Perfil de Autor delega exclusivamente avaliações e perfis locais", () => {
   assert.match(
-    pagina,
-    /import \{ carregarPerfisAutores \} from "\.\/lib\/profile-local-author-utils";/,
+    profileLoadSyncSource,
+    /import \{ carregarPerfisAutores \} from "\.\.\/lib\/profile-local-author-utils";/,
   );
   assert.match(
     ratingSyncSource,

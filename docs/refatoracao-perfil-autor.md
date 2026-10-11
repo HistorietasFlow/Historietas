@@ -324,3 +324,9 @@
 
 - Extraiu o `useEffect` que acompanha a sessão e a troca de conta para `usePerfilAutorAuthIdentitySync`.
 - Manteve limpeza completa do estado da conta anterior, leitura inicial com `getUser`, guarda por versão, `onAuthStateChange`, atualização exclusiva de `usuarioIdLogado` e cancelamento/unsubscribe no unmount.
+
+## Fase 956 — carregamento principal do perfil
+
+- Extraiu o último `useEffect` restante da página para `usePerfilAutorProfileLoadSync`.
+- Manteve parâmetros de rota, guardas contra troca de conta, carregamento de obras/perfil/estado do usuário, mesclagem de interações, complementação da Biblioteca, persistência local e commit final do estado.
+- A página `app/perfil-autor/page.tsx` deixa de conter `useEffect` diretamente; os efeitos passam a ficar delegados aos hooks especializados.

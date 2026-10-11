@@ -12,6 +12,13 @@ const loaderSource = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url), "utf8");
+const profileLoadSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const interactionTotalsSyncSource = readFileSync(
   new URL("../../app/perfil-autor/hooks/use-perfil-autor-interaction-totals-sync.ts", import.meta.url),
   "utf8",
@@ -193,8 +200,8 @@ test("Perfil de Autor delega os dois carregadores de interações", () => {
     /import \{ carregarTotaisInteracoesObrasPerfilAutor \} from "\.\.\/lib\/profile-interactions-loader";/,
   );
   assert.match(
-    pagina,
-    /import \{ carregarInteracoesCapitulosSupabase \} from "\.\/lib\/profile-interactions-loader";/,
+    profileLoadSyncSource,
+    /import \{ carregarInteracoesCapitulosSupabase \} from "\.\.\/lib\/profile-interactions-loader";/,
   );
   for (const helper of ["carregarTotaisInteracoesObrasPerfilAutor", "carregarInteracoesCapitulosSupabase"]) {
     assert.match(loaderSource, new RegExp(`export async function ${helper}\\(`));
@@ -205,7 +212,7 @@ test("Perfil de Autor delega os dois carregadores de interações", () => {
     /await carregarTotaisInteracoesObrasPerfilAutor\(obras\)/,
   );
   assert.match(
-    pagina,
+    profileLoadSyncSource,
     /await carregarInteracoesCapitulosSupabase\([\s\S]*?estadoUsuarioSupabase\.userId,[\s\S]*?obrasMescladas/,
   );
   assert.doesNotMatch(loaderSource, /useState|useEffect|localStorage/);

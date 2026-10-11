@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileLoadSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const authIdentitySyncSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-auth-identity-sync.ts",
@@ -66,11 +73,12 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.doesNotMatch(pagina, /addEventListener\("resize"/);
   assert.doesNotMatch(pagina, /removeEventListener\("resize"/);
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 54);
-  assert.match(pagina, /useEffect\(\(\) => \{[\s\S]*?mensagemAcao/);
+  assert.doesNotMatch(pagina, /useEffect\(/);
+  assert.match(profileLoadSyncSource, /useEffect\(\(\) => \{/);
   assert.match(authIdentitySyncSource, /supabase\.auth\.getUser\(\)/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarJsonUsuarioPerfilAutor,[\s\S]*?carregarListaIdsPerfilBiblioteca,[\s\S]*?salvarJsonUsuarioPerfilAutor,[\s\S]*?salvarListaIdsPerfilBiblioteca,[\s\S]*?\} from "\.\/lib\/profile-local-storage-utils";/,
+    profileLoadSyncSource,
+    /import \{[\s\S]*?carregarJsonUsuarioPerfilAutor,[\s\S]*?carregarListaIdsPerfilBiblioteca,[\s\S]*?salvarJsonUsuarioPerfilAutor,[\s\S]*?salvarListaIdsPerfilBiblioteca,[\s\S]*?\} from "\.\.\/lib\/profile-local-storage-utils";/,
   );
   assert.match(
     storageUtils,
