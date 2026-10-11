@@ -92,7 +92,6 @@ import {
 import {
   type IdentidadeAutenticadaPerfilAutor,
 } from "./lib/profile-auth-identity";
-import { colecaoTemObraPerfilBiblioteca } from "./lib/library-normalizers";
 import {
   criarPerfilUsuarioRemotoComoAutor,
   obterTotalSalvosObraPerfilAutor,
@@ -114,6 +113,7 @@ import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
   formatarMetricasSheetObraPerfilAutor,
+  obterEstadoColecoesObraPerfilAutor,
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
@@ -2208,8 +2208,15 @@ function PerfilAutorPageContent() {
                   numeroUltimoCapitulo || 1,
                 )
               : "";
-            const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra);
-            const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra);
+            const {
+              obraFavorita,
+              obraConcluida,
+            } = obterEstadoColecoesObraPerfilAutor({
+              obra,
+              obrasFavoritas,
+              obrasConcluidas,
+              obrasSeguidasBiblioteca,
+            });
             const {
               totalCurtidas,
               totalComentarios,
@@ -2368,18 +2375,16 @@ function PerfilAutorPageContent() {
                   item.numeroCapitulo || 1,
                 )
               : obraHref;
-            const obraFavorita = colecaoTemObraPerfilBiblioteca(
+            const {
+              obraFavorita,
+              obraConcluida,
+              obraNoQueroLer,
+            } = obterEstadoColecoesObraPerfilAutor({
+              obra,
               obrasFavoritas,
-              obra,
-            );
-            const obraConcluida = colecaoTemObraPerfilBiblioteca(
               obrasConcluidas,
-              obra,
-            );
-            const obraNoQueroLer = colecaoTemObraPerfilBiblioteca(
               obrasSeguidasBiblioteca,
-              obra,
-            );
+            });
             const metaSheet = obterMetaMenuBibliotecaPerfil(item);
 
             return (

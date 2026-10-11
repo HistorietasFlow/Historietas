@@ -557,3 +557,11 @@
 - Preservou a ordem de visualizações, curtidas, comentários, salvos e capítulos.
 - Removeu a montagem inline correspondente do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 989 — estado das coleções da obra
+
+- Centralizou as checagens de favorita, concluída e Quero ler em `obterEstadoColecoesObraPerfilAutor`.
+- Substituiu cinco chamadas duplicadas nos menus de obra e Biblioteca.
+- Removeu o uso direto de `colecaoTemObraPerfilBiblioteca` da página e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

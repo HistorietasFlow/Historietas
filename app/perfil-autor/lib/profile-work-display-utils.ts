@@ -213,3 +213,25 @@ export function formatarMetricasSheetObraPerfilAutor({
     `📚 ${totalCapitulos}`,
   ].join(" • ");
 }
+
+
+export function obterEstadoColecoesObraPerfilAutor({
+  obra,
+  obrasFavoritas,
+  obrasConcluidas,
+  obrasSeguidasBiblioteca,
+}: {
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">;
+  obrasFavoritas: string[];
+  obrasConcluidas: string[];
+  obrasSeguidasBiblioteca: string[];
+}) {
+  return {
+    obraFavorita: colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra),
+    obraConcluida: colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra),
+    obraNoQueroLer: colecaoTemObraPerfilBiblioteca(
+      obrasSeguidasBiblioteca,
+      obra,
+    ),
+  };
+}
