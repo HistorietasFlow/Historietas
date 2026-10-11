@@ -682,8 +682,6 @@ function PerfilAutorPageContent() {
     autorChavePerfil,
     autorNormalizadoParaSeguir,
     seguindoAutor,
-    perfilUserIdParaSeguir,
-    podeUsarSeguimentoUsuario,
     seguindoPerfilAtual,
     solicitacaoSeguimentoPendente,
     seguidoresTotal,
