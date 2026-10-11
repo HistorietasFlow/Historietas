@@ -17,7 +17,7 @@ import {
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
 } from "../../lib/historietasPrivacy";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
@@ -69,11 +69,7 @@ import type {
   TotaisInteracoesObrasPerfilAutor,
 } from "./types";
 import {
-  AUTHOR_FOLLOW_STORAGE_KEY,
   BIO_MAX_LENGTH,
-  COMPLETED_STORAGE_KEY,
-  FAVORITES_STORAGE_KEY,
-  LIBRARY_FOLLOW_STORAGE_KEY,
   PERMISSOES_ABAS_PERFIL_PADRAO,
   SOBRE_BIO_MAX_LENGTH,
   STORAGE_KEY,
