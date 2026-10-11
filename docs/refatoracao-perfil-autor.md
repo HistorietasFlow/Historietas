@@ -666,3 +666,10 @@
 - Preservou exatamente `Adicionar à lista`/`Remover da lista` e `Concluir`/`Marcar como não concluída`.
 - Removeu os dois ternários de texto correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1003 — rótulos das ações do editor de perfil
+
+- Centralizou os textos do botão de imagem e do botão de salvar em `obterRotulosAcoesEditorPerfilAutor`.
+- Preservou exatamente `Colocar imagem`/`Trocar imagem` e `Salvar`/`Salvando...`.
+- Removeu os dois ternários de texto correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
