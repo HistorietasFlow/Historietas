@@ -411,3 +411,10 @@
 - Moveu o cálculo de obras concluídas do perfil para `obterTotalObrasConcluidasPerfilAutor` em `profile-work-display-utils.ts`.
 - Preservou a combinação entre métricas remotas e fallback local, usando o maior valor por obra sem duplicar conclusão local.
 - Ampliou a cobertura comportamental já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 969 — montagem das listas da Biblioteca
+
+- Extraiu a montagem das listas Quero ler, Lendo agora, Favoritas, Concluídas, Histórico e Salvos para `montarItensBibliotecaPerfilAutor`.
+- Preservou a guarda de visibilidade, os prefixos, o filtro de atividades de leitura e a fonte dos capítulos salvos.
+- Adicionou cobertura comportamental e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
