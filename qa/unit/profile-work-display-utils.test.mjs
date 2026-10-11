@@ -147,6 +147,7 @@ const {
   obterDadosCardObraPerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
+  obterRotulosAcoesColecoesObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
@@ -845,6 +846,31 @@ test("página delega os dados derivados do card da Biblioteca", () => {
   assert.doesNotMatch(
     pagina,
     /bibliotecaMenuAbertoChave === item\.chave/,
+  );
+});
+
+
+test("rótulos das coleções do sheet da obra preservam os estados", () => {
+  assert.deepEqual(
+    obterRotulosAcoesColecoesObraPerfilAutor({
+      obraFavorita: false,
+      obraConcluida: false,
+    }),
+    {
+      rotuloFavorita: "Adicionar à lista",
+      rotuloConcluida: "Concluir",
+    },
+  );
+
+  assert.deepEqual(
+    obterRotulosAcoesColecoesObraPerfilAutor({
+      obraFavorita: true,
+      obraConcluida: true,
+    }),
+    {
+      rotuloFavorita: "Remover da lista",
+      rotuloConcluida: "Marcar como não concluída",
+    },
   );
 });
 
