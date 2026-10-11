@@ -319,3 +319,8 @@
 
 - Extraiu o `useEffect` que monta e carrega o Diário para `usePerfilAutorDiarySync`.
 - Manteve seleção da fonte do Diário, inclusão de itens privados, fallback local, leitura remota, mesclagem, aplicação de permissões, timer inicial e cancelamento no unmount.
+
+## Fase 955 — sincronização da identidade autenticada
+
+- Extraiu o `useEffect` que acompanha a sessão e a troca de conta para `usePerfilAutorAuthIdentitySync`.
+- Manteve limpeza completa do estado da conta anterior, leitura inicial com `getUser`, guarda por versão, `onAuthStateChange`, atualização exclusiva de `usuarioIdLogado` e cancelamento/unsubscribe no unmount.

@@ -284,9 +284,16 @@ test("mantem a autenticacao como unica proprietaria de usuarioIdLogado", () => {
     new URL("../../app/perfil-autor/page.tsx", import.meta.url),
     "utf8",
   );
-  const escritasUsuarioIdLogado = paginaPerfilAutor.match(
-    /setUsuarioIdLogado\(/g,
+  const authIdentitySync = readFileSync(
+    new URL(
+      "../../app/perfil-autor/hooks/use-perfil-autor-auth-identity-sync.ts",
+      import.meta.url,
+    ),
+    "utf8",
   );
+  const escritasNaPagina = paginaPerfilAutor.match(/setUsuarioIdLogado\(/g);
+  const escritasNoHook = authIdentitySync.match(/setUsuarioIdLogado\(/g);
 
-  assert.equal(escritasUsuarioIdLogado?.length, 1);
+  assert.equal(escritasNaPagina?.length || 0, 0);
+  assert.equal(escritasNoHook?.length, 1);
 });
