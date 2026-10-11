@@ -128,6 +128,7 @@ import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-u
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-utils";
 import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
+import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import {
   encontrarItemBibliotecaMenuAberto,
@@ -805,31 +806,20 @@ function PerfilAutorPageContent() {
 
   const caracteresRestantesBioSobre =
     SOBRE_BIO_MAX_LENGTH - bioSobrePersonalizada.length;
-  const autorPodeReceberAvaliacao = Boolean(
-    perfilParaMostrar && perfilParaMostrar.obras.length > 0,
-  );
-  const perfilUsaAvaliacaoDiario = Boolean(
-    perfilParaMostrar && perfilParaMostrar.obras.length === 0,
-  );
-  const avaliacaoDiarioPrivada = Boolean(
-    perfilUsaAvaliacaoDiario &&
-      avaliacaoDiario.carregado &&
-      !avaliacaoDiario.mostrar,
-  );
-  const avaliacaoDiarioResumoVisivel = Boolean(
-    perfilUsaAvaliacaoDiario &&
-      (
-        avaliacaoDiarioPrivada ||
-        podeEditarPerfil ||
-        avaliacaoDiario.visivel
-      ),
-  );
-  const avaliacaoResumoPerfilVisivel =
-    autorPodeReceberAvaliacao || avaliacaoDiarioResumoVisivel;
-  const avaliacaoResumoPerfil = autorPodeReceberAvaliacao
-    ? avaliacaoAutor
-    : avaliacaoDiario;
-  const avaliacaoResumoEhDiario = !autorPodeReceberAvaliacao;
+  const {
+    autorPodeReceberAvaliacao,
+    perfilUsaAvaliacaoDiario,
+    avaliacaoDiarioPrivada,
+    avaliacaoDiarioResumoVisivel,
+    avaliacaoResumoPerfilVisivel,
+    avaliacaoResumoPerfil,
+    avaliacaoResumoEhDiario,
+  } = obterEstadoAvaliacaoPerfilAutor({
+    perfilParaMostrar,
+    podeEditarPerfil,
+    avaliacaoAutor,
+    avaliacaoDiario,
+  });
 
   const obrasDoPerfilFiltradas = useMemo(() => {
     if (!perfilParaMostrar) {
