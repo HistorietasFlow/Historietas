@@ -577,11 +577,8 @@ function PerfilAutorPageContent() {
   }, [perfilUsuarioRemoto]);
 
   const {
-    perfilAtual,
     autorNaoEncontrado,
     perfilDoUsuarioLogado,
-    perfilSemParametro,
-    perfilSemLoginSemParametro,
     perfilParaMostrar,
     perfilPertenceAoUsuario,
     redirecionandoParaLogin,
