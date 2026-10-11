@@ -4,6 +4,7 @@ import {
   encontrarItemBibliotecaMenuAberto,
   obterMetaMenuBibliotecaPerfil,
   obterRotuloAcaoRemoverBibliotecaPerfil,
+  obterRotulosAcoesColecoesBibliotecaPerfil,
   obterRotuloBibliotecaPerfil,
 } from "../../app/perfil-autor/lib/profile-library-display-utils.ts";
 
@@ -28,6 +29,35 @@ test("preserva os rótulos das abas da Biblioteca", () => {
   for (const [aba, rotulo] of Object.entries(casos)) {
     assert.equal(obterRotuloBibliotecaPerfil(aba), rotulo);
   }
+});
+
+
+test("preserva os rótulos das ações de coleção da Biblioteca", () => {
+  assert.deepEqual(
+    obterRotulosAcoesColecoesBibliotecaPerfil({
+      obraNoQueroLer: false,
+      obraFavorita: false,
+      obraConcluida: false,
+    }),
+    {
+      rotuloQueroLer: "Quero ler",
+      rotuloFavorita: "Favoritar",
+      rotuloConcluida: "Concluir",
+    },
+  );
+
+  assert.deepEqual(
+    obterRotulosAcoesColecoesBibliotecaPerfil({
+      obraNoQueroLer: true,
+      obraFavorita: true,
+      obraConcluida: true,
+    }),
+    {
+      rotuloQueroLer: "Remover do Quero ler",
+      rotuloFavorita: "Remover favorita",
+      rotuloConcluida: "Marcar como não concluída",
+    },
+  );
 });
 
 
