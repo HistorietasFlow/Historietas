@@ -597,3 +597,11 @@
 - Preservou o helper resumido dos cards sem incluir o cálculo de salvos, evitando trabalho extra na grade.
 - Removeu o acesso direto a `obterTotalSalvosObraPerfilAutor` da página e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 994 — alvo de leitura do menu da obra
+
+- Extraiu a resolução do capítulo para continuar/último capítulo para `obterAlvoLeituraMenuObraPerfilAutor`.
+- Preservou prioridade do capítulo de continuação, fallback para o último capítulo, numeração e href de leitura.
+- Removeu essa derivação do JSX e o uso direto de `encontrarCapituloParaContinuar` da página.
+- Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
