@@ -460,3 +460,10 @@
 - Moveu a data de entrada no Historietas e o contador restante da bio Sobre para `obterDadosExibicaoPerfilAutor`.
 - Preservou o uso do perfil remoto ativo, o fallback sem data e o limite existente da bio.
 - Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 976 — visibilidade dos destaques
+
+- Extraiu a regra de visibilidade do TOP 5 para `obterVisibilidadeDestaquesPerfilAutor`.
+- Preservou diferenças entre autor e visitante, dependência da aba Obras e exibição da seção sem itens quando aplicável.
+- Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
