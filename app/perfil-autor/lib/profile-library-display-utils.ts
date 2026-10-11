@@ -29,3 +29,33 @@ export function obterRotuloBibliotecaPerfil(aba: AbaBibliotecaPerfil) {
       return "histórico";
   }
 }
+
+
+export function obterMetaMenuBibliotecaPerfil(
+  item: ItemBibliotecaPerfil,
+) {
+  const totalCapitulos = item.obra.capitulos.length;
+  const progresso = Math.max(
+    0,
+    Math.min(100, Math.round(item.obra.progressoLeitura || 0)),
+  );
+
+  const rotuloTipo =
+    item.tipoDiario === "lendo"
+      ? "Lendo"
+      : item.tipoDiario === "favorita"
+        ? "Favorita"
+        : item.tipoDiario === "concluida"
+          ? "Concluída"
+          : item.tipoDiario === "quero_ler"
+            ? "Quero ler"
+            : "Biblioteca";
+
+  const detalheLeitura = item.capitulo
+    ? `Capítulo ${item.numeroCapitulo || 1} de ${totalCapitulos || 1}`
+    : totalCapitulos > 0
+      ? `${totalCapitulos} ${totalCapitulos === 1 ? "capítulo" : "capítulos"}`
+      : "Obra";
+
+  return `${rotuloTipo} • ${detalheLeitura} • ${progresso}% concluído`;
+}
