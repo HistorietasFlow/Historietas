@@ -828,13 +828,9 @@ function PerfilAutorPageContent() {
     [perfilParaMostrar],
   );
 
-  const obraMenuAberta = useMemo(
-    () =>
-      obterObraMenuAbertaPerfilAutor(
-        obrasDoPerfilFiltradas,
-        obraMenuAbertoId,
-      ),
-    [obraMenuAbertoId, obrasDoPerfilFiltradas],
+  const obraMenuAberta = obterObraMenuAbertaPerfilAutor(
+    obrasDoPerfilFiltradas,
+    obraMenuAbertoId,
   );
 
 
