@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const topFiveLikeActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-top-five-like-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("usePerfilAutorActionMessage preserva estado e expiração da mensagem", () => {
   assert.match(hook, /^"use client";/);
@@ -47,7 +54,7 @@ test("Perfil de Autor mantém mensagens de domínio e toast na página", () => {
   assert.doesNotMatch(pagina, /timerMensagemAcao/);
   assert.match(pagina, /setMensagemAcao\(""\);/);
   assert.match(
-    pagina,
+    topFiveLikeActionsSource,
     /setMensagemAcao\("Entre para curtir o TOP 5 deste perfil\."\);/,
   );
   assert.match(pagina, /<ProfileActionToast message=\{mensagemAcao\} \/>/);
