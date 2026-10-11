@@ -39,6 +39,7 @@ import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avat
 import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actions";
 import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-actions";
 import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
+import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -1730,6 +1731,26 @@ function PerfilAutorPageContent() {
       setAlvoDenunciaConteudoPerfil,
     });
   const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
+  const { abrirEditorPerfil, fecharEditorPerfil } =
+    usePerfilAutorProfileEditorActions({
+      podeEditarPerfil,
+      perfilParaMostrar,
+      perfilUsuarioRemotoAtivo,
+      bioAutorPersonalizada,
+      avatarAutor,
+      avatarNomePerfil: perfilSalvoAutor.avatarNome || "",
+      salvandoEditorPerfil,
+      avatarInputRef,
+      setNomePerfilEditor,
+      setUsernamePerfilEditor,
+      setBioPerfilEditor,
+      setAvatarPerfilEditor,
+      setAvatarNomePerfilEditor,
+      setAvatarArquivoPerfilEditor,
+      setAvatarErro,
+      setMenuPerfilAberto,
+      setEditorPerfilAberto,
+    });
   const { atualizarBioSobreAutor, alternarDestaquesPerfil } =
     usePerfilAutorAboutActions({
       avatarAutor,
@@ -2532,37 +2553,6 @@ function PerfilAutorPageContent() {
   const comunidadeAutorReviewsHref = comunidadeAutorBusca
     ? `${comunidadeAutorHref}&tipo=Review`
     : "/comunidade?tipo=Review";
-
-  function abrirEditorPerfil() {
-    if (!podeEditarPerfil || !perfilParaMostrar) {
-      return;
-    }
-
-    setNomePerfilEditor(
-      perfilUsuarioRemotoAtivo?.nome || perfilParaMostrar.nome || "",
-    );
-    setUsernamePerfilEditor(perfilUsuarioRemotoAtivo?.username || "");
-    setBioPerfilEditor(bioAutorPersonalizada);
-    setAvatarPerfilEditor(avatarAutor);
-    setAvatarNomePerfilEditor(perfilSalvoAutor.avatarNome || "");
-    setAvatarArquivoPerfilEditor(null);
-    setAvatarErro("");
-    setMenuPerfilAberto(false);
-    setEditorPerfilAberto(true);
-  }
-
-  function fecharEditorPerfil() {
-    if (salvandoEditorPerfil) {
-      return;
-    }
-
-    setEditorPerfilAberto(false);
-    setAvatarErro("");
-
-    if (avatarInputRef.current) {
-      avatarInputRef.current.value = "";
-    }
-  }
 
   function salvarPerfilAutor(novoPerfil: PerfilAutorSalvo) {
     if (!autorChavePerfil) {

@@ -179,3 +179,8 @@
 
 - Extraiu `atualizarBioSobreAutor` e `alternarDestaquesPerfil` para `usePerfilAutorAboutActions`.
 - Manteve limite da bio Sobre, avatar/nome/bio atuais e alternância de destaques antes de delegar para `salvarPerfilAutor`.
+
+## Fase 929 — abertura e fechamento do editor de perfil
+
+- Extraiu `abrirEditorPerfil` e `fecharEditorPerfil` para `usePerfilAutorProfileEditorActions`.
+- Manteve preenchimento dos campos, guardas de permissão/salvamento, fechamento do menu e limpeza do input de avatar.
