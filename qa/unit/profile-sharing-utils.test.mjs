@@ -21,16 +21,25 @@ const shareActionsSource = readFileSync(
   ),
   "utf8",
 );
-const javascript = typescript.transpileModule(modulo, {
+const javascript = typescript.transpileModule(
+  modulo.replace(
+    'import { criarSlugBase } from "../../../lib/utils";',
+    'const criarSlugBase = (titulo) => String(titulo).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");',
+  ),
+  {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
     target: typescript.ScriptTarget.ES2022,
   },
-}).outputText;
+  },
+).outputText;
 const {
   copiarTextoComFallbackPerfilAutor,
+  criarDadosCompartilhamentoObraPerfilAutor,
+  criarDadosCompartilhamentoPerfilAutor,
   criarUrlAbsolutaCompartilhamentoPerfilAutor,
   erroCompartilhamentoFoiCanceladoPerfilAutor,
+  normalizarUsernameCopiavelPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
@@ -269,4 +278,38 @@ test("helpers de compartilhamento permanecem centralizados após extrair o fluxo
     shareActionsSource,
     /erroCompartilhamentoFoiCanceladoPerfilAutor\(error\)/,
   );
+});
+
+
+test("centraliza payloads de obra, perfil e username copiável", () => {
+  assert.deepEqual(
+    criarDadosCompartilhamentoObraPerfilAutor({
+      titulo: "Minha Obra",
+      slug: "minha-obra",
+      link: "",
+    }),
+    {
+      url: "/obra/minha-obra",
+      titulo: "Minha Obra",
+      texto: "Veja Minha Obra na Historietas.",
+    },
+  );
+
+  assert.deepEqual(
+    criarDadosCompartilhamentoPerfilAutor("Ana", "ana"),
+    {
+      titulo: "Ana no HISTORIETAS",
+      texto: "Confira o perfil de Ana (@ana) no HISTORIETAS.",
+    },
+  );
+  assert.deepEqual(
+    criarDadosCompartilhamentoPerfilAutor(null, null),
+    {
+      titulo: "este autor no HISTORIETAS",
+      texto: "Confira o perfil de este autor no HISTORIETAS.",
+    },
+  );
+
+  assert.equal(normalizarUsernameCopiavelPerfilAutor("@ana"), "@ana");
+  assert.equal(normalizarUsernameCopiavelPerfilAutor("ana"), "@ana");
 });

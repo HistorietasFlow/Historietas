@@ -1,4 +1,3 @@
-import { criarSlugBase } from "../../../lib/utils";
 import type {
   DadosCompartilhamentoPerfilAutor,
   NavegadorCompartilhamentoPerfilAutor,
@@ -6,8 +5,11 @@ import type {
 } from "../types";
 import {
   copiarTextoComFallbackPerfilAutor,
+  criarDadosCompartilhamentoObraPerfilAutor,
+  criarDadosCompartilhamentoPerfilAutor,
   criarUrlAbsolutaCompartilhamentoPerfilAutor,
   erroCompartilhamentoFoiCanceladoPerfilAutor,
+  normalizarUsernameCopiavelPerfilAutor,
 } from "../lib/profile-sharing-utils";
 
 export function usePerfilAutorShareActions({
@@ -74,13 +76,10 @@ export function usePerfilAutorShareActions({
   async function compartilharObraPerfilAutor(obra: ObraLocal) {
     setObraMenuAbertoId("");
 
-    const obraHref =
-      obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+    const dadosObra = criarDadosCompartilhamentoObraPerfilAutor(obra);
 
     await compartilharLinkPerfilAutor({
-      url: obraHref,
-      titulo: obra.titulo || "Obra na Historietas",
-      texto: `Veja ${obra.titulo} na Historietas.`,
+      ...dadosObra,
       mensagemCompartilhado: "Compartilhamento da obra aberto.",
       mensagemCopiado: "Link da obra copiado.",
       mensagemErro: "Não consegui compartilhar nem copiar o link da obra neste navegador.",
@@ -90,15 +89,14 @@ export function usePerfilAutorShareActions({
   async function copiarLinkPerfil() {
     setMenuPerfilAberto(false);
 
-    const nomePerfil = perfilParaMostrar?.nome || "este autor";
-    const usernamePerfil = perfilUsuarioRemotoAtivo?.username
-      ? ` (@${perfilUsuarioRemotoAtivo.username})`
-      : "";
+    const dadosPerfil = criarDadosCompartilhamentoPerfilAutor(
+      perfilParaMostrar?.nome,
+      perfilUsuarioRemotoAtivo?.username,
+    );
 
     await compartilharLinkPerfilAutor({
       url: window.location.href,
-      titulo: `${nomePerfil} no HISTORIETAS`,
-      texto: `Confira o perfil de ${nomePerfil}${usernamePerfil} no HISTORIETAS.`,
+      ...dadosPerfil,
       mensagemCompartilhado: "Compartilhamento do perfil aberto.",
       mensagemCopiado: "",
       mensagemErro:
@@ -107,9 +105,8 @@ export function usePerfilAutorShareActions({
   }
 
   async function copiarUsernameCabecalho() {
-    const usernameCompleto = autorHandlePerfil.startsWith("@")
-      ? autorHandlePerfil
-      : `@${autorHandlePerfil}`;
+    const usernameCompleto =
+      normalizarUsernameCopiavelPerfilAutor(autorHandlePerfil);
     const copiado = await copiarTextoComFallbackPerfilAutor(usernameCompleto);
 
     if (!copiado) {

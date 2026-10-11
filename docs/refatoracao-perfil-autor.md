@@ -348,3 +348,17 @@
 - Extraiu a composição dos links gerais, Teorias e Reviews da Comunidade para `criarLinksComunidadePerfilAutor`.
 - Preservou codificação do nome do autor e fallbacks quando o nome está ausente.
 - Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 960 — composição interna dos links da Comunidade
+
+- Centralizou a codificação da busca em `criarBuscaComunidadePerfilAutor`.
+- Separou a montagem dos links tipados de Teoria e Review sem alterar URLs ou fallbacks.
+- Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 961 — payloads de compartilhamento
+
+- Moveu a composição dos dados de compartilhamento de obra e perfil para `profile-sharing-utils`.
+- Centralizou a normalização do username copiável e removeu formatação duplicada do hook.
+- Preservou Web Share, fallback de cópia, textos, URLs e mensagens existentes.
