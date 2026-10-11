@@ -57,9 +57,22 @@ globalThis.__profileWorkDisplayDependencies = {
   compactarNumeroPerfilAutor(valor) {
     return `fmt:${Math.max(0, Math.round(Number(valor) || 0))}`;
   },
+  formatarFormatoPerfilAutor(valor) {
+    const limpo = String(valor || "").trim();
+    return limpo === "Não informado" ? "" : limpo;
+  },
+  formatarGeneroPerfilAutor(valor) {
+    return String(valor || "").trim() || "Não informado";
+  },
+  obterTagPrincipalPerfilAutor(obra) {
+    return Array.isArray(obra.tags) ? obra.tags[0] || "" : "";
+  },
   obterTimestampData(valor) {
     const timestamp = Date.parse(valor);
     return Number.isNaN(timestamp) ? 0 : timestamp;
+  },
+  mostrarClassificacao(obra) {
+    return obra.classificacaoIndicativa !== "Não informado";
   },
 };
 
@@ -93,8 +106,20 @@ const javascript = typescript.transpileModule(
       "const { colecaoTemObraPerfilBiblioteca, encontrarObraPorIdentificadorTopFivePerfil } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
-      /import \{[\s\S]*?compactarNumeroPerfilAutor,[\s\S]*?obterTimestampData,[\s\S]*?\} from "\.\/profile-formatters";/,
-      "const { compactarNumeroPerfilAutor, obterTimestampData } = globalThis.__profileWorkDisplayDependencies;",
+      /import \{[\s\S]*?compactarNumeroPerfilAutor,[\s\S]*?formatarFormatoPerfilAutor,[\s\S]*?formatarGeneroPerfilAutor,[\s\S]*?obterTagPrincipalPerfilAutor,[\s\S]*?obterTimestampData,[\s\S]*?\} from "\.\/profile-formatters";/,
+      [
+        "const {",
+        "  compactarNumeroPerfilAutor,",
+        "  formatarFormatoPerfilAutor,",
+        "  formatarGeneroPerfilAutor,",
+        "  obterTagPrincipalPerfilAutor,",
+        "  obterTimestampData,",
+        "} = globalThis.__profileWorkDisplayDependencies;",
+      ].join("\n"),
+    )
+    .replace(
+      'import { mostrarClassificacao } from "./work-normalizers";',
+      "const { mostrarClassificacao } = globalThis.__profileWorkDisplayDependencies;",
     ),
   {
     compilerOptions: {
@@ -105,6 +130,7 @@ const javascript = typescript.transpileModule(
 ).outputText;
 
 const {
+  formatarMetaSheetObraPerfilAutor,
   formatarMetricasSheetObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefObraPerfilAutor,
@@ -529,4 +555,48 @@ test("página reutiliza estado centralizado das coleções nos dois menus", () =
     pagina,
     /colecaoTemObraPerfilBiblioteca/,
   );
+});
+
+
+test("formata meta do sheet da obra preservando ordem, filtros e tradução", () => {
+  assert.equal(
+    formatarMetaSheetObraPerfilAutor(
+      {
+        genero: "Fantasia",
+        formato: "Mangá",
+        tags: ["Aventura"],
+        classificacaoIndicativa: "16",
+      },
+      (texto) => `T:${texto}`,
+    ),
+    "T:Fantasia • T:Mangá • T:Aventura • T:16",
+  );
+
+  assert.equal(
+    formatarMetaSheetObraPerfilAutor(
+      {
+        genero: "Drama",
+        formato: "Não informado",
+        tags: [],
+        classificacaoIndicativa: "Não informado",
+      },
+      (texto) => texto,
+    ),
+    "Drama",
+  );
+});
+
+test("página delega a meta do sheet da obra", () => {
+  assert.match(
+    pagina,
+    /formatarMetaSheetObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/formatarMetaSheetObraPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(pagina, /formatarFormatoPerfilAutor/);
+  assert.doesNotMatch(pagina, /formatarGeneroPerfilAutor/);
+  assert.doesNotMatch(pagina, /obterTagPrincipalPerfilAutor/);
+  assert.doesNotMatch(pagina, /mostrarClassificacao/);
 });
