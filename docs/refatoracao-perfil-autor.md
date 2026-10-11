@@ -432,3 +432,10 @@
 - Extraiu gêneros principais, total de visualizações, rascunhos e obras sem capítulos para `obterResumoEstatisticasPerfilAutor`.
 - Preservou ordenação por frequência, desempate alfabético, limite de cinco gêneros e normalização numérica.
 - Adicionou cobertura comportamental e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 972 — consolidação da aba Tudo do Diário
+
+- Extraiu a consolidação das listas do Diário para `montarItensDiarioTudoPerfil` em `profile-diary-merge-utils.ts`.
+- Preservou deduplicação por obra, prioridade dos tipos, escolha do item mais recente, fallback por slug e ordenação por data.
+- Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
