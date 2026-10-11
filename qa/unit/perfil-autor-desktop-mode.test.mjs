@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const stylesSource = readFileSync(
+  new URL("../../app/perfil-autor/styles.ts", import.meta.url),
+  "utf8",
+);
 const profileLoadSyncSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
@@ -72,7 +76,7 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.doesNotMatch(pagina, /window\.innerWidth >= 1024/);
   assert.doesNotMatch(pagina, /addEventListener\("resize"/);
   assert.doesNotMatch(pagina, /removeEventListener\("resize"/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 54);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 46);
   assert.doesNotMatch(pagina, /useEffect\(/);
   assert.match(profileLoadSyncSource, /useEffect\(\(\) => \{/);
   assert.match(authIdentitySyncSource, /supabase\.auth\.getUser\(\)/);
@@ -85,4 +89,44 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
     /localStorage\.getItem\(chaveParaLer\)/,
   );
   assert.match(authIdentitySyncSource, /onAuthStateChange/);
+});
+
+
+test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
+  assert.match(
+    pagina,
+    /obterEstilosResponsivosPerfilAutor,[\s\S]*?from "\.\/styles";/,
+  );
+  assert.match(
+    pagina,
+    /\} = obterEstilosResponsivosPerfilAutor\(isDesktop\);/,
+  );
+  assert.match(
+    stylesSource,
+    /export function obterEstilosResponsivosPerfilAutor\(isDesktop: boolean\)/,
+  );
+
+  for (const [atual, desktop, mobile] of [
+    ["containerAtualStyle", "desktopContainerStyle", "containerStyle"],
+    ["heroAtualStyle", "desktopHeroBoxStyle", "heroBoxStyle"],
+    ["authorTopRowAtualStyle", "desktopAuthorTopRowStyle", "authorTopRowStyle"],
+    ["avatarActionsAtualStyle", "desktopAvatarActionsStyle", "avatarActionsStyle"],
+    ["avatarSmallButtonAtualStyle", "desktopAvatarSmallButtonStyle", "avatarSmallButtonStyle"],
+    ["avatarRemoveButtonAtualStyle", "desktopAvatarRemoveButtonStyle", "avatarRemoveButtonStyle"],
+    ["profileActionsAtualStyle", "desktopProfileActionsStyle", "profileActionsStyle"],
+    ["profileVisitorActionsAtualStyle", "desktopProfileVisitorActionsStyle", "profileVisitorActionsStyle"],
+    ["menuSheetAtualStyle", "desktopMenuSheetStyle", "menuSheetStyle"],
+  ]) {
+    assert.match(
+      stylesSource,
+      new RegExp(
+        atual +
+          ":[\\s\\S]{0,120}isDesktop[\\s\\S]{0,120}" +
+          desktop +
+          "[\\s\\S]{0,120}" +
+          mobile,
+      ),
+      atual,
+    );
+  }
 });

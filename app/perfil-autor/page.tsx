@@ -215,6 +215,7 @@ import { ProfileWorkActionSheetMetrics } from "./components/profile-work-action-
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileAboutRecentActivity } from "./components/profile-about-recent-activity";
 import {
+  obterEstilosResponsivosPerfilAutor,
   criarProfileSelectionDotStyle,
   criarCapaDestaquePerfilAutor,
   criarCapaGridPerfilAutor,
@@ -225,7 +226,6 @@ import {
   desktopTopWaterFadeStyle,
   perfilAutorThemeCss,
   pageStyle,
-  containerStyle,
   logoMarkButtonStyle,
   logoTextButtonStyle,
   logoMarkStyle,
@@ -237,8 +237,6 @@ import {
   profileMenuIconStyle,
   profileMenuIconLineStyle,
   menuOverlayStyle,
-  menuSheetStyle,
-  desktopMenuSheetStyle,
   menuHeaderStyle,
   menuTitleBlockStyle,
   menuTitleStyle,
@@ -255,8 +253,6 @@ import {
   menuNotificationLabelStyle,
   menuNotificationRightStyle,
   menuNotificationBadgeStyle,
-  heroBoxStyle,
-  authorTopRowStyle,
   avatarImageStyle,
   hiddenInputStyle,
   profileEditorSheetContentStyle,
@@ -269,23 +265,10 @@ import {
   profileEditorSheetActionsStyle,
   profileEditorCancelButtonStyle,
   profileEditorSaveButtonStyle,
-  avatarActionsStyle,
-  avatarSmallButtonStyle,
-  avatarRemoveButtonStyle,
   avatarErrorStyle,
   bioCounterStyle,
-  profileActionsStyle,
-  desktopProfileActionsStyle,
-  profileVisitorActionsStyle,
-  desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  desktopContainerStyle,
-  desktopHeroBoxStyle,
-  desktopAuthorTopRowStyle,
-  desktopAvatarActionsStyle,
-  desktopAvatarSmallButtonStyle,
-  desktopAvatarRemoveButtonStyle,
 } from "./styles";
 
 
@@ -856,31 +839,17 @@ function PerfilAutorPageContent() {
     abaBibliotecaPerfil,
   );
 
-  const containerAtualStyle = isDesktop
-    ? desktopContainerStyle
-    : containerStyle;
-  const heroAtualStyle = isDesktop ? desktopHeroBoxStyle : heroBoxStyle;
-  const authorTopRowAtualStyle = isDesktop
-    ? desktopAuthorTopRowStyle
-    : authorTopRowStyle;
-  const avatarActionsAtualStyle = isDesktop
-    ? desktopAvatarActionsStyle
-    : avatarActionsStyle;
-  const avatarSmallButtonAtualStyle = isDesktop
-    ? desktopAvatarSmallButtonStyle
-    : avatarSmallButtonStyle;
-  const avatarRemoveButtonAtualStyle = isDesktop
-    ? desktopAvatarRemoveButtonStyle
-    : avatarRemoveButtonStyle;
-  const profileActionsAtualStyle = isDesktop
-    ? desktopProfileActionsStyle
-    : profileActionsStyle;
-  const profileVisitorActionsAtualStyle = isDesktop
-    ? desktopProfileVisitorActionsStyle
-    : profileVisitorActionsStyle;
-  const menuSheetAtualStyle = isDesktop
-    ? desktopMenuSheetStyle
-    : menuSheetStyle;
+  const {
+    containerAtualStyle,
+    heroAtualStyle,
+    authorTopRowAtualStyle,
+    avatarActionsAtualStyle,
+    avatarSmallButtonAtualStyle,
+    avatarRemoveButtonAtualStyle,
+    profileActionsAtualStyle,
+    profileVisitorActionsAtualStyle,
+    menuSheetAtualStyle,
+  } = obterEstilosResponsivosPerfilAutor(isDesktop);
   const {
     geral: comunidadeAutorHref,
     teorias: comunidadeAutorTeoriasHref,
