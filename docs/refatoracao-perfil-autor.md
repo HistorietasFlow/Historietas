@@ -174,3 +174,8 @@
 
 - Extraiu `abrirDenunciaPerfil` e `abrirDenunciaConteudoPerfil` para `usePerfilAutorReportActions`.
 - Manteve guardas do perfil próprio, validação de IDs, fechamento dos menus, mensagens e preparação dos modais.
+
+## Fase 928 — ações da seção Sobre
+
+- Extraiu `atualizarBioSobreAutor` e `alternarDestaquesPerfil` para `usePerfilAutorAboutActions`.
+- Manteve limite da bio Sobre, avatar/nome/bio atuais e alternância de destaques antes de delegar para `salvarPerfilAutor`.

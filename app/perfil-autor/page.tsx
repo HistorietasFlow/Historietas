@@ -38,6 +38,7 @@ import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-li
 import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avatar-editor-actions";
 import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actions";
 import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-actions";
+import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -1729,6 +1730,14 @@ function PerfilAutorPageContent() {
       setAlvoDenunciaConteudoPerfil,
     });
   const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
+  const { atualizarBioSobreAutor, alternarDestaquesPerfil } =
+    usePerfilAutorAboutActions({
+      avatarAutor,
+      perfilSalvoAutor,
+      bioAutorPersonalizada,
+      bioSobrePersonalizada,
+      salvarPerfilAutor,
+    });
   const entradaHistorietasPerfil = formatarEntradaHistorietasPerfilAutor(
     perfilUsuarioRemotoAtivo?.criadoEm || "",
   );
@@ -2924,26 +2933,6 @@ function PerfilAutorPageContent() {
     setMensagemAcao(
       `Perfil atualizado.${avisoAvatar}${avisoMetadadosAuth}`,
     );
-  }
-
-  function atualizarBioSobreAutor(novaBioSobre: string) {
-    salvarPerfilAutor({
-      avatar: avatarAutor,
-      avatarNome: perfilSalvoAutor.avatarNome,
-      bio: bioAutorPersonalizada,
-      sobreBio: novaBioSobre.slice(0, SOBRE_BIO_MAX_LENGTH),
-      mostrarDestaques: perfilSalvoAutor.mostrarDestaques,
-    });
-  }
-
-  function alternarDestaquesPerfil() {
-    salvarPerfilAutor({
-      avatar: avatarAutor,
-      avatarNome: perfilSalvoAutor.avatarNome,
-      bio: bioAutorPersonalizada,
-      sobreBio: bioSobrePersonalizada,
-      mostrarDestaques: !perfilSalvoAutor.mostrarDestaques,
-    });
   }
 
   async function avaliarAutor(nota: number) {
