@@ -190,3 +190,26 @@ export function obterMetricasResumoObraPerfilAutor(
     ),
   };
 }
+
+
+export function formatarMetricasSheetObraPerfilAutor({
+  visualizacoes,
+  totalCurtidas,
+  totalComentarios,
+  totalSalvos,
+  totalCapitulos,
+}: {
+  visualizacoes: string;
+  totalCurtidas: number;
+  totalComentarios: number;
+  totalSalvos: number;
+  totalCapitulos: number;
+}) {
+  return [
+    `👁 ${visualizacoes}`,
+    `❤️ ${totalCurtidas}`,
+    `💬 ${totalComentarios}`,
+    `🔖 ${totalSalvos}`,
+    `📚 ${totalCapitulos}`,
+  ].join(" • ");
+}

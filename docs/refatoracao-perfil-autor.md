@@ -549,3 +549,11 @@
 - Substituiu o link geral e o link por obra, preservando parâmetros, ordem e encoding.
 - Removeu a montagem inline com `URLSearchParams` do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 988 — métricas do sheet da obra
+
+- Extraiu a composição textual das métricas do sheet para `formatarMetricasSheetObraPerfilAutor`.
+- Preservou a ordem de visualizações, curtidas, comentários, salvos e capítulos.
+- Removeu a montagem inline correspondente do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

@@ -105,6 +105,7 @@ const javascript = typescript.transpileModule(
 ).outputText;
 
 const {
+  formatarMetricasSheetObraPerfilAutor,
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
@@ -460,4 +461,33 @@ test("página reutiliza métricas resumidas das obras nos três pontos", () => {
   );
   assert.doesNotMatch(pagina, /obterTotalCurtidasObraPerfilAutor/);
   assert.doesNotMatch(pagina, /obterTotalComentariosObraPerfilAutor/);
+});
+
+
+test("formata métricas do sheet da obra na ordem preservada", () => {
+  assert.equal(
+    formatarMetricasSheetObraPerfilAutor({
+      visualizacoes: "1,2 mil",
+      totalCurtidas: 7,
+      totalComentarios: 4,
+      totalSalvos: 3,
+      totalCapitulos: 12,
+    }),
+    "👁 1,2 mil • ❤️ 7 • 💬 4 • 🔖 3 • 📚 12",
+  );
+});
+
+test("página delega a formatação das métricas do sheet da obra", () => {
+  assert.match(
+    pagina,
+    /formatarMetricasSheetObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/formatarMetricasSheetObraPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const metricasObraSheet = \[/,
+  );
 });
