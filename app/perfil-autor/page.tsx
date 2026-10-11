@@ -54,7 +54,6 @@ import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
   AlvoDenunciaConteudoPerfil,
-  AutorPerfil,
   AvaliacaoAutorPublica,
   AvaliacaoDiarioPublica,
   ComunidadePerfilEstado,
