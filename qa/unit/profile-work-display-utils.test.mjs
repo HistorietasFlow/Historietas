@@ -16,6 +16,9 @@ globalThis.__profileWorkDisplayDependencies = {
   ehClassificacao18(valor) {
     return valor === "18+";
   },
+  criarSlugBase(valor) {
+    return String(valor).trim().toLowerCase().replace(/\s+/g, "-");
+  },
   normalizarTexto(valor) {
     return String(valor).trim().toLowerCase();
   },
@@ -58,8 +61,8 @@ const javascript = typescript.transpileModule(
       "const { ehClassificacao18 } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
-      'import { normalizarTexto } from "../../../lib/utils";',
-      "const { normalizarTexto } = globalThis.__profileWorkDisplayDependencies;",
+      'import { criarSlugBase, normalizarTexto } from "../../../lib/utils";',
+      "const { criarSlugBase, normalizarTexto } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
       'import { TOP_FIVE_MAXIMO } from "../constants";',
@@ -86,6 +89,7 @@ const javascript = typescript.transpileModule(
 ).outputText;
 
 const {
+  obterHrefObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasVisiveisPerfilAutor,
   obterObrasDestaquePerfilAutor,
@@ -364,4 +368,44 @@ test("página resolve obras em destaque sem useMemo", () => {
     pagina,
     /const obrasEmDestaque = useMemo/,
   );
+});
+
+
+test("href da obra prioriza link, depois slug e por fim título", () => {
+  assert.equal(
+    obterHrefObraPerfilAutor({
+      link: "/obra/link-explicito",
+      slug: "slug-ignorado",
+      titulo: "Título Ignorado",
+    }),
+    "/obra/link-explicito",
+  );
+  assert.equal(
+    obterHrefObraPerfilAutor({
+      link: "",
+      slug: "slug-da-obra",
+      titulo: "Título Ignorado",
+    }),
+    "/obra/slug-da-obra",
+  );
+  assert.equal(
+    obterHrefObraPerfilAutor({
+      link: "",
+      slug: "",
+      titulo: "Minha Obra",
+    }),
+    "/obra/minha-obra",
+  );
+});
+
+test("página reutiliza o helper de href das obras", () => {
+  assert.match(
+    pagina,
+    /obterHrefObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterHrefObraPerfilAutor\(/g) || []).length,
+    4,
+  );
+  assert.doesNotMatch(pagina, /criarSlugBase/);
 });

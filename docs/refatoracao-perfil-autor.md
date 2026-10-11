@@ -517,3 +517,11 @@
 - Manteve o agrupamento em `montarPerfisAutoresPorObras` e a resolução em `resolverEstadoPerfilAutor`, ambos como derivação direta.
 - Removeu o import de `useMemo` da página e atualizou os testes estruturais correspondentes.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 984 — href de obra centralizado
+
+- Extraiu a construção do link da obra para `obterHrefObraPerfilAutor`.
+- Substituiu quatro construções duplicadas na página, preservando prioridade de `link`, depois `slug` e fallback pelo título.
+- Removeu o uso direto de `criarSlugBase` da página e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

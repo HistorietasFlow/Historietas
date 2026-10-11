@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { criarSlugBase } from "../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -115,6 +114,7 @@ import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-u
 import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
+  obterHrefObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
@@ -1665,8 +1665,7 @@ function PerfilAutorPageContent() {
               ) : (
                 <ProfileHighlightsList isDesktop={isDesktop}>
                   {obrasEmDestaque.map((obra) => {
-                    const obraHref =
-                      obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+                    const obraHref = obterHrefObraPerfilAutor(obra);
                     return (
                       <ProfileHighlightItem
                         key={`destaque-${obra.id}`}
@@ -1746,11 +1745,7 @@ function PerfilAutorPageContent() {
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {itensBibliotecaAtivos.map((item) => {
-                  const obraHref =
-                    item.obra.link ||
-                    `/obra/${
-                      item.obra.slug || criarSlugBase(item.obra.titulo)
-                    }`;
+                  const obraHref = obterHrefObraPerfilAutor(item.obra);
                   const capituloHref = item.capitulo
                     ? criarHrefLeituraCapituloPerfilAutor(
                         item.obra,
@@ -2155,9 +2150,7 @@ function PerfilAutorPageContent() {
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {obrasDoPerfilFiltradas.map((obra) => {
-                  const obraHref =
-                    obra.link ||
-                    `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+                  const obraHref = obterHrefObraPerfilAutor(obra);
                   const totalCurtidas = obterTotalCurtidasObraPerfilAutor(
                     obra,
                     totaisInteracoesObras,
@@ -2391,8 +2384,7 @@ function PerfilAutorPageContent() {
           (() => {
             const item = bibliotecaMenuAberto;
             const obra = item.obra;
-            const obraHref =
-              obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+            const obraHref = obterHrefObraPerfilAutor(obra);
             const capituloHref = item.capitulo
               ? criarHrefLeituraCapituloPerfilAutor(
                   obra,
