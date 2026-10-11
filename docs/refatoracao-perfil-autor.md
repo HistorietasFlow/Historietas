@@ -418,3 +418,10 @@
 - Extraiu a montagem das listas Quero ler, Lendo agora, Favoritas, Concluídas, Histórico e Salvos para `montarItensBibliotecaPerfilAutor`.
 - Preservou a guarda de visibilidade, os prefixos, o filtro de atividades de leitura e a fonte dos capítulos salvos.
 - Adicionou cobertura comportamental e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 970 — totais derivados da Biblioteca
+
+- Extraiu os totais de obras seguidas e concluídas para `obterTotaisBibliotecaPerfilAutor`.
+- Preservou os fallbacks entre obras carregadas, itens da Biblioteca e total remoto de concluídas.
+- Adicionou cobertura comportamental e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
