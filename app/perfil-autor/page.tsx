@@ -130,6 +130,7 @@ import {
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
+import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import {
   encontrarItemBibliotecaMenuAberto,
@@ -575,82 +576,34 @@ function PerfilAutorPageContent() {
     return criarPerfilUsuarioRemotoComoAutor(perfilUsuarioRemoto);
   }, [perfilUsuarioRemoto]);
 
-  const perfilAtual = useMemo(() => {
-    if (!autorSelecionado && !autorIdSelecionado) {
-      return null;
-    }
-
-    const autorIdNormalizado = autorIdSelecionado.trim().toLowerCase();
-
-    if (autorIdNormalizado) {
-      const perfilPorId = perfisAutores.find(
-        (perfil) => perfil.autorId.trim().toLowerCase() === autorIdNormalizado,
-      );
-
-      if (perfilPorId) {
-        return perfilPorId;
-      }
-
-      if (
-        perfilUsuarioRemotoComoAutor &&
-        perfilUsuarioRemotoComoAutor.autorId.trim().toLowerCase() ===
-          autorIdNormalizado
-      ) {
-        return perfilUsuarioRemotoComoAutor;
-      }
-    }
-
-    const autorNormalizado = normalizarNomeAutor(autorSelecionado);
-
-    return (
-      perfisAutores.find(
-        (perfil) => normalizarNomeAutor(perfil.nome) === autorNormalizado,
-      ) || null
-    );
-  }, [
-    perfisAutores,
-    autorSelecionado,
-    autorIdSelecionado,
-    perfilUsuarioRemotoComoAutor,
-  ]);
-
-  const autorNaoEncontrado = Boolean(
-    (autorSelecionado || autorIdSelecionado) && !perfilAtual,
+  const {
+    perfilAtual,
+    autorNaoEncontrado,
+    perfilDoUsuarioLogado,
+    perfilSemParametro,
+    perfilSemLoginSemParametro,
+    perfilParaMostrar,
+    perfilPertenceAoUsuario,
+    redirecionandoParaLogin,
+  } = useMemo(
+    () =>
+      resolverEstadoPerfilAutor({
+        perfisAutores,
+        autorSelecionado,
+        autorIdSelecionado,
+        usuarioIdLogado,
+        perfilUsuarioRemotoComoAutor,
+        autenticacaoCarregada,
+      }),
+    [
+      perfisAutores,
+      autorSelecionado,
+      autorIdSelecionado,
+      usuarioIdLogado,
+      perfilUsuarioRemotoComoAutor,
+      autenticacaoCarregada,
+    ],
   );
-
-  const perfilDoUsuarioLogado = useMemo(() => {
-    const usuarioIdNormalizado = usuarioIdLogado.trim().toLowerCase();
-
-    if (!usuarioIdNormalizado) {
-      return null;
-    }
-
-    return (
-      perfisAutores.find(
-        (perfil) =>
-          perfil.autorId.trim().toLowerCase() === usuarioIdNormalizado,
-      ) ||
-      (perfilUsuarioRemotoComoAutor?.autorId.trim().toLowerCase() ===
-      usuarioIdNormalizado
-        ? perfilUsuarioRemotoComoAutor
-        : null)
-    );
-  }, [perfisAutores, usuarioIdLogado, perfilUsuarioRemotoComoAutor]);
-
-  const perfilSemParametro =
-    !autorSelecionado.trim() && !autorIdSelecionado.trim();
-  const perfilSemLoginSemParametro =
-    perfilSemParametro && !usuarioIdLogado.trim();
-
-  const perfilParaMostrar =
-    autorSelecionado || autorIdSelecionado
-      ? perfilAtual
-      : perfilSemLoginSemParametro
-        ? null
-        : perfilDoUsuarioLogado || perfilUsuarioRemotoComoAutor || null;
-
-  const redirecionandoParaLogin =
-    autenticacaoCarregada && perfilSemLoginSemParametro;
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,
@@ -669,21 +622,6 @@ function PerfilAutorPageContent() {
     setTopFiveCurtidoPorMim,
   });
 
-  const perfilPertenceAoUsuario = useMemo(() => {
-    const usuarioIdNormalizado = usuarioIdLogado.trim().toLowerCase();
-    const autorIdPerfilNormalizado =
-      perfilParaMostrar?.autorId.trim().toLowerCase() || "";
-    const autorIdUrlNormalizado = autorIdSelecionado.trim().toLowerCase();
-    const perfilSemParametro =
-      !autorSelecionado.trim() && !autorIdSelecionado.trim();
-
-    return Boolean(
-      usuarioIdNormalizado &&
-        (perfilSemParametro ||
-          autorIdPerfilNormalizado === usuarioIdNormalizado ||
-          autorIdUrlNormalizado === usuarioIdNormalizado),
-    );
-  }, [perfilParaMostrar, autorIdSelecionado, autorSelecionado, usuarioIdLogado]);
   const podeEditarPerfil = perfilPertenceAoUsuario;
 
   const {
