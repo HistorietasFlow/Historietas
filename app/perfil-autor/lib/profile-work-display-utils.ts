@@ -343,3 +343,21 @@ export function obterDadosCardObraPerfilAutor(
     menuObraAberto: obraMenuAbertoId === obra.id,
   };
 }
+
+
+export function obterDadosCardBibliotecaPerfilAutor(
+  item: ItemBibliotecaPerfil,
+  totaisInteracoesObras: Parameters<
+    typeof obterTotalCurtidasObraPerfilAutor
+  >[1],
+  bibliotecaMenuAbertoChave: string,
+) {
+  return {
+    capituloHref: obterHrefLeituraItemBibliotecaPerfilAutor(item),
+    ...obterMetricasResumoObraPerfilAutor(
+      item.obra,
+      totaisInteracoesObras,
+    ),
+    menuAberto: bibliotecaMenuAbertoChave === item.chave,
+  };
+}

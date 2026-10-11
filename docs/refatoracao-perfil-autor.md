@@ -621,3 +621,11 @@
 - Removeu três derivações separadas de dentro do `.map()` de obras.
 - Preservou a reutilização dos helpers de href e métricas já existentes.
 - Atualizou testes estruturais de contagem e ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 997 — dados derivados do card da Biblioteca
+
+- Centralizou href de leitura, curtidas, comentários, visualizações formatadas e estado do menu em `obterDadosCardBibliotecaPerfilAutor`.
+- Removeu essas derivações do `.map()` da Biblioteca.
+- Preservou a reutilização dos helpers de href e métricas já existentes.
+- Atualizou testes estruturais de contagem e ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
