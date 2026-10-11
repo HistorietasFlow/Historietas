@@ -246,6 +246,22 @@ export function obterEstadoColecoesObraPerfilAutor({
 }
 
 
+export function obterRotulosAcoesColecoesObraPerfilAutor({
+  obraFavorita,
+  obraConcluida,
+}: {
+  obraFavorita: boolean;
+  obraConcluida: boolean;
+}) {
+  return {
+    rotuloFavorita: obraFavorita ? "Remover da lista" : "Adicionar à lista",
+    rotuloConcluida: obraConcluida
+      ? "Marcar como não concluída"
+      : "Concluir",
+  };
+}
+
+
 export function formatarMetaSheetObraPerfilAutor(
   obra: ObraLocal,
   traduzirTexto: (texto: string) => string,
