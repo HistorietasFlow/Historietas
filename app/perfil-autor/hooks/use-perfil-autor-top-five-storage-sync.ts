@@ -44,5 +44,5 @@ export function usePerfilAutorTopFiveStorageSync({
         atualizarQuandoVoltarParaTela,
       );
     };
-  }, [perfilAutorId, usuarioIdLogado]);
+  }, [perfilAutorId, usuarioIdLogado, setTopFiveObraIds]);
 }
