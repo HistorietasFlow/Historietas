@@ -210,3 +210,9 @@
 
 - Moveu `avaliarAutor` para `usePerfilAutorRatingActions`.
 - Manteve guardas de identidade/sessão, nota local, arredondamento em meias estrelas, upsert/delete em `autor_avaliacoes`, tratamento de falhas e estados da avaliação.
+
+
+## Fase 935 — avaliação do Diário
+
+- Extraiu `avaliarDiarioPerfil` para `usePerfilAutorDiaryRatingActions`.
+- Manteve guardas de identidade/sessão, estado otimista, RPCs `salvar_avaliacao_diario`/`remover_avaliacao_diario`, normalização da resposta e rollback em falhas.
