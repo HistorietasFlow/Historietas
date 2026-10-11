@@ -1725,6 +1725,14 @@ const profilePersistence = fs.readFileSync(
   "utf8"
 );
 
+const profileEditorSaveActions = fs.readFileSync(
+  path.join(
+    ROOT_DIR,
+    "app/perfil-autor/hooks/use-perfil-autor-profile-editor-save-actions.ts"
+  ),
+  "utf8"
+);
+
 if (
   /avatar_url:[\s\S]*?avatarRemoto\.startsWith\("data:"\)[\s\S]*?avatarRemoto\.startsWith\("blob:"\)[\s\S]*?\? ""/i.test(
     profilePersistence
@@ -1743,10 +1751,13 @@ if (
 
 if (
   /deveRemoverAvatarAnterior[\s\S]*?\.from\(AVATAR_STORAGE_BUCKET\)[\s\S]*?\.remove\(\[caminhoAvatarAnterior\]\)/i.test(
-    profilePage
+    profileEditorSaveActions
   )
 ) {
-  pass("avatar anterior é removido após troca confirmada", "app/perfil-autor/page.tsx");
+  pass(
+    "avatar anterior é removido após troca confirmada",
+    "app/perfil-autor/hooks/use-perfil-autor-profile-editor-save-actions.ts"
+  );
 } else {
   fail(
     "avatar anterior é removido após troca confirmada",
