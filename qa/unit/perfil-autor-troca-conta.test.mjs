@@ -256,7 +256,7 @@ test("mantem guards do editor entre as etapas assincronas e os commits", () => {
     "async function salvarEdicaoPerfilAutor()",
   );
   const fimSalvamento = paginaPerfilAutor.indexOf(
-    "function atualizarBioSobreAutor",
+    "async function avaliarAutor",
     inicioSalvamento,
   );
   const blocoSalvamento = paginaPerfilAutor.slice(
