@@ -446,3 +446,10 @@
 - Extraiu a resolução da obra associada ao menu de ações para `obterObraMenuAbertaPerfilAutor`.
 - Preservou seleção por ID exato, retorno nulo sem seleção e retorno nulo para obra inexistente.
 - Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 974 — agrupamento de obras por autor
+
+- Extraiu a montagem de `perfisAutores` para `montarPerfisAutoresPorObras` em `profile-author-groups.ts`.
+- Preservou agrupamento por ID/nome normalizado, fallback de autor, totais de capítulos/publicadas/curtidas/comentários e ordenação alfabética.
+- Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
