@@ -1,5 +1,5 @@
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
-import { normalizarTexto } from "../../../lib/utils";
+import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
 import { TOP_FIVE_MAXIMO } from "../constants";
 import type { AutorPerfil, ObraLocal } from "../types";
 import {
@@ -155,4 +155,11 @@ export function obterVisibilidadeDestaquesPerfilAutor({
         podeEditarPerfil ||
         mostrarDestaquesVisitante),
   };
+}
+
+
+export function obterHrefObraPerfilAutor(
+  obra: Pick<ObraLocal, "link" | "slug" | "titulo">,
+) {
+  return obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
 }
