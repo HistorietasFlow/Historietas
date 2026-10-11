@@ -21,12 +21,17 @@ const shareActionsSource = readFileSync(
   ),
   "utf8",
 );
-const javascript = typescript.transpileModule(modulo, {
+const javascript = typescript.transpileModule(
+  modulo.replace(
+    'import { criarSlugBase } from "../../../lib/utils";',
+    'const criarSlugBase = (titulo) => String(titulo).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");',
+  ),
+  {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
     target: typescript.ScriptTarget.ES2022,
   },
-}).outputText;
+).outputText;
 const {
   copiarTextoComFallbackPerfilAutor,
   criarDadosCompartilhamentoObraPerfilAutor,
