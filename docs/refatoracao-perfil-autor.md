@@ -216,3 +216,9 @@
 
 - Extraiu `avaliarDiarioPerfil` para `usePerfilAutorDiaryRatingActions`.
 - Manteve guardas de identidade/sessão, estado otimista, RPCs `salvar_avaliacao_diario`/`remover_avaliacao_diario`, normalização da resposta e rollback em falhas.
+
+
+## Fase 936 — bloqueio de perfil
+
+- Extraiu `alternarBloqueioPerfil` para `usePerfilAutorBlockActions`.
+- Manteve validação de perfil/usuário, confirmação, bloqueio/desbloqueio, mensagens, limpeza do relacionamento e permissões após bloqueio.
