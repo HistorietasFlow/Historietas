@@ -86,6 +86,13 @@ export function obterDadosExibicaoPerfilAutor({
 }
 
 
+export function formatarContagemNotificacoesPerfilAutor(
+  notificacoesNaoLidas: number,
+) {
+  return notificacoesNaoLidas > 99 ? "99+" : String(notificacoesNaoLidas);
+}
+
+
 export function obterRotuloAcaoBloqueioPerfilAutor({
   bloqueadoPorMim,
   salvando,
