@@ -59,8 +59,6 @@ import type {
   AvaliacaoDiarioPublica,
   ComunidadePerfilEstado,
   DiarioPerfilEstado,
-  DiarioPerfilItem,
-  DiarioPerfilResumoItem,
   ObraLocal,
   PerfisAutoresSalvos,
   PerfilUsuarioRemoto,
@@ -112,6 +110,7 @@ import {
   criarResumoPublicacaoComunidadePerfil,
 } from "./lib/profile-community-publication-utils";
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
+import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
@@ -868,80 +867,10 @@ function PerfilAutorPageContent() {
     setDiarioPerfil,
   });
 
-  const itensDiarioTudo = useMemo(() => {
-    const prioridadeTipos: Record<DiarioPerfilItem["tipo"], number> = {
-      lendo: 0,
-      concluida: 1,
-      quero_ler: 2,
-      favorita: 3,
-      avaliacao: 4,
-      review: 5,
-      atividade: 6,
-    };
-    const itens = [
-      ...diarioPerfil.lendoAgora,
-      ...diarioPerfil.queroLer,
-      ...diarioPerfil.favoritas,
-      ...diarioPerfil.concluidas,
-      ...diarioPerfil.avaliacoes,
-      ...diarioPerfil.reviews,
-      ...diarioPerfil.atividades,
-    ];
-    const itensPorObra = new Map<string, DiarioPerfilResumoItem>();
-
-    itens.forEach((item) => {
-      const obra = item.obra;
-
-      if (!obra) {
-        return;
-      }
-
-      const chaveObra = (
-        obra.id ||
-        obra.slug ||
-        criarSlugBase(obra.titulo)
-      )
-        .trim()
-        .toLowerCase();
-
-      if (!chaveObra) {
-        return;
-      }
-
-      const existente = itensPorObra.get(chaveObra);
-
-      if (!existente) {
-        itensPorObra.set(chaveObra, {
-          ...item,
-          tipos: [item.tipo],
-        });
-        return;
-      }
-
-      const tipos = Array.from(
-        new Set([...existente.tipos, item.tipo]),
-      ).sort(
-        (tipoA, tipoB) =>
-          prioridadeTipos[tipoA] - prioridadeTipos[tipoB],
-      );
-      const itemMaisRecente =
-        obterTimestampData(item.data) >
-        obterTimestampData(existente.data);
-      const base = itemMaisRecente ? item : existente;
-
-      itensPorObra.set(chaveObra, {
-        ...base,
-        tipo: tipos[0] || base.tipo,
-        tipos,
-      });
-    });
-
-    return Array.from(itensPorObra.values()).sort(
-      (itemA, itemB) =>
-        obterTimestampData(itemB.data) -
-        obterTimestampData(itemA.data),
-    );
-  }, [diarioPerfil]);
+  const itensDiarioTudo = useMemo(
+    () => montarItensDiarioTudoPerfil(diarioPerfil),
+    [diarioPerfil],
+  );
 
   usePerfilAutorRatingSync({
     perfilParaMostrar,
