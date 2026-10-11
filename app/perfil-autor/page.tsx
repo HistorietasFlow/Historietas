@@ -98,7 +98,6 @@ import {
 import { colecaoTemObraPerfilBiblioteca } from "./lib/library-normalizers";
 import {
   criarPerfilUsuarioRemotoComoAutor,
-  montarPerfisAutoresPorObras,
   obterTotalComentariosObraPerfilAutor,
   obterTotalCurtidasObraPerfilAutor,
   obterTotalSalvosObraPerfilAutor,
@@ -111,6 +110,7 @@ import {
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
 import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
+import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-utils";
