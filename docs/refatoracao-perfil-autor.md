@@ -304,3 +304,8 @@
 
 - Extraiu o `useEffect` de redirecionamento para autenticação para `usePerfilAutorLoginRedirect`.
 - Manteve a guarda por `redirecionandoParaLogin`, o uso de `router.replace` e o helper seguro `criarLoginHrefPerfilAutor`.
+
+## Fase 952 — sincronização dos totais de interações
+
+- Extraiu o `useEffect` que carrega os totais reais de interações das obras para `usePerfilAutorInteractionTotalsSync`.
+- Manteve fallback vazio para lista sem obras, leitura remota pelo loader e cancelamento antes de aplicar uma resposta obsoleta.
