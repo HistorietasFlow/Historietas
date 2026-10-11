@@ -763,10 +763,8 @@ function PerfilAutorPageContent() {
     ],
   );
 
-  const {
-    destaquesPerfilVisivel,
-    exibirSecaoDestaques,
-  } = obterVisibilidadeDestaquesPerfilAutor({
+  const { exibirSecaoDestaques } =
+    obterVisibilidadeDestaquesPerfilAutor({
     obrasPerfilVisivel,
     podeEditarPerfil,
     mostrarDestaquesAutor: perfilSalvoAutor.mostrarDestaques,
