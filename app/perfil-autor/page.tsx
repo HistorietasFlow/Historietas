@@ -16,8 +16,6 @@ import DenunciaModal from "../../components/DenunciaModal";
 import {
   carregarEstadoBloqueioPerfil,
   carregarEstadoRelacionamentoPerfil,
-  carregarPermissoesAbasPerfil,
-  carregarPreferenciasPrivacidade,
   type EstadoBloqueioPerfil,
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
@@ -42,6 +40,7 @@ import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-act
 import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
 import { usePerfilAutorTopFiveStorageSync } from "./hooks/use-perfil-autor-top-five-storage-sync";
 import { usePerfilAutorTopFiveLikesSync } from "./hooks/use-perfil-autor-top-five-likes-sync";
+import { usePerfilAutorPrivacySync } from "./hooks/use-perfil-autor-privacy-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
 import type {
@@ -1301,49 +1300,13 @@ function PerfilAutorPageContent() {
             ? "biblioteca"
             : null;
 
-  useEffect(() => {
-    const userIdPerfil = perfilParaMostrar?.autorId.trim() || "";
-    let cancelado = false;
-
-    async function carregarPrivacidadePerfil() {
-      setPrivacidadePerfilCarregando(true);
-
-      if (!userIdPerfil || !idAutorSupabaseValido(userIdPerfil)) {
-        if (!cancelado) {
-          setPermissoesAbasPerfil(
-            perfilPertenceAoUsuario
-              ? PERMISSOES_ABAS_PERFIL_PROPRIO
-              : PERMISSOES_ABAS_PERFIL_PADRAO,
-          );
-          setPrivacidadePerfilCarregando(false);
-        }
-
-        return;
-      }
-
-      const preferencias = await carregarPreferenciasPrivacidade(userIdPerfil, {
-        usarFallbackLocal: perfilPertenceAoUsuario,
-      });
-      const permissoes = perfilPertenceAoUsuario
-        ? PERMISSOES_ABAS_PERFIL_PROPRIO
-        : await carregarPermissoesAbasPerfil(userIdPerfil, preferencias);
-
-      if (!cancelado) {
-        setPermissoesAbasPerfil(permissoes);
-        setPrivacidadePerfilCarregando(false);
-      }
-    }
-
-    void carregarPrivacidadePerfil();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [
-    perfilParaMostrar?.autorId,
+  usePerfilAutorPrivacySync({
+    perfilAutorId: perfilParaMostrar?.autorId || "",
     perfilPertenceAoUsuario,
     estadoRelacionamentoPerfil,
-  ]);
+    setPermissoesAbasPerfil,
+    setPrivacidadePerfilCarregando,
+  });
 
   useEffect(() => {
     const userIdPerfil = perfilParaMostrar?.autorId.trim() || "";
