@@ -284,3 +284,8 @@
 
 - Extraiu o `useEffect` que carrega o estado de bloqueio entre perfis para `usePerfilAutorBlockStateSync`.
 - Manteve fallback para perfil inválido, usuário ausente ou próprio perfil, leitura remota, timer inicial e cancelamento no unmount.
+
+## Fase 948 — sincronização do estado de seguimento
+
+- Extraiu o `useEffect` que combina contagens de seguidores e estado de relacionamento para `usePerfilAutorFollowStateSync`.
+- Manteve fallback para perfil inválido, leitura paralela, normalização de próprio perfil/seguindo, atualização das contagens, timer inicial e cancelamento no unmount.
