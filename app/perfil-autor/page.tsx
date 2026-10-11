@@ -80,7 +80,6 @@ import {
 import {
   compactarNumeroPerfilAutor,
   criarHrefLeituraCapituloPerfilAutor,
-  formatarEntradaHistorietasPerfilAutor,
   formatarFormatoPerfilAutor,
   formatarGeneroPerfilAutor,
   normalizarAbaPerfilAutor,
@@ -645,6 +644,8 @@ function PerfilAutorPageContent() {
     bioAutor,
     bioSobrePersonalizada,
     bioSobreAutor,
+    entradaHistorietasPerfil,
+    caracteresRestantesBioSobre,
     bioSobreAutorEhPadrao,
     autorHandlePerfil,
     avatarAutor,
@@ -722,12 +723,6 @@ function PerfilAutorPageContent() {
       bioSobrePersonalizada,
       salvarPerfilAutor,
     });
-  const entradaHistorietasPerfil = formatarEntradaHistorietasPerfilAutor(
-    perfilUsuarioRemotoAtivo?.criadoEm || "",
-  );
-
-  const caracteresRestantesBioSobre =
-    SOBRE_BIO_MAX_LENGTH - bioSobrePersonalizada.length;
   const {
     autorPodeReceberAvaliacao,
     perfilUsaAvaliacaoDiario,

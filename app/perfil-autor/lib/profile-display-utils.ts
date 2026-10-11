@@ -1,10 +1,14 @@
+import { SOBRE_BIO_MAX_LENGTH } from "../constants";
 import type {
   AutorPerfil,
   PerfilAutorSalvo,
   PerfisAutoresSalvos,
   PerfilUsuarioRemoto,
 } from "../types";
-import { criarHandlePerfilAutor } from "./profile-formatters";
+import {
+  criarHandlePerfilAutor,
+  formatarEntradaHistorietasPerfilAutor,
+} from "./profile-formatters";
 import { criarBioAutor } from "./work-normalizers";
 
 const perfilAutorSalvoVazio: PerfilAutorSalvo = {
@@ -62,6 +66,11 @@ export function obterDadosExibicaoPerfilAutor({
     bioAutor,
     bioSobrePersonalizada,
     bioSobreAutor,
+    entradaHistorietasPerfil: formatarEntradaHistorietasPerfilAutor(
+      perfilUsuarioRemotoAtivo?.criadoEm || "",
+    ),
+    caracteresRestantesBioSobre:
+      SOBRE_BIO_MAX_LENGTH - bioSobrePersonalizada.length,
     bioSobreAutorEhPadrao:
       bioSobreAutor.trim() === "Perfil de leitor no Historietas.",
     autorHandlePerfil: perfilParaMostrar

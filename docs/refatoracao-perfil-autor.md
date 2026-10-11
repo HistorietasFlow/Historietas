@@ -453,3 +453,10 @@
 - Extraiu a montagem de `perfisAutores` para `montarPerfisAutoresPorObras` em `profile-author-groups.ts`.
 - Preservou agrupamento por ID/nome normalizado, fallback de autor, totais de capítulos/publicadas/curtidas/comentários e ordenação alfabética.
 - Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 975 — complementos de exibição do perfil
+
+- Moveu a data de entrada no Historietas e o contador restante da bio Sobre para `obterDadosExibicaoPerfilAutor`.
+- Preservou o uso do perfil remoto ativo, o fallback sem data e o limite existente da bio.
+- Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
