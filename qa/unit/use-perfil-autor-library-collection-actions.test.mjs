@@ -16,7 +16,12 @@ const pagina = readFileSync(
 );
 let indiceModulo = 0;
 
-async function carregarModulo({ logado = true } = {}) {
+async function carregarModulo({
+  logado = true,
+  authUserId = "usuario-remoto",
+  obraValida = true,
+  falhaAuthRemota = false,
+} = {}) {
   const chamadas = [];
   globalThis.__profileLibraryCollectionDependencies = {
     completedKey: "completed",
@@ -34,6 +39,43 @@ async function carregarModulo({ logado = true } = {}) {
       chamadas.push(["logado"]);
       return logado;
     },
+    idObraSupabaseValido(id) {
+      chamadas.push(["obra-valida", id]);
+      return obraValida;
+    },
+    supabase: {
+      auth: {
+        async getUser() {
+          chamadas.push(["auth-user"]);
+          if (falhaAuthRemota) {
+            throw new Error("indisponível");
+          }
+          return {
+            data: {
+              user: authUserId ? { id: authUserId } : null,
+            },
+          };
+        },
+      },
+      from(tabela) {
+        chamadas.push(["from", tabela]);
+        const cadeia = {
+          delete() {
+            chamadas.push(["delete", tabela]);
+            return cadeia;
+          },
+          eq(campo, valor) {
+            chamadas.push(["eq", tabela, campo, valor]);
+            return cadeia;
+          },
+          in(campo, valor) {
+            chamadas.push(["in", tabela, campo, valor]);
+            return cadeia;
+          },
+        };
+        return cadeia;
+      },
+    },
     salvarLista(chave, userId, lista) {
       chamadas.push(["salvar", chave, userId, lista.slice()]);
     },
@@ -44,6 +86,14 @@ async function carregarModulo({ logado = true } = {}) {
 
   const javascript = typescript.transpileModule(
     source
+      .replace(
+        'import { supabase } from "../../../lib/supabase/client";',
+        "const supabase = globalThis.__profileLibraryCollectionDependencies.supabase;",
+      )
+      .replace(
+        'import { idObraSupabaseValido } from "../../../lib/utils";',
+        "const idObraSupabaseValido = globalThis.__profileLibraryCollectionDependencies.idObraSupabaseValido;",
+      )
       .replace(
         'import type { AbaBibliotecaPerfil, ItemBibliotecaPerfil, ObraLocal } from "../types";\n',
         "",
@@ -102,7 +152,6 @@ function criarAcoes(
   const concluidas = [];
   const seguidas = [];
   const obrasSalvas = [];
-  const historicosRemovidos = [];
   const versoes = [];
 
   return {
@@ -115,9 +164,6 @@ function criarAcoes(
       usuarioIdLogado: "usuario-1",
       avisarLoginNecessario(mensagem) {
         avisos.push(mensagem);
-      },
-      async removerHistoricoLeituraBibliotecaPerfil(obra) {
-        historicosRemovidos.push(obra.id);
       },
       salvarObrasBibliotecaPerfil(lista) {
         obrasSalvas.push(lista);
@@ -144,7 +190,6 @@ function criarAcoes(
     concluidas,
     seguidas,
     obrasSalvas,
-    historicosRemovidos,
     versoes,
   };
 }
@@ -323,7 +368,6 @@ test("remove item salvo priorizando capítulo salvo na aba tudo", async () => {
 
   assert.equal(acoes.obrasSalvas.length, 1);
   assert.equal(acoes.obrasSalvas[0][0].capitulos[0].salvo, false);
-  assert.deepEqual(acoes.historicosRemovidos, []);
 });
 
 test("remove Quero ler pela ação existente na aba tudo", async () => {
@@ -342,7 +386,6 @@ test("remove Quero ler pela ação existente na aba tudo", async () => {
   await acoes.removerItemBibliotecaPerfil(item);
 
   assert.deepEqual(acoes.seguidas, [[]]);
-  assert.deepEqual(acoes.historicosRemovidos, []);
 });
 
 test("remove favorita e concluída conforme a aba atual", async () => {
@@ -376,8 +419,60 @@ test("remove favorita e concluída conforme a aba atual", async () => {
   assert.deepEqual(concluida.concluidas, [[]]);
 });
 
-test("delega ao histórico quando nenhuma coleção específica se aplica", async () => {
+test("remove histórico local e remoto preservando os dois deletes", async () => {
   const modulo = await carregarModulo();
+  const obra = {
+    id: "obra-1",
+    ultimoCapituloLidoId: "cap-1",
+    ultimaLeituraEm: "2026-10-10",
+    progressoLeitura: 75,
+    capitulos: [{
+      id: "cap-1",
+      salvo: false,
+      lido: true,
+      lidoEm: "2026-10-10",
+    }],
+  };
+  const acoes = criarAcoes(modulo, {
+    abaBibliotecaPerfil: "historico",
+    obras: [obra],
+  });
+
+  await acoes.removerItemBibliotecaPerfil({
+    obra,
+    capitulo: null,
+    tipoDiario: "leu_capitulo",
+  });
+
+  assert.equal(acoes.obrasSalvas.length, 1);
+  assert.equal(acoes.obrasSalvas[0][0].ultimoCapituloLidoId, "");
+  assert.equal(acoes.obrasSalvas[0][0].ultimaLeituraEm, "");
+  assert.equal(acoes.obrasSalvas[0][0].progressoLeitura, 0);
+  assert.equal(acoes.obrasSalvas[0][0].capitulos[0].lido, false);
+  assert.equal(acoes.obrasSalvas[0][0].capitulos[0].lidoEm, "");
+  assert.deepEqual(acoes.versoes, [8]);
+  assert.deepEqual(acoes.mensagens, ["", "Histórico de leitura removido."]);
+
+  assert.deepEqual(
+    modulo.chamadas.filter((chamada) =>
+      ["from", "delete", "eq", "in"].includes(chamada[0]),
+    ),
+    [
+      ["from", "progresso_leitura"],
+      ["delete", "progresso_leitura"],
+      ["eq", "progresso_leitura", "user_id", "usuario-remoto"],
+      ["eq", "progresso_leitura", "obra_id", "obra-1"],
+      ["from", "diario_atividades"],
+      ["delete", "diario_atividades"],
+      ["eq", "diario_atividades", "user_id", "usuario-remoto"],
+      ["eq", "diario_atividades", "obra_id", "obra-1"],
+      ["in", "diario_atividades", "tipo", ["comecou_ler", "leu_capitulo"]],
+    ],
+  );
+});
+
+test("usa usuario local como fallback ao limpar histórico remoto", async () => {
+  const modulo = await carregarModulo({ authUserId: "" });
   const obra = { id: "obra-1", capitulos: [] };
   const acoes = criarAcoes(modulo, {
     abaBibliotecaPerfil: "historico",
@@ -390,7 +485,39 @@ test("delega ao histórico quando nenhuma coleção específica se aplica", asyn
     tipoDiario: "leu_capitulo",
   });
 
-  assert.deepEqual(acoes.historicosRemovidos, ["obra-1"]);
+  assert.equal(
+    modulo.chamadas.some(
+      (chamada) =>
+        chamada[0] === "eq" &&
+        chamada[2] === "user_id" &&
+        chamada[3] === "usuario-1",
+    ),
+    true,
+  );
+});
+
+test("não remove histórico sem login", async () => {
+  const modulo = await carregarModulo({ logado: false });
+  const obra = { id: "obra-1", capitulos: [] };
+  const acoes = criarAcoes(modulo, {
+    abaBibliotecaPerfil: "historico",
+    obras: [obra],
+  });
+
+  await acoes.removerItemBibliotecaPerfil({
+    obra,
+    capitulo: null,
+    tipoDiario: "leu_capitulo",
+  });
+
+  assert.deepEqual(acoes.avisos, [
+    "Entre na sua conta para limpar o histórico.",
+  ]);
+  assert.deepEqual(acoes.obrasSalvas, []);
+  assert.equal(
+    modulo.chamadas.some((chamada) => chamada[0] === "auth-user"),
+    false,
+  );
 });
 
 test("Perfil de Autor delega coleções da Biblioteca para o hook", () => {
@@ -415,6 +542,14 @@ test("Perfil de Autor delega coleções da Biblioteca para o hook", () => {
   assert.doesNotMatch(
     pagina,
     /async function removerItemBibliotecaPerfil\(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /async function removerHistoricoLeituraBibliotecaPerfil\(/,
+  );
+  assert.match(
+    source,
+    /async function removerHistoricoLeituraBibliotecaPerfil\(/,
   );
   assert.match(source, /await usuarioEstaLogado\(\)/);
   assert.match(source, /await sincronizarTabelaUsuario\(/);

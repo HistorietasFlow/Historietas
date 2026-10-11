@@ -199,3 +199,8 @@
 
 - Moveu `removerItemBibliotecaPerfil` para `usePerfilAutorLibraryCollectionActions`.
 - Manteve a prioridade entre capítulo salvo, Quero ler, favoritas, concluídas e fallback para remoção do histórico, sem mover ainda o fluxo remoto do histórico.
+
+## Fase 933 — remoção do histórico de leitura da Biblioteca
+
+- Moveu `removerHistoricoLeituraBibliotecaPerfil` para `usePerfilAutorLibraryCollectionActions`.
+- Manteve guarda de login, limpeza local da obra/capítulos, fallback de usuário, deletes de `progresso_leitura` e `diario_atividades`, tolerância a falhas remotas, mensagem e incremento da versão da Biblioteca.
