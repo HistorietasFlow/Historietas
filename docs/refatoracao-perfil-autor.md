@@ -390,3 +390,10 @@
 - Extraiu a seleção do perfil salvo, perfil remoto ativo, bios, avatar e handle para `obterDadosExibicaoPerfilAutor`.
 - Preservou a prioridade entre dados locais/remotos, fallbacks de bio e detecção da bio padrão do leitor.
 - Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 966 — estado derivado de avaliação
+
+- Extraiu a escolha entre avaliação do autor e avaliação do Diário para `obterEstadoAvaliacaoPerfilAutor`.
+- Preservou visibilidade privada, visibilidade do próprio perfil, fallback sem perfil e seleção do resumo exibido.
+- Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
