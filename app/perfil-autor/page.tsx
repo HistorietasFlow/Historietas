@@ -851,27 +851,15 @@ function PerfilAutorPageContent() {
     concluidas: itensBibliotecaConcluidas,
     historico: itensBibliotecaHistorico,
     salvos: itensBibliotecaSalvos,
-  } = useMemo(
-    () =>
-      montarItensBibliotecaPerfilAutor({
-        bibliotecaPerfilVisivel,
-        queroLer: diarioPerfil.queroLer,
-        lendoAgora: diarioPerfil.lendoAgora,
-        favoritas: diarioPerfil.favoritas,
-        concluidas: diarioPerfil.concluidas,
-        atividades: diarioPerfil.atividades,
-        obras,
-      }),
-    [
-      bibliotecaPerfilVisivel,
-      diarioPerfil.queroLer,
-      diarioPerfil.lendoAgora,
-      diarioPerfil.favoritas,
-      diarioPerfil.concluidas,
-      diarioPerfil.atividades,
-      obras,
-    ],
-  );
+  } = montarItensBibliotecaPerfilAutor({
+    bibliotecaPerfilVisivel,
+    queroLer: diarioPerfil.queroLer,
+    lendoAgora: diarioPerfil.lendoAgora,
+    favoritas: diarioPerfil.favoritas,
+    concluidas: diarioPerfil.concluidas,
+    atividades: diarioPerfil.atividades,
+    obras,
+  });
 
   const {
     obrasSeguidasPerfilTotal,
