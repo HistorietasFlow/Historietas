@@ -106,6 +106,7 @@ const javascript = typescript.transpileModule(
 
 const {
   formatarMetricasSheetObraPerfilAutor,
+  obterEstadoColecoesObraPerfilAutor,
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
@@ -489,5 +490,43 @@ test("página delega a formatação das métricas do sheet da obra", () => {
   assert.doesNotMatch(
     pagina,
     /const metricasObraSheet = \[/,
+  );
+});
+
+
+test("estado das coleções da obra preserva favoritos, concluídas e Quero ler", () => {
+  const obraTeste = {
+    id: "obra-estado",
+    slug: "obra-estado",
+    titulo: "Obra Estado",
+  };
+
+  assert.deepEqual(
+    obterEstadoColecoesObraPerfilAutor({
+      obra: obraTeste,
+      obrasFavoritas: ["obra-estado"],
+      obrasConcluidas: [],
+      obrasSeguidasBiblioteca: ["outra", "obra-estado"],
+    }),
+    {
+      obraFavorita: true,
+      obraConcluida: false,
+      obraNoQueroLer: true,
+    },
+  );
+});
+
+test("página reutiliza estado centralizado das coleções nos dois menus", () => {
+  assert.match(
+    pagina,
+    /obterEstadoColecoesObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterEstadoColecoesObraPerfilAutor\(\{/g) || []).length,
+    2,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /colecaoTemObraPerfilBiblioteca/,
   );
 });
