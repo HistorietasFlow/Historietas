@@ -103,6 +103,7 @@ import {
   criarResumoPublicacaoComunidadePerfil,
 } from "./lib/profile-community-publication-utils";
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
+import { criarHrefListaDiarioPerfilAutor } from "./lib/profile-diary-item-utils";
 import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
@@ -1793,13 +1794,9 @@ function PerfilAutorPageContent() {
                 ? "Meu Diário"
                 : `Diário de ${perfilParaMostrar.nome}`
             }
-            href={`/listas?modo=perfil&origem=diario&categoria=tudo${
-              perfilParaMostrar?.autorId.trim()
-                ? `&usuario=${encodeURIComponent(
-                    perfilParaMostrar.autorId.trim(),
-                  )}`
-                : ""
-            }`}
+            href={criarHrefListaDiarioPerfilAutor(
+              perfilParaMostrar?.autorId || "",
+            )}
             linkAriaLabel="Abrir tudo na página Listas"
             linkTitle="Ver tudo"
             linkLabel="+"
@@ -1818,20 +1815,10 @@ function PerfilAutorPageContent() {
                   return null;
                 }
 
-                const parametrosLista = new URLSearchParams({
-                  modo: "perfil",
-                  origem: "diario",
-                  categoria: "tudo",
-                  obra: obra.id,
-                });
-                const perfilIdLista =
-                  perfilParaMostrar?.autorId.trim() || "";
-
-                if (perfilIdLista) {
-                  parametrosLista.set("usuario", perfilIdLista);
-                }
-
-                const hrefLista = `/listas?${parametrosLista.toString()}`;
+                const hrefLista = criarHrefListaDiarioPerfilAutor(
+                  perfilParaMostrar?.autorId || "",
+                  obra.id,
+                );
 
                 return (
                   <DiarySummaryCard
