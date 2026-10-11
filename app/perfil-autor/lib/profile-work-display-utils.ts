@@ -14,8 +14,12 @@ import {
 } from "./library-normalizers";
 import {
   compactarNumeroPerfilAutor,
+  formatarFormatoPerfilAutor,
+  formatarGeneroPerfilAutor,
+  obterTagPrincipalPerfilAutor,
   obterTimestampData,
 } from "./profile-formatters";
+import { mostrarClassificacao } from "./work-normalizers";
 
 export function obterObrasVisiveisPerfilAutor({
   perfilParaMostrar,
@@ -234,4 +238,23 @@ export function obterEstadoColecoesObraPerfilAutor({
       obra,
     ),
   };
+}
+
+
+export function formatarMetaSheetObraPerfilAutor(
+  obra: ObraLocal,
+  traduzirTexto: (texto: string) => string,
+) {
+  const formatoObra = formatarFormatoPerfilAutor(obra.formato);
+  const tagPrincipalObra = obterTagPrincipalPerfilAutor(obra);
+
+  return [
+    formatarGeneroPerfilAutor(obra.genero),
+    formatoObra,
+    tagPrincipalObra,
+    mostrarClassificacao(obra) ? obra.classificacaoIndicativa : "",
+  ]
+    .filter(Boolean)
+    .map((item) => traduzirTexto(item))
+    .join(" • ");
 }
