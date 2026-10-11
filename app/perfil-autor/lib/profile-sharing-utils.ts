@@ -1,3 +1,6 @@
+import { criarSlugBase } from "../../../lib/utils";
+import type { ObraLocal } from "../types";
+
 export function criarUrlAbsolutaCompartilhamentoPerfilAutor(href: string) {
   const hrefLimpo = href.trim();
 
@@ -10,6 +13,33 @@ export function criarUrlAbsolutaCompartilhamentoPerfilAutor(href: string) {
   } catch {
     return window.location.href;
   }
+}
+
+export function criarDadosCompartilhamentoObraPerfilAutor(
+  obra: Pick<ObraLocal, "link" | "slug" | "titulo">,
+) {
+  return {
+    url: obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`,
+    titulo: obra.titulo || "Obra na Historietas",
+    texto: `Veja ${obra.titulo} na Historietas.`,
+  };
+}
+
+export function criarDadosCompartilhamentoPerfilAutor(
+  nomePerfil: string | null | undefined,
+  username: string | null | undefined,
+) {
+  const nome = nomePerfil || "este autor";
+  const usernameTexto = username ? ` (@${username})` : "";
+
+  return {
+    titulo: `${nome} no HISTORIETAS`,
+    texto: `Confira o perfil de ${nome}${usernameTexto} no HISTORIETAS.`,
+  };
+}
+
+export function normalizarUsernameCopiavelPerfilAutor(username: string) {
+  return username.startsWith("@") ? username : `@${username}`;
 }
 
 export async function copiarTextoComFallbackPerfilAutor(texto: string) {
