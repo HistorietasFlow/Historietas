@@ -18,7 +18,6 @@ import {
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
 } from "../../lib/historietasPrivacy";
-import { carregarMetricasConteudos } from "../../lib/metricas";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
@@ -32,6 +31,7 @@ import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actio
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
 import { usePerfilAutorLibraryCollectionActions } from "./hooks/use-perfil-autor-library-collection-actions";
 import { usePerfilAutorRatingActions } from "./hooks/use-perfil-autor-rating-actions";
+import { usePerfilAutorRatingSync } from "./hooks/use-perfil-autor-rating-sync";
 import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary-rating-actions";
 import { usePerfilAutorDiaryRatingSync } from "./hooks/use-perfil-autor-diary-rating-sync";
 import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
@@ -162,11 +162,7 @@ import {
   salvarJsonUsuarioPerfilAutor,
   salvarListaIdsPerfilBiblioteca,
 } from "./lib/profile-local-storage-utils";
-import {
-  carregarPerfisAutores,
-  obterAvaliacaoAutorLocal,
-  salvarAvaliacaoAutorLocal,
-} from "./lib/profile-local-author-utils";
+import { carregarPerfisAutores } from "./lib/profile-local-author-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -1800,118 +1796,13 @@ function PerfilAutorPageContent() {
     );
   }, [diarioPerfil]);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarAvaliacaoRealAutor() {
-      if (!perfilParaMostrar || !autorPodeReceberAvaliacao) {
-        setAvaliacaoAutor(avaliacaoAutorVazia);
-        return;
-      }
-
-      const perfilAtualAutor = perfilParaMostrar;
-      const notaLocal = perfilPertenceAoUsuario
-        ? 0
-        : obterAvaliacaoAutorLocal(
-            perfilAtualAutor,
-            usuarioIdLogado,
-          );
-
-      if (perfilPertenceAoUsuario && usuarioIdLogado.trim()) {
-        salvarAvaliacaoAutorLocal(
-          perfilAtualAutor,
-          0,
-          usuarioIdLogado,
-        );
-      }
-
-      setAvaliacaoAutor({
-        media: notaLocal > 0 ? notaLocal : 0,
-        total: notaLocal > 0 ? 1 : 0,
-        minhaNota: notaLocal,
-        carregado: true,
-        salvando: false,
-      });
-
-      const autorId = perfilAtualAutor.autorId.trim();
-
-      if (!autorId || !idAutorSupabaseValido(autorId)) {
-        return;
-      }
-
-      try {
-        const { data: usuarioData } = await supabase.auth.getUser();
-        const userId = usuarioData.user?.id || "";
-
-        const contrato = await carregarMetricasConteudos({
-          autorIds: [autorId],
-        });
-        const metrica = contrato.autores.get(autorId);
-
-        if (!contrato.carregado || !metrica) {
-          return;
-        }
-
-        const total = metrica.avaliacao.total;
-        const media = metrica.avaliacao.media;
-        const usuarioEhDonoDoPerfil = Boolean(
-          userId &&
-            userId.trim().toLowerCase() === autorId.toLowerCase(),
-        );
-        const minhaNota = usuarioEhDonoDoPerfil
-          ? 0
-          : metrica.avaliacao.minhaNota > 0
-            ? metrica.avaliacao.minhaNota
-            : notaLocal;
-
-        if (cancelado) {
-          return;
-        }
-
-        setAvaliacaoAutor((avaliacaoAtual) => {
-          if (
-            avaliacaoAtual.salvando ||
-            avaliacaoAtual.minhaNota !== notaLocal
-          ) {
-            return {
-              ...avaliacaoAtual,
-              carregado: true,
-            };
-          }
-
-          return {
-            media,
-            total,
-            minhaNota,
-            carregado: true,
-            salvando: false,
-          };
-        });
-      } catch {
-        if (!cancelado) {
-          setAvaliacaoAutor((avaliacaoAtual) => ({
-            ...avaliacaoAtual,
-            carregado: true,
-            salvando: false,
-          }));
-        }
-      }
-    }
-
-    const carregarAvaliacaoAutorTimer = window.setTimeout(() => {
-      void carregarAvaliacaoRealAutor();
-    }, 0);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(carregarAvaliacaoAutorTimer);
-    };
-  }, [
+  usePerfilAutorRatingSync({
     perfilParaMostrar,
     autorPodeReceberAvaliacao,
     usuarioIdLogado,
     perfilPertenceAoUsuario,
-  ]);
+    setAvaliacaoAutor,
+  });
 
   usePerfilAutorDiaryRatingSync({
     perfilParaMostrar,
