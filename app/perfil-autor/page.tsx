@@ -61,7 +61,6 @@ import type {
   DiarioPerfilEstado,
   DiarioPerfilItem,
   DiarioPerfilResumoItem,
-  ItemBibliotecaPerfil,
   ObraLocal,
   PerfisAutoresSalvos,
   PerfilUsuarioRemoto,
@@ -101,11 +100,7 @@ import {
 import {
   type IdentidadeAutenticadaPerfilAutor,
 } from "./lib/profile-auth-identity";
-import {
-  colecaoTemObraPerfilBiblioteca,
-  converterCapitulosSalvosParaBiblioteca,
-  converterItensDiarioParaBiblioteca,
-} from "./lib/library-normalizers";
+import { colecaoTemObraPerfilBiblioteca } from "./lib/library-normalizers";
 import {
   criarPerfilUsuarioRemotoComoAutor,
   obterTotalComentariosObraPerfilAutor,
@@ -130,6 +125,7 @@ import {
   obterTotalObrasConcluidasPerfilAutor,
 } from "./lib/profile-work-display-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
+import { montarItensBibliotecaPerfilAutor } from "./lib/profile-library-items-builder";
 import {
   encontrarItemBibliotecaMenuAberto,
   obterRotuloBibliotecaPerfil,
@@ -1017,72 +1013,34 @@ function PerfilAutorPageContent() {
   }, [obraMenuAbertoId, obrasDoPerfilFiltradas]);
 
 
-  const itensBibliotecaQueroLer = useMemo(() => {
-    if (!bibliotecaPerfilVisivel) {
-      return [] as ItemBibliotecaPerfil[];
-    }
-
-    return converterItensDiarioParaBiblioteca(
+  const {
+    queroLer: itensBibliotecaQueroLer,
+    lendoAgora: itensBibliotecaLendoAgora,
+    favoritas: itensBibliotecaFavoritas,
+    concluidas: itensBibliotecaConcluidas,
+    historico: itensBibliotecaHistorico,
+    salvos: itensBibliotecaSalvos,
+  } = useMemo(
+    () =>
+      montarItensBibliotecaPerfilAutor({
+        bibliotecaPerfilVisivel,
+        queroLer: diarioPerfil.queroLer,
+        lendoAgora: diarioPerfil.lendoAgora,
+        favoritas: diarioPerfil.favoritas,
+        concluidas: diarioPerfil.concluidas,
+        atividades: diarioPerfil.atividades,
+        obras,
+      }),
+    [
+      bibliotecaPerfilVisivel,
       diarioPerfil.queroLer,
-      "quero-ler",
-    );
-  }, [bibliotecaPerfilVisivel, diarioPerfil.queroLer]);
-
-  const itensBibliotecaLendoAgora = useMemo(() => {
-    if (!bibliotecaPerfilVisivel) {
-      return [] as ItemBibliotecaPerfil[];
-    }
-
-    return converterItensDiarioParaBiblioteca(
       diarioPerfil.lendoAgora,
-      "lendo-agora",
-    );
-  }, [bibliotecaPerfilVisivel, diarioPerfil.lendoAgora]);
-
-  const itensBibliotecaFavoritas = useMemo(() => {
-    if (!bibliotecaPerfilVisivel) {
-      return [] as ItemBibliotecaPerfil[];
-    }
-
-    return converterItensDiarioParaBiblioteca(
       diarioPerfil.favoritas,
-      "favorita",
-    );
-  }, [bibliotecaPerfilVisivel, diarioPerfil.favoritas]);
-
-  const itensBibliotecaConcluidas = useMemo(() => {
-    if (!bibliotecaPerfilVisivel) {
-      return [] as ItemBibliotecaPerfil[];
-    }
-
-    return converterItensDiarioParaBiblioteca(
       diarioPerfil.concluidas,
-      "concluida",
-    );
-  }, [bibliotecaPerfilVisivel, diarioPerfil.concluidas]);
-
-  const itensBibliotecaHistorico = useMemo(() => {
-    if (!bibliotecaPerfilVisivel) {
-      return [] as ItemBibliotecaPerfil[];
-    }
-
-    const atividadesLeitura = diarioPerfil.atividades.filter(
-      (item) => item.tipo === "lendo",
-    );
-
-    return converterItensDiarioParaBiblioteca(
-      atividadesLeitura,
-      "historico",
-    );
-  }, [bibliotecaPerfilVisivel, diarioPerfil.atividades]);
-
-  const itensBibliotecaSalvos = useMemo(() => {
-    if (!bibliotecaPerfilVisivel) {
-      return [] as ItemBibliotecaPerfil[];
-    }
-
-    return converterCapitulosSalvosParaBiblioteca(obras);
-  }, [bibliotecaPerfilVisivel, obras]);
+      diarioPerfil.atividades,
+      obras,
+    ],
+  );
 
   const obrasSeguidasPerfilTotal = useMemo(() => {
     const totalPorObrasCarregadas = obras.filter((obra) =>
