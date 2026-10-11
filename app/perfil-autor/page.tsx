@@ -3,8 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { criarSlugBase, normalizarTexto } from "../../lib/utils";
-import { ehClassificacao18 } from "../../lib/historietasAdultContent";
+import { criarSlugBase } from "../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -72,7 +71,6 @@ import {
   BIO_MAX_LENGTH,
   PERMISSOES_ABAS_PERFIL_PADRAO,
   SOBRE_BIO_MAX_LENGTH,
-  TOP_FIVE_MAXIMO,
   avaliacaoAutorVazia,
   avaliacaoDiarioVazia,
   comunidadePerfilVazia,
@@ -107,11 +105,9 @@ import {
   colecaoTemObraPerfilBiblioteca,
   converterCapitulosSalvosParaBiblioteca,
   converterItensDiarioParaBiblioteca,
-  encontrarObraPorIdentificadorTopFivePerfil,
 } from "./lib/library-normalizers";
 import {
   criarPerfilUsuarioRemotoComoAutor,
-  mesclarObrasPorIdSlug,
   obterTotalComentariosObraPerfilAutor,
   obterTotalConcluidasObraPerfilAutor,
   obterTotalCurtidasObraPerfilAutor,
@@ -129,6 +125,10 @@ import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-utils";
 import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
+import {
+  obterObrasDestaquePerfilAutor,
+  obterObrasVisiveisPerfilAutor,
+} from "./lib/profile-work-display-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import {
   encontrarItemBibliotecaMenuAberto,
@@ -820,65 +820,30 @@ function PerfilAutorPageContent() {
     avaliacaoDiario,
   });
 
-  const obrasDoPerfilFiltradas = useMemo(() => {
-    if (!perfilParaMostrar) {
-      return [];
-    }
+  const obrasDoPerfilFiltradas = useMemo(
+    () =>
+      obterObrasVisiveisPerfilAutor({
+        perfilParaMostrar,
+        perfilPertenceAoUsuario,
+      }),
+    [perfilParaMostrar, perfilPertenceAoUsuario],
+  );
 
-    const obrasVisiveis = perfilPertenceAoUsuario
-      ? perfilParaMostrar.obras
-      : perfilParaMostrar.obras.filter(
-          (obra) => !ehClassificacao18(obra.classificacaoIndicativa),
-        );
-
-    return [...obrasVisiveis].sort(
-      (obraA, obraB) =>
-        obterTimestampData(obraB.criadaEm) - obterTimestampData(obraA.criadaEm),
-    );
-  }, [perfilParaMostrar, perfilPertenceAoUsuario]);
-
-  const obrasEmDestaque = useMemo(() => {
-    if (topFiveObraIds.length === 0) {
-      return [] as ObraLocal[];
-    }
-
-    const obrasDisponiveis = mesclarObrasPorIdSlug(
+  const obrasEmDestaque = useMemo(
+    () =>
+      obterObrasDestaquePerfilAutor({
+        topFiveObraIds,
+        obras,
+        obrasPerfil: perfilParaMostrar?.obras || [],
+        perfilPertenceAoUsuario,
+      }),
+    [
+      topFiveObraIds,
       obras,
-      perfilParaMostrar?.obras || [],
-    ).filter(
-      (obra) =>
-        perfilPertenceAoUsuario ||
-        !ehClassificacao18(obra.classificacaoIndicativa),
-    );
-    const obrasSelecionadas = new Map<string, ObraLocal>();
-
-    topFiveObraIds.forEach((obraId) => {
-      const obraEncontrada = encontrarObraPorIdentificadorTopFivePerfil(
-        obrasDisponiveis,
-        obraId,
-      );
-
-      if (!obraEncontrada) {
-        return;
-      }
-
-      const chaveObra =
-        obraEncontrada.id.trim() ||
-        obraEncontrada.slug.trim() ||
-        normalizarTexto(obraEncontrada.titulo);
-
-      if (chaveObra && !obrasSelecionadas.has(chaveObra)) {
-        obrasSelecionadas.set(chaveObra, obraEncontrada);
-      }
-    });
-
-    return Array.from(obrasSelecionadas.values()).slice(0, TOP_FIVE_MAXIMO);
-  }, [
-    obras,
-    perfilParaMostrar?.obras,
-    perfilPertenceAoUsuario,
-    topFiveObraIds,
-  ]);
+      perfilParaMostrar?.obras,
+      perfilPertenceAoUsuario,
+    ],
+  );
 
   const destaquesPerfilVisivel =
     obrasPerfilVisivel &&
