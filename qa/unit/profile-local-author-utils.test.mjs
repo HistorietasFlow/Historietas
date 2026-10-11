@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const ratingSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const storageRuntime = `
 const criarStorageKeyUsuarioPerfilBiblioteca = (chave, userId) => {
   const userIdLimpo = userId.trim();
@@ -205,7 +212,11 @@ test("storage indisponível preserva retornos seguros das avaliações e perfis"
 test("Perfil de Autor delega exclusivamente avaliações e perfis locais", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?carregarPerfisAutores,[\s\S]*?obterAvaliacaoAutorLocal,[\s\S]*?salvarAvaliacaoAutorLocal,[\s\S]*?\} from "\.\/lib\/profile-local-author-utils";/,
+    /import \{ carregarPerfisAutores \} from "\.\/lib\/profile-local-author-utils";/,
+  );
+  assert.match(
+    ratingSyncSource,
+    /import \{[\s\S]*?obterAvaliacaoAutorLocal,[\s\S]*?salvarAvaliacaoAutorLocal,[\s\S]*?\} from "\.\.\/lib\/profile-local-author-utils";/,
   );
 
   for (const helper of [
@@ -220,5 +231,5 @@ test("Perfil de Autor delega exclusivamente avaliações e perfis locais", () =>
 
   assert.match(utilsSource, /carregarJsonUsuarioPerfilAutor/);
   assert.match(utilsSource, /salvarJsonUsuarioPerfilAutor/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(ratingSyncSource, /supabase\.auth\.getUser\(\)/);
 });

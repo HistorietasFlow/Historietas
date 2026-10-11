@@ -1089,7 +1089,7 @@ const metricsConsumerFiles = [
   "app/explorar/page.tsx",
   "app/listas/page.tsx",
   "app/seguindo/page.tsx",
-  "app/perfil-autor/page.tsx",
+  "app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
   "app/painel-autor/page.tsx",
   "app/obra/[slug]/ObraDinamicaClient.tsx",
   "app/ler-capitulo/page.tsx"

@@ -294,3 +294,8 @@
 
 - Extraiu o `useEffect` que carrega a avaliação pública do Diário para `usePerfilAutorDiaryRatingSync`.
 - Manteve fallbacks para perfil ausente e ID inválido, visibilidade do próprio perfil, RPC `carregar_avaliacao_diario`, normalização, timer inicial e cancelamento no unmount.
+
+## Fase 950 — sincronização da avaliação do autor
+
+- Extraiu o `useEffect` que combina fallback local e métricas remotas da avaliação do autor para `usePerfilAutorRatingSync`.
+- Manteve limpeza da avaliação no próprio perfil, leitura de sessão, métricas remotas, proteção contra sobrescrever estado em salvamento, timer inicial e cancelamento no unmount.
