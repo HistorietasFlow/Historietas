@@ -336,3 +336,9 @@
 - Extraiu a escolha dos itens ativos das seis abas da Biblioteca para `selecionarItensBibliotecaPerfil`.
 - Preservou referências das listas individuais, ordem da mesclagem na aba Tudo e dependências do `useMemo`.
 - Adicionou cobertura em `test:session`, sem alterar schema, RLS ou UI.
+
+## Fase 958 — derivações visuais da Biblioteca
+
+- Extraiu a busca do item com menu aberto e o rótulo da aba ativa para `profile-library-display-utils.ts`.
+- Preservou exatamente as chaves, retornos nulos e textos exibidos.
+- Adicionou testes unitários e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
