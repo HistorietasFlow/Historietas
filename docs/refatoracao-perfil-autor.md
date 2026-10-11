@@ -194,3 +194,8 @@
 
 - Moveu `alternarSalvoCapituloBibliotecaPerfil` e `alternarObraSeguindoBibliotecaPerfil` para `usePerfilAutorLibraryCollectionActions`.
 - Manteve autenticação, atualização dos capítulos, localStorage, sincronização privada/pública, mensagens e versão da Biblioteca.
+
+## Fase 932 — remoção de itens da Biblioteca
+
+- Moveu `removerItemBibliotecaPerfil` para `usePerfilAutorLibraryCollectionActions`.
+- Manteve a prioridade entre capítulo salvo, Quero ler, favoritas, concluídas e fallback para remoção do histórico, sem mover ainda o fluxo remoto do histórico.

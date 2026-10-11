@@ -417,15 +417,17 @@ function PerfilAutorPageContent() {
   const {
     alternarFavoritoObra,
     alternarConcluidoObra,
-    alternarSalvoCapituloBibliotecaPerfil,
     alternarObraSeguindoBibliotecaPerfil,
+    removerItemBibliotecaPerfil,
   } = usePerfilAutorLibraryCollectionActions({
+    abaBibliotecaPerfil,
     obras,
     obrasFavoritas,
     obrasConcluidas,
     obrasSeguidasBiblioteca,
     usuarioIdLogado,
     avisarLoginNecessario,
+    removerHistoricoLeituraBibliotecaPerfil,
     salvarObrasBibliotecaPerfil,
     setMensagemAcao,
     setObrasFavoritas,
@@ -3524,77 +3526,6 @@ function PerfilAutorPageContent() {
 
     setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
     setMensagemAcao("Histórico de leitura removido.");
-  }
-
-  async function removerItemBibliotecaPerfil(item: ItemBibliotecaPerfil) {
-    if (
-      item.capitulo?.salvo &&
-      (abaBibliotecaPerfil === "tudo" || abaBibliotecaPerfil === "salvos")
-    ) {
-      await alternarSalvoCapituloBibliotecaPerfil(
-        item.obra.id,
-        item.capitulo.id,
-        false,
-      );
-      return;
-    }
-
-    if (
-      abaBibliotecaPerfil === "tudo" &&
-      item.tipoDiario === "quero_ler" &&
-      colecaoTemObraPerfilBiblioteca(obrasSeguidasBiblioteca, item.obra)
-    ) {
-      await alternarObraSeguindoBibliotecaPerfil(item.obra, false);
-      return;
-    }
-
-    if (
-      abaBibliotecaPerfil === "tudo" &&
-      item.tipoDiario === "favorita" &&
-      colecaoTemObraPerfilBiblioteca(obrasFavoritas, item.obra)
-    ) {
-      await alternarFavoritoObra(item.obra.id);
-      return;
-    }
-
-    if (
-      abaBibliotecaPerfil === "tudo" &&
-      item.tipoDiario === "concluida" &&
-      colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra)
-    ) {
-      await alternarConcluidoObra(item.obra.id);
-      return;
-    }
-
-    if (abaBibliotecaPerfil === "quero-ler") {
-      await alternarObraSeguindoBibliotecaPerfil(item.obra, false);
-      return;
-    }
-
-    if (abaBibliotecaPerfil === "favoritas") {
-      if (colecaoTemObraPerfilBiblioteca(obrasFavoritas, item.obra)) {
-        await alternarFavoritoObra(item.obra.id);
-      }
-      return;
-    }
-
-    if (abaBibliotecaPerfil === "concluidas") {
-      if (colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra)) {
-        await alternarConcluidoObra(item.obra.id);
-      }
-      return;
-    }
-
-    if (abaBibliotecaPerfil === "salvos" && item.capitulo) {
-      await alternarSalvoCapituloBibliotecaPerfil(
-        item.obra.id,
-        item.capitulo.id,
-        false,
-      );
-      return;
-    }
-
-    await removerHistoricoLeituraBibliotecaPerfil(item.obra);
   }
 
   function renderizarAtividadeRecenteSobrePerfil() {
