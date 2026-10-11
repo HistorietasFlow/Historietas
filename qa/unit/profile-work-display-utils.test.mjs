@@ -145,6 +145,7 @@ const {
   formatarMetricasSheetObraPerfilAutor,
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
+  obterDadosSheetObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
@@ -532,14 +533,11 @@ test("formata métricas do sheet da obra na ordem preservada", () => {
   );
 });
 
-test("página delega a formatação das métricas do sheet da obra", () => {
+test("formatação das métricas do sheet fica encapsulada no helper composto", () => {
+  assert.doesNotMatch(pagina, /formatarMetricasSheetObraPerfilAutor/);
   assert.match(
-    pagina,
-    /formatarMetricasSheetObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
-  );
-  assert.equal(
-    (pagina.match(/formatarMetricasSheetObraPerfilAutor\(/g) || []).length,
-    1,
+    source,
+    /export function obterDadosSheetObraPerfilAutor[\s\S]*?formatarMetricasSheetObraPerfilAutor\(\{/,
   );
   assert.doesNotMatch(
     pagina,
@@ -570,14 +568,18 @@ test("estado das coleções da obra preserva favoritos, concluídas e Quero ler"
   );
 });
 
-test("página reutiliza estado centralizado das coleções nos dois menus", () => {
+test("estado das coleções fica direto na Biblioteca e reutilizado pelo sheet da obra", () => {
   assert.match(
     pagina,
     /obterEstadoColecoesObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
     (pagina.match(/obterEstadoColecoesObraPerfilAutor\(\{/g) || []).length,
-    2,
+    1,
+  );
+  assert.match(
+    source,
+    /export function obterDadosSheetObraPerfilAutor[\s\S]*?obterEstadoColecoesObraPerfilAutor\(\{/,
   );
   assert.doesNotMatch(
     pagina,
@@ -614,14 +616,11 @@ test("formata meta do sheet da obra preservando ordem, filtros e tradução", ()
   );
 });
 
-test("página delega a meta do sheet da obra", () => {
+test("meta do sheet da obra fica encapsulada no helper composto", () => {
+  assert.doesNotMatch(pagina, /formatarMetaSheetObraPerfilAutor/);
   assert.match(
-    pagina,
-    /formatarMetaSheetObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
-  );
-  assert.equal(
-    (pagina.match(/formatarMetaSheetObraPerfilAutor\(/g) || []).length,
-    1,
+    source,
+    /export function obterDadosSheetObraPerfilAutor[\s\S]*?formatarMetaSheetObraPerfilAutor\(/,
   );
   assert.doesNotMatch(pagina, /formatarFormatoPerfilAutor/);
   assert.doesNotMatch(pagina, /formatarGeneroPerfilAutor/);
@@ -656,14 +655,11 @@ test("dados métricos do sheet incluem salvos e total de capítulos sem afetar c
   });
 });
 
-test("página delega os dados métricos do sheet e não lê salvos diretamente", () => {
+test("dados métricos do sheet ficam encapsulados no helper composto", () => {
+  assert.doesNotMatch(pagina, /obterMetricasSheetObraPerfilAutor/);
   assert.match(
-    pagina,
-    /obterMetricasSheetObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
-  );
-  assert.equal(
-    (pagina.match(/obterMetricasSheetObraPerfilAutor\(/g) || []).length,
-    1,
+    source,
+    /export function obterDadosSheetObraPerfilAutor[\s\S]*?obterMetricasSheetObraPerfilAutor\(/,
   );
   assert.doesNotMatch(pagina, /obterTotalSalvosObraPerfilAutor/);
 });
@@ -705,14 +701,11 @@ test("alvo de leitura do menu prioriza capítulo para continuar e preserva fallb
   );
 });
 
-test("página delega o alvo de leitura do menu da obra", () => {
+test("alvo de leitura do menu fica encapsulado no helper composto", () => {
+  assert.doesNotMatch(pagina, /obterAlvoLeituraMenuObraPerfilAutor/);
   assert.match(
-    pagina,
-    /obterAlvoLeituraMenuObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
-  );
-  assert.equal(
-    (pagina.match(/obterAlvoLeituraMenuObraPerfilAutor\(/g) || []).length,
-    1,
+    source,
+    /export function obterDadosSheetObraPerfilAutor[\s\S]*?obterAlvoLeituraMenuObraPerfilAutor\(obra\)/,
   );
   assert.doesNotMatch(pagina, /encontrarCapituloParaContinuar/);
   assert.doesNotMatch(pagina, /numeroUltimoCapitulo/);
@@ -856,4 +849,66 @@ test("página delega os dados derivados do card da Biblioteca", () => {
     pagina,
     /bibliotecaMenuAbertoChave === item\.chave/,
   );
+});
+
+
+test("dados do sheet da obra consolidam leitura, coleções, meta e métricas", () => {
+  const resultado = obterDadosSheetObraPerfilAutor({
+    obra: {
+      id: "obra-sheet-completo",
+      slug: "obra-sheet-completo",
+      titulo: "Obra Sheet Completo",
+      autor: "Ana",
+      genero: "Fantasia",
+      formato: "Mangá",
+      tags: ["Aventura"],
+      classificacaoIndicativa: "16",
+      visualizacoes: 1500,
+      capitulos: [
+        { id: "c1" },
+        { id: "c2", continuar: true },
+      ],
+    },
+    totaisInteracoesObras: {
+      curtidasPorObra: { "obra-sheet-completo": 12 },
+      comentariosPorObra: { "obra-sheet-completo": 4 },
+      salvosPorObra: { "obra-sheet-completo": 6 },
+    },
+    obrasFavoritas: ["obra-sheet-completo"],
+    obrasConcluidas: [],
+    obrasSeguidasBiblioteca: [],
+    traduzirTexto: (texto) => `T:${texto}`,
+  });
+
+  assert.equal(resultado.ultimoCapitulo.id, "c2");
+  assert.equal(resultado.capituloHref, "/ler/obra-sheet-completo/c2/2");
+  assert.equal(resultado.obraFavorita, true);
+  assert.equal(resultado.obraConcluida, false);
+  assert.equal(
+    resultado.metaObraSheet,
+    "T:Fantasia • T:Mangá • T:Aventura • T:16",
+  );
+  assert.equal(
+    resultado.metricasObraSheet,
+    "👁 fmt:1500 • ❤️ 12 • 💬 4 • 🔖 6 • 📚 2",
+  );
+});
+
+test("página delega a composição do sheet da obra ao helper único", () => {
+  assert.match(
+    pagina,
+    /obterDadosSheetObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterDadosSheetObraPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  for (const helper of [
+    "formatarMetaSheetObraPerfilAutor",
+    "formatarMetricasSheetObraPerfilAutor",
+    "obterMetricasSheetObraPerfilAutor",
+    "obterAlvoLeituraMenuObraPerfilAutor",
+  ]) {
+    assert.doesNotMatch(pagina, new RegExp(helper));
+  }
 });
