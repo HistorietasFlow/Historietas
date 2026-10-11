@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diarySyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-diary-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const diaryLoaderSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-diary-loader.ts",
@@ -117,8 +124,8 @@ test("Perfil de Autor delega os helpers de registros do Diário para o carregado
   );
   assert.match(utilsSource, /import \{ pegarTexto \} from "\.\/data-normalizers";/);
   assert.match(
-    pagina,
-    /import \{ criarEstadoDiarioPerfilVazio \} from "\.\/lib\/profile-diary-record-utils";/,
+    diarySyncSource,
+    /import \{ criarEstadoDiarioPerfilVazio \} from "\.\.\/lib\/profile-diary-record-utils";/,
   );
   assert.match(
     diaryLoaderSource,
@@ -146,6 +153,6 @@ test("Perfil de Autor delega os helpers de registros do Diário para o carregado
     diaryLoaderSource,
     /criarItemAtividadeDiarioPerfil\(registro, obrasPorId, obrasPorCapituloId\)/,
   );
-  assert.match(pagina, /: criarEstadoDiarioPerfilVazio\(\);/);
+  assert.match(diarySyncSource, /: criarEstadoDiarioPerfilVazio\(\);/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });
