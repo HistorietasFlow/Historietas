@@ -864,53 +864,28 @@ function PerfilAutorPageContent() {
   const {
     obrasSeguidasPerfilTotal,
     obrasConcluidasPerfilTotal,
-  } = useMemo(
-    () =>
-      obterTotaisBibliotecaPerfilAutor({
-        obras,
-        obrasSeguidasBiblioteca,
-        obrasConcluidas,
-        itensBibliotecaQueroLerTotal: itensBibliotecaQueroLer.length,
-        itensBibliotecaConcluidasTotal: itensBibliotecaConcluidas.length,
-        obrasConcluidasPerfilPorObrasDoAutor,
-      }),
-    [
-      obras,
-      obrasSeguidasBiblioteca,
-      obrasConcluidas,
-      itensBibliotecaQueroLer.length,
-      itensBibliotecaConcluidas.length,
-      obrasConcluidasPerfilPorObrasDoAutor,
-    ],
-  );
+  } = obterTotaisBibliotecaPerfilAutor({
+    obras,
+    obrasSeguidasBiblioteca,
+    obrasConcluidas,
+    itensBibliotecaQueroLerTotal: itensBibliotecaQueroLer.length,
+    itensBibliotecaConcluidasTotal: itensBibliotecaConcluidas.length,
+    obrasConcluidasPerfilPorObrasDoAutor,
+  });
 
-  const itensBibliotecaAtivos = useMemo(() => {
-    return selecionarItensBibliotecaPerfil({
-      aba: abaBibliotecaPerfil,
-      queroLer: itensBibliotecaQueroLer,
-      lendoAgora: itensBibliotecaLendoAgora,
-      favoritas: itensBibliotecaFavoritas,
-      concluidas: itensBibliotecaConcluidas,
-      salvos: itensBibliotecaSalvos,
-      historico: itensBibliotecaHistorico,
-    });
-  }, [
-    abaBibliotecaPerfil,
-    itensBibliotecaConcluidas,
-    itensBibliotecaFavoritas,
-    itensBibliotecaHistorico,
-    itensBibliotecaLendoAgora,
-    itensBibliotecaQueroLer,
-    itensBibliotecaSalvos,
-  ]);
+  const itensBibliotecaAtivos = selecionarItensBibliotecaPerfil({
+    aba: abaBibliotecaPerfil,
+    queroLer: itensBibliotecaQueroLer,
+    lendoAgora: itensBibliotecaLendoAgora,
+    favoritas: itensBibliotecaFavoritas,
+    concluidas: itensBibliotecaConcluidas,
+    salvos: itensBibliotecaSalvos,
+    historico: itensBibliotecaHistorico,
+  });
 
-  const bibliotecaMenuAberto = useMemo(
-    () =>
-      encontrarItemBibliotecaMenuAberto(
-        itensBibliotecaAtivos,
-        bibliotecaMenuAbertoChave,
-      ),
-    [bibliotecaMenuAbertoChave, itensBibliotecaAtivos],
+  const bibliotecaMenuAberto = encontrarItemBibliotecaMenuAberto(
+    itensBibliotecaAtivos,
+    bibliotecaMenuAbertoChave,
   );
 
   const rotuloBibliotecaAtiva = obterRotuloBibliotecaPerfil(
