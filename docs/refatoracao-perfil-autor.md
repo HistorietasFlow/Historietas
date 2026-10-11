@@ -652,3 +652,10 @@
 - Preservou `Parar leitura` em Lendo agora, `Limpar histórico` no Histórico e `Remover` nas demais abas.
 - Removeu o ternário aninhado correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1001 — rótulos das coleções da Biblioteca
+
+- Centralizou os textos das ações Quero ler, Favoritar e Concluir do sheet da Biblioteca em `obterRotulosAcoesColecoesBibliotecaPerfil`.
+- Preservou exatamente os rótulos ativos e inativos já exibidos para cada coleção.
+- Removeu os três ternários de texto correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
