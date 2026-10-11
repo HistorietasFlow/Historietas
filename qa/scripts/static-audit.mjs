@@ -1713,10 +1713,6 @@ if (fs.existsSync(storageClientPath)) {
   }
 }
 
-const profilePage = fs.readFileSync(
-  path.join(ROOT_DIR, "app/perfil-autor/page.tsx"),
-  "utf8"
-);
 const profilePersistence = fs.readFileSync(
   path.join(
     ROOT_DIR,
