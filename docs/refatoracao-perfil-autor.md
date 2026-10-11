@@ -565,3 +565,11 @@
 - Substituiu cinco chamadas duplicadas nos menus de obra e Biblioteca.
 - Removeu o uso direto de `colecaoTemObraPerfilBiblioteca` da página e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 990 — estilos responsivos centralizados
+
+- Centralizou nove pares de estilos desktop/mobile em `obterEstilosResponsivosPerfilAutor`.
+- Removeu os ternários responsivos correspondentes de `page.tsx` e reduziu imports diretos de estilos na página.
+- Preservou os mesmos objetos de estilo e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
