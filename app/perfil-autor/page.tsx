@@ -158,7 +158,6 @@ import {
 import {
   carregarEstadoSeguimentoUsuarioPerfil,
 } from "./lib/profile-follow-state-loader";
-import { obterHrefItemDiarioPerfil } from "./lib/profile-diary-item-utils";
 import {
   dataDiarioPerfilFormatada,
   montarDiarioPerfilLocal,
@@ -265,8 +264,7 @@ import { ProfileWorkActionSheetMeta } from "./components/profile-work-action-she
 import { ProfileWorkActionSheetAuthor } from "./components/profile-work-action-sheet-author";
 import { ProfileWorkActionSheetMetrics } from "./components/profile-work-action-sheet-metrics";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
-import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
-import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
+import { ProfileAboutRecentActivity } from "./components/profile-about-recent-activity";
 import {
   criarProfileSelectionDotStyle,
   criarCapaDestaquePerfilAutor,
@@ -2992,37 +2990,6 @@ function PerfilAutorPageContent() {
     setAutoresSeguidos,
   });
 
-  function renderizarAtividadeRecenteSobrePerfil() {
-    return (
-      <ProfileRecentActivityPanel
-        title="Atividade recente"
-        toggleLabel={atividadeSobreAberta ? "Ocultar" : "Abrir"}
-        toggleIcon={atividadeSobreAberta ? "↑" : "↓"}
-        onToggle={() =>
-          setAtividadeSobreAberta((valorAtual) => !valorAtual)
-        }
-        ariaLabel={
-          atividadeSobreAberta
-            ? "Ocultar atividade recente"
-            : "Abrir atividade recente"
-        }
-        expanded={atividadeSobreAberta}
-        getIsLoading={() => diarioPerfil.carregando}
-        getIsEmpty={() => diarioPerfil.atividades.length === 0}
-        renderItems={() =>
-          diarioPerfil.atividades.slice(0, 8).map((item) => (
-            <ProfileRecentActivityItem
-              key={`timeline-${item.chave}`}
-              href={obterHrefItemDiarioPerfil(item)}
-              title={item.titulo}
-              description={item.descricao}
-              formattedDate={dataDiarioPerfilFormatada(item.data)}
-            />
-          ))
-        }
-      />
-    );
-  }
 
 
   if (carregando || redirecionandoParaLogin) {
@@ -4180,8 +4147,16 @@ function PerfilAutorPageContent() {
               Na Historietas desde {entradaHistorietasPerfil}
             </ProfileAboutMemberSince>
 
-            {atividadesPerfilVisivel &&
-              renderizarAtividadeRecenteSobrePerfil()}
+            {atividadesPerfilVisivel && (
+              <ProfileAboutRecentActivity
+                expanded={atividadeSobreAberta}
+                loading={diarioPerfil.carregando}
+                items={diarioPerfil.atividades}
+                onToggle={() =>
+                  setAtividadeSobreAberta((valorAtual) => !valorAtual)
+                }
+              />
+            )}
           </ProfileAboutSection>
         )}
 
