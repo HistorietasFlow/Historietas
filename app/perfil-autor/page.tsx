@@ -119,6 +119,7 @@ import {
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
   obterTotalObrasConcluidasPerfilAutor,
+  obterVisibilidadeDestaquesPerfilAutor,
 } from "./lib/profile-work-display-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import { montarItensBibliotecaPerfilAutor } from "./lib/profile-library-items-builder";
@@ -762,11 +763,16 @@ function PerfilAutorPageContent() {
     ],
   );
 
-  const destaquesPerfilVisivel =
-    obrasPerfilVisivel &&
-    (podeEditarPerfil
-      ? perfilSalvoAutor.mostrarDestaques
-      : mostrarDestaquesVisitante);
+  const {
+    destaquesPerfilVisivel,
+    exibirSecaoDestaques,
+  } = obterVisibilidadeDestaquesPerfilAutor({
+    obrasPerfilVisivel,
+    podeEditarPerfil,
+    mostrarDestaquesAutor: perfilSalvoAutor.mostrarDestaques,
+    mostrarDestaquesVisitante,
+    totalObrasEmDestaque: obrasEmDestaque.length,
+  });
 
   const { alternarCurtidaTopFivePerfil } =
     usePerfilAutorTopFiveLikeActions({
@@ -1684,8 +1690,7 @@ function PerfilAutorPageContent() {
 
         </section>
 
-        {destaquesPerfilVisivel &&
-          (obrasEmDestaque.length > 0 || podeEditarPerfil || mostrarDestaquesVisitante) && (
+        {exibirSecaoDestaques && (
             <ProfileHighlightsSection isDesktop={isDesktop}>
               <ProfileHighlightsHeader
                 titleActions={
