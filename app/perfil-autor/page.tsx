@@ -97,7 +97,10 @@ import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
-import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-utils";
+import {
+  obterDadosAcaoSeguimentoPerfilAutor,
+  obterEstadoSeguimentoPerfilAutor,
+} from "./lib/profile-follow-display-utils";
 import {
   obterBioSobreExibicaoPerfilAutor,
   obterDadosExibicaoPerfilAutor,
@@ -605,6 +608,16 @@ function PerfilAutorPageContent() {
     seguidoresUsuarioPerfilTotal,
     seguindoUsuarioPerfilTotal,
     podeEditarPerfil,
+  });
+
+  const {
+    ariaLabelSeguimento,
+    titleSeguimento,
+    rotuloSeguimento,
+  } = obterDadosAcaoSeguimentoPerfilAutor({
+    seguindoPerfilAtual,
+    solicitacaoSeguimentoPendente,
+    salvando: seguirUsuarioSalvando,
   });
 
   const obrasConcluidasPerfilPorObrasDoAutor =
@@ -1535,18 +1548,8 @@ function PerfilAutorPageContent() {
                   type="button"
                   onClick={() => void alternarSeguirAutor()}
                   disabled={seguirUsuarioSalvando}
-                  aria-label={
-                    solicitacaoSeguimentoPendente
-                      ? "Cancelar solicitação"
-                      : seguindoPerfilAtual
-                        ? "Deixar de seguir"
-                        : "Seguir"
-                  }
-                  title={
-                    solicitacaoSeguimentoPendente
-                      ? "Cancelar solicitação"
-                      : undefined
-                  }
+                  aria-label={ariaLabelSeguimento}
+                  title={titleSeguimento}
                   style={{
                     ...(seguindoPerfilAtual || solicitacaoSeguimentoPendente
                       ? profileActiveButtonStyle
@@ -1555,13 +1558,7 @@ function PerfilAutorPageContent() {
                     cursor: seguirUsuarioSalvando ? "not-allowed" : "pointer",
                   }}
                 >
-                  {seguirUsuarioSalvando
-                    ? "..."
-                    : solicitacaoSeguimentoPendente
-                      ? "Solicitado"
-                      : seguindoPerfilAtual
-                        ? "Seguindo"
-                        : "Seguir"}
+                  {rotuloSeguimento}
                 </button>
                 )}
 

@@ -7,6 +7,37 @@ import {
   normalizarNomeAutor,
 } from "./profile-formatters";
 
+export function obterDadosAcaoSeguimentoPerfilAutor({
+  seguindoPerfilAtual,
+  solicitacaoSeguimentoPendente,
+  salvando,
+}: {
+  seguindoPerfilAtual: boolean;
+  solicitacaoSeguimentoPendente: boolean;
+  salvando: boolean;
+}) {
+  const ariaLabelSeguimento = solicitacaoSeguimentoPendente
+    ? "Cancelar solicitação"
+    : seguindoPerfilAtual
+      ? "Deixar de seguir"
+      : "Seguir";
+
+  return {
+    ariaLabelSeguimento,
+    titleSeguimento: solicitacaoSeguimentoPendente
+      ? "Cancelar solicitação"
+      : undefined,
+    rotuloSeguimento: salvando
+      ? "..."
+      : solicitacaoSeguimentoPendente
+        ? "Solicitado"
+        : seguindoPerfilAtual
+          ? "Seguindo"
+          : "Seguir",
+  };
+}
+
+
 export function obterEstadoSeguimentoPerfilAutor({
   perfilParaMostrar,
   autoresSeguidos,
