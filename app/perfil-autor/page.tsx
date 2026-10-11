@@ -95,8 +95,6 @@ import {
 import { colecaoTemObraPerfilBiblioteca } from "./lib/library-normalizers";
 import {
   criarPerfilUsuarioRemotoComoAutor,
-  obterTotalComentariosObraPerfilAutor,
-  obterTotalCurtidasObraPerfilAutor,
   obterTotalSalvosObraPerfilAutor,
 } from "./lib/data-normalizers";
 import {
@@ -115,6 +113,7 @@ import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
   obterHrefObraPerfilAutor,
+  obterMetricasResumoObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
@@ -1753,18 +1752,13 @@ function PerfilAutorPageContent() {
                         item.numeroCapitulo || 1,
                       )
                     : obraHref;
-                  const totalCurtidasBiblioteca =
-                    obterTotalCurtidasObraPerfilAutor(
-                      item.obra,
-                      totaisInteracoesObras,
-                    );
-                  const totalComentariosBiblioteca =
-                    obterTotalComentariosObraPerfilAutor(
-                      item.obra,
-                      totaisInteracoesObras,
-                    );
-                  const visualizacoesBiblioteca = compactarNumeroPerfilAutor(
-                    item.obra.visualizacoes || 0,
+                  const {
+                    totalCurtidas: totalCurtidasBiblioteca,
+                    totalComentarios: totalComentariosBiblioteca,
+                    visualizacoesFormatadas: visualizacoesBiblioteca,
+                  } = obterMetricasResumoObraPerfilAutor(
+                    item.obra,
+                    totaisInteracoesObras,
                   );
 
                   return (
@@ -2151,16 +2145,13 @@ function PerfilAutorPageContent() {
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {obrasDoPerfilFiltradas.map((obra) => {
                   const obraHref = obterHrefObraPerfilAutor(obra);
-                  const totalCurtidas = obterTotalCurtidasObraPerfilAutor(
+                  const {
+                    totalCurtidas,
+                    totalComentarios,
+                    visualizacoesFormatadas: visualizacoesObra,
+                  } = obterMetricasResumoObraPerfilAutor(
                     obra,
                     totaisInteracoesObras,
-                  );
-                  const totalComentarios = obterTotalComentariosObraPerfilAutor(
-                    obra,
-                    totaisInteracoesObras,
-                  );
-                  const visualizacoesObra = compactarNumeroPerfilAutor(
-                    obra.visualizacoes,
                   );
                   const menuObraAberto = obraMenuAbertoId === obra.id;
 
@@ -2230,20 +2221,17 @@ function PerfilAutorPageContent() {
               : "";
             const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra);
             const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra);
-            const totalCurtidas = obterTotalCurtidasObraPerfilAutor(
-              obra,
-              totaisInteracoesObras,
-            );
-            const totalComentarios = obterTotalComentariosObraPerfilAutor(
+            const {
+              totalCurtidas,
+              totalComentarios,
+              visualizacoesFormatadas: visualizacoesObra,
+            } = obterMetricasResumoObraPerfilAutor(
               obra,
               totaisInteracoesObras,
             );
             const totalSalvos = obterTotalSalvosObraPerfilAutor(
               obra,
               totaisInteracoesObras,
-            );
-            const visualizacoesObra = compactarNumeroPerfilAutor(
-              obra.visualizacoes,
             );
             const formatoObra = formatarFormatoPerfilAutor(obra.formato);
             const tagPrincipalObra = obterTagPrincipalPerfilAutor(obra);
