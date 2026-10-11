@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const authIdentitySyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-auth-identity-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const topFiveLikeActionsSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-top-five-like-actions.ts",
@@ -52,7 +59,7 @@ test("Perfil de Autor mantém mensagens de domínio e toast na página", () => {
     /const \[mensagemAcao, setMensagemAcao\] = useState\(""\);/,
   );
   assert.doesNotMatch(pagina, /timerMensagemAcao/);
-  assert.match(pagina, /setMensagemAcao\(""\);/);
+  assert.match(authIdentitySyncSource, /setMensagemAcao\(""\);/);
   assert.match(
     topFiveLikeActionsSource,
     /setMensagemAcao\("Entre para curtir o TOP 5 deste perfil\."\);/,
