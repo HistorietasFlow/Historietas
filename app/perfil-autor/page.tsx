@@ -124,7 +124,6 @@ import {
   converterItensDiarioParaBiblioteca,
   encontrarObraPorIdentificadorTopFivePerfil,
   mesclarItensBibliotecaPerfil,
-  removerObraDaColecaoPerfilBiblioteca,
 } from "./lib/library-normalizers";
 import {
   aplicarInteracoesNasObras,
@@ -156,10 +155,7 @@ import {
   carregarObrasPublicadasSupabase,
 } from "./lib/profile-published-works-loader";
 import { carregarEstadoUsuarioSupabase } from "./lib/profile-user-state-loader";
-import {
-  sincronizarAutorSeguidoSupabase,
-  sincronizarTabelaUsuario,
-} from "./lib/profile-user-collections-sync";
+import { sincronizarAutorSeguidoSupabase } from "./lib/profile-user-collections-sync";
 import {
   carregarInteracoesCapitulosSupabase,
   carregarTotaisInteracoesObrasPerfilAutor,
