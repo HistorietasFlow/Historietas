@@ -680,3 +680,10 @@
 - Preservou exatamente `Mostrar username` quando oculto e `Esconder username` quando visível.
 - Removeu o ternário correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1005 — rótulo da ação de bloqueio
+
+- Extraiu o texto do botão de bloquear/desbloquear para `obterRotuloAcaoBloqueioPerfilAutor`.
+- Preservou os quatro estados: `Bloquear usuário`, `Desbloquear usuário`, `Bloqueando...` e `Desbloqueando...`.
+- Removeu o ternário aninhado correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
