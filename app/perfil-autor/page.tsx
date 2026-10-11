@@ -23,7 +23,6 @@ import {
   type PermissoesAbasPerfil,
 } from "../../lib/historietasPrivacy";
 import { carregarMetricasConteudos } from "../../lib/metricas";
-import { obterCaminhoObjetoStorage } from "../../lib/storageUploads";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
@@ -57,15 +56,12 @@ import type {
   ItemBibliotecaPerfil,
   ObraLocal,
   ObraSalva,
-  PerfilAutorSalvo,
   PerfisAutoresSalvos,
   PerfilUsuarioRemoto,
   TotaisInteracoesObrasPerfilAutor,
 } from "./types";
 import {
   AUTHOR_FOLLOW_STORAGE_KEY,
-  AUTHOR_PROFILE_STORAGE_KEY,
-  AVATAR_STORAGE_BUCKET,
   BIO_MAX_LENGTH,
   COMPLETED_STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
@@ -144,9 +140,6 @@ import {
 import { carregarComunidadePerfilSupabase } from "./lib/profile-community-loader";
 import { carregarPerfilUsuarioSupabase } from "./lib/profile-public-profile-loader";
 import { criarLoginHrefPerfilAutor } from "./lib/profile-login-route-utils";
-import { sincronizarNomeAutorObrasSupabase } from "./lib/profile-author-works-sync";
-import { enviarAvatarPerfilUsuarioSupabase } from "./lib/profile-avatar-upload";
-import { salvarPerfilUsuarioSupabase } from "./lib/profile-profile-persistence";
 import { carregarDiarioPerfilSupabase } from "./lib/profile-diary-loader";
 import { mesclarDiarioPerfilComLocal } from "./lib/profile-diary-merge-utils";
 import {
