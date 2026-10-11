@@ -126,6 +126,7 @@ import { obterTotaisBibliotecaPerfilAutor } from "./lib/profile-library-totals";
 import { obterResumoEstatisticasPerfilAutor } from "./lib/profile-summary-stats";
 import {
   encontrarItemBibliotecaMenuAberto,
+  obterMetaMenuBibliotecaPerfil,
   obterRotuloBibliotecaPerfil,
 } from "./lib/profile-library-display-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
@@ -2392,28 +2393,7 @@ function PerfilAutorPageContent() {
               obrasSeguidasBiblioteca,
               obra,
             );
-            const totalCapitulos = obra.capitulos.length;
-            const progresso = Math.max(
-              0,
-              Math.min(100, Math.round(obra.progressoLeitura || 0)),
-            );
-            const metaSheet = `${
-              item.tipoDiario === "lendo"
-                ? "Lendo"
-                : item.tipoDiario === "favorita"
-                  ? "Favorita"
-                  : item.tipoDiario === "concluida"
-                    ? "Concluída"
-                    : item.tipoDiario === "quero_ler"
-                      ? "Quero ler"
-                      : "Biblioteca"
-            } • ${
-              item.capitulo
-                ? `Capítulo ${item.numeroCapitulo || 1} de ${totalCapitulos || 1}`
-                : totalCapitulos > 0
-                  ? `${totalCapitulos} ${totalCapitulos === 1 ? "capítulo" : "capítulos"}`
-                  : "Obra"
-            } • ${progresso}% concluído`;
+            const metaSheet = obterMetaMenuBibliotecaPerfil(item);
 
             return (
               <ProfileWorkActionSheetOverlay

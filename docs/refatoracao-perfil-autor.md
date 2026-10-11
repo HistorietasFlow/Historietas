@@ -533,3 +533,11 @@
 - Substituiu três blocos duplicados na Biblioteca, grade de obras e sheet de ações.
 - Preservou as fontes existentes de interações e a formatação numérica, sem alterar UI, schema, RLS ou Supabase.
 - Ampliou a cobertura unitária já registrada em `test:session`.
+
+
+## Fase 986 — meta do menu da Biblioteca
+
+- Extraiu a composição textual do menu da Biblioteca para `obterMetaMenuBibliotecaPerfil`.
+- Preservou rótulo do tipo, capítulo/total, pluralização e progresso limitado entre 0% e 100%.
+- Removeu essa lógica condicional do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
