@@ -101,6 +101,7 @@ import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-u
 import {
   obterBioSobreExibicaoPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterRotuloAcaoBloqueioPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
@@ -1227,13 +1228,11 @@ function PerfilAutorPageContent() {
                         <MenuPerfilIcone tipo="bloquear" />
                       </span>
                       <strong style={menuItemTextStyle}>
-                        {bloqueioPerfilSalvando
-                          ? estadoBloqueioPerfil.bloqueadoPorMim
-                            ? "Desbloqueando..."
-                            : "Bloqueando..."
-                          : estadoBloqueioPerfil.bloqueadoPorMim
-                            ? "Desbloquear usuário"
-                            : "Bloquear usuário"}
+                        {obterRotuloAcaoBloqueioPerfilAutor({
+                          bloqueadoPorMim:
+                            estadoBloqueioPerfil.bloqueadoPorMim,
+                          salvando: bloqueioPerfilSalvando,
+                        })}
                       </strong>
                       <span style={menuChevronStyle}>›</span>
                     </button>
