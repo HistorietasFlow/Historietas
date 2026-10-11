@@ -282,6 +282,14 @@ test("sincronizações permanecem delegadas após extrair ações da Biblioteca"
     /sincronizarTabelaUsuario\(\s*"concluidas",/,
   );
   assert.match(
+    libraryCollectionActionsSource,
+    /sincronizarTabelaUsuario\(\s*"salvos_capitulos",/,
+  );
+  assert.match(
+    libraryCollectionActionsSource,
+    /sincronizarTabelaUsuario\(\s*"seguindo_obras",/,
+  );
+  assert.match(
     pagina,
     /sincronizarAutorSeguidoSupabase\(\s*autorNormalizado,/,
   );
