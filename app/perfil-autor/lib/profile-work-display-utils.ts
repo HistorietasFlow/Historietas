@@ -2,8 +2,14 @@ import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { normalizarTexto } from "../../../lib/utils";
 import { TOP_FIVE_MAXIMO } from "../constants";
 import type { AutorPerfil, ObraLocal } from "../types";
-import { mesclarObrasPorIdSlug } from "./data-normalizers";
-import { encontrarObraPorIdentificadorTopFivePerfil } from "./library-normalizers";
+import {
+  mesclarObrasPorIdSlug,
+  obterTotalConcluidasObraPerfilAutor,
+} from "./data-normalizers";
+import {
+  colecaoTemObraPerfilBiblioteca,
+  encontrarObraPorIdentificadorTopFivePerfil,
+} from "./library-normalizers";
 import { obterTimestampData } from "./profile-formatters";
 
 export function obterObrasVisiveisPerfilAutor({
@@ -72,4 +78,36 @@ export function obterObrasDestaquePerfilAutor({
   });
 
   return Array.from(obrasSelecionadas.values()).slice(0, TOP_FIVE_MAXIMO);
+}
+
+
+export function obterTotalObrasConcluidasPerfilAutor({
+  perfilParaMostrar,
+  totaisInteracoesObras,
+  obrasConcluidas,
+}: {
+  perfilParaMostrar: AutorPerfil | null;
+  totaisInteracoesObras: Parameters<
+    typeof obterTotalConcluidasObraPerfilAutor
+  >[1];
+  obrasConcluidas: string[];
+}) {
+  if (!perfilParaMostrar) {
+    return 0;
+  }
+
+  return perfilParaMostrar.obras.reduce((total, obra) => {
+    const totalConcluidasReais = obterTotalConcluidasObraPerfilAutor(
+      obra,
+      totaisInteracoesObras,
+    );
+    const concluidaLocal = colecaoTemObraPerfilBiblioteca(
+      obrasConcluidas,
+      obra,
+    )
+      ? 1
+      : 0;
+
+    return total + Math.max(totalConcluidasReais, concluidaLocal);
+  }, 0);
 }
