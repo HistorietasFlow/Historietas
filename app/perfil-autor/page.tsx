@@ -40,6 +40,7 @@ import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary
 import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
 import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-actions";
 import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
+import { usePerfilAutorTopFiveStorageSync } from "./hooks/use-perfil-autor-top-five-storage-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
 import type {
@@ -169,10 +170,7 @@ import {
   obterAvaliacaoAutorLocal,
   salvarAvaliacaoAutorLocal,
 } from "./lib/profile-local-author-utils";
-import {
-  carregarCurtidasTopFiveLocais,
-  carregarTopFivePerfilAutor,
-} from "./lib/profile-top-five-local-utils";
+import { carregarCurtidasTopFiveLocais } from "./lib/profile-top-five-local-utils";
 import { carregarCurtidasTopFivePerfil } from "./lib/profile-top-five-supabase-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
@@ -1219,39 +1217,11 @@ function PerfilAutorPageContent() {
     router.replace(criarLoginHrefPerfilAutor());
   }, [redirecionandoParaLogin, router]);
 
-  useEffect(() => {
-    const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
-    const topFiveUserId = perfilAutorId || usuarioIdLogado.trim();
-
-    function atualizarTopFivePerfil() {
-      setTopFiveObraIds(carregarTopFivePerfilAutor(topFiveUserId));
-    }
-
-    const atualizarTopFiveTimer = window.setTimeout(
-      atualizarTopFivePerfil,
-      0,
-    );
-
-    function atualizarQuandoVoltarParaTela() {
-      if (document.visibilityState !== "hidden") {
-        atualizarTopFivePerfil();
-      }
-    }
-
-    window.addEventListener("focus", atualizarTopFivePerfil);
-    window.addEventListener("storage", atualizarTopFivePerfil);
-    document.addEventListener("visibilitychange", atualizarQuandoVoltarParaTela);
-
-    return () => {
-      window.clearTimeout(atualizarTopFiveTimer);
-      window.removeEventListener("focus", atualizarTopFivePerfil);
-      window.removeEventListener("storage", atualizarTopFivePerfil);
-      document.removeEventListener(
-        "visibilitychange",
-        atualizarQuandoVoltarParaTela,
-      );
-    };
-  }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
+  usePerfilAutorTopFiveStorageSync({
+    perfilAutorId: perfilParaMostrar?.autorId || "",
+    usuarioIdLogado,
+    setTopFiveObraIds,
+  });
 
   useEffect(() => {
     const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
