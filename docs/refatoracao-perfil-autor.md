@@ -222,3 +222,9 @@
 
 - Extraiu `alternarBloqueioPerfil` para `usePerfilAutorBlockActions`.
 - Manteve validação de perfil/usuário, confirmação, bloqueio/desbloqueio, mensagens, limpeza do relacionamento e permissões após bloqueio.
+
+
+## Fase 937 — seguimento de perfil
+
+- Extraiu `alternarSeguirAutor` para `usePerfilAutorFollowActions`.
+- Manteve autenticação, seguir/deixar de seguir/cancelar solicitação, contador de seguidores, notificações sociais e fallback local por autor.
