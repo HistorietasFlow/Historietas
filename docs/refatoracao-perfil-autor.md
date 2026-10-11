@@ -299,3 +299,8 @@
 
 - Extraiu o `useEffect` que combina fallback local e métricas remotas da avaliação do autor para `usePerfilAutorRatingSync`.
 - Manteve limpeza da avaliação no próprio perfil, leitura de sessão, métricas remotas, proteção contra sobrescrever estado em salvamento, timer inicial e cancelamento no unmount.
+
+## Fase 951 — redirecionamento para login
+
+- Extraiu o `useEffect` de redirecionamento para autenticação para `usePerfilAutorLoginRedirect`.
+- Manteve a guarda por `redirecionandoParaLogin`, o uso de `router.replace` e o helper seguro `criarLoginHrefPerfilAutor`.

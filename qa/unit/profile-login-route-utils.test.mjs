@@ -17,6 +17,13 @@ const sessionActionsSource = readFileSync(
   ),
   "utf8",
 );
+const loginRedirectSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-login-redirect.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
@@ -102,17 +109,18 @@ test("rejeita destino iniciado por // e mantém fallback seguro", async () => {
 
 test("Perfil de Autor delega a rota de login para o helper", () => {
   assert.match(
-    pagina,
-    /import \{ criarLoginHrefPerfilAutor \} from "\.\/lib\/profile-login-route-utils";/,
+    loginRedirectSource,
+    /import \{ criarLoginHrefPerfilAutor \} from "\.\.\/lib\/profile-login-route-utils";/,
   );
   assert.match(
-    pagina,
+    loginRedirectSource,
     /router\.replace\(criarLoginHrefPerfilAutor\(\)\)/,
   );
   assert.match(
     sessionActionsSource,
     /import \{ criarLoginHrefPerfilAutor \} from "\.\.\/lib\/profile-login-route-utils";/,
   );
+  assert.doesNotMatch(pagina, /router\.replace\(criarLoginHrefPerfilAutor\(\)\)/);
   assert.doesNotMatch(pagina, /function criarLoginHrefPerfilAutor\(/);
   assert.match(source, /export function criarLoginHrefPerfilAutor\(/);
   assert.match(source, /!redirectTo\.startsWith\("\/\/"\)/);
