@@ -252,3 +252,9 @@
 
 - Extraiu `salvarEdicaoPerfilAutor` para `usePerfilAutorProfileEditorSaveActions`.
 - Manteve validações de identidade, upload/remoção de avatar, persistência de perfil, metadados Auth, sincronização do nome nas obras, fallbacks locais e mensagens finais.
+
+
+## Fase 942 — sincronização local do TOP 5
+
+- Extraiu o `useEffect` de sincronização local do TOP 5 para `usePerfilAutorTopFiveStorageSync`.
+- Manteve o carregamento inicial por timer e os listeners de `focus`, `storage` e `visibilitychange`, incluindo a limpeza no unmount.
