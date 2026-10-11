@@ -309,3 +309,8 @@
 
 - Extraiu o `useEffect` que carrega os totais reais de interações das obras para `usePerfilAutorInteractionTotalsSync`.
 - Manteve fallback vazio para lista sem obras, leitura remota pelo loader e cancelamento antes de aplicar uma resposta obsoleta.
+
+## Fase 953 — sincronização do contador de notificações
+
+- Extraiu o `useEffect` do contador de notificações não lidas para `usePerfilAutorNotificationCountSync`.
+- Manteve fallback para usuário inválido, consultas de notificações e solicitações, deduplicação, realtime, polling, foco/visibilidade, debounce e limpeza do canal.
