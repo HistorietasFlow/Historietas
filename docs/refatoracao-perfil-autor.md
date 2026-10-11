@@ -439,3 +439,10 @@
 - Extraiu a consolidação das listas do Diário para `montarItensDiarioTudoPerfil` em `profile-diary-merge-utils.ts`.
 - Preservou deduplicação por obra, prioridade dos tipos, escolha do item mais recente, fallback por slug e ordenação por data.
 - Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 973 — seleção da obra com menu aberto
+
+- Extraiu a resolução da obra associada ao menu de ações para `obterObraMenuAbertaPerfilAutor`.
+- Preservou seleção por ID exato, retorno nulo sem seleção e retorno nulo para obra inexistente.
+- Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.

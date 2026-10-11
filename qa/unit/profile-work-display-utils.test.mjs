@@ -82,6 +82,7 @@ const javascript = typescript.transpileModule(
 ).outputText;
 
 const {
+  obterObraMenuAbertaPerfilAutor,
   obterObrasVisiveisPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterTotalObrasConcluidasPerfilAutor,
@@ -236,4 +237,15 @@ test("total de concluídas retorna zero sem perfil", () => {
     }),
     0,
   );
+});
+
+
+test("seleção da obra com menu aberto usa ID exato e retorna null sem seleção", () => {
+  const obraA = obra("a");
+  const obraB = obra("b");
+  const obras = [obraA, obraB];
+
+  assert.equal(obterObraMenuAbertaPerfilAutor(obras, ""), null);
+  assert.equal(obterObraMenuAbertaPerfilAutor(obras, "b"), obraB);
+  assert.equal(obterObraMenuAbertaPerfilAutor(obras, "inexistente"), null);
 });

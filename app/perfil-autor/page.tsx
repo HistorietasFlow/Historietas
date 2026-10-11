@@ -117,6 +117,7 @@ import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-u
 import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
+  obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
   obterTotalObrasConcluidasPerfilAutor,
@@ -898,16 +899,14 @@ function PerfilAutorPageContent() {
     [perfilParaMostrar],
   );
 
-  const obraMenuAberta = useMemo(() => {
-    if (!obraMenuAbertoId) {
-      return null;
-    }
-
-    return (
-      obrasDoPerfilFiltradas.find((obra) => obra.id === obraMenuAbertoId) ||
-      null
-    );
-  }, [obraMenuAbertoId, obrasDoPerfilFiltradas]);
+  const obraMenuAberta = useMemo(
+    () =>
+      obterObraMenuAbertaPerfilAutor(
+        obrasDoPerfilFiltradas,
+        obraMenuAbertoId,
+      ),
+    [obraMenuAbertoId, obrasDoPerfilFiltradas],
+  );
 
 
   const {
