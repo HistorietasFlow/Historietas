@@ -122,6 +122,7 @@ import { obterResumoEstatisticasPerfilAutor } from "./lib/profile-summary-stats"
 import {
   encontrarItemBibliotecaMenuAberto,
   obterMetaMenuBibliotecaPerfil,
+  obterRotuloAcaoRemoverBibliotecaPerfil,
   obterRotuloBibliotecaPerfil,
 } from "./lib/profile-library-display-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
@@ -2398,11 +2399,9 @@ function PerfilAutorPageContent() {
                       }}
                       style={workActionSheetItemStyle}
                     >
-                      {abaBibliotecaPerfil === "lendo-agora"
-                        ? "Parar leitura"
-                        : abaBibliotecaPerfil === "historico"
-                          ? "Limpar histórico"
-                          : "Remover"}
+                      {obterRotuloAcaoRemoverBibliotecaPerfil(
+                        abaBibliotecaPerfil,
+                      )}
                     </button>
 
                     <button
