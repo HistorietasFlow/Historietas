@@ -86,6 +86,21 @@ export function obterDadosExibicaoPerfilAutor({
 }
 
 
+export function obterRotuloAcaoBloqueioPerfilAutor({
+  bloqueadoPorMim,
+  salvando,
+}: {
+  bloqueadoPorMim: boolean;
+  salvando: boolean;
+}) {
+  if (salvando) {
+    return bloqueadoPorMim ? "Desbloqueando..." : "Bloqueando...";
+  }
+
+  return bloqueadoPorMim ? "Desbloquear usuário" : "Bloquear usuário";
+}
+
+
 export function obterRotuloVisibilidadeUsernamePerfilAutor(
   usernameVisivel: boolean,
 ) {

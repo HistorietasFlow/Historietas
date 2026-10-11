@@ -55,6 +55,7 @@ const javascript = typescript.transpileModule(
 const {
   obterBioSobreExibicaoPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterRotuloAcaoBloqueioPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } = await import(
@@ -190,6 +191,54 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
   assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
   assert.equal(vazio.caracteresRestantesBioSobre, 160);
+});
+
+
+test("rótulo da ação de bloqueio preserva estado e salvamento", () => {
+  assert.equal(
+    obterRotuloAcaoBloqueioPerfilAutor({
+      bloqueadoPorMim: false,
+      salvando: false,
+    }),
+    "Bloquear usuário",
+  );
+  assert.equal(
+    obterRotuloAcaoBloqueioPerfilAutor({
+      bloqueadoPorMim: true,
+      salvando: false,
+    }),
+    "Desbloquear usuário",
+  );
+  assert.equal(
+    obterRotuloAcaoBloqueioPerfilAutor({
+      bloqueadoPorMim: false,
+      salvando: true,
+    }),
+    "Bloqueando...",
+  );
+  assert.equal(
+    obterRotuloAcaoBloqueioPerfilAutor({
+      bloqueadoPorMim: true,
+      salvando: true,
+    }),
+    "Desbloqueando...",
+  );
+});
+
+
+test("página delega o rótulo da ação de bloqueio ao helper", () => {
+  assert.match(
+    pagina,
+    /obterRotuloAcaoBloqueioPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterRotuloAcaoBloqueioPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /bloqueioPerfilSalvando[\s\S]{0,220}\? "Desbloqueando\.\.\."[\s\S]{0,220}"Bloquear usuário"/,
+  );
 });
 
 
