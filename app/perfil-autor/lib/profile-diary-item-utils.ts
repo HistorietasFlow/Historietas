@@ -164,17 +164,22 @@ export function criarHrefListaDiarioPerfilAutor(
   perfilAutorId: string,
   obraId = "",
 ) {
+  const perfilIdLimpo = perfilAutorId.trim();
+
+  if (!obraId) {
+    return `/listas?modo=perfil&origem=diario&categoria=tudo${
+      perfilIdLimpo
+        ? `&usuario=${encodeURIComponent(perfilIdLimpo)}`
+        : ""
+    }`;
+  }
+
   const parametros = new URLSearchParams({
     modo: "perfil",
     origem: "diario",
     categoria: "tudo",
+    obra: obraId,
   });
-
-  if (obraId) {
-    parametros.set("obra", obraId);
-  }
-
-  const perfilIdLimpo = perfilAutorId.trim();
 
   if (perfilIdLimpo) {
     parametros.set("usuario", perfilIdLimpo);
