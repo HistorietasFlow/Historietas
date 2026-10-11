@@ -525,3 +525,11 @@
 - Substituiu quatro construções duplicadas na página, preservando prioridade de `link`, depois `slug` e fallback pelo título.
 - Removeu o uso direto de `criarSlugBase` da página e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 985 — métricas resumidas das obras
+
+- Extraiu curtidas, comentários e visualizações formatadas para `obterMetricasResumoObraPerfilAutor`.
+- Substituiu três blocos duplicados na Biblioteca, grade de obras e sheet de ações.
+- Preservou as fontes existentes de interações e a formatação numérica, sem alterar UI, schema, RLS ou Supabase.
+- Ampliou a cobertura unitária já registrada em `test:session`.
