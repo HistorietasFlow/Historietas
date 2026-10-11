@@ -269,7 +269,7 @@ test("Perfil de Autor delega construção e resolução de itens ao carregador d
 test("hrefs da página Listas preservam perfil, obra e encoding", () => {
   assert.equal(
     criarHrefListaDiarioPerfilAutor(" usuario 1 "),
-    "/listas?modo=perfil&origem=diario&categoria=tudo&usuario=usuario+1",
+    "/listas?modo=perfil&origem=diario&categoria=tudo&usuario=usuario%201",
   );
   assert.equal(
     criarHrefListaDiarioPerfilAutor("usuario-2", "obra com espaço"),
