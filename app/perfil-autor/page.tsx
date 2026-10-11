@@ -126,6 +126,7 @@ import {
 } from "./lib/profile-work-display-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import { montarItensBibliotecaPerfilAutor } from "./lib/profile-library-items-builder";
+import { obterTotaisBibliotecaPerfilAutor } from "./lib/profile-library-totals";
 import {
   encontrarItemBibliotecaMenuAberto,
   obterRotuloBibliotecaPerfil,
@@ -1042,30 +1043,28 @@ function PerfilAutorPageContent() {
     ],
   );
 
-  const obrasSeguidasPerfilTotal = useMemo(() => {
-    const totalPorObrasCarregadas = obras.filter((obra) =>
-      colecaoTemObraPerfilBiblioteca(obrasSeguidasBiblioteca, obra),
-    ).length;
-
-    return Math.max(totalPorObrasCarregadas, itensBibliotecaQueroLer.length);
-  }, [obras, obrasSeguidasBiblioteca, itensBibliotecaQueroLer.length]);
-
-  const obrasConcluidasPerfilTotal = useMemo(() => {
-    const totalPorObrasCarregadas = obras.filter((obra) =>
-      colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra),
-    ).length;
-
-    return Math.max(
-      obrasConcluidasPerfilPorObrasDoAutor,
-      totalPorObrasCarregadas,
+  const {
+    obrasSeguidasPerfilTotal,
+    obrasConcluidasPerfilTotal,
+  } = useMemo(
+    () =>
+      obterTotaisBibliotecaPerfilAutor({
+        obras,
+        obrasSeguidasBiblioteca,
+        obrasConcluidas,
+        itensBibliotecaQueroLerTotal: itensBibliotecaQueroLer.length,
+        itensBibliotecaConcluidasTotal: itensBibliotecaConcluidas.length,
+        obrasConcluidasPerfilPorObrasDoAutor,
+      }),
+    [
+      obras,
+      obrasSeguidasBiblioteca,
+      obrasConcluidas,
+      itensBibliotecaQueroLer.length,
       itensBibliotecaConcluidas.length,
-    );
-  }, [
-    obras,
-    obrasConcluidas,
-    obrasConcluidasPerfilPorObrasDoAutor,
-    itensBibliotecaConcluidas.length,
-  ]);
+      obrasConcluidasPerfilPorObrasDoAutor,
+    ],
+  );
 
   const itensBibliotecaAtivos = useMemo(() => {
     return selecionarItensBibliotecaPerfil({
