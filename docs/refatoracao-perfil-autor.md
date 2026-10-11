@@ -269,3 +269,8 @@
 
 - Extraiu o `useEffect` de carregamento das permissões das abas para `usePerfilAutorPrivacySync`.
 - Manteve fallback para IDs inválidos, permissões do próprio perfil, leitura remota para visitantes, recarga por relacionamento e cancelamento no unmount.
+
+## Fase 945 — correção da aba visível
+
+- Extraiu o `useEffect` que corrige a aba ativa quando ela deixa de estar visível para `usePerfilAutorVisibleTabSync`.
+- Manteve a validação das cinco abas, o fallback para a primeira aba permitida, o timer assíncrono e a limpeza no unmount.
