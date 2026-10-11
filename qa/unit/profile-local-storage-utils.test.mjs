@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileLoadSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const authIdentitySyncSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-auth-identity-sync.ts",
@@ -188,8 +195,8 @@ test("falhas de localStorage preservam retornos seguros", () => {
 
 test("Perfil de Autor delega exclusivamente os helpers locais de storage", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarJsonUsuarioPerfilAutor,[\s\S]*?carregarListaIdsPerfilBiblioteca,[\s\S]*?salvarJsonUsuarioPerfilAutor,[\s\S]*?salvarListaIdsPerfilBiblioteca,[\s\S]*?\} from "\.\/lib\/profile-local-storage-utils";/,
+    profileLoadSyncSource,
+    /import \{[\s\S]*?carregarJsonUsuarioPerfilAutor,[\s\S]*?carregarListaIdsPerfilBiblioteca,[\s\S]*?salvarJsonUsuarioPerfilAutor,[\s\S]*?salvarListaIdsPerfilBiblioteca,[\s\S]*?\} from "\.\.\/lib\/profile-local-storage-utils";/,
   );
 
   for (const helper of [
