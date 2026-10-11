@@ -694,3 +694,10 @@
 - Preservou os estados `Seguir`, `Seguindo`, `Solicitado`, `Cancelar solicitação`, `Deixar de seguir` e o indicador `...` durante salvamento.
 - Removeu as decisões de texto correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1007 — formatação do badge de notificações
+
+- Extraiu a formatação visual da contagem não lida para `formatarContagemNotificacoesPerfilAutor`.
+- Preservou valores até 99 e o teto visual `99+` acima desse limite.
+- Reutilizou a mesma contagem no conteúdo e no `aria-label`, removendo a lógica duplicada de `page.tsx`.
+- Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.

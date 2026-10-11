@@ -53,6 +53,7 @@ const javascript = typescript.transpileModule(
 ).outputText;
 
 const {
+  formatarContagemNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
@@ -191,6 +192,35 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
   assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
   assert.equal(vazio.caracteresRestantesBioSobre, 160);
+});
+
+
+test("formatação do badge de notificações preserva limite visual", () => {
+  assert.equal(formatarContagemNotificacoesPerfilAutor(0), "0");
+  assert.equal(formatarContagemNotificacoesPerfilAutor(7), "7");
+  assert.equal(formatarContagemNotificacoesPerfilAutor(99), "99");
+  assert.equal(formatarContagemNotificacoesPerfilAutor(100), "99+");
+  assert.equal(formatarContagemNotificacoesPerfilAutor(250), "99+");
+});
+
+
+test("página reutiliza a contagem formatada no badge de notificações", () => {
+  assert.match(
+    pagina,
+    /formatarContagemNotificacoesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/formatarContagemNotificacoesPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /\$\{notificacoesNaoLidasFormatadas\} notificações não lidas/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /notificacoesNaoLidas > 99 \? "99\+" : notificacoesNaoLidas/,
+  );
 });
 
 
