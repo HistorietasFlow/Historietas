@@ -330,3 +330,9 @@
 - Extraiu o último `useEffect` restante da página para `usePerfilAutorProfileLoadSync`.
 - Manteve parâmetros de rota, guardas contra troca de conta, carregamento de obras/perfil/estado do usuário, mesclagem de interações, complementação da Biblioteca, persistência local e commit final do estado.
 - A página `app/perfil-autor/page.tsx` deixa de conter `useEffect` diretamente; os efeitos passam a ficar delegados aos hooks especializados.
+
+## Fase 957 — seleção da aba Biblioteca
+
+- Extraiu a escolha dos itens ativos das seis abas da Biblioteca para `selecionarItensBibliotecaPerfil`.
+- Preservou referências das listas individuais, ordem da mesclagem na aba Tudo e dependências do `useMemo`.
+- Adicionou cobertura em `test:session`, sem alterar schema, RLS ou UI.
