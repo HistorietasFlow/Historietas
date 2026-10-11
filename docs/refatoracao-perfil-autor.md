@@ -397,3 +397,10 @@
 - Extraiu a escolha entre avaliação do autor e avaliação do Diário para `obterEstadoAvaliacaoPerfilAutor`.
 - Preservou visibilidade privada, visibilidade do próprio perfil, fallback sem perfil e seleção do resumo exibido.
 - Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 967 — exibição das obras do perfil
+
+- Extraiu a filtragem 18+, ordenação por data e montagem do TOP 5 para `profile-work-display-utils.ts`.
+- Preservou a ordem selecionada dos destaques, deduplicação, limite de cinco itens e acesso do próprio autor a conteúdo 18+.
+- Adicionou cobertura comportamental e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
