@@ -16,7 +16,7 @@ import {
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
 } from "../../lib/historietasPrivacy";
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
@@ -493,10 +493,14 @@ function PerfilAutorPageContent() {
     setCarregando,
   });
 
-  const perfisAutores = useMemo(
-    () => montarPerfisAutoresPorObras(obras, totaisInteracoesObras),
-    [obras, totaisInteracoesObras],
+  const perfisAutores = montarPerfisAutoresPorObras(
+    obras,
+    totaisInteracoesObras,
   );
+
+  const perfilUsuarioRemotoComoAutor = perfilUsuarioRemoto?.userId
+    ? criarPerfilUsuarioRemotoComoAutor(perfilUsuarioRemoto)
+    : null;
 
   const {
     autorNaoEncontrado,
@@ -504,27 +508,14 @@ function PerfilAutorPageContent() {
     perfilParaMostrar,
     perfilPertenceAoUsuario,
     redirecionandoParaLogin,
-  } = useMemo(() => {
-    const perfilUsuarioRemotoComoAutor = perfilUsuarioRemoto?.userId
-      ? criarPerfilUsuarioRemotoComoAutor(perfilUsuarioRemoto)
-      : null;
-
-    return resolverEstadoPerfilAutor({
-      perfisAutores,
-      autorSelecionado,
-      autorIdSelecionado,
-      usuarioIdLogado,
-      perfilUsuarioRemotoComoAutor,
-      autenticacaoCarregada,
-    });
-  }, [
+  } = resolverEstadoPerfilAutor({
     perfisAutores,
     autorSelecionado,
     autorIdSelecionado,
     usuarioIdLogado,
-    perfilUsuarioRemoto,
+    perfilUsuarioRemotoComoAutor,
     autenticacaoCarregada,
-  ]);
+  });
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,

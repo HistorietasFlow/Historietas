@@ -133,17 +133,17 @@ test("preserva autor não encontrado e propriedade pelo ID da URL", () => {
 });
 
 
-test("página consolida a conversão do perfil remoto no memo de resolução", () => {
+test("página resolve perfil remoto e estado exibido sem useMemo", () => {
+  assert.match(
+    pagina,
+    /const perfilUsuarioRemotoComoAutor = perfilUsuarioRemoto\?\.userId[\s\S]*?criarPerfilUsuarioRemotoComoAutor\(perfilUsuarioRemoto\)/,
+  );
+  assert.match(
+    pagina,
+    /\} = resolverEstadoPerfilAutor\(\{/,
+  );
   assert.doesNotMatch(
     pagina,
-    /const perfilUsuarioRemotoComoAutor = useMemo/,
-  );
-  assert.match(
-    pagina,
-    /const perfilUsuarioRemotoComoAutor = perfilUsuarioRemoto\?\.userId[\s\S]*?criarPerfilUsuarioRemotoComoAutor\(perfilUsuarioRemoto\)[\s\S]*?resolverEstadoPerfilAutor\(\{/,
-  );
-  assert.match(
-    pagina,
-    /perfilUsuarioRemoto,\s*autenticacaoCarregada,\s*\]\);/,
+    /resolverEstadoPerfilAutor\([\s\S]{0,400}useMemo|useMemo\([\s\S]{0,400}resolverEstadoPerfilAutor/,
   );
 });
