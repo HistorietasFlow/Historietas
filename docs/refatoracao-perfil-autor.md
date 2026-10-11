@@ -264,3 +264,8 @@
 
 - Extraiu o `useEffect` que combina estado local e Supabase das curtidas do TOP 5 para `usePerfilAutorTopFiveLikesSync`.
 - Manteve fallback local imediato, leitura remota, cancelamento, timer inicial e listeners de `focus` e `storage`.
+
+## Fase 944 — sincronização da privacidade do perfil
+
+- Extraiu o `useEffect` de carregamento das permissões das abas para `usePerfilAutorPrivacySync`.
+- Manteve fallback para IDs inválidos, permissões do próprio perfil, leitura remota para visitantes, recarga por relacionamento e cancelamento no unmount.
