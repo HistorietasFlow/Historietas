@@ -425,3 +425,10 @@
 - Extraiu os totais de obras seguidas e concluídas para `obterTotaisBibliotecaPerfilAutor`.
 - Preservou os fallbacks entre obras carregadas, itens da Biblioteca e total remoto de concluídas.
 - Adicionou cobertura comportamental e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 971 — resumo de estatísticas do perfil
+
+- Extraiu gêneros principais, total de visualizações, rascunhos e obras sem capítulos para `obterResumoEstatisticasPerfilAutor`.
+- Preservou ordenação por frequência, desempate alfabético, limite de cinco gêneros e normalização numérica.
+- Adicionou cobertura comportamental e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
