@@ -88,7 +88,6 @@ import {
   normalizarAbaPerfilAutor,
   normalizarUsernamePerfilAutor,
   obterTagPrincipalPerfilAutor,
-  obterTimestampData,
 } from "./lib/profile-formatters";
 import {
   encontrarCapituloParaContinuar,
