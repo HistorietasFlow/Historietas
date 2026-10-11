@@ -40,6 +40,7 @@ import { usePerfilAutorRatingActions } from "./hooks/use-perfil-autor-rating-act
 import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary-rating-actions";
 import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
 import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-actions";
+import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -176,12 +177,8 @@ import {
 import {
   carregarCurtidasTopFiveLocais,
   carregarTopFivePerfilAutor,
-  salvarCurtidaTopFiveLocal,
 } from "./lib/profile-top-five-local-utils";
-import {
-  carregarCurtidasTopFivePerfil,
-  salvarCurtidaTopFiveSupabase,
-} from "./lib/profile-top-five-supabase-utils";
+import { carregarCurtidasTopFivePerfil } from "./lib/profile-top-five-supabase-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -1863,85 +1860,18 @@ function PerfilAutorPageContent() {
       ? perfilSalvoAutor.mostrarDestaques
       : mostrarDestaquesVisitante);
 
-  async function alternarCurtidaTopFivePerfil() {
-    const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
-    const usuarioIdEsperado = identidadeEsperada.usuarioId.trim();
-    const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
-    const usuarioId = usuarioIdLogado.trim();
-
-    function curtidaTopFiveAindaAtual() {
-      return execucaoCarregamentoPerfilAutorEstaAtual({
-        cancelada: false,
-        identidadeEsperada,
-        identidadeAtual: identidadeAutenticadaPerfilRef.current,
-      });
-    }
-
-    if (!perfilAutorId) {
-      return;
-    }
-
-    if (
-      !curtidaTopFiveAindaAtual() ||
-      usuarioIdEsperado !== usuarioId
-    ) {
-      return;
-    }
-
-    if (!usuarioId) {
-      setMensagemAcao("Entre para curtir o TOP 5 deste perfil.");
-      return;
-    }
-
-    if (topFiveCurtidaSalvando) {
-      return;
-    }
-
-    const proximaCurtida = !topFiveCurtidoPorMim;
-
-    setTopFiveCurtidaSalvando(true);
-    setTopFiveCurtidoPorMim(proximaCurtida);
-    setTopFiveCurtidasTotal((totalAtual) =>
-      Math.max(0, totalAtual + (proximaCurtida ? 1 : -1)),
-    );
-    salvarCurtidaTopFiveLocal(
-      perfilAutorId,
-      usuarioIdEsperado,
-      proximaCurtida,
-    );
-
-    const salvouRemoto = await salvarCurtidaTopFiveSupabase(
-      perfilAutorId,
-      usuarioIdEsperado,
-      proximaCurtida,
-      curtidaTopFiveAindaAtual,
-    );
-
-    if (!curtidaTopFiveAindaAtual()) {
-      return;
-    }
-
-    if (salvouRemoto) {
-      const estadoAtualizado = await carregarCurtidasTopFivePerfil(
-        perfilAutorId,
-        usuarioIdEsperado,
-        curtidaTopFiveAindaAtual,
-      );
-
-      if (!curtidaTopFiveAindaAtual()) {
-        return;
-      }
-
-      setTopFiveCurtidasTotal(estadoAtualizado.total);
-      setTopFiveCurtidoPorMim(estadoAtualizado.curtiu);
-    }
-
-    if (!curtidaTopFiveAindaAtual()) {
-      return;
-    }
-
-    setTopFiveCurtidaSalvando(false);
-  }
+  const { alternarCurtidaTopFivePerfil } =
+    usePerfilAutorTopFiveLikeActions({
+      identidadeAutenticadaPerfilRef,
+      perfilParaMostrar,
+      usuarioIdLogado,
+      topFiveCurtidaSalvando,
+      topFiveCurtidoPorMim,
+      setMensagemAcao,
+      setTopFiveCurtidaSalvando,
+      setTopFiveCurtidoPorMim,
+      setTopFiveCurtidasTotal,
+    });
 
   useEffect(() => {
     const perfilAtual = perfilParaMostrar;
