@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileLoadSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const diaryLoaderSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-diary-loader.ts",
@@ -331,8 +338,8 @@ test("Perfil de Autor delega carregadores publicados entre página e Diário", (
     /import \{[\s\S]*?carregarTodasPaginasPorLotesSupabase,[\s\S]*?carregarTodasPaginasSupabase,[\s\S]*?\} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/paginacao\.mjs";/,
   );
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarObrasPublicadasPorIdsSupabase,[\s\S]*?carregarObrasPublicadasSupabase,[\s\S]*?\} from "\.\/lib\/profile-published-works-loader";/,
+    profileLoadSyncSource,
+    /import \{[\s\S]*?carregarObrasPublicadasPorIdsSupabase,[\s\S]*?carregarObrasPublicadasSupabase,[\s\S]*?\} from "\.\.\/lib\/profile-published-works-loader";/,
   );
   assert.match(
     diaryLoaderSource,
@@ -347,7 +354,7 @@ test("Perfil de Autor delega carregadores publicados entre página e Diário", (
     assert.doesNotMatch(pagina, new RegExp(`async function ${helper}\\(`));
   }
 
-  assert.match(pagina, /await carregarObrasPublicadasSupabase\(\)/);
+  assert.match(profileLoadSyncSource, /await carregarObrasPublicadasSupabase\(\)/);
   assert.match(
     diaryLoaderSource,
     /await carregarObrasPublicadasPorIdsSupabase\([\s\S]*?idsObrasFaltantes/,
