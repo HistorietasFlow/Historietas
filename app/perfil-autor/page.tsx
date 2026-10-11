@@ -810,7 +810,6 @@ function PerfilAutorPageContent() {
     autorPodeReceberAvaliacao,
     perfilUsaAvaliacaoDiario,
     avaliacaoDiarioPrivada,
-    avaliacaoDiarioResumoVisivel,
     avaliacaoResumoPerfilVisivel,
     avaliacaoResumoPerfil,
     avaliacaoResumoEhDiario,
