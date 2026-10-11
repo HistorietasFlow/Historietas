@@ -488,3 +488,10 @@
 - Removeu o `useMemo` intermediário do resumo de estatísticas do perfil.
 - Manteve toda a derivação em `obterResumoEstatisticasPerfilAutor`, sem alterar gêneros, visualizações, rascunhos ou obras sem capítulos.
 - Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 980 — diário consolidado sem memoização manual
+
+- Removeu o `useMemo` intermediário de `itensDiarioTudo`.
+- Manteve toda a consolidação em `montarItensDiarioTudoPerfil`, sem alterar ordenação ou conteúdo do diário.
+- Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
