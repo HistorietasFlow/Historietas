@@ -123,6 +123,7 @@ import {
   encontrarItemBibliotecaMenuAberto,
   obterMetaMenuBibliotecaPerfil,
   obterRotuloAcaoRemoverBibliotecaPerfil,
+  obterRotulosAcoesColecoesBibliotecaPerfil,
   obterRotuloBibliotecaPerfil,
 } from "./lib/profile-library-display-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
@@ -2301,6 +2302,15 @@ function PerfilAutorPageContent() {
               obrasSeguidasBiblioteca,
             });
             const metaSheet = obterMetaMenuBibliotecaPerfil(item);
+            const {
+              rotuloQueroLer,
+              rotuloFavorita,
+              rotuloConcluida,
+            } = obterRotulosAcoesColecoesBibliotecaPerfil({
+              obraNoQueroLer,
+              obraFavorita,
+              obraConcluida,
+            });
 
             return (
               <ProfileWorkActionSheetOverlay
@@ -2344,7 +2354,7 @@ function PerfilAutorPageContent() {
                       }
                     >
                       <span>
-                        {obraNoQueroLer ? "Remover do Quero ler" : "Quero ler"}
+                        {rotuloQueroLer}
                       </span>
                       <span style={criarProfileSelectionDotStyle(obraNoQueroLer)}>
                         {obraNoQueroLer ? "✓" : ""}
@@ -2364,7 +2374,7 @@ function PerfilAutorPageContent() {
                       }
                     >
                       <span>
-                        {obraFavorita ? "Remover favorita" : "Favoritar"}
+                        {rotuloFavorita}
                       </span>
                       <span style={criarProfileSelectionDotStyle(obraFavorita)}>
                         {obraFavorita ? "✓" : ""}
@@ -2384,7 +2394,7 @@ function PerfilAutorPageContent() {
                       }
                     >
                       <span>
-                        {obraConcluida ? "Marcar como não concluída" : "Concluir"}
+                        {rotuloConcluida}
                       </span>
                       <span style={criarProfileSelectionDotStyle(obraConcluida)}>
                         {obraConcluida ? "✓" : ""}
