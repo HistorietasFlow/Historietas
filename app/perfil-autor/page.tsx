@@ -41,6 +41,7 @@ import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary
 import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
 import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-actions";
 import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
+import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -1754,6 +1755,18 @@ function PerfilAutorPageContent() {
       setMenuPerfilAberto,
       setEditorPerfilAberto,
     });
+  const { salvarPerfilAutor } = usePerfilAutorProfileSaveActions({
+    autorChavePerfil,
+    perfisAutoresSalvos,
+    usuarioIdLogado,
+    perfilParaMostrar,
+    podeEditarPerfil,
+    perfilUsuarioRemotoAtivo,
+    setPerfisAutoresSalvos,
+    setPerfilUsuarioRemoto,
+    setMensagemAcao,
+  });
+
   const { atualizarBioSobreAutor, alternarDestaquesPerfil } =
     usePerfilAutorAboutActions({
       avatarAutor,
@@ -2489,76 +2502,6 @@ function PerfilAutorPageContent() {
   const comunidadeAutorReviewsHref = comunidadeAutorBusca
     ? `${comunidadeAutorHref}&tipo=Review`
     : "/comunidade?tipo=Review";
-
-  function salvarPerfilAutor(novoPerfil: PerfilAutorSalvo) {
-    if (!autorChavePerfil) {
-      return;
-    }
-
-    const perfilNormalizado = {
-      avatar: novoPerfil.avatar,
-      avatarNome: novoPerfil.avatarNome,
-      bio: novoPerfil.bio.slice(0, BIO_MAX_LENGTH),
-      sobreBio: novoPerfil.sobreBio.slice(0, SOBRE_BIO_MAX_LENGTH),
-      mostrarDestaques: novoPerfil.mostrarDestaques === true,
-    };
-
-    const novosPerfis = {
-      ...perfisAutoresSalvos,
-      [autorChavePerfil]: perfilNormalizado,
-    };
-
-    if (usuarioIdLogado.trim()) {
-      salvarJsonUsuarioPerfilAutor(
-        AUTHOR_PROFILE_STORAGE_KEY,
-        usuarioIdLogado,
-        novosPerfis,
-      );
-    }
-
-    setPerfisAutoresSalvos(novosPerfis);
-
-    const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
-
-    if (
-      podeEditarPerfil &&
-      perfilUserId &&
-      usuarioIdLogado &&
-      perfilUserId.toLowerCase() === usuarioIdLogado.trim().toLowerCase()
-    ) {
-      const nomePerfil = perfilParaMostrar?.nome || perfilUsuarioRemotoAtivo?.nome || "Usuário";
-      const avatarRemoto =
-        perfilNormalizado.avatar.startsWith("data:") ||
-        perfilNormalizado.avatar.startsWith("blob:")
-          ? perfilUsuarioRemotoAtivo?.avatar || ""
-          : perfilNormalizado.avatar;
-      const perfilRemoto = {
-        ...perfilNormalizado,
-        avatar: avatarRemoto,
-      };
-
-      setPerfilUsuarioRemoto({
-        userId: perfilUserId,
-        nome: nomePerfil,
-        username: perfilUsuarioRemotoAtivo?.username || "",
-        avatar: avatarRemoto,
-        bio: perfilNormalizado.bio,
-        sobreBio: perfilNormalizado.sobreBio,
-        criadoEm: perfilUsuarioRemotoAtivo?.criadoEm || "",
-      });
-
-      void salvarPerfilUsuarioSupabase({
-        userId: perfilUserId,
-        nome: nomePerfil,
-        perfil: perfilRemoto,
-        username: perfilUsuarioRemotoAtivo?.username || undefined,
-      }).then((resultado) => {
-        if (!resultado.ok && resultado.erro) {
-          setMensagemAcao(`Perfil salvo neste aparelho. Supabase: ${resultado.erro}`);
-        }
-      });
-    }
-  }
 
   async function salvarEdicaoPerfilAutor() {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
