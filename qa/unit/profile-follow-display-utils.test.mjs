@@ -7,6 +7,10 @@ const source = readFileSync(
   new URL("../../app/perfil-autor/lib/profile-follow-display-utils.ts", import.meta.url),
   "utf8",
 );
+const pagina = readFileSync(
+  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  "utf8",
+);
 
 globalThis.__profileFollowDisplayDependencies = {
   criarChaveAutorPerfil(autorId, nome) {
@@ -49,9 +53,82 @@ const javascript = typescript.transpileModule(
   },
 ).outputText;
 
-const { obterEstadoSeguimentoPerfilAutor } = await import(
+const {
+  obterDadosAcaoSeguimentoPerfilAutor,
+  obterEstadoSeguimentoPerfilAutor,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
+
+test("dados da ação de seguimento preservam rótulos, aria-label e title", () => {
+  assert.deepEqual(
+    obterDadosAcaoSeguimentoPerfilAutor({
+      seguindoPerfilAtual: false,
+      solicitacaoSeguimentoPendente: false,
+      salvando: false,
+    }),
+    {
+      ariaLabelSeguimento: "Seguir",
+      titleSeguimento: undefined,
+      rotuloSeguimento: "Seguir",
+    },
+  );
+
+  assert.deepEqual(
+    obterDadosAcaoSeguimentoPerfilAutor({
+      seguindoPerfilAtual: true,
+      solicitacaoSeguimentoPendente: false,
+      salvando: false,
+    }),
+    {
+      ariaLabelSeguimento: "Deixar de seguir",
+      titleSeguimento: undefined,
+      rotuloSeguimento: "Seguindo",
+    },
+  );
+
+  assert.deepEqual(
+    obterDadosAcaoSeguimentoPerfilAutor({
+      seguindoPerfilAtual: false,
+      solicitacaoSeguimentoPendente: true,
+      salvando: false,
+    }),
+    {
+      ariaLabelSeguimento: "Cancelar solicitação",
+      titleSeguimento: "Cancelar solicitação",
+      rotuloSeguimento: "Solicitado",
+    },
+  );
+
+  assert.equal(
+    obterDadosAcaoSeguimentoPerfilAutor({
+      seguindoPerfilAtual: false,
+      solicitacaoSeguimentoPendente: true,
+      salvando: true,
+    }).rotuloSeguimento,
+    "...",
+  );
+});
+
+
+test("página delega os textos da ação de seguimento ao helper", () => {
+  assert.match(
+    pagina,
+    /obterDadosAcaoSeguimentoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-follow-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterDadosAcaoSeguimentoPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /aria-label=\{ariaLabelSeguimento\}/);
+  assert.match(pagina, /title=\{titleSeguimento\}/);
+  assert.match(pagina, /\{rotuloSeguimento\}/);
+  assert.doesNotMatch(
+    pagina,
+    /solicitacaoSeguimentoPendente[\s\S]{0,120}\? "Cancelar solicitação"/,
+  );
+});
+
 
 const UUID = "123e4567-e89b-42d3-a456-426614174000";
 
