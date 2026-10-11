@@ -573,3 +573,11 @@
 - Removeu os ternários responsivos correspondentes de `page.tsx` e reduziu imports diretos de estilos na página.
 - Preservou os mesmos objetos de estilo e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 991 — meta do sheet da obra
+
+- Extraiu gênero, formato, tag e classificação do sheet para `formatarMetaSheetObraPerfilAutor`.
+- Preservou filtros, ordem e tradução dos metadados.
+- Removeu quatro formatações exclusivas de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
