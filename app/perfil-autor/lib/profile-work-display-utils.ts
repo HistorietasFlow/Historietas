@@ -126,3 +126,33 @@ export function obterObraMenuAbertaPerfilAutor(
     null
   );
 }
+
+
+export function obterVisibilidadeDestaquesPerfilAutor({
+  obrasPerfilVisivel,
+  podeEditarPerfil,
+  mostrarDestaquesAutor,
+  mostrarDestaquesVisitante,
+  totalObrasEmDestaque,
+}: {
+  obrasPerfilVisivel: boolean;
+  podeEditarPerfil: boolean;
+  mostrarDestaquesAutor: boolean;
+  mostrarDestaquesVisitante: boolean;
+  totalObrasEmDestaque: number;
+}) {
+  const destaquesPerfilVisivel =
+    obrasPerfilVisivel &&
+    (podeEditarPerfil
+      ? mostrarDestaquesAutor
+      : mostrarDestaquesVisitante);
+
+  return {
+    destaquesPerfilVisivel,
+    exibirSecaoDestaques:
+      destaquesPerfilVisivel &&
+      (totalObrasEmDestaque > 0 ||
+        podeEditarPerfil ||
+        mostrarDestaquesVisitante),
+  };
+}

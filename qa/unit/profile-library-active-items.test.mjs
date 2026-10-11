@@ -7,7 +7,14 @@ const pagina = readFileSync(new URL("../../app/perfil-autor/page.tsx", import.me
 
 test("a página delega seleção de itens da Biblioteca", () => {
   assert.match(pagina, /import \{ selecionarItensBibliotecaPerfil \}/);
-  assert.match(pagina, /const itensBibliotecaAtivos = useMemo\(\(\) => \{\s*return selecionarItensBibliotecaPerfil\(\{/);
+  assert.match(
+    pagina,
+    /const itensBibliotecaAtivos = selecionarItensBibliotecaPerfil\(\{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const itensBibliotecaAtivos = useMemo/,
+  );
   for (const campo of ["aba", "queroLer", "lendoAgora", "favoritas", "concluidas", "salvos", "historico"]) {
     assert.match(pagina, new RegExp(campo + ":"));
   }
