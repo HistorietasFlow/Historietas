@@ -42,6 +42,7 @@ import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actio
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
 import { usePerfilAutorLibraryCollectionActions } from "./hooks/use-perfil-autor-library-collection-actions";
 import { usePerfilAutorRatingActions } from "./hooks/use-perfil-autor-rating-actions";
+import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary-rating-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -2942,18 +2943,27 @@ function PerfilAutorPageContent() {
     );
   }
 
-  const { avaliarAutor, avaliarDiarioPerfil } = usePerfilAutorRatingActions({
+  const { avaliarAutor } = usePerfilAutorRatingActions({
     identidadeAutenticadaPerfilRef,
     perfilParaMostrar,
     autorPodeReceberAvaliacao,
     perfilPertenceAoUsuario,
     usuarioIdLogado,
     avaliacaoAutor,
-    perfilUsaAvaliacaoDiario,
-    perfilUsuarioRemotoAtivo,
-    avaliacaoDiario,
     avisarLoginNecessario,
     setAvaliacaoAutor,
+    setMensagemAcao,
+  });
+
+  const { avaliarDiarioPerfil } = usePerfilAutorDiaryRatingActions({
+    identidadeAutenticadaPerfilRef,
+    perfilParaMostrar,
+    perfilUsaAvaliacaoDiario,
+    perfilUsuarioRemotoAtivo,
+    perfilPertenceAoUsuario,
+    usuarioIdLogado,
+    avaliacaoDiario,
+    avisarLoginNecessario,
     setAvaliacaoDiario,
     setMensagemAcao,
   });
