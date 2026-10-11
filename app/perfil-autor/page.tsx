@@ -765,12 +765,12 @@ function PerfilAutorPageContent() {
 
   const { exibirSecaoDestaques } =
     obterVisibilidadeDestaquesPerfilAutor({
-    obrasPerfilVisivel,
-    podeEditarPerfil,
-    mostrarDestaquesAutor: perfilSalvoAutor.mostrarDestaques,
-    mostrarDestaquesVisitante,
-    totalObrasEmDestaque: obrasEmDestaque.length,
-  });
+      obrasPerfilVisivel,
+      podeEditarPerfil,
+      mostrarDestaquesAutor: perfilSalvoAutor.mostrarDestaques,
+      mostrarDestaquesVisitante,
+      totalObrasEmDestaque: obrasEmDestaque.length,
+    });
 
   const { alternarCurtidaTopFivePerfil } =
     usePerfilAutorTopFiveLikeActions({
