@@ -4,13 +4,18 @@ import { TOP_FIVE_MAXIMO } from "../constants";
 import type { AutorPerfil, ObraLocal } from "../types";
 import {
   mesclarObrasPorIdSlug,
+  obterTotalComentariosObraPerfilAutor,
   obterTotalConcluidasObraPerfilAutor,
+  obterTotalCurtidasObraPerfilAutor,
 } from "./data-normalizers";
 import {
   colecaoTemObraPerfilBiblioteca,
   encontrarObraPorIdentificadorTopFivePerfil,
 } from "./library-normalizers";
-import { obterTimestampData } from "./profile-formatters";
+import {
+  compactarNumeroPerfilAutor,
+  obterTimestampData,
+} from "./profile-formatters";
 
 export function obterObrasVisiveisPerfilAutor({
   perfilParaMostrar,
@@ -162,4 +167,26 @@ export function obterHrefObraPerfilAutor(
   obra: Pick<ObraLocal, "link" | "slug" | "titulo">,
 ) {
   return obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+}
+
+
+export function obterMetricasResumoObraPerfilAutor(
+  obra: ObraLocal,
+  totaisInteracoesObras: Parameters<
+    typeof obterTotalCurtidasObraPerfilAutor
+  >[1],
+) {
+  return {
+    totalCurtidas: obterTotalCurtidasObraPerfilAutor(
+      obra,
+      totaisInteracoesObras,
+    ),
+    totalComentarios: obterTotalComentariosObraPerfilAutor(
+      obra,
+      totaisInteracoesObras,
+    ),
+    visualizacoesFormatadas: compactarNumeroPerfilAutor(
+      obra.visualizacoes || 0,
+    ),
+  };
 }
