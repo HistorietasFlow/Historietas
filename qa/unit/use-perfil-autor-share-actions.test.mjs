@@ -31,21 +31,36 @@ async function carregarModulo({ copiarResultado = true, cancelado = false } = {}
       chamadas.push(["cancelado"]);
       return cancelado;
     },
+    criarDadosCompartilhamentoObraPerfilAutor(obra) {
+      return {
+        url: obra.link || `/obra/${obra.slug || String(obra.titulo).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
+        titulo: obra.titulo || "Obra na Historietas",
+        texto: `Veja ${obra.titulo} na Historietas.`,
+      };
+    },
+    criarDadosCompartilhamentoPerfilAutor(nomePerfil, username) {
+      const nome = nomePerfil || "este autor";
+      return {
+        titulo: `${nome} no HISTORIETAS`,
+        texto: `Confira o perfil de ${nome}${username ? ` (@${username})` : ""} no HISTORIETAS.`,
+      };
+    },
+    normalizarUsernameCopiavelPerfilAutor(username) {
+      return username.startsWith("@") ? username : `@${username}`;
+    },
   };
 
   const javascript = typescript.transpileModule(
-    source
-      .replace(
-        'import { criarSlugBase } from "../../../lib/utils";',
-        'const criarSlugBase = (titulo) => String(titulo).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");',
-      )
-      .replace(
+    source.replace(
       /import \{[\s\S]*?\} from "\.\.\/lib\/profile-sharing-utils";/,
       [
         "const {",
         "  copiarTextoComFallbackPerfilAutor,",
+        "  criarDadosCompartilhamentoObraPerfilAutor,",
+        "  criarDadosCompartilhamentoPerfilAutor,",
         "  criarUrlAbsolutaCompartilhamentoPerfilAutor,",
         "  erroCompartilhamentoFoiCanceladoPerfilAutor,",
+        "  normalizarUsernameCopiavelPerfilAutor,",
         "} = globalThis.__profileShareActionsDependencies;",
       ].join("\n"),
     ),
