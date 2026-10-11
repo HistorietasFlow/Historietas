@@ -54,7 +54,6 @@ import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
   AlvoDenunciaConteudoPerfil,
-  AutorPerfil,
   AvaliacaoAutorPublica,
   AvaliacaoDiarioPublica,
   ComunidadePerfilEstado,
@@ -80,7 +79,6 @@ import {
 } from "./translations";
 import {
   compactarNumeroPerfilAutor,
-  criarChaveAutorPerfil,
   criarHrefLeituraCapituloPerfilAutor,
   formatarEntradaHistorietasPerfilAutor,
   formatarFormatoPerfilAutor,
@@ -111,6 +109,7 @@ import {
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
 import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
+import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-utils";
@@ -494,73 +493,10 @@ function PerfilAutorPageContent() {
     setCarregando,
   });
 
-  const perfisAutores = useMemo<AutorPerfil[]>(() => {
-    const mapa = new Map<
-      string,
-      { autorId: string; nome: string; obras: ObraLocal[] }
-    >();
-
-    obras.forEach((obra) => {
-      const nomeAutor = obra.autor.trim() || "Autor não informado";
-      const autorId = obra.autorId.trim();
-      const chaveAutor = criarChaveAutorPerfil(autorId, nomeAutor);
-      const autorExistente = mapa.get(chaveAutor);
-
-      if (autorExistente) {
-        mapa.set(chaveAutor, {
-          ...autorExistente,
-          autorId: autorExistente.autorId || autorId,
-          obras: [...autorExistente.obras, obra],
-        });
-        return;
-      }
-
-      mapa.set(chaveAutor, {
-        autorId,
-        nome: nomeAutor,
-        obras: [obra],
-      });
-    });
-
-    return Array.from(mapa.values())
-      .map((grupoAutor) => {
-        const obrasDoAutor = grupoAutor.obras;
-
-        const totalCapitulos = obrasDoAutor.reduce(
-          (total, obra) => total + obra.capitulos.length,
-          0,
-        );
-
-        const totalCurtidas = obrasDoAutor.reduce(
-          (total, obra) =>
-            total + obterTotalCurtidasObraPerfilAutor(
-              obra,
-              totaisInteracoesObras,
-            ),
-          0,
-        );
-
-        const totalComentarios = obrasDoAutor.reduce(
-          (total, obra) =>
-            total + obterTotalComentariosObraPerfilAutor(
-              obra,
-              totaisInteracoesObras,
-            ),
-          0,
-        );
-
-        return {
-          autorId: grupoAutor.autorId,
-          nome: grupoAutor.nome,
-          obras: obrasDoAutor,
-          totalCapitulos,
-          totalPublicadas: obrasDoAutor.filter((obra) => obra.publicado).length,
-          totalCurtidas,
-          totalComentarios,
-        };
-      })
-      .sort((autorA, autorB) => autorA.nome.localeCompare(autorB.nome));
-  }, [obras, totaisInteracoesObras]);
+  const perfisAutores = useMemo(
+    () => montarPerfisAutoresPorObras(obras, totaisInteracoesObras),
+    [obras, totaisInteracoesObras],
+  );
 
   const perfilUsuarioRemotoComoAutor = useMemo(() => {
     if (!perfilUsuarioRemoto?.userId) {
