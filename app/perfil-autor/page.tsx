@@ -2937,7 +2937,12 @@ function PerfilAutorPageContent() {
       return;
     }
 
-    setMe  const { avaliarAutor } = usePerfilAutorRatingActions({
+    setMensagemAcao(
+      `Perfil atualizado.${avisoAvatar}${avisoMetadadosAuth}`,
+    );
+  }
+
+  const { avaliarAutor } = usePerfilAutorRatingActions({
     identidadeAutenticadaPerfilRef,
     perfilParaMostrar,
     autorPodeReceberAvaliacao,
@@ -2948,13 +2953,6 @@ function PerfilAutorPageContent() {
     setAvaliacaoAutor,
     setMensagemAcao,
   });
-
-egado: true,
-        salvando: false,
-      }));
-      setMensagemAcao("");
-    }
-  }
 
   async function avaliarDiarioPerfil(nota: number) {
     const identidadeEsperada = identidadeAutenticadaPerfilRef.current;
