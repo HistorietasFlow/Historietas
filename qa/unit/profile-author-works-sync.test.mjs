@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileEditorSaveActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-editor-save-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo({
@@ -134,8 +141,8 @@ test("preserva erro retornado pelo Supabase e exceção inesperada", async () =>
 
 test("Perfil de Autor delega a sincronização do nome das obras", () => {
   assert.match(
-    pagina,
-    /import \{ sincronizarNomeAutorObrasSupabase \} from "\.\/lib\/profile-author-works-sync";/,
+    profileEditorSaveActionsSource,
+    /import \{ sincronizarNomeAutorObrasSupabase \} from "\.\.\/lib\/profile-author-works-sync";/,
   );
   assert.doesNotMatch(
     pagina,
