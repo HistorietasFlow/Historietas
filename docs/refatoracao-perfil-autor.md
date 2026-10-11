@@ -502,3 +502,10 @@
 - Removeu o `useMemo` intermediário de `obrasDoPerfilFiltradas`.
 - Manteve toda a filtragem e ordenação em `obterObrasVisiveisPerfilAutor`, sem alterar regras de conteúdo 18+ ou ownership.
 - Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 982 — obras em destaque sem memoização manual
+
+- Removeu o `useMemo` intermediário de `obrasEmDestaque`.
+- Manteve toda a seleção, deduplicação, limite e filtro 18+ em `obterObrasDestaquePerfilAutor`.
+- Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.

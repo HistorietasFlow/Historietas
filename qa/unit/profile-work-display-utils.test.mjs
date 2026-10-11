@@ -353,3 +353,15 @@ test("página resolve obras visíveis sem useMemo", () => {
     /const obrasDoPerfilFiltradas = useMemo/,
   );
 });
+
+
+test("página resolve obras em destaque sem useMemo", () => {
+  assert.match(
+    pagina,
+    /const obrasEmDestaque = obterObrasDestaquePerfilAutor\(\{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const obrasEmDestaque = useMemo/,
+  );
+});
