@@ -106,9 +106,8 @@ import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-ut
 import {
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
+  obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
-  obterEstadoColecoesObraPerfilAutor,
-  obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
@@ -2289,14 +2288,13 @@ function PerfilAutorPageContent() {
           (() => {
             const item = bibliotecaMenuAberto;
             const obra = item.obra;
-            const capituloHref =
-              obterHrefLeituraItemBibliotecaPerfilAutor(item);
             const {
+              capituloHref,
               obraFavorita,
               obraConcluida,
               obraNoQueroLer,
-            } = obterEstadoColecoesObraPerfilAutor({
-              obra,
+            } = obterDadosSheetBibliotecaPerfilAutor({
+              item,
               obrasFavoritas,
               obrasConcluidas,
               obrasSeguidasBiblioteca,
