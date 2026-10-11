@@ -31,6 +31,21 @@ export function obterRotuloBibliotecaPerfil(aba: AbaBibliotecaPerfil) {
 }
 
 
+export function obterRotuloAcaoRemoverBibliotecaPerfil(
+  aba: AbaBibliotecaPerfil,
+) {
+  if (aba === "lendo-agora") {
+    return "Parar leitura";
+  }
+
+  if (aba === "historico") {
+    return "Limpar histórico";
+  }
+
+  return "Remover";
+}
+
+
 export function obterMetaMenuBibliotecaPerfil(
   item: ItemBibliotecaPerfil,
 ) {

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   encontrarItemBibliotecaMenuAberto,
   obterMetaMenuBibliotecaPerfil,
+  obterRotuloAcaoRemoverBibliotecaPerfil,
   obterRotuloBibliotecaPerfil,
 } from "../../app/perfil-autor/lib/profile-library-display-utils.ts";
 
@@ -26,6 +27,23 @@ test("preserva os rótulos das abas da Biblioteca", () => {
 
   for (const [aba, rotulo] of Object.entries(casos)) {
     assert.equal(obterRotuloBibliotecaPerfil(aba), rotulo);
+  }
+});
+
+
+test("preserva o rótulo da ação de remoção da Biblioteca por aba", () => {
+  const casos = {
+    tudo: "Remover",
+    "quero-ler": "Remover",
+    "lendo-agora": "Parar leitura",
+    favoritas: "Remover",
+    concluidas: "Remover",
+    salvos: "Remover",
+    historico: "Limpar histórico",
+  };
+
+  for (const [aba, rotulo] of Object.entries(casos)) {
+    assert.equal(obterRotuloAcaoRemoverBibliotecaPerfil(aba), rotulo);
   }
 });
 
