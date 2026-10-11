@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const aboutRecentActivitySource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-recent-activity.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const diaryLoaderSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-diary-loader.ts",
@@ -244,6 +251,9 @@ test("Perfil de Autor mantém helpers locais e delega coleta de IDs ao carregado
     /coletarObraIdsRegistrosDiarioPerfil\(diarioAtividades\)/,
   );
   assert.match(pagina, /montarDiarioPerfilLocal\([\s\S]*?obrasSeguidasBiblioteca,[\s\S]*?obras,/);
-  assert.match(pagina, /formattedDate=\{dataDiarioPerfilFormatada\(item\.data\)\}/);
+  assert.match(
+    aboutRecentActivitySource,
+    /formattedDate=\{dataDiarioPerfilFormatada\(item\.data\)\}/,
+  );
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });
