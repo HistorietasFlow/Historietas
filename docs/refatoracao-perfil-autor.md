@@ -258,3 +258,9 @@
 
 - Extraiu o `useEffect` de sincronização local do TOP 5 para `usePerfilAutorTopFiveStorageSync`.
 - Manteve o carregamento inicial por timer e os listeners de `focus`, `storage` e `visibilitychange`, incluindo a limpeza no unmount.
+
+
+## Fase 943 — sincronização das curtidas do TOP 5
+
+- Extraiu o `useEffect` que combina estado local e Supabase das curtidas do TOP 5 para `usePerfilAutorTopFiveLikesSync`.
+- Manteve fallback local imediato, leitura remota, cancelamento, timer inicial e listeners de `focus` e `storage`.

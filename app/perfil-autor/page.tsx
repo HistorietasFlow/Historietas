@@ -41,6 +41,7 @@ import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actio
 import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-actions";
 import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
 import { usePerfilAutorTopFiveStorageSync } from "./hooks/use-perfil-autor-top-five-storage-sync";
+import { usePerfilAutorTopFiveLikesSync } from "./hooks/use-perfil-autor-top-five-likes-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
 import type {
@@ -170,8 +171,6 @@ import {
   obterAvaliacaoAutorLocal,
   salvarAvaliacaoAutorLocal,
 } from "./lib/profile-local-author-utils";
-import { carregarCurtidasTopFiveLocais } from "./lib/profile-top-five-local-utils";
-import { carregarCurtidasTopFivePerfil } from "./lib/profile-top-five-supabase-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -1223,54 +1222,12 @@ function PerfilAutorPageContent() {
     setTopFiveObraIds,
   });
 
-  useEffect(() => {
-    const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
-    let cancelado = false;
-
-    async function atualizarCurtidasTopFive() {
-      if (!perfilAutorId) {
-        setTopFiveCurtidasTotal(0);
-        setTopFiveCurtidoPorMim(false);
-        return;
-      }
-
-      const estadoLocal = carregarCurtidasTopFiveLocais(
-        perfilAutorId,
-        usuarioIdLogado,
-      );
-
-      setTopFiveCurtidasTotal(estadoLocal.total);
-      setTopFiveCurtidoPorMim(estadoLocal.curtiu);
-
-      const estadoRemoto = await carregarCurtidasTopFivePerfil(
-        perfilAutorId,
-        usuarioIdLogado,
-      );
-
-      if (cancelado) {
-        return;
-      }
-
-      setTopFiveCurtidasTotal(estadoRemoto.total);
-      setTopFiveCurtidoPorMim(estadoRemoto.curtiu);
-    }
-
-    const atualizarCurtidasTimer = window.setTimeout(() => {
-      void atualizarCurtidasTopFive();
-    }, 0);
-
-    if (perfilAutorId) {
-      window.addEventListener("focus", atualizarCurtidasTopFive);
-      window.addEventListener("storage", atualizarCurtidasTopFive);
-    }
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(atualizarCurtidasTimer);
-      window.removeEventListener("focus", atualizarCurtidasTopFive);
-      window.removeEventListener("storage", atualizarCurtidasTopFive);
-    };
-  }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
+  usePerfilAutorTopFiveLikesSync({
+    perfilAutorId: perfilParaMostrar?.autorId || "",
+    usuarioIdLogado,
+    setTopFiveCurtidasTotal,
+    setTopFiveCurtidoPorMim,
+  });
 
   const perfilPertenceAoUsuario = useMemo(() => {
     const usuarioIdNormalizado = usuarioIdLogado.trim().toLowerCase();

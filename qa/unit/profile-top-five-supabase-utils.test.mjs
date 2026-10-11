@@ -5,6 +5,20 @@ import typescript from "typescript";
 
 const source = readFileSync(new URL("../../app/perfil-autor/lib/profile-top-five-supabase-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/perfil-autor/page.tsx", import.meta.url), "utf8");
+const topFiveLikesSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-top-five-likes-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const topFiveLikeActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-top-five-like-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indice = 0;
 
 async function modulo(configurar) {
@@ -72,7 +86,17 @@ test("preserva retornos de falhas de escrita e remoção sem inserção", async 
 });
 
 test("Página delega os helpers Top 5 e preserva as guardas", () => {
-  assert.match(pagina, /from "\.\/lib\/profile-top-five-supabase-utils"/);
-  for (const nome of ["carregarCurtidasTopFivePerfil", "salvarCurtidaTopFiveSupabase"]) { assert.match(source, new RegExp(`export async function ${nome}\\(`)); assert.doesNotMatch(pagina, new RegExp(`async function ${nome}\\(`)); }
+  assert.match(
+    topFiveLikesSyncSource,
+    /import \{ carregarCurtidasTopFivePerfil \} from "\.\.\/lib\/profile-top-five-supabase-utils";/,
+  );
+  assert.match(
+    topFiveLikeActionsSource,
+    /import \{[\s\S]*?carregarCurtidasTopFivePerfil,[\s\S]*?salvarCurtidaTopFiveSupabase,[\s\S]*?\} from "\.\.\/lib\/profile-top-five-supabase-utils";/,
+  );
+  for (const nome of ["carregarCurtidasTopFivePerfil", "salvarCurtidaTopFiveSupabase"]) {
+    assert.match(source, new RegExp(`export async function ${nome}\\(`));
+    assert.doesNotMatch(pagina, new RegExp(`async function ${nome}\\(`));
+  }
   assert.equal((source.match(/operacaoAindaAtual && !operacaoAindaAtual\(\)/g) || []).length, 7);
 });
