@@ -14,14 +14,12 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import {
-  bloquearUsuario,
   cancelarSolicitacaoSeguidor,
   carregarEstadoBloqueioPerfil,
   carregarEstadoRelacionamentoPerfil,
   carregarPermissoesAbasPerfil,
   carregarPreferenciasPrivacidade,
   deixarDeSeguirUsuario,
-  desbloquearUsuario,
   solicitarOuSeguirUsuario,
   type EstadoBloqueioPerfil,
   type EstadoRelacionamentoPerfil,
@@ -43,6 +41,7 @@ import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-pro
 import { usePerfilAutorLibraryCollectionActions } from "./hooks/use-perfil-autor-library-collection-actions";
 import { usePerfilAutorRatingActions } from "./hooks/use-perfil-autor-rating-actions";
 import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary-rating-actions";
+import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -2967,99 +2966,21 @@ function PerfilAutorPageContent() {
     setMensagemAcao,
   });
 
-  async function alternarBloqueioPerfil() {
-    if (
-      podeEditarPerfil ||
-      !perfilParaMostrar ||
-      bloqueioPerfilSalvando
-    ) {
-      return;
-    }
-
-    const perfilUserId = perfilParaMostrar.autorId.trim();
-
-    if (!perfilUserId || !idAutorSupabaseValido(perfilUserId)) {
-      setMensagemAcao("Não foi possível identificar este perfil.");
-      return;
-    }
-
-    let usuarioAtualId = usuarioIdLogado.trim();
-
-    if (!usuarioAtualId) {
-      try {
-        const { data } = await supabase.auth.getUser();
-        usuarioAtualId = data.user?.id?.trim() || "";
-      } catch {
-        usuarioAtualId = "";
-      }
-    }
-
-    if (!usuarioAtualId) {
-      setMenuPerfilAberto(false);
-      avisarLoginNecessario(
-        "Entre na sua conta para bloquear este usuário.",
-      );
-      return;
-    }
-
-    if (usuarioAtualId === perfilUserId) {
-      setMensagemAcao("Você não pode bloquear o próprio perfil.");
-      return;
-    }
-
-    const desbloquear = estadoBloqueioPerfil.bloqueadoPorMim;
-    const nomePerfil = perfilParaMostrar.nome || "este usuário";
-    const confirmou = window.confirm(
-      desbloquear
-        ? `Desbloquear ${nomePerfil}?`
-        : `Bloquear ${nomePerfil}? Vocês deixarão de se seguir e não poderão interagir entre si.`,
-    );
-
-    if (!confirmou) {
-      return;
-    }
-
-    setMenuPerfilAberto(false);
-    setMensagemAcao("");
-    setBloqueioPerfilSalvando(true);
-
-    const resultado = desbloquear
-      ? await desbloquearUsuario(perfilUserId)
-      : await bloquearUsuario(perfilUserId);
-
-    setBloqueioPerfilSalvando(false);
-
-    if (!resultado.ok) {
-      setMensagemAcao(
-        resultado.erro ||
-          (desbloquear
-            ? "Não foi possível desbloquear este usuário."
-            : "Não foi possível bloquear este usuário."),
-      );
-      return;
-    }
-
-    setEstadoBloqueioPerfil(resultado.estado);
-
-    if (!desbloquear) {
-      setSeguindoUsuarioPerfil(false);
-      setEstadoRelacionamentoPerfil("nenhum");
-      setPermissoesAbasPerfil({
-        obras: false,
-        sobre: false,
-        diario: false,
-        comunidade: false,
-        biblioteca: false,
-        atividades: false,
-      });
-    }
-
-    setMensagemAcao(
-      desbloquear
-        ? `${nomePerfil} foi desbloqueado.`
-        : `${nomePerfil} foi bloqueado.`,
-    );
-  }
+  const { alternarBloqueioPerfil } = usePerfilAutorBlockActions({
+    podeEditarPerfil,
+    perfilParaMostrar,
+    bloqueioPerfilSalvando,
+    usuarioIdLogado,
+    estadoBloqueioPerfil,
+    avisarLoginNecessario,
+    setMenuPerfilAberto,
+    setMensagemAcao,
+    setBloqueioPerfilSalvando,
+    setEstadoBloqueioPerfil,
+    setSeguindoUsuarioPerfil,
+    setEstadoRelacionamentoPerfil,
+    setPermissoesAbasPerfil,
+  });
 
   async function alternarSeguirAutor() {
     if (!perfilParaMostrar || seguirUsuarioSalvando) {

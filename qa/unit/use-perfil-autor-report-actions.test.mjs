@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const blockSource = readFileSync(
+  new URL("../../app/perfil-autor/hooks/use-perfil-autor-block-actions.ts", import.meta.url),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo({
@@ -164,4 +168,13 @@ test("Perfil de Autor delega as ações de denúncia para o hook", () => {
   assert.match(source, /setDenunciaPerfilAberta\(true\)/);
   assert.match(source, /setAlvoDenunciaConteudoPerfil\(\{/);
   assert.doesNotMatch(source, /supabase|useEffect|localStorage/);
+});
+
+
+test("Perfil de Autor delega bloqueio para o hook de privacidade", () => {
+  assert.match(pagina, /usePerfilAutorBlockActions/);
+  assert.doesNotMatch(pagina, /async function alternarBloqueioPerfil\(/);
+  assert.match(blockSource, /async function alternarBloqueioPerfil\(\)/);
+  assert.match(blockSource, /await bloquearUsuario\(perfilUserId\)/);
+  assert.match(blockSource, /await desbloquearUsuario\(perfilUserId\)/);
 });
