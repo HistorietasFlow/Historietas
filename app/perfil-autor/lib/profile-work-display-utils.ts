@@ -422,3 +422,26 @@ export function obterDadosSheetObraPerfilAutor({
     }),
   };
 }
+
+
+export function obterDadosSheetBibliotecaPerfilAutor({
+  item,
+  obrasFavoritas,
+  obrasConcluidas,
+  obrasSeguidasBiblioteca,
+}: {
+  item: ItemBibliotecaPerfil;
+  obrasFavoritas: string[];
+  obrasConcluidas: string[];
+  obrasSeguidasBiblioteca: string[];
+}) {
+  return {
+    capituloHref: obterHrefLeituraItemBibliotecaPerfilAutor(item),
+    ...obterEstadoColecoesObraPerfilAutor({
+      obra: item.obra,
+      obrasFavoritas,
+      obrasConcluidas,
+      obrasSeguidasBiblioteca,
+    }),
+  };
+}

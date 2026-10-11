@@ -145,6 +145,7 @@ const {
   formatarMetricasSheetObraPerfilAutor,
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
+  obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefLeituraItemBibliotecaPerfilAutor,
@@ -568,18 +569,18 @@ test("estado das coleções da obra preserva favoritos, concluídas e Quero ler"
   );
 });
 
-test("estado das coleções fica direto na Biblioteca e reutilizado pelo sheet da obra", () => {
-  assert.match(
+test("estado das coleções fica encapsulado nos sheets de obra e Biblioteca", () => {
+  assert.doesNotMatch(
     pagina,
-    /obterEstadoColecoesObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
-  );
-  assert.equal(
-    (pagina.match(/obterEstadoColecoesObraPerfilAutor\(\{/g) || []).length,
-    1,
+    /obterEstadoColecoesObraPerfilAutor/,
   );
   assert.match(
     source,
     /export function obterDadosSheetObraPerfilAutor[\s\S]*?obterEstadoColecoesObraPerfilAutor\(\{/,
+  );
+  assert.match(
+    source,
+    /export function obterDadosSheetBibliotecaPerfilAutor[\s\S]*?obterEstadoColecoesObraPerfilAutor\(\{/,
   );
   assert.doesNotMatch(
     pagina,
@@ -742,18 +743,14 @@ test("href de leitura da Biblioteca prioriza capítulo e faz fallback para a obr
   );
 });
 
-test("href de leitura da Biblioteca fica direto no menu e reutilizado no card", () => {
-  assert.match(
+test("href de leitura da Biblioteca fica encapsulado no card e no sheet", () => {
+  assert.doesNotMatch(
     pagina,
-    /obterHrefLeituraItemBibliotecaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    /obterHrefLeituraItemBibliotecaPerfilAutor/,
   );
   assert.equal(
-    (pagina.match(/obterHrefLeituraItemBibliotecaPerfilAutor\(/g) || []).length,
-    1,
-  );
-  assert.match(
-    source,
-    /capituloHref: obterHrefLeituraItemBibliotecaPerfilAutor\(item\),/,
+    (source.match(/obterHrefLeituraItemBibliotecaPerfilAutor\(item\)/g) || []).length,
+    2,
   );
   assert.doesNotMatch(pagina, /criarHrefLeituraCapituloPerfilAutor/);
 });
@@ -911,4 +908,45 @@ test("página delega a composição do sheet da obra ao helper único", () => {
   ]) {
     assert.doesNotMatch(pagina, new RegExp(helper));
   }
+});
+
+
+test("dados do sheet da Biblioteca centralizam href e estado das coleções", () => {
+  assert.deepEqual(
+    obterDadosSheetBibliotecaPerfilAutor({
+      item: {
+        chave: "sheet-biblioteca",
+        obra: {
+          id: "obra-sheet-biblioteca",
+          link: "",
+          slug: "obra-sheet-biblioteca",
+          titulo: "Obra Sheet Biblioteca",
+        },
+        capitulo: { id: "cap-4" },
+        numeroCapitulo: 4,
+      },
+      obrasFavoritas: ["obra-sheet-biblioteca"],
+      obrasConcluidas: [],
+      obrasSeguidasBiblioteca: ["obra-sheet-biblioteca"],
+    }),
+    {
+      capituloHref: "/ler/obra-sheet-biblioteca/cap-4/4",
+      obraFavorita: true,
+      obraConcluida: false,
+      obraNoQueroLer: true,
+    },
+  );
+});
+
+test("página delega os dados do sheet da Biblioteca ao helper único", () => {
+  assert.match(
+    pagina,
+    /obterDadosSheetBibliotecaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterDadosSheetBibliotecaPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(pagina, /obterHrefLeituraItemBibliotecaPerfilAutor/);
+  assert.doesNotMatch(pagina, /obterEstadoColecoesObraPerfilAutor/);
 });
