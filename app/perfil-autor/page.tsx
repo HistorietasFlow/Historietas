@@ -88,13 +88,10 @@ import {
   criarChaveAutorPerfil,
   criarHandlePerfilAutor,
   criarHrefLeituraCapituloPerfilAutor,
-  criarHrefListaSeguimentoPerfilAutor,
   formatarEntradaHistorietasPerfilAutor,
   formatarFormatoPerfilAutor,
   formatarGeneroPerfilAutor,
-  idAutorSupabaseValido,
   normalizarAbaPerfilAutor,
-  normalizarNomeAutor,
   normalizarNumeroPerfilAutor,
   normalizarUsernamePerfilAutor,
   obterTagPrincipalPerfilAutor,
@@ -131,6 +128,7 @@ import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
+import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import {
   encontrarItemBibliotecaMenuAberto,
@@ -680,52 +678,29 @@ function PerfilAutorPageContent() {
     setSeguindoUsuarioPerfilTotal,
   });
 
-  const autorChavePerfil = perfilParaMostrar
-    ? criarChaveAutorPerfil(perfilParaMostrar.autorId, perfilParaMostrar.nome)
-    : "";
-  const autorNormalizadoParaSeguir = perfilParaMostrar
-    ? normalizarNomeAutor(perfilParaMostrar.nome)
-    : "";
+  const {
+    autorChavePerfil,
+    autorNormalizadoParaSeguir,
+    seguindoAutor,
+    perfilUserIdParaSeguir,
+    podeUsarSeguimentoUsuario,
+    seguindoPerfilAtual,
+    solicitacaoSeguimentoPendente,
+    seguidoresTotal,
+    seguindoTotalPerfil,
+    seguidoresPerfilHref,
+    seguindoPerfilHref,
+    obrasSeguidasPerfilHref,
+  } = obterEstadoSeguimentoPerfilAutor({
+    perfilParaMostrar,
+    autoresSeguidos,
+    estadoRelacionamentoPerfil,
+    seguindoUsuarioPerfil,
+    seguidoresUsuarioPerfilTotal,
+    seguindoUsuarioPerfilTotal,
+    podeEditarPerfil,
+  });
 
-  const seguindoAutor = Boolean(
-    autorChavePerfil &&
-    (autoresSeguidos.includes(autorChavePerfil) ||
-      autoresSeguidos.includes(autorNormalizadoParaSeguir)),
-  );
-  const perfilUserIdParaSeguir = perfilParaMostrar?.autorId.trim() || "";
-  const podeUsarSeguimentoUsuario = Boolean(
-    perfilUserIdParaSeguir && idAutorSupabaseValido(perfilUserIdParaSeguir),
-  );
-  const seguindoPerfilAtual = podeUsarSeguimentoUsuario
-    ? estadoRelacionamentoPerfil === "seguindo" || seguindoUsuarioPerfil
-    : seguindoAutor;
-  const solicitacaoSeguimentoPendente = Boolean(
-    podeUsarSeguimentoUsuario &&
-      estadoRelacionamentoPerfil === "solicitado",
-  );
-  const seguidoresTotal = podeUsarSeguimentoUsuario
-    ? seguidoresUsuarioPerfilTotal
-    : seguindoAutor
-      ? 1
-      : 0;
-  const seguindoTotalPerfil = podeUsarSeguimentoUsuario
-    ? seguindoUsuarioPerfilTotal
-    : podeEditarPerfil
-      ? autoresSeguidos.length
-      : 0;
-  const seguidoresPerfilHref = podeEditarPerfil
-    ? "/seguindo?conteudo=seguidores"
-    : criarHrefListaSeguimentoPerfilAutor(
-        "seguidores",
-        perfilParaMostrar,
-      );
-  const seguindoPerfilHref = podeEditarPerfil
-    ? "/seguindo?conteudo=pessoas"
-    : criarHrefListaSeguimentoPerfilAutor(
-        "seguindo",
-        perfilParaMostrar,
-      );
-  const obrasSeguidasPerfilHref = "/seguindo?conteudo=obras";
   const obrasConcluidasPerfilPorObrasDoAutor = perfilParaMostrar
     ? perfilParaMostrar.obras.reduce((total, obra) => {
         const totalConcluidasReais = obterTotalConcluidasObraPerfilAutor(
