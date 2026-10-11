@@ -1,3 +1,5 @@
+import { supabase } from "../../../lib/supabase/client";
+import { idObraSupabaseValido } from "../../../lib/utils";
 import type { AbaBibliotecaPerfil, ItemBibliotecaPerfil, ObraLocal } from "../types";
 import {
   COMPLETED_STORAGE_KEY,
@@ -20,7 +22,6 @@ export function usePerfilAutorLibraryCollectionActions({
   obrasSeguidasBiblioteca,
   usuarioIdLogado,
   avisarLoginNecessario,
-  removerHistoricoLeituraBibliotecaPerfil,
   salvarObrasBibliotecaPerfil,
   setMensagemAcao,
   setObrasFavoritas,
@@ -35,7 +36,6 @@ export function usePerfilAutorLibraryCollectionActions({
   obrasSeguidasBiblioteca: string[];
   usuarioIdLogado: string;
   avisarLoginNecessario: (mensagem: string) => void;
-  removerHistoricoLeituraBibliotecaPerfil: (obra: ObraLocal) => Promise<void>;
   salvarObrasBibliotecaPerfil: (obras: ObraLocal[]) => void;
   setMensagemAcao: (mensagem: string) => void;
   setObrasFavoritas: (obras: string[]) => void;
@@ -216,6 +216,63 @@ export function usePerfilAutorLibraryCollectionActions({
         ? "Obra adicionada ao Quero ler."
         : "Obra removida do Quero ler.",
     );
+  }
+
+  async function removerHistoricoLeituraBibliotecaPerfil(obra: ObraLocal) {
+    setMensagemAcao("");
+
+    const logado = await usuarioEstaLogado();
+
+    if (!logado) {
+      avisarLoginNecessario("Entre na sua conta para limpar o histórico.");
+      return;
+    }
+
+    const novasObras = obras.map((obraAtual) => {
+      if (obraAtual.id !== obra.id) {
+        return obraAtual;
+      }
+
+      return {
+        ...obraAtual,
+        ultimoCapituloLidoId: "",
+        ultimaLeituraEm: "",
+        progressoLeitura: 0,
+        capitulos: obraAtual.capitulos.map((capitulo) => ({
+          ...capitulo,
+          lido: false,
+          lidoEm: "",
+        })),
+      };
+    });
+
+    salvarObrasBibliotecaPerfil(novasObras);
+
+    try {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id || usuarioIdLogado;
+
+      if (userId && idObraSupabaseValido(obra.id)) {
+        await Promise.all([
+          supabase
+            .from("progresso_leitura")
+            .delete()
+            .eq("user_id", userId)
+            .eq("obra_id", obra.id),
+          supabase
+            .from("diario_atividades")
+            .delete()
+            .eq("user_id", userId)
+            .eq("obra_id", obra.id)
+            .in("tipo", ["comecou_ler", "leu_capitulo"]),
+        ]);
+      }
+    } catch (error) {
+      console.warn("Não consegui limpar o histórico remoto da obra:", error);
+    }
+
+    setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
+    setMensagemAcao("Histórico de leitura removido.");
   }
 
   async function removerItemBibliotecaPerfil(item: ItemBibliotecaPerfil) {

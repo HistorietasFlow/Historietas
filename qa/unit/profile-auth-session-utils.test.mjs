@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const libraryCollectionActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-library-collection-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo({ user = { id: "usuario-1" }, falhar = false } = {}) {
@@ -70,12 +77,20 @@ test("retorna false quando a leitura da sessão falha", async () => {
   assert.deepEqual(modulo.chamadas, ["getUser"]);
 });
 
-test("Perfil de Autor delega a verificação de sessão para o helper", () => {
-  assert.match(
+test("Perfil de Autor mantém a verificação de sessão delegada ao helper", () => {
+  assert.doesNotMatch(
     pagina,
-    /import \{ usuarioEstaLogado \} from "\.\/lib\/profile-auth-session-utils";/,
+    /profile-auth-session-utils/,
+  );
+  assert.match(
+    libraryCollectionActionsSource,
+    /import \{ usuarioEstaLogado \} from "\.\.\/lib\/profile-auth-session-utils";/,
   );
   assert.doesNotMatch(pagina, /async function usuarioEstaLogado\(/);
+  assert.doesNotMatch(
+    libraryCollectionActionsSource,
+    /async function usuarioEstaLogado\(/,
+  );
   assert.match(source, /export async function usuarioEstaLogado\(/);
   assert.match(source, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(source, /useState|useEffect|localStorage/);
