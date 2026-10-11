@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileEditorSaveActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-editor-save-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo({
@@ -252,8 +259,8 @@ test("preserva falha de URL pública e exceções inesperadas", async () => {
 
 test("Perfil de Autor delega o upload do avatar para o novo módulo", () => {
   assert.match(
-    pagina,
-    /import \{ enviarAvatarPerfilUsuarioSupabase \} from "\.\/lib\/profile-avatar-upload";/,
+    profileEditorSaveActionsSource,
+    /import \{ enviarAvatarPerfilUsuarioSupabase \} from "\.\.\/lib\/profile-avatar-upload";/,
   );
   assert.doesNotMatch(
     pagina,

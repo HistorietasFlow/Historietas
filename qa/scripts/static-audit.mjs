@@ -1713,14 +1713,18 @@ if (fs.existsSync(storageClientPath)) {
   }
 }
 
-const profilePage = fs.readFileSync(
-  path.join(ROOT_DIR, "app/perfil-autor/page.tsx"),
-  "utf8"
-);
 const profilePersistence = fs.readFileSync(
   path.join(
     ROOT_DIR,
     "app/perfil-autor/lib/profile-profile-persistence.ts"
+  ),
+  "utf8"
+);
+
+const profileEditorSaveActions = fs.readFileSync(
+  path.join(
+    ROOT_DIR,
+    "app/perfil-autor/hooks/use-perfil-autor-profile-editor-save-actions.ts"
   ),
   "utf8"
 );
@@ -1743,10 +1747,13 @@ if (
 
 if (
   /deveRemoverAvatarAnterior[\s\S]*?\.from\(AVATAR_STORAGE_BUCKET\)[\s\S]*?\.remove\(\[caminhoAvatarAnterior\]\)/i.test(
-    profilePage
+    profileEditorSaveActions
   )
 ) {
-  pass("avatar anterior é removido após troca confirmada", "app/perfil-autor/page.tsx");
+  pass(
+    "avatar anterior é removido após troca confirmada",
+    "app/perfil-autor/hooks/use-perfil-autor-profile-editor-save-actions.ts"
+  );
 } else {
   fail(
     "avatar anterior é removido após troca confirmada",

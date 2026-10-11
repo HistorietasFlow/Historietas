@@ -246,3 +246,9 @@
 
 - Extraiu `salvarPerfilAutor` para `usePerfilAutorProfileSaveActions`.
 - Manteve limites de bio/sobre, persistência local por usuário, atualização do perfil remoto e fallback de mensagem quando o Supabase falha.
+
+
+## Fase 941 — salvamento do editor de perfil
+
+- Extraiu `salvarEdicaoPerfilAutor` para `usePerfilAutorProfileEditorSaveActions`.
+- Manteve validações de identidade, upload/remoção de avatar, persistência de perfil, metadados Auth, sincronização do nome nas obras, fallbacks locais e mensagens finais.
