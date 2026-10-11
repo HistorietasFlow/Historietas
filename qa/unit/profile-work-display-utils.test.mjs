@@ -31,8 +31,14 @@ globalThis.__profileWorkDisplayDependencies = {
     }
     return [...mapa.values()];
   },
+  obterTotalComentariosObraPerfilAutor(obra, totais) {
+    return totais?.comentariosPorObra?.[obra.id] ?? obra.__comentarios ?? 0;
+  },
   obterTotalConcluidasObraPerfilAutor(obra, totais) {
     return totais?.concluidasPorObra?.[obra.id] || 0;
+  },
+  obterTotalCurtidasObraPerfilAutor(obra, totais) {
+    return totais?.curtidasPorObra?.[obra.id] ?? obra.__curtidas ?? 0;
   },
   colecaoTemObraPerfilBiblioteca(colecao, obra) {
     return colecao.includes(obra.id) || colecao.includes(obra.slug);
@@ -47,6 +53,9 @@ globalThis.__profileWorkDisplayDependencies = {
             String(identificador).trim().toLowerCase(),
       ) || null
     );
+  },
+  compactarNumeroPerfilAutor(valor) {
+    return `fmt:${Math.max(0, Math.round(Number(valor) || 0))}`;
   },
   obterTimestampData(valor) {
     const timestamp = Date.parse(valor);
@@ -69,16 +78,23 @@ const javascript = typescript.transpileModule(
       "const { TOP_FIVE_MAXIMO } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
-      /import \{[\s\S]*?mesclarObrasPorIdSlug,[\s\S]*?obterTotalConcluidasObraPerfilAutor,[\s\S]*?\} from "\.\/data-normalizers";/,
-      "const { mesclarObrasPorIdSlug, obterTotalConcluidasObraPerfilAutor } = globalThis.__profileWorkDisplayDependencies;",
+      /import \{[\s\S]*?mesclarObrasPorIdSlug,[\s\S]*?obterTotalComentariosObraPerfilAutor,[\s\S]*?obterTotalConcluidasObraPerfilAutor,[\s\S]*?obterTotalCurtidasObraPerfilAutor,[\s\S]*?\} from "\.\/data-normalizers";/,
+      [
+        "const {",
+        "  mesclarObrasPorIdSlug,",
+        "  obterTotalComentariosObraPerfilAutor,",
+        "  obterTotalConcluidasObraPerfilAutor,",
+        "  obterTotalCurtidasObraPerfilAutor,",
+        "} = globalThis.__profileWorkDisplayDependencies;",
+      ].join("\n"),
     )
     .replace(
       /import \{[\s\S]*?colecaoTemObraPerfilBiblioteca,[\s\S]*?encontrarObraPorIdentificadorTopFivePerfil,[\s\S]*?\} from "\.\/library-normalizers";/,
       "const { colecaoTemObraPerfilBiblioteca, encontrarObraPorIdentificadorTopFivePerfil } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
-      'import { obterTimestampData } from "./profile-formatters";',
-      "const { obterTimestampData } = globalThis.__profileWorkDisplayDependencies;",
+      /import \{[\s\S]*?compactarNumeroPerfilAutor,[\s\S]*?obterTimestampData,[\s\S]*?\} from "\.\/profile-formatters";/,
+      "const { compactarNumeroPerfilAutor, obterTimestampData } = globalThis.__profileWorkDisplayDependencies;",
     ),
   {
     compilerOptions: {
@@ -90,6 +106,7 @@ const javascript = typescript.transpileModule(
 
 const {
   obterHrefObraPerfilAutor,
+  obterMetricasResumoObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasVisiveisPerfilAutor,
   obterObrasDestaquePerfilAutor,
@@ -408,4 +425,39 @@ test("página reutiliza o helper de href das obras", () => {
     4,
   );
   assert.doesNotMatch(pagina, /criarSlugBase/);
+});
+
+
+test("métricas resumidas da obra centralizam curtidas, comentários e visualizações", () => {
+  const resultado = obterMetricasResumoObraPerfilAutor(
+    {
+      id: "obra-metricas",
+      visualizacoes: 1200.4,
+      __curtidas: 3,
+      __comentarios: 4,
+    },
+    {
+      curtidasPorObra: { "obra-metricas": 7 },
+      comentariosPorObra: { "obra-metricas": 9 },
+    },
+  );
+
+  assert.deepEqual(resultado, {
+    totalCurtidas: 7,
+    totalComentarios: 9,
+    visualizacoesFormatadas: "fmt:1200",
+  });
+});
+
+test("página reutiliza métricas resumidas das obras nos três pontos", () => {
+  assert.match(
+    pagina,
+    /obterMetricasResumoObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterMetricasResumoObraPerfilAutor\(/g) || []).length,
+    3,
+  );
+  assert.doesNotMatch(pagina, /obterTotalCurtidasObraPerfilAutor/);
+  assert.doesNotMatch(pagina, /obterTotalComentariosObraPerfilAutor/);
 });
