@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { criarLinksComunidadePerfilAutor } from "../../app/perfil-autor/lib/profile-community-links.ts";
+import {
+  criarBuscaComunidadePerfilAutor,
+  criarLinksComunidadePerfilAutor,
+} from "../../app/perfil-autor/lib/profile-community-links.ts";
 
 test("gera links da Comunidade com busca codificada", () => {
   assert.deepEqual(criarLinksComunidadePerfilAutor("Autor Teste"), {
@@ -16,4 +19,13 @@ test("preserva fallbacks sem nome do autor", () => {
     teorias: "/comunidade?tipo=Teoria",
     reviews: "/comunidade?tipo=Review",
   });
+});
+
+test("centraliza a codificação da busca sem alterar o valor original", () => {
+  assert.equal(criarBuscaComunidadePerfilAutor("Autor & Teste"), "Autor%20%26%20Teste");
+  assert.equal(criarBuscaComunidadePerfilAutor(""), "");
+  assert.equal(
+    criarLinksComunidadePerfilAutor("Autor & Teste").geral,
+    "/comunidade?busca=Autor%20%26%20Teste",
+  );
 });
