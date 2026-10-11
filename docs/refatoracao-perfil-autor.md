@@ -279,3 +279,8 @@
 
 - Extraiu o `useEffect` de carregamento da Comunidade para `usePerfilAutorCommunitySync`.
 - Manteve fallback para aba oculta ou ID inválido, estado de carregamento, leitura Supabase, tratamento de erro, timer inicial e cancelamento no unmount.
+
+## Fase 947 — sincronização do estado de bloqueio
+
+- Extraiu o `useEffect` que carrega o estado de bloqueio entre perfis para `usePerfilAutorBlockStateSync`.
+- Manteve fallback para perfil inválido, usuário ausente ou próprio perfil, leitura remota, timer inicial e cancelamento no unmount.
