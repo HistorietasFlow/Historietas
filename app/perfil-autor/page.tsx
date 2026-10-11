@@ -12,9 +12,7 @@ import {
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import DenunciaModal, {
-  type TipoAlvoDenuncia,
-} from "../../components/DenunciaModal";
+import DenunciaModal from "../../components/DenunciaModal";
 import {
   bloquearUsuario,
   cancelarSolicitacaoSeguidor,
@@ -39,6 +37,7 @@ import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-a
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
 import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avatar-editor-actions";
 import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actions";
+import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -1719,6 +1718,16 @@ function PerfilAutorPageContent() {
     setMenuPerfilAberto,
     setObraMenuAbertoId,
   });
+  const { abrirDenunciaPerfil, abrirDenunciaConteudoPerfil } =
+    usePerfilAutorReportActions({
+      podeEditarPerfil,
+      perfilParaMostrar,
+      setMensagemAcao,
+      setMenuPerfilAberto,
+      setDenunciaPerfilAberta,
+      setObraMenuAbertoId,
+      setAlvoDenunciaConteudoPerfil,
+    });
   const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
   const entradaHistorietasPerfil = formatarEntradaHistorietasPerfilAutor(
     perfilUsuarioRemotoAtivo?.criadoEm || "",
@@ -3197,48 +3206,6 @@ function PerfilAutorPageContent() {
       });
       setMensagemAcao("Este Diário não está disponível para avaliação.");
     }
-  }
-
-  function abrirDenunciaPerfil() {
-    if (podeEditarPerfil || !perfilParaMostrar) {
-      return;
-    }
-
-    const perfilDenunciadoId = perfilParaMostrar.autorId.trim();
-
-    if (!perfilDenunciadoId || !idAutorSupabaseValido(perfilDenunciadoId)) {
-      setMensagemAcao("Não foi possível identificar este perfil.");
-      return;
-    }
-
-    setMenuPerfilAberto(false);
-    setMensagemAcao("");
-    setDenunciaPerfilAberta(true);
-  }
-
-  function abrirDenunciaConteudoPerfil(
-    alvoTipo: Extract<TipoAlvoDenuncia, "post" | "obra">,
-    alvoId: string,
-    alvoTitulo: string,
-  ) {
-    if (podeEditarPerfil) {
-      return;
-    }
-
-    const alvoIdLimpo = alvoId.trim();
-
-    if (!alvoIdLimpo || !idObraSupabaseValido(alvoIdLimpo)) {
-      setMensagemAcao("Não foi possível identificar este conteúdo.");
-      return;
-    }
-
-    setObraMenuAbertoId("");
-    setMensagemAcao("");
-    setAlvoDenunciaConteudoPerfil({
-      alvoTipo,
-      alvoId: alvoIdLimpo,
-      alvoTitulo: alvoTitulo.trim() || "Conteúdo",
-    });
   }
 
   async function alternarBloqueioPerfil() {

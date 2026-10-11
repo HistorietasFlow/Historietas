@@ -169,3 +169,8 @@
 
 - Moveu `compartilharObraPerfilAutor` para `usePerfilAutorShareActions`.
 - Manteve fechamento do menu da obra, link existente ou fallback por slug, textos e mensagens do compartilhamento.
+
+## Fase 927 — ações de denúncia do perfil
+
+- Extraiu `abrirDenunciaPerfil` e `abrirDenunciaConteudoPerfil` para `usePerfilAutorReportActions`.
+- Manteve guardas do perfil próprio, validação de IDs, fechamento dos menus, mensagens e preparação dos modais.
