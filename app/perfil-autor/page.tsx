@@ -111,7 +111,6 @@ import {
   obterEstadoColecoesObraPerfilAutor,
   obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
-  obterMetricasResumoObraPerfilAutor,
   obterMetricasSheetObraPerfilAutor,
   obterAlvoLeituraMenuObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
