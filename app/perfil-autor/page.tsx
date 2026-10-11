@@ -737,21 +737,12 @@ function PerfilAutorPageContent() {
     perfilPertenceAoUsuario,
   });
 
-  const obrasEmDestaque = useMemo(
-    () =>
-      obterObrasDestaquePerfilAutor({
-        topFiveObraIds,
-        obras,
-        obrasPerfil: perfilParaMostrar?.obras || [],
-        perfilPertenceAoUsuario,
-      }),
-    [
-      topFiveObraIds,
-      obras,
-      perfilParaMostrar?.obras,
-      perfilPertenceAoUsuario,
-    ],
-  );
+  const obrasEmDestaque = obterObrasDestaquePerfilAutor({
+    topFiveObraIds,
+    obras,
+    obrasPerfil: perfilParaMostrar?.obras || [],
+    perfilPertenceAoUsuario,
+  });
 
   const { exibirSecaoDestaques } =
     obterVisibilidadeDestaquesPerfilAutor({
