@@ -659,3 +659,10 @@
 - Preservou exatamente os rótulos ativos e inativos já exibidos para cada coleção.
 - Removeu os três ternários de texto correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1002 — rótulos das coleções do sheet da obra
+
+- Centralizou os textos das ações de lista e conclusão do sheet da obra em `obterRotulosAcoesColecoesObraPerfilAutor`.
+- Preservou exatamente `Adicionar à lista`/`Remover da lista` e `Concluir`/`Marcar como não concluída`.
+- Removeu os dois ternários de texto correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
