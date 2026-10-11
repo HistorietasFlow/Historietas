@@ -31,6 +31,7 @@ const javascript = typescript.transpileModule(
     module: typescript.ModuleKind.ESNext,
     target: typescript.ScriptTarget.ES2022,
   },
+  },
 ).outputText;
 const {
   copiarTextoComFallbackPerfilAutor,
