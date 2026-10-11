@@ -144,6 +144,6 @@ test("página consolida a conversão do perfil remoto no memo de resolução", (
   );
   assert.match(
     pagina,
-    /perfilUsuarioRemoto,\s*autenticacaoCarregada,\s*\],\s*\);/,
+    /perfilUsuarioRemoto,\s*autenticacaoCarregada,\s*\]\);/,
   );
 });
