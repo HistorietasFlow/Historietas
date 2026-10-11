@@ -289,3 +289,8 @@
 
 - Extraiu o `useEffect` que combina contagens de seguidores e estado de relacionamento para `usePerfilAutorFollowStateSync`.
 - Manteve fallback para perfil inválido, leitura paralela, normalização de próprio perfil/seguindo, atualização das contagens, timer inicial e cancelamento no unmount.
+
+## Fase 949 — sincronização da avaliação do Diário
+
+- Extraiu o `useEffect` que carrega a avaliação pública do Diário para `usePerfilAutorDiaryRatingSync`.
+- Manteve fallbacks para perfil ausente e ID inválido, visibilidade do próprio perfil, RPC `carregar_avaliacao_diario`, normalização, timer inicial e cancelamento no unmount.
