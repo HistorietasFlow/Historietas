@@ -204,3 +204,9 @@
 
 - Moveu `removerHistoricoLeituraBibliotecaPerfil` para `usePerfilAutorLibraryCollectionActions`.
 - Manteve guarda de login, limpeza local da obra/capítulos, fallback de usuário, deletes de `progresso_leitura` e `diario_atividades`, tolerância a falhas remotas, mensagem e incremento da versão da Biblioteca.
+
+
+## Fase 934 — avaliação do autor
+
+- Moveu `avaliarAutor` para `usePerfilAutorRatingActions`.
+- Manteve guardas de identidade/sessão, nota local, arredondamento em meias estrelas, upsert/delete em `autor_avaliacoes`, tratamento de falhas e estados da avaliação.
