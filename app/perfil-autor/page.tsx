@@ -87,7 +87,6 @@ import {
 } from "./translations";
 import {
   aplicarPermissoesAbasAoDiario,
-  calcularProximaAvaliacaoAutor,
   compactarNumeroPerfilAutor,
   criarChaveAutorPerfil,
   criarHandlePerfilAutor,
