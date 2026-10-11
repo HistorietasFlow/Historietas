@@ -101,6 +101,7 @@ import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-u
 import {
   obterBioSobreExibicaoPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
@@ -314,6 +315,13 @@ function PerfilAutorPageContent() {
     useState<File | null>(null);
   const [salvandoEditorPerfil, setSalvandoEditorPerfil] = useState(false);
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
+  const {
+    rotuloAcaoAvatar,
+    rotuloSalvarEditor,
+  } = obterRotulosAcoesEditorPerfilAutor({
+    temAvatar: Boolean(avatarPerfilEditor),
+    salvando: salvandoEditorPerfil,
+  });
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>(() =>
     normalizarAbaPerfilAutor(searchParams.get("aba")),
   );
@@ -1312,7 +1320,7 @@ function PerfilAutorPageContent() {
                       disabled={salvandoEditorPerfil}
                       style={avatarSmallButtonAtualStyle}
                     >
-                      {avatarPerfilEditor ? "Trocar imagem" : "Colocar imagem"}
+                      {rotuloAcaoAvatar}
                     </button>
 
                     {avatarPerfilEditor && (
@@ -1419,7 +1427,7 @@ function PerfilAutorPageContent() {
                     disabled={salvandoEditorPerfil}
                     style={profileEditorSaveButtonStyle}
                   >
-                    {salvandoEditorPerfil ? "Salvando..." : "Salvar"}
+                    {rotuloSalvarEditor}
                   </button>
                 </div>
               </div>

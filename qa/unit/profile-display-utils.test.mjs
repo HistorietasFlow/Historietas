@@ -55,6 +55,7 @@ const javascript = typescript.transpileModule(
 const {
   obterBioSobreExibicaoPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterRotulosAcoesEditorPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
@@ -188,6 +189,51 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
   assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
   assert.equal(vazio.caracteresRestantesBioSobre, 160);
+});
+
+
+test("rótulos das ações do editor preservam avatar e estado de salvamento", () => {
+  assert.deepEqual(
+    obterRotulosAcoesEditorPerfilAutor({
+      temAvatar: false,
+      salvando: false,
+    }),
+    {
+      rotuloAcaoAvatar: "Colocar imagem",
+      rotuloSalvarEditor: "Salvar",
+    },
+  );
+
+  assert.deepEqual(
+    obterRotulosAcoesEditorPerfilAutor({
+      temAvatar: true,
+      salvando: true,
+    }),
+    {
+      rotuloAcaoAvatar: "Trocar imagem",
+      rotuloSalvarEditor: "Salvando...",
+    },
+  );
+});
+
+
+test("página delega os rótulos das ações do editor ao helper", () => {
+  assert.match(
+    pagina,
+    /obterRotulosAcoesEditorPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterRotulosAcoesEditorPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /avatarPerfilEditor \? "Trocar imagem" : "Colocar imagem"/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /salvandoEditorPerfil \? "Salvando\.\.\." : "Salvar"/,
+  );
 });
 
 
