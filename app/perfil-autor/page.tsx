@@ -14,7 +14,6 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import {
-  carregarEstadoRelacionamentoPerfil,
   type EstadoBloqueioPerfil,
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
@@ -43,6 +42,7 @@ import { usePerfilAutorPrivacySync } from "./hooks/use-perfil-autor-privacy-sync
 import { usePerfilAutorVisibleTabSync } from "./hooks/use-perfil-autor-visible-tab-sync";
 import { usePerfilAutorCommunitySync } from "./hooks/use-perfil-autor-community-sync";
 import { usePerfilAutorBlockStateSync } from "./hooks/use-perfil-autor-block-state-sync";
+import { usePerfilAutorFollowStateSync } from "./hooks/use-perfil-autor-follow-state-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
 import type {
@@ -152,9 +152,6 @@ import {
   carregarInteracoesCapitulosSupabase,
   carregarTotaisInteracoesObrasPerfilAutor,
 } from "./lib/profile-interactions-loader";
-import {
-  carregarEstadoSeguimentoUsuarioPerfil,
-} from "./lib/profile-follow-state-loader";
 import {
   dataDiarioPerfilFormatada,
   montarDiarioPerfilLocal,
@@ -1332,60 +1329,14 @@ function PerfilAutorPageContent() {
     setEstadoBloqueioPerfil,
   });
 
-  useEffect(() => {
-    const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
-    const usuarioAtualId = usuarioIdLogado.trim();
-
-    let cancelado = false;
-
-    async function carregarSeguimentoUsuario() {
-      if (!perfilUserId || !idAutorSupabaseValido(perfilUserId)) {
-        setSeguindoUsuarioPerfil(false);
-        setEstadoRelacionamentoPerfil("nenhum");
-        return;
-      }
-
-      const [estadoSeguimento, estadoRelacionamento] = await Promise.all([
-        carregarEstadoSeguimentoUsuarioPerfil(
-          usuarioAtualId,
-          perfilUserId,
-        ),
-        usuarioAtualId && idAutorSupabaseValido(usuarioAtualId)
-          ? carregarEstadoRelacionamentoPerfil(
-              perfilUserId,
-              usuarioAtualId,
-            )
-          : Promise.resolve<EstadoRelacionamentoPerfil>("nenhum"),
-      ]);
-
-      if (cancelado) {
-        return;
-      }
-
-      const seguindoConfirmado =
-        estadoRelacionamento === "seguindo" || estadoSeguimento.seguindo;
-      const estadoSeguro =
-        perfilUserId === usuarioAtualId
-          ? "proprio_perfil"
-          : seguindoConfirmado
-            ? "seguindo"
-            : estadoRelacionamento;
-
-      setEstadoRelacionamentoPerfil(estadoSeguro);
-      setSeguindoUsuarioPerfil(seguindoConfirmado);
-      setSeguidoresUsuarioPerfilTotal(estadoSeguimento.seguidoresTotal);
-      setSeguindoUsuarioPerfilTotal(estadoSeguimento.seguindoTotal);
-    }
-
-    const carregarSeguimentoTimer = window.setTimeout(() => {
-      void carregarSeguimentoUsuario();
-    }, 0);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(carregarSeguimentoTimer);
-    };
-  }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
+  usePerfilAutorFollowStateSync({
+    perfilAutorId: perfilParaMostrar?.autorId || "",
+    usuarioIdLogado,
+    setEstadoRelacionamentoPerfil,
+    setSeguindoUsuarioPerfil,
+    setSeguidoresUsuarioPerfilTotal,
+    setSeguindoUsuarioPerfilTotal,
+  });
 
   const autorChavePerfil = perfilParaMostrar
     ? criarChaveAutorPerfil(perfilParaMostrar.autorId, perfilParaMostrar.nome)
