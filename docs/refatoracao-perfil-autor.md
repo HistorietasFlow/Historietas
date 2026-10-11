@@ -645,3 +645,10 @@
 - Preservou `metaSheet` separado para manter as responsabilidades entre módulos e evitar dependências desnecessárias.
 - Removeu chamadas diretas de href e coleções de `page.tsx`.
 - Atualizou testes estruturais e ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+## Fase 1000 — rótulo de remoção da Biblioteca
+
+- Extraiu a escolha do texto da ação de remoção do sheet da Biblioteca para `obterRotuloAcaoRemoverBibliotecaPerfil`.
+- Preservou `Parar leitura` em Lendo agora, `Limpar histórico` no Histórico e `Remover` nas demais abas.
+- Removeu o ternário aninhado correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
