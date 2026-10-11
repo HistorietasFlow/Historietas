@@ -13,14 +13,25 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diarySyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-diary-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Perfil de Autor delega o carregamento remoto do Diário", () => {
   assert.match(
-    pagina,
-    /import \{ carregarDiarioPerfilSupabase \} from "\.\/lib\/profile-diary-loader";/,
+    diarySyncSource,
+    /import \{ carregarDiarioPerfilSupabase \} from "\.\.\/lib\/profile-diary-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarDiarioPerfilSupabase\(/);
   assert.match(source, /export async function carregarDiarioPerfilSupabase\(/);
+  assert.match(
+    diarySyncSource,
+    /await carregarDiarioPerfilSupabase\([\s\S]*?userIdFonteDiario,[\s\S]*?obras,[\s\S]*?incluirItensPrivados,[\s\S]*?diarioPerfilVisivel,[\s\S]*?atividadesPerfilVisivel,[\s\S]*?obrasConcluidas,/,
+  );
   assert.doesNotMatch(source, /useState|useEffect|localStorage/);
 });
 

@@ -314,3 +314,8 @@
 
 - Extraiu o `useEffect` do contador de notificações não lidas para `usePerfilAutorNotificationCountSync`.
 - Manteve fallback para usuário inválido, consultas de notificações e solicitações, deduplicação, realtime, polling, foco/visibilidade, debounce e limpeza do canal.
+
+## Fase 954 — sincronização do Diário do perfil
+
+- Extraiu o `useEffect` que monta e carrega o Diário para `usePerfilAutorDiarySync`.
+- Manteve seleção da fonte do Diário, inclusão de itens privados, fallback local, leitura remota, mesclagem, aplicação de permissões, timer inicial e cancelamento no unmount.
