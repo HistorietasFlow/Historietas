@@ -60,3 +60,59 @@ test("hook preserva commit final e cancelamento no unmount", () => {
   assert.match(source, /setCarregando\(false\)/);
   assert.match(source, /componenteAtivo = false;/);
 });
+
+test("não persiste nem aplica resultado de conta anterior após resposta atrasada", async () => {
+  const { atualizarIdentidadeAutenticadaPerfilAutor, execucaoCarregamentoPerfilAutorEstaAtual } =
+    await import("../../app/perfil-autor/lib/profile-auth-identity.ts");
+  let identidadeAtual = { usuarioId: "conta-a", versao: 1 };
+  const identidadeEsperada = identidadeAtual;
+  let resolver;
+  const resposta = new Promise((resolve) => { resolver = resolve; });
+  const efeitos = [];
+  const carregar = (async () => {
+    await resposta;
+    const atual = () => execucaoCarregamentoPerfilAutorEstaAtual({
+      cancelada: false, identidadeEsperada, identidadeAtual,
+    });
+    if (!atual()) return;
+    efeitos.push("persistir");
+    if (!atual()) return;
+    efeitos.push("commit");
+  })();
+  identidadeAtual = atualizarIdentidadeAutenticadaPerfilAutor(
+    identidadeAtual, "conta-b",
+  ).identidade;
+  resolver();
+  await carregar;
+  assert.deepEqual(efeitos, []);
+});
+
+test("cancelamento no unmount bloqueia persistência e commit atrasados", async () => {
+  const { execucaoCarregamentoPerfilAutorEstaAtual } =
+    await import("../../app/perfil-autor/lib/profile-auth-identity.ts");
+  const identidade = { usuarioId: "conta-a", versao: 1 };
+  let cancelada = false;
+  let resolver;
+  const resposta = new Promise((resolve) => { resolver = resolve; });
+  const efeitos = [];
+  const carregar = (async () => {
+    await resposta;
+    if (!execucaoCarregamentoPerfilAutorEstaAtual({
+      cancelada, identidadeEsperada: identidade, identidadeAtual: identidade,
+    })) return;
+    efeitos.push("persistir", "commit");
+  })();
+  cancelada = true;
+  resolver();
+  await carregar;
+  assert.deepEqual(efeitos, []);
+});
+
+test("hook verifica identidade antes de persistir e antes do commit final", () => {
+  const persistencia = source.indexOf("salvarJsonUsuarioPerfilAutor(");
+  const commit = source.indexOf("setPerfilUsuarioRemoto(perfilUsuarioRemotoCarregado)");
+  const guarda = "if (!execucaoCarregamentoEstaAtual())";
+  assert.ok(persistencia > 0 && commit > persistencia);
+  assert.ok(source.lastIndexOf(guarda, persistencia) > source.indexOf("await carregarInteracoesCapitulosSupabase("));
+  assert.ok(source.lastIndexOf(guarda, commit) > persistencia);
+});
