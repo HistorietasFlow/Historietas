@@ -541,3 +541,11 @@
 - Preservou rótulo do tipo, capítulo/total, pluralização e progresso limitado entre 0% e 100%.
 - Removeu essa lógica condicional do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 987 — hrefs do Diário centralizados
+
+- Extraiu os links para a página Listas do Diário em `criarHrefListaDiarioPerfilAutor`.
+- Substituiu o link geral e o link por obra, preservando parâmetros, ordem e encoding.
+- Removeu a montagem inline com `URLSearchParams` do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

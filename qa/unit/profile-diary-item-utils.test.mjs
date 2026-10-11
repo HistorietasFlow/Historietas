@@ -61,6 +61,7 @@ const obterVisibilidadeRegistroDiario = (registro, fallback) =>
   },
 ).outputText;
 const {
+  criarHrefListaDiarioPerfilAutor,
   criarItemAtividadeDiarioPerfil,
   criarItemDiarioPerfil,
   montarMapaObrasDiario,
@@ -262,4 +263,35 @@ test("Perfil de Autor delega construção e resolução de itens ao carregador d
   assert.match(diaryLoaderSource, /criarItemDiarioPerfil\(\s*"lendo",/);
   assert.match(aboutRecentActivitySource, /obterHrefItemDiarioPerfil\(item\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
+});
+
+
+test("hrefs da página Listas preservam perfil, obra e encoding", () => {
+  assert.equal(
+    criarHrefListaDiarioPerfilAutor(" usuario 1 "),
+    "/listas?modo=perfil&origem=diario&categoria=tudo&usuario=usuario%201",
+  );
+  assert.equal(
+    criarHrefListaDiarioPerfilAutor("usuario-2", "obra com espaço"),
+    "/listas?modo=perfil&origem=diario&categoria=tudo&obra=obra+com+espa%C3%A7o&usuario=usuario-2",
+  );
+  assert.equal(
+    criarHrefListaDiarioPerfilAutor("", "obra-3"),
+    "/listas?modo=perfil&origem=diario&categoria=tudo&obra=obra-3",
+  );
+});
+
+test("Perfil de Autor reutiliza hrefs centralizados do Diário", () => {
+  assert.match(
+    pagina,
+    /import \{ criarHrefListaDiarioPerfilAutor \} from "\.\/lib\/profile-diary-item-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/criarHrefListaDiarioPerfilAutor\(/g) || []).length,
+    2,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const parametrosLista = new URLSearchParams/,
+  );
 });

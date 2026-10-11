@@ -158,3 +158,32 @@ export function obterObraRegistroDiario(
 
   return null;
 }
+
+
+export function criarHrefListaDiarioPerfilAutor(
+  perfilAutorId: string,
+  obraId = "",
+) {
+  const perfilIdLimpo = perfilAutorId.trim();
+
+  if (!obraId) {
+    return `/listas?modo=perfil&origem=diario&categoria=tudo${
+      perfilIdLimpo
+        ? `&usuario=${encodeURIComponent(perfilIdLimpo)}`
+        : ""
+    }`;
+  }
+
+  const parametros = new URLSearchParams({
+    modo: "perfil",
+    origem: "diario",
+    categoria: "tudo",
+    obra: obraId,
+  });
+
+  if (perfilIdLimpo) {
+    parametros.set("usuario", perfilIdLimpo);
+  }
+
+  return `/listas?${parametros.toString()}`;
+}
