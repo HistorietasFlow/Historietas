@@ -1,4 +1,4 @@
-import type { ObraLocal } from "../types";
+import type { AbaBibliotecaPerfil, ItemBibliotecaPerfil, ObraLocal } from "../types";
 import {
   COMPLETED_STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
@@ -13,12 +13,14 @@ import { salvarListaIdsPerfilBiblioteca } from "../lib/profile-local-storage-uti
 import { sincronizarTabelaUsuario } from "../lib/profile-user-collections-sync";
 
 export function usePerfilAutorLibraryCollectionActions({
+  abaBibliotecaPerfil,
   obras,
   obrasFavoritas,
   obrasConcluidas,
   obrasSeguidasBiblioteca,
   usuarioIdLogado,
   avisarLoginNecessario,
+  removerHistoricoLeituraBibliotecaPerfil,
   salvarObrasBibliotecaPerfil,
   setMensagemAcao,
   setObrasFavoritas,
@@ -26,12 +28,14 @@ export function usePerfilAutorLibraryCollectionActions({
   setObrasSeguidasBiblioteca,
   setVersaoSincronizacaoBiblioteca,
 }: {
+  abaBibliotecaPerfil: AbaBibliotecaPerfil;
   obras: ObraLocal[];
   obrasFavoritas: string[];
   obrasConcluidas: string[];
   obrasSeguidasBiblioteca: string[];
   usuarioIdLogado: string;
   avisarLoginNecessario: (mensagem: string) => void;
+  removerHistoricoLeituraBibliotecaPerfil: (obra: ObraLocal) => Promise<void>;
   salvarObrasBibliotecaPerfil: (obras: ObraLocal[]) => void;
   setMensagemAcao: (mensagem: string) => void;
   setObrasFavoritas: (obras: string[]) => void;
@@ -214,10 +218,82 @@ export function usePerfilAutorLibraryCollectionActions({
     );
   }
 
+  async function removerItemBibliotecaPerfil(item: ItemBibliotecaPerfil) {
+    if (
+      item.capitulo?.salvo &&
+      (abaBibliotecaPerfil === "tudo" || abaBibliotecaPerfil === "salvos")
+    ) {
+      await alternarSalvoCapituloBibliotecaPerfil(
+        item.obra.id,
+        item.capitulo.id,
+        false,
+      );
+      return;
+    }
+
+    if (
+      abaBibliotecaPerfil === "tudo" &&
+      item.tipoDiario === "quero_ler" &&
+      colecaoTemObraPerfilBiblioteca(obrasSeguidasBiblioteca, item.obra)
+    ) {
+      await alternarObraSeguindoBibliotecaPerfil(item.obra, false);
+      return;
+    }
+
+    if (
+      abaBibliotecaPerfil === "tudo" &&
+      item.tipoDiario === "favorita" &&
+      colecaoTemObraPerfilBiblioteca(obrasFavoritas, item.obra)
+    ) {
+      await alternarFavoritoObra(item.obra.id);
+      return;
+    }
+
+    if (
+      abaBibliotecaPerfil === "tudo" &&
+      item.tipoDiario === "concluida" &&
+      colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra)
+    ) {
+      await alternarConcluidoObra(item.obra.id);
+      return;
+    }
+
+    if (abaBibliotecaPerfil === "quero-ler") {
+      await alternarObraSeguindoBibliotecaPerfil(item.obra, false);
+      return;
+    }
+
+    if (abaBibliotecaPerfil === "favoritas") {
+      if (colecaoTemObraPerfilBiblioteca(obrasFavoritas, item.obra)) {
+        await alternarFavoritoObra(item.obra.id);
+      }
+      return;
+    }
+
+    if (abaBibliotecaPerfil === "concluidas") {
+      if (colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra)) {
+        await alternarConcluidoObra(item.obra.id);
+      }
+      return;
+    }
+
+    if (abaBibliotecaPerfil === "salvos" && item.capitulo) {
+      await alternarSalvoCapituloBibliotecaPerfil(
+        item.obra.id,
+        item.capitulo.id,
+        false,
+      );
+      return;
+    }
+
+    await removerHistoricoLeituraBibliotecaPerfil(item.obra);
+  }
+
   return {
     alternarFavoritoObra,
     alternarConcluidoObra,
     alternarSalvoCapituloBibliotecaPerfil,
     alternarObraSeguindoBibliotecaPerfil,
+    removerItemBibliotecaPerfil,
   };
 }

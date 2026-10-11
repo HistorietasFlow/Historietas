@@ -44,7 +44,10 @@ async function carregarModulo({ logado = true } = {}) {
 
   const javascript = typescript.transpileModule(
     source
-      .replace('import type { ObraLocal } from "../types";\n', "")
+      .replace(
+        'import type { AbaBibliotecaPerfil, ItemBibliotecaPerfil, ObraLocal } from "../types";\n',
+        "",
+      )
       .replace(
         /import \{[\s\S]*?\} from "\.\.\/constants";/,
         "const COMPLETED_STORAGE_KEY = globalThis.__profileLibraryCollectionDependencies.completedKey;\nconst FAVORITES_STORAGE_KEY = globalThis.__profileLibraryCollectionDependencies.favoritesKey;\nconst LIBRARY_FOLLOW_STORAGE_KEY = globalThis.__profileLibraryCollectionDependencies.libraryFollowKey;",
@@ -83,6 +86,7 @@ async function carregarModulo({ logado = true } = {}) {
 function criarAcoes(
   modulo,
   {
+    abaBibliotecaPerfil = "tudo",
     obrasFavoritas = [],
     obrasConcluidas = [],
     obrasSeguidasBiblioteca = [],
@@ -98,10 +102,12 @@ function criarAcoes(
   const concluidas = [];
   const seguidas = [];
   const obrasSalvas = [];
+  const historicosRemovidos = [];
   const versoes = [];
 
   return {
     ...modulo.usePerfilAutorLibraryCollectionActions({
+      abaBibliotecaPerfil,
       obras,
       obrasFavoritas,
       obrasConcluidas,
@@ -109,6 +115,9 @@ function criarAcoes(
       usuarioIdLogado: "usuario-1",
       avisarLoginNecessario(mensagem) {
         avisos.push(mensagem);
+      },
+      async removerHistoricoLeituraBibliotecaPerfil(obra) {
+        historicosRemovidos.push(obra.id);
       },
       salvarObrasBibliotecaPerfil(lista) {
         obrasSalvas.push(lista);
@@ -135,6 +144,7 @@ function criarAcoes(
     concluidas,
     seguidas,
     obrasSalvas,
+    historicosRemovidos,
     versoes,
   };
 }
@@ -298,6 +308,91 @@ test("remove obra do Quero ler quando já segue", async () => {
   assert.deepEqual(acoes.mensagens.at(-1), "Obra removida do Quero ler.");
 });
 
+test("remove item salvo priorizando capítulo salvo na aba tudo", async () => {
+  const modulo = await carregarModulo();
+  const item = {
+    obra: { id: "obra-1", capitulos: [{ id: "cap-1", salvo: true }] },
+    capitulo: { id: "cap-1", salvo: true },
+    tipoDiario: "salvo",
+  };
+  const acoes = criarAcoes(modulo, {
+    obras: [item.obra],
+  });
+
+  await acoes.removerItemBibliotecaPerfil(item);
+
+  assert.equal(acoes.obrasSalvas.length, 1);
+  assert.equal(acoes.obrasSalvas[0][0].capitulos[0].salvo, false);
+  assert.deepEqual(acoes.historicosRemovidos, []);
+});
+
+test("remove Quero ler pela ação existente na aba tudo", async () => {
+  const modulo = await carregarModulo();
+  const obra = { id: "obra-1", capitulos: [] };
+  const item = {
+    obra,
+    capitulo: null,
+    tipoDiario: "quero_ler",
+  };
+  const acoes = criarAcoes(modulo, {
+    obras: [obra],
+    obrasSeguidasBiblioteca: ["obra-1"],
+  });
+
+  await acoes.removerItemBibliotecaPerfil(item);
+
+  assert.deepEqual(acoes.seguidas, [[]]);
+  assert.deepEqual(acoes.historicosRemovidos, []);
+});
+
+test("remove favorita e concluída conforme a aba atual", async () => {
+  const moduloFavorita = await carregarModulo();
+  const obra = { id: "obra-1", capitulos: [] };
+  const favorita = criarAcoes(moduloFavorita, {
+    abaBibliotecaPerfil: "favoritas",
+    obras: [obra],
+    obrasFavoritas: ["obra-1"],
+  });
+
+  await favorita.removerItemBibliotecaPerfil({
+    obra,
+    capitulo: null,
+    tipoDiario: "favorita",
+  });
+  assert.deepEqual(favorita.favoritos, [[]]);
+
+  const moduloConcluida = await carregarModulo();
+  const concluida = criarAcoes(moduloConcluida, {
+    abaBibliotecaPerfil: "concluidas",
+    obras: [obra],
+    obrasConcluidas: ["obra-1"],
+  });
+
+  await concluida.removerItemBibliotecaPerfil({
+    obra,
+    capitulo: null,
+    tipoDiario: "concluida",
+  });
+  assert.deepEqual(concluida.concluidas, [[]]);
+});
+
+test("delega ao histórico quando nenhuma coleção específica se aplica", async () => {
+  const modulo = await carregarModulo();
+  const obra = { id: "obra-1", capitulos: [] };
+  const acoes = criarAcoes(modulo, {
+    abaBibliotecaPerfil: "historico",
+    obras: [obra],
+  });
+
+  await acoes.removerItemBibliotecaPerfil({
+    obra,
+    capitulo: null,
+    tipoDiario: "leu_capitulo",
+  });
+
+  assert.deepEqual(acoes.historicosRemovidos, ["obra-1"]);
+});
+
 test("Perfil de Autor delega coleções da Biblioteca para o hook", () => {
   assert.match(
     pagina,
@@ -305,7 +400,7 @@ test("Perfil de Autor delega coleções da Biblioteca para o hook", () => {
   );
   assert.match(
     pagina,
-    /const \{[\s\S]*?alternarFavoritoObra,[\s\S]*?alternarConcluidoObra,[\s\S]*?alternarSalvoCapituloBibliotecaPerfil,[\s\S]*?alternarObraSeguindoBibliotecaPerfil,[\s\S]*?\} = usePerfilAutorLibraryCollectionActions\(\{/,
+    /const \{[\s\S]*?alternarFavoritoObra,[\s\S]*?alternarConcluidoObra,[\s\S]*?alternarSalvoCapituloBibliotecaPerfil,[\s\S]*?alternarObraSeguindoBibliotecaPerfil,[\s\S]*?removerItemBibliotecaPerfil,[\s\S]*?\} = usePerfilAutorLibraryCollectionActions\(\{/,
   );
   assert.doesNotMatch(pagina, /async function alternarFavoritoObra\(/);
   assert.doesNotMatch(pagina, /async function alternarConcluidoObra\(/);
@@ -316,6 +411,10 @@ test("Perfil de Autor delega coleções da Biblioteca para o hook", () => {
   assert.doesNotMatch(
     pagina,
     /async function alternarObraSeguindoBibliotecaPerfil\(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /async function removerItemBibliotecaPerfil\(/,
   );
   assert.match(source, /await usuarioEstaLogado\(\)/);
   assert.match(source, /await sincronizarTabelaUsuario\(/);
