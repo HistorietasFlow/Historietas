@@ -104,15 +104,12 @@ import {
 } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
-  formatarMetaSheetObraPerfilAutor,
-  formatarMetricasSheetObraPerfilAutor,
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
+  obterDadosSheetObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
-  obterMetricasSheetObraPerfilAutor,
-  obterAlvoLeituraMenuObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
@@ -2160,38 +2157,19 @@ function PerfilAutorPageContent() {
             const {
               ultimoCapitulo,
               capituloHref,
-            } = obterAlvoLeituraMenuObraPerfilAutor(obra);
-            const {
               obraFavorita,
               obraConcluida,
-            } = obterEstadoColecoesObraPerfilAutor({
+              metaObraSheet,
+              metricasObraSheet,
+            } = obterDadosSheetObraPerfilAutor({
               obra,
+              totaisInteracoesObras,
               obrasFavoritas,
               obrasConcluidas,
               obrasSeguidasBiblioteca,
+              traduzirTexto: (item) =>
+                traduzirTextoPerfilAutor(item, language),
             });
-            const {
-              totalCurtidas,
-              totalComentarios,
-              totalSalvos,
-              visualizacoesFormatadas: visualizacoesObra,
-              totalCapitulos,
-            } = obterMetricasSheetObraPerfilAutor(
-              obra,
-              totaisInteracoesObras,
-            );
-            const metaObraSheet = formatarMetaSheetObraPerfilAutor(
-              obra,
-              (item) => traduzirTextoPerfilAutor(item, language),
-            );
-            const metricasObraSheet =
-              formatarMetricasSheetObraPerfilAutor({
-                visualizacoes: visualizacoesObra,
-                totalCurtidas,
-                totalComentarios,
-                totalSalvos,
-                totalCapitulos,
-              });
 
             return (
               <ProfileWorkActionSheetOverlay
