@@ -7,6 +7,7 @@ import {
   obterTotalComentariosObraPerfilAutor,
   obterTotalConcluidasObraPerfilAutor,
   obterTotalCurtidasObraPerfilAutor,
+  obterTotalSalvosObraPerfilAutor,
 } from "./data-normalizers";
 import {
   colecaoTemObraPerfilBiblioteca,
@@ -257,4 +258,29 @@ export function formatarMetaSheetObraPerfilAutor(
     .filter(Boolean)
     .map((item) => traduzirTexto(item))
     .join(" • ");
+}
+
+
+export function obterMetricasSheetObraPerfilAutor(
+  obra: ObraLocal,
+  totaisInteracoesObras: Parameters<
+    typeof obterTotalCurtidasObraPerfilAutor
+  >[1],
+) {
+  const {
+    totalCurtidas,
+    totalComentarios,
+    visualizacoesFormatadas,
+  } = obterMetricasResumoObraPerfilAutor(obra, totaisInteracoesObras);
+
+  return {
+    totalCurtidas,
+    totalComentarios,
+    totalSalvos: obterTotalSalvosObraPerfilAutor(
+      obra,
+      totaisInteracoesObras,
+    ),
+    visualizacoesFormatadas,
+    totalCapitulos: obra.capitulos.length,
+  };
 }

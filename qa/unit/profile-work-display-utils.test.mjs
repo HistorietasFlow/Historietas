@@ -40,6 +40,9 @@ globalThis.__profileWorkDisplayDependencies = {
   obterTotalCurtidasObraPerfilAutor(obra, totais) {
     return totais?.curtidasPorObra?.[obra.id] ?? obra.__curtidas ?? 0;
   },
+  obterTotalSalvosObraPerfilAutor(obra, totais) {
+    return totais?.salvosPorObra?.[obra.id] ?? obra.__salvos ?? 0;
+  },
   colecaoTemObraPerfilBiblioteca(colecao, obra) {
     return colecao.includes(obra.id) || colecao.includes(obra.slug);
   },
@@ -91,13 +94,14 @@ const javascript = typescript.transpileModule(
       "const { TOP_FIVE_MAXIMO } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
-      /import \{[\s\S]*?mesclarObrasPorIdSlug,[\s\S]*?obterTotalComentariosObraPerfilAutor,[\s\S]*?obterTotalConcluidasObraPerfilAutor,[\s\S]*?obterTotalCurtidasObraPerfilAutor,[\s\S]*?\} from "\.\/data-normalizers";/,
+      /import \{[\s\S]*?mesclarObrasPorIdSlug,[\s\S]*?obterTotalComentariosObraPerfilAutor,[\s\S]*?obterTotalConcluidasObraPerfilAutor,[\s\S]*?obterTotalCurtidasObraPerfilAutor,[\s\S]*?obterTotalSalvosObraPerfilAutor,[\s\S]*?\} from "\.\/data-normalizers";/,
       [
         "const {",
         "  mesclarObrasPorIdSlug,",
         "  obterTotalComentariosObraPerfilAutor,",
         "  obterTotalConcluidasObraPerfilAutor,",
         "  obterTotalCurtidasObraPerfilAutor,",
+        "  obterTotalSalvosObraPerfilAutor,",
         "} = globalThis.__profileWorkDisplayDependencies;",
       ].join("\n"),
     )
@@ -135,6 +139,7 @@ const {
   obterEstadoColecoesObraPerfilAutor,
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
+  obterMetricasSheetObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasVisiveisPerfilAutor,
   obterObrasDestaquePerfilAutor,
@@ -477,14 +482,18 @@ test("métricas resumidas da obra centralizam curtidas, comentários e visualiza
   });
 });
 
-test("página reutiliza métricas resumidas das obras nos três pontos", () => {
+test("métricas resumidas ficam diretas nos cards e são reutilizadas pelo helper do sheet", () => {
   assert.match(
     pagina,
     /obterMetricasResumoObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
     (pagina.match(/obterMetricasResumoObraPerfilAutor\(/g) || []).length,
-    3,
+    2,
+  );
+  assert.match(
+    source,
+    /obterMetricasResumoObraPerfilAutor\(obra, totaisInteracoesObras\)/,
   );
   assert.doesNotMatch(pagina, /obterTotalCurtidasObraPerfilAutor/);
   assert.doesNotMatch(pagina, /obterTotalComentariosObraPerfilAutor/);
@@ -599,4 +608,43 @@ test("página delega a meta do sheet da obra", () => {
   assert.doesNotMatch(pagina, /formatarGeneroPerfilAutor/);
   assert.doesNotMatch(pagina, /obterTagPrincipalPerfilAutor/);
   assert.doesNotMatch(pagina, /mostrarClassificacao/);
+});
+
+
+test("dados métricos do sheet incluem salvos e total de capítulos sem afetar cards", () => {
+  const resultado = obterMetricasSheetObraPerfilAutor(
+    {
+      id: "obra-sheet",
+      visualizacoes: 42,
+      capitulos: [{ id: "c1" }, { id: "c2" }],
+      __curtidas: 3,
+      __comentarios: 4,
+      __salvos: 5,
+    },
+    {
+      curtidasPorObra: { "obra-sheet": 7 },
+      comentariosPorObra: { "obra-sheet": 8 },
+      salvosPorObra: { "obra-sheet": 9 },
+    },
+  );
+
+  assert.deepEqual(resultado, {
+    totalCurtidas: 7,
+    totalComentarios: 8,
+    totalSalvos: 9,
+    visualizacoesFormatadas: "fmt:42",
+    totalCapitulos: 2,
+  });
+});
+
+test("página delega os dados métricos do sheet e não lê salvos diretamente", () => {
+  assert.match(
+    pagina,
+    /obterMetricasSheetObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterMetricasSheetObraPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(pagina, /obterTotalSalvosObraPerfilAutor/);
 });

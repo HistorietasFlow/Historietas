@@ -88,10 +88,7 @@ import {
 import {
   type IdentidadeAutenticadaPerfilAutor,
 } from "./lib/profile-auth-identity";
-import {
-  criarPerfilUsuarioRemotoComoAutor,
-  obterTotalSalvosObraPerfilAutor,
-} from "./lib/data-normalizers";
+import { criarPerfilUsuarioRemotoComoAutor } from "./lib/data-normalizers";
 import {
   analisarEnquetePublicacaoComunidadePerfil,
   criarHrefPublicacaoComunidadePerfil,
@@ -116,6 +113,7 @@ import {
   obterEstadoColecoesObraPerfilAutor,
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
+  obterMetricasSheetObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
@@ -2192,12 +2190,10 @@ function PerfilAutorPageContent() {
             const {
               totalCurtidas,
               totalComentarios,
+              totalSalvos,
               visualizacoesFormatadas: visualizacoesObra,
-            } = obterMetricasResumoObraPerfilAutor(
-              obra,
-              totaisInteracoesObras,
-            );
-            const totalSalvos = obterTotalSalvosObraPerfilAutor(
+              totalCapitulos,
+            } = obterMetricasSheetObraPerfilAutor(
               obra,
               totaisInteracoesObras,
             );
@@ -2211,7 +2207,7 @@ function PerfilAutorPageContent() {
                 totalCurtidas,
                 totalComentarios,
                 totalSalvos,
-                totalCapitulos: obra.capitulos.length,
+                totalCapitulos,
               });
 
             return (
