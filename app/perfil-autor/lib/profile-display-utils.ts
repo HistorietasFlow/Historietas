@@ -86,6 +86,20 @@ export function obterDadosExibicaoPerfilAutor({
 }
 
 
+export function obterRotulosAcoesEditorPerfilAutor({
+  temAvatar,
+  salvando,
+}: {
+  temAvatar: boolean;
+  salvando: boolean;
+}) {
+  return {
+    rotuloAcaoAvatar: temAvatar ? "Trocar imagem" : "Colocar imagem",
+    rotuloSalvarEditor: salvando ? "Salvando..." : "Salvar",
+  };
+}
+
+
 export function obterBioSobreExibicaoPerfilAutor({
   bioSobreAutor,
   bioSobreAutorEhPadrao,
