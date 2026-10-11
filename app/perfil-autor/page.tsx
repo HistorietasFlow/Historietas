@@ -90,7 +90,10 @@ import {
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
 } from "./lib/profile-community-publication-utils";
-import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
+import {
+  dataDiarioPerfilFormatada,
+  obterMensagemDiarioVazioPerfilAutor,
+} from "./lib/profile-diary-local-utils";
 import { criarHrefListaDiarioPerfilAutor } from "./lib/profile-diary-item-utils";
 import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
@@ -1772,11 +1775,9 @@ function PerfilAutorPageContent() {
             linkLabel="+"
             getIsLoading={() => diarioPerfil.carregando}
             getIsEmpty={() => itensDiarioTudo.length === 0}
-            emptyMessage={
-              podeEditarPerfil
-                ? "Suas obras e atividades de leitura aparecerão aqui."
-                : "Este perfil ainda não compartilhou itens no Diário."
-            }
+            emptyMessage={obterMensagemDiarioVazioPerfilAutor(
+              podeEditarPerfil,
+            )}
             renderItems={() =>
               itensDiarioTudo.map((item) => {
                 const obra = item.obra;
