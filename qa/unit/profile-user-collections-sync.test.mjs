@@ -21,6 +21,13 @@ const libraryCollectionActionsSource = readFileSync(
   ),
   "utf8",
 );
+const followActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-follow-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 function criarSupabase({ userId = "usuario-1", respostas = [] } = {}) {
@@ -255,9 +262,10 @@ test("preserva upsert e delete de autores seguidos", async () => {
 });
 
 test("sincronizações permanecem delegadas após extrair ações da Biblioteca", () => {
+  assert.match(pagina, /usePerfilAutorFollowActions/);
   assert.match(
-    pagina,
-    /import \{ sincronizarAutorSeguidoSupabase \} from "\.\/lib\/profile-user-collections-sync";/,
+    followActionsSource,
+    /import \{ sincronizarAutorSeguidoSupabase \} from "\.\.\/lib\/profile-user-collections-sync";/,
   );
   assert.doesNotMatch(
     pagina,
@@ -294,7 +302,7 @@ test("sincronizações permanecem delegadas após extrair ações da Biblioteca"
     /sincronizarTabelaUsuario\(\s*"seguindo_obras",/,
   );
   assert.match(
-    pagina,
+    followActionsSource,
     /sincronizarAutorSeguidoSupabase\(\s*autorNormalizado,/,
   );
 });

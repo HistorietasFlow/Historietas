@@ -12,6 +12,13 @@ const moduloSource = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url), "utf8");
+const followActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-follow-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 function criarConsulta(resposta, chamadas, tabela) {
@@ -229,10 +236,11 @@ test("não emite evento para falha da RPC e tolera ausência de window", async (
   }
 });
 
-test("Perfil de Autor delega apenas os helpers sociais extraídos", () => {
+test("Perfil de Autor delega os helpers sociais para o hook de seguimento", () => {
+  assert.match(pagina, /usePerfilAutorFollowActions/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?criarNotificacaoSocialPerfilAutor,[\s\S]*?removerNotificacoesSociaisPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-social-notifications-utils";/,
+    followActionsSource,
+    /import \{[\s\S]*?criarNotificacaoSocialPerfilAutor,[\s\S]*?removerNotificacoesSociaisPerfilAutor,[\s\S]*?\} from "\.\.\/lib\/profile-social-notifications-utils";/,
   );
   assert.doesNotMatch(pagina, /NotificacaoSocialPerfilAutorPayload/);
   for (const helper of [
@@ -243,7 +251,7 @@ test("Perfil de Autor delega apenas os helpers sociais extraídos", () => {
     assert.match(moduloSource, new RegExp(`export (?:async )?function ${helper}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`(?:async )?function ${helper}\\(`));
   }
-  assert.match(pagina, /await removerNotificacoesSociaisPerfilAutor\(/);
-  assert.match(pagina, /await criarNotificacaoSocialPerfilAutor\(/);
+  assert.match(followActionsSource, /await removerNotificacoesSociaisPerfilAutor\(/);
+  assert.match(followActionsSource, /await criarNotificacaoSocialPerfilAutor\(/);
   assert.doesNotMatch(moduloSource, /useState|useEffect|localStorage/);
 });
