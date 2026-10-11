@@ -302,7 +302,7 @@ test("sincronizações permanecem delegadas após extrair ações da Biblioteca"
     /sincronizarTabelaUsuario\(\s*"seguindo_obras",/,
   );
   assert.match(
-    pagina,
+    followActionsSource,
     /sincronizarAutorSeguidoSupabase\(\s*autorNormalizado,/,
   );
 });
