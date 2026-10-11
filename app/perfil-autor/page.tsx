@@ -113,7 +113,6 @@ import {
   converterCapitulosSalvosParaBiblioteca,
   converterItensDiarioParaBiblioteca,
   encontrarObraPorIdentificadorTopFivePerfil,
-  mesclarItensBibliotecaPerfil,
 } from "./lib/library-normalizers";
 import {
   criarPerfilUsuarioRemotoComoAutor,
@@ -129,6 +128,7 @@ import {
   criarResumoPublicacaoComunidadePerfil,
 } from "./lib/profile-community-publication-utils";
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
+import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import { MenuPerfilIcone } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -1314,38 +1314,15 @@ function PerfilAutorPageContent() {
   ]);
 
   const itensBibliotecaAtivos = useMemo(() => {
-    if (abaBibliotecaPerfil === "quero-ler") {
-      return itensBibliotecaQueroLer;
-    }
-
-    if (abaBibliotecaPerfil === "lendo-agora") {
-      return itensBibliotecaLendoAgora;
-    }
-
-    if (abaBibliotecaPerfil === "favoritas") {
-      return itensBibliotecaFavoritas;
-    }
-
-    if (abaBibliotecaPerfil === "concluidas") {
-      return itensBibliotecaConcluidas;
-    }
-
-    if (abaBibliotecaPerfil === "salvos") {
-      return itensBibliotecaSalvos;
-    }
-
-    if (abaBibliotecaPerfil === "historico") {
-      return itensBibliotecaHistorico;
-    }
-
-    return mesclarItensBibliotecaPerfil(
-      itensBibliotecaQueroLer,
-      itensBibliotecaLendoAgora,
-      itensBibliotecaFavoritas,
-      itensBibliotecaConcluidas,
-      itensBibliotecaSalvos,
-      itensBibliotecaHistorico,
-    );
+    return selecionarItensBibliotecaPerfil({
+      aba: abaBibliotecaPerfil,
+      queroLer: itensBibliotecaQueroLer,
+      lendoAgora: itensBibliotecaLendoAgora,
+      favoritas: itensBibliotecaFavoritas,
+      concluidas: itensBibliotecaConcluidas,
+      salvos: itensBibliotecaSalvos,
+      historico: itensBibliotecaHistorico,
+    });
   }, [
     abaBibliotecaPerfil,
     itensBibliotecaConcluidas,
