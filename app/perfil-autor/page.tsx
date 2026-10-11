@@ -108,6 +108,7 @@ import {
   obterDadosCardObraPerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
+  obterRotulosAcoesColecoesObraPerfilAutor,
   obterHrefObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
@@ -2171,6 +2172,13 @@ function PerfilAutorPageContent() {
               traduzirTexto: (item) =>
                 traduzirTextoPerfilAutor(item, language),
             });
+            const {
+              rotuloFavorita,
+              rotuloConcluida,
+            } = obterRotulosAcoesColecoesObraPerfilAutor({
+              obraFavorita,
+              obraConcluida,
+            });
 
             return (
               <ProfileWorkActionSheetOverlay
@@ -2226,9 +2234,7 @@ function PerfilAutorPageContent() {
                           }
                         >
                           <span>
-                            {obraFavorita
-                              ? "Remover da lista"
-                              : "Adicionar à lista"}
+                            {rotuloFavorita}
                           </span>
                           <span style={criarProfileSelectionDotStyle(obraFavorita)}>
                             {obraFavorita ? "✓" : ""}
@@ -2248,9 +2254,7 @@ function PerfilAutorPageContent() {
                           }
                         >
                           <span>
-                            {obraConcluida
-                              ? "Marcar como não concluída"
-                              : "Concluir"}
+                            {rotuloConcluida}
                           </span>
                           <span style={criarProfileSelectionDotStyle(obraConcluida)}>
                             {obraConcluida ? "✓" : ""}
