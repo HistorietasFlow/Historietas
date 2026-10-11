@@ -88,7 +88,6 @@ import {
   formatarFormatoPerfilAutor,
   formatarGeneroPerfilAutor,
   normalizarAbaPerfilAutor,
-  normalizarNumeroPerfilAutor,
   normalizarUsernamePerfilAutor,
   obterTagPrincipalPerfilAutor,
   obterTimestampData,
@@ -127,6 +126,7 @@ import {
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import { montarItensBibliotecaPerfilAutor } from "./lib/profile-library-items-builder";
 import { obterTotaisBibliotecaPerfilAutor } from "./lib/profile-library-totals";
+import { obterResumoEstatisticasPerfilAutor } from "./lib/profile-summary-stats";
 import {
   encontrarItemBibliotecaMenuAberto,
   obterRotuloBibliotecaPerfil,
@@ -960,47 +960,15 @@ function PerfilAutorPageContent() {
     setAvaliacaoDiario,
   });
 
-  const generosPrincipaisPerfil = useMemo(() => {
-    if (!perfilParaMostrar) {
-      return [] as string[];
-    }
-
-    const contagemGeneros = new Map<string, number>();
-
-    perfilParaMostrar.obras.forEach((obra) => {
-      const genero = formatarGeneroPerfilAutor(obra.genero);
-
-      if (!genero || genero === "Não informado") {
-        return;
-      }
-
-      contagemGeneros.set(genero, (contagemGeneros.get(genero) || 0) + 1);
-    });
-
-    return Array.from(contagemGeneros.entries())
-      .sort((generoA, generoB) => {
-        if (generoA[1] !== generoB[1]) {
-          return generoB[1] - generoA[1];
-        }
-
-        return generoA[0].localeCompare(generoB[0]);
-      })
-      .slice(0, 5)
-      .map(([genero]) => genero);
-  }, [perfilParaMostrar]);
-
-  const totalVisualizacoesPerfil = perfilParaMostrar
-    ? perfilParaMostrar.obras.reduce(
-        (total, obra) => total + normalizarNumeroPerfilAutor(obra.visualizacoes),
-        0,
-      )
-    : 0;
-  const totalRascunhosPerfil = perfilParaMostrar
-    ? Math.max(0, perfilParaMostrar.obras.length - perfilParaMostrar.totalPublicadas)
-    : 0;
-  const totalObrasSemCapitulosPerfil = perfilParaMostrar
-    ? perfilParaMostrar.obras.filter((obra) => obra.capitulos.length === 0).length
-    : 0;
+  const {
+    generosPrincipaisPerfil,
+    totalVisualizacoesPerfil,
+    totalRascunhosPerfil,
+    totalObrasSemCapitulosPerfil,
+  } = useMemo(
+    () => obterResumoEstatisticasPerfilAutor(perfilParaMostrar),
+    [perfilParaMostrar],
+  );
 
   const obraMenuAberta = useMemo(() => {
     if (!obraMenuAbertoId) {
