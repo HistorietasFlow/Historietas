@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
@@ -23,6 +23,7 @@ import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
 import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-actions";
+import { usePerfilAutorLoginRedirect } from "./hooks/use-perfil-autor-login-redirect";
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
 import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avatar-editor-actions";
 import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actions";
@@ -140,7 +141,6 @@ import {
   criarResumoPublicacaoComunidadePerfil,
 } from "./lib/profile-community-publication-utils";
 import { carregarPerfilUsuarioSupabase } from "./lib/profile-public-profile-loader";
-import { criarLoginHrefPerfilAutor } from "./lib/profile-login-route-utils";
 import { carregarDiarioPerfilSupabase } from "./lib/profile-diary-loader";
 import { mesclarDiarioPerfilComLocal } from "./lib/profile-diary-merge-utils";
 import {
@@ -323,7 +323,6 @@ import {
 
 
 function PerfilAutorPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { language } = useHistorietasLanguage();
   const queryPerfilAtual = searchParams.toString();
@@ -1200,13 +1199,9 @@ function PerfilAutorPageContent() {
   const redirecionandoParaLogin =
     autenticacaoCarregada && perfilSemLoginSemParametro;
 
-  useEffect(() => {
-    if (!redirecionandoParaLogin) {
-      return;
-    }
-
-    router.replace(criarLoginHrefPerfilAutor());
-  }, [redirecionandoParaLogin, router]);
+  usePerfilAutorLoginRedirect({
+    redirecionandoParaLogin,
+  });
 
   usePerfilAutorTopFiveStorageSync({
     perfilAutorId: perfilParaMostrar?.autorId || "",
