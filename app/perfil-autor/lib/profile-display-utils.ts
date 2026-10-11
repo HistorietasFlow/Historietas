@@ -57,6 +57,7 @@ export function obterDadosExibicaoPerfilAutor({
   return {
     perfilSalvoAutor,
     perfilUsuarioRemotoAtivo,
+    bioPadraoAutor,
     bioAutorPersonalizada,
     bioAutor,
     bioSobrePersonalizada,
