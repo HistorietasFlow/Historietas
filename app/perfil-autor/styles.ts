@@ -3036,3 +3036,32 @@ export function criarCapaMiniCardDiarioPerfilStyle(
     backgroundPosition: "center",
   };
 }
+
+
+export function obterEstilosResponsivosPerfilAutor(isDesktop: boolean) {
+  return {
+    containerAtualStyle: isDesktop ? desktopContainerStyle : containerStyle,
+    heroAtualStyle: isDesktop ? desktopHeroBoxStyle : heroBoxStyle,
+    authorTopRowAtualStyle: isDesktop
+      ? desktopAuthorTopRowStyle
+      : authorTopRowStyle,
+    avatarActionsAtualStyle: isDesktop
+      ? desktopAvatarActionsStyle
+      : avatarActionsStyle,
+    avatarSmallButtonAtualStyle: isDesktop
+      ? desktopAvatarSmallButtonStyle
+      : avatarSmallButtonStyle,
+    avatarRemoveButtonAtualStyle: isDesktop
+      ? desktopAvatarRemoveButtonStyle
+      : avatarRemoveButtonStyle,
+    profileActionsAtualStyle: isDesktop
+      ? desktopProfileActionsStyle
+      : profileActionsStyle,
+    profileVisitorActionsAtualStyle: isDesktop
+      ? desktopProfileVisitorActionsStyle
+      : profileVisitorActionsStyle,
+    menuSheetAtualStyle: isDesktop
+      ? desktopMenuSheetStyle
+      : menuSheetStyle,
+  };
+}
