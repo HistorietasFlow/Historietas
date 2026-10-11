@@ -89,7 +89,6 @@ import {
   criarHandlePerfilAutor,
   criarHrefLeituraCapituloPerfilAutor,
   criarHrefListaSeguimentoPerfilAutor,
-  criarPerfilAutorHref,
   formatarEntradaHistorietasPerfilAutor,
   formatarFormatoPerfilAutor,
   formatarGeneroPerfilAutor,
@@ -159,10 +158,6 @@ import {
 import {
   carregarEstadoSeguimentoUsuarioPerfil,
 } from "./lib/profile-follow-state-loader";
-import {
-  criarNotificacaoSocialPerfilAutor,
-  removerNotificacoesSociaisPerfilAutor,
-} from "./lib/profile-social-notifications-utils";
 import { obterHrefItemDiarioPerfil } from "./lib/profile-diary-item-utils";
 import {
   dataDiarioPerfilFormatada,
