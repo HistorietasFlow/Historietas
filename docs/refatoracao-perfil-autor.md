@@ -605,3 +605,11 @@
 - Preservou prioridade do capítulo de continuação, fallback para o último capítulo, numeração e href de leitura.
 - Removeu essa derivação do JSX e o uso direto de `encontrarCapituloParaContinuar` da página.
 - Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 995 — href de leitura da Biblioteca
+
+- Centralizou o href de leitura dos itens da Biblioteca em `obterHrefLeituraItemBibliotecaPerfilAutor`.
+- Preservou prioridade do capítulo e fallback para o href da obra.
+- Removeu duas montagens duplicadas e o uso direto de `criarHrefLeituraCapituloPerfilAutor` de `page.tsx`.
+- Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.

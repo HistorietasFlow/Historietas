@@ -1,7 +1,7 @@
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
 import { TOP_FIVE_MAXIMO } from "../constants";
-import type { AutorPerfil, ObraLocal } from "../types";
+import type { AutorPerfil, ItemBibliotecaPerfil, ObraLocal } from "../types";
 import {
   mesclarObrasPorIdSlug,
   obterTotalComentariosObraPerfilAutor,
@@ -312,4 +312,19 @@ export function obterAlvoLeituraMenuObraPerfilAutor(obra: ObraLocal) {
         )
       : "",
   };
+}
+
+
+export function obterHrefLeituraItemBibliotecaPerfilAutor(
+  item: Pick<ItemBibliotecaPerfil, "obra" | "capitulo" | "numeroCapitulo">,
+) {
+  const obraHref = obterHrefObraPerfilAutor(item.obra);
+
+  return item.capitulo
+    ? criarHrefLeituraCapituloPerfilAutor(
+        item.obra,
+        item.capitulo,
+        item.numeroCapitulo || 1,
+      )
+    : obraHref;
 }

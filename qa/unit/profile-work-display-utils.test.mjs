@@ -144,6 +144,7 @@ const {
   formatarMetaSheetObraPerfilAutor,
   formatarMetricasSheetObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
+  obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
   obterMetricasSheetObraPerfilAutor,
@@ -456,14 +457,18 @@ test("href da obra prioriza link, depois slug e por fim título", () => {
   );
 });
 
-test("página reutiliza o helper de href das obras", () => {
+test("página reutiliza hrefs de obra diretamente e pela Biblioteca", () => {
   assert.match(
     pagina,
     /obterHrefObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
     (pagina.match(/obterHrefObraPerfilAutor\(/g) || []).length,
-    4,
+    2,
+  );
+  assert.match(
+    source,
+    /const obraHref = obterHrefObraPerfilAutor\(item\.obra\);/,
   );
   assert.doesNotMatch(pagina, /criarSlugBase/);
 });
@@ -705,4 +710,47 @@ test("página delega o alvo de leitura do menu da obra", () => {
   );
   assert.doesNotMatch(pagina, /encontrarCapituloParaContinuar/);
   assert.doesNotMatch(pagina, /numeroUltimoCapitulo/);
+});
+
+
+test("href de leitura da Biblioteca prioriza capítulo e faz fallback para a obra", () => {
+  assert.equal(
+    obterHrefLeituraItemBibliotecaPerfilAutor({
+      obra: {
+        id: "obra-biblioteca",
+        link: "/obra/direta",
+        slug: "obra-biblioteca",
+        titulo: "Obra Biblioteca",
+      },
+      capitulo: { id: "cap-2" },
+      numeroCapitulo: 2,
+    }),
+    "/ler/obra-biblioteca/cap-2/2",
+  );
+
+  assert.equal(
+    obterHrefLeituraItemBibliotecaPerfilAutor({
+      obra: {
+        id: "obra-fallback",
+        link: "",
+        slug: "obra-fallback",
+        titulo: "Obra Fallback",
+      },
+      capitulo: null,
+      numeroCapitulo: 0,
+    }),
+    "/obra/obra-fallback",
+  );
+});
+
+test("página delega os dois hrefs de leitura da Biblioteca", () => {
+  assert.match(
+    pagina,
+    /obterHrefLeituraItemBibliotecaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterHrefLeituraItemBibliotecaPerfilAutor\(/g) || []).length,
+    2,
+  );
+  assert.doesNotMatch(pagina, /criarHrefLeituraCapituloPerfilAutor/);
 });

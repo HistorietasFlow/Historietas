@@ -78,7 +78,6 @@ import {
 } from "./translations";
 import {
   compactarNumeroPerfilAutor,
-  criarHrefLeituraCapituloPerfilAutor,
   normalizarAbaPerfilAutor,
   normalizarUsernamePerfilAutor,
 } from "./lib/profile-formatters";
@@ -108,6 +107,7 @@ import {
   formatarMetaSheetObraPerfilAutor,
   formatarMetricasSheetObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
+  obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
   obterMetricasSheetObraPerfilAutor,
@@ -1717,14 +1717,8 @@ function PerfilAutorPageContent() {
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {itensBibliotecaAtivos.map((item) => {
-                  const obraHref = obterHrefObraPerfilAutor(item.obra);
-                  const capituloHref = item.capitulo
-                    ? criarHrefLeituraCapituloPerfilAutor(
-                        item.obra,
-                        item.capitulo,
-                        item.numeroCapitulo || 1,
-                      )
-                    : obraHref;
+                  const capituloHref =
+                    obterHrefLeituraItemBibliotecaPerfilAutor(item);
                   const {
                     totalCurtidas: totalCurtidasBiblioteca,
                     totalComentarios: totalComentariosBiblioteca,
@@ -2314,14 +2308,8 @@ function PerfilAutorPageContent() {
           (() => {
             const item = bibliotecaMenuAberto;
             const obra = item.obra;
-            const obraHref = obterHrefObraPerfilAutor(obra);
-            const capituloHref = item.capitulo
-              ? criarHrefLeituraCapituloPerfilAutor(
-                  obra,
-                  item.capitulo,
-                  item.numeroCapitulo || 1,
-                )
-              : obraHref;
+            const capituloHref =
+              obterHrefLeituraItemBibliotecaPerfilAutor(item);
             const {
               obraFavorita,
               obraConcluida,
