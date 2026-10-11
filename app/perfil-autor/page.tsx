@@ -79,15 +79,11 @@ import {
 import {
   compactarNumeroPerfilAutor,
   criarHrefLeituraCapituloPerfilAutor,
-  formatarFormatoPerfilAutor,
-  formatarGeneroPerfilAutor,
   normalizarAbaPerfilAutor,
   normalizarUsernamePerfilAutor,
-  obterTagPrincipalPerfilAutor,
 } from "./lib/profile-formatters";
 import {
   encontrarCapituloParaContinuar,
-  mostrarClassificacao,
 } from "./lib/work-normalizers";
 import {
   type IdentidadeAutenticadaPerfilAutor,
@@ -112,6 +108,7 @@ import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-u
 import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
+  formatarMetaSheetObraPerfilAutor,
   formatarMetricasSheetObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefObraPerfilAutor,
@@ -2198,17 +2195,10 @@ function PerfilAutorPageContent() {
               obra,
               totaisInteracoesObras,
             );
-            const formatoObra = formatarFormatoPerfilAutor(obra.formato);
-            const tagPrincipalObra = obterTagPrincipalPerfilAutor(obra);
-            const metaObraSheet = [
-              formatarGeneroPerfilAutor(obra.genero),
-              formatoObra,
-              tagPrincipalObra,
-              mostrarClassificacao(obra) ? obra.classificacaoIndicativa : "",
-            ]
-              .filter(Boolean)
-              .map((item) => traduzirTextoPerfilAutor(item, language))
-              .join(" • ");
+            const metaObraSheet = formatarMetaSheetObraPerfilAutor(
+              obra,
+              (item) => traduzirTextoPerfilAutor(item, language),
+            );
             const metricasObraSheet =
               formatarMetricasSheetObraPerfilAutor({
                 visualizacoes: visualizacoesObra,
