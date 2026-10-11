@@ -16,11 +16,15 @@ import {
 import {
   compactarNumeroPerfilAutor,
   formatarFormatoPerfilAutor,
+  criarHrefLeituraCapituloPerfilAutor,
   formatarGeneroPerfilAutor,
   obterTagPrincipalPerfilAutor,
   obterTimestampData,
 } from "./profile-formatters";
-import { mostrarClassificacao } from "./work-normalizers";
+import {
+  encontrarCapituloParaContinuar,
+  mostrarClassificacao,
+} from "./work-normalizers";
 
 export function obterObrasVisiveisPerfilAutor({
   perfilParaMostrar,
@@ -282,5 +286,30 @@ export function obterMetricasSheetObraPerfilAutor(
     ),
     visualizacoesFormatadas,
     totalCapitulos: obra.capitulos.length,
+  };
+}
+
+
+export function obterAlvoLeituraMenuObraPerfilAutor(obra: ObraLocal) {
+  const ultimoCapitulo =
+    encontrarCapituloParaContinuar(obra) ||
+    obra.capitulos[obra.capitulos.length - 1] ||
+    null;
+  const numeroUltimoCapitulo = ultimoCapitulo
+    ? obra.capitulos.findIndex(
+        (capitulo) => capitulo.id === ultimoCapitulo.id,
+      ) + 1
+    : 0;
+
+  return {
+    ultimoCapitulo,
+    numeroUltimoCapitulo,
+    capituloHref: ultimoCapitulo
+      ? criarHrefLeituraCapituloPerfilAutor(
+          obra,
+          ultimoCapitulo,
+          numeroUltimoCapitulo || 1,
+        )
+      : "",
   };
 }

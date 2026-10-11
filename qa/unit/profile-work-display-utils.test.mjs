@@ -60,6 +60,9 @@ globalThis.__profileWorkDisplayDependencies = {
   compactarNumeroPerfilAutor(valor) {
     return `fmt:${Math.max(0, Math.round(Number(valor) || 0))}`;
   },
+  criarHrefLeituraCapituloPerfilAutor(obra, capitulo, numeroCapitulo) {
+    return `/ler/${obra.id}/${capitulo.id}/${numeroCapitulo}`;
+  },
   formatarFormatoPerfilAutor(valor) {
     const limpo = String(valor || "").trim();
     return limpo === "Não informado" ? "" : limpo;
@@ -73,6 +76,9 @@ globalThis.__profileWorkDisplayDependencies = {
   obterTimestampData(valor) {
     const timestamp = Date.parse(valor);
     return Number.isNaN(timestamp) ? 0 : timestamp;
+  },
+  encontrarCapituloParaContinuar(obra) {
+    return obra.capitulos.find((capitulo) => capitulo.continuar) || null;
   },
   mostrarClassificacao(obra) {
     return obra.classificacaoIndicativa !== "Não informado";
@@ -110,11 +116,12 @@ const javascript = typescript.transpileModule(
       "const { colecaoTemObraPerfilBiblioteca, encontrarObraPorIdentificadorTopFivePerfil } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
-      /import \{[\s\S]*?compactarNumeroPerfilAutor,[\s\S]*?formatarFormatoPerfilAutor,[\s\S]*?formatarGeneroPerfilAutor,[\s\S]*?obterTagPrincipalPerfilAutor,[\s\S]*?obterTimestampData,[\s\S]*?\} from "\.\/profile-formatters";/,
+      /import \{[\s\S]*?compactarNumeroPerfilAutor,[\s\S]*?formatarFormatoPerfilAutor,[\s\S]*?criarHrefLeituraCapituloPerfilAutor,[\s\S]*?formatarGeneroPerfilAutor,[\s\S]*?obterTagPrincipalPerfilAutor,[\s\S]*?obterTimestampData,[\s\S]*?\} from "\.\/profile-formatters";/,
       [
         "const {",
         "  compactarNumeroPerfilAutor,",
         "  formatarFormatoPerfilAutor,",
+        "  criarHrefLeituraCapituloPerfilAutor,",
         "  formatarGeneroPerfilAutor,",
         "  obterTagPrincipalPerfilAutor,",
         "  obterTimestampData,",
@@ -122,8 +129,8 @@ const javascript = typescript.transpileModule(
       ].join("\n"),
     )
     .replace(
-      'import { mostrarClassificacao } from "./work-normalizers";',
-      "const { mostrarClassificacao } = globalThis.__profileWorkDisplayDependencies;",
+      /import \{[\s\S]*?encontrarCapituloParaContinuar,[\s\S]*?mostrarClassificacao,[\s\S]*?\} from "\.\/work-normalizers";/,
+      "const { encontrarCapituloParaContinuar, mostrarClassificacao } = globalThis.__profileWorkDisplayDependencies;",
     ),
   {
     compilerOptions: {
@@ -140,6 +147,7 @@ const {
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
   obterMetricasSheetObraPerfilAutor,
+  obterAlvoLeituraMenuObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasVisiveisPerfilAutor,
   obterObrasDestaquePerfilAutor,
@@ -647,4 +655,54 @@ test("página delega os dados métricos do sheet e não lê salvos diretamente",
     1,
   );
   assert.doesNotMatch(pagina, /obterTotalSalvosObraPerfilAutor/);
+});
+
+
+test("alvo de leitura do menu prioriza capítulo para continuar e preserva fallback final", () => {
+  const comContinuacao = obterAlvoLeituraMenuObraPerfilAutor({
+    id: "obra-leitura",
+    capitulos: [
+      { id: "c1" },
+      { id: "c2", continuar: true },
+      { id: "c3" },
+    ],
+  });
+
+  assert.equal(comContinuacao.ultimoCapitulo.id, "c2");
+  assert.equal(comContinuacao.numeroUltimoCapitulo, 2);
+  assert.equal(comContinuacao.capituloHref, "/ler/obra-leitura/c2/2");
+
+  const fallbackFinal = obterAlvoLeituraMenuObraPerfilAutor({
+    id: "obra-fallback",
+    capitulos: [{ id: "a" }, { id: "b" }],
+  });
+
+  assert.equal(fallbackFinal.ultimoCapitulo.id, "b");
+  assert.equal(fallbackFinal.numeroUltimoCapitulo, 2);
+  assert.equal(fallbackFinal.capituloHref, "/ler/obra-fallback/b/2");
+
+  assert.deepEqual(
+    obterAlvoLeituraMenuObraPerfilAutor({
+      id: "obra-vazia",
+      capitulos: [],
+    }),
+    {
+      ultimoCapitulo: null,
+      numeroUltimoCapitulo: 0,
+      capituloHref: "",
+    },
+  );
+});
+
+test("página delega o alvo de leitura do menu da obra", () => {
+  assert.match(
+    pagina,
+    /obterAlvoLeituraMenuObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterAlvoLeituraMenuObraPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(pagina, /encontrarCapituloParaContinuar/);
+  assert.doesNotMatch(pagina, /numeroUltimoCapitulo/);
 });
