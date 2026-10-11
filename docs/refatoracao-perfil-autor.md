@@ -369,3 +369,10 @@
 - Extraiu a derivação de bloqueio, permissões, primeira aba visível e estado de conteúdo privado para `obterVisibilidadeAbasPerfilAutor`.
 - Preservou a prioridade das abas, a regra de carregamento de privacidade e a contagem sem Atividades.
 - Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 963 — resolução do perfil exibido
+
+- Extraiu a resolução por ID, nome, usuário logado e perfil remoto para `resolverEstadoPerfilAutor`.
+- Preservou autor não encontrado, ausência de parâmetros, redirecionamento para login e identificação de perfil próprio.
+- Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
