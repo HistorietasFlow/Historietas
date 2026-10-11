@@ -1,6 +1,27 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
-import { resolverEstadoPerfilAutor } from "../../app/perfil-autor/lib/profile-resolution-utils.ts";
+import typescript from "typescript";
+
+const source = readFileSync(
+  new URL("../../app/perfil-autor/lib/profile-resolution-utils.ts", import.meta.url),
+  "utf8",
+);
+const javascript = typescript.transpileModule(
+  source.replace(
+    'import { normalizarNomeAutor } from "./profile-formatters";',
+    'const normalizarNomeAutor = (nome) => nome.trim().replace(/\\s+/g, " ").toLowerCase();',
+  ),
+  {
+    compilerOptions: {
+      module: typescript.ModuleKind.ESNext,
+      target: typescript.ScriptTarget.ES2022,
+    },
+  },
+).outputText;
+const { resolverEstadoPerfilAutor } = await import(
+  `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
+);
 
 function perfil(autorId, nome) {
   return {
