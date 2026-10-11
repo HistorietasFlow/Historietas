@@ -7,6 +7,10 @@ const source = readFileSync(
   new URL("../../app/perfil-autor/lib/profile-work-display-utils.ts", import.meta.url),
   "utf8",
 );
+const pagina = readFileSync(
+  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  "utf8",
+);
 
 globalThis.__profileWorkDisplayDependencies = {
   ehClassificacao18(valor) {
@@ -323,5 +327,17 @@ test("seção de destaques depende da aba Obras e do conteúdo/configuração di
       destaquesPerfilVisivel: false,
       exibirSecaoDestaques: false,
     },
+  );
+});
+
+
+test("página resolve obra com menu aberto sem useMemo", () => {
+  assert.match(
+    pagina,
+    /const obraMenuAberta = obterObraMenuAbertaPerfilAutor\(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const obraMenuAberta = useMemo/,
   );
 });
