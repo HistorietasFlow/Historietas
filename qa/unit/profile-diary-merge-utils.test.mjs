@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diarySyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-diary-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const diaryLoaderSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-diary-loader.ts",
@@ -198,8 +205,8 @@ test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carre
     /import \{ obterTimestampData \} from "\.\/profile-formatters";/,
   );
   assert.match(
-    pagina,
-    /import \{ mesclarDiarioPerfilComLocal \} from "\.\/lib\/profile-diary-merge-utils";/,
+    diarySyncSource,
+    /import \{ mesclarDiarioPerfilComLocal \} from "\.\.\/lib\/profile-diary-merge-utils";/,
   );
   assert.match(
     diaryLoaderSource,
@@ -216,7 +223,10 @@ test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carre
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(pagina, /mesclarDiarioPerfilComLocal\(diarioSupabase, diarioLocal\)/);
+  assert.match(
+    diarySyncSource,
+    /mesclarDiarioPerfilComLocal\(diarioSupabase, diarioLocal\)/,
+  );
   assert.match(
     diaryLoaderSource,
     /ordenarItensDiarioPerfil\(Array\.from\(lendoPorObra\.values\(\)\)\)/,
