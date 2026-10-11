@@ -21,6 +21,7 @@ async function carregarModulo({ logado = true } = {}) {
   globalThis.__profileLibraryCollectionDependencies = {
     completedKey: "completed",
     favoritesKey: "favorites",
+    libraryFollowKey: "library-follow",
     colecaoTemObra(lista, obra) {
       chamadas.push(["tem", lista.slice(), obra.id]);
       return lista.includes(obra.id);
@@ -46,7 +47,7 @@ async function carregarModulo({ logado = true } = {}) {
       .replace('import type { ObraLocal } from "../types";\n', "")
       .replace(
         /import \{[\s\S]*?\} from "\.\.\/constants";/,
-        "const COMPLETED_STORAGE_KEY = globalThis.__profileLibraryCollectionDependencies.completedKey;\nconst FAVORITES_STORAGE_KEY = globalThis.__profileLibraryCollectionDependencies.favoritesKey;",
+        "const COMPLETED_STORAGE_KEY = globalThis.__profileLibraryCollectionDependencies.completedKey;\nconst FAVORITES_STORAGE_KEY = globalThis.__profileLibraryCollectionDependencies.favoritesKey;\nconst LIBRARY_FOLLOW_STORAGE_KEY = globalThis.__profileLibraryCollectionDependencies.libraryFollowKey;",
       )
       .replace(
         /import \{[\s\S]*?\} from "\.\.\/lib\/library-normalizers";/,
@@ -84,13 +85,19 @@ function criarAcoes(
   {
     obrasFavoritas = [],
     obrasConcluidas = [],
-    obras = [{ id: "obra-1" }],
+    obrasSeguidasBiblioteca = [],
+    obras = [{
+      id: "obra-1",
+      capitulos: [{ id: "cap-1", salvo: false }],
+    }],
   } = {},
 ) {
   const mensagens = [];
   const avisos = [];
   const favoritos = [];
   const concluidas = [];
+  const seguidas = [];
+  const obrasSalvas = [];
   const versoes = [];
 
   return {
@@ -98,9 +105,13 @@ function criarAcoes(
       obras,
       obrasFavoritas,
       obrasConcluidas,
+      obrasSeguidasBiblioteca,
       usuarioIdLogado: "usuario-1",
       avisarLoginNecessario(mensagem) {
         avisos.push(mensagem);
+      },
+      salvarObrasBibliotecaPerfil(lista) {
+        obrasSalvas.push(lista);
       },
       setMensagemAcao(mensagem) {
         mensagens.push(mensagem);
@@ -111,6 +122,9 @@ function criarAcoes(
       setObrasConcluidas(lista) {
         concluidas.push(lista);
       },
+      setObrasSeguidasBiblioteca(lista) {
+        seguidas.push(lista);
+      },
       setVersaoSincronizacaoBiblioteca(atualizar) {
         versoes.push(atualizar(7));
       },
@@ -119,6 +133,8 @@ function criarAcoes(
     avisos,
     favoritos,
     concluidas,
+    seguidas,
+    obrasSalvas,
     versoes,
   };
 }
@@ -203,17 +219,104 @@ test("mantém fallback por id quando a obra não está na lista carregada", asyn
   assert.deepEqual(acoes.concluidas, [[]]);
 });
 
-test("Perfil de Autor delega favoritos e concluídas para o hook", () => {
+test("alterna capítulo salvo preservando estado, sync privado e mensagem", async () => {
+  const modulo = await carregarModulo();
+  const acoes = criarAcoes(modulo);
+
+  await acoes.alternarSalvoCapituloBibliotecaPerfil("obra-1", "cap-1");
+
+  assert.equal(acoes.obrasSalvas.length, 1);
+  assert.equal(acoes.obrasSalvas[0][0].capitulos[0].salvo, true);
+  assert.deepEqual(
+    modulo.chamadas.filter((chamada) => chamada[0] === "sync"),
+    [["sync", "salvos_capitulos", "cap-1", true, "privado"]],
+  );
+  assert.deepEqual(acoes.mensagens, [
+    "",
+    "Capítulo salvo na Biblioteca.",
+  ]);
+});
+
+test("respeita estado explícito ao remover capítulo dos salvos", async () => {
+  const modulo = await carregarModulo();
+  const acoes = criarAcoes(modulo, {
+    obras: [{
+      id: "obra-1",
+      capitulos: [{ id: "cap-1", salvo: true }],
+    }],
+  });
+
+  await acoes.alternarSalvoCapituloBibliotecaPerfil(
+    "obra-1",
+    "cap-1",
+    false,
+  );
+
+  assert.equal(acoes.obrasSalvas[0][0].capitulos[0].salvo, false);
+  assert.deepEqual(acoes.mensagens.at(-1), "Capítulo removido dos salvos.");
+});
+
+test("alterna Quero ler persistindo e sincronizando como público", async () => {
+  const modulo = await carregarModulo();
+  const obra = {
+    id: "obra-1",
+    capitulos: [],
+  };
+  const acoes = criarAcoes(modulo, { obras: [obra] });
+
+  await acoes.alternarObraSeguindoBibliotecaPerfil(obra);
+
+  assert.deepEqual(acoes.seguidas, [["obra-1"]]);
+  assert.deepEqual(acoes.versoes, [8]);
+  assert.deepEqual(
+    modulo.chamadas.filter((chamada) =>
+      ["salvar", "sync"].includes(chamada[0]),
+    ),
+    [
+      ["salvar", "library-follow", "usuario-1", ["obra-1"]],
+      ["sync", "seguindo_obras", "obra-1", true, "publico"],
+    ],
+  );
+  assert.deepEqual(acoes.mensagens.at(-1), "Obra adicionada ao Quero ler.");
+});
+
+test("remove obra do Quero ler quando já segue", async () => {
+  const modulo = await carregarModulo();
+  const obra = { id: "obra-1", capitulos: [] };
+  const acoes = criarAcoes(modulo, {
+    obras: [obra],
+    obrasSeguidasBiblioteca: ["obra-1"],
+  });
+
+  await acoes.alternarObraSeguindoBibliotecaPerfil(obra);
+
+  assert.deepEqual(acoes.seguidas, [[]]);
+  assert.deepEqual(
+    modulo.chamadas.filter((chamada) => chamada[0] === "sync"),
+    [["sync", "seguindo_obras", "obra-1", false, "publico"]],
+  );
+  assert.deepEqual(acoes.mensagens.at(-1), "Obra removida do Quero ler.");
+});
+
+test("Perfil de Autor delega coleções da Biblioteca para o hook", () => {
   assert.match(
     pagina,
     /import \{ usePerfilAutorLibraryCollectionActions \} from "\.\/hooks\/use-perfil-autor-library-collection-actions";/,
   );
   assert.match(
     pagina,
-    /const \{ alternarFavoritoObra, alternarConcluidoObra \} =[\s\S]*?usePerfilAutorLibraryCollectionActions\(\{/,
+    /const \{[\s\S]*?alternarFavoritoObra,[\s\S]*?alternarConcluidoObra,[\s\S]*?alternarSalvoCapituloBibliotecaPerfil,[\s\S]*?alternarObraSeguindoBibliotecaPerfil,[\s\S]*?\} = usePerfilAutorLibraryCollectionActions\(\{/,
   );
   assert.doesNotMatch(pagina, /async function alternarFavoritoObra\(/);
   assert.doesNotMatch(pagina, /async function alternarConcluidoObra\(/);
+  assert.doesNotMatch(
+    pagina,
+    /async function alternarSalvoCapituloBibliotecaPerfil\(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /async function alternarObraSeguindoBibliotecaPerfil\(/,
+  );
   assert.match(source, /await usuarioEstaLogado\(\)/);
   assert.match(source, /await sincronizarTabelaUsuario\(/);
   assert.match(source, /setVersaoSincronizacaoBiblioteca/);

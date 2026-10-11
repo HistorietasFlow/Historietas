@@ -257,7 +257,11 @@ test("preserva upsert e delete de autores seguidos", async () => {
 test("sincronizações permanecem delegadas após extrair ações da Biblioteca", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?sincronizarAutorSeguidoSupabase,[\s\S]*?sincronizarTabelaUsuario,[\s\S]*?\} from "\.\/lib\/profile-user-collections-sync";/,
+    /import \{ sincronizarAutorSeguidoSupabase \} from "\.\/lib\/profile-user-collections-sync";/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /sincronizarTabelaUsuario[\s\S]*?from "\.\/lib\/profile-user-collections-sync";/,
   );
   assert.match(
     libraryCollectionActionsSource,
@@ -280,6 +284,14 @@ test("sincronizações permanecem delegadas após extrair ações da Biblioteca"
   assert.match(
     libraryCollectionActionsSource,
     /sincronizarTabelaUsuario\(\s*"concluidas",/,
+  );
+  assert.match(
+    libraryCollectionActionsSource,
+    /sincronizarTabelaUsuario\(\s*"salvos_capitulos",/,
+  );
+  assert.match(
+    libraryCollectionActionsSource,
+    /sincronizarTabelaUsuario\(\s*"seguindo_obras",/,
   );
   assert.match(
     pagina,

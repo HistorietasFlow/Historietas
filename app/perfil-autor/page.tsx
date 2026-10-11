@@ -124,7 +124,6 @@ import {
   converterItensDiarioParaBiblioteca,
   encontrarObraPorIdentificadorTopFivePerfil,
   mesclarItensBibliotecaPerfil,
-  removerObraDaColecaoPerfilBiblioteca,
 } from "./lib/library-normalizers";
 import {
   aplicarInteracoesNasObras,
@@ -156,10 +155,7 @@ import {
   carregarObrasPublicadasSupabase,
 } from "./lib/profile-published-works-loader";
 import { carregarEstadoUsuarioSupabase } from "./lib/profile-user-state-loader";
-import {
-  sincronizarAutorSeguidoSupabase,
-  sincronizarTabelaUsuario,
-} from "./lib/profile-user-collections-sync";
+import { sincronizarAutorSeguidoSupabase } from "./lib/profile-user-collections-sync";
 import {
   carregarInteracoesCapitulosSupabase,
   carregarTotaisInteracoesObrasPerfilAutor,
@@ -418,18 +414,25 @@ function PerfilAutorPageContent() {
   const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
   const [versaoSincronizacaoBiblioteca, setVersaoSincronizacaoBiblioteca] =
     useState(0);
-  const { alternarFavoritoObra, alternarConcluidoObra } =
-    usePerfilAutorLibraryCollectionActions({
-      obras,
-      obrasFavoritas,
-      obrasConcluidas,
-      usuarioIdLogado,
-      avisarLoginNecessario,
-      setMensagemAcao,
-      setObrasFavoritas,
-      setObrasConcluidas,
-      setVersaoSincronizacaoBiblioteca,
-    });
+  const {
+    alternarFavoritoObra,
+    alternarConcluidoObra,
+    alternarSalvoCapituloBibliotecaPerfil,
+    alternarObraSeguindoBibliotecaPerfil,
+  } = usePerfilAutorLibraryCollectionActions({
+    obras,
+    obrasFavoritas,
+    obrasConcluidas,
+    obrasSeguidasBiblioteca,
+    usuarioIdLogado,
+    avisarLoginNecessario,
+    salvarObrasBibliotecaPerfil,
+    setMensagemAcao,
+    setObrasFavoritas,
+    setObrasConcluidas,
+    setObrasSeguidasBiblioteca,
+    setVersaoSincronizacaoBiblioteca,
+  });
   const [obraMenuAbertoId, setObraMenuAbertoId] = useState("");
   const [bibliotecaMenuAbertoChave, setBibliotecaMenuAbertoChave] = useState("");
   const [avaliacaoAutor, setAvaliacaoAutor] =
@@ -3463,99 +3466,6 @@ function PerfilAutorPageContent() {
     void sincronizarAutorSeguidoSupabase(
       autorNormalizado,
       proximoEstadoSeguindo,
-    );
-  }
-
-  async function alternarSalvoCapituloBibliotecaPerfil(
-    obraId: string,
-    capituloId: string,
-    ativo?: boolean,
-  ) {
-    setMensagemAcao("");
-
-    const logado = await usuarioEstaLogado();
-
-    if (!logado) {
-      avisarLoginNecessario("Entre na sua conta para atualizar a Biblioteca.");
-      return;
-    }
-
-    let proximoEstadoSalvo = false;
-
-    const novasObras = obras.map((obra) => {
-      if (obra.id !== obraId) {
-        return obra;
-      }
-
-      return {
-        ...obra,
-        capitulos: obra.capitulos.map((capitulo) => {
-          if (capitulo.id !== capituloId) {
-            return capitulo;
-          }
-
-          proximoEstadoSalvo =
-            typeof ativo === "boolean" ? ativo : !capitulo.salvo;
-
-          return {
-            ...capitulo,
-            salvo: proximoEstadoSalvo,
-          };
-        }),
-      };
-    });
-
-    salvarObrasBibliotecaPerfil(novasObras);
-
-    void sincronizarTabelaUsuario(
-      "salvos_capitulos",
-      capituloId,
-      proximoEstadoSalvo,
-      "privado",
-    );
-
-    setMensagemAcao(
-      proximoEstadoSalvo
-        ? "Capítulo salvo na Biblioteca."
-        : "Capítulo removido dos salvos.",
-    );
-  }
-
-  async function alternarObraSeguindoBibliotecaPerfil(obra: ObraLocal, ativo?: boolean) {
-    setMensagemAcao("");
-
-    const logado = await usuarioEstaLogado();
-
-    if (!logado) {
-      avisarLoginNecessario("Entre na sua conta para atualizar a Biblioteca.");
-      return;
-    }
-
-    const jaSegue = colecaoTemObraPerfilBiblioteca(obrasSeguidasBiblioteca, obra);
-    const proximoEstadoSeguindo = typeof ativo === "boolean" ? ativo : !jaSegue;
-    const listaAtualizada = proximoEstadoSeguindo
-      ? Array.from(new Set([...obrasSeguidasBiblioteca, obra.id]))
-      : removerObraDaColecaoPerfilBiblioteca(obrasSeguidasBiblioteca, obra);
-
-    salvarListaIdsPerfilBiblioteca(
-      LIBRARY_FOLLOW_STORAGE_KEY,
-      usuarioIdLogado,
-      listaAtualizada,
-    );
-    setObrasSeguidasBiblioteca(listaAtualizada);
-
-    await sincronizarTabelaUsuario(
-      "seguindo_obras",
-      obra.id,
-      proximoEstadoSeguindo,
-      "publico",
-    );
-    setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
-
-    setMensagemAcao(
-      proximoEstadoSeguindo
-        ? "Obra adicionada ao Quero ler."
-        : "Obra removida do Quero ler.",
     );
   }
 

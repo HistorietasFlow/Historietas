@@ -189,3 +189,8 @@
 
 - Extraiu `alternarFavoritoObra` e `alternarConcluidoObra` para `usePerfilAutorLibraryCollectionActions`.
 - Manteve autenticação, mensagens de login, normalização das coleções, localStorage, sincronização Supabase e incremento da versão da Biblioteca.
+
+## Fase 931 — salvos e Quero ler da Biblioteca
+
+- Moveu `alternarSalvoCapituloBibliotecaPerfil` e `alternarObraSeguindoBibliotecaPerfil` para `usePerfilAutorLibraryCollectionActions`.
+- Manteve autenticação, atualização dos capítulos, localStorage, sincronização privada/pública, mensagens e versão da Biblioteca.
