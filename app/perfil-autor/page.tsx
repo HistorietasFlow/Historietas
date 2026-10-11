@@ -128,6 +128,7 @@ import {
   criarResumoPublicacaoComunidadePerfil,
 } from "./lib/profile-community-publication-utils";
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
+import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import {
   encontrarItemBibliotecaMenuAberto,
@@ -1375,18 +1376,11 @@ function PerfilAutorPageContent() {
   const menuSheetAtualStyle = isDesktop
     ? desktopMenuSheetStyle
     : menuSheetStyle;
-  const comunidadeAutorBusca = encodeURIComponent(
-    perfilParaMostrar?.nome || "",
-  );
-  const comunidadeAutorHref = comunidadeAutorBusca
-    ? `/comunidade?busca=${comunidadeAutorBusca}`
-    : "/comunidade";
-  const comunidadeAutorTeoriasHref = comunidadeAutorBusca
-    ? `${comunidadeAutorHref}&tipo=Teoria`
-    : "/comunidade?tipo=Teoria";
-  const comunidadeAutorReviewsHref = comunidadeAutorBusca
-    ? `${comunidadeAutorHref}&tipo=Review`
-    : "/comunidade?tipo=Review";
+  const {
+    geral: comunidadeAutorHref,
+    teorias: comunidadeAutorTeoriasHref,
+    reviews: comunidadeAutorReviewsHref,
+  } = criarLinksComunidadePerfilAutor(perfilParaMostrar?.nome || "");
 
   const { salvarEdicaoPerfilAutor } =
     usePerfilAutorProfileEditorSaveActions({
