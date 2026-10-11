@@ -36,13 +36,18 @@ const collectionsSyncSource = readFileSync(
   "utf8",
 );
 const utilsJavascript = typescript.transpileModule(
-  utilsSource.replace(
-    'import { obterTimestampData } from "./profile-formatters";',
-    `const obterTimestampData = (dataIso) => {
+  utilsSource
+    .replace(
+      'import { criarSlugBase } from "../../../lib/utils";',
+      'const criarSlugBase = (texto) => String(texto).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");',
+    )
+    .replace(
+      'import { obterTimestampData } from "./profile-formatters";',
+      `const obterTimestampData = (dataIso) => {
   const data = new Date(dataIso).getTime();
   return Number.isNaN(data) ? 0 : data;
 };`,
-  ),
+    ),
   {
     compilerOptions: {
       module: typescript.ModuleKind.ESNext,
@@ -56,6 +61,7 @@ const {
   criarChaveCardAtualDiarioPerfil,
   mesclarItensDiarioPerfil,
   mesclarDiarioPerfilComLocal,
+  montarItensDiarioTudoPerfil,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -195,10 +201,74 @@ test("mesclarDiarioPerfilComLocal preserva listas, atividades únicas e limite o
   );
 });
 
+test("montarItensDiarioTudoPerfil consolida a mesma obra, preserva prioridade e usa item mais recente", () => {
+  const obra = { id: "obra-1", slug: "", titulo: "Obra Um" };
+  const lendo = criarItem({
+    chave: "lendo",
+    tipo: "lendo",
+    data: "2026-01-01",
+    obra,
+  });
+  const reviewMaisRecente = criarItem({
+    chave: "review",
+    tipo: "review",
+    data: "2026-03-01",
+    descricao: "Review recente",
+    obra,
+  });
+
+  const resultado = montarItensDiarioTudoPerfil(
+    criarDiario({
+      lendoAgora: [lendo],
+      reviews: [reviewMaisRecente],
+    }),
+  );
+
+  assert.equal(resultado.length, 1);
+  assert.equal(resultado[0].descricao, "Review recente");
+  assert.equal(resultado[0].tipo, "lendo");
+  assert.deepEqual(resultado[0].tipos, ["lendo", "review"]);
+});
+
+test("montarItensDiarioTudoPerfil ignora itens sem obra, usa slug de título e ordena por data", () => {
+  const semId = criarItem({
+    chave: "sem-id",
+    tipo: "favorita",
+    data: "2026-02-01",
+    obra: { id: "", slug: "", titulo: "Obra Sem Id" },
+  });
+  const recente = criarItem({
+    chave: "recente",
+    tipo: "concluida",
+    data: "2026-04-01",
+    obra: { id: "obra-2", slug: "", titulo: "Outra" },
+  });
+  const semObra = criarItem({
+    chave: "sem-obra",
+    tipo: "atividade",
+    data: "2027-01-01",
+    obra: null,
+  });
+
+  const resultado = montarItensDiarioTudoPerfil(
+    criarDiario({
+      favoritas: [semId],
+      concluidas: [recente],
+      atividades: [semObra],
+    }),
+  );
+
+  assert.deepEqual(
+    resultado.map((item) => item.chave),
+    ["recente", "sem-id"],
+  );
+  assert.deepEqual(resultado[1].tipos, ["favorita"]);
+});
+
 test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carregador", () => {
   assert.match(
     utilsSource,
-    /import type \{ DiarioPerfilItem, DiarioPerfilSemCarregando \} from "\.\.\/types";/,
+    /DiarioPerfilResumoItem/,
   );
   assert.match(
     utilsSource,
@@ -219,6 +289,7 @@ test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carre
     "criarChaveCardAtualDiarioPerfil",
     "mesclarItensDiarioPerfil",
     "mesclarDiarioPerfilComLocal",
+    "montarItensDiarioTudoPerfil",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
@@ -230,6 +301,10 @@ test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carre
   assert.match(
     diaryLoaderSource,
     /ordenarItensDiarioPerfil\(Array\.from\(lendoPorObra\.values\(\)\)\)/,
+  );
+  assert.match(
+    pagina,
+    /montarItensDiarioTudoPerfil\(diarioPerfil\)/,
   );
   assert.doesNotMatch(pagina, /supabase\s*\.from\("seguindo_obras"\)/);
   assert.match(
