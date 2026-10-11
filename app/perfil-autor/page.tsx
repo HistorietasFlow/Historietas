@@ -45,6 +45,7 @@ import { usePerfilAutorVisibleTabSync } from "./hooks/use-perfil-autor-visible-t
 import { usePerfilAutorCommunitySync } from "./hooks/use-perfil-autor-community-sync";
 import { usePerfilAutorBlockStateSync } from "./hooks/use-perfil-autor-block-state-sync";
 import { usePerfilAutorFollowStateSync } from "./hooks/use-perfil-autor-follow-state-sync";
+import { usePerfilAutorInteractionTotalsSync } from "./hooks/use-perfil-autor-interaction-totals-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
 import type {
@@ -148,10 +149,7 @@ import {
   carregarObrasPublicadasSupabase,
 } from "./lib/profile-published-works-loader";
 import { carregarEstadoUsuarioSupabase } from "./lib/profile-user-state-loader";
-import {
-  carregarInteracoesCapitulosSupabase,
-  carregarTotaisInteracoesObrasPerfilAutor,
-} from "./lib/profile-interactions-loader";
+import { carregarInteracoesCapitulosSupabase } from "./lib/profile-interactions-loader";
 import {
   dataDiarioPerfilFormatada,
   montarDiarioPerfilLocal,
@@ -745,28 +743,10 @@ function PerfilAutorPageContent() {
     };
   }, [usuarioIdLogado, usuarioNotificacoesId]);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarTotaisReaisPerfil() {
-      if (obras.length === 0) {
-        setTotaisInteracoesObras(totaisInteracoesObrasPerfilVazio);
-        return;
-      }
-
-      const totaisReais = await carregarTotaisInteracoesObrasPerfilAutor(obras);
-
-      if (!cancelado) {
-        setTotaisInteracoesObras(totaisReais);
-      }
-    }
-
-    void carregarTotaisReaisPerfil();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [obras]);
+  usePerfilAutorInteractionTotalsSync({
+    obras,
+    setTotaisInteracoesObras,
+  });
 
 
   useEffect(() => {
