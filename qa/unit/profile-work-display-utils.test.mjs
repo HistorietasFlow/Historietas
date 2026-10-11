@@ -86,6 +86,7 @@ const {
   obterObrasVisiveisPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterTotalObrasConcluidasPerfilAutor,
+  obterVisibilidadeDestaquesPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
@@ -248,4 +249,79 @@ test("seleção da obra com menu aberto usa ID exato e retorna null sem seleçã
   assert.equal(obterObraMenuAbertaPerfilAutor(obras, ""), null);
   assert.equal(obterObraMenuAbertaPerfilAutor(obras, "b"), obraB);
   assert.equal(obterObraMenuAbertaPerfilAutor(obras, "inexistente"), null);
+});
+
+
+test("visibilidade dos destaques preserva regras de autor e visitante", () => {
+  assert.deepEqual(
+    obterVisibilidadeDestaquesPerfilAutor({
+      obrasPerfilVisivel: true,
+      podeEditarPerfil: true,
+      mostrarDestaquesAutor: false,
+      mostrarDestaquesVisitante: true,
+      totalObrasEmDestaque: 3,
+    }),
+    {
+      destaquesPerfilVisivel: false,
+      exibirSecaoDestaques: false,
+    },
+  );
+
+  assert.deepEqual(
+    obterVisibilidadeDestaquesPerfilAutor({
+      obrasPerfilVisivel: true,
+      podeEditarPerfil: false,
+      mostrarDestaquesAutor: false,
+      mostrarDestaquesVisitante: true,
+      totalObrasEmDestaque: 0,
+    }),
+    {
+      destaquesPerfilVisivel: true,
+      exibirSecaoDestaques: true,
+    },
+  );
+});
+
+test("seção de destaques depende da aba Obras e do conteúdo/configuração disponível", () => {
+  assert.deepEqual(
+    obterVisibilidadeDestaquesPerfilAutor({
+      obrasPerfilVisivel: false,
+      podeEditarPerfil: true,
+      mostrarDestaquesAutor: true,
+      mostrarDestaquesVisitante: false,
+      totalObrasEmDestaque: 5,
+    }),
+    {
+      destaquesPerfilVisivel: false,
+      exibirSecaoDestaques: false,
+    },
+  );
+
+  assert.deepEqual(
+    obterVisibilidadeDestaquesPerfilAutor({
+      obrasPerfilVisivel: true,
+      podeEditarPerfil: true,
+      mostrarDestaquesAutor: true,
+      mostrarDestaquesVisitante: false,
+      totalObrasEmDestaque: 0,
+    }),
+    {
+      destaquesPerfilVisivel: true,
+      exibirSecaoDestaques: true,
+    },
+  );
+
+  assert.deepEqual(
+    obterVisibilidadeDestaquesPerfilAutor({
+      obrasPerfilVisivel: true,
+      podeEditarPerfil: false,
+      mostrarDestaquesAutor: true,
+      mostrarDestaquesVisitante: false,
+      totalObrasEmDestaque: 2,
+    }),
+    {
+      destaquesPerfilVisivel: false,
+      exibirSecaoDestaques: false,
+    },
+  );
 });
