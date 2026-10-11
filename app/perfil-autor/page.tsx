@@ -103,6 +103,7 @@ import {
 } from "./lib/profile-follow-display-utils";
 import {
   obterBioSobreExibicaoPerfilAutor,
+  formatarContagemNotificacoesPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
@@ -425,6 +426,8 @@ function PerfilAutorPageContent() {
     useState<number | null>(null);
   const notificacoesNaoLidas =
     notificacoesNaoLidasPerfil ?? notificacoesNaoLidasContexto;
+  const notificacoesNaoLidasFormatadas =
+    formatarContagemNotificacoesPerfilAutor(notificacoesNaoLidas);
 
   usePerfilAutorAuthIdentitySync({
     avatarInputRef,
@@ -1131,11 +1134,9 @@ function PerfilAutorPageContent() {
                         {notificacoesNaoLidas > 0 ? (
                           <span
                             style={menuNotificationBadgeStyle}
-                            aria-label={`${notificacoesNaoLidas > 99 ? "99+" : notificacoesNaoLidas} notificações não lidas`}
+                            aria-label={`${notificacoesNaoLidasFormatadas} notificações não lidas`}
                           >
-                            {notificacoesNaoLidas > 99
-                              ? "99+"
-                              : notificacoesNaoLidas}
+                            {notificacoesNaoLidasFormatadas}
                           </span>
                         ) : null}
                       </span>
