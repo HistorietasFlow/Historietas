@@ -143,6 +143,7 @@ const javascript = typescript.transpileModule(
 const {
   formatarMetaSheetObraPerfilAutor,
   formatarMetricasSheetObraPerfilAutor,
+  obterDadosCardObraPerfilAutor,
   obterEstadoColecoesObraPerfilAutor,
   obterHrefLeituraItemBibliotecaPerfilAutor,
   obterHrefObraPerfilAutor,
@@ -457,18 +458,22 @@ test("href da obra prioriza link, depois slug e por fim título", () => {
   );
 });
 
-test("página reutiliza hrefs de obra diretamente e pela Biblioteca", () => {
+test("hrefs de obra ficam diretos no destaque e reutilizados pelos helpers", () => {
   assert.match(
     pagina,
     /obterHrefObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
     (pagina.match(/obterHrefObraPerfilAutor\(/g) || []).length,
-    2,
+    1,
   );
   assert.match(
     source,
     /const obraHref = obterHrefObraPerfilAutor\(item\.obra\);/,
+  );
+  assert.match(
+    source,
+    /obraHref: obterHrefObraPerfilAutor\(obra\),/,
   );
   assert.doesNotMatch(pagina, /criarSlugBase/);
 });
@@ -495,18 +500,18 @@ test("métricas resumidas da obra centralizam curtidas, comentários e visualiza
   });
 });
 
-test("métricas resumidas ficam diretas nos cards e são reutilizadas pelo helper do sheet", () => {
+test("métricas resumidas ficam diretas na Biblioteca e reutilizadas pelos helpers de obra", () => {
   assert.match(
     pagina,
     /obterMetricasResumoObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
     (pagina.match(/obterMetricasResumoObraPerfilAutor\(/g) || []).length,
-    2,
+    1,
   );
-  assert.match(
-    source,
-    /obterMetricasResumoObraPerfilAutor\(obra, totaisInteracoesObras\)/,
+  assert.equal(
+    (source.match(/obterMetricasResumoObraPerfilAutor\(obra, totaisInteracoesObras\)/g) || []).length,
+    2,
   );
   assert.doesNotMatch(pagina, /obterTotalCurtidasObraPerfilAutor/);
   assert.doesNotMatch(pagina, /obterTotalComentariosObraPerfilAutor/);
@@ -753,4 +758,48 @@ test("página delega os dois hrefs de leitura da Biblioteca", () => {
     2,
   );
   assert.doesNotMatch(pagina, /criarHrefLeituraCapituloPerfilAutor/);
+});
+
+
+test("dados do card de obra centralizam href, métricas e estado do menu", () => {
+  assert.deepEqual(
+    obterDadosCardObraPerfilAutor(
+      {
+        id: "obra-card",
+        link: "",
+        slug: "obra-card",
+        titulo: "Obra Card",
+        visualizacoes: 125.4,
+        __curtidas: 2,
+        __comentarios: 3,
+      },
+      {
+        curtidasPorObra: { "obra-card": 8 },
+        comentariosPorObra: { "obra-card": 6 },
+      },
+      "obra-card",
+    ),
+    {
+      obraHref: "/obra/obra-card",
+      totalCurtidas: 8,
+      totalComentarios: 6,
+      visualizacoesFormatadas: "fmt:125",
+      menuObraAberto: true,
+    },
+  );
+});
+
+test("página delega os dados derivados do card de obra", () => {
+  assert.match(
+    pagina,
+    /obterDadosCardObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterDadosCardObraPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const menuObraAberto = obraMenuAbertoId === obra\.id/,
+  );
 });
