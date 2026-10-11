@@ -234,3 +234,9 @@
 
 - Extraiu a composição de `renderizarAtividadeRecenteSobrePerfil` para `ProfileAboutRecentActivity`.
 - Manteve abertura/fechamento, loading, estado vazio, limite de 8 itens, links e datas da timeline.
+
+
+## Fase 939 — curtida do TOP 5
+
+- Extraiu `alternarCurtidaTopFivePerfil` para `usePerfilAutorTopFiveLikeActions`.
+- Manteve identidade da sessão, estado otimista, persistência local, escrita Supabase, recarga do estado remoto e proteção contra trocas de conta.
