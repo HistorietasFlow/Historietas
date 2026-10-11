@@ -83,9 +83,6 @@ import {
   normalizarUsernamePerfilAutor,
 } from "./lib/profile-formatters";
 import {
-  encontrarCapituloParaContinuar,
-} from "./lib/work-normalizers";
-import {
   type IdentidadeAutenticadaPerfilAutor,
 } from "./lib/profile-auth-identity";
 import { criarPerfilUsuarioRemotoComoAutor } from "./lib/data-normalizers";
@@ -114,6 +111,7 @@ import {
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
   obterMetricasSheetObraPerfilAutor,
+  obterAlvoLeituraMenuObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
@@ -2162,22 +2160,10 @@ function PerfilAutorPageContent() {
         {obraMenuAberta &&
           (() => {
             const obra = obraMenuAberta;
-            const ultimoCapitulo =
-              encontrarCapituloParaContinuar(obra) ||
-              obra.capitulos[obra.capitulos.length - 1] ||
-              null;
-            const numeroUltimoCapitulo = ultimoCapitulo
-              ? obra.capitulos.findIndex(
-                  (capitulo) => capitulo.id === ultimoCapitulo.id,
-                ) + 1
-              : 0;
-            const capituloHref = ultimoCapitulo
-              ? criarHrefLeituraCapituloPerfilAutor(
-                  obra,
-                  ultimoCapitulo,
-                  numeroUltimoCapitulo || 1,
-                )
-              : "";
+            const {
+              ultimoCapitulo,
+              capituloHref,
+            } = obterAlvoLeituraMenuObraPerfilAutor(obra);
             const {
               obraFavorita,
               obraConcluida,
