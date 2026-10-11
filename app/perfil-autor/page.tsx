@@ -14,13 +14,10 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import {
-  cancelarSolicitacaoSeguidor,
   carregarEstadoBloqueioPerfil,
   carregarEstadoRelacionamentoPerfil,
   carregarPermissoesAbasPerfil,
   carregarPreferenciasPrivacidade,
-  deixarDeSeguirUsuario,
-  solicitarOuSeguirUsuario,
   type EstadoBloqueioPerfil,
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
@@ -42,6 +39,7 @@ import { usePerfilAutorLibraryCollectionActions } from "./hooks/use-perfil-autor
 import { usePerfilAutorRatingActions } from "./hooks/use-perfil-autor-rating-actions";
 import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary-rating-actions";
 import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
+import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -154,7 +152,6 @@ import {
   carregarObrasPublicadasSupabase,
 } from "./lib/profile-published-works-loader";
 import { carregarEstadoUsuarioSupabase } from "./lib/profile-user-state-loader";
-import { sincronizarAutorSeguidoSupabase } from "./lib/profile-user-collections-sync";
 import {
   carregarInteracoesCapitulosSupabase,
   carregarTotaisInteracoesObrasPerfilAutor,
@@ -2982,177 +2979,23 @@ function PerfilAutorPageContent() {
     setPermissoesAbasPerfil,
   });
 
-  async function alternarSeguirAutor() {
-    if (!perfilParaMostrar || seguirUsuarioSalvando) {
-      return;
-    }
-
-    setMensagemAcao("");
-
-    let userIdAtual = usuarioIdLogado;
-
-    try {
-      const { data } = await supabase.auth.getUser();
-      userIdAtual = data.user?.id || "";
-    } catch {
-      userIdAtual = usuarioIdLogado;
-    }
-
-    if (!userIdAtual) {
-      avisarLoginNecessario("Entre na sua conta para seguir perfis.");
-      return;
-    }
-
-    const userIdPerfil = perfilParaMostrar.autorId.trim();
-
-    if (
-      userIdPerfil &&
-      idAutorSupabaseValido(userIdPerfil) &&
-      idAutorSupabaseValido(userIdAtual)
-    ) {
-      if (userIdPerfil === userIdAtual) {
-        setMensagemAcao("Este é o seu perfil.");
-        return;
-      }
-
-      const estadoAnterior = estadoRelacionamentoPerfil;
-      const seguindoAntes =
-        estadoAnterior === "seguindo" || seguindoUsuarioPerfil;
-      const notificacaoSolicitacaoId =
-        `solicitacao-seguidor:${userIdAtual}:${userIdPerfil}`;
-      const notificacaoSeguidorId =
-        `seguir-usuario:${userIdAtual}:${userIdPerfil}`;
-
-      setSeguirUsuarioSalvando(true);
-
-      try {
-        const resultado =
-          estadoAnterior === "solicitado"
-            ? await cancelarSolicitacaoSeguidor(userIdPerfil)
-            : seguindoAntes
-              ? await deixarDeSeguirUsuario(userIdPerfil)
-              : await solicitarOuSeguirUsuario(userIdPerfil);
-
-        if (!resultado.ok) {
-          setMensagemAcao(
-            resultado.erro || "Não consegui atualizar este seguimento agora.",
-          );
-          return;
-        }
-
-        const novoEstado = resultado.estado;
-        const seguindoDepois = novoEstado === "seguindo";
-
-        setEstadoRelacionamentoPerfil(novoEstado);
-        setSeguindoUsuarioPerfil(seguindoDepois);
-
-        if (seguindoAntes !== seguindoDepois) {
-          setSeguidoresUsuarioPerfilTotal((totalAtual) => {
-            const proximoTotal = seguindoDepois
-              ? totalAtual + 1
-              : Math.max(0, totalAtual - 1);
-
-            return proximoTotal;
-          });
-        }
-
-        if (novoEstado === "seguindo" && !seguindoAntes) {
-          const nomeSeguidor =
-            perfilDoUsuarioLogado?.nome.trim() || "Um leitor";
-          const linkSeguidor = criarPerfilAutorHref(nomeSeguidor, userIdAtual);
-
-          await removerNotificacoesSociaisPerfilAutor(
-            userIdPerfil,
-            [notificacaoSolicitacaoId],
-          );
-          await criarNotificacaoSocialPerfilAutor({
-            receptorId: userIdPerfil,
-            tipo: "novo-seguidor",
-            titulo: "Novo seguidor",
-            mensagem: `${nomeSeguidor} começou a seguir você.`,
-            link: linkSeguidor,
-            notificacaoId: notificacaoSeguidorId,
-          });
-        } else if (novoEstado === "solicitado") {
-          const nomeSolicitante =
-            perfilDoUsuarioLogado?.nome.trim() || "Um leitor";
-          const linkSolicitante = criarPerfilAutorHref(
-            nomeSolicitante,
-            userIdAtual,
-          );
-
-          await removerNotificacoesSociaisPerfilAutor(
-            userIdPerfil,
-            [notificacaoSeguidorId],
-          );
-          await criarNotificacaoSocialPerfilAutor({
-            receptorId: userIdPerfil,
-            tipo: "solicitacao-seguidor",
-            titulo: "Nova solicitação de seguidor",
-            mensagem: `${nomeSolicitante} pediu para seguir você.`,
-            link: linkSolicitante,
-            notificacaoId: notificacaoSolicitacaoId,
-          });
-        } else if (estadoAnterior === "solicitado") {
-          await removerNotificacoesSociaisPerfilAutor(
-            userIdPerfil,
-            [notificacaoSolicitacaoId],
-          );
-        } else if (seguindoAntes && !seguindoDepois) {
-          await removerNotificacoesSociaisPerfilAutor(
-            userIdPerfil,
-            [notificacaoSeguidorId, notificacaoSolicitacaoId],
-          );
-        }
-
-        setMensagemAcao(
-          novoEstado === "seguindo"
-            ? "Perfil adicionado aos seus seguindo."
-            : novoEstado === "solicitado"
-              ? "Sua solicitação foi enviada."
-              : estadoAnterior === "solicitado"
-                ? "Solicitação cancelada."
-                : "Perfil removido dos seus seguindo.",
-        );
-        return;
-      } catch (error) {
-        setMensagemAcao(
-          error instanceof Error
-            ? error.message
-            : "Não consegui atualizar este seguimento agora.",
-        );
-        return;
-      } finally {
-        setSeguirUsuarioSalvando(false);
-      }
-    }
-
-    const autorNormalizado = normalizarNomeAutor(perfilParaMostrar.nome);
-    const autorChaveSeguir = criarChaveAutorPerfil(
-      perfilParaMostrar.autorId,
-      perfilParaMostrar.nome,
-    );
-    const proximoEstadoSeguindo = !seguindoAutor;
-    const autoresSeguidosSemAutorAtual = autoresSeguidos.filter((autor) => {
-      return autor !== autorChaveSeguir && autor !== autorNormalizado;
-    });
-
-    const novosAutoresSeguidos = proximoEstadoSeguindo
-      ? Array.from(new Set([...autoresSeguidosSemAutorAtual, autorChaveSeguir]))
-      : autoresSeguidosSemAutorAtual;
-
-    salvarJsonUsuarioPerfilAutor(
-      AUTHOR_FOLLOW_STORAGE_KEY,
-      usuarioIdLogado,
-      novosAutoresSeguidos,
-    );
-
-    setAutoresSeguidos(novosAutoresSeguidos);
-    void sincronizarAutorSeguidoSupabase(
-      autorNormalizado,
-      proximoEstadoSeguindo,
-    );
-  }
+  const { alternarSeguirAutor } = usePerfilAutorFollowActions({
+    perfilParaMostrar,
+    seguirUsuarioSalvando,
+    usuarioIdLogado,
+    estadoRelacionamentoPerfil,
+    seguindoUsuarioPerfil,
+    perfilDoUsuarioLogado,
+    seguindoAutor,
+    autoresSeguidos,
+    avisarLoginNecessario,
+    setMensagemAcao,
+    setSeguirUsuarioSalvando,
+    setEstadoRelacionamentoPerfil,
+    setSeguindoUsuarioPerfil,
+    setSeguidoresUsuarioPerfilTotal,
+    setAutoresSeguidos,
+  });
 
   function renderizarAtividadeRecenteSobrePerfil() {
     return (
