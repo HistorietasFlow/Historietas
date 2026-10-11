@@ -493,9 +493,9 @@ function PerfilAutorPageContent() {
     setCarregando,
   });
 
-  const perfisAutores = useMemo(
-    () => montarPerfisAutoresPorObras(obras, totaisInteracoesObras),
-    [obras, totaisInteracoesObras],
+  const perfisAutores = montarPerfisAutoresPorObras(
+    obras,
+    totaisInteracoesObras,
   );
 
   const {
