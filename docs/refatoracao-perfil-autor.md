@@ -687,3 +687,10 @@
 - Preservou os quatro estados: `Bloquear usuário`, `Desbloquear usuário`, `Bloqueando...` e `Desbloqueando...`.
 - Removeu o ternário aninhado correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1006 — textos da ação de seguimento
+
+- Centralizou `aria-label`, `title` e texto visível do botão de seguir em `obterDadosAcaoSeguimentoPerfilAutor`.
+- Preservou os estados `Seguir`, `Seguindo`, `Solicitado`, `Cancelar solicitação`, `Deixar de seguir` e o indicador `...` durante salvamento.
+- Removeu as decisões de texto correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
