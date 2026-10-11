@@ -413,6 +413,11 @@ function PerfilAutorPageContent() {
       setMensagemAcao,
       setMenuPerfilAberto,
     });
+  const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
+    useState<AbaBibliotecaPerfil>("tudo");
+  const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
+  const [versaoSincronizacaoBiblioteca, setVersaoSincronizacaoBiblioteca] =
+    useState(0);
   const { alternarFavoritoObra, alternarConcluidoObra } =
     usePerfilAutorLibraryCollectionActions({
       obras,
@@ -425,11 +430,6 @@ function PerfilAutorPageContent() {
       setObrasConcluidas,
       setVersaoSincronizacaoBiblioteca,
     });
-  const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
-    useState<AbaBibliotecaPerfil>("tudo");
-  const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
-  const [versaoSincronizacaoBiblioteca, setVersaoSincronizacaoBiblioteca] =
-    useState(0);
   const [obraMenuAbertoId, setObraMenuAbertoId] = useState("");
   const [bibliotecaMenuAbertoChave, setBibliotecaMenuAbertoChave] = useState("");
   const [avaliacaoAutor, setAvaliacaoAutor] =
