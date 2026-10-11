@@ -717,7 +717,9 @@ function PerfilAutorPageContent() {
   const {
     perfilSalvoAutor,
     perfilUsuarioRemotoAtivo,
+    bioPadraoAutor,
     bioAutorPersonalizada,
+    bioAutor,
     bioSobrePersonalizada,
     bioSobreAutor,
     bioSobreAutorEhPadrao,
