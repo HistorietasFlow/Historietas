@@ -109,7 +109,6 @@ import {
 import {
   criarPerfilUsuarioRemotoComoAutor,
   obterTotalComentariosObraPerfilAutor,
-  obterTotalConcluidasObraPerfilAutor,
   obterTotalCurtidasObraPerfilAutor,
   obterTotalSalvosObraPerfilAutor,
 } from "./lib/data-normalizers";
@@ -128,6 +127,7 @@ import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-ut
 import {
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
+  obterTotalObrasConcluidasPerfilAutor,
 } from "./lib/profile-work-display-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import {
@@ -699,22 +699,12 @@ function PerfilAutorPageContent() {
     podeEditarPerfil,
   });
 
-  const obrasConcluidasPerfilPorObrasDoAutor = perfilParaMostrar
-    ? perfilParaMostrar.obras.reduce((total, obra) => {
-        const totalConcluidasReais = obterTotalConcluidasObraPerfilAutor(
-          obra,
-          totaisInteracoesObras,
-        );
-        const concluidaLocal = colecaoTemObraPerfilBiblioteca(
-          obrasConcluidas,
-          obra,
-        )
-          ? 1
-          : 0;
-
-        return total + Math.max(totalConcluidasReais, concluidaLocal);
-      }, 0)
-    : 0;
+  const obrasConcluidasPerfilPorObrasDoAutor =
+    obterTotalObrasConcluidasPerfilAutor({
+      perfilParaMostrar,
+      totaisInteracoesObras,
+      obrasConcluidas,
+    });
   const {
     perfilSalvoAutor,
     perfilUsuarioRemotoAtivo,

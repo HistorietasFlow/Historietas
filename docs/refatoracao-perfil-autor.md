@@ -404,3 +404,10 @@
 - Extraiu a filtragem 18+, ordenação por data e montagem do TOP 5 para `profile-work-display-utils.ts`.
 - Preservou a ordem selecionada dos destaques, deduplicação, limite de cinco itens e acesso do próprio autor a conteúdo 18+.
 - Adicionou cobertura comportamental e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 968 — total de obras concluídas
+
+- Moveu o cálculo de obras concluídas do perfil para `obterTotalObrasConcluidasPerfilAutor` em `profile-work-display-utils.ts`.
+- Preservou a combinação entre métricas remotas e fallback local, usando o maior valor por obra sem duplicar conclusão local.
+- Ampliou a cobertura comportamental já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
