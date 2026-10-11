@@ -1,6 +1,8 @@
+import { criarSlugBase } from "../../../lib/utils";
 import type {
   DadosCompartilhamentoPerfilAutor,
   NavegadorCompartilhamentoPerfilAutor,
+  ObraLocal,
 } from "../types";
 import {
   copiarTextoComFallbackPerfilAutor,
@@ -14,12 +16,14 @@ export function usePerfilAutorShareActions({
   perfilUsuarioRemotoAtivo,
   setMensagemAcao,
   setMenuPerfilAberto,
+  setObraMenuAbertoId,
 }: {
   autorHandlePerfil: string;
   perfilParaMostrar: { nome: string } | null;
   perfilUsuarioRemotoAtivo: { username?: string | null } | null;
   setMensagemAcao: (mensagem: string) => void;
   setMenuPerfilAberto: (aberto: boolean) => void;
+  setObraMenuAbertoId: (obraId: string) => void;
 }) {
   async function compartilharLinkPerfilAutor({
     url,
@@ -67,6 +71,22 @@ export function usePerfilAutorShareActions({
     setMensagemAcao(linkCopiado ? mensagemCopiado : mensagemErro);
   }
 
+  async function compartilharObraPerfilAutor(obra: ObraLocal) {
+    setObraMenuAbertoId("");
+
+    const obraHref =
+      obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+
+    await compartilharLinkPerfilAutor({
+      url: obraHref,
+      titulo: obra.titulo || "Obra na Historietas",
+      texto: `Veja ${obra.titulo} na Historietas.`,
+      mensagemCompartilhado: "Compartilhamento da obra aberto.",
+      mensagemCopiado: "Link da obra copiado.",
+      mensagemErro: "Não consegui compartilhar nem copiar o link da obra neste navegador.",
+    });
+  }
+
   async function copiarLinkPerfil() {
     setMenuPerfilAberto(false);
 
@@ -99,6 +119,7 @@ export function usePerfilAutorShareActions({
 
   return {
     compartilharLinkPerfilAutor,
+    compartilharObraPerfilAutor,
     copiarLinkPerfil,
     copiarUsernameCabecalho,
   };
