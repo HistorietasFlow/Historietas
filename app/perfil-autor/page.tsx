@@ -23,6 +23,7 @@ import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
 import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-actions";
+import { usePerfilAutorAuthIdentitySync } from "./hooks/use-perfil-autor-auth-identity-sync";
 import { usePerfilAutorLoginRedirect } from "./hooks/use-perfil-autor-login-redirect";
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
 import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avatar-editor-actions";
@@ -115,8 +116,6 @@ import {
   obraPertenceAoUsuarioPerfilAutor,
 } from "./lib/work-normalizers";
 import {
-  atualizarIdentidadeAutenticadaPerfilAutor,
-  execucaoAutenticacaoPerfilAutorEstaAtual,
   execucaoCarregamentoPerfilAutorEstaAtual,
   type IdentidadeAutenticadaPerfilAutor,
 } from "./lib/profile-auth-identity";
@@ -459,102 +458,34 @@ function PerfilAutorPageContent() {
   const notificacoesNaoLidas =
     notificacoesNaoLidasPerfil ?? notificacoesNaoLidasContexto;
 
-  useEffect(() => {
-    let componenteAtivo = true;
-
-    function limparEstadoContaAnterior() {
-      setPerfilUsuarioRemoto(null);
-      setObras([]);
-      setTotaisInteracoesObras(totaisInteracoesObrasPerfilVazio);
-      setAutoresSeguidos([]);
-      setObrasFavoritas([]);
-      setObrasConcluidas([]);
-      setObrasSeguidasBiblioteca([]);
-      setPerfisAutoresSalvos({});
-      setEditorPerfilAberto(false);
-      setNomePerfilEditor("");
-      setUsernamePerfilEditor("");
-      setBioPerfilEditor("");
-      setAvatarPerfilEditor("");
-      setAvatarNomePerfilEditor("");
-      setAvatarArquivoPerfilEditor(null);
-      setAvatarErro("");
-      setSalvandoEditorPerfil(false);
-      setTopFiveCurtidaSalvando(false);
-      setAvaliacaoDiario((avaliacaoAtual) => ({
-        ...avaliacaoAtual,
-        salvando: false,
-      }));
-      setMensagemAcao("");
-
-      if (avatarInputRef.current) {
-        avatarInputRef.current.value = "";
-      }
-    }
-
-    function aplicarIdentidadeAutenticada(usuarioId: string) {
-      const resultado = atualizarIdentidadeAutenticadaPerfilAutor(
-        identidadeAutenticadaPerfilRef.current,
-        usuarioId,
-      );
-
-      if (resultado.mudou) {
-        identidadeAutenticadaPerfilRef.current = resultado.identidade;
-        setCarregando(true);
-        limparEstadoContaAnterior();
-        setUsuarioIdLogado(resultado.identidade.usuarioId);
-      }
-
-      setAutenticacaoCarregada(true);
-    }
-
-    async function carregarUsuarioAutenticadoPerfil() {
-      const versaoConsulta = versaoConsultaAutenticacaoPerfilRef.current + 1;
-      versaoConsultaAutenticacaoPerfilRef.current = versaoConsulta;
-
-      try {
-        const { data } = await supabase.auth.getUser();
-        const userId = data.user?.id || "";
-
-        if (
-          execucaoAutenticacaoPerfilAutorEstaAtual({
-            cancelada: !componenteAtivo,
-            versaoEsperada: versaoConsulta,
-            versaoAtual: versaoConsultaAutenticacaoPerfilRef.current,
-          })
-        ) {
-          aplicarIdentidadeAutenticada(userId);
-        }
-      } catch {
-        if (
-          execucaoAutenticacaoPerfilAutorEstaAtual({
-            cancelada: !componenteAtivo,
-            versaoEsperada: versaoConsulta,
-            versaoAtual: versaoConsultaAutenticacaoPerfilRef.current,
-          })
-        ) {
-          aplicarIdentidadeAutenticada("");
-        }
-      }
-    }
-
-    void carregarUsuarioAutenticadoPerfil();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (componenteAtivo) {
-        versaoConsultaAutenticacaoPerfilRef.current += 1;
-        aplicarIdentidadeAutenticada(session?.user?.id || "");
-      }
-    });
-
-    return () => {
-      componenteAtivo = false;
-      versaoConsultaAutenticacaoPerfilRef.current += 1;
-      subscription.unsubscribe();
-    };
-  }, [setMensagemAcao]);
+  usePerfilAutorAuthIdentitySync({
+    avatarInputRef,
+    identidadeAutenticadaPerfilRef,
+    versaoConsultaAutenticacaoPerfilRef,
+    setPerfilUsuarioRemoto,
+    setObras,
+    setTotaisInteracoesObras,
+    setAutoresSeguidos,
+    setObrasFavoritas,
+    setObrasConcluidas,
+    setObrasSeguidasBiblioteca,
+    setPerfisAutoresSalvos,
+    setEditorPerfilAberto,
+    setNomePerfilEditor,
+    setUsernamePerfilEditor,
+    setBioPerfilEditor,
+    setAvatarPerfilEditor,
+    setAvatarNomePerfilEditor,
+    setAvatarArquivoPerfilEditor,
+    setAvatarErro,
+    setSalvandoEditorPerfil,
+    setTopFiveCurtidaSalvando,
+    setAvaliacaoDiario,
+    setMensagemAcao,
+    setCarregando,
+    setUsuarioIdLogado,
+    setAutenticacaoCarregada,
+  });
 
   usePerfilAutorNotificationCountSync({
     usuarioNotificacoesId,
