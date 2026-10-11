@@ -629,3 +629,11 @@
 - Removeu essas derivações do `.map()` da Biblioteca.
 - Preservou a reutilização dos helpers de href e métricas já existentes.
 - Atualizou testes estruturais de contagem e ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 998 — composição do sheet da obra
+
+- Centralizou leitura, estado das coleções, meta e métricas do sheet em `obterDadosSheetObraPerfilAutor`.
+- Removeu a composição sequencial desses helpers de `page.tsx`.
+- Preservou os helpers menores já existentes e suas responsabilidades isoladas.
+- Atualizou testes estruturais de contagem e ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
