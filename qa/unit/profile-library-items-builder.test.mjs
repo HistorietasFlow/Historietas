@@ -8,6 +8,8 @@ const source = readFileSync(
   "utf8",
 );
 
+let moduloIndice = 0;
+
 function carregarModulo() {
   const chamadas = [];
   globalThis.__profileLibraryItemsBuilderDependencies = {
@@ -39,8 +41,10 @@ function carregarModulo() {
     },
   ).outputText;
 
+  moduloIndice += 1;
+
   return import(
-    `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
+    `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}#${moduloIndice}`
   ).then((modulo) => ({ ...modulo, chamadas }));
 }
 
