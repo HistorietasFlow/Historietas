@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const authIdentitySyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-auth-identity-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -209,6 +216,6 @@ test("Perfil de Autor delega exclusivamente os helpers locais de storage", () =>
     utilsSource,
     /const listaNormalizada = normalizarListaIdsPerfilBiblioteca\(lista\);/,
   );
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(authIdentitySyncSource, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect/);
 });
