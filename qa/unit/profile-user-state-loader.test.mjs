@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileLoadSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo({
@@ -128,8 +135,8 @@ test("falhas preservam identidade não confirmada", async () => {
 
 test("Perfil de Autor delega o estado do usuário para o novo carregador", () => {
   assert.match(
-    pagina,
-    /import \{ carregarEstadoUsuarioSupabase \} from "\.\/lib\/profile-user-state-loader";/,
+    profileLoadSyncSource,
+    /import \{ carregarEstadoUsuarioSupabase \} from "\.\.\/lib\/profile-user-state-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarEstadoUsuarioSupabase\(/);
   assert.match(source, /export async function carregarEstadoUsuarioSupabase\(/);
