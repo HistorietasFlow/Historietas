@@ -495,3 +495,10 @@
 - Removeu o `useMemo` intermediário de `itensDiarioTudo`.
 - Manteve toda a consolidação em `montarItensDiarioTudoPerfil`, sem alterar ordenação ou conteúdo do diário.
 - Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 981 — obras visíveis sem memoização manual
+
+- Removeu o `useMemo` intermediário de `obrasDoPerfilFiltradas`.
+- Manteve toda a filtragem e ordenação em `obterObrasVisiveisPerfilAutor`, sem alterar regras de conteúdo 18+ ou ownership.
+- Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.

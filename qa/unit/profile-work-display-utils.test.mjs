@@ -341,3 +341,15 @@ test("página resolve obra com menu aberto sem useMemo", () => {
     /const obraMenuAberta = useMemo/,
   );
 });
+
+
+test("página resolve obras visíveis sem useMemo", () => {
+  assert.match(
+    pagina,
+    /const obrasDoPerfilFiltradas = obterObrasVisiveisPerfilAutor\(\{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const obrasDoPerfilFiltradas = useMemo/,
+  );
+});

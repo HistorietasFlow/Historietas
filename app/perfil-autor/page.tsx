@@ -732,14 +732,10 @@ function PerfilAutorPageContent() {
     avaliacaoDiario,
   });
 
-  const obrasDoPerfilFiltradas = useMemo(
-    () =>
-      obterObrasVisiveisPerfilAutor({
-        perfilParaMostrar,
-        perfilPertenceAoUsuario,
-      }),
-    [perfilParaMostrar, perfilPertenceAoUsuario],
-  );
+  const obrasDoPerfilFiltradas = obterObrasVisiveisPerfilAutor({
+    perfilParaMostrar,
+    perfilPertenceAoUsuario,
+  });
 
   const obrasEmDestaque = useMemo(
     () =>
