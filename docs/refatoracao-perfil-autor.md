@@ -581,3 +581,11 @@
 - Preservou filtros, ordem e tradução dos metadados.
 - Removeu quatro formatações exclusivas de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 992 — exibição da bio Sobre
+
+- Extraiu a escolha entre bio padrão traduzida e bio personalizada para `obterBioSobreExibicaoPerfilAutor`.
+- Preservou a marcação de conteúdo do usuário usada por `ProfileAboutText`.
+- Removeu a condição correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
