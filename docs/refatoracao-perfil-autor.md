@@ -589,3 +589,11 @@
 - Preservou a marcação de conteúdo do usuário usada por `ProfileAboutText`.
 - Removeu a condição correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+
+## Fase 993 — dados métricos do sheet da obra
+
+- Extraiu curtidas, comentários, salvos, visualizações formatadas e total de capítulos do sheet para `obterMetricasSheetObraPerfilAutor`.
+- Preservou o helper resumido dos cards sem incluir o cálculo de salvos, evitando trabalho extra na grade.
+- Removeu o acesso direto a `obterTotalSalvosObraPerfilAutor` da página e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
