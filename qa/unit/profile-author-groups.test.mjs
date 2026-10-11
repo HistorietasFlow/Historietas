@@ -7,6 +7,10 @@ const source = readFileSync(
   new URL("../../app/perfil-autor/lib/profile-author-groups.ts", import.meta.url),
   "utf8",
 );
+const pagina = readFileSync(
+  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  "utf8",
+);
 
 globalThis.__profileAuthorGroupsDependencies = {
   criarChaveAutorPerfil(autorId, nome) {
@@ -164,4 +168,16 @@ test("ordena perfis alfabeticamente", () => {
 
 test("lista vazia retorna nenhum perfil", () => {
   assert.deepEqual(montarPerfisAutoresPorObras([], totaisVazios), []);
+});
+
+
+test("página monta perfis de autores sem useMemo", () => {
+  assert.match(
+    pagina,
+    /const perfisAutores = montarPerfisAutoresPorObras\(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const perfisAutores = useMemo/,
+  );
 });
