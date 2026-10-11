@@ -184,3 +184,8 @@
 
 - Extraiu `abrirEditorPerfil` e `fecharEditorPerfil` para `usePerfilAutorProfileEditorActions`.
 - Manteve preenchimento dos campos, guardas de permissão/salvamento, fechamento do menu e limpeza do input de avatar.
+
+## Fase 930 — favoritos e concluídas da Biblioteca
+
+- Extraiu `alternarFavoritoObra` e `alternarConcluidoObra` para `usePerfilAutorLibraryCollectionActions`.
+- Manteve autenticação, mensagens de login, normalização das coleções, localStorage, sincronização Supabase e incremento da versão da Biblioteca.

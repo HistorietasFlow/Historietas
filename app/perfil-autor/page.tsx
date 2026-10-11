@@ -40,6 +40,7 @@ import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actio
 import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-actions";
 import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
+import { usePerfilAutorLibraryCollectionActions } from "./hooks/use-perfil-autor-library-collection-actions";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -417,6 +418,18 @@ function PerfilAutorPageContent() {
   const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
   const [versaoSincronizacaoBiblioteca, setVersaoSincronizacaoBiblioteca] =
     useState(0);
+  const { alternarFavoritoObra, alternarConcluidoObra } =
+    usePerfilAutorLibraryCollectionActions({
+      obras,
+      obrasFavoritas,
+      obrasConcluidas,
+      usuarioIdLogado,
+      avisarLoginNecessario,
+      setMensagemAcao,
+      setObrasFavoritas,
+      setObrasConcluidas,
+      setVersaoSincronizacaoBiblioteca,
+    });
   const [obraMenuAbertoId, setObraMenuAbertoId] = useState("");
   const [bibliotecaMenuAbertoChave, setBibliotecaMenuAbertoChave] = useState("");
   const [avaliacaoAutor, setAvaliacaoAutor] =
@@ -3452,87 +3465,6 @@ function PerfilAutorPageContent() {
       proximoEstadoSeguindo,
     );
   }
-
-  async function alternarFavoritoObra(obraId: string) {
-    setMensagemAcao("");
-
-    const logado = await usuarioEstaLogado();
-
-    if (!logado) {
-      avisarLoginNecessario("Entre na sua conta para adicionar obras à lista.");
-      return;
-    }
-
-    const obraAlvo = obras.find((obra) => obra.id === obraId) || null;
-    const jaFavorita = obraAlvo
-      ? colecaoTemObraPerfilBiblioteca(obrasFavoritas, obraAlvo)
-      : obrasFavoritas.includes(obraId);
-    const proximoEstadoFavorito = !jaFavorita;
-
-    const novasObrasFavoritas = obraAlvo
-      ? proximoEstadoFavorito
-        ? Array.from(new Set([...obrasFavoritas, obraAlvo.id]))
-        : removerObraDaColecaoPerfilBiblioteca(obrasFavoritas, obraAlvo)
-      : proximoEstadoFavorito
-        ? Array.from(new Set([...obrasFavoritas, obraId]))
-        : obrasFavoritas.filter((id) => id !== obraId);
-
-    salvarListaIdsPerfilBiblioteca(
-      FAVORITES_STORAGE_KEY,
-      usuarioIdLogado,
-      novasObrasFavoritas,
-    );
-
-    setObrasFavoritas(novasObrasFavoritas);
-    await sincronizarTabelaUsuario(
-      "favoritos",
-      obraId,
-      proximoEstadoFavorito,
-      "parcial",
-    );
-    setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
-  }
-
-  async function alternarConcluidoObra(obraId: string) {
-    setMensagemAcao("");
-
-    const logado = await usuarioEstaLogado();
-
-    if (!logado) {
-      avisarLoginNecessario("Entre na sua conta para concluir obras.");
-      return;
-    }
-
-    const obraAlvo = obras.find((obra) => obra.id === obraId) || null;
-    const jaConcluida = obraAlvo
-      ? colecaoTemObraPerfilBiblioteca(obrasConcluidas, obraAlvo)
-      : obrasConcluidas.includes(obraId);
-    const proximoEstadoConcluido = !jaConcluida;
-
-    const novasObrasConcluidas = obraAlvo
-      ? proximoEstadoConcluido
-        ? Array.from(new Set([...obrasConcluidas, obraAlvo.id]))
-        : removerObraDaColecaoPerfilBiblioteca(obrasConcluidas, obraAlvo)
-      : proximoEstadoConcluido
-        ? Array.from(new Set([...obrasConcluidas, obraId]))
-        : obrasConcluidas.filter((id) => id !== obraId);
-
-    salvarListaIdsPerfilBiblioteca(
-      COMPLETED_STORAGE_KEY,
-      usuarioIdLogado,
-      novasObrasConcluidas,
-    );
-
-    setObrasConcluidas(novasObrasConcluidas);
-    await sincronizarTabelaUsuario(
-      "concluidas",
-      obraId,
-      proximoEstadoConcluido,
-      "parcial",
-    );
-    setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
-  }
-
 
   async function alternarSalvoCapituloBibliotecaPerfil(
     obraId: string,

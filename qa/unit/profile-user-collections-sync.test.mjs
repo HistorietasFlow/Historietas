@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const libraryCollectionActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-library-collection-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 function criarSupabase({ userId = "usuario-1", respostas = [] } = {}) {
@@ -247,10 +254,14 @@ test("preserva upsert e delete de autores seguidos", async () => {
   ]);
 });
 
-test("página delega as duas sincronizações para a nova fronteira", () => {
+test("sincronizações permanecem delegadas após extrair ações da Biblioteca", () => {
   assert.match(
     pagina,
     /import \{[\s\S]*?sincronizarAutorSeguidoSupabase,[\s\S]*?sincronizarTabelaUsuario,[\s\S]*?\} from "\.\/lib\/profile-user-collections-sync";/,
+  );
+  assert.match(
+    libraryCollectionActionsSource,
+    /import \{ sincronizarTabelaUsuario \} from "\.\.\/lib\/profile-user-collections-sync";/,
   );
   assert.doesNotMatch(pagina, /async function sincronizarTabelaUsuario\(/);
   assert.doesNotMatch(
@@ -262,7 +273,14 @@ test("página delega as duas sincronizações para a nova fronteira", () => {
     source,
     /export async function sincronizarAutorSeguidoSupabase\(/,
   );
-  assert.match(pagina, /sincronizarTabelaUsuario\(\s*"favoritos",/);
+  assert.match(
+    libraryCollectionActionsSource,
+    /sincronizarTabelaUsuario\(\s*"favoritos",/,
+  );
+  assert.match(
+    libraryCollectionActionsSource,
+    /sincronizarTabelaUsuario\(\s*"concluidas",/,
+  );
   assert.match(
     pagina,
     /sincronizarAutorSeguidoSupabase\(\s*autorNormalizado,/,
