@@ -129,6 +129,7 @@ import {
 } from "./lib/profile-community-publication-utils";
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
+import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import {
   encontrarItemBibliotecaMenuAberto,
@@ -685,60 +686,23 @@ function PerfilAutorPageContent() {
   }, [perfilParaMostrar, autorIdSelecionado, autorSelecionado, usuarioIdLogado]);
   const podeEditarPerfil = perfilPertenceAoUsuario;
 
-  const perfilBloqueadoEntreUsuarios =
-    !perfilPertenceAoUsuario && estadoBloqueioPerfil.existeBloqueio;
-  const obrasPerfilVisivel =
-    perfilPertenceAoUsuario ||
-    (!perfilBloqueadoEntreUsuarios &&
-      !privacidadePerfilCarregando &&
-      permissoesAbasPerfil.obras);
-  const sobrePerfilVisivel =
-    perfilPertenceAoUsuario ||
-    (!perfilBloqueadoEntreUsuarios &&
-      !privacidadePerfilCarregando &&
-      permissoesAbasPerfil.sobre);
-  const diarioPerfilVisivel =
-    perfilPertenceAoUsuario ||
-    (!perfilBloqueadoEntreUsuarios &&
-      !privacidadePerfilCarregando &&
-      permissoesAbasPerfil.diario);
-  const comunidadePerfilVisivel =
-    perfilPertenceAoUsuario ||
-    (!perfilBloqueadoEntreUsuarios &&
-      !privacidadePerfilCarregando &&
-      permissoesAbasPerfil.comunidade);
-  const bibliotecaPerfilVisivel =
-    perfilPertenceAoUsuario ||
-    (!perfilBloqueadoEntreUsuarios &&
-      !privacidadePerfilCarregando &&
-      permissoesAbasPerfil.biblioteca);
-  const atividadesPerfilVisivel =
-    perfilPertenceAoUsuario ||
-    (!perfilBloqueadoEntreUsuarios &&
-      !privacidadePerfilCarregando &&
-      permissoesAbasPerfil.atividades);
-  const totalAbasPerfilVisiveis =
-    (obrasPerfilVisivel ? 1 : 0) +
-    (diarioPerfilVisivel ? 1 : 0) +
-    (comunidadePerfilVisivel ? 1 : 0) +
-    (sobrePerfilVisivel ? 1 : 0) +
-    (bibliotecaPerfilVisivel ? 1 : 0);
-  const conteudoPrivadoBloqueado = Boolean(
-    !perfilPertenceAoUsuario &&
-      !privacidadePerfilCarregando &&
-      totalAbasPerfilVisiveis === 0,
-  );
-  const primeiraAbaPerfilVisivel: AbaPerfilAutor | null = obrasPerfilVisivel
-    ? "obras"
-    : diarioPerfilVisivel
-      ? "diario"
-      : comunidadePerfilVisivel
-        ? "comunidade"
-        : sobrePerfilVisivel
-          ? "sobre"
-          : bibliotecaPerfilVisivel
-            ? "biblioteca"
-            : null;
+  const {
+    perfilBloqueadoEntreUsuarios,
+    obrasPerfilVisivel,
+    sobrePerfilVisivel,
+    diarioPerfilVisivel,
+    comunidadePerfilVisivel,
+    bibliotecaPerfilVisivel,
+    atividadesPerfilVisivel,
+    totalAbasPerfilVisiveis,
+    conteudoPrivadoBloqueado,
+    primeiraAbaPerfilVisivel,
+  } = obterVisibilidadeAbasPerfilAutor({
+    perfilPertenceAoUsuario,
+    existeBloqueio: estadoBloqueioPerfil.existeBloqueio,
+    privacidadeCarregando: privacidadePerfilCarregando,
+    permissoes: permissoesAbasPerfil,
+  });
 
   usePerfilAutorPrivacySync({
     perfilAutorId: perfilParaMostrar?.autorId || "",
