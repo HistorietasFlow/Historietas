@@ -28,6 +28,13 @@ const topFiveStorageSyncSource = readFileSync(
   ),
   "utf8",
 );
+const topFiveLikesSyncSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-top-five-likes-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const storageRuntime = `
 const criarStorageKeyUsuarioPerfilBiblioteca = (chave, userId) => {
   const userIdLimpo = userId.trim();
@@ -215,8 +222,8 @@ test("Top 5 preserva fallbacks quando o armazenamento falha", () => {
 
 test("Perfil de Autor delega exclusivamente o Top 5 local", () => {
   assert.match(
-    pagina,
-    /import \{ carregarCurtidasTopFiveLocais \} from "\.\/lib\/profile-top-five-local-utils";/,
+    topFiveLikesSyncSource,
+    /import \{ carregarCurtidasTopFiveLocais \} from "\.\.\/lib\/profile-top-five-local-utils";/,
   );
   assert.match(
     topFiveStorageSyncSource,
