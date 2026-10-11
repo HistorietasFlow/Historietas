@@ -474,3 +474,10 @@
 - Consolidou a conversão de `perfilUsuarioRemoto` para autor dentro do mesmo `useMemo` que resolve o perfil exibido.
 - Removeu um `useMemo` intermediário sem alterar prioridade por ID/nome, ownership ou redirecionamento.
 - Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 978 — seleção direta da obra com menu aberto
+
+- Removeu o `useMemo` intermediário da seleção da obra com menu aberto.
+- Manteve a resolução em `obterObraMenuAbertaPerfilAutor`, sem alterar regra de ID ou comportamento do menu.
+- Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
