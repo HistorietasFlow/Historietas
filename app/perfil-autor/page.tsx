@@ -35,6 +35,7 @@ import { usePerfilAutorRatingActions } from "./hooks/use-perfil-autor-rating-act
 import { usePerfilAutorRatingSync } from "./hooks/use-perfil-autor-rating-sync";
 import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary-rating-actions";
 import { usePerfilAutorDiaryRatingSync } from "./hooks/use-perfil-autor-diary-rating-sync";
+import { usePerfilAutorDiarySync } from "./hooks/use-perfil-autor-diary-sync";
 import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
 import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-actions";
 import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
@@ -88,7 +89,6 @@ import {
   traduzirTextoPerfilAutor,
 } from "./translations";
 import {
-  aplicarPermissoesAbasAoDiario,
   compactarNumeroPerfilAutor,
   criarChaveAutorPerfil,
   criarHandlePerfilAutor,
@@ -136,25 +136,19 @@ import {
   obterTotalCurtidasObraPerfilAutor,
   obterTotalSalvosObraPerfilAutor,
 } from "./lib/data-normalizers";
-import { criarEstadoDiarioPerfilVazio } from "./lib/profile-diary-record-utils";
 import {
   analisarEnquetePublicacaoComunidadePerfil,
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
 } from "./lib/profile-community-publication-utils";
 import { carregarPerfilUsuarioSupabase } from "./lib/profile-public-profile-loader";
-import { carregarDiarioPerfilSupabase } from "./lib/profile-diary-loader";
-import { mesclarDiarioPerfilComLocal } from "./lib/profile-diary-merge-utils";
 import {
   carregarObrasPublicadasPorIdsSupabase,
   carregarObrasPublicadasSupabase,
 } from "./lib/profile-published-works-loader";
 import { carregarEstadoUsuarioSupabase } from "./lib/profile-user-state-loader";
 import { carregarInteracoesCapitulosSupabase } from "./lib/profile-interactions-loader";
-import {
-  dataDiarioPerfilFormatada,
-  montarDiarioPerfilLocal,
-} from "./lib/profile-diary-local-utils";
+import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
 import {
   carregarJsonUsuarioPerfilAutor,
   carregarListaIdsPerfilBiblioteca,
@@ -1417,96 +1411,7 @@ function PerfilAutorPageContent() {
       setTopFiveCurtidasTotal,
     });
 
-  useEffect(() => {
-    const perfilAtual = perfilParaMostrar;
-    let cancelado = false;
-
-    async function carregarDiarioPerfil() {
-      if (!perfilAtual) {
-        setDiarioPerfil(diarioPerfilVazio);
-        return;
-      }
-
-      const perfilDiario = perfilAtual;
-      const userIdPerfil = perfilDiario.autorId.trim();
-      const bibliotecaUsaUsuarioLogado =
-        bibliotecaPerfilVisivel &&
-        abaPerfil === "biblioteca" &&
-        Boolean(usuarioIdLogado.trim());
-      const userIdFonteDiario = bibliotecaUsaUsuarioLogado
-        ? usuarioIdLogado.trim()
-        : userIdPerfil;
-
-      const estaVendoProprioPerfil =
-        Boolean(usuarioIdLogado.trim()) &&
-        userIdPerfil === usuarioIdLogado.trim();
-
-      const incluirItensPrivados =
-        bibliotecaUsaUsuarioLogado ||
-        podeEditarPerfil ||
-        estaVendoProprioPerfil;
-
-      setDiarioPerfil({
-        ...diarioPerfilVazio,
-        carregando: true,
-      });
-
-      const diarioLocal = incluirItensPrivados
-        ? montarDiarioPerfilLocal(
-            perfilDiario,
-            obrasFavoritas,
-            obrasConcluidas,
-            obrasSeguidasBiblioteca,
-            obras,
-          )
-        : criarEstadoDiarioPerfilVazio();
-
-      if (!userIdFonteDiario || !idAutorSupabaseValido(userIdFonteDiario)) {
-        if (!cancelado) {
-          setDiarioPerfil({
-            carregando: false,
-            ...diarioLocal,
-          });
-        }
-
-        return;
-      }
-
-      const diarioSupabase = await carregarDiarioPerfilSupabase(
-        userIdFonteDiario,
-        obras,
-        incluirItensPrivados,
-        diarioPerfilVisivel,
-        atividadesPerfilVisivel,
-        obrasConcluidas,
-      );
-      const diarioSemFiltro = incluirItensPrivados
-        ? mesclarDiarioPerfilComLocal(diarioSupabase, diarioLocal)
-        : diarioSupabase;
-      const diarioFinal = incluirItensPrivados
-        ? diarioSemFiltro
-        : aplicarPermissoesAbasAoDiario(
-            diarioSemFiltro,
-            permissoesAbasPerfil,
-          );
-
-      if (!cancelado) {
-        setDiarioPerfil({
-          carregando: false,
-          ...diarioFinal,
-        });
-      }
-    }
-
-    const carregarDiarioTimer = window.setTimeout(() => {
-      void carregarDiarioPerfil();
-    }, 0);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(carregarDiarioTimer);
-    };
-  }, [
+  usePerfilAutorDiarySync({
     perfilParaMostrar,
     obras,
     obrasFavoritas,
@@ -1520,7 +1425,8 @@ function PerfilAutorPageContent() {
     permissoesAbasPerfil,
     diarioPerfilVisivel,
     atividadesPerfilVisivel,
-  ]);
+    setDiarioPerfil,
+  });
 
   const itensDiarioTudo = useMemo(() => {
     const prioridadeTipos: Record<DiarioPerfilItem["tipo"], number> = {
