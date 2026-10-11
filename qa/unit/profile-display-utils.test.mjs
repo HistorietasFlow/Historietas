@@ -9,19 +9,32 @@ const source = readFileSync(
 );
 
 globalThis.__profileDisplayDependencies = {
+  SOBRE_BIO_MAX_LENGTH: 160,
   criarBioAutor(perfil) {
     return `Bio padrão de ${perfil.nome}`;
   },
   criarHandlePerfilAutor(nome, autorId, username) {
     return username ? `@${username}` : `@${nome.toLowerCase()}-${autorId}`;
   },
+  formatarEntradaHistorietasPerfilAutor(criadoEm) {
+    return criadoEm ? `Entrada: ${criadoEm}` : "Entrada não informada";
+  },
 };
 
 const javascript = typescript.transpileModule(
   source
     .replace(
-      'import { criarHandlePerfilAutor } from "./profile-formatters";',
-      "const { criarHandlePerfilAutor } = globalThis.__profileDisplayDependencies;",
+      'import { SOBRE_BIO_MAX_LENGTH } from "../constants";',
+      "const { SOBRE_BIO_MAX_LENGTH } = globalThis.__profileDisplayDependencies;",
+    )
+    .replace(
+      /import \{[\s\S]*?criarHandlePerfilAutor,[\s\S]*?formatarEntradaHistorietasPerfilAutor,[\s\S]*?\} from "\.\/profile-formatters";/,
+      [
+        "const {",
+        "  criarHandlePerfilAutor,",
+        "  formatarEntradaHistorietasPerfilAutor,",
+        "} = globalThis.__profileDisplayDependencies;",
+      ].join("\n"),
     )
     .replace(
       'import { criarBioAutor } from "./work-normalizers";',
@@ -61,7 +74,7 @@ test("prioriza dados locais salvos sobre perfil remoto", () => {
       avatar: "avatar-remoto",
       bio: "Bio remota",
       sobreBio: "Sobre remoto",
-      criadoEm: "",
+      criadoEm: "2026-01-15",
     },
     perfisAutoresSalvos: {
       "user-a": {
@@ -82,6 +95,11 @@ test("prioriza dados locais salvos sobre perfil remoto", () => {
   assert.equal(resultado.bioSobreAutor, "Sobre local");
   assert.equal(resultado.avatarAutor, "avatar-local");
   assert.equal(resultado.autorHandlePerfil, "@ana.remota");
+  assert.equal(resultado.entradaHistorietasPerfil, "Entrada: 2026-01-15");
+  assert.equal(
+    resultado.caracteresRestantesBioSobre,
+    160 - "Sobre local".length,
+  );
 });
 
 test("usa perfil remoto quando não há personalização local", () => {
@@ -161,4 +179,6 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.bioSobreAutor, "");
   assert.equal(vazio.avatarAutor, "");
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
+  assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
+  assert.equal(vazio.caracteresRestantesBioSobre, 160);
 });
