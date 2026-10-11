@@ -266,7 +266,7 @@ test("Perfil de Autor mantém helpers locais e delega coleta de IDs ao carregado
   assert.match(utilsSource, /import \{ ordenarItensDiarioPerfil \} from "\.\/profile-diary-merge-utils";/);
   assert.match(
     pagina,
-    /import \{ dataDiarioPerfilFormatada \} from "\.\/lib\/profile-diary-local-utils";/,
+    /import \{[\s\S]*?dataDiarioPerfilFormatada,[\s\S]*?obterMensagemDiarioVazioPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-diary-local-utils";/,
   );
   assert.match(
     diarySyncSource,
