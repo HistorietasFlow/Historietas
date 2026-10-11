@@ -482,14 +482,18 @@ test("métricas resumidas da obra centralizam curtidas, comentários e visualiza
   });
 });
 
-test("página reutiliza métricas resumidas das obras nos três pontos", () => {
+test("métricas resumidas ficam diretas nos cards e são reutilizadas pelo helper do sheet", () => {
   assert.match(
     pagina,
     /obterMetricasResumoObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
     (pagina.match(/obterMetricasResumoObraPerfilAutor\(/g) || []).length,
-    3,
+    2,
+  );
+  assert.match(
+    source,
+    /obterMetricasResumoObraPerfilAutor\(obra, totaisInteracoesObras\)/,
   );
   assert.doesNotMatch(pagina, /obterTotalCurtidasObraPerfilAutor/);
   assert.doesNotMatch(pagina, /obterTotalComentariosObraPerfilAutor/);
