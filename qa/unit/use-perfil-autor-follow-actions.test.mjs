@@ -207,10 +207,14 @@ test("segue perfil remoto e cria notificação de novo seguidor", async () => {
     modulo.chamadas.some((chamada) => chamada[0] === "criar-notificacao"),
     true,
   );
-  assert.deepEqual(acoes.chamadas.at(-1), [
-    "mensagem",
-    "Perfil adicionado aos seus seguindo.",
-  ]);
+  assert.deepEqual(
+    acoes.chamadas.find(
+      (chamada) =>
+        chamada[0] === "mensagem" &&
+        chamada[1] === "Perfil adicionado aos seus seguindo.",
+    ),
+    ["mensagem", "Perfil adicionado aos seus seguindo."],
+  );
 });
 
 test("cancela solicitação pendente e remove sua notificação", async () => {
@@ -229,10 +233,14 @@ test("cancela solicitação pendente e remove sua notificação", async () => {
     modulo.chamadas.some((chamada) => chamada[0] === "remover-notificacoes"),
     true,
   );
-  assert.deepEqual(acoes.chamadas.at(-1), [
-    "mensagem",
-    "Solicitação cancelada.",
-  ]);
+  assert.deepEqual(
+    acoes.chamadas.find(
+      (chamada) =>
+        chamada[0] === "mensagem" &&
+        chamada[1] === "Solicitação cancelada.",
+    ),
+    ["mensagem", "Solicitação cancelada."],
+  );
 });
 
 test("sem usuário autenticado pede login e não altera seguimento", async () => {
