@@ -361,3 +361,64 @@ export function obterDadosCardBibliotecaPerfilAutor(
     menuAberto: bibliotecaMenuAbertoChave === item.chave,
   };
 }
+
+
+export function obterDadosSheetObraPerfilAutor({
+  obra,
+  totaisInteracoesObras,
+  obrasFavoritas,
+  obrasConcluidas,
+  obrasSeguidasBiblioteca,
+  traduzirTexto,
+}: {
+  obra: ObraLocal;
+  totaisInteracoesObras: Parameters<
+    typeof obterTotalCurtidasObraPerfilAutor
+  >[1];
+  obrasFavoritas: string[];
+  obrasConcluidas: string[];
+  obrasSeguidasBiblioteca: string[];
+  traduzirTexto: (texto: string) => string;
+}) {
+  const {
+    ultimoCapitulo,
+    capituloHref,
+  } = obterAlvoLeituraMenuObraPerfilAutor(obra);
+  const {
+    obraFavorita,
+    obraConcluida,
+  } = obterEstadoColecoesObraPerfilAutor({
+    obra,
+    obrasFavoritas,
+    obrasConcluidas,
+    obrasSeguidasBiblioteca,
+  });
+  const {
+    totalCurtidas,
+    totalComentarios,
+    totalSalvos,
+    visualizacoesFormatadas,
+    totalCapitulos,
+  } = obterMetricasSheetObraPerfilAutor(
+    obra,
+    totaisInteracoesObras,
+  );
+
+  return {
+    ultimoCapitulo,
+    capituloHref,
+    obraFavorita,
+    obraConcluida,
+    metaObraSheet: formatarMetaSheetObraPerfilAutor(
+      obra,
+      traduzirTexto,
+    ),
+    metricasObraSheet: formatarMetricasSheetObraPerfilAutor({
+      visualizacoes: visualizacoesFormatadas,
+      totalCurtidas,
+      totalComentarios,
+      totalSalvos,
+      totalCapitulos,
+    }),
+  };
+}
