@@ -1755,6 +1755,18 @@ function PerfilAutorPageContent() {
       setMenuPerfilAberto,
       setEditorPerfilAberto,
     });
+  const { salvarPerfilAutor } = usePerfilAutorProfileSaveActions({
+    autorChavePerfil,
+    perfisAutoresSalvos,
+    usuarioIdLogado,
+    perfilParaMostrar,
+    podeEditarPerfil,
+    perfilUsuarioRemotoAtivo,
+    setPerfisAutoresSalvos,
+    setPerfilUsuarioRemoto,
+    setMensagemAcao,
+  });
+
   const { atualizarBioSobreAutor, alternarDestaquesPerfil } =
     usePerfilAutorAboutActions({
       avatarAutor,
@@ -2490,18 +2502,6 @@ function PerfilAutorPageContent() {
   const comunidadeAutorReviewsHref = comunidadeAutorBusca
     ? `${comunidadeAutorHref}&tipo=Review`
     : "/comunidade?tipo=Review";
-
-  const { salvarPerfilAutor } = usePerfilAutorProfileSaveActions({
-    autorChavePerfil,
-    perfisAutoresSalvos,
-    usuarioIdLogado,
-    perfilParaMostrar,
-    podeEditarPerfil,
-    perfilUsuarioRemotoAtivo,
-    setPerfisAutoresSalvos,
-    setPerfilUsuarioRemoto,
-    setMensagemAcao,
-  });
 
   async function salvarEdicaoPerfilAutor() {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
