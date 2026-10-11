@@ -399,9 +399,13 @@ test("href da obra prioriza link, depois slug e por fim título", () => {
 });
 
 test("página reutiliza o helper de href das obras", () => {
+  assert.match(
+    pagina,
+    /obterHrefObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
   assert.equal(
     (pagina.match(/obterHrefObraPerfilAutor\(/g) || []).length,
-    5,
+    4,
   );
   assert.doesNotMatch(pagina, /criarSlugBase/);
 });
