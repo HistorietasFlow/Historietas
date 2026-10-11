@@ -248,20 +248,19 @@ test("evento da mesma identidade mantem o salvamento do editor valido", async ()
 });
 
 test("mantem guards do editor entre as etapas assincronas e os commits", () => {
-  const paginaPerfilAutor = readFileSync(
-    new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  const blocoSalvamento = readFileSync(
+    new URL(
+      "../../app/perfil-autor/hooks/use-perfil-autor-profile-editor-save-actions.ts",
+      import.meta.url,
+    ),
     "utf8",
   );
-  const inicioSalvamento = paginaPerfilAutor.indexOf(
+  const inicioSalvamento = blocoSalvamento.indexOf(
     "async function salvarEdicaoPerfilAutor()",
   );
-  const fimSalvamento = paginaPerfilAutor.indexOf(
-    "const { avaliarAutor } = usePerfilAutorRatingActions",
+  const fimSalvamento = blocoSalvamento.indexOf(
+    "return { salvarEdicaoPerfilAutor }",
     inicioSalvamento,
-  );
-  const blocoSalvamento = paginaPerfilAutor.slice(
-    inicioSalvamento,
-    fimSalvamento,
   );
   const guardsDepoisDeEtapas = blocoSalvamento.match(
     /if \(!salvamentoEditorPerfilAindaAtual\(\)\)/g,
