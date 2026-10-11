@@ -113,6 +113,7 @@ import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-u
 import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
+  formatarMetricasSheetObraPerfilAutor,
   obterHrefObraPerfilAutor,
   obterMetricasResumoObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
@@ -2232,15 +2233,14 @@ function PerfilAutorPageContent() {
               .filter(Boolean)
               .map((item) => traduzirTextoPerfilAutor(item, language))
               .join(" • ");
-            const metricasObraSheet = [
-              `👁 ${visualizacoesObra}`,
-              `❤️ ${totalCurtidas}`,
-              `💬 ${totalComentarios}`,
-              `🔖 ${totalSalvos}`,
-              `📚 ${obra.capitulos.length}`,
-            ]
-              .filter(Boolean)
-              .join(" • ");
+            const metricasObraSheet =
+              formatarMetricasSheetObraPerfilAutor({
+                visualizacoes: visualizacoesObra,
+                totalCurtidas,
+                totalComentarios,
+                totalSalvos,
+                totalCapitulos: obra.capitulos.length,
+              });
 
             return (
               <ProfileWorkActionSheetOverlay
