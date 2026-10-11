@@ -481,3 +481,10 @@
 - Removeu o `useMemo` intermediário da seleção da obra com menu aberto.
 - Manteve a resolução em `obterObraMenuAbertaPerfilAutor`, sem alterar regra de ID ou comportamento do menu.
 - Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 979 — resumo de estatísticas sem memoização manual
+
+- Removeu o `useMemo` intermediário do resumo de estatísticas do perfil.
+- Manteve toda a derivação em `obterResumoEstatisticasPerfilAutor`, sem alterar gêneros, visualizações, rascunhos ou obras sem capítulos.
+- Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.

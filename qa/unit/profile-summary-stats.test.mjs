@@ -7,6 +7,10 @@ const source = readFileSync(
   new URL("../../app/perfil-autor/lib/profile-summary-stats.ts", import.meta.url),
   "utf8",
 );
+const pagina = readFileSync(
+  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  "utf8",
+);
 
 globalThis.__profileSummaryStatsDependencies = {
   formatarGeneroPerfilAutor(genero) {
@@ -134,4 +138,16 @@ test("rascunhos nunca ficam negativos", () => {
   );
 
   assert.equal(resultado.totalRascunhosPerfil, 0);
+});
+
+
+test("página usa resumo de estatísticas sem useMemo", () => {
+  assert.match(
+    pagina,
+    /\} = obterResumoEstatisticasPerfilAutor\(perfilParaMostrar\);/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /obterResumoEstatisticasPerfilAutor\(perfilParaMostrar\)[\s\S]{0,120}\[perfilParaMostrar\]/,
+  );
 });

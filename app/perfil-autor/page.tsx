@@ -823,10 +823,7 @@ function PerfilAutorPageContent() {
     totalVisualizacoesPerfil,
     totalRascunhosPerfil,
     totalObrasSemCapitulosPerfil,
-  } = useMemo(
-    () => obterResumoEstatisticasPerfilAutor(perfilParaMostrar),
-    [perfilParaMostrar],
-  );
+  } = obterResumoEstatisticasPerfilAutor(perfilParaMostrar);
 
   const obraMenuAberta = obterObraMenuAbertaPerfilAutor(
     obrasDoPerfilFiltradas,
