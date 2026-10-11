@@ -228,3 +228,9 @@
 
 - Extraiu `alternarSeguirAutor` para `usePerfilAutorFollowActions`.
 - Manteve autenticação, seguir/deixar de seguir/cancelar solicitação, contador de seguidores, notificações sociais e fallback local por autor.
+
+
+## Fase 938 — atividade recente do Sobre
+
+- Extraiu a composição de `renderizarAtividadeRecenteSobrePerfil` para `ProfileAboutRecentActivity`.
+- Manteve abertura/fechamento, loading, estado vazio, limite de 8 itens, links e datas da timeline.

@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const aboutRecentActivitySource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-recent-activity.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const diaryLoaderSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-diary-loader.ts",
@@ -232,8 +239,8 @@ test("Perfil de Autor delega construção e resolução de itens ao carregador d
   assert.match(utilsSource, /import \{ formatarMediaAvaliacaoAutor \} from "\.\/profile-formatters";/);
   assert.match(utilsSource, /obterDataRegistroDiario,[\s\S]*?obterVisibilidadeRegistroDiario/);
   assert.match(
-    pagina,
-    /import \{ obterHrefItemDiarioPerfil \} from "\.\/lib\/profile-diary-item-utils";/,
+    aboutRecentActivitySource,
+    /import \{ obterHrefItemDiarioPerfil \} from "\.\.\/lib\/profile-diary-item-utils";/,
   );
   assert.match(
     diaryLoaderSource,
@@ -253,6 +260,6 @@ test("Perfil de Autor delega construção e resolução de itens ao carregador d
   }
 
   assert.match(diaryLoaderSource, /criarItemDiarioPerfil\(\s*"lendo",/);
-  assert.match(pagina, /obterHrefItemDiarioPerfil\(item\)/);
+  assert.match(aboutRecentActivitySource, /obterHrefItemDiarioPerfil\(item\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });
