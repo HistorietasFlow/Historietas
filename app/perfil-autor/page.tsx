@@ -796,10 +796,7 @@ function PerfilAutorPageContent() {
     setDiarioPerfil,
   });
 
-  const itensDiarioTudo = useMemo(
-    () => montarItensDiarioTudoPerfil(diarioPerfil),
-    [diarioPerfil],
-  );
+  const itensDiarioTudo = montarItensDiarioTudoPerfil(diarioPerfil);
 
   usePerfilAutorRatingSync({
     perfilParaMostrar,

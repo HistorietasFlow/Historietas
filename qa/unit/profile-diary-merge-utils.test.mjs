@@ -313,3 +313,15 @@ test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carre
   );
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });
+
+
+test("página consolida itens do diário sem useMemo", () => {
+  assert.match(
+    pagina,
+    /const itensDiarioTudo = montarItensDiarioTudoPerfil\(diarioPerfil\);/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const itensDiarioTudo = useMemo/,
+  );
+});
