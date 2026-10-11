@@ -7,6 +7,10 @@ const source = readFileSync(
   new URL("../../app/perfil-autor/lib/profile-resolution-utils.ts", import.meta.url),
   "utf8",
 );
+const pagina = readFileSync(
+  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  "utf8",
+);
 const javascript = typescript.transpileModule(
   source.replace(
     'import { normalizarNomeAutor } from "./profile-formatters";',
@@ -126,4 +130,20 @@ test("preserva autor não encontrado e propriedade pelo ID da URL", () => {
   assert.equal(resultado.autorNaoEncontrado, true);
   assert.equal(resultado.perfilParaMostrar, null);
   assert.equal(resultado.perfilPertenceAoUsuario, true);
+});
+
+
+test("página consolida a conversão do perfil remoto no memo de resolução", () => {
+  assert.doesNotMatch(
+    pagina,
+    /const perfilUsuarioRemotoComoAutor = useMemo/,
+  );
+  assert.match(
+    pagina,
+    /const perfilUsuarioRemotoComoAutor = perfilUsuarioRemoto\?\.userId[\s\S]*?criarPerfilUsuarioRemotoComoAutor\(perfilUsuarioRemoto\)[\s\S]*?resolverEstadoPerfilAutor\(\{/,
+  );
+  assert.match(
+    pagina,
+    /perfilUsuarioRemoto,\s*autenticacaoCarregada,\s*\]\);/,
+  );
 });

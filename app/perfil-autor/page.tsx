@@ -498,39 +498,33 @@ function PerfilAutorPageContent() {
     [obras, totaisInteracoesObras],
   );
 
-  const perfilUsuarioRemotoComoAutor = useMemo(() => {
-    if (!perfilUsuarioRemoto?.userId) {
-      return null;
-    }
-
-    return criarPerfilUsuarioRemotoComoAutor(perfilUsuarioRemoto);
-  }, [perfilUsuarioRemoto]);
-
   const {
     autorNaoEncontrado,
     perfilDoUsuarioLogado,
     perfilParaMostrar,
     perfilPertenceAoUsuario,
     redirecionandoParaLogin,
-  } = useMemo(
-    () =>
-      resolverEstadoPerfilAutor({
-        perfisAutores,
-        autorSelecionado,
-        autorIdSelecionado,
-        usuarioIdLogado,
-        perfilUsuarioRemotoComoAutor,
-        autenticacaoCarregada,
-      }),
-    [
+  } = useMemo(() => {
+    const perfilUsuarioRemotoComoAutor = perfilUsuarioRemoto?.userId
+      ? criarPerfilUsuarioRemotoComoAutor(perfilUsuarioRemoto)
+      : null;
+
+    return resolverEstadoPerfilAutor({
       perfisAutores,
       autorSelecionado,
       autorIdSelecionado,
       usuarioIdLogado,
       perfilUsuarioRemotoComoAutor,
       autenticacaoCarregada,
-    ],
-  );
+    });
+  }, [
+    perfisAutores,
+    autorSelecionado,
+    autorIdSelecionado,
+    usuarioIdLogado,
+    perfilUsuarioRemoto,
+    autenticacaoCarregada,
+  ]);
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,

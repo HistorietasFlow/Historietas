@@ -467,3 +467,10 @@
 - Extraiu a regra de visibilidade do TOP 5 para `obterVisibilidadeDestaquesPerfilAutor`.
 - Preservou diferenças entre autor e visitante, dependência da aba Obras e exibição da seção sem itens quando aplicável.
 - Ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 977 — resolução remota consolidada
+
+- Consolidou a conversão de `perfilUsuarioRemoto` para autor dentro do mesmo `useMemo` que resolve o perfil exibido.
+- Removeu um `useMemo` intermediário sem alterar prioridade por ID/nome, ownership ou redirecionamento.
+- Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
