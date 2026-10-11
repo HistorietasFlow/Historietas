@@ -509,3 +509,11 @@
 - Removeu o `useMemo` intermediário de `obrasEmDestaque`.
 - Manteve toda a seleção, deduplicação, limite e filtro 18+ em `obterObrasDestaquePerfilAutor`.
 - Ampliou a cobertura estrutural já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 983 — remoção das memoizações finais da resolução
+
+- Removeu o `useMemo` de `perfisAutores` e o `useMemo` final de resolução do perfil exibido.
+- Manteve o agrupamento em `montarPerfisAutoresPorObras` e a resolução em `resolverEstadoPerfilAutor`, ambos como derivação direta.
+- Removeu o import de `useMemo` da página e atualizou os testes estruturais correspondentes.
+- Sem alterações de UI, schema, RLS ou Supabase.
