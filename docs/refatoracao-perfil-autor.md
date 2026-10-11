@@ -637,3 +637,11 @@
 - Removeu a composição sequencial desses helpers de `page.tsx`.
 - Preservou os helpers menores já existentes e suas responsabilidades isoladas.
 - Atualizou testes estruturais de contagem e ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 999 — dados do sheet da Biblioteca
+
+- Centralizou href de leitura e estado das coleções do menu da Biblioteca em `obterDadosSheetBibliotecaPerfilAutor`.
+- Preservou `metaSheet` separado para manter as responsabilidades entre módulos e evitar dependências desnecessárias.
+- Removeu chamadas diretas de href e coleções de `page.tsx`.
+- Atualizou testes estruturais e ampliou a cobertura unitária já registrada em `test:session`, sem alterar UI, schema, RLS ou Supabase.
