@@ -31,6 +31,25 @@ export function obterRotuloBibliotecaPerfil(aba: AbaBibliotecaPerfil) {
 }
 
 
+export function obterRotulosAcoesColecoesBibliotecaPerfil({
+  obraNoQueroLer,
+  obraFavorita,
+  obraConcluida,
+}: {
+  obraNoQueroLer: boolean;
+  obraFavorita: boolean;
+  obraConcluida: boolean;
+}) {
+  return {
+    rotuloQueroLer: obraNoQueroLer ? "Remover do Quero ler" : "Quero ler",
+    rotuloFavorita: obraFavorita ? "Remover favorita" : "Favoritar",
+    rotuloConcluida: obraConcluida
+      ? "Marcar como não concluída"
+      : "Concluir",
+  };
+}
+
+
 export function obterRotuloAcaoRemoverBibliotecaPerfil(
   aba: AbaBibliotecaPerfil,
 ) {
