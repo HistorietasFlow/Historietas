@@ -342,3 +342,9 @@
 - Extraiu a busca do item com menu aberto e o rótulo da aba ativa para `profile-library-display-utils.ts`.
 - Preservou exatamente as chaves, retornos nulos e textos exibidos.
 - Adicionou testes unitários e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+## Fase 959 — links da Comunidade
+
+- Extraiu a composição dos links gerais, Teorias e Reviews da Comunidade para `criarLinksComunidadePerfilAutor`.
+- Preservou codificação do nome do autor e fallbacks quando o nome está ausente.
+- Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
