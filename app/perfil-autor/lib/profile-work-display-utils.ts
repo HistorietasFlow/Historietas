@@ -111,3 +111,18 @@ export function obterTotalObrasConcluidasPerfilAutor({
     return total + Math.max(totalConcluidasReais, concluidaLocal);
   }, 0);
 }
+
+
+export function obterObraMenuAbertaPerfilAutor(
+  obrasDoPerfilFiltradas: ObraLocal[],
+  obraMenuAbertoId: string,
+) {
+  if (!obraMenuAbertoId) {
+    return null;
+  }
+
+  return (
+    obrasDoPerfilFiltradas.find((obra) => obra.id === obraMenuAbertoId) ||
+    null
+  );
+}
