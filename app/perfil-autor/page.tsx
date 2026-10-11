@@ -33,6 +33,7 @@ import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-pro
 import { usePerfilAutorLibraryCollectionActions } from "./hooks/use-perfil-autor-library-collection-actions";
 import { usePerfilAutorRatingActions } from "./hooks/use-perfil-autor-rating-actions";
 import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary-rating-actions";
+import { usePerfilAutorDiaryRatingSync } from "./hooks/use-perfil-autor-diary-rating-sync";
 import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
 import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-actions";
 import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
@@ -127,7 +128,6 @@ import {
   aplicarInteracoesNasObras,
   criarPerfilUsuarioRemotoComoAutor,
   mesclarObrasPorIdSlug,
-  normalizarAvaliacaoDiarioPerfil,
   obterTotalComentariosObraPerfilAutor,
   obterTotalConcluidasObraPerfilAutor,
   obterTotalCurtidasObraPerfilAutor,
@@ -1913,75 +1913,14 @@ function PerfilAutorPageContent() {
     perfilPertenceAoUsuario,
   ]);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarAvaliacaoRealDiario() {
-      if (!perfilParaMostrar || !perfilUsaAvaliacaoDiario) {
-        setAvaliacaoDiario(avaliacaoDiarioVazia);
-        return;
-      }
-
-      const diarioUserId = (
-        perfilUsuarioRemotoAtivo?.userId || perfilParaMostrar.autorId
-      ).trim();
-
-      if (!diarioUserId || !idAutorSupabaseValido(diarioUserId)) {
-        setAvaliacaoDiario({
-          ...avaliacaoDiarioVazia,
-          carregado: true,
-          visivel: podeEditarPerfil,
-        });
-        return;
-      }
-
-      setAvaliacaoDiario((avaliacaoAtual) => ({
-        ...avaliacaoAtual,
-        carregado: false,
-        salvando: false,
-      }));
-
-      try {
-        const { data, error } = await supabase.rpc(
-          "carregar_avaliacao_diario",
-          { p_diario_user_id: diarioUserId },
-        );
-
-        if (error) {
-          throw error;
-        }
-
-        if (!cancelado) {
-          setAvaliacaoDiario((avaliacaoAtual) =>
-            normalizarAvaliacaoDiarioPerfil(data, avaliacaoAtual),
-          );
-        }
-      } catch {
-        if (!cancelado) {
-          setAvaliacaoDiario({
-            ...avaliacaoDiarioVazia,
-            carregado: true,
-            visivel: podeEditarPerfil,
-          });
-        }
-      }
-    }
-
-    const carregarAvaliacaoDiarioTimer = window.setTimeout(() => {
-      void carregarAvaliacaoRealDiario();
-    }, 0);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(carregarAvaliacaoDiarioTimer);
-    };
-  }, [
+  usePerfilAutorDiaryRatingSync({
     perfilParaMostrar,
-    perfilUsuarioRemotoAtivo?.userId,
+    perfilUsuarioRemotoUserId: perfilUsuarioRemotoAtivo?.userId || "",
     perfilUsaAvaliacaoDiario,
     podeEditarPerfil,
     usuarioIdLogado,
-  ]);
+    setAvaliacaoDiario,
+  });
 
   const generosPrincipaisPerfil = useMemo(() => {
     if (!perfilParaMostrar) {
