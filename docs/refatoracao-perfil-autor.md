@@ -383,3 +383,10 @@
 - Extraiu a composição de chaves, fallback local, estado remoto, contagens e links de seguimento para `obterEstadoSeguimentoPerfilAutor`.
 - Preservou o comportamento para IDs válidos, perfis locais, solicitações pendentes e perfil próprio.
 - Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
+
+
+## Fase 965 — dados derivados de exibição do perfil
+
+- Extraiu a seleção do perfil salvo, perfil remoto ativo, bios, avatar e handle para `obterDadosExibicaoPerfilAutor`.
+- Preservou a prioridade entre dados locais/remotos, fallbacks de bio e detecção da bio padrão do leitor.
+- Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.

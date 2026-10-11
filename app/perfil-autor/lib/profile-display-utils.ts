@@ -1,0 +1,77 @@
+import type {
+  AutorPerfil,
+  PerfilAutorSalvo,
+  PerfisAutoresSalvos,
+  PerfilUsuarioRemoto,
+} from "../types";
+import { criarHandlePerfilAutor } from "./profile-formatters";
+import { criarBioAutor } from "./work-normalizers";
+
+const perfilAutorSalvoVazio: PerfilAutorSalvo = {
+  avatar: "",
+  avatarNome: "",
+  bio: "",
+  sobreBio: "",
+  mostrarDestaques: false,
+};
+
+export function obterDadosExibicaoPerfilAutor({
+  perfilParaMostrar,
+  perfilUsuarioRemoto,
+  perfisAutoresSalvos,
+  autorChavePerfil,
+  autorNormalizadoParaSeguir,
+}: {
+  perfilParaMostrar: AutorPerfil | null;
+  perfilUsuarioRemoto: PerfilUsuarioRemoto | null;
+  perfisAutoresSalvos: PerfisAutoresSalvos;
+  autorChavePerfil: string;
+  autorNormalizadoParaSeguir: string;
+}) {
+  const perfilSalvoAutor = autorChavePerfil
+    ? perfisAutoresSalvos[autorChavePerfil] ||
+      perfisAutoresSalvos[autorNormalizadoParaSeguir] ||
+      perfilAutorSalvoVazio
+    : perfilAutorSalvoVazio;
+
+  const perfilUsuarioRemotoAtivo =
+    perfilUsuarioRemoto &&
+    perfilParaMostrar &&
+    perfilUsuarioRemoto.userId.trim().toLowerCase() ===
+      perfilParaMostrar.autorId.trim().toLowerCase()
+      ? perfilUsuarioRemoto
+      : null;
+
+  const bioPadraoAutor = perfilParaMostrar
+    ? criarBioAutor(perfilParaMostrar)
+    : "";
+  const bioAutorPersonalizada =
+    perfilSalvoAutor.bio.trim() || perfilUsuarioRemotoAtivo?.bio.trim() || "";
+  const bioAutor = bioAutorPersonalizada || bioPadraoAutor;
+  const bioSobrePersonalizada =
+    perfilSalvoAutor.sobreBio.trim() ||
+    perfilUsuarioRemotoAtivo?.sobreBio.trim() ||
+    "";
+  const bioSobreAutor = bioSobrePersonalizada || bioAutor;
+
+  return {
+    perfilSalvoAutor,
+    perfilUsuarioRemotoAtivo,
+    bioPadraoAutor,
+    bioAutorPersonalizada,
+    bioAutor,
+    bioSobrePersonalizada,
+    bioSobreAutor,
+    bioSobreAutorEhPadrao:
+      bioSobreAutor.trim() === "Perfil de leitor no Historietas.",
+    autorHandlePerfil: perfilParaMostrar
+      ? criarHandlePerfilAutor(
+          perfilParaMostrar.nome,
+          perfilParaMostrar.autorId,
+          perfilUsuarioRemotoAtivo?.username || "",
+        )
+      : "@autor.historietas",
+    avatarAutor:
+      perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "",
+  };
+}

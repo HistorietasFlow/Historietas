@@ -86,7 +86,6 @@ import {
 import {
   compactarNumeroPerfilAutor,
   criarChaveAutorPerfil,
-  criarHandlePerfilAutor,
   criarHrefLeituraCapituloPerfilAutor,
   formatarEntradaHistorietasPerfilAutor,
   formatarFormatoPerfilAutor,
@@ -98,7 +97,6 @@ import {
   obterTimestampData,
 } from "./lib/profile-formatters";
 import {
-  criarBioAutor,
   encontrarCapituloParaContinuar,
   mostrarClassificacao,
 } from "./lib/work-normalizers";
@@ -129,6 +127,7 @@ import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-utils";
+import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
 import {
   encontrarItemBibliotecaMenuAberto,
@@ -715,52 +714,29 @@ function PerfilAutorPageContent() {
         return total + Math.max(totalConcluidasReais, concluidaLocal);
       }, 0)
     : 0;
-  const perfilSalvoAutor = autorChavePerfil
-    ? perfisAutoresSalvos[autorChavePerfil] ||
-      perfisAutoresSalvos[autorNormalizadoParaSeguir] || {
-        avatar: "",
-        avatarNome: "",
-        bio: "",
-        sobreBio: "",
-        mostrarDestaques: false,
-      }
-    : {
-        avatar: "",
-        avatarNome: "",
-        bio: "",
-        sobreBio: "",
-        mostrarDestaques: false,
-      };
-  const perfilUsuarioRemotoAtivo =
-    perfilUsuarioRemoto &&
-    perfilParaMostrar &&
-    perfilUsuarioRemoto.userId.trim().toLowerCase() ===
-      perfilParaMostrar.autorId.trim().toLowerCase()
-      ? perfilUsuarioRemoto
-      : null;
-  const bioPadraoAutor = perfilParaMostrar
-    ? criarBioAutor(perfilParaMostrar)
-    : "";
-  const bioAutorPersonalizada =
-    perfilSalvoAutor.bio.trim() || perfilUsuarioRemotoAtivo?.bio.trim() || "";
-  const bioAutor = bioAutorPersonalizada || bioPadraoAutor;
-  const bioSobrePersonalizada =
-    perfilSalvoAutor.sobreBio.trim() ||
-    perfilUsuarioRemotoAtivo?.sobreBio.trim() ||
-    "";
-  const bioSobreAutor = bioSobrePersonalizada || bioAutor;
-  const bioSobreAutorEhPadrao =
-    bioSobreAutor.trim() === "Perfil de leitor no Historietas.";
+  const {
+    perfilSalvoAutor,
+    perfilUsuarioRemotoAtivo,
+    bioPadraoAutor,
+    bioAutorPersonalizada,
+    bioAutor,
+    bioSobrePersonalizada,
+    bioSobreAutor,
+    bioSobreAutorEhPadrao,
+    autorHandlePerfil,
+    avatarAutor,
+  } = obterDadosExibicaoPerfilAutor({
+    perfilParaMostrar,
+    perfilUsuarioRemoto,
+    perfisAutoresSalvos,
+    autorChavePerfil,
+    autorNormalizadoParaSeguir,
+  });
+
   const bioSobreAutorExibido = bioSobreAutorEhPadrao
     ? traduzirTextoPerfilAutor(bioSobreAutor, language)
     : bioSobreAutor;
-  const autorHandlePerfil = perfilParaMostrar
-    ? criarHandlePerfilAutor(
-        perfilParaMostrar.nome,
-        perfilParaMostrar.autorId,
-        perfilUsuarioRemotoAtivo?.username || "",
-      )
-    : "@autor.historietas";
+
   const {
     compartilharObraPerfilAutor,
     copiarLinkPerfil,
@@ -783,7 +759,6 @@ function PerfilAutorPageContent() {
       setObraMenuAbertoId,
       setAlvoDenunciaConteudoPerfil,
     });
-  const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
   const { abrirEditorPerfil, fecharEditorPerfil } =
     usePerfilAutorProfileEditorActions({
       podeEditarPerfil,
