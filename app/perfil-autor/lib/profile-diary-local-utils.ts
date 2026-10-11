@@ -13,6 +13,15 @@ export function coletarObraIdsRegistrosDiarioPerfil(
     .filter(Boolean);
 }
 
+export function obterMensagemDiarioVazioPerfilAutor(
+  podeEditarPerfil: boolean,
+) {
+  return podeEditarPerfil
+    ? "Suas obras e atividades de leitura aparecerão aqui."
+    : "Este perfil ainda não compartilhou itens no Diário.";
+}
+
+
 export function dataDiarioPerfilFormatada(dataIso: string) {
   if (!dataIso) {
     return "Data não informada";
