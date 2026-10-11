@@ -84,3 +84,23 @@ export function obterDadosExibicaoPerfilAutor({
       perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "",
   };
 }
+
+
+export function obterBioSobreExibicaoPerfilAutor({
+  bioSobreAutor,
+  bioSobreAutorEhPadrao,
+  traduzirTexto,
+}: {
+  bioSobreAutor: string;
+  bioSobreAutorEhPadrao: boolean;
+  traduzirTexto: (texto: string) => string;
+}) {
+  return {
+    bioSobreAutorExibido: bioSobreAutorEhPadrao
+      ? traduzirTexto(bioSobreAutor)
+      : bioSobreAutor,
+    bioSobreAutorUserContent: bioSobreAutorEhPadrao
+      ? undefined
+      : ("true" as const),
+  };
+}

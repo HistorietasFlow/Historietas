@@ -105,7 +105,10 @@ import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import { obterEstadoSeguimentoPerfilAutor } from "./lib/profile-follow-display-utils";
-import { obterDadosExibicaoPerfilAutor } from "./lib/profile-display-utils";
+import {
+  obterBioSobreExibicaoPerfilAutor,
+  obterDadosExibicaoPerfilAutor,
+} from "./lib/profile-display-utils";
 import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
 import {
   formatarMetaSheetObraPerfilAutor,
@@ -625,9 +628,14 @@ function PerfilAutorPageContent() {
     autorNormalizadoParaSeguir,
   });
 
-  const bioSobreAutorExibido = bioSobreAutorEhPadrao
-    ? traduzirTextoPerfilAutor(bioSobreAutor, language)
-    : bioSobreAutor;
+  const {
+    bioSobreAutorExibido,
+    bioSobreAutorUserContent,
+  } = obterBioSobreExibicaoPerfilAutor({
+    bioSobreAutor,
+    bioSobreAutorEhPadrao,
+    traduzirTexto: (texto) => traduzirTextoPerfilAutor(texto, language),
+  });
 
   const {
     compartilharObraPerfilAutor,
@@ -1959,9 +1967,7 @@ function PerfilAutorPageContent() {
 
               <ProfileAboutTextRow>
                 <ProfileAboutText
-                  userContent={
-                    bioSobreAutorEhPadrao ? undefined : "true"
-                  }
+                  userContent={bioSobreAutorUserContent}
                 >
                   {bioSobreAutorExibido}
                 </ProfileAboutText>
