@@ -14,7 +14,6 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import {
-  carregarEstadoBloqueioPerfil,
   carregarEstadoRelacionamentoPerfil,
   type EstadoBloqueioPerfil,
   type EstadoRelacionamentoPerfil,
@@ -43,6 +42,7 @@ import { usePerfilAutorTopFiveLikesSync } from "./hooks/use-perfil-autor-top-fiv
 import { usePerfilAutorPrivacySync } from "./hooks/use-perfil-autor-privacy-sync";
 import { usePerfilAutorVisibleTabSync } from "./hooks/use-perfil-autor-visible-tab-sync";
 import { usePerfilAutorCommunitySync } from "./hooks/use-perfil-autor-community-sync";
+import { usePerfilAutorBlockStateSync } from "./hooks/use-perfil-autor-block-state-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
 import type {
@@ -1326,42 +1326,11 @@ function PerfilAutorPageContent() {
     setAbaPerfil,
   });
 
-  useEffect(() => {
-    const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
-    const usuarioAtualId = usuarioIdLogado.trim();
-    let cancelado = false;
-
-    async function carregarBloqueioPerfil() {
-      if (
-        !perfilUserId ||
-        !usuarioAtualId ||
-        perfilUserId === usuarioAtualId ||
-        !idAutorSupabaseValido(perfilUserId)
-      ) {
-        setEstadoBloqueioPerfil({
-          bloqueadoPorMim: false,
-          bloqueadoPeloPerfil: false,
-          existeBloqueio: false,
-        });
-        return;
-      }
-
-      const estado = await carregarEstadoBloqueioPerfil(perfilUserId);
-
-      if (!cancelado) {
-        setEstadoBloqueioPerfil(estado);
-      }
-    }
-
-    const carregarBloqueioTimer = window.setTimeout(() => {
-      void carregarBloqueioPerfil();
-    }, 0);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(carregarBloqueioTimer);
-    };
-  }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
+  usePerfilAutorBlockStateSync({
+    perfilAutorId: perfilParaMostrar?.autorId || "",
+    usuarioIdLogado,
+    setEstadoBloqueioPerfil,
+  });
 
   useEffect(() => {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
