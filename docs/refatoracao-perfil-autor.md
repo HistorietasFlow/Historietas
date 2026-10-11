@@ -362,3 +362,10 @@
 - Moveu a composição dos dados de compartilhamento de obra e perfil para `profile-sharing-utils`.
 - Centralizou a normalização do username copiável e removeu formatação duplicada do hook.
 - Preservou Web Share, fallback de cópia, textos, URLs e mensagens existentes.
+
+
+## Fase 962 — visibilidade das abas do perfil
+
+- Extraiu a derivação de bloqueio, permissões, primeira aba visível e estado de conteúdo privado para `obterVisibilidadeAbasPerfilAutor`.
+- Preservou a prioridade das abas, a regra de carregamento de privacidade e a contagem sem Atividades.
+- Adicionou cobertura unitária e registro em `test:session`, sem alterar UI, schema, RLS ou Supabase.
