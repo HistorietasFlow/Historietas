@@ -1,4 +1,10 @@
-import type { DiarioPerfilItem, DiarioPerfilSemCarregando } from "../types";
+import { criarSlugBase } from "../../../lib/utils";
+import type {
+  DiarioPerfilEstado,
+  DiarioPerfilItem,
+  DiarioPerfilResumoItem,
+  DiarioPerfilSemCarregando,
+} from "../types";
 import { obterTimestampData } from "./profile-formatters";
 
 export function ordenarItensDiarioPerfil(itens: DiarioPerfilItem[]) {
@@ -88,4 +94,85 @@ export function mesclarDiarioPerfilComLocal(
     reviews,
     atividades,
   };
+}
+
+
+export function montarItensDiarioTudoPerfil(
+  diarioPerfil: Pick<
+    DiarioPerfilEstado,
+    | "lendoAgora"
+    | "queroLer"
+    | "favoritas"
+    | "concluidas"
+    | "avaliacoes"
+    | "reviews"
+    | "atividades"
+  >,
+) {
+  const prioridadeTipos: Record<DiarioPerfilItem["tipo"], number> = {
+    lendo: 0,
+    concluida: 1,
+    quero_ler: 2,
+    favorita: 3,
+    avaliacao: 4,
+    review: 5,
+    atividade: 6,
+  };
+  const itens = [
+    ...diarioPerfil.lendoAgora,
+    ...diarioPerfil.queroLer,
+    ...diarioPerfil.favoritas,
+    ...diarioPerfil.concluidas,
+    ...diarioPerfil.avaliacoes,
+    ...diarioPerfil.reviews,
+    ...diarioPerfil.atividades,
+  ];
+  const itensPorObra = new Map<string, DiarioPerfilResumoItem>();
+
+  itens.forEach((item) => {
+    const obra = item.obra;
+
+    if (!obra) {
+      return;
+    }
+
+    const chaveObra = (obra.id || obra.slug || criarSlugBase(obra.titulo))
+      .trim()
+      .toLowerCase();
+
+    if (!chaveObra) {
+      return;
+    }
+
+    const existente = itensPorObra.get(chaveObra);
+
+    if (!existente) {
+      itensPorObra.set(chaveObra, {
+        ...item,
+        tipos: [item.tipo],
+      });
+      return;
+    }
+
+    const tipos = Array.from(
+      new Set([...existente.tipos, item.tipo]),
+    ).sort(
+      (tipoA, tipoB) =>
+        prioridadeTipos[tipoA] - prioridadeTipos[tipoB],
+    );
+    const itemMaisRecente =
+      obterTimestampData(item.data) > obterTimestampData(existente.data);
+    const base = itemMaisRecente ? item : existente;
+
+    itensPorObra.set(chaveObra, {
+      ...base,
+      tipo: tipos[0] || base.tipo,
+      tipos,
+    });
+  });
+
+  return Array.from(itensPorObra.values()).sort(
+    (itemA, itemB) =>
+      obterTimestampData(itemB.data) - obterTimestampData(itemA.data),
+  );
 }
