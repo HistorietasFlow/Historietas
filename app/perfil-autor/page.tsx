@@ -41,6 +41,7 @@ import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-f
 import { usePerfilAutorTopFiveStorageSync } from "./hooks/use-perfil-autor-top-five-storage-sync";
 import { usePerfilAutorTopFiveLikesSync } from "./hooks/use-perfil-autor-top-five-likes-sync";
 import { usePerfilAutorPrivacySync } from "./hooks/use-perfil-autor-privacy-sync";
+import { usePerfilAutorVisibleTabSync } from "./hooks/use-perfil-autor-visible-tab-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
 import type {
@@ -1368,24 +1369,7 @@ function PerfilAutorPageContent() {
     perfilPertenceAoUsuario,
   ]);
 
-  useEffect(() => {
-    const abaAtualVisivel =
-      (abaPerfil === "obras" && obrasPerfilVisivel) ||
-      (abaPerfil === "diario" && diarioPerfilVisivel) ||
-      (abaPerfil === "comunidade" && comunidadePerfilVisivel) ||
-      (abaPerfil === "sobre" && sobrePerfilVisivel) ||
-      (abaPerfil === "biblioteca" && bibliotecaPerfilVisivel);
-
-    if (!abaAtualVisivel && primeiraAbaPerfilVisivel) {
-      const corrigirAbaTimer = window.setTimeout(() => {
-        setAbaPerfil(primeiraAbaPerfilVisivel);
-      }, 0);
-
-      return () => {
-        window.clearTimeout(corrigirAbaTimer);
-      };
-    }
-  }, [
+  usePerfilAutorVisibleTabSync({
     abaPerfil,
     obrasPerfilVisivel,
     diarioPerfilVisivel,
@@ -1393,7 +1377,8 @@ function PerfilAutorPageContent() {
     sobrePerfilVisivel,
     bibliotecaPerfilVisivel,
     primeiraAbaPerfilVisivel,
-  ]);
+    setAbaPerfil,
+  });
 
   useEffect(() => {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
