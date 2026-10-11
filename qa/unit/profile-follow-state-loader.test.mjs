@@ -12,6 +12,10 @@ const loaderSource = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url), "utf8");
+const followStateSyncSource = readFileSync(
+  new URL("../../app/perfil-autor/hooks/use-perfil-autor-follow-state-sync.ts", import.meta.url),
+  "utf8",
+);
 let indiceModulo = 0;
 
 function criarConsulta(resposta, chamadas, tabela) {
@@ -181,8 +185,8 @@ test("mantém retorno seguro para relacionamento ausente e falhas Supabase", asy
 
 test("Perfil de Autor delega o carregador de estado de seguidores", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarEstadoSeguimentoUsuarioPerfil,[\s\S]*?\} from "\.\/lib\/profile-follow-state-loader";/,
+    followStateSyncSource,
+    /import \{ carregarEstadoSeguimentoUsuarioPerfil \} from "\.\.\/lib\/profile-follow-state-loader";/,
   );
   assert.match(
     loaderSource,
@@ -198,8 +202,12 @@ test("Perfil de Autor delega o carregador de estado de seguidores", () => {
     /async function carregarEstadoSeguimentoUsuarioPerfil\(/,
   );
   assert.match(
-    pagina,
+    followStateSyncSource,
     /carregarEstadoSeguimentoUsuarioPerfil\([\s\S]*?usuarioAtualId,[\s\S]*?perfilUserId,\s*\)/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /import \{[\s\S]*?carregarEstadoSeguimentoUsuarioPerfil,[\s\S]*?\} from "\.\/lib\/profile-follow-state-loader";/,
   );
   assert.doesNotMatch(loaderSource, /useState|useEffect|localStorage/);
 });
