@@ -129,6 +129,10 @@ import {
 } from "./lib/profile-community-publication-utils";
 import { dataDiarioPerfilFormatada } from "./lib/profile-diary-local-utils";
 import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
+import {
+  encontrarItemBibliotecaMenuAberto,
+  obterRotuloBibliotecaPerfil,
+} from "./lib/profile-library-display-utils";
 import { MenuPerfilIcone } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -1333,32 +1337,18 @@ function PerfilAutorPageContent() {
     itensBibliotecaSalvos,
   ]);
 
-  const bibliotecaMenuAberto = useMemo(() => {
-    if (!bibliotecaMenuAbertoChave) {
-      return null;
-    }
+  const bibliotecaMenuAberto = useMemo(
+    () =>
+      encontrarItemBibliotecaMenuAberto(
+        itensBibliotecaAtivos,
+        bibliotecaMenuAbertoChave,
+      ),
+    [bibliotecaMenuAbertoChave, itensBibliotecaAtivos],
+  );
 
-    return (
-      itensBibliotecaAtivos.find(
-        (item) => item.chave === bibliotecaMenuAbertoChave,
-      ) || null
-    );
-  }, [bibliotecaMenuAbertoChave, itensBibliotecaAtivos]);
-
-  const rotuloBibliotecaAtiva =
-    abaBibliotecaPerfil === "tudo"
-      ? "todos os itens"
-      : abaBibliotecaPerfil === "quero-ler"
-        ? "quero ler"
-        : abaBibliotecaPerfil === "lendo-agora"
-          ? "lendo agora"
-          : abaBibliotecaPerfil === "favoritas"
-            ? "na lista"
-            : abaBibliotecaPerfil === "concluidas"
-              ? "concluídas"
-              : abaBibliotecaPerfil === "salvos"
-                ? "capítulos salvos"
-                : "histórico";
+  const rotuloBibliotecaAtiva = obterRotuloBibliotecaPerfil(
+    abaBibliotecaPerfil,
+  );
 
   const containerAtualStyle = isDesktop
     ? desktopContainerStyle
