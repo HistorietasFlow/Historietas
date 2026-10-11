@@ -400,7 +400,7 @@ test("Perfil de Autor delega coleções da Biblioteca para o hook", () => {
   );
   assert.match(
     pagina,
-    /const \{[\s\S]*?alternarFavoritoObra,[\s\S]*?alternarConcluidoObra,[\s\S]*?alternarSalvoCapituloBibliotecaPerfil,[\s\S]*?alternarObraSeguindoBibliotecaPerfil,[\s\S]*?removerItemBibliotecaPerfil,[\s\S]*?\} = usePerfilAutorLibraryCollectionActions\(\{/,
+    /const \{[\s\S]*?alternarFavoritoObra,[\s\S]*?alternarConcluidoObra,[\s\S]*?alternarObraSeguindoBibliotecaPerfil,[\s\S]*?removerItemBibliotecaPerfil,[\s\S]*?\} = usePerfilAutorLibraryCollectionActions\(\{/,
   );
   assert.doesNotMatch(pagina, /async function alternarFavoritoObra\(/);
   assert.doesNotMatch(pagina, /async function alternarConcluidoObra\(/);

@@ -417,7 +417,6 @@ function PerfilAutorPageContent() {
   const {
     alternarFavoritoObra,
     alternarConcluidoObra,
-    alternarSalvoCapituloBibliotecaPerfil,
     alternarObraSeguindoBibliotecaPerfil,
     removerItemBibliotecaPerfil,
   } = usePerfilAutorLibraryCollectionActions({
