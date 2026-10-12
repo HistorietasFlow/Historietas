@@ -764,3 +764,10 @@
 - Eliminou chamadas duplicadas de análise de enquete e resumo dentro do `.map()` da Comunidade.
 - Reutilizou o mesmo resumo na exibição e na denúncia, preservando o comportamento existente.
 - Sem alterações de UI, schema, RLS ou Supabase; cobertura unitária ampliada em `test:session`.
+
+## Fase 1017 — mensagem de estado vazio das Obras
+
+- Extraiu a escolha da mensagem de estado vazio da aba Obras para `obterMensagemObrasVaziasPerfilAutor`.
+- Preservou os textos do próprio perfil, do visitante e do caso em que existem obras mas nenhuma permanece visível após os filtros.
+- Removeu o ternário aninhado correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

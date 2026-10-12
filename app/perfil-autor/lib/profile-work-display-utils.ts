@@ -26,6 +26,23 @@ import {
   mostrarClassificacao,
 } from "./work-normalizers";
 
+export function obterMensagemObrasVaziasPerfilAutor({
+  totalObras,
+  podeEditarPerfil,
+}: {
+  totalObras: number;
+  podeEditarPerfil: boolean;
+}) {
+  if (totalObras > 0) {
+    return "Nenhuma obra encontrada.";
+  }
+
+  return podeEditarPerfil
+    ? "Você ainda não publicou obras. Seu perfil continua ativo como leitor, com Diário e Comunidade."
+    : "Este perfil ainda não publicou obras. O Diário e a Comunidade continuam disponíveis.";
+}
+
+
 export function obterObrasVisiveisPerfilAutor({
   perfilParaMostrar,
   perfilPertenceAoUsuario,
