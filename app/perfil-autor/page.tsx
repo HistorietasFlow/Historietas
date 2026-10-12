@@ -140,6 +140,7 @@ import {
   encontrarItemBibliotecaMenuAberto,
   obterMetaMenuBibliotecaPerfil,
   obterRotuloAcaoRemoverBibliotecaPerfil,
+  obterMensagemBibliotecaVaziaPerfil,
   obterRotulosAcoesColecoesBibliotecaPerfil,
   obterRotuloBibliotecaPerfil,
 } from "./lib/profile-library-display-utils";
@@ -909,6 +910,8 @@ function PerfilAutorPageContent() {
   const rotuloBibliotecaAtiva = obterRotuloBibliotecaPerfil(
     abaBibliotecaPerfil,
   );
+  const mensagemBibliotecaVazia =
+    obterMensagemBibliotecaVaziaPerfil(rotuloBibliotecaAtiva);
 
   const {
     containerAtualStyle,
@@ -1745,7 +1748,7 @@ function PerfilAutorPageContent() {
             {diarioPerfil.carregando ? (
               <LoadingSpinner label="Carregando biblioteca" compacto />
             ) : itensBibliotecaAtivos.length === 0 ? (
-              <ProfileSectionEmptyState message={`Sua Biblioteca ainda não tem itens em ${rotuloBibliotecaAtiva}.`} />
+              <ProfileSectionEmptyState message={mensagemBibliotecaVazia} />
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {itensBibliotecaAtivos.map((item) => {

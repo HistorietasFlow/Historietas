@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   encontrarItemBibliotecaMenuAberto,
+  obterMensagemBibliotecaVaziaPerfil,
   obterMetaMenuBibliotecaPerfil,
   obterRotuloAcaoRemoverBibliotecaPerfil,
   obterRotulosAcoesColecoesBibliotecaPerfil,
@@ -14,6 +15,18 @@ test("encontra apenas o item correspondente ao menu aberto", () => {
   assert.equal(encontrarItemBibliotecaMenuAberto(itens, "x"), null);
   assert.equal(encontrarItemBibliotecaMenuAberto(itens, "b"), itens[1]);
 });
+
+test("mensagem vazia da Biblioteca preserva o rótulo da aba ativa", () => {
+  assert.equal(
+    obterMensagemBibliotecaVaziaPerfil("quero ler"),
+    "Sua Biblioteca ainda não tem itens em quero ler.",
+  );
+  assert.equal(
+    obterMensagemBibliotecaVaziaPerfil("capítulos salvos"),
+    "Sua Biblioteca ainda não tem itens em capítulos salvos.",
+  );
+});
+
 
 test("preserva os rótulos das abas da Biblioteca", () => {
   const casos = {
