@@ -855,3 +855,10 @@
 - Reutilizou a mesma condição nas ações do cabeçalho do TOP 5 e no estado vazio da seção.
 - Removeu três comparações repetidas do JSX e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1030 — dados de exibição das Notificações
+
+- Consolidou contagem formatada, `aria-label` do link e `aria-label` do badge em `obterDadosNotificacoesPerfilAutor`.
+- Preservou os helpers menores e todos os textos/limites existentes, incluindo `99+`.
+- Substituiu três derivações separadas de `page.tsx` por uma única chamada e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

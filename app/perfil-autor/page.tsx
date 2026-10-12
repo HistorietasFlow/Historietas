@@ -109,12 +109,10 @@ import {
   obterEstadoSeguimentoPerfilAutor,
 } from "./lib/profile-follow-display-utils";
 import {
-  obterAriaLabelBadgeNotificacoesPerfilAutor,
   obterAriaLabelCopiarUsernamePerfilAutor,
-  obterAriaLabelNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
-  formatarContagemNotificacoesPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
+  obterDadosNotificacoesPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
@@ -440,12 +438,11 @@ function PerfilAutorPageContent() {
     useState<number | null>(null);
   const notificacoesNaoLidas =
     notificacoesNaoLidasPerfil ?? notificacoesNaoLidasContexto;
-  const notificacoesNaoLidasFormatadas =
-    formatarContagemNotificacoesPerfilAutor(notificacoesNaoLidas);
-  const ariaLabelNotificacoes =
-    obterAriaLabelNotificacoesPerfilAutor(notificacoesNaoLidas);
-  const ariaLabelBadgeNotificacoes =
-    obterAriaLabelBadgeNotificacoesPerfilAutor(notificacoesNaoLidas);
+  const {
+    notificacoesNaoLidasFormatadas,
+    ariaLabelNotificacoes,
+    ariaLabelBadgeNotificacoes,
+  } = obterDadosNotificacoesPerfilAutor(notificacoesNaoLidas);
 
   usePerfilAutorAuthIdentitySync({
     avatarInputRef,
