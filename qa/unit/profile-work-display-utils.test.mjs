@@ -146,6 +146,7 @@ const {
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
   obterDadosCurtidaTopFivePerfilAutor,
+  obterMensagemTopFiveVazioPerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
   obterRotulosAcoesColecoesObraPerfilAutor,
@@ -433,6 +434,42 @@ test("página resolve obras em destaque sem useMemo", () => {
     pagina,
     /const obrasEmDestaque = useMemo/,
   );
+});
+
+
+test("mensagem de TOP 5 vazio preserva textos de autor e visitante", () => {
+  assert.equal(
+    obterMensagemTopFiveVazioPerfilAutor({
+      podeEditarPerfil: true,
+      nomePerfil: "Ana",
+    }),
+    "Monte seu TOP 5 para destacar suas obras favoritas.",
+  );
+  assert.equal(
+    obterMensagemTopFiveVazioPerfilAutor({
+      podeEditarPerfil: false,
+      nomePerfil: "Ana",
+    }),
+    "Ana nao montou top 5",
+  );
+});
+
+
+test("página delega a mensagem de TOP 5 vazio ao helper", () => {
+  assert.match(
+    pagina,
+    /obterMensagemTopFiveVazioPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterMensagemTopFiveVazioPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /message=\{mensagemTopFiveVazio\}/);
+  assert.doesNotMatch(
+    pagina,
+    /Monte seu TOP 5 para destacar suas obras favoritas\./,
+  );
+  assert.doesNotMatch(pagina, /nao montou top 5/);
 });
 
 
