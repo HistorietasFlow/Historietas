@@ -133,6 +133,34 @@ test("preserva autor não encontrado e propriedade pelo ID da URL", () => {
 });
 
 
+test("página deriva o nome do perfil uma vez e reutiliza nas exibições", () => {
+  assert.match(
+    pagina,
+    /const perfilNome = perfilParaMostrar\?\.nome \|\| "";/,
+  );
+  assert.equal(
+    (pagina.match(/perfilParaMostrar\?\.nome \|\| ""/g) || []).length,
+    1,
+  );
+  assert.ok(
+    (pagina.match(/\bperfilNome\b/g) || []).length >= 7,
+    "perfilNome deve ser reutilizado após a derivação",
+  );
+  assert.match(
+    pagina,
+    /obterTituloComunidadePerfilAutor\(\{[\s\S]*?nomePerfil: perfilNome,/,
+  );
+  assert.match(
+    pagina,
+    /obterTituloDiarioPerfilAutor\(\{[\s\S]*?nomePerfil: perfilNome,/,
+  );
+  assert.match(
+    pagina,
+    /criarLinksComunidadePerfilAutor\(perfilNome\)/,
+  );
+});
+
+
 test("página deriva o ID do perfil uma vez e reutiliza nas dependências", () => {
   assert.match(
     pagina,

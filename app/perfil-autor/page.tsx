@@ -532,6 +532,7 @@ function PerfilAutorPageContent() {
     autenticacaoCarregada,
   });
   const perfilAutorId = perfilParaMostrar?.autorId || "";
+  const perfilNome = perfilParaMostrar?.nome || "";
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,
@@ -671,15 +672,15 @@ function PerfilAutorPageContent() {
 
   const avisoComunidadeVazia = obterAvisoComunidadeVaziaPerfilAutor({
     podeEditarPerfil,
-    nomePerfil: perfilParaMostrar?.nome || "",
+    nomePerfil: perfilNome,
   });
   const tituloComunidadePerfil = obterTituloComunidadePerfilAutor({
     language,
-    nomePerfil: perfilParaMostrar?.nome || "",
+    nomePerfil: perfilNome,
   });
   const ariaLabelsEstatisticasComunidade =
     obterAriaLabelsEstatisticasComunidadePerfilAutor(
-      perfilParaMostrar?.nome || "",
+      perfilNome,
     );
   const valoresEstatisticasComunidade =
     obterValoresEstatisticasComunidadePerfilAutor({
@@ -792,7 +793,7 @@ function PerfilAutorPageContent() {
   });
   const tituloDiarioPerfil = obterTituloDiarioPerfilAutor({
     podeEditarPerfil,
-    nomePerfil: perfilParaMostrar?.nome || "",
+    nomePerfil: perfilNome,
   });
 
   const obrasEmDestaque = obterObrasDestaquePerfilAutor({
@@ -817,7 +818,7 @@ function PerfilAutorPageContent() {
   });
   const mensagemTopFiveVazio = obterMensagemTopFiveVazioPerfilAutor({
     podeEditarPerfil,
-    nomePerfil: perfilParaMostrar?.nome || "",
+    nomePerfil: perfilNome,
   });
 
   const { alternarCurtidaTopFivePerfil } =
@@ -948,7 +949,7 @@ function PerfilAutorPageContent() {
     geral: comunidadeAutorHref,
     teorias: comunidadeAutorTeoriasHref,
     reviews: comunidadeAutorReviewsHref,
-  } = criarLinksComunidadePerfilAutor(perfilParaMostrar?.nome || "");
+  } = criarLinksComunidadePerfilAutor(perfilNome);
 
   const { salvarEdicaoPerfilAutor } =
     usePerfilAutorProfileEditorSaveActions({
