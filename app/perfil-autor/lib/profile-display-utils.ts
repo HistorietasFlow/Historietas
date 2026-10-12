@@ -113,6 +113,13 @@ export function obterDadosDenunciaPerfilAutor(
 }
 
 
+export function obterAriaLabelBadgeNotificacoesPerfilAutor(
+  notificacoesNaoLidas: number,
+) {
+  return `${formatarContagemNotificacoesPerfilAutor(notificacoesNaoLidas)} notificações não lidas`;
+}
+
+
 export function obterAriaLabelNotificacoesPerfilAutor(
   notificacoesNaoLidas: number,
 ) {
