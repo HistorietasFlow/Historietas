@@ -376,6 +376,26 @@ test("seleção da obra com menu aberto usa ID exato e retorna null sem seleçã
 });
 
 
+test("página deriva uma vez a existência de obras em destaque", () => {
+  assert.match(
+    pagina,
+    /const temObrasEmDestaque = obrasEmDestaque\.length > 0;/,
+  );
+  assert.equal(
+    (pagina.match(/obrasEmDestaque\.length > 0/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /obrasEmDestaque\.length === 0/,
+  );
+  assert.ok(
+    (pagina.match(/\btemObrasEmDestaque\b/g) || []).length >= 4,
+    "temObrasEmDestaque deve ser reutilizado nas condições do TOP 5",
+  );
+});
+
+
 test("visibilidade dos destaques preserva regras de autor e visitante", () => {
   assert.deepEqual(
     obterVisibilidadeDestaquesPerfilAutor({
