@@ -743,3 +743,10 @@
 - Preservou os textos em português, inglês e espanhol com o nome do perfil.
 - Removeu o ternário aninhado correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1014 — aria-labels das estatísticas da Comunidade
+
+- Centralizou os três rótulos de acessibilidade dos cards de Publicações, Teorias e Reviews em `obterAriaLabelsEstatisticasComunidadePerfilAutor`.
+- Preservou exatamente os textos e a inclusão do nome do perfil.
+- Removeu as três interpolações correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

@@ -89,6 +89,7 @@ import {
   analisarEnquetePublicacaoComunidadePerfil,
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
+  obterAriaLabelsEstatisticasComunidadePerfilAutor,
   obterAvisoComunidadeVaziaPerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
   obterTituloComunidadePerfilAutor,
@@ -666,6 +667,10 @@ function PerfilAutorPageContent() {
     language,
     nomePerfil: perfilParaMostrar?.nome || "",
   });
+  const ariaLabelsEstatisticasComunidade =
+    obterAriaLabelsEstatisticasComunidadePerfilAutor(
+      perfilParaMostrar?.nome || "",
+    );
   const paddingInferiorPublicacaoComunidade =
     obterPaddingInferiorPublicacaoComunidadePerfilAutor(podeEditarPerfil);
 
@@ -1826,7 +1831,7 @@ function PerfilAutorPageContent() {
                 <ProfileCommunityStatsGrid isDesktop={isDesktop}>
                   <ProfileCommunityStatCard
                     href={comunidadeAutorHref}
-                    ariaLabel={`Abrir publicações de ${perfilParaMostrar.nome} na comunidade`}
+                    ariaLabel={ariaLabelsEstatisticasComunidade.publicacoes}
                     value={compactarNumeroPerfilAutor(
                       comunidadePerfil.totalPublicacoes,
                     )}
@@ -1836,7 +1841,7 @@ function PerfilAutorPageContent() {
 
                   <ProfileCommunityStatCard
                     href={comunidadeAutorTeoriasHref}
-                    ariaLabel={`Abrir teorias de ${perfilParaMostrar.nome} na comunidade`}
+                    ariaLabel={ariaLabelsEstatisticasComunidade.teorias}
                     value={compactarNumeroPerfilAutor(
                       comunidadePerfil.totalTeorias,
                     )}
@@ -1846,7 +1851,7 @@ function PerfilAutorPageContent() {
 
                   <ProfileCommunityStatCard
                     href={comunidadeAutorReviewsHref}
-                    ariaLabel={`Abrir reviews de ${perfilParaMostrar.nome} na comunidade`}
+                    ariaLabel={ariaLabelsEstatisticasComunidade.reviews}
                     value={compactarNumeroPerfilAutor(
                       comunidadePerfil.totalReviews,
                     )}
