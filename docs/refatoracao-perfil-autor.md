@@ -883,3 +883,10 @@
 - Preservou exatamente o mesmo valor enviado aos hooks de TOP 5, privacidade, Comunidade, bloqueio e seguimento.
 - Reduziu ruído visual em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1034 — fade superior responsivo
+
+- Centralizou a escolha entre `desktopTopWaterFadeStyle` e `mobileTopWaterFadeStyle` em `topWaterFadeAtualStyle` dentro de `obterEstilosResponsivosPerfilAutor`.
+- Substituiu dois `div` mutuamente exclusivos por um único elemento com o estilo responsivo derivado.
+- Removeu os imports diretos dos estilos de fade de `page.tsx` e atualizou a cobertura específica do modo desktop.
+- Sem alterações visuais, schema, RLS ou Supabase.
