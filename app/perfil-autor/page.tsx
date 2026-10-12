@@ -550,6 +550,7 @@ function PerfilAutorPageContent() {
   });
 
   const podeEditarPerfil = perfilPertenceAoUsuario;
+  const bloqueadoPorMim = estadoBloqueioPerfil.bloqueadoPorMim;
 
   const {
     perfilBloqueadoEntreUsuarios,
@@ -1292,7 +1293,7 @@ function PerfilAutorPageContent() {
                       onClick={() => void alternarBloqueioPerfil()}
                       disabled={bloqueioPerfilSalvando}
                       style={
-                        estadoBloqueioPerfil.bloqueadoPorMim
+                        bloqueadoPorMim
                           ? menuItemStyle
                           : menuDangerItemStyle
                       }
@@ -1303,7 +1304,7 @@ function PerfilAutorPageContent() {
                       <strong style={menuItemTextStyle}>
                         {obterRotuloAcaoBloqueioPerfilAutor({
                           bloqueadoPorMim:
-                            estadoBloqueioPerfil.bloqueadoPorMim,
+                            bloqueadoPorMim,
                           salvando: bloqueioPerfilSalvando,
                         })}
                       </strong>
