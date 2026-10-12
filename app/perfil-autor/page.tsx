@@ -530,6 +530,7 @@ function PerfilAutorPageContent() {
   });
   const perfilAutorId = perfilParaMostrar?.autorId || "";
   const perfilNome = perfilParaMostrar?.nome || "";
+  const obrasPerfil = perfilParaMostrar?.obras || [];
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,
@@ -785,7 +786,7 @@ function PerfilAutorPageContent() {
     perfilPertenceAoUsuario,
   });
   const mensagemObrasVazias = obterMensagemObrasVaziasPerfilAutor({
-    totalObras: perfilParaMostrar?.obras.length || 0,
+    totalObras: obrasPerfil.length,
     podeEditarPerfil,
   });
   const tituloDiarioPerfil = obterTituloDiarioPerfilAutor({
@@ -796,7 +797,7 @@ function PerfilAutorPageContent() {
   const obrasEmDestaque = obterObrasDestaquePerfilAutor({
     topFiveObraIds,
     obras,
-    obrasPerfil: perfilParaMostrar?.obras || [],
+    obrasPerfil,
     perfilPertenceAoUsuario,
   });
   const temObrasEmDestaque = obrasEmDestaque.length > 0;
