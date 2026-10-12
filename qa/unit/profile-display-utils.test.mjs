@@ -54,6 +54,7 @@ const javascript = typescript.transpileModule(
 
 const {
   formatarContagemNotificacoesPerfilAutor,
+  obterAriaLabelNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
   obterDadosDenunciaPerfilAutor,
@@ -286,6 +287,38 @@ test("página delega os dados do alvo da denúncia do perfil ao helper", () => {
   assert.doesNotMatch(
     pagina,
     /\/perfil-autor\?userId=\$\{encodeURIComponent\(/,
+  );
+});
+
+
+test("aria-label de notificações preserva estado vazio e contagem", () => {
+  assert.equal(
+    obterAriaLabelNotificacoesPerfilAutor(0),
+    "Notificações",
+  );
+  assert.equal(
+    obterAriaLabelNotificacoesPerfilAutor(3),
+    "Notificações: 3 não lidas",
+  );
+});
+
+
+test("página delega o aria-label de notificações ao helper", () => {
+  assert.match(
+    pagina,
+    /obterAriaLabelNotificacoesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterAriaLabelNotificacoesPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /aria-label=\{ariaLabelNotificacoes\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /notificacoesNaoLidas > 0[\s\S]{0,120}Notificações: \$\{notificacoesNaoLidas\} não lidas/,
   );
 });
 

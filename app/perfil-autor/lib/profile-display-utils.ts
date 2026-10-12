@@ -113,6 +113,15 @@ export function obterDadosDenunciaPerfilAutor(
 }
 
 
+export function obterAriaLabelNotificacoesPerfilAutor(
+  notificacoesNaoLidas: number,
+) {
+  return notificacoesNaoLidas > 0
+    ? `Notificações: ${notificacoesNaoLidas} não lidas`
+    : "Notificações";
+}
+
+
 export function formatarContagemNotificacoesPerfilAutor(
   notificacoesNaoLidas: number,
 ) {
