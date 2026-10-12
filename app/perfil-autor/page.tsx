@@ -802,6 +802,7 @@ function PerfilAutorPageContent() {
     obrasPerfil: perfilParaMostrar?.obras || [],
     perfilPertenceAoUsuario,
   });
+  const temObrasEmDestaque = obrasEmDestaque.length > 0;
 
   const { exibirSecaoDestaques } =
     obterVisibilidadeDestaquesPerfilAutor({
@@ -1645,7 +1646,7 @@ function PerfilAutorPageContent() {
             <ProfileHighlightsSection isDesktop={isDesktop}>
               <ProfileHighlightsHeader
                 titleActions={
-                  podeEditarPerfil && obrasEmDestaque.length > 0 ? (
+                  podeEditarPerfil && temObrasEmDestaque ? (
                     <ProfileHighlightsLikeButton
                       onClick={() => void alternarCurtidaTopFivePerfil()}
                       salvando={topFiveCurtidaSalvando}
@@ -1658,7 +1659,7 @@ function PerfilAutorPageContent() {
                 headerActions={
                   podeEditarPerfil ? (
                     <ProfileHighlightsEditLink href="/perfil-autor/top-5" />
-                  ) : obrasEmDestaque.length > 0 ? (
+                  ) : temObrasEmDestaque ? (
                     <ProfileHighlightsLikeButton
                       onClick={() => void alternarCurtidaTopFivePerfil()}
                       salvando={topFiveCurtidaSalvando}
@@ -1670,7 +1671,7 @@ function PerfilAutorPageContent() {
                 }
               />
 
-              {obrasEmDestaque.length === 0 ? (
+              {!temObrasEmDestaque ? (
                 <ProfileHighlightsEmptyState
                   message={mensagemTopFiveVazio}
                 />
