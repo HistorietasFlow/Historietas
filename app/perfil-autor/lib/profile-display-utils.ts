@@ -113,6 +113,20 @@ export function obterDadosDenunciaPerfilAutor(
 }
 
 
+export function obterDadosNotificacoesPerfilAutor(
+  notificacoesNaoLidas: number,
+) {
+  return {
+    notificacoesNaoLidasFormatadas:
+      formatarContagemNotificacoesPerfilAutor(notificacoesNaoLidas),
+    ariaLabelNotificacoes:
+      obterAriaLabelNotificacoesPerfilAutor(notificacoesNaoLidas),
+    ariaLabelBadgeNotificacoes:
+      obterAriaLabelBadgeNotificacoesPerfilAutor(notificacoesNaoLidas),
+  };
+}
+
+
 export function obterAriaLabelCopiarUsernamePerfilAutor(
   autorHandlePerfil: string,
 ) {
