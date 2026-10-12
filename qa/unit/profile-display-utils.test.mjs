@@ -61,6 +61,7 @@ const {
   obterDadosDenunciaConteudoPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterDadosNotificacoesPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
@@ -293,6 +294,45 @@ test("página delega os dados do alvo da denúncia do perfil ao helper", () => {
 });
 
 
+test("dados de notificações consolidam contagem e rótulos acessíveis", () => {
+  assert.deepEqual(
+    obterDadosNotificacoesPerfilAutor(0),
+    {
+      notificacoesNaoLidasFormatadas: "0",
+      ariaLabelNotificacoes: "Notificações",
+      ariaLabelBadgeNotificacoes: "0 notificações não lidas",
+    },
+  );
+  assert.deepEqual(
+    obterDadosNotificacoesPerfilAutor(100),
+    {
+      notificacoesNaoLidasFormatadas: "99+",
+      ariaLabelNotificacoes: "Notificações: 100 não lidas",
+      ariaLabelBadgeNotificacoes: "99+ notificações não lidas",
+    },
+  );
+});
+
+
+test("página deriva os dados de notificações em uma única chamada", () => {
+  assert.match(
+    pagina,
+    /obterDadosNotificacoesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterDadosNotificacoesPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /formatarContagemNotificacoesPerfilAutor|obterAriaLabelNotificacoesPerfilAutor|obterAriaLabelBadgeNotificacoesPerfilAutor/,
+  );
+  assert.match(pagina, /\{notificacoesNaoLidasFormatadas\}/);
+  assert.match(pagina, /aria-label=\{ariaLabelNotificacoes\}/);
+  assert.match(pagina, /aria-label=\{ariaLabelBadgeNotificacoes\}/);
+});
+
+
 test("aria-label de copiar username preserva o handle exibido", () => {
   assert.equal(
     obterAriaLabelCopiarUsernamePerfilAutor("@ana"),
@@ -337,18 +377,10 @@ test("aria-label do badge de notificações preserva contagem formatada", () => 
 });
 
 
-test("página delega o aria-label do badge de notificações ao helper", () => {
-  assert.match(
+test("página reutiliza o aria-label consolidado do badge de notificações", () => {
+  assert.doesNotMatch(
     pagina,
-    /obterAriaLabelBadgeNotificacoesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
-  );
-  assert.equal(
-    (
-      pagina.match(
-        /obterAriaLabelBadgeNotificacoesPerfilAutor\(/g,
-      ) || []
-    ).length,
-    1,
+    /obterAriaLabelBadgeNotificacoesPerfilAutor/,
   );
   assert.match(
     pagina,
@@ -373,14 +405,10 @@ test("aria-label de notificações preserva estado vazio e contagem", () => {
 });
 
 
-test("página delega o aria-label de notificações ao helper", () => {
-  assert.match(
+test("página reutiliza o aria-label consolidado de notificações", () => {
+  assert.doesNotMatch(
     pagina,
-    /obterAriaLabelNotificacoesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
-  );
-  assert.equal(
-    (pagina.match(/obterAriaLabelNotificacoesPerfilAutor\(/g) || []).length,
-    1,
+    /obterAriaLabelNotificacoesPerfilAutor/,
   );
   assert.match(
     pagina,
@@ -402,14 +430,10 @@ test("formatação do badge de notificações preserva limite visual", () => {
 });
 
 
-test("página reutiliza a contagem formatada no badge de notificações", () => {
-  assert.match(
+test("página reutiliza a contagem consolidada no badge de notificações", () => {
+  assert.doesNotMatch(
     pagina,
-    /formatarContagemNotificacoesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
-  );
-  assert.equal(
-    (pagina.match(/formatarContagemNotificacoesPerfilAutor\(/g) || []).length,
-    1,
+    /formatarContagemNotificacoesPerfilAutor/,
   );
   assert.match(
     pagina,
