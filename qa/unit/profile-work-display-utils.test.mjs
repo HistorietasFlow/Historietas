@@ -702,7 +702,6 @@ test("estado das coleções da obra preserva favoritos, concluídas e Quero ler"
       obraFavorita: true,
       obraConcluida: false,
       obraNoQueroLer: true,
-      ariaLabelSheetBiblioteca: "Ações da Biblioteca Obra Sheet Biblioteca",
     },
   );
 });
@@ -1121,6 +1120,7 @@ test("dados do sheet da Biblioteca centralizam href e estado das coleções", ()
       obraFavorita: true,
       obraConcluida: false,
       obraNoQueroLer: true,
+      ariaLabelSheetBiblioteca: "Ações da Biblioteca Obra Sheet Biblioteca",
     },
   );
 });
