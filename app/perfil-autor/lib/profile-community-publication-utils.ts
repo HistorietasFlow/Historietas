@@ -1,6 +1,25 @@
 import type { PublicacaoComunidadePerfil } from "../types";
 import { pegarTexto } from "./data-normalizers";
 
+export function obterTituloComunidadePerfilAutor({
+  language,
+  nomePerfil,
+}: {
+  language: string;
+  nomePerfil: string;
+}) {
+  if (language === "en") {
+    return `${nomePerfil}'s Community`;
+  }
+
+  if (language === "es") {
+    return `Comunidad de ${nomePerfil}`;
+  }
+
+  return `Comunidade de ${nomePerfil}`;
+}
+
+
 export function obterPaddingInferiorPublicacaoComunidadePerfilAutor(
   podeEditarPerfil: boolean,
 ) {
