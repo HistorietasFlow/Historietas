@@ -831,6 +831,15 @@ function PerfilAutorPageContent() {
       setTopFiveCurtidoPorMim,
       setTopFiveCurtidasTotal,
     });
+  const botaoCurtidaTopFive = temObrasEmDestaque ? (
+    <ProfileHighlightsLikeButton
+      onClick={() => void alternarCurtidaTopFivePerfil()}
+      salvando={topFiveCurtidaSalvando}
+      curtido={topFiveCurtidoPorMim}
+      totalFormatado={dadosCurtidaTopFive.totalFormatado}
+      ariaLabel={dadosCurtidaTopFive.ariaLabel}
+    />
+  ) : null;
 
   usePerfilAutorDiarySync({
     perfilParaMostrar,
@@ -1643,28 +1652,14 @@ function PerfilAutorPageContent() {
             <ProfileHighlightsSection isDesktop={isDesktop}>
               <ProfileHighlightsHeader
                 titleActions={
-                  podeEditarPerfil && temObrasEmDestaque ? (
-                    <ProfileHighlightsLikeButton
-                      onClick={() => void alternarCurtidaTopFivePerfil()}
-                      salvando={topFiveCurtidaSalvando}
-                      curtido={topFiveCurtidoPorMim}
-                      totalFormatado={dadosCurtidaTopFive.totalFormatado}
-                      ariaLabel={dadosCurtidaTopFive.ariaLabel}
-                    />
-                  ) : null
+                  podeEditarPerfil ? botaoCurtidaTopFive : null
                 }
                 headerActions={
                   podeEditarPerfil ? (
                     <ProfileHighlightsEditLink href="/perfil-autor/top-5" />
-                  ) : temObrasEmDestaque ? (
-                    <ProfileHighlightsLikeButton
-                      onClick={() => void alternarCurtidaTopFivePerfil()}
-                      salvando={topFiveCurtidaSalvando}
-                      curtido={topFiveCurtidoPorMim}
-                      totalFormatado={dadosCurtidaTopFive.totalFormatado}
-                      ariaLabel={dadosCurtidaTopFive.ariaLabel}
-                    />
-                  ) : null
+                  ) : (
+                    botaoCurtidaTopFive
+                  )
                 }
               />
 
