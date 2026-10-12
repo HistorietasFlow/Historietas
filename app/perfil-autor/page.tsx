@@ -90,6 +90,7 @@ import {
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
   obterAvisoComunidadeVaziaPerfilAutor,
+  obterPaddingInferiorPublicacaoComunidadePerfilAutor,
 } from "./lib/profile-community-publication-utils";
 import {
   dataDiarioPerfilFormatada,
@@ -658,6 +659,8 @@ function PerfilAutorPageContent() {
     podeEditarPerfil,
     nomePerfil: perfilParaMostrar?.nome || "",
   });
+  const paddingInferiorPublicacaoComunidade =
+    obterPaddingInferiorPublicacaoComunidadePerfilAutor(podeEditarPerfil);
 
   const {
     bioSobreAutorExibido,
@@ -1883,9 +1886,7 @@ function PerfilAutorPageContent() {
                               href={criarHrefPublicacaoComunidadePerfil(
                                 publicacao.id,
                               )}
-                              paddingBottom={
-                                podeEditarPerfil ? "10px" : "42px"
-                              }
+                              paddingBottom={paddingInferiorPublicacaoComunidade}
                               ariaLabel={`Abrir ${publicacao.tipoPublicacao} na Comunidade`}
                             >
                               <ProfileCommunityPostHeader
