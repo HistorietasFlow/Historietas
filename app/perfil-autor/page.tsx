@@ -2099,6 +2099,7 @@ function PerfilAutorPageContent() {
                     totalComentarios,
                     visualizacoesFormatadas: visualizacoesObra,
                     menuObraAberto,
+                    ariaLabelOpcoes,
                   } = obterDadosCardObraPerfilAutor(
                     obra,
                     totaisInteracoesObras,
@@ -2138,7 +2139,7 @@ function PerfilAutorPageContent() {
                               idAtual === obra.id ? "" : obra.id,
                             )
                           }
-                          ariaLabel={`Abrir opções de ${obra.titulo}`}
+                          ariaLabel={ariaLabelOpcoes}
                           expanded={menuObraAberto}
                         />
                       </ProfileWorkMenuAnchor>
@@ -2160,6 +2161,7 @@ function PerfilAutorPageContent() {
               obraConcluida,
               metaObraSheet,
               metricasObraSheet,
+              ariaLabelSheetObra,
             } = obterDadosSheetObraPerfilAutor({
               obra,
               totaisInteracoesObras,
@@ -2182,7 +2184,7 @@ function PerfilAutorPageContent() {
                 onClick={() => setObraMenuAbertoId("")}
               >
                 <ProfileWorkActionSheetPanel
-                  ariaLabel={`Ações da obra ${obra.titulo}`}
+                  ariaLabel={ariaLabelSheetObra}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <ProfileWorkActionSheetHandle />
@@ -2296,6 +2298,7 @@ function PerfilAutorPageContent() {
               obraFavorita,
               obraConcluida,
               obraNoQueroLer,
+              ariaLabelSheetBiblioteca,
             } = obterDadosSheetBibliotecaPerfilAutor({
               item,
               obrasFavoritas,
@@ -2318,7 +2321,7 @@ function PerfilAutorPageContent() {
                 onClick={() => setBibliotecaMenuAbertoChave("")}
               >
                 <ProfileWorkActionSheetPanel
-                  ariaLabel={`Ações da Biblioteca ${obra.titulo}`}
+                  ariaLabel={ariaLabelSheetBiblioteca}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <ProfileWorkActionSheetHandle />

@@ -893,6 +893,25 @@ test("href de leitura da Biblioteca fica encapsulado no card e no sheet", () => 
 });
 
 
+test("rótulos de acessibilidade das ações de obra ficam nos dados derivados", () => {
+  assert.match(pagina, /ariaLabel=\{ariaLabelOpcoes\}/);
+  assert.match(pagina, /ariaLabel=\{ariaLabelSheetObra\}/);
+  assert.match(pagina, /ariaLabel=\{ariaLabelSheetBiblioteca\}/);
+  assert.doesNotMatch(
+    pagina,
+    /ariaLabel=\{`Abrir opções de \$\{obra\.titulo\}`\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /ariaLabel=\{`Ações da obra \$\{obra\.titulo\}`\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /ariaLabel=\{`Ações da Biblioteca \$\{obra\.titulo\}`\}/,
+  );
+});
+
+
 test("dados do card de obra centralizam href, métricas e estado do menu", () => {
   assert.deepEqual(
     obterDadosCardObraPerfilAutor(
@@ -917,6 +936,7 @@ test("dados do card de obra centralizam href, métricas e estado do menu", () =>
       totalComentarios: 6,
       visualizacoesFormatadas: "fmt:125",
       menuObraAberto: true,
+      ariaLabelOpcoes: "Abrir opções de Obra Card",
     },
   );
 });
@@ -1051,6 +1071,10 @@ test("dados do sheet da obra consolidam leitura, coleções, meta e métricas", 
     resultado.metricasObraSheet,
     "👁 fmt:1500 • ❤️ 12 • 💬 4 • 🔖 6 • 📚 2",
   );
+  assert.equal(
+    resultado.ariaLabelSheetObra,
+    "Ações da obra Obra Sheet Completo",
+  );
 });
 
 test("página delega a composição do sheet da obra ao helper único", () => {
@@ -1096,6 +1120,7 @@ test("dados do sheet da Biblioteca centralizam href e estado das coleções", ()
       obraFavorita: true,
       obraConcluida: false,
       obraNoQueroLer: true,
+      ariaLabelSheetBiblioteca: "Ações da Biblioteca Obra Sheet Biblioteca",
     },
   );
 });
