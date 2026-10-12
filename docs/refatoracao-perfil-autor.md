@@ -806,3 +806,10 @@
 - Preservou exatamente os textos do próprio perfil e do visitante.
 - Removeu o ternário correspondente do `ProfileDiaryPanel` em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1023 — aria-label de Notificações
+
+- Extraiu o texto acessível do link de Notificações para `obterAriaLabelNotificacoesPerfilAutor`.
+- Preservou `Notificações` sem pendências e `Notificações: <n> não lidas` quando há itens não lidos.
+- Removeu o ternário correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
