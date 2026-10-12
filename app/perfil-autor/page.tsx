@@ -110,6 +110,7 @@ import {
 import {
   obterBioSobreExibicaoPerfilAutor,
   formatarContagemNotificacoesPerfilAutor,
+  obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
@@ -681,6 +682,10 @@ function PerfilAutorPageContent() {
     });
   const paddingInferiorPublicacaoComunidade =
     obterPaddingInferiorPublicacaoComunidadePerfilAutor(podeEditarPerfil);
+
+  const dadosDenunciaPerfil = obterDadosDenunciaPerfilAutor(
+    perfilParaMostrar,
+  );
 
   const {
     bioSobreAutorExibido,
@@ -1501,15 +1506,9 @@ function PerfilAutorPageContent() {
             Boolean(perfilParaMostrar)
           }
           alvoTipo="perfil"
-          alvoId={perfilParaMostrar?.autorId || ""}
-          alvoTitulo={perfilParaMostrar?.nome || "Perfil"}
-          alvoUrl={
-            perfilParaMostrar?.autorId
-              ? `/perfil-autor?userId=${encodeURIComponent(
-                  perfilParaMostrar.autorId
-                )}`
-              : ""
-          }
+          alvoId={dadosDenunciaPerfil.alvoId}
+          alvoTitulo={dadosDenunciaPerfil.alvoTitulo}
+          alvoUrl={dadosDenunciaPerfil.alvoUrl}
           onFechar={() => setDenunciaPerfilAberta(false)}
           onEnviada={() => {
             setDenunciaPerfilAberta(false);
