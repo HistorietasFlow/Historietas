@@ -848,3 +848,10 @@
 - Reutilizou o mesmo nome nos textos da Comunidade, Diário, TOP 5 e nos links da Comunidade.
 - Removeu seis repetições da mesma expressão em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1029 — existência de obras em destaque
+
+- Derivou `temObrasEmDestaque` uma única vez a partir de `obrasEmDestaque.length`.
+- Reutilizou a mesma condição nas ações do cabeçalho do TOP 5 e no estado vazio da seção.
+- Removeu três comparações repetidas do JSX e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
