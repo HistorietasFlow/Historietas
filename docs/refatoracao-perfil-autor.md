@@ -778,3 +778,10 @@
 - Preservou exatamente o texto e o rótulo dinâmico da aba ativa.
 - Removeu a interpolação correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1019 — alvo da denúncia do perfil
+
+- Centralizou ID, título e URL do alvo da denúncia em `obterDadosDenunciaPerfilAutor`.
+- Preservou o fallback sem perfil e o encoding do ID na URL.
+- Removeu a montagem inline correspondente do `DenunciaModal` em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

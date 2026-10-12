@@ -86,6 +86,21 @@ export function obterDadosExibicaoPerfilAutor({
 }
 
 
+export function obterDadosDenunciaPerfilAutor(
+  perfilParaMostrar: Pick<AutorPerfil, "autorId" | "nome"> | null,
+) {
+  const alvoId = perfilParaMostrar?.autorId || "";
+
+  return {
+    alvoId,
+    alvoTitulo: perfilParaMostrar?.nome || "Perfil",
+    alvoUrl: alvoId
+      ? `/perfil-autor?userId=${encodeURIComponent(alvoId)}`
+      : "",
+  };
+}
+
+
 export function formatarContagemNotificacoesPerfilAutor(
   notificacoesNaoLidas: number,
 ) {
