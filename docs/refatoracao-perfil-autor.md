@@ -820,3 +820,10 @@
 - Preservou a contagem formatada já existente, incluindo o teto visual `99+`.
 - Removeu a interpolação correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1025 — aria-label de copiar username
+
+- Extraiu o texto acessível do botão que copia o username para `obterAriaLabelCopiarUsernamePerfilAutor`.
+- Preservou exatamente o formato `Copiar @handle` já exibido pelo cabeçalho.
+- Removeu a interpolação correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
