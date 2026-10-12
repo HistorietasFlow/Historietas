@@ -11,6 +11,13 @@ export function encontrarItemBibliotecaMenuAberto(
   return itens.find((item) => item.chave === chave) || null;
 }
 
+export function obterMensagemBibliotecaVaziaPerfil(
+  rotuloBibliotecaAtiva: string,
+) {
+  return `Sua Biblioteca ainda não tem itens em ${rotuloBibliotecaAtiva}.`;
+}
+
+
 export function obterRotuloBibliotecaPerfil(aba: AbaBibliotecaPerfil) {
   switch (aba) {
     case "tudo":
