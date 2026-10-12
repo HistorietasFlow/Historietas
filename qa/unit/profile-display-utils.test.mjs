@@ -478,6 +478,26 @@ test("rótulo da ação de bloqueio preserva estado e salvamento", () => {
 });
 
 
+test("página deriva o estado de bloqueio uma vez e reutiliza no menu", () => {
+  assert.match(
+    pagina,
+    /const bloqueadoPorMim = estadoBloqueioPerfil\.bloqueadoPorMim;/,
+  );
+  assert.equal(
+    (pagina.match(/estadoBloqueioPerfil\.bloqueadoPorMim/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /style=\{\s*bloqueadoPorMim\s*\? menuItemStyle\s*: menuDangerItemStyle\s*\}/,
+  );
+  assert.match(
+    pagina,
+    /obterRotuloAcaoBloqueioPerfilAutor\(\{[\s\S]*?bloqueadoPorMim,[\s\S]*?salvando: bloqueioPerfilSalvando/,
+  );
+});
+
+
 test("página delega o rótulo da ação de bloqueio ao helper", () => {
   assert.match(
     pagina,
