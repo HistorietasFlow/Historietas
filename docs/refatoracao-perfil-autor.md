@@ -736,3 +736,10 @@
 - Preservou exatamente o texto do próprio perfil e o texto exibido para visitantes.
 - Removeu o ternário correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1013 — título localizado da Comunidade
+
+- Extraiu a escolha do título da seção Comunidade para `obterTituloComunidadePerfilAutor`.
+- Preservou os textos em português, inglês e espanhol com o nome do perfil.
+- Removeu o ternário aninhado correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

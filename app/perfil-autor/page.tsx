@@ -91,6 +91,7 @@ import {
   criarResumoPublicacaoComunidadePerfil,
   obterAvisoComunidadeVaziaPerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
+  obterTituloComunidadePerfilAutor,
 } from "./lib/profile-community-publication-utils";
 import {
   dataDiarioPerfilFormatada,
@@ -659,6 +660,10 @@ function PerfilAutorPageContent() {
 
   const avisoComunidadeVazia = obterAvisoComunidadeVaziaPerfilAutor({
     podeEditarPerfil,
+    nomePerfil: perfilParaMostrar?.nome || "",
+  });
+  const tituloComunidadePerfil = obterTituloComunidadePerfilAutor({
+    language,
     nomePerfil: perfilParaMostrar?.nome || "",
   });
   const paddingInferiorPublicacaoComunidade =
@@ -1809,15 +1814,7 @@ function PerfilAutorPageContent() {
 
         {abaPerfil === "comunidade" && comunidadePerfilVisivel && (
           <ProfileCommunitySection isDesktop={isDesktop}>
-            <ProfileCommunityHeader
-              title={
-                language === "en"
-                  ? `${perfilParaMostrar.nome}'s Community`
-                  : language === "es"
-                    ? `Comunidad de ${perfilParaMostrar.nome}`
-                    : `Comunidade de ${perfilParaMostrar.nome}`
-              }
-            />
+            <ProfileCommunityHeader title={tituloComunidadePerfil} />
 
             {comunidadePerfil.carregando ? (
               <LoadingSpinner

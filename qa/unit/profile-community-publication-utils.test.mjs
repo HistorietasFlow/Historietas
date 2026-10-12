@@ -41,6 +41,7 @@ const {
   normalizarPublicacaoComunidadePerfil,
   obterAvisoComunidadeVaziaPerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
+  obterTituloComunidadePerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -55,6 +56,45 @@ const criarPublicacao = (sobrescrever = {}) => ({
   criadoEm: "2026-10-10T00:00:00.000Z",
   ...sobrescrever,
 });
+
+test("título da Comunidade preserva português, inglês e espanhol", () => {
+  assert.equal(
+    obterTituloComunidadePerfilAutor({
+      language: "pt",
+      nomePerfil: "Ana",
+    }),
+    "Comunidade de Ana",
+  );
+  assert.equal(
+    obterTituloComunidadePerfilAutor({
+      language: "en",
+      nomePerfil: "Ana",
+    }),
+    "Ana's Community",
+  );
+  assert.equal(
+    obterTituloComunidadePerfilAutor({
+      language: "es",
+      nomePerfil: "Ana",
+    }),
+    "Comunidad de Ana",
+  );
+});
+
+
+test("página delega o título localizado da Comunidade ao helper", () => {
+  assert.match(
+    pagina,
+    /obterTituloComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterTituloComunidadePerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /<ProfileCommunityHeader title=\{tituloComunidadePerfil\} \/>/);
+  assert.doesNotMatch(pagina, /language === "en"[\s\S]{0,180}Community/);
+});
+
 
 test("padding inferior da publicação preserva espaço de autor e visitante", () => {
   assert.equal(
@@ -245,6 +285,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     "criarResumoPublicacaoComunidadePerfil",
     "obterAvisoComunidadeVaziaPerfilAutor",
     "obterPaddingInferiorPublicacaoComunidadePerfilAutor",
+    "obterTituloComunidadePerfilAutor",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
