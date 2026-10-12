@@ -86,6 +86,7 @@ const {
   dataDiarioPerfilFormatada,
   montarDiarioPerfilLocal,
   obterMensagemDiarioVazioPerfilAutor,
+  obterTituloDiarioPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -137,6 +138,41 @@ test("coleta IDs com a precedência e os fallbacks originais", () => {
     ["obra-1", "obra-2"],
   );
 });
+
+test("título do Diário preserva contexto de autor e visitante", () => {
+  assert.equal(
+    obterTituloDiarioPerfilAutor({
+      podeEditarPerfil: true,
+      nomePerfil: "Ana",
+    }),
+    "Meu Diário",
+  );
+  assert.equal(
+    obterTituloDiarioPerfilAutor({
+      podeEditarPerfil: false,
+      nomePerfil: "Ana",
+    }),
+    "Diário de Ana",
+  );
+});
+
+
+test("página delega o título do Diário ao helper", () => {
+  assert.match(
+    pagina,
+    /obterTituloDiarioPerfilAutor,[\s\S]*?from "\.\/lib\/profile-diary-local-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterTituloDiarioPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /title=\{tituloDiarioPerfil\}/);
+  assert.doesNotMatch(
+    pagina,
+    /podeEditarPerfil[\s\S]{0,100}\? "Meu Diário"[\s\S]{0,100}Diário de/,
+  );
+});
+
 
 test("mensagem vazia do Diário preserva contexto de autor e visitante", () => {
   assert.equal(
@@ -266,7 +302,7 @@ test("Perfil de Autor mantém helpers locais e delega coleta de IDs ao carregado
   assert.match(utilsSource, /import \{ ordenarItensDiarioPerfil \} from "\.\/profile-diary-merge-utils";/);
   assert.match(
     pagina,
-    /import \{[\s\S]*?dataDiarioPerfilFormatada,[\s\S]*?obterMensagemDiarioVazioPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-diary-local-utils";/,
+    /import \{[\s\S]*?dataDiarioPerfilFormatada,[\s\S]*?obterMensagemDiarioVazioPerfilAutor,[\s\S]*?obterTituloDiarioPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-diary-local-utils";/,
   );
   assert.match(
     diarySyncSource,
@@ -282,6 +318,7 @@ test("Perfil de Autor mantém helpers locais e delega coleta de IDs ao carregado
     "dataDiarioPerfilFormatada",
     "montarDiarioPerfilLocal",
     "obterMensagemDiarioVazioPerfilAutor",
+    "obterTituloDiarioPerfilAutor",
   ]) {
     assert.match(utilsSource, new RegExp(`export function ${helper}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
