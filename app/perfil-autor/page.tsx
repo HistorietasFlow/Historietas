@@ -109,6 +109,7 @@ import {
   obterEstadoSeguimentoPerfilAutor,
 } from "./lib/profile-follow-display-utils";
 import {
+  obterAriaLabelNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   formatarContagemNotificacoesPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
@@ -439,6 +440,8 @@ function PerfilAutorPageContent() {
     notificacoesNaoLidasPerfil ?? notificacoesNaoLidasContexto;
   const notificacoesNaoLidasFormatadas =
     formatarContagemNotificacoesPerfilAutor(notificacoesNaoLidas);
+  const ariaLabelNotificacoes =
+    obterAriaLabelNotificacoesPerfilAutor(notificacoesNaoLidas);
 
   usePerfilAutorAuthIdentitySync({
     avatarInputRef,
@@ -1174,11 +1177,7 @@ function PerfilAutorPageContent() {
                       href="/notificacoes"
                       style={menuItemStyle}
                       onClick={() => setMenuPerfilAberto(false)}
-                      aria-label={
-                        notificacoesNaoLidas > 0
-                          ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                          : "Notificações"
-                      }
+                      aria-label={ariaLabelNotificacoes}
                     >
                       <span style={menuItemIconStyle}>
                         <MenuPerfilIcone tipo="notificacoes" />
