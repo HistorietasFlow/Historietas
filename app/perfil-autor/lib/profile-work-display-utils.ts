@@ -172,6 +172,22 @@ export function obterVisibilidadeDestaquesPerfilAutor({
 }
 
 
+export function obterDadosCurtidaTopFivePerfilAutor({
+  curtido,
+  totalCurtidas,
+}: {
+  curtido: boolean;
+  totalCurtidas: number;
+}) {
+  const totalFormatado = compactarNumeroPerfilAutor(totalCurtidas);
+
+  return {
+    totalFormatado,
+    ariaLabel: `${curtido ? "Remover curtida do TOP 5" : "Curtir TOP 5"}. ${totalFormatado} ${totalCurtidas === 1 ? "curtida" : "curtidas"}`,
+  };
+}
+
+
 export function obterHrefObraPerfilAutor(
   obra: Pick<ObraLocal, "link" | "slug" | "titulo">,
 ) {
