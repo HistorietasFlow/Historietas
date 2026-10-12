@@ -3060,6 +3060,9 @@ export function obterEstilosResponsivosPerfilAutor(isDesktop: boolean) {
     profileVisitorActionsAtualStyle: isDesktop
       ? desktopProfileVisitorActionsStyle
       : profileVisitorActionsStyle,
+    profileHeaderAtualStyle: isDesktop
+      ? profileHeaderDesktopStyle
+      : profileHeaderStyle,
     menuSheetAtualStyle: isDesktop
       ? desktopMenuSheetStyle
       : menuSheetStyle,
