@@ -1157,3 +1157,22 @@ test("página delega os dados do sheet da Biblioteca ao helper único", () => {
   assert.doesNotMatch(pagina, /obterHrefLeituraItemBibliotecaPerfilAutor/);
   assert.doesNotMatch(pagina, /obterEstadoColecoesObraPerfilAutor/);
 });
+
+test("página reutiliza um único botão de curtida do TOP 5", () => {
+  assert.equal(
+    (pagina.match(/<ProfileHighlightsLikeButton/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /const botaoCurtidaTopFive = temObrasEmDestaque \? \([\s\S]*?<ProfileHighlightsLikeButton[\s\S]*?\) : null;/,
+  );
+  assert.match(
+    pagina,
+    /titleActions=\{[\s\S]*?podeEditarPerfil \? botaoCurtidaTopFive : null[\s\S]*?\}/,
+  );
+  assert.match(
+    pagina,
+    /headerActions=\{[\s\S]*?podeEditarPerfil \?[\s\S]*?<ProfileHighlightsEditLink[\s\S]*?: \([\s\S]*?botaoCurtidaTopFive/,
+  );
+});
