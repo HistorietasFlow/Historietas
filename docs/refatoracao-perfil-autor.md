@@ -862,3 +862,10 @@
 - Preservou os helpers menores e todos os textos/limites existentes, incluindo `99+`.
 - Substituiu três derivações separadas de `page.tsx` por uma única chamada e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1031 — obras derivadas do perfil exibido
+
+- Centralizou o fallback de `perfilParaMostrar?.obras || []` em `obrasPerfil` logo após a resolução do perfil.
+- Reutilizou a mesma coleção no total de obras do estado vazio e na seleção do TOP 5.
+- Removeu os fallbacks separados de lista e contagem de `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
