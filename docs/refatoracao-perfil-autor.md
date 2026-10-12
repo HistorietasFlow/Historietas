@@ -841,3 +841,10 @@
 - Reutilizou o mesmo ID nos hooks de TOP 5, privacidade, Comunidade, bloqueio, seguimento e nos links do Diário.
 - Removeu oito repetições da mesma expressão em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1028 — nome derivado do perfil exibido
+
+- Centralizou o fallback de `perfilParaMostrar?.nome || ""` em `perfilNome` logo após a resolução do perfil.
+- Reutilizou o mesmo nome nos textos da Comunidade, Diário, TOP 5 e nos links da Comunidade.
+- Removeu seis repetições da mesma expressão em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
