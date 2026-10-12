@@ -119,6 +119,7 @@ import {
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
   obterDadosCurtidaTopFivePerfilAutor,
+  obterMensagemTopFiveVazioPerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
   obterRotulosAcoesColecoesObraPerfilAutor,
@@ -772,6 +773,10 @@ function PerfilAutorPageContent() {
   const dadosCurtidaTopFive = obterDadosCurtidaTopFivePerfilAutor({
     curtido: topFiveCurtidoPorMim,
     totalCurtidas: topFiveCurtidasTotal,
+  });
+  const mensagemTopFiveVazio = obterMensagemTopFiveVazioPerfilAutor({
+    podeEditarPerfil,
+    nomePerfil: perfilParaMostrar?.nome || "",
   });
 
   const { alternarCurtidaTopFivePerfil } =
@@ -1638,11 +1643,7 @@ function PerfilAutorPageContent() {
 
               {obrasEmDestaque.length === 0 ? (
                 <ProfileHighlightsEmptyState
-                  message={
-                    podeEditarPerfil
-                      ? "Monte seu TOP 5 para destacar suas obras favoritas."
-                      : `${perfilParaMostrar.nome} nao montou top 5`
-                  }
+                  message={mensagemTopFiveVazio}
                 />
               ) : (
                 <ProfileHighlightsList isDesktop={isDesktop}>

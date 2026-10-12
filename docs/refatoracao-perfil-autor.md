@@ -729,3 +729,10 @@
 - Preservou os estados `Curtir TOP 5`/`Remover curtida do TOP 5` e a pluralização de curtida(s).
 - Removeu dois blocos duplicados de formatação e acessibilidade de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1012 — mensagem de TOP 5 vazio
+
+- Extraiu a mensagem do estado vazio do TOP 5 para `obterMensagemTopFiveVazioPerfilAutor`.
+- Preservou exatamente o texto do próprio perfil e o texto exibido para visitantes.
+- Removeu o ternário correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

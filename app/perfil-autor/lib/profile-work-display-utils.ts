@@ -172,6 +172,19 @@ export function obterVisibilidadeDestaquesPerfilAutor({
 }
 
 
+export function obterMensagemTopFiveVazioPerfilAutor({
+  podeEditarPerfil,
+  nomePerfil,
+}: {
+  podeEditarPerfil: boolean;
+  nomePerfil: string;
+}) {
+  return podeEditarPerfil
+    ? "Monte seu TOP 5 para destacar suas obras favoritas."
+    : `${nomePerfil} nao montou top 5`;
+}
+
+
 export function obterDadosCurtidaTopFivePerfilAutor({
   curtido,
   totalCurtidas,
