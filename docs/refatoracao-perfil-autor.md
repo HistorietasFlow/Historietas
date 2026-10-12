@@ -827,3 +827,10 @@
 - Preservou exatamente o formato `Copiar @handle` já exibido pelo cabeçalho.
 - Removeu a interpolação correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1026 — aria-labels das ações de obra e Biblioteca
+
+- Incorporou os rótulos acessíveis de abrir opções e dos sheets aos helpers de dados já existentes para card de obra, sheet da obra e sheet da Biblioteca.
+- Preservou exatamente `Abrir opções de <obra>`, `Ações da obra <obra>` e `Ações da Biblioteca <obra>`.
+- Removeu as três interpolações correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
