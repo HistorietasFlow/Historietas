@@ -146,6 +146,7 @@ const {
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
   obterDadosCurtidaTopFivePerfilAutor,
+  obterMensagemObrasVaziasPerfilAutor,
   obterMensagemTopFiveVazioPerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
@@ -191,6 +192,55 @@ function perfil(obras) {
     totalPublicadas: obras.length,
   };
 }
+
+test("mensagem de obras vazias preserva autor, visitante e filtro sem resultado", () => {
+  assert.equal(
+    obterMensagemObrasVaziasPerfilAutor({
+      totalObras: 0,
+      podeEditarPerfil: true,
+    }),
+    "Você ainda não publicou obras. Seu perfil continua ativo como leitor, com Diário e Comunidade.",
+  );
+  assert.equal(
+    obterMensagemObrasVaziasPerfilAutor({
+      totalObras: 0,
+      podeEditarPerfil: false,
+    }),
+    "Este perfil ainda não publicou obras. O Diário e a Comunidade continuam disponíveis.",
+  );
+  assert.equal(
+    obterMensagemObrasVaziasPerfilAutor({
+      totalObras: 3,
+      podeEditarPerfil: false,
+    }),
+    "Nenhuma obra encontrada.",
+  );
+});
+
+
+test("página delega a mensagem de obras vazias ao helper", () => {
+  assert.match(
+    pagina,
+    /obterMensagemObrasVaziasPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterMensagemObrasVaziasPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /<ProfileSectionEmptyState message=\{mensagemObrasVazias\} \/>/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /Você ainda não publicou obras\. Seu perfil continua ativo como leitor/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /Este perfil ainda não publicou obras\. O Diário e a Comunidade continuam disponíveis\./,
+  );
+});
+
 
 test("visitante não vê 18+ e recebe obras da mais recente para a mais antiga", () => {
   const antiga = obra("antiga", { criadaEm: "2025-01-01T00:00:00.000Z" });
