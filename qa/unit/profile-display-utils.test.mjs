@@ -54,6 +54,7 @@ const javascript = typescript.transpileModule(
 
 const {
   formatarContagemNotificacoesPerfilAutor,
+  obterAriaLabelBadgeNotificacoesPerfilAutor,
   obterAriaLabelNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
@@ -291,6 +292,42 @@ test("página delega os dados do alvo da denúncia do perfil ao helper", () => {
 });
 
 
+test("aria-label do badge de notificações preserva contagem formatada", () => {
+  assert.equal(
+    obterAriaLabelBadgeNotificacoesPerfilAutor(7),
+    "7 notificações não lidas",
+  );
+  assert.equal(
+    obterAriaLabelBadgeNotificacoesPerfilAutor(100),
+    "99+ notificações não lidas",
+  );
+});
+
+
+test("página delega o aria-label do badge de notificações ao helper", () => {
+  assert.match(
+    pagina,
+    /obterAriaLabelBadgeNotificacoesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (
+      pagina.match(
+        /obterAriaLabelBadgeNotificacoesPerfilAutor\(/g,
+      ) || []
+    ).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /aria-label=\{ariaLabelBadgeNotificacoes\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /aria-label=\{`\$\{notificacoesNaoLidasFormatadas\} notificações não lidas`\}/,
+  );
+});
+
+
 test("aria-label de notificações preserva estado vazio e contagem", () => {
   assert.equal(
     obterAriaLabelNotificacoesPerfilAutor(0),
@@ -343,7 +380,7 @@ test("página reutiliza a contagem formatada no badge de notificações", () => 
   );
   assert.match(
     pagina,
-    /\$\{notificacoesNaoLidasFormatadas\} notificações não lidas/,
+    /\{notificacoesNaoLidasFormatadas\}/,
   );
   assert.doesNotMatch(
     pagina,
