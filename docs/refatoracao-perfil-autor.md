@@ -890,3 +890,10 @@
 - Substituiu dois `div` mutuamente exclusivos por um único elemento com o estilo responsivo derivado.
 - Removeu os imports diretos dos estilos de fade de `page.tsx` e atualizou a cobertura específica do modo desktop.
 - Sem alterações visuais, schema, RLS ou Supabase.
+
+## Fase 1035 — botão de curtida do TOP 5
+
+- Centralizou o `ProfileHighlightsLikeButton` em `botaoCurtidaTopFive`.
+- Reutilizou o mesmo elemento na posição do autor e do visitante, preservando as condições atuais de exibição.
+- Removeu uma duplicação completa do botão no JSX de `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

@@ -389,9 +389,9 @@ test("página deriva uma vez a existência de obras em destaque", () => {
     pagina,
     /obrasEmDestaque\.length === 0/,
   );
-  assert.ok(
-    (pagina.match(/\btemObrasEmDestaque\b/g) || []).length >= 4,
-    "temObrasEmDestaque deve ser reutilizado nas condições do TOP 5",
+  assert.equal(
+    (pagina.match(/\btemObrasEmDestaque\b/g) || []).length,
+    3,
   );
 });
 
@@ -568,7 +568,7 @@ test("dados de curtida do TOP 5 preservam ação, total e pluralização", () =>
 });
 
 
-test("página reutiliza os dados de curtida do TOP 5 nos dois botões", () => {
+test("página reutiliza os dados de curtida do TOP 5 no botão único", () => {
   assert.match(
     pagina,
     /obterDadosCurtidaTopFivePerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
@@ -580,11 +580,11 @@ test("página reutiliza os dados de curtida do TOP 5 nos dois botões", () => {
   assert.equal(
     (pagina.match(/totalFormatado=\{dadosCurtidaTopFive\.totalFormatado\}/g) || [])
       .length,
-    2,
+    1,
   );
   assert.equal(
     (pagina.match(/ariaLabel=\{dadosCurtidaTopFive\.ariaLabel\}/g) || []).length,
-    2,
+    1,
   );
   assert.doesNotMatch(pagina, /Remover curtida do TOP 5/);
   assert.doesNotMatch(pagina, /topFiveCurtidasTotal === 1 \? "curtida" : "curtidas"/);
@@ -1156,4 +1156,23 @@ test("página delega os dados do sheet da Biblioteca ao helper único", () => {
   );
   assert.doesNotMatch(pagina, /obterHrefLeituraItemBibliotecaPerfilAutor/);
   assert.doesNotMatch(pagina, /obterEstadoColecoesObraPerfilAutor/);
+});
+
+test("página reutiliza um único botão de curtida do TOP 5", () => {
+  assert.equal(
+    (pagina.match(/<ProfileHighlightsLikeButton/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /const botaoCurtidaTopFive = temObrasEmDestaque \? \([\s\S]*?<ProfileHighlightsLikeButton[\s\S]*?\) : null;/,
+  );
+  assert.match(
+    pagina,
+    /titleActions=\{[\s\S]*?podeEditarPerfil \? botaoCurtidaTopFive : null[\s\S]*?\}/,
+  );
+  assert.match(
+    pagina,
+    /headerActions=\{[\s\S]*?podeEditarPerfil \?[\s\S]*?<ProfileHighlightsEditLink[\s\S]*?: \([\s\S]*?botaoCurtidaTopFive/,
+  );
 });
