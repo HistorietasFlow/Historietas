@@ -245,8 +245,6 @@ import {
   logoTextButtonStyle,
   logoMarkStyle,
   logoTextStyle,
-  profileHeaderStyle,
-  profileHeaderDesktopStyle,
   profileHeaderLogoStyle,
   profileMenuButtonStyle,
   profileMenuIconStyle,
@@ -930,6 +928,7 @@ function PerfilAutorPageContent() {
     avatarRemoveButtonAtualStyle,
     profileActionsAtualStyle,
     profileVisitorActionsAtualStyle,
+    profileHeaderAtualStyle,
     menuSheetAtualStyle,
   } = obterEstilosResponsivosPerfilAutor(isDesktop);
   const {
@@ -1065,11 +1064,7 @@ function PerfilAutorPageContent() {
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
       <section style={containerAtualStyle}>
-        <header
-          style={
-            isDesktop ? profileHeaderDesktopStyle : profileHeaderStyle
-          }
-        >
+        <header style={profileHeaderAtualStyle}>
           <div style={profileHeaderLogoStyle}>
             <button
               type="button"
