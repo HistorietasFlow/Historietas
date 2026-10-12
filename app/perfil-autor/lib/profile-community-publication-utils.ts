@@ -1,6 +1,17 @@
 import type { PublicacaoComunidadePerfil } from "../types";
 import { pegarTexto } from "./data-normalizers";
 
+export function obterAriaLabelsEstatisticasComunidadePerfilAutor(
+  nomePerfil: string,
+) {
+  return {
+    publicacoes: `Abrir publicações de ${nomePerfil} na comunidade`,
+    teorias: `Abrir teorias de ${nomePerfil} na comunidade`,
+    reviews: `Abrir reviews de ${nomePerfil} na comunidade`,
+  };
+}
+
+
 export function obterTituloComunidadePerfilAutor({
   language,
   nomePerfil,
