@@ -771,3 +771,10 @@
 - Preservou os textos do próprio perfil, do visitante e do caso em que existem obras mas nenhuma permanece visível após os filtros.
 - Removeu o ternário aninhado correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1018 — mensagem vazia da Biblioteca
+
+- Extraiu a composição da mensagem de estado vazio da Biblioteca para `obterMensagemBibliotecaVaziaPerfil`.
+- Preservou exatamente o texto e o rótulo dinâmico da aba ativa.
+- Removeu a interpolação correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
