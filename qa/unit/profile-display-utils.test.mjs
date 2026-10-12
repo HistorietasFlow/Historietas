@@ -55,6 +55,7 @@ const javascript = typescript.transpileModule(
 const {
   formatarContagemNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
+  obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
@@ -192,6 +193,49 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
   assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
   assert.equal(vazio.caracteresRestantesBioSobre, 160);
+});
+
+
+test("dados da denúncia do perfil preservam ID, título, URL e fallbacks", () => {
+  assert.deepEqual(
+    obterDadosDenunciaPerfilAutor({
+      autorId: " user/1 ",
+      nome: "Ana",
+    }),
+    {
+      alvoId: " user/1 ",
+      alvoTitulo: "Ana",
+      alvoUrl: "/perfil-autor?userId=%20user%2F1%20",
+    },
+  );
+
+  assert.deepEqual(obterDadosDenunciaPerfilAutor(null), {
+    alvoId: "",
+    alvoTitulo: "Perfil",
+    alvoUrl: "",
+  });
+});
+
+
+test("página delega os dados do alvo da denúncia do perfil ao helper", () => {
+  assert.match(
+    pagina,
+    /obterDadosDenunciaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterDadosDenunciaPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /alvoId=\{dadosDenunciaPerfil\.alvoId\}/);
+  assert.match(
+    pagina,
+    /alvoTitulo=\{dadosDenunciaPerfil\.alvoTitulo\}/,
+  );
+  assert.match(pagina, /alvoUrl=\{dadosDenunciaPerfil\.alvoUrl\}/);
+  assert.doesNotMatch(
+    pagina,
+    /\/perfil-autor\?userId=\$\{encodeURIComponent\(/,
+  );
 });
 
 
