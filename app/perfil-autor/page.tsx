@@ -110,6 +110,7 @@ import {
 } from "./lib/profile-follow-display-utils";
 import {
   obterAriaLabelBadgeNotificacoesPerfilAutor,
+  obterAriaLabelCopiarUsernamePerfilAutor,
   obterAriaLabelNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   formatarContagemNotificacoesPerfilAutor,
@@ -1098,7 +1099,7 @@ function PerfilAutorPageContent() {
                 type="button"
                 onClick={copiarUsernameCabecalho}
                 style={logoTextButtonStyle}
-                aria-label={`Copiar ${autorHandlePerfil}`}
+                aria-label={obterAriaLabelCopiarUsernamePerfilAutor(autorHandlePerfil)}
                 title="Copiar username"
               >
                 <span
