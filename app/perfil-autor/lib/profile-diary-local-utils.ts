@@ -13,6 +13,17 @@ export function coletarObraIdsRegistrosDiarioPerfil(
     .filter(Boolean);
 }
 
+export function obterTituloDiarioPerfilAutor({
+  podeEditarPerfil,
+  nomePerfil,
+}: {
+  podeEditarPerfil: boolean;
+  nomePerfil: string;
+}) {
+  return podeEditarPerfil ? "Meu Diário" : `Diário de ${nomePerfil}`;
+}
+
+
 export function obterMensagemDiarioVazioPerfilAutor(
   podeEditarPerfil: boolean,
 ) {
