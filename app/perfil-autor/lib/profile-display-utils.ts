@@ -1,5 +1,6 @@
 import { SOBRE_BIO_MAX_LENGTH } from "../constants";
 import type {
+  AlvoDenunciaConteudoPerfil,
   AutorPerfil,
   PerfilAutorSalvo,
   PerfisAutoresSalvos,
@@ -82,6 +83,17 @@ export function obterDadosExibicaoPerfilAutor({
       : "@autor.historietas",
     avatarAutor:
       perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "",
+  };
+}
+
+
+export function obterDadosDenunciaConteudoPerfilAutor(
+  alvo: AlvoDenunciaConteudoPerfil,
+) {
+  return {
+    alvoTipo: alvo?.alvoTipo || "post",
+    alvoId: alvo?.alvoId || "",
+    alvoTitulo: alvo?.alvoTitulo || "Conteúdo",
   };
 }
 
