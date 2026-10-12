@@ -120,6 +120,7 @@ import {
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
   obterDadosCurtidaTopFivePerfilAutor,
+  obterMensagemObrasVaziasPerfilAutor,
   obterMensagemTopFiveVazioPerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
@@ -768,6 +769,10 @@ function PerfilAutorPageContent() {
   const obrasDoPerfilFiltradas = obterObrasVisiveisPerfilAutor({
     perfilParaMostrar,
     perfilPertenceAoUsuario,
+  });
+  const mensagemObrasVazias = obterMensagemObrasVaziasPerfilAutor({
+    totalObras: perfilParaMostrar?.obras.length || 0,
+    podeEditarPerfil,
   });
 
   const obrasEmDestaque = obterObrasDestaquePerfilAutor({
@@ -2082,13 +2087,7 @@ function PerfilAutorPageContent() {
         {abaPerfil === "obras" && obrasPerfilVisivel && (
           <ProfileWorksSection>
             {obrasDoPerfilFiltradas.length === 0 ? (
-              <ProfileSectionEmptyState
-                message={perfilParaMostrar.obras.length === 0
-                  ? podeEditarPerfil
-                    ? "Você ainda não publicou obras. Seu perfil continua ativo como leitor, com Diário e Comunidade."
-                    : "Este perfil ainda não publicou obras. O Diário e a Comunidade continuam disponíveis."
-                  : "Nenhuma obra encontrada."}
-              />
+              <ProfileSectionEmptyState message={mensagemObrasVazias} />
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {obrasDoPerfilFiltradas.map((obra) => {
