@@ -750,3 +750,10 @@
 - Preservou exatamente os textos e a inclusão do nome do perfil.
 - Removeu as três interpolações correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1015 — valores das estatísticas da Comunidade
+
+- Centralizou a formatação dos totais de Publicações, Teorias e Reviews em `obterValoresEstatisticasComunidadePerfilAutor`.
+- Preservou o mesmo formatador numérico já usado pela página.
+- Removeu três chamadas repetidas de `compactarNumeroPerfilAutor` do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
