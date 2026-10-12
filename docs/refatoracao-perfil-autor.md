@@ -715,3 +715,10 @@
 - Preservou os textos do próprio perfil e do visitante, incluindo o nome do perfil na descrição pública.
 - Removeu os ternários correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1010 — padding inferior das publicações da Comunidade
+
+- Extraiu a escolha do espaçamento inferior dos cards recentes para `obterPaddingInferiorPublicacaoComunidadePerfilAutor`.
+- Preservou `10px` no próprio perfil e `42px` para visitantes.
+- Removeu o ternário correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

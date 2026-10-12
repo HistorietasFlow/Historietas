@@ -1,6 +1,13 @@
 import type { PublicacaoComunidadePerfil } from "../types";
 import { pegarTexto } from "./data-normalizers";
 
+export function obterPaddingInferiorPublicacaoComunidadePerfilAutor(
+  podeEditarPerfil: boolean,
+) {
+  return podeEditarPerfil ? "10px" : "42px";
+}
+
+
 export function obterAvisoComunidadeVaziaPerfilAutor({
   podeEditarPerfil,
   nomePerfil,

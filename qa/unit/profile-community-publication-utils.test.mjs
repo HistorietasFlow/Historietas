@@ -40,6 +40,7 @@ const {
   criarResumoPublicacaoComunidadePerfil,
   normalizarPublicacaoComunidadePerfil,
   obterAvisoComunidadeVaziaPerfilAutor,
+  obterPaddingInferiorPublicacaoComunidadePerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -54,6 +55,42 @@ const criarPublicacao = (sobrescrever = {}) => ({
   criadoEm: "2026-10-10T00:00:00.000Z",
   ...sobrescrever,
 });
+
+test("padding inferior da publicação preserva espaço de autor e visitante", () => {
+  assert.equal(
+    obterPaddingInferiorPublicacaoComunidadePerfilAutor(true),
+    "10px",
+  );
+  assert.equal(
+    obterPaddingInferiorPublicacaoComunidadePerfilAutor(false),
+    "42px",
+  );
+});
+
+
+test("página delega o padding inferior das publicações ao helper", () => {
+  assert.match(
+    pagina,
+    /obterPaddingInferiorPublicacaoComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.equal(
+    (
+      pagina.match(
+        /obterPaddingInferiorPublicacaoComunidadePerfilAutor\(/g,
+      ) || []
+    ).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /paddingBottom=\{paddingInferiorPublicacaoComunidade\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /podeEditarPerfil \? "10px" : "42px"/,
+  );
+});
+
 
 test("aviso de comunidade vazia preserva textos de autor e visitante", () => {
   assert.deepEqual(
@@ -207,6 +244,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     "analisarEnquetePublicacaoComunidadePerfil",
     "criarResumoPublicacaoComunidadePerfil",
     "obterAvisoComunidadeVaziaPerfilAutor",
+    "obterPaddingInferiorPublicacaoComunidadePerfilAutor",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
