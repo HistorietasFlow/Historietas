@@ -403,6 +403,7 @@ export function obterDadosCardObraPerfilAutor(
     obraHref: obterHrefObraPerfilAutor(obra),
     ...obterMetricasResumoObraPerfilAutor(obra, totaisInteracoesObras),
     menuObraAberto: obraMenuAbertoId === obra.id,
+    ariaLabelOpcoes: `Abrir opções de ${obra.titulo}`,
   };
 }
 
@@ -482,6 +483,7 @@ export function obterDadosSheetObraPerfilAutor({
       totalSalvos,
       totalCapitulos,
     }),
+    ariaLabelSheetObra: `Ações da obra ${obra.titulo}`,
   };
 }
 
@@ -505,5 +507,6 @@ export function obterDadosSheetBibliotecaPerfilAutor({
       obrasConcluidas,
       obrasSeguidasBiblioteca,
     }),
+    ariaLabelSheetBiblioteca: `Ações da Biblioteca ${item.obra.titulo}`,
   };
 }
