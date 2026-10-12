@@ -154,3 +154,18 @@ export function criarResumoPublicacaoComunidadePerfil(
 
   return `${textoLimpo.slice(0, 150)}${textoLimpo.length > 150 ? "..." : ""}`;
 }
+
+export function obterDadosPublicacaoRecenteComunidadePerfilAutor(
+  publicacao: PublicacaoComunidadePerfil,
+) {
+  const enquete = analisarEnquetePublicacaoComunidadePerfil(publicacao);
+
+  return {
+    href: criarHrefPublicacaoComunidadePerfil(publicacao.id),
+    ariaLabel: `Abrir ${publicacao.tipoPublicacao} na Comunidade`,
+    resumo: criarResumoPublicacaoComunidadePerfil(publicacao),
+    totalOpcoesEnquete: enquete.totalOpcoes,
+  };
+}
+
+

@@ -39,6 +39,7 @@ const {
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
   normalizarPublicacaoComunidadePerfil,
+  obterDadosPublicacaoRecenteComunidadePerfilAutor,
   obterAriaLabelsEstatisticasComunidadePerfilAutor,
   obterAvisoComunidadeVaziaPerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
@@ -272,6 +273,48 @@ test("página delega o aviso de comunidade vazia ao helper", () => {
 });
 
 
+test("dados da publicação recente centralizam link, acessibilidade, resumo e enquete", () => {
+  assert.deepEqual(
+    obterDadosPublicacaoRecenteComunidadePerfilAutor(
+      criarPublicacao({
+        id: " post / número 1 ",
+        tipoPublicacao: "Enquete",
+        texto: "Enquete: Melhor capítulo?\nOpção 1: Um\nOpção 2: Dois",
+      }),
+    ),
+    {
+      href: "/comunidade?post=post%20%2F%20n%C3%BAmero%201",
+      ariaLabel: "Abrir Enquete na Comunidade",
+      resumo: "Melhor capítulo?",
+      totalOpcoesEnquete: 2,
+    },
+  );
+});
+
+
+test("página deriva os dados da publicação recente uma única vez por item", () => {
+  assert.match(
+    pagina,
+    /obterDadosPublicacaoRecenteComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.equal(
+    (
+      pagina.match(
+        /obterDadosPublicacaoRecenteComunidadePerfilAutor\(/g,
+      ) || []
+    ).length,
+    1,
+  );
+  assert.match(pagina, /href=\{dadosPublicacao\.href\}/);
+  assert.match(pagina, /ariaLabel=\{dadosPublicacao\.ariaLabel\}/);
+  assert.match(pagina, /\{dadosPublicacao\.resumo\}/);
+  assert.match(pagina, /dadosPublicacao\.totalOpcoesEnquete >= 2/);
+  assert.doesNotMatch(pagina, /criarHrefPublicacaoComunidadePerfil/);
+  assert.doesNotMatch(pagina, /criarResumoPublicacaoComunidadePerfil/);
+  assert.doesNotMatch(pagina, /analisarEnquetePublicacaoComunidadePerfil/);
+});
+
+
 test("normalizarPublicacaoComunidadePerfil preserva fallbacks, limites e spoiler", () => {
   assert.equal(normalizarPublicacaoComunidadePerfil({ texto: "sem id" }), null);
 
@@ -362,7 +405,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
   );
   assert.match(
     pagina,
-    /import \{[\s\S]*?analisarEnquetePublicacaoComunidadePerfil,[\s\S]*?criarHrefPublicacaoComunidadePerfil,[\s\S]*?criarResumoPublicacaoComunidadePerfil,[\s\S]*?\} from "\.\/lib\/profile-community-publication-utils";/,
+    /import \{[\s\S]*?obterDadosPublicacaoRecenteComunidadePerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-community-publication-utils";/,
   );
   assert.doesNotMatch(
     pagina,
@@ -378,6 +421,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     "criarHrefPublicacaoComunidadePerfil",
     "analisarEnquetePublicacaoComunidadePerfil",
     "criarResumoPublicacaoComunidadePerfil",
+    "obterDadosPublicacaoRecenteComunidadePerfilAutor",
     "obterAriaLabelsEstatisticasComunidadePerfilAutor",
     "obterAvisoComunidadeVaziaPerfilAutor",
     "obterPaddingInferiorPublicacaoComunidadePerfilAutor",
@@ -391,9 +435,17 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     communityLoaderSource,
     /\.map\(\(registro\) => normalizarPublicacaoComunidadePerfil\(registro\)\)/,
   );
-  assert.match(pagina, /href=\{criarHrefPublicacaoComunidadePerfil\(/);
-  assert.match(pagina, /criarResumoPublicacaoComunidadePerfil\(/);
-  assert.match(pagina, /analisarEnquetePublicacaoComunidadePerfil\(/);
+  assert.equal(
+    (
+      pagina.match(
+        /obterDadosPublicacaoRecenteComunidadePerfilAutor\(/g,
+      ) || []
+    ).length,
+    1,
+  );
+  assert.doesNotMatch(pagina, /criarHrefPublicacaoComunidadePerfil/);
+  assert.doesNotMatch(pagina, /criarResumoPublicacaoComunidadePerfil/);
+  assert.doesNotMatch(pagina, /analisarEnquetePublicacaoComunidadePerfil/);
   assert.doesNotMatch(pagina, /supabase\s*\.from\("comunidade_posts"\)/);
   assert.match(
     communityLoaderSource,

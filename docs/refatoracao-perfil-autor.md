@@ -757,3 +757,10 @@
 - Preservou o mesmo formatador numérico já usado pela página.
 - Removeu três chamadas repetidas de `compactarNumeroPerfilAutor` do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1016 — dados derivados das publicações recentes
+
+- Centralizou href, `aria-label`, resumo e total de opções de enquete em `obterDadosPublicacaoRecenteComunidadePerfilAutor`.
+- Eliminou chamadas duplicadas de análise de enquete e resumo dentro do `.map()` da Comunidade.
+- Reutilizou o mesmo resumo na exibição e na denúncia, preservando o comportamento existente.
+- Sem alterações de UI, schema, RLS ou Supabase; cobertura unitária ampliada em `test:session`.
