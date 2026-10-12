@@ -86,11 +86,9 @@ import {
 } from "./lib/profile-auth-identity";
 import { criarPerfilUsuarioRemotoComoAutor } from "./lib/data-normalizers";
 import {
-  analisarEnquetePublicacaoComunidadePerfil,
-  criarHrefPublicacaoComunidadePerfil,
-  criarResumoPublicacaoComunidadePerfil,
   obterAriaLabelsEstatisticasComunidadePerfilAutor,
   obterAvisoComunidadeVaziaPerfilAutor,
+  obterDadosPublicacaoRecenteComunidadePerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
   obterTituloComunidadePerfilAutor,
   obterValoresEstatisticasComunidadePerfilAutor,
@@ -1879,70 +1877,65 @@ function PerfilAutorPageContent() {
 
                     <ProfileCommunityRecentPostsList isDesktop={isDesktop}>
                       {comunidadePerfil.publicacoesRecentes.map(
-                        (publicacao) => (
-                          <ProfileCommunityPostItem key={publicacao.id}>
-                            <ProfileCommunityPostLink
-                              href={criarHrefPublicacaoComunidadePerfil(
-                                publicacao.id,
-                              )}
-                              paddingBottom={paddingInferiorPublicacaoComunidade}
-                              ariaLabel={`Abrir ${publicacao.tipoPublicacao} na Comunidade`}
-                            >
-                              <ProfileCommunityPostHeader
-                                typeLabel={publicacao.tipoPublicacao}
-                                dateLabel={dataDiarioPerfilFormatada(
-                                  publicacao.criadoEm,
-                                )}
-                              />
+                        (publicacao) => {
+                          const dadosPublicacao =
+                            obterDadosPublicacaoRecenteComunidadePerfilAutor(
+                              publicacao,
+                            );
 
-                              <ProfileCommunityPostBody>
-                                <ProfileCommunityPostSummary>
-                                  {criarResumoPublicacaoComunidadePerfil(
-                                    publicacao,
+                          return (
+                            <ProfileCommunityPostItem key={publicacao.id}>
+                              <ProfileCommunityPostLink
+                                href={dadosPublicacao.href}
+                                paddingBottom={paddingInferiorPublicacaoComunidade}
+                                ariaLabel={dadosPublicacao.ariaLabel}
+                              >
+                                <ProfileCommunityPostHeader
+                                  typeLabel={publicacao.tipoPublicacao}
+                                  dateLabel={dataDiarioPerfilFormatada(
+                                    publicacao.criadoEm,
                                   )}
-                                </ProfileCommunityPostSummary>
+                                />
 
-                                {analisarEnquetePublicacaoComunidadePerfil(
-                                  publicacao,
-                                ).totalOpcoes >= 2 && (
-                                  <ProfileCommunityPostPollInfo>
-                                    Enquete
-                                    <span aria-hidden="true">•</span>
-                                    {
-                                      analisarEnquetePublicacaoComunidadePerfil(
-                                        publicacao,
-                                      ).totalOpcoes
-                                    }{" "}
-                                    opções
-                                  </ProfileCommunityPostPollInfo>
+                                <ProfileCommunityPostBody>
+                                  <ProfileCommunityPostSummary>
+                                    {dadosPublicacao.resumo}
+                                  </ProfileCommunityPostSummary>
+
+                                  {dadosPublicacao.totalOpcoesEnquete >= 2 && (
+                                    <ProfileCommunityPostPollInfo>
+                                      Enquete
+                                      <span aria-hidden="true">•</span>
+                                      {dadosPublicacao.totalOpcoesEnquete}{" "}
+                                      opções
+                                    </ProfileCommunityPostPollInfo>
+                                  )}
+                                </ProfileCommunityPostBody>
+
+                                {publicacao.obraRelacionada && (
+                                  <ProfileCommunityPostWork>
+                                    <span>OBRA</span>
+                                    <strong data-historietas-user-content="true">
+                                      {publicacao.obraRelacionada}
+                                    </strong>
+                                  </ProfileCommunityPostWork>
                                 )}
-                              </ProfileCommunityPostBody>
+                              </ProfileCommunityPostLink>
 
-                              {publicacao.obraRelacionada && (
-                                <ProfileCommunityPostWork>
-                                  <span>OBRA</span>
-                                  <strong data-historietas-user-content="true">
-                                    {publicacao.obraRelacionada}
-                                  </strong>
-                                </ProfileCommunityPostWork>
+                              {!podeEditarPerfil && (
+                                <ProfileCommunityPostReportButton
+                                  onClick={() =>
+                                    abrirDenunciaConteudoPerfil(
+                                      "post",
+                                      publicacao.id,
+                                      dadosPublicacao.resumo,
+                                    )
+                                  }
+                                />
                               )}
-                            </ProfileCommunityPostLink>
-
-                            {!podeEditarPerfil && (
-                              <ProfileCommunityPostReportButton
-                                onClick={() =>
-                                  abrirDenunciaConteudoPerfil(
-                                    "post",
-                                    publicacao.id,
-                                    criarResumoPublicacaoComunidadePerfil(
-                                      publicacao,
-                                    ),
-                                  )
-                                }
-                              />
-                            )}
-                          </ProfileCommunityPostItem>
-                        ),
+                            </ProfileCommunityPostItem>
+                          );
+                        },
                       )}
                     </ProfileCommunityRecentPostsList>
                   </ProfileCommunityRecentPostsSection>
