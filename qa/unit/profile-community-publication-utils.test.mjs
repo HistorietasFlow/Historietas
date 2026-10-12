@@ -39,6 +39,7 @@ const {
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
   normalizarPublicacaoComunidadePerfil,
+  obterAriaLabelsEstatisticasComunidadePerfilAutor,
   obterAvisoComunidadeVaziaPerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
   obterTituloComunidadePerfilAutor,
@@ -56,6 +57,50 @@ const criarPublicacao = (sobrescrever = {}) => ({
   criadoEm: "2026-10-10T00:00:00.000Z",
   ...sobrescrever,
 });
+
+test("aria-labels das estatísticas da Comunidade preservam os três destinos", () => {
+  assert.deepEqual(
+    obterAriaLabelsEstatisticasComunidadePerfilAutor("Ana"),
+    {
+      publicacoes: "Abrir publicações de Ana na comunidade",
+      teorias: "Abrir teorias de Ana na comunidade",
+      reviews: "Abrir reviews de Ana na comunidade",
+    },
+  );
+});
+
+
+test("página reutiliza os aria-labels das estatísticas da Comunidade", () => {
+  assert.match(
+    pagina,
+    /obterAriaLabelsEstatisticasComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.equal(
+    (
+      pagina.match(
+        /obterAriaLabelsEstatisticasComunidadePerfilAutor\(/g,
+      ) || []
+    ).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /ariaLabel=\{ariaLabelsEstatisticasComunidade\.publicacoes\}/,
+  );
+  assert.match(
+    pagina,
+    /ariaLabel=\{ariaLabelsEstatisticasComunidade\.teorias\}/,
+  );
+  assert.match(
+    pagina,
+    /ariaLabel=\{ariaLabelsEstatisticasComunidade\.reviews\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /ariaLabel=\{`Abrir (?:publicações|teorias|reviews) de \$\{perfilParaMostrar\.nome\} na comunidade`\}/,
+  );
+});
+
 
 test("título da Comunidade preserva português, inglês e espanhol", () => {
   assert.equal(
@@ -283,6 +328,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     "criarHrefPublicacaoComunidadePerfil",
     "analisarEnquetePublicacaoComunidadePerfil",
     "criarResumoPublicacaoComunidadePerfil",
+    "obterAriaLabelsEstatisticasComunidadePerfilAutor",
     "obterAvisoComunidadeVaziaPerfilAutor",
     "obterPaddingInferiorPublicacaoComunidadePerfilAutor",
     "obterTituloComunidadePerfilAutor",
