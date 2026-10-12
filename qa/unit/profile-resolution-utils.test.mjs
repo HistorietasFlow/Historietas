@@ -185,6 +185,18 @@ test("página deriva o nome do perfil uma vez e reutiliza nas exibições", () =
 });
 
 
+test("página usa shorthand ao repassar o ID derivado do perfil", () => {
+  assert.doesNotMatch(
+    pagina,
+    /perfilAutorId: perfilAutorId/,
+  );
+  assert.ok(
+    (pagina.match(/\n\s+perfilAutorId,/g) || []).length >= 6,
+    "perfilAutorId deve ser repassado por shorthand aos hooks",
+  );
+});
+
+
 test("página deriva o ID do perfil uma vez e reutiliza nas dependências", () => {
   assert.match(
     pagina,

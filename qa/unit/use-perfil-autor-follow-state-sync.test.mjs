@@ -18,7 +18,7 @@ test("Perfil de Autor delega a sincronização do seguimento", () => {
   assert.match(pagina, /usePerfilAutorFollowStateSync/);
   assert.match(
     pagina,
-    /usePerfilAutorFollowStateSync\(\{[\s\S]*?perfilAutorId:[\s\S]*?usuarioIdLogado,[\s\S]*?setEstadoRelacionamentoPerfil,[\s\S]*?setSeguindoUsuarioPerfil,[\s\S]*?setSeguidoresUsuarioPerfilTotal,[\s\S]*?setSeguindoUsuarioPerfilTotal,[\s\S]*?\}\)/,
+    /usePerfilAutorFollowStateSync\(\{[\s\S]*?perfilAutorId,[\s\S]*?usuarioIdLogado,[\s\S]*?setEstadoRelacionamentoPerfil,[\s\S]*?setSeguindoUsuarioPerfil,[\s\S]*?setSeguidoresUsuarioPerfilTotal,[\s\S]*?setSeguindoUsuarioPerfilTotal,[\s\S]*?\}\)/,
   );
   assert.doesNotMatch(pagina, /async function carregarSeguimentoUsuario\(/);
 });

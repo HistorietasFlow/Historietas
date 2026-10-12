@@ -18,7 +18,7 @@ test("Perfil de Autor delega a sincronização do bloqueio", () => {
   assert.match(pagina, /usePerfilAutorBlockStateSync/);
   assert.match(
     pagina,
-    /usePerfilAutorBlockStateSync\(\{[\s\S]*?perfilAutorId:[\s\S]*?usuarioIdLogado,[\s\S]*?setEstadoBloqueioPerfil,[\s\S]*?\}\)/,
+    /usePerfilAutorBlockStateSync\(\{[\s\S]*?perfilAutorId,[\s\S]*?usuarioIdLogado,[\s\S]*?setEstadoBloqueioPerfil,[\s\S]*?\}\)/,
   );
   assert.doesNotMatch(pagina, /async function carregarBloqueioPerfil\(/);
 });

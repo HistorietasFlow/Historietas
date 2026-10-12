@@ -18,7 +18,7 @@ test("Perfil de Autor delega a sincronização das curtidas do TOP 5", () => {
   assert.match(pagina, /usePerfilAutorTopFiveLikesSync/);
   assert.match(
     pagina,
-    /usePerfilAutorTopFiveLikesSync\(\{[\s\S]*?perfilAutorId:[\s\S]*?usuarioIdLogado,[\s\S]*?setTopFiveCurtidasTotal,[\s\S]*?setTopFiveCurtidoPorMim,[\s\S]*?\}\)/,
+    /usePerfilAutorTopFiveLikesSync\(\{[\s\S]*?perfilAutorId,[\s\S]*?usuarioIdLogado,[\s\S]*?setTopFiveCurtidasTotal,[\s\S]*?setTopFiveCurtidoPorMim,[\s\S]*?\}\)/,
   );
   assert.doesNotMatch(
     pagina,
