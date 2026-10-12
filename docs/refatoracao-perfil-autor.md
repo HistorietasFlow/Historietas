@@ -834,3 +834,10 @@
 - Preservou exatamente `Abrir opções de <obra>`, `Ações da obra <obra>` e `Ações da Biblioteca <obra>`.
 - Removeu as três interpolações correspondentes de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1027 — ID derivado do perfil exibido
+
+- Centralizou o fallback de `perfilParaMostrar?.autorId || ""` em `perfilAutorId` logo após a resolução do perfil.
+- Reutilizou o mesmo ID nos hooks de TOP 5, privacidade, Comunidade, bloqueio, seguimento e nos links do Diário.
+- Removeu oito repetições da mesma expressão em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

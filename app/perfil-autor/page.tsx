@@ -531,19 +531,20 @@ function PerfilAutorPageContent() {
     perfilUsuarioRemotoComoAutor,
     autenticacaoCarregada,
   });
+  const perfilAutorId = perfilParaMostrar?.autorId || "";
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,
   });
 
   usePerfilAutorTopFiveStorageSync({
-    perfilAutorId: perfilParaMostrar?.autorId || "",
+    perfilAutorId: perfilAutorId,
     usuarioIdLogado,
     setTopFiveObraIds,
   });
 
   usePerfilAutorTopFiveLikesSync({
-    perfilAutorId: perfilParaMostrar?.autorId || "",
+    perfilAutorId: perfilAutorId,
     usuarioIdLogado,
     setTopFiveCurtidasTotal,
     setTopFiveCurtidoPorMim,
@@ -570,7 +571,7 @@ function PerfilAutorPageContent() {
   });
 
   usePerfilAutorPrivacySync({
-    perfilAutorId: perfilParaMostrar?.autorId || "",
+    perfilAutorId: perfilAutorId,
     perfilPertenceAoUsuario,
     estadoRelacionamentoPerfil,
     setPermissoesAbasPerfil,
@@ -578,7 +579,7 @@ function PerfilAutorPageContent() {
   });
 
   usePerfilAutorCommunitySync({
-    perfilAutorId: perfilParaMostrar?.autorId || "",
+    perfilAutorId: perfilAutorId,
     comunidadePerfilVisivel,
     perfilPertenceAoUsuario,
     setComunidadePerfil,
@@ -596,13 +597,13 @@ function PerfilAutorPageContent() {
   });
 
   usePerfilAutorBlockStateSync({
-    perfilAutorId: perfilParaMostrar?.autorId || "",
+    perfilAutorId: perfilAutorId,
     usuarioIdLogado,
     setEstadoBloqueioPerfil,
   });
 
   usePerfilAutorFollowStateSync({
-    perfilAutorId: perfilParaMostrar?.autorId || "",
+    perfilAutorId: perfilAutorId,
     usuarioIdLogado,
     setEstadoRelacionamentoPerfil,
     setSeguindoUsuarioPerfil,
@@ -1795,7 +1796,7 @@ function PerfilAutorPageContent() {
             isDesktop={isDesktop}
             title={tituloDiarioPerfil}
             href={criarHrefListaDiarioPerfilAutor(
-              perfilParaMostrar?.autorId || "",
+              perfilAutorId,
             )}
             linkAriaLabel="Abrir tudo na página Listas"
             linkTitle="Ver tudo"
@@ -1814,7 +1815,7 @@ function PerfilAutorPageContent() {
                 }
 
                 const hrefLista = criarHrefListaDiarioPerfilAutor(
-                  perfilParaMostrar?.autorId || "",
+                  perfilAutorId,
                   obra.id,
                 );
 

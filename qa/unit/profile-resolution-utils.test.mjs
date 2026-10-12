@@ -133,6 +133,34 @@ test("preserva autor não encontrado e propriedade pelo ID da URL", () => {
 });
 
 
+test("página deriva o ID do perfil uma vez e reutiliza nas dependências", () => {
+  assert.match(
+    pagina,
+    /const perfilAutorId = perfilParaMostrar\?\.autorId \|\| "";/,
+  );
+  assert.equal(
+    (pagina.match(/perfilParaMostrar\?\.autorId \|\| ""/g) || []).length,
+    1,
+  );
+  assert.ok(
+    (pagina.match(/perfilAutorId/g) || []).length >= 9,
+    "perfilAutorId deve ser reutilizado após a derivação",
+  );
+  assert.match(
+    pagina,
+    /usePerfilAutorTopFiveStorageSync\(\{[\s\S]*?perfilAutorId,/,
+  );
+  assert.match(
+    pagina,
+    /usePerfilAutorCommunitySync\(\{[\s\S]*?perfilAutorId,/,
+  );
+  assert.match(
+    pagina,
+    /criarHrefListaDiarioPerfilAutor\(\s*perfilAutorId/,
+  );
+});
+
+
 test("página resolve perfil remoto e estado exibido sem useMemo", () => {
   assert.match(
     pagina,
