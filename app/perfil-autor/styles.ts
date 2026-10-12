@@ -3063,6 +3063,9 @@ export function obterEstilosResponsivosPerfilAutor(isDesktop: boolean) {
     profileHeaderAtualStyle: isDesktop
       ? profileHeaderDesktopStyle
       : profileHeaderStyle,
+    topWaterFadeAtualStyle: isDesktop
+      ? desktopTopWaterFadeStyle
+      : mobileTopWaterFadeStyle,
     menuSheetAtualStyle: isDesktop
       ? desktopMenuSheetStyle
       : menuSheetStyle,
