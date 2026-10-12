@@ -537,13 +537,13 @@ function PerfilAutorPageContent() {
   });
 
   usePerfilAutorTopFiveStorageSync({
-    perfilAutorId: perfilAutorId,
+    perfilAutorId,
     usuarioIdLogado,
     setTopFiveObraIds,
   });
 
   usePerfilAutorTopFiveLikesSync({
-    perfilAutorId: perfilAutorId,
+    perfilAutorId,
     usuarioIdLogado,
     setTopFiveCurtidasTotal,
     setTopFiveCurtidoPorMim,
@@ -571,7 +571,7 @@ function PerfilAutorPageContent() {
   });
 
   usePerfilAutorPrivacySync({
-    perfilAutorId: perfilAutorId,
+    perfilAutorId,
     perfilPertenceAoUsuario,
     estadoRelacionamentoPerfil,
     setPermissoesAbasPerfil,
@@ -579,7 +579,7 @@ function PerfilAutorPageContent() {
   });
 
   usePerfilAutorCommunitySync({
-    perfilAutorId: perfilAutorId,
+    perfilAutorId,
     comunidadePerfilVisivel,
     perfilPertenceAoUsuario,
     setComunidadePerfil,
@@ -597,13 +597,13 @@ function PerfilAutorPageContent() {
   });
 
   usePerfilAutorBlockStateSync({
-    perfilAutorId: perfilAutorId,
+    perfilAutorId,
     usuarioIdLogado,
     setEstadoBloqueioPerfil,
   });
 
   usePerfilAutorFollowStateSync({
-    perfilAutorId: perfilAutorId,
+    perfilAutorId,
     usuarioIdLogado,
     setEstadoRelacionamentoPerfil,
     setSeguindoUsuarioPerfil,
