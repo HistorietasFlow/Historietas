@@ -18,7 +18,7 @@ test("Perfil de Autor delega o carregamento da Comunidade", () => {
   assert.match(pagina, /usePerfilAutorCommunitySync/);
   assert.match(
     pagina,
-    /usePerfilAutorCommunitySync\(\{[\s\S]*?perfilAutorId:[\s\S]*?comunidadePerfilVisivel,[\s\S]*?perfilPertenceAoUsuario,[\s\S]*?setComunidadePerfil,[\s\S]*?\}\)/,
+    /usePerfilAutorCommunitySync\(\{[\s\S]*?perfilAutorId,[\s\S]*?comunidadePerfilVisivel,[\s\S]*?perfilPertenceAoUsuario,[\s\S]*?setComunidadePerfil,[\s\S]*?\}\)/,
   );
   assert.doesNotMatch(pagina, /async function carregarComunidadePerfil\(/);
 });
