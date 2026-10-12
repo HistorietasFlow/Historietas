@@ -118,6 +118,7 @@ import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-ut
 import {
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
+  obterDadosCurtidaTopFivePerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
   obterRotulosAcoesColecoesObraPerfilAutor,
@@ -767,6 +768,11 @@ function PerfilAutorPageContent() {
       mostrarDestaquesVisitante,
       totalObrasEmDestaque: obrasEmDestaque.length,
     });
+
+  const dadosCurtidaTopFive = obterDadosCurtidaTopFivePerfilAutor({
+    curtido: topFiveCurtidoPorMim,
+    totalCurtidas: topFiveCurtidasTotal,
+  });
 
   const { alternarCurtidaTopFivePerfil } =
     usePerfilAutorTopFiveLikeActions({
@@ -1610,14 +1616,8 @@ function PerfilAutorPageContent() {
                       onClick={() => void alternarCurtidaTopFivePerfil()}
                       salvando={topFiveCurtidaSalvando}
                       curtido={topFiveCurtidoPorMim}
-                      totalFormatado={compactarNumeroPerfilAutor(topFiveCurtidasTotal)}
-                      ariaLabel={`${
-                        topFiveCurtidoPorMim
-                          ? "Remover curtida do TOP 5"
-                          : "Curtir TOP 5"
-                      }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
-                        topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
-                      }`}
+                      totalFormatado={dadosCurtidaTopFive.totalFormatado}
+                      ariaLabel={dadosCurtidaTopFive.ariaLabel}
                     />
                   ) : null
                 }
@@ -1629,14 +1629,8 @@ function PerfilAutorPageContent() {
                       onClick={() => void alternarCurtidaTopFivePerfil()}
                       salvando={topFiveCurtidaSalvando}
                       curtido={topFiveCurtidoPorMim}
-                      totalFormatado={compactarNumeroPerfilAutor(topFiveCurtidasTotal)}
-                      ariaLabel={`${
-                        topFiveCurtidoPorMim
-                          ? "Remover curtida do TOP 5"
-                          : "Curtir TOP 5"
-                      }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
-                        topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
-                      }`}
+                      totalFormatado={dadosCurtidaTopFive.totalFormatado}
+                      ariaLabel={dadosCurtidaTopFive.ariaLabel}
                     />
                   ) : null
                 }

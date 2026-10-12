@@ -145,6 +145,7 @@ const {
   formatarMetricasSheetObraPerfilAutor,
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
+  obterDadosCurtidaTopFivePerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
   obterRotulosAcoesColecoesObraPerfilAutor,
@@ -432,6 +433,54 @@ test("página resolve obras em destaque sem useMemo", () => {
     pagina,
     /const obrasEmDestaque = useMemo/,
   );
+});
+
+
+test("dados de curtida do TOP 5 preservam ação, total e pluralização", () => {
+  assert.deepEqual(
+    obterDadosCurtidaTopFivePerfilAutor({
+      curtido: false,
+      totalCurtidas: 1,
+    }),
+    {
+      totalFormatado: "fmt:1",
+      ariaLabel: "Curtir TOP 5. fmt:1 curtida",
+    },
+  );
+
+  assert.deepEqual(
+    obterDadosCurtidaTopFivePerfilAutor({
+      curtido: true,
+      totalCurtidas: 12,
+    }),
+    {
+      totalFormatado: "fmt:12",
+      ariaLabel: "Remover curtida do TOP 5. fmt:12 curtidas",
+    },
+  );
+});
+
+
+test("página reutiliza os dados de curtida do TOP 5 nos dois botões", () => {
+  assert.match(
+    pagina,
+    /obterDadosCurtidaTopFivePerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterDadosCurtidaTopFivePerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.equal(
+    (pagina.match(/totalFormatado=\{dadosCurtidaTopFive\.totalFormatado\}/g) || [])
+      .length,
+    2,
+  );
+  assert.equal(
+    (pagina.match(/ariaLabel=\{dadosCurtidaTopFive\.ariaLabel\}/g) || []).length,
+    2,
+  );
+  assert.doesNotMatch(pagina, /Remover curtida do TOP 5/);
+  assert.doesNotMatch(pagina, /topFiveCurtidasTotal === 1 \? "curtida" : "curtidas"/);
 });
 
 
