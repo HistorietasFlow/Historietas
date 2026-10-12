@@ -93,6 +93,7 @@ import {
   obterAvisoComunidadeVaziaPerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
   obterTituloComunidadePerfilAutor,
+  obterValoresEstatisticasComunidadePerfilAutor,
 } from "./lib/profile-community-publication-utils";
 import {
   dataDiarioPerfilFormatada,
@@ -671,6 +672,13 @@ function PerfilAutorPageContent() {
     obterAriaLabelsEstatisticasComunidadePerfilAutor(
       perfilParaMostrar?.nome || "",
     );
+  const valoresEstatisticasComunidade =
+    obterValoresEstatisticasComunidadePerfilAutor({
+      totalPublicacoes: comunidadePerfil.totalPublicacoes,
+      totalTeorias: comunidadePerfil.totalTeorias,
+      totalReviews: comunidadePerfil.totalReviews,
+      formatarNumero: compactarNumeroPerfilAutor,
+    });
   const paddingInferiorPublicacaoComunidade =
     obterPaddingInferiorPublicacaoComunidadePerfilAutor(podeEditarPerfil);
 
@@ -1832,9 +1840,7 @@ function PerfilAutorPageContent() {
                   <ProfileCommunityStatCard
                     href={comunidadeAutorHref}
                     ariaLabel={ariaLabelsEstatisticasComunidade.publicacoes}
-                    value={compactarNumeroPerfilAutor(
-                      comunidadePerfil.totalPublicacoes,
-                    )}
+                    value={valoresEstatisticasComunidade.publicacoes}
                     title="PUBLICAÇÕES"
                     description="posts do perfil"
                   />
@@ -1842,9 +1848,7 @@ function PerfilAutorPageContent() {
                   <ProfileCommunityStatCard
                     href={comunidadeAutorTeoriasHref}
                     ariaLabel={ariaLabelsEstatisticasComunidade.teorias}
-                    value={compactarNumeroPerfilAutor(
-                      comunidadePerfil.totalTeorias,
-                    )}
+                    value={valoresEstatisticasComunidade.teorias}
                     title="TEORIAS"
                     description="discussões"
                   />
@@ -1852,9 +1856,7 @@ function PerfilAutorPageContent() {
                   <ProfileCommunityStatCard
                     href={comunidadeAutorReviewsHref}
                     ariaLabel={ariaLabelsEstatisticasComunidade.reviews}
-                    value={compactarNumeroPerfilAutor(
-                      comunidadePerfil.totalReviews,
-                    )}
+                    value={valoresEstatisticasComunidade.reviews}
                     title="REVIEWS"
                     description="opiniões"
                   />
