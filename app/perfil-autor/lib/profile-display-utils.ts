@@ -113,6 +113,13 @@ export function obterDadosDenunciaPerfilAutor(
 }
 
 
+export function obterAriaLabelCopiarUsernamePerfilAutor(
+  autorHandlePerfil: string,
+) {
+  return `Copiar ${autorHandlePerfil}`;
+}
+
+
 export function obterAriaLabelBadgeNotificacoesPerfilAutor(
   notificacoesNaoLidas: number,
 ) {

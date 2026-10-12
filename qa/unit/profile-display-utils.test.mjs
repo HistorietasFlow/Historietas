@@ -55,6 +55,7 @@ const javascript = typescript.transpileModule(
 const {
   formatarContagemNotificacoesPerfilAutor,
   obterAriaLabelBadgeNotificacoesPerfilAutor,
+  obterAriaLabelCopiarUsernamePerfilAutor,
   obterAriaLabelNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
@@ -288,6 +289,38 @@ test("página delega os dados do alvo da denúncia do perfil ao helper", () => {
   assert.doesNotMatch(
     pagina,
     /\/perfil-autor\?userId=\$\{encodeURIComponent\(/,
+  );
+});
+
+
+test("aria-label de copiar username preserva o handle exibido", () => {
+  assert.equal(
+    obterAriaLabelCopiarUsernamePerfilAutor("@ana"),
+    "Copiar @ana",
+  );
+});
+
+
+test("página delega o aria-label de copiar username ao helper", () => {
+  assert.match(
+    pagina,
+    /obterAriaLabelCopiarUsernamePerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (
+      pagina.match(
+        /obterAriaLabelCopiarUsernamePerfilAutor\(/g,
+      ) || []
+    ).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /aria-label=\{obterAriaLabelCopiarUsernamePerfilAutor\(autorHandlePerfil\)\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /aria-label=\{`Copiar \$\{autorHandlePerfil\}`\}/,
   );
 });
 
