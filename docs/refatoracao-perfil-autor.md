@@ -876,3 +876,10 @@
 - Reutilizou o mesmo valor no estilo da ação e no rótulo de bloquear/desbloquear.
 - Removeu duas repetições da expressão em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1033 — shorthand do ID do perfil
+
+- Simplificou seis propriedades redundantes no formato `perfilAutorId: perfilAutorId` para o shorthand `perfilAutorId`.
+- Preservou exatamente o mesmo valor enviado aos hooks de TOP 5, privacidade, Comunidade, bloqueio e seguimento.
+- Reduziu ruído visual em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
