@@ -799,3 +799,10 @@
 - Removeu o ternário responsivo e os imports diretos de `profileHeaderStyle`/`profileHeaderDesktopStyle` de `page.tsx`.
 - Atualizou a cobertura estrutural do modo desktop já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1022 — título do Diário
+
+- Extraiu a escolha entre `Meu Diário` e `Diário de <nome>` para `obterTituloDiarioPerfilAutor`.
+- Preservou exatamente os textos do próprio perfil e do visitante.
+- Removeu o ternário correspondente do `ProfileDiaryPanel` em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
