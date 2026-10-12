@@ -1,6 +1,25 @@
 import type { PublicacaoComunidadePerfil } from "../types";
 import { pegarTexto } from "./data-normalizers";
 
+export function obterValoresEstatisticasComunidadePerfilAutor({
+  totalPublicacoes,
+  totalTeorias,
+  totalReviews,
+  formatarNumero,
+}: {
+  totalPublicacoes: number;
+  totalTeorias: number;
+  totalReviews: number;
+  formatarNumero: (valor: number) => string;
+}) {
+  return {
+    publicacoes: formatarNumero(totalPublicacoes),
+    teorias: formatarNumero(totalTeorias),
+    reviews: formatarNumero(totalReviews),
+  };
+}
+
+
 export function obterAriaLabelsEstatisticasComunidadePerfilAutor(
   nomePerfil: string,
 ) {
