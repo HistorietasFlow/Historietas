@@ -239,8 +239,6 @@ import {
   workActionSheetItemStyle,
   workActionSheetDangerItemStyle,
   workActionSheetItemActiveStyle,
-  mobileTopWaterFadeStyle,
-  desktopTopWaterFadeStyle,
   perfilAutorThemeCss,
   pageStyle,
   logoMarkButtonStyle,
@@ -943,6 +941,7 @@ function PerfilAutorPageContent() {
     profileActionsAtualStyle,
     profileVisitorActionsAtualStyle,
     profileHeaderAtualStyle,
+    topWaterFadeAtualStyle,
     menuSheetAtualStyle,
   } = obterEstilosResponsivosPerfilAutor(isDesktop);
   const {
@@ -1075,8 +1074,7 @@ function PerfilAutorPageContent() {
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
 
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+      <div style={topWaterFadeAtualStyle} aria-hidden="true" />
       <section style={containerAtualStyle}>
         <header style={profileHeaderAtualStyle}>
           <div style={profileHeaderLogoStyle}>

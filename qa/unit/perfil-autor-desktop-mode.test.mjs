@@ -76,7 +76,7 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.doesNotMatch(pagina, /window\.innerWidth >= 1024/);
   assert.doesNotMatch(pagina, /addEventListener\("resize"/);
   assert.doesNotMatch(pagina, /removeEventListener\("resize"/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 45);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 43);
   assert.doesNotMatch(pagina, /useEffect\(/);
   assert.match(profileLoadSyncSource, /useEffect\(\(\) => \{/);
   assert.match(authIdentitySyncSource, /supabase\.auth\.getUser\(\)/);
@@ -106,6 +106,14 @@ test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
     /export function obterEstilosResponsivosPerfilAutor\(isDesktop: boolean\)/,
   );
   assert.match(pagina, /<header style=\{profileHeaderAtualStyle\}>/);
+  assert.match(
+    pagina,
+    /<div style=\{topWaterFadeAtualStyle\} aria-hidden="true" \/>/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /desktopTopWaterFadeStyle|mobileTopWaterFadeStyle/,
+  );
   assert.doesNotMatch(
     pagina,
     /isDesktop \? profileHeaderDesktopStyle : profileHeaderStyle/,
@@ -121,6 +129,7 @@ test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
     ["profileActionsAtualStyle", "desktopProfileActionsStyle", "profileActionsStyle"],
     ["profileVisitorActionsAtualStyle", "desktopProfileVisitorActionsStyle", "profileVisitorActionsStyle"],
     ["profileHeaderAtualStyle", "profileHeaderDesktopStyle", "profileHeaderStyle"],
+    ["topWaterFadeAtualStyle", "desktopTopWaterFadeStyle", "mobileTopWaterFadeStyle"],
     ["menuSheetAtualStyle", "desktopMenuSheetStyle", "menuSheetStyle"],
   ]) {
     assert.match(
