@@ -43,6 +43,7 @@ const {
   obterAvisoComunidadeVaziaPerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
   obterTituloComunidadePerfilAutor,
+  obterValoresEstatisticasComunidadePerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -57,6 +58,55 @@ const criarPublicacao = (sobrescrever = {}) => ({
   criadoEm: "2026-10-10T00:00:00.000Z",
   ...sobrescrever,
 });
+
+test("valores das estatísticas da Comunidade reutilizam a mesma formatação", () => {
+  assert.deepEqual(
+    obterValoresEstatisticasComunidadePerfilAutor({
+      totalPublicacoes: 12,
+      totalTeorias: 3,
+      totalReviews: 7,
+      formatarNumero: (valor) => `fmt:${valor}`,
+    }),
+    {
+      publicacoes: "fmt:12",
+      teorias: "fmt:3",
+      reviews: "fmt:7",
+    },
+  );
+});
+
+
+test("página delega a formatação dos valores das estatísticas da Comunidade", () => {
+  assert.match(
+    pagina,
+    /obterValoresEstatisticasComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.equal(
+    (
+      pagina.match(
+        /obterValoresEstatisticasComunidadePerfilAutor\(\{/g,
+      ) || []
+    ).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /value=\{valoresEstatisticasComunidade\.publicacoes\}/,
+  );
+  assert.match(
+    pagina,
+    /value=\{valoresEstatisticasComunidade\.teorias\}/,
+  );
+  assert.match(
+    pagina,
+    /value=\{valoresEstatisticasComunidade\.reviews\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /value=\{compactarNumeroPerfilAutor\(\s*comunidadePerfil\.total(?:Publicacoes|Teorias|Reviews),?\s*\)\}/,
+  );
+});
+
 
 test("aria-labels das estatísticas da Comunidade preservam os três destinos", () => {
   assert.deepEqual(
@@ -332,6 +382,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     "obterAvisoComunidadeVaziaPerfilAutor",
     "obterPaddingInferiorPublicacaoComunidadePerfilAutor",
     "obterTituloComunidadePerfilAutor",
+    "obterValoresEstatisticasComunidadePerfilAutor",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
