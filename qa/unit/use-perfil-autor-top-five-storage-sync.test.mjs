@@ -18,7 +18,7 @@ test("Perfil de Autor delega a sincronização local do TOP 5", () => {
   assert.match(pagina, /usePerfilAutorTopFiveStorageSync/);
   assert.match(
     pagina,
-    /usePerfilAutorTopFiveStorageSync\(\{[\s\S]*?perfilAutorId:[\s\S]*?usuarioIdLogado,[\s\S]*?setTopFiveObraIds,[\s\S]*?\}\)/,
+    /usePerfilAutorTopFiveStorageSync\(\{[\s\S]*?perfilAutorId,[\s\S]*?usuarioIdLogado,[\s\S]*?setTopFiveObraIds,[\s\S]*?\}\)/,
   );
   assert.doesNotMatch(
     pagina,
