@@ -869,3 +869,10 @@
 - Reutilizou a mesma coleção no total de obras do estado vazio e na seleção do TOP 5.
 - Removeu os fallbacks separados de lista e contagem de `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1032 — estado de bloqueio derivado
+
+- Centralizou `estadoBloqueioPerfil.bloqueadoPorMim` em `bloqueadoPorMim`.
+- Reutilizou o mesmo valor no estilo da ação e no rótulo de bloquear/desbloquear.
+- Removeu duas repetições da expressão em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
