@@ -85,6 +85,7 @@ const {
   coletarObraIdsRegistrosDiarioPerfil,
   dataDiarioPerfilFormatada,
   montarDiarioPerfilLocal,
+  obterMensagemDiarioVazioPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -136,6 +137,34 @@ test("coleta IDs com a precedência e os fallbacks originais", () => {
     ["obra-1", "obra-2"],
   );
 });
+
+test("mensagem vazia do Diário preserva contexto de autor e visitante", () => {
+  assert.equal(
+    obterMensagemDiarioVazioPerfilAutor(true),
+    "Suas obras e atividades de leitura aparecerão aqui.",
+  );
+  assert.equal(
+    obterMensagemDiarioVazioPerfilAutor(false),
+    "Este perfil ainda não compartilhou itens no Diário.",
+  );
+});
+
+
+test("página delega a mensagem vazia do Diário ao helper", () => {
+  assert.match(
+    pagina,
+    /obterMensagemDiarioVazioPerfilAutor,[\s\S]*?from "\.\/lib\/profile-diary-local-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterMensagemDiarioVazioPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /podeEditarPerfil[\s\S]{0,100}\? "Suas obras e atividades de leitura aparecerão aqui\."/,
+  );
+});
+
 
 test("formata datas válidas por idioma e preserva o fallback de data inválida", () => {
   const data = "2026-02-10T12:00:00.000Z";
@@ -237,7 +266,7 @@ test("Perfil de Autor mantém helpers locais e delega coleta de IDs ao carregado
   assert.match(utilsSource, /import \{ ordenarItensDiarioPerfil \} from "\.\/profile-diary-merge-utils";/);
   assert.match(
     pagina,
-    /import \{ dataDiarioPerfilFormatada \} from "\.\/lib\/profile-diary-local-utils";/,
+    /import \{[\s\S]*?dataDiarioPerfilFormatada,[\s\S]*?obterMensagemDiarioVazioPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-diary-local-utils";/,
   );
   assert.match(
     diarySyncSource,
@@ -252,6 +281,7 @@ test("Perfil de Autor mantém helpers locais e delega coleta de IDs ao carregado
     "coletarObraIdsRegistrosDiarioPerfil",
     "dataDiarioPerfilFormatada",
     "montarDiarioPerfilLocal",
+    "obterMensagemDiarioVazioPerfilAutor",
   ]) {
     assert.match(utilsSource, new RegExp(`export function ${helper}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
