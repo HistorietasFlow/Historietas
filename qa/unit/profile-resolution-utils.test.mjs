@@ -133,6 +133,30 @@ test("preserva autor não encontrado e propriedade pelo ID da URL", () => {
 });
 
 
+test("página deriva as obras do perfil uma vez e reutiliza nos cálculos", () => {
+  assert.match(
+    pagina,
+    /const obrasPerfil = perfilParaMostrar\?\.obras \|\| \[\];/,
+  );
+  assert.equal(
+    (pagina.match(/perfilParaMostrar\?\.obras \|\| \[\]/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /perfilParaMostrar\?\.obras\.length \|\| 0/,
+  );
+  assert.match(
+    pagina,
+    /obterMensagemObrasVaziasPerfilAutor\(\{[\s\S]*?totalObras: obrasPerfil\.length,/,
+  );
+  assert.match(
+    pagina,
+    /obterObrasDestaquePerfilAutor\(\{[\s\S]*?obrasPerfil,/,
+  );
+});
+
+
 test("página deriva o nome do perfil uma vez e reutiliza nas exibições", () => {
   assert.match(
     pagina,
