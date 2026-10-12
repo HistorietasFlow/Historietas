@@ -110,6 +110,7 @@ import {
 import {
   obterBioSobreExibicaoPerfilAutor,
   formatarContagemNotificacoesPerfilAutor,
+  obterDadosDenunciaConteudoPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
@@ -686,6 +687,8 @@ function PerfilAutorPageContent() {
   const dadosDenunciaPerfil = obterDadosDenunciaPerfilAutor(
     perfilParaMostrar,
   );
+  const dadosDenunciaConteudoPerfil =
+    obterDadosDenunciaConteudoPerfilAutor(alvoDenunciaConteudoPerfil);
 
   const {
     bioSobreAutorExibido,
@@ -1521,11 +1524,9 @@ function PerfilAutorPageContent() {
             Boolean(alvoDenunciaConteudoPerfil) &&
             !podeEditarPerfil
           }
-          alvoTipo={alvoDenunciaConteudoPerfil?.alvoTipo || "post"}
-          alvoId={alvoDenunciaConteudoPerfil?.alvoId || ""}
-          alvoTitulo={
-            alvoDenunciaConteudoPerfil?.alvoTitulo || "Conteúdo"
-          }
+          alvoTipo={dadosDenunciaConteudoPerfil.alvoTipo}
+          alvoId={dadosDenunciaConteudoPerfil.alvoId}
+          alvoTitulo={dadosDenunciaConteudoPerfil.alvoTitulo}
           onFechar={() => setAlvoDenunciaConteudoPerfil(null)}
           onEnviada={() => {
             setAlvoDenunciaConteudoPerfil(null);

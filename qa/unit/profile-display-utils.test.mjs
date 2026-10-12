@@ -55,6 +55,7 @@ const javascript = typescript.transpileModule(
 const {
   formatarContagemNotificacoesPerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
+  obterDadosDenunciaConteudoPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
@@ -193,6 +194,56 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
   assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
   assert.equal(vazio.caracteresRestantesBioSobre, 160);
+});
+
+
+test("dados da denúncia de conteúdo preservam alvo e fallbacks", () => {
+  assert.deepEqual(
+    obterDadosDenunciaConteudoPerfilAutor({
+      alvoTipo: "obra",
+      alvoId: "obra-1",
+      alvoTitulo: "Minha Obra",
+    }),
+    {
+      alvoTipo: "obra",
+      alvoId: "obra-1",
+      alvoTitulo: "Minha Obra",
+    },
+  );
+
+  assert.deepEqual(obterDadosDenunciaConteudoPerfilAutor(null), {
+    alvoTipo: "post",
+    alvoId: "",
+    alvoTitulo: "Conteúdo",
+  });
+});
+
+
+test("página delega os dados da denúncia de conteúdo ao helper", () => {
+  assert.match(
+    pagina,
+    /obterDadosDenunciaConteudoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterDadosDenunciaConteudoPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /alvoTipo=\{dadosDenunciaConteudoPerfil\.alvoTipo\}/,
+  );
+  assert.match(
+    pagina,
+    /alvoId=\{dadosDenunciaConteudoPerfil\.alvoId\}/,
+  );
+  assert.match(
+    pagina,
+    /alvoTitulo=\{dadosDenunciaConteudoPerfil\.alvoTitulo\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /alvoDenunciaConteudoPerfil\?\.alvoTipo \|\| "post"/,
+  );
 });
 
 

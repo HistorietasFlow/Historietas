@@ -785,3 +785,10 @@
 - Preservou o fallback sem perfil e o encoding do ID na URL.
 - Removeu a montagem inline correspondente do `DenunciaModal` em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1020 — alvo da denúncia de conteúdo
+
+- Centralizou tipo, ID e título do alvo da denúncia de conteúdo em `obterDadosDenunciaConteudoPerfilAutor`.
+- Preservou os fallbacks `post`, ID vazio e `Conteúdo` quando não há alvo selecionado.
+- Removeu os fallbacks inline correspondentes do segundo `DenunciaModal` em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
