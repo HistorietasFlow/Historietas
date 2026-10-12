@@ -792,3 +792,10 @@
 - Preservou os fallbacks `post`, ID vazio e `Conteúdo` quando não há alvo selecionado.
 - Removeu os fallbacks inline correspondentes do segundo `DenunciaModal` em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1021 — estilo responsivo do cabeçalho
+
+- Incluiu o estilo mobile/desktop do cabeçalho em `obterEstilosResponsivosPerfilAutor` como `profileHeaderAtualStyle`.
+- Removeu o ternário responsivo e os imports diretos de `profileHeaderStyle`/`profileHeaderDesktopStyle` de `page.tsx`.
+- Atualizou a cobertura estrutural do modo desktop já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
