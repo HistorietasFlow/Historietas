@@ -96,6 +96,7 @@ import {
 import {
   dataDiarioPerfilFormatada,
   obterMensagemDiarioVazioPerfilAutor,
+  obterTituloDiarioPerfilAutor,
 } from "./lib/profile-diary-local-utils";
 import { criarHrefListaDiarioPerfilAutor } from "./lib/profile-diary-item-utils";
 import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
@@ -780,6 +781,10 @@ function PerfilAutorPageContent() {
   const mensagemObrasVazias = obterMensagemObrasVaziasPerfilAutor({
     totalObras: perfilParaMostrar?.obras.length || 0,
     podeEditarPerfil,
+  });
+  const tituloDiarioPerfil = obterTituloDiarioPerfilAutor({
+    podeEditarPerfil,
+    nomePerfil: perfilParaMostrar?.nome || "",
   });
 
   const obrasEmDestaque = obterObrasDestaquePerfilAutor({
@@ -1785,11 +1790,7 @@ function PerfilAutorPageContent() {
         {abaPerfil === "diario" && diarioPerfilVisivel && (
           <ProfileDiaryPanel
             isDesktop={isDesktop}
-            title={
-              podeEditarPerfil
-                ? "Meu Diário"
-                : `Diário de ${perfilParaMostrar.nome}`
-            }
+            title={tituloDiarioPerfil}
             href={criarHrefListaDiarioPerfilAutor(
               perfilParaMostrar?.autorId || "",
             )}
