@@ -39,6 +39,7 @@ const {
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
   normalizarPublicacaoComunidadePerfil,
+  obterAvisoComunidadeVaziaPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
@@ -53,6 +54,51 @@ const criarPublicacao = (sobrescrever = {}) => ({
   criadoEm: "2026-10-10T00:00:00.000Z",
   ...sobrescrever,
 });
+
+test("aviso de comunidade vazia preserva textos de autor e visitante", () => {
+  assert.deepEqual(
+    obterAvisoComunidadeVaziaPerfilAutor({
+      podeEditarPerfil: true,
+      nomePerfil: "Ana",
+    }),
+    {
+      title: "Sua comunidade ainda está vazia",
+      description:
+        "Publique avisos, bastidores, teorias e chamadas para aproximar leitores das suas obras.",
+    },
+  );
+
+  assert.deepEqual(
+    obterAvisoComunidadeVaziaPerfilAutor({
+      podeEditarPerfil: false,
+      nomePerfil: "Ana",
+    }),
+    {
+      title: "Nenhuma publicação por aqui ainda",
+      description:
+        "Quando Ana publicar posts, teorias ou reviews, eles aparecerão nesta área.",
+    },
+  );
+});
+
+
+test("página delega o aviso de comunidade vazia ao helper", () => {
+  assert.match(
+    pagina,
+    /obterAvisoComunidadeVaziaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterAvisoComunidadeVaziaPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /title=\{avisoComunidadeVazia\.title\}/);
+  assert.match(pagina, /description=\{avisoComunidadeVazia\.description\}/);
+  assert.doesNotMatch(
+    pagina,
+    /podeEditarPerfil[\s\S]{0,120}\? "Sua comunidade ainda está vazia"/,
+  );
+});
+
 
 test("normalizarPublicacaoComunidadePerfil preserva fallbacks, limites e spoiler", () => {
   assert.equal(normalizarPublicacaoComunidadePerfil({ texto: "sem id" }), null);
@@ -160,6 +206,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     "criarHrefPublicacaoComunidadePerfil",
     "analisarEnquetePublicacaoComunidadePerfil",
     "criarResumoPublicacaoComunidadePerfil",
+    "obterAvisoComunidadeVaziaPerfilAutor",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }

@@ -89,6 +89,7 @@ import {
   analisarEnquetePublicacaoComunidadePerfil,
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
+  obterAvisoComunidadeVaziaPerfilAutor,
 } from "./lib/profile-community-publication-utils";
 import {
   dataDiarioPerfilFormatada,
@@ -651,6 +652,11 @@ function PerfilAutorPageContent() {
     perfisAutoresSalvos,
     autorChavePerfil,
     autorNormalizadoParaSeguir,
+  });
+
+  const avisoComunidadeVazia = obterAvisoComunidadeVaziaPerfilAutor({
+    podeEditarPerfil,
+    nomePerfil: perfilParaMostrar?.nome || "",
   });
 
   const {
@@ -1863,16 +1869,8 @@ function PerfilAutorPageContent() {
                 ) : comunidadePerfil.publicacoesRecentes.length === 0 ? (
                   <ProfileCommunityNotice
                     icon="💬"
-                    title={
-                      podeEditarPerfil
-                        ? "Sua comunidade ainda está vazia"
-                        : "Nenhuma publicação por aqui ainda"
-                    }
-                    description={
-                      podeEditarPerfil
-                        ? "Publique avisos, bastidores, teorias e chamadas para aproximar leitores das suas obras."
-                        : `Quando ${perfilParaMostrar.nome} publicar posts, teorias ou reviews, eles aparecerão nesta área.`
-                    }
+                    title={avisoComunidadeVazia.title}
+                    description={avisoComunidadeVazia.description}
                   />
                 ) : (
                   <ProfileCommunityRecentPostsSection title="Publicações recentes">

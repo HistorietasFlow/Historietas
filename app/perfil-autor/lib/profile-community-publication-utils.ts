@@ -1,6 +1,26 @@
 import type { PublicacaoComunidadePerfil } from "../types";
 import { pegarTexto } from "./data-normalizers";
 
+export function obterAvisoComunidadeVaziaPerfilAutor({
+  podeEditarPerfil,
+  nomePerfil,
+}: {
+  podeEditarPerfil: boolean;
+  nomePerfil: string;
+}) {
+  return podeEditarPerfil
+    ? {
+        title: "Sua comunidade ainda está vazia",
+        description:
+          "Publique avisos, bastidores, teorias e chamadas para aproximar leitores das suas obras.",
+      }
+    : {
+        title: "Nenhuma publicação por aqui ainda",
+        description: `Quando ${nomePerfil} publicar posts, teorias ou reviews, eles aparecerão nesta área.`,
+      };
+}
+
+
 export function normalizarPublicacaoComunidadePerfil(
   registro: Record<string, unknown>,
 ): PublicacaoComunidadePerfil | null {
