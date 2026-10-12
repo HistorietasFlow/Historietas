@@ -18,7 +18,7 @@ test("Perfil de Autor delega a sincronização da privacidade", () => {
   assert.match(pagina, /usePerfilAutorPrivacySync/);
   assert.match(
     pagina,
-    /usePerfilAutorPrivacySync\(\{[\s\S]*?perfilAutorId:[\s\S]*?perfilPertenceAoUsuario,[\s\S]*?estadoRelacionamentoPerfil,[\s\S]*?setPermissoesAbasPerfil,[\s\S]*?setPrivacidadePerfilCarregando,[\s\S]*?\}\)/,
+    /usePerfilAutorPrivacySync\(\{[\s\S]*?perfilAutorId,[\s\S]*?perfilPertenceAoUsuario,[\s\S]*?estadoRelacionamentoPerfil,[\s\S]*?setPermissoesAbasPerfil,[\s\S]*?setPrivacidadePerfilCarregando,[\s\S]*?\}\)/,
   );
   assert.doesNotMatch(pagina, /async function carregarPrivacidadePerfil\(/);
 });
