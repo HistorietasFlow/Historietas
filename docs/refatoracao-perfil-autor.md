@@ -813,3 +813,10 @@
 - Preservou `Notificações` sem pendências e `Notificações: <n> não lidas` quando há itens não lidos.
 - Removeu o ternário correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1024 — aria-label do badge de Notificações
+
+- Extraiu o texto acessível do badge de notificações para `obterAriaLabelBadgeNotificacoesPerfilAutor`.
+- Preservou a contagem formatada já existente, incluindo o teto visual `99+`.
+- Removeu a interpolação correspondente de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
