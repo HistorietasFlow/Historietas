@@ -1163,3 +1163,10 @@
 - Reutilizou a coleção na verificação de estado vazio e na renderização da lista recente.
 - Removeu a leitura direta duplicada de `comunidadePerfil.publicacoesRecentes` em `page.tsx` e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1074 — atividades do Diário derivadas
+
+- Derivou `atividadesDiarioPerfil` uma única vez a partir de `diarioPerfil.atividades`.
+- Reutilizou a coleção na montagem dos itens da Biblioteca e na atividade recente da seção Sobre.
+- Removeu a leitura direta duplicada de `diarioPerfil.atividades` em `page.tsx` e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.

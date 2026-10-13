@@ -34,3 +34,23 @@ test("componente preserva limite, loading, vazio e links da timeline", () => {
   assert.match(source, /dataDiarioPerfilFormatada\(item\.data\)/);
   assert.match(source, /expanded \? "Ocultar" : "Abrir"/);
 });
+
+
+test("Perfil de Autor deriva as atividades do Diário uma única vez", () => {
+  assert.match(
+    pagina,
+    /const atividadesDiarioPerfil = diarioPerfil\.atividades;/,
+  );
+  assert.equal(
+    (pagina.match(/diarioPerfil\.atividades/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /atividades: atividadesDiarioPerfil,/,
+  );
+  assert.match(
+    pagina,
+    /items=\{atividadesDiarioPerfil\}/,
+  );
+});

@@ -957,6 +957,7 @@ function PerfilAutorPageContent() {
   });
 
   const itensDiarioTudo = montarItensDiarioTudoPerfil(diarioPerfil);
+  const atividadesDiarioPerfil = diarioPerfil.atividades;
   const diarioPerfilCarregando = diarioPerfil.carregando;
 
   usePerfilAutorRatingSync({
@@ -1003,7 +1004,7 @@ function PerfilAutorPageContent() {
     lendoAgora: diarioPerfil.lendoAgora,
     favoritas: diarioPerfil.favoritas,
     concluidas: diarioPerfil.concluidas,
-    atividades: diarioPerfil.atividades,
+    atividades: atividadesDiarioPerfil,
     obras,
   });
 
@@ -2149,7 +2150,7 @@ function PerfilAutorPageContent() {
               <ProfileAboutRecentActivity
                 expanded={atividadeSobreAberta}
                 loading={diarioPerfilCarregando}
-                items={diarioPerfil.atividades}
+                items={atividadesDiarioPerfil}
                 onToggle={() =>
                   setAtividadeSobreAberta((valorAtual) => !valorAtual)
                 }
