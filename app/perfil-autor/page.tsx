@@ -902,6 +902,7 @@ function PerfilAutorPageContent() {
   });
 
   const {
+    generosEspecialidadesPerfil,
     generosPrincipaisPerfil,
     totalVisualizacoesPerfil,
     totalRascunhosPerfil,
@@ -2014,10 +2015,7 @@ function PerfilAutorPageContent() {
                 <ProfileAboutPanelTitle>Especialidades</ProfileAboutPanelTitle>
 
                 <ProfileAboutChips>
-                  {(generosPrincipaisPerfil.length > 0
-                    ? generosPrincipaisPerfil
-                    : ["Histórias variadas"]
-                  ).map((genero) => (
+                  {generosEspecialidadesPerfil.map((genero) => (
                     <ProfileAboutChip key={`sobre-genero-${genero}`}>
                       {genero}
                     </ProfileAboutChip>
