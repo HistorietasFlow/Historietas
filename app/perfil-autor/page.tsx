@@ -1954,7 +1954,7 @@ function PerfilAutorPageContent() {
                                     {dadosPublicacao.resumo}
                                   </ProfileCommunityPostSummary>
 
-                                  {dadosPublicacao.totalOpcoesEnquete >= 2 && (
+                                  {dadosPublicacao.exibirInfoEnquete && (
                                     <ProfileCommunityPostPollInfo>
                                       Enquete
                                       <span aria-hidden="true">•</span>

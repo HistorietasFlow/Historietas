@@ -317,6 +317,7 @@ test("dados da publicação recente centralizam link, acessibilidade, resumo e e
       ariaLabel: "Abrir Enquete na Comunidade",
       resumo: "Melhor capítulo?",
       totalOpcoesEnquete: 2,
+      exibirInfoEnquete: true,
     },
   );
 });
@@ -338,10 +339,30 @@ test("página deriva os dados da publicação recente uma única vez por item", 
   assert.match(pagina, /href=\{dadosPublicacao\.href\}/);
   assert.match(pagina, /ariaLabel=\{dadosPublicacao\.ariaLabel\}/);
   assert.match(pagina, /\{dadosPublicacao\.resumo\}/);
-  assert.match(pagina, /dadosPublicacao\.totalOpcoesEnquete >= 2/);
+  assert.match(pagina, /dadosPublicacao\.exibirInfoEnquete/);
+  assert.doesNotMatch(pagina, /dadosPublicacao\.totalOpcoesEnquete >= 2/);
   assert.doesNotMatch(pagina, /criarHrefPublicacaoComunidadePerfil/);
   assert.doesNotMatch(pagina, /criarResumoPublicacaoComunidadePerfil/);
   assert.doesNotMatch(pagina, /analisarEnquetePublicacaoComunidadePerfil/);
+});
+
+
+test("dados da publicação recente ocultam info de enquete com menos de duas opções", () => {
+  assert.deepEqual(
+    obterDadosPublicacaoRecenteComunidadePerfilAutor(
+      criarPublicacao({
+        tipoPublicacao: "Enquete",
+        texto: "Enquete: Melhor capítulo?\nOpção 1: Um",
+      }),
+    ),
+    {
+      href: "/comunidade?post=post-1",
+      ariaLabel: "Abrir Enquete na Comunidade",
+      resumo: "Melhor capítulo?",
+      totalOpcoesEnquete: 1,
+      exibirInfoEnquete: false,
+    },
+  );
 });
 
 
