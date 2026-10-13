@@ -188,7 +188,11 @@ test("página reutiliza especialidades já derivadas no resumo", () => {
   assert.match(pagina, /generosEspecialidadesPerfil,/);
   assert.match(
     pagina,
-    /\{generosEspecialidadesPerfil\.map\(\(genero\) => \(/,
+    /import \{ ProfileAboutSpecialties \} from "\.\/components\/profile-about-specialties";/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileAboutSpecialties[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}/,
   );
   assert.doesNotMatch(
     pagina,

@@ -220,10 +220,7 @@ import { ProfileAboutCounter } from "./components/profile-about-counter";
 import { ProfileAboutContentGrid } from "./components/profile-about-content-grid";
 import { ProfileAboutProfileNumbers } from "./components/profile-about-profile-numbers";
 import { ProfileAboutActivity } from "./components/profile-about-activity";
-import { ProfileAboutPanel } from "./components/profile-about-panel";
-import { ProfileAboutPanelTitle } from "./components/profile-about-panel-title";
-import { ProfileAboutChips } from "./components/profile-about-chips";
-import { ProfileAboutChip } from "./components/profile-about-chip";
+import { ProfileAboutSpecialties } from "./components/profile-about-specialties";
 import { ProfileAboutMemberSince } from "./components/profile-about-member-since";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -2062,17 +2059,9 @@ function PerfilAutorPageContent() {
             </ProfileAboutHero>
 
             <ProfileAboutContentGrid>
-              <ProfileAboutPanel>
-                <ProfileAboutPanelTitle>Especialidades</ProfileAboutPanelTitle>
-
-                <ProfileAboutChips>
-                  {generosEspecialidadesPerfil.map((genero) => (
-                    <ProfileAboutChip key={`sobre-genero-${genero}`}>
-                      {genero}
-                    </ProfileAboutChip>
-                  ))}
-                </ProfileAboutChips>
-              </ProfileAboutPanel>
+              <ProfileAboutSpecialties
+                generosEspecialidadesPerfil={generosEspecialidadesPerfil}
+              />
 
               <ProfileAboutProfileNumbers
                 totalPublicadas={compactarNumeroPerfilAutor(

@@ -1183,3 +1183,9 @@
 - Extraiu os painéis apresentacionais “Números do perfil” e “Atividade” para componentes dedicados.
 - Preservou textos, ordem, markup, valores exibidos, condição de obras sem capítulos e primitives visuais existentes.
 - Manteve na página todas as derivações e a lógica de negócio; sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1077 — Especialidades do Sobre
+
+- Extraiu o painel apresentacional “Especialidades” para um componente dedicado.
+- Preservou a coleção derivada na página, o markup, o texto, a ordem e as chaves dos chips.
+- Sem alterações de UI, schema, RLS ou Supabase.
