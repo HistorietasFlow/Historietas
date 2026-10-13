@@ -1149,3 +1149,10 @@
 - Reutilizou o estado na visibilidade da seção de destaques e nas ações do próprio perfil.
 - Removeu duas leituras diretas repetidas de `perfilSalvoAutor.mostrarDestaques` em `page.tsx` e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1072 — erro da Comunidade derivado
+
+- Derivou `erroComunidadePerfil` uma única vez a partir de `comunidadePerfil.erro`.
+- Reutilizou o mesmo valor na condição de erro e na descrição do aviso da Comunidade.
+- Removeu a leitura direta duplicada de `comunidadePerfil.erro` em `page.tsx` e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.

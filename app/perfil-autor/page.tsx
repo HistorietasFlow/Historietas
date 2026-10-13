@@ -734,6 +734,7 @@ function PerfilAutorPageContent() {
     comunidadeSemPublicacoesRecentesPerfilAutor(
       comunidadePerfil.publicacoesRecentes,
     );
+  const erroComunidadePerfil = comunidadePerfil.erro;
   const avisoComunidadeVazia = obterAvisoComunidadeVaziaPerfilAutor({
     podeEditarPerfil,
     nomePerfil: perfilNome,
@@ -1939,11 +1940,11 @@ function PerfilAutorPageContent() {
                   />
                 </ProfileCommunityStatsGrid>
 
-                {comunidadePerfil.erro ? (
+                {erroComunidadePerfil ? (
                   <ProfileCommunityNotice
                     icon="!"
                     title="Comunidade indisponível"
-                    description={comunidadePerfil.erro}
+                    description={erroComunidadePerfil}
                   />
                 ) : comunidadeSemPublicacoesRecentes ? (
                   <ProfileCommunityNotice
