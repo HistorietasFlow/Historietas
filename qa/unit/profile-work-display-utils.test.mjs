@@ -220,6 +220,24 @@ test("página delega o estado vazio de Obras ao helper", () => {
 });
 
 
+test("página deriva o total de obras uma única vez da coleção do perfil", () => {
+  assert.match(
+    pagina,
+    /const totalObrasPerfil = obrasPerfil\.length;/,
+  );
+  assert.equal(
+    (pagina.match(/\btotalObrasPerfil\b/g) || []).length,
+    3,
+  );
+  assert.match(pagina, /totalObras: totalObrasPerfil/);
+  assert.match(pagina, /<strong>\{totalObrasPerfil\}<\/strong>/);
+  assert.doesNotMatch(
+    pagina,
+    /perfilParaMostrar\.obras\.length/,
+  );
+});
+
+
 test("mensagem de obras vazias preserva autor, visitante e filtro sem resultado", () => {
   assert.equal(
     obterMensagemObrasVaziasPerfilAutor({

@@ -1030,3 +1030,10 @@
 - Preservou exatamente a regra `totalAbasPerfilVisiveis > 0`.
 - Removeu a comparação inline do JSX de `ProfileSectionTabs` e ampliou a cobertura unitária/estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1055 — total de obras derivado
+
+- Derivou `totalObrasPerfil` uma única vez a partir de `obrasPerfil.length`.
+- Reutilizou o total na mensagem de estado vazio e na métrica da seção Sobre.
+- Removeu duas leituras de comprimento separadas em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
