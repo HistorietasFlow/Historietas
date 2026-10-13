@@ -903,7 +903,6 @@ function PerfilAutorPageContent() {
 
   const {
     generosEspecialidadesPerfil,
-    generosPrincipaisPerfil,
     totalVisualizacoesPerfil,
     totalRascunhosPerfil,
     totalObrasSemCapitulosPerfil,
