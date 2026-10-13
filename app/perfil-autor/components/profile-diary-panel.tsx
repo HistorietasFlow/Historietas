@@ -4,7 +4,7 @@ import { ProfileDiarySection } from "./profile-diary-section";
 import { ProfileDiarySummaryContent } from "./profile-diary-summary-content";
 import { ProfileDiarySummarySection } from "./profile-diary-summary-section";
 
-type ProfileDiaryPanelProps = {
+type ProfileDiaryPanelProps<T> = {
   isDesktop: boolean;
   title: ReactNode;
   href: string;
@@ -14,10 +14,11 @@ type ProfileDiaryPanelProps = {
   getIsLoading: () => boolean;
   getIsEmpty: () => boolean;
   emptyMessage: ReactNode;
-  renderItems: () => ReactNode;
+  items: T[];
+  renderItem: (item: T) => ReactNode;
 };
 
-export function ProfileDiaryPanel({
+export function ProfileDiaryPanel<T>({
   isDesktop,
   title,
   href,
@@ -27,8 +28,9 @@ export function ProfileDiaryPanel({
   getIsLoading,
   getIsEmpty,
   emptyMessage,
-  renderItems,
-}: ProfileDiaryPanelProps) {
+  items,
+  renderItem,
+}: ProfileDiaryPanelProps<T>) {
   return (
     <ProfileDiarySection isDesktop={isDesktop}>
       <ProfileDiaryHeader
@@ -45,7 +47,7 @@ export function ProfileDiaryPanel({
           getIsLoading={getIsLoading}
           getIsEmpty={getIsEmpty}
           emptyMessage={emptyMessage}
-          renderItems={renderItems}
+          renderItems={() => items.map(renderItem)}
         />
       </ProfileDiarySummarySection>
     </ProfileDiarySection>

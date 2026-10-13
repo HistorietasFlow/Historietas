@@ -1225,3 +1225,9 @@
 - Extraiu os estados de carregamento, vazio e conteúdo da Biblioteca, preservando a seleção e as condições na página.
 - Transferiu para o componente de estado a grade e o `map`, mantendo na página os dados derivados dos cards e o callback do menu.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1084 — Itens do Diário
+
+- Transferiu para o painel do Diário somente o `map` dos itens da grade.
+- Manteve na página a função nomeada de cada item, a validação de obra, a construção do link e o `DiarySummaryCard`.
+- Preservou carregamento, estado vazio, ordem, textos, UI, acessibilidade, schema, RLS e Supabase.
