@@ -24,6 +24,13 @@ const heroSource = readFileSync(
   ),
   "utf8",
 );
+const navigationPanelSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-navigation-panel.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const todas = {
   obras: true,
@@ -121,7 +128,18 @@ test("carregamento de privacidade não é tratado como conteúdo privado definit
 
 test("página reutiliza a presença de abas já derivada pelo helper", () => {
   assert.match(pagina, /temAbasPerfilVisiveis,/);
-  assert.match(pagina, /\{temAbasPerfilVisiveis && \(/);
+  assert.match(
+    pagina,
+    /<ProfileNavigationPanel[\s\S]*?conteudoPrivadoBloqueado=\{conteudoPrivadoBloqueado\}[\s\S]*?temAbasPerfilVisiveis=\{temAbasPerfilVisiveis\}/,
+  );
+  assert.match(
+    navigationPanelSource,
+    /\{temAbasPerfilVisiveis && \([\s\S]*?<ProfileSectionTabs[\s\S]*?abaAtiva=\{abaAtiva\}[\s\S]*?totalAbasVisiveis=\{totalAbasVisiveis\}[\s\S]*?onSelect=\{onSelect\}/,
+  );
+  assert.match(
+    navigationPanelSource,
+    /\{conteudoPrivadoBloqueado && \([\s\S]*?<PrivateProfileNotice[\s\S]*?perfilBloqueadoEntreUsuarios=\{perfilBloqueadoEntreUsuarios\}/,
+  );
   assert.doesNotMatch(
     pagina,
     /totalAbasPerfilVisiveis > 0/,

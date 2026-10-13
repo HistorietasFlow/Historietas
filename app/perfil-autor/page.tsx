@@ -169,11 +169,10 @@ import {
 import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
-import { PrivateProfileNotice } from "./components/private-profile-notice";
 import { DiarySummaryCard } from "./components/diary-summary-card";
 import { LibraryItemCard } from "./components/library-item-card";
-import { ProfileSectionTabs } from "./components/profile-section-tabs";
-import { ProfileRatingAction } from "./components/profile-rating-actions";
+import { ProfileRatingsPanel } from "./components/profile-ratings-panel";
+import { ProfileNavigationPanel } from "./components/profile-navigation-panel";
 import { ProfileHero } from "./components/profile-hero";
 import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
@@ -1441,49 +1440,30 @@ function PerfilAutorPageContent() {
           />
         )}
 
-        {avaliacaoAutorAcaoVisivel && (
-          <ProfileRatingAction
-            ariaLabel="Avaliação do autor"
-            entidadeAvaliacao="autor"
-            isDesktop={isDesktop}
-            keyPrefix="avaliacao-autor"
-            minhaNota={avaliacaoAutor.minhaNota}
-            titulo="AVALIE ESTE AUTOR"
-            onRate={avaliarAutor}
-          />
-        )}
+        <ProfileRatingsPanel
+          avaliacaoAutorAcaoVisivel={avaliacaoAutorAcaoVisivel}
+          avaliacaoAutorMinhaNota={avaliacaoAutor.minhaNota}
+          avaliacaoDiarioAcaoVisivel={avaliacaoDiarioAcaoVisivel}
+          avaliacaoDiarioMinhaNota={avaliacaoDiario.minhaNota}
+          avaliacaoDiarioSalvando={avaliacaoDiario.salvando}
+          isDesktop={isDesktop}
+          onAvaliarAutor={avaliarAutor}
+          onAvaliarDiarioPerfil={avaliarDiarioPerfil}
+        />
 
-        {avaliacaoDiarioAcaoVisivel && (
-          <ProfileRatingAction
-            ariaLabel="Avaliação do Diário"
-            entidadeAvaliacao="Diário"
-            isDesktop={isDesktop}
-            keyPrefix="avaliacao-diario-perfil"
-            minhaNota={avaliacaoDiario.minhaNota}
-            salvando={avaliacaoDiario.salvando}
-            titulo="AVALIE ESTE DIÁRIO"
-            onRate={avaliarDiarioPerfil}
-          />
-        )}
-
-        {temAbasPerfilVisiveis && (
-          <ProfileSectionTabs
-            abaAtiva={abaPerfil}
-            bibliotecaVisivel={bibliotecaPerfilVisivel}
-            comunidadeVisivel={comunidadePerfilVisivel}
-            diarioVisivel={diarioPerfilVisivel}
-            obrasVisivel={obrasPerfilVisivel}
-            sobreVisivel={sobrePerfilVisivel}
-            totalAbasVisiveis={totalAbasPerfilVisiveis}
-            onSelect={selecionarAbaPerfil}
-          />
-        )}
-
-        {conteudoPrivadoBloqueado && (
-          <PrivateProfileNotice
-            perfilBloqueadoEntreUsuarios={perfilBloqueadoEntreUsuarios}
-          />
-        )}
+        <ProfileNavigationPanel
+          abaAtiva={abaPerfil}
+          bibliotecaVisivel={bibliotecaPerfilVisivel}
+          comunidadeVisivel={comunidadePerfilVisivel}
+          conteudoPrivadoBloqueado={conteudoPrivadoBloqueado}
+          diarioVisivel={diarioPerfilVisivel}
+          obrasVisivel={obrasPerfilVisivel}
+          perfilBloqueadoEntreUsuarios={perfilBloqueadoEntreUsuarios}
+          sobreVisivel={sobrePerfilVisivel}
+          temAbasPerfilVisiveis={temAbasPerfilVisiveis}
+          totalAbasVisiveis={totalAbasPerfilVisiveis}
+          onSelect={selecionarAbaPerfil}
+        />
 
         {bibliotecaPerfilAtiva && (
           <ProfileLibraryPanel
