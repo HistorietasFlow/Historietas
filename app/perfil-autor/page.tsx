@@ -546,6 +546,7 @@ function PerfilAutorPageContent() {
   const perfilAutorId = perfilParaMostrar?.autorId || "";
   const perfilNome = perfilParaMostrar?.nome || "";
   const obrasPerfil = perfilParaMostrar?.obras || [];
+  const totalObrasPerfil = obrasPerfil.length;
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,
@@ -832,7 +833,7 @@ function PerfilAutorPageContent() {
     perfilPertenceAoUsuario,
   });
   const mensagemObrasVazias = obterMensagemObrasVaziasPerfilAutor({
-    totalObras: obrasPerfil.length,
+    totalObras: totalObrasPerfil,
     podeEditarPerfil,
   });
   const tituloDiarioPerfil = obterTituloDiarioPerfilAutor({
@@ -2079,7 +2080,7 @@ function PerfilAutorPageContent() {
                 <ProfileAboutRows>
                   <ProfileAboutRow>
                     obras no perfil
-                    <strong>{perfilParaMostrar.obras.length}</strong>
+                    <strong>{totalObrasPerfil}</strong>
                   </ProfileAboutRow>
                   <ProfileAboutRow>
                     rascunhos em desenvolvimento

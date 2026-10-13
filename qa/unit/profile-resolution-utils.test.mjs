@@ -148,7 +148,11 @@ test("página deriva as obras do perfil uma vez e reutiliza nos cálculos", () =
   );
   assert.match(
     pagina,
-    /obterMensagemObrasVaziasPerfilAutor\(\{[\s\S]*?totalObras: obrasPerfil\.length,/,
+    /const totalObrasPerfil = obrasPerfil\.length;/,
+  );
+  assert.match(
+    pagina,
+    /obterMensagemObrasVaziasPerfilAutor\(\{[\s\S]*?totalObras: totalObrasPerfil,/,
   );
   assert.match(
     pagina,
