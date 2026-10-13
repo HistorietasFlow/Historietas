@@ -174,6 +174,7 @@ export function obterDadosPublicacaoRecenteComunidadePerfilAutor(
     resumo: criarResumoPublicacaoComunidadePerfil(publicacao),
     totalOpcoesEnquete,
     exibirInfoEnquete: totalOpcoesEnquete >= 2,
+    exibirObraRelacionada: Boolean(publicacao.obraRelacionada),
   };
 }
 
