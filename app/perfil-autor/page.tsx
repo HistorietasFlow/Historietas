@@ -197,20 +197,13 @@ import { ProfileWorkGridItem } from "./components/profile-work-grid-item";
 import { ProfileWorkActionSheet } from "./components/profile-work-action-sheet";
 import { ProfileLibraryActionSheet } from "./components/profile-library-action-sheet";
 import { ProfileEditor } from "./components/profile-editor";
+import { ProfileHeader } from "./components/profile-header";
 import {
   obterEstilosResponsivosPerfilAutor,
   criarCapaDestaquePerfilAutor,
   criarCapaGridPerfilAutor,
   perfilAutorThemeCss,
   pageStyle,
-  logoMarkButtonStyle,
-  logoTextButtonStyle,
-  logoMarkStyle,
-  logoTextStyle,
-  profileHeaderLogoStyle,
-  profileMenuButtonStyle,
-  profileMenuIconStyle,
-  profileMenuIconLineStyle,
   menuItemStyle,
   menuDangerItemStyle,
   hiddenInputStyle,
@@ -1127,6 +1120,12 @@ function PerfilAutorPageContent() {
   const profileActionsExibicaoStyle = podeEditarPerfil
     ? profileActionsAtualStyle
     : profileVisitorActionsAtualStyle;
+  const ariaLabelAlternarUsernameCabecalho =
+    obterRotuloVisibilidadeUsernamePerfilAutor(usernameCabecalhoVisivel);
+  const ariaLabelCopiarUsernameCabecalho =
+    obterAriaLabelCopiarUsernamePerfilAutor(autorHandlePerfil);
+  const usernameExibidoCabecalho =
+    obterUsernameExibidoPerfilAutor(autorHandlePerfil);
   const {
     geral: comunidadeAutorHref,
     teorias: comunidadeAutorTeoriasHref,
@@ -1297,57 +1296,19 @@ function PerfilAutorPageContent() {
 
       <div style={topWaterFadeAtualStyle} aria-hidden="true" />
       <section style={containerAtualStyle}>
-        <header style={profileHeaderAtualStyle}>
-          <div style={profileHeaderLogoStyle}>
-            <button
-              type="button"
-              onClick={() =>
-                setUsernameCabecalhoVisivel((visivel) => !visivel)
-              }
-              style={logoMarkButtonStyle}
-              aria-label={obterRotuloVisibilidadeUsernamePerfilAutor(
-                usernameCabecalhoVisivel,
-              )}
-              aria-expanded={usernameCabecalhoVisivel}
-            >
-              <span style={logoMarkStyle} aria-hidden="true">
-                @
-              </span>
-            </button>
-
-            {usernameCabecalhoVisivel ? (
-              <button
-                type="button"
-                onClick={copiarUsernameCabecalho}
-                style={logoTextButtonStyle}
-                aria-label={obterAriaLabelCopiarUsernamePerfilAutor(autorHandlePerfil)}
-                title="Copiar username"
-              >
-                <span
-                  data-historietas-user-content="true"
-                  data-historietas-i18n-ignore="true"
-                  style={logoTextStyle}
-                >
-                  {obterUsernameExibidoPerfilAutor(autorHandlePerfil)}
-                </span>
-              </button>
-            ) : null}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setMenuPerfilAberto(true)}
-            style={profileMenuButtonStyle}
-            aria-label="Abrir menu do perfil"
-            aria-expanded={menuPerfilAberto}
-          >
-            <span style={profileMenuIconStyle} aria-hidden="true">
-              <span style={profileMenuIconLineStyle} />
-              <span style={profileMenuIconLineStyle} />
-              <span style={profileMenuIconLineStyle} />
-            </span>
-          </button>
-        </header>
+        <ProfileHeader
+          ariaLabelCopyUsername={ariaLabelCopiarUsernameCabecalho}
+          ariaLabelToggleUsername={ariaLabelAlternarUsernameCabecalho}
+          headerStyle={profileHeaderAtualStyle}
+          menuOpen={menuPerfilAberto}
+          onCopyUsername={copiarUsernameCabecalho}
+          onOpenMenu={() => setMenuPerfilAberto(true)}
+          onToggleUsername={() =>
+            setUsernameCabecalhoVisivel((visivel) => !visivel)
+          }
+          username={usernameExibidoCabecalho}
+          usernameVisible={usernameCabecalhoVisivel}
+        />
 
         {menuPerfilAberto && (
           <ProfileMenu

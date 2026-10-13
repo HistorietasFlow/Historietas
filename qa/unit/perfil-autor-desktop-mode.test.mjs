@@ -130,7 +130,11 @@ test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
     stylesSource,
     /export function obterEstilosResponsivosPerfilAutor\(isDesktop: boolean\)/,
   );
-  assert.match(pagina, /<header style=\{profileHeaderAtualStyle\}>/);
+  assert.match(
+    pagina,
+    /import \{ ProfileHeader \} from "\.\/components\/profile-header";/,
+  );
+  assert.match(pagina, /<ProfileHeader[\s\S]*?headerStyle=\{profileHeaderAtualStyle\}/);
   assert.match(
     pagina,
     /<div style=\{topWaterFadeAtualStyle\} aria-hidden="true" \/>/,

@@ -67,6 +67,20 @@ const profileEditorSource = readFileSync(
   ),
   "utf8",
 );
+const profileHeaderUsernameSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-header-username.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const profileHeaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-header.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileMenuSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-menu.tsx",
@@ -663,8 +677,10 @@ test("página delega a exibição do username ao helper", () => {
   );
   assert.match(
     pagina,
-    /\{obterUsernameExibidoPerfilAutor\(autorHandlePerfil\)\}/,
+    /const usernameExibidoCabecalho =\s*obterUsernameExibidoPerfilAutor\(autorHandlePerfil\);/,
   );
+  assert.match(pagina, /username=\{usernameExibidoCabecalho\}/);
+  assert.match(profileHeaderUsernameSource, /\{username\}/);
   assert.doesNotMatch(
     pagina,
     /autorHandlePerfil\.replace\(\/\^@\/, ""\)/,
@@ -774,8 +790,10 @@ test("página delega o aria-label de copiar username ao helper", () => {
   );
   assert.match(
     pagina,
-    /aria-label=\{obterAriaLabelCopiarUsernamePerfilAutor\(autorHandlePerfil\)\}/,
+    /const ariaLabelCopiarUsernameCabecalho =\s*obterAriaLabelCopiarUsernamePerfilAutor\(autorHandlePerfil\);/,
   );
+  assert.match(pagina, /ariaLabelCopyUsername=\{ariaLabelCopiarUsernameCabecalho\}/);
+  assert.match(profileHeaderUsernameSource, /aria-label=\{ariaLabelCopy\}/);
   assert.doesNotMatch(
     pagina,
     /aria-label=\{`Copiar \$\{autorHandlePerfil\}`\}/,
@@ -962,9 +980,53 @@ test("página delega o rótulo de visibilidade do username ao helper", () => {
     (pagina.match(/obterRotuloVisibilidadeUsernamePerfilAutor\(/g) || []).length,
     1,
   );
+  assert.match(
+    pagina,
+    /const ariaLabelAlternarUsernameCabecalho =\s*obterRotuloVisibilidadeUsernamePerfilAutor\(usernameCabecalhoVisivel\);/,
+  );
+  assert.match(pagina, /ariaLabelToggleUsername=\{ariaLabelAlternarUsernameCabecalho\}/);
+  assert.match(profileHeaderUsernameSource, /aria-label=\{ariaLabelToggle\}/);
   assert.doesNotMatch(
     pagina,
     /usernameCabecalhoVisivel[\s\S]{0,80}\? "Esconder username"[\s\S]{0,80}: "Mostrar username"/,
+  );
+});
+
+
+test("página delega a composição do cabeçalho do perfil", () => {
+  assert.match(
+    pagina,
+    /import \{ ProfileHeader \} from "\.\/components\/profile-header";/,
+  );
+  assert.equal((pagina.match(/<ProfileHeader/g) || []).length, 1);
+  assert.match(pagina, /headerStyle=\{profileHeaderAtualStyle\}/);
+  assert.match(pagina, /menuOpen=\{menuPerfilAberto\}/);
+  assert.match(pagina, /onCopyUsername=\{copiarUsernameCabecalho\}/);
+  assert.match(pagina, /onOpenMenu=\{\(\) => setMenuPerfilAberto\(true\)\}/);
+  assert.match(
+    pagina,
+    /onToggleUsername=\{\(\) =>\s*setUsernameCabecalhoVisivel\(\(visivel\) => !visivel\)\s*\}/,
+  );
+  assert.match(
+    profileHeaderSource,
+    /import \{ ProfileHeaderUsername \} from "\.\/profile-header-username";/,
+  );
+  assert.match(profileHeaderSource, /aria-label="Abrir menu do perfil"/);
+  assert.match(profileHeaderSource, /aria-expanded=\{menuOpen\}/);
+  assert.match(profileHeaderSource, /<span style=\{profileMenuIconLineStyle\} \/>/);
+  assert.equal(
+    (profileHeaderSource.match(/profileMenuIconLineStyle/g) || []).length,
+    4,
+  );
+  assert.match(profileHeaderUsernameSource, /aria-expanded=\{visible\}/);
+  assert.match(profileHeaderUsernameSource, /title="Copiar username"/);
+  assert.match(
+    profileHeaderUsernameSource,
+    /data-historietas-user-content="true"/,
+  );
+  assert.match(
+    profileHeaderUsernameSource,
+    /data-historietas-i18n-ignore="true"/,
   );
 });
 

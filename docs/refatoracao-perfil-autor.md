@@ -1285,3 +1285,9 @@
 - Extraiu o cabeçalho apresentacional do editor, preservando título, subtítulo, botão de fechar, `disabled` e acessibilidade.
 - Extraiu overlay, diálogo e a composição dos blocos de avatar, campos e ações finais para `ProfileEditor`.
 - Manteve na página os estados, derivações, limites, normalizações, callbacks e salvamento; sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1094 — Composição do cabeçalho superior do perfil
+
+- Extraiu o bloco apresentacional de username, preservando alternância, cópia, atributos `data-historietas-*`, rótulos e acessibilidade.
+- Extraiu a composição do cabeçalho com o acionador do menu e seu ícone de três linhas.
+- Manteve na página estados, derivações de rótulos/username, callbacks e estilos responsivos; sem alterações de UI, schema, RLS ou Supabase.
