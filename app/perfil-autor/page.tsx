@@ -210,13 +210,8 @@ import { ProfileCommunityPostWork } from "./components/profile-community-post-wo
 import { ProfileCommunityPostReportButton } from "./components/profile-community-post-report-button";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileAboutHero } from "./components/profile-about-hero";
-import { ProfileAboutTitle } from "./components/profile-about-title";
-import { ProfileAboutTextRow } from "./components/profile-about-text-row";
-import { ProfileAboutText } from "./components/profile-about-text";
-import { ProfileAboutEditButton } from "./components/profile-about-edit-button";
-import { ProfileAboutEditor } from "./components/profile-about-editor";
-import { ProfileAboutTextarea } from "./components/profile-about-textarea";
-import { ProfileAboutCounter } from "./components/profile-about-counter";
+import { ProfileAboutBioDisplay } from "./components/profile-about-bio-display";
+import { ProfileAboutBioEditor } from "./components/profile-about-bio-editor";
 import { ProfileAboutContent } from "./components/profile-about-content";
 import { ProfileAboutFooter } from "./components/profile-about-footer";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
@@ -2020,37 +2015,26 @@ function PerfilAutorPageContent() {
         {sobrePerfilAtivo && (
           <ProfileAboutSection>
             <ProfileAboutHero>
-              <ProfileAboutTitle>
-                {obterTituloSobrePerfilAutor(perfilNome)}
-              </ProfileAboutTitle>
-
-              <ProfileAboutTextRow>
-                <ProfileAboutText
-                  userContent={bioSobreAutorUserContent}
-                >
-                  {bioSobreAutorExibido}
-                </ProfileAboutText>
-
-                {podeEditarPerfil && (
-                  <ProfileAboutEditButton
-                    onClick={() => setEditorSobreAberto((aberto) => !aberto)}
-                  />
-                )}
-              </ProfileAboutTextRow>
+              <ProfileAboutBioDisplay
+                title={obterTituloSobrePerfilAutor(perfilNome)}
+                text={bioSobreAutorExibido}
+                userContent={bioSobreAutorUserContent}
+                canEdit={podeEditarPerfil}
+                onToggleEditor={() =>
+                  setEditorSobreAberto((aberto) => !aberto)
+                }
+              />
 
               {editorSobreVisivel && (
-                <ProfileAboutEditor>
-                  <ProfileAboutTextarea
-                    value={perfilSalvoAutor.sobreBio}
-                    onChange={(event) => atualizarBioSobreAutor(event.target.value)}
-                    placeholder={bioAutor}
-                    maxLength={SOBRE_BIO_MAX_LENGTH}
-                  />
-
-                  <ProfileAboutCounter>
-                    {caracteresRestantesBioSobre} caracteres
-                  </ProfileAboutCounter>
-                </ProfileAboutEditor>
+                <ProfileAboutBioEditor
+                  value={perfilSalvoAutor.sobreBio}
+                  onChange={(event) =>
+                    atualizarBioSobreAutor(event.target.value)
+                  }
+                  placeholder={bioAutor}
+                  maxLength={SOBRE_BIO_MAX_LENGTH}
+                  remainingCharacters={caracteresRestantesBioSobre}
+                />
               )}
             </ProfileAboutHero>
 
