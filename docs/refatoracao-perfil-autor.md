@@ -1135,3 +1135,10 @@
 - Reutilizou o mesmo booleano na decisão de exibir a seção de destaques e no restante da página.
 - Removeu a derivação separada `totalObrasEmDestaque > 0` de `page.tsx` e atualizou a cobertura unitária/estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1070 — estado de carregamento do Diário
+
+- Derivou `diarioPerfilCarregando` uma única vez a partir de `diarioPerfil.carregando`.
+- Reutilizou o estado na Biblioteca, no painel do Diário e na atividade recente da seção Sobre.
+- Removeu três leituras diretas repetidas do estado de carregamento em `page.tsx` e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.

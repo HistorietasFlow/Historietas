@@ -108,6 +108,27 @@ test("Perfil de Autor delega o estado vazio do Diário ao helper", () => {
 });
 
 
+test("Perfil de Autor deriva o carregamento do Diário uma única vez", () => {
+  assert.match(
+    pagina,
+    /const diarioPerfilCarregando = diarioPerfil\.carregando;/,
+  );
+  assert.equal(
+    (pagina.match(/diarioPerfil\.carregando/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /\{diarioPerfilCarregando \? \(/);
+  assert.match(
+    pagina,
+    /getIsLoading=\{\(\) => diarioPerfilCarregando\}/,
+  );
+  assert.match(
+    pagina,
+    /loading=\{diarioPerfilCarregando\}/,
+  );
+});
+
+
 test("criarItemDiarioPerfil preserva chave, referências e fallbacks de URL", () => {
   const obra = criarObra();
   const item = criarItemDiarioPerfil(
