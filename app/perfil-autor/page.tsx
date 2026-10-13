@@ -114,6 +114,7 @@ import {
   obterEstadoSeguimentoPerfilAutor,
 } from "./lib/profile-follow-display-utils";
 import {
+  alternarIdentificadorMenuPerfilAutor,
   obterAriaLabelCopiarUsernamePerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
@@ -1812,7 +1813,10 @@ function PerfilAutorPageContent() {
                       visualizacoes={visualizacoesBiblioteca}
                       onToggleMenu={() =>
                         setBibliotecaMenuAbertoChave((chaveAtual) =>
-                          chaveAtual === item.chave ? "" : item.chave,
+                          alternarIdentificadorMenuPerfilAutor(
+                            chaveAtual,
+                            item.chave,
+                          ),
                         )
                       }
                     />
@@ -2166,7 +2170,10 @@ function PerfilAutorPageContent() {
                         <ProfileWorkOptionsButton
                           onClick={() =>
                             setObraMenuAbertoId((idAtual) =>
-                              idAtual === obra.id ? "" : obra.id,
+                              alternarIdentificadorMenuPerfilAutor(
+                                idAtual,
+                                obra.id,
+                              ),
                             )
                           }
                           ariaLabel={ariaLabelOpcoes}

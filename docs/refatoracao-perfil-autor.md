@@ -1002,3 +1002,10 @@
 - Preservou as guardas atuais de perfil disponível, alvo selecionado e bloqueio para edição do próprio perfil.
 - Removeu as combinações inline de `Boolean(...)` e condições dos dois `DenunciaModal` em `page.tsx`.
 - Sem alterações de UI, schema, RLS ou Supabase; cobertura unitária ampliada em `test:session`.
+
+## Fase 1051 — alternância dos menus de obra e Biblioteca
+
+- Extraiu a regra de alternância do identificador aberto para `alternarIdentificadorMenuPerfilAutor`.
+- Reutilizou o helper nos menus dos cards de obra e da Biblioteca, preservando fechar o item atual ou abrir o novo alvo.
+- Removeu os dois ternários inline dos setters em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

@@ -172,6 +172,14 @@ export function obterCaracteresRestantesPerfilAutor(
 }
 
 
+export function alternarIdentificadorMenuPerfilAutor(
+  identificadorAtual: string,
+  identificadorAlvo: string,
+) {
+  return identificadorAtual === identificadorAlvo ? "" : identificadorAlvo;
+}
+
+
 export function obterIndicadorSelecaoPerfilAutor(selecionado: boolean) {
   return selecionado ? "✓" : "";
 }
