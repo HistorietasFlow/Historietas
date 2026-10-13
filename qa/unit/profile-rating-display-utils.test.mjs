@@ -17,6 +17,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const ratingActionSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-rating-actions.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const {
   obterEstadoAvaliacaoPerfilAutor,
@@ -197,5 +204,30 @@ test("página delega a visibilidade das ações de avaliação ao helper", () =>
   assert.doesNotMatch(
     pagina,
     /autenticacaoCarregada &&[\s\S]{0,140}?autorPodeReceberAvaliacao &&/,
+  );
+});
+
+test("página mantém as condições e delega a composição das avaliações", () => {
+  assert.match(
+    pagina,
+    /import \{ ProfileRatingAction \} from "\.\/components\/profile-rating-actions";/,
+  );
+  assert.equal((pagina.match(/<ProfileRatingAction/g) || []).length, 2);
+  assert.match(
+    pagina,
+    /\{avaliacaoAutorAcaoVisivel && \([\s\S]*?<ProfileRatingAction[\s\S]*?ariaLabel="Avaliação do autor"[\s\S]*?entidadeAvaliacao="autor"[\s\S]*?keyPrefix="avaliacao-autor"[\s\S]*?minhaNota=\{avaliacaoAutor\.minhaNota\}[\s\S]*?onRate=\{avaliarAutor\}/,
+  );
+  assert.match(
+    pagina,
+    /\{avaliacaoDiarioAcaoVisivel && \([\s\S]*?<ProfileRatingAction[\s\S]*?ariaLabel="Avaliação do Diário"[\s\S]*?entidadeAvaliacao="Diário"[\s\S]*?keyPrefix="avaliacao-diario-perfil"[\s\S]*?minhaNota=\{avaliacaoDiario\.minhaNota\}[\s\S]*?salvando=\{avaliacaoDiario\.salvando\}[\s\S]*?onRate=\{avaliarDiarioPerfil\}/,
+  );
+  assert.doesNotMatch(pagina, /<ProfileRatingBox/);
+  assert.match(
+    ratingActionSource,
+    /import \{ ProfileRatingBox \} from "\.\/profile-rating-box";/,
+  );
+  assert.match(
+    ratingActionSource,
+    /<ProfileRatingBox[\s\S]*?ariaLabel=\{ariaLabel\}[\s\S]*?entidadeAvaliacao=\{entidadeAvaliacao\}[\s\S]*?keyPrefix=\{keyPrefix\}[\s\S]*?minhaNota=\{minhaNota\}[\s\S]*?salvando=\{salvando\}[\s\S]*?onRate=\{onRate\}/,
   );
 });

@@ -178,7 +178,7 @@ import { DiarySummaryCard } from "./components/diary-summary-card";
 import { LibraryItemCard } from "./components/library-item-card";
 import { ProfileSectionTabs } from "./components/profile-section-tabs";
 import { LibraryTabs } from "./components/library-tabs";
-import { ProfileRatingBox } from "./components/profile-rating-box";
+import { ProfileRatingAction } from "./components/profile-rating-actions";
 import { ProfileBio } from "./components/profile-bio";
 import { ProfileHeroIdentity } from "./components/profile-hero-identity";
 import { ProfileHeroActions } from "./components/profile-hero-actions";
@@ -1814,7 +1814,7 @@ function PerfilAutorPageContent() {
         )}
 
         {avaliacaoAutorAcaoVisivel && (
-          <ProfileRatingBox
+          <ProfileRatingAction
             ariaLabel="Avaliação do autor"
             entidadeAvaliacao="autor"
             isDesktop={isDesktop}
@@ -1826,17 +1826,17 @@ function PerfilAutorPageContent() {
         )}
 
         {avaliacaoDiarioAcaoVisivel && (
-            <ProfileRatingBox
-              ariaLabel="Avaliação do Diário"
-              entidadeAvaliacao="Diário"
-              isDesktop={isDesktop}
-              keyPrefix="avaliacao-diario-perfil"
-              minhaNota={avaliacaoDiario.minhaNota}
-              salvando={avaliacaoDiario.salvando}
-              titulo="AVALIE ESTE DIÁRIO"
-              onRate={avaliarDiarioPerfil}
-            />
-          )}
+          <ProfileRatingAction
+            ariaLabel="Avaliação do Diário"
+            entidadeAvaliacao="Diário"
+            isDesktop={isDesktop}
+            keyPrefix="avaliacao-diario-perfil"
+            minhaNota={avaliacaoDiario.minhaNota}
+            salvando={avaliacaoDiario.salvando}
+            titulo="AVALIE ESTE DIÁRIO"
+            onRate={avaliarDiarioPerfil}
+          />
+        )}
 
         {temAbasPerfilVisiveis && (
           <ProfileSectionTabs
