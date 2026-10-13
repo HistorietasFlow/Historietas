@@ -66,11 +66,25 @@ function perfil(obras, totalPublicadas) {
 test("sem perfil retorna resumo zerado", () => {
   assert.deepEqual(obterResumoEstatisticasPerfilAutor(null), {
     generosPrincipaisPerfil: [],
+    generosEspecialidadesPerfil: ["Histórias variadas"],
     totalVisualizacoesPerfil: 0,
     totalRascunhosPerfil: 0,
     totalObrasSemCapitulosPerfil: 0,
   });
 });
+
+test("especialidades preservam gêneros principais e fallback quando vazio", () => {
+  const comGeneros = obterResumoEstatisticasPerfilAutor(
+    perfil([obra("1", "Fantasia", 0)], 1),
+  );
+  assert.deepEqual(comGeneros.generosEspecialidadesPerfil, ["Fantasia"]);
+
+  const semGeneros = obterResumoEstatisticasPerfilAutor(
+    perfil([obra("1", "", 0)], 1),
+  );
+  assert.deepEqual(semGeneros.generosEspecialidadesPerfil, ["Histórias variadas"]);
+});
+
 
 test("ordena gêneros por frequência e desempata alfabeticamente", () => {
   const resultado = obterResumoEstatisticasPerfilAutor(
@@ -138,6 +152,19 @@ test("rascunhos nunca ficam negativos", () => {
   );
 
   assert.equal(resultado.totalRascunhosPerfil, 0);
+});
+
+
+test("página reutiliza especialidades já derivadas no resumo", () => {
+  assert.match(pagina, /generosEspecialidadesPerfil,/);
+  assert.match(
+    pagina,
+    /\{generosEspecialidadesPerfil\.map\(\(genero\) => \(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /generosPrincipaisPerfil\.length > 0[\s\S]*?Histórias variadas/,
+  );
 });
 
 

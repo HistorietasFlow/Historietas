@@ -10,6 +10,7 @@ export function obterResumoEstatisticasPerfilAutor(
   if (!perfilParaMostrar) {
     return {
       generosPrincipaisPerfil: [] as string[],
+      generosEspecialidadesPerfil: ["Histórias variadas"],
       totalVisualizacoesPerfil: 0,
       totalRascunhosPerfil: 0,
       totalObrasSemCapitulosPerfil: 0,
@@ -41,6 +42,10 @@ export function obterResumoEstatisticasPerfilAutor(
 
   return {
     generosPrincipaisPerfil,
+    generosEspecialidadesPerfil:
+      generosPrincipaisPerfil.length > 0
+        ? generosPrincipaisPerfil
+        : ["Histórias variadas"],
     totalVisualizacoesPerfil: perfilParaMostrar.obras.reduce(
       (total, obra) =>
         total + normalizarNumeroPerfilAutor(obra.visualizacoes),

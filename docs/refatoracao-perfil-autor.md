@@ -960,3 +960,10 @@
 - Preservou exatamente os estados de seguindo, solicitação pendente e salvamento.
 - Removeu as derivações inline do estilo em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1045 — fallback das especialidades
+
+- Centralizou o fallback de gêneros do painel Sobre em `generosEspecialidadesPerfil`.
+- Preservou os gêneros principais quando existentes e `Histórias variadas` quando a lista está vazia.
+- Removeu o ternário inline do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
