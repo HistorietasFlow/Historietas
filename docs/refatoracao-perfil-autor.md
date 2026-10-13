@@ -1261,3 +1261,9 @@
 - Extraiu o estado apresentacional vazio ou com grade de Obras, preservando a condição derivada na página.
 - Extraiu a composição visual de cada card da grade, incluindo capa, título, métricas e menu de opções.
 - Manteve na página os dados derivados, a construção da capa, a função nomeada de renderização e o callback do menu; sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1090 — Action sheets de Obras e Biblioteca
+
+- Extraiu a composição apresentacional completa do menu de ações de uma obra e do menu de um item da Biblioteca.
+- Manteve na página dados derivados, rótulos, traduções, estados, mutações de coleções, denúncia, compartilhamento e fechamento dos menus.
+- Preservou textos, links, condições, indicadores de seleção, estilos, propagação de clique, ordem das ações, UI, acessibilidade, schema, RLS e Supabase.

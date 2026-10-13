@@ -46,6 +46,20 @@ const workGridItemSource = readFileSync(
   ),
   "utf8",
 );
+const workActionSheetSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-work-action-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const libraryActionSheetSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-library-action-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileWorkDisplayDependencies = {
   ehClassificacao18(valor) {
@@ -1087,8 +1101,16 @@ test("href de leitura da Biblioteca fica encapsulado no card e no sheet", () => 
 test("rótulos de acessibilidade das ações de obra ficam nos dados derivados", () => {
   assert.match(pagina, /ariaLabelOpcoes=\{ariaLabelOpcoes\}/);
   assert.match(workGridItemSource, /ariaLabel=\{ariaLabelOpcoes\}/);
-  assert.match(pagina, /ariaLabel=\{ariaLabelSheetObra\}/);
-  assert.match(pagina, /ariaLabel=\{ariaLabelSheetBiblioteca\}/);
+  assert.match(
+    pagina,
+    /ariaLabel=\{dadosSheetObraPerfil\.ariaLabelSheetObra\}/,
+  );
+  assert.match(
+    pagina,
+    /ariaLabel=\{dadosSheetBibliotecaPerfil\.ariaLabelSheetBiblioteca\}/,
+  );
+  assert.match(workActionSheetSource, /ariaLabel=\{ariaLabel\}/);
+  assert.match(libraryActionSheetSource, /ariaLabel=\{ariaLabel\}/);
   assert.doesNotMatch(
     pagina,
     /ariaLabel=\{`Abrir opções de \$\{obra\.titulo\}`\}/,
@@ -1273,11 +1295,11 @@ test("dados do sheet da obra consolidam leitura, coleções, meta e métricas", 
 test("página reutiliza a visibilidade do alvo de leitura derivada pelo helper", () => {
   assert.match(
     pagina,
-    /temUltimoCapitulo,/,
+    /exibirLeitura=\{dadosSheetObraPerfil\.temUltimoCapitulo\}/,
   );
   assert.match(
-    pagina,
-    /\{temUltimoCapitulo && \(/,
+    workActionSheetSource,
+    /\{exibirLeitura && \(/,
   );
   assert.doesNotMatch(
     pagina,
@@ -1303,6 +1325,67 @@ test("página delega a composição do sheet da obra ao helper único", () => {
   ]) {
     assert.doesNotMatch(pagina, new RegExp(helper));
   }
+});
+
+test("action sheets preservam composição, ordem e callbacks na fronteira da página", () => {
+  assert.match(
+    pagina,
+    /import \{ ProfileWorkActionSheet \} from "\.\/components\/profile-work-action-sheet";/,
+  );
+  assert.match(
+    pagina,
+    /import \{ ProfileLibraryActionSheet \} from "\.\/components\/profile-library-action-sheet";/,
+  );
+  assert.doesNotMatch(pagina, /\{obraMenuAberta &&\s*\(\(\) =>/);
+  assert.doesNotMatch(pagina, /\{bibliotecaMenuAberto &&\s*\(\(\) =>/);
+  assert.match(pagina, /obterDadosSheetObraPerfilAutor\(\{/);
+  assert.match(pagina, /obterDadosSheetBibliotecaPerfilAutor\(\{/);
+  assert.match(pagina, /obterRotulosAcoesColecoesObraPerfilAutor\(\{/);
+  assert.match(pagina, /obterRotulosAcoesColecoesBibliotecaPerfil\(\{/);
+  assert.match(pagina, /onReport=\{\(\) =>\s*abrirDenunciaConteudoPerfil\(/);
+  assert.match(pagina, /onShare=\{\(\) => void compartilharObraPerfilAutor\(obraMenuAberta\)\}/);
+  assert.match(pagina, /void removerItemBibliotecaPerfil\(bibliotecaMenuAberto\)/);
+
+  for (const source of [workActionSheetSource, libraryActionSheetSource]) {
+    assert.match(source, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
+    assert.match(source, /<ProfileWorkActionSheetHandle \/>/);
+    assert.match(source, /workActionSheetItemActiveStyle/);
+    assert.match(source, /workActionSheetItemStyle/);
+    assert.match(source, /criarProfileSelectionDotStyle/);
+  }
+
+  assert.match(workActionSheetSource, /workActionSheetDangerItemStyle/);
+  assert.match(workActionSheetSource, /\{exibirAcoesVisitante && \(/);
+  assert.match(workActionSheetSource, />\s*Ler\s*</);
+  assert.match(workActionSheetSource, />\s*Denunciar obra\s*</);
+  assert.match(workActionSheetSource, />\s*Compartilhar\s*</);
+  assert.match(libraryActionSheetSource, />\s*Ler capítulo\s*</);
+  assert.match(libraryActionSheetSource, /\{rotuloQueroLer\}/);
+  assert.match(libraryActionSheetSource, /\{rotuloRemover\}/);
+  assert.match(libraryActionSheetSource, />\s*Compartilhar\s*</);
+
+  assert.ok(
+    workActionSheetSource.indexOf("Ler") <
+      workActionSheetSource.indexOf("{rotuloFavorita}") &&
+      workActionSheetSource.indexOf("{rotuloFavorita}") <
+        workActionSheetSource.indexOf("{rotuloConcluida}") &&
+      workActionSheetSource.indexOf("{rotuloConcluida}") <
+        workActionSheetSource.indexOf("Denunciar obra") &&
+      workActionSheetSource.indexOf("Denunciar obra") <
+        workActionSheetSource.lastIndexOf("Compartilhar"),
+  );
+  assert.ok(
+    libraryActionSheetSource.indexOf("Ler capítulo") <
+      libraryActionSheetSource.indexOf("{rotuloQueroLer}") &&
+      libraryActionSheetSource.indexOf("{rotuloQueroLer}") <
+        libraryActionSheetSource.indexOf("{rotuloFavorita}") &&
+      libraryActionSheetSource.indexOf("{rotuloFavorita}") <
+        libraryActionSheetSource.indexOf("{rotuloConcluida}") &&
+      libraryActionSheetSource.indexOf("{rotuloConcluida}") <
+        libraryActionSheetSource.indexOf("{rotuloRemover}") &&
+      libraryActionSheetSource.indexOf("{rotuloRemover}") <
+        libraryActionSheetSource.lastIndexOf("Compartilhar"),
+  );
 });
 
 

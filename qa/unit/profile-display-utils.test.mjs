@@ -18,6 +18,20 @@ const heroIdentitySource = readFileSync(
   ),
   "utf8",
 );
+const workActionSheetSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-work-action-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const libraryActionSheetSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-library-action-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileDisplayDependencies = {
   SOBRE_BIO_MAX_LENGTH: 160,
@@ -521,14 +535,26 @@ test("indicador de seleção preserva marca ativa e vazio inativo", () => {
 test("página delega os indicadores de seleção ao helper", () => {
   assert.match(
     pagina,
-    /obterIndicadorSelecaoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    /import \{ ProfileWorkActionSheet \} from "\.\/components\/profile-work-action-sheet";/,
   );
-  assert.equal(
-    (pagina.match(/obterIndicadorSelecaoPerfilAutor\(/g) || []).length,
-    5,
+  assert.match(
+    pagina,
+    /import \{ ProfileLibraryActionSheet \} from "\.\/components\/profile-library-action-sheet";/,
+  );
+  assert.doesNotMatch(pagina, /obterIndicadorSelecaoPerfilAutor/);
+  for (const source of [workActionSheetSource, libraryActionSheetSource]) {
+    assert.match(
+      source,
+      /obterIndicadorSelecaoPerfilAutor \} from "\.\.\/lib\/profile-display-utils";/,
+    );
+    assert.match(source, /obterIndicadorSelecaoPerfilAutor\(/);
+  }
+  assert.doesNotMatch(
+    workActionSheetSource,
+    /\{(?:obraFavorita|obraConcluida|obraNoQueroLer) \? "✓" : ""\}/,
   );
   assert.doesNotMatch(
-    pagina,
+    libraryActionSheetSource,
     /\{(?:obraFavorita|obraConcluida|obraNoQueroLer) \? "✓" : ""\}/,
   );
 });
