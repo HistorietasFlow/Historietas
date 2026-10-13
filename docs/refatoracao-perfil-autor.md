@@ -1219,3 +1219,9 @@
 - Extraiu a composição externa da seção da Comunidade, preservando seção, cabeçalho, estados e condições na página.
 - Nomeou a função de renderização de cada publicação recente na página e a passou para a lista, mantendo as derivações, a data e a denúncia no mesmo escopo.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1083 — Estados e lista da Biblioteca
+
+- Extraiu os estados de carregamento, vazio e conteúdo da Biblioteca, preservando a seleção e as condições na página.
+- Transferiu para o componente de estado a grade e o `map`, mantendo na página os dados derivados dos cards e o callback do menu.
+- Sem alterações de UI, schema, RLS ou Supabase.

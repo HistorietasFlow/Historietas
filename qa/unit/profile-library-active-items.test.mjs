@@ -4,6 +4,13 @@ import test from "node:test";
 
 const helper = readFileSync(new URL("../../app/perfil-autor/lib/profile-library-active-items.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/perfil-autor/page.tsx", import.meta.url), "utf8");
+const contentState = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-library-content-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("a página delega seleção de itens da Biblioteca", () => {
   assert.match(pagina, /import \{ selecionarItensBibliotecaPerfil \}/);
@@ -35,4 +42,35 @@ test("todas as seis abas preservam o array original", () => {
 
 test("aba tudo preserva a ordem original da mesclagem", () => {
   assert.match(helper, /default:\s*return mesclarItensBibliotecaPerfil\(\s*queroLer, lendoAgora, favoritas, concluidas, salvos, historico,/);
+});
+
+test("ProfileLibraryContentState preserva loading, vazio e a grade da Biblioteca", () => {
+  assert.match(
+    contentState,
+    /<LoadingSpinner label="Carregando biblioteca" compacto \/>/,
+  );
+  assert.match(
+    contentState,
+    /if \(empty\) \{[\s\S]*?<ProfileSectionEmptyState message=\{emptyMessage\} \/>/,
+  );
+  assert.match(
+    contentState,
+    /<ProfileWorksGrid isDesktop=\{isDesktop\}>[\s\S]*?\{items\.map\(renderItem\)\}/,
+  );
+});
+
+test("página mantém as derivações e o callback da Biblioteca antes de delegar a lista", () => {
+  assert.match(
+    pagina,
+    /import \{ ProfileLibraryContentState \} from "\.\/components\/profile-library-content-state";/,
+  );
+  assert.match(
+    pagina,
+    /const renderizarItemBiblioteca = \([\s\S]*?item: \(typeof itensBibliotecaAtivos\)\[number\],[\s\S]*?obterDadosCardBibliotecaPerfilAutor\([\s\S]*?item,[\s\S]*?totaisInteracoesObras,[\s\S]*?bibliotecaMenuAbertoChave,[\s\S]*?\);/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileLibraryContentState[\s\S]*?loading=\{diarioPerfilCarregando\}[\s\S]*?empty=\{bibliotecaSemItensAtivosPerfilAutor\([\s\S]*?itensBibliotecaAtivos,[\s\S]*?\)\}[\s\S]*?items=\{itensBibliotecaAtivos\}[\s\S]*?renderItem=\{renderizarItemBiblioteca\}/,
+  );
+  assert.doesNotMatch(pagina, /\{itensBibliotecaAtivos\.map\(/);
 });
