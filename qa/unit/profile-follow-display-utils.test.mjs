@@ -18,6 +18,13 @@ const heroActionsSource = readFileSync(
   ),
   "utf8",
 );
+const heroSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileFollowDisplayDependencies = {
   criarChaveAutorPerfil(autorId, nome) {
@@ -112,11 +119,15 @@ test("página delega a apresentação do botão de seguimento ao helper", () => 
   );
   assert.match(
     pagina,
-    /import \{ ProfileHeroActions \} from "\.\/components\/profile-hero-actions";/,
+    /import \{ ProfileHero \} from "\.\/components\/profile-hero";/,
   );
   assert.match(
     pagina,
-    /<ProfileHeroActions[\s\S]*?followBaseStyle=\{estiloBaseBotaoSeguimento\}[\s\S]*?followOpacity=\{opacidadeBotaoSeguimento\}[\s\S]*?followCursor=\{cursorBotaoSeguimento\}/,
+    /<ProfileHero[\s\S]*?followBaseStyle=\{estiloBaseBotaoSeguimento\}[\s\S]*?followOpacity=\{opacidadeBotaoSeguimento\}[\s\S]*?followCursor=\{cursorBotaoSeguimento\}/,
+  );
+  assert.match(
+    heroSource,
+    /<ProfileHeroActions[\s\S]*?followBaseStyle=\{followBaseStyle\}[\s\S]*?followOpacity=\{followOpacity\}[\s\S]*?followCursor=\{followCursor\}/,
   );
   assert.match(heroActionsSource, /\.\.\.followBaseStyle/);
   assert.match(heroActionsSource, /opacity: followOpacity/);
@@ -202,7 +213,11 @@ test("página delega os textos da ação de seguimento ao helper", () => {
   );
   assert.match(
     pagina,
-    /<ProfileHeroActions[\s\S]*?followAriaLabel=\{ariaLabelSeguimento\}[\s\S]*?followTitle=\{titleSeguimento\}[\s\S]*?followLabel=\{rotuloSeguimento\}/,
+    /<ProfileHero[\s\S]*?followAriaLabel=\{ariaLabelSeguimento\}[\s\S]*?followTitle=\{titleSeguimento\}[\s\S]*?followLabel=\{rotuloSeguimento\}/,
+  );
+  assert.match(
+    heroSource,
+    /<ProfileHeroActions[\s\S]*?followAriaLabel=\{followAriaLabel\}[\s\S]*?followTitle=\{followTitle\}[\s\S]*?followLabel=\{followLabel\}/,
   );
   assert.match(heroActionsSource, /aria-label=\{followAriaLabel\}/);
   assert.match(heroActionsSource, /title=\{followTitle\}/);

@@ -176,9 +176,7 @@ import { LibraryItemCard } from "./components/library-item-card";
 import { ProfileSectionTabs } from "./components/profile-section-tabs";
 import { LibraryTabs } from "./components/library-tabs";
 import { ProfileRatingAction } from "./components/profile-rating-actions";
-import { ProfileBio } from "./components/profile-bio";
-import { ProfileHeroIdentity } from "./components/profile-hero-identity";
-import { ProfileHeroActions } from "./components/profile-hero-actions";
+import { ProfileHero } from "./components/profile-hero";
 import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
 import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
@@ -206,7 +204,6 @@ import {
   pageStyle,
   menuItemStyle,
   menuDangerItemStyle,
-  hiddenInputStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
 } from "./styles";
@@ -1394,72 +1391,50 @@ function PerfilAutorPageContent() {
           }}
         />
 
-        <section style={heroAtualStyle}>
-          <div style={authorTopRowAtualStyle}>
-            <ProfileHeroIdentity
-              autorNome={perfilNome}
-              avatar={avatarAutor}
-              isDesktop={isDesktop}
-              podeEditar={podeEditarPerfil}
-              onEdit={abrirEditorPerfil}
-              avaliacaoDiarioPrivada={avaliacaoDiarioPrivada}
-              avaliacaoEhDiario={avaliacaoResumoEhDiario}
-              avaliacaoMedia={avaliacaoResumoPerfil.media}
-              avaliacaoTotal={avaliacaoResumoPerfil.total}
-              avaliacaoVisivel={avaliacaoResumoPerfilVisivel}
-              language={language}
-              obrasSeguidasHref={obrasSeguidasPerfilHref}
-              obrasSeguidasTotal={obrasSeguidasPerfilTotal}
-              seguidoresHref={seguidoresPerfilHref}
-              seguidoresTotal={seguidoresTotal}
-              seguindoHref={seguindoPerfilHref}
-              seguindoTotal={seguindoTotalPerfil}
-            />
-          </div>
-
-          <ProfileBio
-            bioFallback={bioAutor}
-            bioPersonalizada={bioAutorPersonalizada}
-            isDesktop={isDesktop}
-            podeEditar={podeEditarPerfil}
-            onEdit={abrirEditorPerfil}
-          />
-
-          <ProfileHeroActions
-            actionsStyle={profileActionsExibicaoStyle}
-            podeEditar={podeEditarPerfil}
-            mostrarDestaquesAutor={mostrarDestaquesAutor}
-            onEdit={abrirEditorPerfil}
-            onShare={() => void copiarLinkPerfil()}
-            onToggleOwnerHighlights={alternarDestaquesPerfil}
-            existeBloqueio={existeBloqueioPerfil}
-            onFollow={() => void alternarSeguirAutor()}
-            followDisabled={seguirUsuarioSalvando}
-            followAriaLabel={ariaLabelSeguimento}
-            followTitle={titleSeguimento}
-            followBaseStyle={estiloBaseBotaoSeguimento}
-            followOpacity={opacidadeBotaoSeguimento}
-            followCursor={cursorBotaoSeguimento}
-            followLabel={rotuloSeguimento}
-            mostrarDestaquesVisitante={mostrarDestaquesVisitante}
-            obrasVisiveis={obrasPerfilVisivel}
-            onToggleVisitorHighlights={() =>
-              setMostrarDestaquesVisitante((valorAtual) => !valorAtual)
-            }
-            message={mensagemAcao}
-          />
-
-          {podeEditarPerfil && (
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/*"
-              onChange={selecionarAvatarAutor}
-              style={hiddenInputStyle}
-            />
-          )}
-
-        </section>
+        <ProfileHero
+          heroStyle={heroAtualStyle}
+          identityRowStyle={authorTopRowAtualStyle}
+          avatarInputRef={avatarInputRef}
+          onSelectAvatar={selecionarAvatarAutor}
+          autorNome={perfilNome}
+          avatar={avatarAutor}
+          isDesktop={isDesktop}
+          podeEditar={podeEditarPerfil}
+          onEdit={abrirEditorPerfil}
+          avaliacaoDiarioPrivada={avaliacaoDiarioPrivada}
+          avaliacaoEhDiario={avaliacaoResumoEhDiario}
+          avaliacaoMedia={avaliacaoResumoPerfil.media}
+          avaliacaoTotal={avaliacaoResumoPerfil.total}
+          avaliacaoVisivel={avaliacaoResumoPerfilVisivel}
+          language={language}
+          obrasSeguidasHref={obrasSeguidasPerfilHref}
+          obrasSeguidasTotal={obrasSeguidasPerfilTotal}
+          seguidoresHref={seguidoresPerfilHref}
+          seguidoresTotal={seguidoresTotal}
+          seguindoHref={seguindoPerfilHref}
+          seguindoTotal={seguindoTotalPerfil}
+          bioFallback={bioAutor}
+          bioPersonalizada={bioAutorPersonalizada}
+          actionsStyle={profileActionsExibicaoStyle}
+          mostrarDestaquesAutor={mostrarDestaquesAutor}
+          onShare={() => void copiarLinkPerfil()}
+          onToggleOwnerHighlights={alternarDestaquesPerfil}
+          existeBloqueio={existeBloqueioPerfil}
+          onFollow={() => void alternarSeguirAutor()}
+          followDisabled={seguirUsuarioSalvando}
+          followAriaLabel={ariaLabelSeguimento}
+          followTitle={titleSeguimento}
+          followBaseStyle={estiloBaseBotaoSeguimento}
+          followOpacity={opacidadeBotaoSeguimento}
+          followCursor={cursorBotaoSeguimento}
+          followLabel={rotuloSeguimento}
+          mostrarDestaquesVisitante={mostrarDestaquesVisitante}
+          obrasVisiveis={obrasPerfilVisivel}
+          onToggleVisitorHighlights={() =>
+            setMostrarDestaquesVisitante((valorAtual) => !valorAtual)
+          }
+          message={mensagemAcao}
+        />
 
         {exibirSecaoDestaques && (
           <ProfileHighlightsPanel

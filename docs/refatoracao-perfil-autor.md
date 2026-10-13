@@ -1291,3 +1291,9 @@
 - Extraiu o bloco apresentacional de username, preservando alternância, cópia, atributos `data-historietas-*`, rótulos e acessibilidade.
 - Extraiu a composição do cabeçalho com o acionador do menu e seu ícone de três linhas.
 - Manteve na página estados, derivações de rótulos/username, callbacks e estilos responsivos; sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1095 — Composição completa do hero do perfil
+
+- Elevou a composição apresentacional do hero, reunindo identidade, bio e ações sem deslocar estados, derivações ou callbacks da página.
+- Extraiu o input oculto do avatar e o compôs dentro do hero, preservando a referência, a seleção do arquivo e a condição de edição na fronteira de props.
+- Preservou UI, ordem, responsividade, acessibilidade, seguimento, compartilhamento, destaques, mensagens, schema, RLS e Supabase.

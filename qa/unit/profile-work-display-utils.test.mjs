@@ -18,6 +18,13 @@ const heroActionsSource = readFileSync(
   ),
   "utf8",
 );
+const heroSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const highlightsContentStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-highlights-content-state.tsx",
@@ -662,6 +669,10 @@ test("página deriva mostrar destaques do autor uma única vez", () => {
   );
   assert.match(
     pagina,
+    /<ProfileHero[\s\S]*?mostrarDestaquesAutor=\{mostrarDestaquesAutor\}/,
+  );
+  assert.match(
+    heroSource,
     /<ProfileHeroActions[\s\S]*?mostrarDestaquesAutor=\{mostrarDestaquesAutor\}/,
   );
   assert.match(

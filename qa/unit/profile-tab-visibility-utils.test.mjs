@@ -17,6 +17,13 @@ const heroActionsSource = readFileSync(
   ),
   "utf8",
 );
+const heroSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const todas = {
   obras: true,
@@ -133,8 +140,9 @@ test("página deriva a existência de bloqueio uma única vez", () => {
   );
   assert.match(
     pagina,
-    /<ProfileHeroActions[\s\S]*?existeBloqueio=\{existeBloqueioPerfil\}/,
+    /<ProfileHero[\s\S]*?existeBloqueio=\{existeBloqueioPerfil\}/,
   );
+  assert.match(heroSource, /<ProfileHeroActions[\s\S]*?existeBloqueio=\{existeBloqueio\}/);
   assert.match(heroActionsSource, /\{!existeBloqueio && \(/);
   assert.equal(
     (pagina.match(/estadoBloqueioPerfil\.existeBloqueio/g) || []).length,

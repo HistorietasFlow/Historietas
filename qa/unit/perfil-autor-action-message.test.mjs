@@ -34,6 +34,13 @@ const heroActionsSource = readFileSync(
   ),
   "utf8",
 );
+const heroSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("usePerfilAutorActionMessage preserva estado e expiração da mensagem", () => {
   assert.match(hook, /^"use client";/);
@@ -73,9 +80,10 @@ test("Perfil de Autor mantém mensagens de domínio e toast na página", () => {
   );
   assert.match(
     pagina,
-    /import \{ ProfileHeroActions \} from "\.\/components\/profile-hero-actions";/,
+    /import \{ ProfileHero \} from "\.\/components\/profile-hero";/,
   );
-  assert.match(pagina, /<ProfileHeroActions[\s\S]*?message=\{mensagemAcao\}/);
+  assert.match(pagina, /<ProfileHero[\s\S]*?message=\{mensagemAcao\}/);
+  assert.match(heroSource, /<ProfileHeroActions[\s\S]*?message=\{message\}/);
   assert.match(
     heroActionsSource,
     /import \{ ProfileActionToast \} from "\.\/profile-action-toast";/,
