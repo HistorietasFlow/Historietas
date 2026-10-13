@@ -918,3 +918,10 @@
 - Preservou exatamente o texto visual atual do username no cabeçalho.
 - Removeu o `replace(/^@/, "")` inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1039 — inicial do avatar no editor
+
+- Extraiu a derivação da inicial do avatar para `obterInicialAvatarPerfilAutor`.
+- Preservou exatamente a prioridade do nome editado, o fallback para o nome do perfil e a conversão da primeira letra para maiúscula.
+- Removeu o encadeamento inline de `charAt(0).toUpperCase()` de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

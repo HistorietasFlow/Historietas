@@ -62,6 +62,7 @@ const {
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterDadosNotificacoesPerfilAutor,
+  obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterUsernameExibidoPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
@@ -367,6 +368,33 @@ test("página delega a exibição do username ao helper", () => {
   assert.doesNotMatch(
     pagina,
     /autorHandlePerfil\.replace\(\/\^@\/, ""\)/,
+  );
+});
+
+
+test("inicial do avatar preserva nome editado e fallback do perfil", () => {
+  assert.equal(obterInicialAvatarPerfilAutor("bia", "Ana"), "B");
+  assert.equal(obterInicialAvatarPerfilAutor("", "ana"), "A");
+  assert.equal(obterInicialAvatarPerfilAutor("", ""), "");
+});
+
+
+test("página delega a inicial do avatar ao helper", () => {
+  assert.match(
+    pagina,
+    /obterInicialAvatarPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterInicialAvatarPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /\{obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilParaMostrar\.nome,\s*\)\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /\(nomePerfilEditor \|\| perfilParaMostrar\.nome\)[\s\S]*?\.charAt\(0\)[\s\S]*?\.toUpperCase\(\)/,
   );
 });
 
