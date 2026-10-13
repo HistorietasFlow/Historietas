@@ -195,16 +195,8 @@ import { ProfileCommunityPostItem } from "./components/profile-community-post-it
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
-import { ProfileWorksGrid } from "./components/profile-works-grid";
-import { ProfileWorkCard } from "./components/profile-work-card";
-import { ProfileWorkCoverLink } from "./components/profile-work-cover-link";
-import { ProfileWorkCoverOverlay } from "./components/profile-work-cover-overlay";
-import { ProfileWorkCoverTitle } from "./components/profile-work-cover-title";
-import { ProfileWorkCoverMetrics } from "./components/profile-work-cover-metrics";
-import { ProfileWorkCoverLikeIcon } from "./components/profile-work-cover-like-icon";
-import { ProfileWorkCoverCommentIcon } from "./components/profile-work-cover-comment-icon";
-import { ProfileWorkMenuAnchor } from "./components/profile-work-menu-anchor";
-import { ProfileWorkOptionsButton } from "./components/profile-work-options-button";
+import { ProfileWorksContentState } from "./components/profile-works-content-state";
+import { ProfileWorkGridItem } from "./components/profile-work-grid-item";
 import { ProfileWorkActionSheetOverlay } from "./components/profile-work-action-sheet-overlay";
 import { ProfileWorkActionSheetPanel } from "./components/profile-work-action-sheet-panel";
 import { ProfileWorkActionSheetHandle } from "./components/profile-work-action-sheet-handle";
@@ -214,7 +206,6 @@ import { ProfileWorkActionSheetTitle } from "./components/profile-work-action-sh
 import { ProfileWorkActionSheetMeta } from "./components/profile-work-action-sheet-meta";
 import { ProfileWorkActionSheetAuthor } from "./components/profile-work-action-sheet-author";
 import { ProfileWorkActionSheetMetrics } from "./components/profile-work-action-sheet-metrics";
-import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import {
   obterEstilosResponsivosPerfilAutor,
   criarProfileSelectionDotStyle,
@@ -1029,6 +1020,40 @@ function PerfilAutorPageContent() {
     obrasDoPerfilFiltradas,
     obraMenuAbertoId,
   );
+
+  function renderizarObraPerfilAutor(obra: ObraLocal) {
+    const {
+      obraHref,
+      totalCurtidas,
+      totalComentarios,
+      visualizacoesFormatadas: visualizacoesObra,
+      menuObraAberto,
+      ariaLabelOpcoes,
+    } = obterDadosCardObraPerfilAutor(
+      obra,
+      totaisInteracoesObras,
+      obraMenuAbertoId,
+    );
+
+    return (
+      <ProfileWorkGridItem
+        key={obra.id}
+        href={obraHref}
+        capaStyle={criarCapaGridPerfilAutor(obra.capa, isDesktop)}
+        titulo={obra.titulo}
+        visualizacoes={visualizacoesObra}
+        totalCurtidas={totalCurtidas}
+        totalComentarios={totalComentarios}
+        ariaLabelOpcoes={ariaLabelOpcoes}
+        menuAberto={menuObraAberto}
+        onToggleMenu={() =>
+          setObraMenuAbertoId((idAtual) =>
+            alternarIdentificadorMenuPerfilAutor(idAtual, obra.id),
+          )
+        }
+      />
+    );
+  }
 
 
   const {
@@ -1974,69 +1999,13 @@ function PerfilAutorPageContent() {
 
         {obrasPerfilAtivo && (
           <ProfileWorksSection>
-            {obrasSemResultadosPerfilAutor(obrasDoPerfilFiltradas) ? (
-              <ProfileSectionEmptyState message={mensagemObrasVazias} />
-            ) : (
-              <ProfileWorksGrid isDesktop={isDesktop}>
-                {obrasDoPerfilFiltradas.map((obra) => {
-                  const {
-                    obraHref,
-                    totalCurtidas,
-                    totalComentarios,
-                    visualizacoesFormatadas: visualizacoesObra,
-                    menuObraAberto,
-                    ariaLabelOpcoes,
-                  } = obterDadosCardObraPerfilAutor(
-                    obra,
-                    totaisInteracoesObras,
-                    obraMenuAbertoId,
-                  );
-
-                  return (
-                    <ProfileWorkCard key={obra.id}>
-                      <ProfileWorkCoverLink href={obraHref}>
-                        <div
-                          style={criarCapaGridPerfilAutor(obra.capa, isDesktop)}
-                        >
-                          <ProfileWorkCoverOverlay>
-                            <ProfileWorkCoverTitle>
-                              {obra.titulo}
-                            </ProfileWorkCoverTitle>
-
-                            <ProfileWorkCoverMetrics>
-                              <span>👁 {visualizacoesObra}</span>
-                              <span>
-                                <ProfileWorkCoverLikeIcon />{" "}
-                                {totalCurtidas}
-                              </span>
-                              <span>
-                                <ProfileWorkCoverCommentIcon />{" "}
-                                {totalComentarios}
-                              </span>
-                            </ProfileWorkCoverMetrics>
-                          </ProfileWorkCoverOverlay>
-                        </div>
-                      </ProfileWorkCoverLink>
-
-                      <ProfileWorkMenuAnchor>
-                        <ProfileWorkOptionsButton
-                          onClick={() =>
-                            setObraMenuAbertoId((idAtual) =>
-                              alternarIdentificadorMenuPerfilAutor(
-                                idAtual,
-                                obra.id,
-                              ),
-                            )
-                          }
-                          ariaLabel={ariaLabelOpcoes}
-                          expanded={menuObraAberto}
-                        />
-                      </ProfileWorkMenuAnchor>
-                    </ProfileWorkCard>
-                  );
-                })}
-              </ProfileWorksGrid>
-            )}
+            <ProfileWorksContentState
+              empty={obrasSemResultadosPerfilAutor(obrasDoPerfilFiltradas)}
+              emptyMessage={mensagemObrasVazias}
+              isDesktop={isDesktop}
+              obras={obrasDoPerfilFiltradas}
+              renderObra={renderizarObraPerfilAutor}
+            />
           </ProfileWorksSection>
         )}
 

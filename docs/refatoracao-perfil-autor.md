@@ -1255,3 +1255,9 @@
 - Elevou `ProfileAboutHero` para compor a exibição e o editor condicional da bio.
 - Elevou `ProfileAboutSection` para reunir hero, conteúdo e rodapé, mantendo na página a visibilidade, as derivações, formatações, estados e callbacks.
 - Preservou UI, textos, condições, acessibilidade, schema, RLS e Supabase.
+
+## Fase 1089 — Estados e cards da seção Obras
+
+- Extraiu o estado apresentacional vazio ou com grade de Obras, preservando a condição derivada na página.
+- Extraiu a composição visual de cada card da grade, incluindo capa, título, métricas e menu de opções.
+- Manteve na página os dados derivados, a construção da capa, a função nomeada de renderização e o callback do menu; sem alterações de UI, schema, RLS ou Supabase.
