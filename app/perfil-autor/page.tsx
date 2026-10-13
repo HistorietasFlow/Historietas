@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   historietasThemeCss,
@@ -198,6 +197,9 @@ import { ProfileWorksContentState } from "./components/profile-works-content-sta
 import { ProfileWorkGridItem } from "./components/profile-work-grid-item";
 import { ProfileWorkActionSheet } from "./components/profile-work-action-sheet";
 import { ProfileLibraryActionSheet } from "./components/profile-library-action-sheet";
+import { ProfileEditorAvatar } from "./components/profile-editor-avatar";
+import { ProfileEditorFields } from "./components/profile-editor-fields";
+import { ProfileEditorActions } from "./components/profile-editor-actions";
 import {
   obterEstilosResponsivosPerfilAutor,
   criarCapaDestaquePerfilAutor,
@@ -229,20 +231,8 @@ import {
   menuNotificationLabelStyle,
   menuNotificationRightStyle,
   menuNotificationBadgeStyle,
-  avatarImageStyle,
   hiddenInputStyle,
   profileEditorSheetContentStyle,
-  profileEditorAvatarBlockStyle,
-  profileEditorAvatarPreviewStyle,
-  profileEditorSheetFieldStyle,
-  profileEditorSheetLabelStyle,
-  profileEditorSheetInputStyle,
-  profileEditorSheetTextareaStyle,
-  profileEditorSheetActionsStyle,
-  profileEditorCancelButtonStyle,
-  profileEditorSaveButtonStyle,
-  avatarErrorStyle,
-  bioCounterStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
 } from "./styles";
@@ -495,6 +485,14 @@ function PerfilAutorPageContent() {
   const perfilNome = perfilParaMostrar?.nome || "";
   const obrasPerfil = perfilParaMostrar?.obras || [];
   const totalObrasPerfil = obrasPerfil.length;
+  const inicialAvatarPerfilEditor = obterInicialAvatarPerfilAutor(
+    nomePerfilEditor,
+    perfilNome,
+  );
+  const caracteresRestantesBioPerfil = obterCaracteresRestantesPerfilAutor(
+    bioPerfilEditor,
+    BIO_MAX_LENGTH,
+  );
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,
@@ -1597,152 +1595,50 @@ function PerfilAutorPageContent() {
               </div>
 
               <div style={profileEditorSheetContentStyle}>
-                <div style={profileEditorAvatarBlockStyle}>
-                  <div style={profileEditorAvatarPreviewStyle}>
-                    {temAvatarPerfilEditor ? (
-                      <Image
-                        src={avatarPerfilEditor}
-                        alt="Prévia da imagem do perfil"
-                        width={128}
-                        height={128}
-                        unoptimized
-                        style={avatarImageStyle}
-                      />
-                    ) : (
-                      <span>
-                        {obterInicialAvatarPerfilAutor(
-                          nomePerfilEditor,
-                          perfilNome,
-                        )}
-                      </span>
-                    )}
-                  </div>
+                <ProfileEditorAvatar
+                  actionLabel={rotuloAcaoAvatar}
+                  actionsStyle={avatarActionsAtualStyle}
+                  avatar={avatarPerfilEditor}
+                  disabled={salvandoEditorPerfil}
+                  error={avatarErro}
+                  fallbackInitial={inicialAvatarPerfilEditor}
+                  hasAvatar={temAvatarPerfilEditor}
+                  onChooseImage={() => avatarInputRef.current?.click()}
+                  onRemoveImage={removerAvatarAutor}
+                  removeButtonStyle={avatarRemoveButtonAtualStyle}
+                  smallButtonStyle={avatarSmallButtonAtualStyle}
+                />
 
-                  <div style={avatarActionsAtualStyle}>
-                    <button
-                      type="button"
-                      onClick={() => avatarInputRef.current?.click()}
-                      disabled={salvandoEditorPerfil}
-                      style={avatarSmallButtonAtualStyle}
-                    >
-                      {rotuloAcaoAvatar}
-                    </button>
+                <ProfileEditorFields
+                  bio={bioPerfilEditor}
+                  bioPlaceholder={bioPadraoAutor}
+                  disabled={salvandoEditorPerfil}
+                  maxBioLength={BIO_MAX_LENGTH}
+                  name={nomePerfilEditor}
+                  onBioChange={(value) =>
+                    setBioPerfilEditor(
+                      limitarTextoPerfilAutor(value, BIO_MAX_LENGTH),
+                    )
+                  }
+                  onNameChange={(value) =>
+                    setNomePerfilEditor(limitarTextoPerfilAutor(value, 80))
+                  }
+                  onSave={() => void salvarEdicaoPerfilAutor()}
+                  onUsernameChange={(value) =>
+                    setUsernamePerfilEditor(
+                      normalizarUsernamePerfilAutor(value),
+                    )
+                  }
+                  remainingBioCharacters={caracteresRestantesBioPerfil}
+                  username={usernamePerfilEditor}
+                />
 
-                    {temAvatarPerfilEditor && (
-                      <button
-                        type="button"
-                        onClick={removerAvatarAutor}
-                        disabled={salvandoEditorPerfil}
-                        style={avatarRemoveButtonAtualStyle}
-                      >
-                        Remover
-                      </button>
-                    )}
-                  </div>
-
-                  {avatarErro && (
-                    <span style={avatarErrorStyle}>{avatarErro}</span>
-                  )}
-                </div>
-
-                <label style={profileEditorSheetFieldStyle}>
-                  <span style={profileEditorSheetLabelStyle}>
-                    Nome de usuário
-                  </span>
-
-                  <input
-                    value={nomePerfilEditor}
-                    onChange={(event) =>
-                      setNomePerfilEditor(
-                        limitarTextoPerfilAutor(event.target.value, 80),
-                      )
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        void salvarEdicaoPerfilAutor();
-                      }
-                    }}
-                    placeholder="Digite seu nome"
-                    maxLength={80}
-                    disabled={salvandoEditorPerfil}
-                    style={profileEditorSheetInputStyle}
-                    type="text"
-                  />
-                </label>
-
-                <label style={profileEditorSheetFieldStyle}>
-                  <span style={profileEditorSheetLabelStyle}>
-                    @username público
-                  </span>
-
-                  <input
-                    value={usernamePerfilEditor}
-                    onChange={(event) =>
-                      setUsernamePerfilEditor(
-                        normalizarUsernamePerfilAutor(event.target.value),
-                      )
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        void salvarEdicaoPerfilAutor();
-                      }
-                    }}
-                    placeholder="Digite seu username"
-                    maxLength={30}
-                    disabled={salvandoEditorPerfil}
-                    style={profileEditorSheetInputStyle}
-                    type="text"
-                  />
-                </label>
-
-                <label style={profileEditorSheetFieldStyle}>
-                  <span style={profileEditorSheetLabelStyle}>Biografia</span>
-
-                  <textarea
-                    value={bioPerfilEditor}
-                    onChange={(event) =>
-                      setBioPerfilEditor(
-                        limitarTextoPerfilAutor(
-                          event.target.value,
-                          BIO_MAX_LENGTH,
-                        ),
-                      )
-                    }
-                    placeholder={bioPadraoAutor}
-                    maxLength={BIO_MAX_LENGTH}
-                    disabled={salvandoEditorPerfil}
-                    style={profileEditorSheetTextareaStyle}
-                  />
-                </label>
-
-                <span style={bioCounterStyle}>
-                  {obterCaracteresRestantesPerfilAutor(
-                    bioPerfilEditor,
-                    BIO_MAX_LENGTH,
-                  )} caracteres
-                </span>
-
-                <div style={profileEditorSheetActionsStyle}>
-                  <button
-                    type="button"
-                    onClick={fecharEditorPerfil}
-                    disabled={salvandoEditorPerfil}
-                    style={profileEditorCancelButtonStyle}
-                  >
-                    Cancelar
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => void salvarEdicaoPerfilAutor()}
-                    disabled={salvandoEditorPerfil}
-                    style={profileEditorSaveButtonStyle}
-                  >
-                    {rotuloSalvarEditor}
-                  </button>
-                </div>
+                <ProfileEditorActions
+                  disabled={salvandoEditorPerfil}
+                  onCancel={fecharEditorPerfil}
+                  onSave={() => void salvarEdicaoPerfilAutor()}
+                  saveLabel={rotuloSalvarEditor}
+                />
               </div>
             </section>
           </div>

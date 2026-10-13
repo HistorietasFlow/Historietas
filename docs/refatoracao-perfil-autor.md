@@ -1267,3 +1267,9 @@
 - Extraiu a composição apresentacional completa do menu de ações de uma obra e do menu de um item da Biblioteca.
 - Manteve na página dados derivados, rótulos, traduções, estados, mutações de coleções, denúncia, compartilhamento e fechamento dos menus.
 - Preservou textos, links, condições, indicadores de seleção, estilos, propagação de clique, ordem das ações, UI, acessibilidade, schema, RLS e Supabase.
+
+## Fase 1091 — Composições do editor de perfil
+
+- Extraiu os blocos apresentacionais do avatar, dos campos e das ações finais do editor de perfil.
+- Manteve na página os estados, as derivações, os limites, a normalização, os callbacks e o salvamento do editor.
+- Preservou UI, textos, limites, estados desabilitados, acessibilidade, schema, RLS e Supabase.
