@@ -36,6 +36,7 @@ const utilsJavascript = typescript.transpileModule(
 ).outputText;
 const {
   analisarEnquetePublicacaoComunidadePerfil,
+  comunidadeSemPublicacoesRecentesPerfilAutor,
   criarHrefPublicacaoComunidadePerfil,
   criarResumoPublicacaoComunidadePerfil,
   normalizarPublicacaoComunidadePerfil,
@@ -59,6 +60,35 @@ const criarPublicacao = (sobrescrever = {}) => ({
   criadoEm: "2026-10-10T00:00:00.000Z",
   ...sobrescrever,
 });
+
+test("estado vazio da Comunidade depende apenas da ausência de publicações recentes", () => {
+  assert.equal(comunidadeSemPublicacoesRecentesPerfilAutor([]), true);
+  assert.equal(
+    comunidadeSemPublicacoesRecentesPerfilAutor([criarPublicacao()]),
+    false,
+  );
+});
+
+
+test("página delega o estado vazio das publicações recentes ao helper", () => {
+  assert.match(
+    pagina,
+    /comunidadeSemPublicacoesRecentesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/comunidadeSemPublicacoesRecentesPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /\) : comunidadeSemPublicacoesRecentes \? \(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /comunidadePerfil\.publicacoesRecentes\.length === 0/,
+  );
+});
+
 
 test("valores das estatísticas da Comunidade reutilizam a mesma formatação", () => {
   assert.deepEqual(
@@ -417,6 +447,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
   );
 
   for (const helper of [
+    "comunidadeSemPublicacoesRecentesPerfilAutor",
     "normalizarPublicacaoComunidadePerfil",
     "criarHrefPublicacaoComunidadePerfil",
     "analisarEnquetePublicacaoComunidadePerfil",

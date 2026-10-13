@@ -1,6 +1,13 @@
 import type { PublicacaoComunidadePerfil } from "../types";
 import { pegarTexto } from "./data-normalizers";
 
+export function comunidadeSemPublicacoesRecentesPerfilAutor(
+  publicacoesRecentes: PublicacaoComunidadePerfil[],
+) {
+  return publicacoesRecentes.length === 0;
+}
+
+
 export function obterValoresEstatisticasComunidadePerfilAutor({
   totalPublicacoes,
   totalTeorias,

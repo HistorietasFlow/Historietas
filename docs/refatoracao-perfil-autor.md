@@ -967,3 +967,10 @@
 - Preservou os gêneros principais quando existentes e `Histórias variadas` quando a lista está vazia.
 - Removeu o ternário inline do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1046 — estado vazio das publicações recentes
+
+- Extraiu a verificação de ausência de publicações recentes para `comunidadeSemPublicacoesRecentesPerfilAutor`.
+- Preservou exatamente a regra atual baseada em `publicacoesRecentes.length === 0`.
+- Removeu a comparação inline do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
