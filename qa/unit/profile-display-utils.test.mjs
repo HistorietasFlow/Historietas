@@ -617,7 +617,7 @@ test("página delega a inicial do avatar ao helper", () => {
   );
   assert.match(
     pagina,
-    /\{obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilParaMostrar\.nome,\s*\)\}/,
+    /\{obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilNome,\s*\)\}/,
   );
   assert.doesNotMatch(
     pagina,
@@ -945,5 +945,28 @@ test("página deriva a visibilidade dos editores uma única vez", () => {
   assert.doesNotMatch(
     pagina,
     /\{podeEditarPerfil && editorSobreAberto && \(/,
+  );
+});
+
+test("Perfil de Autor reutiliza o nome derivado do perfil", () => {
+  assert.match(
+    pagina,
+    /const perfilNome = perfilParaMostrar\?\.nome \|\| "";/,
+  );
+  assert.equal(
+    (pagina.match(/perfilParaMostrar\.nome/g) || []).length,
+    0,
+  );
+  assert.match(
+    pagina,
+    /<strong data-historietas-user-content="true" style=\{menuTitleStyle\}>\s*\{perfilNome\}\s*<\/strong>/,
+  );
+  assert.match(
+    pagina,
+    /obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilNome,\s*\)/,
+  );
+  assert.equal(
+    (pagina.match(/autorNome=\{perfilNome\}/g) || []).length,
+    3,
   );
 });
