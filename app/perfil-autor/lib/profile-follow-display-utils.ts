@@ -7,6 +7,24 @@ import {
   normalizarNomeAutor,
 } from "./profile-formatters";
 
+export function obterApresentacaoBotaoSeguimentoPerfilAutor({
+  seguindoPerfilAtual,
+  solicitacaoSeguimentoPendente,
+  salvando,
+}: {
+  seguindoPerfilAtual: boolean;
+  solicitacaoSeguimentoPendente: boolean;
+  salvando: boolean;
+}) {
+  return {
+    botaoSeguimentoAtivo:
+      seguindoPerfilAtual || solicitacaoSeguimentoPendente,
+    opacidadeBotaoSeguimento: salvando ? 0.58 : 1,
+    cursorBotaoSeguimento: salvando ? "not-allowed" : "pointer",
+  };
+}
+
+
 export function obterDadosAcaoSeguimentoPerfilAutor({
   seguindoPerfilAtual,
   solicitacaoSeguimentoPendente,

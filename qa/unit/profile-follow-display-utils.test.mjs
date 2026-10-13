@@ -54,11 +54,64 @@ const javascript = typescript.transpileModule(
 ).outputText;
 
 const {
+  obterApresentacaoBotaoSeguimentoPerfilAutor,
   obterDadosAcaoSeguimentoPerfilAutor,
   obterEstadoSeguimentoPerfilAutor,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
+
+test("apresentação do botão de seguimento preserva estado e bloqueio visual", () => {
+  assert.deepEqual(
+    obterApresentacaoBotaoSeguimentoPerfilAutor({
+      seguindoPerfilAtual: false,
+      solicitacaoSeguimentoPendente: false,
+      salvando: false,
+    }),
+    {
+      botaoSeguimentoAtivo: false,
+      opacidadeBotaoSeguimento: 1,
+      cursorBotaoSeguimento: "pointer",
+    },
+  );
+
+  assert.deepEqual(
+    obterApresentacaoBotaoSeguimentoPerfilAutor({
+      seguindoPerfilAtual: false,
+      solicitacaoSeguimentoPendente: true,
+      salvando: true,
+    }),
+    {
+      botaoSeguimentoAtivo: true,
+      opacidadeBotaoSeguimento: 0.58,
+      cursorBotaoSeguimento: "not-allowed",
+    },
+  );
+});
+
+
+test("página delega a apresentação do botão de seguimento ao helper", () => {
+  assert.match(
+    pagina,
+    /obterApresentacaoBotaoSeguimentoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-follow-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterApresentacaoBotaoSeguimentoPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /botaoSeguimentoAtivo\s*\? profileActiveButtonStyle/);
+  assert.match(pagina, /opacity: opacidadeBotaoSeguimento/);
+  assert.match(pagina, /cursor: cursorBotaoSeguimento/);
+  assert.doesNotMatch(
+    pagina,
+    /seguindoPerfilAtual \|\| solicitacaoSeguimentoPendente\s*\? profileActiveButtonStyle/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /seguirUsuarioSalvando \? (?:0\.58|"not-allowed")/,
+  );
+});
+
 
 test("dados da ação de seguimento preservam rótulos, aria-label e title", () => {
   assert.deepEqual(

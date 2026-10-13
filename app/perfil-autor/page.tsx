@@ -105,6 +105,7 @@ import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
 import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import {
+  obterApresentacaoBotaoSeguimentoPerfilAutor,
   obterDadosAcaoSeguimentoPerfilAutor,
   obterEstadoSeguimentoPerfilAutor,
 } from "./lib/profile-follow-display-utils";
@@ -649,6 +650,15 @@ function PerfilAutorPageContent() {
     titleSeguimento,
     rotuloSeguimento,
   } = obterDadosAcaoSeguimentoPerfilAutor({
+    seguindoPerfilAtual,
+    solicitacaoSeguimentoPendente,
+    salvando: seguirUsuarioSalvando,
+  });
+  const {
+    botaoSeguimentoAtivo,
+    opacidadeBotaoSeguimento,
+    cursorBotaoSeguimento,
+  } = obterApresentacaoBotaoSeguimentoPerfilAutor({
     seguindoPerfilAtual,
     solicitacaoSeguimentoPendente,
     salvando: seguirUsuarioSalvando,
@@ -1626,11 +1636,11 @@ function PerfilAutorPageContent() {
                   aria-label={ariaLabelSeguimento}
                   title={titleSeguimento}
                   style={{
-                    ...(seguindoPerfilAtual || solicitacaoSeguimentoPendente
+                    ...(botaoSeguimentoAtivo
                       ? profileActiveButtonStyle
                       : profilePrimaryButtonStyle),
-                    opacity: seguirUsuarioSalvando ? 0.58 : 1,
-                    cursor: seguirUsuarioSalvando ? "not-allowed" : "pointer",
+                    opacity: opacidadeBotaoSeguimento,
+                    cursor: cursorBotaoSeguimento,
                   }}
                 >
                   {rotuloSeguimento}

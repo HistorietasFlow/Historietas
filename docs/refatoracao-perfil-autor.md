@@ -953,3 +953,10 @@
 - Reutilizou o helper nos campos de nome e biografia, preservando os limites atuais de 80 e `BIO_MAX_LENGTH`.
 - Removeu os dois `slice(0, ...)` inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1044 — apresentação do botão de seguimento
+
+- Extraiu estado ativo, opacidade e cursor do botão de seguir para `obterApresentacaoBotaoSeguimentoPerfilAutor`.
+- Preservou exatamente os estados de seguindo, solicitação pendente e salvamento.
+- Removeu as derivações inline do estilo em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
