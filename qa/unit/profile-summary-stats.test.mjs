@@ -70,6 +70,7 @@ test("sem perfil retorna resumo zerado", () => {
     totalVisualizacoesPerfil: 0,
     totalRascunhosPerfil: 0,
     totalObrasSemCapitulosPerfil: 0,
+    temObrasSemCapitulosPerfil: false,
   });
 });
 
@@ -144,7 +145,31 @@ test("soma visualizações normalizadas e conta rascunhos e obras sem capítulos
   assert.equal(resultado.totalVisualizacoesPerfil, 17);
   assert.equal(resultado.totalRascunhosPerfil, 2);
   assert.equal(resultado.totalObrasSemCapitulosPerfil, 2);
+  assert.equal(resultado.temObrasSemCapitulosPerfil, true);
 });
+
+test("resumo indica quando não existem obras sem capítulos", () => {
+  const resultado = obterResumoEstatisticasPerfilAutor(
+    perfil([obra("1", "A", 0, [{}])], 1),
+  );
+
+  assert.equal(resultado.totalObrasSemCapitulosPerfil, 0);
+  assert.equal(resultado.temObrasSemCapitulosPerfil, false);
+});
+
+
+test("página reutiliza a presença de obras sem capítulos já derivada", () => {
+  assert.match(pagina, /temObrasSemCapitulosPerfil,/);
+  assert.match(
+    pagina,
+    /\{temObrasSemCapitulosPerfil && \(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /totalObrasSemCapitulosPerfil > 0/,
+  );
+});
+
 
 test("rascunhos nunca ficam negativos", () => {
   const resultado = obterResumoEstatisticasPerfilAutor(

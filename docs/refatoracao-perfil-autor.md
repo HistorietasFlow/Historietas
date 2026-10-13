@@ -1079,3 +1079,10 @@
 - Preservou exatamente a regra atual baseada na presença de `publicacao.obraRelacionada`.
 - Removeu a condição inline do JSX e ampliou a cobertura unitária/estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1062 — visibilidade de obras sem capítulos
+
+- Incluiu `temObrasSemCapitulosPerfil` em `obterResumoEstatisticasPerfilAutor`.
+- Preservou exatamente a regra atual baseada em `totalObrasSemCapitulosPerfil > 0`.
+- Removeu a comparação inline da seção Sobre e ampliou a cobertura unitária/estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
