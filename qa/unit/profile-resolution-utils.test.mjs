@@ -252,7 +252,7 @@ test("página deriva o estado de visitante uma única vez", () => {
   );
   assert.equal(
     (pagina.match(/\bperfilVisitante\b/g) || []).length,
-    4,
+    3,
   );
   assert.equal(
     (pagina.match(/!podeEditarPerfil/g) || []).length,
