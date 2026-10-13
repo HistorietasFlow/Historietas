@@ -570,6 +570,8 @@ function PerfilAutorPageContent() {
 
   const podeEditarPerfil = perfilPertenceAoUsuario;
   const perfilVisitante = !podeEditarPerfil;
+  const editorPerfilVisivel = podeEditarPerfil && editorPerfilAberto;
+  const editorSobreVisivel = podeEditarPerfil && editorSobreAberto;
   const bloqueadoPorMim = estadoBloqueioPerfil.bloqueadoPorMim;
   const existeBloqueioPerfil = estadoBloqueioPerfil.existeBloqueio;
   const menuBloqueioStyle = bloqueadoPorMim
@@ -1408,7 +1410,7 @@ function PerfilAutorPageContent() {
           </div>
         )}
 
-        {podeEditarPerfil && editorPerfilAberto && (
+        {editorPerfilVisivel && (
           <div
             style={menuOverlayStyle}
             role="presentation"
@@ -2022,7 +2024,7 @@ function PerfilAutorPageContent() {
                 )}
               </ProfileAboutTextRow>
 
-              {podeEditarPerfil && editorSobreAberto && (
+              {editorSobreVisivel && (
                 <ProfileAboutEditor>
                   <ProfileAboutTextarea
                     value={perfilSalvoAutor.sobreBio}
