@@ -346,11 +346,12 @@ function PerfilAutorPageContent() {
     useState<File | null>(null);
   const [salvandoEditorPerfil, setSalvandoEditorPerfil] = useState(false);
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
+  const temAvatarPerfilEditor = Boolean(avatarPerfilEditor);
   const {
     rotuloAcaoAvatar,
     rotuloSalvarEditor,
   } = obterRotulosAcoesEditorPerfilAutor({
-    temAvatar: Boolean(avatarPerfilEditor),
+    temAvatar: temAvatarPerfilEditor,
     salvando: salvandoEditorPerfil,
   });
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>(() =>
@@ -1417,7 +1418,7 @@ function PerfilAutorPageContent() {
               <div style={profileEditorSheetContentStyle}>
                 <div style={profileEditorAvatarBlockStyle}>
                   <div style={profileEditorAvatarPreviewStyle}>
-                    {avatarPerfilEditor ? (
+                    {temAvatarPerfilEditor ? (
                       <Image
                         src={avatarPerfilEditor}
                         alt="Prévia da imagem do perfil"
@@ -1446,7 +1447,7 @@ function PerfilAutorPageContent() {
                       {rotuloAcaoAvatar}
                     </button>
 
-                    {avatarPerfilEditor && (
+                    {temAvatarPerfilEditor && (
                       <button
                         type="button"
                         onClick={removerAvatarAutor}
