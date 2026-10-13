@@ -1177,3 +1177,9 @@
 - Removeu cinco leituras diretas de `perfilParaMostrar.nome` no menu, no fallback do avatar do editor e no cabeçalho do perfil.
 - Ampliou a cobertura estrutural para garantir a reutilização da derivação única.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1076 — painéis do Sobre
+
+- Extraiu os painéis apresentacionais “Números do perfil” e “Atividade” para componentes dedicados.
+- Preservou textos, ordem, markup, valores exibidos, condição de obras sem capítulos e primitives visuais existentes.
+- Manteve na página todas as derivações e a lógica de negócio; sem alterações de UI, schema, RLS ou Supabase.
