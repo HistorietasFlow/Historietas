@@ -26,6 +26,11 @@ import {
   mostrarClassificacao,
 } from "./work-normalizers";
 
+export function obrasSemResultadosPerfilAutor(obras: ObraLocal[]) {
+  return obras.length === 0;
+}
+
+
 export function obterMensagemObrasVaziasPerfilAutor({
   totalObras,
   podeEditarPerfil,
