@@ -1243,3 +1243,9 @@
 - Extraiu a composição apresentacional dos dois `ProfileRatingBox` para um componente dedicado.
 - Manteve na página as condições de exibição, notas, estados de salvamento e callbacks das avaliações do autor e do Diário.
 - Preservou textos, aria-labels, `keyPrefix`, UI, acessibilidade, schema, RLS e Supabase.
+
+## Fase 1087 — Composições dos Destaques
+
+- Extraiu o estado apresentacional vazio ou com lista de obras em destaque.
+- Extraiu a composição da seção, cabeçalho e conteúdo, mantendo na página a visibilidade, derivações, ações do TOP 5 e a função nomeada de renderização das obras.
+- Preservou UI, ordem, condições, links, acessibilidade, schema, RLS e Supabase.

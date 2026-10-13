@@ -18,6 +18,20 @@ const heroActionsSource = readFileSync(
   ),
   "utf8",
 );
+const highlightsContentStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-highlights-content-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const highlightsPanelSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-highlights-panel.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileWorkDisplayDependencies = {
   ehClassificacao18(valor) {
@@ -568,6 +582,34 @@ test("página resolve obras em destaque sem useMemo", () => {
   assert.doesNotMatch(
     pagina,
     /const obrasEmDestaque = useMemo/,
+  );
+});
+
+test("página mantém as derivações e delega a composição dos destaques", () => {
+  assert.match(
+    pagina,
+    /import \{ ProfileHighlightsPanel \} from "\.\/components\/profile-highlights-panel";/,
+  );
+  assert.match(
+    pagina,
+    /function renderizarObraDestaquePerfilAutor\(obra: ObraLocal\) \{[\s\S]*?const obraHref = obterHrefObraPerfilAutor\(obra\);[\s\S]*?<ProfileHighlightItem[\s\S]*?key=\{`destaque-\$\{obra\.id\}`\}[\s\S]*?href=\{obraHref\}[\s\S]*?capaStyle=\{criarCapaDestaquePerfilAutor\(obra\.capa\)\}/,
+  );
+  assert.match(
+    pagina,
+    /\{exibirSecaoDestaques && \([\s\S]*?<ProfileHighlightsPanel[\s\S]*?headerActions=\{acoesCabecalhoTopFive\}[\s\S]*?message=\{mensagemTopFiveVazio\}[\s\S]*?obras=\{obrasEmDestaque\}[\s\S]*?renderObra=\{renderizarObraDestaquePerfilAutor\}[\s\S]*?temObras=\{temObrasEmDestaque\}[\s\S]*?titleActions=\{acoesTituloTopFive\}/,
+  );
+  assert.doesNotMatch(pagina, /obrasEmDestaque\.map/);
+  assert.match(
+    highlightsContentStateSource,
+    /if \(!temObras\) \{[\s\S]*?<ProfileHighlightsEmptyState message=\{message\} \/>/,
+  );
+  assert.match(
+    highlightsContentStateSource,
+    /<ProfileHighlightsList isDesktop=\{isDesktop\}>[\s\S]*?\{obras\.map\(renderObra\)\}/,
+  );
+  assert.match(
+    highlightsPanelSource,
+    /<ProfileHighlightsSection isDesktop=\{isDesktop\}>[\s\S]*?<ProfileHighlightsHeader[\s\S]*?titleActions=\{titleActions\}[\s\S]*?headerActions=\{headerActions\}[\s\S]*?<ProfileHighlightsContentState[\s\S]*?renderObra=\{renderObra\}/,
   );
 });
 
