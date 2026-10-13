@@ -64,6 +64,7 @@ const {
   obterDadosNotificacoesPerfilAutor,
   obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
+  obterTituloSobrePerfilAutor,
   obterUsernameExibidoPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
@@ -341,6 +342,32 @@ test("página deriva os dados de notificações em uma única chamada", () => {
   assert.doesNotMatch(
     pagina,
     /notificacoesNaoLidas > 0 \? \(/,
+  );
+});
+
+
+test("título da seção Sobre preserva o nome do perfil", () => {
+  assert.equal(obterTituloSobrePerfilAutor("Ana"), "Sobre Ana");
+  assert.equal(obterTituloSobrePerfilAutor(""), "Sobre ");
+});
+
+
+test("página delega o título da seção Sobre ao helper", () => {
+  assert.match(
+    pagina,
+    /obterTituloSobrePerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterTituloSobrePerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /\{obterTituloSobrePerfilAutor\(perfilNome\)\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /Sobre \{perfilParaMostrar\.nome\}/,
   );
 });
 
