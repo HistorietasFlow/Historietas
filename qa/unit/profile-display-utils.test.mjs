@@ -925,3 +925,25 @@ test("página delega a exibição da bio Sobre ao helper", () => {
     /bioSobreAutorEhPadrao \? undefined : "true"/,
   );
 });
+
+
+test("página deriva a visibilidade dos editores uma única vez", () => {
+  assert.match(
+    pagina,
+    /const editorPerfilVisivel = podeEditarPerfil && editorPerfilAberto;/,
+  );
+  assert.match(
+    pagina,
+    /const editorSobreVisivel = podeEditarPerfil && editorSobreAberto;/,
+  );
+  assert.match(pagina, /\{editorPerfilVisivel && \(/);
+  assert.match(pagina, /\{editorSobreVisivel && \(/);
+  assert.doesNotMatch(
+    pagina,
+    /\{podeEditarPerfil && editorPerfilAberto && \(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /\{podeEditarPerfil && editorSobreAberto && \(/,
+  );
+});

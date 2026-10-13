@@ -1100,3 +1100,10 @@
 - Preservou exatamente os totais baseados em `.length` das listas já montadas.
 - Removeu os dois cálculos inline dos argumentos do helper e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1065 — visibilidade dos editores do perfil
+
+- Derivou `editorPerfilVisivel` e `editorSobreVisivel` a partir do estado de edição e da permissão do próprio perfil.
+- Preservou exatamente as guardas atuais de `podeEditarPerfil && editorPerfilAberto` e `podeEditarPerfil && editorSobreAberto`.
+- Removeu as duas condições compostas do JSX e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
