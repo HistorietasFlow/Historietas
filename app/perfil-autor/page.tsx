@@ -1023,6 +1023,9 @@ function PerfilAutorPageContent() {
     topWaterFadeAtualStyle,
     menuSheetAtualStyle,
   } = obterEstilosResponsivosPerfilAutor(isDesktop);
+  const profileActionsExibicaoStyle = podeEditarPerfil
+    ? profileActionsAtualStyle
+    : profileVisitorActionsAtualStyle;
   const {
     geral: comunidadeAutorHref,
     teorias: comunidadeAutorTeoriasHref,
@@ -1651,13 +1654,7 @@ function PerfilAutorPageContent() {
             onEdit={abrirEditorPerfil}
           />
 
-          <div
-            style={
-              podeEditarPerfil
-                ? profileActionsAtualStyle
-                : profileVisitorActionsAtualStyle
-            }
-          >
+          <div style={profileActionsExibicaoStyle}>
             {podeEditarPerfil ? (
               <ProfileOwnerActions
                 mostrarDestaques={perfilSalvoAutor.mostrarDestaques}
