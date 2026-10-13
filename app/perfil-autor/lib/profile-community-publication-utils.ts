@@ -166,12 +166,14 @@ export function obterDadosPublicacaoRecenteComunidadePerfilAutor(
   publicacao: PublicacaoComunidadePerfil,
 ) {
   const enquete = analisarEnquetePublicacaoComunidadePerfil(publicacao);
+  const totalOpcoesEnquete = enquete.totalOpcoes;
 
   return {
     href: criarHrefPublicacaoComunidadePerfil(publicacao.id),
     ariaLabel: `Abrir ${publicacao.tipoPublicacao} na Comunidade`,
     resumo: criarResumoPublicacaoComunidadePerfil(publicacao),
-    totalOpcoesEnquete: enquete.totalOpcoes,
+    totalOpcoesEnquete,
+    exibirInfoEnquete: totalOpcoesEnquete >= 2,
   };
 }
 

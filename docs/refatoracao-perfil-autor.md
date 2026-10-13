@@ -1065,3 +1065,10 @@
 - Preservou `profileActionsAtualStyle` para o próprio perfil e `profileVisitorActionsAtualStyle` para visitantes.
 - Removeu o ternário inline do container de ações e ampliou a cobertura estrutural do modo desktop.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1060 — visibilidade da informação de enquete
+
+- Incluiu `exibirInfoEnquete` nos dados derivados da publicação recente.
+- Preservou exatamente a regra atual de exibir a informação somente com pelo menos duas opções.
+- Removeu a comparação `totalOpcoesEnquete >= 2` do JSX e ampliou a cobertura unitária/estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
