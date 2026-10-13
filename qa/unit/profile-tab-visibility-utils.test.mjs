@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { obterVisibilidadeAbasPerfilAutor } from "../../app/perfil-autor/lib/profile-tab-visibility-utils.ts";
+
+const pagina = readFileSync(
+  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  "utf8",
+);
 
 const todas = {
   obras: true,
@@ -34,6 +40,7 @@ test("perfil próprio mantém todas as áreas visíveis", () => {
   assert.equal(resultado.bibliotecaPerfilVisivel, true);
   assert.equal(resultado.atividadesPerfilVisivel, true);
   assert.equal(resultado.totalAbasPerfilVisiveis, 5);
+  assert.equal(resultado.temAbasPerfilVisiveis, true);
   assert.equal(resultado.conteudoPrivadoBloqueado, false);
   assert.equal(resultado.primeiraAbaPerfilVisivel, "obras");
 });
@@ -48,6 +55,7 @@ test("bloqueio entre usuários oculta as áreas públicas", () => {
 
   assert.equal(resultado.perfilBloqueadoEntreUsuarios, true);
   assert.equal(resultado.totalAbasPerfilVisiveis, 0);
+  assert.equal(resultado.temAbasPerfilVisiveis, false);
   assert.equal(resultado.atividadesPerfilVisivel, false);
   assert.equal(resultado.conteudoPrivadoBloqueado, true);
   assert.equal(resultado.primeiraAbaPerfilVisivel, null);
@@ -74,6 +82,7 @@ test("preserva permissões, ordem da primeira aba e total sem atividades", () =>
   assert.equal(resultado.bibliotecaPerfilVisivel, true);
   assert.equal(resultado.atividadesPerfilVisivel, true);
   assert.equal(resultado.totalAbasPerfilVisiveis, 3);
+  assert.equal(resultado.temAbasPerfilVisiveis, true);
   assert.equal(resultado.primeiraAbaPerfilVisivel, "comunidade");
   assert.equal(resultado.conteudoPrivadoBloqueado, false);
 });
@@ -87,6 +96,17 @@ test("carregamento de privacidade não é tratado como conteúdo privado definit
   });
 
   assert.equal(resultado.totalAbasPerfilVisiveis, 0);
+  assert.equal(resultado.temAbasPerfilVisiveis, false);
   assert.equal(resultado.conteudoPrivadoBloqueado, false);
   assert.equal(resultado.primeiraAbaPerfilVisivel, null);
+});
+
+
+test("página reutiliza a presença de abas já derivada pelo helper", () => {
+  assert.match(pagina, /temAbasPerfilVisiveis,/);
+  assert.match(pagina, /\{temAbasPerfilVisiveis && \(/);
+  assert.doesNotMatch(
+    pagina,
+    /totalAbasPerfilVisiveis > 0/,
+  );
 });

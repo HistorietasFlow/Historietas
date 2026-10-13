@@ -53,6 +53,7 @@ export function obterVisibilidadeAbasPerfilAutor({
     bibliotecaPerfilVisivel: biblioteca,
     atividadesPerfilVisivel: atividades,
     totalAbasPerfilVisiveis: totalVisiveis,
+    temAbasPerfilVisiveis: totalVisiveis > 0,
     conteudoPrivadoBloqueado: Boolean(
       !perfilPertenceAoUsuario &&
         !privacidadeCarregando &&
