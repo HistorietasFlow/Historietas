@@ -981,3 +981,10 @@
 - Preservou exatamente a regra atual baseada em `itensBibliotecaAtivos.length === 0`.
 - Removeu a comparação inline do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1048 — estado vazio do Diário
+
+- Extraiu a verificação de ausência de itens para `diarioSemItensPerfilAutor`.
+- Preservou exatamente a regra atual baseada em `itensDiarioTudo.length === 0`.
+- Removeu a comparação inline do callback `getIsEmpty` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
