@@ -561,6 +561,26 @@ test("página resolve obras em destaque sem useMemo", () => {
 });
 
 
+test("página deriva mostrar destaques do autor uma única vez", () => {
+  assert.match(
+    pagina,
+    /const mostrarDestaquesAutor = perfilSalvoAutor\.mostrarDestaques;/,
+  );
+  assert.equal(
+    (pagina.match(/perfilSalvoAutor\.mostrarDestaques/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /mostrarDestaquesAutor,/,
+  );
+  assert.match(
+    pagina,
+    /mostrarDestaques=\{mostrarDestaquesAutor\}/,
+  );
+});
+
+
 test("página deriva as ações do cabeçalho do TOP 5 antes do JSX", () => {
   assert.match(
     pagina,
