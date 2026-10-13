@@ -217,11 +217,8 @@ import { ProfileAboutEditButton } from "./components/profile-about-edit-button";
 import { ProfileAboutEditor } from "./components/profile-about-editor";
 import { ProfileAboutTextarea } from "./components/profile-about-textarea";
 import { ProfileAboutCounter } from "./components/profile-about-counter";
-import { ProfileAboutContentGrid } from "./components/profile-about-content-grid";
-import { ProfileAboutProfileNumbers } from "./components/profile-about-profile-numbers";
-import { ProfileAboutActivity } from "./components/profile-about-activity";
-import { ProfileAboutSpecialties } from "./components/profile-about-specialties";
-import { ProfileAboutMemberSince } from "./components/profile-about-member-since";
+import { ProfileAboutContent } from "./components/profile-about-content";
+import { ProfileAboutFooter } from "./components/profile-about-footer";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -244,7 +241,6 @@ import { ProfileWorkActionSheetMeta } from "./components/profile-work-action-she
 import { ProfileWorkActionSheetAuthor } from "./components/profile-work-action-sheet-author";
 import { ProfileWorkActionSheetMetrics } from "./components/profile-work-action-sheet-metrics";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
-import { ProfileAboutRecentActivity } from "./components/profile-about-recent-activity";
 import {
   obterEstilosResponsivosPerfilAutor,
   criarProfileSelectionDotStyle,
@@ -2058,50 +2054,38 @@ function PerfilAutorPageContent() {
               )}
             </ProfileAboutHero>
 
-            <ProfileAboutContentGrid>
-              <ProfileAboutSpecialties
-                generosEspecialidadesPerfil={generosEspecialidadesPerfil}
-              />
+            <ProfileAboutContent
+              generosEspecialidadesPerfil={generosEspecialidadesPerfil}
+              totalPublicadas={compactarNumeroPerfilAutor(
+                perfilParaMostrar.totalPublicadas,
+              )}
+              totalCapitulos={compactarNumeroPerfilAutor(
+                perfilParaMostrar.totalCapitulos,
+              )}
+              totalCurtidas={compactarNumeroPerfilAutor(
+                perfilParaMostrar.totalCurtidas,
+              )}
+              totalVisualizacoes={compactarNumeroPerfilAutor(
+                totalVisualizacoesPerfil,
+              )}
+              totalObras={totalObrasPerfil}
+              totalRascunhos={totalRascunhosPerfil}
+              totalComentarios={perfilParaMostrar.totalComentarios}
+              totalConcluidas={obrasConcluidasPerfilTotal}
+              mostrarObrasSemCapitulos={temObrasSemCapitulosPerfil}
+              totalObrasSemCapitulos={totalObrasSemCapitulosPerfil}
+            />
 
-              <ProfileAboutProfileNumbers
-                totalPublicadas={compactarNumeroPerfilAutor(
-                  perfilParaMostrar.totalPublicadas,
-                )}
-                totalCapitulos={compactarNumeroPerfilAutor(
-                  perfilParaMostrar.totalCapitulos,
-                )}
-                totalCurtidas={compactarNumeroPerfilAutor(
-                  perfilParaMostrar.totalCurtidas,
-                )}
-                totalVisualizacoes={compactarNumeroPerfilAutor(
-                  totalVisualizacoesPerfil,
-                )}
-              />
-
-              <ProfileAboutActivity
-                totalObras={totalObrasPerfil}
-                totalRascunhos={totalRascunhosPerfil}
-                totalComentarios={perfilParaMostrar.totalComentarios}
-                totalConcluidas={obrasConcluidasPerfilTotal}
-                mostrarObrasSemCapitulos={temObrasSemCapitulosPerfil}
-                totalObrasSemCapitulos={totalObrasSemCapitulosPerfil}
-              />
-            </ProfileAboutContentGrid>
-
-            <ProfileAboutMemberSince>
-              Na Historietas desde {entradaHistorietasPerfil}
-            </ProfileAboutMemberSince>
-
-            {atividadesPerfilVisivel && (
-              <ProfileAboutRecentActivity
-                expanded={atividadeSobreAberta}
-                loading={diarioPerfilCarregando}
-                items={atividadesDiarioPerfil}
-                onToggle={() =>
-                  setAtividadeSobreAberta((valorAtual) => !valorAtual)
-                }
-              />
-            )}
+            <ProfileAboutFooter
+              memberSince={entradaHistorietasPerfil}
+              showRecentActivity={atividadesPerfilVisivel}
+              expanded={atividadeSobreAberta}
+              loading={diarioPerfilCarregando}
+              items={atividadesDiarioPerfil}
+              onToggle={() =>
+                setAtividadeSobreAberta((valorAtual) => !valorAtual)
+              }
+            />
           </ProfileAboutSection>
         )}
 

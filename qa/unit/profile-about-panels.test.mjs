@@ -20,26 +20,42 @@ const atividade = readFileSync(
   ),
   "utf8",
 );
+const conteudo = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
-test("Perfil de Autor delega os painéis apresentacionais do Sobre", () => {
+test("Perfil de Autor delega a composição dos painéis apresentacionais do Sobre", () => {
   assert.match(
     pagina,
-    /import \{ ProfileAboutProfileNumbers \} from "\.\/components\/profile-about-profile-numbers";/,
+    /import \{ ProfileAboutContent \} from "\.\/components\/profile-about-content";/,
   );
   assert.match(
     pagina,
-    /import \{ ProfileAboutActivity \} from "\.\/components\/profile-about-activity";/,
+    /<ProfileAboutContent[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}[\s\S]*?totalPublicadas=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalPublicadas,[\s\S]*?\)\}[\s\S]*?totalCapitulos=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalCapitulos,[\s\S]*?\)\}[\s\S]*?totalCurtidas=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalCurtidas,[\s\S]*?\)\}[\s\S]*?totalVisualizacoes=\{compactarNumeroPerfilAutor\([\s\S]*?totalVisualizacoesPerfil,[\s\S]*?\)\}[\s\S]*?totalObras=\{totalObrasPerfil\}[\s\S]*?totalRascunhos=\{totalRascunhosPerfil\}[\s\S]*?totalComentarios=\{perfilParaMostrar\.totalComentarios\}[\s\S]*?totalConcluidas=\{obrasConcluidasPerfilTotal\}[\s\S]*?mostrarObrasSemCapitulos=\{temObrasSemCapitulosPerfil\}[\s\S]*?totalObrasSemCapitulos=\{totalObrasSemCapitulosPerfil\}/,
   );
   assert.match(
-    pagina,
-    /<ProfileAboutProfileNumbers[\s\S]*?totalPublicadas=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalPublicadas,[\s\S]*?\)\}[\s\S]*?totalCapitulos=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalCapitulos,[\s\S]*?\)\}[\s\S]*?totalCurtidas=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalCurtidas,[\s\S]*?\)\}[\s\S]*?totalVisualizacoes=\{compactarNumeroPerfilAutor\([\s\S]*?totalVisualizacoesPerfil,[\s\S]*?\)\}/,
+    conteudo,
+    /import \{ ProfileAboutSpecialties \} from "\.\/profile-about-specialties";/,
   );
   assert.match(
-    pagina,
-    /<ProfileAboutActivity[\s\S]*?totalObras=\{totalObrasPerfil\}[\s\S]*?totalRascunhos=\{totalRascunhosPerfil\}[\s\S]*?totalComentarios=\{perfilParaMostrar\.totalComentarios\}[\s\S]*?totalConcluidas=\{obrasConcluidasPerfilTotal\}[\s\S]*?mostrarObrasSemCapitulos=\{temObrasSemCapitulosPerfil\}[\s\S]*?totalObrasSemCapitulos=\{totalObrasSemCapitulosPerfil\}/,
+    conteudo,
+    /import \{ ProfileAboutProfileNumbers \} from "\.\/profile-about-profile-numbers";/,
   );
-  assert.doesNotMatch(pagina, /<ProfileAboutMetricsGrid>/);
-  assert.doesNotMatch(pagina, /<ProfileAboutRows>/);
+  assert.match(
+    conteudo,
+    /import \{ ProfileAboutActivity \} from "\.\/profile-about-activity";/,
+  );
+  assert.match(
+    conteudo,
+    /<ProfileAboutContentGrid>[\s\S]*?<ProfileAboutSpecialties[\s\S]*?<ProfileAboutProfileNumbers[\s\S]*?<ProfileAboutActivity/,
+  );
+  assert.doesNotMatch(pagina, /import \{ ProfileAboutProfileNumbers \}/);
+  assert.doesNotMatch(pagina, /import \{ ProfileAboutActivity \}/);
+  assert.doesNotMatch(pagina, /<ProfileAboutMetricsGrid>|<ProfileAboutRows>/);
 });
 
 test("painel de números preserva os quatro valores e textos", () => {

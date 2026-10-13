@@ -13,13 +13,25 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const footerSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-footer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Perfil de Autor delega a atividade recente do Sobre", () => {
   assert.match(
     pagina,
-    /import \{ ProfileAboutRecentActivity \} from "\.\/components\/profile-about-recent-activity";/,
+    /import \{ ProfileAboutFooter \} from "\.\/components\/profile-about-footer";/,
   );
-  assert.match(pagina, /<ProfileAboutRecentActivity/);
+  assert.match(pagina, /<ProfileAboutFooter/);
+  assert.match(
+    footerSource,
+    /import \{ ProfileAboutRecentActivity \} from "\.\/profile-about-recent-activity";/,
+  );
+  assert.match(footerSource, /<ProfileAboutRecentActivity/);
   assert.doesNotMatch(
     pagina,
     /function renderizarAtividadeRecenteSobrePerfil\(/,
@@ -51,6 +63,6 @@ test("Perfil de Autor deriva as atividades do Diário uma única vez", () => {
   );
   assert.match(
     pagina,
-    /items=\{atividadesDiarioPerfil\}/,
+    /<ProfileAboutFooter[\s\S]*?items=\{atividadesDiarioPerfil\}/,
   );
 });
