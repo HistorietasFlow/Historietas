@@ -617,7 +617,7 @@ test("página delega a inicial do avatar ao helper", () => {
   );
   assert.match(
     pagina,
-    /\{obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilParaMostrar\.nome,\s*\)\}/,
+    /\{obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilNome,\s*\)\}/,
   );
   assert.doesNotMatch(
     pagina,
