@@ -534,6 +534,24 @@ test("página resolve obras em destaque sem useMemo", () => {
 });
 
 
+test("página deriva as ações do cabeçalho do TOP 5 antes do JSX", () => {
+  assert.match(
+    pagina,
+    /const acoesTituloTopFive = podeEditarPerfil \? botaoCurtidaTopFive : null;/,
+  );
+  assert.match(
+    pagina,
+    /const acoesCabecalhoTopFive = podeEditarPerfil \? \([\s\S]*?<ProfileHighlightsEditLink href="\/perfil-autor\/top-5" \/>[\s\S]*?\) : \([\s\S]*?botaoCurtidaTopFive[\s\S]*?\);/,
+  );
+  assert.match(pagina, /titleActions=\{acoesTituloTopFive\}/);
+  assert.match(pagina, /headerActions=\{acoesCabecalhoTopFive\}/);
+  assert.doesNotMatch(
+    pagina,
+    /titleActions=\{[\s\S]{0,120}?podeEditarPerfil \? botaoCurtidaTopFive : null/,
+  );
+});
+
+
 test("mensagem de TOP 5 vazio preserva textos de autor e visitante", () => {
   assert.equal(
     obterMensagemTopFiveVazioPerfilAutor({

@@ -1009,3 +1009,10 @@
 - Reutilizou o helper nos menus dos cards de obra e da Biblioteca, preservando fechar o item atual ou abrir o novo alvo.
 - Removeu os dois ternários inline dos setters em `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1052 — ações do cabeçalho do TOP 5
+
+- Derivou `acoesTituloTopFive` e `acoesCabecalhoTopFive` antes do JSX.
+- Preservou a curtida no título para o próprio perfil, o link de edição no cabeçalho do autor e a curtida no cabeçalho do visitante.
+- Removeu os ternários inline de `ProfileHighlightsHeader` e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

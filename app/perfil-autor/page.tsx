@@ -885,6 +885,12 @@ function PerfilAutorPageContent() {
       ariaLabel={dadosCurtidaTopFive.ariaLabel}
     />
   ) : null;
+  const acoesTituloTopFive = podeEditarPerfil ? botaoCurtidaTopFive : null;
+  const acoesCabecalhoTopFive = podeEditarPerfil ? (
+    <ProfileHighlightsEditLink href="/perfil-autor/top-5" />
+  ) : (
+    botaoCurtidaTopFive
+  );
 
   usePerfilAutorDiarySync({
     perfilParaMostrar,
@@ -1690,16 +1696,8 @@ function PerfilAutorPageContent() {
         {exibirSecaoDestaques && (
             <ProfileHighlightsSection isDesktop={isDesktop}>
               <ProfileHighlightsHeader
-                titleActions={
-                  podeEditarPerfil ? botaoCurtidaTopFive : null
-                }
-                headerActions={
-                  podeEditarPerfil ? (
-                    <ProfileHighlightsEditLink href="/perfil-autor/top-5" />
-                  ) : (
-                    botaoCurtidaTopFive
-                  )
-                }
+                titleActions={acoesTituloTopFive}
+                headerActions={acoesCabecalhoTopFive}
               />
 
               {!temObrasEmDestaque ? (
