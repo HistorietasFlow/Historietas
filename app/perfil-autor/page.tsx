@@ -1258,7 +1258,7 @@ function PerfilAutorPageContent() {
               <div style={menuHeaderStyle}>
                 <div style={menuTitleBlockStyle}>
                   <strong data-historietas-user-content="true" style={menuTitleStyle}>
-                    {perfilParaMostrar.nome}
+                    {perfilNome}
                   </strong>
                   {perfilVisitante ? (
                     <span style={menuSubtitleStyle}>Ações do perfil</span>
@@ -1485,7 +1485,7 @@ function PerfilAutorPageContent() {
                       <span>
                         {obterInicialAvatarPerfilAutor(
                           nomePerfilEditor,
-                          perfilParaMostrar.nome,
+                          perfilNome,
                         )}
                       </span>
                     )}
@@ -1649,7 +1649,7 @@ function PerfilAutorPageContent() {
         <section style={heroAtualStyle}>
           <div style={authorTopRowAtualStyle}>
             <ProfileAvatar
-              autorNome={perfilParaMostrar.nome}
+              autorNome={perfilNome}
               avatar={avatarAutor}
               isDesktop={isDesktop}
               podeEditar={podeEditarPerfil}
@@ -1657,7 +1657,7 @@ function PerfilAutorPageContent() {
             />
 
             <ProfileHeaderInfo
-              autorNome={perfilParaMostrar.nome}
+              autorNome={perfilNome}
               isDesktop={isDesktop}
             >
               <ProfileStats
@@ -1666,7 +1666,7 @@ function PerfilAutorPageContent() {
                 avaliacaoMedia={avaliacaoResumoPerfil.media}
                 avaliacaoTotal={avaliacaoResumoPerfil.total}
                 avaliacaoVisivel={avaliacaoResumoPerfilVisivel}
-                autorNome={perfilParaMostrar.nome}
+                autorNome={perfilNome}
                 isDesktop={isDesktop}
                 language={language}
                 obrasSeguidasHref={obrasSeguidasPerfilHref}
