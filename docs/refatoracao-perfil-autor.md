@@ -918,3 +918,10 @@
 - Preservou exatamente o texto visual atual do username no cabeçalho.
 - Removeu o `replace(/^@/, "")` inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1039 — título da seção Sobre
+
+- Extraiu a composição de `Sobre <nome>` para `obterTituloSobrePerfilAutor`.
+- Reutilizou o `perfilNome` já derivado e preservou exatamente o texto atual da seção.
+- Removeu a composição inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
