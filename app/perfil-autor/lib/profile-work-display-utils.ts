@@ -371,6 +371,7 @@ export function obterAlvoLeituraMenuObraPerfilAutor(obra: ObraLocal) {
   return {
     ultimoCapitulo,
     numeroUltimoCapitulo,
+    temUltimoCapitulo: Boolean(ultimoCapitulo),
     capituloHref: ultimoCapitulo
       ? criarHrefLeituraCapituloPerfilAutor(
           obra,
@@ -450,6 +451,7 @@ export function obterDadosSheetObraPerfilAutor({
 }) {
   const {
     ultimoCapitulo,
+    temUltimoCapitulo,
     capituloHref,
   } = obterAlvoLeituraMenuObraPerfilAutor(obra);
   const {
@@ -474,6 +476,7 @@ export function obterDadosSheetObraPerfilAutor({
 
   return {
     ultimoCapitulo,
+    temUltimoCapitulo,
     capituloHref,
     obraFavorita,
     obraConcluida,

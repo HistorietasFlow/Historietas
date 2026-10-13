@@ -2207,7 +2207,7 @@ function PerfilAutorPageContent() {
           (() => {
             const obra = obraMenuAberta;
             const {
-              ultimoCapitulo,
+              temUltimoCapitulo,
               capituloHref,
               obraFavorita,
               obraConcluida,
@@ -2260,7 +2260,7 @@ function PerfilAutorPageContent() {
                   </ProfileWorkActionSheetHeader>
 
                   <ProfileWorkActionSheetActions>
-                    {ultimoCapitulo && (
+                    {temUltimoCapitulo && (
                       <Link
                         href={capituloHref}
                         onClick={() => setObraMenuAbertoId("")}
