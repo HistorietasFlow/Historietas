@@ -1058,3 +1058,10 @@
 - Preservou as guardas atuais de autenticação, propriedade do perfil, tipo de avaliação, visibilidade e permissão para avaliar.
 - Removeu as condições longas do JSX e ampliou a cobertura unitária/estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1059 — estilo das ações do perfil
+
+- Derivou `profileActionsExibicaoStyle` antes do JSX.
+- Preservou `profileActionsAtualStyle` para o próprio perfil e `profileVisitorActionsAtualStyle` para visitantes.
+- Removeu o ternário inline do container de ações e ampliou a cobertura estrutural do modo desktop.
+- Sem alterações de UI, schema, RLS ou Supabase.

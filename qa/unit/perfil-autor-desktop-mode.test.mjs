@@ -119,6 +119,19 @@ test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
     /isDesktop \? profileHeaderDesktopStyle : profileHeaderStyle/,
   );
 
+  assert.match(
+    pagina,
+    /const profileActionsExibicaoStyle = podeEditarPerfil[\s\S]{0,120}\? profileActionsAtualStyle[\s\S]{0,120}: profileVisitorActionsAtualStyle;/,
+  );
+  assert.match(
+    pagina,
+    /<div style=\{profileActionsExibicaoStyle\}>/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /style=\{[\s\S]{0,120}?podeEditarPerfil[\s\S]{0,120}?profileActionsAtualStyle[\s\S]{0,120}?profileVisitorActionsAtualStyle/,
+  );
+
   for (const [atual, desktop, mobile] of [
     ["containerAtualStyle", "desktopContainerStyle", "containerStyle"],
     ["heroAtualStyle", "desktopHeroBoxStyle", "heroBoxStyle"],
