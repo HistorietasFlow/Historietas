@@ -1,17 +1,33 @@
-import type { ReactNode } from "react";
 import {
   authorCommunityGridStyle,
   desktopAuthorCommunityGridStyle,
 } from "../styles";
+import { ProfileCommunityStatCard } from "./profile-community-stat-card";
 
 type ProfileCommunityStatsGridProps = {
-  children: ReactNode;
   isDesktop: boolean;
+  publicacoes: {
+    href: string;
+    ariaLabel: string;
+    value: string;
+  };
+  teorias: {
+    href: string;
+    ariaLabel: string;
+    value: string;
+  };
+  reviews: {
+    href: string;
+    ariaLabel: string;
+    value: string;
+  };
 };
 
 export function ProfileCommunityStatsGrid({
-  children,
   isDesktop,
+  publicacoes,
+  teorias,
+  reviews,
 }: ProfileCommunityStatsGridProps) {
   return (
     <div
@@ -21,7 +37,29 @@ export function ProfileCommunityStatsGrid({
           : authorCommunityGridStyle
       }
     >
-      {children}
+      <ProfileCommunityStatCard
+        href={publicacoes.href}
+        ariaLabel={publicacoes.ariaLabel}
+        value={publicacoes.value}
+        title="PUBLICAÇÕES"
+        description="posts do perfil"
+      />
+
+      <ProfileCommunityStatCard
+        href={teorias.href}
+        ariaLabel={teorias.ariaLabel}
+        value={teorias.value}
+        title="TEORIAS"
+        description="discussões"
+      />
+
+      <ProfileCommunityStatCard
+        href={reviews.href}
+        ariaLabel={reviews.ariaLabel}
+        value={reviews.value}
+        title="REVIEWS"
+        description="opiniões"
+      />
     </div>
   );
 }
