@@ -318,6 +318,7 @@ test("dados da publicação recente centralizam link, acessibilidade, resumo e e
       resumo: "Melhor capítulo?",
       totalOpcoesEnquete: 2,
       exibirInfoEnquete: true,
+      exibirObraRelacionada: false,
     },
   );
 });
@@ -340,7 +341,9 @@ test("página deriva os dados da publicação recente uma única vez por item", 
   assert.match(pagina, /ariaLabel=\{dadosPublicacao\.ariaLabel\}/);
   assert.match(pagina, /\{dadosPublicacao\.resumo\}/);
   assert.match(pagina, /dadosPublicacao\.exibirInfoEnquete/);
+  assert.match(pagina, /dadosPublicacao\.exibirObraRelacionada/);
   assert.doesNotMatch(pagina, /dadosPublicacao\.totalOpcoesEnquete >= 2/);
+  assert.doesNotMatch(pagina, /\{publicacao\.obraRelacionada && \(/);
   assert.doesNotMatch(pagina, /criarHrefPublicacaoComunidadePerfil/);
   assert.doesNotMatch(pagina, /criarResumoPublicacaoComunidadePerfil/);
   assert.doesNotMatch(pagina, /analisarEnquetePublicacaoComunidadePerfil/);
@@ -361,6 +364,26 @@ test("dados da publicação recente ocultam info de enquete com menos de duas op
       resumo: "Melhor capítulo?",
       totalOpcoesEnquete: 1,
       exibirInfoEnquete: false,
+      exibirObraRelacionada: false,
+    },
+  );
+});
+
+
+test("dados da publicação recente derivam a visibilidade da obra relacionada", () => {
+  assert.deepEqual(
+    obterDadosPublicacaoRecenteComunidadePerfilAutor(
+      criarPublicacao({
+        obraRelacionada: "Obra relacionada",
+      }),
+    ),
+    {
+      href: "/comunidade?post=post-1",
+      ariaLabel: "Abrir Discussão na Comunidade",
+      resumo: "Texto da publicação",
+      totalOpcoesEnquete: 0,
+      exibirInfoEnquete: false,
+      exibirObraRelacionada: true,
     },
   );
 });

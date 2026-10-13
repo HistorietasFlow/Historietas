@@ -1964,7 +1964,7 @@ function PerfilAutorPageContent() {
                                   )}
                                 </ProfileCommunityPostBody>
 
-                                {publicacao.obraRelacionada && (
+                                {dadosPublicacao.exibirObraRelacionada && (
                                   <ProfileCommunityPostWork>
                                     <span>OBRA</span>
                                     <strong data-historietas-user-content="true">

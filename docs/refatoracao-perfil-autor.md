@@ -1072,3 +1072,10 @@
 - Preservou exatamente a regra atual de exibir a informação somente com pelo menos duas opções.
 - Removeu a comparação `totalOpcoesEnquete >= 2` do JSX e ampliou a cobertura unitária/estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1061 — visibilidade da obra relacionada na Comunidade
+
+- Incluiu `exibirObraRelacionada` nos dados derivados da publicação recente.
+- Preservou exatamente a regra atual baseada na presença de `publicacao.obraRelacionada`.
+- Removeu a condição inline do JSX e ampliou a cobertura unitária/estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
