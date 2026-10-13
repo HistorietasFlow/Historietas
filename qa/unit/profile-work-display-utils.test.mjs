@@ -32,6 +32,20 @@ const highlightsPanelSource = readFileSync(
   ),
   "utf8",
 );
+const worksContentStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-works-content-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const workGridItemSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-work-grid-item.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileWorkDisplayDependencies = {
   ehClassificacao18(valor) {
@@ -232,7 +246,11 @@ test("página delega o estado vazio de Obras ao helper", () => {
   );
   assert.match(
     pagina,
-    /\{obrasSemResultadosPerfilAutor\(obrasDoPerfilFiltradas\) \? \(/,
+    /import \{ ProfileWorksContentState \} from "\.\/components\/profile-works-content-state";/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileWorksContentState[\s\S]*?empty=\{obrasSemResultadosPerfilAutor\(obrasDoPerfilFiltradas\)\}[\s\S]*?emptyMessage=\{mensagemObrasVazias\}[\s\S]*?obras=\{obrasDoPerfilFiltradas\}[\s\S]*?renderObra=\{renderizarObraPerfilAutor\}/,
   );
   assert.doesNotMatch(
     pagina,
@@ -298,9 +316,10 @@ test("página delega a mensagem de obras vazias ao helper", () => {
     1,
   );
   assert.match(
-    pagina,
-    /<ProfileSectionEmptyState message=\{mensagemObrasVazias\} \/>/,
+    worksContentStateSource,
+    /if \(empty\) \{[\s\S]*?<ProfileSectionEmptyState message=\{emptyMessage\} \/>/,
   );
+  assert.match(pagina, /emptyMessage=\{mensagemObrasVazias\}/);
   assert.doesNotMatch(
     pagina,
     /Você ainda não publicou obras\. Seu perfil continua ativo como leitor/,
@@ -1066,7 +1085,8 @@ test("href de leitura da Biblioteca fica encapsulado no card e no sheet", () => 
 
 
 test("rótulos de acessibilidade das ações de obra ficam nos dados derivados", () => {
-  assert.match(pagina, /ariaLabel=\{ariaLabelOpcoes\}/);
+  assert.match(pagina, /ariaLabelOpcoes=\{ariaLabelOpcoes\}/);
+  assert.match(workGridItemSource, /ariaLabel=\{ariaLabelOpcoes\}/);
   assert.match(pagina, /ariaLabel=\{ariaLabelSheetObra\}/);
   assert.match(pagina, /ariaLabel=\{ariaLabelSheetBiblioteca\}/);
   assert.doesNotMatch(
@@ -1346,4 +1366,49 @@ test("página reutiliza um único botão de curtida do TOP 5", () => {
   );
   assert.match(pagina, /titleActions=\{acoesTituloTopFive\}/);
   assert.match(pagina, /headerActions=\{acoesCabecalhoTopFive\}/);
+});
+
+test("ProfileWorksContentState preserva o estado vazio e a grade de Obras", () => {
+  assert.match(
+    worksContentStateSource,
+    /if \(empty\) \{[\s\S]*?<ProfileSectionEmptyState message=\{emptyMessage\} \/>/,
+  );
+  assert.match(
+    worksContentStateSource,
+    /<ProfileWorksGrid isDesktop=\{isDesktop\}>[\s\S]*?\{obras\.map\(renderObra\)\}/,
+  );
+});
+
+test("página mantém os dados e o callback do card antes de delegar a composição", () => {
+  assert.match(
+    pagina,
+    /import \{ ProfileWorkGridItem \} from "\.\/components\/profile-work-grid-item";/,
+  );
+  assert.match(
+    pagina,
+    /function renderizarObraPerfilAutor\(obra: ObraLocal\) \{[\s\S]*?obterDadosCardObraPerfilAutor\([\s\S]*?obra,[\s\S]*?totaisInteracoesObras,[\s\S]*?obraMenuAbertoId,[\s\S]*?\);/,
+  );
+  assert.match(
+    pagina,
+    /criarCapaGridPerfilAutor\(obra\.capa, isDesktop\)/,
+  );
+  assert.match(
+    pagina,
+    /setObraMenuAbertoId\(\(idAtual\) =>[\s\S]*?alternarIdentificadorMenuPerfilAutor\(idAtual, obra\.id\)/,
+  );
+  assert.doesNotMatch(pagina, /\{obrasDoPerfilFiltradas\.map\(/);
+});
+
+test("ProfileWorkGridItem preserva capa, métricas e menu de opções", () => {
+  assert.match(workGridItemSource, /<ProfileWorkCard>/);
+  assert.match(workGridItemSource, /<ProfileWorkCoverLink href=\{href\}>/);
+  assert.match(workGridItemSource, /<div style=\{capaStyle\}>/);
+  assert.match(workGridItemSource, /<ProfileWorkCoverTitle>\{titulo\}<\/ProfileWorkCoverTitle>/);
+  assert.match(workGridItemSource, /👁 \{visualizacoes\}/);
+  assert.match(workGridItemSource, /<ProfileWorkCoverLikeIcon \/>\{" "\}[\s\S]*?\{totalCurtidas\}/);
+  assert.match(workGridItemSource, /<ProfileWorkCoverCommentIcon \/>\{" "\}[\s\S]*?\{totalComentarios\}/);
+  assert.match(
+    workGridItemSource,
+    /<ProfileWorkOptionsButton[\s\S]*?onClick=\{onToggleMenu\}[\s\S]*?ariaLabel=\{ariaLabelOpcoes\}[\s\S]*?expanded=\{menuAberto\}/,
+  );
 });
