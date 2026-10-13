@@ -128,6 +128,13 @@ export function obterDadosNotificacoesPerfilAutor(
 }
 
 
+export function obterUsernameExibidoPerfilAutor(
+  autorHandlePerfil: string,
+) {
+  return autorHandlePerfil.replace(/^@/, "");
+}
+
+
 export function obterAriaLabelCopiarUsernamePerfilAutor(
   autorHandlePerfil: string,
 ) {
