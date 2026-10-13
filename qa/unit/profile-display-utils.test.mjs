@@ -54,6 +54,7 @@ const javascript = typescript.transpileModule(
 
 const {
   formatarContagemNotificacoesPerfilAutor,
+  limitarTextoPerfilAutor,
   obterAriaLabelBadgeNotificacoesPerfilAutor,
   obterAriaLabelCopiarUsernamePerfilAutor,
   obterAriaLabelNotificacoesPerfilAutor,
@@ -344,6 +345,36 @@ test("página deriva os dados de notificações em uma única chamada", () => {
   assert.doesNotMatch(
     pagina,
     /notificacoesNaoLidas > 0 \? \(/,
+  );
+});
+
+
+test("limite de texto preserva corte exato dos campos do editor", () => {
+  assert.equal(limitarTextoPerfilAutor("abcdef", 3), "abc");
+  assert.equal(limitarTextoPerfilAutor("abc", 5), "abc");
+});
+
+
+test("página delega os limites de nome e biografia ao helper", () => {
+  assert.match(
+    pagina,
+    /limitarTextoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/limitarTextoPerfilAutor\(/g) || []).length,
+    2,
+  );
+  assert.match(
+    pagina,
+    /limitarTextoPerfilAutor\(event\.target\.value, 80\)/,
+  );
+  assert.match(
+    pagina,
+    /limitarTextoPerfilAutor\(\s*event\.target\.value,\s*BIO_MAX_LENGTH,\s*\)/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /event\.target\.value\.slice\(0, (?:80|BIO_MAX_LENGTH)\)/,
   );
 });
 

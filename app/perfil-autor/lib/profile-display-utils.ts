@@ -136,6 +136,11 @@ export function obterInicialAvatarPerfilAutor(
 }
 
 
+export function limitarTextoPerfilAutor(valor: string, limite: number) {
+  return valor.slice(0, limite);
+}
+
+
 export function obterCaracteresRestantesPerfilAutor(
   valor: string,
   limite: number,

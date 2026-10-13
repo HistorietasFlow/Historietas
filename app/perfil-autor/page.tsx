@@ -115,6 +115,7 @@ import {
   obterDadosNotificacoesPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  limitarTextoPerfilAutor,
   obterCaracteresRestantesPerfilAutor,
   obterIndicadorSelecaoPerfilAutor,
   obterInicialAvatarPerfilAutor,
@@ -1433,7 +1434,9 @@ function PerfilAutorPageContent() {
                   <input
                     value={nomePerfilEditor}
                     onChange={(event) =>
-                      setNomePerfilEditor(event.target.value.slice(0, 80))
+                      setNomePerfilEditor(
+                        limitarTextoPerfilAutor(event.target.value, 80),
+                      )
                     }
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
@@ -1482,7 +1485,10 @@ function PerfilAutorPageContent() {
                     value={bioPerfilEditor}
                     onChange={(event) =>
                       setBioPerfilEditor(
-                        event.target.value.slice(0, BIO_MAX_LENGTH),
+                        limitarTextoPerfilAutor(
+                          event.target.value,
+                          BIO_MAX_LENGTH,
+                        ),
                       )
                     }
                     placeholder={bioPadraoAutor}
