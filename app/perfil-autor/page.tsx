@@ -144,6 +144,7 @@ import {
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
+  obrasSemResultadosPerfilAutor,
   obterTotalObrasConcluidasPerfilAutor,
   obterVisibilidadeDestaquesPerfilAutor,
 } from "./lib/profile-work-display-utils";
@@ -2114,7 +2115,7 @@ function PerfilAutorPageContent() {
 
         {abaPerfil === "obras" && obrasPerfilVisivel && (
           <ProfileWorksSection>
-            {obrasDoPerfilFiltradas.length === 0 ? (
+            {obrasSemResultadosPerfilAutor(obrasDoPerfilFiltradas) ? (
               <ProfileSectionEmptyState message={mensagemObrasVazias} />
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>

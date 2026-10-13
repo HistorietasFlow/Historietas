@@ -988,3 +988,10 @@
 - Preservou exatamente a regra atual baseada em `itensDiarioTudo.length === 0`.
 - Removeu a comparação inline do callback `getIsEmpty` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1049 — estado vazio da aba Obras
+
+- Extraiu a verificação de ausência de resultados para `obrasSemResultadosPerfilAutor`.
+- Preservou exatamente a regra atual baseada em `obrasDoPerfilFiltradas.length === 0`.
+- Removeu a comparação inline do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

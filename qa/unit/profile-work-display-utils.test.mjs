@@ -159,6 +159,7 @@ const {
   obterAlvoLeituraMenuObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasVisiveisPerfilAutor,
+  obrasSemResultadosPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterTotalObrasConcluidasPerfilAutor,
   obterVisibilidadeDestaquesPerfilAutor,
@@ -192,6 +193,32 @@ function perfil(obras) {
     totalPublicadas: obras.length,
   };
 }
+
+test("estado vazio de Obras depende apenas da ausência de resultados", () => {
+  assert.equal(obrasSemResultadosPerfilAutor([]), true);
+  assert.equal(obrasSemResultadosPerfilAutor([obra("a")]), false);
+});
+
+
+test("página delega o estado vazio de Obras ao helper", () => {
+  assert.match(
+    pagina,
+    /obrasSemResultadosPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obrasSemResultadosPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /\{obrasSemResultadosPerfilAutor\(obrasDoPerfilFiltradas\) \? \(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /obrasDoPerfilFiltradas\.length === 0/,
+  );
+});
+
 
 test("mensagem de obras vazias preserva autor, visitante e filtro sem resultado", () => {
   assert.equal(
