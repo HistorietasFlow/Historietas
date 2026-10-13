@@ -544,7 +544,7 @@ test("página delega o título da seção Sobre ao helper", () => {
   );
   assert.match(
     pagina,
-    /\{obterTituloSobrePerfilAutor\(perfilNome\)\}/,
+    /title=\{obterTituloSobrePerfilAutor\(perfilNome\)\}/,
   );
   assert.doesNotMatch(
     pagina,
@@ -918,7 +918,7 @@ test("página delega a exibição da bio Sobre ao helper", () => {
   );
   assert.match(
     pagina,
-    /userContent=\{bioSobreAutorUserContent\}/,
+    /<ProfileAboutBioDisplay[\s\S]*?userContent=\{bioSobreAutorUserContent\}/,
   );
   assert.doesNotMatch(
     pagina,

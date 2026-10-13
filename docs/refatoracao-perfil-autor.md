@@ -1195,3 +1195,9 @@
 - Extraiu a composição apresentacional do grid com Especialidades, Números do perfil e Atividade.
 - Extraiu o bloco final com a data de entrada e a atividade recente.
 - Manteve na página todas as derivações, condições e callbacks; sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1079 — Bio do Sobre
+
+- Extraiu a exibição da bio, incluindo título, texto e botão de edição, para um componente apresentacional.
+- Extraiu o editor da bio, incluindo textarea e contador de caracteres, para um componente dedicado.
+- Manteve na página as derivações, a condição de edição e todos os callbacks e estados; sem alterações de UI, schema, RLS ou Supabase.
