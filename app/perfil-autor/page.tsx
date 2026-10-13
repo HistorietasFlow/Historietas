@@ -106,7 +106,10 @@ import {
 import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
-import { obterVisibilidadeAbasPerfilAutor } from "./lib/profile-tab-visibility-utils";
+import {
+  obterVisibilidadeAbasPerfilAutor,
+  obterVisibilidadeConteudosAbasPerfilAutor,
+} from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import {
   obterApresentacaoBotaoSeguimentoPerfilAutor,
@@ -599,6 +602,20 @@ function PerfilAutorPageContent() {
     existeBloqueio: existeBloqueioPerfil,
     privacidadeCarregando: privacidadePerfilCarregando,
     permissoes: permissoesAbasPerfil,
+  });
+  const {
+    bibliotecaPerfilAtiva,
+    diarioPerfilAtivo,
+    comunidadePerfilAtiva,
+    sobrePerfilAtivo,
+    obrasPerfilAtivo,
+  } = obterVisibilidadeConteudosAbasPerfilAutor({
+    abaPerfil,
+    obrasPerfilVisivel,
+    sobrePerfilVisivel,
+    diarioPerfilVisivel,
+    comunidadePerfilVisivel,
+    bibliotecaPerfilVisivel,
   });
 
   usePerfilAutorPrivacySync({
@@ -1789,7 +1806,7 @@ function PerfilAutorPageContent() {
           />
         )}
 
-        {abaPerfil === "biblioteca" && bibliotecaPerfilVisivel && (
+        {bibliotecaPerfilAtiva && (
           <ProfileLibrarySection isDesktop={isDesktop}>
             <LibraryTabs
               abaAtiva={abaBibliotecaPerfil}
@@ -1842,7 +1859,7 @@ function PerfilAutorPageContent() {
           </ProfileLibrarySection>
         )}
 
-        {abaPerfil === "diario" && diarioPerfilVisivel && (
+        {diarioPerfilAtivo && (
           <ProfileDiaryPanel
             isDesktop={isDesktop}
             title={tituloDiarioPerfil}
@@ -1882,7 +1899,7 @@ function PerfilAutorPageContent() {
           />
         )}
 
-        {abaPerfil === "comunidade" && comunidadePerfilVisivel && (
+        {comunidadePerfilAtiva && (
           <ProfileCommunitySection isDesktop={isDesktop}>
             <ProfileCommunityHeader title={tituloComunidadePerfil} />
 
@@ -2004,7 +2021,7 @@ function PerfilAutorPageContent() {
           </ProfileCommunitySection>
         )}
 
-        {abaPerfil === "sobre" && sobrePerfilVisivel && (
+        {sobrePerfilAtivo && (
           <ProfileAboutSection>
             <ProfileAboutHero>
               <ProfileAboutTitle>
@@ -2135,7 +2152,7 @@ function PerfilAutorPageContent() {
           </ProfileAboutSection>
         )}
 
-        {abaPerfil === "obras" && obrasPerfilVisivel && (
+        {obrasPerfilAtivo && (
           <ProfileWorksSection>
             {obrasSemResultadosPerfilAutor(obrasDoPerfilFiltradas) ? (
               <ProfileSectionEmptyState message={mensagemObrasVazias} />

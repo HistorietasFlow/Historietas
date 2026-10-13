@@ -62,3 +62,33 @@ export function obterVisibilidadeAbasPerfilAutor({
     primeiraAbaPerfilVisivel: primeiraVisivel,
   };
 }
+
+
+export function obterVisibilidadeConteudosAbasPerfilAutor({
+  abaPerfil,
+  obrasPerfilVisivel,
+  sobrePerfilVisivel,
+  diarioPerfilVisivel,
+  comunidadePerfilVisivel,
+  bibliotecaPerfilVisivel,
+}: {
+  abaPerfil: AbaPerfilAutor;
+  obrasPerfilVisivel: boolean;
+  sobrePerfilVisivel: boolean;
+  diarioPerfilVisivel: boolean;
+  comunidadePerfilVisivel: boolean;
+  bibliotecaPerfilVisivel: boolean;
+}) {
+  return {
+    bibliotecaPerfilAtiva:
+      abaPerfil === "biblioteca" && bibliotecaPerfilVisivel,
+    diarioPerfilAtivo:
+      abaPerfil === "diario" && diarioPerfilVisivel,
+    comunidadePerfilAtiva:
+      abaPerfil === "comunidade" && comunidadePerfilVisivel,
+    sobrePerfilAtivo:
+      abaPerfil === "sobre" && sobrePerfilVisivel,
+    obrasPerfilAtivo:
+      abaPerfil === "obras" && obrasPerfilVisivel,
+  };
+}

@@ -1121,3 +1121,10 @@
 - Preservou exatamente a regra atual baseada na presença de `ultimoCapitulo`.
 - Removeu a condição `ultimoCapitulo &&` do JSX e ampliou a cobertura unitária/estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1068 — conteúdo ativo das abas
+
+- Extraiu as cinco combinações de aba selecionada + visibilidade para `obterVisibilidadeConteudosAbasPerfilAutor`.
+- Preservou exatamente as regras atuais de Biblioteca, Diário, Comunidade, Sobre e Obras.
+- Removeu as cinco condições compostas correspondentes do JSX e ampliou a cobertura unitária/estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
