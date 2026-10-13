@@ -128,6 +128,11 @@ export function obterDadosNotificacoesPerfilAutor(
 }
 
 
+export function obterTituloSobrePerfilAutor(nomePerfil: string) {
+  return `Sobre ${nomePerfil}`;
+}
+
+
 export function obterUsernameExibidoPerfilAutor(
   autorHandlePerfil: string,
 ) {
