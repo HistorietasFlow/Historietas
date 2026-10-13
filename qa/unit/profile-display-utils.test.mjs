@@ -301,6 +301,7 @@ test("dados de notificações consolidam contagem e rótulos acessíveis", () =>
       notificacoesNaoLidasFormatadas: "0",
       ariaLabelNotificacoes: "Notificações",
       ariaLabelBadgeNotificacoes: "0 notificações não lidas",
+      temNotificacoesNaoLidas: false,
     },
   );
   assert.deepEqual(
@@ -309,6 +310,7 @@ test("dados de notificações consolidam contagem e rótulos acessíveis", () =>
       notificacoesNaoLidasFormatadas: "99+",
       ariaLabelNotificacoes: "Notificações: 100 não lidas",
       ariaLabelBadgeNotificacoes: "99+ notificações não lidas",
+      temNotificacoesNaoLidas: true,
     },
   );
 });
@@ -330,6 +332,14 @@ test("página deriva os dados de notificações em uma única chamada", () => {
   assert.match(pagina, /\{notificacoesNaoLidasFormatadas\}/);
   assert.match(pagina, /aria-label=\{ariaLabelNotificacoes\}/);
   assert.match(pagina, /aria-label=\{ariaLabelBadgeNotificacoes\}/);
+  assert.match(
+    pagina,
+    /\{temNotificacoesNaoLidas \? \(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /notificacoesNaoLidas > 0 \? \(/,
+  );
 });
 
 
