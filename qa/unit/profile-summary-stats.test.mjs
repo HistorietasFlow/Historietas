@@ -162,7 +162,11 @@ test("página reutiliza a presença de obras sem capítulos já derivada", () =>
   assert.match(pagina, /temObrasSemCapitulosPerfil,/);
   assert.match(
     pagina,
-    /\{temObrasSemCapitulosPerfil && \(/,
+    /import \{ ProfileAboutActivity \} from "\.\/components\/profile-about-activity";/,
+  );
+  assert.match(
+    pagina,
+    /mostrarObrasSemCapitulos=\{temObrasSemCapitulosPerfil\}/,
   );
   assert.doesNotMatch(
     pagina,

@@ -218,16 +218,12 @@ import { ProfileAboutEditor } from "./components/profile-about-editor";
 import { ProfileAboutTextarea } from "./components/profile-about-textarea";
 import { ProfileAboutCounter } from "./components/profile-about-counter";
 import { ProfileAboutContentGrid } from "./components/profile-about-content-grid";
+import { ProfileAboutProfileNumbers } from "./components/profile-about-profile-numbers";
+import { ProfileAboutActivity } from "./components/profile-about-activity";
 import { ProfileAboutPanel } from "./components/profile-about-panel";
 import { ProfileAboutPanelTitle } from "./components/profile-about-panel-title";
 import { ProfileAboutChips } from "./components/profile-about-chips";
 import { ProfileAboutChip } from "./components/profile-about-chip";
-import { ProfileAboutMetricsGrid } from "./components/profile-about-metrics-grid";
-import { ProfileAboutMetricCard } from "./components/profile-about-metric-card";
-import { ProfileAboutMetricNumber } from "./components/profile-about-metric-number";
-import { ProfileAboutMetricLabel } from "./components/profile-about-metric-label";
-import { ProfileAboutRows } from "./components/profile-about-rows";
-import { ProfileAboutRow } from "./components/profile-about-row";
 import { ProfileAboutMemberSince } from "./components/profile-about-member-since";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -2078,68 +2074,29 @@ function PerfilAutorPageContent() {
                 </ProfileAboutChips>
               </ProfileAboutPanel>
 
-              <ProfileAboutPanel>
-                <ProfileAboutPanelTitle>Números do perfil</ProfileAboutPanelTitle>
+              <ProfileAboutProfileNumbers
+                totalPublicadas={compactarNumeroPerfilAutor(
+                  perfilParaMostrar.totalPublicadas,
+                )}
+                totalCapitulos={compactarNumeroPerfilAutor(
+                  perfilParaMostrar.totalCapitulos,
+                )}
+                totalCurtidas={compactarNumeroPerfilAutor(
+                  perfilParaMostrar.totalCurtidas,
+                )}
+                totalVisualizacoes={compactarNumeroPerfilAutor(
+                  totalVisualizacoesPerfil,
+                )}
+              />
 
-                <ProfileAboutMetricsGrid>
-                  <ProfileAboutMetricCard>
-                    <ProfileAboutMetricNumber>
-                      {compactarNumeroPerfilAutor(perfilParaMostrar.totalPublicadas)}
-                    </ProfileAboutMetricNumber>
-                    <ProfileAboutMetricLabel>publicadas</ProfileAboutMetricLabel>
-                  </ProfileAboutMetricCard>
-
-                  <ProfileAboutMetricCard>
-                    <ProfileAboutMetricNumber>
-                      {compactarNumeroPerfilAutor(perfilParaMostrar.totalCapitulos)}
-                    </ProfileAboutMetricNumber>
-                    <ProfileAboutMetricLabel>capítulos</ProfileAboutMetricLabel>
-                  </ProfileAboutMetricCard>
-
-                  <ProfileAboutMetricCard>
-                    <ProfileAboutMetricNumber>
-                      {compactarNumeroPerfilAutor(perfilParaMostrar.totalCurtidas)}
-                    </ProfileAboutMetricNumber>
-                    <ProfileAboutMetricLabel>curtidas</ProfileAboutMetricLabel>
-                  </ProfileAboutMetricCard>
-
-                  <ProfileAboutMetricCard>
-                    <ProfileAboutMetricNumber>
-                      {compactarNumeroPerfilAutor(totalVisualizacoesPerfil)}
-                    </ProfileAboutMetricNumber>
-                    <ProfileAboutMetricLabel>visualizações</ProfileAboutMetricLabel>
-                  </ProfileAboutMetricCard>
-                </ProfileAboutMetricsGrid>
-              </ProfileAboutPanel>
-
-              <ProfileAboutPanel>
-                <ProfileAboutPanelTitle>Atividade</ProfileAboutPanelTitle>
-
-                <ProfileAboutRows>
-                  <ProfileAboutRow>
-                    obras no perfil
-                    <strong>{totalObrasPerfil}</strong>
-                  </ProfileAboutRow>
-                  <ProfileAboutRow>
-                    rascunhos em desenvolvimento
-                    <strong>{totalRascunhosPerfil}</strong>
-                  </ProfileAboutRow>
-                  <ProfileAboutRow>
-                    comentários recebidos
-                    <strong>{perfilParaMostrar.totalComentarios}</strong>
-                  </ProfileAboutRow>
-                  <ProfileAboutRow>
-                    concluídas por leitores
-                    <strong>{obrasConcluidasPerfilTotal}</strong>
-                  </ProfileAboutRow>
-                  {temObrasSemCapitulosPerfil && (
-                    <ProfileAboutRow>
-                      sem capítulos ainda
-                      <strong>{totalObrasSemCapitulosPerfil}</strong>
-                    </ProfileAboutRow>
-                  )}
-                </ProfileAboutRows>
-              </ProfileAboutPanel>
+              <ProfileAboutActivity
+                totalObras={totalObrasPerfil}
+                totalRascunhos={totalRascunhosPerfil}
+                totalComentarios={perfilParaMostrar.totalComentarios}
+                totalConcluidas={obrasConcluidasPerfilTotal}
+                mostrarObrasSemCapitulos={temObrasSemCapitulosPerfil}
+                totalObrasSemCapitulos={totalObrasSemCapitulosPerfil}
+              />
             </ProfileAboutContentGrid>
 
             <ProfileAboutMemberSince>
