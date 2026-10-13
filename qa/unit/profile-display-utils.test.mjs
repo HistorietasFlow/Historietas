@@ -63,6 +63,7 @@ const {
   obterDadosExibicaoPerfilAutor,
   obterDadosNotificacoesPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
+  obterUsernameExibidoPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } = await import(
@@ -339,6 +340,33 @@ test("página deriva os dados de notificações em uma única chamada", () => {
   assert.doesNotMatch(
     pagina,
     /notificacoesNaoLidas > 0 \? \(/,
+  );
+});
+
+
+test("username exibido no cabeçalho remove apenas o @ inicial", () => {
+  assert.equal(obterUsernameExibidoPerfilAutor("@ana"), "ana");
+  assert.equal(obterUsernameExibidoPerfilAutor("ana"), "ana");
+  assert.equal(obterUsernameExibidoPerfilAutor("@@ana"), "@ana");
+});
+
+
+test("página delega a exibição do username ao helper", () => {
+  assert.match(
+    pagina,
+    /obterUsernameExibidoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterUsernameExibidoPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /\{obterUsernameExibidoPerfilAutor\(autorHandlePerfil\)\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /autorHandlePerfil\.replace\(\/\^@\/, ""\)/,
   );
 });
 
