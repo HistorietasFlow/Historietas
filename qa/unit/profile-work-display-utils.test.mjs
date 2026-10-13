@@ -1214,10 +1214,12 @@ test("página reutiliza um único botão de curtida do TOP 5", () => {
   );
   assert.match(
     pagina,
-    /titleActions=\{[\s\S]*?podeEditarPerfil \? botaoCurtidaTopFive : null[\s\S]*?\}/,
+    /const acoesTituloTopFive = podeEditarPerfil \? botaoCurtidaTopFive : null;/,
   );
   assert.match(
     pagina,
-    /headerActions=\{[\s\S]*?podeEditarPerfil \?[\s\S]*?<ProfileHighlightsEditLink[\s\S]*?: \([\s\S]*?botaoCurtidaTopFive/,
+    /const acoesCabecalhoTopFive = podeEditarPerfil \? \([\s\S]*?<ProfileHighlightsEditLink[\s\S]*?: \([\s\S]*?botaoCurtidaTopFive/,
   );
+  assert.match(pagina, /titleActions=\{acoesTituloTopFive\}/);
+  assert.match(pagina, /headerActions=\{acoesCabecalhoTopFive\}/);
 });
