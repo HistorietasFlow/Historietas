@@ -117,6 +117,7 @@ import {
   obterDadosExibicaoPerfilAutor,
   obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
+  obterTituloSobrePerfilAutor,
   obterUsernameExibidoPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
@@ -1954,7 +1955,7 @@ function PerfilAutorPageContent() {
           <ProfileAboutSection>
             <ProfileAboutHero>
               <ProfileAboutTitle>
-                Sobre {perfilParaMostrar.nome}
+                {obterTituloSobrePerfilAutor(perfilNome)}
               </ProfileAboutTitle>
 
               <ProfileAboutTextRow>

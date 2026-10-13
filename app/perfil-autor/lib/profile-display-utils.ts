@@ -136,6 +136,11 @@ export function obterInicialAvatarPerfilAutor(
 }
 
 
+export function obterTituloSobrePerfilAutor(nomePerfil: string) {
+  return `Sobre ${nomePerfil}`;
+}
+
+
 export function obterUsernameExibidoPerfilAutor(
   autorHandlePerfil: string,
 ) {
