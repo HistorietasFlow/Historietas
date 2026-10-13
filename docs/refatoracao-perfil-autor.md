@@ -1279,3 +1279,9 @@
 - Extraiu os conteúdos apresentacionais dos menus do próprio usuário e do visitante.
 - Extraiu a composição externa do menu, preservando overlay, diálogo, cabeçalho e seleção do conteúdo.
 - Manteve na página estados, derivações, notificações, ações, links e callbacks; sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1093 — Composição externa do editor de perfil
+
+- Extraiu o cabeçalho apresentacional do editor, preservando título, subtítulo, botão de fechar, `disabled` e acessibilidade.
+- Extraiu overlay, diálogo e a composição dos blocos de avatar, campos e ações finais para `ProfileEditor`.
+- Manteve na página os estados, derivações, limites, normalizações, callbacks e salvamento; sem alterações de UI, schema, RLS ou Supabase.
