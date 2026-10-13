@@ -62,6 +62,7 @@ const obterVisibilidadeRegistroDiario = (registro, fallback) =>
 ).outputText;
 const {
   criarHrefListaDiarioPerfilAutor,
+  diarioSemItensPerfilAutor,
   criarItemAtividadeDiarioPerfil,
   criarItemDiarioPerfil,
   montarMapaObrasDiario,
@@ -80,6 +81,32 @@ const criarObra = (sobrescrever = {}) => ({
   capitulos: [],
   ...sobrescrever,
 });
+
+test("estado vazio do Diário depende apenas da ausência de itens", () => {
+  assert.equal(diarioSemItensPerfilAutor([]), true);
+  assert.equal(diarioSemItensPerfilAutor([{ chave: "a" }]), false);
+});
+
+
+test("Perfil de Autor delega o estado vazio do Diário ao helper", () => {
+  assert.match(
+    pagina,
+    /diarioSemItensPerfilAutor,[\s\S]*?from "\.\/lib\/profile-diary-item-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/diarioSemItensPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /getIsEmpty=\{\(\) => diarioSemItensPerfilAutor\(itensDiarioTudo\)\}/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /getIsEmpty=\{\(\) => itensDiarioTudo\.length === 0\}/,
+  );
+});
+
 
 test("criarItemDiarioPerfil preserva chave, referências e fallbacks de URL", () => {
   const obra = criarObra();
@@ -284,7 +311,7 @@ test("hrefs da página Listas preservam perfil, obra e encoding", () => {
 test("Perfil de Autor reutiliza hrefs centralizados do Diário", () => {
   assert.match(
     pagina,
-    /import \{ criarHrefListaDiarioPerfilAutor \} from "\.\/lib\/profile-diary-item-utils";/,
+    /import \{[\s\S]*?criarHrefListaDiarioPerfilAutor,[\s\S]*?diarioSemItensPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-diary-item-utils";/,
   );
   assert.equal(
     (pagina.match(/criarHrefListaDiarioPerfilAutor\(/g) || []).length,

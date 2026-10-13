@@ -7,6 +7,11 @@ import {
   obterVisibilidadeRegistroDiario,
 } from "./profile-diary-record-utils";
 
+export function diarioSemItensPerfilAutor(itens: DiarioPerfilItem[]) {
+  return itens.length === 0;
+}
+
+
 export function criarItemDiarioPerfil(
   tipo: DiarioPerfilItem["tipo"],
   obra: ObraLocal,

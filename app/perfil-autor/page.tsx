@@ -99,7 +99,10 @@ import {
   obterMensagemDiarioVazioPerfilAutor,
   obterTituloDiarioPerfilAutor,
 } from "./lib/profile-diary-local-utils";
-import { criarHrefListaDiarioPerfilAutor } from "./lib/profile-diary-item-utils";
+import {
+  criarHrefListaDiarioPerfilAutor,
+  diarioSemItensPerfilAutor,
+} from "./lib/profile-diary-item-utils";
 import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
 import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
@@ -1827,7 +1830,7 @@ function PerfilAutorPageContent() {
             linkTitle="Ver tudo"
             linkLabel="+"
             getIsLoading={() => diarioPerfil.carregando}
-            getIsEmpty={() => itensDiarioTudo.length === 0}
+            getIsEmpty={() => diarioSemItensPerfilAutor(itensDiarioTudo)}
             emptyMessage={obterMensagemDiarioVazioPerfilAutor(
               podeEditarPerfil,
             )}
