@@ -2207,7 +2207,6 @@ function PerfilAutorPageContent() {
           (() => {
             const obra = obraMenuAberta;
             const {
-              ultimoCapitulo,
               temUltimoCapitulo,
               capituloHref,
               obraFavorita,
