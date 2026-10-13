@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { obterVisibilidadeAbasPerfilAutor } from "../../app/perfil-autor/lib/profile-tab-visibility-utils.ts";
+import {
+  obterVisibilidadeAbasPerfilAutor,
+  obterVisibilidadeConteudosAbasPerfilAutor,
+} from "../../app/perfil-autor/lib/profile-tab-visibility-utils.ts";
 
 const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
@@ -128,5 +131,70 @@ test("página deriva a existência de bloqueio uma única vez", () => {
   assert.equal(
     (pagina.match(/estadoBloqueioPerfil\.existeBloqueio/g) || []).length,
     1,
+  );
+});
+
+
+test("conteúdo ativo exige aba selecionada e visível", () => {
+  assert.deepEqual(
+    obterVisibilidadeConteudosAbasPerfilAutor({
+      abaPerfil: "comunidade",
+      obrasPerfilVisivel: true,
+      sobrePerfilVisivel: true,
+      diarioPerfilVisivel: true,
+      comunidadePerfilVisivel: true,
+      bibliotecaPerfilVisivel: true,
+    }),
+    {
+      bibliotecaPerfilAtiva: false,
+      diarioPerfilAtivo: false,
+      comunidadePerfilAtiva: true,
+      sobrePerfilAtivo: false,
+      obrasPerfilAtivo: false,
+    },
+  );
+
+  assert.deepEqual(
+    obterVisibilidadeConteudosAbasPerfilAutor({
+      abaPerfil: "obras",
+      obrasPerfilVisivel: false,
+      sobrePerfilVisivel: true,
+      diarioPerfilVisivel: true,
+      comunidadePerfilVisivel: true,
+      bibliotecaPerfilVisivel: true,
+    }),
+    {
+      bibliotecaPerfilAtiva: false,
+      diarioPerfilAtivo: false,
+      comunidadePerfilAtiva: false,
+      sobrePerfilAtivo: false,
+      obrasPerfilAtivo: false,
+    },
+  );
+});
+
+test("página delega a visibilidade do conteúdo das cinco abas", () => {
+  assert.match(
+    pagina,
+    /obterVisibilidadeConteudosAbasPerfilAutor,[\s\S]*?from "\.\/lib\/profile-tab-visibility-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterVisibilidadeConteudosAbasPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+
+  for (const nome of [
+    "bibliotecaPerfilAtiva",
+    "diarioPerfilAtivo",
+    "comunidadePerfilAtiva",
+    "sobrePerfilAtivo",
+    "obrasPerfilAtivo",
+  ]) {
+    assert.match(pagina, new RegExp("\\{" + nome + " && \\("));
+  }
+
+  assert.doesNotMatch(
+    pagina,
+    /abaPerfil === "(?:biblioteca|diario|comunidade|sobre|obras)" &&/,
   );
 });
