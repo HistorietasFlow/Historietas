@@ -196,9 +196,7 @@ import { ProfileWorksContentState } from "./components/profile-works-content-sta
 import { ProfileWorkGridItem } from "./components/profile-work-grid-item";
 import { ProfileWorkActionSheet } from "./components/profile-work-action-sheet";
 import { ProfileLibraryActionSheet } from "./components/profile-library-action-sheet";
-import { ProfileEditorAvatar } from "./components/profile-editor-avatar";
-import { ProfileEditorFields } from "./components/profile-editor-fields";
-import { ProfileEditorActions } from "./components/profile-editor-actions";
+import { ProfileEditor } from "./components/profile-editor";
 import {
   obterEstilosResponsivosPerfilAutor,
   criarCapaDestaquePerfilAutor,
@@ -213,16 +211,9 @@ import {
   profileMenuButtonStyle,
   profileMenuIconStyle,
   profileMenuIconLineStyle,
-  menuOverlayStyle,
-  menuHeaderStyle,
-  menuTitleBlockStyle,
-  menuTitleStyle,
-  menuSubtitleStyle,
-  menuCloseButtonStyle,
   menuItemStyle,
   menuDangerItemStyle,
   hiddenInputStyle,
-  profileEditorSheetContentStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
 } from "./styles";
@@ -1380,85 +1371,41 @@ function PerfilAutorPageContent() {
         )}
 
         {editorPerfilVisivel && (
-          <div
-            style={menuOverlayStyle}
-            role="presentation"
-            onClick={fecharEditorPerfil}
-          >
-            <section
-              style={menuSheetAtualStyle}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Editar perfil"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div style={menuHeaderStyle}>
-                <div style={menuTitleBlockStyle}>
-                  <strong style={menuTitleStyle}>Editar perfil</strong>
-                  <span style={menuSubtitleStyle}>
-                    Atualize suas informações públicas
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={fecharEditorPerfil}
-                  disabled={salvandoEditorPerfil}
-                  style={menuCloseButtonStyle}
-                  aria-label="Fechar edição do perfil"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div style={profileEditorSheetContentStyle}>
-                <ProfileEditorAvatar
-                  actionLabel={rotuloAcaoAvatar}
-                  actionsStyle={avatarActionsAtualStyle}
-                  avatar={avatarPerfilEditor}
-                  disabled={salvandoEditorPerfil}
-                  error={avatarErro}
-                  fallbackInitial={inicialAvatarPerfilEditor}
-                  hasAvatar={temAvatarPerfilEditor}
-                  onChooseImage={() => avatarInputRef.current?.click()}
-                  onRemoveImage={removerAvatarAutor}
-                  removeButtonStyle={avatarRemoveButtonAtualStyle}
-                  smallButtonStyle={avatarSmallButtonAtualStyle}
-                />
-
-                <ProfileEditorFields
-                  bio={bioPerfilEditor}
-                  bioPlaceholder={bioPadraoAutor}
-                  disabled={salvandoEditorPerfil}
-                  maxBioLength={BIO_MAX_LENGTH}
-                  name={nomePerfilEditor}
-                  onBioChange={(value) =>
-                    setBioPerfilEditor(
-                      limitarTextoPerfilAutor(value, BIO_MAX_LENGTH),
-                    )
-                  }
-                  onNameChange={(value) =>
-                    setNomePerfilEditor(limitarTextoPerfilAutor(value, 80))
-                  }
-                  onSave={() => void salvarEdicaoPerfilAutor()}
-                  onUsernameChange={(value) =>
-                    setUsernamePerfilEditor(
-                      normalizarUsernamePerfilAutor(value),
-                    )
-                  }
-                  remainingBioCharacters={caracteresRestantesBioPerfil}
-                  username={usernamePerfilEditor}
-                />
-
-                <ProfileEditorActions
-                  disabled={salvandoEditorPerfil}
-                  onCancel={fecharEditorPerfil}
-                  onSave={() => void salvarEdicaoPerfilAutor()}
-                  saveLabel={rotuloSalvarEditor}
-                />
-              </div>
-            </section>
-          </div>
+          <ProfileEditor
+            actionLabel={rotuloAcaoAvatar}
+            avatar={avatarPerfilEditor}
+            avatarActionsStyle={avatarActionsAtualStyle}
+            avatarError={avatarErro}
+            avatarRemoveButtonStyle={avatarRemoveButtonAtualStyle}
+            avatarSmallButtonStyle={avatarSmallButtonAtualStyle}
+            bio={bioPerfilEditor}
+            bioPlaceholder={bioPadraoAutor}
+            disabled={salvandoEditorPerfil}
+            fallbackInitial={inicialAvatarPerfilEditor}
+            hasAvatar={temAvatarPerfilEditor}
+            maxBioLength={BIO_MAX_LENGTH}
+            name={nomePerfilEditor}
+            onBioChange={(value) =>
+              setBioPerfilEditor(
+                limitarTextoPerfilAutor(value, BIO_MAX_LENGTH),
+              )
+            }
+            onCancel={fecharEditorPerfil}
+            onChooseImage={() => avatarInputRef.current?.click()}
+            onClose={fecharEditorPerfil}
+            onNameChange={(value) =>
+              setNomePerfilEditor(limitarTextoPerfilAutor(value, 80))
+            }
+            onRemoveImage={removerAvatarAutor}
+            onSave={() => void salvarEdicaoPerfilAutor()}
+            onUsernameChange={(value) =>
+              setUsernamePerfilEditor(normalizarUsernamePerfilAutor(value))
+            }
+            remainingBioCharacters={caracteresRestantesBioPerfil}
+            saveLabel={rotuloSalvarEditor}
+            sheetStyle={menuSheetAtualStyle}
+            username={usernamePerfilEditor}
+          />
         )}
 
         <DenunciaModal

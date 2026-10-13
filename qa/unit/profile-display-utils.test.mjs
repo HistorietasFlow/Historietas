@@ -53,6 +53,20 @@ const profileEditorActionsSource = readFileSync(
   ),
   "utf8",
 );
+const profileEditorHeaderSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-editor-header.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const profileEditorSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-editor.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileMenuSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-menu.tsx",
@@ -706,23 +720,27 @@ test("página delega a inicial do avatar ao helper", () => {
   );
 });
 
-test("página compõe os blocos apresentacionais do editor de perfil", () => {
+test("página delega a composição externa do editor de perfil", () => {
   assert.match(
     pagina,
-    /import \{ ProfileEditorAvatar \} from "\.\/components\/profile-editor-avatar";/,
-  );
-  assert.match(
-    pagina,
-    /import \{ ProfileEditorFields \} from "\.\/components\/profile-editor-fields";/,
-  );
-  assert.match(
-    pagina,
-    /import \{ ProfileEditorActions \} from "\.\/components\/profile-editor-actions";/,
+    /import \{ ProfileEditor \} from "\.\/components\/profile-editor";/,
   );
   assert.match(pagina, /onChooseImage=\{\(\) => avatarInputRef\.current\?\.click\(\)\}/);
   assert.match(pagina, /onRemoveImage=\{removerAvatarAutor\}/);
   assert.match(pagina, /onCancel=\{fecharEditorPerfil\}/);
   assert.match(pagina, /onSave=\{\(\) => void salvarEdicaoPerfilAutor\(\)\}/);
+  assert.match(profileEditorSource, /import \{ ProfileEditorHeader \} from "\.\/profile-editor-header";/);
+  assert.match(profileEditorSource, /import \{ ProfileEditorAvatar \} from "\.\/profile-editor-avatar";/);
+  assert.match(profileEditorSource, /import \{ ProfileEditorFields \} from "\.\/profile-editor-fields";/);
+  assert.match(profileEditorSource, /import \{ ProfileEditorActions \} from "\.\/profile-editor-actions";/);
+  assert.match(profileEditorSource, /role="dialog"/);
+  assert.match(profileEditorSource, /aria-modal="true"/);
+  assert.match(profileEditorSource, /aria-label="Editar perfil"/);
+  assert.match(profileEditorSource, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
+  assert.match(profileEditorHeaderSource, />Editar perfil<\/strong>/);
+  assert.match(profileEditorHeaderSource, /Atualize suas informações públicas/);
+  assert.match(profileEditorHeaderSource, /aria-label="Fechar edição do perfil"/);
+  assert.match(profileEditorHeaderSource, /disabled=\{disabled\}/);
   assert.match(profileEditorAvatarSource, /alt="Prévia da imagem do perfil"/);
   assert.match(profileEditorAvatarSource, /\{error && <span style=\{avatarErrorStyle\}>\{error\}<\/span>\}/);
   assert.match(profileEditorFieldsSource, /if \(event\.key === "Enter"\)/);
