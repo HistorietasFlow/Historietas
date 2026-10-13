@@ -730,9 +730,11 @@ function PerfilAutorPageContent() {
   });
   const mostrarDestaquesAutor = perfilSalvoAutor.mostrarDestaques;
 
+  const publicacoesRecentesComunidade =
+    comunidadePerfil.publicacoesRecentes;
   const comunidadeSemPublicacoesRecentes =
     comunidadeSemPublicacoesRecentesPerfilAutor(
-      comunidadePerfil.publicacoesRecentes,
+      publicacoesRecentesComunidade,
     );
   const erroComunidadePerfil = comunidadePerfil.erro;
   const avisoComunidadeVazia = obterAvisoComunidadeVaziaPerfilAutor({
@@ -1956,7 +1958,7 @@ function PerfilAutorPageContent() {
                   <ProfileCommunityRecentPostsSection title="Publicações recentes">
 
                     <ProfileCommunityRecentPostsList isDesktop={isDesktop}>
-                      {comunidadePerfil.publicacoesRecentes.map(
+                      {publicacoesRecentesComunidade.map(
                         (publicacao) => {
                           const dadosPublicacao =
                             obterDadosPublicacaoRecenteComunidadePerfilAutor(
