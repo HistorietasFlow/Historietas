@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const heroIdentitySource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero-identity.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileDisplayDependencies = {
   SOBRE_BIO_MAX_LENGTH: 160,
@@ -965,8 +972,28 @@ test("Perfil de Autor reutiliza o nome derivado do perfil", () => {
     pagina,
     /obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilNome,\s*\)/,
   );
+  assert.match(
+    pagina,
+    /import \{ ProfileHeroIdentity \} from "\.\/components\/profile-hero-identity";/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileHeroIdentity[\s\S]*?autorNome=\{perfilNome\}/,
+  );
+  assert.match(
+    heroIdentitySource,
+    /import \{ ProfileAvatar \} from "\.\/profile-avatar";/,
+  );
+  assert.match(
+    heroIdentitySource,
+    /import \{ ProfileHeaderInfo \} from "\.\/profile-header-info";/,
+  );
+  assert.match(
+    heroIdentitySource,
+    /import \{ ProfileStats \} from "\.\/profile-stats";/,
+  );
   assert.equal(
-    (pagina.match(/autorNome=\{perfilNome\}/g) || []).length,
+    (heroIdentitySource.match(/autorNome=\{autorNome\}/g) || []).length,
     3,
   );
 });

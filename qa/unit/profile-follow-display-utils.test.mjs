@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const heroActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero-actions.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileFollowDisplayDependencies = {
   criarChaveAutorPerfil(autorId, nome) {
@@ -103,13 +110,25 @@ test("página delega a apresentação do botão de seguimento ao helper", () => 
     pagina,
     /const estiloBaseBotaoSeguimento = botaoSeguimentoAtivo[\s\S]{0,120}\? profileActiveButtonStyle[\s\S]{0,120}: profilePrimaryButtonStyle;/,
   );
-  assert.match(pagina, /\.\.\.estiloBaseBotaoSeguimento/);
+  assert.match(
+    pagina,
+    /import \{ ProfileHeroActions \} from "\.\/components\/profile-hero-actions";/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileHeroActions[\s\S]*?followBaseStyle=\{estiloBaseBotaoSeguimento\}[\s\S]*?followOpacity=\{opacidadeBotaoSeguimento\}[\s\S]*?followCursor=\{cursorBotaoSeguimento\}/,
+  );
+  assert.match(heroActionsSource, /\.\.\.followBaseStyle/);
+  assert.match(heroActionsSource, /opacity: followOpacity/);
+  assert.match(heroActionsSource, /cursor: followCursor/);
+  assert.match(heroActionsSource, /<ProfileOwnerActions[\s\S]*?onToggleHighlights=\{onToggleOwnerHighlights\}/);
+  assert.match(heroActionsSource, /\{!existeBloqueio && \(/);
+  assert.match(heroActionsSource, /<ProfileVisitorSecondaryActions[\s\S]*?onToggleHighlights=\{onToggleVisitorHighlights\}/);
+  assert.match(heroActionsSource, /<ProfileActionToast message=\{message\} \/>/);
   assert.doesNotMatch(
     pagina,
     /\.\.\.\(botaoSeguimentoAtivo[\s\S]{0,120}\? profileActiveButtonStyle/,
   );
-  assert.match(pagina, /opacity: opacidadeBotaoSeguimento/);
-  assert.match(pagina, /cursor: cursorBotaoSeguimento/);
   assert.doesNotMatch(
     pagina,
     /seguindoPerfilAtual \|\| solicitacaoSeguimentoPendente\s*\? profileActiveButtonStyle/,
@@ -181,9 +200,13 @@ test("página delega os textos da ação de seguimento ao helper", () => {
     (pagina.match(/obterDadosAcaoSeguimentoPerfilAutor\(\{/g) || []).length,
     1,
   );
-  assert.match(pagina, /aria-label=\{ariaLabelSeguimento\}/);
-  assert.match(pagina, /title=\{titleSeguimento\}/);
-  assert.match(pagina, /\{rotuloSeguimento\}/);
+  assert.match(
+    pagina,
+    /<ProfileHeroActions[\s\S]*?followAriaLabel=\{ariaLabelSeguimento\}[\s\S]*?followTitle=\{titleSeguimento\}[\s\S]*?followLabel=\{rotuloSeguimento\}/,
+  );
+  assert.match(heroActionsSource, /aria-label=\{followAriaLabel\}/);
+  assert.match(heroActionsSource, /title=\{followTitle\}/);
+  assert.match(heroActionsSource, /\{followLabel\}/);
   assert.doesNotMatch(
     pagina,
     /solicitacaoSeguimentoPendente[\s\S]{0,120}\? "Cancelar solicitação"/,
