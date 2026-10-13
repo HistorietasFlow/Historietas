@@ -421,18 +421,22 @@ test("seleção da obra com menu aberto usa ID exato e retorna null sem seleçã
 });
 
 
-test("página deriva uma vez a existência de obras em destaque", () => {
+test("página deriva total e existência de obras em destaque uma única vez", () => {
   assert.match(
     pagina,
-    /const temObrasEmDestaque = obrasEmDestaque\.length > 0;/,
+    /const totalObrasEmDestaque = obrasEmDestaque\.length;/,
+  );
+  assert.match(
+    pagina,
+    /const temObrasEmDestaque = totalObrasEmDestaque > 0;/,
   );
   assert.equal(
-    (pagina.match(/obrasEmDestaque\.length > 0/g) || []).length,
+    (pagina.match(/obrasEmDestaque\.length/g) || []).length,
     1,
   );
-  assert.doesNotMatch(
+  assert.match(
     pagina,
-    /obrasEmDestaque\.length === 0/,
+    /totalObrasEmDestaque,/,
   );
   assert.equal(
     (pagina.match(/\btemObrasEmDestaque\b/g) || []).length,

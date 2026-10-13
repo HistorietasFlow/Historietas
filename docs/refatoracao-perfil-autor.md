@@ -1037,3 +1037,10 @@
 - Reutilizou o total na mensagem de estado vazio e na métrica da seção Sobre.
 - Removeu duas leituras de comprimento separadas em `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1056 — total de obras em destaque
+
+- Derivou `totalObrasEmDestaque` uma única vez a partir de `obrasEmDestaque.length`.
+- Reutilizou o total na existência de destaques e em `obterVisibilidadeDestaquesPerfilAutor`.
+- Removeu a segunda leitura direta de comprimento em `page.tsx` e atualizou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
