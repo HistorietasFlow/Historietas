@@ -953,6 +953,7 @@ function PerfilAutorPageContent() {
   });
 
   const itensDiarioTudo = montarItensDiarioTudoPerfil(diarioPerfil);
+  const diarioPerfilCarregando = diarioPerfil.carregando;
 
   usePerfilAutorRatingSync({
     perfilParaMostrar,
@@ -1815,7 +1816,7 @@ function PerfilAutorPageContent() {
               onSelect={setAbaBibliotecaPerfil}
             />
 
-            {diarioPerfil.carregando ? (
+            {diarioPerfilCarregando ? (
               <LoadingSpinner label="Carregando biblioteca" compacto />
             ) : bibliotecaSemItensAtivosPerfilAutor(itensBibliotecaAtivos) ? (
               <ProfileSectionEmptyState message={mensagemBibliotecaVazia} />
@@ -1870,7 +1871,7 @@ function PerfilAutorPageContent() {
             linkAriaLabel="Abrir tudo na página Listas"
             linkTitle="Ver tudo"
             linkLabel="+"
-            getIsLoading={() => diarioPerfil.carregando}
+            getIsLoading={() => diarioPerfilCarregando}
             getIsEmpty={() => diarioSemItensPerfilAutor(itensDiarioTudo)}
             emptyMessage={obterMensagemDiarioVazioPerfilAutor(
               podeEditarPerfil,
@@ -2143,7 +2144,7 @@ function PerfilAutorPageContent() {
             {atividadesPerfilVisivel && (
               <ProfileAboutRecentActivity
                 expanded={atividadeSobreAberta}
-                loading={diarioPerfil.carregando}
+                loading={diarioPerfilCarregando}
                 items={diarioPerfil.atividades}
                 onToggle={() =>
                   setAtividadeSobreAberta((valorAtual) => !valorAtual)
