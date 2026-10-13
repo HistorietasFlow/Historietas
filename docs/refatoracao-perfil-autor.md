@@ -946,3 +946,10 @@
 - Preservou exatamente a regra `limite - tamanho atual` usada pela biografia.
 - Removeu o cálculo inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1043 — limite de texto dos campos do editor
+
+- Extraiu o corte de texto para `limitarTextoPerfilAutor`.
+- Reutilizou o helper nos campos de nome e biografia, preservando os limites atuais de 80 e `BIO_MAX_LENGTH`.
+- Removeu os dois `slice(0, ...)` inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
