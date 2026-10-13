@@ -126,7 +126,7 @@ test("Perfil de Autor deriva o carregamento do Diário uma única vez", () => {
   );
   assert.match(
     pagina,
-    /<ProfileLibraryContentState[\s\S]*?loading=\{diarioPerfilCarregando\}/,
+    /<ProfileLibraryPanel[\s\S]*?loading=\{diarioPerfilCarregando\}/,
   );
   assert.match(
     pagina,

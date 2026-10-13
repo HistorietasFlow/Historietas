@@ -46,6 +46,13 @@ const worksContentStateSource = readFileSync(
   ),
   "utf8",
 );
+const worksPanelSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-works-panel.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workGridItemSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-work-grid-item.tsx",
@@ -267,11 +274,15 @@ test("página delega o estado vazio de Obras ao helper", () => {
   );
   assert.match(
     pagina,
-    /import \{ ProfileWorksContentState \} from "\.\/components\/profile-works-content-state";/,
+    /import \{ ProfileWorksPanel \} from "\.\/components\/profile-works-panel";/,
   );
   assert.match(
     pagina,
-    /<ProfileWorksContentState[\s\S]*?empty=\{obrasSemResultadosPerfilAutor\(obrasDoPerfilFiltradas\)\}[\s\S]*?emptyMessage=\{mensagemObrasVazias\}[\s\S]*?obras=\{obrasDoPerfilFiltradas\}[\s\S]*?renderObra=\{renderizarObraPerfilAutor\}/,
+    /<ProfileWorksPanel[\s\S]*?empty=\{obrasSemResultadosPerfilAutor\(obrasDoPerfilFiltradas\)\}[\s\S]*?emptyMessage=\{mensagemObrasVazias\}[\s\S]*?obras=\{obrasDoPerfilFiltradas\}[\s\S]*?renderObra=\{renderizarObraPerfilAutor\}/,
+  );
+  assert.match(
+    worksPanelSource,
+    /<ProfileWorksSection>[\s\S]*?<ProfileWorksContentState[\s\S]*?empty=\{empty\}[\s\S]*?emptyMessage=\{emptyMessage\}[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?obras=\{obras\}[\s\S]*?renderObra=\{renderObra\}/,
   );
   assert.doesNotMatch(
     pagina,
