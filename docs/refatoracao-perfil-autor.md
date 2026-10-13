@@ -1086,3 +1086,10 @@
 - Preservou exatamente a regra atual baseada em `totalObrasSemCapitulosPerfil > 0`.
 - Removeu a comparação inline da seção Sobre e ampliou a cobertura unitária/estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1063 — estado de visitante derivado
+
+- Derivou `perfilVisitante` uma única vez a partir de `!podeEditarPerfil`.
+- Reutilizou o estado no subtítulo do menu, na denúncia de publicação e nas ações do sheet da obra.
+- Removeu as três negações inline restantes de `podeEditarPerfil` no JSX e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
