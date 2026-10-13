@@ -939,3 +939,10 @@
 - Reutilizou o helper nas cinco ações de favorito, concluído e Quero ler dos sheets.
 - Removeu cinco ternários repetidos do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1042 — contador de caracteres da biografia
+
+- Extraiu o cálculo de caracteres restantes para `obterCaracteresRestantesPerfilAutor`.
+- Preservou exatamente a regra `limite - tamanho atual` usada pela biografia.
+- Removeu o cálculo inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

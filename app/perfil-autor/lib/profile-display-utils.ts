@@ -136,6 +136,14 @@ export function obterInicialAvatarPerfilAutor(
 }
 
 
+export function obterCaracteresRestantesPerfilAutor(
+  valor: string,
+  limite: number,
+) {
+  return limite - valor.length;
+}
+
+
 export function obterIndicadorSelecaoPerfilAutor(selecionado: boolean) {
   return selecionado ? "✓" : "";
 }

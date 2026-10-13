@@ -62,6 +62,7 @@ const {
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterDadosNotificacoesPerfilAutor,
+  obterCaracteresRestantesPerfilAutor,
   obterIndicadorSelecaoPerfilAutor,
   obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
@@ -343,6 +344,32 @@ test("página deriva os dados de notificações em uma única chamada", () => {
   assert.doesNotMatch(
     pagina,
     /notificacoesNaoLidas > 0 \? \(/,
+  );
+});
+
+
+test("contador de caracteres preserva limite menos tamanho atual", () => {
+  assert.equal(obterCaracteresRestantesPerfilAutor("abc", 90), 87);
+  assert.equal(obterCaracteresRestantesPerfilAutor("", 90), 90);
+});
+
+
+test("página delega o contador da biografia ao helper", () => {
+  assert.match(
+    pagina,
+    /obterCaracteresRestantesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterCaracteresRestantesPerfilAutor\(/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /obterCaracteresRestantesPerfilAutor\(\s*bioPerfilEditor,\s*BIO_MAX_LENGTH,\s*\)/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /BIO_MAX_LENGTH - bioPerfilEditor\.length/,
   );
 });
 
