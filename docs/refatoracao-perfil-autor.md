@@ -1170,3 +1170,10 @@
 - Reutilizou a coleção na montagem dos itens da Biblioteca e na atividade recente da seção Sobre.
 - Removeu a leitura direta duplicada de `diarioPerfil.atividades` em `page.tsx` e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1075 — nome do perfil derivado
+
+- Reutilizou `perfilNome`, já derivado de `perfilParaMostrar?.nome || ""`, nos pontos restantes da página.
+- Removeu cinco leituras diretas de `perfilParaMostrar.nome` no menu, no fallback do avatar do editor e no cabeçalho do perfil.
+- Ampliou a cobertura estrutural para garantir a reutilização da derivação única.
+- Sem alterações de UI, schema, RLS ou Supabase.
