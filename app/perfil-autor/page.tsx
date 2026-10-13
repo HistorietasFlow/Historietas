@@ -182,13 +182,10 @@ import { ProfileRatingAction } from "./components/profile-rating-actions";
 import { ProfileBio } from "./components/profile-bio";
 import { ProfileHeroIdentity } from "./components/profile-hero-identity";
 import { ProfileHeroActions } from "./components/profile-hero-actions";
-import { ProfileHighlightsEmptyState } from "./components/profile-highlights-empty-state";
 import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
 import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
-import { ProfileHighlightsHeader } from "./components/profile-highlights-header";
-import { ProfileHighlightsList } from "./components/profile-highlights-list";
-import { ProfileHighlightsSection } from "./components/profile-highlights-section";
+import { ProfileHighlightsPanel } from "./components/profile-highlights-panel";
 import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileLibraryContentState } from "./components/profile-library-content-state";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
@@ -950,6 +947,19 @@ function PerfilAutorPageContent() {
   ) : (
     botaoCurtidaTopFive
   );
+
+  function renderizarObraDestaquePerfilAutor(obra: ObraLocal) {
+    const obraHref = obterHrefObraPerfilAutor(obra);
+
+    return (
+      <ProfileHighlightItem
+        key={`destaque-${obra.id}`}
+        href={obraHref}
+        titulo={obra.titulo}
+        capaStyle={criarCapaDestaquePerfilAutor(obra.capa)}
+      />
+    );
+  }
 
   usePerfilAutorDiarySync({
     perfilParaMostrar,
@@ -1785,32 +1795,15 @@ function PerfilAutorPageContent() {
         </section>
 
         {exibirSecaoDestaques && (
-            <ProfileHighlightsSection isDesktop={isDesktop}>
-              <ProfileHighlightsHeader
-                titleActions={acoesTituloTopFive}
-                headerActions={acoesCabecalhoTopFive}
-              />
-
-              {!temObrasEmDestaque ? (
-                <ProfileHighlightsEmptyState
-                  message={mensagemTopFiveVazio}
-                />
-              ) : (
-                <ProfileHighlightsList isDesktop={isDesktop}>
-                  {obrasEmDestaque.map((obra) => {
-                    const obraHref = obterHrefObraPerfilAutor(obra);
-                    return (
-                      <ProfileHighlightItem
-                        key={`destaque-${obra.id}`}
-                        href={obraHref}
-                        titulo={obra.titulo}
-                        capaStyle={criarCapaDestaquePerfilAutor(obra.capa)}
-                      />
-                    );
-                  })}
-                </ProfileHighlightsList>
-              )}
-            </ProfileHighlightsSection>
+          <ProfileHighlightsPanel
+            headerActions={acoesCabecalhoTopFive}
+            isDesktop={isDesktop}
+            message={mensagemTopFiveVazio}
+            obras={obrasEmDestaque}
+            renderObra={renderizarObraDestaquePerfilAutor}
+            temObras={temObrasEmDestaque}
+            titleActions={acoesTituloTopFive}
+          />
         )}
 
         {avaliacaoAutorAcaoVisivel && (
