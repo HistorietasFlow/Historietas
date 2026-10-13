@@ -995,3 +995,10 @@
 - Preservou exatamente a regra atual baseada em `obrasDoPerfilFiltradas.length === 0`.
 - Removeu a comparação inline do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1050 — visibilidade dos modais de denúncia
+
+- Centralizou a visibilidade das denúncias de perfil e conteúdo em `obterVisibilidadeDenunciasPerfilAutor`.
+- Preservou as guardas atuais de perfil disponível, alvo selecionado e bloqueio para edição do próprio perfil.
+- Removeu as combinações inline de `Boolean(...)` e condições dos dois `DenunciaModal` em `page.tsx`.
+- Sem alterações de UI, schema, RLS ou Supabase; cobertura unitária ampliada em `test:session`.

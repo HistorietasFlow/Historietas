@@ -120,6 +120,7 @@ import {
   obterDadosNotificacoesPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterVisibilidadeDenunciasPerfilAutor,
   limitarTextoPerfilAutor,
   obterCaracteresRestantesPerfilAutor,
   obterIndicadorSelecaoPerfilAutor,
@@ -728,6 +729,15 @@ function PerfilAutorPageContent() {
   );
   const dadosDenunciaConteudoPerfil =
     obterDadosDenunciaConteudoPerfilAutor(alvoDenunciaConteudoPerfil);
+  const {
+    denunciaPerfilVisivel,
+    denunciaConteudoVisivel,
+  } = obterVisibilidadeDenunciasPerfilAutor({
+    denunciaPerfilAberta,
+    podeEditarPerfil,
+    perfilParaMostrar,
+    alvoDenunciaConteudoPerfil,
+  });
 
   const {
     bioSobreAutorExibido,
@@ -1550,11 +1560,7 @@ function PerfilAutorPageContent() {
         )}
 
         <DenunciaModal
-          aberto={
-            denunciaPerfilAberta &&
-            !podeEditarPerfil &&
-            Boolean(perfilParaMostrar)
-          }
+          aberto={denunciaPerfilVisivel}
           alvoTipo="perfil"
           alvoId={dadosDenunciaPerfil.alvoId}
           alvoTitulo={dadosDenunciaPerfil.alvoTitulo}
@@ -1567,10 +1573,7 @@ function PerfilAutorPageContent() {
         />
 
         <DenunciaModal
-          aberto={
-            Boolean(alvoDenunciaConteudoPerfil) &&
-            !podeEditarPerfil
-          }
+          aberto={denunciaConteudoVisivel}
           alvoTipo={dadosDenunciaConteudoPerfil.alvoTipo}
           alvoId={dadosDenunciaConteudoPerfil.alvoId}
           alvoTitulo={dadosDenunciaConteudoPerfil.alvoTitulo}
