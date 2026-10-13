@@ -1093,3 +1093,10 @@
 - Reutilizou o estado no subtítulo do menu, na denúncia de publicação e nas ações do sheet da obra.
 - Removeu as três negações inline restantes de `podeEditarPerfil` no JSX e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1064 — totais de itens da Biblioteca
+
+- Derivou `itensBibliotecaQueroLerTotal` e `itensBibliotecaConcluidasTotal` antes de `obterTotaisBibliotecaPerfilAutor`.
+- Preservou exatamente os totais baseados em `.length` das listas já montadas.
+- Removeu os dois cálculos inline dos argumentos do helper e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.

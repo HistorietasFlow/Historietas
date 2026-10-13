@@ -979,6 +979,8 @@ function PerfilAutorPageContent() {
     obras,
   });
 
+  const itensBibliotecaQueroLerTotal = itensBibliotecaQueroLer.length;
+  const itensBibliotecaConcluidasTotal = itensBibliotecaConcluidas.length;
   const {
     obrasSeguidasPerfilTotal,
     obrasConcluidasPerfilTotal,
@@ -986,8 +988,8 @@ function PerfilAutorPageContent() {
     obras,
     obrasSeguidasBiblioteca,
     obrasConcluidas,
-    itensBibliotecaQueroLerTotal: itensBibliotecaQueroLer.length,
-    itensBibliotecaConcluidasTotal: itensBibliotecaConcluidas.length,
+    itensBibliotecaQueroLerTotal,
+    itensBibliotecaConcluidasTotal,
     obrasConcluidasPerfilPorObrasDoAutor,
   });
 
