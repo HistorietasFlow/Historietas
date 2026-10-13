@@ -901,6 +901,7 @@ test("alvo de leitura do menu prioriza capítulo para continuar e preserva fallb
   });
 
   assert.equal(comContinuacao.ultimoCapitulo.id, "c2");
+  assert.equal(comContinuacao.temUltimoCapitulo, true);
   assert.equal(comContinuacao.numeroUltimoCapitulo, 2);
   assert.equal(comContinuacao.capituloHref, "/ler/obra-leitura/c2/2");
 
@@ -910,6 +911,7 @@ test("alvo de leitura do menu prioriza capítulo para continuar e preserva fallb
   });
 
   assert.equal(fallbackFinal.ultimoCapitulo.id, "b");
+  assert.equal(fallbackFinal.temUltimoCapitulo, true);
   assert.equal(fallbackFinal.numeroUltimoCapitulo, 2);
   assert.equal(fallbackFinal.capituloHref, "/ler/obra-fallback/b/2");
 
@@ -921,6 +923,7 @@ test("alvo de leitura do menu prioriza capítulo para continuar e preserva fallb
     {
       ultimoCapitulo: null,
       numeroUltimoCapitulo: 0,
+      temUltimoCapitulo: false,
       capituloHref: "",
     },
   );
@@ -1147,6 +1150,7 @@ test("dados do sheet da obra consolidam leitura, coleções, meta e métricas", 
   });
 
   assert.equal(resultado.ultimoCapitulo.id, "c2");
+  assert.equal(resultado.temUltimoCapitulo, true);
   assert.equal(resultado.capituloHref, "/ler/obra-sheet-completo/c2/2");
   assert.equal(resultado.obraFavorita, true);
   assert.equal(resultado.obraConcluida, false);
@@ -1163,6 +1167,22 @@ test("dados do sheet da obra consolidam leitura, coleções, meta e métricas", 
     "Ações da obra Obra Sheet Completo",
   );
 });
+
+test("página reutiliza a visibilidade do alvo de leitura derivada pelo helper", () => {
+  assert.match(
+    pagina,
+    /temUltimoCapitulo,/,
+  );
+  assert.match(
+    pagina,
+    /\{temUltimoCapitulo && \(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /\{ultimoCapitulo && \(/,
+  );
+});
+
 
 test("página delega a composição do sheet da obra ao helper único", () => {
   assert.match(

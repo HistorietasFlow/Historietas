@@ -1114,3 +1114,10 @@
 - Preservou `profileActiveButtonStyle` no estado ativo e `profilePrimaryButtonStyle` no estado padrão.
 - Removeu o ternário de estilo de dentro do botão de seguir e atualizou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1067 — visibilidade do alvo de leitura
+
+- Incluiu `temUltimoCapitulo` nos dados derivados do alvo de leitura e do sheet da obra.
+- Preservou exatamente a regra atual baseada na presença de `ultimoCapitulo`.
+- Removeu a condição `ultimoCapitulo &&` do JSX e ampliou a cobertura unitária/estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
