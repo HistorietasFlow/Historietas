@@ -63,6 +63,7 @@ const {
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterDadosNotificacoesPerfilAutor,
+  obterVisibilidadeDenunciasPerfilAutor,
   obterCaracteresRestantesPerfilAutor,
   obterIndicadorSelecaoPerfilAutor,
   obterInicialAvatarPerfilAutor,
@@ -204,6 +205,74 @@ test("preserva detecção da bio padrão do leitor e fallback sem perfil", () =>
   assert.equal(vazio.autorHandlePerfil, "@autor.historietas");
   assert.equal(vazio.entradaHistorietasPerfil, "Entrada não informada");
   assert.equal(vazio.caracteresRestantesBioSobre, 160);
+});
+
+
+test("visibilidade das denúncias preserva perfil, conteúdo e bloqueio de edição", () => {
+  assert.deepEqual(
+    obterVisibilidadeDenunciasPerfilAutor({
+      denunciaPerfilAberta: true,
+      podeEditarPerfil: false,
+      perfilParaMostrar: perfil(),
+      alvoDenunciaConteudoPerfil: {
+        alvoTipo: "obra",
+        alvoId: "obra-1",
+        alvoTitulo: "Minha Obra",
+      },
+    }),
+    {
+      denunciaPerfilVisivel: true,
+      denunciaConteudoVisivel: true,
+    },
+  );
+
+  assert.deepEqual(
+    obterVisibilidadeDenunciasPerfilAutor({
+      denunciaPerfilAberta: true,
+      podeEditarPerfil: true,
+      perfilParaMostrar: perfil(),
+      alvoDenunciaConteudoPerfil: {
+        alvoTipo: "obra",
+        alvoId: "obra-1",
+        alvoTitulo: "Minha Obra",
+      },
+    }),
+    {
+      denunciaPerfilVisivel: false,
+      denunciaConteudoVisivel: false,
+    },
+  );
+
+  assert.deepEqual(
+    obterVisibilidadeDenunciasPerfilAutor({
+      denunciaPerfilAberta: true,
+      podeEditarPerfil: false,
+      perfilParaMostrar: null,
+      alvoDenunciaConteudoPerfil: null,
+    }),
+    {
+      denunciaPerfilVisivel: false,
+      denunciaConteudoVisivel: false,
+    },
+  );
+});
+
+
+test("página delega a visibilidade dos modais de denúncia ao helper", () => {
+  assert.match(
+    pagina,
+    /obterVisibilidadeDenunciasPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterVisibilidadeDenunciasPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /aberto=\{denunciaPerfilVisivel\}/);
+  assert.match(pagina, /aberto=\{denunciaConteudoVisivel\}/);
+  assert.doesNotMatch(
+    pagina,
+    /Boolean\(perfilParaMostrar\)|Boolean\(alvoDenunciaConteudoPerfil\)/,
+  );
 });
 
 

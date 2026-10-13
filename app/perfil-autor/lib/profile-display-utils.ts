@@ -87,6 +87,29 @@ export function obterDadosExibicaoPerfilAutor({
 }
 
 
+export function obterVisibilidadeDenunciasPerfilAutor({
+  denunciaPerfilAberta,
+  podeEditarPerfil,
+  perfilParaMostrar,
+  alvoDenunciaConteudoPerfil,
+}: {
+  denunciaPerfilAberta: boolean;
+  podeEditarPerfil: boolean;
+  perfilParaMostrar: AutorPerfil | null;
+  alvoDenunciaConteudoPerfil: AlvoDenunciaConteudoPerfil;
+}) {
+  return {
+    denunciaPerfilVisivel:
+      denunciaPerfilAberta &&
+      !podeEditarPerfil &&
+      Boolean(perfilParaMostrar),
+    denunciaConteudoVisivel:
+      Boolean(alvoDenunciaConteudoPerfil) &&
+      !podeEditarPerfil,
+  };
+}
+
+
 export function obterDadosDenunciaConteudoPerfilAutor(
   alvo: AlvoDenunciaConteudoPerfil,
 ) {
