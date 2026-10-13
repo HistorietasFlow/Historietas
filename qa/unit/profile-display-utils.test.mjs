@@ -32,6 +32,27 @@ const avatarInputSource = readFileSync(
   ),
   "utf8",
 );
+const reportModalsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-report-modals.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const reportProfileModalSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-report-profile-modal.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const reportContentModalSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-report-content-modal.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workActionSheetSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-work-action-sheet.tsx",
@@ -373,8 +394,21 @@ test("página delega a visibilidade dos modais de denúncia ao helper", () => {
     (pagina.match(/obterVisibilidadeDenunciasPerfilAutor\(\{/g) || []).length,
     1,
   );
-  assert.match(pagina, /aberto=\{denunciaPerfilVisivel\}/);
-  assert.match(pagina, /aberto=\{denunciaConteudoVisivel\}/);
+  assert.match(
+    pagina,
+    /import \{ ProfileReportModals \} from "\.\/components\/profile-report-modals";/,
+  );
+  assert.match(pagina, /<ProfileReportModals[\s\S]*?profileOpen=\{denunciaPerfilVisivel\}/);
+  assert.match(pagina, /<ProfileReportModals[\s\S]*?contentOpen=\{denunciaConteudoVisivel\}/);
+  assert.doesNotMatch(pagina, /<DenunciaModal/);
+  assert.match(reportModalsSource, /<ProfileReportProfileModal[\s\S]*?open=\{profileOpen\}/);
+  assert.match(reportModalsSource, /<ProfileReportContentModal[\s\S]*?open=\{contentOpen\}/);
+  assert.match(reportModalsSource, /onClose=\{onProfileClose\}/);
+  assert.match(reportModalsSource, /onSent=\{onProfileSent\}/);
+  assert.match(reportModalsSource, /onClose=\{onContentClose\}/);
+  assert.match(reportModalsSource, /onSent=\{onContentSent\}/);
+  assert.match(pagina, /onProfileClose=\{\(\) => setDenunciaPerfilAberta\(false\)\}/);
+  assert.match(pagina, /onContentClose=\{\(\) => setAlvoDenunciaConteudoPerfil\(null\)\}/);
   assert.doesNotMatch(
     pagina,
     /Boolean\(perfilParaMostrar\)|Boolean\(alvoDenunciaConteudoPerfil\)/,
@@ -415,16 +449,20 @@ test("página delega os dados da denúncia de conteúdo ao helper", () => {
   );
   assert.match(
     pagina,
-    /alvoTipo=\{dadosDenunciaConteudoPerfil\.alvoTipo\}/,
+    /contentTargetType=\{dadosDenunciaConteudoPerfil\.alvoTipo\}/,
   );
   assert.match(
     pagina,
-    /alvoId=\{dadosDenunciaConteudoPerfil\.alvoId\}/,
+    /contentTargetId=\{dadosDenunciaConteudoPerfil\.alvoId\}/,
   );
   assert.match(
     pagina,
-    /alvoTitulo=\{dadosDenunciaConteudoPerfil\.alvoTitulo\}/,
+    /contentTargetTitle=\{dadosDenunciaConteudoPerfil\.alvoTitulo\}/,
   );
+  assert.match(reportModalsSource, /targetType=\{contentTargetType\}/);
+  assert.match(reportContentModalSource, /alvoTipo=\{targetType\}/);
+  assert.match(reportContentModalSource, /alvoId=\{targetId\}/);
+  assert.match(reportContentModalSource, /alvoTitulo=\{targetTitle\}/);
   assert.doesNotMatch(
     pagina,
     /alvoDenunciaConteudoPerfil\?\.alvoTipo \|\| "post"/,
@@ -462,12 +500,17 @@ test("página delega os dados do alvo da denúncia do perfil ao helper", () => {
     (pagina.match(/obterDadosDenunciaPerfilAutor\(/g) || []).length,
     1,
   );
-  assert.match(pagina, /alvoId=\{dadosDenunciaPerfil\.alvoId\}/);
+  assert.match(pagina, /profileTargetId=\{dadosDenunciaPerfil\.alvoId\}/);
   assert.match(
     pagina,
-    /alvoTitulo=\{dadosDenunciaPerfil\.alvoTitulo\}/,
+    /profileTargetTitle=\{dadosDenunciaPerfil\.alvoTitulo\}/,
   );
-  assert.match(pagina, /alvoUrl=\{dadosDenunciaPerfil\.alvoUrl\}/);
+  assert.match(pagina, /profileTargetUrl=\{dadosDenunciaPerfil\.alvoUrl\}/);
+  assert.match(reportModalsSource, /targetUrl=\{profileTargetUrl\}/);
+  assert.match(reportProfileModalSource, /alvoTipo="perfil"/);
+  assert.match(reportProfileModalSource, /alvoId=\{targetId\}/);
+  assert.match(reportProfileModalSource, /alvoTitulo=\{targetTitle\}/);
+  assert.match(reportProfileModalSource, /alvoUrl=\{targetUrl\}/);
   assert.doesNotMatch(
     pagina,
     /\/perfil-autor\?userId=\$\{encodeURIComponent\(/,

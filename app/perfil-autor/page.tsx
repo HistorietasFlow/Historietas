@@ -7,7 +7,6 @@ import {
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import DenunciaModal from "../../components/DenunciaModal";
 import {
   type EstadoBloqueioPerfil,
   type EstadoRelacionamentoPerfil,
@@ -196,6 +195,7 @@ import { ProfileWorkActionSheet } from "./components/profile-work-action-sheet";
 import { ProfileLibraryActionSheet } from "./components/profile-library-action-sheet";
 import { ProfileEditor } from "./components/profile-editor";
 import { ProfileHeader } from "./components/profile-header";
+import { ProfileReportModals } from "./components/profile-report-modals";
 import {
   obterEstilosResponsivosPerfilAutor,
   criarCapaDestaquePerfilAutor,
@@ -1366,26 +1366,22 @@ function PerfilAutorPageContent() {
           />
         )}
 
-        <DenunciaModal
-          aberto={denunciaPerfilVisivel}
-          alvoTipo="perfil"
-          alvoId={dadosDenunciaPerfil.alvoId}
-          alvoTitulo={dadosDenunciaPerfil.alvoTitulo}
-          alvoUrl={dadosDenunciaPerfil.alvoUrl}
-          onFechar={() => setDenunciaPerfilAberta(false)}
-          onEnviada={() => {
+        <ProfileReportModals
+          profileOpen={denunciaPerfilVisivel}
+          profileTargetId={dadosDenunciaPerfil.alvoId}
+          profileTargetTitle={dadosDenunciaPerfil.alvoTitulo}
+          profileTargetUrl={dadosDenunciaPerfil.alvoUrl}
+          contentOpen={denunciaConteudoVisivel}
+          contentTargetType={dadosDenunciaConteudoPerfil.alvoTipo}
+          contentTargetId={dadosDenunciaConteudoPerfil.alvoId}
+          contentTargetTitle={dadosDenunciaConteudoPerfil.alvoTitulo}
+          onProfileClose={() => setDenunciaPerfilAberta(false)}
+          onProfileSent={() => {
             setDenunciaPerfilAberta(false);
             setMensagemAcao("Denúncia enviada para análise.");
           }}
-        />
-
-        <DenunciaModal
-          aberto={denunciaConteudoVisivel}
-          alvoTipo={dadosDenunciaConteudoPerfil.alvoTipo}
-          alvoId={dadosDenunciaConteudoPerfil.alvoId}
-          alvoTitulo={dadosDenunciaConteudoPerfil.alvoTitulo}
-          onFechar={() => setAlvoDenunciaConteudoPerfil(null)}
-          onEnviada={() => {
+          onContentClose={() => setAlvoDenunciaConteudoPerfil(null)}
+          onContentSent={() => {
             setAlvoDenunciaConteudoPerfil(null);
             setMensagemAcao("Denúncia enviada para análise.");
           }}
