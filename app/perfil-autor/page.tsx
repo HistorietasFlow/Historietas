@@ -115,6 +115,7 @@ import {
   obterDadosNotificacoesPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterCaracteresRestantesPerfilAutor,
   obterIndicadorSelecaoPerfilAutor,
   obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
@@ -1492,7 +1493,10 @@ function PerfilAutorPageContent() {
                 </label>
 
                 <span style={bioCounterStyle}>
-                  {BIO_MAX_LENGTH - bioPerfilEditor.length} caracteres
+                  {obterCaracteresRestantesPerfilAutor(
+                    bioPerfilEditor,
+                    BIO_MAX_LENGTH,
+                  )} caracteres
                 </span>
 
                 <div style={profileEditorSheetActionsStyle}>
