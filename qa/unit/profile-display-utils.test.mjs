@@ -53,6 +53,27 @@ const profileEditorActionsSource = readFileSync(
   ),
   "utf8",
 );
+const profileMenuSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-menu.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const profileOwnMenuContentSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-own-menu-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const profileVisitorMenuContentSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-visitor-menu-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileDisplayDependencies = {
   SOBRE_BIO_MAX_LENGTH: 160,
@@ -447,13 +468,14 @@ test("página deriva os dados de notificações em uma única chamada", () => {
     pagina,
     /formatarContagemNotificacoesPerfilAutor|obterAriaLabelNotificacoesPerfilAutor|obterAriaLabelBadgeNotificacoesPerfilAutor/,
   );
-  assert.match(pagina, /\{notificacoesNaoLidasFormatadas\}/);
-  assert.match(pagina, /aria-label=\{ariaLabelNotificacoes\}/);
-  assert.match(pagina, /aria-label=\{ariaLabelBadgeNotificacoes\}/);
   assert.match(
     pagina,
-    /\{temNotificacoesNaoLidas \? \(/,
+    /<ProfileMenu[\s\S]*?ariaLabelNotificationBadge=\{ariaLabelBadgeNotificacoes\}[\s\S]*?ariaLabelNotifications=\{ariaLabelNotificacoes\}[\s\S]*?hasUnreadNotifications=\{temNotificacoesNaoLidas\}[\s\S]*?notificationsUnreadFormatted=\{notificacoesNaoLidasFormatadas\}/,
   );
+  assert.match(profileOwnMenuContentSource, /aria-label=\{ariaLabelNotifications\}/);
+  assert.match(profileOwnMenuContentSource, /aria-label=\{ariaLabelNotificationBadge\}/);
+  assert.match(profileOwnMenuContentSource, /\{hasUnreadNotifications \? \(/);
+  assert.match(profileOwnMenuContentSource, /\{notificationsUnreadFormatted\}/);
   assert.doesNotMatch(
     pagina,
     /notificacoesNaoLidas > 0 \? \(/,
@@ -762,8 +784,9 @@ test("página reutiliza o aria-label consolidado do badge de notificações", ()
   );
   assert.match(
     pagina,
-    /aria-label=\{ariaLabelBadgeNotificacoes\}/,
+    /ariaLabelNotificationBadge=\{ariaLabelBadgeNotificacoes\}/,
   );
+  assert.match(profileOwnMenuContentSource, /aria-label=\{ariaLabelNotificationBadge\}/);
   assert.doesNotMatch(
     pagina,
     /aria-label=\{`\$\{notificacoesNaoLidasFormatadas\} notificações não lidas`\}/,
@@ -790,8 +813,9 @@ test("página reutiliza o aria-label consolidado de notificações", () => {
   );
   assert.match(
     pagina,
-    /aria-label=\{ariaLabelNotificacoes\}/,
+    /ariaLabelNotifications=\{ariaLabelNotificacoes\}/,
   );
+  assert.match(profileOwnMenuContentSource, /aria-label=\{ariaLabelNotifications\}/);
   assert.doesNotMatch(
     pagina,
     /notificacoesNaoLidas > 0[\s\S]{0,120}Notificações: \$\{notificacoesNaoLidas\} não lidas/,
@@ -873,8 +897,13 @@ test("página deriva a apresentação da ação de bloqueio uma vez", () => {
     pagina,
     /const rotuloAcaoBloqueioPerfil = obterRotuloAcaoBloqueioPerfilAutor\(\{[\s\S]*?bloqueadoPorMim,[\s\S]*?salvando: bloqueioPerfilSalvando/,
   );
-  assert.match(pagina, /style=\{menuBloqueioStyle\}/);
-  assert.match(pagina, /\{rotuloAcaoBloqueioPerfil\}/);
+  assert.match(
+    pagina,
+    /<ProfileMenu[\s\S]*?blockActionLabel=\{rotuloAcaoBloqueioPerfil\}[\s\S]*?blockActionStyle=\{menuBloqueioStyle\}[\s\S]*?blockSaving=\{bloqueioPerfilSalvando\}/,
+  );
+  assert.match(profileVisitorMenuContentSource, /style=\{blockActionStyle\}/);
+  assert.match(profileVisitorMenuContentSource, /\{blockActionLabel\}/);
+  assert.match(profileVisitorMenuContentSource, /disabled=\{blockSaving\}/);
 });
 
 
@@ -1042,9 +1071,10 @@ test("Perfil de Autor reutiliza o nome derivado do perfil", () => {
     (pagina.match(/perfilParaMostrar\.nome/g) || []).length,
     0,
   );
+  assert.match(pagina, /<ProfileMenu[\s\S]*?profileName=\{perfilNome\}/);
   assert.match(
-    pagina,
-    /<strong data-historietas-user-content="true" style=\{menuTitleStyle\}>\s*\{perfilNome\}\s*<\/strong>/,
+    profileMenuSource,
+    /<strong data-historietas-user-content="true" style=\{menuTitleStyle\}>\s*\{profileName\}\s*<\/strong>/,
   );
   assert.match(
     pagina,
@@ -1074,4 +1104,34 @@ test("Perfil de Autor reutiliza o nome derivado do perfil", () => {
     (heroIdentitySource.match(/autorNome=\{autorNome\}/g) || []).length,
     3,
   );
+});
+
+test("Perfil de Autor delega a composição do menu aos componentes apresentacionais", () => {
+  assert.match(
+    pagina,
+    /import \{ ProfileMenu \} from "\.\/components\/profile-menu";/,
+  );
+  assert.match(pagina, /\{menuPerfilAberto && \(/);
+  assert.equal((pagina.match(/<ProfileMenu/g) || []).length, 1);
+  assert.match(pagina, /isOwner=\{podeEditarPerfil\}/);
+  assert.match(pagina, /communityHref=\{comunidadeAutorHref\}/);
+  assert.match(pagina, /onClose=\{\(\) => setMenuPerfilAberto\(false\)\}/);
+  assert.match(pagina, /onCopyLink=\{\(\) => void copiarLinkPerfil\(\)\}/);
+  assert.match(pagina, /onReport=\{abrirDenunciaPerfil\}/);
+  assert.match(pagina, /onBlock=\{\(\) => void alternarBloqueioPerfil\(\)\}/);
+  assert.match(pagina, /onSignOut=\{\(\) => void sairDaConta\(\)\}/);
+  assert.match(profileMenuSource, /style=\{menuOverlayStyle\}/);
+  assert.match(profileMenuSource, /role="dialog"/);
+  assert.match(profileMenuSource, /aria-label="Menu do perfil"/);
+  assert.match(profileMenuSource, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
+  assert.match(profileMenuSource, /\{isOwner \? \(/);
+  assert.match(profileMenuSource, /<ProfileOwnMenuContent/);
+  assert.match(profileMenuSource, /<ProfileVisitorMenuContent/);
+  assert.match(profileOwnMenuContentSource, /href="\/painel-autor"/);
+  assert.match(profileOwnMenuContentSource, /href="\/notificacoes"/);
+  assert.match(profileOwnMenuContentSource, /href="\/configuracoes"/);
+  assert.match(profileOwnMenuContentSource, />\s*Sair da conta\s*<\/strong>/);
+  assert.match(profileVisitorMenuContentSource, /href=\{communityHref\}/);
+  assert.match(profileVisitorMenuContentSource, />\s*Denunciar perfil\s*<\/strong>/);
+  assert.match(profileVisitorMenuContentSource, />\s*Explorar outras obras\s*<\/strong>/);
 });
