@@ -182,12 +182,14 @@ export function obterVisibilidadeDestaquesPerfilAutor({
     (podeEditarPerfil
       ? mostrarDestaquesAutor
       : mostrarDestaquesVisitante);
+  const temObrasEmDestaque = totalObrasEmDestaque > 0;
 
   return {
     destaquesPerfilVisivel,
+    temObrasEmDestaque,
     exibirSecaoDestaques:
       destaquesPerfilVisivel &&
-      (totalObrasEmDestaque > 0 ||
+      (temObrasEmDestaque ||
         podeEditarPerfil ||
         mostrarDestaquesVisitante),
   };

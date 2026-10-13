@@ -421,14 +421,10 @@ test("seleção da obra com menu aberto usa ID exato e retorna null sem seleçã
 });
 
 
-test("página deriva total e existência de obras em destaque uma única vez", () => {
+test("página deriva o total e delega a existência de obras em destaque", () => {
   assert.match(
     pagina,
     /const totalObrasEmDestaque = obrasEmDestaque\.length;/,
-  );
-  assert.match(
-    pagina,
-    /const temObrasEmDestaque = totalObrasEmDestaque > 0;/,
   );
   assert.equal(
     (pagina.match(/obrasEmDestaque\.length/g) || []).length,
@@ -436,7 +432,11 @@ test("página deriva total e existência de obras em destaque uma única vez", (
   );
   assert.match(
     pagina,
-    /totalObrasEmDestaque,/,
+    /\{[\s\S]*?temObrasEmDestaque,[\s\S]*?exibirSecaoDestaques,[\s\S]*?\} = obterVisibilidadeDestaquesPerfilAutor\(\{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const temObrasEmDestaque = totalObrasEmDestaque > 0;/,
   );
   assert.equal(
     (pagina.match(/\btemObrasEmDestaque\b/g) || []).length,
@@ -456,6 +456,7 @@ test("visibilidade dos destaques preserva regras de autor e visitante", () => {
     }),
     {
       destaquesPerfilVisivel: false,
+      temObrasEmDestaque: true,
       exibirSecaoDestaques: false,
     },
   );
@@ -470,6 +471,7 @@ test("visibilidade dos destaques preserva regras de autor e visitante", () => {
     }),
     {
       destaquesPerfilVisivel: true,
+      temObrasEmDestaque: false,
       exibirSecaoDestaques: true,
     },
   );
@@ -486,6 +488,7 @@ test("seção de destaques depende da aba Obras e do conteúdo/configuração di
     }),
     {
       destaquesPerfilVisivel: false,
+      temObrasEmDestaque: true,
       exibirSecaoDestaques: false,
     },
   );
@@ -500,6 +503,7 @@ test("seção de destaques depende da aba Obras e do conteúdo/configuração di
     }),
     {
       destaquesPerfilVisivel: true,
+      temObrasEmDestaque: false,
       exibirSecaoDestaques: true,
     },
   );
@@ -514,6 +518,7 @@ test("seção de destaques depende da aba Obras e do conteúdo/configuração di
     }),
     {
       destaquesPerfilVisivel: false,
+      temObrasEmDestaque: true,
       exibirSecaoDestaques: false,
     },
   );

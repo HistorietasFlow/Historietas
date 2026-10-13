@@ -886,10 +886,11 @@ function PerfilAutorPageContent() {
     perfilPertenceAoUsuario,
   });
   const totalObrasEmDestaque = obrasEmDestaque.length;
-  const temObrasEmDestaque = totalObrasEmDestaque > 0;
 
-  const { exibirSecaoDestaques } =
-    obterVisibilidadeDestaquesPerfilAutor({
+  const {
+    temObrasEmDestaque,
+    exibirSecaoDestaques,
+  } = obterVisibilidadeDestaquesPerfilAutor({
       obrasPerfilVisivel,
       podeEditarPerfil,
       mostrarDestaquesAutor: perfilSalvoAutor.mostrarDestaques,
