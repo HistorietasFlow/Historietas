@@ -1128,3 +1128,10 @@
 - Preservou exatamente as regras atuais de Biblioteca, Diário, Comunidade, Sobre e Obras.
 - Removeu as cinco condições compostas correspondentes do JSX e ampliou a cobertura unitária/estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1069 — existência de obras em destaque no helper
+
+- Incluiu `temObrasEmDestaque` em `obterVisibilidadeDestaquesPerfilAutor`.
+- Reutilizou o mesmo booleano na decisão de exibir a seção de destaques e no restante da página.
+- Removeu a derivação separada `totalObrasEmDestaque > 0` de `page.tsx` e atualizou a cobertura unitária/estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
