@@ -911,3 +911,10 @@
 - Removeu de `page.tsx` a comparação inline `notificacoesNaoLidas > 0` usada para exibir o badge.
 - Preservou exatamente a regra atual de visibilidade do badge e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1038 — username exibido no cabeçalho
+
+- Extraiu a remoção do `@` inicial para `obterUsernameExibidoPerfilAutor`.
+- Preservou exatamente o texto visual atual do username no cabeçalho.
+- Removeu o `replace(/^@/, "")` inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
