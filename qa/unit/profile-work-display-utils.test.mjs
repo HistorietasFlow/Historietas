@@ -230,7 +230,11 @@ test("página deriva o total de obras uma única vez da coleção do perfil", ()
     3,
   );
   assert.match(pagina, /totalObras: totalObrasPerfil/);
-  assert.match(pagina, /<strong>\{totalObrasPerfil\}<\/strong>/);
+  assert.match(
+    pagina,
+    /import \{ ProfileAboutActivity \} from "\.\/components\/profile-about-activity";/,
+  );
+  assert.match(pagina, /totalObras=\{totalObrasPerfil\}/);
   assert.doesNotMatch(
     pagina,
     /perfilParaMostrar\.obras\.length/,
