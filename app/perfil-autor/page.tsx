@@ -952,6 +952,7 @@ function PerfilAutorPageContent() {
     totalVisualizacoesPerfil,
     totalRascunhosPerfil,
     totalObrasSemCapitulosPerfil,
+    temObrasSemCapitulosPerfil,
   } = obterResumoEstatisticasPerfilAutor(perfilParaMostrar);
 
   const obraMenuAberta = obterObraMenuAbertaPerfilAutor(
@@ -2101,7 +2102,7 @@ function PerfilAutorPageContent() {
                     concluídas por leitores
                     <strong>{obrasConcluidasPerfilTotal}</strong>
                   </ProfileAboutRow>
-                  {totalObrasSemCapitulosPerfil > 0 && (
+                  {temObrasSemCapitulosPerfil && (
                     <ProfileAboutRow>
                       sem capítulos ainda
                       <strong>{totalObrasSemCapitulosPerfil}</strong>

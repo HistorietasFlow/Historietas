@@ -14,6 +14,7 @@ export function obterResumoEstatisticasPerfilAutor(
       totalVisualizacoesPerfil: 0,
       totalRascunhosPerfil: 0,
       totalObrasSemCapitulosPerfil: 0,
+      temObrasSemCapitulosPerfil: false,
     };
   }
 
@@ -40,6 +41,10 @@ export function obterResumoEstatisticasPerfilAutor(
     .slice(0, 5)
     .map(([genero]) => genero);
 
+  const totalObrasSemCapitulosPerfil = perfilParaMostrar.obras.filter(
+    (obra) => obra.capitulos.length === 0,
+  ).length;
+
   return {
     generosPrincipaisPerfil,
     generosEspecialidadesPerfil:
@@ -55,8 +60,7 @@ export function obterResumoEstatisticasPerfilAutor(
       0,
       perfilParaMostrar.obras.length - perfilParaMostrar.totalPublicadas,
     ),
-    totalObrasSemCapitulosPerfil: perfilParaMostrar.obras.filter(
-      (obra) => obra.capitulos.length === 0,
-    ).length,
+    totalObrasSemCapitulosPerfil,
+    temObrasSemCapitulosPerfil: totalObrasSemCapitulosPerfil > 0,
   };
 }
