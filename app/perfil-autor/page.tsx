@@ -440,6 +440,7 @@ function PerfilAutorPageContent() {
     notificacoesNaoLidasFormatadas,
     ariaLabelNotificacoes,
     ariaLabelBadgeNotificacoes,
+    temNotificacoesNaoLidas,
   } = obterDadosNotificacoesPerfilAutor(notificacoesNaoLidas);
 
   usePerfilAutorAuthIdentitySync({
@@ -1205,7 +1206,7 @@ function PerfilAutorPageContent() {
                       <span style={menuNotificationLabelStyle}>
                         <strong style={menuItemTextStyle}>Notificações</strong>
 
-                        {notificacoesNaoLidas > 0 ? (
+                        {temNotificacoesNaoLidas ? (
                           <span
                             style={menuNotificationBadgeStyle}
                             aria-label={ariaLabelBadgeNotificacoes}
