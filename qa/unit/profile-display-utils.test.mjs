@@ -67,6 +67,13 @@ const libraryActionSheetSource = readFileSync(
   ),
   "utf8",
 );
+const actionSheetsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-action-sheets.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileEditorAvatarSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-editor-avatar.tsx",
@@ -665,11 +672,15 @@ test("indicador de seleção preserva marca ativa e vazio inativo", () => {
 test("página delega os indicadores de seleção ao helper", () => {
   assert.match(
     pagina,
-    /import \{ ProfileWorkActionSheet \} from "\.\/components\/profile-work-action-sheet";/,
+    /import \{ ProfileActionSheets \} from "\.\/components\/profile-action-sheets";/,
   );
   assert.match(
-    pagina,
-    /import \{ ProfileLibraryActionSheet \} from "\.\/components\/profile-library-action-sheet";/,
+    actionSheetsSource,
+    /import \{ ProfileWorkActionSheet \} from "\.\/profile-work-action-sheet";/,
+  );
+  assert.match(
+    actionSheetsSource,
+    /import \{ ProfileLibraryActionSheet \} from "\.\/profile-library-action-sheet";/,
   );
   assert.doesNotMatch(pagina, /obterIndicadorSelecaoPerfilAutor/);
   for (const source of [workActionSheetSource, libraryActionSheetSource]) {

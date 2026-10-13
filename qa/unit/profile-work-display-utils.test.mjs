@@ -74,6 +74,13 @@ const libraryActionSheetSource = readFileSync(
   ),
   "utf8",
 );
+const actionSheetsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-action-sheets.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileWorkDisplayDependencies = {
   ehClassificacao18(valor) {
@@ -1124,11 +1131,11 @@ test("rótulos de acessibilidade das ações de obra ficam nos dados derivados",
   assert.match(pagina, /ariaLabelOpcoes=\{ariaLabelOpcoes\}/);
   assert.match(workGridItemSource, /ariaLabel=\{ariaLabelOpcoes\}/);
   assert.match(
-    pagina,
+    actionSheetsSource,
     /ariaLabel=\{dadosSheetObraPerfil\.ariaLabelSheetObra\}/,
   );
   assert.match(
-    pagina,
+    actionSheetsSource,
     /ariaLabel=\{dadosSheetBibliotecaPerfil\.ariaLabelSheetBiblioteca\}/,
   );
   assert.match(workActionSheetSource, /ariaLabel=\{ariaLabel\}/);
@@ -1316,7 +1323,7 @@ test("dados do sheet da obra consolidam leitura, coleções, meta e métricas", 
 
 test("página reutiliza a visibilidade do alvo de leitura derivada pelo helper", () => {
   assert.match(
-    pagina,
+    actionSheetsSource,
     /exibirLeitura=\{dadosSheetObraPerfil\.temUltimoCapitulo\}/,
   );
   assert.match(
@@ -1352,21 +1359,42 @@ test("página delega a composição do sheet da obra ao helper único", () => {
 test("action sheets preservam composição, ordem e callbacks na fronteira da página", () => {
   assert.match(
     pagina,
-    /import \{ ProfileWorkActionSheet \} from "\.\/components\/profile-work-action-sheet";/,
+    /import \{ ProfileActionSheets \} from "\.\/components\/profile-action-sheets";/,
   );
-  assert.match(
-    pagina,
-    /import \{ ProfileLibraryActionSheet \} from "\.\/components\/profile-library-action-sheet";/,
-  );
+  assert.doesNotMatch(pagina, /<ProfileWorkActionSheet/);
+  assert.doesNotMatch(pagina, /<ProfileLibraryActionSheet/);
   assert.doesNotMatch(pagina, /\{obraMenuAberta &&\s*\(\(\) =>/);
   assert.doesNotMatch(pagina, /\{bibliotecaMenuAberto &&\s*\(\(\) =>/);
   assert.match(pagina, /obterDadosSheetObraPerfilAutor\(\{/);
   assert.match(pagina, /obterDadosSheetBibliotecaPerfilAutor\(\{/);
   assert.match(pagina, /obterRotulosAcoesColecoesObraPerfilAutor\(\{/);
   assert.match(pagina, /obterRotulosAcoesColecoesBibliotecaPerfil\(\{/);
-  assert.match(pagina, /onReport=\{\(\) =>\s*abrirDenunciaConteudoPerfil\(/);
-  assert.match(pagina, /onShare=\{\(\) => void compartilharObraPerfilAutor\(obraMenuAberta\)\}/);
-  assert.match(pagina, /void removerItemBibliotecaPerfil\(bibliotecaMenuAberto\)/);
+  assert.match(
+    pagina,
+    /<ProfileActionSheets[\s\S]*?bibliotecaMenuAberto=\{bibliotecaMenuAberto\}[\s\S]*?dadosSheetBibliotecaPerfil=\{dadosSheetBibliotecaPerfil\}[\s\S]*?dadosSheetObraPerfil=\{dadosSheetObraPerfil\}[\s\S]*?obraMenuAberta=\{obraMenuAberta\}/,
+  );
+  assert.match(
+    pagina,
+    /onReportObra=\{\(\) =>[\s\S]*?abrirDenunciaConteudoPerfil\(/,
+  );
+  assert.match(pagina, /compartilharObraPerfilAutor\(obraMenuAberta!\)/);
+  assert.match(pagina, /removerItemBibliotecaPerfil\(bibliotecaMenuAberto!\)/);
+  assert.match(
+    actionSheetsSource,
+    /import \{ ProfileWorkActionSheet \} from "\.\/profile-work-action-sheet";/,
+  );
+  assert.match(
+    actionSheetsSource,
+    /import \{ ProfileLibraryActionSheet \} from "\.\/profile-library-action-sheet";/,
+  );
+  assert.match(
+    actionSheetsSource,
+    /\{obraMenuAberta && dadosSheetObraPerfil && rotulosSheetObraPerfil && \(/,
+  );
+  assert.match(
+    actionSheetsSource,
+    /\{bibliotecaMenuAberto &&[\s\S]*?dadosSheetBibliotecaPerfil &&[\s\S]*?rotulosSheetBibliotecaPerfil && \(/,
+  );
 
   for (const source of [workActionSheetSource, libraryActionSheetSource]) {
     assert.match(source, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);

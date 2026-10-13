@@ -1315,3 +1315,8 @@
 - Reuniu as duas avaliações apresentacionais em `ProfileRatingsPanel`, mantendo na página as visibilidades derivadas, notas, estados de salvamento e callbacks.
 - Reuniu tabs e aviso privado em `ProfileNavigationPanel`, mantendo na página a aba selecionada, as visibilidades, o total de abas, o bloqueio e a seleção de aba.
 - Preservou textos, `aria-labels`, `keyPrefix`, condições, ordem, acessibilidade, UI, schema, RLS e Supabase.
+
+## Fase 1099 — Composição dos action sheets
+
+- Reuniu os action sheets de Obras e Biblioteca em `ProfileActionSheets`, mantendo na página os dados derivados, rótulos, estados e callbacks de leitura, denúncia, compartilhamento, coleções, remoção e fechamento.
+- Preservou condições, ordem, textos, links, `aria-labels`, indicadores de seleção, acessibilidade, UI, schema, RLS e Supabase.

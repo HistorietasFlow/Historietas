@@ -187,8 +187,7 @@ import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksPanel } from "./components/profile-works-panel";
 import { ProfileWorkGridItem } from "./components/profile-work-grid-item";
-import { ProfileWorkActionSheet } from "./components/profile-work-action-sheet";
-import { ProfileLibraryActionSheet } from "./components/profile-library-action-sheet";
+import { ProfileActionSheets } from "./components/profile-action-sheets";
 import { ProfileEditor } from "./components/profile-editor";
 import { ProfileHeader } from "./components/profile-header";
 import { ProfileReportModals } from "./components/profile-report-modals";
@@ -1596,83 +1595,60 @@ function PerfilAutorPageContent() {
           />
         )}
 
-        {obraMenuAberta && dadosSheetObraPerfil && rotulosSheetObraPerfil && (
-          <ProfileWorkActionSheet
-            ariaLabel={dadosSheetObraPerfil.ariaLabelSheetObra}
-            autor={obraMenuAberta.autor}
-            capituloHref={dadosSheetObraPerfil.capituloHref}
-            concluidaSelecionada={dadosSheetObraPerfil.obraConcluida}
-            exibirAcoesVisitante={perfilVisitante}
-            exibirLeitura={dadosSheetObraPerfil.temUltimoCapitulo}
-            favoritaSelecionada={dadosSheetObraPerfil.obraFavorita}
-            meta={dadosSheetObraPerfil.metaObraSheet}
-            metricas={dadosSheetObraPerfil.metricasObraSheet}
-            rotuloConcluida={rotulosSheetObraPerfil.rotuloConcluida}
-            rotuloFavorita={rotulosSheetObraPerfil.rotuloFavorita}
-            titulo={obraMenuAberta.titulo}
-            onClose={() => setObraMenuAbertoId("")}
-            onRead={() => setObraMenuAbertoId("")}
-            onReport={() =>
-              abrirDenunciaConteudoPerfil(
-                "obra",
-                obraMenuAberta.id,
-                obraMenuAberta.titulo,
-              )
-            }
-            onShare={() => void compartilharObraPerfilAutor(obraMenuAberta)}
-            onToggleCompleted={() => {
-              setObraMenuAbertoId("");
-              void alternarConcluidoObra(obraMenuAberta.id);
-            }}
-            onToggleFavorite={() => {
-              setObraMenuAbertoId("");
-              void alternarFavoritoObra(obraMenuAberta.id);
-            }}
-          />
-        )}
-
-        {bibliotecaMenuAberto &&
-          dadosSheetBibliotecaPerfil &&
-          rotulosSheetBibliotecaPerfil && (
-            <ProfileLibraryActionSheet
-              ariaLabel={dadosSheetBibliotecaPerfil.ariaLabelSheetBiblioteca}
-              capituloHref={dadosSheetBibliotecaPerfil.capituloHref}
-              concluidaSelecionada={dadosSheetBibliotecaPerfil.obraConcluida}
-              favoritaSelecionada={dadosSheetBibliotecaPerfil.obraFavorita}
-              meta={metaSheetBibliotecaPerfil}
-              queroLerSelecionado={dadosSheetBibliotecaPerfil.obraNoQueroLer}
-              rotuloConcluida={rotulosSheetBibliotecaPerfil.rotuloConcluida}
-              rotuloFavorita={rotulosSheetBibliotecaPerfil.rotuloFavorita}
-              rotuloQueroLer={rotulosSheetBibliotecaPerfil.rotuloQueroLer}
-              rotuloRemover={rotuloRemoverSheetBibliotecaPerfil}
-              titulo={bibliotecaMenuAberto.obra.titulo}
-              onClose={() => setBibliotecaMenuAbertoChave("")}
-              onRead={() => setBibliotecaMenuAbertoChave("")}
-              onRemove={() => {
-                setBibliotecaMenuAbertoChave("");
-                void removerItemBibliotecaPerfil(bibliotecaMenuAberto);
-              }}
-              onShare={() => {
-                setBibliotecaMenuAbertoChave("");
-                void compartilharObraPerfilAutor(bibliotecaMenuAberto.obra);
-              }}
-              onToggleCompleted={() => {
-                setBibliotecaMenuAbertoChave("");
-                void alternarConcluidoObra(bibliotecaMenuAberto.obra.id);
-              }}
-              onToggleFavorite={() => {
-                setBibliotecaMenuAbertoChave("");
-                void alternarFavoritoObra(bibliotecaMenuAberto.obra.id);
-              }}
-              onToggleWantToRead={() => {
-                setBibliotecaMenuAbertoChave("");
-                void alternarObraSeguindoBibliotecaPerfil(
-                  bibliotecaMenuAberto.obra,
-                  !dadosSheetBibliotecaPerfil.obraNoQueroLer,
-                );
-              }}
-            />
-          )}
+        <ProfileActionSheets
+          bibliotecaMenuAberto={bibliotecaMenuAberto}
+          dadosSheetBibliotecaPerfil={dadosSheetBibliotecaPerfil}
+          dadosSheetObraPerfil={dadosSheetObraPerfil}
+          exibirAcoesVisitante={perfilVisitante}
+          metaSheetBibliotecaPerfil={metaSheetBibliotecaPerfil}
+          obraMenuAberta={obraMenuAberta}
+          rotuloRemoverSheetBibliotecaPerfil={rotuloRemoverSheetBibliotecaPerfil}
+          rotulosSheetBibliotecaPerfil={rotulosSheetBibliotecaPerfil}
+          rotulosSheetObraPerfil={rotulosSheetObraPerfil}
+          onCloseBiblioteca={() => setBibliotecaMenuAbertoChave("")}
+          onCloseObra={() => setObraMenuAbertoId("")}
+          onReadBiblioteca={() => setBibliotecaMenuAbertoChave("")}
+          onReadObra={() => setObraMenuAbertoId("")}
+          onRemoveBiblioteca={() => {
+            setBibliotecaMenuAbertoChave("");
+            void removerItemBibliotecaPerfil(bibliotecaMenuAberto!);
+          }}
+          onReportObra={() =>
+            abrirDenunciaConteudoPerfil(
+              "obra",
+              obraMenuAberta!.id,
+              obraMenuAberta!.titulo,
+            )
+          }
+          onShareBiblioteca={() => {
+            setBibliotecaMenuAbertoChave("");
+            void compartilharObraPerfilAutor(bibliotecaMenuAberto!.obra);
+          }}
+          onShareObra={() => void compartilharObraPerfilAutor(obraMenuAberta!)}
+          onToggleBibliotecaCompleted={() => {
+            setBibliotecaMenuAbertoChave("");
+            void alternarConcluidoObra(bibliotecaMenuAberto!.obra.id);
+          }}
+          onToggleBibliotecaFavorite={() => {
+            setBibliotecaMenuAbertoChave("");
+            void alternarFavoritoObra(bibliotecaMenuAberto!.obra.id);
+          }}
+          onToggleBibliotecaWantToRead={() => {
+            setBibliotecaMenuAbertoChave("");
+            void alternarObraSeguindoBibliotecaPerfil(
+              bibliotecaMenuAberto!.obra,
+              !dadosSheetBibliotecaPerfil!.obraNoQueroLer,
+            );
+          }}
+          onToggleObraCompleted={() => {
+            setObraMenuAbertoId("");
+            void alternarConcluidoObra(obraMenuAberta!.id);
+          }}
+          onToggleObraFavorite={() => {
+            setObraMenuAbertoId("");
+            void alternarFavoritoObra(obraMenuAberta!.id);
+          }}
+        />
 
       </section>
     </main>
