@@ -18,6 +18,20 @@ const heroIdentitySource = readFileSync(
   ),
   "utf8",
 );
+const heroSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const avatarInputSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-avatar-input.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workActionSheetSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-work-action-sheet.tsx",
@@ -1162,12 +1176,13 @@ test("Perfil de Autor reutiliza o nome derivado do perfil", () => {
   );
   assert.match(
     pagina,
-    /import \{ ProfileHeroIdentity \} from "\.\/components\/profile-hero-identity";/,
+    /import \{ ProfileHero \} from "\.\/components\/profile-hero";/,
   );
   assert.match(
     pagina,
-    /<ProfileHeroIdentity[\s\S]*?autorNome=\{perfilNome\}/,
+    /<ProfileHero[\s\S]*?autorNome=\{perfilNome\}/,
   );
+  assert.match(heroSource, /<ProfileHeroIdentity[\s\S]*?autorNome=\{autorNome\}/);
   assert.match(
     heroIdentitySource,
     /import \{ ProfileAvatar \} from "\.\/profile-avatar";/,
@@ -1184,6 +1199,21 @@ test("Perfil de Autor reutiliza o nome derivado do perfil", () => {
     (heroIdentitySource.match(/autorNome=\{autorNome\}/g) || []).length,
     3,
   );
+});
+
+test("Perfil de Autor delega a composição do hero e o input oculto do avatar", () => {
+  assert.match(pagina, /<ProfileHero[\s\S]*?heroStyle=\{heroAtualStyle\}/);
+  assert.match(pagina, /<ProfileHero[\s\S]*?avatarInputRef=\{avatarInputRef\}/);
+  assert.match(pagina, /<ProfileHero[\s\S]*?onSelectAvatar=\{selecionarAvatarAutor\}/);
+  assert.match(pagina, /<ProfileHero[\s\S]*?podeEditar=\{podeEditarPerfil\}/);
+  assert.match(heroSource, /<ProfileBio[\s\S]*?bioPersonalizada=\{bioPersonalizada\}/);
+  assert.match(heroSource, /<ProfileHeroActions[\s\S]*?message=\{message\}/);
+  assert.match(heroSource, /\{podeEditar && \(/);
+  assert.match(heroSource, /<ProfileAvatarInput[\s\S]*?avatarInputRef=\{avatarInputRef\}[\s\S]*?onSelectAvatar=\{onSelectAvatar\}/);
+  assert.match(avatarInputSource, /type="file"/);
+  assert.match(avatarInputSource, /accept="image\/\*"/);
+  assert.match(avatarInputSource, /onChange=\{onSelectAvatar\}/);
+  assert.match(avatarInputSource, /style=\{hiddenInputStyle\}/);
 });
 
 test("Perfil de Autor delega a composição do menu aos componentes apresentacionais", () => {

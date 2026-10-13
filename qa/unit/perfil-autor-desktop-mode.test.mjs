@@ -52,6 +52,13 @@ const heroActionsSource = readFileSync(
   ),
   "utf8",
 );
+const heroSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("usePerfilAutorDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -90,12 +97,13 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.doesNotMatch(pagina, /window\.innerWidth >= 1024/);
   assert.doesNotMatch(pagina, /addEventListener\("resize"/);
   assert.doesNotMatch(pagina, /removeEventListener\("resize"/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 37);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 35);
   assert.match(
     pagina,
-    /import \{ ProfileHeroIdentity \} from "\.\/components\/profile-hero-identity";/,
+    /import \{ ProfileHero \} from "\.\/components\/profile-hero";/,
   );
-  assert.match(pagina, /<ProfileHeroIdentity[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(pagina, /<ProfileHero[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(heroSource, /<ProfileHeroIdentity[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(heroIdentitySource, /<ProfileAvatar[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(
     heroIdentitySource,
@@ -154,8 +162,9 @@ test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
   );
   assert.match(
     pagina,
-    /<ProfileHeroActions[\s\S]*?actionsStyle=\{profileActionsExibicaoStyle\}/,
+    /<ProfileHero[\s\S]*?actionsStyle=\{profileActionsExibicaoStyle\}/,
   );
+  assert.match(heroSource, /<ProfileHeroActions[\s\S]*?actionsStyle=\{actionsStyle\}/);
   assert.match(heroActionsSource, /<div style=\{actionsStyle\}>/);
   assert.doesNotMatch(
     pagina,
