@@ -974,3 +974,10 @@
 - Preservou exatamente a regra atual baseada em `publicacoesRecentes.length === 0`.
 - Removeu a comparação inline do JSX e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1047 — estado vazio da Biblioteca
+
+- Extraiu a verificação de ausência de itens ativos para `bibliotecaSemItensAtivosPerfilAutor`.
+- Preservou exatamente a regra atual baseada em `itensBibliotecaAtivos.length === 0`.
+- Removeu a comparação inline do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

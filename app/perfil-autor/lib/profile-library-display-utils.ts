@@ -1,5 +1,12 @@
 import type { AbaBibliotecaPerfil, ItemBibliotecaPerfil } from "../types";
 
+export function bibliotecaSemItensAtivosPerfilAutor(
+  itens: ItemBibliotecaPerfil[],
+) {
+  return itens.length === 0;
+}
+
+
 export function encontrarItemBibliotecaMenuAberto(
   itens: ItemBibliotecaPerfil[],
   chave: string,
