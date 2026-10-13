@@ -11,6 +11,13 @@ const contentState = readFileSync(
   ),
   "utf8",
 );
+const panel = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-library-panel.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("a página delega seleção de itens da Biblioteca", () => {
   assert.match(pagina, /import \{ selecionarItensBibliotecaPerfil \}/);
@@ -62,7 +69,7 @@ test("ProfileLibraryContentState preserva loading, vazio e a grade da Biblioteca
 test("página mantém as derivações e o callback da Biblioteca antes de delegar a lista", () => {
   assert.match(
     pagina,
-    /import \{ ProfileLibraryContentState \} from "\.\/components\/profile-library-content-state";/,
+    /import \{ ProfileLibraryPanel \} from "\.\/components\/profile-library-panel";/,
   );
   assert.match(
     pagina,
@@ -70,7 +77,11 @@ test("página mantém as derivações e o callback da Biblioteca antes de delega
   );
   assert.match(
     pagina,
-    /<ProfileLibraryContentState[\s\S]*?loading=\{diarioPerfilCarregando\}[\s\S]*?empty=\{bibliotecaSemItensAtivosPerfilAutor\([\s\S]*?itensBibliotecaAtivos,[\s\S]*?\)\}[\s\S]*?items=\{itensBibliotecaAtivos\}[\s\S]*?renderItem=\{renderizarItemBiblioteca\}/,
+    /<ProfileLibraryPanel[\s\S]*?abaAtiva=\{abaBibliotecaPerfil\}[\s\S]*?onSelect=\{setAbaBibliotecaPerfil\}[\s\S]*?loading=\{diarioPerfilCarregando\}[\s\S]*?empty=\{bibliotecaSemItensAtivosPerfilAutor\([\s\S]*?itensBibliotecaAtivos,[\s\S]*?\)\}[\s\S]*?items=\{itensBibliotecaAtivos\}[\s\S]*?renderItem=\{renderizarItemBiblioteca\}/,
+  );
+  assert.match(
+    panel,
+    /<ProfileLibrarySection isDesktop=\{isDesktop\}>[\s\S]*?<LibraryTabs[\s\S]*?abaAtiva=\{abaAtiva\}[\s\S]*?onSelect=\{onSelect\}[\s\S]*?<ProfileLibraryContentState[\s\S]*?loading=\{loading\}[\s\S]*?empty=\{empty\}[\s\S]*?items=\{items\}[\s\S]*?renderItem=\{renderItem\}/,
   );
   assert.doesNotMatch(pagina, /\{itensBibliotecaAtivos\.map\(/);
 });

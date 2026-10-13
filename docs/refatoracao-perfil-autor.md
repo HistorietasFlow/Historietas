@@ -1303,3 +1303,9 @@
 - Extraiu os modais apresentacionais de denúncia de perfil e de conteúdo, preservando seus tipos de alvo, IDs, títulos e URL de perfil.
 - Reuniu ambos em uma composição única, mantendo na página visibilidades, dados derivados, estados e callbacks de fechamento e sucesso.
 - Preservou a mensagem de confirmação, UI, acessibilidade, schema, RLS e Supabase.
+
+## Fase 1097 — Painéis de Biblioteca e Obras
+
+- Reuniu a seção, as abas e os estados apresentacionais da Biblioteca em `ProfileLibraryPanel`, mantendo na página a aba ativa, carregamento, itens derivados e função de renderização.
+- Reuniu a seção e os estados apresentacionais de Obras em `ProfileWorksPanel`, mantendo na página os resultados filtrados, o estado vazio e a função de renderização.
+- Preservou UI, ordem, tabs, carregamento, estados vazios, responsividade, acessibilidade, schema, RLS e Supabase.

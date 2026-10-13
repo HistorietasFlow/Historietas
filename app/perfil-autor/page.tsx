@@ -173,23 +173,20 @@ import { PrivateProfileNotice } from "./components/private-profile-notice";
 import { DiarySummaryCard } from "./components/diary-summary-card";
 import { LibraryItemCard } from "./components/library-item-card";
 import { ProfileSectionTabs } from "./components/profile-section-tabs";
-import { LibraryTabs } from "./components/library-tabs";
 import { ProfileRatingAction } from "./components/profile-rating-actions";
 import { ProfileHero } from "./components/profile-hero";
 import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
 import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
 import { ProfileHighlightsPanel } from "./components/profile-highlights-panel";
-import { ProfileLibrarySection } from "./components/profile-library-section";
-import { ProfileLibraryContentState } from "./components/profile-library-content-state";
+import { ProfileLibraryPanel } from "./components/profile-library-panel";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
 import { ProfileCommunityPanel } from "./components/profile-community-panel";
 import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
 import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
-import { ProfileWorksSection } from "./components/profile-works-section";
-import { ProfileWorksContentState } from "./components/profile-works-content-state";
+import { ProfileWorksPanel } from "./components/profile-works-panel";
 import { ProfileWorkGridItem } from "./components/profile-work-grid-item";
 import { ProfileWorkActionSheet } from "./components/profile-work-action-sheet";
 import { ProfileLibraryActionSheet } from "./components/profile-library-action-sheet";
@@ -1489,24 +1486,18 @@ function PerfilAutorPageContent() {
         )}
 
         {bibliotecaPerfilAtiva && (
-          <ProfileLibrarySection isDesktop={isDesktop}>
-            <LibraryTabs
-              abaAtiva={abaBibliotecaPerfil}
-              isDesktop={isDesktop}
-              onSelect={setAbaBibliotecaPerfil}
-            />
-
-            <ProfileLibraryContentState
-              loading={diarioPerfilCarregando}
-              empty={bibliotecaSemItensAtivosPerfilAutor(
-                itensBibliotecaAtivos,
-              )}
-              emptyMessage={mensagemBibliotecaVazia}
-              isDesktop={isDesktop}
-              items={itensBibliotecaAtivos}
-              renderItem={renderizarItemBiblioteca}
-            />
-          </ProfileLibrarySection>
+          <ProfileLibraryPanel
+            abaAtiva={abaBibliotecaPerfil}
+            isDesktop={isDesktop}
+            onSelect={setAbaBibliotecaPerfil}
+            loading={diarioPerfilCarregando}
+            empty={bibliotecaSemItensAtivosPerfilAutor(
+              itensBibliotecaAtivos,
+            )}
+            emptyMessage={mensagemBibliotecaVazia}
+            items={itensBibliotecaAtivos}
+            renderItem={renderizarItemBiblioteca}
+          />
         )}
 
         {diarioPerfilAtivo && (
@@ -1616,15 +1607,13 @@ function PerfilAutorPageContent() {
         )}
 
         {obrasPerfilAtivo && (
-          <ProfileWorksSection>
-            <ProfileWorksContentState
-              empty={obrasSemResultadosPerfilAutor(obrasDoPerfilFiltradas)}
-              emptyMessage={mensagemObrasVazias}
-              isDesktop={isDesktop}
-              obras={obrasDoPerfilFiltradas}
-              renderObra={renderizarObraPerfilAutor}
-            />
-          </ProfileWorksSection>
+          <ProfileWorksPanel
+            empty={obrasSemResultadosPerfilAutor(obrasDoPerfilFiltradas)}
+            emptyMessage={mensagemObrasVazias}
+            isDesktop={isDesktop}
+            obras={obrasDoPerfilFiltradas}
+            renderObra={renderizarObraPerfilAutor}
+          />
         )}
 
         {obraMenuAberta && dadosSheetObraPerfil && rotulosSheetObraPerfil && (
