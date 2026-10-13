@@ -115,6 +115,7 @@ import {
   obterDadosNotificacoesPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterUsernameExibidoPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
@@ -1386,9 +1387,10 @@ function PerfilAutorPageContent() {
                       />
                     ) : (
                       <span>
-                        {(nomePerfilEditor || perfilParaMostrar.nome)
-                          .charAt(0)
-                          .toUpperCase()}
+                        {obterInicialAvatarPerfilAutor(
+                          nomePerfilEditor,
+                          perfilParaMostrar.nome,
+                        )}
                       </span>
                     )}
                   </div>

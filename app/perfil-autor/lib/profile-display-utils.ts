@@ -128,6 +128,14 @@ export function obterDadosNotificacoesPerfilAutor(
 }
 
 
+export function obterInicialAvatarPerfilAutor(
+  nomePerfilEditor: string,
+  nomePerfil: string,
+) {
+  return (nomePerfilEditor || nomePerfil).charAt(0).toUpperCase();
+}
+
+
 export function obterUsernameExibidoPerfilAutor(
   autorHandlePerfil: string,
 ) {
