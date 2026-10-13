@@ -1156,3 +1156,10 @@
 - Reutilizou o mesmo valor na condição de erro e na descrição do aviso da Comunidade.
 - Removeu a leitura direta duplicada de `comunidadePerfil.erro` em `page.tsx` e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1073 — publicações recentes da Comunidade
+
+- Derivou `publicacoesRecentesComunidade` uma única vez a partir de `comunidadePerfil.publicacoesRecentes`.
+- Reutilizou a coleção na verificação de estado vazio e na renderização da lista recente.
+- Removeu a leitura direta duplicada de `comunidadePerfil.publicacoesRecentes` em `page.tsx` e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.

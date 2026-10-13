@@ -90,6 +90,26 @@ test("página delega o estado vazio das publicações recentes ao helper", () =>
 });
 
 
+test("página deriva as publicações recentes da Comunidade uma única vez", () => {
+  assert.match(
+    pagina,
+    /const publicacoesRecentesComunidade =\s*comunidadePerfil\.publicacoesRecentes;/,
+  );
+  assert.equal(
+    (pagina.match(/comunidadePerfil\.publicacoesRecentes/g) || []).length,
+    1,
+  );
+  assert.match(
+    pagina,
+    /comunidadeSemPublicacoesRecentesPerfilAutor\(\s*publicacoesRecentesComunidade,?\s*\)/,
+  );
+  assert.match(
+    pagina,
+    /\{publicacoesRecentesComunidade\.map\(/,
+  );
+});
+
+
 test("página deriva o erro da Comunidade uma única vez", () => {
   assert.match(
     pagina,
