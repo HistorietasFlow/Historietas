@@ -567,6 +567,7 @@ function PerfilAutorPageContent() {
 
   const podeEditarPerfil = perfilPertenceAoUsuario;
   const bloqueadoPorMim = estadoBloqueioPerfil.bloqueadoPorMim;
+  const existeBloqueioPerfil = estadoBloqueioPerfil.existeBloqueio;
   const menuBloqueioStyle = bloqueadoPorMim
     ? menuItemStyle
     : menuDangerItemStyle;
@@ -589,7 +590,7 @@ function PerfilAutorPageContent() {
     primeiraAbaPerfilVisivel,
   } = obterVisibilidadeAbasPerfilAutor({
     perfilPertenceAoUsuario,
-    existeBloqueio: estadoBloqueioPerfil.existeBloqueio,
+    existeBloqueio: existeBloqueioPerfil,
     privacidadeCarregando: privacidadePerfilCarregando,
     permissoes: permissoesAbasPerfil,
   });
@@ -1652,7 +1653,7 @@ function PerfilAutorPageContent() {
               />
             ) : (
               <>
-                {!estadoBloqueioPerfil.existeBloqueio && (
+                {!existeBloqueioPerfil && (
                 <button
                   type="button"
                   onClick={() => void alternarSeguirAutor()}

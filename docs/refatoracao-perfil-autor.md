@@ -1044,3 +1044,10 @@
 - Reutilizou o total na existência de destaques e em `obterVisibilidadeDestaquesPerfilAutor`.
 - Removeu a segunda leitura direta de comprimento em `page.tsx` e atualizou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1057 — existência de bloqueio derivada
+
+- Derivou `existeBloqueioPerfil` uma única vez a partir de `estadoBloqueioPerfil.existeBloqueio`.
+- Reutilizou o mesmo estado na visibilidade das abas e na exibição da ação de seguir.
+- Removeu a segunda leitura direta de `estadoBloqueioPerfil.existeBloqueio` em `page.tsx` e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.

@@ -110,3 +110,23 @@ test("página reutiliza a presença de abas já derivada pelo helper", () => {
     /totalAbasPerfilVisiveis > 0/,
   );
 });
+
+
+test("página deriva a existência de bloqueio uma única vez", () => {
+  assert.match(
+    pagina,
+    /const existeBloqueioPerfil = estadoBloqueioPerfil\.existeBloqueio;/,
+  );
+  assert.match(
+    pagina,
+    /existeBloqueio: existeBloqueioPerfil,/,
+  );
+  assert.match(
+    pagina,
+    /\{!existeBloqueioPerfil && \(/,
+  );
+  assert.equal(
+    (pagina.match(/estadoBloqueioPerfil\.existeBloqueio/g) || []).length,
+    1,
+  );
+});
