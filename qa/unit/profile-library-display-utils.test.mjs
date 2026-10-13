@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  bibliotecaSemItensAtivosPerfilAutor,
   encontrarItemBibliotecaMenuAberto,
   obterMensagemBibliotecaVaziaPerfil,
   obterMetaMenuBibliotecaPerfil,
@@ -8,6 +9,15 @@ import {
   obterRotulosAcoesColecoesBibliotecaPerfil,
   obterRotuloBibliotecaPerfil,
 } from "../../app/perfil-autor/lib/profile-library-display-utils.ts";
+
+test("estado vazio da Biblioteca depende apenas da ausência de itens ativos", () => {
+  assert.equal(bibliotecaSemItensAtivosPerfilAutor([]), true);
+  assert.equal(
+    bibliotecaSemItensAtivosPerfilAutor([{ chave: "a" }]),
+    false,
+  );
+});
+
 
 test("encontra apenas o item correspondente ao menu aberto", () => {
   const itens = [{ chave: "a" }, { chave: "b" }];

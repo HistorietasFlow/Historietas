@@ -149,6 +149,7 @@ import { montarItensBibliotecaPerfilAutor } from "./lib/profile-library-items-bu
 import { obterTotaisBibliotecaPerfilAutor } from "./lib/profile-library-totals";
 import { obterResumoEstatisticasPerfilAutor } from "./lib/profile-summary-stats";
 import {
+  bibliotecaSemItensAtivosPerfilAutor,
   encontrarItemBibliotecaMenuAberto,
   obterMetaMenuBibliotecaPerfil,
   obterRotuloAcaoRemoverBibliotecaPerfil,
@@ -1775,7 +1776,7 @@ function PerfilAutorPageContent() {
 
             {diarioPerfil.carregando ? (
               <LoadingSpinner label="Carregando biblioteca" compacto />
-            ) : itensBibliotecaAtivos.length === 0 ? (
+            ) : bibliotecaSemItensAtivosPerfilAutor(itensBibliotecaAtivos) ? (
               <ProfileSectionEmptyState message={mensagemBibliotecaVazia} />
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
