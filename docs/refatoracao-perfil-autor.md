@@ -1231,3 +1231,9 @@
 - Transferiu para o painel do Diário somente o `map` dos itens da grade.
 - Manteve na página a função nomeada de cada item, a validação de obra, a construção do link e o `DiarySummaryCard`.
 - Preservou carregamento, estado vazio, ordem, textos, UI, acessibilidade, schema, RLS e Supabase.
+
+## Fase 1085 — Composições do hero
+
+- Extraiu a composição apresentacional da identidade do hero, reunindo avatar, cabeçalho e estatísticas.
+- Extraiu a composição das ações do hero, preservando ações do dono, seguimento do visitante, ações secundárias e toast.
+- Manteve na página todas as derivações, estados e callbacks; sem alterações de UI, acessibilidade, schema, RLS ou Supabase.

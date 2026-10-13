@@ -38,6 +38,20 @@ const storageUtils = readFileSync(
   ),
   "utf8",
 );
+const heroIdentitySource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero-identity.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const heroActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero-actions.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("usePerfilAutorDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -76,7 +90,18 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.doesNotMatch(pagina, /window\.innerWidth >= 1024/);
   assert.doesNotMatch(pagina, /addEventListener\("resize"/);
   assert.doesNotMatch(pagina, /removeEventListener\("resize"/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 43);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 39);
+  assert.match(
+    pagina,
+    /import \{ ProfileHeroIdentity \} from "\.\/components\/profile-hero-identity";/,
+  );
+  assert.match(pagina, /<ProfileHeroIdentity[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(heroIdentitySource, /<ProfileAvatar[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(
+    heroIdentitySource,
+    /<ProfileHeaderInfo autorNome=\{autorNome\} isDesktop=\{isDesktop\}>/,
+  );
+  assert.match(heroIdentitySource, /<ProfileStats[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.doesNotMatch(pagina, /useEffect\(/);
   assert.match(profileLoadSyncSource, /useEffect\(\(\) => \{/);
   assert.match(authIdentitySyncSource, /supabase\.auth\.getUser\(\)/);
@@ -125,8 +150,9 @@ test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
   );
   assert.match(
     pagina,
-    /<div style=\{profileActionsExibicaoStyle\}>/,
+    /<ProfileHeroActions[\s\S]*?actionsStyle=\{profileActionsExibicaoStyle\}/,
   );
+  assert.match(heroActionsSource, /<div style=\{actionsStyle\}>/);
   assert.doesNotMatch(
     pagina,
     /style=\{[\s\S]{0,120}?podeEditarPerfil[\s\S]{0,120}?profileActionsAtualStyle[\s\S]{0,120}?profileVisitorActionsAtualStyle/,

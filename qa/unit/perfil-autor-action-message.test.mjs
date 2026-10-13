@@ -27,6 +27,13 @@ const topFiveLikeActionsSource = readFileSync(
   ),
   "utf8",
 );
+const heroActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero-actions.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("usePerfilAutorActionMessage preserva estado e expiração da mensagem", () => {
   assert.match(hook, /^"use client";/);
@@ -64,5 +71,14 @@ test("Perfil de Autor mantém mensagens de domínio e toast na página", () => {
     topFiveLikeActionsSource,
     /setMensagemAcao\("Entre para curtir o TOP 5 deste perfil\."\);/,
   );
-  assert.match(pagina, /<ProfileActionToast message=\{mensagemAcao\} \/>/);
+  assert.match(
+    pagina,
+    /import \{ ProfileHeroActions \} from "\.\/components\/profile-hero-actions";/,
+  );
+  assert.match(pagina, /<ProfileHeroActions[\s\S]*?message=\{mensagemAcao\}/);
+  assert.match(
+    heroActionsSource,
+    /import \{ ProfileActionToast \} from "\.\/profile-action-toast";/,
+  );
+  assert.match(heroActionsSource, /<ProfileActionToast message=\{message\} \/>/);
 });
