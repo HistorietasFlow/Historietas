@@ -123,6 +123,7 @@ export function obterDadosNotificacoesPerfilAutor(
       obterAriaLabelNotificacoesPerfilAutor(notificacoesNaoLidas),
     ariaLabelBadgeNotificacoes:
       obterAriaLabelBadgeNotificacoesPerfilAutor(notificacoesNaoLidas),
+    temNotificacoesNaoLidas: notificacoesNaoLidas > 0,
   };
 }
 

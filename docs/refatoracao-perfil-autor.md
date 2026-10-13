@@ -904,3 +904,10 @@
 - Removeu do JSX o ternário de estilo e a chamada inline de `obterRotuloAcaoBloqueioPerfilAutor`.
 - Preservou exatamente o comportamento visual e os textos de bloquear/desbloquear e atualizou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1037 — visibilidade do badge de Notificações
+
+- Incluiu `temNotificacoesNaoLidas` em `obterDadosNotificacoesPerfilAutor`.
+- Removeu de `page.tsx` a comparação inline `notificacoesNaoLidas > 0` usada para exibir o badge.
+- Preservou exatamente a regra atual de visibilidade do badge e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
