@@ -728,6 +728,7 @@ function PerfilAutorPageContent() {
     autorChavePerfil,
     autorNormalizadoParaSeguir,
   });
+  const mostrarDestaquesAutor = perfilSalvoAutor.mostrarDestaques;
 
   const comunidadeSemPublicacoesRecentes =
     comunidadeSemPublicacoesRecentesPerfilAutor(
@@ -893,7 +894,7 @@ function PerfilAutorPageContent() {
   } = obterVisibilidadeDestaquesPerfilAutor({
       obrasPerfilVisivel,
       podeEditarPerfil,
-      mostrarDestaquesAutor: perfilSalvoAutor.mostrarDestaques,
+      mostrarDestaquesAutor,
       mostrarDestaquesVisitante,
       totalObrasEmDestaque,
     });
@@ -1685,7 +1686,7 @@ function PerfilAutorPageContent() {
           <div style={profileActionsExibicaoStyle}>
             {podeEditarPerfil ? (
               <ProfileOwnerActions
-                mostrarDestaques={perfilSalvoAutor.mostrarDestaques}
+                mostrarDestaques={mostrarDestaquesAutor}
                 onEdit={abrirEditorPerfil}
                 onShare={() => void copiarLinkPerfil()}
                 onToggleHighlights={alternarDestaquesPerfil}

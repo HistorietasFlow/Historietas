@@ -1142,3 +1142,10 @@
 - Reutilizou o estado na Biblioteca, no painel do Diário e na atividade recente da seção Sobre.
 - Removeu três leituras diretas repetidas do estado de carregamento em `page.tsx` e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1071 — destaques do autor derivados
+
+- Derivou `mostrarDestaquesAutor` uma única vez a partir de `perfilSalvoAutor.mostrarDestaques`.
+- Reutilizou o estado na visibilidade da seção de destaques e nas ações do próprio perfil.
+- Removeu duas leituras diretas repetidas de `perfilSalvoAutor.mostrarDestaques` em `page.tsx` e ampliou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.
