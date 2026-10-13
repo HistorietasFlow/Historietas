@@ -53,6 +53,7 @@ const javascript = typescript.transpileModule(
 ).outputText;
 
 const {
+  alternarIdentificadorMenuPerfilAutor,
   formatarContagemNotificacoesPerfilAutor,
   limitarTextoPerfilAutor,
   obterAriaLabelBadgeNotificacoesPerfilAutor,
@@ -414,6 +415,36 @@ test("página deriva os dados de notificações em uma única chamada", () => {
   assert.doesNotMatch(
     pagina,
     /notificacoesNaoLidas > 0 \? \(/,
+  );
+});
+
+
+test("alternância de menu fecha o alvo atual e abre outro alvo", () => {
+  assert.equal(alternarIdentificadorMenuPerfilAutor("obra-1", "obra-1"), "");
+  assert.equal(
+    alternarIdentificadorMenuPerfilAutor("obra-1", "obra-2"),
+    "obra-2",
+  );
+  assert.equal(alternarIdentificadorMenuPerfilAutor("", "obra-1"), "obra-1");
+});
+
+
+test("página delega a alternância dos menus de obra e Biblioteca ao helper", () => {
+  assert.match(
+    pagina,
+    /alternarIdentificadorMenuPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/alternarIdentificadorMenuPerfilAutor\(/g) || []).length,
+    2,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /chaveAtual === item\.chave \? "" : item\.chave/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /idAtual === obra\.id \? "" : obra\.id/,
   );
 });
 
