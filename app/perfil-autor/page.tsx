@@ -847,7 +847,8 @@ function PerfilAutorPageContent() {
     obrasPerfil,
     perfilPertenceAoUsuario,
   });
-  const temObrasEmDestaque = obrasEmDestaque.length > 0;
+  const totalObrasEmDestaque = obrasEmDestaque.length;
+  const temObrasEmDestaque = totalObrasEmDestaque > 0;
 
   const { exibirSecaoDestaques } =
     obterVisibilidadeDestaquesPerfilAutor({
@@ -855,7 +856,7 @@ function PerfilAutorPageContent() {
       podeEditarPerfil,
       mostrarDestaquesAutor: perfilSalvoAutor.mostrarDestaques,
       mostrarDestaquesVisitante,
-      totalObrasEmDestaque: obrasEmDestaque.length,
+      totalObrasEmDestaque,
     });
 
   const dadosCurtidaTopFive = obterDadosCurtidaTopFivePerfilAutor({
