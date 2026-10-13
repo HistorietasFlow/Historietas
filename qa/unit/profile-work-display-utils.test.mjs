@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const heroActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-hero-actions.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileWorkDisplayDependencies = {
   ehClassificacao18(valor) {
@@ -580,7 +587,11 @@ test("página deriva mostrar destaques do autor uma única vez", () => {
   );
   assert.match(
     pagina,
-    /mostrarDestaques=\{mostrarDestaquesAutor\}/,
+    /<ProfileHeroActions[\s\S]*?mostrarDestaquesAutor=\{mostrarDestaquesAutor\}/,
+  );
+  assert.match(
+    heroActionsSource,
+    /<ProfileOwnerActions[\s\S]*?mostrarDestaques=\{mostrarDestaquesAutor\}/,
   );
 });
 
