@@ -976,6 +976,29 @@ function PerfilAutorPageContent() {
   const atividadesDiarioPerfil = diarioPerfil.atividades;
   const diarioPerfilCarregando = diarioPerfil.carregando;
 
+  const renderizarItemDiarioPerfil = (
+    item: (typeof itensDiarioTudo)[number],
+  ) => {
+    const obra = item.obra;
+
+    if (!obra) {
+      return null;
+    }
+
+    const hrefLista = criarHrefListaDiarioPerfilAutor(
+      perfilAutorId,
+      obra.id,
+    );
+
+    return (
+      <DiarySummaryCard
+        key={obra.id || item.chave}
+        href={hrefLista}
+        obra={obra}
+      />
+    );
+  };
+
   usePerfilAutorRatingSync({
     perfilParaMostrar,
     autorPodeReceberAvaliacao,
@@ -1901,28 +1924,8 @@ function PerfilAutorPageContent() {
             emptyMessage={obterMensagemDiarioVazioPerfilAutor(
               podeEditarPerfil,
             )}
-            renderItems={() =>
-              itensDiarioTudo.map((item) => {
-                const obra = item.obra;
-
-                if (!obra) {
-                  return null;
-                }
-
-                const hrefLista = criarHrefListaDiarioPerfilAutor(
-                  perfilAutorId,
-                  obra.id,
-                );
-
-                return (
-                  <DiarySummaryCard
-                    key={obra.id || item.chave}
-                    href={hrefLista}
-                    obra={obra}
-                  />
-                );
-              })
-            }
+            items={itensDiarioTudo}
+            renderItem={renderizarItemDiarioPerfil}
           />
         )}
 

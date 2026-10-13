@@ -28,6 +28,13 @@ const diaryLoaderSource = readFileSync(
   ),
   "utf8",
 );
+const diaryPanelSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-diary-panel.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(
   utilsSource
     .replace(
@@ -345,4 +352,25 @@ test("Perfil de Autor reutiliza hrefs centralizados do Diário", () => {
     pagina,
     /const parametrosLista = new URLSearchParams/,
   );
+});
+
+test("Perfil de Autor delega o map do Diario ao painel e prepara cada item", () => {
+  assert.match(
+    diaryPanelSource,
+    /type ProfileDiaryPanelProps<T> = \{[\s\S]*?items: T\[];[\s\S]*?renderItem: \(item: T\) => ReactNode;/,
+  );
+  assert.match(diaryPanelSource, /items\.map\(renderItem\)/);
+  assert.match(
+    pagina,
+    /const renderizarItemDiarioPerfil = \([\s\S]*?const obra = item\.obra;[\s\S]*?if \(!obra\) \{[\s\S]*?return null;[\s\S]*?<DiarySummaryCard[\s\S]*?href=\{hrefLista\}[\s\S]*?obra=\{obra\}/,
+  );
+  assert.match(
+    pagina,
+    /criarHrefListaDiarioPerfilAutor\([\s\S]*?perfilAutorId,[\s\S]*?obra\.id,/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileDiaryPanel[\s\S]*?items=\{itensDiarioTudo\}[\s\S]*?renderItem=\{renderizarItemDiarioPerfil\}/,
+  );
+  assert.doesNotMatch(pagina, /itensDiarioTudo\.map\(/);
 });
