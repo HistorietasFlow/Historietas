@@ -897,3 +897,10 @@
 - Reutilizou o mesmo elemento na posição do autor e do visitante, preservando as condições atuais de exibição.
 - Removeu uma duplicação completa do botão no JSX de `page.tsx` e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1036 — apresentação da ação de bloqueio
+
+- Derivou `menuBloqueioStyle` e `rotuloAcaoBloqueioPerfil` uma única vez a partir do estado de bloqueio.
+- Removeu do JSX o ternário de estilo e a chamada inline de `obterRotuloAcaoBloqueioPerfilAutor`.
+- Preservou exatamente o comportamento visual e os textos de bloquear/desbloquear e atualizou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.

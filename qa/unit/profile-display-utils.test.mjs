@@ -478,7 +478,7 @@ test("rótulo da ação de bloqueio preserva estado e salvamento", () => {
 });
 
 
-test("página deriva o estado de bloqueio uma vez e reutiliza no menu", () => {
+test("página deriva a apresentação da ação de bloqueio uma vez", () => {
   assert.match(
     pagina,
     /const bloqueadoPorMim = estadoBloqueioPerfil\.bloqueadoPorMim;/,
@@ -489,12 +489,14 @@ test("página deriva o estado de bloqueio uma vez e reutiliza no menu", () => {
   );
   assert.match(
     pagina,
-    /style=\{\s*bloqueadoPorMim\s*\? menuItemStyle\s*: menuDangerItemStyle\s*\}/,
+    /const menuBloqueioStyle = bloqueadoPorMim[\s\S]*?\? menuItemStyle[\s\S]*?: menuDangerItemStyle;/,
   );
   assert.match(
     pagina,
-    /obterRotuloAcaoBloqueioPerfilAutor\(\{[\s\S]*?bloqueadoPorMim,[\s\S]*?salvando: bloqueioPerfilSalvando/,
+    /const rotuloAcaoBloqueioPerfil = obterRotuloAcaoBloqueioPerfilAutor\(\{[\s\S]*?bloqueadoPorMim,[\s\S]*?salvando: bloqueioPerfilSalvando/,
   );
+  assert.match(pagina, /style=\{menuBloqueioStyle\}/);
+  assert.match(pagina, /\{rotuloAcaoBloqueioPerfil\}/);
 });
 
 
