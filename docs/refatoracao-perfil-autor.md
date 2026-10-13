@@ -1107,3 +1107,10 @@
 - Preservou exatamente as guardas atuais de `podeEditarPerfil && editorPerfilAberto` e `podeEditarPerfil && editorSobreAberto`.
 - Removeu as duas condições compostas do JSX e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1066 — estilo base do botão de seguir
+
+- Derivou `estiloBaseBotaoSeguimento` antes do JSX a partir de `botaoSeguimentoAtivo`.
+- Preservou `profileActiveButtonStyle` no estado ativo e `profilePrimaryButtonStyle` no estado padrão.
+- Removeu o ternário de estilo de dentro do botão de seguir e atualizou a cobertura estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.

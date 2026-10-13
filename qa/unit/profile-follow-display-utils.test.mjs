@@ -99,7 +99,15 @@ test("página delega a apresentação do botão de seguimento ao helper", () => 
     (pagina.match(/obterApresentacaoBotaoSeguimentoPerfilAutor\(\{/g) || []).length,
     1,
   );
-  assert.match(pagina, /botaoSeguimentoAtivo\s*\? profileActiveButtonStyle/);
+  assert.match(
+    pagina,
+    /const estiloBaseBotaoSeguimento = botaoSeguimentoAtivo[\s\S]{0,120}\? profileActiveButtonStyle[\s\S]{0,120}: profilePrimaryButtonStyle;/,
+  );
+  assert.match(pagina, /\.\.\.estiloBaseBotaoSeguimento/);
+  assert.doesNotMatch(
+    pagina,
+    /\.\.\.\(botaoSeguimentoAtivo[\s\S]{0,120}\? profileActiveButtonStyle/,
+  );
   assert.match(pagina, /opacity: opacidadeBotaoSeguimento/);
   assert.match(pagina, /cursor: cursorBotaoSeguimento/);
   assert.doesNotMatch(

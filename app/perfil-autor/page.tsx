@@ -681,6 +681,9 @@ function PerfilAutorPageContent() {
     solicitacaoSeguimentoPendente,
     salvando: seguirUsuarioSalvando,
   });
+  const estiloBaseBotaoSeguimento = botaoSeguimentoAtivo
+    ? profileActiveButtonStyle
+    : profilePrimaryButtonStyle;
 
   const obrasConcluidasPerfilPorObrasDoAutor =
     obterTotalObrasConcluidasPerfilAutor({
@@ -1678,9 +1681,7 @@ function PerfilAutorPageContent() {
                   aria-label={ariaLabelSeguimento}
                   title={titleSeguimento}
                   style={{
-                    ...(botaoSeguimentoAtivo
-                      ? profileActiveButtonStyle
-                      : profilePrimaryButtonStyle),
+                    ...estiloBaseBotaoSeguimento,
                     opacity: opacidadeBotaoSeguimento,
                     cursor: cursorBotaoSeguimento,
                   }}
