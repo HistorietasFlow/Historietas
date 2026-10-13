@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const secao = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const conteudo = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-about-content.tsx",
@@ -21,17 +28,16 @@ const rodape = readFileSync(
   "utf8",
 );
 
-test("página delega as duas composições apresentacionais do Sobre", () => {
+test("página delega a composição apresentacional completa do Sobre", () => {
   assert.match(
     pagina,
-    /import \{ ProfileAboutContent \} from "\.\/components\/profile-about-content";/,
+    /import \{ ProfileAboutSection \} from "\.\/components\/profile-about-section";/,
   );
-  assert.match(
-    pagina,
-    /import \{ ProfileAboutFooter \} from "\.\/components\/profile-about-footer";/,
-  );
-  assert.match(pagina, /<ProfileAboutContent[\s\S]*?\/>/);
-  assert.match(pagina, /<ProfileAboutFooter[\s\S]*?\/>/);
+  assert.match(pagina, /<ProfileAboutSection[\s\S]*?\/>/);
+  assert.match(secao, /import \{ ProfileAboutHero \} from "\.\/profile-about-hero";/);
+  assert.match(secao, /import \{ ProfileAboutContent \} from "\.\/profile-about-content";/);
+  assert.match(secao, /import \{ ProfileAboutFooter \} from "\.\/profile-about-footer";/);
+  assert.match(secao, /<ProfileAboutHero[\s\S]*?<ProfileAboutContent[\s\S]*?<ProfileAboutFooter/);
   assert.doesNotMatch(pagina, /<ProfileAboutContentGrid>/);
   assert.doesNotMatch(pagina, /<ProfileAboutMemberSince>/);
   assert.doesNotMatch(pagina, /<ProfileAboutRecentActivity/);
@@ -73,6 +79,6 @@ test("bloco final preserva texto, condição e props da atividade recente", () =
   );
   assert.match(
     pagina,
-    /<ProfileAboutFooter[\s\S]*?memberSince=\{entradaHistorietasPerfil\}[\s\S]*?showRecentActivity=\{atividadesPerfilVisivel\}[\s\S]*?expanded=\{atividadeSobreAberta\}[\s\S]*?loading=\{diarioPerfilCarregando\}[\s\S]*?items=\{atividadesDiarioPerfil\}[\s\S]*?onToggle=\{\(\) =>[\s\S]*?setAtividadeSobreAberta\(\(valorAtual\) => !valorAtual\)/,
+    /<ProfileAboutSection[\s\S]*?memberSince=\{entradaHistorietasPerfil\}[\s\S]*?showRecentActivity=\{atividadesPerfilVisivel\}[\s\S]*?recentActivityExpanded=\{atividadeSobreAberta\}[\s\S]*?recentActivityLoading=\{diarioPerfilCarregando\}[\s\S]*?recentActivityItems=\{atividadesDiarioPerfil\}[\s\S]*?onToggleRecentActivity=\{\(\) =>[\s\S]*?setAtividadeSobreAberta\(\(valorAtual\) => !valorAtual\)/,
   );
 });

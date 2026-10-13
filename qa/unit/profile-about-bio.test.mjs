@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const hero = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-hero.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const bioDisplay = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-about-bio-display.tsx",
@@ -24,11 +31,7 @@ const bioEditor = readFileSync(
 test("página delega os blocos de bio do Sobre sem mover suas derivações", () => {
   assert.match(
     pagina,
-    /import \{ ProfileAboutBioDisplay \} from "\.\/components\/profile-about-bio-display";/,
-  );
-  assert.match(
-    pagina,
-    /import \{ ProfileAboutBioEditor \} from "\.\/components\/profile-about-bio-editor";/,
+    /import \{ ProfileAboutSection \} from "\.\/components\/profile-about-section";/,
   );
   assert.match(
     pagina,
@@ -36,13 +39,14 @@ test("página delega os blocos de bio do Sobre sem mover suas derivações", () 
   );
   assert.match(
     pagina,
-    /<ProfileAboutBioDisplay[\s\S]*?title=\{obterTituloSobrePerfilAutor\(perfilNome\)\}[\s\S]*?text=\{bioSobreAutorExibido\}[\s\S]*?userContent=\{bioSobreAutorUserContent\}[\s\S]*?canEdit=\{podeEditarPerfil\}[\s\S]*?onToggleEditor=\{\(\) =>[\s\S]*?setEditorSobreAberto\(\(aberto\) => !aberto\)/,
+    /<ProfileAboutSection[\s\S]*?heroTitle=\{obterTituloSobrePerfilAutor\(perfilNome\)\}[\s\S]*?heroText=\{bioSobreAutorExibido\}[\s\S]*?heroUserContent=\{bioSobreAutorUserContent\}[\s\S]*?heroCanEdit=\{podeEditarPerfil\}[\s\S]*?onToggleHeroEditor=\{\(\) =>[\s\S]*?setEditorSobreAberto\(\(aberto\) => !aberto\)/,
   );
-  assert.match(pagina, /\{editorSobreVisivel && \(/);
   assert.match(
     pagina,
-    /<ProfileAboutBioEditor[\s\S]*?value=\{perfilSalvoAutor\.sobreBio\}[\s\S]*?onChange=\{\(event\) =>[\s\S]*?atualizarBioSobreAutor\(event\.target\.value\)[\s\S]*?placeholder=\{bioAutor\}[\s\S]*?maxLength=\{SOBRE_BIO_MAX_LENGTH\}[\s\S]*?remainingCharacters=\{caracteresRestantesBioSobre\}/,
+    /heroEditorVisible=\{editorSobreVisivel\}[\s\S]*?heroEditorValue=\{perfilSalvoAutor\.sobreBio\}[\s\S]*?onHeroEditorChange=\{\(event\) =>[\s\S]*?atualizarBioSobreAutor\(event\.target\.value\)[\s\S]*?heroEditorPlaceholder=\{bioAutor\}[\s\S]*?heroEditorMaxLength=\{SOBRE_BIO_MAX_LENGTH\}[\s\S]*?heroEditorRemainingCharacters=\{caracteresRestantesBioSobre\}/,
   );
+  assert.match(hero, /<ProfileAboutBioDisplay/);
+  assert.match(hero, /editorVisible && \([\s\S]*?<ProfileAboutBioEditor/);
 });
 
 test("ProfileAboutBioDisplay preserva título, texto, edição e conteúdo do usuário", () => {

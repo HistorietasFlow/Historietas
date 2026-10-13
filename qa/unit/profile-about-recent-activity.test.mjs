@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const sectionSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const footerSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-about-footer.tsx",
@@ -24,9 +31,13 @@ const footerSource = readFileSync(
 test("Perfil de Autor delega a atividade recente do Sobre", () => {
   assert.match(
     pagina,
-    /import \{ ProfileAboutFooter \} from "\.\/components\/profile-about-footer";/,
+    /import \{ ProfileAboutSection \} from "\.\/components\/profile-about-section";/,
   );
-  assert.match(pagina, /<ProfileAboutFooter/);
+  assert.match(pagina, /<ProfileAboutSection/);
+  assert.match(
+    sectionSource,
+    /import \{ ProfileAboutFooter \} from "\.\/profile-about-footer";/,
+  );
   assert.match(
     footerSource,
     /import \{ ProfileAboutRecentActivity \} from "\.\/profile-about-recent-activity";/,
@@ -63,6 +74,6 @@ test("Perfil de Autor deriva as atividades do Diário uma única vez", () => {
   );
   assert.match(
     pagina,
-    /<ProfileAboutFooter[\s\S]*?items=\{atividadesDiarioPerfil\}/,
+    /<ProfileAboutSection[\s\S]*?recentActivityItems=\{atividadesDiarioPerfil\}/,
   );
 });

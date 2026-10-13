@@ -551,7 +551,7 @@ test("página delega o título da seção Sobre ao helper", () => {
   );
   assert.match(
     pagina,
-    /title=\{obterTituloSobrePerfilAutor\(perfilNome\)\}/,
+    /heroTitle=\{obterTituloSobrePerfilAutor\(perfilNome\)\}/,
   );
   assert.doesNotMatch(
     pagina,
@@ -925,7 +925,7 @@ test("página delega a exibição da bio Sobre ao helper", () => {
   );
   assert.match(
     pagina,
-    /<ProfileAboutBioDisplay[\s\S]*?userContent=\{bioSobreAutorUserContent\}/,
+    /<ProfileAboutSection[\s\S]*?heroUserContent=\{bioSobreAutorUserContent\}/,
   );
   assert.doesNotMatch(
     pagina,
@@ -944,7 +944,7 @@ test("página deriva a visibilidade dos editores uma única vez", () => {
     /const editorSobreVisivel = podeEditarPerfil && editorSobreAberto;/,
   );
   assert.match(pagina, /\{editorPerfilVisivel && \(/);
-  assert.match(pagina, /\{editorSobreVisivel && \(/);
+  assert.match(pagina, /heroEditorVisible=\{editorSobreVisivel\}/);
   assert.doesNotMatch(
     pagina,
     /\{podeEditarPerfil && editorPerfilAberto && \(/,
