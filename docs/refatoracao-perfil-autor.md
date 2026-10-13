@@ -1023,3 +1023,10 @@
 - Reutilizou o mesmo estado nos rótulos do editor, na prévia da imagem e na ação de remover avatar.
 - Removeu verificações repetidas de presença do avatar no JSX e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1054 — presença de abas visíveis
+
+- Incluiu `temAbasPerfilVisiveis` em `obterVisibilidadeAbasPerfilAutor`.
+- Preservou exatamente a regra `totalAbasPerfilVisiveis > 0`.
+- Removeu a comparação inline do JSX de `ProfileSectionTabs` e ampliou a cobertura unitária/estrutural.
+- Sem alterações de UI, schema, RLS ou Supabase.

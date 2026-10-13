@@ -583,6 +583,7 @@ function PerfilAutorPageContent() {
     bibliotecaPerfilVisivel,
     atividadesPerfilVisivel,
     totalAbasPerfilVisiveis,
+    temAbasPerfilVisiveis,
     conteudoPrivadoBloqueado,
     primeiraAbaPerfilVisivel,
   } = obterVisibilidadeAbasPerfilAutor({
@@ -1754,7 +1755,7 @@ function PerfilAutorPageContent() {
             />
           )}
 
-        {totalAbasPerfilVisiveis > 0 && (
+        {temAbasPerfilVisiveis && (
           <ProfileSectionTabs
             abaAtiva={abaPerfil}
             bibliotecaVisivel={bibliotecaPerfilVisivel}
