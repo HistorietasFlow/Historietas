@@ -78,7 +78,15 @@ test("página mantém dados e callback de denúncia derivados antes de delegar a
   );
   assert.match(
     pagina,
+    /const renderizarPublicacaoRecenteComunidade = \([\s\S]*?publicacao: PublicacaoComunidadePerfil,[\s\S]*?\) => \{[\s\S]*?const dadosPublicacao =[\s\S]*?obterDadosPublicacaoRecenteComunidadePerfilAutor\([\s\S]*?publicacao,[\s\S]*?\);/,
+  );
+  assert.match(
+    pagina,
     /<ProfileCommunityPostItem[\s\S]*?publicacao=\{publicacao\}[\s\S]*?href=\{dadosPublicacao\.href\}[\s\S]*?ariaLabel=\{dadosPublicacao\.ariaLabel\}[\s\S]*?resumo=\{dadosPublicacao\.resumo\}[\s\S]*?totalOpcoesEnquete=\{[\s\S]*?dadosPublicacao\.totalOpcoesEnquete[\s\S]*?\}[\s\S]*?exibirInfoEnquete=\{[\s\S]*?dadosPublicacao\.exibirInfoEnquete[\s\S]*?\}[\s\S]*?exibirObraRelacionada=\{[\s\S]*?dadosPublicacao\.exibirObraRelacionada[\s\S]*?\}[\s\S]*?paddingBottom=\{[\s\S]*?paddingInferiorPublicacaoComunidade[\s\S]*?\}[\s\S]*?dateLabel=\{dataDiarioPerfilFormatada\([\s\S]*?publicacao\.criadoEm,[\s\S]*?\)\}[\s\S]*?showReportButton=\{perfilVisitante\}[\s\S]*?onReport=\{\(\) =>[\s\S]*?abrirDenunciaConteudoPerfil\([\s\S]*?"post",[\s\S]*?publicacao\.id,[\s\S]*?dadosPublicacao\.resumo/,
+  );
+  assert.match(
+    pagina,
+    /renderPost=\{renderizarPublicacaoRecenteComunidade\}/,
   );
 });
 

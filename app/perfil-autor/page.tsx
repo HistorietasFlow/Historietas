@@ -60,6 +60,7 @@ import type {
   ObraLocal,
   PerfisAutoresSalvos,
   PerfilUsuarioRemoto,
+  PublicacaoComunidadePerfil,
   TotaisInteracoesObrasPerfilAutor,
 } from "./types";
 import {
@@ -193,10 +194,8 @@ import { ProfileHighlightsHeader } from "./components/profile-highlights-header"
 import { ProfileHighlightsList } from "./components/profile-highlights-list";
 import { ProfileHighlightsSection } from "./components/profile-highlights-section";
 import { ProfileLibrarySection } from "./components/profile-library-section";
-import { ProfileCommunitySection } from "./components/profile-community-section";
-import { ProfileCommunityHeader } from "./components/profile-community-header";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
-import { ProfileCommunityContentState } from "./components/profile-community-content-state";
+import { ProfileCommunityPanel } from "./components/profile-community-panel";
 import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
 import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
 import { ProfileAboutSection } from "./components/profile-about-section";
@@ -733,6 +732,47 @@ function PerfilAutorPageContent() {
     });
   const paddingInferiorPublicacaoComunidade =
     obterPaddingInferiorPublicacaoComunidadePerfilAutor(podeEditarPerfil);
+  const renderizarPublicacaoRecenteComunidade = (
+    publicacao: PublicacaoComunidadePerfil,
+  ) => {
+    const dadosPublicacao =
+      obterDadosPublicacaoRecenteComunidadePerfilAutor(
+        publicacao,
+      );
+
+    return (
+      <ProfileCommunityPostItem
+        key={publicacao.id}
+        publicacao={publicacao}
+        href={dadosPublicacao.href}
+        ariaLabel={dadosPublicacao.ariaLabel}
+        resumo={dadosPublicacao.resumo}
+        totalOpcoesEnquete={
+          dadosPublicacao.totalOpcoesEnquete
+        }
+        exibirInfoEnquete={
+          dadosPublicacao.exibirInfoEnquete
+        }
+        exibirObraRelacionada={
+          dadosPublicacao.exibirObraRelacionada
+        }
+        paddingBottom={
+          paddingInferiorPublicacaoComunidade
+        }
+        dateLabel={dataDiarioPerfilFormatada(
+          publicacao.criadoEm,
+        )}
+        showReportButton={perfilVisitante}
+        onReport={() =>
+          abrirDenunciaConteudoPerfil(
+            "post",
+            publicacao.id,
+            dadosPublicacao.resumo,
+          )
+        }
+      />
+    );
+  };
 
   const dadosDenunciaPerfil = obterDadosDenunciaPerfilAutor(
     perfilParaMostrar,
@@ -1882,80 +1922,42 @@ function PerfilAutorPageContent() {
         )}
 
         {comunidadePerfilAtiva && (
-          <ProfileCommunitySection isDesktop={isDesktop}>
-            <ProfileCommunityHeader title={tituloComunidadePerfil} />
-
-            <ProfileCommunityContentState
-              loading={comunidadePerfil.carregando}
-              error={erroComunidadePerfil}
-              empty={comunidadeSemPublicacoesRecentes}
-              emptyTitle={avisoComunidadeVazia.title}
-              emptyDescription={avisoComunidadeVazia.description}
-              persistentContent={
-                <ProfileCommunityStatsGrid
-                  isDesktop={isDesktop}
-                  publicacoes={{
-                    href: comunidadeAutorHref,
-                    ariaLabel: ariaLabelsEstatisticasComunidade.publicacoes,
-                    value: valoresEstatisticasComunidade.publicacoes,
-                  }}
-                  teorias={{
-                    href: comunidadeAutorTeoriasHref,
-                    ariaLabel: ariaLabelsEstatisticasComunidade.teorias,
-                    value: valoresEstatisticasComunidade.teorias,
-                  }}
-                  reviews={{
-                    href: comunidadeAutorReviewsHref,
-                    ariaLabel: ariaLabelsEstatisticasComunidade.reviews,
-                    value: valoresEstatisticasComunidade.reviews,
-                  }}
-                />
-              }
-            >
-              <ProfileCommunityRecentPostsSection
-                title="Publicações recentes"
+          <ProfileCommunityPanel
+            isDesktop={isDesktop}
+            title={tituloComunidadePerfil}
+            loading={comunidadePerfil.carregando}
+            error={erroComunidadePerfil}
+            empty={comunidadeSemPublicacoesRecentes}
+            emptyTitle={avisoComunidadeVazia.title}
+            emptyDescription={avisoComunidadeVazia.description}
+            persistentContent={
+              <ProfileCommunityStatsGrid
                 isDesktop={isDesktop}
-                publicacoes={publicacoesRecentesComunidade}
-                renderPost={(publicacao) => {
-                  const dadosPublicacao =
-                    obterDadosPublicacaoRecenteComunidadePerfilAutor(
-                      publicacao,
-                    );
-
-                  return (
-                    <ProfileCommunityPostItem
-                      key={publicacao.id}
-                      publicacao={publicacao}
-                      href={dadosPublicacao.href}
-                      ariaLabel={dadosPublicacao.ariaLabel}
-                      resumo={dadosPublicacao.resumo}
-                      totalOpcoesEnquete={
-                        dadosPublicacao.totalOpcoesEnquete
-                      }
-                      exibirInfoEnquete={
-                        dadosPublicacao.exibirInfoEnquete
-                      }
-                      exibirObraRelacionada={
-                        dadosPublicacao.exibirObraRelacionada
-                      }
-                      paddingBottom={paddingInferiorPublicacaoComunidade}
-                      dateLabel={dataDiarioPerfilFormatada(
-                        publicacao.criadoEm,
-                      )}
-                      showReportButton={perfilVisitante}
-                      onReport={() =>
-                        abrirDenunciaConteudoPerfil(
-                          "post",
-                          publicacao.id,
-                          dadosPublicacao.resumo,
-                        )
-                      }
-                    />
-                  );
+                publicacoes={{
+                  href: comunidadeAutorHref,
+                  ariaLabel: ariaLabelsEstatisticasComunidade.publicacoes,
+                  value: valoresEstatisticasComunidade.publicacoes,
+                }}
+                teorias={{
+                  href: comunidadeAutorTeoriasHref,
+                  ariaLabel: ariaLabelsEstatisticasComunidade.teorias,
+                  value: valoresEstatisticasComunidade.teorias,
+                }}
+                reviews={{
+                  href: comunidadeAutorReviewsHref,
+                  ariaLabel: ariaLabelsEstatisticasComunidade.reviews,
+                  value: valoresEstatisticasComunidade.reviews,
                 }}
               />
-            </ProfileCommunityContentState>
-          </ProfileCommunitySection>
+            }
+          >
+            <ProfileCommunityRecentPostsSection
+              title="Publicações recentes"
+              isDesktop={isDesktop}
+              publicacoes={publicacoesRecentesComunidade}
+              renderPost={renderizarPublicacaoRecenteComunidade}
+            />
+          </ProfileCommunityPanel>
         )}
 
         {sobrePerfilAtivo && (

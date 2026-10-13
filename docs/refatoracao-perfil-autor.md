@@ -1213,3 +1213,9 @@
 - Extraiu a apresentação dos estados de carregamento, erro e vazio da Comunidade, preservando os valores derivados pela página.
 - Transferiu para a seção de publicações recentes apenas a composição da lista e seu `map`, mantendo na página as derivações, a data e o callback de denúncia.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1082 — Painel externo e renderização da Comunidade
+
+- Extraiu a composição externa da seção da Comunidade, preservando seção, cabeçalho, estados e condições na página.
+- Nomeou a função de renderização de cada publicação recente na página e a passou para a lista, mantendo as derivações, a data e a denúncia no mesmo escopo.
+- Sem alterações de UI, schema, RLS ou Supabase.
