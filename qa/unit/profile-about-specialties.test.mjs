@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const conteudo = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const source = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-about-specialties.tsx",
@@ -17,15 +24,23 @@ const source = readFileSync(
 test("Perfil de Autor delega o painel de Especialidades", () => {
   assert.match(
     pagina,
-    /import \{ ProfileAboutSpecialties \} from "\.\/components\/profile-about-specialties";/,
+    /import \{ ProfileAboutContent \} from "\.\/components\/profile-about-content";/,
   );
   assert.match(
     pagina,
+    /<ProfileAboutContent[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}[\s\S]*?\/>/,
+  );
+  assert.match(
+    conteudo,
+    /import \{ ProfileAboutSpecialties \} from "\.\/profile-about-specialties";/,
+  );
+  assert.match(
+    conteudo,
     /<ProfileAboutSpecialties[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}[\s\S]*?\/>/,
   );
   assert.doesNotMatch(
     pagina,
-    /import \{ ProfileAboutChips \} from "\.\/components\/profile-about-chips";/,
+    /import \{ ProfileAboutSpecialties \} from "\.\/components\/profile-about-specialties";/,
   );
   assert.doesNotMatch(
     pagina,

@@ -1189,3 +1189,9 @@
 - Extraiu o painel apresentacional “Especialidades” para um componente dedicado.
 - Preservou a coleção derivada na página, o markup, o texto, a ordem e as chaves dos chips.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1078 — Composições do Sobre
+
+- Extraiu a composição apresentacional do grid com Especialidades, Números do perfil e Atividade.
+- Extraiu o bloco final com a data de entrada e a atividade recente.
+- Manteve na página todas as derivações, condições e callbacks; sem alterações de UI, schema, RLS ou Supabase.

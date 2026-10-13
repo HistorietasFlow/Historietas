@@ -162,7 +162,7 @@ test("página reutiliza a presença de obras sem capítulos já derivada", () =>
   assert.match(pagina, /temObrasSemCapitulosPerfil,/);
   assert.match(
     pagina,
-    /import \{ ProfileAboutActivity \} from "\.\/components\/profile-about-activity";/,
+    /import \{ ProfileAboutContent \} from "\.\/components\/profile-about-content";/,
   );
   assert.match(
     pagina,
@@ -188,11 +188,11 @@ test("página reutiliza especialidades já derivadas no resumo", () => {
   assert.match(pagina, /generosEspecialidadesPerfil,/);
   assert.match(
     pagina,
-    /import \{ ProfileAboutSpecialties \} from "\.\/components\/profile-about-specialties";/,
+    /import \{ ProfileAboutContent \} from "\.\/components\/profile-about-content";/,
   );
   assert.match(
     pagina,
-    /<ProfileAboutSpecialties[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}/,
+    /<ProfileAboutContent[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}/,
   );
   assert.doesNotMatch(
     pagina,
