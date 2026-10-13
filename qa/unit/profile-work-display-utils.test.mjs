@@ -253,9 +253,9 @@ test("página deriva o total de obras uma única vez da coleção do perfil", ()
   assert.match(pagina, /totalObras: totalObrasPerfil/);
   assert.match(
     pagina,
-    /import \{ ProfileAboutContent \} from "\.\/components\/profile-about-content";/,
+    /import \{ ProfileAboutSection \} from "\.\/components\/profile-about-section";/,
   );
-  assert.match(pagina, /<ProfileAboutContent[\s\S]*?totalObras=\{totalObrasPerfil\}/);
+  assert.match(pagina, /<ProfileAboutSection[\s\S]*?totalObras=\{totalObrasPerfil\}/);
   assert.doesNotMatch(
     pagina,
     /perfilParaMostrar\.obras\.length/,

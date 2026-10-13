@@ -1249,3 +1249,9 @@
 - Extraiu o estado apresentacional vazio ou com lista de obras em destaque.
 - Extraiu a composição da seção, cabeçalho e conteúdo, mantendo na página a visibilidade, derivações, ações do TOP 5 e a função nomeada de renderização das obras.
 - Preservou UI, ordem, condições, links, acessibilidade, schema, RLS e Supabase.
+
+## Fase 1088 — Composição completa do Sobre
+
+- Elevou `ProfileAboutHero` para compor a exibição e o editor condicional da bio.
+- Elevou `ProfileAboutSection` para reunir hero, conteúdo e rodapé, mantendo na página a visibilidade, as derivações, formatações, estados e callbacks.
+- Preservou UI, textos, condições, acessibilidade, schema, RLS e Supabase.

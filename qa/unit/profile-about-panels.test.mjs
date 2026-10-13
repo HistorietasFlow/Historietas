@@ -27,16 +27,24 @@ const conteudo = readFileSync(
   ),
   "utf8",
 );
+const secao = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-about-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Perfil de Autor delega a composição dos painéis apresentacionais do Sobre", () => {
   assert.match(
     pagina,
-    /import \{ ProfileAboutContent \} from "\.\/components\/profile-about-content";/,
+    /import \{ ProfileAboutSection \} from "\.\/components\/profile-about-section";/,
   );
   assert.match(
     pagina,
-    /<ProfileAboutContent[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}[\s\S]*?totalPublicadas=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalPublicadas,[\s\S]*?\)\}[\s\S]*?totalCapitulos=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalCapitulos,[\s\S]*?\)\}[\s\S]*?totalCurtidas=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalCurtidas,[\s\S]*?\)\}[\s\S]*?totalVisualizacoes=\{compactarNumeroPerfilAutor\([\s\S]*?totalVisualizacoesPerfil,[\s\S]*?\)\}[\s\S]*?totalObras=\{totalObrasPerfil\}[\s\S]*?totalRascunhos=\{totalRascunhosPerfil\}[\s\S]*?totalComentarios=\{perfilParaMostrar\.totalComentarios\}[\s\S]*?totalConcluidas=\{obrasConcluidasPerfilTotal\}[\s\S]*?mostrarObrasSemCapitulos=\{temObrasSemCapitulosPerfil\}[\s\S]*?totalObrasSemCapitulos=\{totalObrasSemCapitulosPerfil\}/,
+    /<ProfileAboutSection[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}[\s\S]*?totalPublicadas=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalPublicadas,[\s\S]*?\)\}[\s\S]*?totalCapitulos=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalCapitulos,[\s\S]*?\)\}[\s\S]*?totalCurtidas=\{compactarNumeroPerfilAutor\([\s\S]*?perfilParaMostrar\.totalCurtidas,[\s\S]*?\)\}[\s\S]*?totalVisualizacoes=\{compactarNumeroPerfilAutor\([\s\S]*?totalVisualizacoesPerfil,[\s\S]*?\)\}[\s\S]*?totalObras=\{totalObrasPerfil\}[\s\S]*?totalRascunhos=\{totalRascunhosPerfil\}[\s\S]*?totalComentarios=\{perfilParaMostrar\.totalComentarios\}[\s\S]*?totalConcluidas=\{obrasConcluidasPerfilTotal\}[\s\S]*?mostrarObrasSemCapitulos=\{temObrasSemCapitulosPerfil\}[\s\S]*?totalObrasSemCapitulos=\{totalObrasSemCapitulosPerfil\}/,
   );
+  assert.match(secao, /import \{ ProfileAboutContent \} from "\.\/profile-about-content";/);
   assert.match(
     conteudo,
     /import \{ ProfileAboutSpecialties \} from "\.\/profile-about-specialties";/,

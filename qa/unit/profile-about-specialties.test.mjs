@@ -24,11 +24,11 @@ const source = readFileSync(
 test("Perfil de Autor delega o painel de Especialidades", () => {
   assert.match(
     pagina,
-    /import \{ ProfileAboutContent \} from "\.\/components\/profile-about-content";/,
+    /import \{ ProfileAboutSection \} from "\.\/components\/profile-about-section";/,
   );
   assert.match(
     pagina,
-    /<ProfileAboutContent[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}[\s\S]*?\/>/,
+    /<ProfileAboutSection[\s\S]*?generosEspecialidadesPerfil=\{generosEspecialidadesPerfil\}[\s\S]*?\/>/,
   );
   assert.match(
     conteudo,

@@ -193,11 +193,6 @@ import { ProfileCommunityPanel } from "./components/profile-community-panel";
 import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
 import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
 import { ProfileAboutSection } from "./components/profile-about-section";
-import { ProfileAboutHero } from "./components/profile-about-hero";
-import { ProfileAboutBioDisplay } from "./components/profile-about-bio-display";
-import { ProfileAboutBioEditor } from "./components/profile-about-bio-editor";
-import { ProfileAboutContent } from "./components/profile-about-content";
-import { ProfileAboutFooter } from "./components/profile-about-footer";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -1931,64 +1926,50 @@ function PerfilAutorPageContent() {
         )}
 
         {sobrePerfilAtivo && (
-          <ProfileAboutSection>
-            <ProfileAboutHero>
-              <ProfileAboutBioDisplay
-                title={obterTituloSobrePerfilAutor(perfilNome)}
-                text={bioSobreAutorExibido}
-                userContent={bioSobreAutorUserContent}
-                canEdit={podeEditarPerfil}
-                onToggleEditor={() =>
-                  setEditorSobreAberto((aberto) => !aberto)
-                }
-              />
-
-              {editorSobreVisivel && (
-                <ProfileAboutBioEditor
-                  value={perfilSalvoAutor.sobreBio}
-                  onChange={(event) =>
-                    atualizarBioSobreAutor(event.target.value)
-                  }
-                  placeholder={bioAutor}
-                  maxLength={SOBRE_BIO_MAX_LENGTH}
-                  remainingCharacters={caracteresRestantesBioSobre}
-                />
-              )}
-            </ProfileAboutHero>
-
-            <ProfileAboutContent
-              generosEspecialidadesPerfil={generosEspecialidadesPerfil}
-              totalPublicadas={compactarNumeroPerfilAutor(
-                perfilParaMostrar.totalPublicadas,
-              )}
-              totalCapitulos={compactarNumeroPerfilAutor(
-                perfilParaMostrar.totalCapitulos,
-              )}
-              totalCurtidas={compactarNumeroPerfilAutor(
-                perfilParaMostrar.totalCurtidas,
-              )}
-              totalVisualizacoes={compactarNumeroPerfilAutor(
-                totalVisualizacoesPerfil,
-              )}
-              totalObras={totalObrasPerfil}
-              totalRascunhos={totalRascunhosPerfil}
-              totalComentarios={perfilParaMostrar.totalComentarios}
-              totalConcluidas={obrasConcluidasPerfilTotal}
-              mostrarObrasSemCapitulos={temObrasSemCapitulosPerfil}
-              totalObrasSemCapitulos={totalObrasSemCapitulosPerfil}
-            />
-
-            <ProfileAboutFooter
-              memberSince={entradaHistorietasPerfil}
-              showRecentActivity={atividadesPerfilVisivel}
-              expanded={atividadeSobreAberta}
-              loading={diarioPerfilCarregando}
-              items={atividadesDiarioPerfil}
-              onToggle={() =>
-                setAtividadeSobreAberta((valorAtual) => !valorAtual)
-              }
-            />
-          </ProfileAboutSection>
+          <ProfileAboutSection
+            heroTitle={obterTituloSobrePerfilAutor(perfilNome)}
+            heroText={bioSobreAutorExibido}
+            heroUserContent={bioSobreAutorUserContent}
+            heroCanEdit={podeEditarPerfil}
+            onToggleHeroEditor={() =>
+              setEditorSobreAberto((aberto) => !aberto)
+            }
+            heroEditorVisible={editorSobreVisivel}
+            heroEditorValue={perfilSalvoAutor.sobreBio}
+            onHeroEditorChange={(event) =>
+              atualizarBioSobreAutor(event.target.value)
+            }
+            heroEditorPlaceholder={bioAutor}
+            heroEditorMaxLength={SOBRE_BIO_MAX_LENGTH}
+            heroEditorRemainingCharacters={caracteresRestantesBioSobre}
+            generosEspecialidadesPerfil={generosEspecialidadesPerfil}
+            totalPublicadas={compactarNumeroPerfilAutor(
+              perfilParaMostrar.totalPublicadas,
+            )}
+            totalCapitulos={compactarNumeroPerfilAutor(
+              perfilParaMostrar.totalCapitulos,
+            )}
+            totalCurtidas={compactarNumeroPerfilAutor(
+              perfilParaMostrar.totalCurtidas,
+            )}
+            totalVisualizacoes={compactarNumeroPerfilAutor(
+              totalVisualizacoesPerfil,
+            )}
+            totalObras={totalObrasPerfil}
+            totalRascunhos={totalRascunhosPerfil}
+            totalComentarios={perfilParaMostrar.totalComentarios}
+            totalConcluidas={obrasConcluidasPerfilTotal}
+            mostrarObrasSemCapitulos={temObrasSemCapitulosPerfil}
+            totalObrasSemCapitulos={totalObrasSemCapitulosPerfil}
+            memberSince={entradaHistorietasPerfil}
+            showRecentActivity={atividadesPerfilVisivel}
+            recentActivityExpanded={atividadeSobreAberta}
+            recentActivityLoading={diarioPerfilCarregando}
+            recentActivityItems={atividadesDiarioPerfil}
+            onToggleRecentActivity={() =>
+              setAtividadeSobreAberta((valorAtual) => !valorAtual)
+            }
+          />
         )}
 
         {obrasPerfilAtivo && (
