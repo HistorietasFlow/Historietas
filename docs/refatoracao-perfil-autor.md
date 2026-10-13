@@ -1309,3 +1309,9 @@
 - Reuniu a seção, as abas e os estados apresentacionais da Biblioteca em `ProfileLibraryPanel`, mantendo na página a aba ativa, carregamento, itens derivados e função de renderização.
 - Reuniu a seção e os estados apresentacionais de Obras em `ProfileWorksPanel`, mantendo na página os resultados filtrados, o estado vazio e a função de renderização.
 - Preservou UI, ordem, tabs, carregamento, estados vazios, responsividade, acessibilidade, schema, RLS e Supabase.
+
+## Fase 1098 — Painéis de avaliações e navegação
+
+- Reuniu as duas avaliações apresentacionais em `ProfileRatingsPanel`, mantendo na página as visibilidades derivadas, notas, estados de salvamento e callbacks.
+- Reuniu tabs e aviso privado em `ProfileNavigationPanel`, mantendo na página a aba selecionada, as visibilidades, o total de abas, o bloqueio e a seleção de aba.
+- Preservou textos, `aria-labels`, `keyPrefix`, condições, ordem, acessibilidade, UI, schema, RLS e Supabase.

@@ -24,6 +24,13 @@ const ratingActionSource = readFileSync(
   ),
   "utf8",
 );
+const ratingsPanelSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-ratings-panel.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const {
   obterEstadoAvaliacaoPerfilAutor,
@@ -199,8 +206,10 @@ test("página delega a visibilidade das ações de avaliação ao helper", () =>
     (pagina.match(/obterVisibilidadeAcoesAvaliacaoPerfilAutor\(\{/g) || []).length,
     1,
   );
-  assert.match(pagina, /\{avaliacaoAutorAcaoVisivel && \(/);
-  assert.match(pagina, /\{avaliacaoDiarioAcaoVisivel && \(/);
+  assert.match(
+    pagina,
+    /<ProfileRatingsPanel[\s\S]*?avaliacaoAutorAcaoVisivel=\{avaliacaoAutorAcaoVisivel\}[\s\S]*?avaliacaoDiarioAcaoVisivel=\{avaliacaoDiarioAcaoVisivel\}/,
+  );
   assert.doesNotMatch(
     pagina,
     /autenticacaoCarregada &&[\s\S]{0,140}?autorPodeReceberAvaliacao &&/,
@@ -210,16 +219,24 @@ test("página delega a visibilidade das ações de avaliação ao helper", () =>
 test("página mantém as condições e delega a composição das avaliações", () => {
   assert.match(
     pagina,
-    /import \{ ProfileRatingAction \} from "\.\/components\/profile-rating-actions";/,
+    /import \{ ProfileRatingsPanel \} from "\.\/components\/profile-ratings-panel";/,
   );
-  assert.equal((pagina.match(/<ProfileRatingAction/g) || []).length, 2);
+  assert.equal((pagina.match(/<ProfileRatingsPanel/g) || []).length, 1);
   assert.match(
     pagina,
-    /\{avaliacaoAutorAcaoVisivel && \([\s\S]*?<ProfileRatingAction[\s\S]*?ariaLabel="Avaliação do autor"[\s\S]*?entidadeAvaliacao="autor"[\s\S]*?keyPrefix="avaliacao-autor"[\s\S]*?minhaNota=\{avaliacaoAutor\.minhaNota\}[\s\S]*?onRate=\{avaliarAutor\}/,
+    /<ProfileRatingsPanel[\s\S]*?avaliacaoAutorMinhaNota=\{avaliacaoAutor\.minhaNota\}[\s\S]*?onAvaliarAutor=\{avaliarAutor\}/,
   );
   assert.match(
     pagina,
-    /\{avaliacaoDiarioAcaoVisivel && \([\s\S]*?<ProfileRatingAction[\s\S]*?ariaLabel="Avaliação do Diário"[\s\S]*?entidadeAvaliacao="Diário"[\s\S]*?keyPrefix="avaliacao-diario-perfil"[\s\S]*?minhaNota=\{avaliacaoDiario\.minhaNota\}[\s\S]*?salvando=\{avaliacaoDiario\.salvando\}[\s\S]*?onRate=\{avaliarDiarioPerfil\}/,
+    /<ProfileRatingsPanel[\s\S]*?avaliacaoDiarioMinhaNota=\{avaliacaoDiario\.minhaNota\}[\s\S]*?avaliacaoDiarioSalvando=\{avaliacaoDiario\.salvando\}[\s\S]*?onAvaliarDiarioPerfil=\{avaliarDiarioPerfil\}/,
+  );
+  assert.match(
+    ratingsPanelSource,
+    /\{avaliacaoAutorAcaoVisivel && \([\s\S]*?<ProfileRatingAction[\s\S]*?ariaLabel="Avaliação do autor"[\s\S]*?entidadeAvaliacao="autor"[\s\S]*?keyPrefix="avaliacao-autor"[\s\S]*?minhaNota=\{avaliacaoAutorMinhaNota\}[\s\S]*?onRate=\{onAvaliarAutor\}/,
+  );
+  assert.match(
+    ratingsPanelSource,
+    /\{avaliacaoDiarioAcaoVisivel && \([\s\S]*?<ProfileRatingAction[\s\S]*?ariaLabel="Avaliação do Diário"[\s\S]*?entidadeAvaliacao="Diário"[\s\S]*?keyPrefix="avaliacao-diario-perfil"[\s\S]*?minhaNota=\{avaliacaoDiarioMinhaNota\}[\s\S]*?salvando=\{avaliacaoDiarioSalvando\}[\s\S]*?onRate=\{onAvaliarDiarioPerfil\}/,
   );
   assert.doesNotMatch(pagina, /<ProfileRatingBox/);
   assert.match(
