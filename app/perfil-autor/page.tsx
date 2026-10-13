@@ -116,6 +116,7 @@ import {
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
+  obterUsernameExibidoPerfilAutor,
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
@@ -1124,7 +1125,7 @@ function PerfilAutorPageContent() {
                   data-historietas-i18n-ignore="true"
                   style={logoTextStyle}
                 >
-                  {autorHandlePerfil.replace(/^@/, "")}
+                  {obterUsernameExibidoPerfilAutor(autorHandlePerfil)}
                 </span>
               </button>
             ) : null}
