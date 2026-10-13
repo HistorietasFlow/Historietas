@@ -20,6 +20,13 @@ const postItem = readFileSync(
   ),
   "utf8",
 );
+const recentPostsSection = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-community-recent-posts-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("página mantém derivadas as estatísticas da Comunidade e delega sua composição", () => {
   assert.match(
@@ -58,7 +65,11 @@ test("ProfileCommunityStatsGrid preserva os três cards, textos, links e acessib
 test("página mantém dados e callback de denúncia derivados antes de delegar a publicação", () => {
   assert.match(
     pagina,
-    /\{publicacoesRecentesComunidade\.map\(/,
+    /publicacoes=\{publicacoesRecentesComunidade\}/,
+  );
+  assert.match(
+    recentPostsSection,
+    /\{publicacoes\.map\(renderPost\)\}/,
   );
   assert.equal(
     (pagina.match(/obterDadosPublicacaoRecenteComunidadePerfilAutor\(/g) || [])

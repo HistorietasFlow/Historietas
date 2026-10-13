@@ -196,9 +196,8 @@ import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
 import { ProfileCommunityHeader } from "./components/profile-community-header";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
-import { ProfileCommunityNotice } from "./components/profile-community-notice";
+import { ProfileCommunityContentState } from "./components/profile-community-content-state";
 import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
-import { ProfileCommunityRecentPostsList } from "./components/profile-community-recent-posts-list";
 import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileAboutHero } from "./components/profile-about-hero";
@@ -1886,13 +1885,13 @@ function PerfilAutorPageContent() {
           <ProfileCommunitySection isDesktop={isDesktop}>
             <ProfileCommunityHeader title={tituloComunidadePerfil} />
 
-            {comunidadePerfil.carregando ? (
-              <LoadingSpinner
-                label="Carregando publicações da Comunidade"
-                compacto
-              />
-            ) : (
-              <>
+            <ProfileCommunityContentState
+              loading={comunidadePerfil.carregando}
+              error={erroComunidadePerfil}
+              empty={comunidadeSemPublicacoesRecentes}
+              emptyTitle={avisoComunidadeVazia.title}
+              emptyDescription={avisoComunidadeVazia.description}
+              persistentContent={
                 <ProfileCommunityStatsGrid
                   isDesktop={isDesktop}
                   publicacoes={{
@@ -1911,69 +1910,51 @@ function PerfilAutorPageContent() {
                     value: valoresEstatisticasComunidade.reviews,
                   }}
                 />
+              }
+            >
+              <ProfileCommunityRecentPostsSection
+                title="Publicações recentes"
+                isDesktop={isDesktop}
+                publicacoes={publicacoesRecentesComunidade}
+                renderPost={(publicacao) => {
+                  const dadosPublicacao =
+                    obterDadosPublicacaoRecenteComunidadePerfilAutor(
+                      publicacao,
+                    );
 
-                {erroComunidadePerfil ? (
-                  <ProfileCommunityNotice
-                    icon="!"
-                    title="Comunidade indisponível"
-                    description={erroComunidadePerfil}
-                  />
-                ) : comunidadeSemPublicacoesRecentes ? (
-                  <ProfileCommunityNotice
-                    icon="💬"
-                    title={avisoComunidadeVazia.title}
-                    description={avisoComunidadeVazia.description}
-                  />
-                ) : (
-                  <ProfileCommunityRecentPostsSection title="Publicações recentes">
-
-                    <ProfileCommunityRecentPostsList isDesktop={isDesktop}>
-                      {publicacoesRecentesComunidade.map(
-                        (publicacao) => {
-                          const dadosPublicacao =
-                            obterDadosPublicacaoRecenteComunidadePerfilAutor(
-                              publicacao,
-                            );
-
-                          return (
-                            <ProfileCommunityPostItem
-                              key={publicacao.id}
-                              publicacao={publicacao}
-                              href={dadosPublicacao.href}
-                              ariaLabel={dadosPublicacao.ariaLabel}
-                              resumo={dadosPublicacao.resumo}
-                              totalOpcoesEnquete={
-                                dadosPublicacao.totalOpcoesEnquete
-                              }
-                              exibirInfoEnquete={
-                                dadosPublicacao.exibirInfoEnquete
-                              }
-                              exibirObraRelacionada={
-                                dadosPublicacao.exibirObraRelacionada
-                              }
-                              paddingBottom={
-                                paddingInferiorPublicacaoComunidade
-                              }
-                              dateLabel={dataDiarioPerfilFormatada(
-                                publicacao.criadoEm,
-                              )}
-                              showReportButton={perfilVisitante}
-                              onReport={() =>
-                                abrirDenunciaConteudoPerfil(
-                                  "post",
-                                  publicacao.id,
-                                  dadosPublicacao.resumo,
-                                )
-                              }
-                            />
-                          );
-                        },
+                  return (
+                    <ProfileCommunityPostItem
+                      key={publicacao.id}
+                      publicacao={publicacao}
+                      href={dadosPublicacao.href}
+                      ariaLabel={dadosPublicacao.ariaLabel}
+                      resumo={dadosPublicacao.resumo}
+                      totalOpcoesEnquete={
+                        dadosPublicacao.totalOpcoesEnquete
+                      }
+                      exibirInfoEnquete={
+                        dadosPublicacao.exibirInfoEnquete
+                      }
+                      exibirObraRelacionada={
+                        dadosPublicacao.exibirObraRelacionada
+                      }
+                      paddingBottom={paddingInferiorPublicacaoComunidade}
+                      dateLabel={dataDiarioPerfilFormatada(
+                        publicacao.criadoEm,
                       )}
-                    </ProfileCommunityRecentPostsList>
-                  </ProfileCommunityRecentPostsSection>
-                )}
-              </>
-            )}
+                      showReportButton={perfilVisitante}
+                      onReport={() =>
+                        abrirDenunciaConteudoPerfil(
+                          "post",
+                          publicacao.id,
+                          dadosPublicacao.resumo,
+                        )
+                      }
+                    />
+                  );
+                }}
+              />
+            </ProfileCommunityContentState>
           </ProfileCommunitySection>
         )}
 
