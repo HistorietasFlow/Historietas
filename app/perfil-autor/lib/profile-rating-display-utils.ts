@@ -46,3 +46,33 @@ export function obterEstadoAvaliacaoPerfilAutor({
     avaliacaoResumoEhDiario: !autorPodeReceberAvaliacao,
   };
 }
+
+
+export function obterVisibilidadeAcoesAvaliacaoPerfilAutor({
+  autenticacaoCarregada,
+  autorPodeReceberAvaliacao,
+  perfilUsaAvaliacaoDiario,
+  podeEditarPerfil,
+  avaliacaoDiarioVisivel,
+  avaliacaoDiarioPodeAvaliar,
+}: {
+  autenticacaoCarregada: boolean;
+  autorPodeReceberAvaliacao: boolean;
+  perfilUsaAvaliacaoDiario: boolean;
+  podeEditarPerfil: boolean;
+  avaliacaoDiarioVisivel: boolean;
+  avaliacaoDiarioPodeAvaliar: boolean;
+}) {
+  return {
+    avaliacaoAutorAcaoVisivel:
+      autenticacaoCarregada &&
+      autorPodeReceberAvaliacao &&
+      !podeEditarPerfil,
+    avaliacaoDiarioAcaoVisivel:
+      autenticacaoCarregada &&
+      perfilUsaAvaliacaoDiario &&
+      !podeEditarPerfil &&
+      avaliacaoDiarioVisivel &&
+      avaliacaoDiarioPodeAvaliar,
+  };
+}

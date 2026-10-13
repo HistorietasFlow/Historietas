@@ -13,7 +13,15 @@ const javascript = typescript.transpileModule(source, {
     target: typescript.ScriptTarget.ES2022,
   },
 }).outputText;
-const { obterEstadoAvaliacaoPerfilAutor } = await import(
+const pagina = readFileSync(
+  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+  "utf8",
+);
+
+const {
+  obterEstadoAvaliacaoPerfilAutor,
+  obterVisibilidadeAcoesAvaliacaoPerfilAutor,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
 
@@ -125,4 +133,69 @@ test("sem perfil não mostra resumo", () => {
   assert.equal(resultado.perfilUsaAvaliacaoDiario, false);
   assert.equal(resultado.avaliacaoResumoPerfilVisivel, false);
   assert.equal(resultado.avaliacaoResumoEhDiario, true);
+});
+
+
+test("visibilidade das ações de avaliação preserva autor e Diário", () => {
+  assert.deepEqual(
+    obterVisibilidadeAcoesAvaliacaoPerfilAutor({
+      autenticacaoCarregada: true,
+      autorPodeReceberAvaliacao: true,
+      perfilUsaAvaliacaoDiario: false,
+      podeEditarPerfil: false,
+      avaliacaoDiarioVisivel: false,
+      avaliacaoDiarioPodeAvaliar: false,
+    }),
+    {
+      avaliacaoAutorAcaoVisivel: true,
+      avaliacaoDiarioAcaoVisivel: false,
+    },
+  );
+
+  assert.deepEqual(
+    obterVisibilidadeAcoesAvaliacaoPerfilAutor({
+      autenticacaoCarregada: true,
+      autorPodeReceberAvaliacao: false,
+      perfilUsaAvaliacaoDiario: true,
+      podeEditarPerfil: false,
+      avaliacaoDiarioVisivel: true,
+      avaliacaoDiarioPodeAvaliar: true,
+    }),
+    {
+      avaliacaoAutorAcaoVisivel: false,
+      avaliacaoDiarioAcaoVisivel: true,
+    },
+  );
+
+  assert.deepEqual(
+    obterVisibilidadeAcoesAvaliacaoPerfilAutor({
+      autenticacaoCarregada: true,
+      autorPodeReceberAvaliacao: true,
+      perfilUsaAvaliacaoDiario: true,
+      podeEditarPerfil: true,
+      avaliacaoDiarioVisivel: true,
+      avaliacaoDiarioPodeAvaliar: true,
+    }),
+    {
+      avaliacaoAutorAcaoVisivel: false,
+      avaliacaoDiarioAcaoVisivel: false,
+    },
+  );
+});
+
+test("página delega a visibilidade das ações de avaliação ao helper", () => {
+  assert.match(
+    pagina,
+    /obterVisibilidadeAcoesAvaliacaoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-rating-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterVisibilidadeAcoesAvaliacaoPerfilAutor\(\{/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /\{avaliacaoAutorAcaoVisivel && \(/);
+  assert.match(pagina, /\{avaliacaoDiarioAcaoVisivel && \(/);
+  assert.doesNotMatch(
+    pagina,
+    /autenticacaoCarregada &&[\s\S]{0,140}?autorPodeReceberAvaliacao &&/,
+  );
 });

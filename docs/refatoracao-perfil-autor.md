@@ -1051,3 +1051,10 @@
 - Reutilizou o mesmo estado na visibilidade das abas e na exibição da ação de seguir.
 - Removeu a segunda leitura direta de `estadoBloqueioPerfil.existeBloqueio` em `page.tsx` e ampliou a cobertura estrutural.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1058 — visibilidade das ações de avaliação
+
+- Extraiu as condições de exibição dos cards de avaliação do autor e do Diário para `obterVisibilidadeAcoesAvaliacaoPerfilAutor`.
+- Preservou as guardas atuais de autenticação, propriedade do perfil, tipo de avaliação, visibilidade e permissão para avaliar.
+- Removeu as condições longas do JSX e ampliou a cobertura unitária/estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
