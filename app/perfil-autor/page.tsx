@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   historietasThemeCss,
@@ -168,7 +167,7 @@ import {
   obterRotulosAcoesColecoesBibliotecaPerfil,
   obterRotuloBibliotecaPerfil,
 } from "./lib/profile-library-display-utils";
-import { MenuPerfilIcone } from "./components/profile-icons";
+import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
 import { PrivateProfileNotice } from "./components/private-profile-notice";
@@ -220,17 +219,8 @@ import {
   menuTitleStyle,
   menuSubtitleStyle,
   menuCloseButtonStyle,
-  menuListStyle,
-  menuSectionTitleStyle,
-  menuDividerStyle,
   menuItemStyle,
   menuDangerItemStyle,
-  menuItemIconStyle,
-  menuItemTextStyle,
-  menuChevronStyle,
-  menuNotificationLabelStyle,
-  menuNotificationRightStyle,
-  menuNotificationBadgeStyle,
   hiddenInputStyle,
   profileEditorSheetContentStyle,
   profilePrimaryButtonStyle,
@@ -1369,197 +1359,24 @@ function PerfilAutorPageContent() {
         </header>
 
         {menuPerfilAberto && (
-          <div
-            style={menuOverlayStyle}
-            role="presentation"
-            onClick={() => setMenuPerfilAberto(false)}
-          >
-            <section
-              style={menuSheetAtualStyle}
-              role="dialog"
-              aria-label="Menu do perfil"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div style={menuHeaderStyle}>
-                <div style={menuTitleBlockStyle}>
-                  <strong data-historietas-user-content="true" style={menuTitleStyle}>
-                    {perfilNome}
-                  </strong>
-                  {perfilVisitante ? (
-                    <span style={menuSubtitleStyle}>Ações do perfil</span>
-                  ) : null}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setMenuPerfilAberto(false)}
-                  style={menuCloseButtonStyle}
-                  aria-label="Fechar menu"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div style={menuListStyle}>
-                {podeEditarPerfil ? (
-                  <>
-                    <span style={menuSectionTitleStyle}>Conta e sistema</span>
-
-                    <Link
-                      href="/painel-autor"
-                      style={menuItemStyle}
-                      onClick={() => setMenuPerfilAberto(false)}
-                    >
-                      <span style={menuItemIconStyle}>
-                        <MenuPerfilIcone tipo="painel" />
-                      </span>
-                      <strong style={menuItemTextStyle}>Painel do Autor</strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </Link>
-
-                    <Link
-                      href="/notificacoes"
-                      style={menuItemStyle}
-                      onClick={() => setMenuPerfilAberto(false)}
-                      aria-label={ariaLabelNotificacoes}
-                    >
-                      <span style={menuItemIconStyle}>
-                        <MenuPerfilIcone tipo="notificacoes" />
-                      </span>
-                      <span style={menuNotificationLabelStyle}>
-                        <strong style={menuItemTextStyle}>Notificações</strong>
-
-                        {temNotificacoesNaoLidas ? (
-                          <span
-                            style={menuNotificationBadgeStyle}
-                            aria-label={ariaLabelBadgeNotificacoes}
-                          >
-                            {notificacoesNaoLidasFormatadas}
-                          </span>
-                        ) : null}
-                      </span>
-
-                      <span style={menuNotificationRightStyle}>
-                        <span style={menuChevronStyle}>›</span>
-                      </span>
-                    </Link>
-
-                    <Link
-                      href="/configuracoes"
-                      style={menuItemStyle}
-                      onClick={() => setMenuPerfilAberto(false)}
-                    >
-                      <span style={menuItemIconStyle}>
-                        <MenuPerfilIcone tipo="configuracoes" />
-                      </span>
-                      <strong style={menuItemTextStyle}>
-                        Configurações e atividade
-                      </strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => void copiarLinkPerfil()}
-                      style={menuItemStyle}
-                    >
-                      <span style={menuItemIconStyle}>
-                        <MenuPerfilIcone tipo="link" />
-                      </span>
-                      <strong style={menuItemTextStyle}>
-                        Copiar link do perfil
-                      </strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => void sairDaConta()}
-                      style={menuDangerItemStyle}
-                    >
-                      <span style={menuItemIconStyle}>
-                        <MenuPerfilIcone tipo="sair" />
-                      </span>
-                      <strong style={menuItemTextStyle}>Sair da conta</strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span style={menuSectionTitleStyle}>Perfil</span>
-
-                    <button
-                      type="button"
-                      onClick={() => void copiarLinkPerfil()}
-                      style={menuItemStyle}
-                    >
-                      <span style={menuItemIconStyle}><MenuPerfilIcone tipo="link" /></span>
-                      <strong style={menuItemTextStyle}>
-                        Copiar link do perfil
-                      </strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </button>
-
-                    <Link
-                      href={comunidadeAutorHref}
-                      style={menuItemStyle}
-                      onClick={() => setMenuPerfilAberto(false)}
-                    >
-                      <span style={menuItemIconStyle}><MenuPerfilIcone tipo="comunidade" /></span>
-                      <strong style={menuItemTextStyle}>
-                        Comunidade do autor
-                      </strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={abrirDenunciaPerfil}
-                      style={menuDangerItemStyle}
-                    >
-                      <span style={menuItemIconStyle}>
-                        <MenuPerfilIcone tipo="denunciar" />
-                      </span>
-                      <strong style={menuItemTextStyle}>
-                        Denunciar perfil
-                      </strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => void alternarBloqueioPerfil()}
-                      disabled={bloqueioPerfilSalvando}
-                      style={menuBloqueioStyle}
-                    >
-                      <span style={menuItemIconStyle}>
-                        <MenuPerfilIcone tipo="bloquear" />
-                      </span>
-                      <strong style={menuItemTextStyle}>
-                        {rotuloAcaoBloqueioPerfil}
-                      </strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </button>
-
-                    <div style={menuDividerStyle} />
-                    <span style={menuSectionTitleStyle}>Descoberta</span>
-
-                    <Link
-                      href="/explorar"
-                      style={menuItemStyle}
-                      onClick={() => setMenuPerfilAberto(false)}
-                    >
-                      <span style={menuItemIconStyle}><MenuPerfilIcone tipo="explorar" /></span>
-                      <strong style={menuItemTextStyle}>
-                        Explorar outras obras
-                      </strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </Link>
-                  </>
-                )}
-              </div>
-            </section>
-          </div>
+          <ProfileMenu
+            ariaLabelNotificationBadge={ariaLabelBadgeNotificacoes}
+            ariaLabelNotifications={ariaLabelNotificacoes}
+            blockActionLabel={rotuloAcaoBloqueioPerfil}
+            blockActionStyle={menuBloqueioStyle}
+            blockSaving={bloqueioPerfilSalvando}
+            communityHref={comunidadeAutorHref}
+            hasUnreadNotifications={temNotificacoesNaoLidas}
+            isOwner={podeEditarPerfil}
+            notificationsUnreadFormatted={notificacoesNaoLidasFormatadas}
+            onBlock={() => void alternarBloqueioPerfil()}
+            onClose={() => setMenuPerfilAberto(false)}
+            onCopyLink={() => void copiarLinkPerfil()}
+            onReport={abrirDenunciaPerfil}
+            onSignOut={() => void sairDaConta()}
+            profileName={perfilNome}
+            sheetStyle={menuSheetAtualStyle}
+          />
         )}
 
         {editorPerfilVisivel && (

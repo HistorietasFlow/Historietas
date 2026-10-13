@@ -1273,3 +1273,9 @@
 - Extraiu os blocos apresentacionais do avatar, dos campos e das ações finais do editor de perfil.
 - Manteve na página os estados, as derivações, os limites, a normalização, os callbacks e o salvamento do editor.
 - Preservou UI, textos, limites, estados desabilitados, acessibilidade, schema, RLS e Supabase.
+
+## Fase 1092 — Composições do menu de perfil
+
+- Extraiu os conteúdos apresentacionais dos menus do próprio usuário e do visitante.
+- Extraiu a composição externa do menu, preservando overlay, diálogo, cabeçalho e seleção do conteúdo.
+- Manteve na página estados, derivações, notificações, ações, links e callbacks; sem alterações de UI, schema, RLS ou Supabase.
