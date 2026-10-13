@@ -136,6 +136,11 @@ export function obterInicialAvatarPerfilAutor(
 }
 
 
+export function obterIndicadorSelecaoPerfilAutor(selecionado: boolean) {
+  return selecionado ? "✓" : "";
+}
+
+
 export function obterTituloSobrePerfilAutor(nomePerfil: string) {
   return `Sobre ${nomePerfil}`;
 }

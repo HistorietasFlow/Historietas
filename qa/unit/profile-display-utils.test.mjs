@@ -62,6 +62,7 @@ const {
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
   obterDadosNotificacoesPerfilAutor,
+  obterIndicadorSelecaoPerfilAutor,
   obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterTituloSobrePerfilAutor,
@@ -342,6 +343,28 @@ test("página deriva os dados de notificações em uma única chamada", () => {
   assert.doesNotMatch(
     pagina,
     /notificacoesNaoLidas > 0 \? \(/,
+  );
+});
+
+
+test("indicador de seleção preserva marca ativa e vazio inativo", () => {
+  assert.equal(obterIndicadorSelecaoPerfilAutor(true), "✓");
+  assert.equal(obterIndicadorSelecaoPerfilAutor(false), "");
+});
+
+
+test("página delega os indicadores de seleção ao helper", () => {
+  assert.match(
+    pagina,
+    /obterIndicadorSelecaoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+  );
+  assert.equal(
+    (pagina.match(/obterIndicadorSelecaoPerfilAutor\(/g) || []).length,
+    5,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /\{(?:obraFavorita|obraConcluida|obraNoQueroLer) \? "✓" : ""\}/,
   );
 });
 

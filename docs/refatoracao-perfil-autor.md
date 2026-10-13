@@ -932,3 +932,10 @@
 - Reutilizou o `perfilNome` já derivado e preservou exatamente o texto atual da seção.
 - Removeu a composição inline de `page.tsx` e ampliou a cobertura unitária já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1041 — indicador de seleção das coleções
+
+- Extraiu a marca visual `✓` para `obterIndicadorSelecaoPerfilAutor`.
+- Reutilizou o helper nas cinco ações de favorito, concluído e Quero ler dos sheets.
+- Removeu cinco ternários repetidos do JSX e ampliou a cobertura unitária já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
