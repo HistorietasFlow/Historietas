@@ -88,6 +88,7 @@ import { criarPerfilUsuarioRemotoComoAutor } from "./lib/data-normalizers";
 import {
   obterAriaLabelsEstatisticasComunidadePerfilAutor,
   obterAvisoComunidadeVaziaPerfilAutor,
+  comunidadeSemPublicacoesRecentesPerfilAutor,
   obterDadosPublicacaoRecenteComunidadePerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
   obterTituloComunidadePerfilAutor,
@@ -691,6 +692,10 @@ function PerfilAutorPageContent() {
     autorNormalizadoParaSeguir,
   });
 
+  const comunidadeSemPublicacoesRecentes =
+    comunidadeSemPublicacoesRecentesPerfilAutor(
+      comunidadePerfil.publicacoesRecentes,
+    );
   const avisoComunidadeVazia = obterAvisoComunidadeVaziaPerfilAutor({
     podeEditarPerfil,
     nomePerfil: perfilNome,
@@ -1893,7 +1898,7 @@ function PerfilAutorPageContent() {
                     title="Comunidade indisponível"
                     description={comunidadePerfil.erro}
                   />
-                ) : comunidadePerfil.publicacoesRecentes.length === 0 ? (
+                ) : comunidadeSemPublicacoesRecentes ? (
                   <ProfileCommunityNotice
                     icon="💬"
                     title={avisoComunidadeVazia.title}
