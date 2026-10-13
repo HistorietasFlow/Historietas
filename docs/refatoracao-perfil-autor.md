@@ -1207,3 +1207,9 @@
 - Extraiu a composição das estatísticas, preservando os três cards, links, aria-labels e valores derivados na página.
 - Extraiu a renderização das publicações recentes, incluindo link, cabeçalho, resumo, enquete, obra relacionada e denúncia.
 - Manteve na página as derivações, formatação de data e callback de denúncia; sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1081 — Estado e lista da Comunidade
+
+- Extraiu a apresentação dos estados de carregamento, erro e vazio da Comunidade, preservando os valores derivados pela página.
+- Transferiu para a seção de publicações recentes apenas a composição da lista e seu `map`, mantendo na página as derivações, a data e o callback de denúncia.
+- Sem alterações de UI, schema, RLS ou Supabase.

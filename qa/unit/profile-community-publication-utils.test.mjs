@@ -81,7 +81,7 @@ test("página delega o estado vazio das publicações recentes ao helper", () =>
   );
   assert.match(
     pagina,
-    /\) : comunidadeSemPublicacoesRecentes \? \(/,
+    /empty=\{comunidadeSemPublicacoesRecentes\}/,
   );
   assert.doesNotMatch(
     pagina,
@@ -105,7 +105,7 @@ test("página deriva as publicações recentes da Comunidade uma única vez", ()
   );
   assert.match(
     pagina,
-    /\{publicacoesRecentesComunidade\.map\(/,
+    /publicacoes=\{publicacoesRecentesComunidade\}/,
   );
 });
 
@@ -119,10 +119,10 @@ test("página deriva o erro da Comunidade uma única vez", () => {
     (pagina.match(/comunidadePerfil\.erro/g) || []).length,
     1,
   );
-  assert.match(pagina, /\{erroComunidadePerfil \? \(/);
+  assert.match(pagina, /error=\{erroComunidadePerfil\}/);
   assert.match(
     pagina,
-    /description=\{erroComunidadePerfil\}/,
+    /<ProfileCommunityContentState/,
   );
 });
 
@@ -331,8 +331,11 @@ test("página delega o aviso de comunidade vazia ao helper", () => {
     (pagina.match(/obterAvisoComunidadeVaziaPerfilAutor\(\{/g) || []).length,
     1,
   );
-  assert.match(pagina, /title=\{avisoComunidadeVazia\.title\}/);
-  assert.match(pagina, /description=\{avisoComunidadeVazia\.description\}/);
+  assert.match(pagina, /emptyTitle=\{avisoComunidadeVazia\.title\}/);
+  assert.match(
+    pagina,
+    /emptyDescription=\{avisoComunidadeVazia\.description\}/,
+  );
   assert.doesNotMatch(
     pagina,
     /podeEditarPerfil[\s\S]{0,120}\? "Sua comunidade ainda está vazia"/,
