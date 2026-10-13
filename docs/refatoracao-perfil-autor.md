@@ -1237,3 +1237,9 @@
 - Extraiu a composição apresentacional da identidade do hero, reunindo avatar, cabeçalho e estatísticas.
 - Extraiu a composição das ações do hero, preservando ações do dono, seguimento do visitante, ações secundárias e toast.
 - Manteve na página todas as derivações, estados e callbacks; sem alterações de UI, acessibilidade, schema, RLS ou Supabase.
+
+## Fase 1086 — Composições de avaliação
+
+- Extraiu a composição apresentacional dos dois `ProfileRatingBox` para um componente dedicado.
+- Manteve na página as condições de exibição, notas, estados de salvamento e callbacks das avaliações do autor e do Diário.
+- Preservou textos, aria-labels, `keyPrefix`, UI, acessibilidade, schema, RLS e Supabase.
