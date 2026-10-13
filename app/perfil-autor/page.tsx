@@ -115,6 +115,7 @@ import {
   obterDadosNotificacoesPerfilAutor,
   obterDadosDenunciaPerfilAutor,
   obterDadosExibicaoPerfilAutor,
+  obterIndicadorSelecaoPerfilAutor,
   obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterTituloSobrePerfilAutor,
@@ -2235,7 +2236,7 @@ function PerfilAutorPageContent() {
                             {rotuloFavorita}
                           </span>
                           <span style={criarProfileSelectionDotStyle(obraFavorita)}>
-                            {obraFavorita ? "✓" : ""}
+                            {obterIndicadorSelecaoPerfilAutor(obraFavorita)}
                           </span>
                         </button>
 
@@ -2255,7 +2256,7 @@ function PerfilAutorPageContent() {
                             {rotuloConcluida}
                           </span>
                           <span style={criarProfileSelectionDotStyle(obraConcluida)}>
-                            {obraConcluida ? "✓" : ""}
+                            {obterIndicadorSelecaoPerfilAutor(obraConcluida)}
                           </span>
                         </button>
 
@@ -2360,7 +2361,7 @@ function PerfilAutorPageContent() {
                         {rotuloQueroLer}
                       </span>
                       <span style={criarProfileSelectionDotStyle(obraNoQueroLer)}>
-                        {obraNoQueroLer ? "✓" : ""}
+                        {obterIndicadorSelecaoPerfilAutor(obraNoQueroLer)}
                       </span>
                     </button>
 
@@ -2380,7 +2381,7 @@ function PerfilAutorPageContent() {
                         {rotuloFavorita}
                       </span>
                       <span style={criarProfileSelectionDotStyle(obraFavorita)}>
-                        {obraFavorita ? "✓" : ""}
+                        {obterIndicadorSelecaoPerfilAutor(obraFavorita)}
                       </span>
                     </button>
 
@@ -2400,7 +2401,7 @@ function PerfilAutorPageContent() {
                         {rotuloConcluida}
                       </span>
                       <span style={criarProfileSelectionDotStyle(obraConcluida)}>
-                        {obraConcluida ? "✓" : ""}
+                        {obterIndicadorSelecaoPerfilAutor(obraConcluida)}
                       </span>
                     </button>
 
