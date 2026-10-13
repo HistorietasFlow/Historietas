@@ -132,7 +132,10 @@ import {
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
-import { obterEstadoAvaliacaoPerfilAutor } from "./lib/profile-rating-display-utils";
+import {
+  obterEstadoAvaliacaoPerfilAutor,
+  obterVisibilidadeAcoesAvaliacaoPerfilAutor,
+} from "./lib/profile-rating-display-utils";
 import {
   obterDadosCardBibliotecaPerfilAutor,
   obterDadosCardObraPerfilAutor,
@@ -827,6 +830,17 @@ function PerfilAutorPageContent() {
     podeEditarPerfil,
     avaliacaoAutor,
     avaliacaoDiario,
+  });
+  const {
+    avaliacaoAutorAcaoVisivel,
+    avaliacaoDiarioAcaoVisivel,
+  } = obterVisibilidadeAcoesAvaliacaoPerfilAutor({
+    autenticacaoCarregada,
+    autorPodeReceberAvaliacao,
+    perfilUsaAvaliacaoDiario,
+    podeEditarPerfil,
+    avaliacaoDiarioVisivel: avaliacaoDiario.visivel,
+    avaliacaoDiarioPodeAvaliar: avaliacaoDiario.podeAvaliar,
   });
 
   const obrasDoPerfilFiltradas = obterObrasVisiveisPerfilAutor({
@@ -1727,9 +1741,7 @@ function PerfilAutorPageContent() {
             </ProfileHighlightsSection>
         )}
 
-        {autenticacaoCarregada &&
-          autorPodeReceberAvaliacao &&
-          !perfilPertenceAoUsuario && (
+        {avaliacaoAutorAcaoVisivel && (
           <ProfileRatingBox
             ariaLabel="Avaliação do autor"
             entidadeAvaliacao="autor"
@@ -1741,11 +1753,7 @@ function PerfilAutorPageContent() {
           />
         )}
 
-        {autenticacaoCarregada &&
-          perfilUsaAvaliacaoDiario &&
-          !perfilPertenceAoUsuario &&
-          avaliacaoDiario.visivel &&
-          avaliacaoDiario.podeAvaliar && (
+        {avaliacaoDiarioAcaoVisivel && (
             <ProfileRatingBox
               ariaLabel="Avaliação do Diário"
               entidadeAvaliacao="Diário"
