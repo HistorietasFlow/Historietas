@@ -569,6 +569,7 @@ function PerfilAutorPageContent() {
   });
 
   const podeEditarPerfil = perfilPertenceAoUsuario;
+  const perfilVisitante = !podeEditarPerfil;
   const bloqueadoPorMim = estadoBloqueioPerfil.bloqueadoPorMim;
   const existeBloqueioPerfil = estadoBloqueioPerfil.existeBloqueio;
   const menuBloqueioStyle = bloqueadoPorMim
@@ -1228,7 +1229,7 @@ function PerfilAutorPageContent() {
                   <strong data-historietas-user-content="true" style={menuTitleStyle}>
                     {perfilParaMostrar.nome}
                   </strong>
-                  {!podeEditarPerfil ? (
+                  {perfilVisitante ? (
                     <span style={menuSubtitleStyle}>Ações do perfil</span>
                   ) : null}
                 </div>
@@ -1975,7 +1976,7 @@ function PerfilAutorPageContent() {
                                 )}
                               </ProfileCommunityPostLink>
 
-                              {!podeEditarPerfil && (
+                              {perfilVisitante && (
                                 <ProfileCommunityPostReportButton
                                   onClick={() =>
                                     abrirDenunciaConteudoPerfil(
@@ -2264,7 +2265,7 @@ function PerfilAutorPageContent() {
                       </Link>
                     )}
 
-                    {!podeEditarPerfil && (
+                    {perfilVisitante && (
                       <>
                         <button
                           type="button"

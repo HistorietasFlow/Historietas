@@ -243,3 +243,23 @@ test("página resolve perfil remoto e estado exibido sem useMemo", () => {
     /resolverEstadoPerfilAutor\([\s\S]{0,400}useMemo|useMemo\([\s\S]{0,400}resolverEstadoPerfilAutor/,
   );
 });
+
+
+test("página deriva o estado de visitante uma única vez", () => {
+  assert.match(
+    pagina,
+    /const perfilVisitante = !podeEditarPerfil;/,
+  );
+  assert.equal(
+    (pagina.match(/\bperfilVisitante\b/g) || []).length,
+    4,
+  );
+  assert.equal(
+    (pagina.match(/!podeEditarPerfil/g) || []).length,
+    1,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /\{!podeEditarPerfil(?: \?| &&)/,
+  );
+});
