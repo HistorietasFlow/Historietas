@@ -194,6 +194,7 @@ import { ProfileHighlightsHeader } from "./components/profile-highlights-header"
 import { ProfileHighlightsList } from "./components/profile-highlights-list";
 import { ProfileHighlightsSection } from "./components/profile-highlights-section";
 import { ProfileLibrarySection } from "./components/profile-library-section";
+import { ProfileLibraryContentState } from "./components/profile-library-content-state";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
 import { ProfileCommunityPanel } from "./components/profile-community-panel";
 import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
@@ -1057,6 +1058,42 @@ function PerfilAutorPageContent() {
   );
   const mensagemBibliotecaVazia =
     obterMensagemBibliotecaVaziaPerfil(rotuloBibliotecaAtiva);
+  const renderizarItemBiblioteca = (
+    item: (typeof itensBibliotecaAtivos)[number],
+  ) => {
+    const {
+      capituloHref,
+      totalCurtidas: totalCurtidasBiblioteca,
+      totalComentarios: totalComentariosBiblioteca,
+      visualizacoesFormatadas: visualizacoesBiblioteca,
+      menuAberto,
+    } = obterDadosCardBibliotecaPerfilAutor(
+      item,
+      totaisInteracoesObras,
+      bibliotecaMenuAbertoChave,
+    );
+
+    return (
+      <LibraryItemCard
+        key={item.chave}
+        item={item}
+        href={capituloHref}
+        isDesktop={isDesktop}
+        menuAberto={menuAberto}
+        totalComentarios={totalComentariosBiblioteca}
+        totalCurtidas={totalCurtidasBiblioteca}
+        visualizacoes={visualizacoesBiblioteca}
+        onToggleMenu={() =>
+          setBibliotecaMenuAbertoChave((chaveAtual) =>
+            alternarIdentificadorMenuPerfilAutor(
+              chaveAtual,
+              item.chave,
+            ),
+          )
+        }
+      />
+    );
+  };
 
   const {
     containerAtualStyle,
@@ -1836,48 +1873,16 @@ function PerfilAutorPageContent() {
               onSelect={setAbaBibliotecaPerfil}
             />
 
-            {diarioPerfilCarregando ? (
-              <LoadingSpinner label="Carregando biblioteca" compacto />
-            ) : bibliotecaSemItensAtivosPerfilAutor(itensBibliotecaAtivos) ? (
-              <ProfileSectionEmptyState message={mensagemBibliotecaVazia} />
-            ) : (
-              <ProfileWorksGrid isDesktop={isDesktop}>
-                {itensBibliotecaAtivos.map((item) => {
-                  const {
-                    capituloHref,
-                    totalCurtidas: totalCurtidasBiblioteca,
-                    totalComentarios: totalComentariosBiblioteca,
-                    visualizacoesFormatadas: visualizacoesBiblioteca,
-                    menuAberto,
-                  } = obterDadosCardBibliotecaPerfilAutor(
-                    item,
-                    totaisInteracoesObras,
-                    bibliotecaMenuAbertoChave,
-                  );
-
-                  return (
-                    <LibraryItemCard
-                      key={item.chave}
-                      item={item}
-                      href={capituloHref}
-                      isDesktop={isDesktop}
-                      menuAberto={menuAberto}
-                      totalComentarios={totalComentariosBiblioteca}
-                      totalCurtidas={totalCurtidasBiblioteca}
-                      visualizacoes={visualizacoesBiblioteca}
-                      onToggleMenu={() =>
-                        setBibliotecaMenuAbertoChave((chaveAtual) =>
-                          alternarIdentificadorMenuPerfilAutor(
-                            chaveAtual,
-                            item.chave,
-                          ),
-                        )
-                      }
-                    />
-                  );
-                })}
-              </ProfileWorksGrid>
-            )}
+            <ProfileLibraryContentState
+              loading={diarioPerfilCarregando}
+              empty={bibliotecaSemItensAtivosPerfilAutor(
+                itensBibliotecaAtivos,
+              )}
+              emptyMessage={mensagemBibliotecaVazia}
+              isDesktop={isDesktop}
+              items={itensBibliotecaAtivos}
+              renderItem={renderizarItemBiblioteca}
+            />
           </ProfileLibrarySection>
         )}
 
