@@ -580,6 +580,25 @@ test("página delega a exibição do username ao helper", () => {
 });
 
 
+test("página deriva a presença do avatar do editor uma única vez", () => {
+  assert.match(
+    pagina,
+    /const temAvatarPerfilEditor = Boolean\(avatarPerfilEditor\);/,
+  );
+  assert.equal(
+    (pagina.match(/\btemAvatarPerfilEditor\b/g) || []).length,
+    4,
+  );
+  assert.match(pagina, /temAvatar: temAvatarPerfilEditor/);
+  assert.match(pagina, /\{temAvatarPerfilEditor \? \(/);
+  assert.match(pagina, /\{temAvatarPerfilEditor && \(/);
+  assert.equal(
+    (pagina.match(/Boolean\(avatarPerfilEditor\)/g) || []).length,
+    1,
+  );
+});
+
+
 test("inicial do avatar preserva nome editado e fallback do perfil", () => {
   assert.equal(obterInicialAvatarPerfilAutor("bia", "Ana"), "B");
   assert.equal(obterInicialAvatarPerfilAutor("", "ana"), "A");

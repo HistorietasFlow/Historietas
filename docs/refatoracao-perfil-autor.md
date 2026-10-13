@@ -1016,3 +1016,10 @@
 - Preservou a curtida no título para o próprio perfil, o link de edição no cabeçalho do autor e a curtida no cabeçalho do visitante.
 - Removeu os ternários inline de `ProfileHighlightsHeader` e ampliou a cobertura estrutural já registrada em `test:session`.
 - Sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1053 — presença do avatar no editor
+
+- Derivou `temAvatarPerfilEditor` uma única vez a partir de `avatarPerfilEditor`.
+- Reutilizou o mesmo estado nos rótulos do editor, na prévia da imagem e na ação de remover avatar.
+- Removeu verificações repetidas de presença do avatar no JSX e ampliou a cobertura estrutural já registrada em `test:session`.
+- Sem alterações de UI, schema, RLS ou Supabase.
