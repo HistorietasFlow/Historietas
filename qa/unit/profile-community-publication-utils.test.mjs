@@ -159,15 +159,15 @@ test("página delega a formatação dos valores das estatísticas da Comunidade"
   );
   assert.match(
     pagina,
-    /value=\{valoresEstatisticasComunidade\.publicacoes\}/,
+    /publicacoes=\{\{[\s\S]*?value: valoresEstatisticasComunidade\.publicacoes,/,
   );
   assert.match(
     pagina,
-    /value=\{valoresEstatisticasComunidade\.teorias\}/,
+    /teorias=\{\{[\s\S]*?value: valoresEstatisticasComunidade\.teorias,/,
   );
   assert.match(
     pagina,
-    /value=\{valoresEstatisticasComunidade\.reviews\}/,
+    /reviews=\{\{[\s\S]*?value: valoresEstatisticasComunidade\.reviews,/,
   );
   assert.doesNotMatch(
     pagina,
@@ -203,15 +203,15 @@ test("página reutiliza os aria-labels das estatísticas da Comunidade", () => {
   );
   assert.match(
     pagina,
-    /ariaLabel=\{ariaLabelsEstatisticasComunidade\.publicacoes\}/,
+    /publicacoes=\{\{[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.publicacoes,/,
   );
   assert.match(
     pagina,
-    /ariaLabel=\{ariaLabelsEstatisticasComunidade\.teorias\}/,
+    /teorias=\{\{[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.teorias,/,
   );
   assert.match(
     pagina,
-    /ariaLabel=\{ariaLabelsEstatisticasComunidade\.reviews\}/,
+    /reviews=\{\{[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.reviews,/,
   );
   assert.doesNotMatch(
     pagina,
@@ -286,7 +286,7 @@ test("página delega o padding inferior das publicações ao helper", () => {
   );
   assert.match(
     pagina,
-    /paddingBottom=\{paddingInferiorPublicacaoComunidade\}/,
+    /paddingBottom=\{[\s\S]*?paddingInferiorPublicacaoComunidade[\s\S]*?\}/,
   );
   assert.doesNotMatch(
     pagina,
@@ -374,11 +374,26 @@ test("página deriva os dados da publicação recente uma única vez por item", 
     ).length,
     1,
   );
-  assert.match(pagina, /href=\{dadosPublicacao\.href\}/);
-  assert.match(pagina, /ariaLabel=\{dadosPublicacao\.ariaLabel\}/);
-  assert.match(pagina, /\{dadosPublicacao\.resumo\}/);
-  assert.match(pagina, /dadosPublicacao\.exibirInfoEnquete/);
-  assert.match(pagina, /dadosPublicacao\.exibirObraRelacionada/);
+  assert.match(
+    pagina,
+    /<ProfileCommunityPostItem[\s\S]*?href=\{dadosPublicacao\.href\}/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileCommunityPostItem[\s\S]*?ariaLabel=\{dadosPublicacao\.ariaLabel\}/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileCommunityPostItem[\s\S]*?resumo=\{dadosPublicacao\.resumo\}/,
+  );
+  assert.match(
+    pagina,
+    /exibirInfoEnquete=\{[\s\S]*?dadosPublicacao\.exibirInfoEnquete[\s\S]*?\}/,
+  );
+  assert.match(
+    pagina,
+    /exibirObraRelacionada=\{[\s\S]*?dadosPublicacao\.exibirObraRelacionada[\s\S]*?\}/,
+  );
   assert.doesNotMatch(pagina, /dadosPublicacao\.totalOpcoesEnquete >= 2/);
   assert.doesNotMatch(pagina, /\{publicacao\.obraRelacionada && \(/);
   assert.doesNotMatch(pagina, /criarHrefPublicacaoComunidadePerfil/);

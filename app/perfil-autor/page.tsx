@@ -196,18 +196,10 @@ import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
 import { ProfileCommunityHeader } from "./components/profile-community-header";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
-import { ProfileCommunityStatCard } from "./components/profile-community-stat-card";
 import { ProfileCommunityNotice } from "./components/profile-community-notice";
 import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
 import { ProfileCommunityRecentPostsList } from "./components/profile-community-recent-posts-list";
 import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
-import { ProfileCommunityPostLink } from "./components/profile-community-post-link";
-import { ProfileCommunityPostHeader } from "./components/profile-community-post-header";
-import { ProfileCommunityPostBody } from "./components/profile-community-post-body";
-import { ProfileCommunityPostSummary } from "./components/profile-community-post-summary";
-import { ProfileCommunityPostPollInfo } from "./components/profile-community-post-poll-info";
-import { ProfileCommunityPostWork } from "./components/profile-community-post-work";
-import { ProfileCommunityPostReportButton } from "./components/profile-community-post-report-button";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileAboutHero } from "./components/profile-about-hero";
 import { ProfileAboutBioDisplay } from "./components/profile-about-bio-display";
@@ -1901,31 +1893,24 @@ function PerfilAutorPageContent() {
               />
             ) : (
               <>
-                <ProfileCommunityStatsGrid isDesktop={isDesktop}>
-                  <ProfileCommunityStatCard
-                    href={comunidadeAutorHref}
-                    ariaLabel={ariaLabelsEstatisticasComunidade.publicacoes}
-                    value={valoresEstatisticasComunidade.publicacoes}
-                    title="PUBLICAÇÕES"
-                    description="posts do perfil"
-                  />
-
-                  <ProfileCommunityStatCard
-                    href={comunidadeAutorTeoriasHref}
-                    ariaLabel={ariaLabelsEstatisticasComunidade.teorias}
-                    value={valoresEstatisticasComunidade.teorias}
-                    title="TEORIAS"
-                    description="discussões"
-                  />
-
-                  <ProfileCommunityStatCard
-                    href={comunidadeAutorReviewsHref}
-                    ariaLabel={ariaLabelsEstatisticasComunidade.reviews}
-                    value={valoresEstatisticasComunidade.reviews}
-                    title="REVIEWS"
-                    description="opiniões"
-                  />
-                </ProfileCommunityStatsGrid>
+                <ProfileCommunityStatsGrid
+                  isDesktop={isDesktop}
+                  publicacoes={{
+                    href: comunidadeAutorHref,
+                    ariaLabel: ariaLabelsEstatisticasComunidade.publicacoes,
+                    value: valoresEstatisticasComunidade.publicacoes,
+                  }}
+                  teorias={{
+                    href: comunidadeAutorTeoriasHref,
+                    ariaLabel: ariaLabelsEstatisticasComunidade.teorias,
+                    value: valoresEstatisticasComunidade.teorias,
+                  }}
+                  reviews={{
+                    href: comunidadeAutorReviewsHref,
+                    ariaLabel: ariaLabelsEstatisticasComunidade.reviews,
+                    value: valoresEstatisticasComunidade.reviews,
+                  }}
+                />
 
                 {erroComunidadePerfil ? (
                   <ProfileCommunityNotice
@@ -1951,56 +1936,36 @@ function PerfilAutorPageContent() {
                             );
 
                           return (
-                            <ProfileCommunityPostItem key={publicacao.id}>
-                              <ProfileCommunityPostLink
-                                href={dadosPublicacao.href}
-                                paddingBottom={paddingInferiorPublicacaoComunidade}
-                                ariaLabel={dadosPublicacao.ariaLabel}
-                              >
-                                <ProfileCommunityPostHeader
-                                  typeLabel={publicacao.tipoPublicacao}
-                                  dateLabel={dataDiarioPerfilFormatada(
-                                    publicacao.criadoEm,
-                                  )}
-                                />
-
-                                <ProfileCommunityPostBody>
-                                  <ProfileCommunityPostSummary>
-                                    {dadosPublicacao.resumo}
-                                  </ProfileCommunityPostSummary>
-
-                                  {dadosPublicacao.exibirInfoEnquete && (
-                                    <ProfileCommunityPostPollInfo>
-                                      Enquete
-                                      <span aria-hidden="true">•</span>
-                                      {dadosPublicacao.totalOpcoesEnquete}{" "}
-                                      opções
-                                    </ProfileCommunityPostPollInfo>
-                                  )}
-                                </ProfileCommunityPostBody>
-
-                                {dadosPublicacao.exibirObraRelacionada && (
-                                  <ProfileCommunityPostWork>
-                                    <span>OBRA</span>
-                                    <strong data-historietas-user-content="true">
-                                      {publicacao.obraRelacionada}
-                                    </strong>
-                                  </ProfileCommunityPostWork>
-                                )}
-                              </ProfileCommunityPostLink>
-
-                              {perfilVisitante && (
-                                <ProfileCommunityPostReportButton
-                                  onClick={() =>
-                                    abrirDenunciaConteudoPerfil(
-                                      "post",
-                                      publicacao.id,
-                                      dadosPublicacao.resumo,
-                                    )
-                                  }
-                                />
+                            <ProfileCommunityPostItem
+                              key={publicacao.id}
+                              publicacao={publicacao}
+                              href={dadosPublicacao.href}
+                              ariaLabel={dadosPublicacao.ariaLabel}
+                              resumo={dadosPublicacao.resumo}
+                              totalOpcoesEnquete={
+                                dadosPublicacao.totalOpcoesEnquete
+                              }
+                              exibirInfoEnquete={
+                                dadosPublicacao.exibirInfoEnquete
+                              }
+                              exibirObraRelacionada={
+                                dadosPublicacao.exibirObraRelacionada
+                              }
+                              paddingBottom={
+                                paddingInferiorPublicacaoComunidade
+                              }
+                              dateLabel={dataDiarioPerfilFormatada(
+                                publicacao.criadoEm,
                               )}
-                            </ProfileCommunityPostItem>
+                              showReportButton={perfilVisitante}
+                              onReport={() =>
+                                abrirDenunciaConteudoPerfil(
+                                  "post",
+                                  publicacao.id,
+                                  dadosPublicacao.resumo,
+                                )
+                              }
+                            />
                           );
                         },
                       )}

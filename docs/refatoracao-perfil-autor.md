@@ -1201,3 +1201,9 @@
 - Extraiu a exibição da bio, incluindo título, texto e botão de edição, para um componente apresentacional.
 - Extraiu o editor da bio, incluindo textarea e contador de caracteres, para um componente dedicado.
 - Manteve na página as derivações, a condição de edição e todos os callbacks e estados; sem alterações de UI, schema, RLS ou Supabase.
+
+## Fase 1080 — Composições da Comunidade
+
+- Extraiu a composição das estatísticas, preservando os três cards, links, aria-labels e valores derivados na página.
+- Extraiu a renderização das publicações recentes, incluindo link, cabeçalho, resumo, enquete, obra relacionada e denúncia.
+- Manteve na página as derivações, formatação de data e callback de denúncia; sem alterações de UI, schema, RLS ou Supabase.
