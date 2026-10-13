@@ -128,7 +128,6 @@ import {
   obterVisibilidadeDenunciasPerfilAutor,
   limitarTextoPerfilAutor,
   obterCaracteresRestantesPerfilAutor,
-  obterIndicadorSelecaoPerfilAutor,
   obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterTituloSobrePerfilAutor,
@@ -197,23 +196,12 @@ import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksContentState } from "./components/profile-works-content-state";
 import { ProfileWorkGridItem } from "./components/profile-work-grid-item";
-import { ProfileWorkActionSheetOverlay } from "./components/profile-work-action-sheet-overlay";
-import { ProfileWorkActionSheetPanel } from "./components/profile-work-action-sheet-panel";
-import { ProfileWorkActionSheetHandle } from "./components/profile-work-action-sheet-handle";
-import { ProfileWorkActionSheetHeader } from "./components/profile-work-action-sheet-header";
-import { ProfileWorkActionSheetActions } from "./components/profile-work-action-sheet-actions";
-import { ProfileWorkActionSheetTitle } from "./components/profile-work-action-sheet-title";
-import { ProfileWorkActionSheetMeta } from "./components/profile-work-action-sheet-meta";
-import { ProfileWorkActionSheetAuthor } from "./components/profile-work-action-sheet-author";
-import { ProfileWorkActionSheetMetrics } from "./components/profile-work-action-sheet-metrics";
+import { ProfileWorkActionSheet } from "./components/profile-work-action-sheet";
+import { ProfileLibraryActionSheet } from "./components/profile-library-action-sheet";
 import {
   obterEstilosResponsivosPerfilAutor,
-  criarProfileSelectionDotStyle,
   criarCapaDestaquePerfilAutor,
   criarCapaGridPerfilAutor,
-  workActionSheetItemStyle,
-  workActionSheetDangerItemStyle,
-  workActionSheetItemActiveStyle,
   perfilAutorThemeCss,
   pageStyle,
   logoMarkButtonStyle,
@@ -1254,6 +1242,44 @@ function PerfilAutorPageContent() {
     setAutoresSeguidos,
   });
 
+  const dadosSheetObraPerfil = obraMenuAberta
+    ? obterDadosSheetObraPerfilAutor({
+        obra: obraMenuAberta,
+        totaisInteracoesObras,
+        obrasFavoritas,
+        obrasConcluidas,
+        obrasSeguidasBiblioteca,
+        traduzirTexto: (item) => traduzirTextoPerfilAutor(item, language),
+      })
+    : null;
+  const rotulosSheetObraPerfil = dadosSheetObraPerfil
+    ? obterRotulosAcoesColecoesObraPerfilAutor({
+        obraFavorita: dadosSheetObraPerfil.obraFavorita,
+        obraConcluida: dadosSheetObraPerfil.obraConcluida,
+      })
+    : null;
+  const dadosSheetBibliotecaPerfil = bibliotecaMenuAberto
+    ? obterDadosSheetBibliotecaPerfilAutor({
+        item: bibliotecaMenuAberto,
+        obrasFavoritas,
+        obrasConcluidas,
+        obrasSeguidasBiblioteca,
+      })
+    : null;
+  const metaSheetBibliotecaPerfil = bibliotecaMenuAberto
+    ? obterMetaMenuBibliotecaPerfil(bibliotecaMenuAberto)
+    : "";
+  const rotulosSheetBibliotecaPerfil = dadosSheetBibliotecaPerfil
+    ? obterRotulosAcoesColecoesBibliotecaPerfil({
+        obraNoQueroLer: dadosSheetBibliotecaPerfil.obraNoQueroLer,
+        obraFavorita: dadosSheetBibliotecaPerfil.obraFavorita,
+        obraConcluida: dadosSheetBibliotecaPerfil.obraConcluida,
+      })
+    : null;
+  const rotuloRemoverSheetBibliotecaPerfil = bibliotecaMenuAberto
+    ? obterRotuloAcaoRemoverBibliotecaPerfil(abaBibliotecaPerfil)
+    : "";
+
 
 
   if (carregando || redirecionandoParaLogin) {
@@ -2009,288 +2035,83 @@ function PerfilAutorPageContent() {
           </ProfileWorksSection>
         )}
 
-        {obraMenuAberta &&
-          (() => {
-            const obra = obraMenuAberta;
-            const {
-              temUltimoCapitulo,
-              capituloHref,
-              obraFavorita,
-              obraConcluida,
-              metaObraSheet,
-              metricasObraSheet,
-              ariaLabelSheetObra,
-            } = obterDadosSheetObraPerfilAutor({
-              obra,
-              totaisInteracoesObras,
-              obrasFavoritas,
-              obrasConcluidas,
-              obrasSeguidasBiblioteca,
-              traduzirTexto: (item) =>
-                traduzirTextoPerfilAutor(item, language),
-            });
-            const {
-              rotuloFavorita,
-              rotuloConcluida,
-            } = obterRotulosAcoesColecoesObraPerfilAutor({
-              obraFavorita,
-              obraConcluida,
-            });
-
-            return (
-              <ProfileWorkActionSheetOverlay
-                onClick={() => setObraMenuAbertoId("")}
-              >
-                <ProfileWorkActionSheetPanel
-                  ariaLabel={ariaLabelSheetObra}
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <ProfileWorkActionSheetHandle />
-
-                  <ProfileWorkActionSheetHeader>
-                      <ProfileWorkActionSheetTitle>
-                        {obra.titulo}
-                      </ProfileWorkActionSheetTitle>
-
-                      <ProfileWorkActionSheetAuthor>
-                        Por {obra.autor}
-                      </ProfileWorkActionSheetAuthor>
-
-                      <ProfileWorkActionSheetMeta>
-                        {metaObraSheet}
-                      </ProfileWorkActionSheetMeta>
-
-                      <ProfileWorkActionSheetMetrics>
-                        {metricasObraSheet}
-                      </ProfileWorkActionSheetMetrics>
-                  </ProfileWorkActionSheetHeader>
-
-                  <ProfileWorkActionSheetActions>
-                    {temUltimoCapitulo && (
-                      <Link
-                        href={capituloHref}
-                        onClick={() => setObraMenuAbertoId("")}
-                        style={workActionSheetItemStyle}
-                      >
-                        Ler
-                      </Link>
-                    )}
-
-                    {perfilVisitante && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setObraMenuAbertoId("");
-                            void alternarFavoritoObra(obra.id);
-                          }}
-                          style={
-                            obraFavorita
-                              ? workActionSheetItemActiveStyle
-                              : workActionSheetItemStyle
-                          }
-                        >
-                          <span>
-                            {rotuloFavorita}
-                          </span>
-                          <span style={criarProfileSelectionDotStyle(obraFavorita)}>
-                            {obterIndicadorSelecaoPerfilAutor(obraFavorita)}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setObraMenuAbertoId("");
-                            void alternarConcluidoObra(obra.id);
-                          }}
-                          style={
-                            obraConcluida
-                              ? workActionSheetItemActiveStyle
-                              : workActionSheetItemStyle
-                          }
-                        >
-                          <span>
-                            {rotuloConcluida}
-                          </span>
-                          <span style={criarProfileSelectionDotStyle(obraConcluida)}>
-                            {obterIndicadorSelecaoPerfilAutor(obraConcluida)}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            abrirDenunciaConteudoPerfil(
-                              "obra",
-                              obra.id,
-                              obra.titulo,
-                            )
-                          }
-                          style={workActionSheetDangerItemStyle}
-                        >
-                          Denunciar obra
-                        </button>
-                      </>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => void compartilharObraPerfilAutor(obra)}
-                      style={workActionSheetItemStyle}
-                    >
-                      Compartilhar
-                    </button>
-                  </ProfileWorkActionSheetActions>
-                </ProfileWorkActionSheetPanel>
-              </ProfileWorkActionSheetOverlay>
-            );
-          })()}
+        {obraMenuAberta && dadosSheetObraPerfil && rotulosSheetObraPerfil && (
+          <ProfileWorkActionSheet
+            ariaLabel={dadosSheetObraPerfil.ariaLabelSheetObra}
+            autor={obraMenuAberta.autor}
+            capituloHref={dadosSheetObraPerfil.capituloHref}
+            concluidaSelecionada={dadosSheetObraPerfil.obraConcluida}
+            exibirAcoesVisitante={perfilVisitante}
+            exibirLeitura={dadosSheetObraPerfil.temUltimoCapitulo}
+            favoritaSelecionada={dadosSheetObraPerfil.obraFavorita}
+            meta={dadosSheetObraPerfil.metaObraSheet}
+            metricas={dadosSheetObraPerfil.metricasObraSheet}
+            rotuloConcluida={rotulosSheetObraPerfil.rotuloConcluida}
+            rotuloFavorita={rotulosSheetObraPerfil.rotuloFavorita}
+            titulo={obraMenuAberta.titulo}
+            onClose={() => setObraMenuAbertoId("")}
+            onRead={() => setObraMenuAbertoId("")}
+            onReport={() =>
+              abrirDenunciaConteudoPerfil(
+                "obra",
+                obraMenuAberta.id,
+                obraMenuAberta.titulo,
+              )
+            }
+            onShare={() => void compartilharObraPerfilAutor(obraMenuAberta)}
+            onToggleCompleted={() => {
+              setObraMenuAbertoId("");
+              void alternarConcluidoObra(obraMenuAberta.id);
+            }}
+            onToggleFavorite={() => {
+              setObraMenuAbertoId("");
+              void alternarFavoritoObra(obraMenuAberta.id);
+            }}
+          />
+        )}
 
         {bibliotecaMenuAberto &&
-          (() => {
-            const item = bibliotecaMenuAberto;
-            const obra = item.obra;
-            const {
-              capituloHref,
-              obraFavorita,
-              obraConcluida,
-              obraNoQueroLer,
-              ariaLabelSheetBiblioteca,
-            } = obterDadosSheetBibliotecaPerfilAutor({
-              item,
-              obrasFavoritas,
-              obrasConcluidas,
-              obrasSeguidasBiblioteca,
-            });
-            const metaSheet = obterMetaMenuBibliotecaPerfil(item);
-            const {
-              rotuloQueroLer,
-              rotuloFavorita,
-              rotuloConcluida,
-            } = obterRotulosAcoesColecoesBibliotecaPerfil({
-              obraNoQueroLer,
-              obraFavorita,
-              obraConcluida,
-            });
-
-            return (
-              <ProfileWorkActionSheetOverlay
-                onClick={() => setBibliotecaMenuAbertoChave("")}
-              >
-                <ProfileWorkActionSheetPanel
-                  ariaLabel={ariaLabelSheetBiblioteca}
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <ProfileWorkActionSheetHandle />
-
-                  <ProfileWorkActionSheetHeader>
-                      <ProfileWorkActionSheetTitle>
-                        {obra.titulo}
-                      </ProfileWorkActionSheetTitle>
-                      <ProfileWorkActionSheetMeta>{metaSheet}</ProfileWorkActionSheetMeta>
-                  </ProfileWorkActionSheetHeader>
-
-                  <ProfileWorkActionSheetActions>
-                    <Link
-                      href={capituloHref}
-                      onClick={() => setBibliotecaMenuAbertoChave("")}
-                      style={workActionSheetItemStyle}
-                    >
-                      Ler capítulo
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBibliotecaMenuAbertoChave("");
-                        void alternarObraSeguindoBibliotecaPerfil(
-                          obra,
-                          !obraNoQueroLer,
-                        );
-                      }}
-                      style={
-                        obraNoQueroLer
-                          ? workActionSheetItemActiveStyle
-                          : workActionSheetItemStyle
-                      }
-                    >
-                      <span>
-                        {rotuloQueroLer}
-                      </span>
-                      <span style={criarProfileSelectionDotStyle(obraNoQueroLer)}>
-                        {obterIndicadorSelecaoPerfilAutor(obraNoQueroLer)}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBibliotecaMenuAbertoChave("");
-                        void alternarFavoritoObra(obra.id);
-                      }}
-                      style={
-                        obraFavorita
-                          ? workActionSheetItemActiveStyle
-                          : workActionSheetItemStyle
-                      }
-                    >
-                      <span>
-                        {rotuloFavorita}
-                      </span>
-                      <span style={criarProfileSelectionDotStyle(obraFavorita)}>
-                        {obterIndicadorSelecaoPerfilAutor(obraFavorita)}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBibliotecaMenuAbertoChave("");
-                        void alternarConcluidoObra(obra.id);
-                      }}
-                      style={
-                        obraConcluida
-                          ? workActionSheetItemActiveStyle
-                          : workActionSheetItemStyle
-                      }
-                    >
-                      <span>
-                        {rotuloConcluida}
-                      </span>
-                      <span style={criarProfileSelectionDotStyle(obraConcluida)}>
-                        {obterIndicadorSelecaoPerfilAutor(obraConcluida)}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBibliotecaMenuAbertoChave("");
-                        void removerItemBibliotecaPerfil(item);
-                      }}
-                      style={workActionSheetItemStyle}
-                    >
-                      {obterRotuloAcaoRemoverBibliotecaPerfil(
-                        abaBibliotecaPerfil,
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBibliotecaMenuAbertoChave("");
-                        void compartilharObraPerfilAutor(obra);
-                      }}
-                      style={workActionSheetItemStyle}
-                    >
-                      Compartilhar
-                    </button>
-                  </ProfileWorkActionSheetActions>
-                </ProfileWorkActionSheetPanel>
-              </ProfileWorkActionSheetOverlay>
-            );
-          })()}
+          dadosSheetBibliotecaPerfil &&
+          rotulosSheetBibliotecaPerfil && (
+            <ProfileLibraryActionSheet
+              ariaLabel={dadosSheetBibliotecaPerfil.ariaLabelSheetBiblioteca}
+              capituloHref={dadosSheetBibliotecaPerfil.capituloHref}
+              concluidaSelecionada={dadosSheetBibliotecaPerfil.obraConcluida}
+              favoritaSelecionada={dadosSheetBibliotecaPerfil.obraFavorita}
+              meta={metaSheetBibliotecaPerfil}
+              queroLerSelecionado={dadosSheetBibliotecaPerfil.obraNoQueroLer}
+              rotuloConcluida={rotulosSheetBibliotecaPerfil.rotuloConcluida}
+              rotuloFavorita={rotulosSheetBibliotecaPerfil.rotuloFavorita}
+              rotuloQueroLer={rotulosSheetBibliotecaPerfil.rotuloQueroLer}
+              rotuloRemover={rotuloRemoverSheetBibliotecaPerfil}
+              titulo={bibliotecaMenuAberto.obra.titulo}
+              onClose={() => setBibliotecaMenuAbertoChave("")}
+              onRead={() => setBibliotecaMenuAbertoChave("")}
+              onRemove={() => {
+                setBibliotecaMenuAbertoChave("");
+                void removerItemBibliotecaPerfil(bibliotecaMenuAberto);
+              }}
+              onShare={() => {
+                setBibliotecaMenuAbertoChave("");
+                void compartilharObraPerfilAutor(bibliotecaMenuAberto.obra);
+              }}
+              onToggleCompleted={() => {
+                setBibliotecaMenuAbertoChave("");
+                void alternarConcluidoObra(bibliotecaMenuAberto.obra.id);
+              }}
+              onToggleFavorite={() => {
+                setBibliotecaMenuAbertoChave("");
+                void alternarFavoritoObra(bibliotecaMenuAberto.obra.id);
+              }}
+              onToggleWantToRead={() => {
+                setBibliotecaMenuAbertoChave("");
+                void alternarObraSeguindoBibliotecaPerfil(
+                  bibliotecaMenuAberto.obra,
+                  !dadosSheetBibliotecaPerfil.obraNoQueroLer,
+                );
+              }}
+            />
+          )}
 
       </section>
     </main>
