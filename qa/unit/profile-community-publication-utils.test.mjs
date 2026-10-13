@@ -90,6 +90,23 @@ test("página delega o estado vazio das publicações recentes ao helper", () =>
 });
 
 
+test("página deriva o erro da Comunidade uma única vez", () => {
+  assert.match(
+    pagina,
+    /const erroComunidadePerfil = comunidadePerfil\.erro;/,
+  );
+  assert.equal(
+    (pagina.match(/comunidadePerfil\.erro/g) || []).length,
+    1,
+  );
+  assert.match(pagina, /\{erroComunidadePerfil \? \(/);
+  assert.match(
+    pagina,
+    /description=\{erroComunidadePerfil\}/,
+  );
+});
+
+
 test("valores das estatísticas da Comunidade reutilizam a mesma formatação", () => {
   assert.deepEqual(
     obterValoresEstatisticasComunidadePerfilAutor({
