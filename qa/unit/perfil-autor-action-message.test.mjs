@@ -89,4 +89,11 @@ test("Perfil de Autor mantém mensagens de domínio e toast na página", () => {
     /import \{ ProfileActionToast \} from "\.\/profile-action-toast";/,
   );
   assert.match(heroActionsSource, /<ProfileActionToast message=\{message\} \/>/);
+  assert.equal(
+    (pagina.match(/setMensagemAcao\("Denúncia enviada para análise\."\);/g) || [])
+      .length,
+    2,
+  );
+  assert.match(pagina, /onProfileSent=\{\(\) => \{/);
+  assert.match(pagina, /onContentSent=\{\(\) => \{/);
 });

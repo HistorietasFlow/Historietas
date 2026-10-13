@@ -1297,3 +1297,9 @@
 - Elevou a composição apresentacional do hero, reunindo identidade, bio e ações sem deslocar estados, derivações ou callbacks da página.
 - Extraiu o input oculto do avatar e o compôs dentro do hero, preservando a referência, a seleção do arquivo e a condição de edição na fronteira de props.
 - Preservou UI, ordem, responsividade, acessibilidade, seguimento, compartilhamento, destaques, mensagens, schema, RLS e Supabase.
+
+## Fase 1096 — Composição dos modais de denúncia
+
+- Extraiu os modais apresentacionais de denúncia de perfil e de conteúdo, preservando seus tipos de alvo, IDs, títulos e URL de perfil.
+- Reuniu ambos em uma composição única, mantendo na página visibilidades, dados derivados, estados e callbacks de fechamento e sucesso.
+- Preservou a mensagem de confirmação, UI, acessibilidade, schema, RLS e Supabase.
