@@ -32,6 +32,27 @@ const libraryActionSheetSource = readFileSync(
   ),
   "utf8",
 );
+const profileEditorAvatarSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-editor-avatar.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const profileEditorFieldsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-editor-fields.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const profileEditorActionsSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-editor-actions.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileDisplayDependencies = {
   SOBRE_BIO_MAX_LENGTH: 160,
@@ -487,12 +508,14 @@ test("página delega os limites de nome e biografia ao helper", () => {
   );
   assert.match(
     pagina,
-    /limitarTextoPerfilAutor\(event\.target\.value, 80\)/,
+    /setNomePerfilEditor\(limitarTextoPerfilAutor\(value, 80\)\)/,
   );
   assert.match(
     pagina,
-    /limitarTextoPerfilAutor\(\s*event\.target\.value,\s*BIO_MAX_LENGTH,\s*\)/,
+    /setBioPerfilEditor\(\s*limitarTextoPerfilAutor\(value, BIO_MAX_LENGTH\),\s*\)/,
   );
+  assert.match(profileEditorFieldsSource, /maxLength=\{80\}/);
+  assert.match(profileEditorFieldsSource, /maxLength=\{maxBioLength\}/);
   assert.doesNotMatch(
     pagina,
     /event\.target\.value\.slice\(0, (?:80|BIO_MAX_LENGTH)\)/,
@@ -620,11 +643,12 @@ test("página deriva a presença do avatar do editor uma única vez", () => {
   );
   assert.equal(
     (pagina.match(/\btemAvatarPerfilEditor\b/g) || []).length,
-    4,
+    3,
   );
   assert.match(pagina, /temAvatar: temAvatarPerfilEditor/);
-  assert.match(pagina, /\{temAvatarPerfilEditor \? \(/);
-  assert.match(pagina, /\{temAvatarPerfilEditor && \(/);
+  assert.match(pagina, /hasAvatar=\{temAvatarPerfilEditor\}/);
+  assert.match(profileEditorAvatarSource, /\{hasAvatar \? \(/);
+  assert.match(profileEditorAvatarSource, /\{hasAvatar && \(/);
   assert.equal(
     (pagina.match(/Boolean\(avatarPerfilEditor\)/g) || []).length,
     1,
@@ -650,12 +674,40 @@ test("página delega a inicial do avatar ao helper", () => {
   );
   assert.match(
     pagina,
-    /\{obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilNome,\s*\)\}/,
+    /const inicialAvatarPerfilEditor = obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilNome,\s*\);/,
   );
+  assert.match(pagina, /fallbackInitial=\{inicialAvatarPerfilEditor\}/);
+  assert.match(profileEditorAvatarSource, /\{fallbackInitial\}/);
   assert.doesNotMatch(
     pagina,
     /\(nomePerfilEditor \|\| perfilParaMostrar\.nome\)[\s\S]*?\.charAt\(0\)[\s\S]*?\.toUpperCase\(\)/,
   );
+});
+
+test("página compõe os blocos apresentacionais do editor de perfil", () => {
+  assert.match(
+    pagina,
+    /import \{ ProfileEditorAvatar \} from "\.\/components\/profile-editor-avatar";/,
+  );
+  assert.match(
+    pagina,
+    /import \{ ProfileEditorFields \} from "\.\/components\/profile-editor-fields";/,
+  );
+  assert.match(
+    pagina,
+    /import \{ ProfileEditorActions \} from "\.\/components\/profile-editor-actions";/,
+  );
+  assert.match(pagina, /onChooseImage=\{\(\) => avatarInputRef\.current\?\.click\(\)\}/);
+  assert.match(pagina, /onRemoveImage=\{removerAvatarAutor\}/);
+  assert.match(pagina, /onCancel=\{fecharEditorPerfil\}/);
+  assert.match(pagina, /onSave=\{\(\) => void salvarEdicaoPerfilAutor\(\)\}/);
+  assert.match(profileEditorAvatarSource, /alt="Prévia da imagem do perfil"/);
+  assert.match(profileEditorAvatarSource, /\{error && <span style=\{avatarErrorStyle\}>\{error\}<\/span>\}/);
+  assert.match(profileEditorFieldsSource, /if \(event\.key === "Enter"\)/);
+  assert.match(profileEditorFieldsSource, /event\.preventDefault\(\);/);
+  assert.match(profileEditorFieldsSource, /@username público/);
+  assert.match(profileEditorActionsSource, />\s*Cancelar\s*<\/button>/);
+  assert.match(profileEditorActionsSource, /\{saveLabel\}/);
 });
 
 
