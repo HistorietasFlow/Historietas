@@ -38,10 +38,7 @@ import {
 import { listasPageCss } from "./lib/listas-page-css";
 import { criarAvatarStyle, criarCapaStyle } from "./lib/listas-row-media-utils";
 import {
-  aplicarAnotacoesAosItensListas,
   carregarAnotacoesLocaisListas,
-  dataRegistro,
-  montarMapaAnotacoesPorObraListas,
   removerAnotacaoLocalListas,
   salvarAnotacaoLocalListas,
 } from "./lib/listas-diary-annotation-utils";
@@ -55,18 +52,17 @@ import {
 import {
   colecaoTemObraListas,
   carregarObrasLocaisListas,
-  obterProgressoObraLocalListas,
   removerObraDaColecaoListas,
 } from "./lib/listas-local-work-utils";
 import {
-  criarItemPerfil,
-  criarMapaObrasPorIdentificadorListas,
-  encontrarObraColecaoLocalListas,
-  mesclarItensLocaisCategoriaPerfil,
-  mesclarTudoPerfil,
   obterHrefContinuarLeituraListas,
-  ordenarPorData,
 } from "./lib/listas-profile-items-utils";
+import {
+  criarObraLista,
+  criarPerfilLista,
+  montarListasPerfilEstado,
+  registroPermitido,
+} from "./lib/listas-profile-state-utils";
 import {
   dataUltimoCapitulo,
   ordenarObrasDaSecao,
@@ -112,7 +108,7 @@ import {
   normalizarOrigemPerfil,
 } from "./lib/listas-route-utils";
 import { supabase } from "../../lib/supabase/client";
-import { criarSlugBase, normalizarTexto } from "../../lib/utils";
+import { normalizarTexto } from "../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -414,48 +410,6 @@ async function carregarAvaliacaoDiarioListas(
   return normalizarAvaliacaoDiarioListas(data);
 }
 
-function criarObraLista(row: RegistroGenerico, index: number): ObraLista {
-  const titulo = pegarTexto(row.titulo, `Obra ${index + 1}`);
-  const slug = pegarTexto(row.slug, criarSlugBase(titulo));
-
-  return {
-    id: pegarTexto(row.id, `obra-${index + 1}`),
-    autorId: pegarTexto(row.user_id ?? row.autor_id),
-    titulo,
-    autor: pegarTexto(row.autor, "Autor não informado"),
-    genero: pegarTexto(row.genero, "Não informado"),
-    formato: pegarTexto(row.formato, "Não informado"),
-    classificacaoIndicativa: pegarTexto(row.classificacao_indicativa),
-    capa: pegarTexto(row.capa_url ?? row.capa),
-    slug,
-    link: `/obra/${slug}`,
-    publicadaEm: pegarTexto(row.criada_em ?? row.created_at),
-    visualizacoes: Math.max(0, Math.round(pegarNumero(row.visualizacoes))),
-    totalCurtidas: 0,
-    totalComentarios: 0,
-    capitulos: [],
-    notaMedia: 0,
-    totalAvaliacoes: 0,
-  };
-}
-
-function criarPerfilLista(
-  row: RegistroGenerico | null,
-  userId: string,
-  nomeFallback: string,
-): PerfilLista {
-  return {
-    userId: pegarTexto(row?.user_id ?? row?.id, userId),
-    nome:
-      pegarTexto(row?.nome) ||
-      nomeFallback.trim() ||
-      "Usuário",
-    username: pegarTexto(row?.username).replace(/^@+/, ""),
-    avatar: pegarTexto(row?.avatar_url),
-    bio: pegarTexto(row?.bio ?? row?.sobre_bio, "Perfil no Historietas."),
-  };
-}
-
 async function carregarPerfil(userId: string, nomeFallback = "") {
   if (!idUsuarioValido(userId)) {
     return criarPerfilLista(null, userId, nomeFallback);
@@ -696,15 +650,6 @@ async function carregarRegistrosUsuario(
     console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, mensagem);
     return [];
   }
-}
-
-function registroPermitido(registro: RegistroGenerico, proprioPerfil: boolean) {
-  if (proprioPerfil) {
-    return true;
-  }
-
-  const visibilidade = pegarTexto(registro.visibilidade);
-  return visibilidade !== "privado";
 }
 
 
@@ -991,334 +936,25 @@ async function carregarListasDoPerfil(
   const obras = idsObrasRemotos.length > 0
     ? await carregarObrasPublicadas(idsObrasRemotos)
     : await carregarObrasPublicadas([]);
-  const obrasPorId = new Map(obras.map((obra) => [obra.id, obra]));
-  const obrasPorCapituloId = new Map<string, ObraLista>();
-
-  obras.forEach((obra) => {
-    obra.capitulos.forEach((capitulo) => {
-      if (capitulo.id && !obrasPorCapituloId.has(capitulo.id)) {
-        obrasPorCapituloId.set(capitulo.id, obra);
-      }
-    });
-  });
-
-  const obrasPorIdentificador = criarMapaObrasPorIdentificadorListas(obras);
-  const concluidasIds = new Set(
-    concluidas
-      .filter((registro) => registroPermitido(registro, proprioPerfil))
-      .map((registro) => pegarTexto(registro.obra_id))
-      .filter(Boolean),
-  );
-
-  concluidasLocais.forEach((identificador) => {
-    const obra = encontrarObraColecaoLocalListas(
-      identificador,
-      obrasPorIdentificador,
-    );
-
-    if (obra?.id) {
-      concluidasIds.add(obra.id);
-    }
-  });
-
-  const queroLerRemoto = ordenarPorData(
-    seguindo
-      .filter((registro) => registroPermitido(registro, proprioPerfil))
-      .map((registro) => {
-        const obraId = pegarTexto(registro.obra_id);
-        const obra = obrasPorId.get(obraId);
-
-        if (!obra || concluidasIds.has(obraId)) {
-          return null;
-        }
-
-        return criarItemPerfil<CategoriaPerfil, ObraLista>("quero-ler", obra, registro);
-      })
-      .filter((item): item is ItemObraLista => Boolean(item)),
-  );
-  const queroLer = mesclarItensLocaisCategoriaPerfil(
-    "quero-ler",
-    queroLerRemoto,
+  return montarListasPerfilEstado<
+    ObraLista,
+    CategoriaPerfil,
+    ItemObraLista
+  >({
+    userId,
+    proprioPerfil,
+    seguindo,
+    favoritas,
+    concluidas,
+    avaliacoes,
+    progressoCompleto,
+    anotacoesVisiveis,
     seguindoLocais,
-    obrasPorIdentificador,
-    concluidasIds,
-  );
-
-  const favoritasRemotas = ordenarPorData(
-    favoritas
-      .filter((registro) => registroPermitido(registro, proprioPerfil))
-      .map((registro) => {
-        const obra = obrasPorId.get(pegarTexto(registro.obra_id));
-        return obra
-          ? criarItemPerfil<CategoriaPerfil, ObraLista>("favoritas", obra, registro)
-          : null;
-      })
-      .filter((item): item is ItemObraLista => Boolean(item)),
-  );
-  const itensFavoritas = mesclarItensLocaisCategoriaPerfil(
-    "favoritas",
-    favoritasRemotas,
     favoritasLocais,
-    obrasPorIdentificador,
-  );
-
-  const concluidasRemotas = ordenarPorData(
-    concluidas
-      .filter((registro) => registroPermitido(registro, proprioPerfil))
-      .map((registro) => {
-        const obra = obrasPorId.get(pegarTexto(registro.obra_id));
-        return obra
-          ? criarItemPerfil<CategoriaPerfil, ObraLista>("concluidas", obra, registro)
-          : null;
-      })
-      .filter((item): item is ItemObraLista => Boolean(item)),
-  );
-  const itensConcluidas = mesclarItensLocaisCategoriaPerfil(
-    "concluidas",
-    concluidasRemotas,
     concluidasLocais,
-    obrasPorIdentificador,
-  );
-
-  const itensAvaliacoes = ordenarPorData(
-    avaliacoes
-      .filter((registro) => registroPermitido(registro, proprioPerfil))
-      .map((registro) => {
-        const obra = obrasPorId.get(pegarTexto(registro.obra_id));
-        const nota = pegarNumero(registro.nota);
-
-        if (
-          !obra ||
-          nota <= 0 ||
-          (obra.autorId && obra.autorId === userId)
-        ) {
-          return null;
-        }
-
-        return criarItemPerfil<CategoriaPerfil, ObraLista>(
-          "avaliacoes",
-          obra,
-          registro,
-          { nota },
-        );
-      })
-      .filter((item): item is ItemObraLista => Boolean(item)),
-  );
-
-  const progressoPorObra = new Map<
-    string,
-    {
-      registros: RegistroGenerico[];
-      capitulosLidos: Set<string>;
-      progressoInformado: number;
-      data: string;
-      capituloAtual: string;
-    }
-  >();
-
-  progressoCompleto
-    .filter((registro) => registroPermitido(registro, proprioPerfil))
-    .forEach((registro) => {
-      const obraIdRegistro = pegarTexto(registro.obra_id);
-      const capituloId = pegarTexto(registro.capitulo_id);
-      const obraResolvida =
-        obrasPorId.get(obraIdRegistro) ||
-        obrasPorCapituloId.get(capituloId) ||
-        null;
-      const obraId = obraResolvida?.id || obraIdRegistro;
-      const lido = typeof registro.lido === "boolean" ? registro.lido : true;
-
-      if (!obraId || !obraResolvida || !lido) {
-        return;
-      }
-
-      const atual = progressoPorObra.get(obraId) || {
-        registros: [],
-        capitulosLidos: new Set<string>(),
-        progressoInformado: 0,
-        data: "",
-        capituloAtual: "",
-      };
-      atual.registros.push(registro);
-
-      if (capituloId) {
-        atual.capitulosLidos.add(capituloId);
-      }
-
-      atual.progressoInformado = Math.max(
-        atual.progressoInformado,
-        pegarNumero(registro.progresso),
-      );
-
-      if (timestampData(dataRegistro(registro)) >= timestampData(atual.data)) {
-        atual.data = dataRegistro(registro);
-        atual.capituloAtual = capituloId;
-      }
-
-      progressoPorObra.set(obraId, atual);
-    });
-
-  obrasLocais.forEach((registro) => {
-    const identificadores = [
-      pegarTexto(registro.id),
-      pegarTexto(registro.slug),
-      pegarTexto(registro.titulo),
-    ].filter(Boolean);
-    const obra = identificadores
-      .map((identificador) =>
-        encontrarObraColecaoLocalListas(identificador, obrasPorIdentificador),
-      )
-      .find(Boolean);
-
-    if (!obra || concluidasIds.has(obra.id)) {
-      return;
-    }
-
-    const progressoLocal = obterProgressoObraLocalListas(registro);
-
-    if (progressoLocal.progresso <= 0) {
-      return;
-    }
-
-    const atual = progressoPorObra.get(obra.id) || {
-      registros: [],
-      capitulosLidos: new Set<string>(),
-      progressoInformado: 0,
-      data: "",
-      capituloAtual: "",
-    };
-
-    atual.progressoInformado = Math.max(
-      atual.progressoInformado,
-      progressoLocal.progresso,
-    );
-
-    if (progressoLocal.capituloId) {
-      atual.capitulosLidos.add(progressoLocal.capituloId);
-    }
-
-    if (
-      timestampData(progressoLocal.data) >= timestampData(atual.data)
-    ) {
-      atual.data = progressoLocal.data;
-      atual.capituloAtual = progressoLocal.capituloId;
-    }
-
-    progressoPorObra.set(obra.id, atual);
+    obrasLocais,
+    obras,
   });
-
-  const lendo: ItemObraLista[] = [];
-  const historico: ItemObraLista[] = [];
-
-  progressoPorObra.forEach((grupo, obraId) => {
-    const obra = obrasPorId.get(obraId);
-
-    if (!obra) {
-      return;
-    }
-
-    const totalCapitulos = obra.capitulos.length;
-    const capitulosLidosValidos = obra.capitulos.filter((capitulo) =>
-      grupo.capitulosLidos.has(capitulo.id),
-    ).length;
-    const progressoCalculado = totalCapitulos
-      ? Math.round((capitulosLidosValidos / totalCapitulos) * 100)
-      : 0;
-
-    // Em progresso_leitura, "progresso: 100" pode significar que apenas
-    // o capítulo atual foi concluído. Quando há capítulos registrados,
-    // calculamos o progresso da obra pela quantidade de capítulos lidos,
-    // igual ao Diário do perfil. O valor informado fica apenas como
-    // fallback para leituras mantidas localmente.
-    const progressoFinal =
-      capitulosLidosValidos > 0
-        ? progressoCalculado
-        : Math.min(
-            99,
-            Math.max(1, Math.round(grupo.progressoInformado)),
-          );
-    const capitulo = obra.capitulos.find(
-      (itemCapitulo) => itemCapitulo.id === grupo.capituloAtual,
-    );
-    const registroBase = grupo.registros[0] || {
-      obra_id: obra.id,
-      atualizado_em: grupo.data,
-      origem_local: true,
-    };
-    const extras = {
-      data: grupo.data || obra.publicadaEm,
-      ultimaLeituraEm: grupo.data || obra.publicadaEm,
-      progresso: progressoFinal,
-      capituloAtual: capitulo?.titulo || "",
-      capituloAtualId: grupo.capituloAtual,
-      capitulosLidosIds: Array.from(grupo.capitulosLidos),
-    };
-
-    historico.push(
-      criarItemPerfil<CategoriaPerfil, ObraLista>(
-        "historico",
-        obra,
-        registroBase,
-        extras,
-      ),
-    );
-
-    if (progressoFinal > 0 && !concluidasIds.has(obraId)) {
-      lendo.push(
-        criarItemPerfil<CategoriaPerfil, ObraLista>(
-          "lendo",
-          obra,
-          registroBase,
-          extras,
-        ),
-      );
-    }
-  });
-
-  const estado: ListasPerfilEstado = {
-    tudo: [],
-    lendo: ordenarPorData(lendo),
-    "quero-ler": queroLer,
-    favoritas: itensFavoritas,
-    concluidas: itensConcluidas,
-    avaliacoes: itensAvaliacoes,
-    historico: ordenarPorData(historico),
-  };
-
-  estado.tudo = mesclarTudoPerfil([
-    estado.lendo,
-    estado["quero-ler"],
-    estado.favoritas,
-    estado.concluidas,
-    estado.avaliacoes,
-    estado.historico,
-  ]);
-
-  const anotacoesPorObra = montarMapaAnotacoesPorObraListas(anotacoesVisiveis);
-  const notasPorObra = new Map<string, number>();
-
-  avaliacoes
-    .filter((registro) => registroPermitido(registro, proprioPerfil))
-    .forEach((registro) => {
-      const obraId = pegarTexto(registro.obra_id);
-      const nota = Math.max(0, Math.min(5, pegarNumero(registro.nota)));
-
-      if (obraId && nota > 0) {
-        notasPorObra.set(obraId, Math.round(nota * 2) / 2);
-      }
-    });
-
-  (Object.keys(estado) as CategoriaPerfil[]).forEach((categoriaEstado) => {
-    estado[categoriaEstado] = aplicarAnotacoesAosItensListas(
-      estado[categoriaEstado].map((item) => ({
-        ...item,
-        nota: notasPorObra.get(item.obra.id) || item.nota,
-      })),
-      anotacoesPorObra,
-    );
-  });
-
-  return estado;
 }
 
 async function carregarIdsInteracoesUsuario(userId: string) {
