@@ -40,6 +40,10 @@ const painelComentarios = readFileSync(
   new URL("../../app/listas/components/listas-diary-comments-panel.tsx", import.meta.url),
   "utf8",
 );
+const pageRenderers = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-page-renderers.tsx", import.meta.url),
+  "utf8",
+);
 const executavel = utils
   .replace(/\r\n/g, "\n")
   .replace('import type { CSSProperties } from "react";\n\n', "");
@@ -107,8 +111,16 @@ test("Listas delega somente os helpers de mídia das linhas", () => {
       new RegExp(`const ${estilo}: CSSProperties`),
     );
   }
-  assert.equal((pagina.match(/criarCapaStyle\(/g) || []).length, 2);
-  assert.equal((pagina.match(/criarAvatarStyle\(/g) || []).length, 1);
+  assert.equal(
+    (pagina.match(/criarCapaStyle\(/g) || []).length +
+      (pageRenderers.match(/criarCapaStyle\(/g) || []).length,
+    2,
+  );
+  assert.equal(
+    (pagina.match(/criarAvatarStyle\(/g) || []).length +
+      (pageRenderers.match(/criarAvatarStyle\(/g) || []).length,
+    1,
+  );
   assert.match(
     pagina,
     /import \{[\s\S]*?criarAvatarPerfilDiarioListasStyle,[\s\S]*?\} from "\.\/lib\/listas-diary-comments-styles";/,
@@ -128,7 +140,7 @@ test("Listas delega somente os helpers de mídia das linhas", () => {
     /export function criarAvatarComentarioDiarioListasStyle\(/,
   );
   assert.match(
-    pagina,
+    pageRenderers,
     /<ListasAuthorRow[\s\S]*?avatar=\{autor\.avatar\}[\s\S]*?avatarStyle=\{criarAvatarStyle\(autor\.avatar\)\}/,
   );
   assert.match(
