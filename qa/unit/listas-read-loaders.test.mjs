@@ -3,6 +3,14 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/listas/page.tsx", import.meta.url), "utf8");
+const pageDataHook = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
+  "utf8",
+);
+const interactionsHook = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-diary-interactions-sync.ts", import.meta.url),
+  "utf8",
+);
 const interactions = readFileSync(
   new URL("../../app/listas/lib/listas-diary-interactions-loader.ts", import.meta.url),
   "utf8",
@@ -12,14 +20,15 @@ const profileLoader = readFileSync(
   "utf8",
 );
 
-test("Listas delega os dois carregadores de leitura sem reintroduzir mutações", () => {
-  for (const helper of [
-    "carregarInteracoesAnotacoesListas",
-    "carregarListasDoPerfil",
-  ]) {
-    assert.match(page, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
-    assert.doesNotMatch(page, new RegExp(`async function ${helper}\\(`));
-  }
+test("Listas delega os dois carregadores de leitura e a orquestra??o aos hooks", () => {
+  assert.match(page, /import \{ useListasPageDataLoader \}/);
+  assert.match(page, /useListasPageDataLoader\(\{/);
+  assert.match(page, /import \{ useListasDiaryInteractionsSync \}/);
+  assert.match(page, /useListasDiaryInteractionsSync\(\{/);
+  assert.match(pageDataHook, /import \{ carregarListasDoPerfil \}/);
+  assert.match(interactionsHook, /carregarInteracoesAnotacoesListas/);
+  assert.doesNotMatch(page, /async function carregarListasDoPerfil\(/);
+  assert.doesNotMatch(page, /async function carregarInteracoesAnotacoesListas\(/);
 
   assert.match(interactions, /\.from\("profiles"\)[\s\S]*?\.select\("id,user_id,nome,username,avatar_url"\)[\s\S]*?\.in\(coluna, ids\)/);
   assert.match(interactions, /export async function carregarPerfisComentariosAnotacoesListas\(/);
@@ -37,8 +46,9 @@ test("Listas delega os dois carregadores de leitura sem reintroduzir mutações"
   assert.match(profileLoader, /new Set\([\s\S]*?registrosVisiveis[\s\S]*?pegarTexto\(registro\.obra_id\)/);
   assert.match(profileLoader, /montarListasPerfilEstado</);
   assert.doesNotMatch(profileLoader, /\.insert\(|\.update\(|\.delete\(|\.upsert\(/);
+  assert.doesNotMatch(pageDataHook, /\.insert\(|\.update\(|\.delete\(|\.upsert\(/);
+  assert.doesNotMatch(interactionsHook, /\.insert\(|\.update\(|\.delete\(|\.upsert\(/);
 });
-
 test("contratos preservam deduplicação, fallback de perfis e interações iniciais", () => {
   assert.match(
     interactions,

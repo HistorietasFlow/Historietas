@@ -1,11 +1,13 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import type { TouchEvent } from "react";
 import { useListasActionMessage } from "./hooks/use-listas-action-message";
 import { useListasDiaryCommentsSheetLifecycle } from "./hooks/use-listas-diary-comments-sheet-lifecycle";
 import { useListasDesktopMode } from "./hooks/use-listas-desktop-mode";
+import { useListasDiaryInteractionsSync } from "./hooks/use-listas-diary-interactions-sync";
+import { useListasPageDataLoader } from "./hooks/use-listas-page-data-loader";
 import { useListasRouteUiSync } from "./hooks/use-listas-route-ui-sync";
 import { useListasTargetWorkFocus } from "./hooks/use-listas-target-work-focus";
 import { useListasWorkMenuLifecycle } from "./hooks/use-listas-work-menu-lifecycle";
@@ -212,6 +214,7 @@ import {
   type ComentarioAnotacaoListas,
   type InteracaoAnotacaoListas,
 } from "./lib/listas-diary-comment-utils";
+import { type InteracoesAnotacoesListasEstado } from "./lib/listas-diary-interactions-loader";
 import {
   colecaoTemObraListas,
   removerObraDaColecaoListas,
@@ -219,23 +222,7 @@ import {
 import {
   obterHrefContinuarLeituraListas,
 } from "./lib/listas-profile-items-utils";
-import {
-  carregarAvaliacaoDiarioListas,
-  carregarPerfil,
-} from "./lib/listas-profile-records-loader";
-import {
-  carregarObrasPublicadas,
-} from "./lib/listas-published-works-loader";
-import {
-  carregarAutoresPublicos,
-  carregarIdsInteracoesUsuario,
-} from "./lib/listas-public-catalog-loader";
-import {
-  carregarInteracoesAnotacoesListas,
-  type InteracoesAnotacoesListasEstado,
-} from "./lib/listas-diary-interactions-loader";
-import { carregarListasDoPerfil } from "./lib/listas-profile-loader";
-import { ordenarObrasDaSecao, ordenarRecomendacoes } from "./lib/listas-public-catalog-utils";
+import { carregarAvaliacaoDiarioListas } from "./lib/listas-profile-records-loader";
 import {
   textoSecundarioItem,
 } from "./lib/listas-profile-text-utils";
@@ -284,16 +271,11 @@ import {
   normalizarOrigemPerfil,
 } from "./lib/listas-route-utils";
 import { supabase } from "../../lib/supabase/client";
-import { normalizarTexto } from "../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
-import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
-  carregarEstadoRelacionamentoPerfil,
-  carregarPermissoesAbasPerfil,
-  carregarPreferenciasPrivacidade,
   preferenciasPrivacidadePadrao,
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
@@ -646,216 +628,33 @@ function ListasUniversaisContent() {
     editorAnotacaoVazio: EDITOR_ANOTACAO_LISTAS_VAZIO,
   });
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function iniciar() {
-      setCarregando(true);
-      setBloqueado(false);
-      setErro("");
-      setAvaliacaoDiario((atual) => ({
-        ...AVALIACAO_DIARIO_LISTAS_VAZIA,
-        carregando: modo === "perfil" && origemPerfil === "diario",
-        configuracoesAbertas: atual.configuracoesAbertas,
-      }));
-
-      try {
-        const { data: authData } = await supabase.auth.getUser();
-        const usuarioLogadoId = authData.user?.id || "";
-
-        if (cancelado) {
-          return;
-        }
-
-        setUsuarioAtualId(usuarioLogadoId);
-
-        if (usuarioLogadoId) {
-          try {
-            const perfilUsuarioAtual = await carregarPerfil(
-              usuarioLogadoId,
-              pegarTexto(authData.user?.user_metadata?.nome) ||
-                pegarTexto(authData.user?.email) ||
-                "Usuário",
-            );
-
-            if (!cancelado) {
-              setUsuarioAtualPerfil(perfilUsuarioAtual);
-            }
-          } catch {
-            if (!cancelado) {
-              setUsuarioAtualPerfil({
-                userId: usuarioLogadoId,
-                nome:
-                  pegarTexto(authData.user?.user_metadata?.nome) ||
-                  pegarTexto(authData.user?.email) ||
-                  "Usuário",
-                username: pegarTexto(
-                  authData.user?.user_metadata?.username,
-                ).replace(/^@/, ""),
-                avatar: pegarTexto(
-                  authData.user?.user_metadata?.avatar_url ??
-                    authData.user?.user_metadata?.avatar,
-                ),
-                bio: "",
-              });
-            }
-          }
-        } else {
-          setUsuarioAtualPerfil(null);
-        }
-
-        if (modo === "perfil") {
-          const perfilIdRecebido = userIdUrl.trim() || usuarioLogadoId;
-
-          if (!perfilIdRecebido || !idUsuarioValido(perfilIdRecebido)) {
-            setPerfil(null);
-            setListasPerfil(LISTAS_PERFIL_VAZIAS);
-            setErro("Não foi possível identificar o perfil desta lista.");
-            return;
-          }
-
-          const perfilInicialmenteProprio =
-            perfilIdRecebido === usuarioLogadoId;
-          const perfilCarregado = await carregarPerfil(
-            perfilIdRecebido,
-            perfilInicialmenteProprio
-              ? pegarTexto(authData.user?.user_metadata?.nome) ||
-                  pegarTexto(authData.user?.email)
-              : "",
-          );
-          const perfilUserId =
-            perfilCarregado.userId.trim() || perfilIdRecebido;
-          const proprioPerfil =
-            Boolean(usuarioLogadoId) &&
-            (perfilUserId === usuarioLogadoId ||
-              perfilIdRecebido === usuarioLogadoId);
-          const preferencias = await carregarPreferenciasPrivacidade(
-            perfilUserId,
-            {
-              usarFallbackLocal: proprioPerfil,
-            },
-          );
-          const permissoes = proprioPerfil
-            ? PERMISSOES_PROPRIO_PERFIL
-            : await carregarPermissoesAbasPerfil(perfilUserId, preferencias);
-          const permitido =
-            origemPerfil === "biblioteca"
-              ? permissoes.biblioteca
-              : permissoes.diario;
-          const relacionamento = proprioPerfil
-            ? "proprio_perfil"
-            : await carregarEstadoRelacionamentoPerfil(
-                perfilUserId,
-                usuarioLogadoId,
-              );
-
-          if (cancelado) {
-            return;
-          }
-
-          setPerfil(perfilCarregado);
-          setPreferenciasPerfil(preferencias);
-          setRelacionamentoPerfil(relacionamento);
-
-          if (origemPerfil === "diario") {
-            try {
-              const avaliacaoCarregada = await carregarAvaliacaoDiarioListas(
-                perfilUserId,
-              );
-
-              if (!cancelado) {
-                setAvaliacaoDiario(avaliacaoCarregada);
-              }
-            } catch (error) {
-              if (!cancelado) {
-                setAvaliacaoDiario((atual) => ({
-                  ...atual,
-                  carregando: false,
-                  erro: obterMensagemErroListas(
-                    error,
-                    "Não foi possível carregar a Avaliação do Diário.",
-                  ),
-                }));
-              }
-            }
-          }
-
-          if (!permitido) {
-            setBloqueado(true);
-            setListasPerfil(LISTAS_PERFIL_VAZIAS);
-            return;
-          }
-
-          const listas = await carregarListasDoPerfil<
-            CategoriaPerfil,
-            ItemObraLista
-          >(perfilUserId, proprioPerfil, {
-            seguindo: LIBRARY_FOLLOW_STORAGE_KEY,
-            favoritas: FAVORITES_STORAGE_KEY,
-            concluidas: COMPLETED_STORAGE_KEY,
-          });
-
-          if (!cancelado) {
-            setListasPerfil(listas);
-          }
-
-          return;
-        }
-
-        const catalogo = await carregarObrasPublicadas();
-
-        if (cancelado) {
-          return;
-        }
-
-        let obrasPreparadas = catalogo.filter(
-          (obra) => !ehClassificacao18(obra.classificacaoIndicativa),
-        );
-
-        if (genero) {
-          const generoNormalizado = normalizarTexto(genero);
-          obrasPreparadas = obrasPreparadas.filter((obra) =>
-            normalizarTexto(obra.genero).includes(generoNormalizado),
-          );
-        }
-
-        if (secao === "recomendacoes") {
-          const idsInteracoes = await carregarIdsInteracoesUsuario(usuarioLogadoId);
-          obrasPreparadas = ordenarRecomendacoes(obrasPreparadas, idsInteracoes);
-        } else {
-          obrasPreparadas = ordenarObrasDaSecao(obrasPreparadas, secao);
-        }
-
-        setObrasPublicas(obrasPreparadas);
-
-        if (modo === "autores") {
-          const autoresCarregados = await carregarAutoresPublicos(obrasPreparadas);
-
-          if (!cancelado) {
-            setAutores(autoresCarregados);
-          }
-        }
-      } catch (error) {
-        if (!cancelado) {
-          setErro(
-            error instanceof Error
-              ? error.message
-              : "Não foi possível carregar esta lista agora.",
-          );
-        }
-      } finally {
-        if (!cancelado) {
-          setCarregando(false);
-        }
-      }
-    }
-
-    void iniciar();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [modo, origemPerfil, userIdUrl, secao, genero]);
+  useListasPageDataLoader({
+    modo,
+    origemPerfil,
+    userIdUrl,
+    secao,
+    genero,
+    listasPerfilVazias: LISTAS_PERFIL_VAZIAS,
+    permissoesProprioPerfil: PERMISSOES_PROPRIO_PERFIL,
+    storageKeys: {
+      seguindo: LIBRARY_FOLLOW_STORAGE_KEY,
+      favoritas: FAVORITES_STORAGE_KEY,
+      concluidas: COMPLETED_STORAGE_KEY,
+    },
+    avaliacaoDiarioVazia: AVALIACAO_DIARIO_LISTAS_VAZIA,
+    setCarregando,
+    setBloqueado,
+    setErro,
+    setAvaliacaoDiario,
+    setUsuarioAtualId,
+    setUsuarioAtualPerfil,
+    setPerfil,
+    setListasPerfil,
+    setPreferenciasPerfil,
+    setRelacionamentoPerfil,
+    setObrasPublicas,
+    setAutores,
+  });
 
   useListasDiaryCommentsSheetLifecycle({
     comentariosDiarioItem,
@@ -864,52 +663,12 @@ function ListasUniversaisContent() {
     setMenuOrdenacaoComentariosDiarioAberto,
   });
 
-  useEffect(() => {
-    let cancelado = false;
-
-    if (modo !== "perfil") {
-      setInteracoesAnotacoes({});
-      return;
-    }
-
-    const anotacaoIds = Array.from(
-      new Set(
-        (Object.values(listasPerfil) as ItemObraLista[][])
-          .flat()
-          .map((item) => item.anotacaoId?.trim() || "")
-          .filter(Boolean),
-      ),
-    );
-
-    void carregarInteracoesAnotacoesListas(
-      anotacaoIds,
-      usuarioAtualId,
-    ).then((carregadas) => {
-      if (cancelado) return;
-
-      setInteracoesAnotacoes((atuais) => {
-        const proximo: InteracoesAnotacoesListasEstado = {};
-
-        Object.entries(carregadas).forEach(([id, interacao]) => {
-          proximo[id] = {
-            ...interacao,
-            novoComentario: atuais[id]?.novoComentario || "",
-            respondendoComentarioId:
-              atuais[id]?.respondendoComentarioId || "",
-            respondendoAutorNome: atuais[id]?.respondendoAutorNome || "",
-            ordenacaoComentarios:
-              atuais[id]?.ordenacaoComentarios || "relevantes",
-          };
-        });
-
-        return proximo;
-      });
-    });
-
-    return () => {
-      cancelado = true;
-    };
-  }, [listasPerfil, modo, usuarioAtualId]);
+  useListasDiaryInteractionsSync({
+    listasPerfil,
+    modo,
+    usuarioAtualId,
+    setInteracoesAnotacoes,
+  });
 
   useListasTargetWorkFocus({
     obraAlvoId,
