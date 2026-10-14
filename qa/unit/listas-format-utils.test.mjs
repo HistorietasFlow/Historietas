@@ -184,7 +184,8 @@ test("Listas delega somente os formatadores extraidos", () => {
   assert.match(pageDataHookSource, /function iniciar\(\)/);
   assert.match(pagina, /import \{ useListasDiaryAnnotationActions \}/);
   assert.match(diaryAnnotationActionsSource, /async function salvarAnotacaoListas\(/);
-  assert.match(pagina, /function enviarComentarioAnotacaoListas\(/);
+  assert.match(pagina, /useListasDiaryInteractionActions\(\{/);
+  assert.doesNotMatch(pagina, /function enviarComentarioAnotacaoListas\(/);
   assert.doesNotMatch(utilsSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(profileTextUtilsSource, /useState|useEffect|supabase/);
 });

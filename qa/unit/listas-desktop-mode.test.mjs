@@ -96,6 +96,7 @@ test("Listas delega apenas o modo desktop e preserva consumidores responsivos", 
     /import \{ useListasDiaryAnnotationActions \} from "\.\/hooks\/use-listas-diary-annotation-actions";/,
   );
   assert.match(diaryAnnotationActions, /async function salvarAnotacaoListas\(/);
-  assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
+  assert.match(pagina, /useListasDiaryInteractionActions\(\{/);
+  assert.doesNotMatch(pagina, /async function enviarComentarioAnotacaoListas\(/);
   assert.match(pagina, /<ListasDiaryCommentsPanel[\s\S]*?isDesktop=\{isDesktop\}/);
 });

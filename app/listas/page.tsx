@@ -13,6 +13,7 @@ import { useListasTargetWorkFocus } from "./hooks/use-listas-target-work-focus";
 import { useListasWorkMenuLifecycle } from "./hooks/use-listas-work-menu-lifecycle";
 import { useListasWorkMenuActions } from "./hooks/use-listas-work-menu-actions";
 import { useListasDiaryAnnotationActions } from "./hooks/use-listas-diary-annotation-actions";
+import { useListasDiaryInteractionActions } from "./hooks/use-listas-diary-interaction-actions";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
@@ -113,8 +114,6 @@ import {
 import { criarAvatarStyle, criarCapaStyle } from "./lib/listas-row-media-utils";
 import {
   criarInteracaoAnotacaoListasVazia,
-  type ComentarioAnotacaoListas,
-  type InteracaoAnotacaoListas,
 } from "./lib/listas-diary-comment-utils";
 import { type InteracoesAnotacoesListasEstado } from "./lib/listas-diary-interactions-loader";
 import {
@@ -191,7 +190,6 @@ type VisibilidadeComentariosAnotacaoListas =
   | "publico"
   | "seguidores"
   | "somente_eu";
-type OrdenacaoComentariosDiarioListas = "relevantes" | "recentes";
 type TipoDiarioListas =
   | "lendo"
   | "quero_ler"
@@ -628,6 +626,32 @@ function ListasUniversaisContent() {
     usuarioAtualId,
   });
 
+  const {
+    alternarCurtidaAnotacaoListas,
+    alternarCurtidaComentarioAnotacaoListas,
+    alterarOrdenacaoComentariosAnotacaoListas,
+    atualizarComentarioAnotacaoListas,
+    cancelarRespostaComentarioAnotacaoListas,
+    enviarComentarioAnotacaoListas,
+    iniciarRespostaComentarioAnotacaoListas,
+    removerComentarioAnotacaoListas,
+  } = useListasDiaryInteractionActions({
+    comentarioCurtindoId,
+    diarioComentarioMaxLength: DIARIO_COMENTARIO_MAX_LENGTH,
+    interacoesAnotacoes,
+    perfilEhProprio,
+    preferenciasPerfil,
+    relacionamentoPerfil,
+    router,
+    setComentarioCurtindoId,
+    setComentarioRemovendoId,
+    setInteracoesAnotacoes,
+    setMensagemAcao,
+    setRespostasVisiveisComentariosDiario,
+    usuarioAtualId,
+    usuarioAtualPerfil,
+  });
+
   async function salvarAvaliacaoDiarioPerfil(novaNota: number) {
     const perfilUserId = perfil?.userId.trim() || "";
 
@@ -724,355 +748,6 @@ function ListasUniversaisContent() {
       id: alvoId,
       titulo: titulo.trim() || "Conteúdo do Diário",
     });
-  }
-
-  function atualizarInteracaoAnotacaoListas(
-    anotacaoId: string,
-    atualizar: (estado: InteracaoAnotacaoListas) => InteracaoAnotacaoListas,
-  ) {
-    setInteracoesAnotacoes((estadoAtual) => ({
-      ...estadoAtual,
-      [anotacaoId]: atualizar(
-        estadoAtual[anotacaoId] || criarInteracaoAnotacaoListasVazia(),
-      ),
-    }));
-  }
-
-  async function alternarCurtidaAnotacaoListas(item: ItemObraLista) {
-    const anotacaoId = item.anotacaoId?.trim() || "";
-    const userId = usuarioAtualId.trim();
-
-    if (!anotacaoId) return;
-
-    const permissoes = obterPermissoesAnotacaoListas({
-      item,
-      perfilEhProprio,
-      relacionamentoPerfil,
-      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
-    });
-
-    if (!permissoes.podeCurtirAnotacao) {
-      setMensagemAcao("As curtidas estão desativadas nesta anotação.");
-      return;
-    }
-
-    if (!userId) {
-      router.push(criarLoginHrefListas());
-      return;
-    }
-
-    const interacao =
-      interacoesAnotacoes[anotacaoId] || criarInteracaoAnotacaoListasVazia();
-
-    if (interacao.salvandoCurtida) return;
-
-    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-      ...atual,
-      salvandoCurtida: true,
-      erro: "",
-    }));
-
-    try {
-      if (interacao.curtiu) {
-        const { error } = await supabase
-          .from("diario_anotacao_curtidas")
-          .delete()
-          .eq("anotacao_id", anotacaoId)
-          .eq("user_id", userId);
-        if (error) throw error;
-
-        atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-          ...atual,
-          curtiu: false,
-          totalCurtidas: Math.max(0, atual.totalCurtidas - 1),
-          salvandoCurtida: false,
-        }));
-      } else {
-        const { error } = await supabase
-          .from("diario_anotacao_curtidas")
-          .insert({ anotacao_id: anotacaoId, user_id: userId });
-        if (error) throw error;
-
-        atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-          ...atual,
-          curtiu: true,
-          totalCurtidas: atual.totalCurtidas + 1,
-          salvandoCurtida: false,
-        }));
-      }
-    } catch (error) {
-      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-        ...atual,
-        salvandoCurtida: false,
-        erro:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível atualizar a curtida.",
-      }));
-    }
-  }
-
-  function atualizarComentarioAnotacaoListas(anotacaoId: string, texto: string) {
-    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-      ...atual,
-      novoComentario: texto.slice(0, DIARIO_COMENTARIO_MAX_LENGTH),
-      erro: "",
-    }));
-  }
-
-  function iniciarRespostaComentarioAnotacaoListas(
-    anotacaoId: string,
-    comentario: ComentarioAnotacaoListas,
-  ) {
-    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-      ...atual,
-      respondendoComentarioId: comentario.parentId || comentario.id,
-      respondendoAutorNome: comentario.autorNome,
-      erro: "",
-    }));
-  }
-
-  function cancelarRespostaComentarioAnotacaoListas(anotacaoId: string) {
-    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-      ...atual,
-      respondendoComentarioId: "",
-      respondendoAutorNome: "",
-    }));
-  }
-
-  function alterarOrdenacaoComentariosAnotacaoListas(
-    anotacaoId: string,
-    ordenacao: OrdenacaoComentariosDiarioListas,
-  ) {
-    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-      ...atual,
-      ordenacaoComentarios: ordenacao,
-    }));
-  }
-
-  async function alternarCurtidaComentarioAnotacaoListas(
-    anotacaoId: string,
-    comentario: ComentarioAnotacaoListas,
-  ) {
-    const userId = usuarioAtualId.trim();
-
-    if (!userId) {
-      router.push(criarLoginHrefListas());
-      return;
-    }
-
-    if (!comentario.id || comentarioCurtindoId) return;
-    const curtiu = comentario.curtidas.includes(userId);
-    setComentarioCurtindoId(comentario.id);
-
-    try {
-      if (curtiu) {
-        const { error } = await supabase
-          .from("diario_comentario_curtidas")
-          .delete()
-          .eq("comentario_id", comentario.id)
-          .eq("user_id", userId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("diario_comentario_curtidas")
-          .insert({ comentario_id: comentario.id, user_id: userId });
-        if (error) throw error;
-      }
-
-      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-        ...atual,
-        comentarios: atual.comentarios.map((itemComentario) =>
-          itemComentario.id === comentario.id
-            ? {
-                ...itemComentario,
-                curtidas: curtiu
-                  ? itemComentario.curtidas.filter((id) => id !== userId)
-                  : Array.from(new Set([...itemComentario.curtidas, userId])),
-              }
-            : itemComentario,
-        ),
-        erro: "",
-      }));
-    } catch (error) {
-      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-        ...atual,
-        erro: obterMensagemErroListas(
-          error,
-          "Não foi possível atualizar a curtida do comentário.",
-        ),
-      }));
-    } finally {
-      setComentarioCurtindoId("");
-    }
-  }
-
-  async function enviarComentarioAnotacaoListas(item: ItemObraLista) {
-    const anotacaoId = item.anotacaoId?.trim() || "";
-    const userId = usuarioAtualId.trim();
-
-    if (!anotacaoId) return;
-
-    const permissoes = obterPermissoesAnotacaoListas({
-      item,
-      perfilEhProprio,
-      relacionamentoPerfil,
-      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
-    });
-
-    if (!permissoes.podeComentar) {
-      setMensagemAcao("Você não tem permissão para comentar nesta anotação.");
-      return;
-    }
-
-    if (!userId) {
-      router.push(criarLoginHrefListas());
-      return;
-    }
-
-    const interacao =
-      interacoesAnotacoes[anotacaoId] || criarInteracaoAnotacaoListasVazia();
-    const textoComentario = interacao.novoComentario.trim();
-
-    if (!textoComentario) {
-      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-        ...atual,
-        erro: "Escreva um comentário antes de enviar.",
-      }));
-      return;
-    }
-
-    if (interacao.enviandoComentario) return;
-
-    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-      ...atual,
-      enviandoComentario: true,
-      erro: "",
-    }));
-
-    try {
-      const { data, error } = await supabase
-        .from("diario_anotacao_comentarios")
-        .insert({
-          anotacao_id: anotacaoId,
-          user_id: userId,
-          texto: textoComentario.slice(0, DIARIO_COMENTARIO_MAX_LENGTH),
-          parent_id: interacao.respondendoComentarioId || null,
-        })
-        .select(
-          "id,anotacao_id,user_id,texto,parent_id,criado_em,atualizado_em",
-        )
-        .maybeSingle();
-
-      if (error) throw error;
-
-      const registro = data;
-      const comentario: ComentarioAnotacaoListas = {
-        id: pegarTexto(registro?.id),
-        anotacaoId,
-        userId,
-        autorNome: usuarioAtualPerfil?.nome || "Você",
-        autorUsername: usuarioAtualPerfil?.username || "",
-        autorAvatar: usuarioAtualPerfil?.avatar || "",
-        texto: pegarTexto(registro?.texto, textoComentario),
-        criadoEm: pegarTexto(registro?.criado_em, new Date().toISOString()),
-        atualizadoEm: pegarTexto(
-          registro?.atualizado_em ?? registro?.criado_em,
-          new Date().toISOString(),
-        ),
-        parentId: pegarTexto(
-          registro?.parent_id,
-          interacao.respondendoComentarioId,
-        ),
-        curtidas: [],
-      };
-
-      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-        ...atual,
-        comentarios: comentario.id
-          ? [...atual.comentarios, comentario]
-          : atual.comentarios,
-        novoComentario: "",
-        respondendoComentarioId: "",
-        respondendoAutorNome: "",
-        enviandoComentario: false,
-      }));
-
-      if (comentario.parentId) {
-        setRespostasVisiveisComentariosDiario((atuais) => ({
-          ...atuais,
-          [comentario.parentId]: Math.max(
-            5,
-            atuais[comentario.parentId] || 0,
-          ),
-        }));
-      }
-    } catch (error) {
-      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-        ...atual,
-        enviandoComentario: false,
-        erro:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível enviar o comentário.",
-      }));
-    }
-  }
-
-  async function removerComentarioAnotacaoListas(
-    item: ItemObraLista,
-    comentario: ComentarioAnotacaoListas,
-  ) {
-    const anotacaoId = item.anotacaoId?.trim() || "";
-
-    if (
-      !anotacaoId ||
-      !comentario.id ||
-      comentario.userId !== usuarioAtualId ||
-      !window.confirm("Remover este comentário?")
-    ) {
-      return;
-    }
-
-    setComentarioRemovendoId(comentario.id);
-
-    try {
-      const { error } = await supabase
-        .from("diario_anotacao_comentarios")
-        .delete()
-        .eq("id", comentario.id)
-        .eq("user_id", usuarioAtualId);
-
-      if (error) throw error;
-
-      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-        ...atual,
-        comentarios: atual.comentarios.filter(
-          (itemComentario) =>
-            itemComentario.id !== comentario.id &&
-            itemComentario.parentId !== comentario.id,
-        ),
-        respondendoComentarioId:
-          atual.respondendoComentarioId === comentario.id
-            ? ""
-            : atual.respondendoComentarioId,
-        respondendoAutorNome:
-          atual.respondendoComentarioId === comentario.id
-            ? ""
-            : atual.respondendoAutorNome,
-        erro: "",
-      }));
-    } catch (error) {
-      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
-        ...atual,
-        erro: obterMensagemErroListas(
-          error,
-          "Não foi possível remover o comentário.",
-        ),
-      }));
-    } finally {
-      setComentarioRemovendoId("");
-    }
   }
 
 

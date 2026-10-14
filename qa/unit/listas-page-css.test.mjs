@@ -82,5 +82,6 @@ test("Listas consome somente o CSS extraído na ordem original", () => {
     /import \{ useListasDiaryAnnotationActions \} from "\.\/hooks\/use-listas-diary-annotation-actions";/,
   );
   assert.match(diaryAnnotationActions, /async function salvarAnotacaoListas\(/);
-  assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
+  assert.match(pagina, /useListasDiaryInteractionActions\(\{/);
+  assert.doesNotMatch(pagina, /async function enviarComentarioAnotacaoListas\(/);
 });

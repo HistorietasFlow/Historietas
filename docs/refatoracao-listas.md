@@ -119,3 +119,8 @@
 
 - Extraiu os contratos de escrita e remoção de `diario_anotacoes` e as ações de edição de anotações para módulos dedicados.
 - Preservou estados na página, storage local, normalização, limpeza de duplicadas e todos os contratos Supabase existentes.
+
+## Fase 1119 — Interações e comentários do Diário
+
+- Extraiu as ações de curtida, resposta, ordenação, envio e remoção de comentários para um hook dedicado, mantendo estados e JSX na página.
+- Isolou somente os contratos Supabase de curtidas e comentários em persistência própria, preservando tabelas, payloads, filtros, seleções, fallbacks e mensagens.
