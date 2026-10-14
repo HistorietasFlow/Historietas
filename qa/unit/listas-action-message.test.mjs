@@ -39,6 +39,13 @@ const annotationActions = readFileSync(
   ),
   "utf8",
 );
+const diaryInteractionActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-interaction-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useListasActionMessage preserva o lifecycle da mensagem de ação", () => {
   assert.match(hook, /^"use client";/);
@@ -78,8 +85,6 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
   [
     "Não foi possível identificar este conteúdo.",
     "Você não pode denunciar seu próprio conteúdo.",
-    "As curtidas estão desativadas nesta anotação.",
-    "Você não tem permissão para comentar nesta anotação.",
     "Denúncia enviada para análise.",
   ].forEach((texto) => assert.match(pagina, new RegExp(texto)));
   [
@@ -87,6 +92,10 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
     "Anotação salva.",
     "Anotação removida.",
   ].forEach((texto) => assert.match(annotationActions, new RegExp(texto)));
+  [
+    "As curtidas estão desativadas nesta anotação.",
+    "Você não tem permissão para comentar nesta anotação.",
+  ].forEach((texto) => assert.match(diaryInteractionActions, new RegExp(texto)));
   assert.match(
     comentariosControls,
     /setMensagemAcao\("Os comentários desta anotação não estão disponíveis\."\);/,
@@ -112,5 +121,6 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
     /import \{ useListasDiaryAnnotationActions \} from "\.\/hooks\/use-listas-diary-annotation-actions";/,
   );
   assert.match(annotationActions, /async function salvarAnotacaoListas\(/);
-  assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
+  assert.match(pagina, /useListasDiaryInteractionActions\(\{/);
+  assert.doesNotMatch(pagina, /async function enviarComentarioAnotacaoListas\(/);
 });
