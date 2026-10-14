@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const metadata = readFileSync(
+  new URL("../../app/lib/home-metadata-utils.ts", import.meta.url),
+  "utf8",
+);
 const hookNormalizado = hook.replace(/\r\n/g, "\n");
 const hookExecutavel = hookNormalizado
   .replace('"use client";\n\n', "")
@@ -145,10 +149,21 @@ test("Home mantém apenas a fronteira do bridge de tradução", () => {
   assert.doesNotMatch(pagina, /const HOME_UI_TRANSLATIONS/);
   assert.doesNotMatch(pagina, /const homeTextNodeStates = new WeakMap/);
   assert.doesNotMatch(pagina, /function useHomePageTranslations/);
-  assert.match(pagina, /function traduzirGeneroHome\(/);
-  assert.match(pagina, /function traduzirFormatoHome\(/);
-  assert.match(pagina, /function traduzirClassificacaoHome\(/);
-  assert.match(pagina, /function traduzirBioAutorHome\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?formatarGeneroHome,[\s\S]*?traduzirBioAutorHome,[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirFormatoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
+  );
+  assert.doesNotMatch(pagina, /function traduzirGeneroHome\(/);
+  assert.doesNotMatch(pagina, /function traduzirFormatoHome\(/);
+  assert.doesNotMatch(pagina, /function traduzirClassificacaoHome\(/);
+  assert.doesNotMatch(pagina, /function traduzirBioAutorHome\(/);
+  assert.match(metadata, /export function formatarGeneroHome\(/);
+  assert.match(metadata, /export const HOME_GENRE_TRANSLATIONS/);
+  assert.match(metadata, /export const HOME_FORMAT_TRANSLATIONS/);
+  assert.match(metadata, /export function traduzirGeneroHome\(/);
+  assert.match(metadata, /export function traduzirFormatoHome\(/);
+  assert.match(metadata, /export function traduzirClassificacaoHome\(/);
+  assert.match(metadata, /export function traduzirBioAutorHome\(/);
   assert.match(
     pagina,
     /import type \{ HistorietasLanguage \} from "\.\.\/lib\/i18n";/,
