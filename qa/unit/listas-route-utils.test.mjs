@@ -139,7 +139,7 @@ test("Listas delega normalizacao de rota e armazenamento local", () => {
   assert.match(pagina, /const searchParams = useSearchParams\(\);/);
   assert.match(pagina, /useState/);
   assert.match(pageDataHook, /useEffect/);
-  assert.match(pagina, /supabase/);
+  assert.doesNotMatch(pagina, /from "\.\.\/\.\.\/lib\/supabase\/client"/);
   assert.doesNotMatch(pagina, /localStorage/);
   assert.match(
     profileLoaderSource,
