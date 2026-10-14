@@ -17,6 +17,13 @@ const styles = readFileSync(
   new URL("../../app/listas/lib/listas-layout-styles.ts", import.meta.url),
   "utf8",
 );
+const comentariosControls = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-comments-controls.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useListasActionMessage preserva o lifecycle da mensagem de ação", () => {
   assert.match(hook, /^"use client";/);
@@ -61,9 +68,13 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
     "Você não pode denunciar seu próprio conteúdo.",
     "As curtidas estão desativadas nesta anotação.",
     "Você não tem permissão para comentar nesta anotação.",
-    "Os comentários desta anotação não estão disponíveis.",
     "Denúncia enviada para análise.",
   ].forEach((texto) => assert.match(pagina, new RegExp(texto)));
+  assert.match(
+    comentariosControls,
+    /setMensagemAcao\("Os comentários desta anotação não estão disponíveis\."\);/,
+  );
+  assert.doesNotMatch(pagina, /Os comentários desta anotação não estão disponíveis\./);
 
   assert.match(
     pagina,
