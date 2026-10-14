@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, TouchEvent } from "react";
@@ -12,6 +11,10 @@ import { ListasProfileCategoryControls } from "./components/listas-profile-categ
 import { ListasResultsSection } from "./components/listas-results-section";
 import { ListasDiaryReportModal } from "./components/listas-diary-report-modal";
 import { ListasWorkActionSheet } from "./components/listas-work-action-sheet";
+import { ListasAuthorRow } from "./components/listas-author-row";
+import { ListasDiaryAnnotationCard } from "./components/listas-diary-annotation-card";
+import { ListasProfileWorkRow } from "./components/listas-profile-work-row";
+import { ListasPublicWorkRow } from "./components/listas-public-work-row";
 import {
   ListasDiaryComment,
   type ListasDiaryCommentStyles,
@@ -4335,244 +4338,97 @@ function ListasUniversaisContent() {
       : criarInteracaoAnotacaoListasVazia();
     const permissoesAnotacao = obterPermissoesAnotacaoListas(item);
     return (
-      <article
+      <ListasProfileWorkRow
         key={item.chave}
-        id={`lista-obra-${obra.id}`}
+        annotation={
+          item.anotacao && anotacaoAberta ? (
+            <ListasDiaryAnnotationCard
+                annotation={item.anotacao}
+                annotationId={anotacaoId}
+                authorName={perfil?.nome || "usuário"}
+                canLike={permissoesAnotacao.podeCurtirAnotacao}
+                canSeeComments={permissoesAnotacao.podeVerComentarios}
+                commentAriaLabel={`Abrir ${interacao.comentarios.length} ${
+                  interacao.comentarios.length === 1
+                    ? "comentário"
+                    : "comentários"
+                } da anotação`}
+                commentCount={compactarNumero(interacao.comentarios.length)}
+                containsSpoiler={Boolean(item.anotacaoSpoiler)}
+                isLiked={interacao.curtiu}
+                isSavingLike={interacao.salvandoCurtida}
+                likeAriaLabel={`${
+                  interacao.curtiu
+                    ? "Remover curtida da anotação"
+                    : "Curtir anotação"
+                }. ${compactarNumero(interacao.totalCurtidas)} ${
+                  interacao.totalCurtidas === 1 ? "curtida" : "curtidas"
+                }`}
+                likeCount={compactarNumero(interacao.totalCurtidas)}
+                onLike={() => void alternarCurtidaAnotacaoListas(item)}
+                onOpenComments={() => abrirComentariosDiario(item)}
+                onSetSpoilerRevealed={(revelado) =>
+                  setAnotacoesSpoilerReveladas((atuais) => ({
+                    ...atuais,
+                    [chaveAnotacao]: revelado,
+                  }))
+                }
+                spoilerRevealed={spoilerRevelado}
+                styles={{
+                  annotation: listDiaryCardAnnotationStyle,
+                  annotationCommentButton: listDiaryCardAnnotationCommentButtonStyle,
+                  annotationCommentCount: listDiaryCardAnnotationCommentCountStyle,
+                  annotationCommentIcon: listDiaryCardAnnotationCommentIconStyle,
+                  annotationHeader: listDiaryCardAnnotationHeaderStyle,
+                  annotationHeaderActions: listDiaryCardAnnotationHeaderActionsStyle,
+                  annotationLikeButton: listDiaryCardAnnotationLikeButtonStyle,
+                  annotationLikeCount: listDiaryCardAnnotationLikeCountStyle,
+                  annotationLikeIcon: listDiaryCardAnnotationLikeIconStyle,
+                  annotationText: listDiaryCardAnnotationTextStyle,
+                  annotationTitle: listDiaryCardAnnotationTitleStyle,
+                  annotationTitleGroup: listDiaryCardAnnotationTitleGroupStyle,
+                  spoiler: listDiaryCardSpoilerStyle,
+                  spoilerButton: listDiaryCardSpoilerButtonStyle,
+                  spoilerText: listDiaryCardSpoilerTextStyle,
+                }}
+              workId={obra.id}
+            />
+          ) : null
+        }
+        annotationOpen={anotacaoAberta}
+        autor={obra.autor}
         className={`historietas-list-row${
-          obraDestacadaId === obra.id ? " historietas-list-row-highlight" : ""
+          obraDestacadaId === obra.id
+            ? " historietas-list-row-highlight"
+            : ""
         }`}
-      >
-        <Link href={obra.link} style={rowMainLinkStyle}>
-          <span style={criarCapaStyle(obra.capa)} aria-hidden="true" />
-
-          <span style={rowTextStyle}>
-            <strong data-historietas-user-content="true" style={rowTitleStyle}>
-              {obra.titulo}
-            </strong>
-            <span data-historietas-user-content="true" style={rowMetaStyle}>
-              {obra.autor} • {obra.genero}
-            </span>
-
-            {detalheVisivel && (
-              <span style={rowDetailStyle}>{detalheVisivel}</span>
-            )}
-
-            {(item.anotacao ||
-              (item.nota > 0 && categoriaAtual !== "avaliacoes")) && (
-              <span style={rowSignalsStyle}>
-                {item.nota > 0 && categoriaAtual !== "avaliacoes" && (
-                  <span style={rowRatingSignalStyle}>
-                    <span style={rowRatingSignalStarStyle} aria-hidden="true">
-                      ★
-                    </span>
-                    <span>{formatarNotaListas(item.nota)}</span>
-                  </span>
-                )}
-                {item.anotacao && (
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    aria-expanded={anotacaoAberta}
-                    aria-controls={`anotacao-${obra.id}`}
-                    aria-label={
-                      anotacaoAberta
-                        ? `Ocultar anotação de ${obra.titulo}`
-                        : `Mostrar anotação de ${obra.titulo}`
-                    }
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      alternarExibicaoAnotacao();
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key !== "Enter" && event.key !== " ") {
-                        return;
-                      }
-
-                      event.preventDefault();
-                      event.stopPropagation();
-                      alternarExibicaoAnotacao();
-                    }}
-                    style={{
-                      ...rowSignalAnnotationToggleStyle,
-                      background: anotacaoAberta
-                        ? "rgba(255,255,255,0.16)"
-                        : rowSignalStyle.background,
-                      color: anotacaoAberta
-                        ? "#FFFFFF"
-                        : rowSignalStyle.color,
-                    }}
-                  >
-                    ✎ Anotação
-                  </span>
-                )}
-              </span>
-            )}
-          </span>
-        </Link>
-
-        <button
-          type="button"
-          onClick={() => void abrirMenuObra(obra, item, categoriaAtual)}
-          style={rowOptionsButtonStyle}
-          aria-label={`Abrir opções de ${obra.titulo}`}
-        >
-          <span aria-hidden="true" style={moreOptionsStyle}>
-            <span style={moreDotStyle} />
-            <span style={moreDotStyle} />
-            <span style={moreDotStyle} />
-          </span>
-        </button>
-
-        {item.anotacao && anotacaoAberta && (
-          <div
-            id={`anotacao-${obra.id}`}
-            className="historietas-list-annotation"
-            style={listDiaryCardAnnotationStyle}
-          >
-            <div style={listDiaryCardAnnotationHeaderStyle}>
-              <div style={listDiaryCardAnnotationTitleGroupStyle}>
-                <strong style={listDiaryCardAnnotationTitleStyle}>
-                  Anotação de {perfil?.nome || "usuário"}
-                </strong>
-              </div>
-
-              <div style={listDiaryCardAnnotationHeaderActionsStyle}>
-                {anotacaoId && permissoesAnotacao.podeCurtirAnotacao && (
-                  <button
-                    type="button"
-                    onClick={() => void alternarCurtidaAnotacaoListas(item)}
-                    disabled={interacao.salvandoCurtida}
-                    style={{
-                      ...listDiaryCardAnnotationLikeButtonStyle,
-                      opacity: interacao.salvandoCurtida ? 0.58 : 1,
-                      cursor: interacao.salvandoCurtida
-                        ? "not-allowed"
-                        : "pointer",
-                    }}
-                    aria-label={`${
-                      interacao.curtiu
-                        ? "Remover curtida da anotação"
-                        : "Curtir anotação"
-                    }. ${compactarNumero(interacao.totalCurtidas)} ${
-                      interacao.totalCurtidas === 1 ? "curtida" : "curtidas"
-                    }`}
-                    aria-pressed={interacao.curtiu}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      style={{
-                        ...listDiaryCardAnnotationLikeIconStyle,
-                        animation: interacao.curtiu
-                          ? "historietas-list-heart-pop 260ms ease-out"
-                          : "none",
-                      }}
-                    >
-                      <path
-                        d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                        fill={
-                          interacao.curtiu
-                            ? "var(--historietas-list-like-active, #EF4444)"
-                            : "none"
-                        }
-                        stroke={
-                          interacao.curtiu
-                            ? "var(--historietas-list-like-active, #EF4444)"
-                            : "#FFFFFF"
-                        }
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span style={listDiaryCardAnnotationLikeCountStyle}>
-                      {compactarNumero(interacao.totalCurtidas)}
-                    </span>
-                  </button>
-                )}
-
-                {anotacaoId && permissoesAnotacao.podeVerComentarios && (
-                  <button
-                    type="button"
-                    onClick={() => abrirComentariosDiario(item)}
-                    style={listDiaryCardAnnotationCommentButtonStyle}
-                    aria-label={`Abrir ${interacao.comentarios.length} ${
-                      interacao.comentarios.length === 1
-                        ? "comentário"
-                        : "comentários"
-                    } da anotação`}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      style={listDiaryCardAnnotationCommentIconStyle}
-                    >
-                      <path
-                        d="M5 5.75h14a2.25 2.25 0 0 1 2.25 2.25v6A2.25 2.25 0 0 1 19 16.25h-6.2L8 20v-3.75H5A2.25 2.25 0 0 1 2.75 14V8A2.25 2.25 0 0 1 5 5.75Z"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.9"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span style={listDiaryCardAnnotationCommentCountStyle}>
-                      {compactarNumero(interacao.comentarios.length)}
-                    </span>
-                  </button>
-                )}
-
-              </div>
-            </div>
-
-            {item.anotacaoSpoiler && !spoilerRevelado ? (
-              <div style={listDiaryCardSpoilerStyle}>
-                <span style={listDiaryCardSpoilerTextStyle}>
-                  Esta anotação contém spoiler
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setAnotacoesSpoilerReveladas((atuais) => ({
-                      ...atuais,
-                      [chaveAnotacao]: true,
-                    }))
-                  }
-                  style={listDiaryCardSpoilerButtonStyle}
-                >
-                  Revelar
-                </button>
-              </div>
-            ) : (
-              <>
-                <p
-                  data-historietas-user-content="true"
-                  style={listDiaryCardAnnotationTextStyle}
-                >
-                  {item.anotacao}
-                </p>
-
-                {item.anotacaoSpoiler && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setAnotacoesSpoilerReveladas((atuais) => ({
-                        ...atuais,
-                        [chaveAnotacao]: false,
-                      }))
-                    }
-                    style={listDiaryCardSpoilerButtonStyle}
-                  >
-                    Ocultar
-                  </button>
-                )}
-              </>
-            )}
-
-          </div>
-        )}
-      </article>
+        coverStyle={criarCapaStyle(obra.capa)}
+        detalhe={detalheVisivel}
+        genero={obra.genero}
+        hasAnnotation={Boolean(item.anotacao)}
+        href={obra.link}
+        notaFormatada={formatarNotaListas(item.nota)}
+        onOpenOptions={() => void abrirMenuObra(obra, item, categoriaAtual)}
+        onToggleAnnotation={alternarExibicaoAnotacao}
+        showRating={item.nota > 0 && categoriaAtual !== "avaliacoes"}
+        styles={{
+          detail: rowDetailStyle,
+          mainLink: rowMainLinkStyle,
+          meta: rowMetaStyle,
+          moreDot: moreDotStyle,
+          moreOptions: moreOptionsStyle,
+          optionsButton: rowOptionsButtonStyle,
+          ratingSignal: rowRatingSignalStyle,
+          ratingSignalStar: rowRatingSignalStarStyle,
+          signal: rowSignalStyle,
+          signalAnnotationToggle: rowSignalAnnotationToggleStyle,
+          signals: rowSignalsStyle,
+          text: rowTextStyle,
+          title: rowTitleStyle,
+        }}
+        titulo={obra.titulo}
+        workId={obra.id}
+      />
     );
   }
 
@@ -4863,33 +4719,23 @@ function ListasUniversaisContent() {
 
   function renderizarObraPublica(obra: ObraLista) {
     return (
-      <article key={obra.id} className="historietas-list-row">
-        <Link href={obra.link} style={rowMainLinkStyle}>
-          <span style={criarCapaStyle(obra.capa)} aria-hidden="true" />
-
-          <span style={rowTextStyle}>
-            <strong data-historietas-user-content="true" style={rowTitleStyle}>
-              {obra.titulo}
-            </strong>
-            <span data-historietas-user-content="true" style={rowMetaStyle}>
-              {obra.genero}
-            </span>
-          </span>
-        </Link>
-
-        <button
-          type="button"
-          onClick={() => void abrirMenuObra(obra, null, "tudo")}
-          style={rowOptionsButtonStyle}
-          aria-label={`Abrir opções de ${obra.titulo}`}
-        >
-          <span aria-hidden="true" style={moreOptionsStyle}>
-            <span style={moreDotStyle} />
-            <span style={moreDotStyle} />
-            <span style={moreDotStyle} />
-          </span>
-        </button>
-      </article>
+      <ListasPublicWorkRow
+        key={obra.id}
+        coverStyle={criarCapaStyle(obra.capa)}
+        genero={obra.genero}
+        href={obra.link}
+        onOpenOptions={() => void abrirMenuObra(obra, null, "tudo")}
+        styles={{
+          mainLink: rowMainLinkStyle,
+          meta: rowMetaStyle,
+          moreDot: moreDotStyle,
+          moreOptions: moreOptionsStyle,
+          optionsButton: rowOptionsButtonStyle,
+          text: rowTextStyle,
+          title: rowTitleStyle,
+        }}
+        titulo={obra.titulo}
+      />
     );
   }
 
@@ -4899,23 +4745,21 @@ function ListasUniversaisContent() {
       : `/perfil-autor?autor=${encodeURIComponent(autor.nome)}`;
 
     return (
-      <article key={autor.id || autor.nome} className="historietas-list-row">
-        <Link href={href} style={rowAuthorLinkStyle}>
-          <span style={criarAvatarStyle(autor.avatar)} aria-hidden="true">
-            {!autor.avatar ? autor.nome.slice(0, 1).toLocaleUpperCase("pt-BR") : ""}
-          </span>
-
-          <span style={rowTextStyle}>
-            <strong data-historietas-user-content="true" style={rowTitleStyle}>
-              {autor.nome}
-            </strong>
-            <span data-historietas-user-content="true" style={rowMetaStyle}>
-              {autor.username ? `@${autor.username} • ` : ""}
-              {autor.totalObras} {autor.totalObras === 1 ? "obra" : "obras"}
-            </span>
-          </span>
-        </Link>
-      </article>
+      <ListasAuthorRow
+        key={autor.id || autor.nome}
+        avatar={autor.avatar}
+        avatarStyle={criarAvatarStyle(autor.avatar)}
+        href={href}
+        nome={autor.nome}
+        styles={{
+          authorLink: rowAuthorLinkStyle,
+          meta: rowMetaStyle,
+          text: rowTextStyle,
+          title: rowTitleStyle,
+        }}
+        totalObras={autor.totalObras}
+        username={autor.username}
+      />
     );
   }
 
