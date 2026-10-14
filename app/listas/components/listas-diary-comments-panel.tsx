@@ -283,7 +283,7 @@ export function ListasDiaryCommentsPanel<TItem extends ItemDiarioListas>({
     onToggleOrdenacao={onToggleOrdenacao}
     ordenacao={interacao.ordenacaoComentarios}
     placeholderTextarea={permissoes.podeComentar ? interacao.respondendoComentarioId ? "Adicionar resposta..." : "Adicionar comentário..." : "Comentários limitados pelo dono do Diário."}
-    quickReactions={["💗", "🔥", "😂", "😮", "😭", "👏"]}
+    quickReactions={["💜", "🔥", "😂", "😮", "😭", "👏"]}
     respondendoAutorNome={interacao.respondendoAutorNome}
     respondendoComentarioId={interacao.respondendoComentarioId}
     sheetRef={sheetRef}

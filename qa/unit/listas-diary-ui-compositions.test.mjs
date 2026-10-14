@@ -28,7 +28,7 @@ test("Listas delega os controles e as apresentações do Diário sem persistênc
   assert.match(controls, /deslocamento > 52/);
   assert.match(controls, /deslocamento > 118/);
   assert.match(controls, /texto !== "@" \? " " : ""/);
-  assert.match(panel, /quickReactions=\{\["💗", "🔥", "😂", "😮", "😭", "👏"\]\}/);
+  assert.match(panel, /quickReactions=\{\["💜", "🔥", "😂", "😮", "😭", "👏"\]\}/);
   assert.match(panel, /Math\.min\(5, respostas\.length\)/);
   assert.match(panel, /key=\{comentario\.id\}/);
   assert.match(page, /historietas-list-row-highlight/);
