@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const profileTextUtilsSource = readFileSync(
+  new URL(
+    "../../app/listas/lib/listas-profile-text-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -102,6 +109,15 @@ test("Listas delega somente os formatadores extraidos", () => {
     "formatarNotaListas",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
+    if (helper === "formatarDataCurta") {
+      assert.match(
+        profileTextUtilsSource,
+        /import \{ formatarDataCurta \} from "\.\/listas-format-utils";/,
+      );
+      assert.match(profileTextUtilsSource, /\bformatarDataCurta\(/);
+      continue;
+    }
+
     assert.match(pagina, new RegExp(`\\b${helper}\\(`));
   }
 
@@ -110,4 +126,5 @@ test("Listas delega somente os formatadores extraidos", () => {
   assert.match(pagina, /function salvarAnotacaoListas\(\)/);
   assert.match(pagina, /function enviarComentarioAnotacaoListas\(/);
   assert.doesNotMatch(utilsSource, /useState|useEffect|supabase|localStorage/);
+  assert.doesNotMatch(profileTextUtilsSource, /useState|useEffect|supabase/);
 });

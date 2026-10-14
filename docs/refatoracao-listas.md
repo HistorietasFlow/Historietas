@@ -66,3 +66,8 @@
 
 - Extraiu as linhas de obra do perfil, obra pública e autor, preservando na página cálculos, hrefs, estados e callbacks.
 - Extraiu o card expandido de anotação, mantendo na página permissões, interações, mutações de curtida, comentários e estado de spoiler.
+
+## Fase 1108 — Itens, catálogo e textos puros de Listas
+
+- Extraiu a montagem e mesclagem de itens do perfil, coleções locais, ordenação do catálogo e recomendações para módulos puros.
+- Extraiu os títulos, rótulos e textos secundários derivados, mantendo na página carregadores, estados, hooks, mutações e toda interação com Supabase.

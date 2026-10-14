@@ -8,6 +8,7 @@ const values = readFileSync(new URL("../../app/listas/lib/listas-value-utils.ts"
 const storage = readFileSync(new URL("../../app/listas/lib/listas-storage-utils.ts", import.meta.url), "utf8");
 const works = readFileSync(new URL("../../app/listas/lib/listas-local-work-utils.ts", import.meta.url), "utf8");
 const diary = readFileSync(new URL("../../app/listas/lib/listas-diary-normalizer-utils.ts", import.meta.url), "utf8");
+const profileItems = readFileSync(new URL("../../app/listas/lib/listas-profile-items-utils.ts", import.meta.url), "utf8");
 
 async function importarModulo(codigo) {
   const javascript = typescript.transpileModule(codigo, {
@@ -28,13 +29,18 @@ const obrasLocais = await importarModulo(
 );
 
 test("Listas delega os utilitários locais sem mover fluxos Supabase", () => {
-  for (const name of ["pegarTexto", "pegarNumero", "pegarBooleanoListas", "idUsuarioValido", "obterMensagemErroListas", "carregarListaIdsListas", "salvarListaIdsListas", "carregarObrasLocaisListas", "obterProgressoObraLocalListas", "obterIdentificadoresObraListas", "colecaoTemObraListas", "removerObraDaColecaoListas", "criarLoginHrefListas", "normalizarTipoDiarioListas", "obterTipoDiarioDoItemListas"]) {
+  for (const name of ["pegarTexto", "pegarNumero", "pegarBooleanoListas", "idUsuarioValido", "obterMensagemErroListas", "carregarListaIdsListas", "salvarListaIdsListas", "carregarObrasLocaisListas", "obterProgressoObraLocalListas", "colecaoTemObraListas", "removerObraDaColecaoListas", "criarLoginHrefListas", "normalizarTipoDiarioListas", "obterTipoDiarioDoItemListas"]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${name}\\(`));
   }
   assert.doesNotMatch(storage, /supabase/);
   assert.doesNotMatch(works, /supabase/);
   assert.doesNotMatch(diary, /supabase/);
+  assert.match(
+    profileItems,
+    /import \{ obterIdentificadoresObraListas \} from "\.\/listas-local-work-utils";/,
+  );
+  assert.doesNotMatch(profileItems, /supabase/);
 });
 
 test("módulos preservam parsing, storage isolado, obra local e normalizadores", () => {
