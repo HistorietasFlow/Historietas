@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const annotationUtilsSource = readFileSync(
+  new URL(
+    "../../app/listas/lib/listas-diary-annotation-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -67,7 +74,7 @@ test("normalizarOrdenacao preserva especiais e recentes por fallback", () => {
   assert.equal(normalizarOrdenacao(null), "recentes");
 });
 
-test("Listas delega somente a normalizacao de parametros de rota", () => {
+test("Listas delega normalizacao de rota e armazenamento local", () => {
   assert.match(
     pagina,
     /import \{[\s\S]*?normalizarCategoriaPerfil,[\s\S]*?normalizarModoLista,[\s\S]*?normalizarOrdenacao,[\s\S]*?normalizarOrigemPerfil,[\s\S]*?\} from "\.\/lib\/listas-route-utils";/,
@@ -118,6 +125,15 @@ test("Listas delega somente a normalizacao de parametros de rota", () => {
   assert.match(pagina, /useState/);
   assert.match(pagina, /useEffect/);
   assert.match(pagina, /supabase/);
-  assert.match(pagina, /localStorage/);
+  assert.doesNotMatch(pagina, /localStorage/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?carregarAnotacoesLocaisListas,[\s\S]*?\} from "\.\/lib\/listas-diary-annotation-utils";/,
+  );
+  assert.match(annotationUtilsSource, /localStorage/);
   assert.doesNotMatch(utilsSource, /useState|useEffect|supabase|localStorage/);
+  assert.doesNotMatch(
+    annotationUtilsSource,
+    /useState|useEffect|supabase|\.from\(|\.rpc\(/,
+  );
 });
