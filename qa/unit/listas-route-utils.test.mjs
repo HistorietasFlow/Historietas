@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const pageDataHook = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
+  "utf8",
+);
 const annotationUtilsSource = readFileSync(
   new URL(
     "../../app/listas/lib/listas-diary-annotation-utils.ts",
@@ -127,7 +131,7 @@ test("Listas delega normalizacao de rota e armazenamento local", () => {
   assert.doesNotMatch(pagina, /function normalizarVisibilidadeComentariosAnotacaoListas\(/);
   assert.match(pagina, /const searchParams = useSearchParams\(\);/);
   assert.match(pagina, /useState/);
-  assert.match(pagina, /useEffect/);
+  assert.match(pageDataHook, /useEffect/);
   assert.match(pagina, /supabase/);
   assert.doesNotMatch(pagina, /localStorage/);
   assert.match(

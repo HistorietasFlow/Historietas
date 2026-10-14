@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const pageDataHook = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
+  "utf8",
+);
 
 const componenteExecutavel = componente
   .replace(/\r\n/g, "\n")
@@ -109,5 +113,5 @@ test("Listas delega o detalhe somente ao ramo de avaliações", () => {
   assert.match(pagina, /formatarNotaListas\(item\.nota\)/);
   assert.match(pagina, /supabase/);
   assert.match(pagina, /useState/);
-  assert.match(pagina, /useEffect/);
+  assert.match(pageDataHook, /useEffect/);
 });

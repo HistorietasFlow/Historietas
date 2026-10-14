@@ -4,6 +4,10 @@ import test from "node:test";
 import typescript from "typescript";
 
 const page = readFileSync(new URL("../../app/listas/page.tsx", import.meta.url), "utf8");
+const pageDataHook = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
+  "utf8",
+);
 const profileItems = readFileSync(
   new URL("../../app/listas/lib/listas-profile-items-utils.ts", import.meta.url),
   "utf8",
@@ -109,13 +113,13 @@ function criarItem(categoria, obra, extras = {}) {
 }
 
 test("Listas delega itens, catálogo e textos puros sem mover Supabase", () => {
-  for (const helper of [
-    "obterHrefContinuarLeituraListas",
-    "ordenarObrasDaSecao",
-    "ordenarRecomendacoes",
-    "textoSecundarioItem",
+  for (const [source, helper] of [
+    [page, "obterHrefContinuarLeituraListas"],
+    [pageDataHook, "ordenarObrasDaSecao"],
+    [pageDataHook, "ordenarRecomendacoes"],
+    [page, "textoSecundarioItem"],
   ]) {
-    assert.match(page, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
+    assert.match(source, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
   }
 
