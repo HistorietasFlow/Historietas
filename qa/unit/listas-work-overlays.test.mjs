@@ -19,6 +19,10 @@ const workMenuActions = await readFile(
   "app/listas/hooks/use-listas-work-menu-actions.ts",
   "utf8",
 );
+const diaryAnnotationActions = await readFile(
+  "app/listas/hooks/use-listas-diary-annotation-actions.ts",
+  "utf8",
+);
 
 test("Listas delega os overlays de obra para composições apresentacionais", () => {
   assert.match(
@@ -45,11 +49,18 @@ test("Listas mantém estados, cálculos e mutações do action sheet na página"
     "DIARIO_ANOTACAO_MAX_LENGTH",
     "obterHrefContinuarLeituraListas",
     "abrirDenunciaDiario",
+  ]) {
+    assert.match(pagina, new RegExp(`\\b${contrato}\\b`));
+  }
+
+  assert.match(pagina, /useListasDiaryAnnotationActions\(\{/);
+  for (const helper of [
     "abrirEditorAnotacaoListas",
     "salvarAnotacaoListas",
     "removerAnotacaoListas",
   ]) {
-    assert.match(pagina, new RegExp(`\\b${contrato}\\b`));
+    assert.match(diaryAnnotationActions, new RegExp(`function ${helper}\\(`));
+    assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
   assert.match(

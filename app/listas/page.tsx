@@ -12,6 +12,7 @@ import { useListasRouteUiSync } from "./hooks/use-listas-route-ui-sync";
 import { useListasTargetWorkFocus } from "./hooks/use-listas-target-work-focus";
 import { useListasWorkMenuLifecycle } from "./hooks/use-listas-work-menu-lifecycle";
 import { useListasWorkMenuActions } from "./hooks/use-listas-work-menu-actions";
+import { useListasDiaryAnnotationActions } from "./hooks/use-listas-diary-annotation-actions";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
@@ -111,10 +112,6 @@ import {
 } from "./lib/listas-diary-comments-styles";
 import { criarAvatarStyle, criarCapaStyle } from "./lib/listas-row-media-utils";
 import {
-  removerAnotacaoLocalListas,
-  salvarAnotacaoLocalListas,
-} from "./lib/listas-diary-annotation-utils";
-import {
   criarInteracaoAnotacaoListasVazia,
   type ComentarioAnotacaoListas,
   type InteracaoAnotacaoListas,
@@ -140,13 +137,6 @@ import {
 } from "./lib/listas-presentation-utils";
 import { obterPermissoesAnotacaoListas } from "./lib/listas-diary-annotation-permissions-utils";
 import {
-  normalizarQuemPodeComentarAnotacaoListas,
-  normalizarTipoDiarioListas,
-  normalizarVisibilidadeAnotacaoListas,
-  normalizarVisibilidadeComentariosAnotacaoListas,
-  obterTipoDiarioDoItemListas,
-} from "./lib/listas-diary-normalizer-utils";
-import {
   AVALIACAO_DIARIO_LISTAS_VAZIA,
   calcularProximaAvaliacaoDiarioListas,
   normalizarAvaliacaoDiarioListas,
@@ -158,7 +148,6 @@ import { criarLoginHrefListas } from "./lib/listas-storage-utils";
 import {
   idUsuarioValido,
   obterMensagemErroListas,
-  pegarBooleanoListas,
   pegarTexto,
 } from "./lib/listas-value-utils";
 import {
@@ -285,8 +274,6 @@ type AutorLista = {
 };
 
 type ListasPerfilEstado = Record<CategoriaPerfil, ItemObraLista[]>;
-
-type RegistroGenerico = Record<string, unknown>;
 
 type EditorAnotacaoListasEstado = {
   aberto: boolean;
@@ -616,6 +603,31 @@ function ListasUniversaisContent() {
       perfil?.userId &&
       usuarioAtualId === perfil.userId,
   );
+
+  const {
+    abrirEditorAnotacaoListas,
+    removerAnotacaoListas,
+    salvarAnotacaoListas,
+  } = useListasDiaryAnnotationActions({
+    categoriaMenuAberta,
+    diarioAnotacaoMaxLength: DIARIO_ANOTACAO_MAX_LENGTH,
+    editorAnotacao,
+    editorAnotacaoVazio: EDITOR_ANOTACAO_LISTAS_VAZIO,
+    interacoesAnotacoes,
+    itemPerfilMenuAberto,
+    obraMenuAberta,
+    perfilEhProprio,
+    preferenciasPerfil,
+    setAnotacoesAbertas,
+    setAnotacoesSpoilerReveladas,
+    setEditorAnotacao,
+    setInteracoesAnotacoes,
+    setItemPerfilMenuAberto,
+    setListasPerfil,
+    setMensagemAcao,
+    usuarioAtualId,
+  });
+
   async function salvarAvaliacaoDiarioPerfil(novaNota: number) {
     const perfilUserId = perfil?.userId.trim() || "";
 
@@ -677,367 +689,6 @@ function ListasUniversaisContent() {
           "Não foi possível salvar a Avaliação do Diário.",
         ),
       });
-    }
-  }
-
-
-  function atualizarAnotacaoNosItensListas(
-    obraId: string,
-    atualizacao: Pick<
-      ItemObraLista,
-      | "anotacao"
-      | "anotacaoId"
-      | "anotacaoTipo"
-      | "anotacaoVisibilidade"
-      | "anotacaoQuemPodeComentar"
-      | "anotacaoVisibilidadeComentarios"
-      | "anotacaoPermitirCurtidas"
-      | "anotacaoSpoiler"
-    >,
-  ) {
-    setListasPerfil((estadoAtual) => {
-      const proximo = { ...estadoAtual };
-
-      (Object.keys(proximo) as CategoriaPerfil[]).forEach((categoriaEstado) => {
-        proximo[categoriaEstado] = proximo[categoriaEstado].map((item) =>
-          item.obra.id === obraId ? { ...item, ...atualizacao } : item,
-        );
-      });
-
-      return proximo;
-    });
-
-    setItemPerfilMenuAberto((itemAtual) =>
-      itemAtual?.obra.id === obraId
-        ? { ...itemAtual, ...atualizacao }
-        : itemAtual,
-    );
-  }
-
-  function abrirEditorAnotacaoListas() {
-    const item = itemPerfilMenuAberto;
-    const obra = obraMenuAberta;
-
-    if (!item || !obra || !perfilEhProprio || !idUsuarioValido(obra.id)) {
-      setMensagemAcao("Você só pode editar anotações da sua própria lista.");
-      return;
-    }
-
-    setEditorAnotacao({
-      aberto: true,
-      obraId: obra.id,
-      anotacaoId: item.anotacaoId?.trim() || "",
-      tipo:
-        item.anotacaoTipo ||
-        obterTipoDiarioDoItemListas(categoriaMenuAberta, item),
-      texto: item.anotacao || "",
-      visibilidade:
-        item.anotacaoVisibilidade ||
-        (preferenciasPerfil.anotacoesPrivadasPorPadrao
-          ? "privado"
-          : preferenciasPerfil.visibilidadeDiario === "publico"
-            ? "publico"
-            : "parcial"),
-      quemPodeComentar: item.anotacaoQuemPodeComentar || "herdar",
-      visibilidadeComentarios:
-        item.anotacaoVisibilidadeComentarios || "herdar",
-      permitirCurtidas: item.anotacaoPermitirCurtidas !== false,
-      contemSpoiler: Boolean(item.anotacaoSpoiler),
-      salvando: false,
-      erro: "",
-    });
-  }
-
-  async function salvarAnotacaoListas() {
-    const userId = usuarioAtualId.trim();
-    const obraId = editorAnotacao.obraId.trim();
-    const textoAnotacao = editorAnotacao.texto.trim();
-
-    if (!perfilEhProprio || !userId || !idUsuarioValido(userId)) {
-      setEditorAnotacao((atual) => ({
-        ...atual,
-        erro: "Entre na sua conta para salvar a anotação.",
-      }));
-      return;
-    }
-
-    if (!obraId || !idUsuarioValido(obraId)) {
-      setEditorAnotacao((atual) => ({
-        ...atual,
-        erro: "A obra ainda não possui um ID válido no Supabase.",
-      }));
-      return;
-    }
-
-    if (!textoAnotacao) {
-      setEditorAnotacao((atual) => ({
-        ...atual,
-        erro: "Escreva uma anotação antes de salvar.",
-      }));
-      return;
-    }
-
-    setEditorAnotacao((atual) => ({ ...atual, salvando: true, erro: "" }));
-
-    try {
-      const atualizadoEm = new Date().toISOString();
-      const visibilidadeHerdada: VisibilidadeAnotacaoListas =
-        editorAnotacao.visibilidade;
-      const payload = {
-        user_id: userId,
-        obra_id: obraId,
-        tipo: editorAnotacao.tipo,
-        texto: textoAnotacao.slice(0, DIARIO_ANOTACAO_MAX_LENGTH),
-        visibilidade: visibilidadeHerdada,
-        quem_pode_comentar: editorAnotacao.quemPodeComentar,
-        visibilidade_comentarios: editorAnotacao.visibilidadeComentarios,
-        permitir_curtidas: editorAnotacao.permitirCurtidas,
-        contem_spoiler: editorAnotacao.contemSpoiler,
-        atualizado_em: atualizadoEm,
-      };
-      const camposComSpoiler =
-        "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,atualizado_em";
-
-      async function atualizarRegistroAnotacao(id: string) {
-    const resposta = await supabase
-      .from("diario_anotacoes")
-      .update({
-        texto: payload.texto,
-        visibilidade: payload.visibilidade,
-        quem_pode_comentar: payload.quem_pode_comentar,
-        visibilidade_comentarios: payload.visibilidade_comentarios,
-        permitir_curtidas: payload.permitir_curtidas,
-        contem_spoiler: payload.contem_spoiler,
-        atualizado_em: payload.atualizado_em,
-      })
-      .eq("id", id)
-      .eq("user_id", userId)
-      .select(camposComSpoiler)
-      .maybeSingle();
-
-    if (resposta.error) {
-      throw resposta.error;
-    }
-
-    return resposta.data
-      ? resposta.data
-      : null;
-  }
-
-  async function buscarRegistroAnotacaoExistente() {
-    const resposta = await supabase
-      .from("diario_anotacoes")
-      .select(camposComSpoiler)
-      .eq("user_id", userId)
-      .eq("obra_id", obraId)
-      .order("atualizado_em", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (resposta.error) {
-      throw resposta.error;
-    }
-
-    return resposta.data
-      ? resposta.data
-      : null;
-  }
-
-  async function inserirRegistroAnotacao() {
-    const resposta = await supabase
-      .from("diario_anotacoes")
-      .insert(payload)
-      .select(camposComSpoiler)
-      .single();
-
-    if (resposta.error || !resposta.data) {
-      throw (
-        resposta.error ||
-        new Error("O banco nao confirmou a anotacao salva.")
-      );
-    }
-
-    return resposta.data;
-  }
-
-  let registroSalvo: RegistroGenerico | null = null;
-
-      if (editorAnotacao.anotacaoId) {
-        registroSalvo = await atualizarRegistroAnotacao(
-          editorAnotacao.anotacaoId,
-        );
-      }
-
-      if (!registroSalvo) {
-        const anotacaoExistente = await buscarRegistroAnotacaoExistente();
-        const idExistente = pegarTexto(anotacaoExistente?.id);
-
-        registroSalvo = idExistente
-          ? await atualizarRegistroAnotacao(idExistente)
-          : await inserirRegistroAnotacao();
-      }
-
-      if (!registroSalvo) {
-        throw new Error("O banco não confirmou a anotação salva.");
-      }
-
-      const anotacaoId = pegarTexto(registroSalvo.id);
-      const tipoSalvo =
-        normalizarTipoDiarioListas(registroSalvo.tipo) || editorAnotacao.tipo;
-      const visibilidadeSalva = normalizarVisibilidadeAnotacaoListas(
-        registroSalvo.visibilidade,
-        visibilidadeHerdada,
-      );
-      const textoSalvo = pegarTexto(registroSalvo.texto, payload.texto);
-      const quemPodeComentarSalvo = normalizarQuemPodeComentarAnotacaoListas(
-        registroSalvo.quem_pode_comentar ?? registroSalvo.quemPodeComentar,
-        editorAnotacao.quemPodeComentar,
-      );
-      const visibilidadeComentariosSalva =
-        normalizarVisibilidadeComentariosAnotacaoListas(
-          registroSalvo.visibilidade_comentarios ??
-            registroSalvo.visibilidadeComentarios,
-          editorAnotacao.visibilidadeComentarios,
-        );
-      const permitirCurtidasSalvo = pegarBooleanoListas(
-        registroSalvo.permitir_curtidas ?? registroSalvo.permitirCurtidas,
-        editorAnotacao.permitirCurtidas,
-      );
-      const contemSpoilerSalvo = pegarBooleanoListas(
-        registroSalvo.contem_spoiler ?? registroSalvo.contemSpoiler,
-        editorAnotacao.contemSpoiler,
-      );
-
-      if (anotacaoId) {
-        const { error: erroDuplicadas } = await supabase
-          .from("diario_anotacoes")
-          .delete()
-          .eq("user_id", userId)
-          .eq("obra_id", obraId)
-          .neq("id", anotacaoId);
-
-        if (erroDuplicadas) {
-          console.warn(
-            "Não consegui remover anotações duplicadas:",
-            erroDuplicadas.message,
-          );
-        }
-      }
-
-      salvarAnotacaoLocalListas(userId, {
-        id: anotacaoId,
-        user_id: userId,
-        obra_id: obraId,
-        tipo: tipoSalvo,
-        texto: textoSalvo,
-        visibilidade: visibilidadeSalva,
-        quem_pode_comentar: quemPodeComentarSalvo,
-        visibilidade_comentarios: visibilidadeComentariosSalva,
-        permitir_curtidas: permitirCurtidasSalvo,
-        contem_spoiler: contemSpoilerSalvo,
-        atualizado_em: pegarTexto(registroSalvo.atualizado_em, atualizadoEm),
-      });
-
-      atualizarAnotacaoNosItensListas(obraId, {
-        anotacao: textoSalvo,
-        anotacaoId,
-        anotacaoTipo: tipoSalvo,
-        anotacaoVisibilidade: visibilidadeSalva,
-        anotacaoQuemPodeComentar: quemPodeComentarSalvo,
-        anotacaoVisibilidadeComentarios: visibilidadeComentariosSalva,
-        anotacaoPermitirCurtidas: permitirCurtidasSalvo,
-        anotacaoSpoiler: contemSpoilerSalvo,
-      });
-
-      const chaveAnotacaoSalva = anotacaoId || obraId;
-      setAnotacoesAbertas((atuais) => ({
-        ...atuais,
-        [chaveAnotacaoSalva]: false,
-      }));
-      setAnotacoesSpoilerReveladas((atuais) => ({
-        ...atuais,
-        [chaveAnotacaoSalva]: false,
-      }));
-
-      if (anotacaoId && !interacoesAnotacoes[anotacaoId]) {
-        setInteracoesAnotacoes((atual) => ({
-          ...atual,
-          [anotacaoId]: criarInteracaoAnotacaoListasVazia(),
-        }));
-      }
-
-      setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
-      setMensagemAcao("Anotação salva.");
-    } catch (error) {
-      setEditorAnotacao((atual) => ({
-        ...atual,
-        salvando: false,
-        erro:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível salvar a anotação.",
-      }));
-    }
-  }
-
-  async function removerAnotacaoListas() {
-    const userId = usuarioAtualId.trim();
-    const obraId = editorAnotacao.obraId.trim();
-
-    if (
-      !perfilEhProprio ||
-      !userId ||
-      !obraId ||
-      !window.confirm("Remover esta anotação?")
-    ) {
-      return;
-    }
-
-    setEditorAnotacao((atual) => ({ ...atual, salvando: true, erro: "" }));
-
-    try {
-      const { error } = await supabase
-        .from("diario_anotacoes")
-        .delete()
-        .eq("user_id", userId)
-        .eq("obra_id", obraId);
-
-      if (error) throw error;
-
-      removerAnotacaoLocalListas(userId, obraId);
-      atualizarAnotacaoNosItensListas(obraId, {
-        anotacao: undefined,
-        anotacaoId: undefined,
-        anotacaoTipo: undefined,
-        anotacaoVisibilidade: undefined,
-        anotacaoQuemPodeComentar: undefined,
-        anotacaoVisibilidadeComentarios: undefined,
-        anotacaoPermitirCurtidas: undefined,
-        anotacaoSpoiler: undefined,
-      });
-      const chaveAnotacaoRemovida =
-        editorAnotacao.anotacaoId || obraId;
-      setAnotacoesAbertas((atuais) => {
-        const proximo = { ...atuais };
-        delete proximo[chaveAnotacaoRemovida];
-        return proximo;
-      });
-      setAnotacoesSpoilerReveladas((atuais) => {
-        const proximo = { ...atuais };
-        delete proximo[chaveAnotacaoRemovida];
-        return proximo;
-      });
-      setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
-      setMensagemAcao("Anotação removida.");
-    } catch (error) {
-      setEditorAnotacao((atual) => ({
-        ...atual,
-        salvando: false,
-        erro:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível remover a anotação.",
-      }));
     }
   }
 

@@ -15,6 +15,13 @@ const pageDataHookSource = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
   "utf8",
 );
+const diaryAnnotationActionsSource = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-annotation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileTextUtilsSource = readFileSync(
   new URL(
     "../../app/listas/lib/listas-profile-text-utils.ts",
@@ -175,7 +182,8 @@ test("Listas delega somente os formatadores extraidos", () => {
   assert.match(pagina, /import \{ useListasPageDataLoader \}/);
   assert.match(pageDataHookSource, /await supabase\.auth\.getUser\(\)/);
   assert.match(pageDataHookSource, /function iniciar\(\)/);
-  assert.match(pagina, /function salvarAnotacaoListas\(\)/);
+  assert.match(pagina, /import \{ useListasDiaryAnnotationActions \}/);
+  assert.match(diaryAnnotationActionsSource, /async function salvarAnotacaoListas\(/);
   assert.match(pagina, /function enviarComentarioAnotacaoListas\(/);
   assert.doesNotMatch(utilsSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(profileTextUtilsSource, /useState|useEffect|supabase/);

@@ -19,6 +19,13 @@ const workMenuActions = readFileSync(
   new URL("../../app/listas/hooks/use-listas-work-menu-actions.ts", import.meta.url),
   "utf8",
 ).replace(/\r\n/g, "\n");
+const diaryAnnotationActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-annotation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+).replace(/\r\n/g, "\n");
 
 test("listasPageCss preserva o CSS global crítico de Listas", () => {
   assert.match(cssSource, /export const listasPageCss = `/);
@@ -70,6 +77,10 @@ test("Listas consome somente o CSS extraído na ordem original", () => {
     /import \{ useListasWorkMenuActions \} from "\.\/hooks\/use-listas-work-menu-actions";/,
   );
   assert.match(workMenuActions, /await supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /async function salvarAnotacaoListas\(\)/);
+  assert.match(
+    pagina,
+    /import \{ useListasDiaryAnnotationActions \} from "\.\/hooks\/use-listas-diary-annotation-actions";/,
+  );
+  assert.match(diaryAnnotationActions, /async function salvarAnotacaoListas\(/);
   assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
 });

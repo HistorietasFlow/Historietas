@@ -114,3 +114,8 @@
 
 - Extraiu a persistência de Quero ler e as ações de abertura, fechamento, sincronização e compartilhamento do menu de obra para módulos dedicados.
 - Preservou na página os estados, setters, editor, mutações de anotação e JSX; as operações Supabase, storage, fallback de cópia e redirecionamento de login permanecem com a mesma ordem e contratos.
+
+## Fase 1118 — Ações e persistência de anotações do Diário
+
+- Extraiu os contratos de escrita e remoção de `diario_anotacoes` e as ações de edição de anotações para módulos dedicados.
+- Preservou estados na página, storage local, normalização, limpeza de duplicadas e todos os contratos Supabase existentes.
