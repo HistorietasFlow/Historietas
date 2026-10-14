@@ -10,6 +10,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const tabContent = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-tab-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const heroActionsSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-hero-actions.tsx",
@@ -217,6 +224,12 @@ test("página delega a visibilidade do conteúdo das cinco abas", () => {
     1,
   );
 
+  assert.match(
+    pagina,
+    /import \{ ProfileTabContent \} from "\.\/components\/profile-tab-content";/,
+  );
+  assert.match(pagina, /<ProfileTabContent/);
+
   for (const nome of [
     "bibliotecaPerfilAtiva",
     "diarioPerfilAtivo",
@@ -224,7 +237,9 @@ test("página delega a visibilidade do conteúdo das cinco abas", () => {
     "sobrePerfilAtivo",
     "obrasPerfilAtivo",
   ]) {
-    assert.match(pagina, new RegExp("\\{" + nome + " && \\("));
+    assert.match(tabContent, new RegExp(`${nome}: boolean;`));
+    assert.match(tabContent, new RegExp("\\{" + nome + " && "));
+    assert.match(pagina, new RegExp(nome + "=\\{" + nome + "\\}"));
   }
 
   assert.doesNotMatch(

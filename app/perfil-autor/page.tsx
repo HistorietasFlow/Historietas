@@ -179,9 +179,8 @@ import { ProfileHighlightsLikeButton } from "./components/profile-highlights-lik
 import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
 import { ProfileHighlightsPanel } from "./components/profile-highlights-panel";
 import { ProfileLibraryPanel } from "./components/profile-library-panel";
-import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
-import { ProfileCommunityPanel } from "./components/profile-community-panel";
-import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
+import { ProfileCommunityTab } from "./components/profile-community-tab";
+import { ProfileTabContent } from "./components/profile-tab-content";
 import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
@@ -1464,8 +1463,14 @@ function PerfilAutorPageContent() {
           onSelect={selecionarAbaPerfil}
         />
 
-        {bibliotecaPerfilAtiva && (
-          <ProfileLibraryPanel
+        <ProfileTabContent
+          bibliotecaPerfilAtiva={bibliotecaPerfilAtiva}
+          diarioPerfilAtivo={diarioPerfilAtivo}
+          comunidadePerfilAtiva={comunidadePerfilAtiva}
+          sobrePerfilAtivo={sobrePerfilAtivo}
+          obrasPerfilAtivo={obrasPerfilAtivo}
+          renderBiblioteca={() => (
+            <ProfileLibraryPanel
             abaAtiva={abaBibliotecaPerfil}
             isDesktop={isDesktop}
             onSelect={setAbaBibliotecaPerfil}
@@ -1476,11 +1481,10 @@ function PerfilAutorPageContent() {
             emptyMessage={mensagemBibliotecaVazia}
             items={itensBibliotecaAtivos}
             renderItem={renderizarItemBiblioteca}
-          />
-        )}
-
-        {diarioPerfilAtivo && (
-          <ProfileDiaryPanel
+            />
+          )}
+          renderDiario={() => (
+            <ProfileDiaryPanel
             isDesktop={isDesktop}
             title={tituloDiarioPerfil}
             href={criarHrefListaDiarioPerfilAutor(
@@ -1496,50 +1500,38 @@ function PerfilAutorPageContent() {
             )}
             items={itensDiarioTudo}
             renderItem={renderizarItemDiarioPerfil}
-          />
-        )}
-
-        {comunidadePerfilAtiva && (
-          <ProfileCommunityPanel
-            isDesktop={isDesktop}
-            title={tituloComunidadePerfil}
-            loading={comunidadePerfil.carregando}
-            error={erroComunidadePerfil}
-            empty={comunidadeSemPublicacoesRecentes}
-            emptyTitle={avisoComunidadeVazia.title}
-            emptyDescription={avisoComunidadeVazia.description}
-            persistentContent={
-              <ProfileCommunityStatsGrid
-                isDesktop={isDesktop}
-                publicacoes={{
-                  href: comunidadeAutorHref,
-                  ariaLabel: ariaLabelsEstatisticasComunidade.publicacoes,
-                  value: valoresEstatisticasComunidade.publicacoes,
-                }}
-                teorias={{
-                  href: comunidadeAutorTeoriasHref,
-                  ariaLabel: ariaLabelsEstatisticasComunidade.teorias,
-                  value: valoresEstatisticasComunidade.teorias,
-                }}
-                reviews={{
-                  href: comunidadeAutorReviewsHref,
-                  ariaLabel: ariaLabelsEstatisticasComunidade.reviews,
-                  value: valoresEstatisticasComunidade.reviews,
-                }}
-              />
-            }
-          >
-            <ProfileCommunityRecentPostsSection
-              title="Publicações recentes"
-              isDesktop={isDesktop}
-              publicacoes={publicacoesRecentesComunidade}
-              renderPost={renderizarPublicacaoRecenteComunidade}
             />
-          </ProfileCommunityPanel>
-        )}
-
-        {sobrePerfilAtivo && (
-          <ProfileAboutSection
+          )}
+          renderComunidade={() => (
+            <ProfileCommunityTab
+            empty={comunidadeSemPublicacoesRecentes}
+            emptyDescription={avisoComunidadeVazia.description}
+            emptyTitle={avisoComunidadeVazia.title}
+            error={erroComunidadePerfil}
+            isDesktop={isDesktop}
+            loading={comunidadePerfil.carregando}
+            publicacoes={{
+              href: comunidadeAutorHref,
+              ariaLabel: ariaLabelsEstatisticasComunidade.publicacoes,
+              value: valoresEstatisticasComunidade.publicacoes,
+            }}
+            publicacoesRecentes={publicacoesRecentesComunidade}
+            renderPost={renderizarPublicacaoRecenteComunidade}
+            reviews={{
+              href: comunidadeAutorReviewsHref,
+              ariaLabel: ariaLabelsEstatisticasComunidade.reviews,
+              value: valoresEstatisticasComunidade.reviews,
+            }}
+            teorias={{
+              href: comunidadeAutorTeoriasHref,
+              ariaLabel: ariaLabelsEstatisticasComunidade.teorias,
+              value: valoresEstatisticasComunidade.teorias,
+            }}
+            title={tituloComunidadePerfil}
+            />
+          )}
+          renderSobre={() => (
+            <ProfileAboutSection
             heroTitle={obterTituloSobrePerfilAutor(perfilNome)}
             heroText={bioSobreAutorExibido}
             heroUserContent={bioSobreAutorUserContent}
@@ -1582,18 +1574,18 @@ function PerfilAutorPageContent() {
             onToggleRecentActivity={() =>
               setAtividadeSobreAberta((valorAtual) => !valorAtual)
             }
-          />
-        )}
-
-        {obrasPerfilAtivo && (
-          <ProfileWorksPanel
+            />
+          )}
+          renderObras={() => (
+            <ProfileWorksPanel
             empty={obrasSemResultadosPerfilAutor(obrasDoPerfilFiltradas)}
             emptyMessage={mensagemObrasVazias}
             isDesktop={isDesktop}
             obras={obrasDoPerfilFiltradas}
             renderObra={renderizarObraPerfilAutor}
-          />
-        )}
+            />
+          )}
+        />
 
         <ProfileActionSheets
           bibliotecaMenuAberto={bibliotecaMenuAberto}

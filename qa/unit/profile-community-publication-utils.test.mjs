@@ -105,7 +105,7 @@ test("página deriva as publicações recentes da Comunidade uma única vez", ()
   );
   assert.match(
     pagina,
-    /publicacoes=\{publicacoesRecentesComunidade\}/,
+    /publicacoesRecentes=\{publicacoesRecentesComunidade\}/,
   );
 });
 
@@ -122,7 +122,7 @@ test("página deriva o erro da Comunidade uma única vez", () => {
   assert.match(pagina, /error=\{erroComunidadePerfil\}/);
   assert.match(
     pagina,
-    /<ProfileCommunityPanel/,
+    /<ProfileCommunityTab/,
   );
 });
 
@@ -254,7 +254,7 @@ test("página delega o título localizado da Comunidade ao helper", () => {
     (pagina.match(/obterTituloComunidadePerfilAutor\(\{/g) || []).length,
     1,
   );
-  assert.match(pagina, /<ProfileCommunityPanel[\s\S]*?title=\{tituloComunidadePerfil\}/);
+  assert.match(pagina, /<ProfileCommunityTab[\s\S]*?title=\{tituloComunidadePerfil\}/);
   assert.doesNotMatch(pagina, /language === "en"[\s\S]{0,180}Community/);
 });
 
