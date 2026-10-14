@@ -89,3 +89,8 @@
 
 - Extraiu a sincronização de rota/paginação, locks dos overlays e foco da obra alvo para hooks dedicados.
 - Manteve na página estados, carregamento, renderização, handlers, mutações e todas as consultas Supabase.
+
+## Fase 1113 — Derivações de Listas
+
+- Extraiu filtragem, ordenação, derivações de apresentação e permissões de anotações para utilitários puros.
+- Manteve na página `useMemo`, slices de paginação, estados, hooks, JSX, carregadores, consultas e mutações Supabase.

@@ -35,9 +35,7 @@ import {
   compactarNumero,
   formatarDataCurta,
   formatarLeituraMesAno,
-  formatarMesAno,
   formatarNotaListas,
-  timestampData,
 } from "./lib/listas-format-utils";
 import { listasPageCss } from "./lib/listas-page-css";
 import { criarAvatarStyle, criarCapaStyle } from "./lib/listas-row-media-utils";
@@ -75,17 +73,22 @@ import {
   type InteracoesAnotacoesListasEstado,
 } from "./lib/listas-diary-interactions-loader";
 import { carregarListasDoPerfil } from "./lib/listas-profile-loader";
+import { ordenarObrasDaSecao, ordenarRecomendacoes } from "./lib/listas-public-catalog-utils";
 import {
-  dataUltimoCapitulo,
-  ordenarObrasDaSecao,
-  ordenarRecomendacoes,
-  pontuacaoPopularidadeObra,
-} from "./lib/listas-public-catalog-utils";
-import {
-  textoCategorias,
   textoSecundarioItem,
-  tituloSecaoPublica,
 } from "./lib/listas-profile-text-utils";
+import {
+  filtrarOrdenarAutoresListas,
+  filtrarOrdenarItensPerfilListas,
+  filtrarOrdenarObrasPublicasListas,
+} from "./lib/listas-filter-sort-utils";
+import {
+  agruparItensPerfilPorMesListas,
+  calcularTotalResultadosListas,
+  deveAgruparPorMesListas,
+  obterTituloPaginaListas,
+} from "./lib/listas-presentation-utils";
+import { obterPermissoesAnotacaoListas } from "./lib/listas-diary-annotation-permissions-utils";
 import {
   normalizarQuemPodeComentarAnotacaoListas,
   normalizarTipoDiarioListas,
@@ -790,173 +793,55 @@ function ListasUniversaisContent() {
     setObraDestacadaId,
   });
 
-  const itensPerfilFiltrados = useMemo(() => {
-    const buscaNormalizada = normalizarTexto(busca);
-    let itens = [...listasPerfil[categoria]];
+  const itensPerfilFiltrados = useMemo(
+    () =>
+      filtrarOrdenarItensPerfilListas(
+        listasPerfil[categoria],
+        busca,
+        ordenacao,
+      ),
+    [busca, categoria, listasPerfil, ordenacao],
+  );
 
-    if (buscaNormalizada) {
-      itens = itens.filter((item) =>
-        normalizarTexto(
-          [
-            item.obra.titulo,
-            item.obra.autor,
-            item.obra.genero,
-            item.obra.formato,
-            textoCategorias(item.categorias),
-          ].join(" "),
-        ).includes(buscaNormalizada),
-      );
-    }
+  const obrasFiltradas = useMemo(
+    () =>
+      filtrarOrdenarObrasPublicasListas(
+        obrasPublicas,
+        busca,
+        ordenacao,
+        secao,
+      ),
+    [busca, obrasPublicas, ordenacao, secao],
+  );
 
-    itens.sort((a, b) => {
-      if (ordenacao === "titulo") {
-        return a.obra.titulo.localeCompare(b.obra.titulo, "pt-BR");
-      }
+  const autoresFiltrados = useMemo(
+    () => filtrarOrdenarAutoresListas(autores, busca, ordenacao),
+    [autores, busca, ordenacao],
+  );
 
-      if (ordenacao === "avaliacao") {
-        return (
-          (b.nota || b.obra.notaMedia) - (a.nota || a.obra.notaMedia) ||
-          timestampData(b.data) - timestampData(a.data)
-        );
-      }
-
-      if (ordenacao === "popularidade") {
-        return b.obra.visualizacoes - a.obra.visualizacoes;
-      }
-
-      return timestampData(b.data) - timestampData(a.data);
-    });
-
-    return itens;
-  }, [busca, categoria, listasPerfil, ordenacao]);
-
-  const obrasFiltradas = useMemo(() => {
-    const buscaNormalizada = normalizarTexto(busca);
-    let obras = [...obrasPublicas];
-
-    if (buscaNormalizada) {
-      obras = obras.filter((obra) =>
-        normalizarTexto(
-          [obra.titulo, obra.autor, obra.genero, obra.formato].join(" "),
-        ).includes(buscaNormalizada),
-      );
-    }
-
-    obras.sort((a, b) => {
-      if (ordenacao === "titulo") {
-        return a.titulo.localeCompare(b.titulo, "pt-BR");
-      }
-
-      if (ordenacao === "avaliacao") {
-        return b.notaMedia - a.notaMedia || b.totalAvaliacoes - a.totalAvaliacoes;
-      }
-
-      if (secao === "novos-capitulos") {
-        return dataUltimoCapitulo(b) - dataUltimoCapitulo(a);
-      }
-
-      if (secao === "mais-curtidas") {
-        return b.totalCurtidas - a.totalCurtidas;
-      }
-
-      if (secao === "mais-comentadas") {
-        return b.totalComentarios - a.totalComentarios;
-      }
-
-      if (secao === "para-ler-agora") {
-        return (
-          a.capitulos.length - b.capitulos.length ||
-          pontuacaoPopularidadeObra(b) - pontuacaoPopularidadeObra(a)
-        );
-      }
-
-      if (ordenacao === "popularidade") {
-        return pontuacaoPopularidadeObra(b) - pontuacaoPopularidadeObra(a);
-      }
-
-      return timestampData(b.publicadaEm) - timestampData(a.publicadaEm);
-    });
-
-    return obras;
-  }, [busca, obrasPublicas, ordenacao, secao]);
-
-  const autoresFiltrados = useMemo(() => {
-    const buscaNormalizada = normalizarTexto(busca);
-    let lista = [...autores];
-
-    if (buscaNormalizada) {
-      lista = lista.filter((autor) =>
-        normalizarTexto(
-          [autor.nome, autor.username, autor.bio, ...autor.generos].join(" "),
-        ).includes(buscaNormalizada),
-      );
-    }
-
-    lista.sort((a, b) => {
-      if (ordenacao === "titulo") {
-        return a.nome.localeCompare(b.nome, "pt-BR");
-      }
-
-      if (ordenacao === "avaliacao") {
-        return (
-          b.notaMedia - a.notaMedia ||
-          b.totalAvaliacoes - a.totalAvaliacoes ||
-          b.totalObras - a.totalObras
-        );
-      }
-
-      if (ordenacao === "popularidade") {
-        const pontuacao = (autor: AutorLista) =>
-          autor.totalObras * 12 +
-          autor.totalCurtidas * 4 +
-          autor.totalComentarios * 3;
-
-        return pontuacao(b) - pontuacao(a) || b.totalObras - a.totalObras;
-      }
-
-      if (ordenacao === "recentes") {
-        return timestampData(b.criadaEm) - timestampData(a.criadaEm);
-      }
-
-      return b.totalObras - a.totalObras || a.nome.localeCompare(b.nome, "pt-BR");
-    });
-
-    return lista;
-  }, [autores, busca, ordenacao]);
-
-  const totalResultados =
-    modo === "perfil"
-      ? itensPerfilFiltrados.length
-      : modo === "autores"
-        ? autoresFiltrados.length
-        : obrasFiltradas.length;
-  const tituloPagina =
-    tituloPersonalizado ||
-    (modo === "perfil"
-      ? `${origemPerfil === "biblioteca" ? "Biblioteca" : "Diário"} de ${
-          perfil?.nome || "usuário"
-        }`
-      : modo === "autores"
-        ? "Autores para conhecer"
-        : tituloSecaoPublica(secao, genero));
-  const agruparPorMes =
-    modo === "perfil" && (categoria === "avaliacoes" || categoria === "historico");
+  const totalResultados = calcularTotalResultadosListas({
+    modo,
+    itensPerfil: itensPerfilFiltrados,
+    autores: autoresFiltrados,
+    obras: obrasFiltradas,
+  });
+  const tituloPagina = obterTituloPaginaListas({
+    tituloPersonalizado,
+    modo,
+    origemPerfil,
+    perfilNome: perfil?.nome || "",
+    secao,
+    genero,
+  });
+  const agruparPorMes = deveAgruparPorMesListas(modo, categoria);
   const itensPerfilVisiveis = itensPerfilFiltrados.slice(0, quantidadeVisivel);
   const obrasVisiveis = obrasFiltradas.slice(0, quantidadeVisivel);
   const autoresVisiveis = autoresFiltrados.slice(0, quantidadeVisivel);
 
-  const gruposPerfil = useMemo(() => {
-    const grupos = new Map<string, ItemObraLista[]>();
-
-    itensPerfilVisiveis.forEach((item) => {
-      const chave = formatarMesAno(item.data);
-      const atuais = grupos.get(chave) || [];
-      atuais.push(item);
-      grupos.set(chave, atuais);
-    });
-
-    return Array.from(grupos.entries());
-  }, [itensPerfilVisiveis]);
+  const gruposPerfil = useMemo(
+    () => agruparItensPerfilPorMesListas(itensPerfilVisiveis),
+    [itensPerfilVisiveis],
+  );
 
   const controlesCategoriasPerfilAtualStyle = isDesktop
     ? origemPerfil === "diario"
@@ -1172,33 +1057,6 @@ function ListasUniversaisContent() {
       perfil?.userId &&
       usuarioAtualId === perfil.userId,
   );
-  function obterPermissoesAnotacaoListas(item: ItemObraLista) {
-    const visibilidadeComentarios =
-      item.anotacaoVisibilidadeComentarios || "herdar";
-    const quemPodeComentar = item.anotacaoQuemPodeComentar || "herdar";
-    const seguidor = relacionamentoPerfil === "seguindo";
-    const podeVerComentarios =
-      perfilEhProprio ||
-      visibilidadeComentarios === "publico" ||
-      visibilidadeComentarios === "herdar" ||
-      (visibilidadeComentarios === "seguidores" && seguidor);
-    const regraComentarioEfetiva =
-      quemPodeComentar === "herdar"
-        ? preferenciasPerfil.quemPodeComentarDiario
-        : quemPodeComentar;
-    const podeComentar =
-      podeVerComentarios &&
-      (perfilEhProprio ||
-        regraComentarioEfetiva === "todos" ||
-        (regraComentarioEfetiva === "seguidores" && seguidor));
-
-    return {
-      podeVerComentarios,
-      podeComentar,
-      podeCurtirAnotacao: item.anotacaoPermitirCurtidas !== false,
-    };
-  }
-
   async function salvarAvaliacaoDiarioPerfil(novaNota: number) {
     const perfilUserId = perfil?.userId.trim() || "";
 
@@ -1676,7 +1534,12 @@ function ListasUniversaisContent() {
 
     if (!anotacaoId) return;
 
-    const permissoes = obterPermissoesAnotacaoListas(item);
+    const permissoes = obterPermissoesAnotacaoListas({
+      item,
+      perfilEhProprio,
+      relacionamentoPerfil,
+      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
+    });
 
     if (!permissoes.podeCurtirAnotacao) {
       setMensagemAcao("As curtidas estão desativadas nesta anotação.");
@@ -1840,7 +1703,12 @@ function ListasUniversaisContent() {
 
     if (!anotacaoId) return;
 
-    const permissoes = obterPermissoesAnotacaoListas(item);
+    const permissoes = obterPermissoesAnotacaoListas({
+      item,
+      perfilEhProprio,
+      relacionamentoPerfil,
+      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
+    });
 
     if (!permissoes.podeComentar) {
       setMensagemAcao("Você não tem permissão para comentar nesta anotação.");
@@ -2006,7 +1874,12 @@ function ListasUniversaisContent() {
       return;
     }
 
-    const permissoes = obterPermissoesAnotacaoListas(item);
+    const permissoes = obterPermissoesAnotacaoListas({
+      item,
+      perfilEhProprio,
+      relacionamentoPerfil,
+      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
+    });
 
     if (!permissoes.podeVerComentarios) {
       setMensagemAcao("Os comentários desta anotação não estão disponíveis.");
@@ -2187,7 +2060,12 @@ function ListasUniversaisContent() {
       ? interacoesAnotacoes[anotacaoId] ||
         criarInteracaoAnotacaoListasVazia()
       : criarInteracaoAnotacaoListasVazia();
-    const permissoesAnotacao = obterPermissoesAnotacaoListas(item);
+    const permissoesAnotacao = obterPermissoesAnotacaoListas({
+      item,
+      perfilEhProprio,
+      relacionamentoPerfil,
+      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
+    });
     return (
       <ListasProfileWorkRow
         key={item.chave}
@@ -2300,7 +2178,12 @@ function ListasUniversaisContent() {
 
     const interacao =
       interacoesAnotacoes[anotacaoId] || criarInteracaoAnotacaoListasVazia();
-    const permissoes = obterPermissoesAnotacaoListas(itemSelecionado);
+    const permissoes = obterPermissoesAnotacaoListas({
+      item: itemSelecionado,
+      perfilEhProprio,
+      relacionamentoPerfil,
+      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
+    });
     const comentariosRaiz = ordenarComentariosRaizDiarioListas(
       interacao.comentarios,
       interacao.ordenacaoComentarios,
