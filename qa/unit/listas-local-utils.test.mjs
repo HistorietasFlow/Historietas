@@ -50,10 +50,12 @@ const obrasLocais = await importarModulo(
 );
 
 test("Listas delega os utilitários locais sem mover fluxos Supabase", () => {
-  for (const name of ["pegarTexto", "idUsuarioValido", "criarLoginHrefListas"]) {
+  for (const name of ["pegarTexto", "idUsuarioValido"]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${name}\\(`));
   }
+  assert.match(diaryProfileActions, /import[\s\S]*?\bcriarLoginHrefListas\b/);
+  assert.doesNotMatch(page, /function criarLoginHrefListas\(/);
   assert.match(diaryProfileActions, /import[\s\S]*?\bobterMensagemErroListas\b/);
   assert.doesNotMatch(page, /function obterMensagemErroListas\(/);
   for (const name of ["pegarBooleanoListas", "normalizarTipoDiarioListas", "obterTipoDiarioDoItemListas"]) {
