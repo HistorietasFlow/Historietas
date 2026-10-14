@@ -8,6 +8,9 @@ import { createPortal } from "react-dom";
 import { useListasActionMessage } from "./hooks/use-listas-action-message";
 import { useListasDesktopMode } from "./hooks/use-listas-desktop-mode";
 import ListasRatingDetail from "./components/listas-rating-detail";
+import { ListasPageHeader } from "./components/listas-page-header";
+import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
+import { ListasResultsSection } from "./components/listas-results-section";
 import {
   compactarNumero,
   formatarDataCurta,
@@ -3090,6 +3093,19 @@ function ListasUniversaisContent() {
     return Array.from(grupos.entries());
   }, [itensPerfilVisiveis]);
 
+  const controlesCategoriasPerfilAtualStyle = isDesktop
+    ? origemPerfil === "diario"
+      ? desktopListDiaryControlsStyle
+      : desktopControlsStyle
+    : origemPerfil === "diario"
+      ? listDiaryControlsStyle
+      : controlsStyle;
+  const abasCategoriasPerfilAtualStyle = isDesktop ? desktopTabsStyle : tabsStyle;
+  const secaoResultadosAtualStyle = isDesktop
+    ? desktopListSectionStyle
+    : listSectionStyle;
+  const linhasObrasAtualStyle = isDesktop ? desktopWorksRowsStyle : rowsStyle;
+
   function trocarCategoria(novaCategoria: CategoriaPerfil) {
     setCategoria(novaCategoria);
     const params = new URLSearchParams(queryAtual);
@@ -5147,144 +5163,40 @@ function ListasUniversaisContent() {
       <style>{`${historietasThemeCss}${listasPageCss}`}</style>
 
 
-      <header style={headerStyle}>
-        <div style={headerInnerStyle}>
-          {modo === "perfil" && origemPerfil === "diario" && perfil ? (
-            <div style={listDiaryProfileHeaderStyle}>
-              <div style={listDiaryProfileHeaderTopStyle}>
-                <span
-                  aria-hidden="true"
-                  style={criarAvatarPerfilDiarioListasStyle(perfil.avatar)}
-                >
-                  {!perfil.avatar
-                    ? perfil.nome.slice(0, 1).toLocaleUpperCase("pt-BR") || "U"
-                    : ""}
-                </span>
-
-                <div style={listDiaryProfileTitleAreaStyle}>
-                  <h1
-                    data-historietas-user-content="true"
-                    style={listDiaryProfileTitleStyle}
-                  >
-                    {tituloPagina}
-                  </h1>
-                </div>
-
-                {(perfilEhProprio || avaliacaoDiario.visivel) && (
-                  <div style={listDiaryRatingSummaryStyle}>
-                    <strong style={listDiaryRatingNumberStyle}>
-                      {formatarNotaListas(avaliacaoDiario.media)}
-                    </strong>
-                    <span
-                      style={listDiaryRatingSummaryStarsStyle}
-                      aria-label={`Média ${formatarNotaListas(
-                        avaliacaoDiario.media,
-                      )} de 5`}
-                    >
-                      {NOTAS_AVALIACAO_LISTAS.map((estrela) => (
-                        <span
-                          key={`media-diario-${estrela}`}
-                          style={listDiaryRatingSummaryStarVisualStyle}
-                          aria-hidden="true"
-                        >
-                          <span style={listDiaryRatingSummaryStarBaseStyle}>
-                            ★
-                          </span>
-                          <span
-                            style={{
-                              ...listDiaryRatingSummaryStarFillStyle,
-                              width: obterPreenchimentoEstrelaListas(
-                                estrela,
-                                avaliacaoDiario.media,
-                              ),
-                            }}
-                          >
-                            ★
-                          </span>
-                        </span>
-                      ))}
-                    </span>
-                    <span style={listDiaryRatingTotalStyle}>
-                      {avaliacaoDiario.total} Av. Diário
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {!perfilEhProprio &&
-                avaliacaoDiario.visivel &&
-                avaliacaoDiario.podeAvaliar && (
-                  <div
-                    style={listDiaryHeaderRatingBoxStyle}
-                    aria-label="Avaliar este Diário"
-                  >
-                    <div style={listDiaryHeaderRatingStarsRowStyle}>
-                      {NOTAS_AVALIACAO_LISTAS.map((estrela) => {
-                        const preenchimento = obterPreenchimentoEstrelaListas(
-                          estrela,
-                          avaliacaoDiario.minhaNota,
-                        );
-                        const interativa = !avaliacaoDiario.salvando;
-                        const proximaNota = obterProximaNotaAvaliacaoListas(
-                          estrela,
-                          avaliacaoDiario.minhaNota,
-                        );
-
-                        return (
-                          <button
-                            key={`avaliacao-diario-cabecalho-${estrela}`}
-                            type="button"
-                            onClick={() => {
-                              if (!interativa) {
-                                return;
-                              }
-
-                              void salvarAvaliacaoDiarioPerfil(proximaNota);
-                            }}
-                            disabled={!interativa}
-                            style={{
-                              ...(preenchimento === "0%"
-                                ? listDiaryHeaderRatingStarButtonStyle
-                                : listDiaryHeaderRatingStarActiveStyle),
-                              cursor: interativa ? "pointer" : "default",
-                              opacity: avaliacaoDiario.salvando ? 0.58 : 1,
-                            }}
-                            aria-label={`Avaliar Diário com ${proximaNota
-                              .toString()
-                              .replace(".", ",")} estrela${
-                              proximaNota === 1 ? "" : "s"
-                            }`}
-                          >
-                            <span
-                              style={listDiaryHeaderRatingStarVisualStyle}
-                              aria-hidden="true"
-                            >
-                              <span style={listDiaryHeaderRatingStarBaseStyle}>
-                                ★
-                              </span>
-                              <span
-                                style={{
-                                  ...listDiaryHeaderRatingStarFillStyle,
-                                  width: preenchimento,
-                                }}
-                              >
-                                ★
-                              </span>
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-            </div>
-          ) : (
-            <h1 data-historietas-user-content="true" style={pageTitleStyle}>
-              {tituloPagina}
-            </h1>
-          )}
-        </div>
-      </header>
+      <ListasPageHeader
+        avaliacaoDiario={avaliacaoDiario}
+        criarAvatarStyle={criarAvatarPerfilDiarioListasStyle}
+        formatarNota={formatarNotaListas}
+        headerInnerStyle={headerInnerStyle}
+        headerStyle={headerStyle}
+        isDiaryProfile={modo === "perfil" && origemPerfil === "diario"}
+        listDiaryHeaderRatingBoxStyle={listDiaryHeaderRatingBoxStyle}
+        listDiaryHeaderRatingStarActiveStyle={listDiaryHeaderRatingStarActiveStyle}
+        listDiaryHeaderRatingStarBaseStyle={listDiaryHeaderRatingStarBaseStyle}
+        listDiaryHeaderRatingStarButtonStyle={listDiaryHeaderRatingStarButtonStyle}
+        listDiaryHeaderRatingStarFillStyle={listDiaryHeaderRatingStarFillStyle}
+        listDiaryHeaderRatingStarVisualStyle={listDiaryHeaderRatingStarVisualStyle}
+        listDiaryHeaderRatingStarsRowStyle={listDiaryHeaderRatingStarsRowStyle}
+        listDiaryProfileHeaderStyle={listDiaryProfileHeaderStyle}
+        listDiaryProfileHeaderTopStyle={listDiaryProfileHeaderTopStyle}
+        listDiaryProfileTitleAreaStyle={listDiaryProfileTitleAreaStyle}
+        listDiaryProfileTitleStyle={listDiaryProfileTitleStyle}
+        listDiaryRatingNumberStyle={listDiaryRatingNumberStyle}
+        listDiaryRatingSummaryStarBaseStyle={listDiaryRatingSummaryStarBaseStyle}
+        listDiaryRatingSummaryStarFillStyle={listDiaryRatingSummaryStarFillStyle}
+        listDiaryRatingSummaryStarVisualStyle={listDiaryRatingSummaryStarVisualStyle}
+        listDiaryRatingSummaryStarsStyle={listDiaryRatingSummaryStarsStyle}
+        listDiaryRatingSummaryStyle={listDiaryRatingSummaryStyle}
+        listDiaryRatingTotalStyle={listDiaryRatingTotalStyle}
+        notasAvaliacao={NOTAS_AVALIACAO_LISTAS}
+        obterPreenchimentoEstrela={obterPreenchimentoEstrelaListas}
+        obterProximaNota={obterProximaNotaAvaliacaoListas}
+        onAvaliarDiario={(nota) => void salvarAvaliacaoDiarioPerfil(nota)}
+        pageTitleStyle={pageTitleStyle}
+        perfil={perfil}
+        perfilEhProprio={perfilEhProprio}
+        tituloPagina={tituloPagina}
+      />
 
       {mensagemAcao && (
         <div role="status" style={actionMessageStyle}>
@@ -5292,128 +5204,49 @@ function ListasUniversaisContent() {
         </div>
       )}
 
-      {modo === "perfil" && !bloqueado && (
-        <section
-          style={
-            isDesktop
-              ? origemPerfil === "diario"
-                ? desktopListDiaryControlsStyle
-                : desktopControlsStyle
-              : origemPerfil === "diario"
-                ? listDiaryControlsStyle
-                : controlsStyle
-          }
-        >
-          <div
-            style={isDesktop ? desktopTabsStyle : tabsStyle}
-            aria-label="Categorias da lista"
-          >
-            {CATEGORIAS_PERFIL.map((item) => (
-              <button
-                key={item.valor}
-                type="button"
-                onClick={() => trocarCategoria(item.valor)}
-                style={
-                  categoria === item.valor ? tabActiveStyle : tabStyle
-                }
-              >
-                {item.rotulo}
-                <span style={tabCountStyle}>{listasPerfil[item.valor].length}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      <ListasProfileCategoryControls
+        bloqueado={bloqueado}
+        categoriaAtiva={categoria}
+        categorias={CATEGORIAS_PERFIL}
+        contagens={listasPerfil}
+        controlsStyle={controlesCategoriasPerfilAtualStyle}
+        modo={modo}
+        onTrocarCategoria={trocarCategoria}
+        tabActiveStyle={tabActiveStyle}
+        tabCountStyle={tabCountStyle}
+        tabStyle={tabStyle}
+        tabsStyle={abasCategoriasPerfilAtualStyle}
+      />
 
-      <section
-        style={isDesktop ? desktopListSectionStyle : listSectionStyle}
-        aria-live="polite"
-      >
-        {carregando && (
-          <div style={stateStyle}>
-            <span className="historietas-list-spinner" aria-hidden="true" />
-            <strong>Organizando a lista...</strong>
-          </div>
-        )}
-
-        {!carregando && bloqueado && (
-          <div style={stateStyle}>
-            <span style={stateIconStyle}>🔒</span>
-            <strong>Esta lista é privada</strong>
-            <span style={stateTextStyle}>
-              O dono do perfil escolheu quem pode visualizar esta seção.
-            </span>
-            <Link href="/perfil-autor" style={stateLinkStyle}>
-              Voltar ao perfil
-            </Link>
-          </div>
-        )}
-
-        {!carregando && erro && !bloqueado && (
-          <div style={stateStyle}>
-            <span style={stateIconStyle}>!</span>
-            <strong>Não foi possível abrir a lista</strong>
-            <span style={stateTextStyle}>{erro}</span>
-          </div>
-        )}
-
-        {!carregando && !bloqueado && !erro && totalResultados === 0 && (
-          <div style={stateStyle}>
-            <span style={stateIconStyle}>⌕</span>
-            <strong>Nenhum item encontrado</strong>
-          </div>
-        )}
-
-        {!carregando && !bloqueado && !erro && totalResultados > 0 && (
-          <>
-            {modo === "perfil" &&
-              (agruparPorMes
-                ? gruposPerfil.map(([mes, itens]) => (
-                    <section key={mes} style={monthGroupStyle}>
-                      <h2 style={monthTitleStyle}>{mes}</h2>
-                      <div
-                        style={isDesktop ? desktopWorksRowsStyle : rowsStyle}
-                      >
-                        {itens.map((item) => renderizarItemObra(item, categoria))}
-                      </div>
-                    </section>
-                  ))
-                : (
-                    <div
-                      style={isDesktop ? desktopWorksRowsStyle : rowsStyle}
-                    >
-                      {itensPerfilVisiveis.map((item) =>
-                        renderizarItemObra(item, categoria),
-                      )}
-                    </div>
-                  ))}
-
-            {modo === "obras" && (
-              <div style={isDesktop ? desktopWorksRowsStyle : rowsStyle}>
-                {obrasVisiveis.map(renderizarObraPublica)}
-              </div>
-            )}
-
-            {modo === "autores" && (
-              <div style={rowsStyle}>
-                {autoresVisiveis.map(renderizarAutor)}
-              </div>
-            )}
-
-            {quantidadeVisivel < totalResultados && (
-              <button
-                type="button"
-                onClick={() =>
-                  setQuantidadeVisivel((quantidade) => quantidade + 40)
-                }
-                style={loadMoreButtonStyle}
-              >
-                Carregar mais
-              </button>
-            )}
-          </>
-        )}
-      </section>
+      <ListasResultsSection
+        agruparPorMes={agruparPorMes}
+        autoresVisiveis={autoresVisiveis}
+        bloqueado={bloqueado}
+        erro={erro}
+        gruposPerfil={gruposPerfil}
+        hasMore={quantidadeVisivel < totalResultados}
+        itensPerfilVisiveis={itensPerfilVisiveis}
+        listSectionStyle={secaoResultadosAtualStyle}
+        loadMoreButtonStyle={loadMoreButtonStyle}
+        carregando={carregando}
+        modo={modo}
+        monthGroupStyle={monthGroupStyle}
+        monthTitleStyle={monthTitleStyle}
+        obrasVisiveis={obrasVisiveis}
+        onCarregarMais={() =>
+          setQuantidadeVisivel((quantidade) => quantidade + 40)
+        }
+        renderizarAutor={renderizarAutor}
+        renderizarItemPerfil={(item) => renderizarItemObra(item, categoria)}
+        renderizarObraPublica={renderizarObraPublica}
+        rowsStyle={rowsStyle}
+        stateIconStyle={stateIconStyle}
+        stateLinkStyle={stateLinkStyle}
+        stateStyle={stateStyle}
+        stateTextStyle={stateTextStyle}
+        totalResultados={totalResultados}
+        worksRowsStyle={linhasObrasAtualStyle}
+      />
 
       <footer style={footerStyle}>
         <span>Historietas</span>

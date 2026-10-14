@@ -35,3 +35,9 @@
 
 - Extraiu `useListasActionMessage` para `app/listas/hooks/use-listas-action-message.ts`.
 - Preservou o estado inicial vazio, o timer de 2600 ms, o cleanup e o setter real; mensagens, handlers e o status visual permanecem na página.
+
+## Fase 1102 — Composições apresentacionais de Listas
+
+- Extraiu o cabeçalho normal e o cabeçalho do Diário, incluindo avatar, resumo e avaliação, para `ListasPageHeader`.
+- Extraiu os controles de categorias do perfil para `ListasProfileCategoryControls`, mantendo categorias, contagens e navegação na página.
+- Extraiu os estados e a lista principal de resultados para `ListasResultsSection`, preservando loading, privacidade, erro, vazio, agrupamento mensal, renderizadores e paginação na página.
