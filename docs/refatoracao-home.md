@@ -59,3 +59,9 @@
 - Extraiu a formatação de gêneros, as tabelas de tradução e os helpers de gênero, formato, classificação e bio do autor para `app/lib/home-metadata-utils.ts`.
 - Preservou textos, acentos, regexes, normalizações, `toLocaleLowerCase` e todos os fallbacks da Home.
 - Manteve na Home somente os consumidores dos helpers de metadados.
+
+## Fase 818 — Formatação numérica e locale da Home
+
+- Extraiu a normalização numérica, a resolução de locale, a compactação e a formatação de avaliações de autores para `app/lib/home-format-utils.ts`.
+- Preservou `Math.max`, `Math.round`, `Number.isFinite`, a leitura de `document.documentElement.lang`, os locales e os sufixos de compactação da Home.
+- Manteve na Home somente os consumidores dos helpers de formatação.
