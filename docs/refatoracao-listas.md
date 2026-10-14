@@ -125,6 +125,11 @@
 - Extraiu as ações de avaliação e denúncia para um hook dedicado, mantendo estados e JSX na página.
 - Isolou exclusivamente os RPCs de salvar e remover avaliação, preservando nomes, parâmetros, atualização otimista, recarga e mensagens.
 
+## Fase 1121 — Navegação e renderizadores públicos de Listas
+
+- Extraiu a navegação de categoria, preservando a query, `router.replace` e `{ scroll: false }`.
+- Extraiu os renderizadores de obra pública e autor, preservando links, fallback de autor, estilos, chaves e abertura do menu.
+
 ## Fase 1119 — Interações e comentários do Diário
 
 - Extraiu as ações de curtida, resposta, ordenação, envio e remoção de comentários para um hook dedicado, mantendo estados e JSX na página.
