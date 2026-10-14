@@ -15,6 +15,10 @@ const pageDataHook = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
   "utf8",
 );
+const ratingPersistence = readFileSync(
+  new URL("../../app/listas/lib/listas-diary-rating-persistence.ts", import.meta.url),
+  "utf8",
+);
 
 const componenteExecutavel = componente
   .replace(/\r\n/g, "\n")
@@ -117,7 +121,8 @@ test("Listas delega o detalhe somente ao ramo de avaliações", () => {
     ),
     /formatarNotaListas\(nota\)/,
   );
-  assert.match(pagina, /supabase/);
+  assert.doesNotMatch(pagina, /supabase/);
+  assert.match(ratingPersistence, /supabase\.rpc\(/);
   assert.match(pagina, /useState/);
   assert.match(pageDataHook, /useEffect/);
 });
