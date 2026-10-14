@@ -11,6 +11,24 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const linhaAutor = readFileSync(
+  new URL("../../app/listas/components/listas-author-row.tsx", import.meta.url),
+  "utf8",
+);
+const linhaPerfil = readFileSync(
+  new URL(
+    "../../app/listas/components/listas-profile-work-row.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const linhaObraPublica = readFileSync(
+  new URL(
+    "../../app/listas/components/listas-public-work-row.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = utils
   .replace(/\r\n/g, "\n")
   .replace('import type { CSSProperties } from "react";\n\n', "");
@@ -73,7 +91,10 @@ test("Listas delega somente os helpers de mídia das linhas", () => {
     "authorAvatarStyle",
     "authorAvatarEmptyStyle",
   ]) {
-    assert.doesNotMatch(pagina, new RegExp(`\\b${estilo}\\b`));
+    assert.doesNotMatch(
+      pagina,
+      new RegExp(`const ${estilo}: CSSProperties`),
+    );
   }
   assert.equal((pagina.match(/criarCapaStyle\(/g) || []).length, 2);
   assert.equal((pagina.match(/criarAvatarStyle\(/g) || []).length, 1);
@@ -81,9 +102,19 @@ test("Listas delega somente os helpers de mídia das linhas", () => {
   assert.match(pagina, /function criarAvatarComentarioDiarioListasStyle\(/);
   assert.match(
     pagina,
-    /\{!autor\.avatar\s*\? autor\.nome\.slice\(0, 1\)\.toLocaleUpperCase\("pt-BR"\)\s*: ""\}/,
+    /<ListasAuthorRow[\s\S]*?avatar=\{autor\.avatar\}[\s\S]*?avatarStyle=\{criarAvatarStyle\(autor\.avatar\)\}/,
   );
-  assert.equal((pagina.match(/aria-hidden="true"/g) || []).length >= 3, true);
+  assert.match(
+    linhaAutor,
+    /\{!avatar \? nome\.slice\(0, 1\)\.toLocaleUpperCase\("pt-BR"\) : ""\}/,
+  );
+  assert.equal(
+    [linhaPerfil, linhaObraPublica, linhaAutor].reduce(
+      (total, linha) => total + (linha.match(/aria-hidden="true"/g) || []).length,
+      0,
+    ) >= 3,
+    true,
+  );
   assert.doesNotMatch(utils, /\.trim\(/);
   assert.doesNotMatch(utils, /supabase|useState|useEffect/);
 });

@@ -51,3 +51,8 @@
 
 - Extraiu a apresentação do comentário, da thread e do sheet de comentários para componentes dedicados.
 - Manteve na página ordenação, permissões, estados de arraste e expansão, cálculos de respostas, refs, callbacks, mutações e toda interação com Supabase.
+
+## Fase 1105 — Linhas de obras e autores de Listas
+
+- Extraiu as linhas de obra do perfil, obra pública e autor, preservando na página cálculos, hrefs, estados e callbacks.
+- Extraiu o card expandido de anotação, mantendo na página permissões, interações, mutações de curtida, comentários e estado de spoiler.
