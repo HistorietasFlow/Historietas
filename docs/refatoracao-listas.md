@@ -52,6 +52,11 @@
 - Extraiu a apresentação do comentário, da thread e do sheet de comentários para componentes dedicados.
 - Manteve na página ordenação, permissões, estados de arraste e expansão, cálculos de respostas, refs, callbacks, mutações e toda interação com Supabase.
 
+## Fase 1106 — Utilitários locais de Listas
+
+- Extraiu parsing, validação, localStorage, coleções locais e normalizadores do Diário para módulos puros.
+- Manteve na página estados, hooks, carregadores e toda consulta ou mutação Supabase.
+
 ## Fase 1105 — Linhas de obras e autores de Listas
 
 - Extraiu as linhas de obra do perfil, obra pública e autor, preservando na página cálculos, hrefs, estados e callbacks.

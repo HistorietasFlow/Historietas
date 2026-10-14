@@ -38,6 +38,33 @@ import {
 import { listasPageCss } from "./lib/listas-page-css";
 import { criarAvatarStyle, criarCapaStyle } from "./lib/listas-row-media-utils";
 import {
+  colecaoTemObraListas,
+  carregarObrasLocaisListas,
+  obterIdentificadoresObraListas,
+  obterProgressoObraLocalListas,
+  removerObraDaColecaoListas,
+} from "./lib/listas-local-work-utils";
+import {
+  normalizarQuemPodeAvaliarDiarioListas,
+  normalizarQuemPodeComentarAnotacaoListas,
+  normalizarTipoDiarioListas,
+  normalizarVisibilidadeAnotacaoListas,
+  normalizarVisibilidadeComentariosAnotacaoListas,
+  obterTipoDiarioDoItemListas,
+} from "./lib/listas-diary-normalizer-utils";
+import {
+  carregarListaIdsListas,
+  criarLoginHrefListas,
+  salvarListaIdsListas,
+} from "./lib/listas-storage-utils";
+import {
+  idUsuarioValido,
+  obterMensagemErroListas,
+  pegarBooleanoListas,
+  pegarNumero,
+  pegarTexto,
+} from "./lib/listas-value-utils";
+import {
   normalizarCategoriaPerfil,
   normalizarModoLista,
   normalizarOrdenacao,
@@ -292,7 +319,6 @@ const CATEGORIAS_PERFIL: Array<{
   { valor: "historico", rotulo: "Histórico" },
 ];
 
-const OBRAS_STORAGE_KEY = "historietas-obras";
 const LIBRARY_FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
@@ -353,235 +379,15 @@ function criarInteracaoAnotacaoListasVazia(
 const CAMPOS_OBRAS =
   "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,capa_url,publicado,visualizacoes,slug,criada_em";
 
-function pegarTexto(valor: unknown, fallback = "") {
-  return typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
-}
 
-function pegarNumero(valor: unknown, fallback = 0) {
-  if (typeof valor === "number" && Number.isFinite(valor)) {
-    return valor;
-  }
 
-  if (typeof valor === "string" && valor.trim()) {
-    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
 
-    if (Number.isFinite(numero)) {
-      return numero;
-    }
-  }
 
-  return fallback;
-}
 
-function pegarBooleanoListas(valor: unknown, fallback = false) {
-  if (typeof valor === "boolean") {
-    return valor;
-  }
 
-  if (typeof valor === "number") {
-    return valor === 1;
-  }
 
-  if (typeof valor === "string") {
-    const normalizado = valor.trim().toLowerCase();
 
-    if (normalizado === "true" || normalizado === "1") {
-      return true;
-    }
 
-    if (normalizado === "false" || normalizado === "0") {
-      return false;
-    }
-  }
-
-  return fallback;
-}
-
-function idUsuarioValido(valor: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    valor.trim(),
-  );
-}
-
-function criarStorageKeyUsuarioListas(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function normalizarListaIdsListas(valor: unknown) {
-  return Array.isArray(valor)
-    ? valor.filter(
-        (id): id is string => typeof id === "string" && Boolean(id.trim()),
-      )
-    : [];
-}
-
-function carregarListaIdsListas(chave: string, userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return [] as string[];
-  }
-
-  try {
-    const chaveParaLer = criarStorageKeyUsuarioListas(chave, userIdLimpo);
-    const listaTexto = localStorage.getItem(chaveParaLer);
-    const lista = normalizarListaIdsListas(
-      listaTexto ? JSON.parse(listaTexto) : [],
-    );
-
-    return Array.from(new Set(lista));
-  } catch {
-    return [] as string[];
-  }
-}
-
-function carregarObrasLocaisListas(userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return [];
-  }
-
-  try {
-    const texto = localStorage.getItem(
-      criarStorageKeyUsuarioListas(OBRAS_STORAGE_KEY, userIdLimpo),
-    );
-    const valor = texto ? JSON.parse(texto) : [];
-
-    return Array.isArray(valor)
-      ? valor.filter(
-          (item): item is RegistroGenerico =>
-            Boolean(item) && typeof item === "object" && !Array.isArray(item),
-        )
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function obterProgressoObraLocalListas(registro: RegistroGenerico) {
-  const capitulos = Array.isArray(registro.capitulos)
-    ? registro.capitulos.filter(
-        (item): item is RegistroGenerico =>
-          Boolean(item) && typeof item === "object" && !Array.isArray(item),
-      )
-    : [];
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido === true);
-  const progressoCalculado = capitulos.length
-    ? Math.round((capitulosLidos.length / capitulos.length) * 100)
-    : 0;
-  const progressoInformado = pegarNumero(
-    registro.progressoLeitura ??
-      registro.progresso_leitura ??
-      registro.progresso,
-  );
-  const progresso = Math.max(
-    0,
-    Math.min(100, Math.round(Math.max(progressoCalculado, progressoInformado))),
-  );
-  const capituloMaisRecente = [...capitulosLidos].sort(
-    (a, b) =>
-      timestampData(
-        pegarTexto(b.lidoEm ?? b.lido_em ?? b.atualizado_em ?? b.criado_em),
-      ) -
-      timestampData(
-        pegarTexto(a.lidoEm ?? a.lido_em ?? a.atualizado_em ?? a.criado_em),
-      ),
-  )[0];
-
-  return {
-    progresso,
-    data:
-      pegarTexto(
-        registro.ultimaLeituraEm ??
-          registro.ultima_leitura_em ??
-          capituloMaisRecente?.lidoEm ??
-          capituloMaisRecente?.lido_em ??
-          capituloMaisRecente?.atualizado_em ??
-          capituloMaisRecente?.criado_em,
-      ) || pegarTexto(registro.criadaEm ?? registro.criada_em),
-    capituloId:
-      pegarTexto(
-        registro.ultimoCapituloLidoId ?? registro.ultimo_capitulo_lido_id,
-      ) || pegarTexto(capituloMaisRecente?.id),
-  };
-}
-
-function salvarListaIdsListas(
-  chave: string,
-  userId: string,
-  lista: string[],
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioListas(chave, userIdLimpo),
-      JSON.stringify(Array.from(new Set(normalizarListaIdsListas(lista)))),
-    );
-  } catch {
-    // O estado em memória continua funcionando caso o navegador bloqueie o storage.
-  }
-}
-
-function obterIdentificadoresObraListas(
-  obra: Pick<ObraLista, "id" | "slug" | "titulo">,
-) {
-  return Array.from(
-    new Set(
-      [
-        obra.id,
-        obra.slug,
-        criarSlugBase(obra.titulo),
-        normalizarTexto(obra.titulo),
-      ].filter(
-        (valor): valor is string =>
-          typeof valor === "string" && Boolean(valor.trim()),
-      ),
-    ),
-  );
-}
-
-function colecaoTemObraListas(
-  colecao: string[],
-  obra: Pick<ObraLista, "id" | "slug" | "titulo">,
-) {
-  const idsColecao = new Set(
-    colecao.filter((id): id is string => typeof id === "string"),
-  );
-
-  return obterIdentificadoresObraListas(obra).some((identificador) =>
-    idsColecao.has(identificador),
-  );
-}
-
-function removerObraDaColecaoListas(
-  colecao: string[],
-  obra: Pick<ObraLista, "id" | "slug" | "titulo">,
-) {
-  const identificadores = new Set(obterIdentificadoresObraListas(obra));
-
-  return colecao.filter((id) => !identificadores.has(id));
-}
-
-function criarLoginHrefListas() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/listas";
-  const destinoSeguro =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/listas";
-
-  return `/login?${new URLSearchParams({ redirectTo: destinoSeguro }).toString()}`;
-}
 
 async function sincronizarQueroLerListas(
   userId: string,
@@ -636,53 +442,9 @@ async function sincronizarQueroLerListas(
   }
 }
 
-function normalizarQuemPodeComentarAnotacaoListas(
-  valor: unknown,
-  fallback: QuemPodeComentarAnotacaoListas = "herdar",
-): QuemPodeComentarAnotacaoListas {
-  return valor === "todos" ||
-    valor === "seguidores" ||
-    valor === "ninguem" ||
-    valor === "herdar"
-    ? valor
-    : fallback;
-}
 
-function normalizarVisibilidadeComentariosAnotacaoListas(
-  valor: unknown,
-  fallback: VisibilidadeComentariosAnotacaoListas = "herdar",
-): VisibilidadeComentariosAnotacaoListas {
-  return valor === "publico" ||
-    valor === "seguidores" ||
-    valor === "somente_eu" ||
-    valor === "herdar"
-    ? valor
-    : fallback;
-}
 
-function normalizarQuemPodeAvaliarDiarioListas(
-  valor: unknown,
-): QuemPodeAvaliarDiarioListas {
-  return valor === "seguidores" || valor === "ninguem" || valor === "todos"
-    ? valor
-    : "todos";
-}
 
-function obterMensagemErroListas(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
-
-  if (error && typeof error === "object" && "message" in error) {
-    const mensagem = (error as { message?: unknown }).message;
-
-    if (typeof mensagem === "string" && mensagem.trim()) {
-      return mensagem.trim();
-    }
-  }
-
-  return fallback;
-}
 
 function normalizarAvaliacaoDiarioListas(
   valor: unknown,
@@ -1046,51 +808,8 @@ function registroPermitido(registro: RegistroGenerico, proprioPerfil: boolean) {
 }
 
 
-function normalizarVisibilidadeAnotacaoListas(
-  valor: unknown,
-  fallback: VisibilidadeAnotacaoListas = "privado",
-): VisibilidadeAnotacaoListas {
-  return valor === "publico" || valor === "parcial" || valor === "privado"
-    ? valor
-    : fallback;
-}
 
-function normalizarTipoDiarioListas(valor: unknown): TipoDiarioListas | "" {
-  return valor === "lendo" ||
-    valor === "quero_ler" ||
-    valor === "favorita" ||
-    valor === "concluida" ||
-    valor === "avaliacao" ||
-    valor === "review" ||
-    valor === "atividade"
-    ? valor
-    : "";
-}
 
-function obterTipoDiarioDoItemListas(
-  categoria: CategoriaPerfil,
-  item?: ItemObraLista | null,
-): TipoDiarioListas {
-  const categoriaEfetiva =
-    categoria === "tudo"
-      ? ([
-          "lendo",
-          "quero-ler",
-          "favoritas",
-          "concluidas",
-          "avaliacoes",
-          "historico",
-        ] as CategoriaPerfil[]).find((valor) => item?.categorias.includes(valor)) ||
-        "historico"
-      : categoria;
-
-  if (categoriaEfetiva === "lendo") return "lendo";
-  if (categoriaEfetiva === "quero-ler") return "quero_ler";
-  if (categoriaEfetiva === "favoritas") return "favorita";
-  if (categoriaEfetiva === "concluidas") return "concluida";
-  if (categoriaEfetiva === "avaliacoes") return "avaliacao";
-  return "atividade";
-}
 
 function criarChaveStorageAnotacoesListas(userId: string) {
   return `${DIARIO_ANOTACOES_STORAGE_KEY}:${userId.trim().toLowerCase()}`;

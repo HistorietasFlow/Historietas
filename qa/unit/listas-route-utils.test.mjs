@@ -108,8 +108,12 @@ test("Listas delega somente a normalizacao de parametros de rota", () => {
     assert.match(pagina, new RegExp(`type ${tipo} =`));
   }
 
-  assert.match(pagina, /function normalizarQuemPodeComentarAnotacaoListas\(/);
-  assert.match(pagina, /function normalizarVisibilidadeComentariosAnotacaoListas\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?normalizarQuemPodeComentarAnotacaoListas,[\s\S]*?normalizarVisibilidadeComentariosAnotacaoListas,[\s\S]*?\} from "\.\/lib\/listas-diary-normalizer-utils";/,
+  );
+  assert.doesNotMatch(pagina, /function normalizarQuemPodeComentarAnotacaoListas\(/);
+  assert.doesNotMatch(pagina, /function normalizarVisibilidadeComentariosAnotacaoListas\(/);
   assert.match(pagina, /const searchParams = useSearchParams\(\);/);
   assert.match(pagina, /useState/);
   assert.match(pagina, /useEffect/);
