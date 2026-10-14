@@ -20,6 +20,14 @@ const profileState = readFileSync(
   new URL("../../app/listas/lib/listas-profile-state-utils.ts", import.meta.url),
   "utf8",
 );
+const filterSort = readFileSync(
+  new URL("../../app/listas/lib/listas-filter-sort-utils.ts", import.meta.url),
+  "utf8",
+);
+const presentation = readFileSync(
+  new URL("../../app/listas/lib/listas-presentation-utils.ts", import.meta.url),
+  "utf8",
+);
 
 async function importarModulo(codigo) {
   const javascript = typescript.transpileModule(codigo, {
@@ -103,17 +111,28 @@ function criarItem(categoria, obra, extras = {}) {
 test("Listas delega itens, catálogo e textos puros sem mover Supabase", () => {
   for (const helper of [
     "obterHrefContinuarLeituraListas",
-    "dataUltimoCapitulo",
-    "pontuacaoPopularidadeObra",
     "ordenarObrasDaSecao",
     "ordenarRecomendacoes",
-    "tituloSecaoPublica",
-    "textoCategorias",
     "textoSecundarioItem",
   ]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
   }
+
+  for (const [source, helper] of [
+    [publicCatalog, "dataUltimoCapitulo"],
+    [publicCatalog, "pontuacaoPopularidadeObra"],
+    [profileText, "tituloSecaoPublica"],
+    [profileText, "textoCategorias"],
+  ]) {
+    assert.match(source, new RegExp(`export function ${helper}\\(`));
+  }
+
+  assert.match(filterSort, /import \{ textoCategorias \} from "\.\/listas-profile-text-utils";/);
+  assert.match(filterSort, /\bdataUltimoCapitulo\(/);
+  assert.match(filterSort, /\bpontuacaoPopularidadeObra\(/);
+  assert.match(presentation, /import \{ tituloSecaoPublica \} from "\.\/listas-profile-text-utils";/);
+  assert.match(presentation, /\btituloSecaoPublica\(/);
 
   for (const helper of [
     "criarItemPerfil",
@@ -133,7 +152,7 @@ test("Listas delega itens, catálogo e textos puros sem mover Supabase", () => {
     assert.match(source, new RegExp(`export function ${helper}\\(`));
   }
 
-  for (const source of [profileItems, publicCatalog, profileText, profileState]) {
+  for (const source of [profileItems, publicCatalog, profileText, profileState, filterSort, presentation]) {
     assert.doesNotMatch(source, /supabase|\.rpc\(/);
   }
 });
