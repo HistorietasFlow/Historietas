@@ -4,7 +4,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, TouchEvent } from "react";
 import { useListasActionMessage } from "./hooks/use-listas-action-message";
+import { useListasDiaryCommentsSheetLifecycle } from "./hooks/use-listas-diary-comments-sheet-lifecycle";
 import { useListasDesktopMode } from "./hooks/use-listas-desktop-mode";
+import { useListasRouteUiSync } from "./hooks/use-listas-route-ui-sync";
+import { useListasTargetWorkFocus } from "./hooks/use-listas-target-work-focus";
+import { useListasWorkMenuLifecycle } from "./hooks/use-listas-work-menu-lifecycle";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
@@ -488,37 +492,26 @@ function ListasUniversaisContent() {
   const isDesktop = useListasDesktopMode();
   const [obraDestacadaId, setObraDestacadaId] = useState("");
 
-  useEffect(() => {
-    setCategoria(categoriaUrl);
-  }, [categoriaUrl]);
+  useListasRouteUiSync({
+    categoriaUrl,
+    setCategoria,
+    categoria,
+    busca,
+    ordenacao,
+    modo,
+    secao,
+    genero,
+    setQuantidadeVisivel,
+  });
 
-  useEffect(() => {
-    setQuantidadeVisivel(40);
-  }, [categoria, busca, ordenacao, modo, secao, genero]);
-
-  useEffect(() => {
-    if (!obraMenuAberta) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.overflow;
-    const aoPressionarTecla = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setObraMenuAberta(null);
-        setItemPerfilMenuAberto(null);
-        setObraMenuNoQueroLer(false);
-        setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
-      }
-    };
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", aoPressionarTecla);
-
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      window.removeEventListener("keydown", aoPressionarTecla);
-    };
-  }, [obraMenuAberta]);
+  useListasWorkMenuLifecycle({
+    obraMenuAberta,
+    setObraMenuAberta,
+    setItemPerfilMenuAberto,
+    setObraMenuNoQueroLer,
+    setEditorAnotacao,
+    editorAnotacaoVazio: EDITOR_ANOTACAO_LISTAS_VAZIO,
+  });
 
   useEffect(() => {
     let cancelado = false;
@@ -731,28 +724,12 @@ function ListasUniversaisContent() {
     };
   }, [modo, origemPerfil, userIdUrl, secao, genero]);
 
-  useEffect(() => {
-    if (!comentariosDiarioItem) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.overflow;
-    const aoPressionarTecla = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setComentariosDiarioItem(null);
-        setComentariosDiarioExpandido(false);
-        setMenuOrdenacaoComentariosDiarioAberto(false);
-      }
-    };
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", aoPressionarTecla);
-
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      window.removeEventListener("keydown", aoPressionarTecla);
-    };
-  }, [comentariosDiarioItem]);
+  useListasDiaryCommentsSheetLifecycle({
+    comentariosDiarioItem,
+    setComentariosDiarioItem,
+    setComentariosDiarioExpandido,
+    setMenuOrdenacaoComentariosDiarioAberto,
+  });
 
   useEffect(() => {
     let cancelado = false;
@@ -801,40 +778,7 @@ function ListasUniversaisContent() {
     };
   }, [listasPerfil, modo, usuarioAtualId]);
 
-  useEffect(() => {
-    if (modo !== "perfil" || carregando || !obraAlvoId) {
-      return;
-    }
-
-    const obraEstaNaCategoriaAtual = listasPerfil[categoria].some(
-      (item) => item.obra.id === obraAlvoId,
-    );
-    const obraEstaEmTudo = listasPerfil.tudo.some(
-      (item) => item.obra.id === obraAlvoId,
-    );
-
-    if (!obraEstaNaCategoriaAtual && obraEstaEmTudo && categoria !== "tudo") {
-      const params = new URLSearchParams(queryAtual);
-      params.set("categoria", "tudo");
-      setCategoria("tudo");
-      router.replace(`/listas?${params.toString()}`, { scroll: false });
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      const elemento = document.getElementById(`lista-obra-${obraAlvoId}`);
-
-      if (!elemento) return;
-      setObraDestacadaId(obraAlvoId);
-      elemento.scrollIntoView({ behavior: "smooth", block: "center" });
-
-      window.setTimeout(() => {
-        setObraDestacadaId((atual) => (atual === obraAlvoId ? "" : atual));
-      }, 2400);
-    }, 180);
-
-    return () => window.clearTimeout(timer);
-  }, [
+  useListasTargetWorkFocus({
     obraAlvoId,
     carregando,
     categoria,
@@ -842,7 +786,9 @@ function ListasUniversaisContent() {
     modo,
     queryAtual,
     router,
-  ]);
+    setCategoria,
+    setObraDestacadaId,
+  });
 
   const itensPerfilFiltrados = useMemo(() => {
     const buscaNormalizada = normalizarTexto(busca);

@@ -84,3 +84,8 @@
 
 - Extraiu os carregadores de interações do Diário e a orquestração de leitura das listas do perfil.
 - Manteve na página estados, hooks, mutações e fluxos de inicialização; consultas, storage próprio, visibilidade e fallbacks permanecem nos carregadores dedicados.
+
+## Fase 1112 — Lifecycles de UI de Listas
+
+- Extraiu a sincronização de rota/paginação, locks dos overlays e foco da obra alvo para hooks dedicados.
+- Manteve na página estados, carregamento, renderização, handlers, mutações e todas as consultas Supabase.
