@@ -14,6 +14,12 @@ import useHomeDesktopMode from "./hooks/use-home-desktop-mode";
 import useHomeHeroCarousel from "./hooks/use-home-hero-carousel";
 import useHomePageTranslations from "./hooks/use-home-page-translations";
 import { themePageCss } from "./lib/home-page-css";
+import {
+  criarHrefLeituraCapituloHome,
+  criarHrefObraCatalogoHome,
+  criarHrefPerfilAutorHome,
+  criarLoginHrefHome,
+} from "./lib/home-route-utils";
 import type { HistorietasLanguage } from "../lib/i18n";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
@@ -354,61 +360,6 @@ function traduzirBioAutorHome(
   return idioma === "en"
     ? `Author of ${generoTraduzido} on Historietas.`
     : `Autor de ${generoTraduzido} en Historietas.`;
-}
-
-function criarLoginHrefHome() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/";
-  const destinoSeguro =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/";
-  const params = new URLSearchParams({
-    redirectTo: destinoSeguro,
-  });
-
-  return `/login?${params.toString()}`;
-}
-
-function criarHrefLeituraCapituloHome(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
-  capitulo: CapituloLocal,
-  numeroCapitulo: number
-) {
-  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  if (
-    obra.publicado &&
-    idObraSupabaseValido(obra.id) &&
-    slugSeguro &&
-    Number.isInteger(numeroCapitulo) &&
-    numeroCapitulo > 0
-  ) {
-    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
-  }
-
-  return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id
-  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
-}
-
-function criarHrefObraCatalogoHome(obra: Obra) {
-  const obraComLink = obra as Obra & { link?: string; slug?: string };
-  const linkObra = obraComLink.link?.trim();
-
-  if (linkObra) {
-    return linkObra;
-  }
-
-  if (!obra.disponivel) {
-    return "/explorar";
-  }
-
-  const slugObra = obraComLink.slug?.trim() || criarSlugBase(obra.titulo);
-
-  return `/obra/${slugObra}`;
 }
 
 function criarObraHeroLocalHome(obra: ObraLocal): Obra {
@@ -1152,25 +1103,6 @@ function criarBioAutorPadrao(generos: string[]) {
   const generoPrincipal = formatarGeneroHome(generos[0] || "histórias");
 
   return `Autor de ${generoPrincipal.toLowerCase()} na Historietas.`;
-}
-
-function criarHrefPerfilAutorHome(nomeAutor: string, autorId = "") {
-  const nomeAutorLimpo = nomeAutor.trim();
-  const autorIdLimpo = autorId.trim();
-  const parametros = new URLSearchParams();
-
-  if (nomeAutorLimpo) {
-    parametros.set("autor", nomeAutorLimpo);
-  }
-
-  if (autorIdLimpo) {
-    parametros.set("autorId", autorIdLimpo);
-    parametros.set("userId", autorIdLimpo);
-  }
-
-  const query = parametros.toString();
-
-  return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
 
 function obterValorTextoPerfilHome(...valores: Array<string | null | undefined>) {
