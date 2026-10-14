@@ -16,6 +16,10 @@ const profileText = readFileSync(
   new URL("../../app/listas/lib/listas-profile-text-utils.ts", import.meta.url),
   "utf8",
 );
+const profileState = readFileSync(
+  new URL("../../app/listas/lib/listas-profile-state-utils.ts", import.meta.url),
+  "utf8",
+);
 
 async function importarModulo(codigo) {
   const javascript = typescript.transpileModule(codigo, {
@@ -99,12 +103,6 @@ function criarItem(categoria, obra, extras = {}) {
 test("Listas delega itens, catálogo e textos puros sem mover Supabase", () => {
   for (const helper of [
     "obterHrefContinuarLeituraListas",
-    "criarItemPerfil",
-    "ordenarPorData",
-    "mesclarTudoPerfil",
-    "criarMapaObrasPorIdentificadorListas",
-    "encontrarObraColecaoLocalListas",
-    "mesclarItensLocaisCategoriaPerfil",
     "dataUltimoCapitulo",
     "pontuacaoPopularidadeObra",
     "ordenarObrasDaSecao",
@@ -117,6 +115,17 @@ test("Listas delega itens, catálogo e textos puros sem mover Supabase", () => {
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
   }
 
+  for (const helper of [
+    "criarItemPerfil",
+    "ordenarPorData",
+    "mesclarTudoPerfil",
+    "criarMapaObrasPorIdentificadorListas",
+    "encontrarObraColecaoLocalListas",
+    "mesclarItensLocaisCategoriaPerfil",
+  ]) {
+    assert.match(profileState, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
+  }
+
   for (const [source, helper] of [
     [profileItems, "normalizarIdentificadorColecaoListas"],
     [profileText, "rotuloCategoria"],
@@ -124,7 +133,7 @@ test("Listas delega itens, catálogo e textos puros sem mover Supabase", () => {
     assert.match(source, new RegExp(`export function ${helper}\\(`));
   }
 
-  for (const source of [profileItems, publicCatalog, profileText]) {
+  for (const source of [profileItems, publicCatalog, profileText, profileState]) {
     assert.doesNotMatch(source, /supabase|\.rpc\(/);
   }
 });

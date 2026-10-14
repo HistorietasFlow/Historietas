@@ -10,6 +10,7 @@ const formatters = readFileSync(new URL("../../app/listas/lib/listas-format-util
 const annotations = readFileSync(new URL("../../app/listas/lib/listas-diary-annotation-utils.ts", import.meta.url), "utf8");
 const ratings = readFileSync(new URL("../../app/listas/lib/listas-diary-rating-utils.ts", import.meta.url), "utf8");
 const comments = readFileSync(new URL("../../app/listas/lib/listas-diary-comment-utils.ts", import.meta.url), "utf8");
+const profileState = readFileSync(new URL("../../app/listas/lib/listas-profile-state-utils.ts", import.meta.url), "utf8");
 
 async function importModule(source) {
   const javascript = typescript.transpileModule(source, {
@@ -44,8 +45,6 @@ test("Listas delega somente o domínio puro do Diário", () => {
     "carregarAnotacoesLocaisListas",
     "salvarAnotacaoLocalListas",
     "removerAnotacaoLocalListas",
-    "montarMapaAnotacoesPorObraListas",
-    "aplicarAnotacoesAosItensListas",
     "normalizarAvaliacaoDiarioListas",
     "obterProximaNotaAvaliacaoListas",
     "calcularProximaAvaliacaoDiarioListas",
@@ -58,13 +57,20 @@ test("Listas delega somente o domínio puro do Diário", () => {
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(page, /import[\s\S]*?\bdataRegistro\b[\s\S]*?listas-diary-annotation-utils/);
+  for (const helper of [
+    "dataRegistro",
+    "montarMapaAnotacoesPorObraListas",
+    "aplicarAnotacoesAosItensListas",
+  ]) {
+    assert.match(profileState, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
+  }
   assert.doesNotMatch(page, /function dataRegistro\(/);
   assert.match(annotations, /export function criarChaveStorageAnotacoesListas\(/);
 
   for (const source of [annotations, ratings, comments]) {
     assert.doesNotMatch(source, /supabase|\.from\(|\.rpc\(/);
   }
+  assert.doesNotMatch(profileState, /supabase|\.rpc\(/);
 });
 
 test("anotações locais preservam chave por usuário, vazio, corrupção, substituição e remoção", () => {

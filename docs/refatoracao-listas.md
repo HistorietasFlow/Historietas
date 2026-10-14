@@ -71,3 +71,7 @@
 
 - Extraiu a montagem e mesclagem de itens do perfil, coleções locais, ordenação do catálogo e recomendações para módulos puros.
 - Extraiu os títulos, rótulos e textos secundários derivados, mantendo na página carregadores, estados, hooks, mutações e toda interação com Supabase.
+## Fase 1109 — Montagem pura das listas de perfil
+
+- Extraiu modelos e normalizadores de obras, perfis e visibilidade, além da montagem síncrona do estado após o carregamento dos dados.
+- Manteve na página consultas Supabase, resolução de capítulos, leituras de storage, carregadores assíncronos, estados, hooks e mutações.
