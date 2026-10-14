@@ -134,3 +134,8 @@
 
 - Extraiu as ações de curtida, resposta, ordenação, envio e remoção de comentários para um hook dedicado, mantendo estados e JSX na página.
 - Isolou somente os contratos Supabase de curtidas e comentários em persistência própria, preservando tabelas, payloads, filtros, seleções, fallbacks e mensagens.
+
+## Fase 1122 — Composição da obra do perfil
+
+- Extraiu a composição visual de `ListasProfileWorkItem` para `ListasProfileWorkRenderer`.
+- Preservou em `page.tsx` todas as derivações, permissões, interações, estado de anotação/spoiler e callbacks; somente o repasse visual de props foi delegado.
