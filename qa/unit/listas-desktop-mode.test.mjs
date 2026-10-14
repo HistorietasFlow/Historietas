@@ -55,8 +55,14 @@ test("Listas delega apenas o modo desktop e preserva consumidores responsivos", 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 11);
-  assert.match(pagina, /function iniciarArrasteComentariosDiario[\s\S]*?if \(isDesktop\)/);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 8);
+  assert.match(
+    readFileSync(
+      new URL("../../app/listas/hooks/use-listas-diary-comments-controls.ts", import.meta.url),
+      "utf8",
+    ),
+    /function iniciarArrasteComentariosDiario[\s\S]*?if \(isDesktop\)/,
+  );
   assert.match(
     pagina,
     /const abasCategoriasPerfilAtualStyle = isDesktop \? desktopTabsStyle : tabsStyle;/,
@@ -68,5 +74,5 @@ test("Listas delega apenas o modo desktop e preserva consumidores responsivos", 
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /async function salvarAnotacaoListas\(\)/);
   assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
-  assert.match(pagina, /<ListasDiaryCommentsSheet[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(pagina, /<ListasDiaryCommentsPanel[\s\S]*?isDesktop=\{isDesktop\}/);
 });

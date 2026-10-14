@@ -15,21 +15,19 @@ const sheet = await readFile(
   "app/listas/components/listas-diary-comments-sheet.tsx",
   "utf8",
 );
+const painel = await readFile(
+  "app/listas/components/listas-diary-comments-panel.tsx",
+  "utf8",
+);
+const controles = await readFile(
+  "app/listas/hooks/use-listas-diary-comments-controls.ts",
+  "utf8",
+);
 
 test("Listas delega a apresentação do sheet de comentários do Diário", () => {
-  for (const componente of [
-    "ListasDiaryComment",
-    "ListasDiaryCommentThread",
-    "ListasDiaryCommentsSheet",
-  ]) {
-    assert.match(
-      pagina,
-      new RegExp(
-        `import \\{\\s*${componente}[\\s\\S]*?\\} from "\\.\\/components\\/`,
-      ),
-    );
-    assert.match(pagina, new RegExp(`<${componente}\\b`));
-  }
+  assert.match(pagina, /import \{ ListasDiaryCommentsPanel \} from "\.\/components\/listas-diary-comments-panel"/);
+  assert.match(pagina, /<ListasDiaryCommentsPanel\b/);
+  assert.match(painel, /<ListasDiaryCommentsSheet\b/);
 
   assert.doesNotMatch(pagina, /createPortal\(/);
   assert.doesNotMatch(pagina, /<article\s+key=\{comentario\.id\}/);
@@ -40,14 +38,7 @@ test("página mantém domínio, cálculos, estados, refs e mutações dos coment
     "comentariosDiarioItem",
     "interacoesAnotacoes",
     "obterPermissoesAnotacaoListas",
-    "ordenarComentariosRaizDiarioListas",
-    "obterRespostasComentarioDiarioListas",
     "respostasVisiveisComentariosDiario",
-    "comentariosSheetRef",
-    "iniciarArrasteComentariosDiario",
-    "moverArrasteComentariosDiario",
-    "finalizarArrasteComentariosDiario",
-    "alternarExpansaoComentariosDiario",
     "DIARIO_COMENTARIO_MAX_LENGTH",
     "iniciarRespostaComentarioAnotacaoListas",
     "removerComentarioAnotacaoListas",
@@ -55,13 +46,17 @@ test("página mantém domínio, cálculos, estados, refs e mutações dos coment
     "alternarCurtidaComentarioAnotacaoListas",
     "alterarOrdenacaoComentariosAnotacaoListas",
     "atualizarComentarioAnotacaoListas",
-    "inserirNoComentarioDiario",
     "enviarComentarioAnotacaoListas",
   ]) {
     assert.match(pagina, new RegExp(`\\b${contrato}\\b`));
   }
 
-  assert.match(pagina, /respostas\.length,\s*\(atuais\[comentario\.id\] \|\| 0\) \+ 5/);
+  assert.match(painel, /respostas\.length, \(atuais\[comentario\.id\] \|\| 0\) \+ 5/);
+  assert.match(controles, /"Os comentários desta anotação não estão disponíveis\."/);
+  assert.match(controles, /translate3d\(0, \$\{deslocamento\}px, 0\)/);
+  assert.match(controles, /\}, 350\)/);
+  assert.doesNotMatch(painel, /supabase/);
+  assert.doesNotMatch(controles, /supabase/);
 });
 
 test("comentário preserva perfil, ações, denúncia, curtida e contador", () => {

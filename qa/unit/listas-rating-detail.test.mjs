@@ -110,7 +110,13 @@ test("Listas delega o detalhe somente ao ramo de avaliações", () => {
     /categoriaAtual === "avaliacoes"\s*\? <ListasRatingDetail nota=\{item\.nota\} data=\{item\.data\} \/>\s*: categoriaAtual === "tudo"\s*\? formatarLeituraMesAno\(item\.ultimaLeituraEm \|\| ""\)\s*: textoSecundarioItem\(item, categoriaAtual\)/,
   );
   assert.match(pagina, /function renderizarItemObra\(/);
-  assert.match(pagina, /formatarNotaListas\(item\.nota\)/);
+  assert.match(
+    readFileSync(
+      new URL("../../app/listas/components/listas-profile-work-item.tsx", import.meta.url),
+      "utf8",
+    ),
+    /formatarNotaListas\(nota\)/,
+  );
   assert.match(pagina, /supabase/);
   assert.match(pagina, /useState/);
   assert.match(pageDataHook, /useEffect/);
