@@ -15,11 +15,16 @@ const workItem = await readFile(
   "app/listas/components/listas-profile-work-item.tsx",
   "utf8",
 );
+const workRenderer = await readFile(
+  "app/listas/components/listas-profile-work-renderer.tsx",
+  "utf8",
+);
 
 test("Listas delega os controles e as apresentações do Diário sem persistência", () => {
   assert.match(page, /useListasDiaryCommentsControls\(/);
   assert.match(page, /<ListasDiaryCommentsPanel\b/);
-  assert.match(page, /<ListasProfileWorkItem\b/);
+  assert.match(page, /<ListasProfileWorkRenderer\b/);
+  assert.match(workRenderer, /<ListasProfileWorkItem \{\.\.\.props\} \/>/);
   assert.match(controls, /event\.touches\[0\]\?\.clientY/);
   assert.match(controls, /limiteSuperior = comentariosDiarioExpandido \? -46 : -58/);
   assert.match(controls, /limiteInferior = comentariosDiarioExpandido \? 112 : 132/);
@@ -32,8 +37,8 @@ test("Listas delega os controles e as apresentações do Diário sem persistênc
   assert.match(panel, /Math\.min\(5, respostas\.length\)/);
   assert.match(panel, /key=\{comentario\.id\}/);
   assert.match(page, /historietas-list-row-highlight/);
-  assert.match(page, /<ListasProfileWorkItem\s+key=\{item\.chave\}/);
-  for (const source of [controls, panel, workItem]) {
+  assert.match(page, /<ListasProfileWorkRenderer\s+key=\{item\.chave\}/);
+  for (const source of [controls, panel, workItem, workRenderer]) {
     assert.doesNotMatch(source, /supabase|\.from\(|\.rpc\(|\.insert\(|\.update\(|\.delete\(/);
   }
 });
