@@ -46,3 +46,8 @@
 
 - Extraiu `ListasWorkActionSheet` e `ListasAnnotationEditor`, mantendo na página estados, cálculos, callbacks e mutações de obra e anotação.
 - Extraiu `ListasDiaryReportModal`, preservando o alvo, o fechamento e a mensagem de sucesso controlados pela página.
+
+## Fase 1104 — Sheet de comentários do Diário
+
+- Extraiu a apresentação do comentário, da thread e do sheet de comentários para componentes dedicados.
+- Manteve na página ordenação, permissões, estados de arraste e expansão, cálculos de respostas, refs, callbacks, mutações e toda interação com Supabase.
