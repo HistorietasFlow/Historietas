@@ -525,39 +525,7 @@ function ListasUniversaisContent() {
     usuarioAtualId,
   });
 
-  const perfilEhProprio = Boolean(
-    modo === "perfil" &&
-      usuarioAtualId &&
-      perfil?.userId &&
-      usuarioAtualId === perfil.userId,
-  );
-
-  const {
-    alternarCurtidaAnotacaoListas,
-    alternarCurtidaComentarioAnotacaoListas,
-    alterarOrdenacaoComentariosAnotacaoListas,
-    atualizarComentarioAnotacaoListas,
-    cancelarRespostaComentarioAnotacaoListas,
-    enviarComentarioAnotacaoListas,
-    iniciarRespostaComentarioAnotacaoListas,
-    removerComentarioAnotacaoListas,
-  } = useListasDiaryInteractionActions({
-    comentarioCurtindoId,
-    diarioComentarioMaxLength: DIARIO_COMENTARIO_MAX_LENGTH,
-    interacoesAnotacoes,
-    perfilEhProprio,
-    preferenciasPerfil,
-    relacionamentoPerfil,
-    router,
-    setComentarioCurtindoId,
-    setComentarioRemovendoId,
-    setInteracoesAnotacoes,
-    setMensagemAcao,
-    setRespostasVisiveisComentariosDiario,
-    usuarioAtualId,
-    usuarioAtualPerfil,
-  });
-
+  /* eslint-disable react-hooks/preserve-manual-memoization -- Os três useMemo abaixo são contratos existentes; o hook de interações altera apenas estado do Diário. */
   const itensPerfilFiltrados = useMemo(
     () =>
       filtrarOrdenarItensPerfilListas(
@@ -583,6 +551,8 @@ function ListasUniversaisContent() {
     () => filtrarOrdenarAutoresListas(autores, busca, ordenacao),
     [autores, busca, ordenacao],
   );
+
+  /* eslint-enable react-hooks/preserve-manual-memoization */
 
   const totalResultados = calcularTotalResultadosListas({
     modo,
@@ -628,6 +598,13 @@ function ListasUniversaisContent() {
     router.replace(`/listas?${params.toString()}`, { scroll: false });
   }
 
+  const perfilEhProprio = Boolean(
+    modo === "perfil" &&
+      usuarioAtualId &&
+      perfil?.userId &&
+      usuarioAtualId === perfil.userId,
+  );
+
   const {
     abrirEditorAnotacaoListas,
     removerAnotacaoListas,
@@ -650,6 +627,32 @@ function ListasUniversaisContent() {
     setListasPerfil,
     setMensagemAcao,
     usuarioAtualId,
+  });
+
+  const {
+    alternarCurtidaAnotacaoListas,
+    alternarCurtidaComentarioAnotacaoListas,
+    alterarOrdenacaoComentariosAnotacaoListas,
+    atualizarComentarioAnotacaoListas,
+    cancelarRespostaComentarioAnotacaoListas,
+    enviarComentarioAnotacaoListas,
+    iniciarRespostaComentarioAnotacaoListas,
+    removerComentarioAnotacaoListas,
+  } = useListasDiaryInteractionActions({
+    comentarioCurtindoId,
+    diarioComentarioMaxLength: DIARIO_COMENTARIO_MAX_LENGTH,
+    interacoesAnotacoes,
+    perfilEhProprio,
+    preferenciasPerfil,
+    relacionamentoPerfil,
+    router,
+    setComentarioCurtindoId,
+    setComentarioRemovendoId,
+    setInteracoesAnotacoes,
+    setMensagemAcao,
+    setRespostasVisiveisComentariosDiario,
+    usuarioAtualId,
+    usuarioAtualPerfil,
   });
 
   async function salvarAvaliacaoDiarioPerfil(novaNota: number) {
