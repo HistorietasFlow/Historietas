@@ -165,7 +165,7 @@ test("Home mantém apenas a fronteira do bridge de tradução", () => {
   assert.match(metadata, /export function traduzirClassificacaoHome\(/);
   assert.match(metadata, /export function traduzirBioAutorHome\(/);
   assert.match(
-    pagina,
-    /import type \{ HistorietasLanguage \} from "\.\.\/lib\/i18n";/,
+    metadata,
+    /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/lib\/i18n";/,
   );
 });
