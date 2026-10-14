@@ -23,6 +23,13 @@ const annotationActions = readFileSync(
   ),
   "utf8",
 );
+const diaryProfileActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-profile-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importModule(source) {
   const javascript = typescript.transpileModule(source, {
@@ -54,13 +61,18 @@ const commentUtils = await importModule(
 
 test("Listas delega somente o domínio puro do Diário", () => {
   for (const helper of [
-    "normalizarAvaliacaoDiarioListas",
     "obterProximaNotaAvaliacaoListas",
-    "calcularProximaAvaliacaoDiarioListas",
     "obterPreenchimentoEstrelaListas",
     "criarInteracaoAnotacaoListasVazia",
   ]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
+    assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
+  }
+  for (const helper of [
+    "normalizarAvaliacaoDiarioListas",
+    "calcularProximaAvaliacaoDiarioListas",
+  ]) {
+    assert.match(diaryProfileActions, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
   }
   for (const helper of [
