@@ -14,6 +14,7 @@ import { useListasWorkMenuLifecycle } from "./hooks/use-listas-work-menu-lifecyc
 import { useListasWorkMenuActions } from "./hooks/use-listas-work-menu-actions";
 import { useListasDiaryAnnotationActions } from "./hooks/use-listas-diary-annotation-actions";
 import { useListasDiaryInteractionActions } from "./hooks/use-listas-diary-interaction-actions";
+import { useListasDiaryProfileActions } from "./hooks/use-listas-diary-profile-actions";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
@@ -137,16 +138,12 @@ import {
 import { obterPermissoesAnotacaoListas } from "./lib/listas-diary-annotation-permissions-utils";
 import {
   AVALIACAO_DIARIO_LISTAS_VAZIA,
-  calcularProximaAvaliacaoDiarioListas,
-  normalizarAvaliacaoDiarioListas,
   obterPreenchimentoEstrelaListas,
   obterProximaNotaAvaliacaoListas,
   type AvaliacaoDiarioListasEstado,
 } from "./lib/listas-diary-rating-utils";
-import { criarLoginHrefListas } from "./lib/listas-storage-utils";
 import {
   idUsuarioValido,
-  obterMensagemErroListas,
   pegarTexto,
 } from "./lib/listas-value-utils";
 import {
@@ -155,7 +152,6 @@ import {
   normalizarOrdenacao,
   normalizarOrigemPerfil,
 } from "./lib/listas-route-utils";
-import { supabase } from "../../lib/supabase/client";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -655,104 +651,6 @@ function ListasUniversaisContent() {
     usuarioAtualPerfil,
   });
 
-  async function salvarAvaliacaoDiarioPerfil(novaNota: number) {
-    const perfilUserId = perfil?.userId.trim() || "";
-
-    if (!perfilUserId || avaliacaoDiario.salvando || perfilEhProprio) {
-      return;
-    }
-
-    if (!usuarioAtualId) {
-      router.push(criarLoginHrefListas());
-      return;
-    }
-
-    if (!avaliacaoDiario.visivel || !avaliacaoDiario.podeAvaliar) {
-      return;
-    }
-
-    const nota =
-      novaNota <= 0
-        ? 0
-        : Math.max(0.5, Math.min(5, Math.round(novaNota * 2) / 2));
-    const avaliacaoAnterior = avaliacaoDiario;
-    const avaliacaoOtimista = calcularProximaAvaliacaoDiarioListas(
-      avaliacaoDiario,
-      nota,
-    );
-
-    setAvaliacaoDiario(avaliacaoOtimista);
-    setMensagemAcao("");
-
-    try {
-      const nomeRpc =
-        nota > 0 ? "salvar_avaliacao_diario" : "remover_avaliacao_diario";
-      const parametros =
-        nota > 0
-          ? { p_diario_user_id: perfilUserId, p_nota: nota }
-          : { p_diario_user_id: perfilUserId };
-      const { data, error } = await supabase.rpc(nomeRpc, parametros);
-
-      if (error) {
-        throw error;
-      }
-
-      if (data && typeof data === "object") {
-        setAvaliacaoDiario((atual) =>
-          normalizarAvaliacaoDiarioListas(data, atual),
-        );
-      } else {
-        const avaliacaoAtualizada = await carregarAvaliacaoDiarioListas(
-          perfilUserId,
-        );
-        setAvaliacaoDiario(avaliacaoAtualizada);
-      }
-    } catch (error) {
-      setAvaliacaoDiario({
-        ...avaliacaoAnterior,
-        salvando: false,
-        erro: obterMensagemErroListas(
-          error,
-          "Não foi possível salvar a Avaliação do Diário.",
-        ),
-      });
-    }
-  }
-
-  function abrirDenunciaDiario(
-    tipo: AlvoDenunciaDiarioListas["tipo"],
-    id: string,
-    titulo: string,
-    autorId: string,
-  ) {
-    const alvoId = id.trim();
-    const autorIdLimpo = autorId.trim();
-
-    if (!alvoId || !idUsuarioValido(alvoId)) {
-      setMensagemAcao("Não foi possível identificar este conteúdo.");
-      return;
-    }
-
-    if (
-      autorIdLimpo &&
-      usuarioAtualId.trim() &&
-      autorIdLimpo === usuarioAtualId.trim()
-    ) {
-      setMensagemAcao("Você não pode denunciar seu próprio conteúdo.");
-      return;
-    }
-
-    if (tipo === "comentario_diario") {
-      fecharComentariosDiario();
-    }
-
-    setAlvoDenunciaDiario({
-      tipo,
-      id: alvoId,
-      titulo: titulo.trim() || "Conteúdo do Diário",
-    });
-  }
-
 
   const {
     abrirComentariosDiario,
@@ -783,6 +681,20 @@ function ListasUniversaisContent() {
     setRespostasVisiveisComentariosDiario,
     atualizarComentario: atualizarComentarioAnotacaoListas,
   });
+
+  const { abrirDenunciaDiario, salvarAvaliacaoDiarioPerfil } =
+    useListasDiaryProfileActions({
+      avaliacaoDiario,
+      carregarAvaliacaoDiarioListas,
+      fecharComentariosDiario,
+      perfil,
+      perfilEhProprio,
+      router,
+      setAlvoDenunciaDiario,
+      setAvaliacaoDiario,
+      setMensagemAcao,
+      usuarioAtualId,
+    });
 
   function renderizarItemObra(
     item: ItemObraLista,

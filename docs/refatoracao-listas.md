@@ -120,6 +120,11 @@
 - Extraiu os contratos de escrita e remoção de `diario_anotacoes` e as ações de edição de anotações para módulos dedicados.
 - Preservou estados na página, storage local, normalização, limpeza de duplicadas e todos os contratos Supabase existentes.
 
+## Fase 1120 — Avaliação e denúncia do Diário
+
+- Extraiu as ações de avaliação e denúncia para um hook dedicado, mantendo estados e JSX na página.
+- Isolou exclusivamente os RPCs de salvar e remover avaliação, preservando nomes, parâmetros, atualização otimista, recarga e mensagens.
+
 ## Fase 1119 — Interações e comentários do Diário
 
 - Extraiu as ações de curtida, resposta, ordenação, envio e remoção de comentários para um hook dedicado, mantendo estados e JSX na página.
