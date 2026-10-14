@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, TouchEvent } from "react";
-import { createPortal } from "react-dom";
 import { useListasActionMessage } from "./hooks/use-listas-action-message";
 import { useListasDesktopMode } from "./hooks/use-listas-desktop-mode";
 import ListasRatingDetail from "./components/listas-rating-detail";
@@ -13,6 +12,18 @@ import { ListasProfileCategoryControls } from "./components/listas-profile-categ
 import { ListasResultsSection } from "./components/listas-results-section";
 import { ListasDiaryReportModal } from "./components/listas-diary-report-modal";
 import { ListasWorkActionSheet } from "./components/listas-work-action-sheet";
+import {
+  ListasDiaryComment,
+  type ListasDiaryCommentStyles,
+} from "./components/listas-diary-comment";
+import {
+  ListasDiaryCommentThread,
+  type ListasDiaryCommentThreadStyles,
+} from "./components/listas-diary-comment-thread";
+import {
+  ListasDiaryCommentsSheet,
+  type ListasDiaryCommentsSheetStyles,
+} from "./components/listas-diary-comments-sheet";
 import {
   compactarNumero,
   formatarDataCurta,
@@ -4588,6 +4599,65 @@ function ListasUniversaisContent() {
       interacao.ordenacaoComentarios,
     );
 
+    const commentStyles: ListasDiaryCommentStyles = {
+      actionsRow: commentActionsRowStyle,
+      authorLink: commentAuthorLinkStyle,
+      content: commentContentStyle,
+      heartIcon: commentHeartIconStyle,
+      item: commentItemStyle,
+      likeButton: commentLikeButtonStyle,
+      likeCount: commentLikeCountStyle,
+      likeWrap: commentLikeWrapStyle,
+      removeButton: commentRemoveButtonStyle,
+      replyButton: commentReplyButtonStyle,
+      replyItem: commentReplyItemStyle,
+      reportButton: commentReportButtonStyle,
+      text: commentTextStyle,
+      time: commentTimeStyle,
+      topLine: commentTopLineStyle,
+    };
+    const threadStyles: ListasDiaryCommentThreadStyles = {
+      controls: commentRepliesControlsStyle,
+      hideButton: commentRepliesHideButtonStyle,
+      line: commentRepliesLineStyle,
+      repliesList: commentRepliesListStyle,
+      thread: commentThreadStyle,
+      toggle: commentRepliesToggleStyle,
+    };
+    const sheetStyles: ListasDiaryCommentsSheetStyles = {
+      backdrop: commentsSheetBackdropStyle,
+      compact: commentsSheetCompactStyle,
+      desktop: desktopCommentsSheetStyle,
+      empty: emptyCommentsStyle,
+      error: commentsSheetErrorStyle,
+      expanded: commentsSheetExpandedStyle,
+      form: commentsSheetFormStyle,
+      handle: commentsSheetHandleStyle,
+      handleWrap: commentsSheetHandleWrapStyle,
+      header: commentsSheetHeaderStyle,
+      headerSpacer: commentsSheetHeaderSpacerStyle,
+      input: commentsSheetInputStyle,
+      inputBox: commentsInputBoxStyle,
+      inputIconButton: commentsInputIconButtonStyle,
+      list: commentsSheetListStyle,
+      loading: commentsLoadingStyle,
+      overlay: commentsSheetOverlayStyle,
+      panel: commentsSheetStyle,
+      quickReactionButton: commentsQuickReactionButtonStyle,
+      quickReactions: commentsQuickReactionsStyle,
+      replyingBanner: commentsReplyingBannerStyle,
+      replyingCancel: commentsReplyingCancelStyle,
+      send: commentsSheetSendStyle,
+      sortMenu: commentsSortMenuStyle,
+      sortMenuDivider: commentsSortMenuDividerStyle,
+      sortMenuItem: commentsSortMenuItemStyle,
+      sortMenuItemActive: commentsSortMenuItemActiveStyle,
+      sortMenuTrigger: commentsSortMenuTriggerStyle,
+      sortMenuWrap: commentsSortMenuWrapStyle,
+      title: commentsSheetTitleStyle,
+      tools: commentsToolsStyle,
+    };
+
     function renderizarComentarioSheet(
       comentario: ComentarioAnotacaoListas,
       resposta = false,
@@ -4602,503 +4672,194 @@ function ListasUniversaisContent() {
         : "/perfil-autor";
       const carregandoCurtida = comentarioCurtindoId === comentario.id;
       const removendoComentario = comentarioRemovendoId === comentario.id;
-      const avatarStyle = resposta
+      const avatarBaseStyle = resposta
         ? commentReplyAvatarLinkStyle
         : commentAvatarLinkStyle;
 
       return (
-        <article
+        <ListasDiaryComment
           key={comentario.id}
-          style={resposta ? commentReplyItemStyle : commentItemStyle}
-        >
-          <Link
-            href={hrefPerfil}
-            aria-label={`Abrir perfil de ${comentario.autorNome}`}
-            style={criarAvatarComentarioDiarioListasStyle(
-              avatarStyle,
-              comentario.autorAvatar,
-            )}
-          >
-            {!comentario.autorAvatar &&
-              (comentario.autorNome.slice(0, 1).toUpperCase() || "U")}
-          </Link>
-
-          <div style={commentContentStyle}>
-            <div style={commentTopLineStyle}>
-              <Link href={hrefPerfil} style={commentAuthorLinkStyle}>
-                <span data-historietas-i18n-ignore="true">
-                  {comentario.autorNome}
-                </span>
-              </Link>
-              <span style={commentTimeStyle}>
-                {formatarDataCurta(comentario.criadoEm)}
-              </span>
-            </div>
-
-            <p data-historietas-user-content="true" style={commentTextStyle}>
-              {comentario.texto}
-            </p>
-
-            <div style={commentActionsRowStyle}>
-              <button
-                type="button"
-                onClick={() =>
-                  iniciarRespostaComentarioAnotacaoListas(
-                    anotacaoId,
-                    comentario,
-                  )
-                }
-                disabled={!permissoes.podeComentar}
-                style={{
-                  ...commentReplyButtonStyle,
-                  opacity: permissoes.podeComentar ? 1 : 0.52,
-                  cursor: permissoes.podeComentar
-                    ? "pointer"
-                    : "not-allowed",
-                }}
-              >
-                Responder
-              </button>
-
-              {comentarioEhProprio ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    void removerComentarioAnotacaoListas(itemSelecionado, comentario)
-                  }
-                  disabled={removendoComentario}
-                  style={{
-                    ...commentRemoveButtonStyle,
-                    opacity: removendoComentario ? 0.58 : 1,
-                    cursor: removendoComentario ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {removendoComentario ? "Removendo..." : "Remover"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() =>
-                    abrirDenunciaDiario(
-                      "comentario_diario",
-                      comentario.id,
-                      `Comentário de ${comentario.autorNome} em ${itemSelecionado.obra.titulo}`,
-                      comentario.userId,
-                    )
-                  }
-                  style={commentReportButtonStyle}
-                >
-                  Denunciar
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div style={commentLikeWrapStyle}>
-            <button
-              type="button"
-              aria-pressed={comentarioCurtiu}
-              aria-label={`${
-                comentarioCurtiu
-                  ? "Remover curtida do comentário"
-                  : "Curtir comentário"
-              }. ${comentario.curtidas.length} ${
-                comentario.curtidas.length === 1 ? "curtida" : "curtidas"
-              }`}
-              onClick={() =>
-                void alternarCurtidaComentarioAnotacaoListas(
-                  anotacaoId,
-                  comentario,
-                )
-              }
-              disabled={carregandoCurtida}
-              style={{
-                ...commentLikeButtonStyle,
-                opacity: carregandoCurtida ? 0.58 : 1,
-                cursor: carregandoCurtida ? "not-allowed" : "pointer",
-              }}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                style={{
-                  ...commentHeartIconStyle,
-                  animation: comentarioCurtiu
-                    ? "historietas-list-heart-pop 260ms ease-out"
-                    : "none",
-                }}
-              >
-                <path
-                  d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                  fill={comentarioCurtiu ? "#EF4444" : "none"}
-                  stroke={comentarioCurtiu ? "#EF4444" : "#FFFFFF"}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <span style={commentLikeCountStyle}>
-              {comentario.curtidas.length}
-            </span>
-          </div>
-        </article>
+          avatarContent={
+            !comentario.autorAvatar &&
+            (comentario.autorNome.slice(0, 1).toUpperCase() || "U")
+          }
+          avatarStyle={criarAvatarComentarioDiarioListasStyle(
+            avatarBaseStyle,
+            comentario.autorAvatar,
+          )}
+          carregandoCurtida={carregandoCurtida}
+          comentario={comentario}
+          comentarioCurtiu={comentarioCurtiu}
+          comentarioEhProprio={comentarioEhProprio}
+          formatarData={formatarDataCurta}
+          hrefPerfil={hrefPerfil}
+          onLike={() =>
+            void alternarCurtidaComentarioAnotacaoListas(
+              anotacaoId,
+              comentario,
+            )
+          }
+          onRemove={() =>
+            void removerComentarioAnotacaoListas(itemSelecionado, comentario)
+          }
+          onReply={() =>
+            iniciarRespostaComentarioAnotacaoListas(anotacaoId, comentario)
+          }
+          onReport={() =>
+            abrirDenunciaDiario(
+              "comentario_diario",
+              comentario.id,
+              `Comentário de ${comentario.autorNome} em ${itemSelecionado.obra.titulo}`,
+              comentario.userId,
+            )
+          }
+          podeResponder={permissoes.podeComentar}
+          removendoComentario={removendoComentario}
+          resposta={resposta}
+          styles={commentStyles}
+        />
       );
     }
 
-    return createPortal(
-      <section style={commentsSheetOverlayStyle} aria-label="Comentários">
-        <button
-          type="button"
-          aria-label="Fechar comentários"
-          onClick={fecharComentariosDiario}
-          style={commentsSheetBackdropStyle}
-        />
+    function renderizarThreadComentarioSheet(
+      comentario: ComentarioAnotacaoListas,
+    ) {
+      const respostas = obterRespostasComentarioDiarioListas(
+        interacao.comentarios,
+        comentario.id,
+      );
+      const quantidadeVisivel = Math.min(
+        respostas.length,
+        respostasVisiveisComentariosDiario[comentario.id] || 0,
+      );
+      const respostasVisiveis = respostas.slice(0, quantidadeVisivel);
+      const respostasOcultas = Math.max(
+        0,
+        respostas.length - quantidadeVisivel,
+      );
+      const respostasExpandidas = quantidadeVisivel > 0;
 
-        <article
-          ref={comentariosSheetRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Comentários de ${itemSelecionado.obra.titulo}`}
-          style={
-            isDesktop
-              ? desktopCommentsSheetStyle
-              : {
-                  ...commentsSheetStyle,
-                  ...(comentariosDiarioExpandido
-                    ? commentsSheetExpandedStyle
-                    : commentsSheetCompactStyle),
-                }
+      return (
+        <ListasDiaryCommentThread
+          key={comentario.id}
+          comentario={renderizarComentarioSheet(comentario)}
+          onCollapseReplies={() =>
+            setRespostasVisiveisComentariosDiario((atuais) => ({
+              ...atuais,
+              [comentario.id]: 0,
+            }))
           }
-        >
+          onExpandReplies={() =>
+            setRespostasVisiveisComentariosDiario((atuais) => ({
+              ...atuais,
+              [comentario.id]: Math.min(5, respostas.length),
+            }))
+          }
+          onShowMoreReplies={() =>
+            setRespostasVisiveisComentariosDiario((atuais) => ({
+              ...atuais,
+              [comentario.id]: Math.min(
+                respostas.length,
+                (atuais[comentario.id] || 0) + 5,
+              ),
+            }))
+          }
+          quantidadeRespostas={respostas.length}
+          quantidadeRespostasOcultas={respostasOcultas}
+          respostas={respostasVisiveis.map((resposta) =>
+            renderizarComentarioSheet(resposta, true),
+          )}
+          respostasExpandidas={respostasExpandidas}
+          styles={threadStyles}
+        />
+      );
+    }
+
+    return (
+      <ListasDiaryCommentsSheet
+        ariaLabelTextarea={
+          permissoes.podeComentar
+            ? interacao.respondendoComentarioId
+              ? "Adicionar resposta"
+              : "Adicionar comentário"
+            : "Comentários limitados pelo dono do Diário"
+        }
+        avatar={
           <div
-            data-comments-sheet-handle="true"
-            style={commentsSheetHandleWrapStyle}
-            onClick={alternarExpansaoComentariosDiario}
-            onTouchStart={iniciarArrasteComentariosDiario}
-            onTouchMove={moverArrasteComentariosDiario}
-            onTouchEnd={finalizarArrasteComentariosDiario}
-            onTouchCancel={finalizarArrasteComentariosDiario}
-            role="button"
-            tabIndex={0}
-            aria-label={
-              comentariosDiarioExpandido
-                ? "Recolher comentários"
-                : "Expandir comentários"
-            }
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                alternarExpansaoComentariosDiario();
-              }
-            }}
-          >
-            <div style={commentsSheetHandleStyle} />
-          </div>
-
-          <header style={commentsSheetHeaderStyle}>
-            <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
-
-            <strong style={commentsSheetTitleStyle}>
-              {interacao.comentarios.length === 1
-                ? "1 comentário"
-                : `${interacao.comentarios.length} comentários`}
-            </strong>
-
-            <div style={commentsSortMenuWrapStyle}>
-              <button
-                type="button"
-                onClick={() =>
-                  setMenuOrdenacaoComentariosDiarioAberto((aberto) => !aberto)
-                }
-                style={commentsSortMenuTriggerStyle}
-                aria-label="Ordenar comentários"
-                aria-haspopup="menu"
-                aria-expanded={menuOrdenacaoComentariosDiarioAberto}
-              >
-                +
-              </button>
-
-              {menuOrdenacaoComentariosDiarioAberto ? (
-                <div style={commentsSortMenuStyle} role="menu">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      alterarOrdenacaoComentariosAnotacaoListas(
-                        anotacaoId,
-                        "relevantes",
-                      );
-                      setMenuOrdenacaoComentariosDiarioAberto(false);
-                    }}
-                    style={
-                      interacao.ordenacaoComentarios === "relevantes"
-                        ? commentsSortMenuItemActiveStyle
-                        : commentsSortMenuItemStyle
-                    }
-                    role="menuitem"
-                  >
-                    Relevantes
-                  </button>
-
-                  <div style={commentsSortMenuDividerStyle} aria-hidden="true" />
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      alterarOrdenacaoComentariosAnotacaoListas(
-                        anotacaoId,
-                        "recentes",
-                      );
-                      setMenuOrdenacaoComentariosDiarioAberto(false);
-                    }}
-                    style={
-                      interacao.ordenacaoComentarios === "recentes"
-                        ? commentsSortMenuItemActiveStyle
-                        : commentsSortMenuItemStyle
-                    }
-                    role="menuitem"
-                  >
-                    Recentes
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </header>
-
-          <section style={commentsSheetListStyle}>
-            {comentariosRaiz.length > 0 ? (
-              comentariosRaiz.map((comentario) => {
-                const respostas = obterRespostasComentarioDiarioListas(
-                  interacao.comentarios,
-                  comentario.id,
-                );
-                const quantidadeVisivel = Math.min(
-                  respostas.length,
-                  respostasVisiveisComentariosDiario[comentario.id] || 0,
-                );
-                const respostasVisiveis = respostas.slice(0, quantidadeVisivel);
-                const respostasOcultas = Math.max(
-                  0,
-                  respostas.length - quantidadeVisivel,
-                );
-                const respostasExpandidas = quantidadeVisivel > 0;
-
-                return (
-                  <section key={comentario.id} style={commentThreadStyle}>
-                    {renderizarComentarioSheet(comentario)}
-
-                    {respostasVisiveis.length > 0 ? (
-                      <div style={commentRepliesListStyle}>
-                        {respostasVisiveis.map((resposta) =>
-                          renderizarComentarioSheet(resposta, true),
-                        )}
-                      </div>
-                    ) : null}
-
-                    {respostas.length > 0 && !respostasExpandidas ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRespostasVisiveisComentariosDiario((atuais) => ({
-                            ...atuais,
-                            [comentario.id]: Math.min(5, respostas.length),
-                          }))
-                        }
-                        style={commentRepliesToggleStyle}
-                      >
-                        <span style={commentRepliesLineStyle} />
-                        {`Ver ${respostas.length} ${
-                          respostas.length === 1 ? "resposta" : "respostas"
-                        }`}
-                      </button>
-                    ) : null}
-
-                    {respostasExpandidas ? (
-                      <div style={commentRepliesControlsStyle}>
-                        {respostasOcultas > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRespostasVisiveisComentariosDiario((atuais) => ({
-                                ...atuais,
-                                [comentario.id]: Math.min(
-                                  respostas.length,
-                                  (atuais[comentario.id] || 0) + 5,
-                                ),
-                              }))
-                            }
-                            style={commentRepliesToggleStyle}
-                          >
-                            <span style={commentRepliesLineStyle} />
-                            {`Ver mais ${respostasOcultas} ${
-                              respostasOcultas === 1 ? "resposta" : "respostas"
-                            }`}
-                          </button>
-                        ) : null}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setRespostasVisiveisComentariosDiario((atuais) => ({
-                              ...atuais,
-                              [comentario.id]: 0,
-                            }))
-                          }
-                          style={commentRepliesHideButtonStyle}
-                        >
-                          Ocultar respostas
-                        </button>
-                      </div>
-                    ) : null}
-                  </section>
-                );
-              })
-            ) : interacao.carregando ? (
-              <div style={commentsLoadingStyle}>Carregando comentários...</div>
-            ) : (
-              <p style={emptyCommentsStyle}>Sem comentários ainda</p>
+            style={criarAvatarComentarioDiarioListasStyle(
+              commentsInputAvatarStyle,
+              permissoes.podeComentar ? usuarioAtualPerfil?.avatar || "" : "",
             )}
-          </section>
-
-          {interacao.erro ? (
-            <span style={commentsSheetErrorStyle}>{interacao.erro}</span>
-          ) : null}
-
-          {interacao.respondendoComentarioId ? (
-            <div style={commentsReplyingBannerStyle}>
-              <span>
-                Respondendo a {interacao.respondendoAutorNome || "usuário"}
-              </span>
-              <button
-                type="button"
-                onClick={() =>
-                  cancelarRespostaComentarioAnotacaoListas(anotacaoId)
-                }
-                style={commentsReplyingCancelStyle}
-              >
-                Cancelar
-              </button>
-            </div>
-          ) : null}
-
-          <section style={commentsToolsStyle}>
-            <div style={commentsQuickReactionsStyle}>
-              {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => inserirNoComentarioDiario(emoji)}
-                  disabled={!permissoes.podeComentar}
-                  style={commentsQuickReactionButtonStyle}
-                  aria-label={`Adicionar ${emoji} ao comentário`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void enviarComentarioAnotacaoListas(itemSelecionado);
-            }}
-            style={commentsSheetFormStyle}
           >
-            <div
-              style={criarAvatarComentarioDiarioListasStyle(
-                commentsInputAvatarStyle,
-                permissoes.podeComentar
-                  ? usuarioAtualPerfil?.avatar || ""
-                  : "",
-              )}
-            >
-              {!(permissoes.podeComentar && usuarioAtualPerfil?.avatar) &&
-                (permissoes.podeComentar
-                  ? usuarioAtualPerfil?.nome || "U"
-                  : "H"
-                )
-                  .slice(0, 1)
-                  .toUpperCase()}
-            </div>
-
-            <div style={commentsInputBoxStyle}>
-              <textarea
-                aria-label={
-                  permissoes.podeComentar
-                    ? interacao.respondendoComentarioId
-                      ? "Adicionar resposta"
-                      : "Adicionar comentário"
-                    : "Comentários limitados pelo dono do Diário"
-                }
-                value={interacao.novoComentario}
-                onChange={(event) =>
-                  atualizarComentarioAnotacaoListas(
-                    anotacaoId,
-                    event.target.value,
-                  )
-                }
-                placeholder={
-                  permissoes.podeComentar
-                    ? interacao.respondendoComentarioId
-                      ? "Adicionar resposta..."
-                      : "Adicionar comentário..."
-                    : "Comentários limitados pelo dono do Diário."
-                }
-                disabled={!permissoes.podeComentar || interacao.enviandoComentario}
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                inputMode="text"
-                enterKeyHint="send"
-                maxLength={DIARIO_COMENTARIO_MAX_LENGTH}
-                rows={1}
-                style={commentsSheetInputStyle}
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => inserirNoComentarioDiario("@")}
-              disabled={!permissoes.podeComentar}
-              style={commentsInputIconButtonStyle}
-              aria-label="Adicionar menção"
-            >
-              @
-            </button>
-
-            <button
-              type="submit"
-              aria-label="Enviar comentário"
-              disabled={
-                !permissoes.podeComentar ||
-                interacao.enviandoComentario ||
-                !interacao.novoComentario.trim()
-              }
-              style={{
-                ...commentsSheetSendStyle,
-                opacity:
-                  permissoes.podeComentar &&
-                  !interacao.enviandoComentario &&
-                  interacao.novoComentario.trim()
-                    ? 1
-                    : 0.58,
-                cursor:
-                  permissoes.podeComentar &&
-                  !interacao.enviandoComentario &&
-                  interacao.novoComentario.trim()
-                    ? "pointer"
-                    : "not-allowed",
-              }}
-            >
-              {interacao.enviandoComentario ? "…" : "↑"}
-            </button>
-          </form>
-        </article>
-      </section>,
-      document.body,
+            {!(permissoes.podeComentar && usuarioAtualPerfil?.avatar) &&
+              (permissoes.podeComentar
+                ? usuarioAtualPerfil?.nome || "U"
+                : "H"
+              )
+                .slice(0, 1)
+                .toUpperCase()}
+          </div>
+        }
+        comentario={interacao.novoComentario}
+        comentarioEmEnvio={interacao.enviandoComentario}
+        comentarios={comentariosRaiz.map(renderizarThreadComentarioSheet)}
+        comentariosCarregando={interacao.carregando}
+        comentariosErro={interacao.erro}
+        comentariosExpandido={comentariosDiarioExpandido}
+        comentariosTemPermissao={permissoes.podeComentar}
+        comentariosTemRaiz={comentariosRaiz.length > 0}
+        comentariosTotal={interacao.comentarios.length}
+        isDesktop={isDesktop}
+        maxLength={DIARIO_COMENTARIO_MAX_LENGTH}
+        menuOrdenacaoAberto={menuOrdenacaoComentariosDiarioAberto}
+        onCancelReply={() =>
+          cancelarRespostaComentarioAnotacaoListas(anotacaoId)
+        }
+        onChangeComentario={(texto) =>
+          atualizarComentarioAnotacaoListas(anotacaoId, texto)
+        }
+        onClose={fecharComentariosDiario}
+        onHandleKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            alternarExpansaoComentariosDiario();
+          }
+        }}
+        onHandleTouchCancel={finalizarArrasteComentariosDiario}
+        onHandleTouchEnd={finalizarArrasteComentariosDiario}
+        onHandleTouchMove={moverArrasteComentariosDiario}
+        onHandleTouchStart={iniciarArrasteComentariosDiario}
+        onInsertReaction={inserirNoComentarioDiario}
+        onSelectOrdenacao={(ordenacao) => {
+          alterarOrdenacaoComentariosAnotacaoListas(anotacaoId, ordenacao);
+          setMenuOrdenacaoComentariosDiarioAberto(false);
+        }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void enviarComentarioAnotacaoListas(itemSelecionado);
+        }}
+        onToggleExpand={alternarExpansaoComentariosDiario}
+        onToggleOrdenacao={() =>
+          setMenuOrdenacaoComentariosDiarioAberto((aberto) => !aberto)
+        }
+        ordenacao={interacao.ordenacaoComentarios}
+        placeholderTextarea={
+          permissoes.podeComentar
+            ? interacao.respondendoComentarioId
+              ? "Adicionar resposta..."
+              : "Adicionar comentário..."
+            : "Comentários limitados pelo dono do Diário."
+        }
+        quickReactions={["💜", "🔥", "😂", "😮", "😭", "👏"]}
+        respondendoAutorNome={interacao.respondendoAutorNome}
+        respondendoComentarioId={interacao.respondendoComentarioId}
+        sheetRef={comentariosSheetRef}
+        styles={sheetStyles}
+        tituloObra={itemSelecionado.obra.titulo}
+      />
     );
   }
+
 
   function renderizarObraPublica(obra: ObraLista) {
     return (
