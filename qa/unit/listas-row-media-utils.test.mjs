@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const diaryStyles = readFileSync(
+  new URL(
+    "../../app/listas/lib/listas-diary-comments-styles.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const linhaAutor = readFileSync(
   new URL("../../app/listas/components/listas-author-row.tsx", import.meta.url),
   "utf8",
@@ -98,8 +105,20 @@ test("Listas delega somente os helpers de mídia das linhas", () => {
   }
   assert.equal((pagina.match(/criarCapaStyle\(/g) || []).length, 2);
   assert.equal((pagina.match(/criarAvatarStyle\(/g) || []).length, 1);
-  assert.match(pagina, /function criarAvatarPerfilDiarioListasStyle\(/);
-  assert.match(pagina, /function criarAvatarComentarioDiarioListasStyle\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?criarAvatarPerfilDiarioListasStyle,[\s\S]*?criarAvatarComentarioDiarioListasStyle,[\s\S]*?\} from "\.\/lib\/listas-diary-comments-styles";/,
+  );
+  assert.doesNotMatch(pagina, /function criarAvatarPerfilDiarioListasStyle\(/);
+  assert.doesNotMatch(pagina, /function criarAvatarComentarioDiarioListasStyle\(/);
+  assert.match(
+    diaryStyles,
+    /export function criarAvatarPerfilDiarioListasStyle\(avatar: string\): CSSProperties/,
+  );
+  assert.match(
+    diaryStyles,
+    /export function criarAvatarComentarioDiarioListasStyle\(/,
+  );
   assert.match(
     pagina,
     /<ListasAuthorRow[\s\S]*?avatar=\{autor\.avatar\}[\s\S]*?avatarStyle=\{criarAvatarStyle\(autor\.avatar\)\}/,

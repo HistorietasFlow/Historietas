@@ -94,3 +94,8 @@
 
 - Extraiu filtragem, ordenação, derivações de apresentação e permissões de anotações para utilitários puros.
 - Manteve na página `useMemo`, slices de paginação, estados, hooks, JSX, carregadores, consultas e mutações Supabase.
+
+## Fase 1114 ? M?dulos de estilos de Listas
+
+- Moveu os estilos est?ticos de layout, obra/anota??o e Di?rio/coment?rios para tr?s m?dulos dedicados.
+- Preservou nomes, propriedades, valores, spreads, responsividade e consumidores; a p?gina continua respons?vel por JSX, estados, hooks, carregadores e muta??es.
