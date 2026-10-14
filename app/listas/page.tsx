@@ -11,6 +11,8 @@ import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
+import { ListasDiaryReportModal } from "./components/listas-diary-report-modal";
+import { ListasWorkActionSheet } from "./components/listas-work-action-sheet";
 import {
   compactarNumero,
   formatarDataCurta,
@@ -44,9 +46,7 @@ import {
   type PermissoesAbasPerfil,
   type PreferenciasPrivacidadeHistorietas,
 } from "../../lib/historietasPrivacy";
-import DenunciaModal, {
-  type TipoAlvoDenuncia,
-} from "../../components/DenunciaModal";
+import { type TipoAlvoDenuncia } from "../../components/DenunciaModal";
 
 type ModoLista = "perfil" | "obras" | "autores";
 type OrigemPerfil = "diario" | "biblioteca";
@@ -5252,245 +5252,94 @@ function ListasUniversaisContent() {
         <span>Historietas</span>
       </footer>
 
-      <DenunciaModal
-        aberto={Boolean(alvoDenunciaDiario)}
-        alvoTipo={alvoDenunciaDiario?.tipo || "diario_anotacao"}
-        alvoId={alvoDenunciaDiario?.id || ""}
-        alvoTitulo={alvoDenunciaDiario?.titulo || "Conteúdo do Diário"}
-        onFechar={() => setAlvoDenunciaDiario(null)}
-        onEnviada={() => {
+      <ListasDiaryReportModal
+        alvo={alvoDenunciaDiario}
+        onClose={() => setAlvoDenunciaDiario(null)}
+        onSent={() => {
           setAlvoDenunciaDiario(null);
           setMensagemAcao("Denúncia enviada para análise.");
         }}
       />
 
-      {obraMenuAberta &&
-        (() => {
-          const obra = obraMenuAberta;
-          const item = itemPerfilMenuAberto;
-          const hrefPrincipal = item
-            ? obterHrefContinuarLeituraListas(item)
-            : obra.link;
-          const podeContinuar = Boolean(item && item.progresso > 0);
-          const detalheMenu = item
-            ? textoSecundarioItem(item, categoriaMenuAberta)
-            : "";
+      {obraMenuAberta && (
+        <ListasWorkActionSheet
+          detalhe={
+            itemPerfilMenuAberto
+              ? textoSecundarioItem(itemPerfilMenuAberto, categoriaMenuAberta)
+              : ""
+          }
+          editor={editorAnotacao}
+          editorStyles={{
+            cancel: listDiaryAnnotationCancelStyle,
+            counter: listDiaryAnnotationCounterStyle,
+            editor: listDiaryActionSheetEditorStyle,
+            editorMeta: listDiaryAnnotationEditorMetaStyle,
+            error: listDiaryAnnotationErrorStyle,
+            metaActions: listDiaryAnnotationMetaActionsStyle,
+            remove: listDiaryAnnotationRemoveStyle,
+            save: listDiaryAnnotationSaveStyle,
+            spoilerCheckbox: listDiaryAnnotationSpoilerCheckboxStyle,
+            spoilerLabel: listDiaryAnnotationSpoilerLabelStyle,
+            textarea: listDiaryAnnotationTextareaStyle,
+            textareaWrap: listDiaryAnnotationTextareaWrapStyle,
+          }}
+          hrefPrincipal={
+            itemPerfilMenuAberto
+              ? obterHrefContinuarLeituraListas(itemPerfilMenuAberto)
+              : obraMenuAberta.link
+          }
+          item={itemPerfilMenuAberto}
+          maxAnnotationLength={DIARIO_ANOTACAO_MAX_LENGTH}
+          onCancelAnnotation={() => setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO)}
+          onClose={fecharMenuObra}
+          onEditAnnotation={abrirEditorAnotacaoListas}
+          onRemoveAnnotation={() => void removerAnotacaoListas()}
+          onReportAnnotation={() => {
+            const anotacaoId = itemPerfilMenuAberto?.anotacaoId?.trim() || "";
 
-          return (
-            <div
-              style={actionSheetOverlayStyle}
-              onClick={(event) => {
-                if (event.target === event.currentTarget) fecharMenuObra();
-              }}
-            >
-              <section
-                role="dialog"
-                aria-modal="true"
-                aria-label={`Opções de ${obra.titulo}`}
-                style={actionSheetStyle}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <span style={actionSheetHandleStyle} aria-hidden="true" />
+            if (!anotacaoId) {
+              return;
+            }
 
-                <div style={actionSheetHeaderStyle}>
-                  <strong
-                    data-historietas-user-content="true"
-                    style={actionSheetTitleStyle}
-                  >
-                    {obra.titulo}
-                  </strong>
-                  <span
-                    data-historietas-user-content="true"
-                    style={actionSheetMetaStyle}
-                  >
-                    {obra.autor} • {obra.genero}
-                  </span>
-
-                  {detalheMenu && (
-                    <span style={actionSheetDetailStyle}>{detalheMenu}</span>
-                  )}
-                </div>
-
-                <div style={actionSheetActionsStyle}>
-                  <Link
-                    href={hrefPrincipal}
-                    onClick={() => fecharMenuObra()}
-                    style={actionSheetButtonStyle}
-                  >
-                    <span>{podeContinuar ? "Continuar leitura" : "Ver obra"}</span>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => void alternarObraNoQueroLer()}
-                    disabled={salvandoQueroLer}
-                    style={{
-                      ...actionSheetButtonStyle,
-                      ...(salvandoQueroLer ? actionSheetButtonDisabledStyle : {}),
-                    }}
-                  >
-                    <span>
-                      {obraMenuNoQueroLer
-                        ? "Remover do Quero ler"
-                        : "Quero ler mais tarde"}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      style={
-                        obraMenuNoQueroLer
-                          ? actionSheetSelectionDotActiveStyle
-                          : actionSheetSelectionDotStyle
-                      }
-                    >
-                      {obraMenuNoQueroLer ? "✓" : ""}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => void compartilharObraDoMenu()}
-                    style={actionSheetButtonStyle}
-                  >
-                    <span>Compartilhar</span>
-                  </button>
-
-                  {item?.anotacaoId && !perfilEhProprio && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const anotacaoId = item.anotacaoId?.trim() || "";
-
-                        if (!anotacaoId) {
-                          return;
-                        }
-
-                        setObraMenuAberta(null);
-                        setItemPerfilMenuAberto(null);
-                        setObraMenuNoQueroLer(false);
-                        abrirDenunciaDiario(
-                          "diario_anotacao",
-                          anotacaoId,
-                          `Anotação de ${perfil?.nome || "usuário"} em ${obra.titulo}`,
-                          perfil?.userId || "",
-                        );
-                      }}
-                      style={listDiaryActionSheetReportStyle}
-                    >
-                      <span>Denunciar anotação</span>
-                    </button>
-                  )}
-
-                  {item && perfilEhProprio && (
-                    <button
-                      type="button"
-                      onClick={abrirEditorAnotacaoListas}
-                      style={actionSheetButtonStyle}
-                    >
-                      <span>
-                        {item.anotacao
-                          ? "Editar anotação"
-                          : "Criar anotação"}
-                      </span>
-                      <span aria-hidden="true" style={actionSheetButtonIconStyle}>
-                        ✎
-                      </span>
-                    </button>
-                  )}
-                </div>
-
-                {editorAnotacao.aberto && (
-                  <div style={listDiaryActionSheetEditorStyle}>
-                    <div style={listDiaryAnnotationTextareaWrapStyle}>
-                      <textarea
-                        aria-label="Anotação da leitura"
-                        value={editorAnotacao.texto}
-                        onChange={(event) =>
-                          setEditorAnotacao((estadoAtual) => ({
-                            ...estadoAtual,
-                            texto: event.target.value.slice(
-                              0,
-                              DIARIO_ANOTACAO_MAX_LENGTH,
-                            ),
-                            erro: "",
-                          }))
-                        }
-                        placeholder="Escreva o que achou desta leitura..."
-                        maxLength={DIARIO_ANOTACAO_MAX_LENGTH}
-                        rows={4}
-                        style={listDiaryAnnotationTextareaStyle}
-                        disabled={editorAnotacao.salvando}
-                      />
-
-                      <span style={listDiaryAnnotationCounterStyle}>
-                        {editorAnotacao.texto.length}/
-                        {DIARIO_ANOTACAO_MAX_LENGTH}
-                      </span>
-                    </div>
-
-                    <div style={listDiaryAnnotationEditorMetaStyle}>
-                      <label style={listDiaryAnnotationSpoilerLabelStyle}>
-                        <span>Contém spoiler</span>
-                        <input
-                          type="checkbox"
-                          checked={editorAnotacao.contemSpoiler}
-                          onChange={(event) =>
-                            setEditorAnotacao((estadoAtual) => ({
-                              ...estadoAtual,
-                              contemSpoiler: event.target.checked,
-                              erro: "",
-                            }))
-                          }
-                          style={listDiaryAnnotationSpoilerCheckboxStyle}
-                          disabled={editorAnotacao.salvando}
-                        />
-                      </label>
-
-                      {item?.anotacao && (
-                        <button
-                          type="button"
-                          onClick={() => void removerAnotacaoListas()}
-                          disabled={editorAnotacao.salvando}
-                          style={listDiaryAnnotationRemoveStyle}
-                        >
-                          Remover
-                        </button>
-                      )}
-
-                      <div style={listDiaryAnnotationMetaActionsStyle}>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO)
-                          }
-                          disabled={editorAnotacao.salvando}
-                          style={listDiaryAnnotationCancelStyle}
-                        >
-                          Cancelar
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => void salvarAnotacaoListas()}
-                          disabled={editorAnotacao.salvando}
-                          style={listDiaryAnnotationSaveStyle}
-                        >
-                          {editorAnotacao.salvando ? "Salvando..." : "Salvar"}
-                        </button>
-                      </div>
-                    </div>
-
-                    {editorAnotacao.erro && (
-                      <span style={listDiaryAnnotationErrorStyle}>
-                        {editorAnotacao.erro}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-              </section>
-            </div>
-          );
-        })()}
+            setObraMenuAberta(null);
+            setItemPerfilMenuAberto(null);
+            setObraMenuNoQueroLer(false);
+            abrirDenunciaDiario(
+              "diario_anotacao",
+              anotacaoId,
+              `Anotação de ${perfil?.nome || "usuário"} em ${obraMenuAberta.titulo}`,
+              perfil?.userId || "",
+            );
+          }}
+          onSaveAnnotation={() => void salvarAnotacaoListas()}
+          onShare={() => void compartilharObraDoMenu()}
+          onToggleWantToRead={() => void alternarObraNoQueroLer()}
+          obra={obraMenuAberta}
+          perfilEhProprio={perfilEhProprio}
+          podeContinuar={Boolean(
+            itemPerfilMenuAberto && itemPerfilMenuAberto.progresso > 0,
+          )}
+          queroLer={obraMenuNoQueroLer}
+          salvandoQueroLer={salvandoQueroLer}
+          setEditor={setEditorAnotacao}
+          styles={{
+            actions: actionSheetActionsStyle,
+            button: actionSheetButtonStyle,
+            buttonDisabled: actionSheetButtonDisabledStyle,
+            buttonIcon: actionSheetButtonIconStyle,
+            detail: actionSheetDetailStyle,
+            handle: actionSheetHandleStyle,
+            header: actionSheetHeaderStyle,
+            meta: actionSheetMetaStyle,
+            overlay: actionSheetOverlayStyle,
+            panel: actionSheetStyle,
+            report: listDiaryActionSheetReportStyle,
+            selection: actionSheetSelectionDotStyle,
+            selectionActive: actionSheetSelectionDotActiveStyle,
+            title: actionSheetTitleStyle,
+          }}
+        />
+      )}
 
       {renderizarComentariosDiarioSheet()}
     </main>

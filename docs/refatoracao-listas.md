@@ -41,3 +41,8 @@
 - Extraiu o cabeçalho normal e o cabeçalho do Diário, incluindo avatar, resumo e avaliação, para `ListasPageHeader`.
 - Extraiu os controles de categorias do perfil para `ListasProfileCategoryControls`, mantendo categorias, contagens e navegação na página.
 - Extraiu os estados e a lista principal de resultados para `ListasResultsSection`, preservando loading, privacidade, erro, vazio, agrupamento mensal, renderizadores e paginação na página.
+
+## Fase 1103 — Overlays e ações de obra de Listas
+
+- Extraiu `ListasWorkActionSheet` e `ListasAnnotationEditor`, mantendo na página estados, cálculos, callbacks e mutações de obra e anotação.
+- Extraiu `ListasDiaryReportModal`, preservando o alvo, o fechamento e a mensagem de sucesso controlados pela página.
