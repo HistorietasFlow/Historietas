@@ -31,11 +31,17 @@ const autor = readFileSync(
   new URL("../../app/listas/components/listas-author-row.tsx", import.meta.url),
   "utf8",
 );
+const itemPerfil = readFileSync(
+  new URL(
+    "../../app/listas/components/listas-profile-work-item.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Listas delega as quatro apresentações das linhas sem mover o domínio", () => {
   for (const componente of [
-    "ListasProfileWorkRow",
-    "ListasDiaryAnnotationCard",
+    "ListasProfileWorkItem",
     "ListasPublicWorkRow",
     "ListasAuthorRow",
   ]) {
@@ -48,13 +54,6 @@ test("Listas delega as quatro apresentações das linhas sem mover o domínio", 
 
   for (const contrato of [
     "categoriaAtual",
-    "detalheVisivel",
-    "anotacaoId",
-    "chaveAnotacao",
-    "anotacaoAberta",
-    "spoilerRevelado",
-    "interacao",
-    "permissoesAnotacao",
     "abrirMenuObra",
     "alternarCurtidaAnotacaoListas",
     "abrirComentariosDiario",
@@ -74,6 +73,8 @@ test("Listas delega as quatro apresentações das linhas sem mover o domínio", 
 test("linha do perfil preserva mídia, destaque, nota, toggle e opções", () => {
   assert.match(linhaPerfil, /export function ListasProfileWorkRow/);
   assert.match(pagina, /historietas-list-row-highlight/);
+  assert.match(itemPerfil, /export function ListasProfileWorkItem/);
+  assert.match(itemPerfil, /ListasDiaryAnnotationCard/);
   assert.match(linhaPerfil, /data-historietas-user-content="true"/);
   assert.match(linhaPerfil, /aria-expanded=\{annotationOpen\}/);
   assert.match(linhaPerfil, /aria-controls=\{`anotacao-\$\{workId\}`\}/);

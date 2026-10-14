@@ -36,6 +36,10 @@ const linhaObraPublica = readFileSync(
   ),
   "utf8",
 );
+const painelComentarios = readFileSync(
+  new URL("../../app/listas/components/listas-diary-comments-panel.tsx", import.meta.url),
+  "utf8",
+);
 const executavel = utils
   .replace(/\r\n/g, "\n")
   .replace('import type { CSSProperties } from "react";\n\n', "");
@@ -107,7 +111,11 @@ test("Listas delega somente os helpers de mídia das linhas", () => {
   assert.equal((pagina.match(/criarAvatarStyle\(/g) || []).length, 1);
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarAvatarPerfilDiarioListasStyle,[\s\S]*?criarAvatarComentarioDiarioListasStyle,[\s\S]*?\} from "\.\/lib\/listas-diary-comments-styles";/,
+    /import \{[\s\S]*?criarAvatarPerfilDiarioListasStyle,[\s\S]*?\} from "\.\/lib\/listas-diary-comments-styles";/,
+  );
+  assert.match(
+    painelComentarios,
+    /import \{ criarAvatarComentarioDiarioListasStyle \} from "\.\.\/lib\/listas-diary-comments-styles";/,
   );
   assert.doesNotMatch(pagina, /function criarAvatarPerfilDiarioListasStyle\(/);
   assert.doesNotMatch(pagina, /function criarAvatarComentarioDiarioListasStyle\(/);

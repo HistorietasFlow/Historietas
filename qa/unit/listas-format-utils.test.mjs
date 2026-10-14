@@ -30,6 +30,14 @@ const presentationUtilsSource = readFileSync(
   new URL("../../app/listas/lib/listas-presentation-utils.ts", import.meta.url),
   "utf8",
 );
+const profileWorkItemSource = readFileSync(
+  new URL("../../app/listas/components/listas-profile-work-item.tsx", import.meta.url),
+  "utf8",
+);
+const diaryCommentsPanelSource = readFileSync(
+  new URL("../../app/listas/components/listas-diary-comments-panel.tsx", import.meta.url),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -109,7 +117,7 @@ test("formatarNotaListas preserva validacao e arredondamento decimal", () => {
 test("Listas delega somente os formatadores extraidos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?compactarNumero,[\s\S]*?formatarDataCurta,[\s\S]*?formatarLeituraMesAno,[\s\S]*?formatarNotaListas,[\s\S]*?\} from "\.\/lib\/listas-format-utils";/,
+    /import \{ formatarLeituraMesAno, formatarNotaListas \} from "\.\/lib\/listas-format-utils";/,
   );
 
   for (const helper of [
@@ -127,6 +135,11 @@ test("Listas delega somente os formatadores extraidos", () => {
         /import \{ formatarDataCurta \} from "\.\/listas-format-utils";/,
       );
       assert.match(profileTextUtilsSource, /\bformatarDataCurta\(/);
+      assert.match(
+        diaryCommentsPanelSource,
+        /import \{ formatarDataCurta \} from "\.\.\/lib\/listas-format-utils";/,
+      );
+      assert.match(diaryCommentsPanelSource, /formatarData=\{formatarDataCurta\}/);
       continue;
     }
 
@@ -139,6 +152,20 @@ test("Listas delega somente os formatadores extraidos", () => {
     if (helper === "formatarMesAno") {
       assert.match(presentationUtilsSource, /import \{ formatarMesAno \} from "\.\/listas-format-utils";/);
       assert.match(presentationUtilsSource, /\bformatarMesAno\(/);
+      continue;
+    }
+
+    if (helper === "compactarNumero") {
+      assert.match(
+        profileWorkItemSource,
+        /import \{ compactarNumero, formatarNotaListas \} from "\.\.\/lib\/listas-format-utils";/,
+      );
+      assert.match(profileWorkItemSource, /\bcompactarNumero\(/);
+      continue;
+    }
+
+    if (helper === "formatarNotaListas") {
+      assert.match(pagina, /formatarNota=\{formatarNotaListas\}/);
       continue;
     }
 

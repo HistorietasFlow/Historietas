@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 ).replace(/\r\n/g, "\n");
+const commentsPanel = readFileSync(
+  new URL("../../app/listas/components/listas-diary-comments-panel.tsx", import.meta.url),
+  "utf8",
+).replace(/\r\n/g, "\n");
 
 test("listasPageCss preserva o CSS global crítico de Listas", () => {
   assert.match(cssSource, /export const listasPageCss = `/);
@@ -49,9 +53,10 @@ test("Listas consome somente o CSS extraído na ordem original", () => {
     /import \{[\s\S]*?pageStyle,[\s\S]*?\} from "\.\/lib\/listas-layout-styles";/,
   );
   assert.match(
-    pagina,
-    /import \{[\s\S]*?commentsSheetStyle,[\s\S]*?\} from "\.\/lib\/listas-diary-comments-styles";/,
+    commentsPanel,
+    /import \{[\s\S]*?commentsSheetStyle,[\s\S]*?\} from "\.\.\/lib\/listas-diary-comments-styles";/,
   );
+  assert.doesNotMatch(pagina, /\bcommentsSheetStyle\b/);
   assert.doesNotMatch(pagina, /const pageStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /const commentsSheetStyle: CSSProperties = \{/);
   assert.match(pagina, /const isDesktop = useListasDesktopMode\(\);/);

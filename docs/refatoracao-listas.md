@@ -104,3 +104,8 @@
 
 - Moveu o carregamento principal e a sincronização de interações do Diário para hooks dedicados, mantendo a página como proprietária dos estados, JSX e mutações.
 - Preservou autenticação, privacidade, consultas de leitura, cancelamentos, fallbacks, filtros, recomendações e a mesclagem dos campos locais de comentários.
+
+## Fase 1116 — Controles e apresentações do Diário de Listas
+
+- Extraiu os controles de abertura, arraste, expansão, fechamento e inserção do sheet de comentários para um hook dedicado.
+- Extraiu a composição do painel de comentários e a composição visual da obra do perfil, mantendo na página estados, permissões, derivações, callbacks e todas as mutações.

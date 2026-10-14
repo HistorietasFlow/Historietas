@@ -12,6 +12,10 @@ const ratings = readFileSync(new URL("../../app/listas/lib/listas-diary-rating-u
 const comments = readFileSync(new URL("../../app/listas/lib/listas-diary-comment-utils.ts", import.meta.url), "utf8");
 const profileState = readFileSync(new URL("../../app/listas/lib/listas-profile-state-utils.ts", import.meta.url), "utf8");
 const profileLoader = readFileSync(new URL("../../app/listas/lib/listas-profile-loader.ts", import.meta.url), "utf8");
+const commentsPanel = readFileSync(
+  new URL("../../app/listas/components/listas-diary-comments-panel.tsx", import.meta.url),
+  "utf8",
+);
 
 async function importModule(source) {
   const javascript = typescript.transpileModule(source, {
@@ -50,12 +54,18 @@ test("Listas delega somente o domínio puro do Diário", () => {
     "calcularProximaAvaliacaoDiarioListas",
     "obterPreenchimentoEstrelaListas",
     "criarInteracaoAnotacaoListasVazia",
-    "ordenarComentariosRaizDiarioListas",
-    "obterRespostasComentarioDiarioListas",
   ]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
   }
+  assert.match(
+    commentsPanel,
+    /import \{[\s\S]*?ordenarComentariosRaizDiarioListas,[\s\S]*?\} from "\.\.\/lib\/listas-diary-comment-utils";/,
+  );
+  assert.match(commentsPanel, /ordenarComentariosRaizDiarioListas\(/);
+  assert.match(commentsPanel, /obterRespostasComentarioDiarioListas\(/);
+  assert.doesNotMatch(page, /\bordenarComentariosRaizDiarioListas\b/);
+  assert.doesNotMatch(page, /\bobterRespostasComentarioDiarioListas\b/);
 
   for (const helper of [
     "dataRegistro",
