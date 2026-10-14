@@ -38,18 +38,23 @@ const itemPerfil = readFileSync(
   ),
   "utf8",
 );
+const pageRenderers = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-page-renderers.tsx", import.meta.url),
+  "utf8",
+);
 
 test("Listas delega as quatro apresentações das linhas sem mover o domínio", () => {
-  for (const componente of [
-    "ListasProfileWorkItem",
-    "ListasPublicWorkRow",
-    "ListasAuthorRow",
-  ]) {
+  assert.match(
+    pagina,
+    /import \{ ListasProfileWorkItem \} from "\.\/components\/listas-profile-work-item";/,
+  );
+  assert.match(pagina, /<ListasProfileWorkItem\b/);
+  for (const componente of ["ListasPublicWorkRow", "ListasAuthorRow"]) {
     assert.match(
-      pagina,
-      new RegExp(`import \\{ ${componente} \\} from "\\.\\/components\\/`),
+      pageRenderers,
+      new RegExp(`import \\{ ${componente} \\} from "\\.\\.\\/components\\/`),
     );
-    assert.match(pagina, new RegExp(`<${componente}\\b`));
+    assert.match(pageRenderers, new RegExp(`<${componente}\\b`));
   }
 
   for (const contrato of [
@@ -62,12 +67,12 @@ test("Listas delega as quatro apresentações das linhas sem mover o domínio", 
   }
 
   assert.match(
-    pagina,
+    pageRenderers,
     /const href = idUsuarioValido\(autor\.id\)[\s\S]*?ListasAuthorRow/,
   );
   assert.match(pagina, /key=\{item\.chave\}/);
-  assert.match(pagina, /key=\{obra\.id\}/);
-  assert.match(pagina, /key=\{autor\.id \|\| autor\.nome\}/);
+  assert.match(pageRenderers, /key=\{obra\.id\}/);
+  assert.match(pageRenderers, /key=\{autor\.id \|\| autor\.nome\}/);
 });
 
 test("linha do perfil preserva mídia, destaque, nota, toggle e opções", () => {

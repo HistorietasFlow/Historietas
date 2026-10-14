@@ -15,16 +15,16 @@ import { useListasWorkMenuActions } from "./hooks/use-listas-work-menu-actions";
 import { useListasDiaryAnnotationActions } from "./hooks/use-listas-diary-annotation-actions";
 import { useListasDiaryInteractionActions } from "./hooks/use-listas-diary-interaction-actions";
 import { useListasDiaryProfileActions } from "./hooks/use-listas-diary-profile-actions";
+import { useListasCategoryNavigation } from "./hooks/use-listas-category-navigation";
+import { useListasPageRenderers } from "./hooks/use-listas-page-renderers";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
 import { ListasDiaryReportModal } from "./components/listas-diary-report-modal";
 import { ListasWorkActionSheet } from "./components/listas-work-action-sheet";
-import { ListasAuthorRow } from "./components/listas-author-row";
 import { ListasProfileWorkItem } from "./components/listas-profile-work-item";
 import { ListasDiaryCommentsPanel } from "./components/listas-diary-comments-panel";
-import { ListasPublicWorkRow } from "./components/listas-public-work-row";
 import { formatarLeituraMesAno, formatarNotaListas } from "./lib/listas-format-utils";
 import { listasPageCss } from "./lib/listas-page-css";
 import {
@@ -587,12 +587,11 @@ function ListasUniversaisContent() {
     : listSectionStyle;
   const linhasObrasAtualStyle = isDesktop ? desktopWorksRowsStyle : rowsStyle;
 
-  function trocarCategoria(novaCategoria: CategoriaPerfil) {
-    setCategoria(novaCategoria);
-    const params = new URLSearchParams(queryAtual);
-    params.set("categoria", novaCategoria);
-    router.replace(`/listas?${params.toString()}`, { scroll: false });
-  }
+  const { trocarCategoria } = useListasCategoryNavigation<CategoriaPerfil>({
+    queryAtual,
+    router,
+    setCategoria,
+  });
 
   const perfilEhProprio = Boolean(
     modo === "perfil" &&
@@ -840,51 +839,14 @@ function ListasUniversaisContent() {
       />
     );
   }
-  function renderizarObraPublica(obra: ObraLista) {
-    return (
-      <ListasPublicWorkRow
-        key={obra.id}
-        coverStyle={criarCapaStyle(obra.capa)}
-        genero={obra.genero}
-        href={obra.link}
-        onOpenOptions={() => void abrirMenuObra(obra, null, "tudo")}
-        styles={{
-          mainLink: rowMainLinkStyle,
-          meta: rowMetaStyle,
-          moreDot: moreDotStyle,
-          moreOptions: moreOptionsStyle,
-          optionsButton: rowOptionsButtonStyle,
-          text: rowTextStyle,
-          title: rowTitleStyle,
-        }}
-        titulo={obra.titulo}
-      />
-    );
-  }
 
-  function renderizarAutor(autor: AutorLista) {
-    const href = idUsuarioValido(autor.id)
-      ? `/perfil-autor?autorId=${encodeURIComponent(autor.id)}`
-      : `/perfil-autor?autor=${encodeURIComponent(autor.nome)}`;
-
-    return (
-      <ListasAuthorRow
-        key={autor.id || autor.nome}
-        avatar={autor.avatar}
-        avatarStyle={criarAvatarStyle(autor.avatar)}
-        href={href}
-        nome={autor.nome}
-        styles={{
-          authorLink: rowAuthorLinkStyle,
-          meta: rowMetaStyle,
-          text: rowTextStyle,
-          title: rowTitleStyle,
-        }}
-        totalObras={autor.totalObras}
-        username={autor.username}
-      />
-    );
-  }
+  const { renderizarAutor, renderizarObraPublica } = useListasPageRenderers({
+    abrirMenuObra,
+    criarAvatarStyle,
+    criarCapaStyle,
+    idUsuarioValido,
+    styles: { rowAuthorLinkStyle, rowMainLinkStyle, rowMetaStyle, moreDotStyle, moreOptionsStyle, rowOptionsButtonStyle, rowTextStyle, rowTitleStyle },
+  });
 
   return (
     <main style={pageThemeStyle}>
