@@ -21,6 +21,14 @@ const resultados = readFileSync(
   new URL("../../app/listas/components/listas-results-section.tsx", import.meta.url),
   "utf8",
 );
+const categoryNavigation = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-category-navigation.ts", import.meta.url),
+  "utf8",
+);
+const pageRenderers = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-page-renderers.tsx", import.meta.url),
+  "utf8",
+);
 
 test("ListasPageHeader preserva os dois cabeçalhos e a avaliação do Diário", () => {
   assert.match(cabecalho, /export function ListasPageHeader/);
@@ -64,7 +72,7 @@ test("ListasResultsSection preserva estados, agrupamento, modos e paginação", 
   assert.match(resultados, /Carregar mais/);
 });
 
-test("página mantém derivações e renderizadores locais, delegando só composição", () => {
+test("página mantém derivações e delega navegação e renderizadores públicos", () => {
   for (const componente of [
     "ListasPageHeader",
     "ListasProfileCategoryControls",
@@ -82,10 +90,15 @@ test("página mantém derivações e renderizadores locais, delegando só compos
   assert.match(pagina, /const itensPerfilVisiveis =/);
   assert.match(pagina, /const obrasVisiveis =/);
   assert.match(pagina, /const autoresVisiveis =/);
-  assert.match(pagina, /function trocarCategoria\(/);
+  assert.match(pagina, /useListasCategoryNavigation<CategoriaPerfil>\(\{/);
+  assert.doesNotMatch(pagina, /function trocarCategoria\(/);
+  assert.match(categoryNavigation, /function trocarCategoria\(/);
   assert.match(pagina, /function renderizarItemObra\(/);
-  assert.match(pagina, /function renderizarObraPublica\(/);
-  assert.match(pagina, /function renderizarAutor\(/);
+  assert.match(pagina, /useListasPageRenderers\(\{/);
+  assert.doesNotMatch(pagina, /function renderizarObraPublica\(/);
+  assert.doesNotMatch(pagina, /function renderizarAutor\(/);
+  assert.match(pageRenderers, /function renderizarObraPublica\(/);
+  assert.match(pageRenderers, /function renderizarAutor\(/);
   assert.match(
     pagina,
     /renderizarItemPerfil=\{\(item\) => renderizarItemObra\(item, categoria\)\}/,
