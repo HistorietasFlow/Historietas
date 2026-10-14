@@ -32,6 +32,13 @@ const workMenuActions = readFileSync(
   ),
   "utf8",
 );
+const annotationActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-annotation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useListasActionMessage preserva o lifecycle da mensagem de ação", () => {
   assert.match(hook, /^"use client";/);
@@ -69,15 +76,17 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
   assert.doesNotMatch(pagina, /setTimeout\(\(\) => setMensagemAcao\(""\), 2600\)/);
 
   [
-    "Você só pode editar anotações da sua própria lista.",
-    "Anotação salva.",
-    "Anotação removida.",
     "Não foi possível identificar este conteúdo.",
     "Você não pode denunciar seu próprio conteúdo.",
     "As curtidas estão desativadas nesta anotação.",
     "Você não tem permissão para comentar nesta anotação.",
     "Denúncia enviada para análise.",
   ].forEach((texto) => assert.match(pagina, new RegExp(texto)));
+  [
+    "Você só pode editar anotações da sua própria lista.",
+    "Anotação salva.",
+    "Anotação removida.",
+  ].forEach((texto) => assert.match(annotationActions, new RegExp(texto)));
   assert.match(
     comentariosControls,
     /setMensagemAcao\("Os comentários desta anotação não estão disponíveis\."\);/,
@@ -98,6 +107,10 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
     /import \{ useListasWorkMenuActions \} from "\.\/hooks\/use-listas-work-menu-actions";/,
   );
   assert.match(workMenuActions, /await supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /async function salvarAnotacaoListas\(/);
+  assert.match(
+    pagina,
+    /import \{ useListasDiaryAnnotationActions \} from "\.\/hooks\/use-listas-diary-annotation-actions";/,
+  );
+  assert.match(annotationActions, /async function salvarAnotacaoListas\(/);
   assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
 });

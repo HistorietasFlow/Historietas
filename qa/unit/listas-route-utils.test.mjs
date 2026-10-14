@@ -22,6 +22,13 @@ const annotationUtilsSource = readFileSync(
   ),
   "utf8",
 );
+const annotationActionsSource = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-annotation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileLoaderSource = readFileSync(
   new URL("../../app/listas/lib/listas-profile-loader.ts", import.meta.url),
   "utf8",
@@ -124,8 +131,8 @@ test("Listas delega normalizacao de rota e armazenamento local", () => {
   }
 
   assert.match(
-    pagina,
-    /import \{[\s\S]*?normalizarQuemPodeComentarAnotacaoListas,[\s\S]*?normalizarVisibilidadeComentariosAnotacaoListas,[\s\S]*?\} from "\.\/lib\/listas-diary-normalizer-utils";/,
+    annotationActionsSource,
+    /import \{[\s\S]*?normalizarQuemPodeComentarAnotacaoListas,[\s\S]*?normalizarVisibilidadeComentariosAnotacaoListas,[\s\S]*?\} from "\.\.\/lib\/listas-diary-normalizer-utils";/,
   );
   assert.doesNotMatch(pagina, /function normalizarQuemPodeComentarAnotacaoListas\(/);
   assert.doesNotMatch(pagina, /function normalizarVisibilidadeComentariosAnotacaoListas\(/);

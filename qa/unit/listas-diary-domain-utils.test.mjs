@@ -16,6 +16,13 @@ const commentsPanel = readFileSync(
   new URL("../../app/listas/components/listas-diary-comments-panel.tsx", import.meta.url),
   "utf8",
 );
+const annotationActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-annotation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importModule(source) {
   const javascript = typescript.transpileModule(source, {
@@ -47,8 +54,6 @@ const commentUtils = await importModule(
 
 test("Listas delega somente o domínio puro do Diário", () => {
   for (const helper of [
-    "salvarAnotacaoLocalListas",
-    "removerAnotacaoLocalListas",
     "normalizarAvaliacaoDiarioListas",
     "obterProximaNotaAvaliacaoListas",
     "calcularProximaAvaliacaoDiarioListas",
@@ -56,6 +61,13 @@ test("Listas delega somente o domínio puro do Diário", () => {
     "criarInteracaoAnotacaoListasVazia",
   ]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
+    assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
+  }
+  for (const helper of [
+    "salvarAnotacaoLocalListas",
+    "removerAnotacaoLocalListas",
+  ]) {
+    assert.match(annotationActions, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
   }
   assert.match(

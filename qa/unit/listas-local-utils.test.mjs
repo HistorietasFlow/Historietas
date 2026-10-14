@@ -16,6 +16,13 @@ const workMenuActions = readFileSync(
   new URL("../../app/listas/hooks/use-listas-work-menu-actions.ts", import.meta.url),
   "utf8",
 );
+const annotationActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-annotation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarModulo(codigo) {
   const javascript = typescript.transpileModule(codigo, {
@@ -36,8 +43,12 @@ const obrasLocais = await importarModulo(
 );
 
 test("Listas delega os utilitários locais sem mover fluxos Supabase", () => {
-  for (const name of ["pegarTexto", "pegarBooleanoListas", "idUsuarioValido", "obterMensagemErroListas", "criarLoginHrefListas", "normalizarTipoDiarioListas", "obterTipoDiarioDoItemListas"]) {
+  for (const name of ["pegarTexto", "idUsuarioValido", "obterMensagemErroListas", "criarLoginHrefListas"]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
+    assert.doesNotMatch(page, new RegExp(`function ${name}\\(`));
+  }
+  for (const name of ["pegarBooleanoListas", "normalizarTipoDiarioListas", "obterTipoDiarioDoItemListas"]) {
+    assert.match(annotationActions, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${name}\\(`));
   }
   for (const name of ["carregarListaIdsListas", "salvarListaIdsListas", "colecaoTemObraListas", "removerObraDaColecaoListas"]) {
