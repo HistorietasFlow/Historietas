@@ -14,6 +14,14 @@ const pagina = readFileSync(
   "utf8",
 );
 
+const workMenuActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-work-menu-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
 test("useListasDesktopMode preserva o lifecycle responsivo de Listas", () => {
   assert.match(hook, /^"use client";/);
   assert.match(hook, /export function useListasDesktopMode\(\)/);
@@ -71,7 +79,11 @@ test("Listas delega apenas o modo desktop e preserva consumidores responsivos", 
     pagina,
     /const secaoResultadosAtualStyle = isDesktop\s*\? desktopListSectionStyle\s*:\s*listSectionStyle;/,
   );
-  assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
+  assert.match(
+    pagina,
+    /import \{ useListasWorkMenuActions \} from "\.\/hooks\/use-listas-work-menu-actions";/,
+  );
+  assert.match(workMenuActions, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /async function salvarAnotacaoListas\(\)/);
   assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
   assert.match(pagina, /<ListasDiaryCommentsPanel[\s\S]*?isDesktop=\{isDesktop\}/);

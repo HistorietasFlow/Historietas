@@ -15,6 +15,11 @@ const commentsPanel = readFileSync(
   "utf8",
 ).replace(/\r\n/g, "\n");
 
+const workMenuActions = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-work-menu-actions.ts", import.meta.url),
+  "utf8",
+).replace(/\r\n/g, "\n");
+
 test("listasPageCss preserva o CSS global crítico de Listas", () => {
   assert.match(cssSource, /export const listasPageCss = `/);
   assert.match(cssSource, /--historietas-list-like-active: #FFFFFF;/);
@@ -60,7 +65,11 @@ test("Listas consome somente o CSS extraído na ordem original", () => {
   assert.doesNotMatch(pagina, /const pageStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /const commentsSheetStyle: CSSProperties = \{/);
   assert.match(pagina, /const isDesktop = useListasDesktopMode\(\);/);
-  assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
+  assert.match(
+    pagina,
+    /import \{ useListasWorkMenuActions \} from "\.\/hooks\/use-listas-work-menu-actions";/,
+  );
+  assert.match(workMenuActions, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /async function salvarAnotacaoListas\(\)/);
   assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
 });
