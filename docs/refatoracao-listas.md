@@ -57,6 +57,11 @@
 - Extraiu parsing, validação, localStorage, coleções locais e normalizadores do Diário para módulos puros.
 - Manteve na página estados, hooks, carregadores e toda consulta ou mutação Supabase.
 
+## Fase 1107 — Domínio puro do Diário de Listas
+
+- Extraiu anotações locais, cálculos de avaliação e ordenação de comentários para utilitários puros.
+- Manteve na página carregadores, estados, hooks, permissões, callbacks, mutações e toda interação com Supabase.
+
 ## Fase 1105 — Linhas de obras e autores de Listas
 
 - Extraiu as linhas de obra do perfil, obra pública e autor, preservando na página cálculos, hrefs, estados e callbacks.
