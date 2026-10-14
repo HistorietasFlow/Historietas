@@ -11,6 +11,7 @@ const annotations = readFileSync(new URL("../../app/listas/lib/listas-diary-anno
 const ratings = readFileSync(new URL("../../app/listas/lib/listas-diary-rating-utils.ts", import.meta.url), "utf8");
 const comments = readFileSync(new URL("../../app/listas/lib/listas-diary-comment-utils.ts", import.meta.url), "utf8");
 const profileState = readFileSync(new URL("../../app/listas/lib/listas-profile-state-utils.ts", import.meta.url), "utf8");
+const profileLoader = readFileSync(new URL("../../app/listas/lib/listas-profile-loader.ts", import.meta.url), "utf8");
 
 async function importModule(source) {
   const javascript = typescript.transpileModule(source, {
@@ -42,7 +43,6 @@ const commentUtils = await importModule(
 
 test("Listas delega somente o domínio puro do Diário", () => {
   for (const helper of [
-    "carregarAnotacoesLocaisListas",
     "salvarAnotacaoLocalListas",
     "removerAnotacaoLocalListas",
     "normalizarAvaliacaoDiarioListas",
@@ -66,6 +66,10 @@ test("Listas delega somente o domínio puro do Diário", () => {
   }
   assert.doesNotMatch(page, /function dataRegistro\(/);
   assert.match(annotations, /export function criarChaveStorageAnotacoesListas\(/);
+  assert.match(
+    profileLoader,
+    /import \{[\s\S]*?carregarAnotacoesLocaisListas,[\s\S]*?\} from "\.\/listas-diary-annotation-utils";/,
+  );
 
   for (const source of [annotations, ratings, comments]) {
     assert.doesNotMatch(source, /supabase|\.from\(|\.rpc\(/);

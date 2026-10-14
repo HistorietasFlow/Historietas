@@ -18,6 +18,10 @@ const annotationUtilsSource = readFileSync(
   ),
   "utf8",
 );
+const profileLoaderSource = readFileSync(
+  new URL("../../app/listas/lib/listas-profile-loader.ts", import.meta.url),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -127,8 +131,8 @@ test("Listas delega normalizacao de rota e armazenamento local", () => {
   assert.match(pagina, /supabase/);
   assert.doesNotMatch(pagina, /localStorage/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarAnotacoesLocaisListas,[\s\S]*?\} from "\.\/lib\/listas-diary-annotation-utils";/,
+    profileLoaderSource,
+    /import \{[\s\S]*?carregarAnotacoesLocaisListas,[\s\S]*?\} from "\.\/listas-diary-annotation-utils";/,
   );
   assert.match(annotationUtilsSource, /localStorage/);
   assert.doesNotMatch(utilsSource, /useState|useEffect|supabase|localStorage/);

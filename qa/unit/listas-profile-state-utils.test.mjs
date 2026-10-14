@@ -20,6 +20,10 @@ const worksLoader = readFileSync(
   new URL("../../app/listas/lib/listas-published-works-loader.ts", import.meta.url),
   "utf8",
 );
+const profileLoader = readFileSync(
+  new URL("../../app/listas/lib/listas-profile-loader.ts", import.meta.url),
+  "utf8",
+);
 
 async function importarModulo(codigo) {
   const javascript = typescript.transpileModule(codigo, {
@@ -141,7 +145,6 @@ test("Listas delega modelos e montagem pura do estado do perfil", () => {
     "registroPermitido",
     "montarListasPerfilEstado",
   ]) {
-    assert.match(page, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
     assert.match(source, new RegExp(`export function ${helper}\\b`));
   }
@@ -154,8 +157,12 @@ test("Listas delega modelos e montagem pura do estado do perfil", () => {
     worksLoader,
     /import \{ criarObraLista \} from "\.\/listas-profile-state-utils";/,
   );
-  assert.match(page, /carregarRegistrosUsuario\(/);
-  assert.match(page, /carregarObrasPublicadas\(/);
+  assert.match(
+    profileLoader,
+    /import \{[\s\S]*?montarListasPerfilEstado,[\s\S]*?registroPermitido,[\s\S]*?\} from "\.\/listas-profile-state-utils";/,
+  );
+  assert.match(profileLoader, /carregarRegistrosUsuario\(/);
+  assert.match(profileLoader, /carregarObrasPublicadas\(/);
 });
 
 test("modelos preservam fallbacks e visibilidade", () => {
