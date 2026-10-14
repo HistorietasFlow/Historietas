@@ -53,3 +53,9 @@
 - Extraiu `criarLoginHrefHome`, `criarHrefLeituraCapituloHome`, `criarHrefObraCatalogoHome` e `criarHrefPerfilAutorHome` para `app/lib/home-route-utils.ts`.
 - Preservou os slugs, query strings, encoding, fallbacks e todas as rotas consumidas pela Home.
 - Manteve na Home somente os consumidores dos quatro helpers.
+
+## Fase 817 — Metadados e tradução da Home
+
+- Extraiu a formatação de gêneros, as tabelas de tradução e os helpers de gênero, formato, classificação e bio do autor para `app/lib/home-metadata-utils.ts`.
+- Preservou textos, acentos, regexes, normalizações, `toLocaleLowerCase` e todos os fallbacks da Home.
+- Manteve na Home somente os consumidores dos helpers de metadados.
