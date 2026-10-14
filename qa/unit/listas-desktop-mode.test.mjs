@@ -55,12 +55,15 @@ test("Listas delega apenas o modo desktop e preserva consumidores responsivos", 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 12);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 10);
   assert.match(pagina, /function iniciarArrasteComentariosDiario[\s\S]*?if \(isDesktop\)/);
-  assert.match(pagina, /style=\{isDesktop \? desktopTabsStyle : tabsStyle\}/);
   assert.match(
     pagina,
-    /style=\{isDesktop \? desktopListSectionStyle : listSectionStyle\}/,
+    /const abasCategoriasPerfilAtualStyle = isDesktop \? desktopTabsStyle : tabsStyle;/,
+  );
+  assert.match(
+    pagina,
+    /const secaoResultadosAtualStyle = isDesktop\s*\? desktopListSectionStyle\s*:\s*listSectionStyle;/,
   );
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /async function salvarAnotacaoListas\(\)/);
