@@ -25,6 +25,14 @@ const comentariosControls = readFileSync(
   "utf8",
 );
 
+const workMenuActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-work-menu-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
 test("useListasActionMessage preserva o lifecycle da mensagem de ação", () => {
   assert.match(hook, /^"use client";/);
   assert.match(hook, /const \[mensagemAcao, setMensagemAcao\] = useState\(""\);/);
@@ -85,7 +93,11 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
     /import \{[\s\S]*?actionMessageStyle,[\s\S]*?\} from "\.\/lib\/listas-layout-styles";/,
   );
   assert.match(styles, /export const actionMessageStyle: CSSProperties =/);
-  assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
+  assert.match(
+    pagina,
+    /import \{ useListasWorkMenuActions \} from "\.\/hooks\/use-listas-work-menu-actions";/,
+  );
+  assert.match(workMenuActions, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /async function salvarAnotacaoListas\(/);
   assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);
 });
