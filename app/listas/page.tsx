@@ -15,6 +15,7 @@ import { useListasWorkMenuActions } from "./hooks/use-listas-work-menu-actions";
 import { useListasDiaryAnnotationActions } from "./hooks/use-listas-diary-annotation-actions";
 import { useListasDiaryInteractionActions } from "./hooks/use-listas-diary-interaction-actions";
 import { useListasDiaryProfileActions } from "./hooks/use-listas-diary-profile-actions";
+import { useListasCategoryNavigation } from "./hooks/use-listas-category-navigation";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
@@ -587,12 +588,11 @@ function ListasUniversaisContent() {
     : listSectionStyle;
   const linhasObrasAtualStyle = isDesktop ? desktopWorksRowsStyle : rowsStyle;
 
-  function trocarCategoria(novaCategoria: CategoriaPerfil) {
-    setCategoria(novaCategoria);
-    const params = new URLSearchParams(queryAtual);
-    params.set("categoria", novaCategoria);
-    router.replace(`/listas?${params.toString()}`, { scroll: false });
-  }
+  const { trocarCategoria } = useListasCategoryNavigation<CategoriaPerfil>({
+    queryAtual,
+    router,
+    setCategoria,
+  });
 
   const perfilEhProprio = Boolean(
     modo === "perfil" &&
