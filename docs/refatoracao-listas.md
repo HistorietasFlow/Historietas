@@ -75,3 +75,7 @@
 
 - Extraiu modelos e normalizadores de obras, perfis e visibilidade, além da montagem síncrona do estado após o carregamento dos dados.
 - Manteve na página consultas Supabase, resolução de capítulos, leituras de storage, carregadores assíncronos, estados, hooks e mutações.
+## Fase 1110 — Carregadores de leitura de Listas
+
+- Extraiu carregadores de perfil, registros, obras publicadas, catálogo e autores para módulos dedicados.
+- Preservou na página estados, hooks, mutações e todos os demais fluxos; os contratos Supabase, limites, filtros, fallbacks e ordenações permaneceram nos carregadores extraídos.
