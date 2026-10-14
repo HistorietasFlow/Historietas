@@ -27,15 +27,31 @@ const recentPostsSection = readFileSync(
   ),
   "utf8",
 );
+const communityTab = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-community-tab.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("página mantém derivadas as estatísticas da Comunidade e delega sua composição", () => {
   assert.match(
     pagina,
-    /import \{ ProfileCommunityStatsGrid \} from "\.\/components\/profile-community-stats-grid";/,
+    /import \{ ProfileCommunityTab \} from "\.\/components\/profile-community-tab";/,
   );
+  assert.match(pagina, /<ProfileCommunityTab/);
+  for (const valor of [
+    /isDesktop=\{isDesktop\}/,
+    /href: comunidadeAutorHref,[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.publicacoes,[\s\S]*?value: valoresEstatisticasComunidade\.publicacoes,/,
+    /href: comunidadeAutorTeoriasHref,[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.teorias,[\s\S]*?value: valoresEstatisticasComunidade\.teorias,/,
+    /href: comunidadeAutorReviewsHref,[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.reviews,[\s\S]*?value: valoresEstatisticasComunidade\.reviews,/,
+  ]) {
+    assert.match(pagina, valor);
+  }
   assert.match(
-    pagina,
-    /<ProfileCommunityStatsGrid[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?publicacoes=\{\{[\s\S]*?href: comunidadeAutorHref,[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.publicacoes,[\s\S]*?value: valoresEstatisticasComunidade\.publicacoes,[\s\S]*?\}\}[\s\S]*?teorias=\{\{[\s\S]*?href: comunidadeAutorTeoriasHref,[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.teorias,[\s\S]*?value: valoresEstatisticasComunidade\.teorias,[\s\S]*?\}\}[\s\S]*?reviews=\{\{[\s\S]*?href: comunidadeAutorReviewsHref,[\s\S]*?ariaLabel: ariaLabelsEstatisticasComunidade\.reviews,[\s\S]*?value: valoresEstatisticasComunidade\.reviews,/,
+    communityTab,
+    /import \{ ProfileCommunityStatsGrid \} from "\.\/profile-community-stats-grid";/,
   );
 });
 
@@ -65,7 +81,7 @@ test("ProfileCommunityStatsGrid preserva os três cards, textos, links e acessib
 test("página mantém dados e callback de denúncia derivados antes de delegar a publicação", () => {
   assert.match(
     pagina,
-    /publicacoes=\{publicacoesRecentesComunidade\}/,
+    /publicacoesRecentes=\{publicacoesRecentesComunidade\}/,
   );
   assert.match(
     recentPostsSection,

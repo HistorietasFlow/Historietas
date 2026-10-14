@@ -1320,3 +1320,9 @@
 
 - Reuniu os action sheets de Obras e Biblioteca em `ProfileActionSheets`, mantendo na página os dados derivados, rótulos, estados e callbacks de leitura, denúncia, compartilhamento, coleções, remoção e fechamento.
 - Preservou condições, ordem, textos, links, `aria-labels`, indicadores de seleção, acessibilidade, UI, schema, RLS e Supabase.
+
+## Fase 1100 — Composições de conteúdo das abas
+
+- Reuniu a apresentação da aba Comunidade em `ProfileCommunityTab`, preservando estatísticas, estados e publicações recentes.
+- Reuniu a decisão de exibição das cinco abas em `ProfileTabContent`, mantendo na página todas as derivações, dados e callbacks.
+- Preservou ordem, textos, links, carregamento, estados vazios e de erro, acessibilidade, UI, schema, RLS e Supabase.

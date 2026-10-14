@@ -27,6 +27,13 @@ const communityPanel = readFileSync(
   ),
   "utf8",
 );
+const communityTab = readFileSync(
+  new URL(
+    "../../app/perfil-autor/components/profile-community-tab.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("ProfileCommunityContentState preserva loading, erro, vazio e conteúdo", () => {
   assert.match(
@@ -75,15 +82,31 @@ test("ProfileCommunityPanel compõe seção, cabeçalho e estado da Comunidade",
 test("página delega a composição externa sem alterar os valores derivados", () => {
   assert.match(
     pagina,
-    /import \{ ProfileCommunityPanel \} from "\.\/components\/profile-community-panel";/,
+    /import \{ ProfileCommunityTab \} from "\.\/components\/profile-community-tab";/,
   );
-  assert.match(
-    pagina,
-    /\{comunidadePerfilAtiva && \([\s\S]*?<ProfileCommunityPanel[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?title=\{tituloComunidadePerfil\}[\s\S]*?loading=\{comunidadePerfil\.carregando\}[\s\S]*?error=\{erroComunidadePerfil\}[\s\S]*?empty=\{comunidadeSemPublicacoesRecentes\}[\s\S]*?emptyTitle=\{avisoComunidadeVazia\.title\}[\s\S]*?emptyDescription=\{avisoComunidadeVazia\.description\}[\s\S]*?persistentContent=\{[\s\S]*?<ProfileCommunityStatsGrid/,
-  );
+  assert.match(pagina, /<ProfileCommunityTab/);
+  for (const prop of [
+    /isDesktop=\{isDesktop\}/,
+    /title=\{tituloComunidadePerfil\}/,
+    /loading=\{comunidadePerfil\.carregando\}/,
+    /error=\{erroComunidadePerfil\}/,
+    /empty=\{comunidadeSemPublicacoesRecentes\}/,
+    /emptyTitle=\{avisoComunidadeVazia\.title\}/,
+    /emptyDescription=\{avisoComunidadeVazia\.description\}/,
+  ]) {
+    assert.match(pagina, prop);
+  }
   assert.doesNotMatch(pagina, /import \{ ProfileCommunitySection \} from/);
   assert.doesNotMatch(pagina, /import \{ ProfileCommunityHeader \} from/);
   assert.doesNotMatch(pagina, /import \{ ProfileCommunityContentState \} from/);
+  assert.match(
+    communityTab,
+    /import \{ ProfileCommunityPanel \} from "\.\/profile-community-panel";/,
+  );
+  assert.match(
+    communityTab,
+    /<ProfileCommunityPanel[\s\S]*?persistentContent=\{[\s\S]*?<ProfileCommunityStatsGrid/,
+  );
 });
 
 test("ProfileCommunityRecentPostsSection compõe a lista e o map das publicações", () => {
@@ -100,7 +123,7 @@ test("ProfileCommunityRecentPostsSection compõe a lista e o map das publicaçõ
     /<ProfileCommunityRecentPostsList isDesktop=\{isDesktop\}>[\s\S]*?\{publicacoes\.map\(renderPost\)\}/,
   );
   assert.match(
-    pagina,
-    /<ProfileCommunityRecentPostsSection[\s\S]*?title="Publicações recentes"[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?publicacoes=\{publicacoesRecentesComunidade\}[\s\S]*?renderPost=\{renderizarPublicacaoRecenteComunidade\}/,
+    communityTab,
+    /<ProfileCommunityRecentPostsSection[\s\S]*?title="Publicações recentes"[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?publicacoes=\{publicacoesRecentes\}[\s\S]*?renderPost=\{renderPost\}/,
   );
 });
