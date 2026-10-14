@@ -135,7 +135,6 @@ test("Listas delega os carregadores, preservando as fronteiras da página", () =
   for (const helper of [
     "carregarAvaliacaoDiarioListas",
     "carregarPerfil",
-    "carregarRegistrosUsuario",
     "carregarObrasPublicadas",
     "carregarIdsInteracoesUsuario",
     "carregarAutoresPublicos",
@@ -145,6 +144,10 @@ test("Listas delega os carregadores, preservando as fronteiras da página", () =
   }
   assert.match(worksSource, /export const CAMPOS_OBRAS =/);
   assert.match(recordsSource, /export type TabelaRegistrosUsuarioListas/);
+  assert.match(
+    readFileSync(new URL("../../app/listas/lib/listas-profile-loader.ts", import.meta.url), "utf8"),
+    /import \{[\s\S]*?carregarRegistrosUsuario,[\s\S]*?\} from "\.\/listas-profile-records-loader";/,
+  );
   assert.match(worksSource, /\.from\("obras"\)[\s\S]*?\.select\(CAMPOS_OBRAS\)[\s\S]*?\.eq\("publicado", true\)[\s\S]*?\.order\("criada_em", \{ ascending: false \}\)/);
   assert.match(worksSource, /\.from\("capitulos"\)[\s\S]*?\.select\("id,obra_id,titulo,ordem,publicado,criado_em"\)[\s\S]*?\.eq\("publicado", true\)[\s\S]*?\.order\("ordem", \{ ascending: true \}\)/);
   assert.match(recordsSource, /\.rpc\("carregar_avaliacao_diario", \{[\s\S]*?p_diario_user_id: userId/);

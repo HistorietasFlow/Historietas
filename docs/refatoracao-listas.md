@@ -79,3 +79,8 @@
 
 - Extraiu carregadores de perfil, registros, obras publicadas, catálogo e autores para módulos dedicados.
 - Preservou na página estados, hooks, mutações e todos os demais fluxos; os contratos Supabase, limites, filtros, fallbacks e ordenações permaneceram nos carregadores extraídos.
+
+## Fase 1111 — Interações do Diário e orquestração de Listas
+
+- Extraiu os carregadores de interações do Diário e a orquestração de leitura das listas do perfil.
+- Manteve na página estados, hooks, mutações e fluxos de inicialização; consultas, storage próprio, visibilidade e fallbacks permanecem nos carregadores dedicados.
