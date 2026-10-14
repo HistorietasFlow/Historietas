@@ -23,6 +23,13 @@ const annotationActions = readFileSync(
   ),
   "utf8",
 );
+const diaryProfileActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-profile-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarModulo(codigo) {
   const javascript = typescript.transpileModule(codigo, {
@@ -43,10 +50,12 @@ const obrasLocais = await importarModulo(
 );
 
 test("Listas delega os utilitários locais sem mover fluxos Supabase", () => {
-  for (const name of ["pegarTexto", "idUsuarioValido", "obterMensagemErroListas", "criarLoginHrefListas"]) {
+  for (const name of ["pegarTexto", "idUsuarioValido", "criarLoginHrefListas"]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${name}\\(`));
   }
+  assert.match(diaryProfileActions, /import[\s\S]*?\bobterMensagemErroListas\b/);
+  assert.doesNotMatch(page, /function obterMensagemErroListas\(/);
   for (const name of ["pegarBooleanoListas", "normalizarTipoDiarioListas", "obterTipoDiarioDoItemListas"]) {
     assert.match(annotationActions, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${name}\\(`));
