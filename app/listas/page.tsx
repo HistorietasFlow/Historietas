@@ -38,6 +38,21 @@ import {
 import { listasPageCss } from "./lib/listas-page-css";
 import { criarAvatarStyle, criarCapaStyle } from "./lib/listas-row-media-utils";
 import {
+  aplicarAnotacoesAosItensListas,
+  carregarAnotacoesLocaisListas,
+  dataRegistro,
+  montarMapaAnotacoesPorObraListas,
+  removerAnotacaoLocalListas,
+  salvarAnotacaoLocalListas,
+} from "./lib/listas-diary-annotation-utils";
+import {
+  criarInteracaoAnotacaoListasVazia,
+  obterRespostasComentarioDiarioListas,
+  ordenarComentariosRaizDiarioListas,
+  type ComentarioAnotacaoListas,
+  type InteracaoAnotacaoListas,
+} from "./lib/listas-diary-comment-utils";
+import {
   colecaoTemObraListas,
   carregarObrasLocaisListas,
   obterIdentificadoresObraListas,
@@ -45,13 +60,20 @@ import {
   removerObraDaColecaoListas,
 } from "./lib/listas-local-work-utils";
 import {
-  normalizarQuemPodeAvaliarDiarioListas,
   normalizarQuemPodeComentarAnotacaoListas,
   normalizarTipoDiarioListas,
   normalizarVisibilidadeAnotacaoListas,
   normalizarVisibilidadeComentariosAnotacaoListas,
   obterTipoDiarioDoItemListas,
 } from "./lib/listas-diary-normalizer-utils";
+import {
+  AVALIACAO_DIARIO_LISTAS_VAZIA,
+  calcularProximaAvaliacaoDiarioListas,
+  normalizarAvaliacaoDiarioListas,
+  obterPreenchimentoEstrelaListas,
+  obterProximaNotaAvaliacaoListas,
+  type AvaliacaoDiarioListasEstado,
+} from "./lib/listas-diary-rating-utils";
 import {
   carregarListaIdsListas,
   criarLoginHrefListas,
@@ -112,7 +134,6 @@ type VisibilidadeComentariosAnotacaoListas =
   | "seguidores"
   | "somente_eu";
 type OrdenacaoComentariosDiarioListas = "relevantes" | "recentes";
-type QuemPodeAvaliarDiarioListas = "todos" | "seguidores" | "ninguem";
 type TipoDiarioListas =
   | "lendo"
   | "quero_ler"
@@ -198,19 +219,6 @@ type ListasPerfilEstado = Record<CategoriaPerfil, ItemObraLista[]>;
 
 type RegistroGenerico = Record<string, unknown>;
 
-type AnotacaoObraListas = {
-  id: string;
-  obraId: string;
-  tipo: TipoDiarioListas;
-  texto: string;
-  visibilidade: VisibilidadeAnotacaoListas;
-  quemPodeComentar: QuemPodeComentarAnotacaoListas;
-  visibilidadeComentarios: VisibilidadeComentariosAnotacaoListas;
-  permitirCurtidas: boolean;
-  contemSpoiler: boolean;
-  atualizadoEm: string;
-};
-
 type EditorAnotacaoListasEstado = {
   aberto: boolean;
   obraId: string;
@@ -230,50 +238,6 @@ type PerfilComentarioDiarioListas = {
   nome: string;
   username: string;
   avatar: string;
-};
-
-type ComentarioAnotacaoListas = {
-  id: string;
-  anotacaoId: string;
-  userId: string;
-  autorNome: string;
-  autorUsername: string;
-  autorAvatar: string;
-  texto: string;
-  criadoEm: string;
-  atualizadoEm: string;
-  parentId: string;
-  curtidas: string[];
-};
-
-type InteracaoAnotacaoListas = {
-  carregando: boolean;
-  totalCurtidas: number;
-  curtiu: boolean;
-  comentarios: ComentarioAnotacaoListas[];
-  novoComentario: string;
-  respondendoComentarioId: string;
-  respondendoAutorNome: string;
-  ordenacaoComentarios: OrdenacaoComentariosDiarioListas;
-  salvandoCurtida: boolean;
-  enviandoComentario: boolean;
-  erro: string;
-};
-
-type AvaliacaoDiarioListasEstado = {
-  carregando: boolean;
-  visivel: boolean;
-  mostrar: boolean;
-  permitir: boolean;
-  quemPodeAvaliar: QuemPodeAvaliarDiarioListas;
-  podeAvaliar: boolean;
-  media: number;
-  total: number;
-  minhaNota: number;
-  salvando: boolean;
-  salvandoConfiguracoes: boolean;
-  configuracoesAbertas: boolean;
-  erro: string;
 };
 
 type InteracoesAnotacoesListasEstado = Record<string, InteracaoAnotacaoListas>;
@@ -322,7 +286,6 @@ const CATEGORIAS_PERFIL: Array<{
 const LIBRARY_FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const DIARIO_ANOTACOES_STORAGE_KEY = "historietas-diario-anotacoes";
 const DIARIO_ANOTACAO_MAX_LENGTH = 700;
 const DIARIO_COMENTARIO_MAX_LENGTH = 700;
 const NOTAS_AVALIACAO_LISTAS = [1, 2, 3, 4, 5] as const;
@@ -341,40 +304,6 @@ const EDITOR_ANOTACAO_LISTAS_VAZIO: EditorAnotacaoListasEstado = {
   salvando: false,
   erro: "",
 };
-
-const AVALIACAO_DIARIO_LISTAS_VAZIA: AvaliacaoDiarioListasEstado = {
-  carregando: false,
-  visivel: false,
-  mostrar: true,
-  permitir: true,
-  quemPodeAvaliar: "todos",
-  podeAvaliar: false,
-  media: 0,
-  total: 0,
-  minhaNota: 0,
-  salvando: false,
-  salvandoConfiguracoes: false,
-  configuracoesAbertas: false,
-  erro: "",
-};
-
-function criarInteracaoAnotacaoListasVazia(
-  carregando = false,
-): InteracaoAnotacaoListas {
-  return {
-    carregando,
-    totalCurtidas: 0,
-    curtiu: false,
-    comentarios: [],
-    novoComentario: "",
-    respondendoComentarioId: "",
-    respondendoAutorNome: "",
-    ordenacaoComentarios: "relevantes",
-    salvandoCurtida: false,
-    enviandoComentario: false,
-    erro: "",
-  };
-}
 
 const CAMPOS_OBRAS =
   "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,capa_url,publicado,visualizacoes,slug,criada_em";
@@ -445,45 +374,6 @@ async function sincronizarQueroLerListas(
 
 
 
-
-function normalizarAvaliacaoDiarioListas(
-  valor: unknown,
-  estadoAnterior: AvaliacaoDiarioListasEstado = AVALIACAO_DIARIO_LISTAS_VAZIA,
-): AvaliacaoDiarioListasEstado {
-  const registro =
-    valor && typeof valor === "object" && !Array.isArray(valor)
-      ? (valor as RegistroGenerico)
-      : {};
-
-  return {
-    ...estadoAnterior,
-    carregando: false,
-    visivel: pegarBooleanoListas(registro.visivel, false),
-    mostrar: pegarBooleanoListas(registro.mostrar, true),
-    permitir: pegarBooleanoListas(registro.permitir, true),
-    quemPodeAvaliar: normalizarQuemPodeAvaliarDiarioListas(
-      registro.quem_pode_avaliar ?? registro.quemPodeAvaliar,
-    ),
-    podeAvaliar: pegarBooleanoListas(
-      registro.pode_avaliar ?? registro.podeAvaliar,
-      false,
-    ),
-    media: Math.max(0, Math.min(5, pegarNumero(registro.media, 0))),
-    total: Math.max(0, Math.trunc(pegarNumero(registro.total, 0))),
-    minhaNota: Math.max(
-      0,
-      Math.min(
-        5,
-        Math.round(
-          pegarNumero(registro.minha_nota ?? registro.minhaNota, 0) * 2,
-        ) / 2,
-      ),
-    ),
-    salvando: false,
-    salvandoConfiguracoes: false,
-    erro: "",
-  };
-}
 
 async function carregarAvaliacaoDiarioListas(
   perfilUserId: string,
@@ -789,15 +679,6 @@ async function carregarRegistrosUsuario(
   }
 }
 
-function dataRegistro(registro: RegistroGenerico) {
-  return pegarTexto(
-    registro.atualizado_em ??
-      registro.updated_at ??
-      registro.criado_em ??
-      registro.created_at,
-  );
-}
-
 function registroPermitido(registro: RegistroGenerico, proprioPerfil: boolean) {
   if (proprioPerfil) {
     return true;
@@ -810,226 +691,6 @@ function registroPermitido(registro: RegistroGenerico, proprioPerfil: boolean) {
 
 
 
-
-function criarChaveStorageAnotacoesListas(userId: string) {
-  return `${DIARIO_ANOTACOES_STORAGE_KEY}:${userId.trim().toLowerCase()}`;
-}
-
-function carregarAnotacoesLocaisListas(userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return [];
-  }
-
-  try {
-    const salvo = window.localStorage.getItem(
-      criarChaveStorageAnotacoesListas(userId),
-    );
-    const registros = salvo ? JSON.parse(salvo) : [];
-
-    return Array.isArray(registros)
-      ? registros.filter(
-          (registro): registro is RegistroGenerico =>
-            Boolean(registro) &&
-            typeof registro === "object" &&
-            !Array.isArray(registro),
-        )
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarAnotacaoLocalListas(
-  userId: string,
-  registro: RegistroGenerico,
-) {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return;
-  }
-
-  try {
-    const obraId = pegarTexto(registro.obra_id ?? registro.obraId);
-
-    if (!obraId) {
-      return;
-    }
-
-    const registros = carregarAnotacoesLocaisListas(userId).filter(
-      (item) => pegarTexto(item.obra_id ?? item.obraId) !== obraId,
-    );
-
-    registros.push(registro);
-    window.localStorage.setItem(
-      criarChaveStorageAnotacoesListas(userId),
-      JSON.stringify(registros),
-    );
-  } catch {
-    // O Supabase continua sendo a fonte principal.
-  }
-}
-
-function removerAnotacaoLocalListas(userId: string, obraId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return;
-  }
-
-  try {
-    const obraIdLimpo = obraId.trim();
-    const registros = carregarAnotacoesLocaisListas(userId).filter(
-      (item) => pegarTexto(item.obra_id ?? item.obraId) !== obraIdLimpo,
-    );
-
-    window.localStorage.setItem(
-      criarChaveStorageAnotacoesListas(userId),
-      JSON.stringify(registros),
-    );
-  } catch {
-    // Ignora somente a cópia local.
-  }
-}
-
-function montarMapaAnotacoesPorObraListas(
-  registros: RegistroGenerico[],
-) {
-  const mapa = new Map<string, AnotacaoObraListas>();
-
-  registros.forEach((registro) => {
-    const obraId = pegarTexto(registro.obra_id ?? registro.obraId);
-    const tipo = normalizarTipoDiarioListas(registro.tipo);
-    const textoAnotacao = pegarTexto(registro.texto);
-    const atualizadoEm = dataRegistro(registro);
-
-    if (!obraId || !tipo || !textoAnotacao) {
-      return;
-    }
-
-    const chave = obraId.toLowerCase();
-    const existente = mapa.get(chave);
-
-    if (
-      existente &&
-      timestampData(existente.atualizadoEm) >= timestampData(atualizadoEm)
-    ) {
-      return;
-    }
-
-    mapa.set(chave, {
-      id: pegarTexto(registro.id),
-      obraId,
-      tipo,
-      texto: textoAnotacao,
-      visibilidade: normalizarVisibilidadeAnotacaoListas(
-        registro.visibilidade,
-        "publico",
-      ),
-      quemPodeComentar: normalizarQuemPodeComentarAnotacaoListas(
-        registro.quem_pode_comentar ?? registro.quemPodeComentar,
-      ),
-      visibilidadeComentarios: normalizarVisibilidadeComentariosAnotacaoListas(
-        registro.visibilidade_comentarios ?? registro.visibilidadeComentarios,
-      ),
-      permitirCurtidas: pegarBooleanoListas(
-        registro.permitir_curtidas ?? registro.permitirCurtidas,
-        true,
-      ),
-      contemSpoiler: pegarBooleanoListas(
-        registro.contem_spoiler ?? registro.contemSpoiler,
-      ),
-      atualizadoEm,
-    });
-  });
-
-  return mapa;
-}
-
-function aplicarAnotacoesAosItensListas(
-  itens: ItemObraLista[],
-  anotacoesPorObra: Map<string, AnotacaoObraListas>,
-) {
-  return itens.map((item) => {
-    const anotacao = anotacoesPorObra.get(item.obra.id.toLowerCase());
-
-    if (!anotacao) {
-      return item;
-    }
-
-    return {
-      ...item,
-      anotacao: anotacao.texto,
-      anotacaoId: anotacao.id,
-      anotacaoTipo: anotacao.tipo,
-      anotacaoVisibilidade: anotacao.visibilidade,
-      anotacaoQuemPodeComentar: anotacao.quemPodeComentar,
-      anotacaoVisibilidadeComentarios: anotacao.visibilidadeComentarios,
-      anotacaoPermitirCurtidas: anotacao.permitirCurtidas,
-      anotacaoSpoiler: anotacao.contemSpoiler,
-    };
-  });
-}
-
-function obterProximaNotaAvaliacaoListas(estrela: number, notaAtual: number) {
-  const meiaNota = estrela - 0.5;
-  const notaNormalizada = Math.round(notaAtual * 2) / 2;
-
-  if (notaNormalizada === meiaNota) {
-    return estrela;
-  }
-
-  if (notaNormalizada === estrela) {
-    return 0;
-  }
-
-  return meiaNota;
-}
-
-function calcularProximaAvaliacaoDiarioListas(
-  avaliacaoAtual: AvaliacaoDiarioListasEstado,
-  novaNota: number,
-): AvaliacaoDiarioListasEstado {
-  const notaAnterior = avaliacaoAtual.minhaNota;
-  const totalAtual = avaliacaoAtual.total;
-  const somaAtual = avaliacaoAtual.media * totalAtual;
-
-  if (novaNota <= 0) {
-    const totalNovo = notaAnterior > 0 ? Math.max(0, totalAtual - 1) : totalAtual;
-    const somaNova = notaAnterior > 0 ? somaAtual - notaAnterior : somaAtual;
-
-    return {
-      ...avaliacaoAtual,
-      media: totalNovo > 0 ? somaNova / totalNovo : 0,
-      total: totalNovo,
-      minhaNota: 0,
-      salvando: true,
-      erro: "",
-    };
-  }
-
-  const totalNovo = notaAnterior > 0 ? totalAtual : totalAtual + 1;
-  const somaNova =
-    notaAnterior > 0
-      ? somaAtual - notaAnterior + novaNota
-      : somaAtual + novaNota;
-
-  return {
-    ...avaliacaoAtual,
-    media: totalNovo > 0 ? somaNova / totalNovo : 0,
-    total: totalNovo,
-    minhaNota: novaNota,
-    salvando: true,
-    erro: "",
-  };
-}
-
-function obterPreenchimentoEstrelaListas(estrela: number, notaAtual: number) {
-  const notaNormalizada = Math.max(
-    0,
-    Math.min(5, Math.round(notaAtual * 2) / 2),
-  );
-
-  if (notaNormalizada >= estrela) return "100%";
-  if (notaNormalizada >= estrela - 0.5) return "50%";
-  return "0%";
-}
 
 
 
@@ -1186,48 +847,6 @@ async function carregarInteracoesAnotacoesListas(
   });
 
   return resultado;
-}
-
-function ordenarComentariosRaizDiarioListas(
-  comentarios: ComentarioAnotacaoListas[],
-  ordenacao: OrdenacaoComentariosDiarioListas,
-) {
-  const respostasPorPai = new Map<string, number>();
-
-  comentarios.forEach((comentario) => {
-    if (!comentario.parentId) return;
-    respostasPorPai.set(
-      comentario.parentId,
-      (respostasPorPai.get(comentario.parentId) || 0) + 1,
-    );
-  });
-
-  return comentarios
-    .filter((comentario) => !comentario.parentId)
-    .sort((a, b) => {
-      if (ordenacao === "recentes") {
-        return timestampData(b.criadoEm) - timestampData(a.criadoEm);
-      }
-
-      const relevanciaA =
-        a.curtidas.length * 3 + (respostasPorPai.get(a.id) || 0) * 2;
-      const relevanciaB =
-        b.curtidas.length * 3 + (respostasPorPai.get(b.id) || 0) * 2;
-
-      return (
-        relevanciaB - relevanciaA ||
-        timestampData(b.criadoEm) - timestampData(a.criadoEm)
-      );
-    });
-}
-
-function obterRespostasComentarioDiarioListas(
-  comentarios: ComentarioAnotacaoListas[],
-  comentarioId: string,
-) {
-  return comentarios
-    .filter((comentario) => comentario.parentId === comentarioId)
-    .sort((a, b) => timestampData(a.criadoEm) - timestampData(b.criadoEm));
 }
 
 function obterHrefContinuarLeituraListas(item: ItemObraLista) {
