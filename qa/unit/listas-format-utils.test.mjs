@@ -18,6 +18,14 @@ const profileTextUtilsSource = readFileSync(
   ),
   "utf8",
 );
+const filterSortUtilsSource = readFileSync(
+  new URL("../../app/listas/lib/listas-filter-sort-utils.ts", import.meta.url),
+  "utf8",
+);
+const presentationUtilsSource = readFileSync(
+  new URL("../../app/listas/lib/listas-presentation-utils.ts", import.meta.url),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -97,7 +105,7 @@ test("formatarNotaListas preserva validacao e arredondamento decimal", () => {
 test("Listas delega somente os formatadores extraidos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?compactarNumero,[\s\S]*?formatarDataCurta,[\s\S]*?formatarLeituraMesAno,[\s\S]*?formatarMesAno,[\s\S]*?formatarNotaListas,[\s\S]*?timestampData,[\s\S]*?\} from "\.\/lib\/listas-format-utils";/,
+    /import \{[\s\S]*?compactarNumero,[\s\S]*?formatarDataCurta,[\s\S]*?formatarLeituraMesAno,[\s\S]*?formatarNotaListas,[\s\S]*?\} from "\.\/lib\/listas-format-utils";/,
   );
 
   for (const helper of [
@@ -115,6 +123,18 @@ test("Listas delega somente os formatadores extraidos", () => {
         /import \{ formatarDataCurta \} from "\.\/listas-format-utils";/,
       );
       assert.match(profileTextUtilsSource, /\bformatarDataCurta\(/);
+      continue;
+    }
+
+    if (helper === "timestampData") {
+      assert.match(filterSortUtilsSource, /import \{ timestampData \} from "\.\/listas-format-utils";/);
+      assert.match(filterSortUtilsSource, /\btimestampData\(/);
+      continue;
+    }
+
+    if (helper === "formatarMesAno") {
+      assert.match(presentationUtilsSource, /import \{ formatarMesAno \} from "\.\/listas-format-utils";/);
+      assert.match(presentationUtilsSource, /\bformatarMesAno\(/);
       continue;
     }
 
