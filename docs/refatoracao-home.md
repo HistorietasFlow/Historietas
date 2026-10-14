@@ -47,3 +47,9 @@
 - Extraiu `useHomeAuthorRatings` para `app/hooks/use-home-author-ratings.ts`.
 - Preservou a extração, normalização, validação e deduplicação dos IDs de autores, o lifecycle assíncrono e os resets do mapa de avaliações.
 - Manteve na Home a lista de autores, sua ordenação, a apresentação dos cards e o restante do carregamento de dados.
+
+## Fase 816 — Utilitários de rotas da Home
+
+- Extraiu `criarLoginHrefHome`, `criarHrefLeituraCapituloHome`, `criarHrefObraCatalogoHome` e `criarHrefPerfilAutorHome` para `app/lib/home-route-utils.ts`.
+- Preservou os slugs, query strings, encoding, fallbacks e todas as rotas consumidas pela Home.
+- Manteve na Home somente os consumidores dos quatro helpers.
