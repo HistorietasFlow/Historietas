@@ -42,13 +42,29 @@ const pageRenderers = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-renderers.tsx", import.meta.url),
   "utf8",
 );
+const profileWorkRenderer = readFileSync(
+  new URL(
+    "../../app/listas/components/listas-profile-work-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Listas delega as quatro apresentações das linhas sem mover o domínio", () => {
   assert.match(
     pagina,
-    /import \{ ListasProfileWorkItem \} from "\.\/components\/listas-profile-work-item";/,
+    /import \{ ListasProfileWorkRenderer \} from "\.\/components\/listas-profile-work-renderer";/,
   );
-  assert.match(pagina, /<ListasProfileWorkItem\b/);
+  assert.match(pagina, /<ListasProfileWorkRenderer\b/);
+  assert.match(
+    profileWorkRenderer,
+    /import \{ ListasProfileWorkItem \} from "\.\/listas-profile-work-item";/,
+  );
+  assert.match(
+    profileWorkRenderer,
+    /ComponentProps<typeof ListasProfileWorkItem>/,
+  );
+  assert.match(profileWorkRenderer, /<ListasProfileWorkItem \{\.\.\.props\} \/>/);
   for (const componente of ["ListasPublicWorkRow", "ListasAuthorRow"]) {
     assert.match(
       pageRenderers,

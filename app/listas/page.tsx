@@ -23,7 +23,7 @@ import { ListasProfileCategoryControls } from "./components/listas-profile-categ
 import { ListasResultsSection } from "./components/listas-results-section";
 import { ListasDiaryReportModal } from "./components/listas-diary-report-modal";
 import { ListasWorkActionSheet } from "./components/listas-work-action-sheet";
-import { ListasProfileWorkItem } from "./components/listas-profile-work-item";
+import { ListasProfileWorkRenderer } from "./components/listas-profile-work-renderer";
 import { ListasDiaryCommentsPanel } from "./components/listas-diary-comments-panel";
 import { formatarLeituraMesAno, formatarNotaListas } from "./lib/listas-format-utils";
 import { listasPageCss } from "./lib/listas-page-css";
@@ -739,7 +739,7 @@ function ListasUniversaisContent() {
       quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
     });
     return (
-      <ListasProfileWorkItem
+      <ListasProfileWorkRenderer
         key={item.chave}
         annotation={item.anotacao || ""}
         annotationId={anotacaoId}
