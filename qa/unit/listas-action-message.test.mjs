@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const styles = readFileSync(
+  new URL("../../app/listas/lib/listas-layout-styles.ts", import.meta.url),
+  "utf8",
+);
 
 test("useListasActionMessage preserva o lifecycle da mensagem de ação", () => {
   assert.match(hook, /^"use client";/);
@@ -65,7 +69,11 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
     pagina,
     /\{mensagemAcao && \(\s*<div role="status" style=\{actionMessageStyle\}>\s*\{mensagemAcao\}/,
   );
-  assert.match(pagina, /const actionMessageStyle: CSSProperties =/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?actionMessageStyle,[\s\S]*?\} from "\.\/lib\/listas-layout-styles";/,
+  );
+  assert.match(styles, /export const actionMessageStyle: CSSProperties =/);
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /async function salvarAnotacaoListas\(/);
   assert.match(pagina, /async function enviarComentarioAnotacaoListas\(/);

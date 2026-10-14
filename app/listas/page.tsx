@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, TouchEvent } from "react";
+import type { TouchEvent } from "react";
 import { useListasActionMessage } from "./hooks/use-listas-action-message";
 import { useListasDiaryCommentsSheetLifecycle } from "./hooks/use-listas-diary-comments-sheet-lifecycle";
 import { useListasDesktopMode } from "./hooks/use-listas-desktop-mode";
@@ -38,6 +38,168 @@ import {
   formatarNotaListas,
 } from "./lib/listas-format-utils";
 import { listasPageCss } from "./lib/listas-page-css";
+import {
+  pageStyle,
+  headerStyle,
+  headerInnerStyle,
+  pageTitleStyle,
+  controlsStyle,
+  listDiaryControlsStyle,
+  desktopControlsStyle,
+  desktopListDiaryControlsStyle,
+  tabsStyle,
+  desktopTabsStyle,
+  tabStyle,
+  tabActiveStyle,
+  tabCountStyle,
+  listSectionStyle,
+  desktopListSectionStyle,
+  rowsStyle,
+  desktopWorksRowsStyle,
+  rowMainLinkStyle,
+  rowAuthorLinkStyle,
+  rowTextStyle,
+  rowTitleStyle,
+  rowMetaStyle,
+  rowDetailStyle,
+  rowOptionsButtonStyle,
+  moreOptionsStyle,
+  moreDotStyle,
+  monthGroupStyle,
+  monthTitleStyle,
+  stateStyle,
+  stateIconStyle,
+  stateTextStyle,
+  stateLinkStyle,
+  loadMoreButtonStyle,
+  actionMessageStyle,
+  footerStyle,
+} from "./lib/listas-layout-styles";
+import {
+  actionSheetOverlayStyle,
+  actionSheetStyle,
+  actionSheetHandleStyle,
+  actionSheetHeaderStyle,
+  actionSheetTitleStyle,
+  actionSheetMetaStyle,
+  actionSheetDetailStyle,
+  actionSheetActionsStyle,
+  actionSheetButtonStyle,
+  actionSheetButtonDisabledStyle,
+  actionSheetButtonIconStyle,
+  actionSheetSelectionDotStyle,
+  actionSheetSelectionDotActiveStyle,
+  rowSignalsStyle,
+  rowSignalStyle,
+  rowRatingSignalStyle,
+  rowRatingSignalStarStyle,
+  rowSignalAnnotationToggleStyle,
+  listDiaryActionSheetReportStyle,
+  listDiaryActionSheetEditorStyle,
+  listDiaryAnnotationTextareaWrapStyle,
+  listDiaryAnnotationTextareaStyle,
+  listDiaryAnnotationEditorMetaStyle,
+  listDiaryAnnotationMetaActionsStyle,
+  listDiaryAnnotationSpoilerLabelStyle,
+  listDiaryAnnotationSpoilerCheckboxStyle,
+  listDiaryAnnotationCounterStyle,
+  listDiaryAnnotationErrorStyle,
+  listDiaryAnnotationSaveStyle,
+  listDiaryAnnotationCancelStyle,
+  listDiaryAnnotationRemoveStyle,
+  listDiaryCardAnnotationStyle,
+  listDiaryCardAnnotationHeaderStyle,
+  listDiaryCardAnnotationTitleStyle,
+  listDiaryCardAnnotationHeaderActionsStyle,
+  listDiaryCardAnnotationLikeButtonStyle,
+  listDiaryCardAnnotationLikeIconStyle,
+  listDiaryCardAnnotationLikeCountStyle,
+  listDiaryCardAnnotationTextStyle,
+  listDiaryCardSpoilerStyle,
+  listDiaryCardSpoilerTextStyle,
+  listDiaryCardSpoilerButtonStyle,
+  listDiaryCardAnnotationTitleGroupStyle,
+} from "./lib/listas-work-styles";
+import {
+  criarAvatarPerfilDiarioListasStyle,
+  criarAvatarComentarioDiarioListasStyle,
+  listDiaryProfileHeaderStyle,
+  listDiaryProfileHeaderTopStyle,
+  listDiaryProfileTitleAreaStyle,
+  listDiaryProfileTitleStyle,
+  listDiaryHeaderRatingBoxStyle,
+  listDiaryHeaderRatingStarsRowStyle,
+  listDiaryHeaderRatingStarButtonStyle,
+  listDiaryHeaderRatingStarActiveStyle,
+  listDiaryHeaderRatingStarVisualStyle,
+  listDiaryHeaderRatingStarBaseStyle,
+  listDiaryHeaderRatingStarFillStyle,
+  listDiaryRatingSummaryStyle,
+  listDiaryRatingNumberStyle,
+  listDiaryRatingSummaryStarsStyle,
+  listDiaryRatingSummaryStarVisualStyle,
+  listDiaryRatingSummaryStarBaseStyle,
+  listDiaryRatingSummaryStarFillStyle,
+  listDiaryRatingTotalStyle,
+  listDiaryCardAnnotationCommentButtonStyle,
+  listDiaryCardAnnotationCommentIconStyle,
+  listDiaryCardAnnotationCommentCountStyle,
+  commentsSheetOverlayStyle,
+  commentsSheetBackdropStyle,
+  commentsSheetStyle,
+  commentsSheetCompactStyle,
+  commentsSheetExpandedStyle,
+  desktopCommentsSheetStyle,
+  commentsSheetHandleWrapStyle,
+  commentsSheetHandleStyle,
+  commentsSheetHeaderStyle,
+  commentsSheetHeaderSpacerStyle,
+  commentsSheetTitleStyle,
+  commentsSortMenuWrapStyle,
+  commentsSortMenuTriggerStyle,
+  commentsSortMenuStyle,
+  commentsSortMenuItemStyle,
+  commentsSortMenuItemActiveStyle,
+  commentsSortMenuDividerStyle,
+  commentsSheetListStyle,
+  commentThreadStyle,
+  commentItemStyle,
+  commentRepliesListStyle,
+  commentReplyItemStyle,
+  commentRepliesToggleStyle,
+  commentRepliesControlsStyle,
+  commentRepliesHideButtonStyle,
+  commentRepliesLineStyle,
+  commentAvatarLinkStyle,
+  commentReplyAvatarLinkStyle,
+  commentContentStyle,
+  commentTopLineStyle,
+  commentAuthorLinkStyle,
+  commentTimeStyle,
+  commentTextStyle,
+  commentActionsRowStyle,
+  commentReplyButtonStyle,
+  commentRemoveButtonStyle,
+  commentReportButtonStyle,
+  commentLikeWrapStyle,
+  commentLikeButtonStyle,
+  commentLikeCountStyle,
+  commentHeartIconStyle,
+  commentsLoadingStyle,
+  emptyCommentsStyle,
+  commentsSheetErrorStyle,
+  commentsReplyingBannerStyle,
+  commentsReplyingCancelStyle,
+  commentsToolsStyle,
+  commentsQuickReactionsStyle,
+  commentsQuickReactionButtonStyle,
+  commentsSheetFormStyle,
+  commentsInputAvatarStyle,
+  commentsInputBoxStyle,
+  commentsSheetInputStyle,
+  commentsInputIconButtonStyle,
+  commentsSheetSendStyle,
+} from "./lib/listas-diary-comments-styles";
 import { criarAvatarStyle, criarCapaStyle } from "./lib/listas-row-media-utils";
 import {
   removerAnotacaoLocalListas,
@@ -380,38 +542,6 @@ async function sincronizarQueroLerListas(
 
 
 
-
-
-function criarAvatarPerfilDiarioListasStyle(avatar: string): CSSProperties {
-  const avatarLimpo = avatar.trim();
-
-  return avatarLimpo
-    ? {
-        ...listDiaryProfileAvatarStyle,
-        backgroundImage: `url(${avatarLimpo})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        color: "transparent",
-      }
-    : listDiaryProfileAvatarStyle;
-}
-
-function criarAvatarComentarioDiarioListasStyle(
-  estiloBase: CSSProperties,
-  avatar: string,
-): CSSProperties {
-  const avatarLimpo = avatar.trim();
-
-  return avatarLimpo
-    ? {
-        ...estiloBase,
-        backgroundImage: `url(${avatarLimpo})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        color: "transparent",
-      }
-    : estiloBase;
-}
 
 function ListasUniversaisContent() {
   const router = useRouter();
@@ -2684,7 +2814,6 @@ function ListasUniversaisContent() {
     </main>
   );
 }
-
 export default function ListasUniversaisPage() {
   return (
     <Suspense
@@ -2698,1677 +2827,3 @@ export default function ListasUniversaisPage() {
     </Suspense>
   );
 }
-
-const pageStyle: CSSProperties = {
-  minHeight: "100vh",
-  background: "#000000",
-  color: "#FFFFFF",
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  paddingBottom: "48px",
-};
-
-
-const headerStyle: CSSProperties = {
-  background: "#000000",
-};
-
-const headerInnerStyle: CSSProperties = {
-  width: "min(100%, 920px)",
-  minHeight: "72px",
-  margin: "0 auto",
-  padding: "14px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-};
-
-const pageTitleStyle: CSSProperties = {
-  width: "100%",
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "clamp(20px, 4vw, 30px)",
-  fontWeight: 900,
-  letterSpacing: "-0.035em",
-  lineHeight: 1.08,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  textAlign: "center",
-};
-
-const controlsStyle: CSSProperties = {
-  width: "min(100%, 920px)",
-  margin: "0 auto",
-  padding: "12px 14px 8px",
-  display: "grid",
-  gap: "10px",
-  boxSizing: "border-box",
-};
-
-const listDiaryControlsStyle: CSSProperties = {
-  ...controlsStyle,
-  padding: "5px 14px 8px",
-};
-
-const desktopControlsStyle: CSSProperties = {
-  ...controlsStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  padding: "12px 0 10px",
-};
-
-const desktopListDiaryControlsStyle: CSSProperties = {
-  ...desktopControlsStyle,
-  padding: "6px 0 10px",
-};
-
-const tabsStyle: CSSProperties = {
-  display: "flex",
-  gap: "7px",
-  overflowX: "auto",
-  scrollbarWidth: "none",
-  paddingBottom: "2px",
-};
-
-const desktopTabsStyle: CSSProperties = {
-  ...tabsStyle,
-  width: "100%",
-  justifyContent: "center",
-  alignItems: "center",
-  flexWrap: "wrap",
-  overflowX: "visible",
-  paddingBottom: "2px",
-};
-
-const tabStyle: CSSProperties = {
-  flex: "0 0 auto",
-  minHeight: "38px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  borderRadius: "999px",
-  background: "#000000",
-  color: "rgba(255,255,255,0.68)",
-  padding: "0 12px",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "7px",
-  fontSize: "12px",
-  fontWeight: 850,
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-};
-
-const tabActiveStyle: CSSProperties = {
-  ...tabStyle,
-  background: "#FFFFFF",
-  color: "#090909",
-  border: "1px solid #FFFFFF",
-};
-
-const tabCountStyle: CSSProperties = {
-  minWidth: "19px",
-  height: "19px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 5px",
-  background: "rgba(127,127,127,0.22)",
-  fontSize: "10px",
-  fontWeight: 950,
-};
-
-
-
-
-
-
-const listSectionStyle: CSSProperties = {
-  width: "min(100%, 920px)",
-  margin: "0 auto",
-  padding: "0 14px",
-  boxSizing: "border-box",
-};
-
-const desktopListSectionStyle: CSSProperties = {
-  ...listSectionStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  padding: 0,
-};
-
-const rowsStyle: CSSProperties = {};
-
-const desktopWorksRowsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  columnGap: "22px",
-  rowGap: "8px",
-  alignItems: "start",
-  minWidth: 0,
-};
-
-const rowMainLinkStyle: CSSProperties = {
-  minHeight: "104px",
-  padding: "9px 0 9px 4px",
-  display: "grid",
-  gridTemplateColumns: "62px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "12px",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  boxSizing: "border-box",
-  transition: "background 120ms ease",
-};
-
-const rowAuthorLinkStyle: CSSProperties = {
-  ...rowMainLinkStyle,
-  gridColumn: "1 / -1",
-  paddingRight: "4px",
-};
-
-const rowTextStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  gap: "5px",
-};
-
-const rowTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "clamp(16px, 3.3vw, 18px)",
-  fontWeight: 500,
-  letterSpacing: "-0.01em",
-  lineHeight: 1.2,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-};
-
-const rowMetaStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.52)",
-  fontSize: "14px",
-  fontWeight: 450,
-  lineHeight: 1.25,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const rowDetailStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.72)",
-  fontSize: "12px",
-  fontWeight: 750,
-  lineHeight: 1.3,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const rowOptionsButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "40px",
-  minHeight: "44px",
-  alignSelf: "center",
-  justifySelf: "stretch",
-  margin: 0,
-  padding: 0,
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  color: "#FFFFFF",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  position: "relative",
-  zIndex: 2,
-};
-
-const moreOptionsStyle: CSSProperties = {
-  minHeight: "20px",
-  minWidth: "10px",
-  display: "inline-flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "2.5px",
-};
-
-const moreDotStyle: CSSProperties = {
-  width: "3px",
-  height: "3px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.92)",
-  display: "block",
-};
-
-const actionSheetOverlayStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 9998,
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "center",
-  background: "rgba(0,0,0,0.68)",
-  overscrollBehavior: "none",
-};
-
-const actionSheetStyle: CSSProperties = {
-  width: "min(820px, 100%)",
-  maxHeight: "calc(100dvh - 72px)",
-  overflowY: "auto",
-  borderRadius: "24px 24px 0 0",
-  background: "#000000",
-  boxShadow: "0 -18px 50px rgba(0,0,0,0.42)",
-  padding: "8px 0 calc(14px + env(safe-area-inset-bottom))",
-  boxSizing: "border-box",
-};
-
-const actionSheetHandleStyle: CSSProperties = {
-  width: "68px",
-  height: "5px",
-  borderRadius: "999px",
-  background: "rgba(244,244,245,0.58)",
-  display: "block",
-  margin: "0 auto 15px",
-};
-
-const actionSheetHeaderStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "5px",
-  padding: "0 28px 18px",
-  textAlign: "center",
-};
-
-const actionSheetTitleStyle: CSSProperties = {
-  maxWidth: "100%",
-  color: "#FFFFFF",
-  fontSize: "20px",
-  fontWeight: 850,
-  lineHeight: 1.15,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const actionSheetMetaStyle: CSSProperties = {
-  maxWidth: "100%",
-  color: "rgba(255,255,255,0.52)",
-  fontSize: "13px",
-  fontWeight: 600,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const actionSheetDetailStyle: CSSProperties = {
-  maxWidth: "100%",
-  color: "rgba(255,255,255,0.72)",
-  fontSize: "11px",
-  fontWeight: 750,
-  lineHeight: 1.3,
-  textAlign: "center",
-  overflowWrap: "anywhere",
-};
-
-const actionSheetActionsStyle: CSSProperties = {
-  display: "grid",
-};
-
-const actionSheetButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "100%",
-  minHeight: "54px",
-  padding: "0 30px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "18px",
-  fontSize: "18px",
-  fontWeight: 650,
-  fontFamily: "inherit",
-  textAlign: "left",
-  textDecoration: "none",
-  cursor: "pointer",
-};
-
-const actionSheetButtonDisabledStyle: CSSProperties = {
-  opacity: 0.58,
-  cursor: "default",
-};
-
-const actionSheetButtonIconStyle: CSSProperties = {
-  minWidth: "24px",
-  color: "rgba(255,255,255,0.72)",
-  fontSize: "22px",
-  lineHeight: 1,
-  textAlign: "center",
-};
-
-const actionSheetSelectionDotStyle: CSSProperties = {
-  width: "20px",
-  height: "20px",
-  borderRadius: "999px",
-  border: "2.25px solid rgba(161,161,170,0.72)",
-  background: "transparent",
-  color: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "0 0 auto",
-  boxSizing: "border-box",
-  fontSize: "13px",
-  lineHeight: 1,
-  fontWeight: 900,
-};
-
-const actionSheetSelectionDotActiveStyle: CSSProperties = {
-  ...actionSheetSelectionDotStyle,
-  border: "2px solid #FFFFFF",
-  background: "#FFFFFF",
-  color: "#111111",
-};
-
-
-const monthGroupStyle: CSSProperties = {
-  marginBottom: "12px",
-};
-
-const monthTitleStyle: CSSProperties = {
-  margin: "14px 0 7px",
-  color: "rgba(255,255,255,0.48)",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-};
-
-const stateStyle: CSSProperties = {
-  minHeight: "300px",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "9px",
-  color: "#FFFFFF",
-  textAlign: "center",
-  padding: "30px 18px",
-};
-
-const stateIconStyle: CSSProperties = {
-  width: "48px",
-  height: "48px",
-  borderRadius: "999px",
-  background: "#151515",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "20px",
-  fontWeight: 950,
-};
-
-const stateTextStyle: CSSProperties = {
-  maxWidth: "430px",
-  color: "rgba(255,255,255,0.58)",
-  fontSize: "13px",
-  fontWeight: 650,
-  lineHeight: 1.45,
-};
-
-const stateLinkStyle: CSSProperties = {
-  marginTop: "5px",
-  minHeight: "38px",
-  padding: "0 15px",
-  borderRadius: "999px",
-  background: "#FFFFFF",
-  color: "#090909",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 900,
-};
-
-const loadMoreButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "48px",
-  marginTop: "14px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: "14px",
-  background: "#0B0B0B",
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 900,
-  cursor: "pointer",
-};
-
-
-const actionMessageStyle: CSSProperties = {
-  position: "sticky",
-  top: "10px",
-  zIndex: 40,
-  width: "fit-content",
-  maxWidth: "calc(100% - 28px)",
-  margin: "8px auto 0",
-  padding: "10px 14px",
-  borderRadius: "999px",
-  background: "#FFFFFF",
-  color: "#090909",
-  fontSize: "12px",
-  fontWeight: 900,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.32)",
-};
-
-const rowSignalsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  flexWrap: "nowrap",
-  gap: "5px",
-  marginTop: "3px",
-  minWidth: 0,
-};
-
-const rowSignalStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  minHeight: "18px",
-  padding: "2px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.09)",
-  color: "rgba(255,255,255,0.78)",
-  fontSize: "9px",
-  fontWeight: 850,
-  lineHeight: 1,
-};
-
-const rowRatingSignalStyle: CSSProperties = {
-  ...rowSignalStyle,
-  gap: "3px",
-  position: "relative",
-  top: 0,
-  flex: "0 0 auto",
-};
-
-const rowRatingSignalStarStyle: CSSProperties = {
-  display: "inline-block",
-  lineHeight: 1,
-  transform: "translateY(-0.5px)",
-};
-
-const rowSignalAnnotationToggleStyle: CSSProperties = {
-  ...rowSignalStyle,
-  cursor: "pointer",
-  userSelect: "none",
-  WebkitUserSelect: "none",
-  WebkitTapHighlightColor: "transparent",
-};
-
-const listDiaryActionSheetReportStyle: CSSProperties = {
-  ...actionSheetButtonStyle,
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
-};
-
-const listDiaryActionSheetEditorStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  padding: "4px 18px 14px",
-  borderBottom: "0",
-  boxSizing: "border-box",
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const listDiaryAnnotationTextareaWrapStyle: CSSProperties = {
-  position: "relative",
-  width: "100%",
-  minWidth: 0,
-  paddingTop: "13px",
-};
-
-const listDiaryAnnotationTextareaStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "78px",
-  resize: "vertical",
-  padding: "8px 48px 8px 9px",
-  borderRadius: "11px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "rgba(255,255,255,0.05)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "9px",
-  lineHeight: 1.4,
-  fontWeight: 700,
-  outline: "none",
-  boxSizing: "border-box",
-};
-
-const listDiaryAnnotationEditorMetaStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  flexWrap: "wrap",
-  gap: "8px",
-  minWidth: 0,
-};
-
-const listDiaryAnnotationMetaActionsStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  flexWrap: "wrap",
-  gap: "5px",
-  marginLeft: "auto",
-};
-
-const listDiaryAnnotationSpoilerLabelStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "5px",
-  minHeight: "27px",
-  color: "rgba(255,255,255,0.72)",
-  fontSize: "8px",
-  fontWeight: 850,
-  lineHeight: 1,
-  whiteSpace: "nowrap",
-  cursor: "pointer",
-};
-
-const listDiaryAnnotationSpoilerCheckboxStyle: CSSProperties = {
-  width: "13px",
-  height: "13px",
-  margin: 0,
-  accentColor:
-    "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
-  cursor: "pointer",
-  flex: "0 0 auto",
-};
-
-const listDiaryAnnotationCounterStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  right: "10px",
-  zIndex: 1,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "7.5px",
-  lineHeight: 1,
-  fontWeight: 800,
-  whiteSpace: "nowrap",
-  pointerEvents: "none",
-};
-
-const listDiaryAnnotationErrorStyle: CSSProperties = {
-  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
-  fontSize: "8px",
-  lineHeight: 1.3,
-  fontWeight: 800,
-  overflowWrap: "anywhere",
-};
-
-const listDiaryAnnotationSaveStyle: CSSProperties = {
-  minHeight: "27px",
-  padding: "5px 9px",
-  borderRadius: "999px",
-  border: "none",
-  background:
-    "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
-  color: "#000000",
-  fontSize: "7.8px",
-  lineHeight: 1,
-  fontWeight: 950,
-  cursor: "pointer",
-};
-
-const listDiaryAnnotationCancelStyle: CSSProperties = {
-  ...listDiaryAnnotationSaveStyle,
-  background: "rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
-
-const listDiaryAnnotationRemoveStyle: CSSProperties = {
-  ...listDiaryAnnotationSaveStyle,
-  background:
-    "var(--historietas-perfil-rose-dark-14, rgba(190,18,60,0.14))",
-  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
-};
-
-const listDiaryCardAnnotationStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-  boxSizing: "border-box",
-};
-
-const listDiaryCardAnnotationHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  minWidth: 0,
-};
-
-const listDiaryCardAnnotationTitleStyle: CSSProperties = {
-  minWidth: 0,
-  color: "rgba(255,255,255,0.82)",
-  fontSize: "11px",
-  fontWeight: 900,
-  lineHeight: 1.25,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const listDiaryCardAnnotationHeaderActionsStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flex: "0 0 auto",
-  transform: "translateX(33px)",
-};
-
-const listDiaryCardAnnotationLikeButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "5px",
-  minHeight: "26px",
-  padding: "0 2px",
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  lineHeight: 1,
-  flex: "0 0 auto",
-};
-
-const listDiaryCardAnnotationLikeIconStyle: CSSProperties = {
-  width: "18px",
-  height: "18px",
-  display: "block",
-  flex: "0 0 auto",
-  transformOrigin: "center",
-};
-
-const listDiaryCardAnnotationLikeCountStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "10px",
-  fontWeight: 850,
-  lineHeight: 1,
-};
-
-const listDiaryCardAnnotationTextStyle: CSSProperties = {
-  margin: 0,
-  color: "rgba(255,255,255,0.88)",
-  fontSize: "12px",
-  fontWeight: 600,
-  lineHeight: 1.5,
-  whiteSpace: "pre-wrap",
-  overflowWrap: "anywhere",
-};
-
-const listDiaryCardSpoilerStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  flexWrap: "wrap",
-  gap: "8px",
-  minWidth: 0,
-  padding: "8px 10px",
-  borderRadius: "10px",
-  background: "rgba(255,255,255,0.05)",
-};
-
-const listDiaryCardSpoilerTextStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.64)",
-  fontSize: "10px",
-  fontWeight: 750,
-  lineHeight: 1.35,
-};
-
-const listDiaryCardSpoilerButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "fit-content",
-  minHeight: "26px",
-  padding: "4px 8px",
-  border: "none",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  fontWeight: 900,
-  lineHeight: 1,
-  cursor: "pointer",
-};
-
-const listDiaryCardAnnotationTitleGroupStyle: CSSProperties = {
-  minWidth: 0,
-  display: "flex",
-  alignItems: "center",
-  gap: "7px",
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const footerStyle: CSSProperties = {
-  width: "min(100%, 920px)",
-  margin: "28px auto 0",
-  padding: "0 14px",
-  color: "rgba(255,255,255,0.32)",
-  fontSize: "10px",
-  fontWeight: 750,
-  textAlign: "center",
-  boxSizing: "border-box",
-};
-const listDiaryProfileHeaderStyle: CSSProperties = {
-  width: "100%",
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-  boxSizing: "border-box",
-};
-
-const listDiaryProfileHeaderTopStyle: CSSProperties = {
-  width: "100%",
-  display: "grid",
-  gridTemplateColumns: "42px minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "9px",
-  minWidth: 0,
-  boxSizing: "border-box",
-};
-
-const listDiaryProfileAvatarStyle: CSSProperties = {
-  width: "42px",
-  maxWidth: "42px",
-  height: "42px",
-  borderRadius: "11px",
-  border: "none",
-  padding: 0,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "#FFFFFF",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  overflow: "hidden",
-  boxSizing: "border-box",
-  flex: "0 0 auto",
-};
-
-const listDiaryProfileTitleAreaStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "center",
-  justifyItems: "start",
-  gap: "7px",
-  minWidth: 0,
-};
-
-const listDiaryProfileTitleStyle: CSSProperties = {
-  ...rowTitleStyle,
-  width: "100%",
-  minWidth: 0,
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "clamp(15px, 3vw, 17px)",
-  fontWeight: 500,
-  letterSpacing: "-0.01em",
-  lineHeight: 1.2,
-  textAlign: "left",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  display: "block",
-  WebkitLineClamp: "unset",
-  WebkitBoxOrient: "initial",
-};
-
-const listDiaryHeaderRatingBoxStyle: CSSProperties = {
-  width: "min(420px, 100%)",
-  margin: "0 auto",
-  padding: 0,
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-  boxSizing: "border-box",
-};
-
-const listDiaryHeaderRatingStarsRowStyle: CSSProperties = {
-  width: "100%",
-  display: "grid",
-  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-  alignItems: "center",
-  gap: "6px",
-  minWidth: 0,
-  background: "transparent",
-  boxShadow: "none",
-};
-
-const listDiaryHeaderRatingStarButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-list-diary-rating-muted, rgba(249, 115, 22, 0.34))",
-  fontSize: "22px",
-  fontWeight: 950,
-  lineHeight: 1,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  filter: "none",
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  padding: 0,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const listDiaryHeaderRatingStarActiveStyle: CSSProperties = {
-  ...listDiaryHeaderRatingStarButtonStyle,
-  color: "var(--historietas-list-diary-rating, #FFFFFF)",
-};
-
-const listDiaryHeaderRatingStarVisualStyle: CSSProperties = {
-  position: "relative",
-  width: "1em",
-  height: "1em",
-  display: "inline-block",
-  lineHeight: 1,
-};
-
-const listDiaryHeaderRatingStarBaseStyle: CSSProperties = {
-  color: "var(--historietas-list-diary-rating-muted, rgba(249, 115, 22, 0.34))",
-  position: "absolute",
-  inset: 0,
-  lineHeight: 1,
-};
-
-const listDiaryHeaderRatingStarFillStyle: CSSProperties = {
-  color: "var(--historietas-list-diary-rating, #FFFFFF)",
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  lineHeight: 1,
-};
-
-const listDiaryRatingSummaryStyle: CSSProperties = {
-  flex: "0 0 auto",
-  width: "fit-content",
-  maxWidth: "118px",
-  minHeight: "39px",
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "center",
-  gap: "3px",
-  padding: "4px 2px",
-  background: "transparent",
-  border: "none",
-  boxShadow: "none",
-  boxSizing: "border-box",
-  textAlign: "center",
-};
-
-const listDiaryRatingNumberStyle: CSSProperties = {
-  color: "var(--historietas-list-diary-rating, #FFFFFF)",
-  fontSize: "18.5px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-};
-
-const listDiaryRatingSummaryStarsStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "1px",
-  color: "var(--historietas-list-diary-rating, #FFFFFF)",
-  fontSize: "10px",
-  lineHeight: 1,
-  letterSpacing: "-0.02em",
-};
-
-const listDiaryRatingSummaryStarVisualStyle: CSSProperties = {
-  position: "relative",
-  width: "1em",
-  height: "1em",
-  display: "inline-block",
-  lineHeight: 1,
-  flex: "0 0 auto",
-};
-
-const listDiaryRatingSummaryStarBaseStyle: CSSProperties = {
-  color: "var(--historietas-list-diary-rating-muted, rgba(249, 115, 22, 0.34))",
-  position: "absolute",
-  inset: 0,
-  lineHeight: 1,
-};
-
-const listDiaryRatingSummaryStarFillStyle: CSSProperties = {
-  color: "var(--historietas-list-diary-rating, #FFFFFF)",
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  lineHeight: 1,
-};
-
-const listDiaryRatingTotalStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "7.8px",
-  lineHeight: 1.1,
-  fontWeight: 850,
-  textTransform: "none",
-  letterSpacing: 0,
-  textAlign: "center",
-  whiteSpace: "nowrap",
-};
-
-const listDiaryCardAnnotationCommentButtonStyle: CSSProperties = {
-  minWidth: "44px",
-  height: "34px",
-  borderRadius: "999px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "4px",
-  padding: "0 4px",
-  fontFamily: "inherit",
-  cursor: "pointer",
-};
-
-const listDiaryCardAnnotationCommentIconStyle: CSSProperties = {
-  width: "20px",
-  height: "20px",
-  display: "block",
-  flex: "0 0 auto",
-};
-
-const listDiaryCardAnnotationCommentCountStyle: CSSProperties = {
-  minWidth: "12px",
-  color: "rgba(255,255,255,0.92)",
-  fontSize: "10px",
-  lineHeight: 1,
-  fontWeight: 900,
-  textAlign: "center",
-};
-
-const commentsSheetOverlayStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 2147483647,
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "center",
-  pointerEvents: "none",
-  isolation: "isolate",
-};
-
-const commentsSheetBackdropStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  zIndex: 0,
-  border: "none",
-  background:
-    "color-mix(in srgb, var(--historietas-page-background, #000000) 66%, transparent)",
-  backdropFilter: "blur(4px)",
-  WebkitBackdropFilter: "blur(4px)",
-  pointerEvents: "auto",
-  cursor: "pointer",
-  padding: 0,
-};
-
-const commentsSheetStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  width: "min(720px, 100%)",
-  maxHeight: "calc(100dvh - env(safe-area-inset-top) - 10px)",
-  display: "grid",
-  gridTemplateRows: "auto auto minmax(0, 1fr) auto auto auto auto",
-  gap: "7px",
-  padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
-  borderRadius: "28px 28px 0 0",
-  background: "var(--historietas-page-background, #000000)",
-  border: "none",
-  borderBottom: "none",
-  boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
-  pointerEvents: "auto",
-  overflow: "hidden",
-  boxSizing: "border-box",
-  willChange: "height",
-  transition: "height 220ms ease",
-};
-
-const commentsSheetCompactStyle: CSSProperties = {
-  height: "min(64dvh, 540px)",
-};
-
-const commentsSheetExpandedStyle: CSSProperties = {
-  height: "min(90dvh, 760px)",
-};
-
-const desktopCommentsSheetStyle: CSSProperties = {
-  ...commentsSheetStyle,
-  width: "min(800px, calc(100% - 40px))",
-  height: "min(76dvh, 720px)",
-};
-
-const commentsSheetHandleWrapStyle: CSSProperties = {
-  minHeight: "24px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  touchAction: "none",
-  cursor: "grab",
-  willChange: "transform",
-  outline: "none",
-};
-
-const commentsSheetHandleStyle: CSSProperties = {
-  width: "44px",
-  height: "5px",
-  borderRadius: "999px",
-  background: "var(--historietas-border-soft, rgba(255,255,255,0.34))",
-};
-
-const commentsSheetHeaderStyle: CSSProperties = {
-  minHeight: "32px",
-  display: "grid",
-  gridTemplateColumns: "40px minmax(0, 1fr) 40px",
-  alignItems: "center",
-  gap: "6px",
-  minWidth: 0,
-};
-
-const commentsSheetHeaderSpacerStyle: CSSProperties = {
-  width: "40px",
-  height: "1px",
-};
-
-const commentsSheetTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14.5px",
-  fontWeight: 950,
-  textAlign: "center",
-  letterSpacing: "-0.02em",
-};
-
-const commentsSortMenuWrapStyle: CSSProperties = {
-  position: "relative",
-  width: "40px",
-  height: "34px",
-  justifySelf: "end",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-};
-
-const commentsSortMenuTriggerStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "27px",
-  lineHeight: 1,
-  fontWeight: 500,
-  fontFamily: "inherit",
-  padding: "0 0 2px",
-  cursor: "pointer",
-};
-
-const commentsSortMenuStyle: CSSProperties = {
-  position: "absolute",
-  top: "calc(100% + 6px)",
-  right: 0,
-  zIndex: 12,
-  width: "132px",
-  maxWidth: "calc(100vw - 24px)",
-  display: "grid",
-  gap: 0,
-  padding: "4px 8px",
-  boxSizing: "border-box",
-  borderRadius: "12px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background:
-    "var(--historietas-surface-strong, rgba(18, 12, 30, 0.98))",
-  boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
-};
-
-const commentsSortMenuItemStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "36px",
-  border: "none",
-  borderRadius: 0,
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  padding: "0 4px",
-  textAlign: "center",
-  fontSize: "11.5px",
-  fontWeight: 850,
-  fontFamily: "inherit",
-  cursor: "pointer",
-};
-
-const commentsSortMenuItemActiveStyle: CSSProperties = {
-  ...commentsSortMenuItemStyle,
-  color: "#FFFFFF",
-};
-
-const commentsSortMenuDividerStyle: CSSProperties = {
-  width: "100%",
-  height: "1px",
-  background: "var(--historietas-border-soft, rgba(255,255,255,0.12))",
-};
-
-const commentsSheetListStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "start",
-  gap: "12px",
-  minHeight: 0,
-  overflowY: "auto",
-  padding: "6px 2px 9px",
-  WebkitOverflowScrolling: "touch",
-};
-
-const commentThreadStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-};
-
-const commentItemStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
-  gap: "10px",
-  alignItems: "start",
-  minWidth: 0,
-};
-
-const commentRepliesListStyle: CSSProperties = {
-  display: "grid",
-  gap: "9px",
-  marginLeft: "34px",
-  paddingLeft: "10px",
-  borderLeft:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  minWidth: 0,
-};
-
-const commentReplyItemStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
-  gap: "8px",
-  alignItems: "start",
-  minWidth: 0,
-};
-
-const commentRepliesToggleStyle: CSSProperties = {
-  width: "fit-content",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "8px",
-  marginLeft: "44px",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "1px 0",
-  cursor: "pointer",
-};
-
-const commentRepliesControlsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
-
-const commentRepliesHideButtonStyle: CSSProperties = {
-  width: "fit-content",
-  marginLeft: "44px",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "1px 0",
-  cursor: "pointer",
-};
-
-const commentRepliesLineStyle: CSSProperties = {
-  width: "22px",
-  height: "1px",
-  background: "var(--historietas-border-soft, rgba(255,255,255,0.22))",
-};
-
-const commentAvatarLinkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-page-background, #000000)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #FFFFFF) 30%, transparent)",
-  color: "#FFFFFF",
-  fontSize: "12.5px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  textDecoration: "none",
-  boxShadow: "none",
-  flex: "0 0 auto",
-  overflow: "hidden",
-  boxSizing: "border-box",
-  cursor: "pointer",
-};
-
-const commentReplyAvatarLinkStyle: CSSProperties = {
-  ...commentAvatarLinkStyle,
-  width: "28px",
-  height: "28px",
-  borderRadius: "10px",
-  fontSize: "10.5px",
-};
-
-const commentContentStyle: CSSProperties = {
-  position: "relative",
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-};
-
-const commentTopLineStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "baseline",
-  gap: "6px",
-  minWidth: 0,
-};
-
-const commentAuthorLinkStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
-  fontWeight: 950,
-  textDecoration: "none",
-  cursor: "pointer",
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const commentTimeStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  fontWeight: 750,
-  whiteSpace: "nowrap",
-};
-
-const commentTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12.5px",
-  lineHeight: 1.38,
-  fontWeight: 750,
-  whiteSpace: "pre-wrap",
-  overflowWrap: "anywhere",
-};
-
-const commentActionsRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  flexWrap: "wrap",
-};
-
-const commentReplyButtonStyle: CSSProperties = {
-  width: "fit-content",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "1px 0 0",
-  cursor: "pointer",
-};
-
-const commentRemoveButtonStyle: CSSProperties = {
-  ...commentReplyButtonStyle,
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
-};
-
-const commentReportButtonStyle: CSSProperties = {
-  ...commentReplyButtonStyle,
-};
-
-const commentLikeWrapStyle: CSSProperties = {
-  minWidth: "28px",
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "start",
-  gap: "2px",
-};
-
-const commentLikeButtonStyle: CSSProperties = {
-  width: "28px",
-  height: "28px",
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-  cursor: "pointer",
-};
-
-const commentLikeCountStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 900,
-  lineHeight: 1,
-  minHeight: "10px",
-  textAlign: "center",
-};
-
-const commentHeartIconStyle: CSSProperties = {
-  width: "19px",
-  height: "19px",
-  display: "block",
-  flex: "0 0 auto",
-  transformOrigin: "center",
-};
-
-const commentsLoadingStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "58px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 850,
-  boxSizing: "border-box",
-};
-
-const emptyCommentsStyle: CSSProperties = {
-  margin: "10px 0 0",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
-  fontWeight: 800,
-  textAlign: "center",
-};
-
-const commentsSheetErrorStyle: CSSProperties = {
-  display: "block",
-  padding: "8px 10px",
-  borderRadius: "14px",
-  background: "rgba(239,68,68,0.12)",
-  border: "1px solid rgba(248,113,113,0.24)",
-  color: "#FCA5A5",
-  fontSize: "11px",
-  fontWeight: 850,
-  lineHeight: 1.35,
-  textAlign: "center",
-};
-
-const commentsReplyingBannerStyle: CSSProperties = {
-  minHeight: "30px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  padding: "5px 8px",
-  borderRadius: "12px",
-  background:
-    "var(--historietas-secondary-surface, rgba(255,255,255,0.05))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10.5px",
-  fontWeight: 800,
-};
-
-const commentsReplyingCancelStyle: CSSProperties = {
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontSize: "10.5px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "2px 0",
-  cursor: "pointer",
-};
-
-const commentsToolsStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  padding: "5px 0 0",
-};
-
-const commentsQuickReactionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "6px",
-  width: "100%",
-  overflowX: "auto",
-  padding: "0 1px",
-  scrollbarWidth: "none",
-  WebkitOverflowScrolling: "touch",
-};
-
-const commentsQuickReactionButtonStyle: CSSProperties = {
-  width: "30px",
-  height: "28px",
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  fontSize: "18px",
-  lineHeight: 1,
-  padding: 0,
-  cursor: "pointer",
-  flex: "0 0 auto",
-};
-
-const commentsSheetFormStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "30px minmax(0, 1fr) 28px 38px",
-  alignItems: "center",
-  gap: "7px",
-  padding: "7px 0 0",
-  minWidth: 0,
-};
-
-const commentsInputAvatarStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "11px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-page-background, #000000)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #FFFFFF) 30%, transparent)",
-  color: "#FFFFFF",
-  fontSize: "11.5px",
-  fontWeight: 950,
-  overflow: "hidden",
-};
-
-const commentsInputBoxStyle: CSSProperties = {
-  minWidth: 0,
-  minHeight: "38px",
-  display: "flex",
-  alignItems: "center",
-};
-
-const commentsSheetInputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "38px",
-  maxHeight: "82px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-page-background, #000000)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "9px 12px",
-  outline: "none",
-  fontSize: "12.5px",
-  lineHeight: 1.32,
-  fontWeight: 650,
-  resize: "none",
-  overflowY: "auto",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-};
-
-const commentsInputIconButtonStyle: CSSProperties = {
-  width: "26px",
-  height: "30px",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "16px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: 0,
-  cursor: "pointer",
-};
-
-const commentsSheetSendStyle: CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-bottom-nav-publish-border, color-mix(in srgb, var(--historietas-accent, #FFFFFF) 38%, transparent))",
-  background:
-    "var(--historietas-bottom-nav-publish-bg, var(--historietas-accent, #FFFFFF))",
-  color: "var(--historietas-list-comments-send-text, #FFFFFF)",
-  fontSize: "18px",
-  lineHeight: 1,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: 0,
-};

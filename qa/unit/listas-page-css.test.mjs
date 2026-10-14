@@ -44,8 +44,16 @@ test("Listas consome somente o CSS extraído na ordem original", () => {
     1,
   );
   assert.doesNotMatch(pagina, /\$\{listasPageCss\}\$\{historietasThemeCss\}/);
-  assert.match(pagina, /const pageStyle: CSSProperties = \{/);
-  assert.match(pagina, /const commentsSheetStyle: CSSProperties = \{/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?pageStyle,[\s\S]*?\} from "\.\/lib\/listas-layout-styles";/,
+  );
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?commentsSheetStyle,[\s\S]*?\} from "\.\/lib\/listas-diary-comments-styles";/,
+  );
+  assert.doesNotMatch(pagina, /const pageStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const commentsSheetStyle: CSSProperties = \{/);
   assert.match(pagina, /const isDesktop = useListasDesktopMode\(\);/);
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /async function salvarAnotacaoListas\(\)/);
