@@ -11,6 +11,7 @@ import { useListasPageDataLoader } from "./hooks/use-listas-page-data-loader";
 import { useListasRouteUiSync } from "./hooks/use-listas-route-ui-sync";
 import { useListasTargetWorkFocus } from "./hooks/use-listas-target-work-focus";
 import { useListasWorkMenuLifecycle } from "./hooks/use-listas-work-menu-lifecycle";
+import { useListasWorkMenuActions } from "./hooks/use-listas-work-menu-actions";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
@@ -120,10 +121,6 @@ import {
 } from "./lib/listas-diary-comment-utils";
 import { type InteracoesAnotacoesListasEstado } from "./lib/listas-diary-interactions-loader";
 import {
-  colecaoTemObraListas,
-  removerObraDaColecaoListas,
-} from "./lib/listas-local-work-utils";
-import {
   obterHrefContinuarLeituraListas,
 } from "./lib/listas-profile-items-utils";
 import { carregarAvaliacaoDiarioListas } from "./lib/listas-profile-records-loader";
@@ -157,11 +154,7 @@ import {
   obterProximaNotaAvaliacaoListas,
   type AvaliacaoDiarioListasEstado,
 } from "./lib/listas-diary-rating-utils";
-import {
-  carregarListaIdsListas,
-  criarLoginHrefListas,
-  salvarListaIdsListas,
-} from "./lib/listas-storage-utils";
+import { criarLoginHrefListas } from "./lib/listas-storage-utils";
 import {
   idUsuarioValido,
   obterMensagemErroListas,
@@ -373,62 +366,6 @@ const EDITOR_ANOTACAO_LISTAS_VAZIO: EditorAnotacaoListasEstado = {
   erro: "",
 };
 
-async function sincronizarQueroLerListas(
-  userId: string,
-  obraId: string,
-  ativo: boolean,
-) {
-  try {
-    if (!userId.trim() || !obraId.trim()) {
-      return;
-    }
-
-    const { error: erroDelete } = await supabase
-      .from("seguindo_obras")
-      .delete()
-      .eq("user_id", userId)
-      .eq("obra_id", obraId);
-
-    if (erroDelete) {
-      throw erroDelete;
-    }
-
-    if (!ativo) {
-      return;
-    }
-
-    const payloadBase = {
-      user_id: userId,
-      obra_id: obraId,
-    };
-
-    const { error: erroComVisibilidade } = await supabase
-      .from("seguindo_obras")
-      .insert({
-        ...payloadBase,
-        visibilidade: "publico",
-      });
-
-    if (!erroComVisibilidade) {
-      return;
-    }
-
-    const { error: erroSemVisibilidade } = await supabase
-      .from("seguindo_obras")
-      .insert(payloadBase);
-
-    if (erroSemVisibilidade) {
-      throw erroSemVisibilidade;
-    }
-  } catch (error) {
-    console.warn("Não consegui sincronizar Quero ler na Lista Page:", error);
-    // Assim como no perfil, a ação local permanece funcionando.
-  }
-}
-
-
-
-
 function ListasUniversaisContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -581,6 +518,28 @@ function ListasUniversaisContent() {
     setObraDestacadaId,
   });
 
+  const {
+    abrirMenuObra,
+    fecharMenuObra,
+    alternarObraNoQueroLer,
+    compartilharObraDoMenu,
+  } = useListasWorkMenuActions({
+    editorAnotacao,
+    editorAnotacaoVazio: EDITOR_ANOTACAO_LISTAS_VAZIO,
+    obraMenuAberta,
+    obraMenuNoQueroLer,
+    router,
+    salvandoQueroLer,
+    setCategoriaMenuAberta,
+    setEditorAnotacao,
+    setItemPerfilMenuAberto,
+    setObraMenuAberta,
+    setObraMenuNoQueroLer,
+    setSalvandoQueroLer,
+    storageKey: LIBRARY_FOLLOW_STORAGE_KEY,
+    usuarioAtualId,
+  });
+
   const itensPerfilFiltrados = useMemo(
     () =>
       filtrarOrdenarItensPerfilListas(
@@ -650,194 +609,6 @@ function ListasUniversaisContent() {
     params.set("categoria", novaCategoria);
     router.replace(`/listas?${params.toString()}`, { scroll: false });
   }
-
-  async function abrirMenuObra(
-    obra: ObraLista,
-    item: ItemObraLista | null = null,
-    categoriaAtual: CategoriaPerfil = "tudo",
-  ) {
-    setObraMenuAberta(obra);
-    setItemPerfilMenuAberto(item);
-    setCategoriaMenuAberta(categoriaAtual);
-    setObraMenuNoQueroLer(false);
-    setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
-
-    try {
-      const userId =
-        usuarioAtualId ||
-        (await supabase.auth.getUser()).data.user?.id ||
-        "";
-
-      if (!userId) {
-        return;
-      }
-
-      const listaLocal = carregarListaIdsListas(
-        LIBRARY_FOLLOW_STORAGE_KEY,
-        userId,
-      );
-      const salvoLocalmente = colecaoTemObraListas(listaLocal, obra);
-
-      setObraMenuNoQueroLer(salvoLocalmente);
-
-      const { data, error } = await supabase
-        .from("seguindo_obras")
-        .select("obra_id")
-        .eq("user_id", userId)
-        .eq("obra_id", obra.id)
-        .limit(1);
-
-      if (error) {
-        return;
-      }
-
-      const salvoRemotamente = Array.isArray(data) && data.length > 0;
-      const salvo = salvoLocalmente || salvoRemotamente;
-
-      setObraMenuNoQueroLer(salvo);
-
-      if (salvoRemotamente && !salvoLocalmente) {
-        salvarListaIdsListas(
-          LIBRARY_FOLLOW_STORAGE_KEY,
-          userId,
-          Array.from(new Set([...listaLocal, obra.id])),
-        );
-      }
-    } catch {
-      // O estado local continua disponível mesmo sem resposta do Supabase.
-    }
-  }
-
-  function fecharMenuObra() {
-    if (salvandoQueroLer || editorAnotacao.salvando) {
-      return;
-    }
-
-    setObraMenuAberta(null);
-    setItemPerfilMenuAberto(null);
-    setObraMenuNoQueroLer(false);
-    setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
-  }
-
-  async function alternarObraNoQueroLer() {
-    if (!obraMenuAberta || salvandoQueroLer) {
-      return;
-    }
-
-    const obra = obraMenuAberta;
-    setSalvandoQueroLer(true);
-
-    try {
-      const userId =
-        usuarioAtualId ||
-        (await supabase.auth.getUser()).data.user?.id ||
-        "";
-
-      if (!userId) {
-        setObraMenuAberta(null);
-        router.push(criarLoginHrefListas());
-        return;
-      }
-
-      const listaAtual = carregarListaIdsListas(
-        LIBRARY_FOLLOW_STORAGE_KEY,
-        userId,
-      );
-      const jaEstaSalva =
-        obraMenuNoQueroLer || colecaoTemObraListas(listaAtual, obra);
-      const proximoEstado = !jaEstaSalva;
-      const listaAtualizada = proximoEstado
-        ? Array.from(new Set([...listaAtual, obra.id]))
-        : removerObraDaColecaoListas(listaAtual, obra);
-
-      salvarListaIdsListas(
-        LIBRARY_FOLLOW_STORAGE_KEY,
-        userId,
-        listaAtualizada,
-      );
-      setObraMenuNoQueroLer(proximoEstado);
-      setObraMenuAberta(null);
-      setItemPerfilMenuAberto(null);
-
-      await sincronizarQueroLerListas(userId, obra.id, proximoEstado);
-    } finally {
-      setSalvandoQueroLer(false);
-    }
-  }
-
-  function copiarTextoComFallback(texto: string) {
-    const campo = document.createElement("textarea");
-    campo.value = texto;
-    campo.setAttribute("readonly", "true");
-    campo.style.position = "fixed";
-    campo.style.left = "-9999px";
-    document.body.appendChild(campo);
-    campo.select();
-
-    let copiado = false;
-
-    try {
-      copiado = document.execCommand("copy");
-    } catch {
-      copiado = false;
-    }
-
-    document.body.removeChild(campo);
-    return copiado;
-  }
-
-  async function compartilharObraDoMenu() {
-    if (!obraMenuAberta) {
-      return;
-    }
-
-    const link = new URL(obraMenuAberta.link, window.location.origin).toString();
-    const dados: ShareData = {
-      title: `${obraMenuAberta.titulo} no HISTORIETAS`,
-      text: `Confira ${obraMenuAberta.titulo} de ${obraMenuAberta.autor} no HISTORIETAS.`,
-      url: link,
-    };
-
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share(dados);
-        fecharMenuObra();
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-      }
-    }
-
-    try {
-      let copiado = false;
-
-      if (
-        window.isSecureContext &&
-        navigator.clipboard &&
-        typeof navigator.clipboard.writeText === "function"
-      ) {
-        try {
-          await navigator.clipboard.writeText(link);
-          copiado = true;
-        } catch {
-          copiado = copiarTextoComFallback(link);
-        }
-      } else {
-        copiado = copiarTextoComFallback(link);
-      }
-
-      if (!copiado) {
-        throw new Error("Não foi possível copiar o link.");
-      }
-
-      fecharMenuObra();
-    } catch {
-      // Mantém a ação silenciosa quando o compartilhamento não estiver disponível.
-    }
-  }
-
 
   const perfilEhProprio = Boolean(
     modo === "perfil" &&

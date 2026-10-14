@@ -109,3 +109,8 @@
 
 - Extraiu os controles de abertura, arraste, expansão, fechamento e inserção do sheet de comentários para um hook dedicado.
 - Extraiu a composição do painel de comentários e a composição visual da obra do perfil, mantendo na página estados, permissões, derivações, callbacks e todas as mutações.
+
+## Fase 1117 — Ações do menu de obra de Listas
+
+- Extraiu a persistência de Quero ler e as ações de abertura, fechamento, sincronização e compartilhamento do menu de obra para módulos dedicados.
+- Preservou na página os estados, setters, editor, mutações de anotação e JSX; as operações Supabase, storage, fallback de cópia e redirecionamento de login permanecem com a mesma ordem e contratos.

@@ -15,6 +15,10 @@ const denuncia = await readFile(
   "app/listas/components/listas-diary-report-modal.tsx",
   "utf8",
 );
+const workMenuActions = await readFile(
+  "app/listas/hooks/use-listas-work-menu-actions.ts",
+  "utf8",
+);
 
 test("Listas delega os overlays de obra para composições apresentacionais", () => {
   assert.match(
@@ -40,15 +44,26 @@ test("Listas mantém estados, cálculos e mutações do action sheet na página"
     "editorAnotacao",
     "DIARIO_ANOTACAO_MAX_LENGTH",
     "obterHrefContinuarLeituraListas",
-    "alternarObraNoQueroLer",
-    "compartilharObraDoMenu",
     "abrirDenunciaDiario",
     "abrirEditorAnotacaoListas",
     "salvarAnotacaoListas",
     "removerAnotacaoListas",
-    "fecharMenuObra",
   ]) {
     assert.match(pagina, new RegExp(`\\b${contrato}\\b`));
+  }
+
+  assert.match(
+    pagina,
+    /import \{ useListasWorkMenuActions \} from "\.\/hooks\/use-listas-work-menu-actions";/,
+  );
+  assert.match(pagina, /useListasWorkMenuActions\(\{/);
+  for (const helper of [
+    "alternarObraNoQueroLer",
+    "compartilharObraDoMenu",
+    "fecharMenuObra",
+  ]) {
+    assert.match(workMenuActions, new RegExp(`function ${helper}\\(`));
+    assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
   assert.match(pagina, /setMensagemAcao\("Denúncia enviada para análise\."\)/);
