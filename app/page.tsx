@@ -33,6 +33,16 @@ import {
   normalizarNumeroHome,
 } from "./lib/home-format-utils";
 import type { AvaliacaoAutorHome } from "./lib/home-format-utils";
+import {
+  colecaoTemIdentificadorHome,
+  criarIdentificadoresObraCatalogoHome,
+  criarIdentificadoresObraLocalHome,
+  normalizarListaIdsHome,
+  obraCatalogoEstaNaMinhaLista,
+  obraLocalEstaNaMinhaLista,
+  obterIdentificadorFavoritoHome,
+  removerIdentificadoresDaListaHome,
+} from "./lib/home-collection-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../lib/utils";
@@ -448,37 +458,6 @@ function formatarSinopseHeroMobile(sinopse: string | undefined) {
   return `${textoComPalavrasSeguras.slice(0, 129).trim()}…`;
 }
 
-function obterIdentificadorFavoritoHome(obra: Obra) {
-  const obraComIdentificador = obra as Obra & {
-    id?: string;
-    slug?: string;
-  };
-
-  return (
-    obraComIdentificador.id?.trim() ||
-    obraComIdentificador.slug?.trim() ||
-    criarSlugBase(obra.titulo)
-  );
-}
-
-function criarFavoritosNormalizadosHome(obrasFavoritas: string[]) {
-  return new Set(
-    obrasFavoritas
-      .map((favorito) => favorito.trim())
-      .filter(Boolean)
-  );
-}
-
-function normalizarListaIdsHome(lista: string[]) {
-  return Array.from(
-    new Set(
-      lista
-        .map((item) => item.trim())
-        .filter((item) => Boolean(item))
-    )
-  );
-}
-
 function criarStorageKeyUsuarioHome(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
@@ -555,61 +534,6 @@ function salvarListaIdsHome(chave: string, userId: string, lista: string[]) {
   const listaNormalizada = normalizarListaIdsHome(lista);
 
   salvarJsonStorageUsuarioHome(chave, userIdLimpo, listaNormalizada);
-}
-
-function criarIdentificadoresObraLocalHome(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
-) {
-  return normalizarListaIdsHome([
-    obra.id,
-    obra.slug,
-    criarSlugBase(obra.titulo),
-    normalizarTexto(obra.titulo),
-  ]);
-}
-
-function criarIdentificadoresObraCatalogoHome(obra: Obra) {
-  const obraComIdentificador = obra as Obra & {
-    id?: string;
-    slug?: string;
-  };
-
-  return normalizarListaIdsHome([
-    obraComIdentificador.id?.trim() || "",
-    obraComIdentificador.slug?.trim() || "",
-    criarSlugBase(obra.titulo),
-    normalizarTexto(obra.titulo),
-  ]);
-}
-
-function colecaoTemIdentificadorHome(identificadores: string[], colecao: string[]) {
-  const colecaoNormalizada = criarFavoritosNormalizadosHome(colecao);
-
-  return identificadores.some((identificador) =>
-    colecaoNormalizada.has(identificador)
-  );
-}
-
-function removerIdentificadoresDaListaHome(lista: string[], identificadores: string[]) {
-  const identificadoresParaRemover = new Set(identificadores);
-
-  return normalizarListaIdsHome(
-    lista.filter((item) => !identificadoresParaRemover.has(item.trim()))
-  );
-}
-
-function obraLocalEstaNaMinhaLista(obra: ObraLocal, obrasFavoritas: string[]) {
-  return colecaoTemIdentificadorHome(
-    criarIdentificadoresObraLocalHome(obra),
-    obrasFavoritas
-  );
-}
-
-function obraCatalogoEstaNaMinhaLista(obra: Obra, obrasFavoritas: string[]) {
-  return colecaoTemIdentificadorHome(
-    criarIdentificadoresObraCatalogoHome(obra),
-    obrasFavoritas
-  );
 }
 
 function obraCatalogoCombinaBuscaHome(obra: Obra, termoBusca: string) {

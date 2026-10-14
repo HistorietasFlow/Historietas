@@ -65,3 +65,9 @@
 - Extraiu a normalização numérica, a resolução de locale, a compactação e a formatação de avaliações de autores para `app/lib/home-format-utils.ts`.
 - Preservou `Math.max`, `Math.round`, `Number.isFinite`, a leitura de `document.documentElement.lang`, os locales e os sufixos de compactação da Home.
 - Manteve na Home somente os consumidores dos helpers de formatação.
+
+## Fase 819 — Coleções e identificadores da Home
+
+- Extraiu os identificadores, normalização, comparação e remoção de coleções para `app/lib/home-collection-utils.ts`.
+- Preservou a prioridade de IDs, slugs e slugs derivados, `trim()`, `Set`, normalização textual e os retornos booleanos.
+- Manteve na Home a persistência de `localStorage` e seus consumidores do normalizador.
