@@ -46,6 +46,13 @@ const diaryInteractionActions = readFileSync(
   ),
   "utf8",
 );
+const diaryProfileActions = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-diary-profile-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useListasActionMessage preserva o lifecycle da mensagem de ação", () => {
   assert.match(hook, /^"use client";/);
@@ -85,8 +92,8 @@ test("Listas delega somente o lifecycle e mantém mensagens e status locais", ()
   [
     "Não foi possível identificar este conteúdo.",
     "Você não pode denunciar seu próprio conteúdo.",
-    "Denúncia enviada para análise.",
-  ].forEach((texto) => assert.match(pagina, new RegExp(texto)));
+  ].forEach((texto) => assert.match(diaryProfileActions, new RegExp(texto)));
+  assert.match(pagina, /Denúncia enviada para análise\./);
   [
     "Você só pode editar anotações da sua própria lista.",
     "Anotação salva.",
