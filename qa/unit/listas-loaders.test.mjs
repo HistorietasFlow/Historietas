@@ -4,6 +4,10 @@ import test from "node:test";
 import typescript from "typescript";
 
 const page = readFileSync(new URL("../../app/listas/page.tsx", import.meta.url), "utf8");
+const pageDataHook = readFileSync(
+  new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
+  "utf8",
+);
 const recordsSource = readFileSync(
   new URL("../../app/listas/lib/listas-profile-records-loader.ts", import.meta.url),
   "utf8",
@@ -131,7 +135,9 @@ async function importarCatalog(supabase, carregarMetricasConteudos) {
   );
 }
 
-test("Listas delega os carregadores, preservando as fronteiras da página", () => {
+test("Listas delega os carregadores, preservando as fronteiras da p?gina", () => {
+  assert.match(page, /import \{ useListasPageDataLoader \}/);
+  assert.match(page, /useListasPageDataLoader\(\{/);
   for (const helper of [
     "carregarAvaliacaoDiarioListas",
     "carregarPerfil",
@@ -139,8 +145,8 @@ test("Listas delega os carregadores, preservando as fronteiras da página", () =
     "carregarIdsInteracoesUsuario",
     "carregarAutoresPublicos",
   ]) {
-    assert.match(page, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
-    assert.doesNotMatch(page, new RegExp(`async function ${helper}\\(`));
+    assert.match(pageDataHook, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
+    assert.doesNotMatch(pageDataHook, new RegExp(`async function ${helper}\\(`));
   }
   assert.match(worksSource, /export const CAMPOS_OBRAS =/);
   assert.match(recordsSource, /export type TabelaRegistrosUsuarioListas/);

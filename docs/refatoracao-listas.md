@@ -99,3 +99,8 @@
 
 - Moveu os estilos est?ticos de layout, obra/anota??o e Di?rio/coment?rios para tr?s m?dulos dedicados.
 - Preservou nomes, propriedades, valores, spreads, responsividade e consumidores; a p?gina continua respons?vel por JSX, estados, hooks, carregadores e muta??es.
+
+## Fase 1115 — Orquestração de leitura de Listas
+
+- Moveu o carregamento principal e a sincronização de interações do Diário para hooks dedicados, mantendo a página como proprietária dos estados, JSX e mutações.
+- Preservou autenticação, privacidade, consultas de leitura, cancelamentos, fallbacks, filtros, recomendações e a mesclagem dos campos locais de comentários.
