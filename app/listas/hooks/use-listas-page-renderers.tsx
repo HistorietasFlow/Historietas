@@ -7,14 +7,14 @@ import { ListasPublicWorkRow } from "../components/listas-public-work-row";
 type Obra = { id: string; capa: string; genero: string; link: string; titulo: string };
 type Autor = { id: string; nome: string; avatar: string; totalObras: number; username: string };
 
-export function useListasPageRenderers({ abrirMenuObra, criarAvatarStyle, criarCapaStyle, idUsuarioValido, styles }: {
-  abrirMenuObra: (obra: any, item: null, categoria: "tudo") => void;
+export function useListasPageRenderers<TObra extends Obra>({ abrirMenuObra, criarAvatarStyle, criarCapaStyle, idUsuarioValido, styles }: {
+  abrirMenuObra: (obra: TObra, item: null, categoria: "tudo") => void;
   criarAvatarStyle: (avatar: string) => CSSProperties;
   criarCapaStyle: (capa: string) => CSSProperties;
   idUsuarioValido: (id: string) => boolean;
   styles: { rowAuthorLinkStyle: CSSProperties; rowMainLinkStyle: CSSProperties; rowMetaStyle: CSSProperties; moreDotStyle: CSSProperties; moreOptionsStyle: CSSProperties; rowOptionsButtonStyle: CSSProperties; rowTextStyle: CSSProperties; rowTitleStyle: CSSProperties };
 }) {
-  function renderizarObraPublica(obra: Obra) {
+  function renderizarObraPublica(obra: TObra) {
     return <ListasPublicWorkRow key={obra.id} coverStyle={criarCapaStyle(obra.capa)} genero={obra.genero} href={obra.link} onOpenOptions={() => void abrirMenuObra(obra, null, "tudo")} styles={{ mainLink: styles.rowMainLinkStyle, meta: styles.rowMetaStyle, moreDot: styles.moreDotStyle, moreOptions: styles.moreOptionsStyle, optionsButton: styles.rowOptionsButtonStyle, text: styles.rowTextStyle, title: styles.rowTitleStyle }} titulo={obra.titulo} />;
   }
   function renderizarAutor(autor: Autor) {
