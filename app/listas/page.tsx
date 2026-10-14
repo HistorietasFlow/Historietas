@@ -58,11 +58,21 @@ import {
   obterHrefContinuarLeituraListas,
 } from "./lib/listas-profile-items-utils";
 import {
-  criarObraLista,
-  criarPerfilLista,
   montarListasPerfilEstado,
   registroPermitido,
 } from "./lib/listas-profile-state-utils";
+import {
+  carregarAvaliacaoDiarioListas,
+  carregarPerfil,
+  carregarRegistrosUsuario,
+} from "./lib/listas-profile-records-loader";
+import {
+  carregarObrasPublicadas,
+} from "./lib/listas-published-works-loader";
+import {
+  carregarAutoresPublicos,
+  carregarIdsInteracoesUsuario,
+} from "./lib/listas-public-catalog-loader";
 import {
   dataUltimoCapitulo,
   ordenarObrasDaSecao,
@@ -98,7 +108,6 @@ import {
   idUsuarioValido,
   obterMensagemErroListas,
   pegarBooleanoListas,
-  pegarNumero,
   pegarTexto,
 } from "./lib/listas-value-utils";
 import {
@@ -114,7 +123,6 @@ import {
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
-import { carregarMetricasConteudos } from "../../lib/metricas";
 import {
   carregarEstadoRelacionamentoPerfil,
   carregarPermissoesAbasPerfil,
@@ -320,19 +328,6 @@ const EDITOR_ANOTACAO_LISTAS_VAZIO: EditorAnotacaoListasEstado = {
   erro: "",
 };
 
-const CAMPOS_OBRAS =
-  "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,capa_url,publicado,visualizacoes,slug,criada_em";
-
-
-
-
-
-
-
-
-
-
-
 async function sincronizarQueroLerListas(
   userId: string,
   obraId: string,
@@ -385,274 +380,6 @@ async function sincronizarQueroLerListas(
     // Assim como no perfil, a ação local permanece funcionando.
   }
 }
-
-
-
-
-
-async function carregarAvaliacaoDiarioListas(
-  perfilUserId: string,
-): Promise<AvaliacaoDiarioListasEstado> {
-  const userId = perfilUserId.trim();
-
-  if (!idUsuarioValido(userId)) {
-    return { ...AVALIACAO_DIARIO_LISTAS_VAZIA };
-  }
-
-  const { data, error } = await supabase.rpc("carregar_avaliacao_diario", {
-    p_diario_user_id: userId,
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  return normalizarAvaliacaoDiarioListas(data);
-}
-
-async function carregarPerfil(userId: string, nomeFallback = "") {
-  if (!idUsuarioValido(userId)) {
-    return criarPerfilLista(null, userId, nomeFallback);
-  }
-
-  for (const campo of ["user_id", "id"] as const) {
-    try {
-      const { data, error } = await supabase
-        .from("profiles_publicos")
-        .select("id,user_id,nome,username,avatar_url,bio,sobre_bio")
-        .eq(campo, userId)
-        .limit(1)
-        .maybeSingle();
-
-      if (!error && data) {
-        return criarPerfilLista(data, userId, nomeFallback);
-      }
-    } catch {
-      // Tenta buscar pelo identificador alternativo.
-    }
-  }
-
-  return criarPerfilLista(null, userId, nomeFallback);
-}
-
-async function carregarCapitulosDasObras(obras: ObraLista[]) {
-  const ids = Array.from(new Set(obras.map((obra) => obra.id).filter(Boolean)));
-
-  if (ids.length === 0) {
-    return obras;
-  }
-
-  const capitulosPorObra = new Map<string, CapituloLista[]>();
-  const tamanhoChunk = 100;
-
-  for (let inicio = 0; inicio < ids.length; inicio += tamanhoChunk) {
-    const chunk = ids.slice(inicio, inicio + tamanhoChunk);
-
-    try {
-      const { data, error } = await supabase
-        .from("capitulos")
-        .select("id,obra_id,titulo,ordem,publicado,criado_em")
-        .in("obra_id", chunk)
-        .eq("publicado", true)
-        .order("ordem", { ascending: true })
-        .limit(Math.max(chunk.length * 80, 100));
-
-      if (error || !Array.isArray(data)) {
-        continue;
-      }
-
-      data.forEach((registro, index) => {
-        if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-          return;
-        }
-
-        const row = registro;
-        const obraId = pegarTexto(row.obra_id);
-
-        if (!obraId) {
-          return;
-        }
-
-        const atuais = capitulosPorObra.get(obraId) || [];
-        atuais.push({
-          id: pegarTexto(row.id, `capitulo-${obraId}-${index + 1}`),
-          obraId,
-          titulo: pegarTexto(row.titulo, `Capítulo ${index + 1}`),
-          ordem: Math.max(1, Math.round(pegarNumero(row.ordem, index + 1))),
-          criadoEm: pegarTexto(row.criado_em),
-        });
-        capitulosPorObra.set(obraId, atuais);
-      });
-    } catch {
-      // A lista continua funcionando mesmo sem os capítulos.
-    }
-  }
-
-  return obras.map((obra) => ({
-    ...obra,
-    capitulos: capitulosPorObra.get(obra.id) || [],
-  }));
-}
-
-async function aplicarMetricasObrasListas(obras: ObraLista[]) {
-  const obraIds = Array.from(
-    new Set(obras.map((obra) => obra.id.trim()).filter(Boolean)),
-  );
-
-  if (obraIds.length === 0) {
-    return obras;
-  }
-
-  const metricas = await carregarMetricasConteudos({ obraIds });
-
-  if (!metricas.carregado) {
-    return obras;
-  }
-
-  return obras.map((obra) => {
-    const metrica = metricas.obras.get(obra.id);
-
-    if (!metrica) {
-      return obra;
-    }
-
-    return {
-      ...obra,
-      totalCurtidas: metrica.audiencia.curtidoresUnicos,
-      totalComentarios: metrica.audiencia.comentaristasUnicos,
-      notaMedia: metrica.avaliacao.media,
-      totalAvaliacoes: metrica.avaliacao.total,
-    };
-  });
-}
-async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
-  try {
-    let consulta = supabase
-      .from("obras")
-      .select(CAMPOS_OBRAS)
-      .eq("publicado", true)
-      .order("criada_em", { ascending: false });
-
-    if (idsEspecificos.length > 0) {
-      consulta = consulta.in(
-        "id",
-        Array.from(new Set(idsEspecificos.map((id) => id.trim()).filter(Boolean))),
-      );
-    }
-
-    const { data, error } = await consulta.limit(
-      idsEspecificos.length > 0 ? Math.max(idsEspecificos.length, 1) : 500,
-    );
-
-    if (error || !Array.isArray(data)) {
-      return [] as ObraLista[];
-    }
-
-    let obras = data.map((registro, index) =>
-      criarObraLista(registro, index),
-    );
-
-    obras = await carregarCapitulosDasObras(obras);
-    obras = await aplicarMetricasObrasListas(obras);
-
-    return obras;
-  } catch {
-    return [] as ObraLista[];
-  }
-}
-
-type TabelaRegistrosUsuarioListas =
-  | "seguindo_obras"
-  | "favoritos"
-  | "concluidas"
-  | "obra_avaliacoes"
-  | "progresso_leitura"
-  | "diario_anotacoes";
-
-async function carregarRegistrosUsuario(
-  tabela: TabelaRegistrosUsuarioListas,
-  userId: string,
-) {
-  if (!idUsuarioValido(userId)) {
-    return [];
-  }
-
-  try {
-    const consultas = {
-      seguindo_obras: () =>
-        supabase
-          .from("seguindo_obras")
-          .select("obra_id,visibilidade,criado_em")
-          .eq("user_id", userId)
-          .limit(2000),
-      favoritos: () =>
-        supabase
-          .from("favoritos")
-          .select("obra_id,visibilidade,criado_em")
-          .eq("user_id", userId)
-          .limit(2000),
-      concluidas: () =>
-        supabase
-          .from("concluidas")
-          .select("obra_id,visibilidade,criado_em")
-          .eq("user_id", userId)
-          .limit(2000),
-      obra_avaliacoes: () =>
-        supabase
-          .from("obra_avaliacoes")
-          .select("obra_id,nota,criado_em,atualizado_em")
-          .eq("user_id", userId)
-          .limit(2000),
-      progresso_leitura: () =>
-        supabase
-          .from("progresso_leitura")
-          .select(
-            "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
-          )
-          .eq("user_id", userId)
-          .limit(2000),
-      diario_anotacoes: () =>
-        supabase
-          .from("diario_anotacoes")
-          .select(
-            "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,criado_em,atualizado_em",
-          )
-          .eq("user_id", userId)
-          .limit(2000),
-    } satisfies Record<
-      TabelaRegistrosUsuarioListas,
-      () => PromiseLike<unknown>
-    >;
-
-    const { data, error } = await consultas[tabela]();
-
-    if (error) {
-      console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, error.message);
-      return [];
-    }
-
-    if (!Array.isArray(data)) {
-      return [];
-    }
-
-    return data
-      .filter(
-        (registro) =>
-          Boolean(
-            registro &&
-              typeof registro === "object" &&
-              !Array.isArray(registro),
-          ),
-      )
-      .map((registro) => registro as unknown as RegistroGenerico);
-  } catch (error) {
-    const mensagem = error instanceof Error ? error.message : "Falha desconhecida";
-    console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, mensagem);
-    return [];
-  }
-}
-
-
 
 
 
@@ -955,170 +682,6 @@ async function carregarListasDoPerfil(
     obrasLocais,
     obras,
   });
-}
-
-async function carregarIdsInteracoesUsuario(userId: string) {
-  if (!idUsuarioValido(userId)) {
-    return [] as string[];
-  }
-
-  const carregarIds = async (
-    tabela: "favoritos" | "seguindo_obras" | "concluidas",
-  ) => {
-    const consultas = {
-      favoritos: () =>
-        supabase
-          .from("favoritos")
-          .select("obra_id")
-          .eq("user_id", userId),
-      seguindo_obras: () =>
-        supabase
-          .from("seguindo_obras")
-          .select("obra_id")
-          .eq("user_id", userId),
-      concluidas: () =>
-        supabase
-          .from("concluidas")
-          .select("obra_id")
-          .eq("user_id", userId),
-    };
-    const { data, error } = await consultas[tabela]();
-
-    if (error || !Array.isArray(data)) {
-      return [];
-    }
-
-    return data.map(({ obra_id }) => ({ obra_id }));
-  };
-
-  const [favoritas, seguindo, concluidas] = await Promise.all([
-    carregarIds("favoritos"),
-    carregarIds("seguindo_obras"),
-    carregarIds("concluidas"),
-  ]);
-
-  return Array.from(
-    new Set(
-      [...favoritas, ...seguindo, ...concluidas]
-        .map((registro) => pegarTexto(registro.obra_id))
-        .filter(Boolean),
-    ),
-  );
-}
-
-async function carregarAvaliacoesAutoresPublicos(autorIds: string[]) {
-  const idsUnicos = Array.from(
-    new Set(autorIds.map((id) => id.trim()).filter(idUsuarioValido)),
-  );
-  const avaliacoes = new Map<string, { media: number; total: number }>();
-
-  if (idsUnicos.length === 0) {
-    return avaliacoes;
-  }
-
-  const metricas = await carregarMetricasConteudos({ autorIds: idsUnicos });
-
-  if (!metricas.carregado) {
-    return avaliacoes;
-  }
-
-  metricas.autores.forEach((metrica) => {
-    avaliacoes.set(metrica.id, {
-      media: metrica.avaliacao.media,
-      total: metrica.avaliacao.total,
-    });
-  });
-
-  return avaliacoes;
-}
-async function carregarAutoresPublicos(obras: ObraLista[]) {
-  const idsAutores = Array.from(
-    new Set(obras.map((obra) => obra.autorId).filter(idUsuarioValido)),
-  );
-  const perfisPorId = new Map<string, PerfilLista>();
-  const avaliacoesPorAutor = await carregarAvaliacoesAutoresPublicos(idsAutores);
-  const tamanhoChunk = 100;
-
-  for (let inicio = 0; inicio < idsAutores.length; inicio += tamanhoChunk) {
-    const chunk = idsAutores.slice(inicio, inicio + tamanhoChunk);
-
-    for (const campo of ["user_id", "id"] as const) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles_publicos")
-          .select("id,user_id,nome,username,avatar_url,bio,sobre_bio,criado_em")
-          .in(campo, chunk)
-          .limit(Math.max(chunk.length, 1));
-
-        if (error || !Array.isArray(data)) {
-          continue;
-        }
-
-        data.forEach((registro) => {
-          if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-            return;
-          }
-
-          const row = registro;
-          const userId = pegarTexto(row.user_id ?? row.id);
-
-          if (userId) {
-            perfisPorId.set(userId, criarPerfilLista(row, userId, "Usuário"));
-          }
-        });
-      } catch {
-        // Os dados das próprias obras servem como fallback.
-      }
-    }
-  }
-
-  const agrupados = new Map<string, ObraLista[]>();
-
-  obras.forEach((obra) => {
-    const chave = obra.autorId || normalizarTexto(obra.autor);
-    const atuais = agrupados.get(chave) || [];
-    atuais.push(obra);
-    agrupados.set(chave, atuais);
-  });
-
-  return Array.from(agrupados.entries())
-    .map(([chave, obrasAutor]): AutorLista => {
-      const primeiraObra = obrasAutor[0];
-      const perfil = primeiraObra.autorId
-        ? perfisPorId.get(primeiraObra.autorId)
-        : undefined;
-      const generos = Array.from(
-        new Set(obrasAutor.map((obra) => obra.genero).filter(Boolean)),
-      ).slice(0, 3);
-
-      const avaliacao = primeiraObra.autorId
-        ? avaliacoesPorAutor.get(primeiraObra.autorId)
-        : undefined;
-
-      return {
-        id: perfil?.userId || primeiraObra.autorId || chave,
-        nome: perfil?.nome || primeiraObra.autor,
-        username: perfil?.username || "",
-        avatar: perfil?.avatar || "",
-        bio: perfil?.bio || "Autor no Historietas.",
-        totalObras: obrasAutor.length,
-        totalCurtidas: obrasAutor.reduce(
-          (total, obra) => total + obra.totalCurtidas,
-          0,
-        ),
-        totalComentarios: obrasAutor.reduce(
-          (total, obra) => total + obra.totalComentarios,
-          0,
-        ),
-        notaMedia: avaliacao?.media || 0,
-        totalAvaliacoes: avaliacao?.total || 0,
-        generos,
-        criadaEm: obrasAutor
-          .map((obra) => obra.publicadaEm)
-          .sort((a, b) => timestampData(b) - timestampData(a))[0] || "",
-      };
-    })
-    .sort((a, b) => b.totalObras - a.totalObras || a.nome.localeCompare(b.nome));
 }
 
 function criarAvatarPerfilDiarioListasStyle(avatar: string): CSSProperties {

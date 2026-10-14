@@ -12,6 +12,14 @@ const profileItemsSource = readFileSync(
   new URL("../../app/listas/lib/listas-profile-items-utils.ts", import.meta.url),
   "utf8",
 );
+const recordsLoader = readFileSync(
+  new URL("../../app/listas/lib/listas-profile-records-loader.ts", import.meta.url),
+  "utf8",
+);
+const worksLoader = readFileSync(
+  new URL("../../app/listas/lib/listas-published-works-loader.ts", import.meta.url),
+  "utf8",
+);
 
 async function importarModulo(codigo) {
   const javascript = typescript.transpileModule(codigo, {
@@ -130,8 +138,6 @@ function montar(args = {}) {
 
 test("Listas delega modelos e montagem pura do estado do perfil", () => {
   for (const helper of [
-    "criarObraLista",
-    "criarPerfilLista",
     "registroPermitido",
     "montarListasPerfilEstado",
   ]) {
@@ -140,6 +146,14 @@ test("Listas delega modelos e montagem pura do estado do perfil", () => {
     assert.match(source, new RegExp(`export function ${helper}\\b`));
   }
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect/);
+  assert.match(
+    recordsLoader,
+    /import \{ criarPerfilLista \} from "\.\/listas-profile-state-utils";/,
+  );
+  assert.match(
+    worksLoader,
+    /import \{ criarObraLista \} from "\.\/listas-profile-state-utils";/,
+  );
   assert.match(page, /carregarRegistrosUsuario\(/);
   assert.match(page, /carregarObrasPublicadas\(/);
 });

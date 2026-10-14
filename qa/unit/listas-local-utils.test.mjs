@@ -10,6 +10,7 @@ const works = readFileSync(new URL("../../app/listas/lib/listas-local-work-utils
 const diary = readFileSync(new URL("../../app/listas/lib/listas-diary-normalizer-utils.ts", import.meta.url), "utf8");
 const profileItems = readFileSync(new URL("../../app/listas/lib/listas-profile-items-utils.ts", import.meta.url), "utf8");
 const profileState = readFileSync(new URL("../../app/listas/lib/listas-profile-state-utils.ts", import.meta.url), "utf8");
+const worksLoader = readFileSync(new URL("../../app/listas/lib/listas-published-works-loader.ts", import.meta.url), "utf8");
 
 async function importarModulo(codigo) {
   const javascript = typescript.transpileModule(codigo, {
@@ -30,7 +31,7 @@ const obrasLocais = await importarModulo(
 );
 
 test("Listas delega os utilitários locais sem mover fluxos Supabase", () => {
-  for (const name of ["pegarTexto", "pegarNumero", "pegarBooleanoListas", "idUsuarioValido", "obterMensagemErroListas", "carregarListaIdsListas", "salvarListaIdsListas", "carregarObrasLocaisListas", "colecaoTemObraListas", "removerObraDaColecaoListas", "criarLoginHrefListas", "normalizarTipoDiarioListas", "obterTipoDiarioDoItemListas"]) {
+  for (const name of ["pegarTexto", "pegarBooleanoListas", "idUsuarioValido", "obterMensagemErroListas", "carregarListaIdsListas", "salvarListaIdsListas", "carregarObrasLocaisListas", "colecaoTemObraListas", "removerObraDaColecaoListas", "criarLoginHrefListas", "normalizarTipoDiarioListas", "obterTipoDiarioDoItemListas"]) {
     assert.match(page, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${name}\\(`));
   }
@@ -47,6 +48,10 @@ test("Listas delega os utilitários locais sem mover fluxos Supabase", () => {
     /import \{[\s\S]*?obterProgressoObraLocalListas,[\s\S]*?\} from "\.\/listas-local-work-utils";/,
   );
   assert.doesNotMatch(profileState, /supabase|localStorage/);
+  assert.match(
+    worksLoader,
+    /import \{ pegarNumero, pegarTexto \} from "\.\/listas-value-utils";/,
+  );
 });
 
 test("módulos preservam parsing, storage isolado, obra local e normalizadores", () => {
