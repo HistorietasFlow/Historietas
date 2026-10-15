@@ -28,6 +28,15 @@ import {
   traduzirGeneroHome,
 } from "./lib/home-metadata-utils";
 import {
+  obraCatalogoCombinaBuscaHome,
+  obraCatalogoCombinaComTemasRecomendados,
+  obraCatalogoCombinaTemas,
+  obraCombinaComTemasRecomendados,
+  obraLocalCombinaBusca,
+  obterTemasRecomendacaoObra,
+  obterTemasRecomendacaoObraCatalogo,
+} from "./lib/home-discovery-utils";
+import {
   compactarNumeroHome,
   formatarMediaAvaliacaoAutorHome,
   normalizarNumeroHome,
@@ -312,29 +321,6 @@ function encontrarCapituloParaContinuar(obra: ObraLocal) {
   return obra.capitulos.find((capitulo) => !capitulo.lido) || null;
 }
 
-function obraLocalCombinaBusca(obra: ObraLocal, termoBusca: string) {
-  if (!termoBusca) {
-    return true;
-  }
-
-  const textoObra = normalizarTexto(
-    [
-      obra.titulo,
-      obra.autor,
-      obra.genero,
-      formatarGeneroHome(obra.genero),
-      obra.formato,
-      obra.classificacaoIndicativa,
-      obra.sinopse,
-      obra.tags.join(" "),
-      obra.capaNome,
-      obra.capitulos.map((capitulo) => capitulo.titulo).join(" "),
-    ].join(" ")
-  );
-
-  return textoObra.includes(termoBusca);
-}
-
 function obterTempoUltimaLeitura(obra: ObraLocal) {
   const temposLeitura = [
     obra.ultimaLeituraEm,
@@ -464,73 +450,6 @@ function formatarSinopseHeroMobile(sinopse: string | undefined) {
   return `${textoComPalavrasSeguras.slice(0, 129).trim()}…`;
 }
 
-function obraCatalogoCombinaBuscaHome(obra: Obra, termoBusca: string) {
-  if (!termoBusca) {
-    return true;
-  }
-
-  const textoObra = normalizarTexto(
-    [
-      obra.titulo,
-      obra.autor,
-      obra.genero,
-      formatarGeneroHome(obra.genero),
-      obra.classificacaoIndicativa,
-      obra.status,
-    ].join(" ")
-  );
-
-  return textoObra.includes(termoBusca);
-}
-
-function obterTemasRecomendacaoObra(obra: ObraLocal) {
-  return Array.from(
-    new Set(
-      [
-        obra.genero,
-        formatarGeneroHome(obra.genero),
-        obra.formato,
-        ...obra.tags,
-      ]
-        .map((tema) => normalizarTexto(tema))
-        .filter((tema) => tema && tema !== "sem tags" && tema !== "nao informado")
-    )
-  );
-}
-
-function obterTemasRecomendacaoObraCatalogo(obra: Obra) {
-  return Array.from(
-    new Set(
-      [
-        obra.genero,
-        formatarGeneroHome(obra.genero),
-        obra.status,
-        obra.classificacaoIndicativa,
-      ]
-        .map((tema) => normalizarTexto(tema))
-        .filter((tema) => tema && tema !== "nao informado")
-    )
-  );
-}
-
-function obraCombinaComTemasRecomendados(obra: ObraLocal, temas: Set<string>) {
-  if (temas.size === 0) {
-    return false;
-  }
-
-  return obterTemasRecomendacaoObra(obra).some((tema) => temas.has(tema));
-}
-
-function obraCatalogoCombinaComTemasRecomendados(obra: Obra, temas: Set<string>) {
-  if (temas.size === 0) {
-    return false;
-  }
-
-  return obterTemasRecomendacaoObraCatalogo(obra).some((tema) =>
-    temas.has(tema)
-  );
-}
-
 function criarDesktopHeroPosterStyle(obra: Obra): CSSProperties {
   const imagemObra = obterImagemObraCatalogo(obra);
 
@@ -628,20 +547,6 @@ function obraTemArquivoAnexado(obra: ObraLocal) {
 
 function obraTemConteudoPublicoHome(obra: ObraLocal) {
   return obra.capitulos.length > 0 || obraTemArquivoAnexado(obra);
-}
-
-function obraCatalogoCombinaTemas(obra: Obra, temas: string[]) {
-  const textoObra = normalizarTexto(
-    [
-      obra.titulo,
-      obra.autor,
-      obra.genero,
-      formatarGeneroHome(obra.genero),
-      obra.status,
-    ].join(" ")
-  );
-
-  return temas.some((tema) => textoObra.includes(normalizarTexto(tema)));
 }
 
 function normalizarChaveAutor(nome: string) {

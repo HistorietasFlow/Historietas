@@ -77,3 +77,9 @@
 - Extraiu as chaves, leitura, escrita e listas isoladas por usuário para `app/lib/home-storage-utils.ts`.
 - Preservou os guards de SSR, `try/catch`, serialização JSON, filtros, fallbacks e normalização das listas.
 - Manteve na Home as constantes de storage e todos os consumidores dos helpers.
+
+## Fase 821 — Busca e recomendação da Home
+
+- Extraiu os helpers puros de busca local, busca de catálogo e temas de recomendação para `app/lib/home-discovery-utils.ts`.
+- Preservou a ordem dos campos pesquisados, normalização, deduplicação, filtros literais e comparações de temas.
+- Manteve na Home os `useMemo`, ranking, ordenação, limites e todos os consumidores dos helpers.
