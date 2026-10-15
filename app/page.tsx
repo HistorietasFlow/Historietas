@@ -276,6 +276,8 @@ export default function Home() {
       cancelado = true;
       window.clearTimeout(timer);
     };
+    // setObrasLocais é estável e o lifecycle de busca mantém suas dependências originais.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dadosHomeCarregados, termoBusca, usuarioIdLogado]);
 
   const obrasPublicadas = useMemo(() => {

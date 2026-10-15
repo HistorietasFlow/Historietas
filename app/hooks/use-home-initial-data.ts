@@ -81,6 +81,8 @@ export default function useHomeInitialData(
       cancelado = true;
       window.clearTimeout(reiniciarCarregamentoTimer);
     };
+    // obrasCacheLocalHomeRef é estável e deve manter a dependência original do lifecycle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuarioIdLogado]);
 
   return {

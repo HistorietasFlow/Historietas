@@ -31,7 +31,7 @@ test("useHomeInitialData preserva estados, timer e lifecycle inicial da Home", (
   assert.match(hook, /const obrasComSupabase = await carregarObrasSupabaseHome\(\s*obrasNormalizadas,\s*userIdHome\s*\);/);
   assert.match(hook, /window\.clearTimeout\(reiniciarCarregamentoTimer\);\s*setObrasLocais\(obrasComSupabase\);\s*setPerfisAutores\(carregarPerfisAutoresHomeSalvos\(userIdHome\)\);\s*setDadosHomeCarregados\(true\);/);
   assert.match(hook, /catch \{\s*if \(!cancelado\) \{\s*window\.clearTimeout\(reiniciarCarregamentoTimer\);\s*setObrasLocais\(\[\]\);\s*setObrasFavoritas\(\[\]\);\s*setPerfisAutores\(\{\}\);\s*setDadosHomeCarregados\(true\);/);
-  assert.match(hook, /return \(\) => \{\s*cancelado = true;\s*window\.clearTimeout\(reiniciarCarregamentoTimer\);\s*\};\s*\}, \[usuarioIdLogado\]\);/);
+  assert.match(hook, /return \(\) => \{\s*cancelado = true;\s*window\.clearTimeout\(reiniciarCarregamentoTimer\);\s*\};[\s\S]*?\}, \[usuarioIdLogado\]\);/);
 });
 
 test("Home consome o hook e mantém o segundo lifecycle fora da fronteira", () => {
