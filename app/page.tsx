@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
@@ -18,12 +17,12 @@ import useHomeAuthorRatings from "./hooks/use-home-author-ratings";
 import useHomeDesktopMode from "./hooks/use-home-desktop-mode";
 import useHomeHeroCarousel from "./hooks/use-home-hero-carousel";
 import useHomePageTranslations from "./hooks/use-home-page-translations";
+import useHomeAuthSession from "./hooks/use-home-auth-session";
 import { themePageCss } from "./lib/home-page-css";
 import {
   criarHrefLeituraCapituloHome,
   criarHrefObraCatalogoHome,
   criarHrefPerfilAutorHome,
-  criarLoginHrefHome,
 } from "./lib/home-route-utils";
 import {
   formatarGeneroHome,
@@ -213,7 +212,6 @@ const HERO_INICIAL_HOME = {
 } as Obra & { link: string };
 
 export default function Home() {
-  const router = useRouter();
   const { language } = useHistorietasLanguage();
   const homeTranslationRootRef = useRef<HTMLElement | null>(null);
   useHomePageTranslations(homeTranslationRootRef, language);
@@ -225,58 +223,17 @@ export default function Home() {
   const { notificacoesNaoLidas } = useNotificacoes();
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const isDesktop = useHomeDesktopMode();
-  const [usuarioLogado, setUsuarioLogado] = useState(false);
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const {
+    usuarioLogado,
+    usuarioIdLogado,
+    avisoLogin,
+    setAvisoLogin,
+    exigirLoginHome,
+  } = useHomeAuthSession();
   const [dadosHomeCarregados, setDadosHomeCarregados] = useState(false);
-  const [avisoLogin, setAvisoLogin] = useState("");
   const obrasCacheLocalHomeRef = useRef<ObraLocal[]>([]);
   const consultaCatalogoHomeRef = useRef(0);
   const buscaCatalogoHomeAtivaRef = useRef(false);
-
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarUsuarioHome() {
-      try {
-        const { data } = await supabase.auth.getUser();
-        const logado = Boolean(data.user);
-
-        if (!cancelado) {
-          setUsuarioLogado(logado);
-          setUsuarioIdLogado(data.user?.id || "");
-
-          if (logado) {
-            setAvisoLogin("");
-          }
-        }
-      } catch {
-        if (!cancelado) {
-          setUsuarioLogado(false);
-          setUsuarioIdLogado("");
-        }
-      }
-    }
-
-    void carregarUsuarioHome();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_evento, session) => {
-      const logado = Boolean(session?.user);
-
-      setUsuarioLogado(logado);
-      setUsuarioIdLogado(session?.user.id || "");
-
-      if (logado) {
-        setAvisoLogin("");
-      }
-    });
-
-    return () => {
-      cancelado = true;
-      subscription.unsubscribe();
-    };
-  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -546,28 +503,6 @@ export default function Home() {
         obrasFavoritas
       )
   );
-
-  async function exigirLoginHome(mensagem: string) {
-    try {
-      const { data } = await supabase.auth.getUser();
-      const logado = Boolean(data.user);
-
-      setUsuarioLogado(logado);
-      setUsuarioIdLogado(data.user?.id || "");
-
-      if (logado) {
-        setAvisoLogin("");
-        return true;
-      }
-    } catch {
-      setUsuarioLogado(false);
-      setUsuarioIdLogado("");
-    }
-
-    setAvisoLogin(mensagem);
-    router.push(criarLoginHrefHome());
-    return false;
-  }
 
   async function alternarHeroFavorito() {
     if (!heroObra || !heroFavoritoId) {

@@ -7,6 +7,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const authSession = readFileSync(
+  new URL("../../app/hooks/use-home-auth-session.ts", import.meta.url),
+  "utf8",
+);
 
 test("home-route-utils preserva os quatro contratos de rota da Home", () => {
   assert.match(
@@ -44,7 +48,7 @@ test("home-route-utils preserva os quatro contratos de rota da Home", () => {
 test("Home delega os utilitários de rota ao módulo dedicado", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarHrefLeituraCapituloHome,[\s\S]*?criarHrefObraCatalogoHome,[\s\S]*?criarHrefPerfilAutorHome,[\s\S]*?criarLoginHrefHome,[\s\S]*?\} from "\.\/lib\/home-route-utils";/,
+    /import \{[\s\S]*?criarHrefLeituraCapituloHome,[\s\S]*?criarHrefObraCatalogoHome,[\s\S]*?criarHrefPerfilAutorHome,[\s\S]*?\} from "\.\/lib\/home-route-utils";/,
   );
 
   for (const nomeFuncao of [
@@ -56,7 +60,9 @@ test("Home delega os utilitários de rota ao módulo dedicado", () => {
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
 
-  assert.match(pagina, /router\.push\(criarLoginHrefHome\(\)\);/);
+  assert.doesNotMatch(pagina, /criarLoginHrefHome/);
+  assert.match(authSession, /import \{ criarLoginHrefHome \} from "\.\.\/lib\/home-route-utils";/);
+  assert.match(authSession, /router\.push\(criarLoginHrefHome\(\)\);/);
   assert.match(pagina, /criarHrefLeituraCapituloHome\(/);
   assert.match(pagina, /criarHrefObraCatalogoHome\(/);
   assert.match(pagina, /criarHrefPerfilAutorHome\(/);

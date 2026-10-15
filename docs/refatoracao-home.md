@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 838 — Lifecycle de autenticação e exigência de login da Home
+
+- Extraiu o estado de autenticação, lifecycle de sessão e `exigirLoginHome` para `app/hooks/use-home-auth-session.ts`.
+- Preservou `getUser`, `onAuthStateChange`, cancelamento, cleanup da subscription, mensagens e a rota de login.
+- Manteve na Home os consumidores, demais chamadas de autenticação, loaders, favoritos e toda a apresentação.
+
 ## Fase 837 — Estados simples de UI da Home
 
 - Extraiu `LoadingSpinner`, `HomeEmptyState` e `EmptySearch` para `components/HomeStatusStates.tsx`.
