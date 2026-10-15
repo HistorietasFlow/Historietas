@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const estilosLayoutHero = readFileSync(
+  new URL("../../app/lib/home-hero-layout-styles.ts", import.meta.url),
+  "utf8",
+);
 
 test("HomeHeroCarouselDots preserva os indicadores desktop e mobile", () => {
   assert.match(componente, /export default function HomeHeroCarouselDots/);
@@ -94,7 +98,10 @@ test("Home delega os dois indicadores e preserva o lifecycle do hero no hook", (
   );
   assert.doesNotMatch(pagina, /const \[heroIndex, setHeroIndex\] = useState\(0\);/);
   assert.match(pagina, /const obrasHero = useMemo/);
-  assert.match(pagina, /const desktopHeroFooterStyle: CSSProperties/);
-  assert.match(pagina, /const mobileHeroFooterStyle: CSSProperties/);
+  assert.match(pagina, /from "\.\/lib\/home-hero-layout-styles";/);
+  assert.doesNotMatch(pagina, /const desktopHeroFooterStyle: CSSProperties/);
+  assert.doesNotMatch(pagina, /const mobileHeroFooterStyle: CSSProperties/);
+  assert.match(estilosLayoutHero, /export const desktopHeroFooterStyle: CSSProperties/);
+  assert.match(estilosLayoutHero, /export const mobileHeroFooterStyle: CSSProperties/);
   assert.match(pagina, /alternarHeroFavorito/);
 });
