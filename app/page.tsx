@@ -9,6 +9,11 @@ import { useHistorietasLanguage } from "../components/HistorietasLanguageProvide
 import HomeCarouselRow from "../components/HomeCarouselRow";
 import HomeHeroCarouselDots from "../components/HomeHeroCarouselDots";
 import HomeSectionHeader from "../components/HomeSectionHeader";
+import {
+  EmptySearch,
+  HomeEmptyState,
+  LoadingSpinner,
+} from "../components/HomeStatusStates";
 import useHomeAuthorRatings from "./hooks/use-home-author-ratings";
 import useHomeDesktopMode from "./hooks/use-home-desktop-mode";
 import useHomeHeroCarousel from "./hooks/use-home-hero-carousel";
@@ -206,23 +211,6 @@ const HERO_INICIAL_HOME = {
   disponivel: false,
   link: "/explorar",
 } as Obra & { link: string };
-
-function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={label}
-      style={loadingPageStyle}
-    >
-      <span
-        className="historietas-loading-spinner"
-        style={loadingSpinnerStyle}
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
 
 export default function Home() {
   const router = useRouter();
@@ -2252,38 +2240,6 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
   );
 }
 
-function HomeEmptyState() {
-  return (
-    <p
-      style={{
-        margin: "10px 0 0",
-        color: "#FFFFFF",
-        fontSize: "12px",
-        fontWeight: 800,
-        textAlign: "center",
-      }}
-    >
-      Nenhuma obra cadastrada
-    </p>
-  );
-}
-
-function EmptySearch() {
-  return (
-    <p
-      style={{
-        margin: "10px 0 0",
-        color: "#FFFFFF",
-        fontSize: "12px",
-        fontWeight: 800,
-        textAlign: "center",
-      }}
-    >
-      Nenhuma obra encontrada
-    </p>
-  );
-}
-
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -2328,28 +2284,6 @@ const heroDecorationLayerStyle: CSSProperties = {
   overflow: "hidden",
   pointerEvents: "none",
   zIndex: 0,
-};
-
-const loadingPageStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 2,
-  width: "100%",
-  minHeight: "100dvh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-};
-
-const loadingSpinnerStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "999px",
-  border: "3px solid rgba(255,255,255,0.20)",
-  borderTopColor: "#FFFFFF",
-  boxSizing: "border-box",
-  animation: "historietas-loading-spin 0.78s linear infinite",
-  flex: "0 0 auto",
 };
 
 // Teste: identidade tipográfica trazida da página Lista.
