@@ -7,6 +7,10 @@ const hook = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const acaoFavoritoHero = readFileSync(
+  new URL("../../app/lib/home-hero-favorite-action.ts", import.meta.url),
+  "utf8",
+);
 
 test("useHomeAuthSession preserva estados, lifecycle e subscription da Home", () => {
   assert.match(hook, /^"use client";/);
@@ -48,5 +52,8 @@ test("Home delega somente o lifecycle de autenticação e mantém consumidores r
   assert.doesNotMatch(pagina, /async function exigirLoginHome/);
   assert.doesNotMatch(pagina, /criarLoginHrefHome/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /await exigirLoginHome\(/);
+  assert.match(
+    acaoFavoritoHero,
+    /await exigirLoginHome\(\s*"Entre na sua conta para salvar obras na sua lista\."/,
+  );
 });
