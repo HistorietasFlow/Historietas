@@ -92,7 +92,11 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
   assert.match(pagina, /function MobileObraLocalCard\(/);
   assert.match(pagina, /function MobileAutorCard\(/);
   assert.match(pagina, /function MobileObraCard\(/);
-  assert.match(pagina, /async function carregarObrasSupabaseHome\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\/lib\/home-supabase-works-loader";/,
+  );
+  assert.doesNotMatch(pagina, /async function carregarObrasSupabaseHome\(/);
   assert.match(
     pagina,
     /import \{[\s\S]*?sincronizarColecaoObraHome,[\s\S]*?\} from "\.\/lib\/home-collection-supabase-utils";/,

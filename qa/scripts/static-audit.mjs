@@ -1084,7 +1084,7 @@ if (!metricsContractMigrationName) {
 }
 
 const metricsConsumerFiles = [
-  "app/page.tsx",
+  "app/lib/home-supabase-works-loader.ts",
   "app/em-alta/page.tsx",
   "app/explorar/page.tsx",
   "app/listas/lib/listas-published-works-loader.ts",
@@ -2152,6 +2152,13 @@ const homeCollectionSupabaseUtilsPath = path.join(
 const homeCollectionSupabaseUtils = fs.existsSync(homeCollectionSupabaseUtilsPath)
   ? fs.readFileSync(homeCollectionSupabaseUtilsPath, "utf8")
   : "";
+const homeSupabaseWorksLoaderPath = path.join(
+  ROOT_DIR,
+  "app/lib/home-supabase-works-loader.ts"
+);
+const homeSupabaseWorksLoader = fs.existsSync(homeSupabaseWorksLoaderPath)
+  ? fs.readFileSync(homeSupabaseWorksLoaderPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2169,7 +2176,7 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   relativePath,
   source: `${fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8")}${
     relativePath === "app/page.tsx"
-      ? `\n${homeCollectionSupabaseUtils}`
+      ? `\n${homeCollectionSupabaseUtils}\n${homeSupabaseWorksLoader}`
       : ""
   }${
     relativePath === "app/perfil-autor/page.tsx"

@@ -239,5 +239,8 @@ test("home-collection-supabase-utils estabelece a fronteira das coleções", () 
   assert.match(modulo, /visibilidade: "parcial"/);
   assert.match(modulo, /\.insert\(payloadBase\)/);
   assert.doesNotMatch(modulo, /useEffect|useState|localStorage|carregarObrasSupabaseHome/);
-  assert.match(pagina, /async function carregarObrasSupabaseHome\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\/lib\/home-supabase-works-loader";/,
+  );
 });
