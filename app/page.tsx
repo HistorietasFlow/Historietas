@@ -32,14 +32,6 @@ import {
   traduzirGeneroHome,
 } from "./lib/home-metadata-utils";
 import {
-  obraCatalogoCombinaBuscaHome,
-  obraCatalogoCombinaComTemasRecomendados,
-  obraCombinaComTemasRecomendados,
-  obraLocalCombinaBusca,
-  obterTemasRecomendacaoObra,
-  obterTemasRecomendacaoObraCatalogo,
-} from "./lib/home-discovery-utils";
-import {
   criarObrasAcaoRivalidadesHome,
   criarObrasEmBreveHome,
   criarObrasFantasiaPoderesHome,
@@ -56,6 +48,11 @@ import {
   criarObrasMinhaListaHome,
   criarObrasParaContinuarHome,
 } from "./lib/home-user-library-list-utils";
+import {
+  criarObrasCatalogoRecomendadasHome,
+  criarObrasRecomendadasHome,
+  criarTemasRecomendadosUsuarioHome,
+} from "./lib/home-recommendation-list-utils";
 import {
   compactarNumeroHome,
   formatarMediaAvaliacaoAutorHome,
@@ -83,7 +80,6 @@ import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
 import {
   calcularProgressoLeitura,
   encontrarCapituloParaContinuar,
-  obterTempoUltimoCapitulo,
 } from "./lib/home-reading-utils";
 import {
   obterFormatoObraCatalogoHome,
@@ -625,50 +621,21 @@ export default function Home() {
   }, [obrasFavoritas, termoBusca, usuarioLogado]);
 
   const temasRecomendadosUsuario = useMemo(() => {
-    const temas = new Set<string>();
-
-    [...obrasParaContinuar, ...obrasMinhaLista].forEach((obra) => {
-      obterTemasRecomendacaoObra(obra).forEach((tema) => {
-        temas.add(tema);
-      });
-    });
-
-    obrasCatalogoMinhaLista.forEach((obra) => {
-      obterTemasRecomendacaoObraCatalogo(obra).forEach((tema) => {
-        temas.add(tema);
-      });
-    });
-
-    return temas;
+    return criarTemasRecomendadosUsuarioHome(
+      obrasParaContinuar,
+      obrasMinhaLista,
+      obrasCatalogoMinhaLista
+    );
   }, [obrasCatalogoMinhaLista, obrasMinhaLista, obrasParaContinuar]);
 
   const obrasRecomendadas = useMemo(() => {
-    const obrasJaPriorizadas = new Set(
-      [...obrasParaContinuar, ...obrasMinhaLista].map((obra) => obra.id)
+    return criarObrasRecomendadasHome(
+      obrasPublicadas,
+      obrasParaContinuar,
+      obrasMinhaLista,
+      temasRecomendadosUsuario,
+      termoBusca
     );
-
-    return obrasPublicadas
-      .filter((obra) => {
-        return (
-          !obrasJaPriorizadas.has(obra.id) &&
-          obraCombinaComTemasRecomendados(obra, temasRecomendadosUsuario) &&
-          obraLocalCombinaBusca(obra, termoBusca)
-        );
-      })
-      .sort((obraA, obraB) => {
-        const afinidadeA = obterTemasRecomendacaoObra(obraA).filter((tema) =>
-          temasRecomendadosUsuario.has(tema)
-        ).length;
-        const afinidadeB = obterTemasRecomendacaoObra(obraB).filter((tema) =>
-          temasRecomendadosUsuario.has(tema)
-        ).length;
-
-        return (
-          afinidadeB - afinidadeA ||
-          obterTempoUltimoCapitulo(obraB) - obterTempoUltimoCapitulo(obraA)
-        );
-      })
-      .slice(0, 12);
   }, [
     obrasMinhaLista,
     obrasParaContinuar,
@@ -678,29 +645,12 @@ export default function Home() {
   ]);
 
   const obrasCatalogoRecomendadas = useMemo(() => {
-    const titulosMinhaLista = new Set(
-      obrasCatalogoMinhaLista.map((obra) => normalizarTexto(obra.titulo))
+    return criarObrasCatalogoRecomendadasHome(
+      OBRAS_CATALOGO_HOME,
+      obrasCatalogoMinhaLista,
+      temasRecomendadosUsuario,
+      termoBusca
     );
-
-    const recomendadasPorTema = OBRAS_CATALOGO_HOME.filter((obra) => {
-      return (
-        !titulosMinhaLista.has(normalizarTexto(obra.titulo)) &&
-        obraCatalogoCombinaBuscaHome(obra, termoBusca) &&
-        obraCatalogoCombinaComTemasRecomendados(obra, temasRecomendadosUsuario)
-      );
-    });
-
-    const baseRecomendacoes =
-      recomendadasPorTema.length > 0
-        ? recomendadasPorTema
-        : OBRAS_CATALOGO_HOME.filter((obra) => {
-            return (
-              !titulosMinhaLista.has(normalizarTexto(obra.titulo)) &&
-              obraCatalogoCombinaBuscaHome(obra, termoBusca)
-            );
-          });
-
-    return baseRecomendacoes.slice(0, 12);
   }, [obrasCatalogoMinhaLista, temasRecomendadosUsuario, termoBusca]);
 
   const totalMinhaListaHome =
