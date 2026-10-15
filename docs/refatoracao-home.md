@@ -138,3 +138,9 @@
 - Extraiu `aplicarProgressoLeituraHome` para `app/lib/home-reading-progress-utils.ts`.
 - Preservou retorno sem progresso carregado, datas, desempate, capítulos, última leitura e recálculo do progresso.
 - Manteve na Home o loader, as consultas e todos os demais consumidores.
+
+## Fase 831 — Helpers Supabase das coleções da Home
+
+- Extraiu o carregamento paginado e a sincronização das coleções para `app/lib/home-collection-supabase-utils.ts`.
+- Preservou tabelas, queries, paginação, exclusão prévia, inserção com fallback de compatibilidade e tratamento de falhas.
+- Manteve na Home os consumidores, o registro de atividades e todos os demais loaders.

@@ -2145,6 +2145,13 @@ const profileInteractionsLoaderPath = path.join(
 const profileInteractionsLoader = fs.existsSync(profileInteractionsLoaderPath)
   ? fs.readFileSync(profileInteractionsLoaderPath, "utf8")
   : "";
+const homeCollectionSupabaseUtilsPath = path.join(
+  ROOT_DIR,
+  "app/lib/home-collection-supabase-utils.ts"
+);
+const homeCollectionSupabaseUtils = fs.existsSync(homeCollectionSupabaseUtilsPath)
+  ? fs.readFileSync(homeCollectionSupabaseUtilsPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2161,6 +2168,10 @@ const contentPaginationFiles = [
 const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   relativePath,
   source: `${fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8")}${
+    relativePath === "app/page.tsx"
+      ? `\n${homeCollectionSupabaseUtils}`
+      : ""
+  }${
     relativePath === "app/perfil-autor/page.tsx"
       ? `\n${profileUserCollectionsLoader}\n${profileInteractionsLoader}`
       : ""

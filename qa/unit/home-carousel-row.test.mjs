@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const colecoesSupabase = readFileSync(
+  new URL("../../app/lib/home-collection-supabase-utils.ts", import.meta.url),
+  "utf8",
+);
 
 test("HomeCarouselRow preserva as regras, lifecycle e controles do carrossel", () => {
   assert.match(
@@ -89,5 +93,9 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
   assert.match(pagina, /function MobileAutorCard\(/);
   assert.match(pagina, /function MobileObraCard\(/);
   assert.match(pagina, /async function carregarObrasSupabaseHome\(/);
-  assert.match(pagina, /async function sincronizarColecaoObraHome\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?sincronizarColecaoObraHome,[\s\S]*?\} from "\.\/lib\/home-collection-supabase-utils";/,
+  );
+  assert.match(colecoesSupabase, /export async function sincronizarColecaoObraHome\(/);
 });
