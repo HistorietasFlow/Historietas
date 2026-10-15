@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 846 — Snapshot inicial da Home
+
+- Extraiu `carregarSnapshotInicialHome` para `app/lib/home-initial-data-loader.ts`.
+- Preservou na Home o lifecycle, cancelamento, timer, setters, fallback geral e o carregamento Supabase posterior.
+- Manteve a atualização do cache local imediatamente após a normalização, antes das coleções e persistências.
+
 ## Fase 845 — Ação de favorito do Hero da Home
 
 - Extraiu `alternarHeroFavoritoHome` para `app/lib/home-hero-favorite-action.ts`.
