@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 844 — Composição de recomendações da Home
+
+- Extraiu os temas recomendados e as recomendações local/de catálogo para `app/lib/home-recommendation-list-utils.ts`.
+- Preservou na Home os três `useMemo`, suas dependências e os consumidores de apresentação.
+- Manteve exclusões, filtros, afinidade, desempates, fallback do catálogo, limites e ordem das listas.
+
 ## Fase 843 — Listas pessoais da Home
 
 - Extraiu as listas de continuar lendo e Minha lista local/de catálogo para `app/lib/home-user-library-list-utils.ts`.
