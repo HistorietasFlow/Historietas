@@ -10,6 +10,10 @@ const estilosAutor = readFileSync(
   new URL("../../app/lib/home-author-card-styles.ts", import.meta.url),
   "utf8",
 );
+const componente = readFileSync(
+  new URL("../../components/HomeAuthorCard.tsx", import.meta.url),
+  "utf8",
+);
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
 
 const estilosAutorEsperados = [
@@ -62,17 +66,18 @@ test("home-author-card-styles delega os primitives e os estilos do card de autor
   assert.doesNotMatch(estilosAutor, /supabase|localStorage|useState|useEffect|useMemo/);
 });
 
-test("Home mantém MobileAutorCard e consome a nova fronteira de estilos", () => {
-  assert.match(pagina, /function MobileAutorCard\(/);
+test("MobileAutorCard consome a nova fronteira de estilos", () => {
+  assert.match(componente, /from "\.\.\/app\/lib\/home-author-card-styles";/);
+  assert.match(componente, /style=\{isDesktop \? desktopAuthorCardStyle : authorCardStyle\}/);
+  assert.match(componente, /style=\{authorAvatarImageStyle\}/);
+  assert.match(componente, /style=\{authorCardNameStyle\}/);
+  assert.match(componente, /style=\{authorCardBioStyle\}/);
+  assert.match(componente, /style=\{authorMetaBadgeStyle\}/);
+  assert.match(componente, /style=\{authorGenreBadgeStyle\}/);
+  assert.match(componente, /style=\{authorProfileButtonStyle\}/);
+  assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
+  assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
   assert.match(pagina, /from "\.\/lib\/home-card-style-primitives";/);
-  assert.match(pagina, /from "\.\/lib\/home-author-card-styles";/);
-  assert.match(pagina, /style=\{isDesktop \? desktopAuthorCardStyle : authorCardStyle\}/);
-  assert.match(pagina, /style=\{authorAvatarImageStyle\}/);
-  assert.match(pagina, /style=\{authorCardNameStyle\}/);
-  assert.match(pagina, /style=\{authorCardBioStyle\}/);
-  assert.match(pagina, /style=\{authorMetaBadgeStyle\}/);
-  assert.match(pagina, /style=\{authorGenreBadgeStyle\}/);
-  assert.match(pagina, /style=\{authorProfileButtonStyle\}/);
 
   for (const nome of [
     "safeTextStyle",

@@ -168,5 +168,6 @@ test("home-author-list-utils estabelece a fronteira pura da lista de autores", (
   assert.doesNotMatch(pagina, /function registrarAutor\(/);
   assert.match(pagina, /const autoresParaConhecer = useMemo<AutorHome\[\]>\(\(\) => \{[\s\S]*?return criarAutoresParaConhecerHome\(\{[\s\S]*?obrasPublicadas,[\s\S]*?obrasFiltradas,[\s\S]*?perfisAutores,[\s\S]*?termoBusca,[\s\S]*?\}\);[\s\S]*?\}, \[obrasPublicadas, obrasFiltradas, perfisAutores, termoBusca\]\);/);
   assert.match(pagina, /const avaliacoesAutoresHome = useHomeAuthorRatings\(autoresParaConhecer\);/);
-  assert.match(pagina, /function MobileAutorCard\(/);
+  assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
+  assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
 });
