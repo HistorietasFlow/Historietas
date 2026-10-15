@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 856 — Estilos estruturais e do header da Home
+
+- Moveu os estilos estruturais e do header/nav para `app/lib/home-shell-header-styles.ts`.
+- Preservou valores, spreads, responsividade, tipografia e consumidores da Home.
+- Manteve os estilos do Hero e das seções finais na página.
+
 ## Fase 855 — Componente MobileObraLocalCard da Home
 
 - Extraiu o `MobileObraLocalCard` para `components/HomeLocalWorkCard.tsx`.
