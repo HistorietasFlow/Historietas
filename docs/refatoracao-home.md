@@ -132,3 +132,9 @@
 - Extraiu a normalização de categorias, arquivos e obras Supabase para `app/lib/home-supabase-work-normalizers.ts`.
 - Preservou os fallbacks, a ordenação dos capítulos, as interações locais, as métricas derivadas e os links.
 - Manteve na Home os loaders, as consultas, o aplicador de progresso e todos os demais consumidores.
+
+## Fase 830 — Progresso de leitura da Home
+
+- Extraiu `aplicarProgressoLeituraHome` para `app/lib/home-reading-progress-utils.ts`.
+- Preservou retorno sem progresso carregado, datas, desempate, capítulos, última leitura e recálculo do progresso.
+- Manteve na Home o loader, as consultas e todos os demais consumidores.
