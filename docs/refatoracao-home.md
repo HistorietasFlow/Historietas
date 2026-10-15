@@ -83,3 +83,9 @@
 - Extraiu os helpers puros de busca local, busca de catálogo e temas de recomendação para `app/lib/home-discovery-utils.ts`.
 - Preservou a ordem dos campos pesquisados, normalização, deduplicação, filtros literais e comparações de temas.
 - Manteve na Home os `useMemo`, ranking, ordenação, limites e todos os consumidores dos helpers.
+
+## Fase 822 — Progresso e continuidade de leitura da Home
+
+- Extraiu o cálculo de progresso, a resolução do próximo capítulo e os tempos de leitura para `app/lib/home-reading-utils.ts`.
+- Preservou a ordem dos fallbacks, `Math.round`, `Math.max`, o tratamento de datas inválidas e todos os retornos.
+- Manteve na Home os `useMemo`, a ordenação e todos os consumidores dos helpers.
