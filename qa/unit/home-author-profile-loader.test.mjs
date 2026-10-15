@@ -12,6 +12,10 @@ const obrasLoader = readFileSync(
   new URL("../../app/lib/home-supabase-works-loader.ts", import.meta.url),
   "utf8",
 );
+const hookBuscaCatalogo = readFileSync(
+  new URL("../../app/hooks/use-home-catalog-search.ts", import.meta.url),
+  "utf8",
+);
 
 const estado = {
   chamadas: [],
@@ -229,7 +233,11 @@ test("home-author-profile-loader preserva fallbacks quando as consultas lançam 
 });
 
 test("home-author-profile-loader delega o loader Supabase para a fronteira dedicada", () => {
-  assert.match(pagina, /from "\.\/lib\/home-supabase-works-loader";/);
+  assert.match(pagina, /from "\.\/hooks\/use-home-catalog-search";/);
+  assert.match(
+    hookBuscaCatalogo,
+    /from "\.\.\/lib\/home-supabase-works-loader";/,
+  );
   assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/home-author-profile-loader";/,

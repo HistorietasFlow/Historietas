@@ -12,6 +12,10 @@ const obrasLoader = readFileSync(
   new URL("../../app/lib/home-supabase-works-loader.ts", import.meta.url),
   "utf8",
 );
+const hookBuscaCatalogo = readFileSync(
+  new URL("../../app/hooks/use-home-catalog-search.ts", import.meta.url),
+  "utf8",
+);
 
 const moduloExecutavel = modulo
   .replace(
@@ -141,7 +145,11 @@ test("home-supabase-work-normalizers preserva fallbacks, tags, capa, métricas e
 });
 
 test("home-supabase-work-normalizers delega somente a normalização Supabase", () => {
-  assert.match(pagina, /from "\.\/lib\/home-supabase-works-loader";/);
+  assert.match(pagina, /from "\.\/hooks\/use-home-catalog-search";/);
+  assert.match(
+    hookBuscaCatalogo,
+    /from "\.\.\/lib\/home-supabase-works-loader";/,
+  );
   assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/home-supabase-work-normalizers";/,
