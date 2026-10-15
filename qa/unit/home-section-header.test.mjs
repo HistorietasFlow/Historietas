@@ -51,7 +51,7 @@ test("Home delega os 18 cabecalhos sem alterar os estilos compartilhados", () =>
     estilosShellHeader,
     /export const listaPageTitleTypographyStyle: CSSProperties/,
   );
-  assert.match(pagina, /from "\.\/lib\/home-card-style-primitives";/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/home-card-style-primitives";/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const sectionHeaderStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const sectionTitleStyle: CSSProperties/);
