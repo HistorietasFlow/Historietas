@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
 import MobileAutorCard from "../components/HomeAuthorCard";
+import MobileObraCard from "../components/HomeCatalogWorkCard";
 import HomeCarouselRow from "../components/HomeCarouselRow";
 import HomeHeroCarouselDots from "../components/HomeHeroCarouselDots";
 import HomeSectionHeader from "../components/HomeSectionHeader";
@@ -26,7 +27,6 @@ import {
 } from "./lib/home-card-style-primitives";
 import {
   authorLinkStyle,
-  authorStyle,
   cardStatHeartIconStyle,
   cardStatIconStyle,
   cardStatItemStyle,
@@ -41,12 +41,8 @@ import {
   desktopCardActionRowStyle,
   desktopCardGenreBadgeStyle,
   desktopCardPrimaryActionStyle,
-  desktopCardSecondaryActionStyle,
   desktopCoverPlaceholderCompactHeightStyle,
   desktopCoverPlaceholderStyle,
-  desktopObraCardSoonStyle,
-  desktopObraCardStyle,
-  desktopObraTitleStyle,
   desktopPublishedCardCompactHeightStyle,
   desktopPublishedCardStyle,
   desktopPublishedTitleStyle,
@@ -55,11 +51,6 @@ import {
   mobileCardActionRowStyle,
   mobileCardGenreBadgeStyle,
   mobileCardPrimaryActionStyle,
-  mobileCardSecondaryActionStyle,
-  obraCardSoonStyle,
-  obraCardStyle,
-  obraInfoStyle,
-  obraTitleStyle,
   pageBackgroundActionButtonStyle,
   progressBarStyle,
   progressCompactStyle,
@@ -74,7 +65,6 @@ import {
 import {
   criarHrefObraCatalogoHome,
 } from "./lib/home-route-utils";
-import { criarDadosObraCatalogoCardHome } from "./lib/home-catalog-work-card-view-utils";
 import {
   formatarGeneroHome,
   traduzirClassificacaoHome,
@@ -116,7 +106,6 @@ import useHomeCatalogSearch from "./hooks/use-home-catalog-search";
 import type { AutorHome } from "./lib/home-author-composition-utils";
 import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
 import {
-  obterFormatoObraCatalogoHome,
   obterImagemObraCatalogo,
   obterTotalCapitulosObraCatalogoHome,
   obraCatalogoTemArquivoAnexadoHome,
@@ -140,7 +129,6 @@ import {
 import {
   criarDesktopHeroPosterStyle,
   criarMobileCoverStyle,
-  criarMobileCoverThumbStyle,
 } from "./lib/home-cover-hero-style-utils";
 import {
   criarDecoracaoHomeStyle,
@@ -1529,107 +1517,6 @@ function MobileObraLocalCard({
         </div>
       </div>
     </article>
-  );
-}
-
-function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }) {
-  const { language } = useHistorietasLanguage();
-  const { obraHref, iconeConteudoObra, totalConteudoObra } =
-    criarDadosObraCatalogoCardHome(obra);
- 
-  const conteudoCard = (
-    <>
-      <div
-        style={
-          isDesktop
-            ? {
-                ...criarMobileCoverThumbStyle(obra),
-                minHeight: "122px",
-                borderRadius: "16px",
-              }
-            : criarMobileCoverThumbStyle(obra)
-        }
-      />
-
-      <div style={obraInfoStyle}>
-        <div style={cardTopRowStyle}>
-          <h3 style={isDesktop ? desktopObraTitleStyle : obraTitleStyle}>{obra.titulo}</h3>
-
-          <p style={authorStyle}>Por {obra.autor}</p>
-        </div>
-
-        <div style={statusRowStyle}>
-          <span style={formatBadgeStyle}>{traduzirFormatoHome(obterFormatoObraCatalogoHome(obra), language)}</span>
-          <span style={classificationBadgeStyle}>
-            {traduzirClassificacaoHome(obra.classificacaoIndicativa, language)}
-          </span>
-        </div>
-
-        <div style={cardStatsStyle}>
-          <span style={cardStatItemStyle}>
-            <span style={cardStatIconStyle}>👁️</span>
-            <span style={cardStatValueStyle}>{obra.views}</span>
-          </span>
-
-          <span style={cardStatItemStyle}>
-            <span style={cardStatHeartIconStyle}>❤️</span>
-            <span style={cardStatValueStyle}>{obra.likes}</span>
-          </span>
-
-          <span style={cardStatItemStyle}>
-            <span style={cardStatIconStyle}>💬</span>
-            <span style={cardStatValueStyle}>{obra.comentarios}</span>
-          </span>
-
-          <span style={cardStatItemStyle}>
-            <span style={cardStatIconStyle}>{iconeConteudoObra}</span>
-            <span style={cardStatValueStyle}>{totalConteudoObra}</span>
-          </span>
-
-         </div>
-
-        <div style={isDesktop ? desktopCardActionRowStyle : mobileCardActionRowStyle}>
-          <span style={isDesktop ? desktopCardGenreBadgeStyle : mobileCardGenreBadgeStyle}>
-            {traduzirGeneroHome(obra.genero, language)}
-          </span>
-
-          <span
-            style={{
-              ...(obra.disponivel
-                ? isDesktop
-                  ? desktopCardPrimaryActionStyle
-                  : mobileCardPrimaryActionStyle
-                : isDesktop
-                  ? desktopCardSecondaryActionStyle
-                  : mobileCardSecondaryActionStyle),
-              ...(obra.disponivel
-                ? pageBackgroundActionButtonStyle
-                : {}),
-            }}
-          >
-            {obra.disponivel ? "Ver obra" : "Ver detalhes"}
-          </span>
-        </div>
-      </div>
-    </>
-  );
-
-  return (
-    <Link
-      href={obraHref}
-      style={
-        isDesktop
-          ? obra.disponivel
-            ? desktopObraCardStyle
-            : desktopObraCardSoonStyle
-          : obra.disponivel
-            ? obraCardStyle
-            : obraCardSoonStyle
-      }
-      aria-label={`Abrir página da obra ${obra.titulo}`}
-    >
-      {conteudoCard}
-    </Link>
   );
 }
 

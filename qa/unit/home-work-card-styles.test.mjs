@@ -7,6 +7,10 @@ const estilos = readFileSync(
   new URL("../../app/lib/home-work-card-styles.ts", import.meta.url),
   "utf8",
 );
+const componente = readFileSync(
+  new URL("../../components/HomeCatalogWorkCard.tsx", import.meta.url),
+  "utf8",
+);
 
 const nomesEstilos = [
   "publishedCardStyle",
@@ -83,10 +87,13 @@ test("home-work-card-styles preserva os valores e spreads centrais", () => {
   assert.doesNotMatch(estilos, /useState|useEffect|supabase|localStorage/);
 });
 
-test("Home delega somente os estilos, mantendo os dois cards de obra", () => {
+test("Home delega os estilos e o card de catálogo para suas fronteiras", () => {
   assert.match(pagina, /from "\.\/lib\/home-work-card-styles";/);
   assert.match(pagina, /function MobileObraLocalCard\(/);
-  assert.match(pagina, /function MobileObraCard\(/);
+  assert.match(pagina, /import MobileObraCard from "\.\.\/components\/HomeCatalogWorkCard";/);
+  assert.doesNotMatch(pagina, /function MobileObraCard\(/);
+  assert.match(componente, /export default function MobileObraCard\(/);
+  assert.match(componente, /from "\.\.\/app\/lib\/home-work-card-styles";/);
 
   for (const nomeEstilo of nomesEstilos) {
     assert.doesNotMatch(pagina, new RegExp(`const ${nomeEstilo}: CSSProperties = \\{`));
@@ -98,6 +105,6 @@ test("Home delega somente os estilos, mantendo os dois cards de obra", () => {
     "obraCardStyle",
     "desktopObraCardStyle",
   ].forEach((nomeEstilo) => {
-    assert.match(pagina, new RegExp(`\\b${nomeEstilo}\\b`));
+    assert.match(`${pagina}\n${componente}`, new RegExp(`\\b${nomeEstilo}\\b`));
   });
 });
