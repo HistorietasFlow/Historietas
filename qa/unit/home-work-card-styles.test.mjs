@@ -1,0 +1,103 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const estilos = readFileSync(
+  new URL("../../app/lib/home-work-card-styles.ts", import.meta.url),
+  "utf8",
+);
+
+const nomesEstilos = [
+  "publishedCardStyle",
+  "desktopPublishedCardStyle",
+  "publishedCardCompactHeightStyle",
+  "desktopPublishedCardCompactHeightStyle",
+  "desktopCoverPlaceholderStyle",
+  "coverPlaceholderCompactHeightStyle",
+  "desktopCoverPlaceholderCompactHeightStyle",
+  "publishedInfoStyle",
+  "cardTopRowStyle",
+  "publishedTitleStyle",
+  "desktopPublishedTitleStyle",
+  "statusRowStyle",
+  "formatBadgeStyle",
+  "classificationBadgeStyle",
+  "authorLinkStyle",
+  "latestChapterInfoStyle",
+  "cardStatsStyle",
+  "cardStatItemStyle",
+  "cardStatIconStyle",
+  "cardStatHeartIconStyle",
+  "cardStatValueStyle",
+  "mobileCardActionRowStyle",
+  "mobileCardGenreBadgeStyle",
+  "progressCompactStyle",
+  "progressTrackStyle",
+  "progressBarStyle",
+  "progressTextStyle",
+  "readNowStyle",
+  "continueActionTextWrapStyle",
+  "continueActionMainTextStyle",
+  "continueActionSubTextStyle",
+  "mobileCardPrimaryActionStyle",
+  "pageBackgroundActionButtonStyle",
+  "mobileCardSecondaryActionStyle",
+  "desktopCardActionRowStyle",
+  "desktopCardGenreBadgeStyle",
+  "desktopCardPrimaryActionStyle",
+  "desktopCardSecondaryActionStyle",
+  "obraCardStyle",
+  "desktopObraCardStyle",
+  "obraCardSoonStyle",
+  "desktopObraCardSoonStyle",
+  "obraInfoStyle",
+  "obraTitleStyle",
+  "desktopObraTitleStyle",
+  "authorStyle",
+];
+
+test("home-work-card-styles exporta todos os estilos dos cards de obra", () => {
+  assert.match(estilos, /import type \{ CSSProperties \} from "react";/);
+  assert.match(
+    estilos,
+    /import \{[\s\S]*?listaAuthorMetaTypographyStyle,[\s\S]*?listaWorkTitleTypographyStyle,[\s\S]*?safeTextStyle,[\s\S]*?\} from "\.\/home-card-style-primitives";/,
+  );
+
+  for (const nomeEstilo of nomesEstilos) {
+    assert.match(estilos, new RegExp(`export const ${nomeEstilo}: CSSProperties = \\{`));
+  }
+});
+
+test("home-work-card-styles preserva os valores e spreads centrais", () => {
+  assert.match(estilos, /flex: "0 0 min\(360px, 88vw\)",/);
+  assert.match(estilos, /gridTemplateColumns: "minmax\(88px, 98px\) minmax\(0, 1fr\)",/);
+  assert.match(estilos, /\.\.\.publishedCardStyle,/);
+  assert.match(estilos, /\.\.\.obraCardStyle,/);
+  assert.match(estilos, /WebkitLineClamp: 2,/);
+  assert.match(estilos, /background: "linear-gradient\(90deg, #FFFFFF 0%, #A1A1AA 100%\)",/);
+  assert.match(estilos, /background: "var\(--historietas-bg-start, #000000\)",/);
+  assert.match(estilos, /\.\.\.safeTextStyle,/);
+  assert.match(estilos, /\.\.\.listaWorkTitleTypographyStyle,/);
+  assert.match(estilos, /\.\.\.listaAuthorMetaTypographyStyle,/);
+  assert.doesNotMatch(estilos, /useState|useEffect|supabase|localStorage/);
+});
+
+test("Home delega somente os estilos, mantendo os dois cards de obra", () => {
+  assert.match(pagina, /from "\.\/lib\/home-work-card-styles";/);
+  assert.match(pagina, /function MobileObraLocalCard\(/);
+  assert.match(pagina, /function MobileObraCard\(/);
+
+  for (const nomeEstilo of nomesEstilos) {
+    assert.doesNotMatch(pagina, new RegExp(`const ${nomeEstilo}: CSSProperties = \\{`));
+  }
+
+  [
+    "publishedCardStyle",
+    "mobileCardPrimaryActionStyle",
+    "obraCardStyle",
+    "desktopObraCardStyle",
+  ].forEach((nomeEstilo) => {
+    assert.match(pagina, new RegExp(`\\b${nomeEstilo}\\b`));
+  });
+});

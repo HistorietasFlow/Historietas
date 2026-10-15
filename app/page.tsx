@@ -25,6 +25,53 @@ import {
   safeTextStyle,
 } from "./lib/home-card-style-primitives";
 import {
+  authorLinkStyle,
+  authorStyle,
+  cardStatHeartIconStyle,
+  cardStatIconStyle,
+  cardStatItemStyle,
+  cardStatsStyle,
+  cardStatValueStyle,
+  cardTopRowStyle,
+  classificationBadgeStyle,
+  continueActionMainTextStyle,
+  continueActionSubTextStyle,
+  continueActionTextWrapStyle,
+  coverPlaceholderCompactHeightStyle,
+  desktopCardActionRowStyle,
+  desktopCardGenreBadgeStyle,
+  desktopCardPrimaryActionStyle,
+  desktopCardSecondaryActionStyle,
+  desktopCoverPlaceholderCompactHeightStyle,
+  desktopCoverPlaceholderStyle,
+  desktopObraCardSoonStyle,
+  desktopObraCardStyle,
+  desktopObraTitleStyle,
+  desktopPublishedCardCompactHeightStyle,
+  desktopPublishedCardStyle,
+  desktopPublishedTitleStyle,
+  formatBadgeStyle,
+  latestChapterInfoStyle,
+  mobileCardActionRowStyle,
+  mobileCardGenreBadgeStyle,
+  mobileCardPrimaryActionStyle,
+  mobileCardSecondaryActionStyle,
+  obraCardSoonStyle,
+  obraCardStyle,
+  obraInfoStyle,
+  obraTitleStyle,
+  pageBackgroundActionButtonStyle,
+  progressBarStyle,
+  progressCompactStyle,
+  progressTextStyle,
+  progressTrackStyle,
+  publishedCardCompactHeightStyle,
+  publishedCardStyle,
+  publishedInfoStyle,
+  publishedTitleStyle,
+  statusRowStyle,
+} from "./lib/home-work-card-styles";
+import {
   criarHrefObraCatalogoHome,
 } from "./lib/home-route-utils";
 import { criarDadosObraCatalogoCardHome } from "./lib/home-catalog-work-card-view-utils";
@@ -2730,461 +2777,4 @@ const desktopLastSectionStyle: CSSProperties = {
   ...lastSectionStyle,
   marginTop: "30px",
   paddingBottom: "76px",
-};
-
-const publishedCardStyle: CSSProperties = {
-  flex: "0 0 min(360px, 88vw)",
-  width: "min(360px, 88vw)",
-  scrollSnapAlign: "start",
-  display: "grid",
-  gridTemplateColumns: "minmax(88px, 98px) minmax(0, 1fr)",
-  gap: "14px",
-  alignItems: "stretch",
-  padding: "11px",
-  borderRadius: "22px",
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  minWidth: 0,
-  maxWidth: "88vw",
-  overflow: "hidden",
-  boxShadow: "none",
-  boxSizing: "border-box",
-};
-
-const desktopPublishedCardStyle: CSSProperties = {
-  ...publishedCardStyle,
-  flex: "0 0 360px",
-  width: "360px",
-  maxWidth: "360px",
-  gridTemplateColumns: "98px minmax(0, 1fr)",
-  gap: "14px",
-  padding: "11px",
-  borderRadius: "22px",
-  boxShadow: "none",
-};
-
-const publishedCardCompactHeightStyle: CSSProperties = {
-  ...publishedCardStyle,
-  padding: "8px",
-};
-
-const desktopPublishedCardCompactHeightStyle: CSSProperties = {
-  ...desktopPublishedCardStyle,
-  padding: "8px",
-};
-
-const desktopCoverPlaceholderStyle: CSSProperties = {
-  minHeight: "116px",
-  borderRadius: "16px",
-};
-
-const coverPlaceholderCompactHeightStyle: CSSProperties = {
-  minHeight: "106px",
-};
-
-const desktopCoverPlaceholderCompactHeightStyle: CSSProperties = {
-  minHeight: "106px",
-  borderRadius: "16px",
-};
-
-
-const publishedInfoStyle: CSSProperties = {
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  display: "grid",
-  alignContent: "center",
-  gap: "7px",
-};
-
-const cardTopRowStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
-  minWidth: 0,
-};
-
-const publishedTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "20px",
-  lineHeight: 1.05,
-  ...listaWorkTitleTypographyStyle,
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const desktopPublishedTitleStyle: CSSProperties = {
-  ...publishedTitleStyle,
-  fontSize: "20px",
-  lineHeight: 1.05,
-};
-
-const statusRowStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  maxWidth: "100%",
-  minWidth: 0,
-};
-
-
-const formatBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "10px",
-  fontWeight: 900,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const classificationBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "10px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const authorLinkStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "12px",
-  ...listaAuthorMetaTypographyStyle,
-  textDecoration: "none",
-  borderBottom: "0",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const latestChapterInfoStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.2,
-  fontWeight: 900,
-  textDecoration: "none",
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const cardStatsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 800,
-  maxWidth: "100%",
-  minWidth: 0,
-};
-
-const cardStatItemStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  whiteSpace: "nowrap",
-  lineHeight: 1,
-};
-
-const cardStatIconStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  lineHeight: 1,
-  flex: "0 0 auto",
-};
-
-const cardStatHeartIconStyle: CSSProperties = {
-  ...cardStatIconStyle,
-  color: "#E11D48",
-};
-
-const cardStatValueStyle: CSSProperties = {
-  display: "inline-block",
-  lineHeight: 1,
-  whiteSpace: "nowrap",
-};
-
-const mobileCardActionRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  marginTop: "4px",
-  maxWidth: "100%",
-  minWidth: 0,
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const mobileCardGenreBadgeStyle: CSSProperties = {
-  flex: "0 1 42%",
-  maxWidth: "42%",
-  minHeight: "34px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 900,
-  lineHeight: 1.12,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  boxSizing: "border-box",
-};
-
-const progressCompactStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "8px",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const progressTrackStyle: CSSProperties = {
-  width: "100%",
-  height: "7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const progressBarStyle: CSSProperties = {
-  height: "100%",
-  borderRadius: "999px",
-  background: "linear-gradient(90deg, #FFFFFF 0%, #A1A1AA 100%)",
-};
-
-const progressTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 850,
-  lineHeight: 1.2,
-  whiteSpace: "nowrap",
-};
-
-const readNowStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  minHeight: "34px",
-  padding: "0 14px",
-  marginTop: "4px",
-  borderRadius: "999px",
-  background: "#050505",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-  lineHeight: 1.15,
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const continueActionTextWrapStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  alignItems: "center",
-  gap: "1px",
-  lineHeight: 1.05,
-  textAlign: "center",
-  minWidth: 0,
-  ...safeTextStyle,
-};
-
-const continueActionMainTextStyle: CSSProperties = {
-  display: "block",
-  fontSize: "11px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const continueActionSubTextStyle: CSSProperties = {
-  display: "block",
-  fontSize: "10px",
-  lineHeight: 1.05,
-  fontWeight: 900,
-  opacity: 0.96,
-  ...safeTextStyle,
-};
-
-const mobileCardPrimaryActionStyle: CSSProperties = {
-  ...readNowStyle,
-  flex: "1 1 auto",
-  minWidth: 0,
-  marginTop: 0,
-  padding: "0 12px",
-  textAlign: "center",
-};
-
-const pageBackgroundActionButtonStyle: CSSProperties = {
-  background: "var(--historietas-bg-start, #000000)",
-};
-
-const mobileCardSecondaryActionStyle: CSSProperties = {
-  flex: "1 1 auto",
-  minWidth: 0,
-  maxWidth: "100%",
-  minHeight: "34px",
-  padding: "0 12px",
-  marginTop: 0,
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "13px",
-  fontWeight: 950,
-  lineHeight: 1.15,
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const desktopCardActionRowStyle: CSSProperties = {
-  ...mobileCardActionRowStyle,
-  overflow: "visible",
-};
-
-const desktopCardGenreBadgeStyle: CSSProperties = {
-  ...mobileCardGenreBadgeStyle,
-  flex: "0 1 42%",
-  maxWidth: "42%",
-  padding: "0 10px",
-  textAlign: "center",
-};
-
-const desktopCardPrimaryActionStyle: CSSProperties = {
-  ...mobileCardPrimaryActionStyle,
-  justifyContent: "center",
-  textAlign: "center",
-};
-
-const desktopCardSecondaryActionStyle: CSSProperties = {
-  ...mobileCardSecondaryActionStyle,
-  justifyContent: "center",
-  textAlign: "center",
-};
-
-const obraCardStyle: CSSProperties = {
-  flex: "0 0 min(360px, 88vw)",
-  width: "min(360px, 88vw)",
-  scrollSnapAlign: "start",
-  display: "grid",
-  gridTemplateColumns: "minmax(88px, 98px) minmax(0, 1fr)",
-  gap: "14px",
-  alignItems: "stretch",
-  padding: "11px",
-  borderRadius: "22px",
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  minWidth: 0,
-  maxWidth: "88vw",
-  overflow: "hidden",
-  boxShadow: "none",
-  boxSizing: "border-box",
-};
-
-const desktopObraCardStyle: CSSProperties = {
-  ...obraCardStyle,
-  flex: "0 0 360px",
-  width: "360px",
-  maxWidth: "360px",
-  gridTemplateColumns: "98px minmax(0, 1fr)",
-  gap: "14px",
-  padding: "11px",
-  borderRadius: "22px",
-  boxShadow: "none",
-};
-
-const obraCardSoonStyle: CSSProperties = {
-  ...obraCardStyle,
-  opacity: 0.9,
-};
-
-const desktopObraCardSoonStyle: CSSProperties = {
-  ...desktopObraCardStyle,
-  opacity: 0.9,
-};
-
-const obraInfoStyle: CSSProperties = {
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  display: "grid",
-  alignContent: "center",
-  gap: "7px",
-};
-
-const obraTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "20px",
-  lineHeight: 1.05,
-  ...listaWorkTitleTypographyStyle,
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const desktopObraTitleStyle: CSSProperties = {
-  ...obraTitleStyle,
-  fontSize: "20px",
-  lineHeight: 1.05,
-};
-
-
-
-const authorStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "12px",
-  ...listaAuthorMetaTypographyStyle,
-  maxWidth: "100%",
-  ...safeTextStyle,
 };

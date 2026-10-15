@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 853 — Estilos dos cards de obra da Home
+
+- Moveu literalmente os estilos compartilhados por `MobileObraLocalCard` e `MobileObraCard` para `app/lib/home-work-card-styles.ts`.
+- Preservou os dois componentes, seus JSX e comportamento na Home.
+- Manteve os primitives tipográficos compartilhados em `home-card-style-primitives.ts`.
+
 ## Fase 852 — Componente MobileAutorCard da Home
 
 - Extraiu o `MobileAutorCard` para `components/HomeAuthorCard.tsx`.
