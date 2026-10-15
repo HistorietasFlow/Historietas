@@ -12,6 +12,10 @@ const acaoFavoritoHero = readFileSync(
   new URL("../../app/lib/home-hero-favorite-action.ts", import.meta.url),
   "utf8",
 );
+const loaderInicial = readFileSync(
+  new URL("../../app/lib/home-initial-data-loader.ts", import.meta.url),
+  "utf8",
+);
 
 const estado = {
   chamadas: [],
@@ -232,7 +236,11 @@ test("home-collection-supabase-utils preserva guards, remoção e falhas de sinc
 test("home-collection-supabase-utils estabelece a fronteira das coleções", () => {
   assert.match(
     pagina,
-    /import \{ carregarIdsColecaoUsuarioHome \} from "\.\/lib\/home-collection-supabase-utils";/,
+    /import \{ carregarSnapshotInicialHome \} from "\.\/lib\/home-initial-data-loader";/,
+  );
+  assert.match(
+    loaderInicial,
+    /import \{ carregarIdsColecaoUsuarioHome \} from "\.\/home-collection-supabase-utils";/,
   );
   assert.match(
     acaoFavoritoHero,

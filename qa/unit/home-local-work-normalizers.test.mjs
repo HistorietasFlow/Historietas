@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const loaderInicial = readFileSync(
+  new URL("../../app/lib/home-initial-data-loader.ts", import.meta.url),
+  "utf8",
+);
 
 const moduloExecutavel = modulo
   .replace(
@@ -198,7 +202,10 @@ test("home-local-work-normalizers preserva o filtro final de obras salvas", () =
 });
 
 test("home-local-work-normalizers estabelece a fronteira dos normalizadores locais", () => {
-  assert.match(pagina, /import \{ normalizarObrasHomeSalvas \} from "\.\/lib\/home-local-work-normalizers";/);
+  assert.match(
+    loaderInicial,
+    /import \{ normalizarObrasHomeSalvas \} from "\.\/home-local-work-normalizers";/,
+  );
   for (const nome of ["normalizarCapituloHome", "normalizarObraHome", "normalizarObrasHomeSalvas"]) {
     assert.match(modulo, new RegExp(`export function ${nome}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));

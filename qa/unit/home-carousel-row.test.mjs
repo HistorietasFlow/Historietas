@@ -18,6 +18,10 @@ const acaoFavoritoHero = readFileSync(
   new URL("../../app/lib/home-hero-favorite-action.ts", import.meta.url),
   "utf8",
 );
+const loaderInicial = readFileSync(
+  new URL("../../app/lib/home-initial-data-loader.ts", import.meta.url),
+  "utf8",
+);
 
 test("HomeCarouselRow preserva as regras, lifecycle e controles do carrossel", () => {
   assert.match(
@@ -103,7 +107,11 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
   assert.doesNotMatch(pagina, /async function carregarObrasSupabaseHome\(/);
   assert.match(
     pagina,
-    /import \{ carregarIdsColecaoUsuarioHome \} from "\.\/lib\/home-collection-supabase-utils";/,
+    /import \{ carregarSnapshotInicialHome \} from "\.\/lib\/home-initial-data-loader";/,
+  );
+  assert.match(
+    loaderInicial,
+    /import \{ carregarIdsColecaoUsuarioHome \} from "\.\/home-collection-supabase-utils";/,
   );
   assert.match(
     acaoFavoritoHero,

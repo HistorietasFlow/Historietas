@@ -61,15 +61,8 @@ import type { AvaliacaoAutorHome } from "./lib/home-format-utils";
 import {
   colecaoTemIdentificadorHome,
   criarIdentificadoresObraCatalogoHome,
-  normalizarListaIdsHome,
   obterIdentificadorFavoritoHome,
 } from "./lib/home-collection-utils";
-import {
-  carregarListaIdsHome,
-  lerStorageUsuarioHome,
-  salvarJsonStorageUsuarioHome,
-  salvarListaIdsHome,
-} from "./lib/home-storage-utils";
 import {
   carregarPerfisAutoresHomeSalvos,
 } from "./lib/home-author-storage-utils";
@@ -102,13 +95,12 @@ import {
   obraTemArquivoAnexado,
   obraTemConteudoPublicoHome,
 } from "./lib/home-local-work-utils";
-import { normalizarObrasHomeSalvas } from "./lib/home-local-work-normalizers";
 import {
   carregarObrasSupabaseHome,
   CONSULTAS_INICIAIS_CATALOGO_HOME,
 } from "./lib/home-supabase-works-loader";
-import { carregarIdsColecaoUsuarioHome } from "./lib/home-collection-supabase-utils";
 import { alternarHeroFavoritoHome } from "./lib/home-hero-favorite-action";
+import { carregarSnapshotInicialHome } from "./lib/home-initial-data-loader";
 import {
   criarObraHeroLocalHome,
   formatarSinopseHeroMobile,
@@ -124,7 +116,6 @@ import {
   criarMobileHeroImageLayerStyle,
   heroStyle,
 } from "./lib/home-hero-visual-style-utils";
-import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../lib/utils";
 import {
@@ -254,69 +245,20 @@ export default function Home() {
 
     async function carregarDadosHome() {
       try {
-        let userIdHome = usuarioIdLogado.trim();
-        if (!userIdHome) {
-          try {
-            const { data } = await supabase.auth.getUser();
-            userIdHome = data.user?.id || "";
-          } catch {
-            userIdHome = "";
-          }
-        }
-
-        const obrasSalvasTexto = lerStorageUsuarioHome(
-          STORAGE_KEY,
-          userIdHome
-        );
-        const obrasSalvasJson = obrasSalvasTexto
-          ? JSON.parse(obrasSalvasTexto)
-          : [];
-
-        const obrasNormalizadas = normalizarObrasHomeSalvas(obrasSalvasJson);
-
-        obrasCacheLocalHomeRef.current = obrasNormalizadas;
-
-        salvarJsonStorageUsuarioHome(STORAGE_KEY, userIdHome, obrasNormalizadas);
-
-        let obrasFavoritasNormalizadas = carregarListaIdsHome(
-          FAVORITES_STORAGE_KEY,
-          userIdHome
-        );
-        let obrasConcluidasNormalizadas = carregarListaIdsHome(
-          COMPLETED_STORAGE_KEY,
-          userIdHome
-        );
-
-        if (userIdHome) {
-          const [favoritasSupabase, concluidasSupabase] = await Promise.all([
-            carregarIdsColecaoUsuarioHome("favoritos", userIdHome),
-            carregarIdsColecaoUsuarioHome("concluidas", userIdHome),
-          ]);
-
-          obrasFavoritasNormalizadas = normalizarListaIdsHome([
-            ...obrasFavoritasNormalizadas,
-            ...favoritasSupabase,
-          ]);
-          obrasConcluidasNormalizadas = normalizarListaIdsHome([
-            ...obrasConcluidasNormalizadas,
-            ...concluidasSupabase,
-          ]);
-        }
-
-        salvarListaIdsHome(
-          FAVORITES_STORAGE_KEY,
+        const {
           userIdHome,
-          obrasFavoritasNormalizadas
-        );
-
-        salvarListaIdsHome(
-          COMPLETED_STORAGE_KEY,
-          userIdHome,
-          obrasConcluidasNormalizadas
-        );
-
-        const perfisAutoresNormalizados =
-          carregarPerfisAutoresHomeSalvos(userIdHome);
+          obrasNormalizadas,
+          obrasFavoritasNormalizadas,
+          perfisAutoresNormalizados,
+        } = await carregarSnapshotInicialHome({
+          usuarioIdLogado,
+          storageKey: STORAGE_KEY,
+          favoritesStorageKey: FAVORITES_STORAGE_KEY,
+          completedStorageKey: COMPLETED_STORAGE_KEY,
+          aoNormalizarObras: (obras) => {
+            obrasCacheLocalHomeRef.current = obras;
+          },
+        });
 
         if (!cancelado) {
           setObrasLocais(obrasNormalizadas);

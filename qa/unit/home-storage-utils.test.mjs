@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const loaderInicial = readFileSync(
+  new URL("../../app/lib/home-initial-data-loader.ts", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo.replace(
   'import { normalizarListaIdsHome } from "./home-collection-utils";\n',
   `const normalizarListaIdsHome = (lista) => Array.from(
@@ -156,7 +160,14 @@ test("home-storage-utils preserva escrita e a fronteira da Home", () => {
     assert.match(modulo, new RegExp(`export function ${nomeFuncao}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(pagina, /from "\.\/lib\/home-storage-utils";/);
+  assert.match(
+    pagina,
+    /import \{ carregarSnapshotInicialHome \} from "\.\/lib\/home-initial-data-loader";/,
+  );
+  assert.match(
+    loaderInicial,
+    /from "\.\/home-storage-utils";/,
+  );
   assert.match(modulo, /localStorage\.getItem/);
   assert.match(modulo, /localStorage\.setItem/);
   assert.match(modulo, /JSON\.parse/);
