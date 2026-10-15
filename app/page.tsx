@@ -88,6 +88,7 @@ import {
 } from "./lib/home-local-work-utils";
 import { normalizarObrasHomeSalvas } from "./lib/home-local-work-normalizers";
 import { normalizarObraSupabaseHome } from "./lib/home-supabase-work-normalizers";
+import { aplicarProgressoLeituraHome } from "./lib/home-reading-progress-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../lib/utils";
@@ -381,60 +382,6 @@ function criarMobileHeroImageLayerStyle(obra: Obra): CSSProperties {
 function criarDecoracaoHomeStyle(): CSSProperties {
   return {
     display: "none",
-  };
-}
-
-function aplicarProgressoLeituraHome(
-  obra: ObraLocal,
-  progressoPorCapitulo: Map<string, SupabaseProgressoLeituraHomeRow>,
-  progressoCarregado: boolean
-) {
-  if (!progressoCarregado) {
-    return obra;
-  }
-
-  let ultimoCapituloLidoId = "";
-  let ultimaLeituraEm = "";
-
-  const capitulos = obra.capitulos.map((capitulo) => {
-    const registro = progressoPorCapitulo.get(capitulo.id);
-    const lido = Boolean(registro?.lido);
-    const lidoEmRemoto =
-      typeof registro?.atualizado_em === "string"
-        ? registro.atualizado_em
-        : "";
-    const lidoEm = lido ? lidoEmRemoto || capitulo.lidoEm : "";
-
-    if (lido) {
-      const tempoAtual = new Date(lidoEm).getTime();
-      const tempoUltimaLeitura = new Date(ultimaLeituraEm).getTime();
-      const tempoAtualSeguro = Number.isNaN(tempoAtual) ? 0 : tempoAtual;
-      const tempoUltimaLeituraSeguro = Number.isNaN(tempoUltimaLeitura)
-        ? 0
-        : tempoUltimaLeitura;
-
-      if (
-        !ultimoCapituloLidoId ||
-        tempoAtualSeguro >= tempoUltimaLeituraSeguro
-      ) {
-        ultimoCapituloLidoId = capitulo.id;
-        ultimaLeituraEm = lidoEm;
-      }
-    }
-
-    return {
-      ...capitulo,
-      lido,
-      lidoEm,
-    };
-  });
-
-  return {
-    ...obra,
-    capitulos,
-    ultimoCapituloLidoId,
-    ultimaLeituraEm,
-    progressoLeitura: calcularProgressoLeitura(capitulos),
   };
 }
 
