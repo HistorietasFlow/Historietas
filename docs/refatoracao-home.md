@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 857 — Estilos do Hero da Home
+
+- Moveu literalmente os estilos específicos do Hero para `app/lib/home-hero-layout-styles.ts`.
+- Preservou valores, spreads, responsividade, tipografia, poster, metadados, botões e estatísticas.
+- Manteve na Home o JSX do Hero e os estilos de summary/seções finais.
+
 ## Fase 856 — Estilos estruturais e do header da Home
 
 - Moveu os estilos estruturais e do header/nav para `app/lib/home-shell-header-styles.ts`.
