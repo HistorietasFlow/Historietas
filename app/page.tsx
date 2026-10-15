@@ -93,9 +93,10 @@ import {
   carregarIdsColecaoUsuarioHome,
   sincronizarColecaoObraHome,
 } from "./lib/home-collection-supabase-utils";
+import { registrarAtividadeDiarioHome } from "./lib/home-diary-activity-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
-import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../lib/utils";
+import { criarSlugBase, normalizarTexto } from "../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -582,40 +583,6 @@ async function carregarObrasSupabaseHome(
   } catch (error) {
     console.warn("Não consegui acessar o Supabase na Home:", error);
     return obrasLocais;
-  }
-}
-
-async function registrarAtividadeDiarioHome({
-  userId,
-  tipo,
-  obra,
-  texto,
-}: {
-  userId: string;
-  tipo: "favoritou_obra" | "concluiu_obra";
-  obra: ObraLocal;
-  texto: string;
-}) {
-  if (!userId.trim() || !idObraSupabaseValido(obra.id)) {
-    return;
-  }
-
-  try {
-    await supabase.from("diario_atividades").insert({
-      user_id: userId,
-      tipo,
-      obra_id: obra.id,
-      texto: texto.trim() || null,
-      visibilidade: "parcial",
-      metadata: {
-        obra_titulo: obra.titulo,
-        obra_slug: obra.slug,
-        autor: obra.autor,
-        origem: "home",
-      },
-    });
-  } catch {
-    // A Home não deve travar se o Diário não registrar a atividade.
   }
 }
 
