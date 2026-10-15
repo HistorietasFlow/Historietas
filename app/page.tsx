@@ -48,6 +48,10 @@ import {
   criarObrasTerrorSuspenseHome,
 } from "./lib/home-catalog-theme-list-utils";
 import {
+  criarObrasCatalogoFiltradasHome,
+  criarObrasPublicadasFiltradasHome,
+} from "./lib/home-search-list-utils";
+import {
   compactarNumeroHome,
   formatarMediaAvaliacaoAutorHome,
 } from "./lib/home-format-utils";
@@ -589,17 +593,7 @@ export default function Home() {
   }
 
   const obrasPublicadasFiltradas = useMemo(() => {
-    return obrasPublicadas
-      .filter((obra) => obraLocalCombinaBusca(obra, termoBusca))
-      .sort((obraA, obraB) => {
-        const dataA = new Date(obraA.criadaEm).getTime();
-        const dataB = new Date(obraB.criadaEm).getTime();
-
-        return (
-          (Number.isNaN(dataB) ? 0 : dataB) -
-          (Number.isNaN(dataA) ? 0 : dataA)
-        );
-      });
+    return criarObrasPublicadasFiltradasHome(obrasPublicadas, termoBusca);
   }, [obrasPublicadas, termoBusca]);
 
   const obrasParaContinuar = useMemo(() => {
@@ -744,24 +738,7 @@ export default function Home() {
     obrasRecomendadas.length + obrasCatalogoRecomendadas.length;
 
   const obrasFiltradas = useMemo(() => {
-    if (!termoBusca) {
-      return OBRAS_CATALOGO_HOME;
-    }
-
-    return OBRAS_CATALOGO_HOME.filter((obra) => {
-      const textoObra = normalizarTexto(
-        [
-          obra.titulo,
-          obra.autor,
-          obra.genero,
-          formatarGeneroHome(obra.genero),
-          obra.classificacaoIndicativa,
-          obra.status,
-        ].join(" ")
-      );
-
-      return textoObra.includes(termoBusca);
-    });
+    return criarObrasCatalogoFiltradasHome(OBRAS_CATALOGO_HOME, termoBusca);
   }, [termoBusca]);
 
   const obrasComNovosCapitulos = useMemo(() => {

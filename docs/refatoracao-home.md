@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 842 — Listas de busca da Home
+
+- Extraiu a filtragem de obras publicadas e do catálogo para `app/lib/home-search-list-utils.ts`.
+- Preservou na Home os dois `useMemo`, suas dependências e os consumidores de apresentação.
+- Manteve busca, ordenação por data, datas inválidas, identidade do catálogo sem termo e ordem das correspondências.
+
 ## Fase 841 — Listas temáticas do catálogo da Home
 
 - Extraiu as seis listas temáticas do catálogo para `app/lib/home-catalog-theme-list-utils.ts`.
