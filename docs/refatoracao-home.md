@@ -114,3 +114,9 @@
 - Preservou as chaves, o isolamento por usuário, JSON, `try/catch`, normalização e fallbacks do storage.
 - Extraiu a composição pura de autores para `app/lib/home-author-composition-utils.ts`.
 - Preservou perfis salvos, gêneros, totais, bio, avatar, limites e hrefs, mantendo na Home o loader Supabase.
+
+## Fase 827 — Loader Supabase de perfis de autores da Home
+
+- Extraiu `carregarPerfisSupabaseHome` para `app/lib/home-author-profile-loader.ts`.
+- Preservou as consultas separadas por `user_id` e `id`, selects, limites, aliases, warnings, normalização e persistência local dos perfis.
+- Manteve na Home o consumidor do loader e todos os demais fluxos de obras, métricas e apresentação.
