@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const recomendacoes = readFileSync(
+  new URL("../../app/lib/home-recommendation-list-utils.ts", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(
     'import { normalizarTexto } from "../../lib/utils";\n',
@@ -141,6 +145,7 @@ test("home-discovery-utils estabelece a fronteira pura da Home", () => {
     assert.match(modulo, new RegExp(`export function ${nomeFuncao}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(pagina, /from "\.\/lib\/home-discovery-utils";/);
+  assert.match(recomendacoes, /from "\.\/home-discovery-utils";/);
+  assert.match(pagina, /from "\.\/lib\/home-recommendation-list-utils";/);
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState/);
 });
