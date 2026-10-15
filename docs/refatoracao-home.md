@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 851 — Estilos do MobileAutorCard da Home
+
+- Extraiu os primitives compartilhados para `app/lib/home-card-style-primitives.ts`.
+- Extraiu os estilos do card de autor para `app/lib/home-author-card-styles.ts`.
+- Manteve na Home o `MobileAutorCard`, seu JSX, dados, traduções e condições visuais.
+
 ## Fase 850 — Dados derivados do MobileObraCard da Home
 
 - Extraiu os dados derivados do card de catálogo para `app/lib/home-catalog-work-card-view-utils.ts`.
