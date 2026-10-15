@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 837 — Estados simples de UI da Home
+
+- Extraiu `LoadingSpinner`, `HomeEmptyState` e `EmptySearch` para `components/HomeStatusStates.tsx`.
+- Preservou semântica acessível, textos, markup e os estilos exclusivos de carregamento e estados vazios.
+- Manteve na Home os três consumidores, a busca, o hero, os loaders e todos os demais fluxos de apresentação.
+
 ## Fase 808 — Linha de carrossel da Home
 
 - Extraiu `HomeCarouselRow` para `components/HomeCarouselRow.tsx`.
