@@ -234,10 +234,7 @@ test("home-collection-supabase-utils preserva guards, remoção e falhas de sinc
 });
 
 test("home-collection-supabase-utils estabelece a fronteira das coleções", () => {
-  assert.match(
-    pagina,
-    /import \{ carregarSnapshotInicialHome \} from "\.\/lib\/home-initial-data-loader";/,
-  );
+  assert.match(pagina, /useHomeInitialData\(usuarioIdLogado, obrasCacheLocalHomeRef\)/);
   assert.match(
     loaderInicial,
     /import \{ carregarIdsColecaoUsuarioHome \} from "\.\/home-collection-supabase-utils";/,

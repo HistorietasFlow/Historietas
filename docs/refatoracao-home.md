@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 847 — Lifecycle de carregamento inicial da Home
+
+- Extraiu o lifecycle inicial para `app/hooks/use-home-initial-data.ts`.
+- Preservou cancelamento, timer, snapshot, atualizações intermediária/final, fallback e cleanup.
+- Manteve na Home o segundo lifecycle de busca do catálogo, os refs e todos os consumidores de apresentação.
+
 ## Fase 846 — Snapshot inicial da Home
 
 - Extraiu `carregarSnapshotInicialHome` para `app/lib/home-initial-data-loader.ts`.

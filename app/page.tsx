@@ -63,9 +63,9 @@ import {
   criarIdentificadoresObraCatalogoHome,
   obterIdentificadorFavoritoHome,
 } from "./lib/home-collection-utils";
-import {
-  carregarPerfisAutoresHomeSalvos,
-} from "./lib/home-author-storage-utils";
+import useHomeInitialData, {
+  FAVORITES_STORAGE_KEY,
+} from "./hooks/use-home-initial-data";
 import type { AutorHome } from "./lib/home-author-composition-utils";
 import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
 import {
@@ -81,7 +81,6 @@ import {
 import {
   criarIniciaisAutor,
 } from "./lib/home-author-profile-utils";
-import type { PerfisAutoresSalvos } from "./lib/home-author-profile-utils";
 import {
   criarLeiturasRapidasHome,
   criarObrasComArquivoAnexadoHome,
@@ -100,7 +99,6 @@ import {
   CONSULTAS_INICIAIS_CATALOGO_HOME,
 } from "./lib/home-supabase-works-loader";
 import { alternarHeroFavoritoHome } from "./lib/home-hero-favorite-action";
-import { carregarSnapshotInicialHome } from "./lib/home-initial-data-loader";
 import {
   criarObraHeroLocalHome,
   formatarSinopseHeroMobile,
@@ -188,9 +186,6 @@ type ObraLocal = {
   link: string;
 };
 
-const STORAGE_KEY = "historietas-obras";
-const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
-const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const OBRAS_CATALOGO_HOME: Obra[] = [];
 
 const HERO_INICIAL_HOME = {
@@ -217,9 +212,6 @@ export default function Home() {
   useHomePageTranslations(homeTranslationRootRef, language);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const [busca, setBusca] = useState("");
-  const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
-  const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
-  const [perfisAutores, setPerfisAutores] = useState<PerfisAutoresSalvos>({});
   const { notificacoesNaoLidas } = useNotificacoes();
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const isDesktop = useHomeDesktopMode();
@@ -230,71 +222,17 @@ export default function Home() {
     setAvisoLogin,
     exigirLoginHome,
   } = useHomeAuthSession();
-  const [dadosHomeCarregados, setDadosHomeCarregados] = useState(false);
   const obrasCacheLocalHomeRef = useRef<ObraLocal[]>([]);
+  const {
+    obrasLocais,
+    obrasFavoritas,
+    perfisAutores,
+    dadosHomeCarregados,
+    setObrasLocais,
+    setObrasFavoritas,
+  } = useHomeInitialData(usuarioIdLogado, obrasCacheLocalHomeRef);
   const consultaCatalogoHomeRef = useRef(0);
   const buscaCatalogoHomeAtivaRef = useRef(false);
-
-  useEffect(() => {
-    let cancelado = false;
-    const reiniciarCarregamentoTimer = window.setTimeout(() => {
-      if (!cancelado) {
-        setDadosHomeCarregados(false);
-      }
-    }, 0);
-
-    async function carregarDadosHome() {
-      try {
-        const {
-          userIdHome,
-          obrasNormalizadas,
-          obrasFavoritasNormalizadas,
-          perfisAutoresNormalizados,
-        } = await carregarSnapshotInicialHome({
-          usuarioIdLogado,
-          storageKey: STORAGE_KEY,
-          favoritesStorageKey: FAVORITES_STORAGE_KEY,
-          completedStorageKey: COMPLETED_STORAGE_KEY,
-          aoNormalizarObras: (obras) => {
-            obrasCacheLocalHomeRef.current = obras;
-          },
-        });
-
-        if (!cancelado) {
-          setObrasLocais(obrasNormalizadas);
-          setObrasFavoritas(obrasFavoritasNormalizadas);
-          setPerfisAutores(perfisAutoresNormalizados);
-        }
-
-        const obrasComSupabase = await carregarObrasSupabaseHome(
-          obrasNormalizadas,
-          userIdHome
-        );
-
-        if (!cancelado) {
-          window.clearTimeout(reiniciarCarregamentoTimer);
-          setObrasLocais(obrasComSupabase);
-          setPerfisAutores(carregarPerfisAutoresHomeSalvos(userIdHome));
-          setDadosHomeCarregados(true);
-        }
-      } catch {
-        if (!cancelado) {
-          window.clearTimeout(reiniciarCarregamentoTimer);
-          setObrasLocais([]);
-          setObrasFavoritas([]);
-          setPerfisAutores({});
-          setDadosHomeCarregados(true);
-        }
-      }
-    }
-
-    void carregarDadosHome();
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(reiniciarCarregamentoTimer);
-    };
-  }, [usuarioIdLogado]);
 
   const termoBusca = normalizarTexto(busca);
 

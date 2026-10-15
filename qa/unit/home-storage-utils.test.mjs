@@ -160,10 +160,7 @@ test("home-storage-utils preserva escrita e a fronteira da Home", () => {
     assert.match(modulo, new RegExp(`export function ${nomeFuncao}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(
-    pagina,
-    /import \{ carregarSnapshotInicialHome \} from "\.\/lib\/home-initial-data-loader";/,
-  );
+  assert.match(pagina, /useHomeInitialData\(usuarioIdLogado, obrasCacheLocalHomeRef\)/);
   assert.match(
     loaderInicial,
     /from "\.\/home-storage-utils";/,
