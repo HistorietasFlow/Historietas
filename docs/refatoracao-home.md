@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 849 — Dados derivados do MobileObraLocalCard da Home
+
+- Extraiu os dados derivados do card local para `app/lib/home-local-work-card-view-utils.ts`.
+- Preservou métricas, conteúdo, progresso, capítulos, rotas, ações, textos e altura do card.
+- Manteve na Home o `MobileObraLocalCard`, seus estilos, traduções e JSX.
+
 ## Fase 848 — Lifecycle de busca do catálogo da Home
 
 - Extraiu o lifecycle de busca do catálogo para `app/hooks/use-home-catalog-search.ts`.

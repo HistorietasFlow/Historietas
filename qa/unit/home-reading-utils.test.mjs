@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const cardObraLocal = readFileSync(
+  new URL("../../app/lib/home-local-work-card-view-utils.ts", import.meta.url),
+  "utf8",
+);
 const javascriptModulo = typescript.transpileModule(modulo, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -148,7 +152,10 @@ test("home-reading-utils estabelece a fronteira pura da Home", () => {
     assert.match(modulo, new RegExp(`export function ${nomeFuncao}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(pagina, /from "\.\/lib\/home-reading-utils";/);
+  assert.match(
+    cardObraLocal,
+    /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?encontrarCapituloParaContinuar,[\s\S]*?\} from "\.\/home-reading-utils";/,
+  );
   assert.match(modulo, /\.some\(\(capitulo\) => capitulo\.lido\)/);
   assert.match(modulo, /\.slice\(indiceUltimoCapituloLido \+ 1\)/);
   assert.match(modulo, /Math\.max\(0, \.\.\.temposLeitura\)/);
