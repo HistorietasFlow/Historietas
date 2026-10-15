@@ -58,6 +58,12 @@ import {
   salvarJsonStorageUsuarioHome,
   salvarListaIdsHome,
 } from "./lib/home-storage-utils";
+import {
+  calcularProgressoLeitura,
+  encontrarCapituloParaContinuar,
+  obterTempoUltimaLeitura,
+  obterTempoUltimoCapitulo,
+} from "./lib/home-reading-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../lib/utils";
@@ -285,58 +291,6 @@ function criarObraHeroLocalHome(obra: ObraLocal): Obra {
   };
 }
 
-function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  if (capitulos.length === 0) {
-    return 0;
-  }
-
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
-
-  return Math.round((capitulosLidos / capitulos.length) * 100);
-}
-
-function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const temCapituloLido = obra.capitulos.some((capitulo) => capitulo.lido);
-
-  if (!temCapituloLido) {
-    return null;
-  }
-
-  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
-    ? obra.capitulos.findIndex(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
-      )
-    : -1;
-
-  if (indiceUltimoCapituloLido >= 0) {
-    const proximoCapituloNaoLido = obra.capitulos
-      .slice(indiceUltimoCapituloLido + 1)
-      .find((capitulo) => !capitulo.lido);
-
-    if (proximoCapituloNaoLido) {
-      return proximoCapituloNaoLido;
-    }
-  }
-
-  return obra.capitulos.find((capitulo) => !capitulo.lido) || null;
-}
-
-function obterTempoUltimaLeitura(obra: ObraLocal) {
-  const temposLeitura = [
-    obra.ultimaLeituraEm,
-    ...obra.capitulos
-      .filter((capitulo) => capitulo.lido)
-      .map((capitulo) => capitulo.lidoEm),
-  ].map((dataLeitura) => {
-    const tempo = new Date(dataLeitura).getTime();
-
-    return Number.isNaN(tempo) ? 0 : tempo;
-  });
-
-  return Math.max(0, ...temposLeitura);
-}
-
-
 function criarMobileCoverStyle(capa: string): CSSProperties {
   if (!capa) {
     return coverPlaceholderStyle;
@@ -518,14 +472,6 @@ function obterTotalCurtidasObraHome(obra: ObraLocal) {
 
 function obterTotalComentariosObraHome(obra: ObraLocal) {
   return Math.max(obra.totalComentarios || 0, contarComentariosObraLocal(obra));
-}
-
-function obterTempoUltimoCapitulo(obra: ObraLocal) {
-  const ultimoCapitulo = obra.capitulos[obra.capitulos.length - 1] || null;
-  const dataReferencia = ultimoCapitulo?.criadoEm || obra.criadaEm;
-  const tempo = new Date(dataReferencia).getTime();
-
-  return Number.isNaN(tempo) ? 0 : tempo;
 }
 
 function obraTemArquivoAnexado(obra: ObraLocal) {
