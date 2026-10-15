@@ -14,6 +14,10 @@ const acaoFavoritoHero = readFileSync(
 );
 const heroObras = readFileSync(
   new URL("../../app/lib/home-hero-work-utils.ts", import.meta.url), "utf8");
+const hookBuscaCatalogo = readFileSync(
+  new URL("../../app/hooks/use-home-catalog-search.ts", import.meta.url),
+  "utf8",
+);
 
 const estado = {
   chamadas: [],
@@ -170,8 +174,9 @@ test("home-diary-activity-utils estabelece a fronteira isolada da atividade", ()
   assert.doesNotMatch(modulo, /console\.warn|useEffect|useState|localStorage/);
   assert.doesNotMatch(pagina, /function encontrarObraLocalPorHeroHome\(/);
   assert.match(heroObras, /export function encontrarObraLocalPorHeroHome\(/);
+  assert.match(pagina, /import useHomeCatalogSearch from "\.\/hooks\/use-home-catalog-search";/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\/lib\/home-supabase-works-loader";/,
+    hookBuscaCatalogo,
+    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\.\/lib\/home-supabase-works-loader";/,
   );
 });

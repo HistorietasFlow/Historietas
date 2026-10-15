@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 848 — Lifecycle de busca do catálogo da Home
+
+- Extraiu o lifecycle de busca do catálogo para `app/hooks/use-home-catalog-search.ts`.
+- Preservou refs, guardas, debounce, consultas, proteção contra resposta obsoleta e cleanup.
+- Manteve na Home o termo de busca, o cache, o setter e todos os consumidores de apresentação.
+
 ## Fase 847 — Lifecycle de carregamento inicial da Home
 
 - Extraiu o lifecycle inicial para `app/hooks/use-home-initial-data.ts`.

@@ -12,6 +12,10 @@ const obrasLoader = readFileSync(
   new URL("../../app/lib/home-supabase-works-loader.ts", import.meta.url),
   "utf8",
 );
+const hookBuscaCatalogo = readFileSync(
+  new URL("../../app/hooks/use-home-catalog-search.ts", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo.replace(
   'import { calcularProgressoLeitura } from "./home-reading-utils";\n',
   `const calcularProgressoLeitura = (capitulos) => {
@@ -92,7 +96,11 @@ test("home-reading-progress-utils preserva fallback local, datas inválidas e de
 });
 
 test("home-reading-progress-utils estabelece a fronteira pura do progresso", () => {
-  assert.match(pagina, /from "\.\/lib\/home-supabase-works-loader";/);
+  assert.match(pagina, /from "\.\/hooks\/use-home-catalog-search";/);
+  assert.match(
+    hookBuscaCatalogo,
+    /from "\.\.\/lib\/home-supabase-works-loader";/,
+  );
   assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/home-reading-progress-utils";/,
