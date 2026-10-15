@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const acaoFavoritoHero = readFileSync(
+  new URL("../../app/lib/home-hero-favorite-action.ts", import.meta.url),
+  "utf8",
+);
 const heroObras = readFileSync(
   new URL("../../app/lib/home-hero-work-utils.ts", import.meta.url), "utf8");
 
@@ -152,8 +156,8 @@ test("home-diary-activity-utils mantém falhas silenciosas sem warning", async (
 
 test("home-diary-activity-utils estabelece a fronteira isolada da atividade", () => {
   assert.match(
-    pagina,
-    /import \{ registrarAtividadeDiarioHome \} from "\.\/lib\/home-diary-activity-utils";/,
+    acaoFavoritoHero,
+    /import \{ registrarAtividadeDiarioHome \} from "\.\/home-diary-activity-utils";/,
   );
   assert.doesNotMatch(pagina, /async function registrarAtividadeDiarioHome\b/);
   assert.match(modulo, /export async function registrarAtividadeDiarioHome\b/);

@@ -61,10 +61,8 @@ import type { AvaliacaoAutorHome } from "./lib/home-format-utils";
 import {
   colecaoTemIdentificadorHome,
   criarIdentificadoresObraCatalogoHome,
-  criarIdentificadoresObraLocalHome,
   normalizarListaIdsHome,
   obterIdentificadorFavoritoHome,
-  removerIdentificadoresDaListaHome,
 } from "./lib/home-collection-utils";
 import {
   carregarListaIdsHome,
@@ -109,14 +107,10 @@ import {
   carregarObrasSupabaseHome,
   CONSULTAS_INICIAIS_CATALOGO_HOME,
 } from "./lib/home-supabase-works-loader";
-import {
-  carregarIdsColecaoUsuarioHome,
-  sincronizarColecaoObraHome,
-} from "./lib/home-collection-supabase-utils";
-import { registrarAtividadeDiarioHome } from "./lib/home-diary-activity-utils";
+import { carregarIdsColecaoUsuarioHome } from "./lib/home-collection-supabase-utils";
+import { alternarHeroFavoritoHome } from "./lib/home-hero-favorite-action";
 import {
   criarObraHeroLocalHome,
-  encontrarObraLocalPorHeroHome,
   formatarSinopseHeroMobile,
 } from "./lib/home-hero-work-utils";
 import {
@@ -519,75 +513,17 @@ export default function Home() {
       )
   );
 
-  async function alternarHeroFavorito() {
-    if (!heroObra || !heroFavoritoId) {
-      return;
-    }
-
-    const podeSalvar = await exigirLoginHome(
-      "Entre na sua conta para salvar obras na sua lista."
-    );
-
-    if (!podeSalvar) {
-      return;
-    }
-
-    let userIdAtual = "";
-
-    try {
-      const { data } = await supabase.auth.getUser();
-      userIdAtual = data.user?.id || "";
-    } catch {
-      userIdAtual = "";
-    }
-
-    const obraLocalHero = encontrarObraLocalPorHeroHome(
-      obrasLocais,
+  function alternarHeroFavorito() {
+    return alternarHeroFavoritoHome({
       heroObra,
-      heroFavoritoId
-    );
-    const identificadoresHero = normalizarListaIdsHome([
       heroFavoritoId,
-      ...criarIdentificadoresObraCatalogoHome(heroObra),
-      ...(obraLocalHero ? criarIdentificadoresObraLocalHome(obraLocalHero) : []),
-    ]);
-    const estaNaLista = colecaoTemIdentificadorHome(
-      identificadoresHero,
-      obrasFavoritas
-    );
-    const novoStatusFavorito = !estaNaLista;
-    const favoritoPrincipal = obraLocalHero?.id || heroFavoritoId;
-    const favoritosSemHero = removerIdentificadoresDaListaHome(
+      obrasLocais,
       obrasFavoritas,
-      identificadoresHero
-    );
-    const favoritosAtualizados = novoStatusFavorito
-      ? normalizarListaIdsHome([...favoritosSemHero, favoritoPrincipal])
-      : favoritosSemHero;
-
-    salvarListaIdsHome(FAVORITES_STORAGE_KEY, userIdAtual, favoritosAtualizados);
-    setObrasFavoritas(favoritosAtualizados);
-
-    if (obraLocalHero) {
-      const sincronizado = await sincronizarColecaoObraHome(
-        "favoritos",
-        obraLocalHero.id,
-        novoStatusFavorito
-      );
-
-      if (!sincronizado && novoStatusFavorito) {
-        setAvisoLogin("A obra ficou salva no aparelho, mas não sincronizou agora.");
-      }
-
-      if (novoStatusFavorito && userIdAtual) {
-        void registrarAtividadeDiarioHome({
-          userId: userIdAtual,
-          tipo: "favoritou_obra",
-          obra: obraLocalHero,
-          texto: `Adicionou ${obraLocalHero.titulo} à lista`,
-        });
-      }
-    }
+      exigirLoginHome,
+      favoritesStorageKey: FAVORITES_STORAGE_KEY,
+      setObrasFavoritas,
+      setAvisoLogin,
+    });
   }
 
   const obrasPublicadasFiltradas = useMemo(() => {

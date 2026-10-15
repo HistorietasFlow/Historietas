@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 845 — Ação de favorito do Hero da Home
+
+- Extraiu `alternarHeroFavoritoHome` para `app/lib/home-hero-favorite-action.ts`.
+- Preservou na Home o adaptador, os valores derivados, os setters e os consumidores do Hero.
+- Manteve guardas, autenticação, identificadores, storage, sincronização, atividade do Diário e mensagens de fallback.
+
 ## Fase 844 — Composição de recomendações da Home
 
 - Extraiu os temas recomendados e as recomendações local/de catálogo para `app/lib/home-recommendation-list-utils.ts`.

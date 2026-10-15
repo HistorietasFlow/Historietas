@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const acaoFavoritoHero = readFileSync(
+  new URL("../../app/lib/home-hero-favorite-action.ts", import.meta.url),
+  "utf8",
+);
 
 const estado = {
   chamadas: [],
@@ -228,7 +232,11 @@ test("home-collection-supabase-utils preserva guards, remoção e falhas de sinc
 test("home-collection-supabase-utils estabelece a fronteira das coleções", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?carregarIdsColecaoUsuarioHome,[\s\S]*?sincronizarColecaoObraHome,[\s\S]*?\} from "\.\/lib\/home-collection-supabase-utils";/,
+    /import \{ carregarIdsColecaoUsuarioHome \} from "\.\/lib\/home-collection-supabase-utils";/,
+  );
+  assert.match(
+    acaoFavoritoHero,
+    /import \{ sincronizarColecaoObraHome \} from "\.\/home-collection-supabase-utils";/,
   );
   assert.doesNotMatch(pagina, /async function carregarIdsColecaoUsuarioHome\b/);
   assert.doesNotMatch(pagina, /async function sincronizarColecaoObraHome\b/);
