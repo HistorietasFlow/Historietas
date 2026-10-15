@@ -64,6 +64,12 @@ import {
   obterTempoUltimaLeitura,
   obterTempoUltimoCapitulo,
 } from "./lib/home-reading-utils";
+import {
+  obterFormatoObraCatalogoHome,
+  obterImagemObraCatalogo,
+  obterTotalCapitulosObraCatalogoHome,
+  obraCatalogoTemArquivoAnexadoHome,
+} from "./lib/home-catalog-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../lib/utils";
@@ -302,64 +308,6 @@ function criarMobileCoverStyle(capa: string): CSSProperties {
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
-}
-
-function obterImagemObraCatalogo(obra: Obra) {
-  const obraComImagem = obra as Obra & {
-    capa?: string;
-    capaUrl?: string;
-    cover?: string;
-    imagem?: string;
-  };
-
-  return (
-    [
-      obraComImagem.capa,
-      obraComImagem.capaUrl,
-      obraComImagem.cover,
-      obraComImagem.imagem,
-    ].find((imagem): imagem is string => {
-      return typeof imagem === "string" && Boolean(imagem.trim());
-    }) || ""
-  );
-}
-
-function obterFormatoObraCatalogoHome(obra: Obra) {
-  const obraComFormato = obra as Obra & {
-    formato?: string;
-  };
-
-  return obraComFormato.formato?.trim() || "História";
-}
-
-function obterTotalCapitulosObraCatalogoHome(obra: Obra) {
-  const obraComCapitulos = obra as Obra & {
-    capitulos?: unknown;
-  };
-
-  return Array.isArray(obraComCapitulos.capitulos)
-    ? obraComCapitulos.capitulos.length
-    : 0;
-}
-
-function obraCatalogoTemArquivoAnexadoHome(obra: Obra) {
-  const obraComArquivo = obra as Obra & {
-    arquivoObra?: unknown;
-  };
-  const arquivo = obraComArquivo.arquivoObra;
-
-  if (!arquivo || typeof arquivo !== "object" || Array.isArray(arquivo)) {
-    return false;
-  }
-
-  const arquivoValidado = arquivo as Record<string, unknown>;
-
-  return Boolean(
-    typeof arquivoValidado.nome === "string" &&
-      arquivoValidado.nome.trim() &&
-      typeof arquivoValidado.conteudo === "string" &&
-      arquivoValidado.conteudo.trim(),
-  );
 }
 
 function criarMobileCoverThumbStyle(obra: Obra): CSSProperties {
