@@ -70,6 +70,12 @@ import {
   obterTotalCapitulosObraCatalogoHome,
   obraCatalogoTemArquivoAnexadoHome,
 } from "./lib/home-catalog-utils";
+import {
+  obterTotalComentariosObraHome,
+  obterTotalCurtidasObraHome,
+  obraTemArquivoAnexado,
+  obraTemConteudoPublicoHome,
+} from "./lib/home-local-work-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../lib/utils";
@@ -404,43 +410,6 @@ function criarDecoracaoHomeStyle(): CSSProperties {
   return {
     display: "none",
   };
-}
-
-function contarCurtidasObraLocal(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
-}
-
-function contarComentariosObraLocal(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
-}
-
-function obterTotalCurtidasObraHome(obra: ObraLocal) {
-  return Math.max(obra.totalCurtidas || 0, contarCurtidasObraLocal(obra));
-}
-
-function obterTotalComentariosObraHome(obra: ObraLocal) {
-  return Math.max(obra.totalComentarios || 0, contarComentariosObraLocal(obra));
-}
-
-function obraTemArquivoAnexado(obra: ObraLocal) {
-  const arquivo = obra.arquivoObra;
-
-  if (!arquivo || typeof arquivo !== "object" || Array.isArray(arquivo)) {
-    return false;
-  }
-
-  const arquivoValidado = arquivo as Record<string, unknown>;
-
-  return Boolean(
-    typeof arquivoValidado.nome === "string" &&
-      arquivoValidado.nome.trim() &&
-      typeof arquivoValidado.conteudo === "string" &&
-      arquivoValidado.conteudo.trim()
-  );
-}
-
-function obraTemConteudoPublicoHome(obra: ObraLocal) {
-  return obra.capitulos.length > 0 || obraTemArquivoAnexado(obra);
 }
 
 function normalizarChaveAutor(nome: string) {
