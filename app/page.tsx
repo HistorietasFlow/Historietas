@@ -99,6 +99,11 @@ import {
   encontrarObraLocalPorHeroHome,
   formatarSinopseHeroMobile,
 } from "./lib/home-hero-work-utils";
+import {
+  criarDesktopHeroPosterStyle,
+  criarMobileCoverStyle,
+  criarMobileCoverThumbStyle,
+} from "./lib/home-cover-hero-style-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../lib/utils";
@@ -252,54 +257,6 @@ const HERO_INICIAL_HOME = {
   disponivel: false,
   link: "/explorar",
 } as Obra & { link: string };
-
-function criarMobileCoverStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return coverPlaceholderStyle;
-  }
-
-  return {
-    ...coverPlaceholderStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarMobileCoverThumbStyle(obra: Obra): CSSProperties {
-  const imagemObra = obterImagemObraCatalogo(obra);
-
-  if (!imagemObra) {
-    return coverThumbStyle;
-  }
-
-  return {
-    ...coverThumbStyle,
-    backgroundImage: `url(${imagemObra})`,
-    backgroundSize: "cover",
-    backgroundPosition: obra.disponivel ? "center" : "center top",
-  };
-}
-
-function criarDesktopHeroPosterStyle(obra: Obra): CSSProperties {
-  const imagemObra = obterImagemObraCatalogo(obra);
-
-  if (imagemObra) {
-    return {
-      ...desktopHeroPosterStyle,
-      backgroundImage: `url(${imagemObra})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
-  }
-
-  return {
-    ...desktopHeroPosterStyle,
-    backgroundImage:
-      "linear-gradient(145deg, #050505 0%, #0B0B0D 52%, #000000 100%)",
-  };
-}
-
 
 function criarMobileHeroFrameBackground(): CSSProperties {
   return {
@@ -3155,28 +3112,6 @@ const desktopHeroPosterFrameStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const desktopHeroPosterStyle: CSSProperties = {
-  position: "relative",
-  width: "100%",
-  height: "100%",
-  minHeight: 0,
-  borderRadius: "22px",
-  overflow: "hidden",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  textDecoration: "none",
-  color: "#FFFFFF",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "flex-end",
-  gap: "10px",
-  padding: "22px",
-  boxSizing: "border-box",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  backgroundRepeat: "no-repeat",
-};
-
 const desktopHeroPosterGlowStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
@@ -4073,21 +4008,6 @@ const desktopPublishedCardCompactHeightStyle: CSSProperties = {
   padding: "8px",
 };
 
-const coverPlaceholderStyle: CSSProperties = {
-  minHeight: "116px",
-  borderRadius: "16px",
-  position: "relative",
-  overflow: "hidden",
-  backgroundImage: "linear-gradient(135deg, #050505 0%, #0B0B0D 100%)",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  textDecoration: "none",
-  display: "block",
-};
-
 const desktopCoverPlaceholderStyle: CSSProperties = {
   minHeight: "116px",
   borderRadius: "16px",
@@ -4462,20 +4382,6 @@ const desktopObraCardSoonStyle: CSSProperties = {
   ...desktopObraCardStyle,
   opacity: 0.9,
 };
-
-const coverThumbStyle: CSSProperties = {
-  minHeight: "122px",
-  borderRadius: "16px",
-  position: "relative",
-  overflow: "hidden",
-  backgroundImage: "linear-gradient(135deg, #050505 0%, #0B0B0D 100%)",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
 
 const obraInfoStyle: CSSProperties = {
   minWidth: 0,

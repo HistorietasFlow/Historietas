@@ -212,7 +212,7 @@ test("home-hero-work-utils estabelece a fronteira pura dos dados do Hero", () =>
   assert.match(modulo, /textoComPalavrasSeguras\.length <= 132/);
   assert.match(modulo, /textoComPalavrasSeguras\.slice\(0, 129\)/);
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState|from "react"/);
-  assert.match(pagina, /function criarMobileCoverStyle\(/);
-  assert.match(pagina, /function criarDesktopHeroPosterStyle\(/);
+  assert.doesNotMatch(pagina, /function criarMobileCoverStyle\(/);
+  assert.doesNotMatch(pagina, /function criarDesktopHeroPosterStyle\(/);
   assert.match(pagina, /function criarMobileHeroFrameBackground\(/);
 });
