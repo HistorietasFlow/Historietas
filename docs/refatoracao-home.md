@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 854 — Componente MobileObraCard da Home
+
+- Extraiu o `MobileObraCard` para `components/HomeCatalogWorkCard.tsx`.
+- Preservou JSX, estilos, traduções, métricas, acessibilidade e condições visuais do card.
+- Manteve na Home todos os consumidores e as listas de obras do catálogo.
+
 ## Fase 853 — Estilos dos cards de obra da Home
 
 - Moveu literalmente os estilos compartilhados por `MobileObraLocalCard` e `MobileObraCard` para `app/lib/home-work-card-styles.ts`.

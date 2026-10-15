@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const catalogoCard = readFileSync(
+  new URL("../../components/HomeCatalogWorkCard.tsx", import.meta.url),
+  "utf8",
+);
 const colecoesSupabase = readFileSync(
   new URL("../../app/lib/home-collection-supabase-utils.ts", import.meta.url),
   "utf8",
@@ -108,7 +112,9 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
   assert.match(pagina, /function MobileObraLocalCard\(/);
   assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
   assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
-  assert.match(pagina, /function MobileObraCard\(/);
+  assert.match(pagina, /import MobileObraCard from "\.\.\/components\/HomeCatalogWorkCard";/);
+  assert.doesNotMatch(pagina, /function MobileObraCard\(/);
+  assert.match(catalogoCard, /export default function MobileObraCard\(/);
   assert.match(pagina, /import useHomeCatalogSearch from "\.\/hooks\/use-home-catalog-search";/);
   assert.match(
     hookBuscaCatalogo,

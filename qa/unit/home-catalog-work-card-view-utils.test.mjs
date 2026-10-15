@@ -11,6 +11,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const componente = readFileSync(
+  new URL("../../components/HomeCatalogWorkCard.tsx", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(
     /import \{[\s\S]*?\} from "\.\/home-catalog-utils";\r?\n/,
@@ -102,10 +106,12 @@ test("home-catalog-work-card-view-utils estabelece a fronteira pura do card de c
   );
   assert.match(modulo, /const totalConteudoObra = compactarNumeroHome\(/);
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState|from "react"/);
-  assert.match(pagina, /function MobileObraCard\(/);
-  assert.match(pagina, /from "\.\/lib\/home-catalog-work-card-view-utils";/);
-  assert.match(pagina, /criarDadosObraCatalogoCardHome\(obra\)/);
-  assert.match(pagina, /\{obra\.disponivel \? "Ver obra" : "Ver detalhes"\}/);
+  assert.match(componente, /export default function MobileObraCard\(/);
+  assert.match(componente, /from "\.\.\/app\/lib\/home-catalog-work-card-view-utils";/);
+  assert.match(componente, /criarDadosObraCatalogoCardHome\(obra\)/);
+  assert.match(componente, /\{obra\.disponivel \? "Ver obra" : "Ver detalhes"\}/);
+  assert.match(pagina, /import MobileObraCard from "\.\.\/components\/HomeCatalogWorkCard";/);
+  assert.doesNotMatch(pagina, /function MobileObraCard\(/);
   assert.doesNotMatch(
     pagina,
     /const obraTemArquivo = obraCatalogoTemArquivoAnexadoHome\(obra\);/,
