@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 840 — Listas derivadas de obras locais da Home
+
+- Extraiu as cinco listas derivadas de obras locais para `app/lib/home-local-work-list-utils.ts`.
+- Preservou na Home os cinco `useMemo`, suas dependências e todos os consumidores de apresentação.
+- Manteve filtros, ordenações, limites, busca e a ordem original da lista de arquivos anexados.
+
 ## Fase 839 — Lista “Autores para conhecer” da Home
 
 - Extraiu a agregação, composição, ordenação e limite de autores para `app/lib/home-author-list-utils.ts`.
