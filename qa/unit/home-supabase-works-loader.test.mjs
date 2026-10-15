@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const hookBuscaCatalogo = readFileSync(
+  new URL("../../app/hooks/use-home-catalog-search.ts", import.meta.url),
+  "utf8",
+);
 
 const estado = {
   capitulos: [],
@@ -247,9 +251,10 @@ test("home-supabase-works-loader preserva fallback limitado e retorno local em f
 });
 
 test("home-supabase-works-loader estabelece a fronteira do loader principal", () => {
+  assert.match(pagina, /import useHomeCatalogSearch from "\.\/hooks\/use-home-catalog-search";/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?CONSULTAS_INICIAIS_CATALOGO_HOME,[\s\S]*?\} from "\.\/lib\/home-supabase-works-loader";/,
+    hookBuscaCatalogo,
+    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?CONSULTAS_INICIAIS_CATALOGO_HOME,[\s\S]*?\} from "\.\.\/lib\/home-supabase-works-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarObrasSupabaseHome\(/);
   assert.match(modulo, /export const CONSULTAS_INICIAIS_CATALOGO_HOME = \[/);

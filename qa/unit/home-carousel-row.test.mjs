@@ -26,6 +26,10 @@ const hookInicial = readFileSync(
   new URL("../../app/hooks/use-home-initial-data.ts", import.meta.url),
   "utf8",
 );
+const hookBuscaCatalogo = readFileSync(
+  new URL("../../app/hooks/use-home-catalog-search.ts", import.meta.url),
+  "utf8",
+);
 
 test("HomeCarouselRow preserva as regras, lifecycle e controles do carrossel", () => {
   assert.match(
@@ -104,9 +108,10 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
   assert.match(pagina, /function MobileObraLocalCard\(/);
   assert.match(pagina, /function MobileAutorCard\(/);
   assert.match(pagina, /function MobileObraCard\(/);
+  assert.match(pagina, /import useHomeCatalogSearch from "\.\/hooks\/use-home-catalog-search";/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\/lib\/home-supabase-works-loader";/,
+    hookBuscaCatalogo,
+    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\.\/lib\/home-supabase-works-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarObrasSupabaseHome\(/);
   assert.match(pagina, /import[\s\S]*?useHomeInitialData[\s\S]*?from "\.\/hooks\/use-home-initial-data";/);

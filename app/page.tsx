@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
 import HomeCarouselRow from "../components/HomeCarouselRow";
@@ -66,6 +66,7 @@ import {
 import useHomeInitialData, {
   FAVORITES_STORAGE_KEY,
 } from "./hooks/use-home-initial-data";
+import useHomeCatalogSearch from "./hooks/use-home-catalog-search";
 import type { AutorHome } from "./lib/home-author-composition-utils";
 import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
 import {
@@ -94,10 +95,6 @@ import {
   obraTemArquivoAnexado,
   obraTemConteudoPublicoHome,
 } from "./lib/home-local-work-utils";
-import {
-  carregarObrasSupabaseHome,
-  CONSULTAS_INICIAIS_CATALOGO_HOME,
-} from "./lib/home-supabase-works-loader";
 import { alternarHeroFavoritoHome } from "./lib/home-hero-favorite-action";
 import {
   criarObraHeroLocalHome,
@@ -121,7 +118,6 @@ import {
   useHistorietasTheme,
 } from "../lib/historietasTheme";
 import { ehClassificacao18 } from "../lib/historietasAdultContent";
-import type { ConsultaCatalogo } from "../lib/catalogo";
 
 type CapituloLocal = {
   id: string;
@@ -231,54 +227,15 @@ export default function Home() {
     setObrasLocais,
     setObrasFavoritas,
   } = useHomeInitialData(usuarioIdLogado, obrasCacheLocalHomeRef);
-  const consultaCatalogoHomeRef = useRef(0);
-  const buscaCatalogoHomeAtivaRef = useRef(false);
-
   const termoBusca = normalizarTexto(busca);
 
-  useEffect(() => {
-    if (!dadosHomeCarregados) {
-      return;
-    }
-
-    const buscaAtiva = Boolean(termoBusca);
-
-    if (!buscaAtiva && !buscaCatalogoHomeAtivaRef.current) {
-      return;
-    }
-
-    buscaCatalogoHomeAtivaRef.current = buscaAtiva;
-    const numeroConsulta = consultaCatalogoHomeRef.current + 1;
-    consultaCatalogoHomeRef.current = numeroConsulta;
-    let cancelado = false;
-    const timer = window.setTimeout(async () => {
-      const consultas = buscaAtiva
-        ? ([
-            {
-              busca: termoBusca,
-              ordenacao: "relevancia",
-              limite: 50,
-            },
-          ] satisfies readonly ConsultaCatalogo[])
-        : CONSULTAS_INICIAIS_CATALOGO_HOME;
-      const obras = await carregarObrasSupabaseHome(
-        obrasCacheLocalHomeRef.current,
-        usuarioIdLogado,
-        consultas,
-      );
-
-      if (!cancelado && consultaCatalogoHomeRef.current === numeroConsulta) {
-        setObrasLocais(obras);
-      }
-    }, 350);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(timer);
-    };
-    // setObrasLocais é estável e o lifecycle de busca mantém suas dependências originais.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dadosHomeCarregados, termoBusca, usuarioIdLogado]);
+  useHomeCatalogSearch({
+    dadosHomeCarregados,
+    termoBusca,
+    usuarioIdLogado,
+    obrasCacheLocalHomeRef,
+    setObrasLocais,
+  });
 
   const obrasPublicadas = useMemo(() => {
     return obrasLocais.filter((obra) => {

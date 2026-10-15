@@ -6,6 +6,10 @@ const hook = readFileSync(
   new URL("../../app/hooks/use-home-initial-data.ts", import.meta.url),
   "utf8",
 );
+const hookBuscaCatalogo = readFileSync(
+  new URL("../../app/hooks/use-home-catalog-search.ts", import.meta.url),
+  "utf8",
+);
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
 
 test("useHomeInitialData preserva estados, timer e lifecycle inicial da Home", () => {
@@ -34,7 +38,7 @@ test("useHomeInitialData preserva estados, timer e lifecycle inicial da Home", (
   assert.match(hook, /return \(\) => \{\s*cancelado = true;\s*window\.clearTimeout\(reiniciarCarregamentoTimer\);\s*\};[\s\S]*?\}, \[usuarioIdLogado\]\);/);
 });
 
-test("Home consome o hook e mantém o segundo lifecycle fora da fronteira", () => {
+test("Home consome os hooks e mantém os lifecycles em suas fronteiras", () => {
   assert.match(
     pagina,
     /import useHomeInitialData, \{[\s\S]*?FAVORITES_STORAGE_KEY,[\s\S]*?\} from "\.\/hooks\/use-home-initial-data";/,
@@ -45,10 +49,14 @@ test("Home consome o hook e mantém o segundo lifecycle fora da fronteira", () =
   );
   assert.doesNotMatch(pagina, /async function carregarDadosHome\(/);
   assert.doesNotMatch(pagina, /carregarSnapshotInicialHome/);
+  assert.match(pagina, /import useHomeCatalogSearch from "\.\/hooks\/use-home-catalog-search";/);
   assert.match(
     pagina,
-    /useEffect\(\(\) => \{[\s\S]*?consultaCatalogoHomeRef\.current = numeroConsulta;[\s\S]*?carregarObrasSupabaseHome\(/,
+    /useHomeCatalogSearch\(\{[\s\S]*?dadosHomeCarregados,[\s\S]*?termoBusca,[\s\S]*?usuarioIdLogado,[\s\S]*?obrasCacheLocalHomeRef,[\s\S]*?setObrasLocais,[\s\S]*?\}\);/,
   );
+  assert.doesNotMatch(pagina, /consultaCatalogoHomeRef|buscaCatalogoHomeAtivaRef/);
+  assert.match(hookBuscaCatalogo, /const consultaCatalogoHomeRef = useRef\(0\);/);
+  assert.match(hookBuscaCatalogo, /await carregarObrasSupabaseHome\(/);
   assert.match(hook, /return \{[\s\S]*?obrasLocais,[\s\S]*?obrasFavoritas,[\s\S]*?perfisAutores,[\s\S]*?dadosHomeCarregados,/);
   assert.doesNotMatch(hook, /\.insert\(|\.update\(|\.delete\(/);
 });
