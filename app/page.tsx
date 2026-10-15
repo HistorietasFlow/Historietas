@@ -94,6 +94,11 @@ import {
   sincronizarColecaoObraHome,
 } from "./lib/home-collection-supabase-utils";
 import { registrarAtividadeDiarioHome } from "./lib/home-diary-activity-utils";
+import {
+  criarObraHeroLocalHome,
+  encontrarObraLocalPorHeroHome,
+  formatarSinopseHeroMobile,
+} from "./lib/home-hero-work-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../lib/utils";
@@ -248,38 +253,6 @@ const HERO_INICIAL_HOME = {
   link: "/explorar",
 } as Obra & { link: string };
 
-function criarObraHeroLocalHome(obra: ObraLocal): Obra {
-  return {
-    id: obra.id,
-    titulo: obra.titulo,
-    autor: obra.autor,
-    genero: formatarGeneroHome(obra.genero),
-    formato: obra.formato || "História",
-    classificacaoIndicativa: obra.classificacaoIndicativa,
-    sinopse: obra.sinopse || "Nenhuma sinopse informada.",
-    tags: obra.tags,
-    status: obra.capitulos.length > 0 ? "Em andamento" : "Publicado",
-    views: compactarNumeroHome(obra.visualizacoes || 0),
-    likes: compactarNumeroHome(obterTotalCurtidasObraHome(obra)),
-    comentarios: compactarNumeroHome(obterTotalComentariosObraHome(obra)),
-    disponivel: true,
-    capa: obra.capa,
-    capaUrl: obra.capa,
-    arquivoObra: obra.arquivoObra,
-    slug: obra.slug,
-    link: obra.link,
-    capitulos: obra.capitulos,
-  } as Obra & {
-    id?: string;
-    capa?: string;
-    capaUrl?: string;
-    slug?: string;
-    link?: string;
-    arquivoObra?: unknown;
-    capitulos?: CapituloLocal[];
-  };
-}
-
 function criarMobileCoverStyle(capa: string): CSSProperties {
   if (!capa) {
     return coverPlaceholderStyle;
@@ -306,33 +279,6 @@ function criarMobileCoverThumbStyle(obra: Obra): CSSProperties {
     backgroundSize: "cover",
     backgroundPosition: obra.disponivel ? "center" : "center top",
   };
-}
-
-function formatarSinopseHeroMobile(sinopse: string | undefined) {
-  const textoBase = String(sinopse || "Nenhuma sinopse informada.")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!textoBase) {
-    return "Nenhuma sinopse informada.";
-  }
-
-  const textoComPalavrasSeguras = textoBase
-    .split(" ")
-    .map((palavra) => {
-      if (palavra.length <= 18) {
-        return palavra;
-      }
-
-      return `${palavra.slice(0, 16)}…`;
-    })
-    .join(" ");
-
-  if (textoComPalavrasSeguras.length <= 132) {
-    return textoComPalavrasSeguras;
-  }
-
-  return `${textoComPalavrasSeguras.slice(0, 129).trim()}…`;
 }
 
 function criarDesktopHeroPosterStyle(obra: Obra): CSSProperties {
@@ -584,28 +530,6 @@ async function carregarObrasSupabaseHome(
     console.warn("Não consegui acessar o Supabase na Home:", error);
     return obrasLocais;
   }
-}
-
-function encontrarObraLocalPorHeroHome(
-  obrasLocais: ObraLocal[],
-  heroObra: Obra,
-  heroFavoritoId: string
-) {
-  const identificadoresHero = new Set(
-    normalizarListaIdsHome([
-      heroFavoritoId,
-      ...criarIdentificadoresObraCatalogoHome(heroObra),
-      normalizarTexto(heroObra.titulo),
-    ])
-  );
-
-  return (
-    obrasLocais.find((obra) => {
-      return criarIdentificadoresObraLocalHome(obra).some((identificador) =>
-        identificadoresHero.has(identificador)
-      );
-    }) || null
-  );
 }
 
 function LoadingSpinner({ label = "Carregando" }: { label?: string }) {

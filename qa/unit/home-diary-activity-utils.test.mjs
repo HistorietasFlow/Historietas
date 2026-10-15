@@ -8,6 +8,8 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const heroObras = readFileSync(
+  new URL("../../app/lib/home-hero-work-utils.ts", import.meta.url), "utf8");
 
 const estado = {
   chamadas: [],
@@ -162,6 +164,7 @@ test("home-diary-activity-utils estabelece a fronteira isolada da atividade", ()
   assert.match(modulo, /origem: "home"/);
   assert.match(modulo, /\/\/ A Home não deve travar se o Diário não registrar a atividade\./);
   assert.doesNotMatch(modulo, /console\.warn|useEffect|useState|localStorage/);
-  assert.match(pagina, /function encontrarObraLocalPorHeroHome\(/);
+  assert.doesNotMatch(pagina, /function encontrarObraLocalPorHeroHome\(/);
+  assert.match(heroObras, /export function encontrarObraLocalPorHeroHome\(/);
   assert.match(pagina, /async function carregarObrasSupabaseHome\(/);
 });
