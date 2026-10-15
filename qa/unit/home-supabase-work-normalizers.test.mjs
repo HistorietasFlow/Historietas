@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const obrasLoader = readFileSync(
+  new URL("../../app/lib/home-supabase-works-loader.ts", import.meta.url),
+  "utf8",
+);
 
 const moduloExecutavel = modulo
   .replace(
@@ -137,7 +141,11 @@ test("home-supabase-work-normalizers preserva fallbacks, tags, capa, métricas e
 });
 
 test("home-supabase-work-normalizers delega somente a normalização Supabase", () => {
-  assert.match(pagina, /import \{ normalizarObraSupabaseHome \} from "\.\/lib\/home-supabase-work-normalizers";/);
+  assert.match(pagina, /from "\.\/lib\/home-supabase-works-loader";/);
+  assert.doesNotMatch(
+    pagina,
+    /from "\.\/lib\/home-supabase-work-normalizers";/,
+  );
   for (const nome of ["normalizarCategoriaArquivoHome", "criarArquivoObraSupabaseHome", "normalizarObraSupabaseHome"]) {
     assert.match(modulo, new RegExp(`export function ${nome}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
@@ -145,5 +153,9 @@ test("home-supabase-work-normalizers delega somente a normalização Supabase", 
   assert.match(modulo, /import \{ criarSlugBase \} from "\.\.\/\.\.\/lib\/utils";/);
   assert.match(modulo, /import \{ calcularProgressoLeitura \} from "\.\/home-reading-utils";/);
   assert.match(modulo, /import \{ normalizarNumeroHome \} from "\.\/home-format-utils";/);
+  assert.match(
+    obrasLoader,
+    /import \{ normalizarObraSupabaseHome \} from "\.\/home-supabase-work-normalizers";/,
+  );
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState/);
 });
