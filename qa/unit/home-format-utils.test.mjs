@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const normalizadoresSupabase = readFileSync(
+  new URL("../../app/lib/home-supabase-work-normalizers.ts", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(/\r\n/g, "\n")
   .replace('import type { HistorietasLanguage } from "../../lib/i18n";\n', "");
@@ -90,7 +94,7 @@ test("home-format-utils preserva locale, compactação e avaliação", () => {
 test("Home delega formatação numérica e mantém os consumidores", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?compactarNumeroHome,[\s\S]*?formatarMediaAvaliacaoAutorHome,[\s\S]*?normalizarNumeroHome,[\s\S]*?\} from "\.\/lib\/home-format-utils";/,
+    /import \{[\s\S]*?compactarNumeroHome,[\s\S]*?formatarMediaAvaliacaoAutorHome,[\s\S]*?\} from "\.\/lib\/home-format-utils";/,
   );
   for (const nomeFuncao of [
     "normalizarNumeroHome",
@@ -102,5 +106,9 @@ test("Home delega formatação numérica e mantém os consumidores", () => {
   }
   assert.match(pagina, /compactarNumeroHome\(obra\.visualizacoes \|\| 0\)/);
   assert.match(pagina, /formatarMediaAvaliacaoAutorHome\(avaliacao\)/);
-  assert.match(pagina, /normalizarNumeroHome\(/);
+  assert.match(
+    normalizadoresSupabase,
+    /import \{ normalizarNumeroHome \} from "\.\/home-format-utils";/,
+  );
+  assert.match(normalizadoresSupabase, /normalizarNumeroHome\(obra\.visualizacoes\)/);
 });
