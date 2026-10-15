@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 839 — Lista “Autores para conhecer” da Home
+
+- Extraiu a agregação, composição, ordenação e limite de autores para `app/lib/home-author-list-utils.ts`.
+- Preservou o `useMemo` na Home, suas dependências, `useHomeAuthorRatings` e `MobileAutorCard`.
+- Manteve a busca, totais, gêneros, perfis salvos e apresentação sem mudanças.
+
 ## Fase 838 — Lifecycle de autenticação e exigência de login da Home
 
 - Extraiu o estado de autenticação, lifecycle de sessão e `exigirLoginHome` para `app/hooks/use-home-auth-session.ts`.

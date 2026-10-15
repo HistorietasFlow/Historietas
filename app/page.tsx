@@ -64,8 +64,8 @@ import {
 import {
   carregarPerfisAutoresHomeSalvos,
 } from "./lib/home-author-storage-utils";
-import { criarAutorHome } from "./lib/home-author-composition-utils";
 import type { AutorHome } from "./lib/home-author-composition-utils";
+import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
 import {
   calcularProgressoLeitura,
   encontrarCapituloParaContinuar,
@@ -80,7 +80,6 @@ import {
 } from "./lib/home-catalog-utils";
 import {
   criarIniciaisAutor,
-  normalizarChaveAutor,
 } from "./lib/home-author-profile-utils";
 import type { PerfisAutoresSalvos } from "./lib/home-author-profile-utils";
 import {
@@ -792,96 +791,12 @@ export default function Home() {
   }, [obrasPublicadas, termoBusca]);
 
   const autoresParaConhecer = useMemo<AutorHome[]>(() => {
-    const autoresMap = new Map<
-      string,
-      {
-        nome: string;
-        autorId: string;
-        generos: string[];
-        totalObras: number;
-        totalCapitulos: number;
-        totalCurtidas: number;
-        totalComentarios: number;
-      }
-    >();
-
-    function registrarAutor(
-      nomeAutor: string,
-      autorId: string,
-      genero: string,
-      capitulos = 0,
-      curtidas = 0,
-      comentarios = 0
-    ) {
-      const nomeLimpo = nomeAutor.trim() || "Autor não informado";
-      const autorIdLimpo = autorId.trim();
-      const chave = autorIdLimpo || normalizarChaveAutor(nomeLimpo);
-      const autorRegistrado = autoresMap.get(chave);
-
-      if (autorRegistrado) {
-        autoresMap.set(chave, {
-          ...autorRegistrado,
-          generos: genero.trim()
-            ? [...autorRegistrado.generos, genero.trim()]
-            : autorRegistrado.generos,
-          totalObras: autorRegistrado.totalObras + 1,
-          totalCapitulos: autorRegistrado.totalCapitulos + capitulos,
-          totalCurtidas: autorRegistrado.totalCurtidas + curtidas,
-          totalComentarios: autorRegistrado.totalComentarios + comentarios,
-        });
-
-        return;
-      }
-
-      autoresMap.set(chave, {
-        nome: nomeLimpo,
-        autorId: autorIdLimpo,
-        generos: genero.trim() ? [genero.trim()] : [],
-        totalObras: 1,
-        totalCapitulos: capitulos,
-        totalCurtidas: curtidas,
-        totalComentarios: comentarios,
-      });
-    }
-
-    obrasPublicadas
-      .filter((obra) => obraLocalCombinaBusca(obra, termoBusca))
-      .forEach((obra) => {
-        registrarAutor(
-          obra.autor,
-          obra.autorId || "",
-          obra.genero,
-          obra.capitulos.length,
-          obterTotalCurtidasObraHome(obra),
-          obterTotalComentariosObraHome(obra)
-        );
-      });
-
-    obrasFiltradas.forEach((obra) => {
-      registrarAutor(obra.autor, "", obra.genero);
+    return criarAutoresParaConhecerHome({
+      obrasPublicadas,
+      obrasFiltradas,
+      perfisAutores,
+      termoBusca,
     });
-
-    return Array.from(autoresMap.values())
-      .map((autor) =>
-        criarAutorHome(
-          autor.nome,
-          autor.autorId,
-          autor.generos,
-          autor.totalObras,
-          autor.totalCapitulos,
-          autor.totalCurtidas,
-          autor.totalComentarios,
-          perfisAutores
-        )
-      )
-      .sort((autorA, autorB) => {
-        return (
-          autorB.totalObras - autorA.totalObras ||
-          autorB.totalCapitulos - autorA.totalCapitulos ||
-          autorA.nome.localeCompare(autorB.nome, "pt-BR")
-        );
-      })
-      .slice(0, 12);
   }, [obrasPublicadas, obrasFiltradas, perfisAutores, termoBusca]);
 
   const avaliacoesAutoresHome = useHomeAuthorRatings(autoresParaConhecer);
