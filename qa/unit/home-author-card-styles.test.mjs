@@ -77,7 +77,7 @@ test("MobileAutorCard consome a nova fronteira de estilos", () => {
   assert.match(componente, /style=\{authorProfileButtonStyle\}/);
   assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
   assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
-  assert.match(pagina, /from "\.\/lib\/home-card-style-primitives";/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/home-card-style-primitives";/);
 
   for (const nome of [
     "safeTextStyle",
