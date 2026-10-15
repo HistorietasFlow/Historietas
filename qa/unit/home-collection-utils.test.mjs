@@ -8,7 +8,11 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-const moduloExecutavel = modulo.replace(
+const storage = readFileSync(
+  new URL("../../app/lib/home-storage-utils.ts", import.meta.url),
+  "utf8",
+);
+const moduloExecutavel = modulo.replace(/\r\n/g, "\n").replace(
   'import { criarSlugBase, normalizarTexto } from "../../lib/utils";\n',
   `const criarSlugBase = (valor) => normalizarTexto(valor).replace(/\\s+/g, "-");
 const normalizarTexto = (valor) => String(valor || "")
@@ -111,7 +115,8 @@ test("home-collection-utils preserva remoção e a fronteira pura", () => {
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
   assert.match(pagina, /from "\.\/lib\/home-collection-utils";/);
-  assert.match(pagina, /function carregarListaIdsHome\(/);
-  assert.match(pagina, /return normalizarListaIdsHome\(\[\.\.\.fallback, \.\.\.listaSalva\]\);/);
+  assert.match(storage, /import \{ normalizarListaIdsHome \} from "\.\/home-collection-utils";/);
+  assert.match(storage, /return normalizarListaIdsHome\(\[\.\.\.fallback, \.\.\.listaSalva\]\);/);
+  assert.doesNotMatch(pagina, /function carregarListaIdsHome\(/);
   assert.doesNotMatch(modulo, /localStorage|supabase|useEffect|useState/);
 });
