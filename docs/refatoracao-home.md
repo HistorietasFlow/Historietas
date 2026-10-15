@@ -156,3 +156,9 @@
 - Extraiu a composição de obras locais do hero, sua resolução por identificadores e a sinopse mobile para `app/lib/home-hero-work-utils.ts`.
 - Preservou campos, fallbacks, métricas, ordem dos identificadores, limites e reticências da sinopse.
 - Manteve na Home os estilos, hooks, efeitos, loaders e todos os consumidores visuais do hero.
+
+## Fase 834 — Estilos de capas e poster do Hero da Home
+
+- Extraiu os estilos-base e helpers de capa mobile, miniatura e poster desktop para `app/lib/home-cover-hero-style-utils.ts`.
+- Preservou propriedades CSS, spreads, gradientes, imagens, posições e fallbacks dos estilos existentes.
+- Manteve na Home o `heroStyle`, as demais camadas do hero e todos os consumidores visuais.
