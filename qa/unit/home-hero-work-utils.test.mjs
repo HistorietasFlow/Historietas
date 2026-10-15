@@ -214,5 +214,5 @@ test("home-hero-work-utils estabelece a fronteira pura dos dados do Hero", () =>
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState|from "react"/);
   assert.doesNotMatch(pagina, /function criarMobileCoverStyle\(/);
   assert.doesNotMatch(pagina, /function criarDesktopHeroPosterStyle\(/);
-  assert.match(pagina, /function criarMobileHeroFrameBackground\(/);
+  assert.doesNotMatch(pagina, /function criarMobileHeroFrameBackground\(/);
 });

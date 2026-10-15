@@ -104,6 +104,12 @@ import {
   criarMobileCoverStyle,
   criarMobileCoverThumbStyle,
 } from "./lib/home-cover-hero-style-utils";
+import {
+  criarDecoracaoHomeStyle,
+  criarMobileHeroFrameBackground,
+  criarMobileHeroImageLayerStyle,
+  heroStyle,
+} from "./lib/home-hero-visual-style-utils";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../lib/utils";
@@ -257,40 +263,6 @@ const HERO_INICIAL_HOME = {
   disponivel: false,
   link: "/explorar",
 } as Obra & { link: string };
-
-function criarMobileHeroFrameBackground(): CSSProperties {
-  return {
-    ...heroStyle,
-    backgroundColor: "#000000",
-    backgroundImage: "linear-gradient(145deg, #000000 0%, #050505 58%, #0B0B0D 100%)",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarMobileHeroImageLayerStyle(obra: Obra): CSSProperties {
-  const imagemObra = obterImagemObraCatalogo(obra);
-  const imagemOuFallback = imagemObra
-    ? `url(${imagemObra})`
-    : "linear-gradient(145deg, #050505 0%, #0B0B0D 58%, #000000 100%)";
-
-  return {
-    position: "absolute",
-    zIndex: 0,
-    inset: "5px",
-    borderRadius: "24px",
-    backgroundImage: imagemOuFallback,
-    backgroundSize: "cover",
-    backgroundPosition: obra.disponivel ? "center" : "center top",
-    pointerEvents: "none",
-  };
-}
-
-function criarDecoracaoHomeStyle(): CSSProperties {
-  return {
-    display: "none",
-  };
-}
 
 async function carregarObrasSupabaseHome(
   obrasLocais: ObraLocal[],
@@ -3056,18 +3028,6 @@ const desktopProfileAvatarStyle: CSSProperties = {
   background: "#08080A",
   color: "#FFFFFF",
   border: "1px solid rgba(255,255,255,0.22)",
-  boxSizing: "border-box",
-};
-
-const heroStyle: CSSProperties = {
-  marginTop: "8px",
-  borderRadius: "28px",
-  overflow: "hidden",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  position: "relative",
-  minWidth: 0,
-  maxWidth: "100%",
   boxSizing: "border-box",
 };
 
