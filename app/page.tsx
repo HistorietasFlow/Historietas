@@ -52,6 +52,11 @@ import {
   criarObrasPublicadasFiltradasHome,
 } from "./lib/home-search-list-utils";
 import {
+  criarObrasCatalogoMinhaListaHome,
+  criarObrasMinhaListaHome,
+  criarObrasParaContinuarHome,
+} from "./lib/home-user-library-list-utils";
+import {
   compactarNumeroHome,
   formatarMediaAvaliacaoAutorHome,
 } from "./lib/home-format-utils";
@@ -61,8 +66,6 @@ import {
   criarIdentificadoresObraCatalogoHome,
   criarIdentificadoresObraLocalHome,
   normalizarListaIdsHome,
-  obraCatalogoEstaNaMinhaLista,
-  obraLocalEstaNaMinhaLista,
   obterIdentificadorFavoritoHome,
   removerIdentificadoresDaListaHome,
 } from "./lib/home-collection-utils";
@@ -80,7 +83,6 @@ import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
 import {
   calcularProgressoLeitura,
   encontrarCapituloParaContinuar,
-  obterTempoUltimaLeitura,
   obterTempoUltimoCapitulo,
 } from "./lib/home-reading-utils";
 import {
@@ -597,60 +599,29 @@ export default function Home() {
   }, [obrasPublicadas, termoBusca]);
 
   const obrasParaContinuar = useMemo(() => {
-    if (!usuarioLogado) {
-      return [];
-    }
-
-    return obrasPublicadas
-      .filter((obra) => {
-        return (
-          Boolean(encontrarCapituloParaContinuar(obra)) &&
-          obraLocalCombinaBusca(obra, termoBusca)
-        );
-      })
-      .sort((obraA, obraB) => {
-        return obterTempoUltimaLeitura(obraB) - obterTempoUltimaLeitura(obraA);
-      })
-      .slice(0, 5);
+    return criarObrasParaContinuarHome(
+      obrasPublicadas,
+      termoBusca,
+      usuarioLogado
+    );
   }, [obrasPublicadas, termoBusca, usuarioLogado]);
 
   const obrasMinhaLista = useMemo(() => {
-    if (!usuarioLogado) {
-      return [];
-    }
-
-    return obrasPublicadas
-      .filter((obra) => {
-        return (
-          obraLocalEstaNaMinhaLista(obra, obrasFavoritas) &&
-          obraLocalCombinaBusca(obra, termoBusca)
-        );
-      })
-      .sort((obraA, obraB) => {
-        const dataA = new Date(obraA.ultimaLeituraEm || obraA.criadaEm).getTime();
-        const dataB = new Date(obraB.ultimaLeituraEm || obraB.criadaEm).getTime();
-
-        return (
-          (Number.isNaN(dataB) ? 0 : dataB) -
-          (Number.isNaN(dataA) ? 0 : dataA)
-        );
-      })
-      .slice(0, 12);
+    return criarObrasMinhaListaHome(
+      obrasPublicadas,
+      obrasFavoritas,
+      termoBusca,
+      usuarioLogado
+    );
   }, [obrasPublicadas, obrasFavoritas, termoBusca, usuarioLogado]);
 
   const obrasCatalogoMinhaLista = useMemo(() => {
-    if (!usuarioLogado) {
-      return [];
-    }
-
-    return OBRAS_CATALOGO_HOME
-      .filter((obra) => {
-        return (
-          obraCatalogoEstaNaMinhaLista(obra, obrasFavoritas) &&
-          obraCatalogoCombinaBuscaHome(obra, termoBusca)
-        );
-      })
-      .slice(0, 12);
+    return criarObrasCatalogoMinhaListaHome(
+      OBRAS_CATALOGO_HOME,
+      obrasFavoritas,
+      termoBusca,
+      usuarioLogado
+    );
   }, [obrasFavoritas, termoBusca, usuarioLogado]);
 
   const temasRecomendadosUsuario = useMemo(() => {
