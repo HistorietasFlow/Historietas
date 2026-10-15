@@ -39,7 +39,8 @@ test("Home delega os 18 cabecalhos sem alterar os estilos compartilhados", () =>
   assert.equal((pagina.match(/<HomeSectionHeader[\s\S]*?\/>/g) || []).length, 18);
   assert.match(pagina, /subtitle="Continue do ponto em que parou\."/);
   assert.match(pagina, /const listaPageTitleTypographyStyle: CSSProperties/);
-  assert.match(pagina, /const safeTextStyle: CSSProperties/);
+  assert.match(pagina, /from "\.\/lib\/home-card-style-primitives";/);
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const sectionHeaderStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const sectionTitleStyle: CSSProperties/);
 });
