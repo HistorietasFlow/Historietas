@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const hook = readFileSync(
+  new URL("../../app/hooks/use-home-initial-data.ts", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(
     `import {
@@ -189,7 +193,8 @@ test("home-author-storage-utils estabelece a fronteira de persistência", () => 
     assert.match(modulo, new RegExp(`export function ${nomeFuncao}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(pagina, /from "\.\/lib\/home-author-storage-utils";/);
+  assert.match(pagina, /from "\.\/hooks\/use-home-initial-data";/);
+  assert.match(hook, /import \{ carregarPerfisAutoresHomeSalvos \} from "\.\.\/lib\/home-author-storage-utils";/);
   assert.match(modulo, /JSON\.parse/);
   assert.match(modulo, /\[\s*perfil\.userId,\s*perfil\.nome,\s*normalizarChaveAutor\(perfil\.nome\),\s*perfil\.nome\.trim\(\)\.replace\(\/\\s\+\/g, " "\)\.toLowerCase\(\),\s*\]/);
   assert.doesNotMatch(modulo, /supabase|useEffect|useState/);
