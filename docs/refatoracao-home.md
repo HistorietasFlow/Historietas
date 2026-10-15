@@ -95,3 +95,9 @@
 - Extraiu a imagem, o formato, a contagem de capítulos e a validação de arquivos do catálogo para `app/lib/home-catalog-utils.ts`.
 - Preservou a prioridade de capas, os fallbacks e a validação de arquivos anexados.
 - Manteve na Home os estilos, o hero e todos os consumidores dos helpers.
+
+## Fase 824 — Métricas e conteúdo das obras locais da Home
+
+- Extraiu as contagens de curtidas e comentários, os totais e a validação de conteúdo local para `app/lib/home-local-work-utils.ts`.
+- Preservou `filter`, `trim()`, `Math.max`, os fallbacks dos totais e a validação do arquivo anexado.
+- Manteve na Home os consumidores, o hero, os loaders e todas as derivações de apresentação.
