@@ -34,12 +34,19 @@ import {
 import {
   obraCatalogoCombinaBuscaHome,
   obraCatalogoCombinaComTemasRecomendados,
-  obraCatalogoCombinaTemas,
   obraCombinaComTemasRecomendados,
   obraLocalCombinaBusca,
   obterTemasRecomendacaoObra,
   obterTemasRecomendacaoObraCatalogo,
 } from "./lib/home-discovery-utils";
+import {
+  criarObrasAcaoRivalidadesHome,
+  criarObrasEmBreveHome,
+  criarObrasFantasiaPoderesHome,
+  criarObrasRomanceDramaHome,
+  criarObrasScifiCodigoHome,
+  criarObrasTerrorSuspenseHome,
+} from "./lib/home-catalog-theme-list-utils";
 import {
   compactarNumeroHome,
   formatarMediaAvaliacaoAutorHome,
@@ -792,37 +799,27 @@ export default function Home() {
   const avaliacoesAutoresHome = useHomeAuthorRatings(autoresParaConhecer);
 
   const obrasFantasiaPoderes = useMemo(() => {
-    return obrasFiltradas.filter((obra) =>
-      obraCatalogoCombinaTemas(obra, ["fantasia", "sobrenatural", "poder", "magia"])
-    );
+    return criarObrasFantasiaPoderesHome(obrasFiltradas);
   }, [obrasFiltradas]);
 
   const obrasTerrorSuspense = useMemo(() => {
-    return obrasFiltradas.filter((obra) =>
-      obraCatalogoCombinaTemas(obra, ["terror", "suspense", "mistério", "sombrio"])
-    );
+    return criarObrasTerrorSuspenseHome(obrasFiltradas);
   }, [obrasFiltradas]);
 
   const obrasRomanceDrama = useMemo(() => {
-    return obrasFiltradas.filter((obra) =>
-      obraCatalogoCombinaTemas(obra, ["romance", "drama", "emocional"])
-    );
+    return criarObrasRomanceDramaHome(obrasFiltradas);
   }, [obrasFiltradas]);
 
   const obrasAcaoRivalidades = useMemo(() => {
-    return obrasFiltradas.filter((obra) =>
-      obraCatalogoCombinaTemas(obra, ["ação", "acao", "luta", "rivalidade", "guerra"])
-    );
+    return criarObrasAcaoRivalidadesHome(obrasFiltradas);
   }, [obrasFiltradas]);
 
   const obrasScifiCodigo = useMemo(() => {
-    return obrasFiltradas.filter((obra) =>
-      obraCatalogoCombinaTemas(obra, ["sci-fi", "scifi", "ficção", "futur", "código", "codigo"])
-    );
+    return criarObrasScifiCodigoHome(obrasFiltradas);
   }, [obrasFiltradas]);
 
   const obrasEmBreve = useMemo(() => {
-    return obrasFiltradas.filter((obra) => !obra.disponivel);
+    return criarObrasEmBreveHome(obrasFiltradas);
   }, [obrasFiltradas]);
 
   if (!dadosHomeCarregados) {

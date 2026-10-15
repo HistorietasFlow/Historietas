@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 841 — Listas temáticas do catálogo da Home
+
+- Extraiu as seis listas temáticas do catálogo para `app/lib/home-catalog-theme-list-utils.ts`.
+- Preservou na Home os seis `useMemo`, suas dependências e todas as seções de apresentação.
+- Manteve literalmente os termos, filtros e a ordem de `obrasFiltradas`, sem ordenação ou limite adicional.
+
 ## Fase 840 — Listas derivadas de obras locais da Home
 
 - Extraiu as cinco listas derivadas de obras locais para `app/lib/home-local-work-list-utils.ts`.
