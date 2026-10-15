@@ -59,6 +59,12 @@ import {
   salvarListaIdsHome,
 } from "./lib/home-storage-utils";
 import {
+  carregarPerfisAutoresHomeSalvos,
+  salvarPerfisSupabaseHomeNoStorage,
+} from "./lib/home-author-storage-utils";
+import { criarAutorHome } from "./lib/home-author-composition-utils";
+import type { AutorHome } from "./lib/home-author-composition-utils";
+import {
   calcularProgressoLeitura,
   encontrarCapituloParaContinuar,
   obterTempoUltimaLeitura,
@@ -71,15 +77,11 @@ import {
   obraCatalogoTemArquivoAnexadoHome,
 } from "./lib/home-catalog-utils";
 import {
-  criarBioAutorPadrao,
   criarIniciaisAutor,
-  encontrarPerfilAutor,
   normalizarChaveAutor,
   normalizarPerfilSupabaseHome,
-  normalizarPerfisAutoresSalvos,
 } from "./lib/home-author-profile-utils";
 import type {
-  PerfilAutorSalvo,
   PerfisAutoresSalvos,
   PerfilSupabaseHome,
   PerfilSupabaseHomeRow,
@@ -214,20 +216,6 @@ type SupabaseProgressoLeituraHomeRow = {
   atualizado_em: string | null;
 };
 
-type AutorHome = {
-  chave: string;
-  nome: string;
-  autorId: string;
-  avatar: string;
-  bio: string;
-  totalObras: number;
-  totalCapitulos: number;
-  totalCurtidas: number;
-  totalComentarios: number;
-  generos: string[];
-  href: string;
-};
-
 const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
@@ -239,8 +227,6 @@ const CONSULTAS_INICIAIS_CATALOGO_HOME = [
   { ordenacao: "salvas", limite: 12 },
   { ordenacao: "capitulos", limite: 12 },
 ] as const satisfies readonly ConsultaCatalogo[];
-const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
-
 const OBRAS_CATALOGO_HOME: Obra[] = [];
 
 const HERO_INICIAL_HOME = {
@@ -402,74 +388,6 @@ function criarDecoracaoHomeStyle(): CSSProperties {
   };
 }
 
-function carregarPerfisAutoresHomeSalvos(userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return {};
-  }
-
-  try {
-    const perfisAutoresTexto = lerStorageUsuarioHome(
-      AUTHOR_PROFILE_STORAGE_KEY,
-      userIdLimpo
-    );
-    const perfisAutoresJson: unknown = perfisAutoresTexto
-      ? JSON.parse(perfisAutoresTexto)
-      : {};
-
-    return normalizarPerfisAutoresSalvos(perfisAutoresJson);
-  } catch {
-    return {};
-  }
-}
-
-function salvarPerfisSupabaseHomeNoStorage(
-  perfis: PerfilSupabaseHome[],
-  userId = ""
-) {
-  const userIdLimpo = userId.trim();
-
-  if (perfis.length === 0 || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const perfisSalvos = carregarPerfisAutoresHomeSalvos(userIdLimpo);
-    const perfisAtualizados: PerfisAutoresSalvos = { ...perfisSalvos };
-
-    perfis.forEach((perfil) => {
-      const perfilAutor: PerfilAutorSalvo = {
-        avatar: perfil.avatar,
-        avatarNome: "",
-        bio: perfil.bio,
-      };
-      const chaves = [
-        perfil.userId,
-        perfil.nome,
-        normalizarChaveAutor(perfil.nome),
-        perfil.nome.trim().replace(/\s+/g, " ").toLowerCase(),
-      ];
-
-      chaves.forEach((chave) => {
-        const chaveLimpa = chave.trim();
-
-        if (chaveLimpa) {
-          perfisAtualizados[chaveLimpa] = perfilAutor;
-        }
-      });
-    });
-
-    salvarJsonStorageUsuarioHome(
-      AUTHOR_PROFILE_STORAGE_KEY,
-      userIdLimpo,
-      perfisAtualizados
-    );
-  } catch {
-    // Profiles são apoio visual. A Home continua funcionando com os dados da obra.
-  }
-}
-
 async function carregarPerfisSupabaseHome(autorIds: string[], userId = "") {
   const idsUnicos = Array.from(
     new Set(
@@ -547,41 +465,6 @@ async function carregarPerfisSupabaseHome(autorIds: string[], userId = "") {
   return perfisPorUsuario;
 }
 
-
-function criarAutorHome(
-  nomeAutor: string,
-  autorId: string,
-  generos: string[],
-  totalObras: number,
-  totalCapitulos: number,
-  totalCurtidas: number,
-  totalComentarios: number,
-  perfisAutores: PerfisAutoresSalvos
-): AutorHome {
-  const perfil = encontrarPerfilAutor(perfisAutores, nomeAutor);
-  const generosUnicos = Array.from(
-    new Set(
-      generos
-        .filter((genero) => Boolean(genero.trim()))
-        .map((genero) => formatarGeneroHome(genero))
-    )
-  );
-  const bioPerfil = perfil?.bio.trim() || "";
-
-  return {
-    chave: autorId.trim() || normalizarChaveAutor(nomeAutor),
-    nome: nomeAutor.trim() || "Autor não informado",
-    autorId: autorId.trim(),
-    avatar: perfil?.avatar.trim() || "",
-    bio: bioPerfil || criarBioAutorPadrao(generosUnicos),
-    totalObras,
-    totalCapitulos,
-    totalCurtidas,
-    totalComentarios,
-    generos: generosUnicos.slice(0, 2),
-    href: criarHrefPerfilAutorHome(nomeAutor, autorId),
-  };
-}
 
 function normalizarCapituloHome(
   capitulo: Partial<CapituloLocal>,
