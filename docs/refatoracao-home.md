@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 843 — Listas pessoais da Home
+
+- Extraiu as listas de continuar lendo e Minha lista local/de catálogo para `app/lib/home-user-library-list-utils.ts`.
+- Preservou na Home os três `useMemo`, suas dependências e os consumidores de apresentação.
+- Manteve guards de sessão, filtros, ordenações, limites, datas inválidas e a ordem do catálogo.
+
 ## Fase 842 — Listas de busca da Home
 
 - Extraiu a filtragem de obras publicadas e do catálogo para `app/lib/home-search-list-utils.ts`.
