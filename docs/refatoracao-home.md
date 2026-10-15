@@ -120,3 +120,9 @@
 - Extraiu `carregarPerfisSupabaseHome` para `app/lib/home-author-profile-loader.ts`.
 - Preservou as consultas separadas por `user_id` e `id`, selects, limites, aliases, warnings, normalização e persistência local dos perfis.
 - Manteve na Home o consumidor do loader e todos os demais fluxos de obras, métricas e apresentação.
+
+## Fase 828 — Normalizadores das obras locais da Home
+
+- Extraiu a normalização de capítulos, obras e coleções salvas para `app/lib/home-local-work-normalizers.ts`.
+- Preservou fallbacks, aliases de métricas, filtros de publicação e conteúdo, progresso e links das obras locais.
+- Manteve na Home todos os consumidores, loaders, hooks e composição visual.
