@@ -60,5 +60,6 @@ test("Home delega o shell e o header sem alterar seus consumidores", () => {
     pagina,
     /buscaMobileAberta\s*\? mobileSearchToggleActiveStyle\s*:\s*mobileSearchToggleStyle/,
   );
-  assert.match(pagina, /const desktopHeroStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const desktopHeroStyle: CSSProperties = \{/);
+  assert.match(pagina, /const summaryStripStyle: CSSProperties = \{/);
 });
