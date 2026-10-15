@@ -101,3 +101,9 @@
 - Extraiu as contagens de curtidas e comentários, os totais e a validação de conteúdo local para `app/lib/home-local-work-utils.ts`.
 - Preservou `filter`, `trim()`, `Math.max`, os fallbacks dos totais e a validação do arquivo anexado.
 - Manteve na Home os consumidores, o hero, os loaders e todas as derivações de apresentação.
+
+## Fase 825 — Perfil e identidade dos autores da Home
+
+- Extraiu a normalização, resolução de perfis, iniciais e bio padrão para `app/lib/home-author-profile-utils.ts`.
+- Preservou chaves normalizadas, fallbacks, prioridades de perfil e textos da Home.
+- Manteve na Home a persistência, as consultas Supabase, os loaders e a composição de autores.
