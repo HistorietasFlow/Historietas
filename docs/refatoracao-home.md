@@ -150,3 +150,9 @@
 - Extraiu `registrarAtividadeDiarioHome` para `app/lib/home-diary-activity-utils.ts`.
 - Preservou guardas, tabela, payload, visibilidade, metadados e o `catch` silencioso da atividade.
 - Manteve na Home o consumidor e todos os demais fluxos de hero, coleções e obras.
+
+## Fase 833 — Dados puros do Hero da Home
+
+- Extraiu a composição de obras locais do hero, sua resolução por identificadores e a sinopse mobile para `app/lib/home-hero-work-utils.ts`.
+- Preservou campos, fallbacks, métricas, ordem dos identificadores, limites e reticências da sinopse.
+- Manteve na Home os estilos, hooks, efeitos, loaders e todos os consumidores visuais do hero.
