@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const hook = readFileSync(
+  new URL("../../app/hooks/use-home-initial-data.ts", import.meta.url),
+  "utf8",
+);
 
 const estado = {
   eventos: [],
@@ -227,10 +231,11 @@ test("home-initial-data-loader estabelece a fronteira do snapshot inicial", () =
   assert.match(modulo, /carregarIdsColecaoUsuarioHome\("concluidas", userIdHome\)/);
   assert.match(modulo, /return \{[\s\S]*?userIdHome,[\s\S]*?obrasNormalizadas,[\s\S]*?obrasFavoritasNormalizadas,[\s\S]*?perfisAutoresNormalizados,/);
   assert.doesNotMatch(modulo, /useEffect|useState|from "react"/);
-  assert.match(pagina, /import \{ carregarSnapshotInicialHome \} from "\.\/lib\/home-initial-data-loader";/);
-  assert.match(pagina, /useEffect\(\(\) => \{[\s\S]*?let cancelado = false;/);
-  assert.match(pagina, /const reiniciarCarregamentoTimer = window\.setTimeout/);
-  assert.match(pagina, /const obrasComSupabase = await carregarObrasSupabaseHome\(/);
-  assert.match(pagina, /setPerfisAutores\(carregarPerfisAutoresHomeSalvos\(userIdHome\)\);/);
-  assert.match(pagina, /setObrasLocais\(\[\]\);[\s\S]*?setObrasFavoritas\(\[\]\);[\s\S]*?setPerfisAutores\(\{\}\);/);
+  assert.match(pagina, /useHomeInitialData\(usuarioIdLogado, obrasCacheLocalHomeRef\)/);
+  assert.doesNotMatch(pagina, /carregarSnapshotInicialHome/);
+  assert.match(hook, /import \{ carregarSnapshotInicialHome \} from "\.\.\/lib\/home-initial-data-loader";/);
+  assert.match(hook, /const reiniciarCarregamentoTimer = window\.setTimeout/);
+  assert.match(hook, /const obrasComSupabase = await carregarObrasSupabaseHome\(/);
+  assert.match(hook, /setPerfisAutores\(carregarPerfisAutoresHomeSalvos\(userIdHome\)\);/);
+  assert.match(hook, /setObrasLocais\(\[\]\);[\s\S]*?setObrasFavoritas\(\[\]\);[\s\S]*?setPerfisAutores\(\{\}\);/);
 });

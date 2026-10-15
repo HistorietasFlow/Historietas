@@ -22,6 +22,10 @@ const loaderInicial = readFileSync(
   new URL("../../app/lib/home-initial-data-loader.ts", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL("../../app/hooks/use-home-initial-data.ts", import.meta.url),
+  "utf8",
+);
 
 test("HomeCarouselRow preserva as regras, lifecycle e controles do carrossel", () => {
   assert.match(
@@ -105,10 +109,8 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
     /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\/lib\/home-supabase-works-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarObrasSupabaseHome\(/);
-  assert.match(
-    pagina,
-    /import \{ carregarSnapshotInicialHome \} from "\.\/lib\/home-initial-data-loader";/,
-  );
+  assert.match(pagina, /import[\s\S]*?useHomeInitialData[\s\S]*?from "\.\/hooks\/use-home-initial-data";/);
+  assert.match(hookInicial, /import \{ carregarSnapshotInicialHome \} from "\.\.\/lib\/home-initial-data-loader";/);
   assert.match(
     loaderInicial,
     /import \{ carregarIdsColecaoUsuarioHome \} from "\.\/home-collection-supabase-utils";/,
