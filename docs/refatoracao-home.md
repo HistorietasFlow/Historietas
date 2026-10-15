@@ -107,3 +107,10 @@
 - Extraiu a normalização, resolução de perfis, iniciais e bio padrão para `app/lib/home-author-profile-utils.ts`.
 - Preservou chaves normalizadas, fallbacks, prioridades de perfil e textos da Home.
 - Manteve na Home a persistência, as consultas Supabase, os loaders e a composição de autores.
+
+## Fase 826 — Persistência e composição de autores da Home
+
+- Extraiu a persistência local dos perfis de autores para `app/lib/home-author-storage-utils.ts`.
+- Preservou as chaves, o isolamento por usuário, JSON, `try/catch`, normalização e fallbacks do storage.
+- Extraiu a composição pura de autores para `app/lib/home-author-composition-utils.ts`.
+- Preservou perfis salvos, gêneros, totais, bio, avatar, limites e hrefs, mantendo na Home o loader Supabase.
