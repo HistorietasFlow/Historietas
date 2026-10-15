@@ -71,3 +71,9 @@
 - Extraiu os identificadores, normalização, comparação e remoção de coleções para `app/lib/home-collection-utils.ts`.
 - Preservou a prioridade de IDs, slugs e slugs derivados, `trim()`, `Set`, normalização textual e os retornos booleanos.
 - Manteve na Home a persistência de `localStorage` e seus consumidores do normalizador.
+
+## Fase 820 — Persistência localStorage da Home
+
+- Extraiu as chaves, leitura, escrita e listas isoladas por usuário para `app/lib/home-storage-utils.ts`.
+- Preservou os guards de SSR, `try/catch`, serialização JSON, filtros, fallbacks e normalização das listas.
+- Manteve na Home as constantes de storage e todos os consumidores dos helpers.
