@@ -163,6 +163,12 @@
 - Preservou propriedades CSS, spreads, gradientes, imagens, posições e fallbacks dos estilos existentes.
 - Manteve na Home o `heroStyle`, as demais camadas do hero e todos os consumidores visuais.
 
+## Fase 836 — Loader principal de obras Supabase da Home
+
+- Extraiu o carregamento principal de obras publicadas e a seleção inicial do catálogo para `app/lib/home-supabase-works-loader.ts`.
+- Preservou consultas, paginação de capítulos, métricas, perfis de autores, progresso, fallbacks, deduplicação e filtros de conteúdo publicado.
+- Manteve na Home os consumidores, a busca, os hooks, o JSX e todos os demais fluxos de apresentação.
+
 ## Fase 835 — Estilos visuais restantes do Hero da Home
 
 - Extraiu `heroStyle`, o fundo e a camada mobile, além da decoração, para `app/lib/home-hero-visual-style-utils.ts`.

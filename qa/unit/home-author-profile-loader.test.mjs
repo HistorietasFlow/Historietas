@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const obrasLoader = readFileSync(
+  new URL("../../app/lib/home-supabase-works-loader.ts", import.meta.url),
+  "utf8",
+);
 
 const estado = {
   chamadas: [],
@@ -225,11 +229,16 @@ test("home-author-profile-loader preserva fallbacks quando as consultas lançam 
 });
 
 test("home-author-profile-loader delega o loader Supabase para a fronteira dedicada", () => {
-  assert.match(
+  assert.match(pagina, /from "\.\/lib\/home-supabase-works-loader";/);
+  assert.doesNotMatch(
     pagina,
-    /import \{ carregarPerfisSupabaseHome \} from "\.\/lib\/home-author-profile-loader";/,
+    /from "\.\/lib\/home-author-profile-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarPerfisSupabaseHome\(/);
+  assert.match(
+    obrasLoader,
+    /import \{ carregarPerfisSupabaseHome \} from "\.\/home-author-profile-loader";/,
+  );
   assert.match(modulo, /import \{ supabase \} from "\.\.\/\.\.\/lib\/supabase\/client";/);
   assert.match(modulo, /import \{ normalizarPerfilSupabaseHome \} from "\.\/home-author-profile-utils";/);
   assert.match(modulo, /import \{ salvarPerfisSupabaseHomeNoStorage \} from "\.\/home-author-storage-utils";/);

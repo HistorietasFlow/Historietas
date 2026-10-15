@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const obrasLoader = readFileSync(
+  new URL("../../app/lib/home-supabase-works-loader.ts", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo.replace(
   'import { calcularProgressoLeitura } from "./home-reading-utils";\n',
   `const calcularProgressoLeitura = (capitulos) => {
@@ -88,12 +92,17 @@ test("home-reading-progress-utils preserva fallback local, datas inválidas e de
 });
 
 test("home-reading-progress-utils estabelece a fronteira pura do progresso", () => {
-  assert.match(
+  assert.match(pagina, /from "\.\/lib\/home-supabase-works-loader";/);
+  assert.doesNotMatch(
     pagina,
-    /import \{ aplicarProgressoLeituraHome \} from "\.\/lib\/home-reading-progress-utils";/,
+    /from "\.\/lib\/home-reading-progress-utils";/,
   );
   assert.match(modulo, /export function aplicarProgressoLeituraHome\b/);
   assert.doesNotMatch(pagina, /function aplicarProgressoLeituraHome\b/);
+  assert.match(
+    obrasLoader,
+    /import \{ aplicarProgressoLeituraHome \} from "\.\/home-reading-progress-utils";/,
+  );
   assert.match(modulo, /import \{ calcularProgressoLeitura \} from "\.\/home-reading-utils";/);
   assert.match(modulo, /tempoAtualSeguro >= tempoUltimaLeituraSeguro/);
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState/);

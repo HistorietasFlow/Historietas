@@ -12,6 +12,10 @@ const formatadores = readFileSync(
   new URL("../../app/lib/home-format-utils.ts", import.meta.url), "utf8");
 const atividadeDiario = readFileSync(
   new URL("../../app/lib/home-diary-activity-utils.ts", import.meta.url), "utf8");
+const obrasLoader = readFileSync(
+  new URL("../../app/lib/home-supabase-works-loader.ts", import.meta.url),
+  "utf8",
+);
 
 test("useHomeAuthorRatings preserves the author ratings lifecycle", () => {
   assert.match(hook, /^"use client";/);
@@ -87,7 +91,11 @@ test("Home delegates only author ratings to the hook", () => {
     pagina,
     /avaliacao=\{avaliacoesAutoresHome\[autor\.autorId\]\}/,
   );
-  assert.match(pagina, /carregarMetricasConteudos/);
+  assert.doesNotMatch(pagina, /carregarMetricasConteudos/);
+  assert.match(
+    obrasLoader,
+    /import \{ carregarMetricasConteudos \} from "\.\.\/\.\.\/lib\/metricas";/,
+  );
   assert.doesNotMatch(pagina, /idObraSupabaseValido/);
   assert.match(
     atividadeDiario,

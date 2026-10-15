@@ -166,5 +166,8 @@ test("home-diary-activity-utils estabelece a fronteira isolada da atividade", ()
   assert.doesNotMatch(modulo, /console\.warn|useEffect|useState|localStorage/);
   assert.doesNotMatch(pagina, /function encontrarObraLocalPorHeroHome\(/);
   assert.match(heroObras, /export function encontrarObraLocalPorHeroHome\(/);
-  assert.match(pagina, /async function carregarObrasSupabaseHome\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\/lib\/home-supabase-works-loader";/,
+  );
 });
