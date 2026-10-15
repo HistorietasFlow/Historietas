@@ -144,10 +144,10 @@ test("home-cover-hero-style-utils estabelece a fronteira dos estilos de capa e p
   assert.doesNotMatch(pagina, /const coverPlaceholderStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const coverThumbStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const desktopHeroPosterStyle: CSSProperties/);
-  assert.match(pagina, /function criarMobileHeroFrameBackground\(/);
-  assert.match(pagina, /function criarMobileHeroImageLayerStyle\(/);
-  assert.match(pagina, /function criarDecoracaoHomeStyle\(/);
-  assert.match(pagina, /const heroStyle: CSSProperties/);
+  assert.doesNotMatch(pagina, /function criarMobileHeroFrameBackground\(/);
+  assert.doesNotMatch(pagina, /function criarMobileHeroImageLayerStyle\(/);
+  assert.doesNotMatch(pagina, /function criarDecoracaoHomeStyle\(/);
+  assert.doesNotMatch(pagina, /const heroStyle: CSSProperties/);
   assert.match(modulo, /import type \{ CSSProperties \} from "react";/);
   assert.match(modulo, /import \{ obterImagemObraCatalogo \} from "\.\/home-catalog-utils";/);
   assert.match(modulo, /const coverPlaceholderStyle: CSSProperties/);

@@ -162,3 +162,9 @@
 - Extraiu os estilos-base e helpers de capa mobile, miniatura e poster desktop para `app/lib/home-cover-hero-style-utils.ts`.
 - Preservou propriedades CSS, spreads, gradientes, imagens, posições e fallbacks dos estilos existentes.
 - Manteve na Home o `heroStyle`, as demais camadas do hero e todos os consumidores visuais.
+
+## Fase 835 — Estilos visuais restantes do Hero da Home
+
+- Extraiu `heroStyle`, o fundo e a camada mobile, além da decoração, para `app/lib/home-hero-visual-style-utils.ts`.
+- Preservou spreads, gradientes, posições, fallback visual e todos os valores CSS dos estilos existentes.
+- Manteve na Home os estilos desktop, os demais estilos do Hero e todos os consumidores JSX.
