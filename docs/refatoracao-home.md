@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 855 — Componente MobileObraLocalCard da Home
+
+- Extraiu o `MobileObraLocalCard` para `components/HomeLocalWorkCard.tsx`.
+- Preservou JSX, estilos, traduções, métricas, progresso, capítulo novo e ações do card.
+- Manteve na Home todos os consumidores e as listas de obras locais.
+
 ## Fase 854 — Componente MobileObraCard da Home
 
 - Extraiu o `MobileObraCard` para `components/HomeCatalogWorkCard.tsx`.

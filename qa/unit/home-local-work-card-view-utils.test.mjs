@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const componente = readFileSync(
+  new URL("../../components/HomeLocalWorkCard.tsx", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(
     /import \{ criarSlugBase \} from "\.\.\/\.\.\/lib\/utils";\r?\n/,
@@ -165,8 +169,10 @@ test("home-local-work-card-view-utils estabelece a fronteira pura do card local"
   assert.match(modulo, /Leitura Cap\. \$\{String\(numeroCapituloContinuar\)\.padStart\(2, "0"\)\}/);
   assert.match(modulo, /const cardComAlturaExtra = progressoLeitura > 0 \|\| tipo === "novo-capitulo";/);
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState|from "react"/);
-  assert.match(pagina, /function MobileObraLocalCard\(/);
-  assert.match(pagina, /from "\.\/lib\/home-local-work-card-view-utils";/);
-  assert.match(pagina, /\} = criarDadosObraLocalCardHome\(obra, tipo\);/);
+  assert.match(componente, /export default function MobileObraLocalCard\(/);
+  assert.match(componente, /from "\.\.\/app\/lib\/home-local-work-card-view-utils";/);
+  assert.match(componente, /\} = criarDadosObraLocalCardHome\(obra, tipo\);/);
+  assert.match(pagina, /import MobileObraLocalCard from "\.\.\/components\/HomeLocalWorkCard";/);
+  assert.doesNotMatch(pagina, /function MobileObraLocalCard\(/);
   assert.doesNotMatch(pagina, /const capituloParaContinuar = encontrarCapituloParaContinuar\(obra\);/);
 });
