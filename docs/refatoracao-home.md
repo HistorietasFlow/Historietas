@@ -144,3 +144,9 @@
 - Extraiu o carregamento paginado e a sincronização das coleções para `app/lib/home-collection-supabase-utils.ts`.
 - Preservou tabelas, queries, paginação, exclusão prévia, inserção com fallback de compatibilidade e tratamento de falhas.
 - Manteve na Home os consumidores, o registro de atividades e todos os demais loaders.
+
+## Fase 832 — Persistência de atividade do Diário da Home
+
+- Extraiu `registrarAtividadeDiarioHome` para `app/lib/home-diary-activity-utils.ts`.
+- Preservou guardas, tabela, payload, visibilidade, metadados e o `catch` silencioso da atividade.
+- Manteve na Home o consumidor e todos os demais fluxos de hero, coleções e obras.

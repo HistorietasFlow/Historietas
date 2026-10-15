@@ -10,6 +10,8 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url), "utf8");
 const formatadores = readFileSync(
   new URL("../../app/lib/home-format-utils.ts", import.meta.url), "utf8");
+const atividadeDiario = readFileSync(
+  new URL("../../app/lib/home-diary-activity-utils.ts", import.meta.url), "utf8");
 
 test("useHomeAuthorRatings preserves the author ratings lifecycle", () => {
   assert.match(hook, /^"use client";/);
@@ -86,5 +88,9 @@ test("Home delegates only author ratings to the hook", () => {
     /avaliacao=\{avaliacoesAutoresHome\[autor\.autorId\]\}/,
   );
   assert.match(pagina, /carregarMetricasConteudos/);
-  assert.match(pagina, /idObraSupabaseValido/);
+  assert.doesNotMatch(pagina, /idObraSupabaseValido/);
+  assert.match(
+    atividadeDiario,
+    /import \{ idObraSupabaseValido \} from "\.\.\/\.\.\/lib\/utils";/,
+  );
 });
