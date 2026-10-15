@@ -61,7 +61,7 @@ test("home-hero-layout-styles preserva valores centrais, spreads e fronteiras", 
   assert.doesNotMatch(estilos, /summaryStripStyle|sectionStyle/);
 });
 
-test("Home delega os estilos do Hero e mantém consumers e estilos de seções", () => {
+test("Home delega os estilos do Hero e mantém seus consumidores", () => {
   assert.match(pagina, /from "\.\/lib\/home-hero-layout-styles";/);
 
   for (const nomeEstilo of nomesEstilos) {
@@ -76,8 +76,5 @@ test("Home delega os estilos do Hero e mantém consumers e estilos de seções",
   assert.match(pagina, /style=\{desktopHeroFooterStyle\}/);
   assert.match(pagina, /style=\{desktopPrimaryButtonStyle\}/);
   assert.match(pagina, /style=\{primaryButtonStyle\}/);
-  assert.match(pagina, /const summaryStripStyle: CSSProperties = \{/);
-  assert.match(pagina, /const desktopSummaryStripStyle: CSSProperties = \{/);
-  assert.match(pagina, /const sectionStyle: CSSProperties = \{/);
-  assert.match(pagina, /const desktopSectionStyle: CSSProperties = \{/);
+  assert.match(pagina, /from "\.\/lib\/home-summary-section-styles";/);
 });

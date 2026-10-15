@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
 import MobileAutorCard from "../components/HomeAuthorCard";
 import MobileObraCard from "../components/HomeCatalogWorkCard";
@@ -22,8 +21,16 @@ import useHomePageTranslations from "./hooks/use-home-page-translations";
 import useHomeAuthSession from "./hooks/use-home-auth-session";
 import { themePageCss } from "./lib/home-page-css";
 import {
-  safeTextStyle,
-} from "./lib/home-card-style-primitives";
+  desktopLastSectionStyle,
+  desktopSectionStyle,
+  desktopSummaryStripStyle,
+  lastSectionStyle,
+  sectionStyle,
+  summaryDividerLineStyle,
+  summaryItemStyle,
+  summaryNumberStyle,
+  summaryStripStyle,
+} from "./lib/home-summary-section-styles";
 import {
   containerStyle,
   desktopActiveLinkStyle,
@@ -1417,89 +1424,3 @@ export default function Home() {
     </main>
   );
 }
-
-const summaryStripStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "0",
-  marginTop: "14px",
-  padding: "0",
-  borderRadius: "0",
-  background: "transparent",
-  border: "0",
-  boxShadow: "none",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  minWidth: 0,
-  overflow: "visible",
-};
-
-const desktopSummaryStripStyle: CSSProperties = {
-  ...summaryStripStyle,
-  gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
-  gap: "0",
-  padding: "0",
-  borderRadius: "0",
-};
-
-const summaryItemStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: "42px",
-  padding: "8px 10px",
-  maxWidth: "100%",
-  minWidth: 0,
-  borderRadius: "0",
-  background: "transparent",
-  border: "0",
-  textDecoration: "none",
-  color: "#FFFFFF",
-  boxSizing: "border-box",
-};
-
-const summaryDividerLineStyle: CSSProperties = {
-  width: "1px",
-  height: "30px",
-  alignSelf: "center",
-  justifySelf: "center",
-  background: "rgba(255,255,255,0.20)",
-  borderRadius: "999px",
-};
-
-const summaryNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "17px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-
-const sectionStyle: CSSProperties = {
-  marginTop: "24px",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const lastSectionStyle: CSSProperties = {
-  marginTop: "24px",
-  paddingBottom: "22px",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const desktopSectionStyle: CSSProperties = {
-  ...sectionStyle,
-  marginTop: "30px",
-};
-
-const desktopLastSectionStyle: CSSProperties = {
-  ...lastSectionStyle,
-  marginTop: "30px",
-  paddingBottom: "76px",
-};
