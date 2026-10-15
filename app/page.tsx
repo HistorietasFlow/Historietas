@@ -22,6 +22,7 @@ import { themePageCss } from "./lib/home-page-css";
 import {
   criarHrefObraCatalogoHome,
 } from "./lib/home-route-utils";
+import { criarDadosObraCatalogoCardHome } from "./lib/home-catalog-work-card-view-utils";
 import {
   formatarGeneroHome,
   traduzirBioAutorHome,
@@ -1586,12 +1587,8 @@ function MobileAutorCard({
 
 function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }) {
   const { language } = useHistorietasLanguage();
-  const obraHref = criarHrefObraCatalogoHome(obra);
-  const obraTemArquivo = obraCatalogoTemArquivoAnexadoHome(obra);
-  const iconeConteudoObra = obraTemArquivo ? "📄" : "📚";
-  const totalConteudoObra = compactarNumeroHome(
-    obraTemArquivo ? 1 : obterTotalCapitulosObraCatalogoHome(obra),
-  );
+  const { obraHref, iconeConteudoObra, totalConteudoObra } =
+    criarDadosObraCatalogoCardHome(obra);
  
   const conteudoCard = (
     <>
