@@ -126,3 +126,9 @@
 - Extraiu a normalização de capítulos, obras e coleções salvas para `app/lib/home-local-work-normalizers.ts`.
 - Preservou fallbacks, aliases de métricas, filtros de publicação e conteúdo, progresso e links das obras locais.
 - Manteve na Home todos os consumidores, loaders, hooks e composição visual.
+
+## Fase 829 — Normalizadores das obras Supabase da Home
+
+- Extraiu a normalização de categorias, arquivos e obras Supabase para `app/lib/home-supabase-work-normalizers.ts`.
+- Preservou os fallbacks, a ordenação dos capítulos, as interações locais, as métricas derivadas e os links.
+- Manteve na Home os loaders, as consultas, o aplicador de progresso e todos os demais consumidores.
