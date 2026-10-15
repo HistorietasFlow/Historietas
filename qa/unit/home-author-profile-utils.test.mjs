@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const cardAutor = readFileSync(
+  new URL("../../components/HomeAuthorCard.tsx", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(
     'import { formatarGeneroHome } from "./home-metadata-utils";\n',
@@ -164,7 +168,12 @@ test("home-author-profile-utils estabelece a fronteira pura dos perfis de autor"
     assert.match(modulo, new RegExp(`export function ${nomeFuncao}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(pagina, /from "\.\/lib\/home-author-profile-utils";/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/home-author-profile-utils";/);
+  assert.match(
+    cardAutor,
+    /import \{ criarIniciaisAutor \} from "\.\.\/app\/lib\/home-author-profile-utils";/,
+  );
+  assert.match(cardAutor, /criarIniciaisAutor\(autor\.nome\)/);
   assert.match(modulo, /normalizarTexto\(nome\)\.replace\(\/\\s\+\/g, " "\)\.trim\(\)/);
   assert.match(modulo, /generos\[0\] \|\| "histórias"/);
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState/);

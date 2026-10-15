@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const cardAutor = readFileSync(
+  new URL("../../components/HomeAuthorCard.tsx", import.meta.url),
+  "utf8",
+);
 const cardObraLocal = readFileSync(
   new URL("../../app/lib/home-local-work-card-view-utils.ts", import.meta.url),
   "utf8",
@@ -98,7 +102,7 @@ test("home-format-utils preserva locale, compactação e avaliação", () => {
 test("Home delega formatação numérica e mantém os consumidores", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?compactarNumeroHome,[\s\S]*?formatarMediaAvaliacaoAutorHome,[\s\S]*?\} from "\.\/lib\/home-format-utils";/,
+    /import \{ compactarNumeroHome \} from "\.\/lib\/home-format-utils";/,
   );
   for (const nomeFuncao of [
     "normalizarNumeroHome",
@@ -110,7 +114,12 @@ test("Home delega formatação numérica e mantém os consumidores", () => {
   }
   assert.match(cardObraLocal, /import \{ compactarNumeroHome \} from "\.\/home-format-utils";/);
   assert.match(cardObraLocal, /compactarNumeroHome\(obra\.visualizacoes \|\| 0\)/);
-  assert.match(pagina, /formatarMediaAvaliacaoAutorHome\(avaliacao\)/);
+  assert.doesNotMatch(pagina, /formatarMediaAvaliacaoAutorHome\(avaliacao\)/);
+  assert.match(
+    cardAutor,
+    /import \{ formatarMediaAvaliacaoAutorHome \} from "\.\.\/app\/lib\/home-format-utils";/,
+  );
+  assert.match(cardAutor, /formatarMediaAvaliacaoAutorHome\(avaliacao\)/);
   assert.match(
     normalizadoresSupabase,
     /import \{ normalizarNumeroHome \} from "\.\/home-format-utils";/,

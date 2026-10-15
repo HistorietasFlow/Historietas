@@ -8,6 +8,10 @@ const hook = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url), "utf8");
+const cardAutor = readFileSync(
+  new URL("../../components/HomeAuthorCard.tsx", import.meta.url),
+  "utf8",
+);
 const formatadores = readFileSync(
   new URL("../../app/lib/home-format-utils.ts", import.meta.url), "utf8");
 const atividadeDiario = readFileSync(
@@ -79,10 +83,12 @@ test("Home delegates only author ratings to the hook", () => {
   assert.doesNotMatch(pagina, /setAvaliacoesAutoresHome/);
   assert.doesNotMatch(pagina, /async function carregarAvaliacoesAutoresHome/);
   assert.match(pagina, /const autoresParaConhecer = useMemo<AutorHome\[\]>/);
+  assert.doesNotMatch(pagina, /formatarMediaAvaliacaoAutorHome/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?formatarMediaAvaliacaoAutorHome,[\s\S]*?\} from "\.\/lib\/home-format-utils";/,
+    cardAutor,
+    /import \{ formatarMediaAvaliacaoAutorHome \} from "\.\.\/app\/lib\/home-format-utils";/,
   );
+  assert.match(cardAutor, /formatarMediaAvaliacaoAutorHome\(avaliacao\)/);
   assert.doesNotMatch(pagina, /function formatarMediaAvaliacaoAutorHome\(/);
   assert.doesNotMatch(pagina, /type AvaliacaoAutorHome = \{/);
   assert.match(formatadores, /export type AvaliacaoAutorHome = \{/);

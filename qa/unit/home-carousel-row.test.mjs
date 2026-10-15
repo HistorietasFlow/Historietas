@@ -106,7 +106,8 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
   }
 
   assert.match(pagina, /function MobileObraLocalCard\(/);
-  assert.match(pagina, /function MobileAutorCard\(/);
+  assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
+  assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
   assert.match(pagina, /function MobileObraCard\(/);
   assert.match(pagina, /import useHomeCatalogSearch from "\.\/hooks\/use-home-catalog-search";/);
   assert.match(

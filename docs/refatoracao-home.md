@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 852 — Componente MobileAutorCard da Home
+
+- Extraiu o `MobileAutorCard` para `components/HomeAuthorCard.tsx`.
+- Preservou JSX, estilos, traduções, acessibilidade e dados derivados do card.
+- Manteve na Home os consumidores e as listas de autores.
+
 ## Fase 851 — Estilos do MobileAutorCard da Home
 
 - Extraiu os primitives compartilhados para `app/lib/home-card-style-primitives.ts`.

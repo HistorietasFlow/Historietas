@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const cardAutor = readFileSync(
+  new URL("../../components/HomeAuthorCard.tsx", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(/\r\n/g, "\n")
   .replace('import type { HistorietasLanguage } from "../../lib/i18n";\n', "")
@@ -79,7 +83,7 @@ test("home-metadata-utils preserva traduções, regexes e fallbacks", () => {
 test("Home delega os metadados e mantém seus consumidores", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?formatarGeneroHome,[\s\S]*?traduzirBioAutorHome,[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirFormatoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
+    /import \{[\s\S]*?formatarGeneroHome,[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirFormatoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
   );
   for (const nomeFuncao of [
     "formatarGeneroHome",
@@ -97,5 +101,10 @@ test("Home delega os metadados e mantém seus consumidores", () => {
     pagina,
     /traduzirClassificacaoHome\(heroObra\.classificacaoIndicativa, language\)/,
   );
-  assert.match(pagina, /traduzirBioAutorHome\(autor\.bio, language\)/);
+  assert.doesNotMatch(pagina, /traduzirBioAutorHome\(autor\.bio, language\)/);
+  assert.match(
+    cardAutor,
+    /import \{ traduzirBioAutorHome, traduzirGeneroHome \} from "\.\.\/app\/lib\/home-metadata-utils";/,
+  );
+  assert.match(cardAutor, /traduzirBioAutorHome\(autor\.bio, language\)/);
 });
