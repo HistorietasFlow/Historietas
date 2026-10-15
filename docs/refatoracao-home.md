@@ -89,3 +89,9 @@
 - Extraiu o cálculo de progresso, a resolução do próximo capítulo e os tempos de leitura para `app/lib/home-reading-utils.ts`.
 - Preservou a ordem dos fallbacks, `Math.round`, `Math.max`, o tratamento de datas inválidas e todos os retornos.
 - Manteve na Home os `useMemo`, a ordenação e todos os consumidores dos helpers.
+
+## Fase 823 — Utilitários do catálogo da Home
+
+- Extraiu a imagem, o formato, a contagem de capítulos e a validação de arquivos do catálogo para `app/lib/home-catalog-utils.ts`.
+- Preservou a prioridade de capas, os fallbacks e a validação de arquivos anexados.
+- Manteve na Home os estilos, o hero e todos os consumidores dos helpers.
