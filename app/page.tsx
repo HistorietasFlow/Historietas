@@ -83,6 +83,13 @@ import {
 } from "./lib/home-author-profile-utils";
 import type { PerfisAutoresSalvos } from "./lib/home-author-profile-utils";
 import {
+  criarLeiturasRapidasHome,
+  criarObrasComArquivoAnexadoHome,
+  criarObrasComNovosCapitulosHome,
+  criarObrasMaisComentadasHome,
+  criarObrasMaisCurtidasHome,
+} from "./lib/home-local-work-list-utils";
+import {
   obterTotalComentariosObraHome,
   obterTotalCurtidasObraHome,
   obraTemArquivoAnexado,
@@ -751,43 +758,26 @@ export default function Home() {
   }, [termoBusca]);
 
   const obrasComNovosCapitulos = useMemo(() => {
-    return obrasPublicadas
-      .filter((obra) => obra.capitulos.length > 0 && obraLocalCombinaBusca(obra, termoBusca))
-      .sort((obraA, obraB) => obterTempoUltimoCapitulo(obraB) - obterTempoUltimoCapitulo(obraA))
-      .slice(0, 12);
+    return criarObrasComNovosCapitulosHome(
+      obrasPublicadas,
+      termoBusca
+    );
   }, [obrasPublicadas, termoBusca]);
 
   const obrasMaisCurtidas = useMemo(() => {
-    return obrasPublicadas
-      .filter((obra) => obterTotalCurtidasObraHome(obra) > 0 && obraLocalCombinaBusca(obra, termoBusca))
-      .sort((obraA, obraB) => obterTotalCurtidasObraHome(obraB) - obterTotalCurtidasObraHome(obraA))
-      .slice(0, 12);
+    return criarObrasMaisCurtidasHome(obrasPublicadas, termoBusca);
   }, [obrasPublicadas, termoBusca]);
 
   const obrasMaisComentadas = useMemo(() => {
-    return obrasPublicadas
-      .filter((obra) => obterTotalComentariosObraHome(obra) > 0 && obraLocalCombinaBusca(obra, termoBusca))
-      .sort((obraA, obraB) => obterTotalComentariosObraHome(obraB) - obterTotalComentariosObraHome(obraA))
-      .slice(0, 12);
+    return criarObrasMaisComentadasHome(obrasPublicadas, termoBusca);
   }, [obrasPublicadas, termoBusca]);
 
   const obrasComArquivoAnexado = useMemo(() => {
-    return obrasPublicadas
-      .filter((obra) => obraTemArquivoAnexado(obra) && obraLocalCombinaBusca(obra, termoBusca))
-      .slice(0, 12);
+    return criarObrasComArquivoAnexadoHome(obrasPublicadas, termoBusca);
   }, [obrasPublicadas, termoBusca]);
 
   const leiturasRapidas = useMemo(() => {
-    return obrasPublicadas
-      .filter((obra) => {
-        return (
-          obra.capitulos.length > 0 &&
-          obra.capitulos.length <= 3 &&
-          obraLocalCombinaBusca(obra, termoBusca)
-        );
-      })
-      .sort((obraA, obraB) => obraA.capitulos.length - obraB.capitulos.length)
-      .slice(0, 12);
+    return criarLeiturasRapidasHome(obrasPublicadas, termoBusca);
   }, [obrasPublicadas, termoBusca]);
 
   const autoresParaConhecer = useMemo<AutorHome[]>(() => {
