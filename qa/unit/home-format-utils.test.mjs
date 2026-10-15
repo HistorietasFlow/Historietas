@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const cardObraLocal = readFileSync(
+  new URL("../../app/lib/home-local-work-card-view-utils.ts", import.meta.url),
+  "utf8",
+);
 const normalizadoresSupabase = readFileSync(
   new URL("../../app/lib/home-supabase-work-normalizers.ts", import.meta.url),
   "utf8",
@@ -104,7 +108,8 @@ test("Home delega formatação numérica e mantém os consumidores", () => {
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(pagina, /compactarNumeroHome\(obra\.visualizacoes \|\| 0\)/);
+  assert.match(cardObraLocal, /import \{ compactarNumeroHome \} from "\.\/home-format-utils";/);
+  assert.match(cardObraLocal, /compactarNumeroHome\(obra\.visualizacoes \|\| 0\)/);
   assert.match(pagina, /formatarMediaAvaliacaoAutorHome\(avaliacao\)/);
   assert.match(
     normalizadoresSupabase,

@@ -20,9 +20,7 @@ import useHomePageTranslations from "./hooks/use-home-page-translations";
 import useHomeAuthSession from "./hooks/use-home-auth-session";
 import { themePageCss } from "./lib/home-page-css";
 import {
-  criarHrefLeituraCapituloHome,
   criarHrefObraCatalogoHome,
-  criarHrefPerfilAutorHome,
 } from "./lib/home-route-utils";
 import {
   formatarGeneroHome,
@@ -70,10 +68,6 @@ import useHomeCatalogSearch from "./hooks/use-home-catalog-search";
 import type { AutorHome } from "./lib/home-author-composition-utils";
 import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
 import {
-  calcularProgressoLeitura,
-  encontrarCapituloParaContinuar,
-} from "./lib/home-reading-utils";
-import {
   obterFormatoObraCatalogoHome,
   obterImagemObraCatalogo,
   obterTotalCapitulosObraCatalogoHome,
@@ -90,11 +84,9 @@ import {
   criarObrasMaisCurtidasHome,
 } from "./lib/home-local-work-list-utils";
 import {
-  obterTotalComentariosObraHome,
-  obterTotalCurtidasObraHome,
-  obraTemArquivoAnexado,
   obraTemConteudoPublicoHome,
 } from "./lib/home-local-work-utils";
+import { criarDadosObraLocalCardHome } from "./lib/home-local-work-card-view-utils";
 import { alternarHeroFavoritoHome } from "./lib/home-hero-favorite-action";
 import {
   criarObraHeroLocalHome,
@@ -112,7 +104,7 @@ import {
   heroStyle,
 } from "./lib/home-hero-visual-style-utils";
 import { useNotificacoes } from "../components/NotificacoesProvider";
-import { criarSlugBase, normalizarTexto } from "../lib/utils";
+import { normalizarTexto } from "../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -1362,76 +1354,23 @@ function MobileObraLocalCard({
   isDesktop?: boolean;
 }) {
   const { language } = useHistorietasLanguage();
-  const visualizacoesObra = compactarNumeroHome(obra.visualizacoes || 0);
-  const totalCurtidas = compactarNumeroHome(obterTotalCurtidasObraHome(obra));
-  const totalComentarios = compactarNumeroHome(
-    obterTotalComentariosObraHome(obra),
-  );
-  const obraTemArquivo = obraTemArquivoAnexado(obra);
-  const iconeConteudoObra = obraTemArquivo ? "📄" : "📚";
-  const totalConteudoObra = compactarNumeroHome(
-    obraTemArquivo ? 1 : obra.capitulos.length,
-  );
-
-  const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
-  const capituloParaContinuar = encontrarCapituloParaContinuar(obra);
-  const ultimoCapituloPublicado =
-    obra.capitulos.length > 0 ? obra.capitulos[obra.capitulos.length - 1] : null;
-  const slugObra = obra.slug || criarSlugBase(obra.titulo);
-  const verObraHref = obra.link?.trim() || `/obra/${slugObra}`;
-  const numeroCapituloContinuar = capituloParaContinuar
-    ? Math.max(
-        1,
-        obra.capitulos.findIndex(
-          (capitulo) => capitulo.id === capituloParaContinuar.id
-        ) + 1
-      )
-    : 0;
-  const numeroUltimoCapitulo = ultimoCapituloPublicado
-    ? Math.max(
-        1,
-        obra.capitulos.findIndex(
-          (capitulo) => capitulo.id === ultimoCapituloPublicado.id
-        ) + 1
-      )
-    : 0;
-  const continuarLeituraHref = capituloParaContinuar
-    ? criarHrefLeituraCapituloHome(
-        obra,
-        capituloParaContinuar,
-        numeroCapituloContinuar || 1
-      )
-    : verObraHref;
-  const ultimoCapituloHref = ultimoCapituloPublicado
-    ? criarHrefLeituraCapituloHome(
-        obra,
-        ultimoCapituloPublicado,
-        numeroUltimoCapitulo || 1
-      )
-    : verObraHref;
-  const perfilAutorHref = criarHrefPerfilAutorHome(obra.autor, obra.autorId || "");
-
-  const actionHref =
-    tipo === "continuar"
-      ? continuarLeituraHref
-      : tipo === "novo-capitulo"
-      ? ultimoCapituloHref
-      : verObraHref;
-  const actionLabel =
-    tipo === "continuar"
-      ? "Continuar"
-      : tipo === "novo-capitulo"
-      ? "Ler agora"
-      : "Ver obra";
-  const actionSubLabel =
-    tipo === "continuar"
-      ? numeroCapituloContinuar > 0
-        ? `Leitura Cap. ${String(numeroCapituloContinuar).padStart(2, "0")}`
-        : "Leitura"
-      : tipo === "novo-capitulo" && numeroUltimoCapitulo > 0
-      ? `Cap ${numeroUltimoCapitulo}`
-      : "";
-  const cardComAlturaExtra = progressoLeitura > 0 || tipo === "novo-capitulo";
+  const {
+    visualizacoesObra,
+    totalCurtidas,
+    totalComentarios,
+    iconeConteudoObra,
+    totalConteudoObra,
+    progressoLeitura,
+    ultimoCapituloPublicado,
+    verObraHref,
+    numeroUltimoCapitulo,
+    ultimoCapituloHref,
+    perfilAutorHref,
+    actionHref,
+    actionLabel,
+    actionSubLabel,
+    cardComAlturaExtra,
+  } = criarDadosObraLocalCardHome(obra, tipo);
   const cardStyle = isDesktop
     ? cardComAlturaExtra
       ? desktopPublishedCardCompactHeightStyle
