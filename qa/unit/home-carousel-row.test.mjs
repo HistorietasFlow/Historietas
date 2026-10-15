@@ -14,6 +14,10 @@ const catalogoCard = readFileSync(
   new URL("../../components/HomeCatalogWorkCard.tsx", import.meta.url),
   "utf8",
 );
+const obraLocalCard = readFileSync(
+  new URL("../../components/HomeLocalWorkCard.tsx", import.meta.url),
+  "utf8",
+);
 const colecoesSupabase = readFileSync(
   new URL("../../app/lib/home-collection-supabase-utils.ts", import.meta.url),
   "utf8",
@@ -109,7 +113,9 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
     assert.doesNotMatch(pagina, new RegExp(`\\b${estilo}\\b`));
   }
 
-  assert.match(pagina, /function MobileObraLocalCard\(/);
+  assert.match(pagina, /import MobileObraLocalCard from "\.\.\/components\/HomeLocalWorkCard";/);
+  assert.doesNotMatch(pagina, /function MobileObraLocalCard\(/);
+  assert.match(obraLocalCard, /export default function MobileObraLocalCard\(/);
   assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
   assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
   assert.match(pagina, /import MobileObraCard from "\.\.\/components\/HomeCatalogWorkCard";/);

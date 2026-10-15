@@ -12,6 +12,10 @@ const catalogoCard = readFileSync(
   new URL("../../components/HomeCatalogWorkCard.tsx", import.meta.url),
   "utf8",
 );
+const obraLocalCard = readFileSync(
+  new URL("../../components/HomeLocalWorkCard.tsx", import.meta.url),
+  "utf8",
+);
 
 const moduloExecutavel = modulo.replace(
   'import { obterImagemObraCatalogo } from "./home-catalog-utils";\n',
@@ -140,7 +144,7 @@ test("home-cover-hero-style-utils preserva poster desktop com imagem e gradiente
 test("home-cover-hero-style-utils estabelece a fronteira dos estilos de capa e poster", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarDesktopHeroPosterStyle,[\s\S]*?criarMobileCoverStyle,[\s\S]*?\} from "\.\/lib\/home-cover-hero-style-utils";/,
+    /import \{ criarDesktopHeroPosterStyle \} from "\.\/lib\/home-cover-hero-style-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarMobileCoverStyle\(/);
   assert.doesNotMatch(pagina, /function criarMobileCoverThumbStyle\(/);
@@ -165,6 +169,11 @@ test("home-cover-hero-style-utils estabelece a fronteira dos estilos de capa e p
     /import \{ criarMobileCoverThumbStyle \} from "\.\.\/app\/lib\/home-cover-hero-style-utils";/,
   );
   assert.match(catalogoCard, /criarMobileCoverThumbStyle\(obra\)/);
+  assert.match(
+    obraLocalCard,
+    /import \{ criarMobileCoverStyle \} from "\.\.\/app\/lib\/home-cover-hero-style-utils";/,
+  );
+  assert.match(obraLocalCard, /criarMobileCoverStyle\(obra\.capa\)/);
   assert.match(modulo, /export function criarDesktopHeroPosterStyle\(/);
   assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|useState/);
 });
