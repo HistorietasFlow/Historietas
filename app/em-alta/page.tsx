@@ -60,9 +60,12 @@ import {
 } from "./lib/em-alta-ranking-data-utils";
 import {
   criarAutorAvatarRankingStyle,
+  criarAutorCardTitleRankingStyle,
   criarCardRankingStyle,
   criarDecoracaoPaginaStyle,
+  criarObraCardTitleRankingStyle,
   criarRankingCoverStyle,
+  safeTextStyle,
 } from "./lib/em-alta-ranking-visual-style-utils";
 import { obterTemaPosicao } from "./lib/em-alta-ranking-position-theme";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
@@ -1627,13 +1630,6 @@ function criarRankingTierInlineBadgeStyle(posicao: number): CSSProperties {
   };
 }
 
-function criarObraCardTitleRankingStyle(): CSSProperties {
-  return {
-    ...cardTitleStyle,
-    color: "#FFFFFF",
-  };
-}
-
 function criarAutorTierInlineBadgeStyle(posicao: number): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
 
@@ -1665,20 +1661,6 @@ function criarAutorPointsBadgeStyle(): CSSProperties {
     flex: "0 0 auto",
   };
 }
-
-function criarAutorCardTitleRankingStyle(): CSSProperties {
-  return {
-    ...authorRankingCardTitleStyle,
-    color: "#FFFFFF",
-  };
-}
-
-
-
-const safeTextStyle: CSSProperties = {
-  overflowWrap: "anywhere",
-  wordBreak: "break-word",
-};
 
 const pageDecorationLayerStyle: CSSProperties = {
   position: "absolute",
@@ -2060,23 +2042,6 @@ const cardTopStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const cardTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "20px",
-  lineHeight: 1.05,
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 500,
-  letterSpacing: "-0.01em",
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
 const statusRowStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
@@ -2363,24 +2328,6 @@ const authorRankingTierBadgeStyle: CSSProperties = {
   boxShadow: "0 6px 12px rgba(0,0,0,0.22)",
   ...safeTextStyle,
 };
-
-
-const authorRankingCardTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "19px",
-  lineHeight: 1.05,
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 500,
-  letterSpacing: "-0.01em",
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
 
 
 const authorRankingTitleAreaStyle: CSSProperties = {
