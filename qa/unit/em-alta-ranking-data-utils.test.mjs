@@ -8,6 +8,7 @@ import "./em-alta-ranking-card.test.mjs";
 import "./em-alta-ranking-sections.test.mjs";
 import "./em-alta-ranking-position-theme.test.mjs";
 import "./em-alta-ranking-category-theme.test.mjs";
+import "./em-alta-author-ranking-utils.test.mjs";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-ranking-data-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
