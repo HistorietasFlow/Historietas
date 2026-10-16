@@ -8,6 +8,7 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
+import { useEmAltaAuthSession } from "./hooks/use-em-alta-auth-session";
 import { useEmAltaDesktopMode } from "./hooks/use-em-alta-desktop-mode";
 import { emAltaPageCss } from "./lib/em-alta-page-css";
 import type {
@@ -79,36 +80,10 @@ export default function EmAltaPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-
-  useEffect(() => {
-    let ativo = true;
-
-    async function verificarUsuarioLogado() {
-      try {
-        const { data } = await supabase.auth.getUser();
-
-        window.setTimeout(() => {
-          if (ativo) {
-            setUsuarioLogado(Boolean(data.user));
-            setUsuarioLogadoId(data.user?.id || "");
-          }
-        }, 0);
-      } catch {
-        window.setTimeout(() => {
-          if (ativo) {
-            setUsuarioLogado(false);
-            setUsuarioLogadoId("");
-          }
-        }, 0);
-      }
-    }
-
-    void verificarUsuarioLogado();
-
-    return () => {
-      ativo = false;
-    };
-  }, []);
+  const { usuarioTemSessaoAtiva } = useEmAltaAuthSession({
+    setUsuarioLogado,
+    setUsuarioLogadoId,
+  });
 
   useEffect(() => {
     let cancelado = false;
@@ -270,24 +245,6 @@ export default function EmAltaPage() {
 
   function avisarLoginRanking() {
     router.push(criarLoginHrefEmAlta());
-  }
-
-  async function usuarioTemSessaoAtiva() {
-    try {
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id || "";
-      const logado = Boolean(userId);
-
-      setUsuarioLogado(logado);
-      setUsuarioLogadoId(userId);
-
-      return logado;
-    } catch {
-      setUsuarioLogado(false);
-      setUsuarioLogadoId("");
-
-      return false;
-    }
   }
 
   async function alternarFavorito(obraId: string) {
