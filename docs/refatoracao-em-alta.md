@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 867 — base de texto e títulos dos cards
+
+- Moveu `safeTextStyle` para a fronteira visual compartilhada do ranking.
+- Isolou os títulos de obras e autores, preservando quebra de texto, clamp, tipografia e cores.
+- Os demais consumidores de `safeTextStyle` permanecem na página sem alteração.
+
 ## Fase 866 — estilos-base dos cards do ranking
 
 - Isolou as bases mobile/desktop dos cards no módulo visual do ranking.

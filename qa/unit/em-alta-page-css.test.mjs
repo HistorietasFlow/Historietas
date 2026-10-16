@@ -53,7 +53,11 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
     /\$\{emAltaPageCss\}\$\{historietasThemeCss\}/,
   );
 
-  assert.match(pagina, /const safeTextStyle: CSSProperties/);
+  assert.match(
+    pagina,
+    /safeTextStyle,\s*\} from "\.\/lib\/em-alta-ranking-visual-style-utils";/,
+  );
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/em-alta-loading-spinner";/,

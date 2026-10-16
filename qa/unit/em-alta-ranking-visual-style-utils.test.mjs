@@ -47,6 +47,40 @@ const estilos = await import(
 const gradient =
   "linear-gradient(135deg, var(--historietas-em-alta-hex-08030f, #08030F) 0%, var(--historietas-em-alta-hex-04000a, #04000A) 100%)";
 
+test("preserva a base segura e os títulos dos cards de ranking", () => {
+  assert.deepEqual(estilos.safeTextStyle, {
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+  });
+
+  assert.equal(estilos.cardTitleStyle.fontSize, "20px");
+  assert.equal(estilos.cardTitleStyle.lineHeight, 1.05);
+  assert.equal(estilos.cardTitleStyle.fontWeight, 500);
+  assert.equal(estilos.cardTitleStyle.letterSpacing, "-0.01em");
+  assert.equal(estilos.cardTitleStyle.WebkitLineClamp, 2);
+  assert.equal(estilos.cardTitleStyle.overflow, "hidden");
+  assert.equal(estilos.cardTitleStyle.overflowWrap, "anywhere");
+  assert.equal(estilos.cardTitleStyle.wordBreak, "break-word");
+
+  assert.equal(estilos.authorRankingCardTitleStyle.fontSize, "19px");
+  assert.equal(estilos.authorRankingCardTitleStyle.lineHeight, 1.05);
+  assert.equal(estilos.authorRankingCardTitleStyle.fontWeight, 500);
+  assert.equal(estilos.authorRankingCardTitleStyle.letterSpacing, "-0.01em");
+  assert.equal(estilos.authorRankingCardTitleStyle.WebkitLineClamp, 2);
+  assert.equal(estilos.authorRankingCardTitleStyle.overflow, "hidden");
+  assert.equal(estilos.authorRankingCardTitleStyle.overflowWrap, "anywhere");
+  assert.equal(estilos.authorRankingCardTitleStyle.wordBreak, "break-word");
+
+  assert.deepEqual(estilos.criarObraCardTitleRankingStyle(), {
+    ...estilos.cardTitleStyle,
+    color: "#FFFFFF",
+  });
+  assert.deepEqual(estilos.criarAutorCardTitleRankingStyle(), {
+    ...estilos.authorRankingCardTitleStyle,
+    color: "#FFFFFF",
+  });
+});
+
 test("preserva a base visual da capa mobile e desktop", () => {
   assert.equal(estilos.coverStyle.minHeight, "122px");
   assert.equal(estilos.coverStyle.borderRadius, "16px");
@@ -218,6 +252,11 @@ test("a página delega toda a fronteira visual", () => {
     "cardSoonStyle",
     "desktopCardSoonStyle",
     "criarCardRankingStyle",
+    "safeTextStyle",
+    "cardTitleStyle",
+    "authorRankingCardTitleStyle",
+    "criarObraCardTitleRankingStyle",
+    "criarAutorCardTitleRankingStyle",
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
     "criarDecoracaoPaginaStyle",
@@ -228,6 +267,9 @@ test("a página delega toda a fronteira visual", () => {
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
     "criarCardRankingStyle",
+    "safeTextStyle",
+    "criarObraCardTitleRankingStyle",
+    "criarAutorCardTitleRankingStyle",
     "criarDecoracaoPaginaStyle",
   ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
@@ -242,6 +284,15 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /const cardSoonStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /const desktopCardSoonStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /function criarCardRankingStyle\b/);
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const cardTitleStyle: CSSProperties = \{/);
+  assert.doesNotMatch(
+    pagina,
+    /const authorRankingCardTitleStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(pagina, /function criarObraCardTitleRankingStyle\b/);
+  assert.doesNotMatch(pagina, /function criarAutorCardTitleRankingStyle\b/);
+  assert.ok((pagina.match(/\.\.\.safeTextStyle/g) || []).length > 0);
   assert.match(
     modulo,
     /export function criarCardRankingStyle\(\s*posicao: number,\s*disponivel: boolean,\s*_tipo: TipoRanking,\s*isDesktop = false,/,

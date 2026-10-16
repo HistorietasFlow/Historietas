@@ -104,9 +104,7 @@ test("a fronteira preserva os ramos, os consumidores e a pureza", () => {
   assert.doesNotMatch(pagina, /function criarCardRankingStyle\b/);
   for (const consumidor of [
     "criarRankingTierInlineBadgeStyle",
-    "criarObraCardTitleRankingStyle",
     "criarAutorTierInlineBadgeStyle",
-    "criarAutorCardTitleRankingStyle",
   ]) {
     assert.match(pagina, new RegExp(`function ${consumidor}\\b`));
   }

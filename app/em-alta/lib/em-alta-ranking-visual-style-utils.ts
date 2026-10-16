@@ -2,6 +2,58 @@ import type { CSSProperties } from "react";
 import type { TipoRanking } from "./em-alta-models";
 import { obterTemaPosicao } from "./em-alta-ranking-position-theme";
 
+export const safeTextStyle: CSSProperties = {
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
+};
+
+export const cardTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "20px",
+  lineHeight: 1.05,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+  maxWidth: "100%",
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+export const authorRankingCardTitleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: "19px",
+  lineHeight: 1.05,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+  maxWidth: "100%",
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+export function criarObraCardTitleRankingStyle(): CSSProperties {
+  return {
+    ...cardTitleStyle,
+    color: "#FFFFFF",
+  };
+}
+
+export function criarAutorCardTitleRankingStyle(): CSSProperties {
+  return {
+    ...authorRankingCardTitleStyle,
+    color: "#FFFFFF",
+  };
+}
+
 export const cardStyle: CSSProperties = {
   position: "relative",
   flex: "0 0 min(360px, 88vw)",
