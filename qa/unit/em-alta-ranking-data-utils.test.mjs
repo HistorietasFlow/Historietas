@@ -6,9 +6,9 @@ import typescript from "typescript";
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-ranking-data-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
 const executavel = modulo
-  .replace('import { criarSlugBase, normalizarTexto } from "../../../lib/utils";\n', `const normalizarTexto = (valor) => String(valor || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+  .replace(/import \{ criarSlugBase, normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";\r?\n/, `const normalizarTexto = (valor) => String(valor || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
 const criarSlugBase = (valor) => normalizarTexto(valor).replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");\n`)
-  .replace('import type { CapituloLocal, ObraLocal } from "./em-alta-models";\n', "");
+  .replace(/import type \{ CapituloLocal, ObraLocal \} from "\.\/em-alta-models";\r?\n/, "");
 const js = typescript.transpileModule(executavel, { compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 } }).outputText;
 const utils = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
 const obra = { id: "obra-1", slug: "slug-obra", titulo: "Obra Ágil", capitulos: [{ lido: true }, { lido: false }, { lido: true }] };
@@ -33,8 +33,46 @@ test("normaliza avaliações em passos de meio ponto e resolve aliases", () => {
 test("calcula capítulos lidos e progresso arredondado", () => {
   assert.equal(utils.calcularCapitulosLidos(obra.capitulos), 2); assert.equal(utils.calcularProgressoLeitura([]), 0); assert.equal(utils.calcularProgressoLeitura(obra.capitulos), 67);
 });
-test("fronteira delega os dez helpers e permanece pura", () => {
-  for (const nome of ["formatarNumero", "formatarMediaRanking", "normalizarVisualizacoesRanking", "obterVisualizacoesRegistradasObra", "normalizarAvaliacoesLocaisRanking", "obterAvaliacaoLocalRanking", "formatarDataRanking", "formatarGeneroCard", "calcularCapitulosLidos", "calcularProgressoLeitura"]) {
+test("encontra o próximo capítulo preservando prioridade e fallbacks", () => {
+  const primeiroNaoLido = { id: "primeiro", lido: false };
+  const ultimoLido = { id: "ultimo", lido: true };
+  const posteriorNaoLido = { id: "posterior", lido: false };
+
+  assert.equal(
+    utils.encontrarCapituloParaContinuar({ capitulos: [primeiroNaoLido] }),
+    null,
+  );
+  assert.equal(
+    utils.encontrarCapituloParaContinuar({
+      capitulos: [primeiroNaoLido, ultimoLido, posteriorNaoLido],
+      ultimoCapituloLidoId: "ultimo",
+    }),
+    posteriorNaoLido,
+  );
+  assert.equal(
+    utils.encontrarCapituloParaContinuar({
+      capitulos: [primeiroNaoLido, ultimoLido],
+      ultimoCapituloLidoId: "ultimo",
+    }),
+    primeiroNaoLido,
+  );
+  assert.equal(
+    utils.encontrarCapituloParaContinuar({
+      capitulos: [primeiroNaoLido, ultimoLido],
+      ultimoCapituloLidoId: "ausente",
+    }),
+    primeiroNaoLido,
+  );
+  assert.equal(
+    utils.encontrarCapituloParaContinuar({
+      capitulos: [ultimoLido],
+      ultimoCapituloLidoId: "ultimo",
+    }),
+    null,
+  );
+});
+test("fronteira delega os onze helpers e permanece pura", () => {
+  for (const nome of ["formatarNumero", "formatarMediaRanking", "normalizarVisualizacoesRanking", "obterVisualizacoesRegistradasObra", "normalizarAvaliacoesLocaisRanking", "obterAvaliacaoLocalRanking", "formatarDataRanking", "formatarGeneroCard", "calcularCapitulosLidos", "calcularProgressoLeitura", "encontrarCapituloParaContinuar"]) {
     assert.match(modulo, new RegExp(`export function ${nome}\\b`)); assert.match(pagina, new RegExp(`\\b${nome}\\b`)); assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
   }
   for (const proibido of [/react/i, /\buse[A-Z]\w*\b/, /supabase/i, /localStorage/, /\bwindow\b/, /\bdocument\b/, /<[A-Z][\w.]*\s+[\w-]+=/]) assert.doesNotMatch(modulo, proibido);
