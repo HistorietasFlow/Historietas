@@ -1,5 +1,12 @@
 # Refatoração de Em Alta
 
+## Fase 876 — card de obra do ranking
+
+- `RankingCard` foi movido para componente dedicado.
+- Navegação da obra e link do autor foram preservados.
+- Metadata, status, métricas, destaque e tier permaneceram iguais.
+- Nenhuma query, estado ou comportamento foi alterado.
+
 ## Fase 875 — card de autor do ranking
 
 - `AutorRankingCard` foi movido para componente dedicado.

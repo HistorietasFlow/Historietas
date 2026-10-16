@@ -12,6 +12,13 @@ const modulo = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
+const rankingCard = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const js = typescript.transpileModule(modulo, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -98,9 +105,17 @@ test("a fronteira preserva os ramos, os consumidores e a pureza", () => {
     assert.match(modulo, new RegExp(`if \\(posicao === ${posicao}\\)`));
   }
   assert.match(modulo, /return \{\r?\n    nome: "Bronze"/);
-  assert.match(pagina, /from "\.\/lib\/em-alta-ranking-position-theme";/);
+  assert.match(
+    pagina,
+    /import \{ RankingCard \} from "\.\/components\/em-alta-ranking-card";/,
+  );
   assert.doesNotMatch(pagina, /function obterTemaPosicao\b/);
-  assert.match(pagina, /\bcriarCardRankingStyle\b/);
+  assert.match(
+    rankingCard,
+    /from "\.\.\/lib\/em-alta-ranking-position-theme";/,
+  );
+  assert.match(rankingCard, /\bobterTemaPosicao\(posicao\)/);
+  assert.match(rankingCard, /\bcriarCardRankingStyle\b/);
   assert.doesNotMatch(pagina, /function criarCardRankingStyle\b/);
   for (const proibido of [
     /react/i,
