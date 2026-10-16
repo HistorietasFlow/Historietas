@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-const estilos = readFileSync(
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);const estilos = readFileSync(
   new URL("../../app/lib/home-work-card-styles.ts", import.meta.url),
   "utf8",
 );
@@ -98,11 +101,11 @@ test("home-work-card-styles preserva os valores e spreads centrais", () => {
 test("Home delega os estilos e os cards de obra para suas fronteiras", () => {
   assert.match(pagina, /import HomeHero from "\.\.\/components\/HomeHero";/);
   assert.match(hero, /from "\.\.\/app\/lib\/home-work-card-styles";/);
-  assert.match(pagina, /import MobileObraLocalCard from "\.\.\/components\/HomeLocalWorkCard";/);
+  assert.match(secoes, /import MobileObraLocalCard from "\.\/HomeLocalWorkCard";/);
   assert.doesNotMatch(pagina, /function MobileObraLocalCard\(/);
   assert.match(componenteLocal, /export default function MobileObraLocalCard\(/);
   assert.match(componenteLocal, /from "\.\.\/app\/lib\/home-work-card-styles";/);
-  assert.match(pagina, /import MobileObraCard from "\.\.\/components\/HomeCatalogWorkCard";/);
+  assert.match(secoes, /import MobileObraCard from "\.\/HomeCatalogWorkCard";/);
   assert.doesNotMatch(pagina, /function MobileObraCard\(/);
   assert.match(componente, /export default function MobileObraCard\(/);
   assert.match(componente, /from "\.\.\/app\/lib\/home-work-card-styles";/);

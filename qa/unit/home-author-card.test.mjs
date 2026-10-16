@@ -7,7 +7,10 @@ const componente = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);
 test("HomeAuthorCard preserva a apresentação e os contratos do MobileAutorCard", () => {
   assert.match(componente, /^"use client";/);
   assert.match(componente, /export default function MobileAutorCard\(/);
@@ -33,7 +36,7 @@ test("HomeAuthorCard preserva a apresentação e os contratos do MobileAutorCard
 });
 
 test("Home delega o MobileAutorCard sem manter sua implementação local", () => {
-  assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
-  assert.match(pagina, /<MobileAutorCard[\s\S]*?autor=\{autor\}[\s\S]*?avaliacao=\{avaliacoesAutoresHome\[autor\.autorId\]\}[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(secoes, /import MobileAutorCard from "\.\/HomeAuthorCard";/);
+  assert.match(secoes, /<MobileAutorCard[\s\S]*?autor=\{autor\}[\s\S]*?avaliacao=\{avaliacoesAutoresHome\[autor\.autorId\]\}[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
 });

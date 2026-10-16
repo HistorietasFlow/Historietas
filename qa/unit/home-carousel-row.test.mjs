@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);
 const catalogoCard = readFileSync(
   new URL("../../components/HomeCatalogWorkCard.tsx", import.meta.url),
   "utf8",
@@ -85,14 +89,14 @@ test("HomeCarouselRow preserva as regras, lifecycle e controles do carrossel", (
   assert.match(componente, /desktopCarouselArrowRightIconStyle/);
 });
 
-test("Home delega somente as linhas de carrossel e preserva seus consumidores", () => {
+test("Home delega as seções de conteúdo e preserva seus consumidores", () => {
   assert.match(
-    pagina,
-    /import HomeCarouselRow from "\.\.\/components\/HomeCarouselRow";/,
+    secoes,
+    /import HomeCarouselRow from "\.\/HomeCarouselRow";/,
   );
   assert.doesNotMatch(pagina, /function CarouselRow\(/);
-  assert.equal((pagina.match(/<HomeCarouselRow\b/g) || []).length, 18);
-  assert.equal((pagina.match(/<\/HomeCarouselRow>/g) || []).length, 18);
+  assert.equal((secoes.match(/<HomeCarouselRow\b/g) || []).length, 18);
+  assert.equal((secoes.match(/<\/HomeCarouselRow>/g) || []).length, 18);
   assert.doesNotMatch(pagina, /<CarouselRow\b/);
 
   for (const estilo of [
@@ -113,12 +117,12 @@ test("Home delega somente as linhas de carrossel e preserva seus consumidores", 
     assert.doesNotMatch(pagina, new RegExp(`\\b${estilo}\\b`));
   }
 
-  assert.match(pagina, /import MobileObraLocalCard from "\.\.\/components\/HomeLocalWorkCard";/);
+  assert.match(secoes, /import MobileObraLocalCard from "\.\/HomeLocalWorkCard";/);
   assert.doesNotMatch(pagina, /function MobileObraLocalCard\(/);
   assert.match(obraLocalCard, /export default function MobileObraLocalCard\(/);
-  assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
+  assert.match(secoes, /import MobileAutorCard from "\.\/HomeAuthorCard";/);
   assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
-  assert.match(pagina, /import MobileObraCard from "\.\.\/components\/HomeCatalogWorkCard";/);
+  assert.match(secoes, /import MobileObraCard from "\.\/HomeCatalogWorkCard";/);
   assert.doesNotMatch(pagina, /function MobileObraCard\(/);
   assert.match(catalogoCard, /export default function MobileObraCard\(/);
   assert.match(pagina, /import useHomeCatalogSearch from "\.\/hooks\/use-home-catalog-search";/);

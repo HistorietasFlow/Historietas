@@ -8,7 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-const moduloExecutavel = modulo.replace(
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);const moduloExecutavel = modulo.replace(
   'import { obraCatalogoCombinaTemas } from "./home-discovery-utils";\n',
   `const normalizarTexto = (valor) => String(valor || "")
   .normalize("NFD")
@@ -165,5 +168,5 @@ test("home-catalog-theme-list-utils estabelece a fronteira pura das seis listas"
       new RegExp(`const ${nomeMemo} = useMemo\\(\\(\\) => \\{[\\s\\S]*?\\}, \\[obrasFiltradas\\]\\);`),
     );
   }
-  assert.match(pagina, /<MobileObraCard/);
+  assert.match(secoes, /<MobileObraCard/);
 });

@@ -8,7 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-const moduloExecutavel = modulo
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);const moduloExecutavel = modulo
   .replace(
     'import { criarAutorHome } from "./home-author-composition-utils";\n',
     `const criarAutorHome = (nome, autorId, generos, totalObras, totalCapitulos, totalCurtidas, totalComentarios, perfis) => ({
@@ -168,6 +171,6 @@ test("home-author-list-utils estabelece a fronteira pura da lista de autores", (
   assert.doesNotMatch(pagina, /function registrarAutor\(/);
   assert.match(pagina, /const autoresParaConhecer = useMemo<AutorHome\[\]>\(\(\) => \{[\s\S]*?return criarAutoresParaConhecerHome\(\{[\s\S]*?obrasPublicadas,[\s\S]*?obrasFiltradas,[\s\S]*?perfisAutores,[\s\S]*?termoBusca,[\s\S]*?\}\);[\s\S]*?\}, \[obrasPublicadas, obrasFiltradas, perfisAutores, termoBusca\]\);/);
   assert.match(pagina, /const avaliacoesAutoresHome = useHomeAuthorRatings\(autoresParaConhecer\);/);
-  assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
+  assert.match(secoes, /import MobileAutorCard from "\.\/HomeAuthorCard";/);
   assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
 });

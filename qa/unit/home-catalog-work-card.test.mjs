@@ -7,7 +7,10 @@ const componente = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);
 test("HomeCatalogWorkCard preserva a composição do MobileObraCard", () => {
   assert.match(componente, /^"use client";/);
   assert.match(componente, /export default function MobileObraCard\(/);
@@ -33,7 +36,7 @@ test("HomeCatalogWorkCard preserva a composição do MobileObraCard", () => {
 });
 
 test("Home delega o MobileObraCard sem manter sua implementação local", () => {
-  assert.match(pagina, /import MobileObraCard from "\.\.\/components\/HomeCatalogWorkCard";/);
-  assert.match(pagina, /<MobileObraCard key=\{obra\.titulo\} obra=\{obra\} isDesktop=\{isDesktop\} \/>/);
+  assert.match(secoes, /import MobileObraCard from "\.\/HomeCatalogWorkCard";/);
+  assert.match(secoes, /<MobileObraCard key=\{obra\.titulo\} obra=\{obra\} isDesktop=\{isDesktop\} \/>/);
   assert.doesNotMatch(pagina, /function MobileObraCard\(/);
 });
