@@ -1,5 +1,12 @@
 # Refatoração de Em Alta
 
+## Fase 873 — estrutura e metadata dos cards
+
+- Estrutura interna, linhas de metadata, status e badges auxiliares foram isolados.
+- Estilos mobile/desktop e tipografia foram preservados.
+- Author link e estados visuais foram mantidos.
+- Nenhuma métrica, JSX ou comportamento foi alterado.
+
 ## Fase 872 — shell e cabeçalho principal
 
 - Isolou decoração, fundo, container e cabeçalho principal do ranking.

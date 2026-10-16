@@ -616,6 +616,182 @@ export const desktopCardSoonStyle: CSSProperties = {
   opacity: 0.9,
 };
 
+export const coroaNumberStyle: CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 950,
+  lineHeight: 1,
+  color: "#FFFFFF",
+  textShadow: "0 1px 4px rgba(0,0,0,0.28)",
+};
+
+export const cardContentStyle: CSSProperties = {
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  display: "grid",
+  alignContent: "center",
+  gap: "7px",
+};
+
+export const desktopCardContentStyle: CSSProperties = {
+  ...cardContentStyle,
+  gap: "7px",
+  alignContent: "center",
+};
+
+export const cardTopStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "8px",
+  minWidth: 0,
+};
+
+export const statusRowStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "6px",
+  minWidth: 0,
+};
+
+export const cardMetaRowStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "6px",
+  maxWidth: "100%",
+  minWidth: 0,
+};
+
+export const rankingCardActionRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  marginTop: "2px",
+  maxWidth: "100%",
+  minWidth: 0,
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+export const desktopRankingCardActionRowStyle: CSSProperties = {
+  ...rankingCardActionRowStyle,
+  overflow: "visible",
+};
+
+export const rankingThemeBadgeStyle: CSSProperties = {
+  flex: "0 1 42%",
+  maxWidth: "42%",
+  minHeight: "34px",
+  padding: "0 10px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  fontWeight: 900,
+  lineHeight: 1.12,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  boxSizing: "border-box",
+  ...safeTextStyle,
+};
+
+export const desktopRankingThemeBadgeStyle: CSSProperties = {
+  ...rankingThemeBadgeStyle,
+  flex: "0 1 46%",
+  maxWidth: "46%",
+  padding: "0 8px",
+  textAlign: "center",
+  whiteSpace: "normal",
+  overflow: "visible",
+  textOverflow: "clip",
+};
+
+export const statusStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "6px 9px",
+  borderRadius: "999px",
+  background:
+    "color-mix(in srgb, var(--historietas-accent, #FFFFFF) 14%, transparent)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #FFFFFF) 28%, transparent)",
+  color: "var(--historietas-accent, var(--historietas-em-alta-hex-fdba74, #FDBA74))",
+  fontSize: "11px",
+  fontWeight: 850,
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+export const publishedStatusStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "6px 9px",
+  borderRadius: "999px",
+  background: "var(--historietas-em-alta-rgba-34-197-94-0-14, rgba(34, 197, 94, 0.14))",
+  border: "1px solid var(--historietas-em-alta-rgba-34-197-94-0-3, rgba(34, 197, 94, 0.3))",
+  color: "var(--historietas-em-alta-hex-86efac, #86EFAC)",
+  fontSize: "11px",
+  fontWeight: 900,
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+export const formatBadgeStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "5px 8px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "none",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "10px",
+  fontWeight: 900,
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+export const classificationBadgeStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "5px 8px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "none",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "10px",
+  fontWeight: 950,
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+export const authorStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
+  fontSize: "12px",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+  maxWidth: "100%",
+  display: "-webkit-box",
+  WebkitLineClamp: 1,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+export const authorLinkStyle: CSSProperties = {
+  ...authorStyle,
+  textDecoration: "none",
+  cursor: "pointer",
+  WebkitTapHighlightColor: "transparent",
+  touchAction: "manipulation",
+};
+
 export function criarCardRankingStyle(
   posicao: number,
   disponivel: boolean,

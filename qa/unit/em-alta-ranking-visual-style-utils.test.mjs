@@ -695,6 +695,170 @@ test("cria avatar de autor com tema, fallback e bases responsivas", () => {
   assert.match(prataSemAvatar.backgroundImage, /#26303D/);
 });
 
+test("preserva estrutura, metadata e status visuais dos cards", () => {
+  assert.deepEqual(estilos.coroaNumberStyle, {
+    fontSize: "11px",
+    fontWeight: 950,
+    lineHeight: 1,
+    color: "#FFFFFF",
+    textShadow: "0 1px 4px rgba(0,0,0,0.28)",
+  });
+  assert.deepEqual(estilos.cardContentStyle, {
+    minWidth: 0,
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    display: "grid",
+    alignContent: "center",
+    gap: "7px",
+  });
+  assert.deepEqual(estilos.desktopCardContentStyle, {
+    ...estilos.cardContentStyle,
+    gap: "7px",
+    alignContent: "center",
+  });
+  assert.deepEqual(estilos.cardTopStyle, {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: "8px",
+    minWidth: 0,
+  });
+  assert.deepEqual(estilos.statusRowStyle, {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
+    minWidth: 0,
+  });
+  assert.deepEqual(estilos.cardMetaRowStyle, {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
+    maxWidth: "100%",
+    minWidth: 0,
+  });
+  assert.deepEqual(estilos.rankingCardActionRowStyle, {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginTop: "2px",
+    maxWidth: "100%",
+    minWidth: 0,
+    overflow: "hidden",
+    boxSizing: "border-box",
+  });
+  assert.deepEqual(estilos.desktopRankingCardActionRowStyle, {
+    ...estilos.rankingCardActionRowStyle,
+    overflow: "visible",
+  });
+  assert.deepEqual(estilos.rankingThemeBadgeStyle, {
+    flex: "0 1 42%",
+    maxWidth: "42%",
+    minHeight: "34px",
+    padding: "0 10px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    color: "var(--historietas-text-primary, #FFFFFF)",
+    fontSize: "11px",
+    fontWeight: 900,
+    lineHeight: 1.12,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    boxSizing: "border-box",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.desktopRankingThemeBadgeStyle, {
+    ...estilos.rankingThemeBadgeStyle,
+    flex: "0 1 46%",
+    maxWidth: "46%",
+    padding: "0 8px",
+    textAlign: "center",
+    whiteSpace: "normal",
+    overflow: "visible",
+    textOverflow: "clip",
+  });
+
+  assert.deepEqual(estilos.statusStyle, {
+    width: "fit-content",
+    maxWidth: "100%",
+    padding: "6px 9px",
+    borderRadius: "999px",
+    background:
+      "color-mix(in srgb, var(--historietas-accent, #FFFFFF) 14%, transparent)",
+    border:
+      "1px solid color-mix(in srgb, var(--historietas-accent, #FFFFFF) 28%, transparent)",
+    color: "var(--historietas-accent, var(--historietas-em-alta-hex-fdba74, #FDBA74))",
+    fontSize: "11px",
+    fontWeight: 850,
+    whiteSpace: "normal",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.publishedStatusStyle, {
+    width: "fit-content",
+    maxWidth: "100%",
+    padding: "6px 9px",
+    borderRadius: "999px",
+    background: "var(--historietas-em-alta-rgba-34-197-94-0-14, rgba(34, 197, 94, 0.14))",
+    border: "1px solid var(--historietas-em-alta-rgba-34-197-94-0-3, rgba(34, 197, 94, 0.3))",
+    color: "var(--historietas-em-alta-hex-86efac, #86EFAC)",
+    fontSize: "11px",
+    fontWeight: 900,
+    whiteSpace: "normal",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.formatBadgeStyle, {
+    width: "fit-content",
+    maxWidth: "100%",
+    padding: "5px 8px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.06)",
+    border: "none",
+    color: "var(--historietas-text-primary, #FFFFFF)",
+    fontSize: "10px",
+    fontWeight: 900,
+    whiteSpace: "normal",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.classificationBadgeStyle, {
+    width: "fit-content",
+    maxWidth: "100%",
+    padding: "5px 8px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.06)",
+    border: "none",
+    color: "var(--historietas-text-primary, #FFFFFF)",
+    fontSize: "10px",
+    fontWeight: 950,
+    whiteSpace: "normal",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.authorStyle, {
+    margin: 0,
+    color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
+    fontSize: "12px",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontWeight: 450,
+    lineHeight: 1.25,
+    maxWidth: "100%",
+    display: "-webkit-box",
+    WebkitLineClamp: 1,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.authorLinkStyle, {
+    ...estilos.authorStyle,
+    textDecoration: "none",
+    cursor: "pointer",
+    WebkitTapHighlightColor: "transparent",
+    touchAction: "manipulation",
+  });
+});
+
 test("a página delega toda a fronteira visual", () => {
   for (const nome of [
     "coverStyle",
@@ -756,6 +920,22 @@ test("a página delega toda a fronteira visual", () => {
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
     "criarDecoracaoPaginaStyle",
+    "coroaNumberStyle",
+    "cardContentStyle",
+    "desktopCardContentStyle",
+    "cardTopStyle",
+    "statusRowStyle",
+    "cardMetaRowStyle",
+    "rankingCardActionRowStyle",
+    "desktopRankingCardActionRowStyle",
+    "rankingThemeBadgeStyle",
+    "desktopRankingThemeBadgeStyle",
+    "statusStyle",
+    "publishedStatusStyle",
+    "formatBadgeStyle",
+    "classificationBadgeStyle",
+    "authorStyle",
+    "authorLinkStyle",
   ]) {
     assert.match(modulo, new RegExp(`export (?:const|function) ${nome}\\b`));
   }
@@ -802,6 +982,21 @@ test("a página delega toda a fronteira visual", () => {
     "criarDesktopSectionHeaderTemaStyle",
     "criarSectionIconStyle",
     "criarDecoracaoPaginaStyle",
+    "coroaNumberStyle",
+    "cardContentStyle",
+    "desktopCardContentStyle",
+    "cardTopStyle",
+    "statusRowStyle",
+    "cardMetaRowStyle",
+    "rankingCardActionRowStyle",
+    "desktopRankingCardActionRowStyle",
+    "rankingThemeBadgeStyle",
+    "desktopRankingThemeBadgeStyle",
+    "statusStyle",
+    "publishedStatusStyle",
+    "formatBadgeStyle",
+    "classificationBadgeStyle",
+    "authorLinkStyle",
   ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
   }
@@ -815,6 +1010,26 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /const cardSoonStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /const desktopCardSoonStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /function criarCardRankingStyle\b/);
+  for (const nome of [
+    "coroaNumberStyle",
+    "cardContentStyle",
+    "desktopCardContentStyle",
+    "cardTopStyle",
+    "statusRowStyle",
+    "cardMetaRowStyle",
+    "rankingCardActionRowStyle",
+    "desktopRankingCardActionRowStyle",
+    "rankingThemeBadgeStyle",
+    "desktopRankingThemeBadgeStyle",
+    "statusStyle",
+    "publishedStatusStyle",
+    "formatBadgeStyle",
+    "classificationBadgeStyle",
+    "authorStyle",
+    "authorLinkStyle",
+  ]) {
+    assert.doesNotMatch(pagina, new RegExp(`const ${nome}: CSSProperties = \\{`));
+  }
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties = \{/);
   assert.doesNotMatch(
     pagina,
@@ -962,6 +1177,12 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /function criarSectionIconStyle\b/);
   assert.match(pagina, /function RankingSection\b/);
   assert.match(pagina, /function AutoresEmAltaSection\b/);
+  assert.match(pagina, /function RankingCard\b/);
+  assert.match(pagina, /function AutorRankingCard\b/);
+  assert.match(
+    pagina,
+    /const authorRankingTitleAreaStyle: CSSProperties = \{\s*\.\.\.cardTopStyle,/,
+  );
   assert.match(pagina, /useHistorietasTheme\(pageStyle\)/);
   assert.match(
     pagina,
