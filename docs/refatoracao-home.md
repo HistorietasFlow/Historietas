@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 862 — Header da Home
+
+- Extraiu o Header da Home para `components/HomeHeader.tsx`.
+- Preservou os estados e controladores de busca, autenticação e notificações na Home.
+- Manteve literalmente as navegações desktop/mobile, SVGs, acessibilidade, estilos e comportamento da busca.
+
 ## Fase 861 — Modelos e dados estáticos locais da Home
 
 - Moveu os tipos `CapituloLocal`, `Obra` e `ObraLocal` para `app/lib/home-page-models.ts`.
