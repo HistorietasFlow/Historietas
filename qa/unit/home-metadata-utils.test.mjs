@@ -16,6 +16,10 @@ const cardObraLocal = readFileSync(
   new URL("../../components/HomeLocalWorkCard.tsx", import.meta.url),
   "utf8",
 );
+const hero = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(/\r\n/g, "\n")
   .replace('import type { HistorietasLanguage } from "../../lib/i18n";\n', "")
@@ -85,10 +89,7 @@ test("home-metadata-utils preserva traduções, regexes e fallbacks", () => {
 });
 
 test("Home delega os metadados e mantém seus consumidores", () => {
-  assert.match(
-    pagina,
-    /import \{[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
-  );
+  assert.match(pagina, /import HomeHero from "\.\.\/components\/HomeHero";/);
   for (const nomeFuncao of [
     "formatarGeneroHome",
     "traduzirGeneroHome",
@@ -100,9 +101,9 @@ test("Home delega os metadados e mantém seus consumidores", () => {
   }
   assert.doesNotMatch(pagina, /const HOME_GENRE_TRANSLATIONS/);
   assert.doesNotMatch(pagina, /const HOME_FORMAT_TRANSLATIONS/);
-  assert.match(pagina, /traduzirGeneroHome\(heroObra\.genero, language\)/);
+  assert.match(hero, /traduzirGeneroHome\(heroObra\.genero, language\)/);
   assert.match(
-    pagina,
+    hero,
     /traduzirClassificacaoHome\(heroObra\.classificacaoIndicativa, language\)/,
   );
   assert.doesNotMatch(pagina, /traduzirBioAutorHome\(autor\.bio, language\)/);

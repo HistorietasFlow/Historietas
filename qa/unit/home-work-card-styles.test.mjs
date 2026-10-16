@@ -15,6 +15,10 @@ const componenteLocal = readFileSync(
   new URL("../../components/HomeLocalWorkCard.tsx", import.meta.url),
   "utf8",
 );
+const hero = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 
 const nomesEstilos = [
   "publishedCardStyle",
@@ -92,7 +96,8 @@ test("home-work-card-styles preserva os valores e spreads centrais", () => {
 });
 
 test("Home delega os estilos e os cards de obra para suas fronteiras", () => {
-  assert.match(pagina, /from "\.\/lib\/home-work-card-styles";/);
+  assert.match(pagina, /import HomeHero from "\.\.\/components\/HomeHero";/);
+  assert.match(hero, /from "\.\.\/app\/lib\/home-work-card-styles";/);
   assert.match(pagina, /import MobileObraLocalCard from "\.\.\/components\/HomeLocalWorkCard";/);
   assert.doesNotMatch(pagina, /function MobileObraLocalCard\(/);
   assert.match(componenteLocal, /export default function MobileObraLocalCard\(/);

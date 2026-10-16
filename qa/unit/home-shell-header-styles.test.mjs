@@ -11,6 +11,10 @@ const header = readFileSync(
   new URL("../../components/HomeHeader.tsx", import.meta.url),
   "utf8",
 );
+const componenteHero = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 
 const nomesEstilos = [
   "pageDecorationLayerStyle", "mobileTopWaterFadeStyle", "desktopTopWaterFadeStyle",
@@ -59,7 +63,11 @@ test("Home delega o shell e o header sem alterar seus consumidores", () => {
   assert.match(pagina, /import HomeHeader from "\.\.\/components\/HomeHeader";/);
   assert.match(pagina, /<HomeHeader\s+isDesktop=\{isDesktop\}/);
   assert.match(pagina, /style=\{isDesktop \? desktopContainerStyle : containerStyle\}/);
-  assert.match(pagina, /style=\{heroDecorationLayerStyle\}/);
+  assert.match(
+    componenteHero,
+    /import \{ heroDecorationLayerStyle \} from "\.\.\/app\/lib\/home-shell-header-styles";/,
+  );
+  assert.match(componenteHero, /style=\{heroDecorationLayerStyle\}/);
   assert.match(header, /style=\{isDesktop \? desktopNavStyle : mobileNavStyle\}/);
   assert.match(header, /style=\{desktopHeaderActionsStyle\}/);
   assert.match(

@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 863 — Hero da Home
+
+- Extraiu a composição visual completa do Hero para `components/HomeHero.tsx`.
+- Preservou as variantes desktop/mobile, textos, métricas, acessibilidade, carrossel, traduções e ação de favorito.
+- Manteve na Home a seleção, os dados derivados, o lifecycle do carrossel e a persistência de favoritos.
+
 ## Fase 862 — Header da Home
 
 - Extraiu o Header da Home para `components/HomeHeader.tsx`.

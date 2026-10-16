@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const hero = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 const estilosLayoutHero = readFileSync(
   new URL("../../app/lib/home-hero-layout-styles.ts", import.meta.url),
   "utf8",
@@ -59,17 +63,19 @@ test("HomeHeroCarouselDots preserva os indicadores desktop e mobile", () => {
 });
 
 test("Home delega os dois indicadores e preserva o lifecycle do hero no hook", () => {
+  assert.match(pagina, /import HomeHero from "\.\.\/components\/HomeHero";/);
+  assert.doesNotMatch(pagina, /<HomeHeroCarouselDots\b/);
   assert.match(
-    pagina,
-    /import HomeHeroCarouselDots from "\.\.\/components\/HomeHeroCarouselDots";/,
+    hero,
+    /import HomeHeroCarouselDots from "\.\/HomeHeroCarouselDots";/,
   );
-  assert.equal((pagina.match(/<HomeHeroCarouselDots\b/g) || []).length, 2);
+  assert.equal((hero.match(/<HomeHeroCarouselDots\b/g) || []).length, 2);
   assert.match(
-    pagina,
+    hero,
     /<HomeHeroCarouselDots[\s\S]*?obras=\{obrasHero\}[\s\S]*?activeIndex=\{heroIndex\}[\s\S]*?onSelect=\{setHeroIndex\}[\s\S]*?isDesktop=\{true\}[\s\S]*?\/>/,
   );
   assert.match(
-    pagina,
+    hero,
     /<HomeHeroCarouselDots[\s\S]*?obras=\{obrasHero\}[\s\S]*?activeIndex=\{heroIndex\}[\s\S]*?onSelect=\{setHeroIndex\}[\s\S]*?isDesktop=\{false\}[\s\S]*?\/>/,
   );
 
@@ -86,8 +92,8 @@ test("Home delega os dois indicadores e preserva o lifecycle do hero no hook", (
     assert.doesNotMatch(pagina, new RegExp(`\\b${estilo}\\b`));
   }
 
-  assert.doesNotMatch(pagina, /<div style=\{desktopHeroDotsStyle\}/);
-  assert.doesNotMatch(pagina, /<div style=\{mobileHeroDotsStyle\}/);
+  assert.doesNotMatch(hero, /<div style=\{desktopHeroDotsStyle\}/);
+  assert.doesNotMatch(hero, /<div style=\{mobileHeroDotsStyle\}/);
   assert.match(
     pagina,
     /import useHomeHeroCarousel from "\.\/hooks\/use-home-hero-carousel";/,
@@ -98,7 +104,7 @@ test("Home delega os dois indicadores e preserva o lifecycle do hero no hook", (
   );
   assert.doesNotMatch(pagina, /const \[heroIndex, setHeroIndex\] = useState\(0\);/);
   assert.match(pagina, /const obrasHero = useMemo/);
-  assert.match(pagina, /from "\.\/lib\/home-hero-layout-styles";/);
+  assert.match(hero, /from "\.\.\/app\/lib\/home-hero-layout-styles";/);
   assert.doesNotMatch(pagina, /const desktopHeroFooterStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const mobileHeroFooterStyle: CSSProperties/);
   assert.match(estilosLayoutHero, /export const desktopHeroFooterStyle: CSSProperties/);
