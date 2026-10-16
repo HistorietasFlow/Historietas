@@ -7,6 +7,10 @@ const estilos = readFileSync(
   new URL("../../app/lib/home-shell-header-styles.ts", import.meta.url),
   "utf8",
 );
+const header = readFileSync(
+  new URL("../../components/HomeHeader.tsx", import.meta.url),
+  "utf8",
+);
 
 const nomesEstilos = [
   "pageDecorationLayerStyle", "mobileTopWaterFadeStyle", "desktopTopWaterFadeStyle",
@@ -52,12 +56,14 @@ test("Home delega o shell e o header sem alterar seus consumidores", () => {
   }
 
   assert.match(pagina, /useHistorietasTheme\(pageStyle\)/);
-  assert.match(pagina, /style=\{isDesktop \? desktopNavStyle : mobileNavStyle\}/);
+  assert.match(pagina, /import HomeHeader from "\.\.\/components\/HomeHeader";/);
+  assert.match(pagina, /<HomeHeader\s+isDesktop=\{isDesktop\}/);
   assert.match(pagina, /style=\{isDesktop \? desktopContainerStyle : containerStyle\}/);
   assert.match(pagina, /style=\{heroDecorationLayerStyle\}/);
-  assert.match(pagina, /style=\{desktopHeaderActionsStyle\}/);
+  assert.match(header, /style=\{isDesktop \? desktopNavStyle : mobileNavStyle\}/);
+  assert.match(header, /style=\{desktopHeaderActionsStyle\}/);
   assert.match(
-    pagina,
+    header,
     /buscaMobileAberta\s*\? mobileSearchToggleActiveStyle\s*:\s*mobileSearchToggleStyle/,
   );
   assert.doesNotMatch(pagina, /const desktopHeroStyle: CSSProperties = \{/);

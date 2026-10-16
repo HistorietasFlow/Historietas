@@ -50,7 +50,7 @@ test("Home delega apenas o modo desktop e preserva consumidores responsivos", ()
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.match(pagina, /isDesktop \? desktopNavStyle : mobileNavStyle/);
+  assert.match(pagina, /<HomeHeader\s+isDesktop=\{isDesktop\}/);
   assert.match(pagina, /<HomeCarouselRow isDesktop=\{isDesktop\}>/);
   assert.match(pagina, /isDesktop \? desktopSectionStyle : sectionStyle/);
 });
