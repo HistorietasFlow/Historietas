@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 870 — temas das categorias do ranking
+
+- Isolou os temas de geral, lidas, curtidas, comentadas, salvas, recentes e fallback.
+- Ícones, labels, cores, bordas, glow e backgrounds foram preservados literalmente.
+- Consumidores e comportamento visual permaneceram iguais.
+
 ## Fase 869 — estilos dos carrosséis
 
 - Isolou shell, setas, ícones e trilhos mobile/desktop dos carrosséis.
