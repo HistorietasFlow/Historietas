@@ -1,5 +1,10 @@
 # Refatoração de Em Alta
 
+## Fase 856 — métricas e formatação
+
+- Extraiu normalizadores de views e avaliações, formatação de números/data/gênero e cálculo de progresso de leitura.
+- As funções permanecem puras, sem alteração intencional de comportamento.
+
 ## Fase 855 — registro das coleções no Diário
 
 - Isolou o registro de favorito/conclusão no Diário.
