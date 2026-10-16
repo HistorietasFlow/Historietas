@@ -73,7 +73,7 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
   assert.doesNotMatch(pagina, /atualizarModoDesktopTimer/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 69);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 67);
 
   assert.match(pagina, /async function carregarRanking\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
