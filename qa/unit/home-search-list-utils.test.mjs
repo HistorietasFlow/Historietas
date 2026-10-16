@@ -135,5 +135,8 @@ test("home-search-list-utils estabelece a fronteira pura das listas de busca", (
   assert.match(pagina, /const obrasPublicadasFiltradas = useMemo\(\(\) => \{[\s\S]*?\}, \[obrasPublicadas, termoBusca\]\);/);
   assert.match(pagina, /criarObrasCatalogoFiltradasHome\(OBRAS_CATALOGO_HOME, termoBusca\)/);
   assert.match(pagina, /const obrasFiltradas = useMemo\(\(\) => \{[\s\S]*?\}, \[termoBusca\]\);/);
-  assert.match(pagina, /const OBRAS_CATALOGO_HOME: Obra\[\] = \[\];/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?OBRAS_CATALOGO_HOME,[\s\S]*?\} from "\.\/lib\/home-page-models";/,
+  );
 });
