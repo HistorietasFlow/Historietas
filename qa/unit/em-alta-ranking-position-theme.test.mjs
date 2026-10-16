@@ -104,7 +104,6 @@ test("a fronteira preserva os ramos, os consumidores e a pureza", () => {
     "criarCardRankingStyle",
     "criarRankingTierInlineBadgeStyle",
     "criarObraCardTitleRankingStyle",
-    "criarAutorAvatarRankingStyle",
     "criarAutorTierInlineBadgeStyle",
     "criarAutorCardTitleRankingStyle",
   ]) {

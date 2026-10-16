@@ -14,10 +14,26 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
-const executavel = modulo.replace(
-  /import type \{ CSSProperties \} from "react";\r?\n/,
-  "",
+const moduloTema = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-position-theme.ts",
+    import.meta.url,
+  ),
+  "utf8",
 );
+const temaJs = typescript.transpileModule(moduloTema, {
+  compilerOptions: {
+    module: typescript.ModuleKind.ESNext,
+    target: typescript.ScriptTarget.ES2022,
+  },
+}).outputText;
+const temaUrl = `data:text/javascript;base64,${Buffer.from(temaJs).toString("base64")}`;
+const executavel = modulo
+  .replace(/import type \{ CSSProperties \} from "react";\r?\n/, "")
+  .replace(
+    /from "\.\/em-alta-ranking-position-theme";/,
+    `from "${temaUrl}";`,
+  );
 const js = typescript.transpileModule(executavel, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -88,14 +104,59 @@ test("preserva posições, ciclo e propriedades comuns da decoração", () => {
   assert.equal(primeira.userSelect, "none");
 });
 
-test("a página delega apenas a fronteira visual e preserva o avatar local", () => {
+test("cria avatar de autor com tema, fallback e bases responsivas", () => {
+  const mobileComAvatar = estilos.criarAutorAvatarRankingStyle(
+    "avatar.png",
+    1,
+    false,
+  );
+  const desktopSemAvatar = estilos.criarAutorAvatarRankingStyle("", 2, true);
+  const prataSemAvatar = estilos.criarAutorAvatarRankingStyle("", 4, false);
+
+  assert.equal(
+    mobileComAvatar.backgroundImage,
+    "linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.24)), url(avatar.png)",
+  );
+  assert.equal(
+    mobileComAvatar.backgroundColor,
+    "var(--historietas-em-alta-hex-061523, #061523)",
+  );
+  assert.equal(mobileComAvatar.minHeight, "122px");
+  assert.equal(mobileComAvatar.borderRadius, "16px");
+  assert.equal(mobileComAvatar.backgroundSize, "cover");
+  assert.equal(mobileComAvatar.backgroundPosition, "center");
+  assert.equal(mobileComAvatar.border, "none");
+  assert.equal(mobileComAvatar.outline, "none");
+  assert.equal(mobileComAvatar.boxShadow, "none");
+  assert.equal(desktopSemAvatar.minHeight, "142px");
+  assert.equal(desktopSemAvatar.borderRadius, "18px");
+  assert.equal(
+    desktopSemAvatar.backgroundColor,
+    "var(--historietas-em-alta-hex-2a0716, #2A0716)",
+  );
+  assert.match(desktopSemAvatar.backgroundImage, /#3A1020/);
+  assert.equal(
+    prataSemAvatar.backgroundColor,
+    "var(--historietas-em-alta-hex-101722, #101722)",
+  );
+  assert.match(prataSemAvatar.backgroundImage, /#26303D/);
+});
+
+test("a página delega toda a fronteira visual", () => {
   for (const nome of [
     "coverStyle",
     "desktopCoverStyle",
     "criarRankingCoverStyle",
+    "criarAutorAvatarRankingStyle",
     "criarDecoracaoPaginaStyle",
   ]) {
     assert.match(modulo, new RegExp(`export (?:const|function) ${nome}\\b`));
+  }
+  for (const nome of [
+    "criarRankingCoverStyle",
+    "criarAutorAvatarRankingStyle",
+    "criarDecoracaoPaginaStyle",
+  ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
   }
   assert.match(pagina, /from "\.\/lib\/em-alta-ranking-visual-style-utils";/);
@@ -103,12 +164,19 @@ test("a página delega apenas a fronteira visual e preserva o avatar local", () 
   assert.doesNotMatch(pagina, /function criarDecoracaoPaginaStyle\b/);
   assert.doesNotMatch(pagina, /const coverStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /const desktopCoverStyle: CSSProperties = \{/);
-  assert.match(pagina, /function criarAutorAvatarRankingStyle\b/);
-  assert.match(pagina, /const baseStyle = isDesktop \? desktopCoverStyle : coverStyle;/);
+  assert.doesNotMatch(pagina, /function criarAutorAvatarRankingStyle\b/);
+  assert.match(
+    pagina,
+    /style=\{criarAutorAvatarRankingStyle\(avatarAutor, posicao, isDesktop\)\}/,
+  );
 });
 
-test("o módulo é puro e importa somente o tipo CSSProperties", () => {
+test("o módulo permanece visual e sem runtime externo", () => {
   assert.match(modulo, /^import type \{ CSSProperties \} from "react";$/m);
+  assert.match(
+    modulo,
+    /^import \{ obterTemaPosicao \} from "\.\/em-alta-ranking-position-theme";$/m,
+  );
   for (const proibido of [
     /supabase/i,
     /localStorage/,
@@ -116,7 +184,7 @@ test("o módulo é puro e importa somente o tipo CSSProperties", () => {
     /\bdocument\b/,
     /\buse[A-Z]\w*\b/,
     /<[A-Z][\w.]*(?:\s|\/?>)/,
-    /^import (?!type)/m,
+    /^import (?!type).*react/m,
   ]) {
     assert.doesNotMatch(modulo, proibido);
   }
