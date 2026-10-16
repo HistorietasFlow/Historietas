@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const moduloVisual = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-visual-style-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo.replace(
   /import type \{ TipoRanking \} from "\.\/em-alta-models";\r?\n/,
   "",
@@ -182,9 +189,13 @@ test("a fronteira preserva ramos, consumidores e pureza", () => {
     "criarDesktopSectionHeaderTemaStyle",
     "criarSectionIconStyle",
   ]) {
-    assert.match(pagina, new RegExp(`function ${nome}\\b`));
+    assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
     assert.match(
-      pagina,
+      moduloVisual,
+      new RegExp(`export function ${nome}\\b`),
+    );
+    assert.match(
+      moduloVisual,
       new RegExp(`ReturnType<typeof obterTemaRanking>`),
     );
   }
