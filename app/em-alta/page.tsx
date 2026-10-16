@@ -48,6 +48,7 @@ import {
 import {
   calcularCapitulosLidos,
   calcularProgressoLeitura,
+  encontrarCapituloParaContinuar,
   formatarDataRanking,
   formatarGeneroCard,
   formatarMediaRanking,
@@ -59,32 +60,6 @@ import {
 } from "./lib/em-alta-ranking-data-utils";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
-
-function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const temCapituloLido = obra.capitulos.some((capitulo) => capitulo.lido);
-
-  if (!temCapituloLido) {
-    return null;
-  }
-
-  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
-    ? obra.capitulos.findIndex(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId,
-      )
-    : -1;
-
-  if (indiceUltimoCapituloLido >= 0) {
-    const proximoCapituloNaoLido = obra.capitulos
-      .slice(indiceUltimoCapituloLido + 1)
-      .find((capitulo) => !capitulo.lido);
-
-    if (proximoCapituloNaoLido) {
-      return proximoCapituloNaoLido;
-    }
-  }
-
-  return obra.capitulos.find((capitulo) => !capitulo.lido) || null;
-}
 
 function criarRankingCoverStyle(
   capa: string,

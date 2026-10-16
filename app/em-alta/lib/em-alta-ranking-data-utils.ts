@@ -136,3 +136,29 @@ export function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
     (calcularCapitulosLidos(capitulos) / capitulos.length) * 100,
   );
 }
+
+export function encontrarCapituloParaContinuar(obra: ObraLocal) {
+  const temCapituloLido = obra.capitulos.some((capitulo) => capitulo.lido);
+
+  if (!temCapituloLido) {
+    return null;
+  }
+
+  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
+    ? obra.capitulos.findIndex(
+        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId,
+      )
+    : -1;
+
+  if (indiceUltimoCapituloLido >= 0) {
+    const proximoCapituloNaoLido = obra.capitulos
+      .slice(indiceUltimoCapituloLido + 1)
+      .find((capitulo) => !capitulo.lido);
+
+    if (proximoCapituloNaoLido) {
+      return proximoCapituloNaoLido;
+    }
+  }
+
+  return obra.capitulos.find((capitulo) => !capitulo.lido) || null;
+}

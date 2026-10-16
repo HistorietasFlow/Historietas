@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 862 — continuação de leitura
+
+- Moveu a seleção do próximo capítulo para os helpers de dados do ranking.
+- A prioridade após `ultimoCapituloLidoId` e o fallback global foram preservados.
+- Nenhuma navegação ou comportamento foi alterado.
+
 ## Fase 861 — loader de obras publicadas
 
 - Isolou a leitura do catálogo, obras, capítulos, métricas e profiles.
