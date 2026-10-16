@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 864 — Seções de conteúdo da Home
+
+- Extraiu a composição visual das 18 seções de conteúdo para `components/HomeContentSections.tsx`.
+- Preservou condições, textos, chaves, variantes dos cards, estilos desktop/mobile e estados vazios.
+- Manteve na Home a preparação de todas as listas, contagens, `useMemo`s, Header, Hero e summary de atalhos.
+
 ## Fase 863 — Hero da Home
 
 - Extraiu a composição visual completa do Hero para `components/HomeHero.tsx`.

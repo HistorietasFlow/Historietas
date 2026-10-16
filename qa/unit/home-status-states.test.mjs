@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);
 
 test("HomeStatusStates preserva o loading acessível e seus estilos exclusivos", () => {
   assert.match(
@@ -48,13 +52,11 @@ test("HomeStatusStates preserva os dois estados vazios sem generalizar os estilo
 });
 
 test("Home delega os estados simples sem levar estilos exclusivos para a página", () => {
-  assert.match(
-    pagina,
-    /import \{[\s\S]*?EmptySearch,[\s\S]*?HomeEmptyState,[\s\S]*?LoadingSpinner,[\s\S]*?\} from "\.\.\/components\/HomeStatusStates";/,
-  );
+  assert.match(pagina, /import \{ LoadingSpinner \} from "\.\.\/components\/HomeStatusStates";/);
+  assert.match(secoes, /import \{ EmptySearch, HomeEmptyState \} from "\.\/HomeStatusStates";/);
   assert.match(pagina, /<LoadingSpinner label="Carregando página inicial" \/>/);
-  assert.match(pagina, /homeSemObrasReais && <HomeEmptyState \/>/);
-  assert.match(pagina, /<EmptySearch \/>/);
+  assert.match(secoes, /homeSemObrasReais && <HomeEmptyState \/>/);
+  assert.match(secoes, /<EmptySearch \/>/);
 
   for (const declaracao of [
     "function LoadingSpinner",

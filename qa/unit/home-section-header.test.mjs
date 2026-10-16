@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);
 const estilosShellHeader = readFileSync(
   new URL("../../app/lib/home-shell-header-styles.ts", import.meta.url),
   "utf8",
@@ -33,15 +37,15 @@ test("HomeSectionHeader preserva a apresentacao e o contrato de props", () => {
   );
 });
 
-test("Home delega os 18 cabecalhos sem alterar os estilos compartilhados", () => {
+test("HomeContentSections delega os 18 cabecalhos sem alterar os estilos compartilhados", () => {
   assert.match(
-    pagina,
-    /import HomeSectionHeader from "\.\.\/components\/HomeSectionHeader";/,
+    secoes,
+    /import HomeSectionHeader from "\.\/HomeSectionHeader";/,
   );
-  assert.doesNotMatch(pagina, /function SectionHeader\(/);
-  assert.equal((pagina.match(/<HomeSectionHeader\b/g) || []).length, 18);
-  assert.equal((pagina.match(/<HomeSectionHeader[\s\S]*?\/>/g) || []).length, 18);
-  assert.match(pagina, /subtitle="Continue do ponto em que parou\."/);
+  assert.doesNotMatch(secoes, /function SectionHeader\(/);
+  assert.equal((secoes.match(/<HomeSectionHeader\b/g) || []).length, 18);
+  assert.equal((secoes.match(/<HomeSectionHeader[\s\S]*?\/>/g) || []).length, 18);
+  assert.match(secoes, /subtitle="Continue do ponto em que parou\."/);
   assert.match(
     pagina,
     /from "\.\/lib\/home-shell-header-styles";/,
