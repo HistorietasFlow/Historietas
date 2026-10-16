@@ -99,6 +99,158 @@ test("preserva a base segura e os títulos dos cards de ranking", () => {
   });
 });
 
+test("preserva o shell e o cabeçalho principal de Em Alta", () => {
+  assert.deepEqual(estilos.pageDecorationLayerStyle, {
+    position: "absolute",
+    inset: 0,
+    overflow: "hidden",
+    pointerEvents: "none",
+    zIndex: 0,
+  });
+  assert.deepEqual(estilos.mobileTopWaterFadeStyle, {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "min(340px, 48vh)",
+    pointerEvents: "none",
+    zIndex: 0,
+    background: "transparent",
+    WebkitMaskImage: "none",
+    maskImage: "none",
+  });
+  assert.deepEqual(estilos.desktopTopWaterFadeStyle, {
+    ...estilos.mobileTopWaterFadeStyle,
+    height: "min(620px, 68vh)",
+  });
+  assert.deepEqual(estilos.pageStyle, {
+    position: "relative",
+    minHeight: "100vh",
+    width: "100%",
+    maxWidth: "100vw",
+    overflowX: "hidden",
+    backgroundColor: "var(--historietas-em-alta-hex-070212, #000000)",
+    background: "var(--historietas-em-alta-hex-070212, #000000)",
+    color: "var(--historietas-text-primary, #FFFFFF)",
+    fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+  });
+  assert.deepEqual(estilos.containerStyle, {
+    position: "relative",
+    zIndex: 1,
+    width: "min(820px, calc(100% - 28px))",
+    maxWidth: "100%",
+    margin: "0 auto",
+    padding: "14px 0 116px",
+    boxSizing: "border-box",
+    minWidth: 0,
+  });
+  assert.deepEqual(estilos.desktopContainerStyle, {
+    ...estilos.containerStyle,
+    width: "min(1180px, calc(100% - 64px))",
+    padding: "18px 0 84px",
+  });
+  assert.deepEqual(estilos.topStyle, {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    marginBottom: "14px",
+    minWidth: 0,
+  });
+  assert.deepEqual(estilos.titleStyle, {
+    position: "relative",
+    zIndex: 1,
+    margin: 0,
+    fontSize: "clamp(30px, 8vw, 46px)",
+    lineHeight: 1.04,
+    fontWeight: 950,
+    letterSpacing: "-0.074em",
+    maxWidth: "100%",
+    textAlign: "center",
+    background:
+      "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, var(--historietas-em-alta-hex-f5f3ff, #F5F3FF)) 42%, var(--historietas-title-to, var(--historietas-em-alta-hex-fdba74, #FDBA74)) 100%)",
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+    color: "transparent",
+    textShadow: "none",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.titleHeaderStyle, {
+    ...estilos.topStyle,
+    justifyContent: "center",
+    marginTop: "4px",
+    marginBottom: "18px",
+    textAlign: "center",
+  });
+  assert.deepEqual(estilos.desktopTitleHeaderStyle, {
+    ...estilos.titleHeaderStyle,
+    position: "relative",
+    marginTop: "6px",
+    marginBottom: "22px",
+  });
+  assert.deepEqual(estilos.headerTitleLinkStyle, {
+    color: "var(--historietas-text-primary, #FFFFFF)",
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "3px",
+    width: "100%",
+    maxWidth: "100%",
+    margin: "0 auto",
+    minWidth: 0,
+    textAlign: "center",
+  });
+  assert.deepEqual(estilos.desktopHeaderTitleLinkStyle, {
+    ...estilos.headerTitleLinkStyle,
+    gap: "4px",
+  });
+  assert.deepEqual(estilos.headerTitleMarkStyle, {
+    width: "clamp(36px, 8vw, 48px)",
+    height: "clamp(36px, 8vw, 48px)",
+    borderRadius: "clamp(12px, 2.6vw, 16px)",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "var(--historietas-em-alta-hex-04000a, #04000A)",
+    color: "#FFFFFF",
+    fontSize: "clamp(18px, 4.3vw, 24px)",
+    lineHeight: 1,
+    fontWeight: 950,
+    letterSpacing: "-0.04em",
+    flex: "0 0 auto",
+    border: "1px solid var(--historietas-em-alta-rgba-59-7-100-0-58, rgba(59, 7, 100, 0.58))",
+    boxShadow: "none",
+  });
+  assert.deepEqual(estilos.desktopHeaderTitleMarkStyle, {
+    ...estilos.headerTitleMarkStyle,
+    width: "50px",
+    height: "50px",
+    borderRadius: "17px",
+    fontSize: "25px",
+  });
+  assert.deepEqual(estilos.headerTitleTextStyle, {
+    ...estilos.titleStyle,
+    margin: 0,
+    fontSize: "clamp(26px, 6.8vw, 40px)",
+    maxWidth: "calc(100vw - 86px)",
+    textAlign: "center",
+    background: "none",
+    WebkitBackgroundClip: "initial",
+    backgroundClip: "initial",
+    color: "#FFFFFF",
+    textShadow: "none",
+    textTransform: "uppercase",
+    wordSpacing: "0.1em",
+    whiteSpace: "nowrap",
+  });
+  assert.deepEqual(estilos.desktopHeaderTitleTextStyle, {
+    ...estilos.headerTitleTextStyle,
+    fontSize: "clamp(34px, 3.6vw, 44px)",
+    maxWidth: "760px",
+  });
+});
+
 test("preserva as bases e helpers dos badges do ranking", () => {
   assert.deepEqual(estilos.highlightBadgeStyle, {
     width: "fit-content",
@@ -553,6 +705,22 @@ test("a página delega toda a fronteira visual", () => {
     "desktopCardSoonStyle",
     "criarCardRankingStyle",
     "safeTextStyle",
+    "pageDecorationLayerStyle",
+    "mobileTopWaterFadeStyle",
+    "desktopTopWaterFadeStyle",
+    "pageStyle",
+    "containerStyle",
+    "desktopContainerStyle",
+    "topStyle",
+    "titleStyle",
+    "titleHeaderStyle",
+    "desktopTitleHeaderStyle",
+    "headerTitleLinkStyle",
+    "desktopHeaderTitleLinkStyle",
+    "headerTitleMarkStyle",
+    "desktopHeaderTitleMarkStyle",
+    "headerTitleTextStyle",
+    "desktopHeaderTitleTextStyle",
     "cardTitleStyle",
     "authorRankingCardTitleStyle",
     "criarObraCardTitleRankingStyle",
@@ -596,6 +764,20 @@ test("a página delega toda a fronteira visual", () => {
     "criarAutorAvatarRankingStyle",
     "criarCardRankingStyle",
     "safeTextStyle",
+    "pageDecorationLayerStyle",
+    "mobileTopWaterFadeStyle",
+    "desktopTopWaterFadeStyle",
+    "pageStyle",
+    "containerStyle",
+    "desktopContainerStyle",
+    "titleHeaderStyle",
+    "desktopTitleHeaderStyle",
+    "headerTitleLinkStyle",
+    "desktopHeaderTitleLinkStyle",
+    "headerTitleMarkStyle",
+    "desktopHeaderTitleMarkStyle",
+    "headerTitleTextStyle",
+    "desktopHeaderTitleTextStyle",
     "criarObraCardTitleRankingStyle",
     "criarAutorCardTitleRankingStyle",
     "criarRankingTierInlineBadgeStyle",
@@ -634,6 +816,58 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /const desktopCardSoonStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /function criarCardRankingStyle\b/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties = \{/);
+  assert.doesNotMatch(
+    pagina,
+    /const pageDecorationLayerStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const mobileTopWaterFadeStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const desktopTopWaterFadeStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(pagina, /const pageStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const containerStyle: CSSProperties = \{/);
+  assert.doesNotMatch(
+    pagina,
+    /const desktopContainerStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(pagina, /const topStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const titleStyle: CSSProperties = \{/);
+  assert.doesNotMatch(
+    pagina,
+    /const titleHeaderStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const desktopTitleHeaderStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const headerTitleLinkStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const desktopHeaderTitleLinkStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const headerTitleMarkStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const desktopHeaderTitleMarkStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const headerTitleTextStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const desktopHeaderTitleTextStyle: CSSProperties = \{/,
+  );
   assert.doesNotMatch(pagina, /const cardTitleStyle: CSSProperties = \{/);
   assert.doesNotMatch(
     pagina,
@@ -728,6 +962,12 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /function criarSectionIconStyle\b/);
   assert.match(pagina, /function RankingSection\b/);
   assert.match(pagina, /function AutoresEmAltaSection\b/);
+  assert.match(pagina, /useHistorietasTheme\(pageStyle\)/);
+  assert.match(
+    pagina,
+    /<header style=\{isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle\}>/,
+  );
+  assert.match(pagina, /import type \{ CSSProperties \} from "react";/);
   assert.ok((pagina.match(/\.\.\.safeTextStyle/g) || []).length > 0);
   assert.match(
     modulo,

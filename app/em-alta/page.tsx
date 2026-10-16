@@ -79,14 +79,28 @@ import {
   criarSectionIconStyle,
   desktopCarouselShellStyle,
   desktopCarouselStyle,
+  desktopContainerStyle,
+  desktopHeaderTitleLinkStyle,
+  desktopHeaderTitleMarkStyle,
+  desktopHeaderTitleTextStyle,
   desktopSectionHeaderContentStyle,
   desktopSectionStyle,
   desktopSectionTextBlockStyle,
+  desktopTopWaterFadeStyle,
+  desktopTitleHeaderStyle,
+  headerTitleLinkStyle,
+  headerTitleMarkStyle,
+  headerTitleTextStyle,
+  mobileTopWaterFadeStyle,
+  pageDecorationLayerStyle,
+  pageStyle,
   safeTextStyle,
+  containerStyle,
   sectionHeaderContentStyle,
   sectionStyle,
   sectionTextBlockStyle,
   sectionTitleStyle,
+  titleHeaderStyle,
 } from "./lib/em-alta-ranking-visual-style-utils";
 import { obterTemaPosicao } from "./lib/em-alta-ranking-position-theme";
 import { obterTemaRanking } from "./lib/em-alta-ranking-category-theme";
@@ -1480,182 +1494,6 @@ function RankingCard({
     </article>
   );
 }
-
-const pageDecorationLayerStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  pointerEvents: "none",
-  zIndex: 0,
-};
-
-const mobileTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(340px, 48vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-};
-
-const desktopTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(620px, 68vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-};
-
-const pageStyle: CSSProperties = {
-  position: "relative",
-  minHeight: "100vh",
-  width: "100%",
-  maxWidth: "100vw",
-  overflowX: "hidden",
-  backgroundColor: "var(--historietas-em-alta-hex-070212, #000000)",
-  background: "var(--historietas-em-alta-hex-070212, #000000)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const containerStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  width: "min(820px, calc(100% - 28px))",
-  maxWidth: "100%",
-  margin: "0 auto",
-  padding: "14px 0 116px",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const desktopContainerStyle: CSSProperties = {
-  ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  padding: "18px 0 84px",
-};
-
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  marginBottom: "14px",
-  minWidth: 0,
-};
-
-const titleStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: 0,
-  fontSize: "clamp(30px, 8vw, 46px)",
-  lineHeight: 1.04,
-  fontWeight: 950,
-  letterSpacing: "-0.074em",
-  maxWidth: "100%",
-  textAlign: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, var(--historietas-em-alta-hex-f5f3ff, #F5F3FF)) 42%, var(--historietas-title-to, var(--historietas-em-alta-hex-fdba74, #FDBA74)) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-  ...safeTextStyle,
-};
-
-
-const titleHeaderStyle: CSSProperties = {
-  ...topStyle,
-  justifyContent: "center",
-  marginTop: "4px",
-  marginBottom: "18px",
-  textAlign: "center",
-};
-
-const desktopTitleHeaderStyle: CSSProperties = {
-  ...titleHeaderStyle,
-  position: "relative",
-  marginTop: "6px",
-  marginBottom: "22px",
-};
-
-
-
-const headerTitleLinkStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "3px",
-  width: "100%",
-  maxWidth: "100%",
-  margin: "0 auto",
-  minWidth: 0,
-  textAlign: "center",
-};
-
-const desktopHeaderTitleLinkStyle: CSSProperties = {
-  ...headerTitleLinkStyle,
-  gap: "4px",
-};
-
-const headerTitleMarkStyle: CSSProperties = {
-  width: "clamp(36px, 8vw, 48px)",
-  height: "clamp(36px, 8vw, 48px)",
-  borderRadius: "clamp(12px, 2.6vw, 16px)",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-em-alta-hex-04000a, #04000A)",
-  color: "#FFFFFF",
-  fontSize: "clamp(18px, 4.3vw, 24px)",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  flex: "0 0 auto",
-  border: "1px solid var(--historietas-em-alta-rgba-59-7-100-0-58, rgba(59, 7, 100, 0.58))",
-  boxShadow: "none",
-};
-
-const desktopHeaderTitleMarkStyle: CSSProperties = {
-  ...headerTitleMarkStyle,
-  width: "50px",
-  height: "50px",
-  borderRadius: "17px",
-  fontSize: "25px",
-};
-
-const headerTitleTextStyle: CSSProperties = {
-  ...titleStyle,
-  margin: 0,
-  fontSize: "clamp(26px, 6.8vw, 40px)",
-  maxWidth: "calc(100vw - 86px)",
-  textAlign: "center",
-  background: "none",
-  WebkitBackgroundClip: "initial",
-  backgroundClip: "initial",
-  color: "#FFFFFF",
-  textShadow: "none",
-  textTransform: "uppercase",
-  wordSpacing: "0.1em",
-  whiteSpace: "nowrap",
-};
-
-const desktopHeaderTitleTextStyle: CSSProperties = {
-  ...headerTitleTextStyle,
-  fontSize: "clamp(34px, 3.6vw, 44px)",
-  maxWidth: "760px",
-};
 
 const coroaNumberStyle: CSSProperties = {
   fontSize: "11px",

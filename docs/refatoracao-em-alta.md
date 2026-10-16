@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 872 — shell e cabeçalho principal
+
+- Isolou decoração, fundo, container e cabeçalho principal do ranking.
+- Variantes mobile/desktop, gradientes, tipografia, dimensões e tema foram preservados.
+- Nenhum JSX, estado ou comportamento foi alterado.
+
 ## Fase 871 — cabeçalhos das seções do ranking
 
 - Isolou os estilos mobile/desktop das seções e cabeçalhos do ranking.
