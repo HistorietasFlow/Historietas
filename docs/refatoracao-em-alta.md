@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 848 — modelos e contratos de dados
+
+- Moveu os modelos locais para `app/em-alta/lib/em-alta-models.ts`.
+- Preservou literalmente os contratos de dados locais e Supabase.
+- Não houve mudança de runtime ou comportamento.
+
 ## Fase 845 — modo desktop
 
 - Extraiu o lifecycle responsivo de `isDesktop` para `useEmAltaDesktopMode`.
