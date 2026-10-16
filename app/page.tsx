@@ -116,9 +116,6 @@ import {
 } from "./lib/home-hero-layout-styles";
 import { cardStatHeartIconStyle } from "./lib/home-work-card-styles";
 import {
-  criarHrefObraCatalogoHome,
-} from "./lib/home-route-utils";
-import {
   traduzirClassificacaoHome,
   traduzirGeneroHome,
 } from "./lib/home-metadata-utils";
@@ -144,23 +141,12 @@ import {
   criarObrasRecomendadasHome,
   criarTemasRecomendadosUsuarioHome,
 } from "./lib/home-recommendation-list-utils";
-import { compactarNumeroHome } from "./lib/home-format-utils";
-import {
-  colecaoTemIdentificadorHome,
-  criarIdentificadoresObraCatalogoHome,
-  obterIdentificadorFavoritoHome,
-} from "./lib/home-collection-utils";
 import useHomeInitialData, {
   FAVORITES_STORAGE_KEY,
 } from "./hooks/use-home-initial-data";
 import useHomeCatalogSearch from "./hooks/use-home-catalog-search";
 import type { AutorHome } from "./lib/home-author-composition-utils";
 import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
-import {
-  obterImagemObraCatalogo,
-  obterTotalCapitulosObraCatalogoHome,
-  obraCatalogoTemArquivoAnexadoHome,
-} from "./lib/home-catalog-utils";
 import {
   criarLeiturasRapidasHome,
   criarObrasComArquivoAnexadoHome,
@@ -174,6 +160,7 @@ import {
 import { alternarHeroFavoritoHome } from "./lib/home-hero-favorite-action";
 import { formatarSinopseHeroMobile } from "./lib/home-hero-work-utils";
 import { criarObrasHeroHome } from "./lib/home-hero-selection-utils";
+import { criarDadosHeroHome } from "./lib/home-hero-view-utils";
 import { criarDesktopHeroPosterStyle } from "./lib/home-cover-hero-style-utils";
 import {
   criarDecoracaoHomeStyle,
@@ -329,41 +316,22 @@ export default function Home() {
     obrasHero.length,
   );
 
-  const usandoHeroInicial = obrasHero.length === 0;
-  const heroObra = obrasHero[heroIndex] || obrasHero[0] || HERO_INICIAL_HOME;
-  const heroObraHref = usandoHeroInicial ? "/explorar" : criarHrefObraCatalogoHome(heroObra);
-  const heroTemImagem = Boolean(!usandoHeroInicial && obterImagemObraCatalogo(heroObra));
-  const heroFavoritoId = usandoHeroInicial ? "" : obterIdentificadorFavoritoHome(heroObra);
-  const heroTotalCapitulos = usandoHeroInicial
-    ? 0
-    : obterTotalCapitulosObraCatalogoHome(heroObra);
-  const desktopHeroTemArquivo = Boolean(
-    !usandoHeroInicial && obraCatalogoTemArquivoAnexadoHome(heroObra),
-  );
-  const desktopHeroTotalConteudo = compactarNumeroHome(
-    desktopHeroTemArquivo ? 1 : heroTotalCapitulos,
-  );
-  const metricasHeroHome = [
-    { icone: "👁️", valor: heroObra.views || "0" },
-    { icone: "❤️", valor: heroObra.likes || "0", destaque: true },
-    { icone: "💬", valor: heroObra.comentarios || "0" },
-  ];
-  const desktopMetricasHeroHome = [
-    ...metricasHeroHome,
-    {
-      icone: desktopHeroTemArquivo ? "📄" : "📚",
-      valor: desktopHeroTotalConteudo,
-    },
-  ];
-  const heroEstaSalvo = Boolean(
-    usuarioLogado &&
-      heroObra &&
-      heroFavoritoId &&
-      colecaoTemIdentificadorHome(
-        criarIdentificadoresObraCatalogoHome(heroObra),
-        obrasFavoritas
-      )
-  );
+  const {
+    usandoHeroInicial,
+    heroObra,
+    heroObraHref,
+    heroTemImagem,
+    heroFavoritoId,
+    metricasHeroHome,
+    desktopMetricasHeroHome,
+    heroEstaSalvo,
+  } = criarDadosHeroHome({
+    obrasHero,
+    heroIndex,
+    heroInicial: HERO_INICIAL_HOME,
+    usuarioLogado,
+    obrasFavoritas,
+  });
 
   function alternarHeroFavorito() {
     return alternarHeroFavoritoHome({

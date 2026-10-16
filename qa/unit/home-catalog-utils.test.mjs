@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const heroView = readFileSync(
+  new URL("../../app/lib/home-hero-view-utils.ts", import.meta.url),
+  "utf8",
+);
 const javascriptModulo = typescript.transpileModule(modulo, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -99,7 +103,15 @@ test("home-catalog-utils estabelece a fronteira pura do catálogo", () => {
     assert.match(modulo, new RegExp(`export function ${nomeFuncao}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(pagina, /from "\.\/lib\/home-catalog-utils";/);
+  assert.match(
+    pagina,
+    /import \{ criarDadosHeroHome \} from "\.\/lib\/home-hero-view-utils";/,
+  );
+  assert.match(
+    heroView,
+    /import \{[\s\S]*?obterImagemObraCatalogo,[\s\S]*?obterTotalCapitulosObraCatalogoHome,[\s\S]*?obraCatalogoTemArquivoAnexadoHome,[\s\S]*?\} from "\.\/home-catalog-utils";/,
+  );
+  assert.match(heroView, /obterImagemObraCatalogo\(heroObra\)/);
   assert.match(modulo, /\.find\(\(imagem\): imagem is string =>/);
   assert.match(modulo, /typeof imagem === "string" && Boolean\(imagem\.trim\(\)\)/);
   assert.match(modulo, /Array\.isArray\(obraComCapitulos\.capitulos\)/);

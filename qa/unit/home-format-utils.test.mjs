@@ -20,6 +20,10 @@ const normalizadoresSupabase = readFileSync(
   new URL("../../app/lib/home-supabase-work-normalizers.ts", import.meta.url),
   "utf8",
 );
+const heroView = readFileSync(
+  new URL("../../app/lib/home-hero-view-utils.ts", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(/\r\n/g, "\n")
   .replace('import type { HistorietasLanguage } from "../../lib/i18n";\n', "");
@@ -100,10 +104,8 @@ test("home-format-utils preserva locale, compactação e avaliação", () => {
 });
 
 test("Home delega formatação numérica e mantém os consumidores", () => {
-  assert.match(
-    pagina,
-    /import \{ compactarNumeroHome \} from "\.\/lib\/home-format-utils";/,
-  );
+  assert.match(pagina, /import \{ criarDadosHeroHome \} from "\.\/lib\/home-hero-view-utils";/);
+  assert.match(heroView, /import \{ compactarNumeroHome \} from "\.\/home-format-utils";/);
   for (const nomeFuncao of [
     "normalizarNumeroHome",
     "obterLocaleHomeAtual",
@@ -114,6 +116,7 @@ test("Home delega formatação numérica e mantém os consumidores", () => {
   }
   assert.match(cardObraLocal, /import \{ compactarNumeroHome \} from "\.\/home-format-utils";/);
   assert.match(cardObraLocal, /compactarNumeroHome\(obra\.visualizacoes \|\| 0\)/);
+  assert.match(heroView, /const desktopHeroTotalConteudo = compactarNumeroHome\(/);
   assert.doesNotMatch(pagina, /formatarMediaAvaliacaoAutorHome\(avaliacao\)/);
   assert.match(
     cardAutor,
