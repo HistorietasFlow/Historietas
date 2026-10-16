@@ -44,11 +44,7 @@ import {
   normalizarVisualizacoesRanking,
 } from "./lib/em-alta-ranking-data-utils";
 import {
-  criarDecoracaoPaginaStyle,
   desktopContainerStyle,
-  desktopTopWaterFadeStyle,
-  mobileTopWaterFadeStyle,
-  pageDecorationLayerStyle,
   pageStyle,
   containerStyle,
 } from "./lib/em-alta-ranking-visual-style-utils";
@@ -56,6 +52,7 @@ import { EmAltaRankingContent } from "./components/em-alta-ranking-content";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
 import { EmAltaHeader } from "./components/em-alta-header";
+import { EmAltaPageDecorations } from "./components/em-alta-page-decorations";
 
 export default function EmAltaPage() {
   const router = useRouter();
@@ -351,20 +348,7 @@ export default function EmAltaPage() {
       <style>{`${historietasThemeCss}${emAltaPageCss}`}</style>
       <EmAltaLanguageBridge />
 
-      <div style={pageDecorationLayerStyle} aria-hidden="true">
-        {["#", "★"].map((decoracao, index) => (
-          <span
-            key={`${decoracao}-${index}`}
-            style={criarDecoracaoPaginaStyle(index)}
-          >
-            {decoracao}
-          </span>
-        ))}
-      </div>
-
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+      <EmAltaPageDecorations isDesktop={isDesktop} />
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <EmAltaHeader isDesktop={isDesktop} titulo={tituloCabecalho} />

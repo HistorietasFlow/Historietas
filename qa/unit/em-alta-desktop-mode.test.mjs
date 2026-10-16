@@ -27,6 +27,13 @@ const header = readFileSync(
   ),
   "utf8",
 );
+const decorations = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-page-decorations.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const autorRankingCard = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-author-ranking-card.tsx",
@@ -117,9 +124,22 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
   assert.doesNotMatch(pagina, /atualizarModoDesktopTimer/);
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 8);
   assert.equal((header.match(/\bisDesktop\b/g) || []).length, 6);
+  assert.equal((decorations.match(/\bisDesktop\b/g) || []).length, 4);
   assert.match(
     pagina,
     /<EmAltaHeader isDesktop=\{isDesktop\} titulo=\{tituloCabecalho\} \/>/,
+  );
+  assert.match(
+    pagina,
+    /<EmAltaPageDecorations isDesktop=\{isDesktop\} \/>/,
+  );
+  assert.match(
+    decorations,
+    /\{isDesktop && <div style=\{desktopTopWaterFadeStyle\} aria-hidden="true" \/>\}/,
+  );
+  assert.match(
+    decorations,
+    /\{!isDesktop && <div style=\{mobileTopWaterFadeStyle\} aria-hidden="true" \/>\}/,
   );
   assert.equal((rankingContent.match(/\bisDesktop\b/g) || []).length, 20);
   assert.equal((rankingSection.match(/\bisDesktop\b/g) || []).length, 13);

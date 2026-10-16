@@ -231,3 +231,9 @@
 - Moveu a composição visual do cabeçalho para `app/em-alta/components/em-alta-header.tsx`.
 - Preservou literalmente marca, rota da Home, acessibilidade e seleção responsiva dos estilos.
 - Carregamento, autenticação, Supabase, estados e mutações permaneceram na página.
+
+## Fase 884 — decoração visual da página
+
+- Moveu os ornamentos estáticos e os fades responsivos para `EmAltaPageDecorations`.
+- Preservou literalmente símbolos, ordem, `aria-hidden`, estilos e seleção desktop/mobile.
+- Carregamento, autenticação, storage, Supabase, estados e mutações permaneceram na página.

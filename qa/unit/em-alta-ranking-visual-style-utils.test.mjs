@@ -49,6 +49,13 @@ const header = readFileSync(
   ),
   "utf8",
 );
+const decorations = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-page-decorations.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloTema = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-ranking-position-theme.ts",
@@ -1002,6 +1009,7 @@ test("a página delega toda a fronteira visual", () => {
     rankingSection,
     authorsSection,
     header,
+    decorations,
   ];
   for (const nome of [
     "coverStyle",
