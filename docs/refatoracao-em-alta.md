@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 852 — storage local
+
+- Moveu as chaves e os helpers de persistência local para `app/em-alta/lib/em-alta-local-storage-utils.ts`.
+- Preservou fallbacks, serialização e normalização de IDs e avatares.
+- Não houve alteração de Supabase nem de comportamento.
+
 ## Fase 851 — helpers puros de listas e ranking
 
 - Moveu a identificação e normalização de obras de ranking para `app/em-alta/lib/em-alta-ranking-list-utils.ts`.
