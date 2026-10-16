@@ -59,10 +59,9 @@ import {
   obterVisualizacoesRegistradasObra,
 } from "./lib/em-alta-ranking-data-utils";
 import {
-  coverStyle,
+  criarAutorAvatarRankingStyle,
   criarDecoracaoPaginaStyle,
   criarRankingCoverStyle,
-  desktopCoverStyle,
 } from "./lib/em-alta-ranking-visual-style-utils";
 import { obterTemaPosicao } from "./lib/em-alta-ranking-position-theme";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
@@ -1655,31 +1654,6 @@ function criarObraCardTitleRankingStyle(): CSSProperties {
   return {
     ...cardTitleStyle,
     color: "#FFFFFF",
-  };
-}
-
-function criarAutorAvatarRankingStyle(
-  avatar: string,
-  posicao: number,
-  isDesktop: boolean,
-): CSSProperties {
-  const temaPosicao = obterTemaPosicao(posicao);
-  const baseStyle = isDesktop ? desktopCoverStyle : coverStyle;
-
-  return {
-    ...baseStyle,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: temaPosicao.deep,
-    backgroundImage: avatar
-      ? `linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.24)), url(${avatar})`
-      : temaPosicao.coverBackground,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    border: "none",
-    outline: "none",
-    boxShadow: "none",
   };
 }
 

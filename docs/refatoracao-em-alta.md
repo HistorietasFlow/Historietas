@@ -1,5 +1,10 @@
 # Refatoração de Em Alta
 
+## Fase 865 — avatar visual dos autores
+
+- Moveu o estilo dinâmico do avatar para a fronteira visual do ranking.
+- Temas, capa mobile/desktop e fallbacks visuais foram preservados sem alteração de comportamento.
+
 ## Fase 864 — temas de posição do ranking
 
 - Isolou os temas Diamante, Rubi, Ouro, Prata e Bronze.

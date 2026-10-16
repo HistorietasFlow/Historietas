@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { obterTemaPosicao } from "./em-alta-ranking-position-theme";
 
 export const coverStyle: CSSProperties = {
   minHeight: "122px",
@@ -46,6 +47,31 @@ export function criarRankingCoverStyle(
     backgroundSize: "cover",
     backgroundPosition: "center",
     border: "none",
+  };
+}
+
+export function criarAutorAvatarRankingStyle(
+  avatar: string,
+  posicao: number,
+  isDesktop: boolean,
+): CSSProperties {
+  const temaPosicao = obterTemaPosicao(posicao);
+  const baseStyle = isDesktop ? desktopCoverStyle : coverStyle;
+
+  return {
+    ...baseStyle,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: temaPosicao.deep,
+    backgroundImage: avatar
+      ? `linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.24)), url(${avatar})`
+      : temaPosicao.coverBackground,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    border: "none",
+    outline: "none",
+    boxShadow: "none",
   };
 }
 
