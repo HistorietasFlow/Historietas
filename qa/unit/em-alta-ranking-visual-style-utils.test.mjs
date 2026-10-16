@@ -21,6 +21,13 @@ const moduloTema = readFileSync(
   ),
   "utf8",
 );
+const moduloCategoria = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-category-theme.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const temaJs = typescript.transpileModule(moduloTema, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -28,8 +35,19 @@ const temaJs = typescript.transpileModule(moduloTema, {
   },
 }).outputText;
 const temaUrl = `data:text/javascript;base64,${Buffer.from(temaJs).toString("base64")}`;
+const categoriaJs = typescript.transpileModule(moduloCategoria, {
+  compilerOptions: {
+    module: typescript.ModuleKind.ESNext,
+    target: typescript.ScriptTarget.ES2022,
+  },
+}).outputText;
+const categoriaUrl = `data:text/javascript;base64,${Buffer.from(categoriaJs).toString("base64")}`;
 const executavel = modulo
   .replace(/import type \{ CSSProperties \} from "react";\r?\n/, "")
+  .replace(
+    /from "\.\/em-alta-ranking-category-theme";/,
+    `from "${categoriaUrl}";`,
+  )
   .replace(
     /from "\.\/em-alta-ranking-position-theme";/,
     `from "${temaUrl}";`,
@@ -269,6 +287,100 @@ test("preserva os shells, setas e trilhos dos carrosséis", () => {
   });
 });
 
+test("preserva estilos e helpers dos cabeçalhos das seções", () => {
+  assert.deepEqual(estilos.sectionStyle, {
+    marginTop: "32px",
+    paddingBottom: "14px",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    minWidth: 0,
+  });
+  assert.deepEqual(estilos.desktopSectionStyle, {
+    ...estilos.sectionStyle,
+    marginTop: "40px",
+    paddingBottom: "18px",
+  });
+  assert.deepEqual(estilos.sectionHeaderStyle, {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
+    justifyItems: "center",
+    gap: "6px",
+    marginBottom: "14px",
+    maxWidth: "100%",
+    minWidth: 0,
+    textAlign: "center",
+  });
+  assert.deepEqual(estilos.desktopSectionHeaderStyle, {
+    ...estilos.sectionHeaderStyle,
+    padding: "8px 0 12px",
+    borderRadius: 0,
+  });
+  assert.deepEqual(estilos.sectionTitleStyle, {
+    margin: 0,
+    color: "#FFFFFF",
+    fontSize: "clamp(24px, 4vw, 30px)",
+    lineHeight: 1.05,
+    fontWeight: 950,
+    letterSpacing: "-0.03em",
+    maxWidth: "100%",
+    textAlign: "center",
+    textShadow: "none",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.sectionHeaderContentStyle, {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "10px",
+    minWidth: 0,
+    textAlign: "center",
+  });
+  assert.deepEqual(estilos.desktopSectionHeaderContentStyle, {
+    ...estilos.sectionHeaderContentStyle,
+    justifyContent: "center",
+    textAlign: "center",
+  });
+  assert.deepEqual(estilos.sectionTextBlockStyle, {
+    minWidth: 0,
+    display: "grid",
+    justifyItems: "center",
+    textAlign: "center",
+  });
+  assert.deepEqual(estilos.desktopSectionTextBlockStyle, {
+    ...estilos.sectionTextBlockStyle,
+    maxWidth: "760px",
+    textAlign: "center",
+  });
+
+  const tema = { accent: "#ABCDEF" };
+  assert.deepEqual(estilos.criarSectionHeaderTemaStyle(tema), {
+    ...estilos.sectionHeaderStyle,
+    background: "transparent",
+    border: "none",
+    boxShadow: "none",
+  });
+  assert.deepEqual(estilos.criarDesktopSectionHeaderTemaStyle(tema), {
+    ...estilos.desktopSectionHeaderStyle,
+    background: "transparent",
+    border: "none",
+    boxShadow: "none",
+  });
+  assert.deepEqual(estilos.criarSectionIconStyle(tema), {
+    width: "auto",
+    height: "auto",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "transparent",
+    border: "none",
+    color: "#ABCDEF",
+    fontSize: "28px",
+    lineHeight: 1,
+    flex: "0 0 auto",
+    boxShadow: "none",
+  });
+});
+
 test("preserva a base visual da capa mobile e desktop", () => {
   assert.equal(estilos.coverStyle.minHeight, "122px");
   assert.equal(estilos.coverStyle.borderRadius, "16px");
@@ -461,6 +573,18 @@ test("a página delega toda a fronteira visual", () => {
     "carouselArrowRightStyle",
     "carouselStyle",
     "desktopCarouselStyle",
+    "sectionStyle",
+    "desktopSectionStyle",
+    "sectionHeaderStyle",
+    "desktopSectionHeaderStyle",
+    "sectionTitleStyle",
+    "sectionHeaderContentStyle",
+    "desktopSectionHeaderContentStyle",
+    "sectionTextBlockStyle",
+    "desktopSectionTextBlockStyle",
+    "criarSectionHeaderTemaStyle",
+    "criarDesktopSectionHeaderTemaStyle",
+    "criarSectionIconStyle",
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
     "criarDecoracaoPaginaStyle",
@@ -485,6 +609,16 @@ test("a página delega toda a fronteira visual", () => {
     "carouselArrowRightStyle",
     "carouselStyle",
     "desktopCarouselStyle",
+    "sectionStyle",
+    "desktopSectionStyle",
+    "sectionTitleStyle",
+    "sectionHeaderContentStyle",
+    "desktopSectionHeaderContentStyle",
+    "sectionTextBlockStyle",
+    "desktopSectionTextBlockStyle",
+    "criarSectionHeaderTemaStyle",
+    "criarDesktopSectionHeaderTemaStyle",
+    "criarSectionIconStyle",
     "criarDecoracaoPaginaStyle",
   ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
@@ -553,6 +687,45 @@ test("a página delega toda a fronteira visual", () => {
     pagina,
     /const desktopCarouselStyle: CSSProperties = \{/,
   );
+  assert.doesNotMatch(pagina, /const sectionStyle: CSSProperties = \{/);
+  assert.doesNotMatch(
+    pagina,
+    /const desktopSectionStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const sectionHeaderStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const desktopSectionHeaderStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const sectionTitleStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const sectionHeaderContentStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const desktopSectionHeaderContentStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const sectionTextBlockStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const desktopSectionTextBlockStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(pagina, /function criarSectionHeaderTemaStyle\b/);
+  assert.doesNotMatch(
+    pagina,
+    /function criarDesktopSectionHeaderTemaStyle\b/,
+  );
+  assert.doesNotMatch(pagina, /function criarSectionIconStyle\b/);
   assert.match(pagina, /function RankingSection\b/);
   assert.match(pagina, /function AutoresEmAltaSection\b/);
   assert.ok((pagina.match(/\.\.\.safeTextStyle/g) || []).length > 0);
@@ -565,6 +738,14 @@ test("a página delega toda a fronteira visual", () => {
     pagina,
     /style=\{criarAutorAvatarRankingStyle\(avatarAutor, posicao, isDesktop\)\}/,
   );
+  assert.match(
+    modulo,
+    /export function criarSectionHeaderTemaStyle\(\s*_tema: ReturnType<typeof obterTemaRanking>,\s*\): CSSProperties \{\s*void _tema;/,
+  );
+  assert.match(
+    modulo,
+    /export function criarDesktopSectionHeaderTemaStyle\(\s*_tema: ReturnType<typeof obterTemaRanking>,\s*\): CSSProperties \{\s*void _tema;/,
+  );
 });
 
 test("o módulo permanece visual e sem runtime externo", () => {
@@ -572,6 +753,10 @@ test("o módulo permanece visual e sem runtime externo", () => {
   assert.match(
     modulo,
     /^import \{ obterTemaPosicao \} from "\.\/em-alta-ranking-position-theme";$/m,
+  );
+  assert.match(
+    modulo,
+    /^import \{ obterTemaRanking \} from "\.\/em-alta-ranking-category-theme";$/m,
   );
   assert.match(
     modulo,

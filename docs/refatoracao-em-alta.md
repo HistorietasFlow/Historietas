@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 871 — cabeçalhos das seções do ranking
+
+- Isolou os estilos mobile/desktop das seções e cabeçalhos do ranking.
+- Título, conteúdo, bloco de texto e ícone temático foram preservados.
+- Os helpers continuam usando os temas da Fase 870; nenhum JSX ou comportamento foi alterado.
+
 ## Fase 870 — temas das categorias do ranking
 
 - Isolou os temas de geral, lidas, curtidas, comentadas, salvas, recentes e fallback.

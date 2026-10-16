@@ -1,11 +1,129 @@
 import type { CSSProperties } from "react";
 import type { TipoRanking } from "./em-alta-models";
+import { obterTemaRanking } from "./em-alta-ranking-category-theme";
 import { obterTemaPosicao } from "./em-alta-ranking-position-theme";
 
 export const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
 };
+
+export const sectionStyle: CSSProperties = {
+  marginTop: "32px",
+  paddingBottom: "14px",
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  minWidth: 0,
+};
+
+export const desktopSectionStyle: CSSProperties = {
+  ...sectionStyle,
+  marginTop: "40px",
+  paddingBottom: "18px",
+};
+
+export const sectionHeaderStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  justifyItems: "center",
+  gap: "6px",
+  marginBottom: "14px",
+  maxWidth: "100%",
+  minWidth: 0,
+  textAlign: "center",
+};
+
+export const desktopSectionHeaderStyle: CSSProperties = {
+  ...sectionHeaderStyle,
+  padding: "8px 0 12px",
+  borderRadius: 0,
+};
+
+export const sectionTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "clamp(24px, 4vw, 30px)",
+  lineHeight: 1.05,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  maxWidth: "100%",
+  textAlign: "center",
+  textShadow: "none",
+  ...safeTextStyle,
+};
+
+export const sectionHeaderContentStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  minWidth: 0,
+  textAlign: "center",
+};
+
+export const desktopSectionHeaderContentStyle: CSSProperties = {
+  ...sectionHeaderContentStyle,
+  justifyContent: "center",
+  textAlign: "center",
+};
+
+export const sectionTextBlockStyle: CSSProperties = {
+  minWidth: 0,
+  display: "grid",
+  justifyItems: "center",
+  textAlign: "center",
+};
+
+export const desktopSectionTextBlockStyle: CSSProperties = {
+  ...sectionTextBlockStyle,
+  maxWidth: "760px",
+  textAlign: "center",
+};
+
+export function criarSectionHeaderTemaStyle(
+  _tema: ReturnType<typeof obterTemaRanking>,
+): CSSProperties {
+  void _tema;
+
+  return {
+    ...sectionHeaderStyle,
+    background: "transparent",
+    border: "none",
+    boxShadow: "none",
+  };
+}
+
+export function criarDesktopSectionHeaderTemaStyle(
+  _tema: ReturnType<typeof obterTemaRanking>,
+): CSSProperties {
+  void _tema;
+
+  return {
+    ...desktopSectionHeaderStyle,
+    background: "transparent",
+    border: "none",
+    boxShadow: "none",
+  };
+}
+
+export function criarSectionIconStyle(
+  tema: ReturnType<typeof obterTemaRanking>,
+): CSSProperties {
+  return {
+    width: "auto",
+    height: "auto",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "transparent",
+    border: "none",
+    color: tema.accent,
+    fontSize: "28px",
+    lineHeight: 1,
+    flex: "0 0 auto",
+    boxShadow: "none",
+  };
+}
 
 export const cardTitleStyle: CSSProperties = {
   margin: 0,

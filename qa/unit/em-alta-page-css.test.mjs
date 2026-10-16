@@ -55,7 +55,7 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
 
   assert.match(
     pagina,
-    /safeTextStyle,\s*\} from "\.\/lib\/em-alta-ranking-visual-style-utils";/,
+    /import \{[\s\S]*?safeTextStyle,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-visual-style-utils";/,
   );
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(
