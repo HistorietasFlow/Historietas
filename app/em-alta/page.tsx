@@ -57,6 +57,11 @@ import { carregarIdsColecaoUsuarioSupabaseEmAlta } from "./lib/em-alta-collectio
 import { sincronizarColecaoRankingSupabase } from "./lib/em-alta-collection-supabase-sync";
 import { registrarColecaoRankingNoDiario } from "./lib/em-alta-diary-activity";
 import {
+  adicionarProfileAutorRankingNoMapa,
+  obterAvatarProfileAutorRanking,
+  obterNomeProfileAutorRanking,
+} from "./lib/em-alta-author-profile-utils";
+import {
   criarHrefLeituraCapitulo,
   criarLinkPerfilAutorRanking,
   criarLoginHrefEmAlta,
@@ -75,39 +80,6 @@ import {
 } from "./lib/em-alta-ranking-data-utils";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
-
-function obterNomeProfileAutorRanking(
-  profile?: SupabaseProfileAutorRankingRow | null,
-) {
-  return typeof profile?.nome === "string" && profile.nome.trim()
-    ? profile.nome.trim()
-    : "";
-}
-
-function obterAvatarProfileAutorRanking(
-  profile?: SupabaseProfileAutorRankingRow | null,
-) {
-  return typeof profile?.avatar_url === "string"
-    ? profile.avatar_url.trim()
-    : "";
-}
-
-function adicionarProfileAutorRankingNoMapa(
-  mapa: Map<string, SupabaseProfileAutorRankingRow>,
-  profile: SupabaseProfileAutorRankingRow,
-) {
-  const userId =
-    typeof profile.user_id === "string" ? profile.user_id.trim() : "";
-  const id = typeof profile.id === "string" ? profile.id.trim() : "";
-
-  if (userId) {
-    mapa.set(userId, profile);
-  }
-
-  if (id) {
-    mapa.set(id, profile);
-  }
-}
 
 async function carregarProfilesAutoresRanking(userIds: string[]) {
   const idsUnicos = Array.from(
