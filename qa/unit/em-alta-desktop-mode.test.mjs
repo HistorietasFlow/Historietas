@@ -20,6 +20,13 @@ const bridge = readFileSync(
   ),
   "utf8",
 );
+const header = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-header.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const autorRankingCard = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-author-ranking-card.tsx",
@@ -108,7 +115,12 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
   assert.doesNotMatch(pagina, /atualizarModoDesktopTimer/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 10);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 8);
+  assert.equal((header.match(/\bisDesktop\b/g) || []).length, 6);
+  assert.match(
+    pagina,
+    /<EmAltaHeader isDesktop=\{isDesktop\} titulo=\{tituloCabecalho\} \/>/,
+  );
   assert.equal((rankingContent.match(/\bisDesktop\b/g) || []).length, 20);
   assert.equal((rankingSection.match(/\bisDesktop\b/g) || []).length, 13);
   assert.equal((authorsSection.match(/\bisDesktop\b/g) || []).length, 13);

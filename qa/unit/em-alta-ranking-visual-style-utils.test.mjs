@@ -42,6 +42,13 @@ const authorsSection = readFileSync(
   ),
   "utf8",
 );
+const header = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-header.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloTema = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-ranking-position-theme.ts",
@@ -990,7 +997,12 @@ test("preserva métricas e estilos finais dos cards de autor", () => {
 });
 
 test("a página delega toda a fronteira visual", () => {
-  const consumidoresVisuais = [pagina, rankingSection, authorsSection];
+  const consumidoresVisuais = [
+    pagina,
+    rankingSection,
+    authorsSection,
+    header,
+  ];
   for (const nome of [
     "coverStyle",
     "desktopCoverStyle",
@@ -1361,7 +1373,7 @@ test("a página delega toda a fronteira visual", () => {
   assert.match(componenteObra, /<div style=\{cardTopStyle\}>/);
   assert.match(pagina, /useHistorietasTheme\(pageStyle\)/);
   assert.match(
-    pagina,
+    header,
     /<header style=\{isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle\}>/,
   );
   assert.match(
