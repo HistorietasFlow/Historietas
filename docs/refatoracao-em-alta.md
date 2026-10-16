@@ -219,3 +219,9 @@
 - Moveu a composição de autores, categorias, catálogo inicial e estado vazio para um componente de apresentação dedicado.
 - As props, a ordem das seções, textos, callbacks e estados visuais foram preservados literalmente.
 - Supabase, autenticação, efeitos, estados e mutações permaneceram na página.
+
+## Fase 882 — lifecycle de autenticação
+
+- Moveu a leitura inicial e a revalidação de sessão para `useEmAltaAuthSession`.
+- Timers, cleanup, fallbacks e atualização dos estados de autenticação foram preservados literalmente.
+- Carregamento do ranking, coleções, mutações e JSX permaneceram na página.
