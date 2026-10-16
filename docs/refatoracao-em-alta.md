@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 851 — helpers puros de listas e ranking
+
+- Moveu a identificação e normalização de obras de ranking para `app/em-alta/lib/em-alta-ranking-list-utils.ts`.
+- Moveu a ordenação, o top 5 e a detecção de interação real para a mesma fronteira pura.
+- Preservou o comportamento e deixou storage, Supabase e runtime da página inalterados.
+
 ## Fase 850 — language bridge
 
 - Moveu o bridge de tradução dinâmica para componente dedicado.
