@@ -17,6 +17,13 @@ const normalizadorObrasSupabase = readFileSync(
   ),
   "utf8",
 );
+const loaderObrasSupabase = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-supabase-works-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const traducoes = readFileSync(
   new URL("../../app/em-alta/lib/em-alta-translations.ts", import.meta.url),
   "utf8",
@@ -78,7 +85,11 @@ test("modelos de Em Alta preservam os contratos locais e Supabase", () => {
 test("Em Alta importa os modelos sem manter contratos duplicados", () => {
   assert.match(
     pagina,
-    /import type \{[\s\S]*?ObraLocal,[\s\S]*?SupabaseObraRow,[\s\S]*?SupabaseCapituloRow,[\s\S]*?SupabaseProgressoLeituraEmAltaRow,[\s\S]*?AvaliacaoRankingObra,[\s\S]*?ObraRanking,[\s\S]*?AutorRanking,[\s\S]*?TipoRanking,[\s\S]*?\} from "\.\/lib\/em-alta-models";/,
+    /import type \{[\s\S]*?ObraLocal,[\s\S]*?ObraRanking,[\s\S]*?AutorRanking,[\s\S]*?TipoRanking,[\s\S]*?\} from "\.\/lib\/em-alta-models";/,
+  );
+  assert.match(
+    loaderObrasSupabase,
+    /import type \{[\s\S]*?AvaliacaoRankingObra,[\s\S]*?ObraLocal,[\s\S]*?SupabaseCapituloRow,[\s\S]*?SupabaseObraRow,[\s\S]*?SupabaseProgressoLeituraEmAltaRow,[\s\S]*?\} from "\.\/em-alta-models";/,
   );
   assert.match(
     normalizadorObrasSupabase,

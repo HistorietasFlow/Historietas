@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 861 — loader de obras publicadas
+
+- Isolou a leitura do catálogo, obras, capítulos, métricas e profiles.
+- Paginação, fallbacks, warnings e filtros foram preservados; a conversão continua delegada ao normalizador da Fase 860.
+- Nenhuma escrita Supabase, schema ou RLS foi alterado.
+
 ## Fase 860 — normalização de obras Supabase
 
 - Isolou tipo de arquivo e conversão Supabase → `ObraLocal`.

@@ -21,6 +21,13 @@ const loader = readFileSync(
   ),
   "utf8",
 );
+const loaderObrasSupabase = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-supabase-works-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const normalizador = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-supabase-work-normalizer.ts",
@@ -97,8 +104,8 @@ test("Em Alta delega helpers de profile às fronteiras corretas", () => {
     /import \{[\s\S]*?obterAvatarProfileAutorRanking,[\s\S]*?obterNomeProfileAutorRanking,[\s\S]*?\} from "\.\/em-alta-author-profile-utils";/,
   );
   assert.match(
-    pagina,
-    /import \{ carregarProfilesAutoresRanking \} from "\.\/lib\/em-alta-author-profile-loader";/,
+    loaderObrasSupabase,
+    /import \{ carregarProfilesAutoresRanking \} from "\.\/em-alta-author-profile-loader";/,
   );
   assert.match(
     loader,

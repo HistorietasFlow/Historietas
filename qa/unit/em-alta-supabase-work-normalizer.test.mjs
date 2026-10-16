@@ -14,10 +14,17 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const loader = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-supabase-works-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const executavel = modulo
   .replace(
-    'import { criarSlugBase } from "../../../lib/utils";\n',
+    /import \{ criarSlugBase \} from "\.\.\/\.\.\/\.\.\/lib\/utils";\r?\n/,
     `const criarSlugBase = (valor) => valor.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");\n`,
   )
   .replace(
@@ -26,7 +33,7 @@ const executavel = modulo
 const obterAvatarProfileAutorRanking = (profile) => typeof profile?.avatar_url === "string" ? profile.avatar_url.trim() : "";\n`,
   )
   .replace(
-    'import { obterAvatarAutorLocalEmAlta } from "./em-alta-local-storage-utils";\n',
+    /import \{ obterAvatarAutorLocalEmAlta \} from "\.\/em-alta-local-storage-utils";\r?\n/,
     `const obterAvatarAutorLocalEmAlta = (mapa, nome, id) => mapa.get(id) || mapa.get(nome) || "";\n`,
   )
   .replace(
@@ -114,7 +121,7 @@ test("preserva fallbacks de autor, avatar, tags e arquivo ausente", () => {
   assert.equal(converter({ obraSupabase: obra({ user_id: null, autor: "  " }) }).autor, "Autor não informado");
 });
 
-test("fronteira preserva conversão pura e loader de obras na página", () => {
+test("fronteira preserva conversão pura e loader de obras dedicado", () => {
   assert.match(modulo, /export function converterObraSupabaseParaLocal\b/);
   assert.match(modulo, /function normalizarTipoArquivoSupabase\b/);
   assert.match(modulo, /satisfies CapituloLocal/);
@@ -123,8 +130,15 @@ test("fronteira preserva conversão pura e loader de obras na página", () => {
   assert.match(modulo, /Number\.isNaN\(tempoAtual\)/);
   assert.match(modulo, /calcularProgressoLeitura\(capitulosMesclados\)/);
   for (const proibido of [/supabase\/client/, /\.from\(/, /\.select\(/, /\.in\(/, /from ["']react["']/i, /\buse[A-Z]\w*\b/, /\.auth\b/, /\blocalStorage\b/i, /\bwindow\b/, /\bdocument\b/, /<[A-Z][\w.]*/]) assert.doesNotMatch(modulo, proibido);
-  assert.match(pagina, /import \{ converterObraSupabaseParaLocal \} from "\.\/lib\/em-alta-supabase-work-normalizer";/);
+  assert.match(
+    loader,
+    /import \{ converterObraSupabaseParaLocal \} from "\.\/em-alta-supabase-work-normalizer";/,
+  );
+  assert.match(
+    pagina,
+    /import \{ carregarObrasSupabasePublicadas \} from "\.\/lib\/em-alta-supabase-works-loader";/,
+  );
   assert.doesNotMatch(pagina, /function normalizarTipoArquivoSupabase\b/);
   assert.doesNotMatch(pagina, /function converterObraSupabaseParaLocal\b/);
-  assert.match(pagina, /async function carregarObrasSupabasePublicadas\b/);
+  assert.doesNotMatch(pagina, /async function carregarObrasSupabasePublicadas\b/);
 });
