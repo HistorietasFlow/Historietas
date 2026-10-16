@@ -56,52 +56,9 @@ import {
 } from "./lib/em-alta-local-storage-utils";
 import { carregarIdsColecaoUsuarioSupabaseEmAlta } from "./lib/em-alta-collection-supabase-loader";
 import { sincronizarColecaoRankingSupabase } from "./lib/em-alta-collection-supabase-sync";
+import { registrarColecaoRankingNoDiario } from "./lib/em-alta-diary-activity";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
-
-async function registrarColecaoRankingNoDiario(
-  tipo: "favoritou_obra" | "concluiu_obra",
-  obra: Pick<ObraRanking, "storageId" | "titulo"> | null,
-) {
-  try {
-    const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id || "";
-    const obraId = obra?.storageId?.trim() || "";
-
-    if (!userId || !obraId || !idObraSupabaseValido(obraId)) {
-      return;
-    }
-
-    const payload = {
-      user_id: userId,
-      obra_id: obraId,
-      tipo,
-      texto:
-        tipo === "favoritou_obra"
-          ? `adicionou ${obra?.titulo || "uma obra"} à lista`
-          : `concluiu ${obra?.titulo || "uma obra"}`,
-      visibilidade: "parcial",
-      metadata: {
-        obra_titulo: obra?.titulo || "",
-        origem: "em-alta",
-      },
-    };
-
-    const { error } = await supabase.from("diario_atividades").insert(payload);
-
-    if (error) {
-      await supabase.from("diario_atividades").insert({
-        user_id: payload.user_id,
-        obra_id: payload.obra_id,
-        tipo: payload.tipo,
-        texto: payload.texto,
-        metadata: payload.metadata,
-      });
-    }
-  } catch {
-    // O ranking não deve falhar por causa do Diário.
-  }
-}
 
 function criarLoginHrefEmAlta() {
   const redirectTo =
