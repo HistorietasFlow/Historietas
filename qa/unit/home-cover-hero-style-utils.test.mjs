@@ -8,6 +8,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const hero = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 const catalogoCard = readFileSync(
   new URL("../../components/HomeCatalogWorkCard.tsx", import.meta.url),
   "utf8",
@@ -142,9 +146,10 @@ test("home-cover-hero-style-utils preserva poster desktop com imagem e gradiente
 });
 
 test("home-cover-hero-style-utils estabelece a fronteira dos estilos de capa e poster", () => {
+  assert.match(pagina, /import HomeHero from "\.\.\/components\/HomeHero";/);
   assert.match(
-    pagina,
-    /import \{ criarDesktopHeroPosterStyle \} from "\.\/lib\/home-cover-hero-style-utils";/,
+    hero,
+    /import \{ criarDesktopHeroPosterStyle \} from "\.\.\/app\/lib\/home-cover-hero-style-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarMobileCoverStyle\(/);
   assert.doesNotMatch(pagina, /function criarMobileCoverThumbStyle\(/);

@@ -16,6 +16,10 @@ const estilosLayoutHero = readFileSync(
   new URL("../../app/lib/home-hero-layout-styles.ts", import.meta.url),
   "utf8",
 );
+const hero = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 
 const moduloExecutavel = modulo.replace(
   'import { obterImagemObraCatalogo } from "./home-catalog-utils";\n',
@@ -99,16 +103,13 @@ test("home-hero-visual-style-utils preserva a decoração vazia", () => {
 });
 
 test("home-hero-visual-style-utils estabelece a fronteira visual do Hero", () => {
-  assert.match(
-    pagina,
-    /import \{[\s\S]*?criarDecoracaoHomeStyle,[\s\S]*?criarMobileHeroFrameBackground,[\s\S]*?criarMobileHeroImageLayerStyle,[\s\S]*?heroStyle,[\s\S]*?\} from "\.\/lib\/home-hero-visual-style-utils";/,
-  );
+  assert.match(pagina, /import \{[\s\S]*?criarDecoracaoHomeStyle,[\s\S]*?\} from "\.\/lib\/home-hero-visual-style-utils";/);
   assert.doesNotMatch(pagina, /function criarMobileHeroFrameBackground\(/);
   assert.doesNotMatch(pagina, /function criarMobileHeroImageLayerStyle\(/);
   assert.doesNotMatch(pagina, /function criarDecoracaoHomeStyle\(/);
   assert.doesNotMatch(pagina, /const heroStyle: CSSProperties/);
-  assert.match(pagina, /style=\{\s*isDesktop\s*\? \{[\s\S]*?\.\.\.heroStyle,[\s\S]*?\.\.\.desktopHeroStyle,/);
-  assert.match(pagina, /from "\.\/lib\/home-hero-layout-styles";/);
+  assert.match(hero, /style=\{\s*isDesktop\s*\? \{[\s\S]*?\.\.\.heroStyle,[\s\S]*?\.\.\.desktopHeroStyle,/);
+  assert.match(hero, /from "\.\.\/app\/lib\/home-hero-layout-styles";/);
   assert.doesNotMatch(pagina, /const desktopHeroStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const desktopHeroShellStyle: CSSProperties/);
   assert.match(estilosLayoutHero, /export const desktopHeroStyle: CSSProperties/);

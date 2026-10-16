@@ -7,6 +7,10 @@ const hook = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
+const componente = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 const heroView = readFileSync(
   new URL("../../app/lib/home-hero-view-utils.ts", import.meta.url),
   "utf8",
@@ -60,14 +64,20 @@ test("Home delega somente o lifecycle do índice e preserva os consumidores do h
     /const heroObra = obrasHero\[heroIndex\] \|\| obrasHero\[0\] \|\| heroInicial;/,
   );
 
-  const indicadores = pagina.match(/<HomeHeroCarouselDots/g) || [];
-  assert.equal(indicadores.length, 2);
+  assert.match(pagina, /import HomeHero from "\.\.\/components\/HomeHero";/);
   assert.match(
     pagina,
+    /<HomeHero[\s\S]*?obrasHero=\{obrasHero\}[\s\S]*?heroIndex=\{heroIndex\}[\s\S]*?setHeroIndex=\{setHeroIndex\}/,
+  );
+
+  const indicadores = componente.match(/<HomeHeroCarouselDots/g) || [];
+  assert.equal(indicadores.length, 2);
+  assert.match(
+    componente,
     /<HomeHeroCarouselDots[\s\S]*?activeIndex=\{heroIndex\}[\s\S]*?onSelect=\{setHeroIndex\}[\s\S]*?isDesktop=\{true\}[\s\S]*?\/>/,
   );
   assert.match(
-    pagina,
+    componente,
     /<HomeHeroCarouselDots[\s\S]*?activeIndex=\{heroIndex\}[\s\S]*?onSelect=\{setHeroIndex\}[\s\S]*?isDesktop=\{false\}[\s\S]*?\/>/,
   );
 });

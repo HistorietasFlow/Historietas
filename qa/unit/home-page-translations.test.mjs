@@ -19,6 +19,10 @@ const cardObraLocal = readFileSync(
   new URL("../../components/HomeLocalWorkCard.tsx", import.meta.url),
   "utf8",
 );
+const hero = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 const metadata = readFileSync(
   new URL("../../app/lib/home-metadata-utils.ts", import.meta.url),
   "utf8",
@@ -157,9 +161,10 @@ test("Home mantém apenas a fronteira do bridge de tradução", () => {
   assert.doesNotMatch(pagina, /const HOME_UI_TRANSLATIONS/);
   assert.doesNotMatch(pagina, /const homeTextNodeStates = new WeakMap/);
   assert.doesNotMatch(pagina, /function useHomePageTranslations/);
+  assert.match(pagina, /import HomeHero from "\.\.\/components\/HomeHero";/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
+    hero,
+    /import \{[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\.\/app\/lib\/home-metadata-utils";/,
   );
   assert.doesNotMatch(pagina, /function traduzirGeneroHome\(/);
   assert.doesNotMatch(pagina, /function traduzirFormatoHome\(/);

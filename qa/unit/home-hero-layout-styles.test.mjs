@@ -7,6 +7,10 @@ const estilos = readFileSync(
   new URL("../../app/lib/home-hero-layout-styles.ts", import.meta.url),
   "utf8",
 );
+const hero = readFileSync(
+  new URL("../../components/HomeHero.tsx", import.meta.url),
+  "utf8",
+);
 
 const nomesEstilos = [
   "desktopHeroStyle", "desktopHeroShellStyle", "desktopHeroPosterFrameStyle",
@@ -62,19 +66,20 @@ test("home-hero-layout-styles preserva valores centrais, spreads e fronteiras", 
 });
 
 test("Home delega os estilos do Hero e mantém seus consumidores", () => {
-  assert.match(pagina, /from "\.\/lib\/home-hero-layout-styles";/);
+  assert.match(hero, /from "\.\.\/app\/lib\/home-hero-layout-styles";/);
 
   for (const nomeEstilo of nomesEstilos) {
     assert.doesNotMatch(pagina, new RegExp(`const ${nomeEstilo}: CSSProperties = \\{`));
   }
 
-  assert.match(pagina, /isDesktop\s*\? \{[\s\S]*?\.\.\.heroStyle,[\s\S]*?\.\.\.desktopHeroStyle,/);
-  assert.match(pagina, /style=\{desktopHeroContentStyle\}/);
-  assert.match(pagina, /style=\{mobileHeroContentStyle\}/);
-  assert.match(pagina, /style=\{desktopHeroTitleStyle\}/);
-  assert.match(pagina, /style=\{mobileHeroTitleStyle\}/);
-  assert.match(pagina, /style=\{desktopHeroFooterStyle\}/);
-  assert.match(pagina, /style=\{desktopPrimaryButtonStyle\}/);
-  assert.match(pagina, /style=\{primaryButtonStyle\}/);
+  assert.match(pagina, /import HomeHero from "\.\.\/components\/HomeHero";/);
+  assert.match(hero, /isDesktop\s*\? \{[\s\S]*?\.\.\.heroStyle,[\s\S]*?\.\.\.desktopHeroStyle,/);
+  assert.match(hero, /style=\{desktopHeroContentStyle\}/);
+  assert.match(hero, /style=\{mobileHeroContentStyle\}/);
+  assert.match(hero, /style=\{desktopHeroTitleStyle\}/);
+  assert.match(hero, /style=\{mobileHeroTitleStyle\}/);
+  assert.match(hero, /style=\{desktopHeroFooterStyle\}/);
+  assert.match(hero, /style=\{desktopPrimaryButtonStyle\}/);
+  assert.match(hero, /style=\{primaryButtonStyle\}/);
   assert.match(pagina, /from "\.\/lib\/home-summary-section-styles";/);
 });
