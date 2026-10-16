@@ -792,6 +792,117 @@ export const authorLinkStyle: CSSProperties = {
   touchAction: "manipulation",
 };
 
+export const statsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexWrap: "wrap",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11px",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 850,
+  maxWidth: "100%",
+  minWidth: 0,
+};
+
+export const ratingStatsStyle: CSSProperties = {
+  ...statsStyle,
+  flexWrap: "nowrap",
+};
+
+export const statsItemStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "4px",
+  minWidth: 0,
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+};
+
+export const metricIconStyle: CSSProperties = {
+  width: "14px",
+  minWidth: "14px",
+  height: "17px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  lineHeight: 1,
+  fontSize: "13px",
+};
+
+export const metricValueStyle: CSSProperties = {
+  display: "inline-block",
+  lineHeight: 1,
+  whiteSpace: "nowrap",
+  color: "#FFFFFF",
+};
+
+export const heartMetricIconStyle: CSSProperties = {
+  ...metricIconStyle,
+  width: "16px",
+  minWidth: "16px",
+  fontSize: "13px",
+  color: "var(--historietas-em-alta-hex-ef4444, #EF4444)",
+};
+
+export const starMetricIconStyle: CSSProperties = {
+  ...metricIconStyle,
+  color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
+  transform: "translateY(-1px)",
+};
+
+export const authorRankingAvatarInitialStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "34px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textShadow: "0 4px 12px rgba(0,0,0,0.42)",
+};
+
+export const authorRankingTitleAreaStyle: CSSProperties = {
+  ...cardTopStyle,
+  minHeight: "21px",
+  paddingRight: "2px",
+};
+
+export const authorRankingMetaStackStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "start",
+  alignItems: "start",
+  gap: "5px",
+  width: "100%",
+  minWidth: 0,
+};
+
+export const authorRankingWorksBadgeStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
+  fontSize: "12px",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+  width: "fit-content",
+  maxWidth: "100%",
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  borderRadius: 0,
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+export const authorRankingScoreRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexWrap: "wrap",
+  marginTop: "4px",
+  maxWidth: "100%",
+  minWidth: 0,
+};
+
 export function criarCardRankingStyle(
   posicao: number,
   disponivel: boolean,

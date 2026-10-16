@@ -55,9 +55,10 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
 
   assert.match(
     pagina,
-    /import \{[\s\S]*?safeTextStyle,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-visual-style-utils";/,
+    /import \{[\s\S]*?cardTopStyle,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-visual-style-utils";/,
   );
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
+  assert.doesNotMatch(pagina, /\bsafeTextStyle\b/);
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/em-alta-loading-spinner";/,
