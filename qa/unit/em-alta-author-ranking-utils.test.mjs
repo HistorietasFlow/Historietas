@@ -16,7 +16,7 @@ const pagina = readFileSync(
 );
 const executavel = modulo
   .replace(
-    'import { normalizarTexto } from "../../../lib/utils";\n',
+    /import \{ normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";\r?\n/,
     `const normalizarTexto = (texto) => String(texto || "")
   .normalize("NFD")
   .replace(/[\\u0300-\\u036f]/g, "")
@@ -24,11 +24,11 @@ const executavel = modulo
   .trim();\n`,
   )
   .replace(
-    'import type { AutorRanking, ObraRanking } from "./em-alta-models";\n',
+    /import type \{ AutorRanking, ObraRanking \} from "\.\/em-alta-models";\r?\n/,
     "",
   )
   .replace(
-    'import { criarLinkPerfilAutorRanking } from "./em-alta-route-utils";\n',
+    /import \{ criarLinkPerfilAutorRanking \} from "\.\/em-alta-route-utils";\r?\n/,
     'const criarLinkPerfilAutorRanking = (nome, autorId) => `${nome}|${autorId || ""}`;\n',
   );
 const js = typescript.transpileModule(executavel, {

@@ -21,6 +21,13 @@ const dadosRanking = readFileSync(
   ),
   "utf8",
 );
+const rankingObrasLocaisUtils = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-local-ranking-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const estado = {
   catalogo: { obraIds: [] },
@@ -39,6 +46,7 @@ const estado = {
 globalThis.__emAltaWorksLoaderState = estado;
 
 const executavel = modulo
+  .replace(/\r\n/g, "\n")
   .replace(
     'import { listarSelecaoCatalogo } from "../../../lib/catalogo";\n',
     `const listarSelecaoCatalogo = async (consultas) => {
@@ -307,7 +315,7 @@ test("fronteira preserva queries de leitura e responsabilidades da página", () 
   );
   assert.doesNotMatch(pagina, /async function carregarObrasSupabasePublicadas\b/);
   assert.match(dadosRanking, /export function encontrarCapituloParaContinuar\b/);
-  assert.match(pagina, /\bencontrarCapituloParaContinuar\b/);
+  assert.match(rankingObrasLocaisUtils, /\bencontrarCapituloParaContinuar\b/);
   assert.doesNotMatch(pagina, /function encontrarCapituloParaContinuar\b/);
   assert.match(pagina, /async function carregarRanking\b/);
 });
