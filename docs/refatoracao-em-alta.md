@@ -1,5 +1,12 @@
 # Refatoração de Em Alta
 
+## Fase 875 — card de autor do ranking
+
+- `AutorRankingCard` foi movido para componente dedicado.
+- Navegação por clique/teclado foi preservada.
+- Avatar, fallback de inicial, métricas, tier e pontuação permaneceram iguais.
+- Nenhum Supabase, estado global ou comportamento foi alterado.
+
 ## Fase 874 — métricas e estilos finais dos cards
 
 - Métricas compartilhadas de obras/autores foram isoladas.

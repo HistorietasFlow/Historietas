@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const componenteAutor = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-author-ranking-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloTema = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-ranking-position-theme.ts",
@@ -1055,7 +1062,6 @@ test("a página delega toda a fronteira visual", () => {
   }
   for (const nome of [
     "criarRankingCoverStyle",
-    "criarAutorAvatarRankingStyle",
     "criarCardRankingStyle",
     "pageDecorationLayerStyle",
     "mobileTopWaterFadeStyle",
@@ -1072,10 +1078,7 @@ test("a página delega toda a fronteira visual", () => {
     "headerTitleTextStyle",
     "desktopHeaderTitleTextStyle",
     "criarObraCardTitleRankingStyle",
-    "criarAutorCardTitleRankingStyle",
     "criarRankingTierInlineBadgeStyle",
-    "criarAutorTierInlineBadgeStyle",
-    "criarAutorPointsBadgeStyle",
     "carouselShellStyle",
     "desktopCarouselShellStyle",
     "carouselArrowLeftIconStyle",
@@ -1117,11 +1120,6 @@ test("a página delega toda a fronteira visual", () => {
     "metricValueStyle",
     "heartMetricIconStyle",
     "starMetricIconStyle",
-    "authorRankingAvatarInitialStyle",
-    "authorRankingTitleAreaStyle",
-    "authorRankingMetaStackStyle",
-    "authorRankingWorksBadgeStyle",
-    "authorRankingScoreRowStyle",
   ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
   }
@@ -1315,7 +1313,12 @@ test("a página delega toda a fronteira visual", () => {
   assert.match(pagina, /function RankingSection\b/);
   assert.match(pagina, /function AutoresEmAltaSection\b/);
   assert.match(pagina, /function RankingCard\b/);
-  assert.match(pagina, /function AutorRankingCard\b/);
+  assert.match(
+    pagina,
+    /import \{ AutorRankingCard \} from "\.\/components\/em-alta-author-ranking-card";/,
+  );
+  assert.doesNotMatch(pagina, /function AutorRankingCard\b/);
+  assert.match(componenteAutor, /export function AutorRankingCard\b/);
   assert.doesNotMatch(pagina, /const \w+Style: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /import type \{ CSSProperties \} from "react";/);
   assert.doesNotMatch(pagina, /\bsafeTextStyle\b/);
@@ -1331,7 +1334,7 @@ test("a página delega toda a fronteira visual", () => {
   );
   assert.doesNotMatch(pagina, /function criarAutorAvatarRankingStyle\b/);
   assert.match(
-    pagina,
+    componenteAutor,
     /style=\{criarAutorAvatarRankingStyle\(avatarAutor, posicao, isDesktop\)\}/,
   );
   assert.match(
