@@ -859,6 +859,108 @@ test("preserva estrutura, metadata e status visuais dos cards", () => {
   });
 });
 
+test("preserva métricas e estilos finais dos cards de autor", () => {
+  assert.deepEqual(estilos.statsStyle, {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+    color: "var(--historietas-text-secondary, #A1A1AA)",
+    fontSize: "11px",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontWeight: 850,
+    maxWidth: "100%",
+    minWidth: 0,
+  });
+  assert.deepEqual(estilos.ratingStatsStyle, {
+    ...estilos.statsStyle,
+    flexWrap: "nowrap",
+  });
+  assert.deepEqual(estilos.statsItemStyle, {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    minWidth: 0,
+    whiteSpace: "nowrap",
+    lineHeight: 1,
+  });
+  assert.deepEqual(estilos.metricIconStyle, {
+    width: "14px",
+    minWidth: "14px",
+    height: "17px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    lineHeight: 1,
+    fontSize: "13px",
+  });
+  assert.deepEqual(estilos.metricValueStyle, {
+    display: "inline-block",
+    lineHeight: 1,
+    whiteSpace: "nowrap",
+    color: "#FFFFFF",
+  });
+  assert.deepEqual(estilos.heartMetricIconStyle, {
+    ...estilos.metricIconStyle,
+    width: "16px",
+    minWidth: "16px",
+    fontSize: "13px",
+    color: "var(--historietas-em-alta-hex-ef4444, #EF4444)",
+  });
+  assert.deepEqual(estilos.starMetricIconStyle, {
+    ...estilos.metricIconStyle,
+    color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
+    transform: "translateY(-1px)",
+  });
+  assert.deepEqual(estilos.authorRankingAvatarInitialStyle, {
+    color: "#FFFFFF",
+    fontSize: "34px",
+    lineHeight: 1,
+    fontWeight: 950,
+    textShadow: "0 4px 12px rgba(0,0,0,0.42)",
+  });
+  assert.deepEqual(estilos.authorRankingTitleAreaStyle, {
+    ...estilos.cardTopStyle,
+    minHeight: "21px",
+    paddingRight: "2px",
+  });
+  assert.deepEqual(estilos.authorRankingMetaStackStyle, {
+    display: "grid",
+    justifyItems: "start",
+    alignItems: "start",
+    gap: "5px",
+    width: "100%",
+    minWidth: 0,
+  });
+  assert.deepEqual(estilos.authorRankingWorksBadgeStyle, {
+    margin: 0,
+    color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
+    fontSize: "12px",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontWeight: 450,
+    lineHeight: 1.25,
+    width: "fit-content",
+    maxWidth: "100%",
+    background: "transparent",
+    border: "none",
+    padding: 0,
+    borderRadius: 0,
+    whiteSpace: "normal",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.authorRankingScoreRowStyle, {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+    marginTop: "4px",
+    maxWidth: "100%",
+    minWidth: 0,
+  });
+});
+
 test("a página delega toda a fronteira visual", () => {
   for (const nome of [
     "coverStyle",
@@ -936,6 +1038,18 @@ test("a página delega toda a fronteira visual", () => {
     "classificationBadgeStyle",
     "authorStyle",
     "authorLinkStyle",
+    "statsStyle",
+    "ratingStatsStyle",
+    "statsItemStyle",
+    "metricIconStyle",
+    "metricValueStyle",
+    "heartMetricIconStyle",
+    "starMetricIconStyle",
+    "authorRankingAvatarInitialStyle",
+    "authorRankingTitleAreaStyle",
+    "authorRankingMetaStackStyle",
+    "authorRankingWorksBadgeStyle",
+    "authorRankingScoreRowStyle",
   ]) {
     assert.match(modulo, new RegExp(`export (?:const|function) ${nome}\\b`));
   }
@@ -943,7 +1057,6 @@ test("a página delega toda a fronteira visual", () => {
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
     "criarCardRankingStyle",
-    "safeTextStyle",
     "pageDecorationLayerStyle",
     "mobileTopWaterFadeStyle",
     "desktopTopWaterFadeStyle",
@@ -997,6 +1110,18 @@ test("a página delega toda a fronteira visual", () => {
     "formatBadgeStyle",
     "classificationBadgeStyle",
     "authorLinkStyle",
+    "statsStyle",
+    "ratingStatsStyle",
+    "statsItemStyle",
+    "metricIconStyle",
+    "metricValueStyle",
+    "heartMetricIconStyle",
+    "starMetricIconStyle",
+    "authorRankingAvatarInitialStyle",
+    "authorRankingTitleAreaStyle",
+    "authorRankingMetaStackStyle",
+    "authorRankingWorksBadgeStyle",
+    "authorRankingScoreRowStyle",
   ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
   }
@@ -1027,6 +1152,18 @@ test("a página delega toda a fronteira visual", () => {
     "classificationBadgeStyle",
     "authorStyle",
     "authorLinkStyle",
+    "statsStyle",
+    "ratingStatsStyle",
+    "statsItemStyle",
+    "metricIconStyle",
+    "metricValueStyle",
+    "heartMetricIconStyle",
+    "starMetricIconStyle",
+    "authorRankingAvatarInitialStyle",
+    "authorRankingTitleAreaStyle",
+    "authorRankingMetaStackStyle",
+    "authorRankingWorksBadgeStyle",
+    "authorRankingScoreRowStyle",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`const ${nome}: CSSProperties = \\{`));
   }
@@ -1179,17 +1316,15 @@ test("a página delega toda a fronteira visual", () => {
   assert.match(pagina, /function AutoresEmAltaSection\b/);
   assert.match(pagina, /function RankingCard\b/);
   assert.match(pagina, /function AutorRankingCard\b/);
-  assert.match(
-    pagina,
-    /const authorRankingTitleAreaStyle: CSSProperties = \{\s*\.\.\.cardTopStyle,/,
-  );
+  assert.doesNotMatch(pagina, /const \w+Style: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /import type \{ CSSProperties \} from "react";/);
+  assert.doesNotMatch(pagina, /\bsafeTextStyle\b/);
+  assert.match(pagina, /<div style=\{cardTopStyle\}>/);
   assert.match(pagina, /useHistorietasTheme\(pageStyle\)/);
   assert.match(
     pagina,
     /<header style=\{isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle\}>/,
   );
-  assert.match(pagina, /import type \{ CSSProperties \} from "react";/);
-  assert.ok((pagina.match(/\.\.\.safeTextStyle/g) || []).length > 0);
   assert.match(
     modulo,
     /export function criarCardRankingStyle\(\s*posicao: number,\s*disponivel: boolean,\s*_tipo: TipoRanking,\s*isDesktop = false,/,

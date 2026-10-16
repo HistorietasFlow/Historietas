@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import {
   historietasThemeCss,
@@ -65,6 +64,12 @@ import {
   carouselArrowRightStyle,
   carouselShellStyle,
   carouselStyle,
+  authorRankingAvatarInitialStyle,
+  authorRankingMetaStackStyle,
+  authorRankingScoreRowStyle,
+  authorRankingTitleAreaStyle,
+  authorRankingWorksBadgeStyle,
+  authorLinkStyle,
   cardContentStyle,
   cardMetaRowStyle,
   cardTopStyle,
@@ -100,13 +105,16 @@ import {
   headerTitleLinkStyle,
   headerTitleMarkStyle,
   headerTitleTextStyle,
+  heartMetricIconStyle,
+  metricIconStyle,
+  metricValueStyle,
   mobileTopWaterFadeStyle,
   pageDecorationLayerStyle,
   pageStyle,
   publishedStatusStyle,
   rankingCardActionRowStyle,
   rankingThemeBadgeStyle,
-  safeTextStyle,
+  ratingStatsStyle,
   containerStyle,
   sectionHeaderContentStyle,
   sectionStyle,
@@ -114,8 +122,10 @@ import {
   sectionTitleStyle,
   statusRowStyle,
   statusStyle,
+  starMetricIconStyle,
+  statsItemStyle,
+  statsStyle,
   titleHeaderStyle,
-  authorLinkStyle,
 } from "./lib/em-alta-ranking-visual-style-utils";
 import { obterTemaPosicao } from "./lib/em-alta-ranking-position-theme";
 import { obterTemaRanking } from "./lib/em-alta-ranking-category-theme";
@@ -878,7 +888,6 @@ export default function EmAltaPage() {
     </main>
   );
 }
-
 function RankingSection({
   titulo,
   obras,
@@ -1295,7 +1304,6 @@ function AutorRankingCard({
     </article>
   );
 }
-
 function RankingCard({
   obra,
   posicao,
@@ -1509,131 +1517,3 @@ function RankingCard({
     </article>
   );
 }
-
-const statsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 850,
-  maxWidth: "100%",
-  minWidth: 0,
-};
-
-const ratingStatsStyle: CSSProperties = {
-  ...statsStyle,
-  flexWrap: "nowrap",
-};
-
-const statsItemStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  whiteSpace: "nowrap",
-  lineHeight: 1,
-};
-
-const metricIconStyle: CSSProperties = {
-  width: "14px",
-  minWidth: "14px",
-  height: "17px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  lineHeight: 1,
-  fontSize: "13px",
-};
-
-const metricValueStyle: CSSProperties = {
-  display: "inline-block",
-  lineHeight: 1,
-  whiteSpace: "nowrap",
-  color: "#FFFFFF",
-};
-
-const heartMetricIconStyle: CSSProperties = {
-  ...metricIconStyle,
-  width: "16px",
-  minWidth: "16px",
-  fontSize: "13px",
-  color: "var(--historietas-em-alta-hex-ef4444, #EF4444)",
-};
-
-const starMetricIconStyle: CSSProperties = {
-  ...metricIconStyle,
-  color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
-  transform: "translateY(-1px)",
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const authorRankingAvatarInitialStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "34px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textShadow: "0 4px 12px rgba(0,0,0,0.42)",
-};
-
-const authorRankingTitleAreaStyle: CSSProperties = {
-  ...cardTopStyle,
-  minHeight: "21px",
-  paddingRight: "2px",
-};
-
-const authorRankingMetaStackStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "start",
-  alignItems: "start",
-  gap: "5px",
-  width: "100%",
-  minWidth: 0,
-};
-
-const authorRankingWorksBadgeStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
-  fontSize: "12px",
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 450,
-  lineHeight: 1.25,
-  width: "fit-content",
-  maxWidth: "100%",
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  borderRadius: 0,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const authorRankingScoreRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  marginTop: "4px",
-  maxWidth: "100%",
-  minWidth: 0,
-};

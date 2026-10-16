@@ -1,5 +1,13 @@
 # Refatoração de Em Alta
 
+## Fase 874 — métricas e estilos finais dos cards
+
+- Métricas compartilhadas de obras/autores foram isoladas.
+- Estilos finais específicos de autor foram movidos.
+- Valores, ícones, tipografia e heranças foram preservados.
+- `app/em-alta/page.tsx` não mantém mais constantes CSSProperties locais.
+- Nenhum JSX ou comportamento foi alterado.
+
 ## Fase 873 — estrutura e metadata dos cards
 
 - Estrutura interna, linhas de metadata, status e badges auxiliares foram isolados.
