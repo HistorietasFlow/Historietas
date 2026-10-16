@@ -12,6 +12,10 @@ const acaoFavoritoHero = readFileSync(
   new URL("../../app/lib/home-hero-favorite-action.ts", import.meta.url),
   "utf8",
 );
+const selecaoHero = readFileSync(
+  new URL("../../app/lib/home-hero-selection-utils.ts", import.meta.url),
+  "utf8",
+);
 
 const moduloExecutavel = modulo
   .replace(
@@ -203,7 +207,11 @@ test("home-hero-work-utils formata a sinopse mobile com espaços, limites e reti
 test("home-hero-work-utils estabelece a fronteira pura dos dados do Hero", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarObraHeroLocalHome,[\s\S]*?formatarSinopseHeroMobile,[\s\S]*?\} from "\.\/lib\/home-hero-work-utils";/,
+    /import \{ formatarSinopseHeroMobile \} from "\.\/lib\/home-hero-work-utils";/,
+  );
+  assert.match(
+    selecaoHero,
+    /import \{ criarObraHeroLocalHome \} from "\.\/home-hero-work-utils";/,
   );
   assert.match(
     acaoFavoritoHero,

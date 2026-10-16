@@ -87,7 +87,7 @@ test("home-metadata-utils preserva traduções, regexes e fallbacks", () => {
 test("Home delega os metadados e mantém seus consumidores", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?formatarGeneroHome,[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
+    /import \{[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
   );
   for (const nomeFuncao of [
     "formatarGeneroHome",

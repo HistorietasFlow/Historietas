@@ -119,7 +119,6 @@ import {
   criarHrefObraCatalogoHome,
 } from "./lib/home-route-utils";
 import {
-  formatarGeneroHome,
   traduzirClassificacaoHome,
   traduzirGeneroHome,
 } from "./lib/home-metadata-utils";
@@ -173,10 +172,8 @@ import {
   obraTemConteudoPublicoHome,
 } from "./lib/home-local-work-utils";
 import { alternarHeroFavoritoHome } from "./lib/home-hero-favorite-action";
-import {
-  criarObraHeroLocalHome,
-  formatarSinopseHeroMobile,
-} from "./lib/home-hero-work-utils";
+import { formatarSinopseHeroMobile } from "./lib/home-hero-work-utils";
+import { criarObrasHeroHome } from "./lib/home-hero-selection-utils";
 import { criarDesktopHeroPosterStyle } from "./lib/home-cover-hero-style-utils";
 import {
   criarDecoracaoHomeStyle,
@@ -324,64 +321,7 @@ export default function Home() {
     dadosHomeCarregados && !termoBusca && obrasPublicadas.length === 0;
 
   const obrasHero = useMemo(() => {
-    if (!termoBusca) {
-      return obrasPublicadas
-        .slice(0, 6)
-        .map((obra) => criarObraHeroLocalHome(obra));
-    }
-
-    return obrasPublicadas
-      .map((obra, ordem) => {
-        const titulo = normalizarTexto(obra.titulo);
-        const autor = normalizarTexto(obra.autor);
-        const genero = normalizarTexto(formatarGeneroHome(obra.genero));
-        const tags = obra.tags.map((tag) => normalizarTexto(tag));
-        const textoCompleto = normalizarTexto(
-          [
-            obra.titulo,
-            obra.autor,
-            obra.genero,
-            formatarGeneroHome(obra.genero),
-            obra.formato,
-            obra.classificacaoIndicativa,
-            obra.sinopse,
-            ...obra.tags,
-            ...obra.capitulos.map((capitulo) => capitulo.titulo),
-          ].join(" ")
-        );
-
-        let relevancia = -1;
-
-        if (titulo.startsWith(termoBusca)) {
-          relevancia = 0;
-        } else if (titulo.includes(termoBusca)) {
-          relevancia = 1;
-        } else if (autor.startsWith(termoBusca)) {
-          relevancia = 2;
-        } else if (
-          genero.startsWith(termoBusca) ||
-          tags.some((tag) => tag.startsWith(termoBusca))
-        ) {
-          relevancia = 3;
-        } else if (textoCompleto.includes(termoBusca)) {
-          relevancia = 4;
-        }
-
-        return {
-          obra,
-          ordem,
-          relevancia,
-        };
-      })
-      .filter((resultado) => resultado.relevancia >= 0)
-      .sort((resultadoA, resultadoB) => {
-        return (
-          resultadoA.relevancia - resultadoB.relevancia ||
-          resultadoA.ordem - resultadoB.ordem
-        );
-      })
-      .slice(0, 6)
-      .map(({ obra }) => criarObraHeroLocalHome(obra));
+    return criarObrasHeroHome(obrasPublicadas, termoBusca);
   }, [obrasPublicadas, termoBusca]);
 
   const { heroIndex, setHeroIndex } = useHomeHeroCarousel(
