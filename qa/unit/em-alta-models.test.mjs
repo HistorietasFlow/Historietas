@@ -42,6 +42,13 @@ const rankingAutoresUtils = readFileSync(
   ),
   "utf8",
 );
+const rankingObrasLocaisUtils = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-local-ranking-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("modelos de Em Alta preservam os contratos locais e Supabase", () => {
   for (const tipo of [
@@ -104,6 +111,10 @@ test("Em Alta importa os modelos sem manter contratos duplicados", () => {
   assert.match(
     rankingAutoresUtils,
     /import type \{ AutorRanking, ObraRanking \} from "\.\/em-alta-models";/,
+  );
+  assert.match(
+    rankingObrasLocaisUtils,
+    /import type \{ ObraLocal, ObraRanking \} from "\.\/em-alta-models";/,
   );
   assert.match(
     rankingSection,

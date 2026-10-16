@@ -9,9 +9,17 @@ import "./em-alta-ranking-sections.test.mjs";
 import "./em-alta-ranking-position-theme.test.mjs";
 import "./em-alta-ranking-category-theme.test.mjs";
 import "./em-alta-author-ranking-utils.test.mjs";
+import "./em-alta-local-ranking-utils.test.mjs";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-ranking-data-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
+const rankingObrasLocaisUtils = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-local-ranking-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const rankingCard = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-ranking-card.tsx",
@@ -90,14 +98,14 @@ test("fronteira delega os onze helpers e permanece pura", () => {
     formatarNumero: rankingCard,
     formatarMediaRanking: rankingCard,
     normalizarVisualizacoesRanking: pagina,
-    obterVisualizacoesRegistradasObra: pagina,
+    obterVisualizacoesRegistradasObra: rankingObrasLocaisUtils,
     normalizarAvaliacoesLocaisRanking: pagina,
-    obterAvaliacaoLocalRanking: pagina,
+    obterAvaliacaoLocalRanking: rankingObrasLocaisUtils,
     formatarDataRanking: rankingCard,
     formatarGeneroCard: rankingCard,
-    calcularCapitulosLidos: pagina,
-    calcularProgressoLeitura: pagina,
-    encontrarCapituloParaContinuar: pagina,
+    calcularCapitulosLidos: rankingObrasLocaisUtils,
+    calcularProgressoLeitura: rankingObrasLocaisUtils,
+    encontrarCapituloParaContinuar: rankingObrasLocaisUtils,
   };
   for (const [nome, consumidor] of Object.entries(consumidores)) {
     assert.match(modulo, new RegExp(`export function ${nome}\\b`));

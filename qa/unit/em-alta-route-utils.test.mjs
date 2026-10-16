@@ -18,13 +18,20 @@ const rankingAutoresUtils = readFileSync(
   ),
   "utf8",
 );
+const rankingObrasLocaisUtils = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-local-ranking-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo
   .replace(
-    'import {\n  criarSlugBase,\n  idObraSupabaseValido,\n} from "../../../lib/utils";\n',
+    /import \{\r?\n  criarSlugBase,\r?\n  idObraSupabaseValido,\r?\n\} from "\.\.\/\.\.\/\.\.\/lib\/utils";\r?\n/,
     'const criarSlugBase = (texto) => String(texto).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");\nconst idObraSupabaseValido = (id) => id === "00000000-0000-4000-8000-000000000001";\n',
   )
   .replace(
-    'import type {\n  CapituloLocal,\n  ObraLocal,\n} from "./em-alta-models";\n',
+    /import type \{\r?\n  CapituloLocal,\r?\n  ObraLocal,\r?\n\} from "\.\/em-alta-models";\r?\n/,
     "",
   );
 const javascriptModulo = typescript.transpileModule(executavel, {
@@ -131,22 +138,27 @@ test("criarLinkPerfilAutorRanking preserva parâmetros, trims e fallback", () =>
   assert.equal(utils.criarLinkPerfilAutorRanking("   ", "  "), "/perfil-autor");
 });
 
-test("Em Alta delega as três rotas à fronteira pura", () => {
+test("Em Alta delega as três rotas às fronteiras puras", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarHrefLeituraCapitulo,[\s\S]*?criarLoginHrefEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-route-utils";/,
+    /import \{[\s\S]*?criarLoginHrefEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-route-utils";/,
   );
   assert.match(
     rankingAutoresUtils,
     /import \{ criarLinkPerfilAutorRanking \} from "\.\/em-alta-route-utils";/,
   );
 
-  for (const nome of [
-    "criarLoginHrefEmAlta",
-    "criarHrefLeituraCapitulo",
+  assert.match(
+    rankingObrasLocaisUtils,
+    /import \{ criarHrefLeituraCapitulo \} from "\.\/em-alta-route-utils";/,
+  );
+  for (const [nome, consumidor] of [
+    ["criarLoginHrefEmAlta", pagina],
+    ["criarHrefLeituraCapitulo", rankingObrasLocaisUtils],
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
     assert.match(modulo, new RegExp(`export function ${nome}\\b`));
+    assert.match(consumidor, new RegExp(`\\b${nome}\\b`));
   }
   assert.doesNotMatch(pagina, /function criarLinkPerfilAutorRanking\b/);
   assert.match(modulo, /export function criarLinkPerfilAutorRanking\b/);

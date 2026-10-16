@@ -200,3 +200,10 @@
 - Agrupamento, média ponderada, pontuação e ordenação foram preservados.
 - O `useMemo` e sua dependência `[ranking]` continuam na página.
 - Nenhuma query, estado ou comportamento foi alterado.
+
+## Fase 879 — cálculo do ranking de obras locais
+
+- Transformação de `ObraLocal` para `ObraRanking` foi isolada.
+- Filtros, métricas, progresso, continuação de leitura e pontuação foram preservados.
+- O `useMemo` e suas três dependências continuam na página.
+- Nenhuma query, mutação, estado ou JSX foi alterado.
