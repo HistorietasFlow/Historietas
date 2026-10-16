@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingAutoresUtils = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-author-ranking-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo
   .replace(
     'import {\n  criarSlugBase,\n  idObraSupabaseValido,\n} from "../../../lib/utils";\n',
@@ -127,17 +134,22 @@ test("criarLinkPerfilAutorRanking preserva parâmetros, trims e fallback", () =>
 test("Em Alta delega as três rotas à fronteira pura", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarHrefLeituraCapitulo,[\s\S]*?criarLinkPerfilAutorRanking,[\s\S]*?criarLoginHrefEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-route-utils";/,
+    /import \{[\s\S]*?criarHrefLeituraCapitulo,[\s\S]*?criarLoginHrefEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-route-utils";/,
+  );
+  assert.match(
+    rankingAutoresUtils,
+    /import \{ criarLinkPerfilAutorRanking \} from "\.\/em-alta-route-utils";/,
   );
 
   for (const nome of [
     "criarLoginHrefEmAlta",
     "criarHrefLeituraCapitulo",
-    "criarLinkPerfilAutorRanking",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
     assert.match(modulo, new RegExp(`export function ${nome}\\b`));
   }
+  assert.doesNotMatch(pagina, /function criarLinkPerfilAutorRanking\b/);
+  assert.match(modulo, /export function criarLinkPerfilAutorRanking\b/);
 
   for (const proibido of [
     /react/i,
