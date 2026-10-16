@@ -81,6 +81,99 @@ test("preserva a base segura e os títulos dos cards de ranking", () => {
   });
 });
 
+test("preserva as bases e helpers dos badges do ranking", () => {
+  assert.deepEqual(estilos.highlightBadgeStyle, {
+    width: "fit-content",
+    maxWidth: "100%",
+    minHeight: "34px",
+    padding: "0 10px",
+    marginTop: "4px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    color: "var(--historietas-text-primary, #FFFFFF)",
+    fontSize: "11px",
+    fontWeight: 900,
+    lineHeight: 1.12,
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "5px",
+    boxSizing: "border-box",
+    whiteSpace: "normal",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    ...estilos.safeTextStyle,
+  });
+  assert.deepEqual(estilos.rankingHighlightBadgeInlineStyle, {
+    flex: "1 1 auto",
+    minWidth: 0,
+    marginTop: 0,
+    padding: "0 12px",
+    textAlign: "center",
+  });
+  assert.deepEqual(estilos.authorRankingTierBadgeStyle, {
+    position: "absolute",
+    left: "6px",
+    right: "6px",
+    bottom: "6px",
+    zIndex: 3,
+    minHeight: "24px",
+    padding: "0 7px",
+    borderRadius: "999px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+    fontSize: "8px",
+    lineHeight: 1,
+    fontWeight: 950,
+    letterSpacing: "0.055em",
+    textTransform: "uppercase",
+    whiteSpace: "nowrap",
+    boxShadow: "0 6px 12px rgba(0,0,0,0.22)",
+    ...estilos.safeTextStyle,
+  });
+
+  const diamante = estilos.criarRankingTierInlineBadgeStyle(1);
+  const prata = estilos.criarRankingTierInlineBadgeStyle(4);
+  assert.equal(
+    diamante.background,
+    "var(--historietas-em-alta-rgba-125-211-252-0-16, rgba(125,211,252,0.16))",
+  );
+  assert.equal(diamante.padding, "0 12px");
+  assert.equal(diamante.minHeight, "34px");
+  assert.equal(diamante.boxShadow, "none");
+  assert.equal(
+    prata.background,
+    "var(--historietas-em-alta-rgba-203-213-225-0-13, rgba(203,213,225,0.13))",
+  );
+
+  const autor = estilos.criarAutorTierInlineBadgeStyle(2);
+  assert.equal(autor.position, "static");
+  assert.equal(autor.left, "auto");
+  assert.equal(autor.right, "auto");
+  assert.equal(autor.bottom, "auto");
+  assert.equal(autor.minHeight, "34px");
+  assert.equal(autor.padding, "0 16px");
+  assert.equal(autor.width, "fit-content");
+  assert.equal(autor.flex, "0 0 auto");
+  assert.equal(
+    autor.background,
+    "var(--historietas-em-alta-rgba-251-113-133-0-16, rgba(251,113,133,0.16))",
+  );
+
+  assert.deepEqual(estilos.criarAutorPointsBadgeStyle(), {
+    ...estilos.highlightBadgeStyle,
+    marginTop: 0,
+    minHeight: "34px",
+    padding: "0 16px",
+    color: "#FFFFFF",
+    flex: "0 0 auto",
+  });
+});
+
 test("preserva a base visual da capa mobile e desktop", () => {
   assert.equal(estilos.coverStyle.minHeight, "122px");
   assert.equal(estilos.coverStyle.borderRadius, "16px");
@@ -257,6 +350,12 @@ test("a página delega toda a fronteira visual", () => {
     "authorRankingCardTitleStyle",
     "criarObraCardTitleRankingStyle",
     "criarAutorCardTitleRankingStyle",
+    "highlightBadgeStyle",
+    "rankingHighlightBadgeInlineStyle",
+    "authorRankingTierBadgeStyle",
+    "criarRankingTierInlineBadgeStyle",
+    "criarAutorTierInlineBadgeStyle",
+    "criarAutorPointsBadgeStyle",
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
     "criarDecoracaoPaginaStyle",
@@ -270,6 +369,9 @@ test("a página delega toda a fronteira visual", () => {
     "safeTextStyle",
     "criarObraCardTitleRankingStyle",
     "criarAutorCardTitleRankingStyle",
+    "criarRankingTierInlineBadgeStyle",
+    "criarAutorTierInlineBadgeStyle",
+    "criarAutorPointsBadgeStyle",
     "criarDecoracaoPaginaStyle",
   ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
@@ -292,6 +394,18 @@ test("a página delega toda a fronteira visual", () => {
   );
   assert.doesNotMatch(pagina, /function criarObraCardTitleRankingStyle\b/);
   assert.doesNotMatch(pagina, /function criarAutorCardTitleRankingStyle\b/);
+  assert.doesNotMatch(pagina, /const highlightBadgeStyle: CSSProperties = \{/);
+  assert.doesNotMatch(
+    pagina,
+    /const rankingHighlightBadgeInlineStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const authorRankingTierBadgeStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(pagina, /function criarRankingTierInlineBadgeStyle\b/);
+  assert.doesNotMatch(pagina, /function criarAutorTierInlineBadgeStyle\b/);
+  assert.doesNotMatch(pagina, /function criarAutorPointsBadgeStyle\b/);
   assert.ok((pagina.match(/\.\.\.safeTextStyle/g) || []).length > 0);
   assert.match(
     modulo,

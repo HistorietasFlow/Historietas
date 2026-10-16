@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 868 — badges visuais do ranking
+
+- Moveu os estilos-base dos badges para a fronteira visual do ranking.
+- Isolou os badges de ranking, tier de autor e pontos, preservando temas, tipografia, tamanhos e fallbacks.
+- Nenhum comportamento ou JSX foi alterado.
+
 ## Fase 867 — base de texto e títulos dos cards
 
 - Moveu `safeTextStyle` para a fronteira visual compartilhada do ranking.
