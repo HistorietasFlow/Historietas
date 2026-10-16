@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 861 — Modelos e dados estáticos locais da Home
+
+- Moveu os tipos `CapituloLocal`, `Obra` e `ObraLocal` para `app/lib/home-page-models.ts`.
+- Moveu `OBRAS_CATALOGO_HOME` e `HERO_INICIAL_HOME`, preservando seus contratos e literais.
+- Manteve na Home todos os consumidores, lifecycle, JSX e comportamentos.
+
 ## Fase 860 — Dados derivados do Hero da Home
 
 - Extraiu os dados derivados do Hero para `app/lib/home-hero-view-utils.ts`.
