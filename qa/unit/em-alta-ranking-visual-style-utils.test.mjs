@@ -61,6 +61,73 @@ test("preserva a base visual da capa mobile e desktop", () => {
   assert.equal(estilos.desktopCoverStyle.borderRadius, "18px");
 });
 
+test("preserva as bases mobile, desktop e indisponíveis dos cards", () => {
+  assert.equal(estilos.cardStyle.flex, "0 0 min(360px, 88vw)");
+  assert.equal(estilos.cardStyle.width, "min(360px, 88vw)");
+  assert.equal(
+    estilos.cardStyle.gridTemplateColumns,
+    "minmax(88px, 98px) minmax(0, 1fr)",
+  );
+  assert.equal(estilos.cardStyle.padding, "11px");
+  assert.equal(estilos.cardStyle.borderRadius, "22px");
+  assert.equal(
+    estilos.cardStyle.background,
+    "var(--historietas-em-alta-rgba-4-0-10-0-72, rgba(4, 0, 10, 0.72))",
+  );
+  assert.equal(estilos.cardStyle.border, "1px solid rgba(255,255,255,0.06)");
+  assert.equal(estilos.cardStyle.maxWidth, "88vw");
+  assert.equal(estilos.cardStyle.cursor, "pointer");
+  assert.equal(estilos.cardStyle.touchAction, "manipulation");
+  assert.equal(estilos.cardStyle.userSelect, "none");
+
+  assert.equal(estilos.desktopCardStyle.flex, "0 0 calc((100% - 44px) / 3)");
+  assert.equal(estilos.desktopCardStyle.width, "calc((100% - 44px) / 3)");
+  assert.equal(estilos.desktopCardStyle.gridTemplateColumns, "112px minmax(0, 1fr)");
+  assert.equal(estilos.desktopCardStyle.gap, "15px");
+  assert.equal(estilos.desktopCardStyle.padding, "13px");
+  assert.equal(estilos.desktopCardStyle.borderRadius, "24px");
+  assert.equal(estilos.cardSoonStyle.opacity, 0.9);
+  assert.equal(estilos.cardSoonStyle.width, estilos.cardStyle.width);
+  assert.equal(estilos.desktopCardSoonStyle.opacity, 0.9);
+  assert.equal(
+    estilos.desktopCardSoonStyle.width,
+    estilos.desktopCardStyle.width,
+  );
+});
+
+test("cria cards de ranking com a base e o tema de cada posição", () => {
+  const mobileDisponivel = estilos.criarCardRankingStyle(1, true, "geral");
+  const desktopDisponivel = estilos.criarCardRankingStyle(2, true, "lidas", true);
+  const mobileIndisponivel = estilos.criarCardRankingStyle(3, false, "curtidas");
+  const desktopIndisponivel = estilos.criarCardRankingStyle(
+    4,
+    false,
+    "comentadas",
+    true,
+  );
+
+  assert.equal(mobileDisponivel.width, estilos.cardStyle.width);
+  assert.equal(
+    mobileDisponivel.background,
+    "var(--historietas-em-alta-hex-2486c2, #2486C2)",
+  );
+  assert.equal(
+    mobileDisponivel.border,
+    "1px solid var(--historietas-em-alta-rgba-125-211-252-0-78, rgba(125,211,252,0.78))",
+  );
+  assert.equal(desktopDisponivel.width, estilos.desktopCardStyle.width);
+  assert.equal(desktopDisponivel.gap, "15px");
+  assert.equal(mobileIndisponivel.opacity, 0.9);
+  assert.equal(mobileIndisponivel.width, estilos.cardSoonStyle.width);
+  assert.equal(desktopIndisponivel.opacity, 0.9);
+  assert.equal(desktopIndisponivel.width, estilos.desktopCardSoonStyle.width);
+  assert.equal(
+    desktopIndisponivel.backgroundColor,
+    "var(--historietas-em-alta-hex-7b8aa3, #7B8AA3)",
+  );
+  assert.equal(desktopIndisponivel.outline, "none");
+});
+
 test("cria capas com fallbacks e URL literal em ambos os layouts", () => {
   const mobileVazia = estilos.criarRankingCoverStyle("", false);
   const desktopVazia = estilos.criarRankingCoverStyle("", true);
@@ -146,6 +213,11 @@ test("a página delega toda a fronteira visual", () => {
   for (const nome of [
     "coverStyle",
     "desktopCoverStyle",
+    "cardStyle",
+    "desktopCardStyle",
+    "cardSoonStyle",
+    "desktopCardSoonStyle",
+    "criarCardRankingStyle",
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
     "criarDecoracaoPaginaStyle",
@@ -155,6 +227,7 @@ test("a página delega toda a fronteira visual", () => {
   for (const nome of [
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
+    "criarCardRankingStyle",
     "criarDecoracaoPaginaStyle",
   ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
@@ -164,6 +237,15 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /function criarDecoracaoPaginaStyle\b/);
   assert.doesNotMatch(pagina, /const coverStyle: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /const desktopCoverStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const cardStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const desktopCardStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const cardSoonStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /const desktopCardSoonStyle: CSSProperties = \{/);
+  assert.doesNotMatch(pagina, /function criarCardRankingStyle\b/);
+  assert.match(
+    modulo,
+    /export function criarCardRankingStyle\(\s*posicao: number,\s*disponivel: boolean,\s*_tipo: TipoRanking,\s*isDesktop = false,/,
+  );
   assert.doesNotMatch(pagina, /function criarAutorAvatarRankingStyle\b/);
   assert.match(
     pagina,
@@ -176,6 +258,10 @@ test("o módulo permanece visual e sem runtime externo", () => {
   assert.match(
     modulo,
     /^import \{ obterTemaPosicao \} from "\.\/em-alta-ranking-position-theme";$/m,
+  );
+  assert.match(
+    modulo,
+    /^import type \{ TipoRanking \} from "\.\/em-alta-models";$/m,
   );
   for (const proibido of [
     /supabase/i,

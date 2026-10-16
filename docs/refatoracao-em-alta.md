@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 866 — estilos-base dos cards do ranking
+
+- Isolou as bases mobile/desktop dos cards no módulo visual do ranking.
+- Preservou as variantes indisponíveis e a aplicação de temas por posição.
+- Nenhum comportamento ou layout foi alterado.
+
 ## Fase 865 — avatar visual dos autores
 
 - Moveu o estilo dinâmico do avatar para a fronteira visual do ranking.
