@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-const estilos = readFileSync(
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);const estilos = readFileSync(
   new URL("../../app/lib/home-summary-section-styles.ts", import.meta.url),
   "utf8",
 );
@@ -52,6 +55,6 @@ test("Home delega todos os estilos finais sem alterar seus consumidores", () => 
   assert.match(pagina, /style=\{summaryItemStyle\}/);
   assert.match(pagina, /style=\{summaryDividerLineStyle\}/);
   assert.match(pagina, /style=\{summaryNumberStyle\}/);
-  assert.match(pagina, /isDesktop \? desktopSectionStyle : sectionStyle/);
-  assert.match(pagina, /isDesktop \? desktopLastSectionStyle : lastSectionStyle/);
+  assert.match(secoes, /isDesktop \? desktopSectionStyle : sectionStyle/);
+  assert.match(secoes, /isDesktop \? desktopLastSectionStyle : lastSectionStyle/);
 });

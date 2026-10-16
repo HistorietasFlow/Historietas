@@ -15,7 +15,10 @@ const componente = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);
 const estilosAutorEsperados = [
   "authorCardStyle",
   "desktopAuthorCardStyle",
@@ -75,7 +78,7 @@ test("MobileAutorCard consome a nova fronteira de estilos", () => {
   assert.match(componente, /style=\{authorMetaBadgeStyle\}/);
   assert.match(componente, /style=\{authorGenreBadgeStyle\}/);
   assert.match(componente, /style=\{authorProfileButtonStyle\}/);
-  assert.match(pagina, /import MobileAutorCard from "\.\.\/components\/HomeAuthorCard";/);
+  assert.match(secoes, /import MobileAutorCard from "\.\/HomeAuthorCard";/);
   assert.doesNotMatch(pagina, /function MobileAutorCard\(/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/home-card-style-primitives";/);
 

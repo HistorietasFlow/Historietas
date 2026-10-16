@@ -11,7 +11,10 @@ const modulo = readFileSync(
   "utf8",
 );
 const pagina = readFileSync(new URL("../../app/page.tsx", import.meta.url), "utf8");
-const componente = readFileSync(
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);const componente = readFileSync(
   new URL("../../components/HomeCatalogWorkCard.tsx", import.meta.url),
   "utf8",
 );
@@ -110,7 +113,7 @@ test("home-catalog-work-card-view-utils estabelece a fronteira pura do card de c
   assert.match(componente, /from "\.\.\/app\/lib\/home-catalog-work-card-view-utils";/);
   assert.match(componente, /criarDadosObraCatalogoCardHome\(obra\)/);
   assert.match(componente, /\{obra\.disponivel \? "Ver obra" : "Ver detalhes"\}/);
-  assert.match(pagina, /import MobileObraCard from "\.\.\/components\/HomeCatalogWorkCard";/);
+  assert.match(secoes, /import MobileObraCard from "\.\/HomeCatalogWorkCard";/);
   assert.doesNotMatch(pagina, /function MobileObraCard\(/);
   assert.doesNotMatch(
     pagina,
