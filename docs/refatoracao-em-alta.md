@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 864 — temas de posição do ranking
+
+- Isolou os temas Diamante, Rubi, Ouro, Prata e Bronze.
+- Cores, gradientes, badges e sombras foram preservados literalmente.
+- Consumidores e comportamento visual não foram alterados.
+
 ## Fase 863 — estilos visuais do ranking
 
 - Bases de capa mobile/desktop foram extraídas.
