@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 859 — Seleção e relevância das obras do Hero da Home
+
+- Extraiu a seleção pura das obras do Hero para `app/lib/home-hero-selection-utils.ts`.
+- Preservou limites, campos pesquisados, prioridades de relevância, desempate e normalização da saída.
+- Manteve na Home o `useMemo`, suas dependências e todo o lifecycle do Hero.
+
 ## Fase 858 — Estilos finais de summary e seções da Home
 
 - Moveu literalmente os estilos finais de summary e seções para `app/lib/home-summary-section-styles.ts`.

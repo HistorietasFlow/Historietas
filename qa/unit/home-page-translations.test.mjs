@@ -159,7 +159,7 @@ test("Home mantém apenas a fronteira do bridge de tradução", () => {
   assert.doesNotMatch(pagina, /function useHomePageTranslations/);
   assert.match(
     pagina,
-    /import \{[\s\S]*?formatarGeneroHome,[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
+    /import \{[\s\S]*?traduzirClassificacaoHome,[\s\S]*?traduzirGeneroHome,[\s\S]*?\} from "\.\/lib\/home-metadata-utils";/,
   );
   assert.doesNotMatch(pagina, /function traduzirGeneroHome\(/);
   assert.doesNotMatch(pagina, /function traduzirFormatoHome\(/);
