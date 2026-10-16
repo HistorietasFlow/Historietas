@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import {
   historietasThemeCss,
@@ -16,7 +16,6 @@ import type {
   ObraLocal,
   ObraRanking,
   AutorRanking,
-  TipoRanking,
 } from "./lib/em-alta-models";
 import {
   adicionarRankingObraNaLista,
@@ -54,25 +53,11 @@ import {
   obterVisualizacoesRegistradasObra,
 } from "./lib/em-alta-ranking-data-utils";
 import {
-  carouselArrowLeftIconStyle,
-  carouselArrowLeftStyle,
-  carouselArrowRightIconStyle,
-  carouselArrowRightStyle,
-  carouselShellStyle,
-  carouselStyle,
-  criarDesktopSectionHeaderTemaStyle,
   criarDecoracaoPaginaStyle,
-  criarSectionHeaderTemaStyle,
-  criarSectionIconStyle,
-  desktopCarouselShellStyle,
-  desktopCarouselStyle,
   desktopContainerStyle,
   desktopHeaderTitleLinkStyle,
   desktopHeaderTitleMarkStyle,
   desktopHeaderTitleTextStyle,
-  desktopSectionHeaderContentStyle,
-  desktopSectionStyle,
-  desktopSectionTextBlockStyle,
   desktopTopWaterFadeStyle,
   desktopTitleHeaderStyle,
   headerTitleLinkStyle,
@@ -82,15 +67,10 @@ import {
   pageDecorationLayerStyle,
   pageStyle,
   containerStyle,
-  sectionHeaderContentStyle,
-  sectionStyle,
-  sectionTextBlockStyle,
-  sectionTitleStyle,
   titleHeaderStyle,
 } from "./lib/em-alta-ranking-visual-style-utils";
-import { obterTemaRanking } from "./lib/em-alta-ranking-category-theme";
-import { AutorRankingCard } from "./components/em-alta-author-ranking-card";
-import { RankingCard } from "./components/em-alta-ranking-card";
+import { RankingSection } from "./components/em-alta-ranking-section";
+import { AutoresEmAltaSection } from "./components/em-alta-authors-ranking-section";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
 
@@ -848,292 +828,5 @@ export default function EmAltaPage() {
         )}
       </section>
     </main>
-  );
-}
-function RankingSection({
-  titulo,
-  obras,
-  tipo,
-  obrasFavoritas,
-  obrasConcluidas,
-  onAlternarFavorito: _onAlternarFavorito,
-  onAlternarConcluido: _onAlternarConcluido,
-  isDesktop,
-}: {
-  titulo: string;
-  descricao: string;
-  obras: ObraRanking[];
-  tipo: TipoRanking;
-  obrasFavoritas: string[];
-  obrasConcluidas: string[];
-  onAlternarFavorito: (obraId: string) => void;
-  onAlternarConcluido: (obraId: string) => void;
-  isDesktop: boolean;
-}) {
-  void _onAlternarFavorito;
-  void _onAlternarConcluido;
-
-  const tema = obterTemaRanking(tipo);
-  const carrosselRef = useRef<HTMLDivElement | null>(null);
-  const obrasComPosicao = obras.map((obra, index) => ({
-    obra,
-    posicao: index + 1,
-  }));
-  const obrasEmOrdem = [...obrasComPosicao].reverse();
-
-  function rolarCarrossel(direcao: "esquerda" | "direita") {
-    const carrossel = carrosselRef.current;
-
-    if (!carrossel) {
-      return;
-    }
-
-    const distancia = Math.max(320, Math.floor(carrossel.clientWidth * 0.82));
-
-    carrossel.scrollBy({
-      left: direcao === "direita" ? distancia : -distancia,
-      behavior: "smooth",
-    });
-  }
-
-  return (
-    <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-      <div
-        style={
-          isDesktop
-            ? criarDesktopSectionHeaderTemaStyle(tema)
-            : criarSectionHeaderTemaStyle(tema)
-        }
-      >
-        <div
-          style={
-            isDesktop
-              ? desktopSectionHeaderContentStyle
-              : sectionHeaderContentStyle
-          }
-        >
-          <span
-            className={`historietas-em-alta-emoji-icon${
-              tipo === "curtidas" ? " historietas-em-alta-heart-icon" : ""
-            }`}
-            style={{
-              ...criarSectionIconStyle(tema),
-              ...(tipo === "curtidas"
-                ? {
-                    color:
-                      "#EF4444",
-                    fontFamily: "Arial, Helvetica, sans-serif",
-                  }
-                : {}),
-            }}
-          >
-            {tema.icone}
-          </span>
-
-          <div
-            style={
-              isDesktop ? desktopSectionTextBlockStyle : sectionTextBlockStyle
-            }
-          >
-            <h2
-              style={
-                isDesktop
-                  ? {
-                      ...sectionTitleStyle,
-                      color: "#FFFFFF",
-                      textAlign: "center",
-                    }
-                  : { ...sectionTitleStyle, color: "#FFFFFF" }
-              }
-            >
-              {titulo}
-            </h2>
-          </div>
-        </div>
-      </div>
-
-      {obras.length > 0 ? (
-        <div style={isDesktop ? desktopCarouselShellStyle : carouselShellStyle}>
-          {isDesktop && obras.length > 3 && (
-            <button
-              type="button"
-              aria-label={`Voltar carrossel ${titulo}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                rolarCarrossel("esquerda");
-              }}
-              style={carouselArrowLeftStyle}
-            >
-              <span aria-hidden="true" style={carouselArrowLeftIconStyle} />
-            </button>
-          )}
-
-          <div
-            ref={carrosselRef}
-            style={isDesktop ? desktopCarouselStyle : carouselStyle}
-            aria-label={`${titulo} em carrossel`}
-          >
-            {obrasEmOrdem.map(({ obra, posicao }) => (
-              <RankingCard
-                key={`${tipo}-${obra.id}`}
-                obra={obra}
-                posicao={posicao}
-                tipo={tipo}
-                favorita={listaTemRankingObra(obra, obrasFavoritas)}
-                concluida={listaTemRankingObra(obra, obrasConcluidas)}
-                isDesktop={isDesktop}
-              />
-            ))}
-          </div>
-
-          {isDesktop && obras.length > 3 && (
-            <button
-              type="button"
-              aria-label={`Avançar carrossel ${titulo}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                rolarCarrossel("direita");
-              }}
-              style={carouselArrowRightStyle}
-            >
-              <span aria-hidden="true" style={carouselArrowRightIconStyle} />
-            </button>
-          )}
-        </div>
-      ) : (
-        <p
-          style={{
-            margin: "10px 0 0",
-            color: "#FFFFFF",
-            fontSize: "12px",
-            fontWeight: 800,
-            textAlign: "center",
-          }}
-        >
-          Nada para mostrar neste ranking
-        </p>
-      )}
-    </section>
-  );
-}
-function AutoresEmAltaSection({
-  autores,
-  isDesktop,
-}: {
-  autores: AutorRanking[];
-  isDesktop: boolean;
-}) {
-  const tema = obterTemaRanking("geral");
-  const carrosselRef = useRef<HTMLDivElement | null>(null);
-  const autoresComPosicao = autores.map((autor, index) => ({
-    autor,
-    posicao: index + 1,
-  }));
-  const autoresEmOrdem = [...autoresComPosicao].reverse();
-
-  function rolarCarrossel(direcao: "esquerda" | "direita") {
-    const carrossel = carrosselRef.current;
-
-    if (!carrossel) {
-      return;
-    }
-
-    const distancia = Math.max(320, Math.floor(carrossel.clientWidth * 0.82));
-
-    carrossel.scrollBy({
-      left: direcao === "direita" ? distancia : -distancia,
-      behavior: "smooth",
-    });
-  }
-
-  if (autores.length === 0) {
-    return null;
-  }
-
-  return (
-    <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-      <div
-        style={
-          isDesktop
-            ? criarDesktopSectionHeaderTemaStyle(tema)
-            : criarSectionHeaderTemaStyle(tema)
-        }
-      >
-        <div
-          style={
-            isDesktop
-              ? desktopSectionHeaderContentStyle
-              : sectionHeaderContentStyle
-          }
-        >
-          <span className="historietas-em-alta-emoji-icon" style={criarSectionIconStyle(tema)}>👤</span>
-
-          <div
-            style={
-              isDesktop ? desktopSectionTextBlockStyle : sectionTextBlockStyle
-            }
-          >
-            <h2
-              style={
-                isDesktop
-                  ? {
-                      ...sectionTitleStyle,
-                      color: "#FFFFFF",
-                      textAlign: "center",
-                    }
-                  : { ...sectionTitleStyle, color: "#FFFFFF" }
-              }
-            >
-              Autores em Alta
-            </h2>
-          </div>
-        </div>
-      </div>
-
-      <div style={isDesktop ? desktopCarouselShellStyle : carouselShellStyle}>
-        {isDesktop && autores.length > 3 && (
-          <button
-            type="button"
-            aria-label="Voltar carrossel Autores em Alta"
-            onClick={(event) => {
-              event.stopPropagation();
-              rolarCarrossel("esquerda");
-            }}
-            style={carouselArrowLeftStyle}
-          >
-            <span aria-hidden="true" style={carouselArrowLeftIconStyle} />
-          </button>
-        )}
-
-        <div
-          ref={carrosselRef}
-          style={isDesktop ? desktopCarouselStyle : carouselStyle}
-          aria-label="Autores em Alta em carrossel"
-        >
-          {autoresEmOrdem.map(({ autor, posicao }) => (
-            <AutorRankingCard
-              key={`autor-ranking-${autor.id}`}
-              autor={autor}
-              posicao={posicao}
-              isDesktop={isDesktop}
-            />
-          ))}
-        </div>
-
-        {isDesktop && autores.length > 3 && (
-          <button
-            type="button"
-            aria-label="Avançar carrossel Autores em Alta"
-            onClick={(event) => {
-              event.stopPropagation();
-              rolarCarrossel("direita");
-            }}
-            style={carouselArrowRightStyle}
-          >
-            <span aria-hidden="true" style={carouselArrowRightIconStyle} />
-          </button>
-        )}
-      </div>
-    </section>
   );
 }

@@ -28,6 +28,20 @@ const componenteObra = readFileSync(
   ),
   "utf8",
 );
+const rankingSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const authorsSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-authors-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloTema = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-ranking-position-theme.ts",
@@ -976,6 +990,7 @@ test("preserva métricas e estilos finais dos cards de autor", () => {
 });
 
 test("a página delega toda a fronteira visual", () => {
+  const consumidoresVisuais = [pagina, rankingSection, authorsSection];
   for (const nome of [
     "coverStyle",
     "desktopCoverStyle",
@@ -1102,7 +1117,12 @@ test("a página delega toda a fronteira visual", () => {
     "criarSectionIconStyle",
     "criarDecoracaoPaginaStyle",
   ]) {
-    assert.match(pagina, new RegExp(`\\b${nome}\\b`));
+    assert.ok(
+      consumidoresVisuais.some((consumidor) =>
+        new RegExp(`\\b${nome}\\b`).test(consumidor),
+      ),
+      `${nome} permanece consumido pela fronteira visual`,
+    );
   }
   for (const nome of [
     "criarRankingCoverStyle",
@@ -1321,19 +1341,19 @@ test("a página delega toda a fronteira visual", () => {
     /function criarDesktopSectionHeaderTemaStyle\b/,
   );
   assert.doesNotMatch(pagina, /function criarSectionIconStyle\b/);
-  assert.match(pagina, /function RankingSection\b/);
-  assert.match(pagina, /function AutoresEmAltaSection\b/);
+  assert.match(rankingSection, /export function RankingSection\b/);
+  assert.match(authorsSection, /export function AutoresEmAltaSection\b/);
   assert.match(
-    pagina,
-    /import \{ RankingCard \} from "\.\/components\/em-alta-ranking-card";/,
+    rankingSection,
+    /import \{ RankingCard \} from "\.\/em-alta-ranking-card";/,
   );
-  assert.doesNotMatch(pagina, /function RankingCard\b/);
+  assert.doesNotMatch(rankingSection, /function RankingCard\b/);
   assert.match(componenteObra, /export function RankingCard\b/);
   assert.match(
-    pagina,
-    /import \{ AutorRankingCard \} from "\.\/components\/em-alta-author-ranking-card";/,
+    authorsSection,
+    /import \{ AutorRankingCard \} from "\.\/em-alta-author-ranking-card";/,
   );
-  assert.doesNotMatch(pagina, /function AutorRankingCard\b/);
+  assert.doesNotMatch(authorsSection, /function AutorRankingCard\b/);
   assert.match(componenteAutor, /export function AutorRankingCard\b/);
   assert.doesNotMatch(pagina, /const \w+Style: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /import type \{ CSSProperties \} from "react";/);

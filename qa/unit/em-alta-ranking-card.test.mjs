@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("RankingCard preserva props, navegação e acessibilidade", () => {
   assert.match(componente, /^"use client";/);
@@ -71,14 +78,18 @@ test("RankingCard preserva metadata, destaque, autor, métricas e capa", () => {
   assert.match(componente, /\{temaPosicao\.nome\}/);
 });
 
-test("Em Alta delega RankingCard sem mover as seções", () => {
+test("RankingSection delega RankingCard sem manter sua implementação local", () => {
   assert.match(
     pagina,
-    /import \{ RankingCard \} from "\.\/components\/em-alta-ranking-card";/,
+    /import \{ RankingSection \} from "\.\/components\/em-alta-ranking-section";/,
   );
   assert.doesNotMatch(pagina, /function RankingCard\b/);
-  assert.match(pagina, /function RankingSection\b/);
-  assert.match(pagina, /<RankingCard[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.doesNotMatch(pagina, /function RankingSection\b/);
+  assert.match(
+    rankingSection,
+    /import \{ RankingCard \} from "\.\/em-alta-ranking-card";/,
+  );
+  assert.match(rankingSection, /<RankingCard[\s\S]*?isDesktop=\{isDesktop\}/);
 });
 
 test("RankingCard permanece visual, sem dados persistentes ou lifecycle", () => {

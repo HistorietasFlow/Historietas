@@ -186,3 +186,10 @@
 ## Fase 847 — LoadingSpinner
 
 - Extraiu o spinner de carregamento e seus estilos exclusivos, preservando o único consumidor no branch de ranking.
+
+## Fase 877 — seções e carrosséis do ranking
+
+- `RankingSection` e `AutoresEmAltaSection` foram movidos para componentes dedicados.
+- Refs e rolagem suave foram preservados literalmente.
+- Ordem invertida dos cards, setas e acessibilidade permaneceram iguais.
+- Nenhuma lógica de dados, Supabase ou estado principal foi alterada.

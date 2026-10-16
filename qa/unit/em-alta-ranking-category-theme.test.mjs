@@ -21,6 +21,20 @@ const moduloVisual = readFileSync(
   ),
   "utf8",
 );
+const rankingSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const authorsSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-authors-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo.replace(
   /import type \{ TipoRanking \} from "\.\/em-alta-models";\r?\n/,
   "",
@@ -180,8 +194,12 @@ test("a fronteira preserva ramos, consumidores e pureza", () => {
   }
   assert.match(modulo, /return \{\r?\n    icone: "📚"/);
   assert.match(
-    pagina,
-    /import \{ obterTemaRanking \} from "\.\/lib\/em-alta-ranking-category-theme";/,
+    rankingSection,
+    /import \{ obterTemaRanking \} from "\.\.\/lib\/em-alta-ranking-category-theme";/,
+  );
+  assert.match(
+    authorsSection,
+    /import \{ obterTemaRanking \} from "\.\.\/lib\/em-alta-ranking-category-theme";/,
   );
   assert.doesNotMatch(pagina, /function obterTemaRanking\b/);
   for (const nome of [
@@ -199,7 +217,8 @@ test("a fronteira preserva ramos, consumidores e pureza", () => {
       new RegExp(`ReturnType<typeof obterTemaRanking>`),
     );
   }
-  assert.match(pagina, /function RankingSection\b/);
+  assert.match(rankingSection, /obterTemaRanking\(tipo\)/);
+  assert.match(authorsSection, /obterTemaRanking\("geral"\)/);
   for (const proibido of [
     /react/i,
     /CSSProperties/,
