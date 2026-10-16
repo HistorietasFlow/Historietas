@@ -225,3 +225,9 @@
 - Moveu a leitura inicial e a revalidação de sessão para `useEmAltaAuthSession`.
 - Timers, cleanup, fallbacks e atualização dos estados de autenticação foram preservados literalmente.
 - Carregamento do ranking, coleções, mutações e JSX permaneceram na página.
+
+## Fase 883 — cabeçalho de Em Alta
+
+- Moveu a composição visual do cabeçalho para `app/em-alta/components/em-alta-header.tsx`.
+- Preservou literalmente marca, rota da Home, acessibilidade e seleção responsiva dos estilos.
+- Carregamento, autenticação, Supabase, estados e mutações permaneceram na página.

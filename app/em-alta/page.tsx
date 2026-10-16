@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -47,23 +46,16 @@ import {
 import {
   criarDecoracaoPaginaStyle,
   desktopContainerStyle,
-  desktopHeaderTitleLinkStyle,
-  desktopHeaderTitleMarkStyle,
-  desktopHeaderTitleTextStyle,
   desktopTopWaterFadeStyle,
-  desktopTitleHeaderStyle,
-  headerTitleLinkStyle,
-  headerTitleMarkStyle,
-  headerTitleTextStyle,
   mobileTopWaterFadeStyle,
   pageDecorationLayerStyle,
   pageStyle,
   containerStyle,
-  titleHeaderStyle,
 } from "./lib/em-alta-ranking-visual-style-utils";
 import { EmAltaRankingContent } from "./components/em-alta-ranking-content";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
+import { EmAltaHeader } from "./components/em-alta-header";
 
 export default function EmAltaPage() {
   const router = useRouter();
@@ -375,33 +367,7 @@ export default function EmAltaPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-          <Link
-            href="/"
-            style={
-              isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle
-            }
-            aria-label="Voltar para a Home"
-          >
-            <span
-              className="historietas-em-alta-logo-mark"
-              style={
-                isDesktop ? desktopHeaderTitleMarkStyle : headerTitleMarkStyle
-              }
-            >
-              H
-            </span>
-            <span
-              className="historietas-em-alta-hero-title"
-              style={
-                isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle
-              }
-            >
-              {tituloCabecalho}
-            </span>
-          </Link>
-
-        </header>
+        <EmAltaHeader isDesktop={isDesktop} titulo={tituloCabecalho} />
 
         <EmAltaRankingContent
           ranking={ranking}
