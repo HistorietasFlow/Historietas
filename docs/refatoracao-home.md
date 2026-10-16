@@ -2,7 +2,7 @@
 
 ## Fase 865 — Auditoria final e encerramento
 
-- Auditou `app/page.tsx`, que encerra a refatoração com 384 linhas, e as fronteiras de componentes, hooks, utilitários, estilos e testes estruturais da Home.
+- Auditou `app/page.tsx`, que encerra a refatoração com 427 linhas, e as fronteiras de componentes, hooks, utilitários, estilos e testes estruturais da Home.
 - Confirmou a separação de Header, Hero, seções, cards, carrosséis, estados visuais, carregamento inicial, busca de catálogo, autenticação, avaliações e dados derivados; não foram encontrados imports, estados, callbacks, helpers ou contratos estruturais obsoletos que exigissem alteração de produção.
 - Confirmou que não houve mudança intencional de comportamento em busca, autenticação, Hero, favoritos, carrossel, estados de carregamento/vazio, summary, 18 seções, traduções, responsividade, acessibilidade, rotas, `localStorage` ou contratos Supabase.
 - Limitações locais conhecidas: Node 24 não resolve imports relativos usados por testes em módulos `data:`; e integrações/E2E dependem do Supabase CLI local. A CI Linux com Node 22 permanece a autoridade para esses fluxos.
