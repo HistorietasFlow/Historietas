@@ -21,6 +21,13 @@ const loader = readFileSync(
   ),
   "utf8",
 );
+const normalizador = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-supabase-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo.replace(
   'import type { SupabaseProfileAutorRankingRow } from "./em-alta-models";\n',
   "",
@@ -84,10 +91,10 @@ test("adicionarProfileAutorRankingNoMapa ignora chaves inválidas", () => {
   assert.equal(mapa.get("usuario"), apenasUserId);
 });
 
-test("Em Alta delega helpers de profile e o loader dedicado indexa profiles", () => {
+test("Em Alta delega helpers de profile às fronteiras corretas", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?obterAvatarProfileAutorRanking,[\s\S]*?obterNomeProfileAutorRanking,[\s\S]*?\} from "\.\/lib\/em-alta-author-profile-utils";/,
+    normalizador,
+    /import \{[\s\S]*?obterAvatarProfileAutorRanking,[\s\S]*?obterNomeProfileAutorRanking,[\s\S]*?\} from "\.\/em-alta-author-profile-utils";/,
   );
   assert.match(
     pagina,
@@ -107,6 +114,10 @@ test("Em Alta delega helpers de profile e o loader dedicado indexa profiles", ()
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
   }
   assert.doesNotMatch(pagina, /async function carregarProfilesAutoresRanking\b/);
+  assert.doesNotMatch(
+    pagina,
+    /from "\.\/lib\/em-alta-author-profile-utils"/,
+  );
 
   assert.ok(
     modulo.indexOf("const userId =") < modulo.indexOf("const id ="),

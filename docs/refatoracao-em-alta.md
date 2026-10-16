@@ -1,5 +1,10 @@
 # Refatoração de Em Alta
 
+## Fase 860 — normalização de obras Supabase
+
+- Isolou tipo de arquivo e conversão Supabase → `ObraLocal`.
+- Progresso, autor/avatar, fallbacks, arquivo e métricas foram preservados; nenhuma query Supabase foi movida ou teve comportamento alterado.
+
 ## Fase 859 — loader de profiles dos autores
 
 - Isolou as duas leituras de `profiles` dos autores do ranking.
