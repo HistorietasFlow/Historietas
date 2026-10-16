@@ -102,12 +102,6 @@ test("a fronteira preserva os ramos, os consumidores e a pureza", () => {
   assert.doesNotMatch(pagina, /function obterTemaPosicao\b/);
   assert.match(pagina, /\bcriarCardRankingStyle\b/);
   assert.doesNotMatch(pagina, /function criarCardRankingStyle\b/);
-  for (const consumidor of [
-    "criarRankingTierInlineBadgeStyle",
-    "criarAutorTierInlineBadgeStyle",
-  ]) {
-    assert.match(pagina, new RegExp(`function ${consumidor}\\b`));
-  }
   for (const proibido of [
     /react/i,
     /\buse[A-Z]\w*\b/,

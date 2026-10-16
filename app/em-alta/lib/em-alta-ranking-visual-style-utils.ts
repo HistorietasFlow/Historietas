@@ -54,6 +54,125 @@ export function criarAutorCardTitleRankingStyle(): CSSProperties {
   };
 }
 
+export const rankingHighlightBadgeInlineStyle: CSSProperties = {
+  flex: "1 1 auto",
+  minWidth: 0,
+  marginTop: 0,
+  padding: "0 12px",
+  textAlign: "center",
+};
+
+export const highlightBadgeStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  minHeight: "34px",
+  padding: "0 10px",
+  marginTop: "4px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  fontWeight: 900,
+  lineHeight: 1.12,
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "5px",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  ...safeTextStyle,
+};
+
+export const authorRankingTierBadgeStyle: CSSProperties = {
+  position: "absolute",
+  left: "6px",
+  right: "6px",
+  bottom: "6px",
+  zIndex: 3,
+  minHeight: "24px",
+  padding: "0 7px",
+  borderRadius: "999px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+  fontSize: "8px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "0.055em",
+  textTransform: "uppercase",
+  whiteSpace: "nowrap",
+  boxShadow: "0 6px 12px rgba(0,0,0,0.22)",
+  ...safeTextStyle,
+};
+
+export function criarRankingTierInlineBadgeStyle(
+  posicao: number,
+): CSSProperties {
+  const temaPosicao = obterTemaPosicao(posicao);
+
+  return {
+    ...highlightBadgeStyle,
+    ...rankingHighlightBadgeInlineStyle,
+    position: "static",
+    minHeight: "34px",
+    marginTop: 0,
+    padding: "0 12px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "5px",
+    background: temaPosicao.badgeBackground,
+    border: `1px solid ${temaPosicao.badgeBorder}`,
+    color: "#FFFFFF",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.055em",
+    lineHeight: 1,
+    textTransform: "uppercase",
+    whiteSpace: "nowrap",
+    boxShadow: "none",
+  };
+}
+
+export function criarAutorTierInlineBadgeStyle(
+  posicao: number,
+): CSSProperties {
+  const temaPosicao = obterTemaPosicao(posicao);
+
+  return {
+    ...authorRankingTierBadgeStyle,
+    position: "static",
+    left: "auto",
+    right: "auto",
+    bottom: "auto",
+    minHeight: "34px",
+    padding: "0 16px",
+    width: "fit-content",
+    maxWidth: "100%",
+    flex: "0 0 auto",
+    background: temaPosicao.badgeBackground,
+    border: `1px solid ${temaPosicao.badgeBorder}`,
+    color: "#FFFFFF",
+    boxSizing: "border-box",
+  };
+}
+
+export function criarAutorPointsBadgeStyle(): CSSProperties {
+  return {
+    ...highlightBadgeStyle,
+    marginTop: 0,
+    minHeight: "34px",
+    padding: "0 16px",
+    color: "#FFFFFF",
+    flex: "0 0 auto",
+  };
+}
+
 export const cardStyle: CSSProperties = {
   position: "relative",
   flex: "0 0 min(360px, 88vw)",
