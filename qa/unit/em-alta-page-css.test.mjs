@@ -17,6 +17,13 @@ const bridge = readFileSync(
   ),
   "utf8",
 );
+const decorations = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-page-decorations.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const rankingCard = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-ranking-card.tsx",
@@ -62,7 +69,15 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
 
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarDecoracaoPaginaStyle,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-visual-style-utils";/,
+    /import \{ EmAltaPageDecorations \} from "\.\/components\/em-alta-page-decorations";/,
+  );
+  assert.match(
+    pagina,
+    /<EmAltaPageDecorations isDesktop=\{isDesktop\} \/>/,
+  );
+  assert.match(
+    decorations,
+    /import \{[\s\S]*?criarDecoracaoPaginaStyle,[\s\S]*?\} from "\.\.\/lib\/em-alta-ranking-visual-style-utils";/,
   );
   assert.match(
     rankingCard,
