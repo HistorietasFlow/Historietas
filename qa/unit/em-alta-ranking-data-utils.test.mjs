@@ -10,6 +10,7 @@ import "./em-alta-ranking-position-theme.test.mjs";
 import "./em-alta-ranking-category-theme.test.mjs";
 import "./em-alta-author-ranking-utils.test.mjs";
 import "./em-alta-local-ranking-utils.test.mjs";
+import "./em-alta-ranking-view-utils.test.mjs";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-ranking-data-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");

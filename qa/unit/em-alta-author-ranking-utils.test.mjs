@@ -212,7 +212,15 @@ test("fronteira mantém o useMemo da página e permanece pura", () => {
   );
   assert.doesNotMatch(pagina, /type AutorRankingAcumulado/);
   assert.doesNotMatch(pagina, /const autoresPorChave = new Map/);
-  for (const memoRestante of [
+  assert.match(
+    pagina,
+    /import \{ criarVisaoRankingEmAlta \} from "\.\/lib\/em-alta-ranking-view-utils";/,
+  );
+  assert.match(
+    pagina,
+    /\} = useMemo\(\(\) => criarVisaoRankingEmAlta\(ranking\), \[ranking\]\);/,
+  );
+  for (const dadoDerivado of [
     "rankingGeral",
     "rankingMaisLidas",
     "rankingMaisCurtidas",
@@ -223,6 +231,6 @@ test("fronteira mantém o useMemo da página e permanece pura", () => {
     "rankingTemAtividadeReal",
     "rankingParaCatalogoInicial",
   ]) {
-    assert.match(pagina, new RegExp(`const ${memoRestante} = useMemo`));
+    assert.match(pagina, new RegExp(`\\b${dadoDerivado}\\b`));
   }
 });

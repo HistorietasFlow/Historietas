@@ -18,8 +18,6 @@ import {
   adicionarRankingObraNaLista,
   listaTemRankingObra,
   normalizarListaIdsEmAlta,
-  pegarTopRanking,
-  rankingTemInteracaoReal,
   removerRankingObraDaLista,
 } from "./lib/em-alta-ranking-list-utils";
 import {
@@ -40,6 +38,7 @@ import {
 } from "./lib/em-alta-route-utils";
 import { calcularRankingAutores } from "./lib/em-alta-author-ranking-utils";
 import { calcularRankingObrasLocais } from "./lib/em-alta-local-ranking-utils";
+import { criarVisaoRankingEmAlta } from "./lib/em-alta-ranking-view-utils";
 import {
   normalizarAvaliacoesLocaisRanking,
   normalizarVisualizacoesRanking,
@@ -249,51 +248,20 @@ export default function EmAltaPage() {
     [ranking],
   );
 
+  const {
+    rankingGeral,
+    rankingMaisLidas,
+    rankingMaisCurtidas,
+    rankingMaisComentadas,
+    rankingMaisSalvas,
+    rankingMaisRecentes,
+    rankingMaisCapitulos,
+    rankingTemAtividadeReal,
+    rankingParaCatalogoInicial,
+  } = useMemo(() => criarVisaoRankingEmAlta(ranking), [ranking]);
+
   const obrasFavoritasProtegidas = usuarioLogado ? obrasFavoritas : [];
   const obrasConcluidasProtegidas = usuarioLogado ? obrasConcluidas : [];
-
-  const rankingGeral = useMemo(
-    () => pegarTopRanking(ranking, "geral"),
-    [ranking],
-  );
-
-  const rankingMaisLidas = useMemo(
-    () => pegarTopRanking(ranking, "lidas"),
-    [ranking],
-  );
-
-  const rankingMaisCurtidas = useMemo(
-    () => pegarTopRanking(ranking, "curtidas"),
-    [ranking],
-  );
-
-  const rankingMaisComentadas = useMemo(
-    () => pegarTopRanking(ranking, "comentadas"),
-    [ranking],
-  );
-
-  const rankingMaisSalvas = useMemo(
-    () => pegarTopRanking(ranking, "salvas"),
-    [ranking],
-  );
-
-  const rankingMaisRecentes = useMemo(
-    () => pegarTopRanking(ranking, "recentes"),
-    [ranking],
-  );
-
-  const rankingMaisCapitulos = useMemo(
-    () => pegarTopRanking(ranking, "capitulos"),
-    [ranking],
-  );
-
-  const rankingTemAtividadeReal = useMemo(() => {
-    return ranking.some((obra) => rankingTemInteracaoReal(obra));
-  }, [ranking]);
-
-  const rankingParaCatalogoInicial = useMemo(() => {
-    return rankingMaisRecentes.length > 0 ? rankingMaisRecentes : rankingGeral;
-  }, [rankingGeral, rankingMaisRecentes]);
 
   const tituloCabecalho = carregandoRanking
     ? "ISTORIETAS"
