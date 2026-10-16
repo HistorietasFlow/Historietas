@@ -11,7 +11,6 @@ import {
 } from "../../lib/historietasTheme";
 import {
   criarSlugBase,
-  idObraSupabaseValido,
   normalizarTexto,
 } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
@@ -58,6 +57,11 @@ import { carregarIdsColecaoUsuarioSupabaseEmAlta } from "./lib/em-alta-collectio
 import { sincronizarColecaoRankingSupabase } from "./lib/em-alta-collection-supabase-sync";
 import { registrarColecaoRankingNoDiario } from "./lib/em-alta-diary-activity";
 import {
+  criarHrefLeituraCapitulo,
+  criarLinkPerfilAutorRanking,
+  criarLoginHrefEmAlta,
+} from "./lib/em-alta-route-utils";
+import {
   calcularCapitulosLidos,
   calcularProgressoLeitura,
   formatarDataRanking,
@@ -71,64 +75,6 @@ import {
 } from "./lib/em-alta-ranking-data-utils";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
-
-function criarLoginHrefEmAlta() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/em-alta";
-  const destinoSeguro =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/em-alta";
-  const params = new URLSearchParams({
-    redirectTo: destinoSeguro,
-  });
-
-  return `/login?${params.toString()}`;
-}
-
-function criarHrefLeituraCapitulo(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
-  capitulo: CapituloLocal,
-  numeroCapitulo: number,
-) {
-  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  if (
-    obra.publicado &&
-    idObraSupabaseValido(obra.id) &&
-    slugSeguro &&
-    Number.isInteger(numeroCapitulo) &&
-    numeroCapitulo > 0
-  ) {
-    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
-  }
-
-  return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id,
-  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
-}
-
-function criarLinkPerfilAutorRanking(nomeAutor: string, autorId?: string) {
-  const params = new URLSearchParams();
-  const nomeAutorLimpo = nomeAutor.trim();
-
-  if (nomeAutorLimpo) {
-    params.set("autor", nomeAutorLimpo);
-  }
-
-  const autorIdLimpo = autorId?.trim();
-
-  if (autorIdLimpo) {
-    params.set("autorId", autorIdLimpo);
-    params.set("userId", autorIdLimpo);
-  }
-
-  const query = params.toString();
-
-  return query ? `/perfil-autor?${query}` : "/perfil-autor";
-}
 
 function obterNomeProfileAutorRanking(
   profile?: SupabaseProfileAutorRankingRow | null,

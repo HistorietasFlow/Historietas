@@ -1,5 +1,10 @@
 # Refatoração de Em Alta
 
+## Fase 857 — rotas e navegação
+
+- Extraiu login redirect, leitura de capítulo e perfil de autor para helpers puros.
+- Encoding, validações e fallbacks foram preservados, sem alteração intencional de navegação ou comportamento.
+
 ## Fase 856 — métricas e formatação
 
 - Extraiu normalizadores de views e avaliações, formatação de números/data/gênero e cálculo de progresso de leitura.
