@@ -174,6 +174,101 @@ test("preserva as bases e helpers dos badges do ranking", () => {
   });
 });
 
+test("preserva os shells, setas e trilhos dos carrosséis", () => {
+  assert.deepEqual(estilos.carouselShellStyle, {
+    position: "relative",
+    minWidth: 0,
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    overflow: "visible",
+  });
+  assert.deepEqual(estilos.desktopCarouselShellStyle, {
+    ...estilos.carouselShellStyle,
+    width: "100%",
+    maxWidth: "100%",
+    marginLeft: 0,
+    marginRight: 0,
+    overflow: "visible",
+    marginTop: "0",
+  });
+  assert.deepEqual(estilos.carouselArrowButtonStyle, {
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+    zIndex: 8,
+    width: "52px",
+    height: "96px",
+    padding: 0,
+    borderRadius: 0,
+    border: "none",
+    background: "transparent",
+    color: "#FFFFFF",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "none",
+    outline: "none",
+    WebkitTapHighlightColor: "transparent",
+    touchAction: "manipulation",
+  });
+  assert.deepEqual(estilos.carouselArrowIconStyle, {
+    display: "block",
+    width: "18px",
+    height: "18px",
+    borderTop: "4px solid #FFFFFF",
+    borderRight: "4px solid #FFFFFF",
+    filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.92))",
+    pointerEvents: "none",
+    boxSizing: "border-box",
+  });
+  assert.deepEqual(estilos.carouselArrowLeftIconStyle, {
+    ...estilos.carouselArrowIconStyle,
+    transform: "rotate(-135deg)",
+  });
+  assert.deepEqual(estilos.carouselArrowRightIconStyle, {
+    ...estilos.carouselArrowIconStyle,
+    transform: "rotate(45deg)",
+  });
+  assert.deepEqual(estilos.carouselArrowLeftStyle, {
+    ...estilos.carouselArrowButtonStyle,
+    left: "-10px",
+  });
+  assert.deepEqual(estilos.carouselArrowRightStyle, {
+    ...estilos.carouselArrowButtonStyle,
+    right: "-10px",
+  });
+  assert.deepEqual(estilos.carouselStyle, {
+    display: "flex",
+    alignItems: "stretch",
+    gap: "16px",
+    width: "calc(100% + 24px)",
+    maxWidth: "calc(100% + 24px)",
+    minWidth: 0,
+    boxSizing: "border-box",
+    overflowX: "auto",
+    overflowY: "hidden",
+    padding: "4px 12px 22px",
+    margin: "0 -12px",
+    scrollSnapType: "x mandatory",
+    scrollPaddingLeft: "12px",
+    scrollPaddingRight: "12px",
+    scrollbarWidth: "none",
+    overscrollBehaviorX: "contain",
+  });
+  assert.deepEqual(estilos.desktopCarouselStyle, {
+    ...estilos.carouselStyle,
+    gap: "22px",
+    width: "calc(100% + 24px)",
+    maxWidth: "calc(100% + 24px)",
+    padding: "8px 12px 30px",
+    margin: "0 -12px",
+    scrollPaddingLeft: "12px",
+    scrollPaddingRight: "12px",
+  });
+});
+
 test("preserva a base visual da capa mobile e desktop", () => {
   assert.equal(estilos.coverStyle.minHeight, "122px");
   assert.equal(estilos.coverStyle.borderRadius, "16px");
@@ -356,6 +451,16 @@ test("a página delega toda a fronteira visual", () => {
     "criarRankingTierInlineBadgeStyle",
     "criarAutorTierInlineBadgeStyle",
     "criarAutorPointsBadgeStyle",
+    "carouselShellStyle",
+    "desktopCarouselShellStyle",
+    "carouselArrowButtonStyle",
+    "carouselArrowIconStyle",
+    "carouselArrowLeftIconStyle",
+    "carouselArrowRightIconStyle",
+    "carouselArrowLeftStyle",
+    "carouselArrowRightStyle",
+    "carouselStyle",
+    "desktopCarouselStyle",
     "criarRankingCoverStyle",
     "criarAutorAvatarRankingStyle",
     "criarDecoracaoPaginaStyle",
@@ -372,6 +477,14 @@ test("a página delega toda a fronteira visual", () => {
     "criarRankingTierInlineBadgeStyle",
     "criarAutorTierInlineBadgeStyle",
     "criarAutorPointsBadgeStyle",
+    "carouselShellStyle",
+    "desktopCarouselShellStyle",
+    "carouselArrowLeftIconStyle",
+    "carouselArrowRightIconStyle",
+    "carouselArrowLeftStyle",
+    "carouselArrowRightStyle",
+    "carouselStyle",
+    "desktopCarouselStyle",
     "criarDecoracaoPaginaStyle",
   ]) {
     assert.match(pagina, new RegExp(`\\b${nome}\\b`));
@@ -406,6 +519,42 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /function criarRankingTierInlineBadgeStyle\b/);
   assert.doesNotMatch(pagina, /function criarAutorTierInlineBadgeStyle\b/);
   assert.doesNotMatch(pagina, /function criarAutorPointsBadgeStyle\b/);
+  assert.doesNotMatch(pagina, /const carouselShellStyle: CSSProperties = \{/);
+  assert.doesNotMatch(
+    pagina,
+    /const desktopCarouselShellStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const carouselArrowButtonStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const carouselArrowIconStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const carouselArrowLeftIconStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const carouselArrowRightIconStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const carouselArrowLeftStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const carouselArrowRightStyle: CSSProperties = \{/,
+  );
+  assert.doesNotMatch(pagina, /const carouselStyle: CSSProperties = \{/);
+  assert.doesNotMatch(
+    pagina,
+    /const desktopCarouselStyle: CSSProperties = \{/,
+  );
+  assert.match(pagina, /function RankingSection\b/);
+  assert.match(pagina, /function AutoresEmAltaSection\b/);
   assert.ok((pagina.match(/\.\.\.safeTextStyle/g) || []).length > 0);
   assert.match(
     modulo,

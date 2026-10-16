@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 869 — estilos dos carrosséis
+
+- Isolou shell, setas, ícones e trilhos mobile/desktop dos carrosséis.
+- Preservou dimensões, offsets, scroll snap e comportamento visual.
+- Nenhuma lógica de rolagem ou JSX foi alterada.
+
 ## Fase 868 — badges visuais do ranking
 
 - Moveu os estilos-base dos badges para a fronteira visual do ranking.

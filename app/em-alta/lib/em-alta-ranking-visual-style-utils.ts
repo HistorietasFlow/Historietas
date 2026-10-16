@@ -173,6 +173,108 @@ export function criarAutorPointsBadgeStyle(): CSSProperties {
   };
 }
 
+export const carouselShellStyle: CSSProperties = {
+  position: "relative",
+  minWidth: 0,
+  width: "100%",
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "visible",
+};
+
+export const desktopCarouselShellStyle: CSSProperties = {
+  ...carouselShellStyle,
+  width: "100%",
+  maxWidth: "100%",
+  marginLeft: 0,
+  marginRight: 0,
+  overflow: "visible",
+  marginTop: "0",
+};
+
+export const carouselArrowButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  zIndex: 8,
+  width: "52px",
+  height: "96px",
+  padding: 0,
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  boxShadow: "none",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+  touchAction: "manipulation",
+};
+
+export const carouselArrowIconStyle: CSSProperties = {
+  display: "block",
+  width: "18px",
+  height: "18px",
+  borderTop: "4px solid #FFFFFF",
+  borderRight: "4px solid #FFFFFF",
+  filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.92))",
+  pointerEvents: "none",
+  boxSizing: "border-box",
+};
+
+export const carouselArrowLeftIconStyle: CSSProperties = {
+  ...carouselArrowIconStyle,
+  transform: "rotate(-135deg)",
+};
+
+export const carouselArrowRightIconStyle: CSSProperties = {
+  ...carouselArrowIconStyle,
+  transform: "rotate(45deg)",
+};
+
+export const carouselArrowLeftStyle: CSSProperties = {
+  ...carouselArrowButtonStyle,
+  left: "-10px",
+};
+
+export const carouselArrowRightStyle: CSSProperties = {
+  ...carouselArrowButtonStyle,
+  right: "-10px",
+};
+
+export const carouselStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "stretch",
+  gap: "16px",
+  width: "calc(100% + 24px)",
+  maxWidth: "calc(100% + 24px)",
+  minWidth: 0,
+  boxSizing: "border-box",
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: "4px 12px 22px",
+  margin: "0 -12px",
+  scrollSnapType: "x mandatory",
+  scrollPaddingLeft: "12px",
+  scrollPaddingRight: "12px",
+  scrollbarWidth: "none",
+  overscrollBehaviorX: "contain",
+};
+
+export const desktopCarouselStyle: CSSProperties = {
+  ...carouselStyle,
+  gap: "22px",
+  width: "calc(100% + 24px)",
+  maxWidth: "calc(100% + 24px)",
+  padding: "8px 12px 30px",
+  margin: "0 -12px",
+  scrollPaddingLeft: "12px",
+  scrollPaddingRight: "12px",
+};
+
 export const cardStyle: CSSProperties = {
   position: "relative",
   flex: "0 0 min(360px, 88vw)",
