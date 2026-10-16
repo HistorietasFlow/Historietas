@@ -100,8 +100,9 @@ test("a fronteira preserva os ramos, os consumidores e a pureza", () => {
   assert.match(modulo, /return \{\r?\n    nome: "Bronze"/);
   assert.match(pagina, /from "\.\/lib\/em-alta-ranking-position-theme";/);
   assert.doesNotMatch(pagina, /function obterTemaPosicao\b/);
+  assert.match(pagina, /\bcriarCardRankingStyle\b/);
+  assert.doesNotMatch(pagina, /function criarCardRankingStyle\b/);
   for (const consumidor of [
-    "criarCardRankingStyle",
     "criarRankingTierInlineBadgeStyle",
     "criarObraCardTitleRankingStyle",
     "criarAutorTierInlineBadgeStyle",
