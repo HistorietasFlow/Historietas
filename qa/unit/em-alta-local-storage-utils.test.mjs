@@ -21,6 +21,13 @@ const normalizadorObrasSupabase = readFileSync(
   ),
   "utf8",
 );
+const loaderObrasSupabase = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-supabase-works-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(
     'import { normalizarTexto } from "../../../lib/utils";',
@@ -267,7 +274,6 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
   assert.ok(importacao);
 
   for (const nome of [
-    "carregarAvataresAutoresLocaisEmAlta",
     "carregarListaIdsLocalEmAlta",
     "criarStorageKeyUsuarioEmAlta",
     "salvarListaIdsLocalEmAlta",
@@ -281,7 +287,11 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
 
   assert.match(
     pagina,
-    /import \{[\s\S]*?carregarAvataresAutoresLocaisEmAlta,[\s\S]*?carregarListaIdsLocalEmAlta,[\s\S]*?salvarListaIdsLocalEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-local-storage-utils";/,
+    /import \{[\s\S]*?carregarListaIdsLocalEmAlta,[\s\S]*?salvarListaIdsLocalEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-local-storage-utils";/,
+  );
+  assert.match(
+    loaderObrasSupabase,
+    /import \{ carregarAvataresAutoresLocaisEmAlta \} from "\.\/em-alta-local-storage-utils";/,
   );
   assert.match(
     normalizadorObrasSupabase,
