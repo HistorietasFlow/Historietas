@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 863 — estilos visuais do ranking
+
+- Bases de capa mobile/desktop foram extraídas.
+- Estilo dinâmico da capa e decoração da página foram isolados.
+- Valores CSS e comportamento visual foram preservados; nenhuma lógica de ranking, estado ou dados foi alterada.
+
 ## Fase 862 — continuação de leitura
 
 - Moveu a seleção do próximo capítulo para os helpers de dados do ranking.
