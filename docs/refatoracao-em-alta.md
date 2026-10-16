@@ -213,3 +213,9 @@
 - Isolou os tops por categoria, a detecção de atividade e o fallback do catálogo inicial em um helper puro.
 - O `useMemo` da página continua dependente apenas de `ranking`.
 - Nenhuma query, mutação, estado, JSX ou comportamento visual foi alterado.
+
+## Fase 881 — composição das seções do ranking
+
+- Moveu a composição de autores, categorias, catálogo inicial e estado vazio para um componente de apresentação dedicado.
+- As props, a ordem das seções, textos, callbacks e estados visuais foram preservados literalmente.
+- Supabase, autenticação, efeitos, estados e mutações permaneceram na página.

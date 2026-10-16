@@ -114,7 +114,7 @@ test("a fronteira preserva os ramos, os consumidores e a pureza", () => {
   assert.match(modulo, /return \{\r?\n    nome: "Bronze"/);
   assert.match(
     pagina,
-    /import \{ RankingSection \} from "\.\/components\/em-alta-ranking-section";/,
+    /import \{ EmAltaRankingContent \} from "\.\/components\/em-alta-ranking-content";/,
   );
   assert.match(
     rankingSection,

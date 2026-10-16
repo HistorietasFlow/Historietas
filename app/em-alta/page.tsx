@@ -60,8 +60,7 @@ import {
   containerStyle,
   titleHeaderStyle,
 } from "./lib/em-alta-ranking-visual-style-utils";
-import { RankingSection } from "./components/em-alta-ranking-section";
-import { AutoresEmAltaSection } from "./components/em-alta-authors-ranking-section";
+import { EmAltaRankingContent } from "./components/em-alta-ranking-content";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
 
@@ -447,140 +446,24 @@ export default function EmAltaPage() {
 
         </header>
 
-        {!carregandoRanking && ranking.length > 0 && rankingTemAtividadeReal && (
-          <>
-            <AutoresEmAltaSection
-              autores={rankingAutores}
-              isDesktop={isDesktop}
-            />
-
-            <RankingSection
-              titulo="Ranking Mestre"
-              descricao=""
-              obras={rankingGeral}
-              tipo="geral"
-              obrasFavoritas={obrasFavoritasProtegidas}
-              obrasConcluidas={obrasConcluidasProtegidas}
-              onAlternarFavorito={alternarFavorito}
-              onAlternarConcluido={alternarConcluido}
-              isDesktop={isDesktop}
-            />
-
-            <RankingSection
-              titulo="Alcance Dominante"
-              descricao="As histórias que mais chamaram atenção dos leitores."
-              obras={rankingMaisLidas}
-              tipo="lidas"
-              obrasFavoritas={obrasFavoritasProtegidas}
-              obrasConcluidas={obrasConcluidasProtegidas}
-              onAlternarFavorito={alternarFavorito}
-              onAlternarConcluido={alternarConcluido}
-              isDesktop={isDesktop}
-            />
-
-            <RankingSection
-              titulo="Preferidas do Público"
-              descricao="As obras que mais receberam curtidas e reações positivas."
-              obras={rankingMaisCurtidas}
-              tipo="curtidas"
-              obrasFavoritas={obrasFavoritasProtegidas}
-              obrasConcluidas={obrasConcluidasProtegidas}
-              onAlternarFavorito={alternarFavorito}
-              onAlternarConcluido={alternarConcluido}
-              isDesktop={isDesktop}
-            />
-
-            <RankingSection
-              titulo="Mais Comentadas"
-              descricao="As histórias que mais puxaram conversa entre os leitores."
-              obras={rankingMaisComentadas}
-              tipo="comentadas"
-              obrasFavoritas={obrasFavoritasProtegidas}
-              obrasConcluidas={obrasConcluidasProtegidas}
-              onAlternarFavorito={alternarFavorito}
-              onAlternarConcluido={alternarConcluido}
-              isDesktop={isDesktop}
-            />
-
-            <RankingSection
-              titulo="Mais Seguidas"
-              descricao="Obras que mais leitores decidiram acompanhar."
-              obras={rankingMaisSalvas}
-              tipo="salvas"
-              obrasFavoritas={obrasFavoritasProtegidas}
-              obrasConcluidas={obrasConcluidasProtegidas}
-              onAlternarFavorito={alternarFavorito}
-              onAlternarConcluido={alternarConcluido}
-              isDesktop={isDesktop}
-            />
-
-            <RankingSection
-              titulo="Novas Promessas"
-              descricao="Publicações recentes começando a aparecer no radar."
-              obras={rankingMaisRecentes}
-              tipo="recentes"
-              obrasFavoritas={obrasFavoritasProtegidas}
-              obrasConcluidas={obrasConcluidasProtegidas}
-              onAlternarFavorito={alternarFavorito}
-              onAlternarConcluido={alternarConcluido}
-              isDesktop={isDesktop}
-            />
-
-            <RankingSection
-              titulo="Grandes Jornadas"
-              descricao="Histórias com mais capítulos e conteúdo publicado."
-              obras={rankingMaisCapitulos}
-              tipo="capitulos"
-              obrasFavoritas={obrasFavoritasProtegidas}
-              obrasConcluidas={obrasConcluidasProtegidas}
-              onAlternarFavorito={alternarFavorito}
-              onAlternarConcluido={alternarConcluido}
-              isDesktop={isDesktop}
-            />
-          </>
-        )}
-
-        {!carregandoRanking && ranking.length > 0 && !rankingTemAtividadeReal && (
-          <>
-            <p
-              style={{
-                margin: "10px 0 18px",
-                color: "#FFFFFF",
-                fontSize: "12px",
-                fontWeight: 800,
-                textAlign: "center",
-              }}
-            >
-              Catálogo em formação
-            </p>
-
-            <RankingSection
-              titulo="Obras publicadas"
-              descricao="Catálogo inicial com obras publicadas no HISTORIETAS."
-              obras={rankingParaCatalogoInicial}
-              tipo="recentes"
-              obrasFavoritas={obrasFavoritasProtegidas}
-              obrasConcluidas={obrasConcluidasProtegidas}
-              onAlternarFavorito={alternarFavorito}
-              onAlternarConcluido={alternarConcluido}
-              isDesktop={isDesktop}
-            />
-          </>
-        )}
-
-        {!carregandoRanking && ranking.length === 0 && (
-          <p
-            style={{
-              margin: "10px 0 0",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              fontWeight: 800,
-              textAlign: "center",
-            }}
-          >
-            Ainda não há obras publicadas
-          </p>
-        )}
+        <EmAltaRankingContent
+          ranking={ranking}
+          rankingTemAtividadeReal={rankingTemAtividadeReal}
+          rankingAutores={rankingAutores}
+          rankingGeral={rankingGeral}
+          rankingMaisLidas={rankingMaisLidas}
+          rankingMaisCurtidas={rankingMaisCurtidas}
+          rankingMaisComentadas={rankingMaisComentadas}
+          rankingMaisSalvas={rankingMaisSalvas}
+          rankingMaisRecentes={rankingMaisRecentes}
+          rankingMaisCapitulos={rankingMaisCapitulos}
+          rankingParaCatalogoInicial={rankingParaCatalogoInicial}
+          obrasFavoritas={obrasFavoritasProtegidas}
+          obrasConcluidas={obrasConcluidasProtegidas}
+          onAlternarFavorito={alternarFavorito}
+          onAlternarConcluido={alternarConcluido}
+          isDesktop={isDesktop}
+        />
       </section>
     </main>
   );

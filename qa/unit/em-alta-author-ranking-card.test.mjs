@@ -67,7 +67,7 @@ test("AutorRankingCard preserva apresentação, navegação e acessibilidade", (
 test("AutoresEmAltaSection delega AutorRankingCard sem manter sua implementação local", () => {
   assert.match(
     pagina,
-    /import \{ AutoresEmAltaSection \} from "\.\/components\/em-alta-authors-ranking-section";/,
+    /import \{ EmAltaRankingContent \} from "\.\/components\/em-alta-ranking-content";/,
   );
   assert.doesNotMatch(pagina, /function AutorRankingCard\(/);
   assert.doesNotMatch(pagina, /function AutoresEmAltaSection\b/);
