@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const loader = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-author-profile-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo.replace(
   'import type { SupabaseProfileAutorRankingRow } from "./em-alta-models";\n',
   "",
@@ -77,14 +84,17 @@ test("adicionarProfileAutorRankingNoMapa ignora chaves inválidas", () => {
   assert.equal(mapa.get("usuario"), apenasUserId);
 });
 
-test("Em Alta delega helpers de profile e mantém o loader local", () => {
+test("Em Alta delega helpers de profile e o loader dedicado indexa profiles", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?adicionarProfileAutorRankingNoMapa,[\s\S]*?obterAvatarProfileAutorRanking,[\s\S]*?obterNomeProfileAutorRanking,[\s\S]*?\} from "\.\/lib\/em-alta-author-profile-utils";/,
+    /import \{[\s\S]*?obterAvatarProfileAutorRanking,[\s\S]*?obterNomeProfileAutorRanking,[\s\S]*?\} from "\.\/lib\/em-alta-author-profile-utils";/,
   );
-  assert.match(pagina, /async function carregarProfilesAutoresRanking\(/);
   assert.match(
     pagina,
+    /import \{ carregarProfilesAutoresRanking \} from "\.\/lib\/em-alta-author-profile-loader";/,
+  );
+  assert.match(
+    loader,
     /adicionarProfileAutorRankingNoMapa\(profilesPorUsuario, profile\)/,
   );
 
@@ -96,6 +106,7 @@ test("Em Alta delega helpers de profile e mantém o loader local", () => {
     assert.match(modulo, new RegExp(`export function ${nome}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
   }
+  assert.doesNotMatch(pagina, /async function carregarProfilesAutoresRanking\b/);
 
   assert.ok(
     modulo.indexOf("const userId =") < modulo.indexOf("const id ="),

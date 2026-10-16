@@ -1,5 +1,10 @@
 # Refatoração de Em Alta
 
+## Fase 859 — loader de profiles dos autores
+
+- Isolou as duas leituras de `profiles` dos autores do ranking.
+- As consultas por `user_id` e `id`, ordem, limite e warnings foram preservados; nenhuma escrita Supabase ou comportamento foi alterado.
+
 ## Fase 858 — helpers de perfil dos autores
 
 - Extraiu leitura de nome/avatar e indexação dos profiles para helpers puros.
