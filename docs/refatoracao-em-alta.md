@@ -1,5 +1,12 @@
 # Refatoração de Em Alta
 
+## Fase 850 — language bridge
+
+- Moveu o bridge de tradução dinâmica para componente dedicado.
+- Preservou literalmente o `MutationObserver` e seu cleanup.
+- Manteve os dois consumidores na página.
+- Nenhuma mudança intencional de comportamento foi introduzida.
+
 ## Fase 849 — traduções puras
 
 - Extraiu o mapa e os helpers puros de tradução para `app/em-alta/lib/em-alta-translations.ts`.

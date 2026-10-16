@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const bridge = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-language-bridge.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useEmAltaDesktopMode preserva o lifecycle responsivo com timer", () => {
   assert.match(hook, /^"use client";/);
@@ -71,7 +78,12 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
   assert.match(pagina, /async function carregarRanking\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /localStorage\.getItem/);
-  assert.match(pagina, /function EmAltaLanguageBridge\(\)/);
+  assert.match(
+    pagina,
+    /import \{ EmAltaLanguageBridge \} from "\.\/components\/em-alta-language-bridge";/,
+  );
+  assert.doesNotMatch(pagina, /function EmAltaLanguageBridge\(\)/);
+  assert.match(bridge, /export function EmAltaLanguageBridge\(\)/);
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/em-alta-loading-spinner";/,
