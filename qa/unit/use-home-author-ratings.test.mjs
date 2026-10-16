@@ -8,6 +8,10 @@ const hook = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url), "utf8");
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);
 const cardAutor = readFileSync(
   new URL("../../components/HomeAuthorCard.tsx", import.meta.url),
   "utf8",
@@ -95,8 +99,9 @@ test("Home delegates only author ratings to the hook", () => {
   assert.match(formatadores, /export function formatarMediaAvaliacaoAutorHome\(/);
   assert.match(
     pagina,
-    /avaliacao=\{avaliacoesAutoresHome\[autor\.autorId\]\}/,
+    /avaliacoesAutoresHome=\{avaliacoesAutoresHome\}/,
   );
+  assert.match(secoes, /avaliacao=\{avaliacoesAutoresHome\[autor\.autorId\]\}/);
   assert.doesNotMatch(pagina, /carregarMetricasConteudos/);
   assert.match(
     obrasLoader,

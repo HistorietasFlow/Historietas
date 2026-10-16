@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/page.tsx", import.meta.url),
   "utf8",
 );
+const secoes = readFileSync(
+  new URL("../../components/HomeContentSections.tsx", import.meta.url),
+  "utf8",
+);
 
 test("useHomeDesktopMode preserva o lifecycle responsivo da Home", () => {
   assert.match(hook, /^"use client";/);
@@ -51,6 +55,8 @@ test("Home delega apenas o modo desktop e preserva consumidores responsivos", ()
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
   assert.match(pagina, /<HomeHeader\s+isDesktop=\{isDesktop\}/);
-  assert.match(pagina, /<HomeCarouselRow isDesktop=\{isDesktop\}>/);
-  assert.match(pagina, /isDesktop \? desktopSectionStyle : sectionStyle/);
+  assert.match(pagina, /<HomeContentSections\s+isDesktop=\{isDesktop\}/);
+  assert.match(secoes, /<HomeCarouselRow isDesktop=\{isDesktop\}>/);
+  assert.match(secoes, /isDesktop \? desktopSectionStyle : sectionStyle/);
+  assert.match(secoes, /isDesktop \? desktopLastSectionStyle : lastSectionStyle/);
 });
