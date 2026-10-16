@@ -19,7 +19,6 @@ import { carregarMetricasConteudos } from "../../lib/metricas";
 import { listarSelecaoCatalogo } from "../../lib/catalogo";
 import {
   carregarTodasPaginasPorLotesSupabase,
-  carregarTodasPaginasSupabase,
 } from "../../lib/supabase/paginacao.mjs";
 import { useEmAltaDesktopMode } from "./hooks/use-em-alta-desktop-mode";
 import { emAltaPageCss } from "./lib/em-alta-page-css";
@@ -55,52 +54,9 @@ import {
   salvarListaIdsLocalEmAlta,
   VIEWED_WORKS_STORAGE_KEY,
 } from "./lib/em-alta-local-storage-utils";
+import { carregarIdsColecaoUsuarioSupabaseEmAlta } from "./lib/em-alta-collection-supabase-loader";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
-
-async function carregarIdsColecaoUsuarioSupabaseEmAlta(
-  tabela: "favoritos" | "concluidas",
-  userId: string,
-) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [] as string[];
-  }
-
-  try {
-    const data = await carregarTodasPaginasSupabase<{ obra_id: string }>({
-      nomeColecao: `${tabela} do Em Alta`,
-      buscarPagina: async (inicio, fim) =>
-        supabase
-          .from(tabela)
-          .select("obra_id")
-          .eq("user_id", userIdLimpo)
-          .order("obra_id", { ascending: true })
-          .range(inicio, fim),
-    });
-
-    return normalizarListaIdsEmAlta(
-      data.map((registro) => {
-        if (
-          !registro ||
-          typeof registro !== "object" ||
-          Array.isArray(registro)
-        ) {
-          return "";
-        }
-
-        const obraId = (registro as Record<string, unknown>).obra_id;
-
-        return typeof obraId === "string" ? obraId : "";
-      }),
-    );
-  } catch (error) {
-    console.warn(`Não consegui acessar ${tabela} no Em Alta:`, error);
-    return [] as string[];
-  }
-}
-
 
 async function sincronizarColecaoRankingSupabase(
   tabela: "favoritos" | "concluidas",
