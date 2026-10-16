@@ -81,17 +81,17 @@ test("traduções puras preservam mensagens dinâmicas, datas e whitespace", () 
   assert.equal(traduzirTextoEmAlta("Texto desconhecido", "es"), "Texto desconhecido");
 });
 
-test("Em Alta delega as traduções e preserva o bridge local", () => {
+test("Em Alta delega as traduções e o bridge às fronteiras dedicadas", () => {
   assert.match(
     pagina,
-    /import \{ traduzirTextoEmAlta \} from "\.\/lib\/em-alta-translations";/,
+    /import \{ EmAltaLanguageBridge \} from "\.\/components\/em-alta-language-bridge";/,
   );
   assert.doesNotMatch(pagina, /type TraducaoEmAlta = \{/);
   assert.doesNotMatch(pagina, /const EM_ALTA_UI_TRANSLATIONS/);
   assert.doesNotMatch(pagina, /function traduzirDataEmAlta\(/);
   assert.doesNotMatch(pagina, /function traduzirTextoEmAlta\(/);
-  assert.match(pagina, /function EmAltaLanguageBridge\(\)/);
-  assert.match(pagina, /traduzirTextoEmAlta\(estado\.original, language\)/);
+  assert.doesNotMatch(pagina, /function EmAltaLanguageBridge\(\)/);
+  assert.doesNotMatch(pagina, /traduzirTextoEmAlta/);
 });
 
 test("módulo de traduções permanece puro e sem runtime de UI ou persistência", () => {
