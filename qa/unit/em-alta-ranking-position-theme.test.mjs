@@ -19,6 +19,13 @@ const rankingCard = readFileSync(
   ),
   "utf8",
 );
+const rankingSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const js = typescript.transpileModule(modulo, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -107,7 +114,11 @@ test("a fronteira preserva os ramos, os consumidores e a pureza", () => {
   assert.match(modulo, /return \{\r?\n    nome: "Bronze"/);
   assert.match(
     pagina,
-    /import \{ RankingCard \} from "\.\/components\/em-alta-ranking-card";/,
+    /import \{ RankingSection \} from "\.\/components\/em-alta-ranking-section";/,
+  );
+  assert.match(
+    rankingSection,
+    /import \{ RankingCard \} from "\.\/em-alta-ranking-card";/,
   );
   assert.doesNotMatch(pagina, /function obterTemaPosicao\b/);
   assert.match(

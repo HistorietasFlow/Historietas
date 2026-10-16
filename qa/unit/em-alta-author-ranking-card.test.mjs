@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const authorsSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-authors-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("AutorRankingCard preserva apresentação, navegação e acessibilidade", () => {
   assert.match(componente, /^"use client";/);
@@ -57,17 +64,18 @@ test("AutorRankingCard preserva apresentação, navegação e acessibilidade", (
   }
 });
 
-test("Em Alta delega AutorRankingCard sem mover sua seção de autores", () => {
+test("AutoresEmAltaSection delega AutorRankingCard sem manter sua implementação local", () => {
   assert.match(
     pagina,
-    /import \{ AutorRankingCard \} from "\.\/components\/em-alta-author-ranking-card";/,
+    /import \{ AutoresEmAltaSection \} from "\.\/components\/em-alta-authors-ranking-section";/,
   );
   assert.doesNotMatch(pagina, /function AutorRankingCard\(/);
-  assert.match(pagina, /function AutoresEmAltaSection\b/);
+  assert.doesNotMatch(pagina, /function AutoresEmAltaSection\b/);
   assert.match(
-    pagina,
-    /<AutorRankingCard[\s\S]*?autor=\{autor\}[\s\S]*?posicao=\{posicao\}[\s\S]*?isDesktop=\{isDesktop\}/,
+    authorsSection,
+    /import \{ AutorRankingCard \} from "\.\/em-alta-author-ranking-card";/,
   );
+  assert.match(authorsSection, /<AutorRankingCard[\s\S]*?autor=\{autor\}[\s\S]*?posicao=\{posicao\}[\s\S]*?isDesktop=\{isDesktop\}/);
 });
 
 test("AutorRankingCard permanece sem dados, sessão ou efeitos", () => {

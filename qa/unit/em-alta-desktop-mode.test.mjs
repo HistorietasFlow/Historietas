@@ -34,6 +34,20 @@ const rankingCard = readFileSync(
   ),
   "utf8",
 );
+const rankingSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const authorsSection = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-authors-ranking-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useEmAltaDesktopMode preserva o lifecycle responsivo com timer", () => {
   assert.match(hook, /^"use client";/);
@@ -87,7 +101,9 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
   assert.doesNotMatch(pagina, /atualizarModoDesktopTimer/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 52);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 26);
+  assert.equal((rankingSection.match(/\bisDesktop\b/g) || []).length, 13);
+  assert.equal((authorsSection.match(/\bisDesktop\b/g) || []).length, 13);
   assert.equal((autorRankingCard.match(/\bisDesktop\b/g) || []).length, 5);
   assert.equal((rankingCard.match(/\bisDesktop\b/g) || []).length, 7);
 
@@ -105,6 +121,14 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
     /import \{ LoadingSpinner \} from "\.\/components\/em-alta-loading-spinner";/,
   );
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
-  assert.match(pagina, /function RankingSection\(/);
-  assert.match(pagina, /function AutoresEmAltaSection\(/);
+  assert.match(
+    pagina,
+    /import \{ RankingSection \} from "\.\/components\/em-alta-ranking-section";/,
+  );
+  assert.match(
+    pagina,
+    /import \{ AutoresEmAltaSection \} from "\.\/components\/em-alta-authors-ranking-section";/,
+  );
+  assert.doesNotMatch(pagina, /function RankingSection\(/);
+  assert.doesNotMatch(pagina, /function AutoresEmAltaSection\(/);
 });

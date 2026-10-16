@@ -5,6 +5,7 @@ import typescript from "typescript";
 import "./em-alta-ranking-visual-style-utils.test.mjs";
 import "./em-alta-author-ranking-card.test.mjs";
 import "./em-alta-ranking-card.test.mjs";
+import "./em-alta-ranking-sections.test.mjs";
 import "./em-alta-ranking-position-theme.test.mjs";
 import "./em-alta-ranking-category-theme.test.mjs";
 
