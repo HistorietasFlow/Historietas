@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 855 — registro das coleções no Diário
+
+- Isolou o registro de favorito/conclusão no Diário.
+- Preservou payload, autenticação, visibilidade e fallback.
+- O erro continua não bloqueando o ranking; não houve mudança de schema/RLS ou comportamento.
+
 ## Fase 854 — sincronização Supabase das coleções
 
 - Isolou a escrita de favoritos e concluídas, preservando autenticação e a ordem delete/insert.
