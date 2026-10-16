@@ -12,6 +12,10 @@ const storage = readFileSync(
   new URL("../../app/lib/home-storage-utils.ts", import.meta.url),
   "utf8",
 );
+const heroView = readFileSync(
+  new URL("../../app/lib/home-hero-view-utils.ts", import.meta.url),
+  "utf8",
+);
 const moduloExecutavel = modulo.replace(/\r\n/g, "\n").replace(
   'import { criarSlugBase, normalizarTexto } from "../../lib/utils";\n',
   `const criarSlugBase = (valor) => normalizarTexto(valor).replace(/\\s+/g, "-");
@@ -114,7 +118,16 @@ test("home-collection-utils preserva remoção e a fronteira pura", () => {
     assert.match(modulo, new RegExp(`export function ${nomeFuncao}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nomeFuncao}\\b`));
   }
-  assert.match(pagina, /from "\.\/lib\/home-collection-utils";/);
+  assert.match(
+    pagina,
+    /import \{ criarDadosHeroHome \} from "\.\/lib\/home-hero-view-utils";/,
+  );
+  assert.match(
+    heroView,
+    /import \{[\s\S]*?criarIdentificadoresObraCatalogoHome,[\s\S]*?colecaoTemIdentificadorHome,[\s\S]*?obterIdentificadorFavoritoHome,[\s\S]*?\} from "\.\/home-collection-utils";/,
+  );
+  assert.match(heroView, /obterIdentificadorFavoritoHome\(heroObra\)/);
+  assert.match(heroView, /criarIdentificadoresObraCatalogoHome\(heroObra\)/);
   assert.match(storage, /import \{ normalizarListaIdsHome \} from "\.\/home-collection-utils";/);
   assert.match(storage, /return normalizarListaIdsHome\(\[\.\.\.fallback, \.\.\.listaSalva\]\);/);
   assert.doesNotMatch(pagina, /function carregarListaIdsHome\(/);
