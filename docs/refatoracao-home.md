@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 858 — Estilos finais de summary e seções da Home
+
+- Moveu literalmente os estilos finais de summary e seções para `app/lib/home-summary-section-styles.ts`.
+- Preservou valores, spreads, responsividade, tipografia e espaçamentos das últimas seções.
+- Removeu as últimas declarações locais `CSSProperties` de `app/page.tsx`, mantendo o JSX e seus consumidores.
+
 ## Fase 857 — Estilos do Hero da Home
 
 - Moveu literalmente os estilos específicos do Hero para `app/lib/home-hero-layout-styles.ts`.
