@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 854 — sincronização Supabase das coleções
+
+- Isolou a escrita de favoritos e concluídas, preservando autenticação e a ordem delete/insert.
+- Preservou o fallback de insert sem `visibilidade`.
+- Não houve alteração de schema/RLS ou comportamento; o Diário permaneceu fora da fase.
+
 ## Fase 853 — loader Supabase das coleções
 
 - Moveu a leitura paginada de IDs de favoritos e concluídas para `app/em-alta/lib/em-alta-collection-supabase-loader.ts`.
