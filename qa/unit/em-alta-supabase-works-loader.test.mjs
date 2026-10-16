@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const dadosRanking = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-data-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const estado = {
   catalogo: { obraIds: [] },
@@ -299,6 +306,8 @@ test("fronteira preserva queries de leitura e responsabilidades da página", () 
     /import \{ carregarObrasSupabasePublicadas \} from "\.\/lib\/em-alta-supabase-works-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarObrasSupabasePublicadas\b/);
-  assert.match(pagina, /function encontrarCapituloParaContinuar\b/);
+  assert.match(dadosRanking, /export function encontrarCapituloParaContinuar\b/);
+  assert.match(pagina, /\bencontrarCapituloParaContinuar\b/);
+  assert.doesNotMatch(pagina, /function encontrarCapituloParaContinuar\b/);
   assert.match(pagina, /async function carregarRanking\b/);
 });
