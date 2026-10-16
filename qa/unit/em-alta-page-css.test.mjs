@@ -17,6 +17,13 @@ const bridge = readFileSync(
   ),
   "utf8",
 );
+const rankingCard = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("emAltaPageCss preserva o CSS global de Em Alta", () => {
   assert.match(css, /export const emAltaPageCss = `/);
@@ -55,7 +62,11 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
 
   assert.match(
     pagina,
-    /import \{[\s\S]*?cardTopStyle,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-visual-style-utils";/,
+    /import \{[\s\S]*?criarDecoracaoPaginaStyle,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-visual-style-utils";/,
+  );
+  assert.match(
+    rankingCard,
+    /import \{[\s\S]*?cardTopStyle,[\s\S]*?\} from "\.\.\/lib\/em-alta-ranking-visual-style-utils";/,
   );
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /\bsafeTextStyle\b/);
