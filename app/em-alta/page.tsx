@@ -57,10 +57,10 @@ import { carregarIdsColecaoUsuarioSupabaseEmAlta } from "./lib/em-alta-collectio
 import { sincronizarColecaoRankingSupabase } from "./lib/em-alta-collection-supabase-sync";
 import { registrarColecaoRankingNoDiario } from "./lib/em-alta-diary-activity";
 import {
-  adicionarProfileAutorRankingNoMapa,
   obterAvatarProfileAutorRanking,
   obterNomeProfileAutorRanking,
 } from "./lib/em-alta-author-profile-utils";
+import { carregarProfilesAutoresRanking } from "./lib/em-alta-author-profile-loader";
 import {
   criarHrefLeituraCapitulo,
   criarLinkPerfilAutorRanking,
@@ -80,68 +80,6 @@ import {
 } from "./lib/em-alta-ranking-data-utils";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
-
-async function carregarProfilesAutoresRanking(userIds: string[]) {
-  const idsUnicos = Array.from(
-    new Set(userIds.map((userId) => userId.trim()).filter(Boolean)),
-  );
-  const profilesPorUsuario = new Map<string, SupabaseProfileAutorRankingRow>();
-
-  if (idsUnicos.length === 0) {
-    return profilesPorUsuario;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id,user_id,nome,avatar_url")
-      .in("user_id", idsUnicos)
-      .limit(1000);
-
-    if (error) {
-      console.warn(
-        "Não consegui carregar profiles por user_id no ranking:",
-        error.message,
-      );
-    } else {
-      (data || []).forEach(
-        (profile) => {
-          adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
-        },
-      );
-    }
-  } catch (error) {
-    console.warn(
-      "Não consegui acessar profiles por user_id no ranking:",
-      error,
-    );
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id,user_id,nome,avatar_url")
-      .in("id", idsUnicos)
-      .limit(1000);
-
-    if (error) {
-      console.warn(
-        "Não consegui carregar profiles por id no ranking:",
-        error.message,
-      );
-    } else {
-      (data || []).forEach(
-        (profile) => {
-          adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
-        },
-      );
-    }
-  } catch (error) {
-    console.warn("Não consegui acessar profiles por id no ranking:", error);
-  }
-
-  return profilesPorUsuario;
-}
 
 function normalizarTipoArquivoSupabase(
   tipo: string | null,
