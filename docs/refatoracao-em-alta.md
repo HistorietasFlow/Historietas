@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 853 — loader Supabase das coleções
+
+- Moveu a leitura paginada de IDs de favoritos e concluídas para `app/em-alta/lib/em-alta-collection-supabase-loader.ts`.
+- Preservou query, ordenação, paginação, validação defensiva e fallback.
+- Nenhuma escrita Supabase ou autenticação foi movida.
+
 ## Fase 852 — storage local
 
 - Moveu as chaves e os helpers de persistência local para `app/em-alta/lib/em-alta-local-storage-utils.ts`.

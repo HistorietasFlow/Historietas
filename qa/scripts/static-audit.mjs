@@ -2159,6 +2159,15 @@ const homeSupabaseWorksLoaderPath = path.join(
 const homeSupabaseWorksLoader = fs.existsSync(homeSupabaseWorksLoaderPath)
   ? fs.readFileSync(homeSupabaseWorksLoaderPath, "utf8")
   : "";
+const emAltaCollectionSupabaseLoaderPath = path.join(
+  ROOT_DIR,
+  "app/em-alta/lib/em-alta-collection-supabase-loader.ts"
+);
+const emAltaCollectionSupabaseLoader = fs.existsSync(
+  emAltaCollectionSupabaseLoaderPath
+)
+  ? fs.readFileSync(emAltaCollectionSupabaseLoaderPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2181,6 +2190,10 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   }${
     relativePath === "app/perfil-autor/page.tsx"
       ? `\n${profileUserCollectionsLoader}\n${profileInteractionsLoader}`
+      : ""
+  }${
+    relativePath === "app/em-alta/page.tsx"
+      ? `\n${emAltaCollectionSupabaseLoader}`
       : ""
   }${
     relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"
