@@ -20,6 +20,13 @@ const authorsSection = readFileSync(
   ),
   "utf8",
 );
+const rankingContent = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("RankingSection preserva composição, rolagem, posições e acessibilidade", () => {
   assert.match(rankingSection, /^"use client";/);
@@ -79,20 +86,24 @@ test("AutoresEmAltaSection preserva composição, rolagem, posições e acessibi
 test("Em Alta delega as seções sem manter as implementações locais", () => {
   assert.match(
     pagina,
-    /import \{ RankingSection \} from "\.\/components\/em-alta-ranking-section";/,
+    /import \{ EmAltaRankingContent \} from "\.\/components\/em-alta-ranking-content";/,
   );
   assert.match(
-    pagina,
-    /import \{ AutoresEmAltaSection \} from "\.\/components\/em-alta-authors-ranking-section";/,
+    rankingContent,
+    /import \{ RankingSection \} from "\.\/em-alta-ranking-section";/,
+  );
+  assert.match(
+    rankingContent,
+    /import \{ AutoresEmAltaSection \} from "\.\/em-alta-authors-ranking-section";/,
   );
   assert.doesNotMatch(pagina, /function RankingSection\b/);
   assert.doesNotMatch(pagina, /function AutoresEmAltaSection\b/);
-  assert.match(pagina, /<RankingSection[\s\S]*?onAlternarConcluido=\{alternarConcluido\}/);
-  assert.match(pagina, /<AutoresEmAltaSection[\s\S]*?autores=\{rankingAutores\}[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(rankingContent, /<RankingSection[\s\S]*?onAlternarConcluido=\{onAlternarConcluido\}/);
+  assert.match(rankingContent, /<AutoresEmAltaSection[\s\S]*?autores=\{rankingAutores\}[\s\S]*?isDesktop=\{isDesktop\}/);
 });
 
 test("as seções permanecem de apresentação, sem persistência ou lifecycle", () => {
-  for (const modulo of [rankingSection, authorsSection]) {
+  for (const modulo of [rankingSection, authorsSection, rankingContent]) {
     for (const proibido of [
       /supabase/i,
       /localStorage/,

@@ -48,6 +48,13 @@ const authorsSection = readFileSync(
   ),
   "utf8",
 );
+const rankingContent = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useEmAltaDesktopMode preserva o lifecycle responsivo com timer", () => {
   assert.match(hook, /^"use client";/);
@@ -101,7 +108,8 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
   assert.doesNotMatch(pagina, /atualizarModoDesktopTimer/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 26);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 10);
+  assert.equal((rankingContent.match(/\bisDesktop\b/g) || []).length, 20);
   assert.equal((rankingSection.match(/\bisDesktop\b/g) || []).length, 13);
   assert.equal((authorsSection.match(/\bisDesktop\b/g) || []).length, 13);
   assert.equal((autorRankingCard.match(/\bisDesktop\b/g) || []).length, 5);
@@ -123,11 +131,19 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.match(
     pagina,
-    /import \{ RankingSection \} from "\.\/components\/em-alta-ranking-section";/,
+    /import \{ EmAltaRankingContent \} from "\.\/components\/em-alta-ranking-content";/,
   );
   assert.match(
     pagina,
-    /import \{ AutoresEmAltaSection \} from "\.\/components\/em-alta-authors-ranking-section";/,
+    /<EmAltaRankingContent[\s\S]*?isDesktop=\{isDesktop\}/,
+  );
+  assert.match(
+    rankingContent,
+    /import \{ RankingSection \} from "\.\/em-alta-ranking-section";/,
+  );
+  assert.match(
+    rankingContent,
+    /import \{ AutoresEmAltaSection \} from "\.\/em-alta-authors-ranking-section";/,
   );
   assert.doesNotMatch(pagina, /function RankingSection\(/);
   assert.doesNotMatch(pagina, /function AutoresEmAltaSection\(/);

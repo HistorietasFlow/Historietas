@@ -81,7 +81,7 @@ test("RankingCard preserva metadata, destaque, autor, métricas e capa", () => {
 test("RankingSection delega RankingCard sem manter sua implementação local", () => {
   assert.match(
     pagina,
-    /import \{ RankingSection \} from "\.\/components\/em-alta-ranking-section";/,
+    /import \{ EmAltaRankingContent \} from "\.\/components\/em-alta-ranking-content";/,
   );
   assert.doesNotMatch(pagina, /function RankingCard\b/);
   assert.doesNotMatch(pagina, /function RankingSection\b/);
