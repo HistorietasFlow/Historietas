@@ -207,3 +207,9 @@
 - Filtros, métricas, progresso, continuação de leitura e pontuação foram preservados.
 - O `useMemo` e suas três dependências continuam na página.
 - Nenhuma query, mutação, estado ou JSX foi alterado.
+
+## Fase 880 — visão derivada do ranking
+
+- Isolou os tops por categoria, a detecção de atividade e o fallback do catálogo inicial em um helper puro.
+- O `useMemo` da página continua dependente apenas de `ranking`.
+- Nenhuma query, mutação, estado, JSX ou comportamento visual foi alterado.

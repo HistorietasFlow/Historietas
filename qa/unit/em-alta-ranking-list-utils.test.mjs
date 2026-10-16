@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const moduloVisao = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-view-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloExecutavel = modulo.replace(
   'import { criarSlugBase, normalizarTexto } from "../../../lib/utils";',
   `const normalizarTexto = (texto) => texto
@@ -173,19 +180,26 @@ test("reconhece qualquer interação real no ranking", () => {
 test("Em Alta delega helpers de listas e ranking para a fronteira pura", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?adicionarRankingObraNaLista,[\s\S]*?listaTemRankingObra,[\s\S]*?normalizarListaIdsEmAlta,[\s\S]*?pegarTopRanking,[\s\S]*?rankingTemInteracaoReal,[\s\S]*?removerRankingObraDaLista,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-list-utils";/,
+    /import \{[\s\S]*?adicionarRankingObraNaLista,[\s\S]*?listaTemRankingObra,[\s\S]*?normalizarListaIdsEmAlta,[\s\S]*?removerRankingObraDaLista,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-list-utils";/,
+  );
+
+  assert.match(
+    moduloVisao,
+    /import \{[\s\S]*?pegarTopRanking,[\s\S]*?rankingTemInteracaoReal,[\s\S]*?\} from "\.\/em-alta-ranking-list-utils";/,
   );
 
   for (const helper of [
     "adicionarRankingObraNaLista",
     "listaTemRankingObra",
     "normalizarListaIdsEmAlta",
-    "pegarTopRanking",
-    "rankingTemInteracaoReal",
     "removerRankingObraDaLista",
   ]) {
     assert.match(pagina, new RegExp(`\\b${helper}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
+  }
+
+  for (const helper of ["pegarTopRanking", "rankingTemInteracaoReal"]) {
+    assert.match(moduloVisao, new RegExp(`\\b${helper}\\b`));
   }
 
   for (const helper of [

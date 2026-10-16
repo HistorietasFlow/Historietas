@@ -16,15 +16,15 @@ const pagina = readFileSync(
 );
 const executavel = modulo
   .replace(
-    'import { ehClassificacao18 } from "../../../lib/historietasAdultContent";\n',
+    /import \{ ehClassificacao18 \} from "\.\.\/\.\.\/\.\.\/lib\/historietasAdultContent";\r?\n/,
     'const ehClassificacao18 = (classificacao) => classificacao === "18+";\n',
   )
   .replace(
-    'import type { ObraLocal, ObraRanking } from "./em-alta-models";\n',
+    /import type \{ ObraLocal, ObraRanking \} from "\.\/em-alta-models";\r?\n/,
     "",
   )
   .replace(
-    'import { criarHrefLeituraCapitulo } from "./em-alta-route-utils";\n',
+    /import \{ criarHrefLeituraCapitulo \} from "\.\/em-alta-route-utils";\r?\n/,
     'const criarHrefLeituraCapitulo = (obra, capitulo, numero) => `leitura:${obra.id}:${capitulo.id}:${numero}`;\n',
   )
   .replace(
