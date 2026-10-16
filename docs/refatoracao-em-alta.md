@@ -1,5 +1,11 @@
 # Refatoração de Em Alta
 
+## Fase 849 — traduções puras
+
+- Extraiu o mapa e os helpers puros de tradução para `app/em-alta/lib/em-alta-translations.ts`.
+- Manteve `EmAltaLanguageBridge` na página.
+- Nenhuma tradução ou comportamento foi alterado intencionalmente.
+
 ## Fase 848 — modelos e contratos de dados
 
 - Moveu os modelos locais para `app/em-alta/lib/em-alta-models.ts`.

@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const traducoes = readFileSync(
+  new URL("../../app/em-alta/lib/em-alta-translations.ts", import.meta.url),
+  "utf8",
+);
 
 test("modelos de Em Alta preservam os contratos locais e Supabase", () => {
   for (const tipo of [
@@ -83,7 +87,7 @@ test("Em Alta importa os modelos sem manter contratos duplicados", () => {
     assert.doesNotMatch(pagina, new RegExp(`type ${tipo}\\s*=`));
   }
 
-  assert.match(pagina, /type TraducaoEmAlta = \{/);
+  assert.match(traducoes, /type TraducaoEmAlta = \{/);
 });
 
 test("módulo de modelos permanece exclusivamente estático", () => {
