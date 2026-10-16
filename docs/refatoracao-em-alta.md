@@ -193,3 +193,10 @@
 - Refs e rolagem suave foram preservados literalmente.
 - Ordem invertida dos cards, setas e acessibilidade permaneceram iguais.
 - Nenhuma lógica de dados, Supabase ou estado principal foi alterada.
+
+## Fase 878 — cálculo do ranking de autores
+
+- Agregação e pontuação de autores foram isoladas em helper puro.
+- Agrupamento, média ponderada, pontuação e ordenação foram preservados.
+- O `useMemo` e sua dependência `[ranking]` continuam na página.
+- Nenhuma query, estado ou comportamento foi alterado.
