@@ -27,6 +27,13 @@ const autorRankingCard = readFileSync(
   ),
   "utf8",
 );
+const rankingCard = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useEmAltaDesktopMode preserva o lifecycle responsivo com timer", () => {
   assert.match(hook, /^"use client";/);
@@ -80,8 +87,9 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
   assert.doesNotMatch(pagina, /atualizarModoDesktopTimer/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 59);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 52);
   assert.equal((autorRankingCard.match(/\bisDesktop\b/g) || []).length, 5);
+  assert.equal((rankingCard.match(/\bisDesktop\b/g) || []).length, 7);
 
   assert.match(pagina, /async function carregarRanking\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);

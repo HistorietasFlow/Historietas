@@ -21,6 +21,13 @@ const componenteAutor = readFileSync(
   ),
   "utf8",
 );
+const componenteObra = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloTema = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-ranking-position-theme.ts",
@@ -1061,8 +1068,6 @@ test("a página delega toda a fronteira visual", () => {
     assert.match(modulo, new RegExp(`export (?:const|function) ${nome}\\b`));
   }
   for (const nome of [
-    "criarRankingCoverStyle",
-    "criarCardRankingStyle",
     "pageDecorationLayerStyle",
     "mobileTopWaterFadeStyle",
     "desktopTopWaterFadeStyle",
@@ -1077,8 +1082,6 @@ test("a página delega toda a fronteira visual", () => {
     "desktopHeaderTitleMarkStyle",
     "headerTitleTextStyle",
     "desktopHeaderTitleTextStyle",
-    "criarObraCardTitleRankingStyle",
-    "criarRankingTierInlineBadgeStyle",
     "carouselShellStyle",
     "desktopCarouselShellStyle",
     "carouselArrowLeftIconStyle",
@@ -1098,6 +1101,14 @@ test("a página delega toda a fronteira visual", () => {
     "criarDesktopSectionHeaderTemaStyle",
     "criarSectionIconStyle",
     "criarDecoracaoPaginaStyle",
+  ]) {
+    assert.match(pagina, new RegExp(`\\b${nome}\\b`));
+  }
+  for (const nome of [
+    "criarRankingCoverStyle",
+    "criarCardRankingStyle",
+    "criarObraCardTitleRankingStyle",
+    "criarRankingTierInlineBadgeStyle",
     "coroaNumberStyle",
     "cardContentStyle",
     "desktopCardContentStyle",
@@ -1121,7 +1132,7 @@ test("a página delega toda a fronteira visual", () => {
     "heartMetricIconStyle",
     "starMetricIconStyle",
   ]) {
-    assert.match(pagina, new RegExp(`\\b${nome}\\b`));
+    assert.match(componenteObra, new RegExp(`\\b${nome}\\b`));
   }
   assert.match(pagina, /from "\.\/lib\/em-alta-ranking-visual-style-utils";/);
   assert.doesNotMatch(pagina, /function criarRankingCoverStyle\b/);
@@ -1312,7 +1323,12 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /function criarSectionIconStyle\b/);
   assert.match(pagina, /function RankingSection\b/);
   assert.match(pagina, /function AutoresEmAltaSection\b/);
-  assert.match(pagina, /function RankingCard\b/);
+  assert.match(
+    pagina,
+    /import \{ RankingCard \} from "\.\/components\/em-alta-ranking-card";/,
+  );
+  assert.doesNotMatch(pagina, /function RankingCard\b/);
+  assert.match(componenteObra, /export function RankingCard\b/);
   assert.match(
     pagina,
     /import \{ AutorRankingCard \} from "\.\/components\/em-alta-author-ranking-card";/,
@@ -1322,7 +1338,7 @@ test("a página delega toda a fronteira visual", () => {
   assert.doesNotMatch(pagina, /const \w+Style: CSSProperties = \{/);
   assert.doesNotMatch(pagina, /import type \{ CSSProperties \} from "react";/);
   assert.doesNotMatch(pagina, /\bsafeTextStyle\b/);
-  assert.match(pagina, /<div style=\{cardTopStyle\}>/);
+  assert.match(componenteObra, /<div style=\{cardTopStyle\}>/);
   assert.match(pagina, /useHistorietasTheme\(pageStyle\)/);
   assert.match(
     pagina,

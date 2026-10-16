@@ -4,11 +4,19 @@ import test from "node:test";
 import typescript from "typescript";
 import "./em-alta-ranking-visual-style-utils.test.mjs";
 import "./em-alta-author-ranking-card.test.mjs";
+import "./em-alta-ranking-card.test.mjs";
 import "./em-alta-ranking-position-theme.test.mjs";
 import "./em-alta-ranking-category-theme.test.mjs";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-ranking-data-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
+const rankingCard = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-ranking-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo
   .replace(/import \{ criarSlugBase, normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";\r?\n/, `const normalizarTexto = (valor) => String(valor || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
 const criarSlugBase = (valor) => normalizarTexto(valor).replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");\n`)
@@ -76,8 +84,23 @@ test("encontra o próximo capítulo preservando prioridade e fallbacks", () => {
   );
 });
 test("fronteira delega os onze helpers e permanece pura", () => {
-  for (const nome of ["formatarNumero", "formatarMediaRanking", "normalizarVisualizacoesRanking", "obterVisualizacoesRegistradasObra", "normalizarAvaliacoesLocaisRanking", "obterAvaliacaoLocalRanking", "formatarDataRanking", "formatarGeneroCard", "calcularCapitulosLidos", "calcularProgressoLeitura", "encontrarCapituloParaContinuar"]) {
-    assert.match(modulo, new RegExp(`export function ${nome}\\b`)); assert.match(pagina, new RegExp(`\\b${nome}\\b`)); assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
+  const consumidores = {
+    formatarNumero: rankingCard,
+    formatarMediaRanking: rankingCard,
+    normalizarVisualizacoesRanking: pagina,
+    obterVisualizacoesRegistradasObra: pagina,
+    normalizarAvaliacoesLocaisRanking: pagina,
+    obterAvaliacaoLocalRanking: pagina,
+    formatarDataRanking: rankingCard,
+    formatarGeneroCard: rankingCard,
+    calcularCapitulosLidos: pagina,
+    calcularProgressoLeitura: pagina,
+    encontrarCapituloParaContinuar: pagina,
+  };
+  for (const [nome, consumidor] of Object.entries(consumidores)) {
+    assert.match(modulo, new RegExp(`export function ${nome}\\b`));
+    assert.match(consumidor, new RegExp(`\\b${nome}\\b`));
+    assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\b`));
   }
   for (const proibido of [/react/i, /\buse[A-Z]\w*\b/, /supabase/i, /localStorage/, /\bwindow\b/, /\bdocument\b/, /<[A-Z][\w.]*\s+[\w-]+=/]) assert.doesNotMatch(modulo, proibido);
 });
