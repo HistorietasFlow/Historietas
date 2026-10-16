@@ -1,5 +1,11 @@
 # Refatoração incremental — Home
 
+## Fase 860 — Dados derivados do Hero da Home
+
+- Extraiu os dados derivados do Hero para `app/lib/home-hero-view-utils.ts`.
+- Preservou fallbacks, métricas, conteúdo desktop, rota e estado de favorito.
+- Manteve na Home o carousel, a ação de favorito e todo o JSX do Hero.
+
 ## Fase 859 — Seleção e relevância das obras do Hero da Home
 
 - Extraiu a seleção pura das obras do Hero para `app/lib/home-hero-selection-utils.ts`.
