@@ -1,5 +1,10 @@
 # Refatoração de Em Alta
 
+## Fase 858 — helpers de perfil dos autores
+
+- Extraiu leitura de nome/avatar e indexação dos profiles para helpers puros.
+- A normalização e as chaves `user_id`/`id` foram preservadas; o loader Supabase permaneceu na página, sem alteração de query ou comportamento.
+
 ## Fase 857 — rotas e navegação
 
 - Extraiu login redirect, leitura de capítulo e perfil de autor para helpers puros.
