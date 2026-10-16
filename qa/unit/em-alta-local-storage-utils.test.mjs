@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const normalizadorObrasSupabase = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-supabase-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloExecutavel = modulo
   .replace(
     'import { normalizarTexto } from "../../../lib/utils";',
@@ -263,7 +270,6 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
     "carregarAvataresAutoresLocaisEmAlta",
     "carregarListaIdsLocalEmAlta",
     "criarStorageKeyUsuarioEmAlta",
-    "obterAvatarAutorLocalEmAlta",
     "salvarListaIdsLocalEmAlta",
     "FAVORITES_STORAGE_KEY",
     "COMPLETED_STORAGE_KEY",
@@ -276,6 +282,10 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
   assert.match(
     pagina,
     /import \{[\s\S]*?carregarAvataresAutoresLocaisEmAlta,[\s\S]*?carregarListaIdsLocalEmAlta,[\s\S]*?salvarListaIdsLocalEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-local-storage-utils";/,
+  );
+  assert.match(
+    normalizadorObrasSupabase,
+    /import \{ obterAvatarAutorLocalEmAlta \} from "\.\/em-alta-local-storage-utils";/,
   );
 
   for (const nome of [
@@ -293,13 +303,18 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
     "normalizarChaveAutorEmAlta",
     "adicionarAvatarAutorLocalEmAlta",
     "carregarAvataresAutoresLocaisEmAlta",
-    "obterAvatarAutorLocalEmAlta",
     "carregarListaIdsLocalEmAlta",
     "salvarListaIdsLocalEmAlta",
   ]) {
     assert.match(modulo, new RegExp(`export function ${helper}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
+
+  assert.match(
+    modulo,
+    /export function obterAvatarAutorLocalEmAlta\(/,
+  );
+  assert.doesNotMatch(importacao[1], /\bobterAvatarAutorLocalEmAlta\b/);
 });
 
 test("módulo de storage permanece isolado de UI, Supabase e autenticação", () => {
