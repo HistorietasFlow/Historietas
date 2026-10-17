@@ -80,7 +80,7 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
   );
   assert.match(
     pagina,
-    /import \{ Children, useEffect, useMemo, useRef, useState \} from "react";/,
+    /import \{ useEffect, useMemo, useRef, useState \} from "react";/,
   );
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.match(
