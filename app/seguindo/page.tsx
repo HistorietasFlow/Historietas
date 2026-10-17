@@ -33,6 +33,7 @@ import {
   normalizarNomeAutor,
   normalizarNumeroSeguindo,
 } from "./lib/seguindo-format-utils";
+import { deduplicarAtividadesSeguindo } from "./lib/seguindo-activity-list-utils";
 import {
   criarMapaComentariosPorCapitulo,
   criarSetObrasPorRegistro,
@@ -1804,32 +1805,6 @@ async function carregarRegistrosAtividadesTabelaSeguindo(
     console.warn(`Não consegui carregar ${tabela} no feed Seguindo:`, error);
     return [] as RegistroSupabaseGenerico[];
   }
-}
-
-function ordenarAtividadesSeguindo(itens: AtividadeSeguindo[]) {
-  return [...itens].sort(
-    (atividadeA, atividadeB) =>
-      new Date(atividadeB.data).getTime() - new Date(atividadeA.data).getTime(),
-  );
-}
-
-function deduplicarAtividadesSeguindo(itens: AtividadeSeguindo[]) {
-  const atividadesPorChave = new Map<string, AtividadeSeguindo>();
-
-  ordenarAtividadesSeguindo(itens).forEach((atividade) => {
-    const chave = [
-      atividade.usuarioId,
-      atividade.tipo,
-      normalizarTexto(atividade.titulo),
-      atividade.href,
-    ].join("|");
-
-    if (!atividadesPorChave.has(chave)) {
-      atividadesPorChave.set(chave, atividade);
-    }
-  });
-
-  return ordenarAtividadesSeguindo(Array.from(atividadesPorChave.values()));
 }
 
 async function carregarAtividadesSeguindoSupabase(
