@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const colecoesRanking = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-collections-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const estado = {
   chamadas: [],
@@ -203,8 +210,12 @@ test("fronteira preserva imports, contratos de query e ausência de escrita", ()
   }
 
   assert.match(
+    colecoesRanking,
+    /import \{ carregarIdsColecaoUsuarioSupabaseEmAlta \} from "\.\/em-alta-collection-supabase-loader";/,
+  );
+  assert.match(
     pagina,
-    /import \{ carregarIdsColecaoUsuarioSupabaseEmAlta \} from "\.\/lib\/em-alta-collection-supabase-loader";/,
+    /import \{ carregarColecoesRankingEmAlta \} from "\.\/lib\/em-alta-ranking-collections-loader";/,
   );
   assert.doesNotMatch(
     pagina,

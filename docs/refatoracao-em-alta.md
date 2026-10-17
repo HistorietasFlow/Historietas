@@ -267,3 +267,9 @@
 - Moveu a leitura e a normalização de visualizações e avaliações locais para um helper dedicado.
 - Preservou as chaves por usuário, a ordem das leituras, a normalização e a propagação de falhas ao `catch` do carregamento.
 - O lifecycle, as consultas Supabase, os estados e o restante do carregamento permaneceram na página.
+
+## Fase 890 — snapshot das coleções do ranking
+
+- Moveu a leitura local/remota, normalização e persistência de favoritos e concluídas para um loader dedicado.
+- Preservou a ordem do `Promise.all`, as chaves, o armazenamento local e os fallbacks existentes.
+- O lifecycle, autenticação, estados e carregamento de obras permaneceram na página.
