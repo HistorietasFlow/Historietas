@@ -34,7 +34,7 @@ test("página mantém estados e repassa valores e callbacks sem wrappers", () =>
     assert.match(chamada[1], new RegExp(`\\b${nome}=\\{${nome}\\}`));
   }
   assert.match(pagina, /const \{ alternarCurtida, alternarSalvo \} = criarAcoesInteracoesCapitulo\(\{/);
-  assert.match(pagina, /async function alternarLido\(/);
+  assert.match(pagina, /const \{ alternarLido \} = criarAcaoProgressoLeituraCapitulo\(\{/);
   assert.match(pagina, /function trocarCapitulo\(/);
   assert.match(pagina, /<ComentariosCapituloSheet/);
   assert.match(pagina, /<AdultContentGate/);

@@ -75,3 +75,8 @@
 
 - Extraiu as ações relacionadas de curtir e salvar capítulo para uma fronteira dedicada, com estados e dependências recebidos explicitamente.
 - Preservou autenticação, atualização otimista, sincronização, reversão em falha, notificações e atividade do Diário; o progresso de leitura e os efeitos permanecem na página.
+
+## Fase 838 — Ação de progresso de leitura
+
+- Isolou a ação de marcar ou desmarcar capítulo lido, recebendo estados e dependências explicitamente.
+- Preservou autenticação, cálculo de progresso e última leitura, atualização local, sincronização, reversão, notificações e Diário; estados, efeitos e persistências permanecem na página.
