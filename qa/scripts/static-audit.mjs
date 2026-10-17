@@ -2197,6 +2197,13 @@ const readerWorkLoaderPath = path.join(
 const readerWorkLoader = fs.existsSync(readerWorkLoaderPath)
   ? fs.readFileSync(readerWorkLoaderPath, "utf8")
   : "";
+const seguindoWorkQueryUtilsPath = path.join(
+  ROOT_DIR,
+  "app/seguindo/lib/seguindo-work-query-utils.ts"
+);
+const seguindoWorkQueryUtils = fs.existsSync(seguindoWorkQueryUtilsPath)
+  ? fs.readFileSync(seguindoWorkQueryUtilsPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2235,6 +2242,10 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   }${
     relativePath === "app/ler-capitulo/page.tsx"
       ? `\n${readerWorkLoader}`
+      : ""
+  }${
+    relativePath === "app/seguindo/page.tsx"
+      ? `\n${seguindoWorkQueryUtils}`
       : ""
   }`
 }));

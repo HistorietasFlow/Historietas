@@ -14,10 +14,6 @@ import {
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
 import { carregarMetricasConteudos } from "../../lib/metricas";
-import {
-  carregarTodasPaginasPorLotesSupabase,
-  carregarTodasPaginasSupabase,
-} from "../../lib/supabase/paginacao.mjs";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
@@ -59,8 +55,10 @@ import {
   textoBuscaObra,
 } from "./lib/seguindo-work-presentation-utils";
 import {
+  carregarCapitulosPublicadosSeguindoSupabase,
   carregarComentariosCapitulosUsuarioSupabase,
   carregarIdsObrasUsuarioSupabase,
+  carregarObrasPublicadasSeguindoSupabase,
 } from "./lib/seguindo-work-query-utils";
 import {
   carregarIdsSolicitacoesEnviadasSupabase,
@@ -184,37 +182,6 @@ type AtividadeSeguindo = {
 };
 
 
-type SupabaseObraRow = {
-  id: string;
-  user_id?: string | null;
-  titulo: string | null;
-  autor: string | null;
-  genero: string | null;
-  formato: string | null;
-  classificacao_indicativa: string | null;
-  sinopse: string | null;
-  tags: string[] | null;
-  capa_url: string | null;
-  capa_nome: string | null;
-  publicado: boolean | null;
-  slug: string | null;
-  link: string | null;
-  criada_em: string | null;
-  atualizado_em: string | null;
-};
-
-type SupabaseCapituloRow = {
-  id: string;
-  obra_id: string;
-  user_id?: string | null;
-  titulo: string | null;
-  texto?: string | null;
-  ordem: number | null;
-  publicado: boolean | null;
-  criado_em: string | null;
-  atualizado_em: string | null;
-};
-
 type FiltroSeguindo =
   | "todos"
   | "obras"
@@ -253,19 +220,7 @@ async function carregarSeguindoSupabase(
       : userId;
 
     const obrasSupabaseBanco =
-      await carregarTodasPaginasSupabase<SupabaseObraRow>({
-        nomeColecao: "obras publicadas do Seguindo",
-        buscarPagina: async (inicio, fim) =>
-          supabase
-            .from("obras")
-            .select(
-              "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,publicado,slug,link,criada_em,atualizado_em"
-            )
-            .eq("publicado", true)
-            .order("criada_em", { ascending: false })
-            .order("id", { ascending: false })
-            .range(inicio, fim),
-      });
+      await carregarObrasPublicadasSeguindoSupabase();
     const obraIds = obrasSupabaseBanco
       .map((obra) => obra.id)
       .filter((obraId) => Boolean(obraId));
@@ -279,30 +234,8 @@ async function carregarSeguindoSupabase(
       };
     }
 
-    let capitulosSupabaseBanco: SupabaseCapituloRow[] = [];
-
-    try {
-      capitulosSupabaseBanco =
-        await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
-          nomeColecao: "capítulos publicados do Seguindo",
-          itens: obraIds,
-          buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
-            supabase
-              .from("capitulos")
-              .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
-              .in("obra_id", obraIdsLote)
-              .eq("publicado", true)
-              .order("obra_id", { ascending: true })
-              .order("ordem", { ascending: true })
-              .order("id", { ascending: true })
-              .range(inicio, fim),
-        });
-    } catch (error) {
-      console.warn(
-        "Não consegui carregar capítulos no Seguindo:",
-        error,
-      );
-    }
+    const capitulosSupabaseBanco =
+      await carregarCapitulosPublicadosSeguindoSupabase(obraIds);
     const capituloIds = capitulosSupabaseBanco
       .map((capitulo) => capitulo.id)
       .filter((capituloId) => Boolean(capituloId));
