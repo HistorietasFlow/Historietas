@@ -93,3 +93,18 @@ export function obraEmLeitura(
 
   return progresso > 0 && progresso < 100;
 }
+export function somarTotaisCapitulosSeguindo(
+  capitulos: Array<{ id: string }>,
+  contagens: Record<string, number>,
+) {
+  return capitulos.reduce((total, capitulo) => {
+    return total + normalizarNumeroSeguindo(contagens[capitulo.id], 0);
+  }, 0);
+}
+
+export function obterTotalRegistroObraSeguindo(
+  obraId: string,
+  contagens: Record<string, number>,
+) {
+  return normalizarNumeroSeguindo(contagens[obraId], 0);
+}
