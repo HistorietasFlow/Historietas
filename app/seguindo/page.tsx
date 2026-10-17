@@ -16,6 +16,7 @@ import {
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
+import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
@@ -404,20 +405,10 @@ export default function SeguindoPage() {
     }, 0);
   }, [perfilSocialId, usuarioLogadoId]);
 
-  useEffect(() => {
-    if (!usuarioLogadoId) {
-      return;
-    }
-
-    const carregarDadosTimer = window.setTimeout(() => {
-      void carregarDadosSeguindo();
-    }, 0);
-
-    return () => {
-      window.clearTimeout(carregarDadosTimer);
-    };
-  }, [carregarDadosSeguindo, usuarioLogadoId]);
-
+  useSeguindoDataLoadTrigger({
+    usuarioLogadoId,
+    carregarDadosSeguindo,
+  });
 
   const termoBusca = normalizarTexto(busca);
   const listaSocialEhDoUsuarioLogado = Boolean(
