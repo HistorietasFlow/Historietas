@@ -29,6 +29,7 @@ const {
   criarLoginHrefSeguindo,
   idUsuarioSupabaseValido,
   obterParametrosSociaisSeguindoUrl,
+  obterUsuarioObrasSeguidasSeguindo,
 } = modulo;
 
 test("validação de ID preserva UUID canônico", () => {
@@ -38,6 +39,24 @@ test("validação de ID preserva UUID canônico", () => {
   );
   assert.equal(idUsuarioSupabaseValido("usuario-1"), false);
   assert.equal(idUsuarioSupabaseValido(""), false);
+});
+
+test("usuário das obras seguidas prioriza perfil social válido", () => {
+  const idPerfil = "123e4567-e89b-12d3-a456-426614174000";
+  const idLogado = "223e4567-e89b-12d3-a456-426614174000";
+
+  assert.equal(
+    obterUsuarioObrasSeguidasSeguindo(`  ${idPerfil}  `, idLogado),
+    idPerfil,
+  );
+  assert.equal(
+    obterUsuarioObrasSeguidasSeguindo("perfil-invalido", idLogado),
+    idLogado,
+  );
+  assert.equal(
+    obterUsuarioObrasSeguidasSeguindo("", idLogado),
+    idLogado,
+  );
 });
 
 test("login preserva redirect atual e fallback SSR", () => {
