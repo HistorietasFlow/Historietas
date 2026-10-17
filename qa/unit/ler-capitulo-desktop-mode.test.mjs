@@ -21,6 +21,10 @@ const sheet = readFileSync(
   new URL("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx", import.meta.url),
   "utf8",
 );
+const conteudo = readFileSync(
+  new URL("../../app/ler-capitulo/components/ler-capitulo-reader-content.tsx", import.meta.url),
+  "utf8",
+);
 
 test("useLerCapituloDesktopMode preserva o lifecycle responsivo do leitor", () => {
   assert.match(hook, /^"use client";/);
@@ -63,13 +67,16 @@ test("Leitor delega apenas o modo desktop e preserva consumidores responsivos", 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 18);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 6);
+  assert.equal((conteudo.match(/\bisDesktop\b/g) || []).length, 16);
   assert.equal((sheet.match(/\bisDesktop\b/g) || []).length, 7);
   assert.equal((estilosLayout.match(/\bisDesktop\b/g) || []).length, 7);
   assert.match(
     pagina,
     /<ComentariosCapituloSheet[\s\S]*?isDesktop=\{isDesktop\}/,
   );
+  assert.match(pagina, /<LerCapituloReaderContent[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(conteudo, /<section style=\{isDesktop \? desktopContainerStyle : containerStyle\}>/);
   assert.match(
     pagina,
     /<section style=\{isDesktop \? desktopContainerStyle : containerStyle\}>/,

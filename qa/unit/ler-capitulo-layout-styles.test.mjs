@@ -6,6 +6,7 @@ import typescript from "typescript";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
+const conteudo = ler("../../app/ler-capitulo/components/ler-capitulo-reader-content.tsx");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-layout-styles.ts");
 const texto = ler("../../app/ler-capitulo/lib/ler-capitulo-text-style.ts");
 const compilar = (source) => typescript.transpileModule(source, {
@@ -49,21 +50,24 @@ test("helper preserva tamanhos e line-height de títulos mobile e desktop", () =
   }
 });
 
-test("a página consome os estilos sem duplicá-los ou mover JSX", () => {
+test("página e conteúdo consomem os estilos sem duplicá-los", () => {
   const nomes = [...fonte.matchAll(/^export const (\w+): CSSProperties = \{/gm)].map((m) => m[1]);
   assert.equal(nomes.length, 56);
-  const importacao = pagina.match(/import \{([\s\S]*?)\} from "\.\/lib\/ler-capitulo-layout-styles";/);
+  const importacao = pagina.match(/import \{([^}]*)\} from "\.\/lib\/ler-capitulo-layout-styles";/);
+  const importacaoConteudo = conteudo.match(/import \{([^}]*)\} from "\.\.\/lib\/ler-capitulo-layout-styles";/);
   assert.ok(importacao);
+  assert.ok(importacaoConteudo);
   for (const nome of nomes) {
-    assert.match(importacao[1], new RegExp(`\\b${nome}\\b`));
+    assert.match(importacao[1] + importacaoConteudo[1], new RegExp(`\\b${nome}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`const ${nome}: CSSProperties`));
+    assert.doesNotMatch(conteudo, new RegExp(`const ${nome}: CSSProperties`));
   }
-  assert.match(importacao[1], /\bcriarEstiloTituloCapitulo\b/);
+  assert.match(importacaoConteudo[1], /\bcriarEstiloTituloCapitulo\b/);
   assert.doesNotMatch(pagina, /function criarEstiloTituloCapitulo\(/);
   assert.match(pagina, /function criarTextoLeituraStyle\(/);
   assert.match(pagina, /<ComentariosCapituloSheet/);
   assert.match(pagina, /export default function LerCapituloPage\(/);
-  assert.match(pagina, /style=\{criarEstiloTituloCapitulo\(/);
+  assert.match(conteudo, /style=\{criarEstiloTituloCapitulo\(/);
 });
 
 test("módulo é somente visual, sem hooks ou persistência", () => {
