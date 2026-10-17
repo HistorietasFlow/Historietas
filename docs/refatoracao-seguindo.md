@@ -31,3 +31,10 @@
 - Preservou trim do usuário, chaves, serialização JSON, fallbacks e tolerância silenciosa a falhas de `localStorage`.
 - Adicionou cobertura focada e manteve os consumidores da página sem alterar fluxo de carregamento ou persistência.
 - Sem alterações de UI, autenticação, Supabase, schema ou RLS.
+
+## Fase 858 — rotas e identidade
+
+- Extraiu `criarLoginHrefSeguindo`, `obterParametrosSociaisSeguindoUrl`, `criarHrefPerfilAutorSeguindo`, `criarHrefPerfilUsuarioSeguindo` e `idUsuarioSupabaseValido` para `app/seguindo/lib/seguindo-route-utils.ts`.
+- Preservou parsing dos parâmetros sociais, fallbacks de abas/conteúdo, validação UUID e construção das rotas de login e perfil.
+- Adicionou cobertura focada e manteve os consumidores da página sem alterar navegação ou fluxo de autenticação.
+- Sem alterações de UI, Supabase, schema ou RLS.
