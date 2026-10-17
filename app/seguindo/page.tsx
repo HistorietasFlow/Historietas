@@ -2175,6 +2175,7 @@ export default function SeguindoPage() {
                             style={{
                               ...criarAvatarUsuarioSeguindoStyle(
                                 usuarioSolicitante.avatar,
+                                authorAvatarStyle,
                               ),
                               ...(isDesktop ? desktopAuthorAvatarStyle : {}),
                               width: isDesktop ? "58px" : "52px",
@@ -2473,7 +2474,8 @@ export default function SeguindoPage() {
                             aria-label={`Abrir perfil de ${usuarioSugestao.nome}`}
                             style={{
                               ...criarAvatarUsuarioSeguindoStyle(
-                                usuarioSugestao.avatar
+                                usuarioSugestao.avatar,
+                                authorAvatarStyle,
                               ),
                               ...(isDesktop ? desktopAuthorAvatarStyle : {}),
                               width: isDesktop ? "58px" : "52px",
