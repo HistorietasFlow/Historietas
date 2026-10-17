@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const hook = readFileSync(
+  new URL(
+    "../../app/em-alta/hooks/use-em-alta-ranking-derived-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo
   .replace('import type { ObraRanking } from "./em-alta-models";\n', "")
   .replace(
@@ -122,13 +129,14 @@ test("a fronteira preserva o useMemo e permanece pura", () => {
     /import \{[\s\S]*?pegarTopRanking,[\s\S]*?rankingTemInteracaoReal,[\s\S]*?\} from "\.\/em-alta-ranking-list-utils";/,
   );
   assert.match(
-    pagina,
-    /import \{ criarVisaoRankingEmAlta \} from "\.\/lib\/em-alta-ranking-view-utils";/,
+    hook,
+    /import \{ criarVisaoRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-view-utils";/,
   );
   assert.match(
-    pagina,
+    hook,
     /\} = useMemo\(\(\) => criarVisaoRankingEmAlta\(ranking\), \[ranking\]\);/,
   );
+  assert.match(pagina, /useEmAltaRankingDerivedData\(/);
 
   for (const termoProibido of [
     /from ["']react["']/i,

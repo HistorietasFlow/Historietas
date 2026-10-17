@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const hook = readFileSync(
+  new URL(
+    "../../app/em-alta/hooks/use-em-alta-ranking-derived-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo
   .replace(
     /import \{ normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";\r?\n/,
@@ -205,21 +212,22 @@ test("fronteira mantém o useMemo da página e permanece pura", () => {
   assert.match(modulo, /import \{ criarLinkPerfilAutorRanking \} from "\.\/em-alta-route-utils";/);
   assert.doesNotMatch(modulo, /\b(useMemo|React|supabase|localStorage|window|document)\b/);
   assert.doesNotMatch(modulo, /<[A-Z][A-Za-z]/);
-  assert.match(pagina, /import \{ calcularRankingAutores \} from "\.\/lib\/em-alta-author-ranking-utils";/);
+  assert.match(hook, /import \{ calcularRankingAutores \} from "\.\.\/lib\/em-alta-author-ranking-utils";/);
   assert.match(
-    pagina,
+    hook,
     /const rankingAutores = useMemo\(\s*\(\) => calcularRankingAutores\(ranking\),\s*\[ranking\],\s*\);/,
   );
   assert.doesNotMatch(pagina, /type AutorRankingAcumulado/);
   assert.doesNotMatch(pagina, /const autoresPorChave = new Map/);
   assert.match(
-    pagina,
-    /import \{ criarVisaoRankingEmAlta \} from "\.\/lib\/em-alta-ranking-view-utils";/,
+    hook,
+    /import \{ criarVisaoRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-view-utils";/,
   );
   assert.match(
-    pagina,
+    hook,
     /\} = useMemo\(\(\) => criarVisaoRankingEmAlta\(ranking\), \[ranking\]\);/,
   );
+  assert.match(pagina, /useEmAltaRankingDerivedData\(/);
   for (const dadoDerivado of [
     "rankingGeral",
     "rankingMaisLidas",
