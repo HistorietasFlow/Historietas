@@ -15,6 +15,7 @@ import {
 } from "../../lib/historietasPrivacy";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
+import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
@@ -58,9 +59,7 @@ import { sincronizarObraUsuarioSupabase } from "./lib/seguindo-work-sync-utils";
 import {
   criarHrefPerfilAutorSeguindo,
   criarHrefPerfilUsuarioSeguindo,
-  criarLoginHrefSeguindo,
   idUsuarioSupabaseValido,
-  obterParametrosSociaisSeguindoUrl,
 } from "./lib/seguindo-route-utils";
 import {
   AUTHOR_FOLLOW_STORAGE_KEY,
@@ -233,44 +232,15 @@ export default function SeguindoPage() {
 
   useSeguindoSortingSheetBodyLock(mostrarPainelOrdenacao);
 
-  useEffect(() => {
-    let cancelado = false;
+  useSeguindoAccessSync({
+    setUsuarioLogadoId,
+    setAbaSeguimento,
+    setAbaConteudo,
+    setPerfilSocialId,
+    setPerfilSocialNome,
+    setVerificandoAcesso,
+  });
 
-    async function verificarAcesso() {
-      try {
-        const { data } = await supabase.auth.getUser();
-        const userId = data.user?.id || "";
-
-        if (!userId) {
-          router.replace(criarLoginHrefSeguindo());
-          return;
-        }
-
-        const parametrosSociais = obterParametrosSociaisSeguindoUrl(userId);
-
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setUsuarioLogadoId(userId);
-            setAbaSeguimento(parametrosSociais.aba);
-            setAbaConteudo(parametrosSociais.conteudo);
-            setPerfilSocialId(parametrosSociais.perfilId);
-            setPerfilSocialNome(parametrosSociais.perfilNome);
-            setVerificandoAcesso(false);
-          }
-        }, 0);
-      } catch {
-        if (!cancelado) {
-          router.replace(criarLoginHrefSeguindo());
-        }
-      }
-    }
-
-    void verificarAcesso();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [router]);
 
 
   const carregarDadosSeguindo = useCallback(async () => {
