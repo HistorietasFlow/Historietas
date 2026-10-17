@@ -124,3 +124,37 @@ export function criarResultadoColecoesSeguindo<T>({
     ),
   };
 }
+
+export function finalizarObrasSeguindo<T extends {
+  id: string;
+  titulo: string;
+  slug: string;
+}>({
+  obrasLocais,
+  obrasRemotas,
+  obrasSeguidasLocais,
+  obrasFavoritasLocais,
+  obrasConcluidasLocais,
+  obrasSeguidasRemotas,
+  obrasFavoritasRemotas,
+  obrasConcluidasRemotas,
+}: {
+  obrasLocais: T[];
+  obrasRemotas: T[];
+  obrasSeguidasLocais: string[];
+  obrasFavoritasLocais: string[];
+  obrasConcluidasLocais: string[];
+  obrasSeguidasRemotas: Iterable<string>;
+  obrasFavoritasRemotas: Iterable<string>;
+  obrasConcluidasRemotas: Iterable<string>;
+}) {
+  return criarResultadoColecoesSeguindo({
+    obras: mesclarObrasSeguindo(obrasLocais, obrasRemotas),
+    obrasSeguidasLocais,
+    obrasFavoritasLocais,
+    obrasConcluidasLocais,
+    obrasSeguidasRemotas,
+    obrasFavoritasRemotas,
+    obrasConcluidasRemotas,
+  });
+}
