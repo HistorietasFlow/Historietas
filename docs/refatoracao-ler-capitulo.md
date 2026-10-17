@@ -102,3 +102,8 @@
 - Isolou os efeitos de registro de visualização e de entrada no capítulo em uma fronteira dedicada, mantendo suas posições relativas aos demais efeitos.
 - Preservou guardas de acesso, refs de deduplicação, métricas, notificações, atividade do Diário e dependências, sem mudança intencional de comportamento.
 - Documentou exceções locais de dependências de lint para refs, setter e helpers estáveis da página.
+
+## Fase 843 — Métricas e persistência do capítulo
+
+- Extraiu os helpers de visualização, progresso e registros de interação para um módulo de persistência e os helpers de métricas para uma fronteira própria.
+- Preservou consultas, payloads, ordenação, fallbacks, mensagens e os consumidores existentes, sem alterar notificações, Diário ou comportamento.

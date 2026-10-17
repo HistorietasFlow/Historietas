@@ -92,7 +92,10 @@ test("os dois helpers e seus contratos permanecem literalmente iguais", () => {
     assert.match(inicializacao, new RegExp(`await ${nome}\\(`));
   }
   assert.doesNotMatch(fonte, /\.(?:insert|update|delete|upsert)\s*\(|\b(?:localStorage|useEffect|useState)\b/);
-  assert.match(pagina, /async function salvarProgressoLeituraSupabase\(/);
+  const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-interaction-persistence.ts");
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-interaction-persistence";/);
+  assert.match(persistencia, /export async function salvarProgressoLeituraSupabase\(/);
+  assert.doesNotMatch(pagina, /async function salvarProgressoLeituraSupabase\(/);
   assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
 });
 
