@@ -60,3 +60,8 @@
 
 - Extraiu os helpers de storage por usuário, obras locais e curtidas de comentários, assim como as preferências de leitura, para módulos dedicados.
 - Preservou chaves, serialização, normalização, acesso por autor, isolamento entre contas, escala de fonte e fallbacks; efeitos da página e operações Supabase permanecem inalterados.
+
+## Fase 835 — Leitura de obra e interações dos capítulos
+
+- Extraiu as consultas de obra e capítulos e a aplicação das interações lidas para um módulo de leitura dedicado.
+- Preservou consultas, permissões, paginação, ordem, progresso e fallbacks; autenticação, efeitos e mutações permanecem na página, sem mudança intencional de comportamento.
