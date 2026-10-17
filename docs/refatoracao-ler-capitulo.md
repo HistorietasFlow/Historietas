@@ -65,3 +65,8 @@
 
 - Extraiu as consultas de obra e capítulos e a aplicação das interações lidas para um módulo de leitura dedicado.
 - Preservou consultas, permissões, paginação, ordem, progresso e fallbacks; autenticação, efeitos e mutações permanecem na página, sem mudança intencional de comportamento.
+
+## Fase 836 — Ações de comentários do leitor
+
+- Extraiu as ações de envio, remoção e curtida de comentários e a identificação das respostas para uma fronteira dedicada, recebendo estados e dependências explicitamente.
+- Preservou a ordem das operações, autenticação, mensagens, atualizações otimistas, reversões e contratos Supabase; estados e efeitos permanecem na página.

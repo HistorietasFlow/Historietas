@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const loader = ler("../../app/ler-capitulo/lib/ler-capitulo-comments-read-loader.ts");
+const acoes = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-actions.ts");
 const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx");
 const bloco = sheet.slice(sheet.indexOf("type ComentariosCapituloSheetProps = {"), sheet.indexOf("export default ComentariosCapituloSheet;")).trimEnd();
 const funcoes = sheet.slice(sheet.indexOf("function criarHrefPerfilUsuarioLeitor("), sheet.indexOf("type ComentariosCapituloSheetProps = {"));
@@ -45,12 +46,13 @@ test("página mantém a integração e as ações de dados e persistência", () 
   }
   assert.match(pagina, /post=\{mostrarComentario \? postComentariosCapitulo : null\}/);
   assert.match(pagina, /podeComentar=\{Boolean\(usuarioIdLogado\)\}/);
-  assert.match(pagina, /async function enviarComentarioCapitulo\(/);
+  assert.match(pagina, /criarAcoesComentariosCapitulo\(\{/);
+  assert.match(acoes, /async function enviarComentarioCapitulo\(/);
   assert.match(pagina, /import \{[\s\S]*?carregarComentariosCapituloSupabase,[\s\S]*?\} from "\.\/lib\/ler-capitulo-comments-read-loader";/);
   assert.match(loader, /export async function carregarComentariosCapituloSupabase\(/);
   assert.match(pagina, /await carregarComentariosCapituloSupabase\(/);
   assert.doesNotMatch(pagina, /async function carregarComentariosCapituloSupabase\(/);
-  assert.match(pagina, /function obterIdsComentarioCapituloComRespostas\(/);
+  assert.match(acoes, /function obterIdsComentarioCapituloComRespostas\(/);
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
 });
 
