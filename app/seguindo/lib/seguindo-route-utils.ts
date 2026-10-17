@@ -23,6 +23,17 @@ export function idUsuarioSupabaseValido(id: string) {
   );
 }
 
+export function obterUsuarioObrasSeguidasSeguindo(
+  perfilSocialId: string,
+  userIdLogado: string,
+) {
+  const perfilSocialIdLimpo = perfilSocialId.trim();
+
+  return idUsuarioSupabaseValido(perfilSocialIdLimpo)
+    ? perfilSocialIdLimpo
+    : userIdLogado;
+}
+
 export function obterParametrosSociaisSeguindoUrl(userIdLogado: string) {
   if (typeof window === "undefined") {
     return {

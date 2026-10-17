@@ -76,6 +76,7 @@ import {
   criarLoginHrefSeguindo,
   idUsuarioSupabaseValido,
   obterParametrosSociaisSeguindoUrl,
+  obterUsuarioObrasSeguidasSeguindo,
 } from "./lib/seguindo-route-utils";
 import {
   AUTHOR_FOLLOW_STORAGE_KEY,
@@ -216,10 +217,10 @@ async function carregarSeguindoSupabase(
       userId = "";
     }
 
-    const perfilSocialIdLimpo = perfilSocialId.trim();
-    const userIdObrasSeguidas = idUsuarioSupabaseValido(perfilSocialIdLimpo)
-      ? perfilSocialIdLimpo
-      : userId;
+    const userIdObrasSeguidas = obterUsuarioObrasSeguidasSeguindo(
+      perfilSocialId,
+      userId,
+    );
 
     const obrasSupabaseBanco =
       await carregarObrasPublicadasSeguindoSupabase();
