@@ -1,20 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase/client";
+import { useState } from "react";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEmAltaAuthSession } from "./hooks/use-em-alta-auth-session";
 import { useEmAltaDesktopMode } from "./hooks/use-em-alta-desktop-mode";
+import { useEmAltaRankingLoader } from "./hooks/use-em-alta-ranking-loader";
 import type {
   ObraLocal,
 } from "./lib/em-alta-models";
-import { carregarColecoesRankingEmAlta } from "./lib/em-alta-ranking-collections-loader";
-import { carregarObrasSupabasePublicadas } from "./lib/em-alta-supabase-works-loader";
 import {
   criarLoginHrefEmAlta,
 } from "./lib/em-alta-route-utils";
-import { carregarInteracoesLocaisRankingEmAlta } from "./lib/em-alta-ranking-local-interactions";
 import {
   obterObrasConcluidasProtegidasEmAlta,
   obterObrasFavoritasProtegidasEmAlta,
@@ -53,87 +50,17 @@ export default function EmAltaPage() {
     setUsuarioLogadoId,
   });
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarRanking() {
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setCarregandoRanking(true);
-        }
-      }, 0);
-
-      try {
-        const obrasNormalizadas: ObraLocal[] = [];
-        let userIdAtual = usuarioLogadoId;
-
-        if (!userIdAtual) {
-          try {
-            const { data } = await supabase.auth.getUser();
-            userIdAtual = data.user?.id || "";
-          } catch {
-            userIdAtual = "";
-          }
-        }
-
-        const {
-          obrasFavoritasNormalizadas,
-          obrasConcluidasNormalizadas,
-        } = await carregarColecoesRankingEmAlta(userIdAtual);
-
-        const {
-          visualizacoesNormalizadas,
-          avaliacoesLocaisNormalizadas,
-        } = carregarInteracoesLocaisRankingEmAlta(userIdAtual);
-
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setUsuarioLogado(Boolean(userIdAtual));
-            setUsuarioLogadoId(userIdAtual);
-            setObrasLocais(obrasNormalizadas);
-            setObrasFavoritas(obrasFavoritasNormalizadas);
-            setObrasConcluidas(obrasConcluidasNormalizadas);
-            setVisualizacoesRegistradas(visualizacoesNormalizadas);
-            setAvaliacoesLocaisRegistradas(avaliacoesLocaisNormalizadas);
-          }
-        }, 0);
-
-        const obrasComSupabase =
-          await carregarObrasSupabasePublicadas(
-            obrasNormalizadas,
-            userIdAtual,
-          );
-
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setObrasLocais(obrasComSupabase);
-          }
-        }, 0);
-      } catch {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setObrasLocais([]);
-            setObrasFavoritas([]);
-            setObrasConcluidas([]);
-            setVisualizacoesRegistradas({});
-            setAvaliacoesLocaisRegistradas({});
-          }
-        }, 0);
-      } finally {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setCarregandoRanking(false);
-          }
-        }, 0);
-      }
-    }
-
-    void carregarRanking();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [usuarioLogadoId]);
+  useEmAltaRankingLoader({
+    usuarioLogadoId,
+    setCarregandoRanking,
+    setUsuarioLogado,
+    setUsuarioLogadoId,
+    setObrasLocais,
+    setObrasFavoritas,
+    setObrasConcluidas,
+    setVisualizacoesRegistradas,
+    setAvaliacoesLocaisRegistradas,
+  });
 
   const {
     ranking,

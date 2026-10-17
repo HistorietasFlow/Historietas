@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const loaderObrasSupabase = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-supabase-works-loader.ts",
@@ -237,8 +241,8 @@ test("fronteira preserva loader de leitura e delegação da página", () => {
     /import \{ carregarProfilesAutoresRanking \} from "\.\/em-alta-author-profile-loader";/,
   );
   assert.match(
-    pagina,
-    /import \{ carregarObrasSupabasePublicadas \} from "\.\/lib\/em-alta-supabase-works-loader";/,
+    rankingLoaderFase891,
+    /import \{ carregarObrasSupabasePublicadas \} from "\.\.\/lib\/em-alta-supabase-works-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarProfilesAutoresRanking\b/);
 });

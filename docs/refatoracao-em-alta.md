@@ -273,3 +273,9 @@
 - Moveu a leitura local/remota, normalização e persistência de favoritos e concluídas para um loader dedicado.
 - Preservou a ordem do `Promise.all`, as chaves, o armazenamento local e os fallbacks existentes.
 - O lifecycle, autenticação, estados e carregamento de obras permaneceram na página.
+
+## Fase 891 — lifecycle de carregamento do ranking
+
+- Moveu o efeito de carregamento para `useEmAltaRankingLoader`, mantendo os estados na página.
+- Preservou autenticação, ordem dos loaders, timers, cancelamento, fallbacks e dependência do usuário.
+- Nenhuma query, mutação, chave de storage ou comportamento visual foi alterado.

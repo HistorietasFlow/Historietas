@@ -6,6 +6,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const shell = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-page-shell.tsx",
@@ -53,6 +57,6 @@ test("Em Alta delega só o shell e mantém os ramos de carregamento e conteúdo"
   assert.doesNotMatch(pagina, /data-historietas-em-alta-root="true"/);
   assert.doesNotMatch(pagina, /historietasThemeCss/);
   assert.doesNotMatch(pagina, /emAltaPageCss/);
-  assert.match(pagina, /async function carregarRanking\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /useEmAltaRankingLoader\(/);
+  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
 });
