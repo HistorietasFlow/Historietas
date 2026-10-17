@@ -38,6 +38,7 @@ import {
 import {
   criarMapaComentariosPorCapitulo,
   criarSetObrasPorRegistro,
+  extrairIdsRegistrosSeguindo,
 } from "./lib/seguindo-record-utils";
 import {
   calcularProgressoLeitura,
@@ -222,9 +223,7 @@ async function carregarSeguindoSupabase(
 
     const obrasSupabaseBanco =
       await carregarObrasPublicadasSeguindoSupabase();
-    const obraIds = obrasSupabaseBanco
-      .map((obra) => obra.id)
-      .filter((obraId) => Boolean(obraId));
+    const obraIds = extrairIdsRegistrosSeguindo(obrasSupabaseBanco);
 
     if (obraIds.length === 0) {
       return criarResultadoColecoesSeguindo({
@@ -237,9 +236,9 @@ async function carregarSeguindoSupabase(
 
     const capitulosSupabaseBanco =
       await carregarCapitulosPublicadosSeguindoSupabase(obraIds);
-    const capituloIds = capitulosSupabaseBanco
-      .map((capitulo) => capitulo.id)
-      .filter((capituloId) => Boolean(capituloId));
+    const capituloIds = extrairIdsRegistrosSeguindo(
+      capitulosSupabaseBanco,
+    );
     const [seguidasBanco, comentariosCapitulosBanco, metricas] =
       await Promise.all([
         carregarIdsObrasUsuarioSupabase("seguindo_obras", userIdObrasSeguidas),
