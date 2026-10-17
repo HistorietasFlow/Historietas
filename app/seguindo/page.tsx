@@ -20,6 +20,8 @@ import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
+  encontrarObraLocalSeguindo,
+  mesclarIdsColecaoSeguindo,
   mesclarObrasSeguindo,
   obraEstaNaLista,
   removerObraDaLista,
@@ -261,12 +263,10 @@ async function carregarSeguindoSupabase(
     } = prepararMetricasSeguindo(metricas, userId);
 
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
-      const obraLocal = obrasLocais.find((obraAtual) => {
-        const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
-        const slugBanco = obraBanco.slug?.trim() || criarSlugBase(obraBanco.titulo || "");
-
-        return obraAtual.id === obraBanco.id || slugLocal === slugBanco;
-      });
+      const obraLocal = encontrarObraLocalSeguindo(
+        obrasLocais,
+        obraBanco,
+      );
 
       const capitulosDaObra = capitulosSupabaseBanco.filter(
         (capitulo) => capitulo.obra_id === obraBanco.id
@@ -290,14 +290,17 @@ async function carregarSeguindoSupabase(
 
     return {
       obras: obrasMescladas,
-      obrasSeguidas: Array.from(
-        new Set([...obrasSeguidasLocais, ...Array.from(seguidasSupabase)])
+      obrasSeguidas: mesclarIdsColecaoSeguindo(
+        obrasSeguidasLocais,
+        seguidasSupabase,
       ),
-      obrasFavoritas: Array.from(
-        new Set([...obrasFavoritasLocais, ...Array.from(favoritasSupabase)])
+      obrasFavoritas: mesclarIdsColecaoSeguindo(
+        obrasFavoritasLocais,
+        favoritasSupabase,
       ),
-      obrasConcluidas: Array.from(
-        new Set([...obrasConcluidasLocais, ...Array.from(concluidasSupabase)])
+      obrasConcluidas: mesclarIdsColecaoSeguindo(
+        obrasConcluidasLocais,
+        concluidasSupabase,
       ),
     };
   } catch (error) {
