@@ -54,7 +54,9 @@ import {
   obterTotalComentariosObraSeguindo,
   obterTotalCurtidasObraSeguindo,
   obterTotalLidosObraSeguindo,
+  obterTotalRegistroObraSeguindo,
   obterTotalSalvosObraSeguindo,
+  somarTotaisCapitulosSeguindo,
 } from "./lib/seguindo-work-metrics-utils";
 import {
   dataAtividadeObra,
@@ -610,22 +612,6 @@ async function carregarComentariosCapitulosUsuarioSupabase(
 
   return [];
 }
-function somarTotaisCapitulosSeguindo(
-  capitulos: Pick<SupabaseCapituloRow, "id">[],
-  contagens: Record<string, number>,
-) {
-  return capitulos.reduce((total, capitulo) => {
-    return total + normalizarNumeroSeguindo(contagens[capitulo.id], 0);
-  }, 0);
-}
-
-function obterTotalRegistroObraSeguindo(
-  obraId: string,
-  contagens: Record<string, number>,
-) {
-  return normalizarNumeroSeguindo(contagens[obraId], 0);
-}
-
 function converterObraSupabaseParaLocal({
   obraBanco,
   capitulosBanco,
