@@ -37,10 +37,8 @@ import {
 import { carregarRegistrosAtividadesTabelaSeguindo } from "./lib/seguindo-activity-query-utils";
 import { deduplicarAtividadesSeguindo } from "./lib/seguindo-activity-list-utils";
 import {
-  criarAtividadeSeguindoPorDados,
-  obterDataRegistroAtividadeSeguindo,
-  obterMetadataAtividadeSeguindo,
-  registroAtividadeSeguindoPodeAparecer,
+  criarAtividadeSeguindoDeObra,
+  criarAtividadeSeguindoDoDiario,
 } from "./lib/seguindo-activity-utils";
 import {
   criarHandleUsuarioSeguindo,
@@ -52,7 +50,6 @@ import {
   criarMapaComentariosPorCapitulo,
   criarSetObrasPorRegistro,
   normalizarRegistrosSupabaseGenericos,
-  obterIdObraRegistro,
   obterTextoRegistro,
 } from "./lib/seguindo-record-utils";
 import type { RegistroSupabaseGenerico } from "./lib/seguindo-record-utils";
@@ -1085,99 +1082,6 @@ async function carregarSolicitacoesSeguidoresSupabase(
     console.warn("Não consegui carregar solicitações de seguidores:", error);
     return [];
   }
-}
-
-function criarAtividadeSeguindoDoDiario({
-  registro,
-  usuariosPorId,
-  obrasPorId,
-}: {
-  registro: RegistroSupabaseGenerico;
-  usuariosPorId: Map<string, UsuarioSeguido>;
-  obrasPorId: Map<string, ObraLocal>;
-}) {
-  if (!registroAtividadeSeguindoPodeAparecer(registro, "privado")) {
-    return null;
-  }
-
-  const atividadeId = obterTextoRegistro(registro, "id");
-  const usuarioId = obterTextoRegistro(registro, "user_id");
-  const usuario = usuariosPorId.get(usuarioId);
-
-  if (!atividadeId || !usuario) {
-    return null;
-  }
-
-  const metadata = obterMetadataAtividadeSeguindo(registro.metadata);
-  const tipo = obterTextoRegistro(registro, "tipo") || "diario";
-  const obraId = obterTextoRegistro(registro, "obra_id");
-  const obra = obraId ? obrasPorId.get(obraId) || null : null;
-  const tituloObra =
-    obra?.titulo ||
-    obterTextoRegistro(metadata, "obra_titulo") ||
-    obterTextoRegistro(metadata, "titulo_obra") ||
-    obterTextoRegistro(metadata, "obra_relacionada") ||
-    "atividade de leitura";
-  const nota = Number(registro.nota ?? metadata.nota ?? metadata.rating ?? 0);
-  const postId = obterTextoRegistro(metadata, "post_id");
-  const href =
-    obra?.link ||
-    (obra?.slug
-      ? `/obra/${obra.slug}`
-      : postId
-        ? `/comunidade?post=${encodeURIComponent(postId)}`
-        : criarHrefPerfilUsuarioSeguindo(usuario));
-
-  return criarAtividadeSeguindoPorDados({
-    id: `diario-${atividadeId}`,
-    usuario,
-    tipo,
-    tituloObra,
-    nota,
-    data: obterDataRegistroAtividadeSeguindo(registro),
-    href,
-  });
-}
-
-function criarAtividadeSeguindoDeObra({
-  registro,
-  usuariosPorId,
-  obrasPorId,
-  tipo,
-  fallbackVisibilidade,
-}: {
-  registro: RegistroSupabaseGenerico;
-  usuariosPorId: Map<string, UsuarioSeguido>;
-  obrasPorId: Map<string, ObraLocal>;
-  tipo: "favoritou_obra" | "concluiu_obra" | "avaliou_obra";
-  fallbackVisibilidade: "publico" | "parcial" | "privado";
-}) {
-  if (!registroAtividadeSeguindoPodeAparecer(registro, fallbackVisibilidade)) {
-    return null;
-  }
-
-  const usuarioId = obterTextoRegistro(registro, "user_id");
-  const usuario = usuariosPorId.get(usuarioId);
-  const obraId = obterIdObraRegistro(registro);
-  const obra = obraId ? obrasPorId.get(obraId) || null : null;
-
-  if (!usuario || !obra) {
-    return null;
-  }
-
-  const nota = Number(registro.nota ?? registro.rating ?? registro.avaliacao ?? 0);
-  const data = obterDataRegistroAtividadeSeguindo(registro) || obra.criadaEm;
-  const registroId = obterTextoRegistro(registro, "id") || `${usuarioId}-${tipo}-${obraId}`;
-
-  return criarAtividadeSeguindoPorDados({
-    id: `${tipo}-${registroId}`,
-    usuario,
-    tipo,
-    tituloObra: obra.titulo,
-    nota,
-    data,
-    href: obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`,
-  });
 }
 
 async function carregarAtividadesSeguindoSupabase(
