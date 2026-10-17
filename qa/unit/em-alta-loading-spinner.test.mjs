@@ -17,6 +17,13 @@ const css = readFileSync(
   new URL("../../app/em-alta/lib/em-alta-page-css.ts", import.meta.url),
   "utf8",
 );
+const shell = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-page-shell.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("LoadingSpinner de Em Alta preserva estrutura, acessibilidade e estilos", () => {
   assert.match(componente, /export function LoadingSpinner\(/);
@@ -56,6 +63,10 @@ test("Em Alta mantém o único consumidor no branch de carregamento", () => {
   assert.match(pagina, /if \(carregandoRanking\)/);
   assert.match(
     pagina,
-    /<style>\{`\$\{historietasThemeCss\}\$\{emAltaPageCss\}`\}<\/style>\s*<EmAltaLanguageBridge \/>\s*<LoadingSpinner label="Carregando Em Alta" \/>/,
+    /<EmAltaPageShell pageThemeStyle=\{pageThemeStyle\} carregando>\s*<LoadingSpinner label="Carregando Em Alta" \/>\s*<\/EmAltaPageShell>/,
+  );
+  assert.match(
+    shell,
+    /<style>\{`\$\{historietasThemeCss\}\$\{emAltaPageCss\}`\}<\/style>\s*<EmAltaLanguageBridge \/>\s*\{children\}/,
   );
 });

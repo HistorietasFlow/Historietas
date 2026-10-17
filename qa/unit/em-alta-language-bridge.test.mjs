@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const shell = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-page-shell.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("EmAltaLanguageBridge preserva o lifecycle e a restauração do DOM", () => {
   assert.match(bridge, /^"use client";/);
@@ -58,13 +65,18 @@ test("EmAltaLanguageBridge preserva o lifecycle e a restauração do DOM", () =>
   assert.match(bridge, /return null;/);
 });
 
-test("Em Alta consome o bridge dedicado e preserva os dois mounts", () => {
+test("Em Alta consome o bridge dedicado pelo shell e preserva os dois mounts", () => {
   assert.match(
     pagina,
-    /import \{ EmAltaLanguageBridge \} from "\.\/components\/em-alta-language-bridge";/,
+    /import \{ EmAltaPageShell \} from "\.\/components\/em-alta-page-shell";/,
   );
   assert.doesNotMatch(pagina, /function EmAltaLanguageBridge\(\)/);
-  assert.equal((pagina.match(/<EmAltaLanguageBridge \/>/g) || []).length, 2);
+  assert.doesNotMatch(pagina, /EmAltaLanguageBridge/);
+  assert.match(
+    shell,
+    /import \{ EmAltaLanguageBridge \} from "\.\/em-alta-language-bridge";/,
+  );
+  assert.equal((shell.match(/<EmAltaLanguageBridge \/>/g) || []).length, 2);
   assert.doesNotMatch(pagina, /useHistorietasLanguage/);
   assert.doesNotMatch(pagina, /traduzirTextoEmAlta/);
 });
