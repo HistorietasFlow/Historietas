@@ -34,6 +34,16 @@ import {
   normalizarNumeroSeguindo,
 } from "./lib/seguindo-format-utils";
 import {
+  criarMapaComentariosPorCapitulo,
+  criarSetObrasPorRegistro,
+  normalizarRegistrosSupabaseGenericos,
+  obterIdCapituloRegistro,
+  obterIdObraRegistro,
+  obterTextoComentarioRegistro,
+  obterTextoRegistro,
+} from "./lib/seguindo-record-utils";
+import type { RegistroSupabaseGenerico } from "./lib/seguindo-record-utils";
+import {
   calcularProgressoLeitura,
   obraEmLeitura,
   obterTotalComentariosObraSeguindo,
@@ -213,24 +223,6 @@ const totaisInteracoesSeguindoVazios: TotaisInteracoesSeguindo = {
   salvosPorCapitulo: {},
   lidosPorCapitulo: {},
 };
-
-type RegistroSupabaseGenerico = Record<string, unknown>;
-
-function normalizarRegistrosSupabaseGenericos(
-  valor: unknown
-): RegistroSupabaseGenerico[] {
-  if (!Array.isArray(valor)) {
-    return [];
-  }
-
-  return valor.filter((registro): registro is RegistroSupabaseGenerico => {
-    return (
-      Boolean(registro) &&
-      typeof registro === "object" &&
-      !Array.isArray(registro)
-    );
-  });
-}
 
 type FiltroSeguindo =
   | "todos"
@@ -604,69 +596,6 @@ function normalizarObraSalva(obra: ObraSalva, obraIndex: number): ObraLocal {
       0,
     ),
   };
-}
-
-function obterTextoRegistro(registro: RegistroSupabaseGenerico, chave: string) {
-  const valor = registro[chave];
-
-  if (typeof valor === "string") {
-    return valor.trim();
-  }
-
-  if (typeof valor === "number" || typeof valor === "boolean") {
-    return String(valor);
-  }
-
-  return "";
-}
-
-function obterIdObraRegistro(registro: RegistroSupabaseGenerico) {
-  return (
-    obterTextoRegistro(registro, "obra_id") ||
-    obterTextoRegistro(registro, "obraId") ||
-    obterTextoRegistro(registro, "id_obra")
-  );
-}
-
-function obterIdCapituloRegistro(registro: RegistroSupabaseGenerico) {
-  return (
-    obterTextoRegistro(registro, "capitulo_id") ||
-    obterTextoRegistro(registro, "capituloId") ||
-    obterTextoRegistro(registro, "id_capitulo")
-  );
-}
-
-function obterTextoComentarioRegistro(registro: RegistroSupabaseGenerico) {
-  return (
-    obterTextoRegistro(registro, "comentario") ||
-    obterTextoRegistro(registro, "texto") ||
-    obterTextoRegistro(registro, "conteudo")
-  );
-}
-
-function criarSetObrasPorRegistro(registros: RegistroSupabaseGenerico[]) {
-  return new Set(
-    registros
-      .map((registro) => obterIdObraRegistro(registro))
-      .filter((obraId) => Boolean(obraId))
-  );
-}
-
-function criarMapaComentariosPorCapitulo(
-  registros: RegistroSupabaseGenerico[]
-) {
-  const mapa = new Map<string, string>();
-
-  registros.forEach((registro) => {
-    const capituloId = obterIdCapituloRegistro(registro);
-    const comentario = obterTextoComentarioRegistro(registro);
-
-    if (capituloId && comentario) {
-      mapa.set(capituloId, comentario);
-    }
-  });
-
-  return mapa;
 }
 
 async function carregarIdsObrasUsuarioSupabase(
