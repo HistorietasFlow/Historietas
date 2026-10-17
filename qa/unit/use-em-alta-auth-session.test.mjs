@@ -78,6 +78,7 @@ test("Em Alta delega autenticação sem mover o carregador ou as ações", () =>
   assert.doesNotMatch(pagina, /async function usuarioTemSessaoAtiva\(/);
   assert.match(pagina, /async function carregarRanking\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /async function alternarFavorito\(obraId: string\)/);
-  assert.match(pagina, /async function alternarConcluido\(obraId: string\)/);
+  assert.match(pagina, /useEmAltaRankingCollectionActions\(/);
+  assert.doesNotMatch(pagina, /async function alternarFavorito\(obraId: string\)/);
+  assert.doesNotMatch(pagina, /async function alternarConcluido\(obraId: string\)/);
 });

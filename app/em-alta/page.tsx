@@ -10,10 +10,7 @@ import type {
   ObraLocal,
 } from "./lib/em-alta-models";
 import {
-  adicionarRankingObraNaLista,
-  listaTemRankingObra,
   normalizarListaIdsEmAlta,
-  removerRankingObraDaLista,
 } from "./lib/em-alta-ranking-list-utils";
 import {
   carregarListaIdsLocalEmAlta,
@@ -26,8 +23,6 @@ import {
 } from "./lib/em-alta-local-storage-utils";
 import { carregarIdsColecaoUsuarioSupabaseEmAlta } from "./lib/em-alta-collection-supabase-loader";
 import { carregarObrasSupabasePublicadas } from "./lib/em-alta-supabase-works-loader";
-import { sincronizarColecaoRankingSupabase } from "./lib/em-alta-collection-supabase-sync";
-import { registrarColecaoRankingNoDiario } from "./lib/em-alta-diary-activity";
 import {
   criarLoginHrefEmAlta,
 } from "./lib/em-alta-route-utils";
@@ -51,6 +46,7 @@ import { EmAltaHeader } from "./components/em-alta-header";
 import { EmAltaPageDecorations } from "./components/em-alta-page-decorations";
 import { EmAltaPageShell } from "./components/em-alta-page-shell";
 import { useEmAltaRankingDerivedData } from "./hooks/use-em-alta-ranking-derived-data";
+import { useEmAltaRankingCollectionActions } from "./hooks/use-em-alta-ranking-collection-actions";
 
 export default function EmAltaPage() {
   const router = useRouter();
@@ -230,93 +226,17 @@ export default function EmAltaPage() {
     router.push(criarLoginHrefEmAlta());
   }
 
-  async function alternarFavorito(obraId: string) {
-    const logado = await usuarioTemSessaoAtiva();
-
-    if (!logado) {
-      avisarLoginRanking();
-      return;
-    }
-
-    const obraRanking =
-      ranking.find((obra) => {
-        return obra.storageId === obraId || obra.id === obraId;
-      }) || null;
-
-    const obraVaiFicarFavorita = obraRanking
-      ? !listaTemRankingObra(obraRanking, obrasFavoritas)
-      : !obrasFavoritas.includes(obraId);
-
-    const novasObrasFavoritas = obraRanking
-      ? obraVaiFicarFavorita
-        ? adicionarRankingObraNaLista(obraRanking, obrasFavoritas)
-        : removerRankingObraDaLista(obraRanking, obrasFavoritas)
-      : obraVaiFicarFavorita
-        ? normalizarListaIdsEmAlta([...obrasFavoritas, obraId])
-        : obrasFavoritas.filter((id) => id !== obraId);
-
-    salvarListaIdsLocalEmAlta(
-      FAVORITES_STORAGE_KEY,
+  const { alternarFavorito, alternarConcluido } =
+    useEmAltaRankingCollectionActions({
+      ranking,
+      obrasFavoritas,
+      obrasConcluidas,
       usuarioLogadoId,
-      novasObrasFavoritas,
-    );
-
-    setObrasFavoritas(novasObrasFavoritas);
-
-    void sincronizarColecaoRankingSupabase(
-      "favoritos",
-      obraRanking,
-      obraVaiFicarFavorita,
-    );
-
-    if (obraVaiFicarFavorita) {
-      void registrarColecaoRankingNoDiario("favoritou_obra", obraRanking);
-    }
-  }
-
-  async function alternarConcluido(obraId: string) {
-    const logado = await usuarioTemSessaoAtiva();
-
-    if (!logado) {
-      avisarLoginRanking();
-      return;
-    }
-
-    const obraRanking =
-      ranking.find((obra) => {
-        return obra.storageId === obraId || obra.id === obraId;
-      }) || null;
-
-    const obraVaiFicarConcluida = obraRanking
-      ? !listaTemRankingObra(obraRanking, obrasConcluidas)
-      : !obrasConcluidas.includes(obraId);
-
-    const novasObrasConcluidas = obraRanking
-      ? obraVaiFicarConcluida
-        ? adicionarRankingObraNaLista(obraRanking, obrasConcluidas)
-        : removerRankingObraDaLista(obraRanking, obrasConcluidas)
-      : obraVaiFicarConcluida
-        ? normalizarListaIdsEmAlta([...obrasConcluidas, obraId])
-        : obrasConcluidas.filter((id) => id !== obraId);
-
-    salvarListaIdsLocalEmAlta(
-      COMPLETED_STORAGE_KEY,
-      usuarioLogadoId,
-      novasObrasConcluidas,
-    );
-
-    setObrasConcluidas(novasObrasConcluidas);
-
-    void sincronizarColecaoRankingSupabase(
-      "concluidas",
-      obraRanking,
-      obraVaiFicarConcluida,
-    );
-
-    if (obraVaiFicarConcluida) {
-      void registrarColecaoRankingNoDiario("concluiu_obra", obraRanking);
-    }
-  }
+      usuarioTemSessaoAtiva,
+      avisarLoginRanking,
+      setObrasFavoritas,
+      setObrasConcluidas,
+    });
 
   if (carregandoRanking) {
     return (

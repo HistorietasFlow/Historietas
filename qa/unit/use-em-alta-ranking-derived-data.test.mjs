@@ -69,6 +69,7 @@ test("Em Alta delega somente os dados derivados do ranking", () => {
   assert.doesNotMatch(pagina, /calcularRankingAutores/);
   assert.doesNotMatch(pagina, /criarVisaoRankingEmAlta/);
   assert.match(pagina, /async function carregarRanking\(\)/);
-  assert.match(pagina, /async function alternarFavorito\(/);
-  assert.match(pagina, /async function alternarConcluido\(/);
+  assert.match(pagina, /useEmAltaRankingCollectionActions\(/);
+  assert.doesNotMatch(pagina, /async function alternarFavorito\(/);
+  assert.doesNotMatch(pagina, /async function alternarConcluido\(/);
 });
