@@ -29,3 +29,8 @@
 
 - Extraiu os mapas e helpers de tradução para `app/explorar/lib/explorar-translations.ts`.
 - Preservou textos, idiomas, normalização, traduções dinâmicas e fallbacks, sem alterar os consumidores ou o comportamento.
+
+## Fase 846 — estilos de layout, busca e filtros
+
+- Extraiu os estilos do shell, cabeçalho, busca, categorias, filtros e confirmação 18+ para `app/explorar/lib/explorar-layout-styles.ts`.
+- Preservou objetos, spreads, variantes e helpers visuais; os estilos próprios dos cards permaneceram na página.
