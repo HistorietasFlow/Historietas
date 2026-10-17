@@ -534,3 +534,5 @@ Não alterar schema, migrations, dependências ou contratos públicos sem autori
 ## Validação obrigatória
 
 Qualquer manutenção futura deve executar as validações aplicáveis definidas no `AGENTS.md`, incluindo lint, typecheck, auditoria estática, testes unitários, integrações com Supabase local, build, E2E e verificação final de diff/whitespace. Qualquer validação não executada ou com falha deve ser registrada claramente.
+
+A continuidade da refatoração do leitor está registrada em `docs/refatoracao-ler-capitulo.md`.

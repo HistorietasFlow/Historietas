@@ -49,7 +49,8 @@ test("Leitor mantém o CSS de foco separado no único consumidor normal", () => 
   assert.match(leitorPageCss, /export const leitorPageCss = `/);
   assert.doesNotMatch(leitorPageCss, /focusBottomNavigationCss/);
   assert.doesNotMatch(leitorPageCss, /historietas-bottom-nav-main-border/);
-  assert.match(pagina, /const safeTextStyle: CSSProperties = \{/);
+  assert.match(pagina, /import \{ safeTextStyle \} from "\.\/lib\/ler-capitulo-text-style";/);
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties = \{/);
   assert.match(pagina, /const isDesktop = useLerCapituloDesktopMode\(\);/);
   assert.match(pagina, /async function enviarComentarioCapitulo\(/);
 });
