@@ -1,3 +1,9 @@
+export const STORAGE_KEY = "historietas-obras";
+export const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
+export const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
+export const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+export const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
+
 export function criarStorageKeyUsuarioSeguindo(
   chave: string,
   userId: string,
