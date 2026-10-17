@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Children, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { supabase } from "../../lib/supabase/client";
-import { criarSlugBase, normalizarTexto } from "../../lib/utils";
+import { normalizarTexto } from "../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -21,6 +20,9 @@ import {
   type CursorCatalogo,
 } from "../../lib/catalogo";
 import { LoadingSpinner } from "./components/explorar-loading-spinner";
+import AutorExplorarCard from "./components/explorar-autor-card";
+import ObraPublicadaCard from "./components/explorar-obra-publicada-card";
+import { criarPerfilAutorHrefExplorar } from "./lib/explorar-author-route-utils";
 import { useExplorarAdvancedFiltersBodyLock } from "./hooks/use-explorar-advanced-filters-body-lock";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
@@ -76,13 +78,6 @@ import {
   desktopCategoriesStyle,
 } from "./lib/explorar-layout-styles";
 import {
-  criarPublishedCardTemaStyle,
-  criarDesktopPublishedCardTemaStyle,
-  criarPublishedCoverTemaStyle,
-  criarDesktopPublishedCoverStyle,
-  criarProgressTrackStyle,
-  criarProgressBarStyle,
-  criarCardPrimaryActionStyle,
   sectionStyle,
   sectionHeaderStyle,
   sectionHeaderSpacerStyle,
@@ -103,63 +98,17 @@ import {
   explorarCarouselArrowRightIconStyle,
   autoresExplorarGridStyle,
   desktopAutoresExplorarGridStyle,
-  autorExplorarCardStyle,
-  desktopAutorExplorarCardStyle,
-  autorExplorarGridCardStyle,
-  desktopAutorExplorarGridCardStyle,
-  autorExplorarCardGlowStyle,
-  autorExplorarTopStyle,
-  autorExplorarAvatarShellStyle,
-  autorExplorarAvatarImageStyle,
-  autorExplorarAvatarInitialsStyle,
-  autorExplorarIdentityStyle,
-  autorExplorarNameStyle,
-  autorExplorarBioStyle,
-  autorExplorarMetaRowStyle,
-  autorExplorarMetaBadgeStyle,
-  autorExplorarRatingStarStyle,
-  autorExplorarBottomStyle,
-  autorExplorarGenresStyle,
-  autorExplorarGenreBadgeStyle,
-  autorExplorarProfileButtonStyle,
   gridStyle,
-  cardTopStyle,
-  publishedTitleStyle,
-  statusRowStyle,
-  draftStatusStyle,
-  formatBadgeStyle,
-  classificationBadgeStyle,
-  authorLinkStyle,
-  publishedInfoStyle,
-  desktopPublishedInfoStyle,
-  desktopPublishedSynopsisStyle,
-  statsStyle,
-  metricItemStyle,
-  metricIconStyle,
-  heartMetricIconStyle,
-  progressCompactStyle,
-  progressTextStyle,
-  cardActionRowStyle,
-  cardGenreBadgeStyle,
-  desktopCardActionRowStyle,
-  desktopCardGenreBadgeStyle,
   desktopSectionStyle,
   desktopSectionHeaderStyle,
   desktopSectionTitleStyle,
   desktopPublishedGridStyle,
-  desktopPublishedTitleStyle,
 } from "./lib/explorar-content-styles";
 import {
   traduzirTextoExplorar,
   traduzirGeneroExplorar,
-  traduzirFormatoExplorar,
-  traduzirClassificacaoExplorar,
 } from "./lib/explorar-translations";
 import {
-  normalizarContadorExplorar,
-  totalCurtidasObra,
-  totalComentariosObra,
-  calcularProgressoLeitura,
   obraTemConteudoPublicadoExplorar,
 } from "./lib/explorar-work-normalizers";
 import type { ObraLocal } from "./lib/explorar-work-normalizers";
@@ -167,9 +116,7 @@ import {
   colecaoTemObraExplorar,
 } from "./lib/explorar-local-storage";
 import {
-  criarIniciaisAutorExplorar,
   criarBioAutorExplorar,
-  formatarMediaAvaliacaoAutorExplorar,
   carregarPerfisAutoresExplorar,
   carregarAvaliacoesAutoresExplorar,
 } from "./lib/explorar-author-profile-utils";
@@ -190,7 +137,6 @@ import {
   criarSecoesAutoresPorGeneroExplorar,
 } from "./lib/explorar-derived-utils";
 import type {
-  AutorExplorar,
   OrdenacaoExplorar,
   FiltroColecaoExplorar,
 } from "./lib/explorar-derived-utils";
@@ -282,25 +228,6 @@ function criarLoginHrefExplorar() {
   return `/login?${params.toString()}`;
 }
 
-function criarPerfilAutorHrefExplorar(autor: string, autorId?: string) {
-  const parametros = new URLSearchParams();
-  const autorLimpo = autor.trim();
-  const autorIdLimpo = autorId?.trim() || "";
-
-  if (autorLimpo) {
-    parametros.set("autor", autorLimpo);
-  }
-
-  if (autorIdLimpo) {
-    parametros.set("autorId", autorIdLimpo);
-    parametros.set("userId", autorIdLimpo);
-  }
-
-  const query = parametros.toString();
-
-  return query ? `/perfil-autor?${query}` : "/perfil-autor";
-}
-
 function criarHrefListaExplorar({
   titulo,
   modo,
@@ -365,25 +292,6 @@ function criarHrefListaExplorar({
   return `/listas?${parametros.toString()}`;
 }
 
-
-function criarPublishedCoverStyle(
-  capa: string,
-): CSSProperties {
-  const baseStyle = criarPublishedCoverTemaStyle();
-
-  if (!capa) {
-    return baseStyle;
-  }
-
-  return {
-    ...baseStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    filter: "none",
-    opacity: 1,
-  };
-}
 
 type TemaCategoriaExplorar = {
   accent: string;
@@ -1663,156 +1571,6 @@ function SectionHeader({
   );
 }
 
-function AutorExplorarCard({
-  autor,
-  isDesktop,
-  emGrade = false,
-}: {
-  autor: AutorExplorar;
-  isDesktop?: boolean;
-  emGrade?: boolean;
-}) {
-  const { language } = useHistorietasLanguage();
-  const generos = autor.generos.length > 0 ? autor.generos : ["Historietas"];
-  const nomeExibicao =
-    autor.nome === "Autor não informado"
-      ? traduzirTextoExplorar(autor.nome, language)
-      : autor.nome;
-
-  return (
-    <Link
-      href={autor.href}
-      style={
-        emGrade
-          ? isDesktop
-            ? desktopAutorExplorarGridCardStyle
-            : autorExplorarGridCardStyle
-          : isDesktop
-            ? desktopAutorExplorarCardStyle
-            : autorExplorarCardStyle
-      }
-      aria-label={
-        language === "en"
-          ? `Open author profile for ${nomeExibicao}`
-          : language === "es"
-            ? `Abrir el perfil del autor ${nomeExibicao}`
-            : `Abrir perfil do autor ${nomeExibicao}`
-      }
-    >
-      <span style={autorExplorarCardGlowStyle} aria-hidden="true" />
-
-      <div style={autorExplorarTopStyle}>
-        <div style={autorExplorarAvatarShellStyle}>
-          {autor.avatar ? (
-            <Image
-              src={autor.avatar}
-              alt={
-                language === "en"
-                  ? `${nomeExibicao} avatar`
-                  : `Avatar de ${nomeExibicao}`
-              }
-              width={68}
-              height={68}
-              unoptimized
-              style={autorExplorarAvatarImageStyle}
-            />
-          ) : (
-            <span style={autorExplorarAvatarInitialsStyle}>
-              {criarIniciaisAutorExplorar(nomeExibicao)}
-            </span>
-          )}
-        </div>
-
-        <div style={autorExplorarIdentityStyle}>
-          <h3 style={autorExplorarNameStyle}>{nomeExibicao}</h3>
-          <p style={autorExplorarBioStyle}>{autor.bio}</p>
-        </div>
-      </div>
-
-      <div style={autorExplorarMetaRowStyle}>
-        <span
-          style={autorExplorarMetaBadgeStyle}
-          aria-label={`${autor.totalObras} ${traduzirTextoExplorar(
-            autor.totalObras === 1 ? "obra publicada" : "obras publicadas",
-            language
-          )}`}
-        >
-          📚 {autor.totalObras}
-        </span>
-
-        <span
-          style={autorExplorarMetaBadgeStyle}
-          aria-label={
-            autor.avaliacao && autor.avaliacao.total > 0
-              ? language === "en"
-                ? `Average rating ${formatarMediaAvaliacaoAutorExplorar(
-                    autor.avaliacao,
-                    language
-                  )} out of 5, from ${autor.avaliacao.total} ${
-                    autor.avaliacao.total === 1 ? "rating" : "ratings"
-                  }`
-                : language === "es"
-                  ? `Valoración media ${formatarMediaAvaliacaoAutorExplorar(
-                      autor.avaliacao,
-                      language
-                    )} de 5, con ${autor.avaliacao.total} ${
-                      autor.avaliacao.total === 1
-                        ? "valoración"
-                        : "valoraciones"
-                    }`
-                  : `Avaliação média ${formatarMediaAvaliacaoAutorExplorar(
-                      autor.avaliacao,
-                      language
-                    )} de 5, com ${autor.avaliacao.total} ${
-                      autor.avaliacao.total === 1
-                        ? "avaliação"
-                        : "avaliações"
-                    }`
-              : traduzirTextoExplorar("Autor ainda sem avaliações", language)
-          }
-        >
-          <span style={autorExplorarRatingStarStyle} aria-hidden="true">
-            ★
-          </span>
-          {formatarMediaAvaliacaoAutorExplorar(autor.avaliacao, language)}
-        </span>
-
-        {autor.totalCurtidas > 0 && (
-          <span style={autorExplorarMetaBadgeStyle}>
-            ❤️ {autor.totalCurtidas}
-          </span>
-        )}
-
-        {autor.totalComentarios > 0 && (
-          <span style={autorExplorarMetaBadgeStyle}>
-            💬 {autor.totalComentarios}
-          </span>
-        )}
-      </div>
-
-      <div style={autorExplorarBottomStyle}>
-        <div style={autorExplorarGenresStyle}>
-          {generos.slice(0, 2).map((genero) => (
-            <span
-              key={`${autor.chave}-${genero}`}
-              style={autorExplorarGenreBadgeStyle}
-            >
-              {traduzirGeneroExplorar(genero, language)}
-            </span>
-          ))}
-        </div>
-
-        <span
-          data-historietas-page-background-action="true"
-          style={autorExplorarProfileButtonStyle}
-        >
-          {traduzirTextoExplorar("Ver perfil", language)}
-        </span>
-      </div>
-    </Link>
-  );
-}
-
 function ExplorarCarouselRow({
   children,
   isDesktop,
@@ -1889,145 +1647,5 @@ function ExplorarCarouselRow({
         />
       </button>
     </div>
-  );
-}
-
-function ObraPublicadaCard({
-  obra,
-  isDesktop,
-}: {
-  obra: ObraLocal;
-  isDesktop?: boolean;
-}) {
-  const { language } = useHistorietasLanguage();
-  const totalCurtidas = totalCurtidasObra(obra);
-  const totalComentarios = totalComentariosObra(obra);
-  const totalVisualizacoes = normalizarContadorExplorar(obra.visualizacoes);
-  const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
-  const paginaPublicaHref = `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-  const perfilAutorHref = criarPerfilAutorHrefExplorar(
-    obra.autor,
-    obra.autorId
-  );
-
-  return (
-    <article style={isDesktop ? criarDesktopPublishedCardTemaStyle() : criarPublishedCardTemaStyle()}>
-      <Link
-        href={paginaPublicaHref}
-        style={
-          isDesktop
-            ? criarDesktopPublishedCoverStyle(obra.capa)
-            : criarPublishedCoverStyle(obra.capa)
-        }
-        aria-label={
-          obra.titulo === "Obra sem título"
-            ? traduzirTextoExplorar(obra.titulo, language)
-            : obra.titulo
-        }
-      >
-        {!obra.capa && null}
-      </Link>
-
-      <div style={isDesktop ? desktopPublishedInfoStyle : publishedInfoStyle}>
-        <div style={cardTopStyle}>
-          <h3 style={isDesktop ? desktopPublishedTitleStyle : publishedTitleStyle}>
-            {obra.titulo === "Obra sem título"
-              ? traduzirTextoExplorar(obra.titulo, language)
-              : obra.titulo}
-          </h3>
-
-          <Link href={perfilAutorHref} style={authorLinkStyle}>
-            {traduzirTextoExplorar("Por", language)}{" "}
-            {obra.autor === "Autor não informado"
-              ? traduzirTextoExplorar(obra.autor, language)
-              : obra.autor}
-          </Link>
-        </div>
-
-        <div style={statusRowStyle}>
-          {!obra.publicado && (
-            <span style={draftStatusStyle}>
-              {traduzirTextoExplorar("Rascunho", language)}
-            </span>
-          )}
-
-          <span style={formatBadgeStyle}>
-            {traduzirFormatoExplorar(obra.formato, language)}
-          </span>
-
-          <span style={classificationBadgeStyle}>
-            {traduzirClassificacaoExplorar(
-              obra.classificacaoIndicativa,
-              language
-            )}
-          </span>
-        </div>
-
-        {isDesktop && (
-          <p style={desktopPublishedSynopsisStyle}>
-            {obra.sinopse === "Nenhuma sinopse informada."
-              ? traduzirTextoExplorar(obra.sinopse, language)
-              : obra.sinopse}
-          </p>
-        )}
-
-        <div style={statsStyle}>
-          <span style={metricItemStyle}>
-            <span style={metricIconStyle}>👁️</span>
-            {totalVisualizacoes}
-          </span>
-
-          <span style={metricItemStyle}>
-            <span style={heartMetricIconStyle}>❤️</span>
-            {totalCurtidas}
-          </span>
-
-          <span style={metricItemStyle}>
-            <span style={metricIconStyle}>💬</span>
-            {totalComentarios}
-          </span>
-
-          <span style={metricItemStyle}>
-            <span style={metricIconStyle}>
-              {obra.capitulos.length > 0 ? "📚" : obra.arquivoObra ? "📄" : "📚"}
-            </span>
-            {obra.capitulos.length > 0
-              ? `${obra.capitulos.length}`
-              : obra.arquivoObra
-                ? "1"
-                : "0"}
-          </span>
-        </div>
-
-        {progressoLeitura > 0 && (
-          <div style={progressCompactStyle}>
-            <div style={criarProgressTrackStyle()}>
-              <div
-                style={{
-                  ...criarProgressBarStyle(),
-                  width: `${progressoLeitura}%`,
-                }}
-              />
-            </div>
-
-            <span style={progressTextStyle}>{progressoLeitura}%</span>
-          </div>
-        )}
-
-        <div style={isDesktop ? desktopCardActionRowStyle : cardActionRowStyle}>
-          <span style={isDesktop ? desktopCardGenreBadgeStyle : cardGenreBadgeStyle}>
-            {traduzirGeneroExplorar(obra.genero, language)}
-          </span>
-
-          <Link
-            href={paginaPublicaHref}
-            data-historietas-page-background-action="true"
-            style={criarCardPrimaryActionStyle(isDesktop)}
-          >
-            {traduzirTextoExplorar("Ver obra", language)}
-          </Link>
-        </div>
-      </div>
-    </article>
   );
 }

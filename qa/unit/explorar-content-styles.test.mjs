@@ -16,6 +16,8 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const autorCard = readFileSync(new URL("../../app/explorar/components/explorar-autor-card.tsx", import.meta.url), "utf8");
+const obraCard = readFileSync(new URL("../../app/explorar/components/explorar-obra-publicada-card.tsx", import.meta.url), "utf8");
 const compilar = (codigo) =>
   typescript.transpileModule(codigo, {
     compilerOptions: {
@@ -45,6 +47,7 @@ const estilos = await import(
 
 test("o bloco visual preserva literalmente as declarações originais", () => {
   const original = modulo
+    .replace(/export function criarPublishedCoverStyle\([\s\S]*?\n}\n\n/, "")
     .replace(/^import type[^\n]+\nimport \{[\s\S]*?\} from "\.\/explorar-layout-styles";\n\n/, "")
     .replace(/^export (?=const|function)/gm, "")
     .trimEnd();
@@ -107,6 +110,15 @@ test("cards de obras preservam temas, capas, progresso e ações", () => {
     backgroundSize: "cover",
     backgroundPosition: "center",
   });
+  assert.deepEqual(estilos.criarPublishedCoverStyle(""), estilos.criarPublishedCoverTemaStyle());
+  assert.deepEqual(estilos.criarPublishedCoverStyle("capa.png"), {
+    ...estilos.criarPublishedCoverTemaStyle(),
+    backgroundImage: "url(capa.png)",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    filter: "none",
+    opacity: 1,
+  });
   const capaVazia = estilos.criarDesktopPublishedCoverStyle("");
   assert.deepEqual(capaVazia, {
     ...estilos.desktopPublishedCoverStyle,
@@ -147,6 +159,12 @@ test("o módulo de estilos é estático e a página continua consumindo os estil
   const importacao = pagina.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\/lib\/explorar-content-styles";/);
   assert.ok(importacao);
   const nomes = importacao[1].split(",").map((nome) => nome.trim()).filter(Boolean);
+  const importacaoAutor = autorCard.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  const importacaoObra = obraCard.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  assert.ok(importacaoAutor);
+  assert.ok(importacaoObra);
+  nomes.push(...importacaoAutor[1].split(",").map((nome) => nome.trim()).filter(Boolean));
+  nomes.push(...importacaoObra[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   assert.equal(nomes.length, 72);
   for (const nome of nomes) {
     assert.match(modulo, new RegExp(`export (?:const|function) ${nome}\\b`));
@@ -154,7 +172,7 @@ test("o módulo de estilos é estático e a página continua consumindo os estil
   }
   assert.match(modulo, /from "\.\/explorar-layout-styles"/);
   assert.match(pagina, /isDesktop \? desktopSectionStyle : sectionStyle/);
-  assert.match(pagina, /criarDesktopPublishedCoverStyle\(obra\.capa/);
+  assert.match(obraCard, /criarDesktopPublishedCoverStyle\(obra\.capa/);
   assert.doesNotMatch(modulo, /\b(?:supabase|localStorage|window|document|useEffect|useState)\b/i);
   assert.doesNotMatch(modulo, /<(?:div|section|article)\b/);
 });

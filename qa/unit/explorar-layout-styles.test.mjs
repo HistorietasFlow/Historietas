@@ -134,7 +134,10 @@ test("a página importa os estilos e os cards permanecem na fronteira visual", (
   }
   for (const nome of ["criarPublishedCardTemaStyle", "criarPublishedCoverTemaStyle", "criarProgressTrackStyle", "criarCardPrimaryActionStyle"]) {
     assert.match(estilosConteudo, new RegExp(`export function ${nome}\\(`));
-    assert.match(pagina, new RegExp(`\\b${nome}\\b`));
+    const consumidor = nome === "criarPublishedCoverTemaStyle"
+      ? estilosConteudo
+      : readFileSync(new URL("../../app/explorar/components/explorar-obra-publicada-card.tsx", import.meta.url), "utf8");
+    assert.match(consumidor, new RegExp(`\\b${nome}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\(`));
   }
   assert.match(modulo, /import type \{ CSSProperties \} from "react"/);

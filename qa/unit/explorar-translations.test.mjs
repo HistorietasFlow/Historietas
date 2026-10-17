@@ -102,7 +102,9 @@ test("a página delega a tradução a uma fronteira pura", () => {
   for (const nome of ["obterLocaleExplorar", "traduzirTextoExplorar", "traduzirGeneroExplorar", "traduzirFormatoExplorar", "traduzirClassificacaoExplorar"]) {
     assert.match(modulo, new RegExp(`export function ${nome}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\(`));
-    const consumidor = nome === "obterLocaleExplorar" ? derivados : pagina;
+    const consumidor = nome === "obterLocaleExplorar"
+      ? derivados
+      : [pagina, readFileSync(new URL("../../app/explorar/components/explorar-obra-publicada-card.tsx", import.meta.url), "utf8")].join("\n");
     assert.match(consumidor, new RegExp(`\\b${nome}\\(`));
   }
   assert.match(derivados, /import \{ obterLocaleExplorar \} from "\.\/explorar-translations"/);
