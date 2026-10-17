@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/ler-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const estilosLayout = readFileSync(
+  new URL("../../app/ler-capitulo/lib/ler-capitulo-layout-styles.ts", import.meta.url),
+  "utf8",
+);
 
 test("useLerCapituloDesktopMode preserva o lifecycle responsivo do leitor", () => {
   assert.match(hook, /^"use client";/);
@@ -55,7 +59,8 @@ test("Leitor delega apenas o modo desktop e preserva consumidores responsivos", 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 32);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 25);
+  assert.equal((estilosLayout.match(/\bisDesktop\b/g) || []).length, 7);
   assert.match(
     pagina,
     /<ComentariosCapituloSheet[\s\S]*?isDesktop=\{isDesktop\}/,
