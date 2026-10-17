@@ -49,3 +49,8 @@
 
 - Extraiu os helpers de storage por usuário, coleções e backups de arquivos para `app/explorar/lib/explorar-local-storage.ts`.
 - Preservou as chaves, a serialização, os fallbacks e a precedência do arquivo atual sobre o backup, reutilizando os normalizadores existentes.
+
+## Fase 850 — perfis e apresentação de autores
+
+- Extraiu os helpers de perfis públicos, nomes, bios, iniciais e avaliações para `app/explorar/lib/explorar-author-profile-utils.ts`.
+- Preservou consultas, aliases, deduplicação, traduções, formatação e falhas complementares sem alterar o catálogo ou as métricas de obras.
