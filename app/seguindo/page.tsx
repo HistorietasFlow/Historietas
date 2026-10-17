@@ -24,6 +24,7 @@ import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
+  mesclarObrasSeguindo,
   obraEstaNaLista,
   removerObraDaLista,
 } from "./lib/seguindo-work-collection-utils";
@@ -501,34 +502,6 @@ function converterObraSupabaseParaLocal({
       totalConcluidasObra,
     ),
   };
-}
-
-function mesclarObrasSeguindo(
-  obrasLocais: ObraLocal[],
-  obrasSupabase: ObraLocal[]
-) {
-  const obrasMescladas: ObraLocal[] = [...obrasLocais];
-
-  obrasSupabase.forEach((obraSupabase) => {
-    const indiceExistente = obrasMescladas.findIndex((obraLocal) => {
-      const slugLocal = obraLocal.slug || criarSlugBase(obraLocal.titulo);
-      const slugSupabase = obraSupabase.slug || criarSlugBase(obraSupabase.titulo);
-
-      return obraLocal.id === obraSupabase.id || slugLocal === slugSupabase;
-    });
-
-    if (indiceExistente >= 0) {
-      obrasMescladas[indiceExistente] = {
-        ...obrasMescladas[indiceExistente],
-        ...obraSupabase,
-      };
-      return;
-    }
-
-    obrasMescladas.unshift(obraSupabase);
-  });
-
-  return obrasMescladas;
 }
 
 async function carregarSeguindoSupabase(
