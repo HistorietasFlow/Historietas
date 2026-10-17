@@ -249,3 +249,9 @@
 - Moveu o pipeline de `useMemo` que compõe ranking de obras, autores e visões por categoria para `useEmAltaRankingDerivedData`.
 - Preservou as três dependências originais, a ordem dos cálculos e os contratos dos helpers puros.
 - Carregamento, Supabase, storage, autenticação, estados e mutações permaneceram na página.
+
+## Fase 887 — dados de exibição da página
+
+- Isolou a proteção das coleções pessoais e o título derivado do cabeçalho em helper puro.
+- Preservou os fallbacks de usuário não autenticado e os três títulos de estado literalmente.
+- Carregamento, Supabase, storage, autenticação, estados e mutações permaneceram na página.

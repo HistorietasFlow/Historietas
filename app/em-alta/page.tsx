@@ -36,6 +36,11 @@ import {
   normalizarVisualizacoesRanking,
 } from "./lib/em-alta-ranking-data-utils";
 import {
+  obterObrasConcluidasProtegidasEmAlta,
+  obterObrasFavoritasProtegidasEmAlta,
+  obterTituloCabecalhoEmAlta,
+} from "./lib/em-alta-page-display-utils";
+import {
   desktopContainerStyle,
   pageStyle,
   containerStyle,
@@ -207,14 +212,19 @@ export default function EmAltaPage() {
     visualizacoesRegistradas,
   });
 
-  const obrasFavoritasProtegidas = usuarioLogado ? obrasFavoritas : [];
-  const obrasConcluidasProtegidas = usuarioLogado ? obrasConcluidas : [];
+  const obrasFavoritasProtegidas = obterObrasFavoritasProtegidasEmAlta(
+    usuarioLogado,
+    obrasFavoritas,
+  );
+  const obrasConcluidasProtegidas = obterObrasConcluidasProtegidasEmAlta(
+    usuarioLogado,
+    obrasConcluidas,
+  );
 
-  const tituloCabecalho = carregandoRanking
-    ? "ISTORIETAS"
-    : rankingTemAtividadeReal
-      ? "ISTORIETAS POPULARES"
-      : "ISTORIETAS PUBLICADAS";
+  const tituloCabecalho = obterTituloCabecalhoEmAlta(
+    carregandoRanking,
+    rankingTemAtividadeReal,
+  );
 
   function avisarLoginRanking() {
     router.push(criarLoginHrefEmAlta());
