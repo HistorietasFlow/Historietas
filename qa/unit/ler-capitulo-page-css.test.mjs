@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import "./ler-capitulo-comments-styles.test.mjs";
 import "./ler-capitulo-layout-styles.test.mjs";
+import "./ler-capitulo-comments-sheet.test.mjs";
 
 const cssSource = readFileSync(
   new URL(
@@ -13,6 +14,10 @@ const cssSource = readFileSync(
 ).replace(/\r\n/g, "\n");
 const pagina = readFileSync(
   new URL("../../app/ler-capitulo/page.tsx", import.meta.url),
+  "utf8",
+).replace(/\r\n/g, "\n");
+const sheet = readFileSync(
+  new URL("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx", import.meta.url),
   "utf8",
 ).replace(/\r\n/g, "\n");
 
@@ -56,7 +61,7 @@ test("Leitor consome somente o CSS extraído na ordem original", () => {
   assert.match(pagina, /<style>\{focusBottomNavigationCss\}<\/style>/);
   assert.match(pagina, /import \{[\s\S]*?focusPageStyle,[\s\S]*?\} from "\.\/lib\/ler-capitulo-layout-styles";/);
   assert.doesNotMatch(pagina, /const pageStyle: CSSProperties = \{/);
-  assert.match(pagina, /import \{[\s\S]*?commentsSheetStyle,[\s\S]*?\} from "\.\/lib\/ler-capitulo-comments-styles";/);
+  assert.match(sheet, /import \{[\s\S]*?commentsSheetStyle,[\s\S]*?\} from "\.\.\/lib\/ler-capitulo-comments-styles";/);
   assert.doesNotMatch(pagina, /const commentsSheetStyle: CSSProperties = \{/);
   assert.match(pagina, /const isDesktop = useLerCapituloDesktopMode\(\);/);
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);

@@ -35,3 +35,8 @@
 
 - Extraiu os 77 estilos de layout, controles e navegação, junto ao helper visual de tamanho do título, para um módulo dedicado.
 - Preservou literalmente os objetos, spreads e limites de tamanho; estados, JSX e lógica de leitura permanecem na página.
+
+## Fase 830 — Sheet de comentários do leitor
+
+- Extraiu `ComentariosCapituloSheet` e seus helpers exclusivos de apresentação para componente dedicado, preservando literalmente estados, efeitos, props, callbacks, JSX e estilos.
+- A página continua responsável pelos dados, autenticação, carregamento e mutações de comentários, sem alteração dos contratos Supabase ou de storage.
