@@ -1,5 +1,6 @@
 import { criarSlugBase } from "../../../lib/utils";
 import { normalizarNumeroSeguindo } from "./seguindo-format-utils";
+import { encontrarObraLocalSeguindo } from "./seguindo-work-collection-utils";
 import {
   calcularProgressoLeitura,
   obterTotalRegistroObraSeguindo,
@@ -296,4 +297,46 @@ export function converterObraSupabaseParaLocal({
       totalConcluidasObra,
     ),
   };
+}
+
+export function converterObrasSupabaseParaLocais({
+  obrasBanco,
+  capitulosBanco,
+  obrasLocais,
+  capitulosSalvos,
+  capitulosCurtidos,
+  progressoPorCapitulo,
+  progressoCarregado,
+  comentariosCapitulos,
+  totaisReais,
+}: {
+  obrasBanco: SupabaseObraConversao[];
+  capitulosBanco: Array<SupabaseCapituloConversao & { obra_id: string }>;
+  obrasLocais: ObraLocalConversao[];
+  capitulosSalvos: Set<string>;
+  capitulosCurtidos: Set<string>;
+  progressoPorCapitulo: Map<string, string>;
+  progressoCarregado: boolean;
+  comentariosCapitulos: Map<string, string>;
+  totaisReais: TotaisInteracoesConversao;
+}) {
+  return obrasBanco.map((obraBanco, index) => {
+    const obraLocal = encontrarObraLocalSeguindo(obrasLocais, obraBanco);
+    const capitulosDaObra = capitulosBanco.filter(
+      (capitulo) => capitulo.obra_id === obraBanco.id,
+    );
+
+    return converterObraSupabaseParaLocal({
+      obraBanco,
+      capitulosBanco: capitulosDaObra,
+      obraLocal,
+      capitulosSalvos,
+      capitulosCurtidos,
+      progressoPorCapitulo,
+      progressoCarregado,
+      comentariosCapitulos,
+      totaisReais,
+      index,
+    });
+  });
 }
