@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const hook = readFileSync(
+  new URL(
+    "../../app/em-alta/hooks/use-em-alta-ranking-derived-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = modulo
   .replace(
     /import \{ ehClassificacao18 \} from "\.\.\/\.\.\/\.\.\/lib\/historietasAdultContent";\r?\n/,
@@ -183,7 +190,8 @@ test("fronteira preserva o useMemo, dependências e pureza", () => {
   assert.match(modulo, /\} satisfies ObraRanking;/);
   assert.doesNotMatch(modulo, /\b(React|useMemo|supabase|localStorage|window|document)\b/);
   assert.doesNotMatch(modulo, /<[A-Z][A-Za-z]/);
-  assert.match(pagina, /import \{ calcularRankingObrasLocais \} from "\.\/lib\/em-alta-local-ranking-utils";/);
-  assert.match(pagina, /const ranking = useMemo<ObraRanking\[\]>\([\s\S]*?calcularRankingObrasLocais\([\s\S]*?obrasLocais,[\s\S]*?avaliacoesLocaisRegistradas,[\s\S]*?visualizacoesRegistradas,[\s\S]*?\)[\s\S]*?\[avaliacoesLocaisRegistradas, obrasLocais, visualizacoesRegistradas\],[\s\S]*?\);/);
+  assert.match(hook, /import \{ calcularRankingObrasLocais \} from "\.\.\/lib\/em-alta-local-ranking-utils";/);
+  assert.match(hook, /const ranking = useMemo<ObraRanking\[\]>\([\s\S]*?calcularRankingObrasLocais\([\s\S]*?obrasLocais,[\s\S]*?avaliacoesLocaisRegistradas,[\s\S]*?visualizacoesRegistradas,[\s\S]*?\)[\s\S]*?\[avaliacoesLocaisRegistradas, obrasLocais, visualizacoesRegistradas\],[\s\S]*?\);/);
+  assert.match(pagina, /useEmAltaRankingDerivedData\(/);
   assert.doesNotMatch(pagina, /const totalCurtidas = Math\.max\(0, obra\.totalCurtidasRanking \|\| 0\);/);
 });

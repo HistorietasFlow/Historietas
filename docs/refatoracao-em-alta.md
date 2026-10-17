@@ -243,3 +243,9 @@
 - Moveu a moldura compartilhada dos ramos de carregamento e conteúdo para `EmAltaPageShell`.
 - Preservou literalmente o tema, o CSS, o bridge de idioma, o atributo de carregamento e os filhos de cada ramo.
 - Carregamento do ranking, autenticação, storage, Supabase, estados e mutações permaneceram na página.
+
+## Fase 886 — dados derivados do ranking
+
+- Moveu o pipeline de `useMemo` que compõe ranking de obras, autores e visões por categoria para `useEmAltaRankingDerivedData`.
+- Preservou as três dependências originais, a ordem dos cálculos e os contratos dos helpers puros.
+- Carregamento, Supabase, storage, autenticação, estados e mutações permaneceram na página.

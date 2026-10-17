@@ -1,14 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEmAltaAuthSession } from "./hooks/use-em-alta-auth-session";
 import { useEmAltaDesktopMode } from "./hooks/use-em-alta-desktop-mode";
 import type {
   ObraLocal,
-  ObraRanking,
 } from "./lib/em-alta-models";
 import {
   adicionarRankingObraNaLista,
@@ -32,9 +31,6 @@ import { registrarColecaoRankingNoDiario } from "./lib/em-alta-diary-activity";
 import {
   criarLoginHrefEmAlta,
 } from "./lib/em-alta-route-utils";
-import { calcularRankingAutores } from "./lib/em-alta-author-ranking-utils";
-import { calcularRankingObrasLocais } from "./lib/em-alta-local-ranking-utils";
-import { criarVisaoRankingEmAlta } from "./lib/em-alta-ranking-view-utils";
 import {
   normalizarAvaliacoesLocaisRanking,
   normalizarVisualizacoesRanking,
@@ -49,6 +45,7 @@ import { LoadingSpinner } from "./components/em-alta-loading-spinner";
 import { EmAltaHeader } from "./components/em-alta-header";
 import { EmAltaPageDecorations } from "./components/em-alta-page-decorations";
 import { EmAltaPageShell } from "./components/em-alta-page-shell";
+import { useEmAltaRankingDerivedData } from "./hooks/use-em-alta-ranking-derived-data";
 
 export default function EmAltaPage() {
   const router = useRouter();
@@ -192,22 +189,9 @@ export default function EmAltaPage() {
     };
   }, [usuarioLogadoId]);
 
-  const ranking = useMemo<ObraRanking[]>(
-    () =>
-      calcularRankingObrasLocais(
-        obrasLocais,
-        avaliacoesLocaisRegistradas,
-        visualizacoesRegistradas,
-      ),
-    [avaliacoesLocaisRegistradas, obrasLocais, visualizacoesRegistradas],
-  );
-
-  const rankingAutores = useMemo(
-    () => calcularRankingAutores(ranking),
-    [ranking],
-  );
-
   const {
+    ranking,
+    rankingAutores,
     rankingGeral,
     rankingMaisLidas,
     rankingMaisCurtidas,
@@ -217,7 +201,11 @@ export default function EmAltaPage() {
     rankingMaisCapitulos,
     rankingTemAtividadeReal,
     rankingParaCatalogoInicial,
-  } = useMemo(() => criarVisaoRankingEmAlta(ranking), [ranking]);
+  } = useEmAltaRankingDerivedData({
+    avaliacoesLocaisRegistradas,
+    obrasLocais,
+    visualizacoesRegistradas,
+  });
 
   const obrasFavoritasProtegidas = usuarioLogado ? obrasFavoritas : [];
   const obrasConcluidasProtegidas = usuarioLogado ? obrasConcluidas : [];
