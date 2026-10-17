@@ -175,7 +175,11 @@ test("a página consome a fronteira local sem mover loaders ou normalizadores", 
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\(`));
   }
   assert.match(pagina, /from "\.\/lib\/explorar-local-storage"/);
-  assert.match(pagina, /normalizarObra\(obra, index, userIdAtual, obterArquivoObraComBackup\)/);
+  assert.match(pagina, /useExplorarInitialLoad\(\{/);
+  assert.match(
+    ler("../../app/explorar/hooks/use-explorar-initial-load.ts"),
+    /normalizarObra\(obra, index, userIdAtual, obterArquivoObraComBackup\)/,
+  );
   assert.match(codigo, /from "\.\/explorar-work-normalizers"/);
   assert.doesNotMatch(codigo, /\b(?:supabase|useEffect|useState)\b/i);
 });

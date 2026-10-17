@@ -66,7 +66,11 @@ test("Explorar delega somente o spinner e preserva suas fronteiras", () => {
     pagina,
     /import \{ useExplorarDesktopMode \} from "\.\/hooks\/use-explorar-desktop-mode";/,
   );
-  assert.match(pagina, /async function carregarExplorar\(\)/);
+  assert.match(pagina, /useExplorarInitialLoad\(\{/);
+  assert.match(
+    readFileSync(new URL("../../app/explorar/hooks/use-explorar-initial-load.ts", import.meta.url), "utf8"),
+    /async function carregarExplorar\(\)/,
+  );
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /carregarObrasPublicadasSupabase/);
   assert.match(

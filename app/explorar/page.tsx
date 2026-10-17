@@ -24,10 +24,9 @@ import {
 import { LoadingSpinner } from "./components/explorar-loading-spinner";
 import { useExplorarAdvancedFiltersBodyLock } from "./hooks/use-explorar-advanced-filters-body-lock";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
+import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
 import {
-  STORAGE_KEY,
   CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
-  carregarColecoesUsuarioExplorar,
   carregarObrasPublicadasSupabase,
 } from "./lib/explorar-remote-loader";
 import { themePageCss } from "./lib/explorar-page-css";
@@ -166,17 +165,10 @@ import {
   totalComentariosObra,
   calcularProgressoLeitura,
   obraTemConteudoPublicadoExplorar,
-  normalizarObra,
 } from "./lib/explorar-work-normalizers";
 import type { ObraLocal } from "./lib/explorar-work-normalizers";
 import {
-  lerStorageUsuarioExplorar,
-  salvarJsonStorageUsuarioExplorar,
-  carregarListaIdsUsuarioExplorar,
-  salvarListaIdsUsuarioExplorar,
   colecaoTemObraExplorar,
-  obterArquivoObraComBackup,
-  salvarBackupsArquivosObras,
 } from "./lib/explorar-local-storage";
 import {
   criarIniciaisAutorExplorar,
@@ -523,126 +515,21 @@ export default function ExplorarPage() {
 
   useExplorarAdvancedFiltersBodyLock(mostrarFiltrosAvancados);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarExplorar() {
-      const params = new URLSearchParams(window.location.search);
-      const categoriaParam = params.get("categoria") || "";
-      const tipoParam = params.get("tipo") === "autores" ? "autores" : "obras";
-
-      setModoConteudo(tipoParam);
-      setCategoriaSelecionada(categoriaParam.trim());
-
-      try {
-        let userIdAtual = "";
-
-        try {
-          const { data } = await supabase.auth.getUser();
-          userIdAtual = data.user?.id || "";
-        } catch {
-          userIdAtual = "";
-        }
-
-        if (!cancelado) {
-          setUsuarioLogado(Boolean(userIdAtual));
-        }
-
-        const obrasSalvasTexto = lerStorageUsuarioExplorar(
-          STORAGE_KEY,
-          userIdAtual
-        );
-        const obrasSalvasJson = obrasSalvasTexto
-          ? JSON.parse(obrasSalvasTexto)
-          : [];
-
-        const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-          ? obrasSalvasJson.map((obra, index) =>
-              normalizarObra(obra, index, userIdAtual, obterArquivoObraComBackup)
-            )
-          : [];
-
-        obrasCacheLocalRef.current = obrasNormalizadas;
-        usuarioIdExplorarRef.current = userIdAtual;
-
-        salvarBackupsArquivosObras(obrasNormalizadas, userIdAtual);
-        salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userIdAtual, obrasNormalizadas);
-
-        const favoritasGlobais: string[] = [];
-        const favoritasDoUsuario = userIdAtual
-          ? carregarListaIdsUsuarioExplorar(FAVORITES_STORAGE_KEY, userIdAtual)
-          : [];
-
-        const concluidasGlobais: string[] = [];
-        const concluidasDoUsuario = userIdAtual
-          ? carregarListaIdsUsuarioExplorar(COMPLETED_STORAGE_KEY, userIdAtual)
-          : [];
-
-        const colecoesSupabase = userIdAtual
-          ? await carregarColecoesUsuarioExplorar(userIdAtual)
-          : { favoritas: [] as string[], concluidas: [] as string[] };
-
-        const obrasFavoritasNormalizadas = Array.from(
-          new Set([
-            ...favoritasGlobais,
-            ...favoritasDoUsuario,
-            ...colecoesSupabase.favoritas,
-          ])
-        );
-        const obrasConcluidasNormalizadas = Array.from(
-          new Set([
-            ...concluidasGlobais,
-            ...concluidasDoUsuario,
-            ...colecoesSupabase.concluidas,
-          ])
-        );
-
-        salvarListaIdsUsuarioExplorar(
-          FAVORITES_STORAGE_KEY,
-          userIdAtual,
-          obrasFavoritasNormalizadas
-        );
-        salvarListaIdsUsuarioExplorar(
-          COMPLETED_STORAGE_KEY,
-          userIdAtual,
-          obrasConcluidasNormalizadas
-        );
-
-        if (!cancelado) {
-          setObrasLocais(obrasNormalizadas);
-          setObrasFavoritas(obrasFavoritasNormalizadas);
-          setObrasConcluidas(obrasConcluidasNormalizadas);
-        }
-
-        const resultadoCatalogo = await carregarObrasPublicadasSupabase(
-          obrasNormalizadas,
-          userIdAtual
-        );
-
-        if (!cancelado) {
-          setObrasLocais(resultadoCatalogo.obras);
-          setProximoCursorCatalogo(resultadoCatalogo.pagina?.proximoCursor || null);
-          setCatalogoTemMais(Boolean(resultadoCatalogo.pagina?.temMais));
-        }
-      } catch {
-        if (!cancelado) {
-          setObrasLocais([]);
-          setObrasFavoritas([]);
-          setObrasConcluidas([]);
-        }
-      } finally {
-        if (!cancelado) {
-          setDadosExplorarCarregados(true);
-        }
-      }
-    }
-
-    void carregarExplorar();
-
-    return () => {
-      cancelado = true;
-    };
-  }, []);
+  useExplorarInitialLoad({
+    obrasCacheLocalRef,
+    usuarioIdExplorarRef,
+    setModoConteudo,
+    setCategoriaSelecionada,
+    setUsuarioLogado,
+    setObrasLocais,
+    setObrasFavoritas,
+    setObrasConcluidas,
+    setProximoCursorCatalogo,
+    setCatalogoTemMais,
+    setDadosExplorarCarregados,
+    FAVORITES_STORAGE_KEY,
+    COMPLETED_STORAGE_KEY,
+  });
 
   useEffect(() => {
     const autorIds = Array.from(

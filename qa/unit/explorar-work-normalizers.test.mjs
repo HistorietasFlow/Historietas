@@ -212,7 +212,11 @@ test("a página injeta o backup e mantém storage e queries fora dos normalizado
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\(`));
     assert.doesNotMatch(modulo, new RegExp(`function ${nome}\\(`));
   }
-  assert.match(pagina, /normalizarObra\(obra, index, userIdAtual, obterArquivoObraComBackup\)/);
+  assert.match(pagina, /useExplorarInitialLoad\(\{/);
+  assert.match(
+    ler("../../app/explorar/hooks/use-explorar-initial-load.ts"),
+    /normalizarObra\(obra, index, userIdAtual, obterArquivoObraComBackup\)/,
+  );
   assert.match(pagina, /from "\.\/lib\/explorar-work-normalizers"/);
   assert.match(pagina, /from "\.\/lib\/explorar-local-storage"/);
   assert.doesNotMatch(pagina, /function normalizarObraSupabase\(/);
