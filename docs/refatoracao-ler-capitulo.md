@@ -25,3 +25,8 @@
 
 - Extraiu `focusBottomNavigationCss` para `app/ler-capitulo/lib/ler-capitulo-focus-bottom-navigation-css.ts` sem alterar o template CSS.
 - Manteve o único consumidor na renderização normal, após `LerCapituloLanguageBridge`, e separado de `leitorPageCss`.
+
+## Fase 828 — Estilos dos comentários do leitor
+
+- Extraiu os 55 estilos do sheet de comentários e o primitivo de texto seguro para módulos visuais dedicados.
+- Preservou literalmente os valores, spreads, consumidores e comportamento visual; o painel e suas interações permanecem na página.

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import "./ler-capitulo-comments-styles.test.mjs";
 
 const cssSource = readFileSync(
   new URL(
@@ -53,7 +54,8 @@ test("Leitor consome somente o CSS extraído na ordem original", () => {
   assert.doesNotMatch(pagina, /const focusBottomNavigationCss = `/);
   assert.match(pagina, /<style>\{focusBottomNavigationCss\}<\/style>/);
   assert.match(pagina, /const pageStyle: CSSProperties = \{/);
-  assert.match(pagina, /const commentsSheetStyle: CSSProperties = \{/);
+  assert.match(pagina, /import \{[\s\S]*?commentsSheetStyle,[\s\S]*?\} from "\.\/lib\/ler-capitulo-comments-styles";/);
+  assert.doesNotMatch(pagina, /const commentsSheetStyle: CSSProperties = \{/);
   assert.match(pagina, /const isDesktop = useLerCapituloDesktopMode\(\);/);
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /acessoConteudo18Confirmado\(\)/);
