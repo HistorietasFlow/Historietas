@@ -37,10 +37,9 @@ import {
 import { carregarRegistrosAtividadesTabelaSeguindo } from "./lib/seguindo-activity-query-utils";
 import { deduplicarAtividadesSeguindo } from "./lib/seguindo-activity-list-utils";
 import {
-  montarTextoAtividadeSeguindo,
+  criarAtividadeSeguindoPorDados,
   obterDataRegistroAtividadeSeguindo,
   obterMetadataAtividadeSeguindo,
-  obterRotuloAtividadeSeguindo,
   registroAtividadeSeguindoPodeAparecer,
 } from "./lib/seguindo-activity-utils";
 import {
@@ -1086,42 +1085,6 @@ async function carregarSolicitacoesSeguidoresSupabase(
     console.warn("Não consegui carregar solicitações de seguidores:", error);
     return [];
   }
-}
-
-function criarAtividadeSeguindoPorDados({
-  id,
-  usuario,
-  tipo,
-  tituloObra,
-  nota,
-  data,
-  href,
-}: {
-  id: string;
-  usuario: UsuarioSeguido;
-  tipo: string;
-  tituloObra: string;
-  nota: number;
-  data: string;
-  href: string;
-}): AtividadeSeguindo {
-  return {
-    id,
-    usuarioId: usuario.id,
-    usuarioNome: usuario.nome,
-    usuarioHandle: usuario.handle,
-    usuarioAvatar: usuario.avatar,
-    tipo,
-    tipoRotulo: obterRotuloAtividadeSeguindo(tipo),
-    titulo: tituloObra,
-    descricao: montarTextoAtividadeSeguindo({
-      tipo,
-      tituloObra,
-      nota,
-    }),
-    data,
-    href,
-  };
 }
 
 function criarAtividadeSeguindoDoDiario({

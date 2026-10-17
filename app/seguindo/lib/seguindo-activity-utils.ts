@@ -86,3 +86,46 @@ export function registroAtividadeSeguindoPodeAparecer(
 
   return visibilidade === "publico" || visibilidade === "parcial";
 }
+
+type UsuarioAtividadeSeguindo = {
+  id: string;
+  nome: string;
+  handle: string;
+  avatar: string;
+};
+
+export function criarAtividadeSeguindoPorDados({
+  id,
+  usuario,
+  tipo,
+  tituloObra,
+  nota,
+  data,
+  href,
+}: {
+  id: string;
+  usuario: UsuarioAtividadeSeguindo;
+  tipo: string;
+  tituloObra: string;
+  nota: number;
+  data: string;
+  href: string;
+}) {
+  return {
+    id,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    usuarioHandle: usuario.handle,
+    usuarioAvatar: usuario.avatar,
+    tipo,
+    tipoRotulo: obterRotuloAtividadeSeguindo(tipo),
+    titulo: tituloObra,
+    descricao: montarTextoAtividadeSeguindo({
+      tipo,
+      tituloObra,
+      nota,
+    }),
+    data,
+    href,
+  };
+}
