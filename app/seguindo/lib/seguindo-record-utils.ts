@@ -85,3 +85,11 @@ export function criarMapaComentariosPorCapitulo(
 
   return mapa;
 }
+
+export function extrairIdsRegistrosSeguindo(
+  registros: Array<{ id: string }>,
+) {
+  return registros
+    .map((registro) => registro.id)
+    .filter((id) => Boolean(id));
+}
