@@ -39,3 +39,31 @@ export function removerObraDaLista(
     (item) => !chavesParaRemover.has(item),
   );
 }
+
+export function mesclarObrasSeguindo<
+  T extends { id: string; titulo: string; slug: string },
+>(obrasLocais: T[], obrasSupabase: T[]) {
+  const obrasMescladas: T[] = [...obrasLocais];
+
+  obrasSupabase.forEach((obraSupabase) => {
+    const indiceExistente = obrasMescladas.findIndex((obraLocal) => {
+      const slugLocal = obraLocal.slug || criarSlugBase(obraLocal.titulo);
+      const slugSupabase =
+        obraSupabase.slug || criarSlugBase(obraSupabase.titulo);
+
+      return obraLocal.id === obraSupabase.id || slugLocal === slugSupabase;
+    });
+
+    if (indiceExistente >= 0) {
+      obrasMescladas[indiceExistente] = {
+        ...obrasMescladas[indiceExistente],
+        ...obraSupabase,
+      };
+      return;
+    }
+
+    obrasMescladas.unshift(obraSupabase);
+  });
+
+  return obrasMescladas;
+}
