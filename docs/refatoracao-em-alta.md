@@ -261,3 +261,9 @@
 - Moveu as ações de favoritar e concluir para um hook dedicado.
 - Preservou a sessão, os aliases de obras, o storage local, a sincronização Supabase e o registro no Diário.
 - O carregamento, os estados e o adaptador de redirecionamento de login permaneceram na página.
+
+## Fase 889 — interações locais do ranking
+
+- Moveu a leitura e a normalização de visualizações e avaliações locais para um helper dedicado.
+- Preservou as chaves por usuário, a ordem das leituras, a normalização e a propagação de falhas ao `catch` do carregamento.
+- O lifecycle, as consultas Supabase, os estados e o restante do carregamento permaneceram na página.

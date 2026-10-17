@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const interacoesLocaisRanking = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-local-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const normalizadorObrasSupabase = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-supabase-work-normalizer.ts",
@@ -275,15 +282,17 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
 
   for (const nome of [
     "carregarListaIdsLocalEmAlta",
-    "criarStorageKeyUsuarioEmAlta",
     "salvarListaIdsLocalEmAlta",
     "FAVORITES_STORAGE_KEY",
     "COMPLETED_STORAGE_KEY",
-    "VIEWED_WORKS_STORAGE_KEY",
-    "RATED_WORKS_STORAGE_KEY",
   ]) {
     assert.match(importacao[1], new RegExp(`\\b${nome}\\b`));
   }
+
+  assert.match(
+    interacoesLocaisRanking,
+    /import \{[\s\S]*?criarStorageKeyUsuarioEmAlta,[\s\S]*?RATED_WORKS_STORAGE_KEY,[\s\S]*?VIEWED_WORKS_STORAGE_KEY,[\s\S]*?\} from "\.\/em-alta-local-storage-utils";/,
+  );
 
   assert.match(
     pagina,

@@ -19,6 +19,7 @@ import "./em-alta-page-shell.test.mjs";
 import "./use-em-alta-ranking-derived-data.test.mjs";
 import "./em-alta-page-display-utils.test.mjs";
 import "./use-em-alta-ranking-collection-actions.test.mjs";
+import "./em-alta-ranking-local-interactions.test.mjs";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-ranking-data-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
@@ -32,6 +33,13 @@ const rankingObrasLocaisUtils = readFileSync(
 const rankingCard = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-ranking-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const interacoesLocaisRanking = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-local-interactions.ts",
     import.meta.url,
   ),
   "utf8",
@@ -106,9 +114,9 @@ test("fronteira delega os onze helpers e permanece pura", () => {
   const consumidores = {
     formatarNumero: rankingCard,
     formatarMediaRanking: rankingCard,
-    normalizarVisualizacoesRanking: pagina,
+    normalizarVisualizacoesRanking: interacoesLocaisRanking,
     obterVisualizacoesRegistradasObra: rankingObrasLocaisUtils,
-    normalizarAvaliacoesLocaisRanking: pagina,
+    normalizarAvaliacoesLocaisRanking: interacoesLocaisRanking,
     obterAvaliacaoLocalRanking: rankingObrasLocaisUtils,
     formatarDataRanking: rankingCard,
     formatarGeneroCard: rankingCard,
