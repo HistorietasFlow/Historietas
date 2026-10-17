@@ -8,6 +8,15 @@ import {
 } from "./seguindo-record-utils";
 import type { RegistroSupabaseGenerico } from "./seguindo-record-utils";
 
+export async function carregarUsuarioAtualSeguindoSupabase() {
+  try {
+    const { data } = await supabase.auth.getUser();
+    return data.user?.id || "";
+  } catch {
+    return "";
+  }
+}
+
 export async function carregarIdsObrasUsuarioSupabase(
   tabela: "seguindo_obras" | "favoritos" | "concluidas",
   userId: string,
