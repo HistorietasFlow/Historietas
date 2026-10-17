@@ -24,3 +24,10 @@
 
 - Extraiu o lifecycle de lock/restauração do `document.body` para `useSeguindoSortingSheetBodyLock`.
 - Preservou guard, valores anteriores, ordem de lock/restauração e dependência do painel de ordenação.
+
+## Fase 857 — storage por usuário
+
+- Extraiu `criarStorageKeyUsuarioSeguindo`, `lerJsonStorageUsuarioSeguindo` e `salvarJsonStorageUsuarioSeguindo` para `app/seguindo/lib/seguindo-storage-utils.ts`.
+- Preservou trim do usuário, chaves, serialização JSON, fallbacks e tolerância silenciosa a falhas de `localStorage`.
+- Adicionou cobertura focada e manteve os consumidores da página sem alterar fluxo de carregamento ou persistência.
+- Sem alterações de UI, autenticação, Supabase, schema ou RLS.

@@ -23,6 +23,10 @@ import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import {
+  lerJsonStorageUsuarioSeguindo,
+  salvarJsonStorageUsuarioSeguindo,
+} from "./lib/seguindo-storage-utils";
 
 type CapituloLocal = {
   id: string;
@@ -219,49 +223,6 @@ const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 
-
-function criarStorageKeyUsuarioSeguindo(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function lerJsonStorageUsuarioSeguindo(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioSeguindo(chave, userIdLimpo);
-    const texto = chaveStorage ? localStorage.getItem(chaveStorage) : null;
-
-    return texto ? JSON.parse(texto) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioSeguindo(chave: string, userId: string, valor: unknown) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioSeguindo(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é apoio; a página continua com o estado em memória.
-  }
-}
 
 function normalizarNomeAutor(nome: string) {
   return nome.trim().replace(/\s+/g, " ").toLowerCase();
