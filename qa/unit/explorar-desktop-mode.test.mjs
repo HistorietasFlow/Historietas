@@ -21,6 +21,8 @@ const storage = readFileSync(
   new URL("../../app/explorar/lib/explorar-local-storage.ts", import.meta.url),
   "utf8",
 );
+const autorCard = readFileSync(new URL("../../app/explorar/components/explorar-autor-card.tsx", import.meta.url), "utf8");
+const obraCard = readFileSync(new URL("../../app/explorar/components/explorar-obra-publicada-card.tsx", import.meta.url), "utf8");
 
 test("useExplorarDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -67,11 +69,11 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 74);
+  assert.equal(([pagina, autorCard, obraCard].join("\n").match(/\bisDesktop\b/g) || []).length, 74);
   assert.equal((estilos.match(/\bisDesktop\b/g) || []).length, 2);
   assert.match(estilos, /export function criarCardPrimaryActionStyle\(\s*isDesktop\?: boolean/);
   assert.match(estilos, /isDesktop \? desktopCardPrimaryActionStyle : cardPrimaryActionStyle/);
-  assert.match(pagina, /criarCardPrimaryActionStyle\(isDesktop\)/);
+  assert.match(obraCard, /criarCardPrimaryActionStyle\(isDesktop\)/);
   assert.match(
     pagina,
     /import \{ useExplorarAdvancedFiltersBodyLock \} from "\.\/hooks\/use-explorar-advanced-filters-body-lock";/,

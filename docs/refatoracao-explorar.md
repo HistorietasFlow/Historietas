@@ -74,3 +74,8 @@
 
 - Extraiu a construção das consultas, o debounce e a ação de carregar mais para `app/explorar/hooks/use-explorar-catalog-query.ts`, mantendo os estados na página.
 - Preservou filtros, cursor, controle de respostas obsoletas, cancelamento, ordem dos setters e os demais lifecycles.
+
+## Fase 855 — cards de autores e obras
+
+- Extraiu `AutorExplorarCard` e `ObraPublicadaCard` para componentes dedicados, preservando JSX, traduções, acessibilidade e variantes responsivas.
+- Isolou o helper compartilhado de rota de autor e moveu o estilo de capa para o módulo visual existente, sem alterar as regras ou valores.

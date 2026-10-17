@@ -35,6 +35,25 @@ export function criarPublishedCoverTemaStyle(): CSSProperties {
   };
 }
 
+export function criarPublishedCoverStyle(
+  capa: string,
+): CSSProperties {
+  const baseStyle = criarPublishedCoverTemaStyle();
+
+  if (!capa) {
+    return baseStyle;
+  }
+
+  return {
+    ...baseStyle,
+    backgroundImage: `url(${capa})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    filter: "none",
+    opacity: 1,
+  };
+}
+
 export function criarDesktopPublishedCoverStyle(
   capa: string,
 ): CSSProperties {
