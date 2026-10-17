@@ -15,6 +15,7 @@ import "./ler-capitulo-reading-progress-action.test.mjs";
 import "./ler-capitulo-initial-load.test.mjs";
 import "./ler-capitulo-session-preferences.test.mjs";
 import "./ler-capitulo-interaction-data.test.mjs";
+import "./ler-capitulo-entry-lifecycle.test.mjs";
 
 const cssSource = readFileSync(
   new URL(
