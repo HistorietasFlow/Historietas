@@ -37,9 +37,7 @@ import {
   criarMapaComentariosPorCapitulo,
   criarSetObrasPorRegistro,
   normalizarRegistrosSupabaseGenericos,
-  obterIdCapituloRegistro,
   obterIdObraRegistro,
-  obterTextoComentarioRegistro,
   obterTextoRegistro,
 } from "./lib/seguindo-record-utils";
 import type { RegistroSupabaseGenerico } from "./lib/seguindo-record-utils";
