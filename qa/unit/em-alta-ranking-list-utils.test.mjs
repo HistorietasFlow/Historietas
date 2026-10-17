@@ -21,6 +21,13 @@ const moduloVisao = readFileSync(
   ),
   "utf8",
 );
+const moduloAcoesColecao = readFileSync(
+  new URL(
+    "../../app/em-alta/hooks/use-em-alta-ranking-collection-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moduloExecutavel = modulo.replace(
   'import { criarSlugBase, normalizarTexto } from "../../../lib/utils";',
   `const normalizarTexto = (texto) => texto
@@ -180,7 +187,15 @@ test("reconhece qualquer interação real no ranking", () => {
 test("Em Alta delega helpers de listas e ranking para a fronteira pura", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?adicionarRankingObraNaLista,[\s\S]*?listaTemRankingObra,[\s\S]*?normalizarListaIdsEmAlta,[\s\S]*?removerRankingObraDaLista,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-list-utils";/,
+    /import \{[\s\S]*?normalizarListaIdsEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-ranking-list-utils";/,
+  );
+  assert.match(
+    pagina,
+    /import \{ useEmAltaRankingCollectionActions \} from "\.\/hooks\/use-em-alta-ranking-collection-actions";/,
+  );
+  assert.match(
+    moduloAcoesColecao,
+    /import \{[\s\S]*?adicionarRankingObraNaLista,[\s\S]*?listaTemRankingObra,[\s\S]*?normalizarListaIdsEmAlta,[\s\S]*?removerRankingObraDaLista,[\s\S]*?\} from "\.\.\/lib\/em-alta-ranking-list-utils";/,
   );
 
   assert.match(
@@ -194,7 +209,12 @@ test("Em Alta delega helpers de listas e ranking para a fronteira pura", () => {
     "normalizarListaIdsEmAlta",
     "removerRankingObraDaLista",
   ]) {
-    assert.match(pagina, new RegExp(`\\b${helper}\\b`));
+    if (helper === "normalizarListaIdsEmAlta") {
+      assert.match(pagina, new RegExp(`\\b${helper}\\b`));
+    } else {
+      assert.doesNotMatch(pagina, new RegExp(`\\b${helper}\\b`));
+    }
+    assert.match(moduloAcoesColecao, new RegExp(`\\b${helper}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
