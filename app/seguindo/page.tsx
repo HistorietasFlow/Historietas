@@ -20,7 +20,6 @@ import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
-  encontrarObraLocalSeguindo,
   mesclarIdsColecaoSeguindo,
   mesclarObrasSeguindo,
   obraEstaNaLista,
@@ -50,7 +49,7 @@ import {
   prepararMetricasSeguindo,
 } from "./lib/seguindo-work-metrics-utils";
 import { normalizarObraSalva } from "./lib/seguindo-saved-work-utils";
-import { converterObraSupabaseParaLocal } from "./lib/seguindo-work-converter-utils";
+import { converterObrasSupabaseParaLocais } from "./lib/seguindo-work-converter-utils";
 import {
   dataAtividadeObra,
   mostrarClassificacao,
@@ -262,28 +261,16 @@ async function carregarSeguindoSupabase(
       totaisReais,
     } = prepararMetricasSeguindo(metricas, userId);
 
-    const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
-      const obraLocal = encontrarObraLocalSeguindo(
-        obrasLocais,
-        obraBanco,
-      );
-
-      const capitulosDaObra = capitulosSupabaseBanco.filter(
-        (capitulo) => capitulo.obra_id === obraBanco.id
-      );
-
-      return converterObraSupabaseParaLocal({
-        obraBanco,
-        capitulosBanco: capitulosDaObra,
-        obraLocal,
-        capitulosSalvos,
-        capitulosCurtidos,
-        progressoPorCapitulo,
-        progressoCarregado,
-        comentariosCapitulos,
-        totaisReais,
-        index,
-      });
+    const obrasSupabase = converterObrasSupabaseParaLocais({
+      obrasBanco: obrasSupabaseBanco,
+      capitulosBanco: capitulosSupabaseBanco,
+      obrasLocais,
+      capitulosSalvos,
+      capitulosCurtidos,
+      progressoPorCapitulo,
+      progressoCarregado,
+      comentariosCapitulos,
+      totaisReais,
     });
 
     const obrasMescladas = mesclarObrasSeguindo(obrasLocais, obrasSupabase);
