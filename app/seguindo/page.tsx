@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -19,6 +19,7 @@ import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
+import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
   obraEstaNaLista,
@@ -55,7 +56,6 @@ import {
   carregarUsuariosSeguidoresSupabase,
   carregarUsuariosSeguidosSupabase,
 } from "./lib/seguindo-social-query-utils";
-import { buscarUsuariosParaSeguirSupabase } from "./lib/seguindo-user-search-utils";
 import { sincronizarObraUsuarioSupabase } from "./lib/seguindo-work-sync-utils";
 import {
   criarHrefPerfilAutorSeguindo,
@@ -439,61 +439,15 @@ export default function SeguindoPage() {
   const podeRemoverSeguidoresDaLista =
     listaSocialEhDoUsuarioLogado && abaConteudo === "seguidores";
 
-  useEffect(() => {
-    let cancelado = false;
-
-    const timerBusca = window.setTimeout(
-      () => {
-        if (cancelado) {
-          return;
-        }
-
-        if (!buscaSugestoesUsuariosAtiva) {
-          setUsuariosSugestoesBusca([]);
-          setCarregandoUsuariosSugestoes(false);
-          return;
-        }
-
-        setCarregandoUsuariosSugestoes(true);
-
-        void buscarUsuariosParaSeguirSupabase(busca)
-          .then((usuariosEncontrados) => {
-            if (cancelado) {
-              return;
-            }
-
-            const idsJaSeguidos = new Set(
-              usuariosSeguidos.map((usuarioSeguido) => usuarioSeguido.id)
-            );
-
-            setUsuariosSugestoesBusca(
-              usuariosEncontrados.filter((usuarioEncontrado) => {
-                return (
-                  usuarioEncontrado.id !== usuarioLogadoId &&
-                  !idsJaSeguidos.has(usuarioEncontrado.id)
-                );
-              })
-            );
-          })
-          .finally(() => {
-            if (!cancelado) {
-              setCarregandoUsuariosSugestoes(false);
-            }
-          });
-      },
-      buscaSugestoesUsuariosAtiva ? 220 : 0
-    );
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(timerBusca);
-    };
-  }, [
+  useSeguindoUserSearchSync({
     busca,
     buscaSugestoesUsuariosAtiva,
     usuarioLogadoId,
     usuariosSeguidos,
-  ]);
+    setUsuariosSugestoesBusca,
+    setCarregandoUsuariosSugestoes,
+  });
+
 
   const obrasVisiveisSeguindo = useMemo(() => {
     return obras.filter(
