@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const derivados = readFileSync(
+  new URL("../../app/explorar/lib/explorar-derived-utils.ts", import.meta.url),
+  "utf8",
+);
 const utils = readFileSync(new URL("../../lib/utils.ts", import.meta.url), "utf8");
 const options = {
   compilerOptions: {
@@ -98,8 +102,10 @@ test("a página delega a tradução a uma fronteira pura", () => {
   for (const nome of ["obterLocaleExplorar", "traduzirTextoExplorar", "traduzirGeneroExplorar", "traduzirFormatoExplorar", "traduzirClassificacaoExplorar"]) {
     assert.match(modulo, new RegExp(`export function ${nome}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\(`));
-    assert.match(pagina, new RegExp(`\\b${nome}\\(`));
+    const consumidor = nome === "obterLocaleExplorar" ? derivados : pagina;
+    assert.match(consumidor, new RegExp(`\\b${nome}\\(`));
   }
+  assert.match(derivados, /import \{ obterLocaleExplorar \} from "\.\/explorar-translations"/);
   assert.doesNotMatch(pagina, /(?:type ExplorarTranslationEntry|const EXPLORAR_\w+_TRANSLATIONS)/);
   assert.doesNotMatch(modulo, /(?:from ["']react["']|\buse[A-Z]\w*\b|\bsupabase\b|localStorage|\bwindow\b|\bdocument\b)/i);
 });

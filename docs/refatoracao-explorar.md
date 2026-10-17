@@ -59,3 +59,8 @@
 
 - Extraiu a leitura das coleções, catálogo, capítulos e métricas para `app/explorar/lib/explorar-remote-loader.ts`.
 - Preservou consultas, paginação, limites, fallbacks, métricas privadas e persistência local, mantendo os efeitos na página.
+
+## Fase 852 — dados derivados e seções do Explorar
+
+- Extraiu filtros, ordenações, agregação de autores e composição das seções para `app/explorar/lib/explorar-derived-utils.ts`.
+- Manteve os `useMemo` e suas dependências na página, preservando busca, coleções, regras 18+, pontuações, desempates, títulos e limites, sem mover efeitos, storage ou carregamento remoto.
