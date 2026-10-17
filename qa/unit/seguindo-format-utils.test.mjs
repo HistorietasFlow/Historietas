@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const converter = readFileSync(
+  new URL(
+    "../../app/seguindo/lib/seguindo-work-converter-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsSource = readFileSync(
   new URL("../../lib/utils.ts", import.meta.url),
   "utf8",
@@ -76,7 +83,11 @@ test("número preserva arredondamento, formato pt-BR, piso zero e fallback", () 
 test("página delega normalização e formatação ao módulo dedicado", () => {
   assert.match(
     pagina,
-    /formatarGeneroSeguindo,[\s\S]*?normalizarListaTexto,[\s\S]*?normalizarNomeAutor,[\s\S]*?normalizarNumeroSeguindo,[\s\S]*?from "\.\/lib\/seguindo-format-utils";/,
+    /formatarGeneroSeguindo,[\s\S]*?normalizarListaTexto,[\s\S]*?normalizarNomeAutor,[\s\S]*?from "\.\/lib\/seguindo-format-utils";/,
+  );
+  assert.match(
+    converter,
+    /import \{ normalizarNumeroSeguindo \} from "\.\/seguindo-format-utils";/,
   );
 
   for (const nome of [
