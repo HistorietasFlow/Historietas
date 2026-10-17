@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/ler-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const sheet = readFileSync(
+  new URL("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx", import.meta.url),
+  "utf8",
+);
 const cssLeitor = readFileSync(
   new URL("../../app/ler-capitulo/lib/ler-capitulo-page-css.ts", import.meta.url),
   "utf8",
@@ -70,16 +74,17 @@ test("Leitor delega somente os quatro spinners e preserva consumidores", () => {
   assert.doesNotMatch(pagina, /const loadingInlineStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const loadingSpinnerStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const loadingSpinnerCompactStyle: CSSProperties/);
-  assert.equal((pagina.match(/<LoadingSpinner/g) || []).length, 4);
-  assert.equal((pagina.match(/compacto/g) || []).length, 2);
+  assert.equal((pagina.match(/<LoadingSpinner/g) || []).length, 2);
+  assert.equal((sheet.match(/<LoadingSpinner/g) || []).length, 2);
+  assert.equal((sheet.match(/compacto/g) || []).length, 2);
   assert.match(pagina, /<LoadingSpinner label="Carregando capítulo" \/>/);
   assert.match(pagina, /<LoadingSpinner label="Verificando acesso" \/>/);
   assert.match(
-    pagina,
+    sheet,
     /<LoadingSpinner\s+compacto\s+label="Carregando comentários"\s+\/>/,
   );
   assert.match(
-    pagina,
+    sheet,
     /<LoadingSpinner\s+compacto\s+label="Enviando comentário"\s+\/>/,
   );
 });

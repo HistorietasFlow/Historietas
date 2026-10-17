@@ -61,7 +61,7 @@ test("a página consome os estilos sem duplicá-los ou mover JSX", () => {
   assert.match(importacao[1], /\bcriarEstiloTituloCapitulo\b/);
   assert.doesNotMatch(pagina, /function criarEstiloTituloCapitulo\(/);
   assert.match(pagina, /function criarTextoLeituraStyle\(/);
-  assert.match(pagina, /function ComentariosCapituloSheet\(/);
+  assert.match(pagina, /<ComentariosCapituloSheet/);
   assert.match(pagina, /export default function LerCapituloPage\(/);
   assert.match(pagina, /style=\{criarEstiloTituloCapitulo\(/);
 });
