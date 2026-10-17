@@ -39,3 +39,8 @@
 
 - Extraiu os estilos de seções, carrosséis, autores e obras para `app/explorar/lib/explorar-content-styles.ts`.
 - Preservou literalmente os valores, spreads, variantes desktop/mobile e helpers visuais, sem alterar o JSX ou comportamento.
+
+## Fase 848 — modelos e normalização de obras
+
+- Extraiu os modelos e normalizadores de obras, capítulos, métricas e merge para `app/explorar/lib/explorar-work-normalizers.ts`.
+- Preservou defaults, regras de 18+, identificadores e precedência; a recuperação de backup é injetada e as operações de storage permanecem na página.
