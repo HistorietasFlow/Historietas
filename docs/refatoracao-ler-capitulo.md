@@ -107,3 +107,8 @@
 
 - Extraiu os helpers de visualização, progresso e registros de interação para um módulo de persistência e os helpers de métricas para uma fronteira própria.
 - Preservou consultas, payloads, ordenação, fallbacks, mensagens e os consumidores existentes, sem alterar notificações, Diário ou comportamento.
+
+## Fase 844 — Persistência social do leitor
+
+- Isolou a marcação de notificações, notificações de interação e atividades do Diário em uma fronteira social, mantendo a função de navegação na página e injetando-a por uma referência estável.
+- Preservou validações, tabelas, RPC, payloads, metadata e tratamento não bloqueante de falhas, sem mudança intencional de comportamento.
