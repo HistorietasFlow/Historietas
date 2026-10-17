@@ -44,3 +44,8 @@
 
 - Extraiu os modelos e normalizadores de obras, capítulos, métricas e merge para `app/explorar/lib/explorar-work-normalizers.ts`.
 - Preservou defaults, regras de 18+, identificadores e precedência; a recuperação de backup é injetada e as operações de storage permanecem na página.
+
+## Fase 849 — persistência local e backups
+
+- Extraiu os helpers de storage por usuário, coleções e backups de arquivos para `app/explorar/lib/explorar-local-storage.ts`.
+- Preservou as chaves, a serialização, os fallbacks e a precedência do arquivo atual sobre o backup, reutilizando os normalizadores existentes.

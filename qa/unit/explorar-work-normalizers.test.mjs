@@ -8,6 +8,7 @@ const ler = (caminho) =>
   readFileSync(new URL(caminho, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const modulo = ler("../../app/explorar/lib/explorar-work-normalizers.ts");
 const pagina = ler("../../app/explorar/page.tsx");
+const storage = ler("../../app/explorar/lib/explorar-local-storage.ts");
 const compilar = (codigo) =>
   typescript.transpileModule(codigo, {
     compilerOptions: {
@@ -205,13 +206,15 @@ test("merge conserva precedência remota, ordem e deduplicação por id ou slug"
   assert.deepEqual(mesclarObrasSemDuplicar([mesmoId, mesmoSlug, unico], [remota]), [remota, unico]);
 });
 
-test("a página injeta o backup e conserva storage e queries fora do módulo", () => {
+test("a página injeta o backup e mantém storage e queries fora dos normalizadores", () => {
   for (const nome of ["carregarBackupArquivosObras", "obterArquivoObraComBackup", "salvarBackupsArquivosObras"]) {
-    assert.match(pagina, new RegExp(`function ${nome}\\(`));
+    assert.match(storage, new RegExp(`export function ${nome}\\(`));
+    assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\(`));
     assert.doesNotMatch(modulo, new RegExp(`function ${nome}\\(`));
   }
   assert.match(pagina, /normalizarObra\(obra, index, userIdAtual, obterArquivoObraComBackup\)/);
   assert.match(pagina, /from "\.\/lib\/explorar-work-normalizers"/);
+  assert.match(pagina, /from "\.\/lib\/explorar-local-storage"/);
   assert.doesNotMatch(pagina, /function normalizarObraSupabase\(/);
   assert.doesNotMatch(modulo, /\b(?:supabase|localStorage|window|document|useEffect|useState)\b/i);
 });
