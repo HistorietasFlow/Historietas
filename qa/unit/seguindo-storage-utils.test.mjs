@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const dadosLocais = readFileSync(
+  new URL(
+    "../../app/seguindo/lib/seguindo-local-data-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -115,21 +122,28 @@ test("escrita preserva chave por usuário, JSON e falhas silenciosas", () => {
   }
 });
 
-test("página delega storage por usuário ao módulo dedicado", () => {
+test("página e snapshot local delegam storage por usuário ao módulo dedicado", () => {
   assert.match(
     pagina,
-    /lerJsonStorageUsuarioSeguindo,[\s\S]*?salvarJsonStorageUsuarioSeguindo,[\s\S]*?from "\.\/lib\/seguindo-storage-utils";/,
+    /salvarJsonStorageUsuarioSeguindo,[\s\S]*?from "\.\/lib\/seguindo-storage-utils";/,
   );
-  assert.doesNotMatch(
-    pagina,
-    /function criarStorageKeyUsuarioSeguindo\(/,
+  assert.match(
+    dadosLocais,
+    /lerJsonStorageUsuarioSeguindo,[\s\S]*?from "\.\/seguindo-storage-utils";/,
   );
-  assert.doesNotMatch(
-    pagina,
-    /function lerJsonStorageUsuarioSeguindo\(/,
-  );
-  assert.doesNotMatch(
-    pagina,
-    /function salvarJsonStorageUsuarioSeguindo\(/,
-  );
+
+  for (const source of [pagina, dadosLocais]) {
+    assert.doesNotMatch(
+      source,
+      /function criarStorageKeyUsuarioSeguindo\(/,
+    );
+    assert.doesNotMatch(
+      source,
+      /function lerJsonStorageUsuarioSeguindo\(/,
+    );
+    assert.doesNotMatch(
+      source,
+      /function salvarJsonStorageUsuarioSeguindo\(/,
+    );
+  }
 });
