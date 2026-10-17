@@ -24,3 +24,8 @@
 
 - Extraiu `explorarBuscaToggleCss` para `app/explorar/lib/explorar-search-toggle-css.ts`.
 - Manteve na página o único consumidor, os controles de busca e todas as fronteiras de dados.
+
+## Fase 845 — traduções do Explorar
+
+- Extraiu os mapas e helpers de tradução para `app/explorar/lib/explorar-translations.ts`.
+- Preservou textos, idiomas, normalização, traduções dinâmicas e fallbacks, sem alterar os consumidores ou o comportamento.
