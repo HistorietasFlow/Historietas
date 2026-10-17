@@ -45,3 +45,10 @@
 - Preservou aliases de gênero, normalização de nomes/listas, parsing numérico, arredondamento, piso zero e fallbacks.
 - Adicionou cobertura focada e manteve todos os consumidores existentes da página.
 - Sem alterações de UI, autenticação, Supabase, schema ou RLS.
+
+## Fase 860 — coleções de obras
+
+- Extraiu `criarChavesObra`, `obraEstaNaLista` e `removerObraDaLista` para `app/seguindo/lib/seguindo-work-collection-utils.ts`.
+- Preservou IDs, slug, slug derivado do título, título normalizado, link, deduplicação e remoção por equivalência.
+- Adicionou cobertura focada e manteve todos os consumidores existentes da página.
+- Sem alterações de UI, autenticação, Supabase, schema ou RLS.
