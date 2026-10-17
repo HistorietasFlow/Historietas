@@ -41,7 +41,7 @@ test("página delega a leitura e normalização local ao snapshot", () => {
   );
   assert.match(
     pagina,
-    /\} = carregarDadosLocaisSeguindo\(usuarioLogadoId\);/,
+    /const dadosLocaisSeguindo = carregarDadosLocaisSeguindo\(usuarioLogadoId\);/,
   );
   assert.doesNotMatch(pagina, /lerJsonStorageUsuarioSeguindo/);
 });
