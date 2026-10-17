@@ -91,8 +91,10 @@ test("página delega transformações mantendo carregamento e persistência fora
   }
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-work-normalization"/);
   assert.match(loader, /export async function carregarObraSupabase\(/);
-  assert.match(pagina, /carregarObraSupabase\(/);
-  assert.match(pagina, /carregarObrasLocaisNormalizadas\(/);
+  assert.match(pagina, /useLerCapituloInitialLoad\(/);
+  const inicializacao = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts");
+  assert.match(inicializacao, /carregarObraSupabase\(/);
+  assert.match(inicializacao, /carregarObrasLocaisNormalizadas\(/);
   assert.match(storage, /export function carregarObrasLocaisNormalizadas\(/);
   assert.match(storage, /normalizarObra\(/);
   assert.doesNotMatch(modulo, /from ["'][^"']*(?:react|supabase\/client)["']|localStorage|\buse(?:Effect|State|Memo)\b|\.(?:insert|update|delete|upsert)\(/);

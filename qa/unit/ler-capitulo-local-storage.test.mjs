@@ -65,7 +65,9 @@ test("os três blocos movidos permanecem literalmente iguais", () => {
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-reading-preferences";/);
   assert.doesNotMatch(pagina, /function (?:salvarObrasPreservandoContas|carregarPreferenciasLeitura|aplicarCurtidasComentariosCapitulosLocais)\(/);
   assert.match(loaderObra, /export async function carregarObraSupabase\(/);
-  assert.match(pagina, /carregarObraSupabase\(/);
+  const inicializacao = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts");
+  assert.match(pagina, /useLerCapituloInitialLoad\(/);
+  assert.match(inicializacao, /carregarObraSupabase\(/);
   assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
   assert.doesNotMatch(storage + preferencias, /\b(?:supabase|useEffect|useState)\b|\.(?:insert|update|delete|upsert)\s*\(/);
 });

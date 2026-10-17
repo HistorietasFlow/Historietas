@@ -80,3 +80,8 @@
 
 - Isolou a ação de marcar ou desmarcar capítulo lido, recebendo estados e dependências explicitamente.
 - Preservou autenticação, cálculo de progresso e última leitura, atualização local, sincronização, reversão, notificações e Diário; estados, efeitos e persistências permanecem na página.
+
+## Fase 839 — Carregamento inicial do leitor
+
+- Isolou o efeito de carregamento inicial de obra e capítulo em um hook dedicado, mantendo os estados na página.
+- Preservou a autenticação, permissões, capítulos publicados, dados locais e remotos, persistência, temporização, cancelamento e tratamento de erros, sem alteração intencional de comportamento.
