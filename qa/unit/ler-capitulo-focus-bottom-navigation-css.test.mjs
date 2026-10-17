@@ -17,6 +17,10 @@ const pagina = readFileSync(
   new URL("../../app/ler-capitulo/page.tsx", import.meta.url),
   "utf8",
 ).replace(/\r\n/g, "\n");
+const estilosLayout = readFileSync(
+  new URL("../../app/ler-capitulo/lib/ler-capitulo-layout-styles.ts", import.meta.url),
+  "utf8",
+).replace(/\r\n/g, "\n");
 
 test("focusBottomNavigationCss preserva as regras globais críticas da navegação", () => {
   assert.match(cssSource, /export const focusBottomNavigationCss = `/);
@@ -49,7 +53,7 @@ test("Leitor mantém o CSS de foco separado no único consumidor normal", () => 
   assert.match(leitorPageCss, /export const leitorPageCss = `/);
   assert.doesNotMatch(leitorPageCss, /focusBottomNavigationCss/);
   assert.doesNotMatch(leitorPageCss, /historietas-bottom-nav-main-border/);
-  assert.match(pagina, /import \{ safeTextStyle \} from "\.\/lib\/ler-capitulo-text-style";/);
+  assert.match(estilosLayout, /import \{ safeTextStyle \} from "\.\/ler-capitulo-text-style";/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties = \{/);
   assert.match(pagina, /const isDesktop = useLerCapituloDesktopMode\(\);/);
   assert.match(pagina, /async function enviarComentarioCapitulo\(/);

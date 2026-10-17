@@ -30,3 +30,8 @@
 
 - Extraiu os 55 estilos do sheet de comentários e o primitivo de texto seguro para módulos visuais dedicados.
 - Preservou literalmente os valores, spreads, consumidores e comportamento visual; o painel e suas interações permanecem na página.
+
+## Fase 829 — Estilos de layout do leitor
+
+- Extraiu os 77 estilos de layout, controles e navegação, junto ao helper visual de tamanho do título, para um módulo dedicado.
+- Preservou literalmente os objetos, spreads e limites de tamanho; estados, JSX e lógica de leitura permanecem na página.
