@@ -34,6 +34,14 @@ import {
   normalizarNumeroSeguindo,
 } from "./lib/seguindo-format-utils";
 import {
+  calcularProgressoLeitura,
+  obraEmLeitura,
+  obterTotalComentariosObraSeguindo,
+  obterTotalCurtidasObraSeguindo,
+  obterTotalLidosObraSeguindo,
+  obterTotalSalvosObraSeguindo,
+} from "./lib/seguindo-work-metrics-utils";
+import {
   criarHrefPerfilAutorSeguindo,
   criarHrefPerfilUsuarioSeguindo,
   criarLoginHrefSeguindo,
@@ -439,62 +447,6 @@ function criarAvatarUsuarioSeguindoStyle(avatar: string): CSSProperties {
   };
 }
 
-function contarCapitulosComFlagSeguindo(
-  obra: Pick<ObraLocal, "capitulos">,
-  campo: "curtiu" | "salvo" | "lido",
-) {
-  return obra.capitulos.filter((capitulo) => Boolean(capitulo[campo])).length;
-}
-
-function contarComentariosLocaisSeguindo(obra: Pick<ObraLocal, "capitulos">) {
-  return obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
-}
-
-function obterTotalCurtidasObraSeguindo(
-  obra: Pick<ObraLocal, "capitulos" | "totalCurtidas">,
-) {
-  return Math.max(
-    normalizarNumeroSeguindo(obra.totalCurtidas, 0),
-    contarCapitulosComFlagSeguindo(obra, "curtiu"),
-  );
-}
-
-function obterTotalComentariosObraSeguindo(
-  obra: Pick<ObraLocal, "capitulos" | "totalComentarios">,
-) {
-  return Math.max(
-    normalizarNumeroSeguindo(obra.totalComentarios, 0),
-    contarComentariosLocaisSeguindo(obra),
-  );
-}
-
-function obterTotalSalvosObraSeguindo(
-  obra: Pick<
-    ObraLocal,
-    | "capitulos"
-    | "totalSalvos"
-    | "totalSeguidores"
-    | "totalFavoritas"
-  >,
-) {
-  return Math.max(
-    normalizarNumeroSeguindo(obra.totalSalvos, 0),
-    normalizarNumeroSeguindo(obra.totalSeguidores, 0),
-    normalizarNumeroSeguindo(obra.totalFavoritas, 0),
-    contarCapitulosComFlagSeguindo(obra, "salvo"),
-  );
-}
-
-function obterTotalLidosObraSeguindo(
-  obra: Pick<ObraLocal, "capitulos" | "totalLidos">,
-) {
-  return Math.max(
-    normalizarNumeroSeguindo(obra.totalLidos, 0),
-    contarCapitulosComFlagSeguindo(obra, "lido"),
-  );
-}
-
-
 function dataAtividadeObra(obra: ObraLocal) {
   const datas = [obra.ultimaLeituraEm, obra.criadaEm]
     .map((data) => new Date(data).getTime())
@@ -525,23 +477,6 @@ function mostrarClassificacao(obra: ObraLocal) {
     obra.classificacaoIndicativa &&
     obra.classificacaoIndicativa !== "Não informada"
   );
-}
-
-function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  if (capitulos.length === 0) {
-    return 0;
-  }
-
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
-
-  return Math.round((capitulosLidos / capitulos.length) * 100);
-}
-
-
-function obraEmLeitura(obra: ObraLocal) {
-  const progresso = calcularProgressoLeitura(obra.capitulos);
-
-  return progresso > 0 && progresso < 100;
 }
 
 function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
