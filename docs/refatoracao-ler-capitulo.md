@@ -50,3 +50,8 @@
 
 - Extraiu a composição do cabeçalho, ajustes, conteúdo do capítulo, ações e navegação para um componente dedicado, mantendo as 368 linhas de JSX literalmente iguais.
 - Estados, callbacks, acesso, autenticação, storage, consultas e mutações permanecem na página; sem mudança intencional de comportamento ou apresentação.
+
+## Fase 833 — Leitura de comentários e perfis do leitor
+
+- Extraiu os helpers de perfil e o carregamento de comentários, perfis e curtidas para um módulo de leitura dedicado, preservando consultas, paginação, autenticação de apoio, ordenação e fallbacks.
+- A página mantém os efeitos, estados, mutações e o armazenamento local; a aplicação das curtidas locais é fornecida explicitamente ao loader, sem mudança intencional de comportamento.
