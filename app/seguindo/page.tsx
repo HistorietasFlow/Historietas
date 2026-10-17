@@ -249,13 +249,14 @@ export default function SeguindoPage() {
       setCarregando(true);
     }, 0);
 
+    const dadosLocaisSeguindo = carregarDadosLocaisSeguindo(usuarioLogadoId);
     let {
       obras: obrasNormalizadas,
       obrasSeguidas: seguindoNormalizado,
-      autoresSeguidos: autoresNormalizados,
       obrasFavoritas: favoritasNormalizadas,
       obrasConcluidas: concluidasNormalizadas,
-    } = carregarDadosLocaisSeguindo(usuarioLogadoId);
+    } = dadosLocaisSeguindo;
+    const autoresNormalizados = dadosLocaisSeguindo.autoresSeguidos;
 
     window.setTimeout(() => {
       setObras(obrasNormalizadas);
