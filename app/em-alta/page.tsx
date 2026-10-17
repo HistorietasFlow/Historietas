@@ -9,16 +9,7 @@ import { useEmAltaDesktopMode } from "./hooks/use-em-alta-desktop-mode";
 import type {
   ObraLocal,
 } from "./lib/em-alta-models";
-import {
-  normalizarListaIdsEmAlta,
-} from "./lib/em-alta-ranking-list-utils";
-import {
-  carregarListaIdsLocalEmAlta,
-  COMPLETED_STORAGE_KEY,
-  FAVORITES_STORAGE_KEY,
-  salvarListaIdsLocalEmAlta,
-} from "./lib/em-alta-local-storage-utils";
-import { carregarIdsColecaoUsuarioSupabaseEmAlta } from "./lib/em-alta-collection-supabase-loader";
+import { carregarColecoesRankingEmAlta } from "./lib/em-alta-ranking-collections-loader";
 import { carregarObrasSupabasePublicadas } from "./lib/em-alta-supabase-works-loader";
 import {
   criarLoginHrefEmAlta,
@@ -85,31 +76,10 @@ export default function EmAltaPage() {
           }
         }
 
-        const [favoritosSupabase, concluidasSupabase] = await Promise.all([
-          carregarIdsColecaoUsuarioSupabaseEmAlta("favoritos", userIdAtual),
-          carregarIdsColecaoUsuarioSupabaseEmAlta("concluidas", userIdAtual),
-        ]);
-
-        const obrasFavoritasNormalizadas = normalizarListaIdsEmAlta([
-          ...carregarListaIdsLocalEmAlta(FAVORITES_STORAGE_KEY, userIdAtual),
-          ...favoritosSupabase,
-        ]);
-
-        const obrasConcluidasNormalizadas = normalizarListaIdsEmAlta([
-          ...carregarListaIdsLocalEmAlta(COMPLETED_STORAGE_KEY, userIdAtual),
-          ...concluidasSupabase,
-        ]);
-
-        salvarListaIdsLocalEmAlta(
-          FAVORITES_STORAGE_KEY,
-          userIdAtual,
+        const {
           obrasFavoritasNormalizadas,
-        );
-        salvarListaIdsLocalEmAlta(
-          COMPLETED_STORAGE_KEY,
-          userIdAtual,
           obrasConcluidasNormalizadas,
-        );
+        } = await carregarColecoesRankingEmAlta(userIdAtual);
 
         const {
           visualizacoesNormalizadas,

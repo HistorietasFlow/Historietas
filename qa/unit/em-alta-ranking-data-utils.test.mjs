@@ -20,6 +20,7 @@ import "./use-em-alta-ranking-derived-data.test.mjs";
 import "./em-alta-page-display-utils.test.mjs";
 import "./use-em-alta-ranking-collection-actions.test.mjs";
 import "./em-alta-ranking-local-interactions.test.mjs";
+import "./em-alta-ranking-collections-loader.test.mjs";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-ranking-data-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
