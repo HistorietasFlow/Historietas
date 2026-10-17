@@ -12,6 +12,10 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const estilosConteudo = readFileSync(
+  new URL("../../app/explorar/lib/explorar-content-styles.ts", import.meta.url),
+  "utf8",
+);
 const executavel = modulo + `\nexport { activeCategoryStyle, searchBoxStyle,
   mobileTopWaterFadeStyle, desktopTopWaterFadeStyle };\n`;
 const javascript = typescript.transpileModule(executavel, {
@@ -120,7 +124,7 @@ test("filtros, modal e confirmação de idade mantêm estilos e estados", () => 
   assert.deepEqual(estilos.explorarAdultConfirmationDisabledStyle, { opacity: 0.42, cursor: "not-allowed" });
 });
 
-test("a página importa os estilos, preserva os cards e o módulo não tem efeitos", () => {
+test("a página importa os estilos e os cards permanecem na fronteira visual", () => {
   const importacao = pagina.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\/lib\/explorar-layout-styles";/);
   assert.ok(importacao);
   const nomes = importacao[1].split(",").map((nome) => nome.trim()).filter(Boolean);
@@ -129,7 +133,9 @@ test("a página importa os estilos, preserva os cards e o módulo não tem efeit
     assert.doesNotMatch(pagina, new RegExp(`(?:const|function) ${nome}\\b`));
   }
   for (const nome of ["criarPublishedCardTemaStyle", "criarPublishedCoverTemaStyle", "criarProgressTrackStyle", "criarCardPrimaryActionStyle"]) {
-    assert.match(pagina, new RegExp(`function ${nome}\\(`));
+    assert.match(estilosConteudo, new RegExp(`export function ${nome}\\(`));
+    assert.match(pagina, new RegExp(`\\b${nome}\\b`));
+    assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\(`));
   }
   assert.match(modulo, /import type \{ CSSProperties \} from "react"/);
   const runtime = modulo.replace('import type { CSSProperties } from "react";', "");
