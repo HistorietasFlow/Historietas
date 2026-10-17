@@ -79,3 +79,10 @@
 
 - Extraiu `AutorExplorarCard` e `ObraPublicadaCard` para componentes dedicados, preservando JSX, traduções, acessibilidade e variantes responsivas.
 - Isolou o helper compartilhado de rota de autor e moveu o estilo de capa para o módulo visual existente, sem alterar as regras ou valores.
+
+## Fase 856 — componentes auxiliares do Explorar
+
+- Extraiu `EstadoVazioExplorar`, `SectionHeader` e `ExplorarCarouselRow` para `app/explorar/components/explorar-section-components.tsx`.
+- Preservou textos, traduções, acessibilidade, variantes desktop/mobile, reset de `scrollLeft`, regra de setas e deslocamento suave de 460px.
+- Moveu apenas os tipos compartilhados diretamente necessários pelos componentes e atualizou as coberturas estruturais existentes.
+- Sem alterações de autenticação, loaders, filtros, lifecycle de dados, Supabase, schema ou RLS.

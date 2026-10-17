@@ -18,6 +18,7 @@ const pagina = readFileSync(
 );
 const autorCard = readFileSync(new URL("../../app/explorar/components/explorar-autor-card.tsx", import.meta.url), "utf8");
 const obraCard = readFileSync(new URL("../../app/explorar/components/explorar-obra-publicada-card.tsx", import.meta.url), "utf8");
+const auxiliares = readFileSync(new URL("../../app/explorar/components/explorar-section-components.tsx", import.meta.url), "utf8");
 const compilar = (codigo) =>
   typescript.transpileModule(codigo, {
     compilerOptions: {
@@ -161,10 +162,13 @@ test("o módulo de estilos é estático e a página continua consumindo os estil
   const nomes = importacao[1].split(",").map((nome) => nome.trim()).filter(Boolean);
   const importacaoAutor = autorCard.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   const importacaoObra = obraCard.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  const importacaoAuxiliares = auxiliares.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   assert.ok(importacaoAutor);
   assert.ok(importacaoObra);
+  assert.ok(importacaoAuxiliares);
   nomes.push(...importacaoAutor[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   nomes.push(...importacaoObra[1].split(",").map((nome) => nome.trim()).filter(Boolean));
+  nomes.push(...importacaoAuxiliares[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   assert.equal(nomes.length, 72);
   for (const nome of nomes) {
     assert.match(modulo, new RegExp(`export (?:const|function) ${nome}\\b`));

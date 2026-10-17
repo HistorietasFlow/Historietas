@@ -11,6 +11,7 @@ const ler = (caminho) =>
 const pagina = ler("../../app/explorar/page.tsx");
 const autorCodigo = ler("../../app/explorar/components/explorar-autor-card.tsx");
 const obraCodigo = ler("../../app/explorar/components/explorar-obra-publicada-card.tsx");
+const auxiliaresCodigo = ler("../../app/explorar/components/explorar-section-components.tsx");
 const estiloCodigo = ler("../../app/explorar/lib/explorar-content-styles.ts");
 const rotaCodigo = ler("../../app/explorar/lib/explorar-author-route-utils.ts");
 const hash = (valor) => createHash("sha256").update(valor).digest("hex");
@@ -64,6 +65,14 @@ const comuns = {
   "../lib/explorar-translations": traducoes,
   "../lib/explorar-content-styles": estilos,
 };
+const {
+  EstadoVazioExplorar,
+  SectionHeader,
+  ExplorarCarouselRow,
+} = compilar(auxiliaresCodigo, {
+  ...comuns,
+  react: React,
+});
 const AutorCard = compilar(autorCodigo, {
   ...comuns,
   "next/image": { default: Image },
@@ -111,8 +120,69 @@ test("corpos dos cards, rota e capa preservam literalmente a base", () => {
   assert.match(pagina, /import ObraPublicadaCard from "\.\/components\/explorar-obra-publicada-card"/);
   assert.equal((pagina.match(/<AutorExplorarCard\b/g) || []).length, 3);
   assert.equal((pagina.match(/<ObraPublicadaCard\b/g) || []).length, 3);
-  assert.doesNotMatch(pagina, /function (?:AutorExplorarCard|ObraPublicadaCard)\(/);
-  assert.match(pagina, /function (?:SectionHeader|ExplorarCarouselRow)\(/);
+  assert.doesNotMatch(
+    pagina,
+    /function (?:AutorExplorarCard|ObraPublicadaCard|EstadoVazioExplorar|SectionHeader|ExplorarCarouselRow)\(/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/components\/explorar-section-components"/,
+  );
+  for (const nome of ["EstadoVazioExplorar", "SectionHeader", "ExplorarCarouselRow"]) {
+    assert.match(auxiliaresCodigo, new RegExp(`export function ${nome}\\(`));
+  }
+});
+
+test("componentes auxiliares preservam vazio, cabeçalho e regras do carrossel", () => {
+  language = "pt-BR";
+  assert.match(
+    html(EstadoVazioExplorar, {
+      possuiObrasPublicadas: false,
+      modoConteudo: "obras",
+    }),
+    /PUBLIQUE SUA HISTÓRIA/,
+  );
+  assert.match(
+    html(EstadoVazioExplorar, {
+      possuiObrasPublicadas: true,
+      modoConteudo: "autores",
+    }),
+    /Nenhum autor encontrado/,
+  );
+
+  language = "en";
+  const cabecalho = html(SectionHeader, {
+    title: "Explorar",
+    tema: {},
+    isDesktop: true,
+    href: "/listas",
+  });
+  assert.match(cabecalho, />Explore<\/h2>/);
+  assert.match(cabecalho, /href="\/listas"/);
+  assert.match(cabecalho, /aria-label="View all in Explore"/);
+
+  language = "pt-BR";
+  const filhos = [1, 2, 3, 4].map((item) =>
+    React.createElement("span", { key: item }, item),
+  );
+  const comSetas = html(ExplorarCarouselRow, {
+    children: filhos,
+    isDesktop: true,
+    variant: "obra",
+  });
+  assert.match(comSetas, /Rolar carrossel para a esquerda/);
+  assert.match(comSetas, /Rolar carrossel para a direita/);
+  const semSetas = html(ExplorarCarouselRow, {
+    children: filhos.slice(0, 3),
+    isDesktop: true,
+    variant: "autor",
+  });
+  assert.doesNotMatch(semSetas, /<button/);
+
+  assert.match(auxiliaresCodigo, /const totalItems = Children\.count\(children\);/);
+  assert.match(auxiliaresCodigo, /const precisaSetas = isDesktop && totalItems > 3;/);
+  assert.match(auxiliaresCodigo, /row\.scrollLeft = 0;[\s\S]*?\}, \[isDesktop, totalItems, variant\]\);/);
+  assert.match(auxiliaresCodigo, /left: direcao \* 460,[\s\S]*?behavior: "smooth"/);
 });
 
 test("autor preserva variantes, iniciais, fallback de gênero e métricas condicionais", () => {
