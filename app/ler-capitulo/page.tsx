@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import {
   useEffect,
-  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -28,14 +27,12 @@ import { useLerCapituloDesktopMode } from "./hooks/use-ler-capitulo-desktop-mode
 import { focusBottomNavigationCss } from "./lib/ler-capitulo-focus-bottom-navigation-css";
 import { leitorPageCss } from "./lib/ler-capitulo-page-css";
 import {
-  aplicarCurtidasComentariosCapitulosLocais,
   obterAutorIdSeguro,
   salvarCurtidaComentarioCapituloLocal,
   salvarObrasPreservandoContas,
 } from "./lib/ler-capitulo-local-storage";
 import { FONT_SCALE_VALUES } from "./lib/ler-capitulo-reading-preferences";
 import {
-  carregarComentariosCapituloSupabase,
   carregarPerfilComentarioLeitor,
   obterTextoRegistroLeitor,
   type PerfilComentarioLeitor,
@@ -48,6 +45,7 @@ import {
 } from "./lib/ler-capitulo-work-normalization";
 import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load";
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
+import { useLerCapituloInteractionData, type MetricasCapituloLeitor } from "./hooks/use-ler-capitulo-interaction-data";
 import { criarAcoesComentariosCapitulo } from "./lib/ler-capitulo-comment-actions";
 import { criarAcoesInteracoesCapitulo } from "./lib/ler-capitulo-interaction-actions";
 import { criarAcaoProgressoLeituraCapitulo } from "./lib/ler-capitulo-reading-progress-action";
@@ -73,15 +71,6 @@ type TipoNotificacaoInteracaoCapitulo =
   | "comentario-capitulo"
   | "curtida-comentario-capitulo";
 
-type MetricasCapituloLeitor = {
-  totalVisualizacoes: number;
-  totalCurtidas: number;
-  totalSalvos: number;
-  totalComentarios: number;
-  curtiu: boolean;
-  salvo: boolean;
-  carregado: boolean;
-};
 
 
 
@@ -707,9 +696,6 @@ export default function LerCapituloPage() {
       null
     );
   }, [obraAtual, capituloId]);
-  const atualizarCapituloPorMetricas = useEffectEvent(
-    (dados: Partial<CapituloLocal>) => atualizarCapitulo(dados),
-  );
 
   const statusAcesso18 =
     obraAtual && controleAcesso18.obraId === obraAtual.id
@@ -749,111 +735,22 @@ export default function LerCapituloPage() {
   }, [obraAtual]);
 
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarComentariosCapitulo() {
-      if (!capituloAtual?.id) {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setComentariosCapitulo([]);
-            setComentariosCarregando(false);
-          }
-        }, 0);
-        return;
-      }
-
-      const deveExibirCarregamentoInicial =
-        comentariosCapituloCarregadoIdRef.current !== capituloAtual.id;
-
-      if (deveExibirCarregamentoInicial) {
-        setComentariosCarregando(true);
-      }
-
-      const comentarios = await carregarComentariosCapituloSupabase(
-        capituloAtual.id,
-        usuarioIdLogado,
-        {
-          aplicarCurtidasComentariosCapitulosLocais,
-          TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,
-        },
-      );
-
-      if (!cancelado) {
-        comentariosCapituloCarregadoIdRef.current = capituloAtual.id;
-        setComentariosCapitulo(comentarios);
-        setComentariosCarregando(false);
-      }
-    }
-
-    void carregarComentariosCapitulo();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [capituloAtual?.id, usuarioIdLogado]);
-
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarMetricasCapituloAtual() {
-      if (
-        curtidaCapituloSalvandoRef.current ||
-        salvoCapituloSalvandoRef.current
-      ) {
-        return;
-      }
-
-      if (!capituloAtual) {
-        setMetricasCapitulo(metricasCapituloVazias);
-        return;
-      }
-
-      const metricasLocais = criarMetricasCapituloLocais(
-        capituloAtual,
-        comentariosCapitulo.length
-      );
-
-      setMetricasCapitulo(metricasLocais);
-
-      const metricasReais = await carregarMetricasCapituloSupabase(
-        capituloAtual,
-        comentariosCapitulo.length
-      );
-
-      if (cancelado) {
-        return;
-      }
-
-      setMetricasCapitulo((metricasAtuais) => ({
-        ...metricasReais,
-        totalVisualizacoes: Math.max(
-          metricasAtuais.totalVisualizacoes,
-          metricasReais.totalVisualizacoes
-        ),
-      }));
-
-      if (
-        metricasReais.curtiu !== capituloAtual.curtiu ||
-        metricasReais.salvo !== capituloAtual.salvo
-      ) {
-        atualizarCapituloPorMetricas({
-          curtiu: metricasReais.curtiu,
-          salvo: metricasReais.salvo,
-        });
-      }
-    }
-
-    void carregarMetricasCapituloAtual();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [
+  useLerCapituloInteractionData({
     capituloAtual,
-    comentariosCapitulo.length,
+    comentariosCapitulo,
     usuarioIdLogado,
-  ]);
+    comentariosCapituloCarregadoIdRef,
+    curtidaCapituloSalvandoRef,
+    salvoCapituloSalvandoRef,
+    setComentariosCapitulo,
+    setComentariosCarregando,
+    setMetricasCapitulo,
+    metricasCapituloVazias,
+    criarMetricasCapituloLocais,
+    carregarMetricasCapituloSupabase,
+    atualizarCapitulo,
+    TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,
+  });
 
   const indiceCapitulo = useMemo(() => {
     if (!obraAtual || !capituloAtual) {
@@ -1138,6 +1035,8 @@ export default function LerCapituloPage() {
     salvarObras(novasObras);
   }
 
+  // A fábrica apenas cria callbacks; as refs são lidas quando as ações são executadas.
+  // eslint-disable-next-line react-hooks/refs
   const { alternarCurtida, alternarSalvo } = criarAcoesInteracoesCapitulo({
     obraAtual,
     capituloAtual,
@@ -1161,6 +1060,8 @@ export default function LerCapituloPage() {
     setMetricasCapitulo,
   });
 
+  // A fábrica apenas cria o callback; a ref é lida quando a ação é executada.
+  // eslint-disable-next-line react-hooks/refs
   const { alternarLido } = criarAcaoProgressoLeituraCapitulo({
     obraAtual,
     capituloAtual,
@@ -1184,6 +1085,8 @@ export default function LerCapituloPage() {
     enviarComentarioCapitulo,
     removerComentarioCapitulo,
     alternarCurtidaComentarioCapitulo,
+    // A fábrica apenas cria callbacks; as refs são lidas quando as ações são executadas.
+    // eslint-disable-next-line react-hooks/refs
   } = criarAcoesComentariosCapitulo({
     supabase,
     obraId,
