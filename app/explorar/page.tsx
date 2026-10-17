@@ -18,17 +18,13 @@ import {
   confirmarAcessoConteudo18,
 } from "../../lib/historietasAdultContent";
 import {
-  type ConsultaCatalogo,
   type CursorCatalogo,
 } from "../../lib/catalogo";
 import { LoadingSpinner } from "./components/explorar-loading-spinner";
 import { useExplorarAdvancedFiltersBodyLock } from "./hooks/use-explorar-advanced-filters-body-lock";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
-import {
-  CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
-  carregarObrasPublicadasSupabase,
-} from "./lib/explorar-remote-loader";
+import { useExplorarCatalogQuery } from "./hooks/use-explorar-catalog-query";
 import { themePageCss } from "./lib/explorar-page-css";
 import { explorarBuscaToggleCss } from "./lib/explorar-search-toggle-css";
 import {
@@ -468,8 +464,6 @@ export default function ExplorarPage() {
   const [carregandoMaisCatalogo, setCarregandoMaisCatalogo] = useState(false);
   const obrasCacheLocalRef = useRef<ObraLocal[]>([]);
   const usuarioIdExplorarRef = useRef("");
-  const consultaCatalogoRef = useRef(0);
-  const consultaPersonalizadaAtivaRef = useRef(false);
 
   useEffect(() => {
     let componenteAtivo = true;
@@ -577,122 +571,26 @@ export default function ExplorarPage() {
   }, [obrasLocais]);
 
   const termoBusca = normalizarTexto(busca);
-  const buscaCatalogo = busca.trim();
-
-  const consultaCatalogoAtual = useMemo<ConsultaCatalogo>(() => ({
-    busca: buscaCatalogo,
-    genero: categoriaSelecionada,
-    formato: filtroFormato === "todos" ? "" : filtroFormato,
-    classificacao:
-      filtroClassificacao === "todos" ? "" : filtroClassificacao,
-    filtroCapitulos:
-      filtroCapitulos === "com-capitulos" ||
-      filtroCapitulos === "sem-capitulos"
-        ? filtroCapitulos
-        : "todos",
-    ordenacao,
-    limite: 24,
-  }), [
-    buscaCatalogo,
-    categoriaSelecionada,
-    filtroCapitulos,
-    filtroClassificacao,
-    filtroFormato,
-    ordenacao,
-  ]);
-  const consultaCatalogoPersonalizada = Boolean(
-    termoBusca ||
-      categoriaSelecionada ||
-      filtroFormato !== "todos" ||
-      filtroClassificacao !== "todos" ||
-      filtroCapitulos !== "todos" ||
-      ordenacao !== "relevancia",
-  );
-
-  useEffect(() => {
-    if (!dadosExplorarCarregados) {
-      return;
-    }
-
-    if (
-      !consultaCatalogoPersonalizada &&
-      !consultaPersonalizadaAtivaRef.current
-    ) {
-      return;
-    }
-
-    consultaPersonalizadaAtivaRef.current = consultaCatalogoPersonalizada;
-    const numeroConsulta = consultaCatalogoRef.current + 1;
-    consultaCatalogoRef.current = numeroConsulta;
-    let cancelado = false;
-    const timer = window.setTimeout(async () => {
-      setCarregandoMaisCatalogo(true);
-
-      try {
-        const consultas = consultaCatalogoPersonalizada
-          ? [consultaCatalogoAtual]
-          : CONSULTAS_INICIAIS_CATALOGO_EXPLORAR;
-        const resultado = await carregarObrasPublicadasSupabase(
-          obrasCacheLocalRef.current,
-          usuarioIdExplorarRef.current,
-          consultas,
-        );
-
-        if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
-          setObrasLocais(resultado.obras);
-          setProximoCursorCatalogo(
-            resultado.pagina?.proximoCursor || null,
-          );
-          setCatalogoTemMais(Boolean(resultado.pagina?.temMais));
-        }
-      } finally {
-        if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
-          setCarregandoMaisCatalogo(false);
-        }
-      }
-    }, 350);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(timer);
-    };
-  }, [
-    consultaCatalogoAtual,
-    consultaCatalogoPersonalizada,
-    dadosExplorarCarregados,
-  ]);
-
-  async function carregarMaisObrasCatalogo() {
-    if (
-      !consultaCatalogoPersonalizada ||
-      !proximoCursorCatalogo ||
-      carregandoMaisCatalogo
-    ) {
-      return;
-    }
-
-    const numeroConsulta = consultaCatalogoRef.current + 1;
-    consultaCatalogoRef.current = numeroConsulta;
-    setCarregandoMaisCatalogo(true);
-
-    try {
-      const resultado = await carregarObrasPublicadasSupabase(
-        obrasLocais,
-        usuarioIdExplorarRef.current,
-        [{ ...consultaCatalogoAtual, cursor: proximoCursorCatalogo }],
-      );
-
-      if (consultaCatalogoRef.current === numeroConsulta) {
-        setObrasLocais(resultado.obras);
-        setProximoCursorCatalogo(resultado.pagina?.proximoCursor || null);
-        setCatalogoTemMais(Boolean(resultado.pagina?.temMais));
-      }
-    } finally {
-      if (consultaCatalogoRef.current === numeroConsulta) {
-        setCarregandoMaisCatalogo(false);
-      }
-    }
-  }
+  const { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo } =
+    useExplorarCatalogQuery({
+      busca,
+      termoBusca,
+      categoriaSelecionada,
+      filtroFormato,
+      filtroClassificacao,
+      filtroCapitulos,
+      ordenacao,
+      dadosExplorarCarregados,
+      obrasLocais,
+      proximoCursorCatalogo,
+      carregandoMaisCatalogo,
+      obrasCacheLocalRef,
+      usuarioIdExplorarRef,
+      setObrasLocais,
+      setProximoCursorCatalogo,
+      setCatalogoTemMais,
+      setCarregandoMaisCatalogo,
+    });
 
   const obrasBaseFiltradas = useMemo(() => {
     return filtrarObrasBaseExplorar({

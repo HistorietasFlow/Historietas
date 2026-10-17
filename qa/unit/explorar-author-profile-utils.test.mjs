@@ -254,7 +254,8 @@ test("a página delega perfis e preserva catálogo, métricas de obras e efeitos
   assert.match(pagina, /from "\.\/lib\/explorar-author-profile-utils"/);
   assert.match(loaderRemoto, /carregarNomesProfilesExplorar\(/);
   assert.match(loaderRemoto, /aplicarNomesProfilesEmObrasExplorar\(/);
-  assert.match(pagina, /carregarObrasPublicadasSupabase\(/);
+  assert.match(pagina, /useExplorarCatalogQuery\(\{/);
+  assert.match(ler("../../app/explorar/hooks/use-explorar-catalog-query.ts"), /carregarObrasPublicadasSupabase\(/);
   assert.match(pagina, /carregarPerfisAutoresExplorar\(autorIds\)/);
   assert.match(pagina, /carregarAvaliacoesAutoresExplorar\(autorIds\)/);
   assert.match(loaderRemoto, /carregarMetricasConteudos\(\{ obraIds, capituloIds \}\)/);

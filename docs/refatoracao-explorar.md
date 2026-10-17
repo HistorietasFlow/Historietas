@@ -69,3 +69,8 @@
 
 - Extraiu apenas o lifecycle inicial para `app/explorar/hooks/use-explorar-initial-load.ts`, mantendo estados e refs na página.
 - Preservou a ordem da autenticação, leitura e persistência locais, coleções, catálogo remoto, cancelamento e finalização do carregamento. Os demais lifecycles permaneceram na página.
+
+## Fase 854 — consultas personalizadas e paginação do catálogo
+
+- Extraiu a construção das consultas, o debounce e a ação de carregar mais para `app/explorar/hooks/use-explorar-catalog-query.ts`, mantendo os estados na página.
+- Preservou filtros, cursor, controle de respostas obsoletas, cancelamento, ordem dos setters e os demais lifecycles.
