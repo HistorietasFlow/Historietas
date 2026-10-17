@@ -83,11 +83,13 @@ test("os dois helpers e seus contratos permanecem literalmente iguais", () => {
   const corpo = fonte.slice(fonte.indexOf("export async function carregarObraSupabase("))
     .replaceAll("export async function ", "async function ").trimEnd();
   assert.equal(createHash("sha256").update(corpo).digest("hex"), "f63dc60eb6b106c1f560c919fa5c0fb797d52da1200f1cd564814a75528d7492");
-  assert.match(pagina, /from "\.\/lib\/ler-capitulo-work-read-loader";/);
+  const inicializacao = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts");
+  assert.match(inicializacao, /from "\.\.\/lib\/ler-capitulo-work-read-loader";/);
+  assert.match(pagina, /useLerCapituloInitialLoad\(/);
   for (const nome of ["carregarObraSupabase", "aplicarInteracoesCapitulosSupabase"]) {
     assert.match(fonte, new RegExp(`export async function ${nome}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`async function ${nome}\\(`));
-    assert.match(pagina, new RegExp(`await ${nome}\\(`));
+    assert.match(inicializacao, new RegExp(`await ${nome}\\(`));
   }
   assert.doesNotMatch(fonte, /\.(?:insert|update|delete|upsert)\s*\(|\b(?:localStorage|useEffect|useState)\b/);
   assert.match(pagina, /async function salvarProgressoLeituraSupabase\(/);
