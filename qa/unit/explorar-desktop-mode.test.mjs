@@ -17,6 +17,10 @@ const estilos = readFileSync(
   new URL("../../app/explorar/lib/explorar-content-styles.ts", import.meta.url),
   "utf8",
 );
+const storage = readFileSync(
+  new URL("../../app/explorar/lib/explorar-local-storage.ts", import.meta.url),
+  "utf8",
+);
 
 test("useExplorarDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -83,5 +87,7 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
   assert.match(pagina, /async function carregarExplorar\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /listarSelecaoCatalogo/);
-  assert.match(pagina, /localStorage\.getItem/);
+  assert.match(pagina, /from "\.\/lib\/explorar-local-storage"/);
+  assert.match(pagina, /lerStorageUsuarioExplorar\(/);
+  assert.match(storage, /localStorage\.getItem/);
 });
