@@ -76,6 +76,7 @@ import {
   carregarComentariosCapitulosUsuarioSupabase,
   carregarIdsObrasUsuarioSupabase,
 } from "./lib/seguindo-work-query-utils";
+import { carregarIdsSolicitacoesEnviadasSupabase } from "./lib/seguindo-social-query-utils";
 import { buscarUsuariosParaSeguirSupabase } from "./lib/seguindo-user-search-utils";
 import { sincronizarObraUsuarioSupabase } from "./lib/seguindo-work-sync-utils";
 import {
@@ -1085,37 +1086,6 @@ async function carregarSolicitacoesSeguidoresSupabase(
     return [];
   }
 }
-
-async function carregarIdsSolicitacoesEnviadasSupabase(userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (!idUsuarioSupabaseValido(userIdLimpo)) {
-    return [] as string[];
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("solicitacoes_seguidores")
-      .select("destinatario_id")
-      .eq("solicitante_id", userIdLimpo)
-      .limit(240);
-
-    if (error || !Array.isArray(data)) {
-      return [] as string[];
-    }
-
-    return Array.from(
-      new Set(
-        normalizarRegistrosSupabaseGenericos(data)
-          .map((registro) => obterTextoRegistro(registro, "destinatario_id"))
-          .filter((destinatarioId) => idUsuarioSupabaseValido(destinatarioId)),
-      ),
-    );
-  } catch {
-    return [] as string[];
-  }
-}
-
 
 function criarAtividadeSeguindoPorDados({
   id,
