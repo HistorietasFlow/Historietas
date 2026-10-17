@@ -24,6 +24,10 @@ import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
+  obraEstaNaLista,
+  removerObraDaLista,
+} from "./lib/seguindo-work-collection-utils";
+import {
   formatarGeneroSeguindo,
   normalizarListaTexto,
   normalizarNomeAutor,
@@ -488,29 +492,6 @@ function obterTotalLidosObraSeguindo(
     normalizarNumeroSeguindo(obra.totalLidos, 0),
     contarCapitulosComFlagSeguindo(obra, "lido"),
   );
-}
-
-
-function criarChavesObra(obra: Pick<ObraLocal, "id" | "titulo" | "slug" | "link">) {
-  return normalizarListaTexto([
-    obra.id,
-    obra.slug,
-    criarSlugBase(obra.titulo),
-    normalizarTexto(obra.titulo),
-    obra.link,
-  ]);
-}
-
-function obraEstaNaLista(obra: Pick<ObraLocal, "id" | "titulo" | "slug" | "link">, lista: string[]) {
-  const listaNormalizada = new Set(normalizarListaTexto(lista));
-
-  return criarChavesObra(obra).some((chave) => listaNormalizada.has(chave));
-}
-
-function removerObraDaLista(obra: Pick<ObraLocal, "id" | "titulo" | "slug" | "link">, lista: string[]) {
-  const chavesParaRemover = new Set(criarChavesObra(obra));
-
-  return normalizarListaTexto(lista).filter((item) => !chavesParaRemover.has(item));
 }
 
 
