@@ -1,3 +1,12 @@
+export async function carregarUsuarioAtualSeguindoSupabase() {
+  try {
+    const { data } = await supabase.auth.getUser();
+    return data.user?.id || "";
+  } catch {
+    return "";
+  }
+}
+
 import { supabase } from "../../../lib/supabase/client";
 import {
   carregarTodasPaginasPorLotesSupabase,
