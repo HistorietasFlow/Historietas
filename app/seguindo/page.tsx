@@ -13,7 +13,6 @@ import {
   deixarDeSeguirUsuario as deixarDeSeguirUsuarioPrivacidade,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
-import { carregarMetricasConteudos } from "../../lib/metricas";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
@@ -58,8 +57,7 @@ import {
 } from "./lib/seguindo-work-presentation-utils";
 import {
   carregarCapitulosPublicadosSeguindoSupabase,
-  carregarComentariosCapitulosUsuarioSupabase,
-  carregarIdsObrasUsuarioSupabase,
+  carregarDadosRelacionadosObrasSeguindoSupabase,
   carregarObrasPublicadasSeguindoSupabase,
   carregarUsuarioAtualSeguindoSupabase,
 } from "./lib/seguindo-work-query-utils";
@@ -234,12 +232,16 @@ async function carregarSeguindoSupabase(
     const capituloIds = extrairIdsRegistrosSeguindo(
       capitulosSupabaseBanco,
     );
-    const [seguidasBanco, comentariosCapitulosBanco, metricas] =
-      await Promise.all([
-        carregarIdsObrasUsuarioSupabase("seguindo_obras", userIdObrasSeguidas),
-        carregarComentariosCapitulosUsuarioSupabase(userId, capituloIds),
-        carregarMetricasConteudos({ obraIds, capituloIds }),
-      ]);
+    const {
+      seguidasBanco,
+      comentariosCapitulosBanco,
+      metricas,
+    } = await carregarDadosRelacionadosObrasSeguindoSupabase({
+      userId,
+      userIdObrasSeguidas,
+      obraIds,
+      capituloIds,
+    });
 
     const seguidasSupabase = criarSetObrasPorRegistro(seguidasBanco);
     const comentariosCapitulos = criarMapaComentariosPorCapitulo(
