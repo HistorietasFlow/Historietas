@@ -9,6 +9,7 @@ import "./ler-capitulo-reader-content.test.mjs";
 import "./ler-capitulo-comments-read-loader.test.mjs";
 import "./ler-capitulo-local-storage.test.mjs";
 import "./ler-capitulo-work-read-loader.test.mjs";
+import "./ler-capitulo-comment-actions.test.mjs";
 
 const cssSource = readFileSync(
   new URL(
@@ -25,6 +26,10 @@ const sheet = readFileSync(
   new URL("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx", import.meta.url),
   "utf8",
 ).replace(/\r\n/g, "\n");
+const acoes = readFileSync(
+  new URL("../../app/ler-capitulo/lib/ler-capitulo-comment-actions.ts", import.meta.url),
+  "utf8",
+);
 
 test("leitorPageCss preserva o CSS global crítico do leitor", () => {
   assert.match(cssSource, /export const leitorPageCss = `/);
@@ -71,5 +76,6 @@ test("Leitor consome somente o CSS extraído na ordem original", () => {
   assert.match(pagina, /const isDesktop = useLerCapituloDesktopMode\(\);/);
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /acessoConteudo18Confirmado\(\)/);
-  assert.match(pagina, /async function enviarComentarioCapitulo\(/);
+  assert.match(pagina, /criarAcoesComentariosCapitulo\(\{/);
+  assert.match(acoes, /async function enviarComentarioCapitulo\(/);
 });
