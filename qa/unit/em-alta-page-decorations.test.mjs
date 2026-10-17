@@ -6,6 +6,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const decorations = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-page-decorations.tsx",
@@ -48,6 +52,6 @@ test("Em Alta delega somente a camada decorativa estática", () => {
   assert.doesNotMatch(pagina, /desktopTopWaterFadeStyle/);
   assert.doesNotMatch(pagina, /mobileTopWaterFadeStyle/);
   assert.doesNotMatch(pagina, /pageDecorationLayerStyle/);
-  assert.match(pagina, /async function carregarRanking\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /useEmAltaRankingLoader\(/);
+  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
 });

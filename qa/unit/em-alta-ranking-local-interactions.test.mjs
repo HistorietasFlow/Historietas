@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const executavel = modulo
   .replace(
     /import \{[\s\S]*?\} from "\.\/em-alta-local-storage-utils";\r?\n/,
@@ -160,11 +164,11 @@ test("a página delega a leitura local sem alterar o lifecycle do ranking", () =
   assert.doesNotMatch(modulo, /supabase/i);
   assert.doesNotMatch(modulo, /function carregarRanking\(/);
   assert.match(
-    pagina,
-    /import \{ carregarInteracoesLocaisRankingEmAlta \} from "\.\/lib\/em-alta-ranking-local-interactions";/,
+    rankingLoaderFase891,
+    /import \{ carregarInteracoesLocaisRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-local-interactions";/,
   );
-  assert.match(pagina, /carregarInteracoesLocaisRankingEmAlta\(userIdAtual\)/);
-  assert.match(pagina, /async function carregarRanking\(/);
+  assert.match(rankingLoaderFase891, /carregarInteracoesLocaisRankingEmAlta\(userIdAtual\)/);
+  assert.match(pagina, /useEmAltaRankingLoader\(/);
   assert.doesNotMatch(pagina, /const chaveVisualizacoesUsuario =/);
   assert.doesNotMatch(pagina, /const chaveAvaliacoesUsuario =/);
 });

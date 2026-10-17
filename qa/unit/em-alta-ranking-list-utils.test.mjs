@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const moduloVisao = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-ranking-view-utils.ts",
@@ -193,10 +197,10 @@ test("reconhece qualquer interação real no ranking", () => {
 
 test("Em Alta delega helpers de listas e ranking para a fronteira pura", () => {
   assert.match(
-    pagina,
-    /import \{ carregarColecoesRankingEmAlta \} from "\.\/lib\/em-alta-ranking-collections-loader";/,
+    rankingLoaderFase891,
+    /import \{ carregarColecoesRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-collections-loader";/,
   );
-  assert.match(pagina, /carregarColecoesRankingEmAlta\(userIdAtual\)/);
+  assert.match(rankingLoaderFase891, /carregarColecoesRankingEmAlta\(userIdAtual\)/);
   assert.match(
     moduloColecoesRanking,
     /import \{ normalizarListaIdsEmAlta \} from "\.\/em-alta-ranking-list-utils";/,

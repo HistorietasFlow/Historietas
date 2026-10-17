@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 
 test("useEmAltaAuthSession preserva a leitura inicial, o timer e o cleanup", () => {
   assert.match(hook, /^"use client";/);
@@ -65,7 +69,7 @@ test("useEmAltaAuthSession preserva a revalidação de sessão das ações", () 
   }
 });
 
-test("Em Alta delega autenticação sem mover o carregador ou as ações", () => {
+test("Em Alta mantém autenticação, carregamento e ações em suas fronteiras", () => {
   assert.match(
     pagina,
     /import \{ useEmAltaAuthSession \} from "\.\/hooks\/use-em-alta-auth-session";/,
@@ -76,8 +80,8 @@ test("Em Alta delega autenticação sem mover o carregador ou as ações", () =>
   );
   assert.doesNotMatch(pagina, /async function verificarUsuarioLogado\(/);
   assert.doesNotMatch(pagina, /async function usuarioTemSessaoAtiva\(/);
-  assert.match(pagina, /async function carregarRanking\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /useEmAltaRankingLoader\(/);
+  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /useEmAltaRankingCollectionActions\(/);
   assert.doesNotMatch(pagina, /async function alternarFavorito\(obraId: string\)/);
   assert.doesNotMatch(pagina, /async function alternarConcluido\(obraId: string\)/);

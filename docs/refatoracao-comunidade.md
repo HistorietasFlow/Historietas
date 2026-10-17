@@ -534,3 +534,7 @@ Não alterar schema, migrations, dependências ou contratos públicos sem autori
 ## Validação obrigatória
 
 Qualquer manutenção futura deve executar as validações aplicáveis definidas no `AGENTS.md`, incluindo lint, typecheck, auditoria estática, testes unitários, integrações com Supabase local, build, E2E e verificação final de diff/whitespace. Qualquer validação não executada ou com falha deve ser registrada claramente.
+
+## Registro da Fase 891 — Em Alta
+
+O lifecycle de carregamento do ranking de Em Alta foi isolado sem alteração intencional de comportamento; detalhes em `docs/refatoracao-em-alta.md`.

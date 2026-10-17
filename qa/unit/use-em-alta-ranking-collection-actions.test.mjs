@@ -198,6 +198,6 @@ test("a página delega as duas ações e o hook preserva suas fronteiras", () =>
   );
   assert.doesNotMatch(pagina, /async function alternarFavorito\(obraId: string\)/);
   assert.doesNotMatch(pagina, /async function alternarConcluido\(obraId: string\)/);
-  assert.match(pagina, /async function carregarRanking\(\)/);
+  assert.match(pagina, /useEmAltaRankingLoader\(/);
   assert.match(pagina, /function avisarLoginRanking\(\)/);
 });

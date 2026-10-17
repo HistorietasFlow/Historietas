@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 
 test("loader preserva leituras, ordem, normalização e persistência das coleções", () => {
   assert.match(modulo, /export async function carregarColecoesRankingEmAlta\(userIdAtual: string\)/);
@@ -25,9 +29,9 @@ test("loader preserva leituras, ordem, normalização e persistência das coleç
   assert.doesNotMatch(modulo, /supabase\.from|\.insert\(|\.update\(|\.delete\(/);
 });
 
-test("página delega somente o snapshot de coleções e preserva o lifecycle", () => {
-  assert.match(pagina, /import \{ carregarColecoesRankingEmAlta \} from "\.\/lib\/em-alta-ranking-collections-loader";/);
-  assert.match(pagina, /await carregarColecoesRankingEmAlta\(userIdAtual\)/);
-  assert.match(pagina, /async function carregarRanking\(/);
+test("lifecycle delega o snapshot de coleções e a página consome o hook", () => {
+  assert.match(rankingLoaderFase891, /import \{ carregarColecoesRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-collections-loader";/);
+  assert.match(rankingLoaderFase891, /await carregarColecoesRankingEmAlta\(userIdAtual\)/);
+  assert.match(pagina, /useEmAltaRankingLoader\(/);
   assert.doesNotMatch(pagina, /const \[favoritosSupabase, concluidasSupabase\]/);
 });

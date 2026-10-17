@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const interacoesLocaisRanking = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-ranking-local-interactions.ts",
@@ -302,10 +306,10 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
   );
 
   assert.match(
-    pagina,
-    /import \{ carregarColecoesRankingEmAlta \} from "\.\/lib\/em-alta-ranking-collections-loader";/,
+    rankingLoaderFase891,
+    /import \{ carregarColecoesRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-collections-loader";/,
   );
-  assert.match(pagina, /carregarColecoesRankingEmAlta\(userIdAtual\)/);
+  assert.match(rankingLoaderFase891, /carregarColecoesRankingEmAlta\(userIdAtual\)/);
   assert.match(
     loaderObrasSupabase,
     /import \{ carregarAvataresAutoresLocaisEmAlta \} from "\.\/em-alta-local-storage-utils";/,

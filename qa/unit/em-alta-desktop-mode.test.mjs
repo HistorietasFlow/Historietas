@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const interacoesLocaisRanking = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-ranking-local-interactions.ts",
@@ -161,13 +165,13 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
   assert.equal((autorRankingCard.match(/\bisDesktop\b/g) || []).length, 5);
   assert.equal((rankingCard.match(/\bisDesktop\b/g) || []).length, 7);
 
-  assert.match(pagina, /async function carregarRanking\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /useEmAltaRankingLoader\(/);
+  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
   assert.match(
-    pagina,
-    /import \{ carregarInteracoesLocaisRankingEmAlta \} from "\.\/lib\/em-alta-ranking-local-interactions";/,
+    rankingLoaderFase891,
+    /import \{ carregarInteracoesLocaisRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-local-interactions";/,
   );
-  assert.match(pagina, /carregarInteracoesLocaisRankingEmAlta\(userIdAtual\)/);
+  assert.match(rankingLoaderFase891, /carregarInteracoesLocaisRankingEmAlta\(userIdAtual\)/);
   assert.match(interacoesLocaisRanking, /localStorage\.getItem/);
   assert.match(
     pagina,

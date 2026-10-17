@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const loader = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-supabase-works-loader.ts",
@@ -135,8 +139,8 @@ test("fronteira preserva conversão pura e loader de obras dedicado", () => {
     /import \{ converterObraSupabaseParaLocal \} from "\.\/em-alta-supabase-work-normalizer";/,
   );
   assert.match(
-    pagina,
-    /import \{ carregarObrasSupabasePublicadas \} from "\.\/lib\/em-alta-supabase-works-loader";/,
+    rankingLoaderFase891,
+    /import \{ carregarObrasSupabasePublicadas \} from "\.\.\/lib\/em-alta-supabase-works-loader";/,
   );
   assert.doesNotMatch(pagina, /function normalizarTipoArquivoSupabase\b/);
   assert.doesNotMatch(pagina, /function converterObraSupabaseParaLocal\b/);

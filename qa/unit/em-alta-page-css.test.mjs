@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const rankingLoaderFase891 = readFileSync(
+  new URL("../../app/em-alta/hooks/use-em-alta-ranking-loader.ts", import.meta.url),
+  "utf8",
+);
 const bridge = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-language-bridge.tsx",
@@ -107,6 +111,6 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
   assert.equal((shell.match(/<EmAltaLanguageBridge \/>/g) || []).length, 2);
   assert.match(pagina, /if \(carregandoRanking\)/);
   assert.match(pagina, /const isDesktop = useEmAltaDesktopMode\(\);/);
-  assert.match(pagina, /async function carregarRanking\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /useEmAltaRankingLoader\(/);
+  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
 });
