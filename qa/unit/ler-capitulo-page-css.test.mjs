@@ -10,6 +10,7 @@ import "./ler-capitulo-comments-read-loader.test.mjs";
 import "./ler-capitulo-local-storage.test.mjs";
 import "./ler-capitulo-work-read-loader.test.mjs";
 import "./ler-capitulo-comment-actions.test.mjs";
+import "./ler-capitulo-interaction-actions.test.mjs";
 
 const cssSource = readFileSync(
   new URL(
