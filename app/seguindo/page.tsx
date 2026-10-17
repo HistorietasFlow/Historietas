@@ -34,12 +34,7 @@ import {
   normalizarNomeAutor,
   normalizarNumeroSeguindo,
 } from "./lib/seguindo-format-utils";
-import { carregarRegistrosAtividadesTabelaSeguindo } from "./lib/seguindo-activity-query-utils";
-import { deduplicarAtividadesSeguindo } from "./lib/seguindo-activity-list-utils";
-import {
-  criarAtividadeSeguindoDeObra,
-  criarAtividadeSeguindoDoDiario,
-} from "./lib/seguindo-activity-utils";
+import { carregarAtividadesSeguindoSupabase } from "./lib/seguindo-activity-feed-utils";
 import {
   criarHandleUsuarioSeguindo,
   obterAvatarProfileSeguindo,
@@ -1082,89 +1077,6 @@ async function carregarSolicitacoesSeguidoresSupabase(
     console.warn("Não consegui carregar solicitações de seguidores:", error);
     return [];
   }
-}
-
-async function carregarAtividadesSeguindoSupabase(
-  usuariosSeguidosBase: UsuarioSeguido[],
-  obrasDisponiveis: ObraLocal[],
-  usuarioLogadoId: string,
-) {
-  const usuariosIds = usuariosSeguidosBase
-    .map((usuarioSeguido) => usuarioSeguido.id)
-    .filter((id) => idUsuarioSupabaseValido(id) && id !== usuarioLogadoId);
-
-  if (usuariosIds.length === 0) {
-    return [] as AtividadeSeguindo[];
-  }
-
-  const usuariosPorId = new Map(
-    usuariosSeguidosBase.map((usuarioSeguido) => [usuarioSeguido.id, usuarioSeguido])
-  );
-  const obrasPorId = new Map(
-    obrasDisponiveis
-      .filter((obra) => Boolean(obra.id))
-      .map((obra) => [obra.id, obra])
-  );
-
-  const [diarioAtividades, favoritos, concluidas, avaliacoes] = await Promise.all([
-    carregarRegistrosAtividadesTabelaSeguindo("diario_atividades", usuariosIds),
-    carregarRegistrosAtividadesTabelaSeguindo("favoritos", usuariosIds),
-    carregarRegistrosAtividadesTabelaSeguindo("concluidas", usuariosIds),
-    carregarRegistrosAtividadesTabelaSeguindo("obra_avaliacoes", usuariosIds),
-  ]);
-
-  const atividadesDiario = diarioAtividades
-    .map((registro) =>
-      criarAtividadeSeguindoDoDiario({
-        registro,
-        usuariosPorId,
-        obrasPorId,
-      }),
-    )
-    .filter((atividade): atividade is AtividadeSeguindo => Boolean(atividade));
-
-  const atividadesFavoritos = favoritos
-    .map((registro) =>
-      criarAtividadeSeguindoDeObra({
-        registro,
-        usuariosPorId,
-        obrasPorId,
-        tipo: "favoritou_obra",
-        fallbackVisibilidade: "parcial",
-      }),
-    )
-    .filter((atividade): atividade is AtividadeSeguindo => Boolean(atividade));
-
-  const atividadesConcluidas = concluidas
-    .map((registro) =>
-      criarAtividadeSeguindoDeObra({
-        registro,
-        usuariosPorId,
-        obrasPorId,
-        tipo: "concluiu_obra",
-        fallbackVisibilidade: "parcial",
-      }),
-    )
-    .filter((atividade): atividade is AtividadeSeguindo => Boolean(atividade));
-
-  const atividadesAvaliacoes = avaliacoes
-    .map((registro) =>
-      criarAtividadeSeguindoDeObra({
-        registro,
-        usuariosPorId,
-        obrasPorId,
-        tipo: "avaliou_obra",
-        fallbackVisibilidade: "publico",
-      }),
-    )
-    .filter((atividade): atividade is AtividadeSeguindo => Boolean(atividade));
-
-  return deduplicarAtividadesSeguindo([
-    ...atividadesDiario,
-    ...atividadesFavoritos,
-    ...atividadesConcluidas,
-    ...atividadesAvaliacoes,
-  ]).slice(0, 30);
 }
 
 export default function SeguindoPage() {
