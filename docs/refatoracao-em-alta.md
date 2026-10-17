@@ -237,3 +237,9 @@
 - Moveu os ornamentos estáticos e os fades responsivos para `EmAltaPageDecorations`.
 - Preservou literalmente símbolos, ordem, `aria-hidden`, estilos e seleção desktop/mobile.
 - Carregamento, autenticação, storage, Supabase, estados e mutações permaneceram na página.
+
+## Fase 885 — shell visual da página
+
+- Moveu a moldura compartilhada dos ramos de carregamento e conteúdo para `EmAltaPageShell`.
+- Preservou literalmente o tema, o CSS, o bridge de idioma, o atributo de carregamento e os filhos de cada ramo.
+- Carregamento do ranking, autenticação, storage, Supabase, estados e mutações permaneceram na página.

@@ -20,6 +20,13 @@ const bridge = readFileSync(
   ),
   "utf8",
 );
+const shell = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-page-shell.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const header = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-header.tsx",
@@ -152,10 +159,11 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
   assert.match(pagina, /localStorage\.getItem/);
   assert.match(
     pagina,
-    /import \{ EmAltaLanguageBridge \} from "\.\/components\/em-alta-language-bridge";/,
+    /import \{ EmAltaPageShell \} from "\.\/components\/em-alta-page-shell";/,
   );
   assert.doesNotMatch(pagina, /function EmAltaLanguageBridge\(\)/);
   assert.match(bridge, /export function EmAltaLanguageBridge\(\)/);
+  assert.match(shell, /<EmAltaLanguageBridge \/>/);
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/em-alta-loading-spinner";/,

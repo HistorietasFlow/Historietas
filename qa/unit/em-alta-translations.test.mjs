@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const shell = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-page-shell.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascriptModulo = typescript.transpileModule(modulo, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -84,13 +91,17 @@ test("traduções puras preservam mensagens dinâmicas, datas e whitespace", () 
 test("Em Alta delega as traduções e o bridge às fronteiras dedicadas", () => {
   assert.match(
     pagina,
-    /import \{ EmAltaLanguageBridge \} from "\.\/components\/em-alta-language-bridge";/,
+    /import \{ EmAltaPageShell \} from "\.\/components\/em-alta-page-shell";/,
   );
   assert.doesNotMatch(pagina, /type TraducaoEmAlta = \{/);
   assert.doesNotMatch(pagina, /const EM_ALTA_UI_TRANSLATIONS/);
   assert.doesNotMatch(pagina, /function traduzirDataEmAlta\(/);
   assert.doesNotMatch(pagina, /function traduzirTextoEmAlta\(/);
   assert.doesNotMatch(pagina, /function EmAltaLanguageBridge\(\)/);
+  assert.match(
+    shell,
+    /import \{ EmAltaLanguageBridge \} from "\.\/em-alta-language-bridge";/,
+  );
   assert.doesNotMatch(pagina, /traduzirTextoEmAlta/);
 });
 

@@ -3,13 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
-import {
-  historietasThemeCss,
-  useHistorietasTheme,
-} from "../../lib/historietasTheme";
+import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEmAltaAuthSession } from "./hooks/use-em-alta-auth-session";
 import { useEmAltaDesktopMode } from "./hooks/use-em-alta-desktop-mode";
-import { emAltaPageCss } from "./lib/em-alta-page-css";
 import type {
   ObraLocal,
   ObraRanking,
@@ -50,9 +46,9 @@ import {
 } from "./lib/em-alta-ranking-visual-style-utils";
 import { EmAltaRankingContent } from "./components/em-alta-ranking-content";
 import { LoadingSpinner } from "./components/em-alta-loading-spinner";
-import { EmAltaLanguageBridge } from "./components/em-alta-language-bridge";
 import { EmAltaHeader } from "./components/em-alta-header";
 import { EmAltaPageDecorations } from "./components/em-alta-page-decorations";
+import { EmAltaPageShell } from "./components/em-alta-page-shell";
 
 export default function EmAltaPage() {
   const router = useRouter();
@@ -326,28 +322,14 @@ export default function EmAltaPage() {
 
   if (carregandoRanking) {
     return (
-      <main
-        className="historietas-em-alta-page"
-        data-historietas-em-alta-root="true"
-        style={pageThemeStyle}
-        aria-busy="true"
-      >
-        <style>{`${historietasThemeCss}${emAltaPageCss}`}</style>
-        <EmAltaLanguageBridge />
+      <EmAltaPageShell pageThemeStyle={pageThemeStyle} carregando>
         <LoadingSpinner label="Carregando Em Alta" />
-      </main>
+      </EmAltaPageShell>
     );
   }
 
   return (
-    <main
-      className="historietas-em-alta-page"
-      data-historietas-em-alta-root="true"
-      style={pageThemeStyle}
-    >
-      <style>{`${historietasThemeCss}${emAltaPageCss}`}</style>
-      <EmAltaLanguageBridge />
-
+    <EmAltaPageShell pageThemeStyle={pageThemeStyle}>
       <EmAltaPageDecorations isDesktop={isDesktop} />
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
@@ -372,6 +354,6 @@ export default function EmAltaPage() {
           isDesktop={isDesktop}
         />
       </section>
-    </main>
+    </EmAltaPageShell>
   );
 }

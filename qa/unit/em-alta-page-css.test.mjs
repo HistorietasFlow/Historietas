@@ -17,6 +17,13 @@ const bridge = readFileSync(
   ),
   "utf8",
 );
+const shell = readFileSync(
+  new URL(
+    "../../app/em-alta/components/em-alta-page-shell.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const decorations = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-page-decorations.tsx",
@@ -54,16 +61,17 @@ test("emAltaPageCss preserva o CSS global de Em Alta", () => {
 test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
   assert.match(
     pagina,
-    /import \{ emAltaPageCss \} from "\.\/lib\/em-alta-page-css";/,
+    /import \{ EmAltaPageShell \} from "\.\/components\/em-alta-page-shell";/,
   );
   assert.doesNotMatch(pagina, /const emAltaPageCss = `/);
+  assert.doesNotMatch(pagina, /import \{ emAltaPageCss \}/);
 
-  const consumidores = pagina.match(
+  const consumidores = shell.match(
     /<style>\{`\$\{historietasThemeCss\}\$\{emAltaPageCss\}`\}<\/style>/g,
   );
   assert.equal(consumidores?.length, 2);
   assert.doesNotMatch(
-    pagina,
+    shell,
     /\$\{emAltaPageCss\}\$\{historietasThemeCss\}/,
   );
 
@@ -91,12 +99,12 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
   );
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.match(
-    pagina,
-    /import \{ EmAltaLanguageBridge \} from "\.\/components\/em-alta-language-bridge";/,
+    shell,
+    /import \{ EmAltaLanguageBridge \} from "\.\/em-alta-language-bridge";/,
   );
-  assert.doesNotMatch(pagina, /function EmAltaLanguageBridge\(\)/);
+  assert.doesNotMatch(pagina, /EmAltaLanguageBridge/);
   assert.match(bridge, /export function EmAltaLanguageBridge\(\)/);
-  assert.equal((pagina.match(/<EmAltaLanguageBridge \/>/g) || []).length, 2);
+  assert.equal((shell.match(/<EmAltaLanguageBridge \/>/g) || []).length, 2);
   assert.match(pagina, /if \(carregandoRanking\)/);
   assert.match(pagina, /const isDesktop = useEmAltaDesktopMode\(\);/);
   assert.match(pagina, /async function carregarRanking\(\)/);
