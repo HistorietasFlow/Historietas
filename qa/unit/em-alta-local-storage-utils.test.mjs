@@ -21,6 +21,13 @@ const interacoesLocaisRanking = readFileSync(
   ),
   "utf8",
 );
+const colecoesRanking = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-collections-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const normalizadorObrasSupabase = readFileSync(
   new URL(
     "../../app/em-alta/lib/em-alta-supabase-work-normalizer.ts",
@@ -274,8 +281,8 @@ test("salva IDs normalizados e tolera falhas de storage", () => {
 });
 
 test("Em Alta delega a persistência local sem manter implementações duplicadas", () => {
-  const importacao = pagina.match(
-    /import \{([\s\S]*?)\} from "\.\/lib\/em-alta-local-storage-utils";/,
+  const importacao = colecoesRanking.match(
+    /import \{([^}]*)\} from "\.\/em-alta-local-storage-utils";/,
   );
 
   assert.ok(importacao);
@@ -296,8 +303,9 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
 
   assert.match(
     pagina,
-    /import \{[\s\S]*?carregarListaIdsLocalEmAlta,[\s\S]*?salvarListaIdsLocalEmAlta,[\s\S]*?\} from "\.\/lib\/em-alta-local-storage-utils";/,
+    /import \{ carregarColecoesRankingEmAlta \} from "\.\/lib\/em-alta-ranking-collections-loader";/,
   );
+  assert.match(pagina, /carregarColecoesRankingEmAlta\(userIdAtual\)/);
   assert.match(
     loaderObrasSupabase,
     /import \{ carregarAvataresAutoresLocaisEmAlta \} from "\.\/em-alta-local-storage-utils";/,
