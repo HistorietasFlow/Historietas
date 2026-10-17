@@ -153,7 +153,7 @@ test("rotas de perfil preservam parâmetros e fallbacks", () => {
 test("página delega rotas e validação ao módulo dedicado", () => {
   assert.match(
     pagina,
-    /criarHrefPerfilAutorSeguindo,[\s\S]*?criarHrefPerfilUsuarioSeguindo,[\s\S]*?criarLoginHrefSeguindo,[\s\S]*?idUsuarioSupabaseValido,[\s\S]*?obterParametrosSociaisSeguindoUrl,[\s\S]*?from "\.\/lib\/seguindo-route-utils";/,
+    /criarHrefPerfilAutorSeguindo,[\s\S]*?criarHrefPerfilUsuarioSeguindo,[\s\S]*?idUsuarioSupabaseValido,[\s\S]*?from "\.\/lib\/seguindo-route-utils";/,
   );
   for (const nome of [
     "criarLoginHrefSeguindo",
