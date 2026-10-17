@@ -36,6 +36,10 @@ import {
 } from "./lib/seguindo-format-utils";
 import { carregarAtividadesSeguindoSupabase } from "./lib/seguindo-activity-feed-utils";
 import {
+  criarAvatarUsuarioSeguindoStyle,
+  criarCoverStyle,
+} from "./lib/seguindo-image-style-utils";
+import {
   criarMapaComentariosPorCapitulo,
   criarSetObrasPorRegistro,
 } from "./lib/seguindo-record-utils";
@@ -256,49 +260,6 @@ const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 
-
-function criarAvatarUsuarioSeguindoStyle(avatar: string): CSSProperties {
-  const avatarLimpo = avatar.trim();
-
-  if (!avatarLimpo) {
-    return {
-      ...authorAvatarStyle,
-      textDecoration: "none",
-    };
-  }
-
-  return {
-    ...authorAvatarStyle,
-    textDecoration: "none",
-    backgroundImage: `url(${avatarLimpo})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    color: "transparent",
-    WebkitTextFillColor: "transparent",
-  };
-}
-
-function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
-  const baseStyle = isDesktop ? desktopCoverStyle : coverStyle;
-
-  if (!capa) {
-    return {
-      ...baseStyle,
-      background: "var(--historietas-seguindo-bg-deep, #050505)",
-      backgroundImage: "linear-gradient(135deg, var(--historietas-seguindo-surface, #0A0A0A) 0%, var(--historietas-seguindo-bg-deep, #050505) 100%)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
-  }
-
-  return {
-    ...baseStyle,
-    background: "var(--historietas-seguindo-bg-deep, #050505)",
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
 
 function converterObraSupabaseParaLocal({
   obraBanco,
@@ -2070,7 +2031,7 @@ export default function SeguindoPage() {
 
                     return (
                       <article key={obra.id} style={isDesktop ? desktopCardStyle : cardStyle}>
-                        <div style={criarCoverStyle(obra.capa, isDesktop)}>
+                        <div style={criarCoverStyle(obra.capa, isDesktop ? desktopCoverStyle : coverStyle)}>
                           <div style={overlayStyle} />
 
                         </div>
@@ -2341,7 +2302,10 @@ export default function SeguindoPage() {
                       >
                         <div
                           style={{
-                            ...criarAvatarUsuarioSeguindoStyle(usuarioSeguido.avatar),
+                            ...criarAvatarUsuarioSeguindoStyle(
+                              usuarioSeguido.avatar,
+                              authorAvatarStyle,
+                            ),
                             ...(isDesktop ? desktopAuthorAvatarStyle : {}),
                             width: isDesktop ? "58px" : "52px",
                             height: isDesktop ? "58px" : "52px",
