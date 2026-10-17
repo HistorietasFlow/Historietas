@@ -67,3 +67,26 @@ export function mesclarObrasSeguindo<
 
   return obrasMescladas;
 }
+
+export function encontrarObraLocalSeguindo<
+  T extends { id: string; titulo: string; slug: string },
+>(
+  obrasLocais: T[],
+  obraBanco: { id: string; titulo: string | null; slug: string | null },
+) {
+  const slugBanco =
+    obraBanco.slug?.trim() || criarSlugBase(obraBanco.titulo || "");
+
+  return obrasLocais.find((obraAtual) => {
+    const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
+
+    return obraAtual.id === obraBanco.id || slugLocal === slugBanco;
+  });
+}
+
+export function mesclarIdsColecaoSeguindo(
+  listaLocal: string[],
+  listaRemota: Iterable<string>,
+) {
+  return Array.from(new Set([...listaLocal, ...listaRemota]));
+}
