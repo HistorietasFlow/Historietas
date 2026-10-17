@@ -61,6 +61,7 @@ import {
   carregarComentariosCapitulosUsuarioSupabase,
   carregarIdsObrasUsuarioSupabase,
   carregarObrasPublicadasSeguindoSupabase,
+  carregarUsuarioAtualSeguindoSupabase,
 } from "./lib/seguindo-work-query-utils";
 import {
   carregarIdsSolicitacoesEnviadasSupabase,
@@ -208,14 +209,7 @@ async function carregarSeguindoSupabase(
   perfilSocialId = ""
 ) {
   try {
-    let userId = "";
-
-    try {
-      const { data } = await supabase.auth.getUser();
-      userId = data.user?.id || "";
-    } catch {
-      userId = "";
-    }
+    const userId = await carregarUsuarioAtualSeguindoSupabase();
 
     const userIdObrasSeguidas = obterUsuarioObrasSeguidasSeguindo(
       perfilSocialId,
