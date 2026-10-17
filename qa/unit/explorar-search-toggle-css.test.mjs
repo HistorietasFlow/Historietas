@@ -17,6 +17,10 @@ const pageCss = readFileSync(
   new URL("../../app/explorar/lib/explorar-page-css.ts", import.meta.url),
   "utf8",
 );
+const estilos = readFileSync(
+  new URL("../../app/explorar/lib/explorar-layout-styles.ts", import.meta.url),
+  "utf8",
+);
 
 test("explorarBuscaToggleCss preserva literalmente as regras exclusivas de busca", () => {
   assert.equal(
@@ -104,7 +108,8 @@ test("Explorar mantém o único consumidor e as fronteiras da busca", () => {
     pagina,
     /import \{ useExplorarAdvancedFiltersBodyLock \} from "\.\/hooks\/use-explorar-advanced-filters-body-lock";/,
   );
-  assert.match(pagina, /const safeTextStyle: CSSProperties/);
+  assert.match(estilos, /export const safeTextStyle: CSSProperties/);
+  assert.match(pagina, /from "\.\/lib\/explorar-layout-styles"/);
   assert.match(pagina, /const \[busca, setBusca\] = useState\(""\);/);
   assert.match(
     pagina,

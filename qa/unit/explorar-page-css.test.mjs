@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const estilos = readFileSync(
+  new URL("../../app/explorar/lib/explorar-layout-styles.ts", import.meta.url),
+  "utf8",
+);
 
 test("themePageCss preserva o CSS global de Explorar", () => {
   assert.match(modulo, /export const themePageCss = `/);
@@ -51,7 +55,8 @@ test("Explorar consome themePageCss sem alterar as fronteiras da página", () =>
     /import \{ explorarBuscaToggleCss \} from "\.\/lib\/explorar-search-toggle-css";/,
   );
   assert.match(pagina, /<style>\{explorarBuscaToggleCss\}<\/style>/);
-  assert.match(pagina, /const safeTextStyle: CSSProperties/);
+  assert.match(estilos, /export const safeTextStyle: CSSProperties/);
+  assert.match(pagina, /from "\.\/lib\/explorar-layout-styles"/);
   assert.match(
     pagina,
     /import \{ useExplorarDesktopMode \} from "\.\/hooks\/use-explorar-desktop-mode";/,
