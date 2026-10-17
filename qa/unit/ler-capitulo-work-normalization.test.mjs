@@ -6,6 +6,7 @@ import ts from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const modulo = ler("../../app/ler-capitulo/lib/ler-capitulo-work-normalization.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
+const storage = ler("../../app/ler-capitulo/lib/ler-capitulo-local-storage.ts");
 const js = (source) => ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
@@ -89,6 +90,8 @@ test("página delega transformações mantendo carregamento e persistência fora
   }
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-work-normalization"/);
   assert.match(pagina, /async function carregarObraSupabase\(/);
-  assert.match(pagina, /function carregarObrasLocaisNormalizadas\(/);
+  assert.match(pagina, /carregarObrasLocaisNormalizadas\(/);
+  assert.match(storage, /export function carregarObrasLocaisNormalizadas\(/);
+  assert.match(storage, /normalizarObra\(/);
   assert.doesNotMatch(modulo, /from ["'][^"']*(?:react|supabase\/client)["']|localStorage|\buse(?:Effect|State|Memo)\b|\.(?:insert|update|delete|upsert)\(/);
 });

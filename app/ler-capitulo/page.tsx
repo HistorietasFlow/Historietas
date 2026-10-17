@@ -32,6 +32,19 @@ import { useLerCapituloDesktopMode } from "./hooks/use-ler-capitulo-desktop-mode
 import { focusBottomNavigationCss } from "./lib/ler-capitulo-focus-bottom-navigation-css";
 import { leitorPageCss } from "./lib/ler-capitulo-page-css";
 import {
+  aplicarCurtidasComentariosCapitulosLocais,
+  carregarObrasLocaisNormalizadas,
+  obterAutorIdSeguro,
+  salvarCurtidaComentarioCapituloLocal,
+  salvarObrasPreservandoContas,
+  usuarioPodeAbrirObraNoLeitor,
+} from "./lib/ler-capitulo-local-storage";
+import {
+  carregarPreferenciasLeitura,
+  FONT_SCALE_VALUES,
+  salvarPreferenciasLeitura,
+} from "./lib/ler-capitulo-reading-preferences";
+import {
   carregarComentariosCapituloSupabase,
   carregarPerfilComentarioLeitor,
   obterTextoRegistroLeitor,
@@ -72,12 +85,6 @@ type TipoNotificacaoInteracaoCapitulo =
   | "comentario-capitulo"
   | "curtida-comentario-capitulo";
 
-type PreferenciasLeitura = {
-  tamanhoFonte: TamanhoFonte;
-  mostrarLinhaProgresso: boolean;
-  versaoTamanhoFonte: 2;
-};
-
 type MetricasCapituloLeitor = {
   totalVisualizacoes: number;
   totalCurtidas: number;
@@ -102,7 +109,6 @@ const metricasCapituloVazias: MetricasCapituloLeitor = {
   carregado: false,
 };
 
-const FONT_SCALE_VALUES: TamanhoFonte[] = [1, 2, 3, 4, 5];
 const FONT_SCALE_LEGACY_VALUES: Record<TamanhoFonte, 1 | 3 | 5 | 7 | 10> = {
   1: 1,
   2: 3,
@@ -111,146 +117,7 @@ const FONT_SCALE_LEGACY_VALUES: Record<TamanhoFonte, 1 | 3 | 5 | 7 | 10> = {
   5: 10,
 };
 
-const STORAGE_KEY = "historietas-obras";
-const READER_PREFERENCES_STORAGE_KEY = "historietas-preferencias-leitura";
 const TABELA_COMENTARIOS_CAPITULOS_CURTIDAS = "comentarios_capitulos_curtidas";
-const CURTIDAS_COMENTARIOS_CAPITULOS_STORAGE_KEY = "historietas-comentarios-capitulos-curtidas";
-
-function criarStorageKeyUsuarioLeitor(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function lerStorageUsuarioLeitor(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioLeitor(chave, userIdLimpo);
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioLeitor(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioLeitor(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; a leitura continua com estado em memória.
-  }
-}
-
-function carregarCurtidasComentariosCapitulosLocais(
-  userId: string
-): Record<string, boolean> {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return {};
-  }
-
-  try {
-    const texto = lerStorageUsuarioLeitor(
-      CURTIDAS_COMENTARIOS_CAPITULOS_STORAGE_KEY,
-      userIdLimpo
-    );
-    const json: unknown = texto ? JSON.parse(texto) : {};
-
-    if (!json || typeof json !== "object" || Array.isArray(json)) {
-      return {};
-    }
-
-    return Object.fromEntries(
-      Object.entries(json as Record<string, unknown>).filter(
-        (entrada): entrada is [string, boolean] =>
-          typeof entrada[0] === "string" && typeof entrada[1] === "boolean"
-      )
-    );
-  } catch {
-    return {};
-  }
-}
-
-function salvarCurtidaComentarioCapituloLocal(
-  userId: string,
-  comentarioId: string,
-  ativo: boolean
-) {
-  const userIdLimpo = userId.trim();
-  const comentarioIdLimpo = comentarioId.trim();
-
-  if (!userIdLimpo || !comentarioIdLimpo) {
-    return;
-  }
-
-  const curtidasLocais = carregarCurtidasComentariosCapitulosLocais(userIdLimpo);
-
-  salvarJsonStorageUsuarioLeitor(
-    CURTIDAS_COMENTARIOS_CAPITULOS_STORAGE_KEY,
-    userIdLimpo,
-    {
-      ...curtidasLocais,
-      [comentarioIdLimpo]: ativo,
-    }
-  );
-}
-
-function aplicarCurtidasComentariosCapitulosLocais(
-  comentarios: ComentarioCapituloPublico[],
-  userId: string
-) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return comentarios;
-  }
-
-  const curtidasLocais = carregarCurtidasComentariosCapitulosLocais(userIdLimpo);
-
-  return comentarios.map((comentario) => {
-    const estadoLocal = curtidasLocais[comentario.id];
-
-    if (estadoLocal === true) {
-      return {
-        ...comentario,
-        curtidas: Array.from(new Set([...comentario.curtidas, userIdLimpo])),
-      };
-    }
-
-    if (estadoLocal === false) {
-      return {
-        ...comentario,
-        curtidas: comentario.curtidas.filter(
-          (curtidaId) => curtidaId !== userIdLimpo
-        ),
-      };
-    }
-
-    return comentario;
-  });
-}
 
 async function marcarNotificacaoCapituloComoLidaSupabase(
   userId: string,
@@ -359,102 +226,6 @@ function contarPalavras(texto: string) {
   return texto.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function normalizarTamanhoFonte(
-  valor: unknown,
-  versaoAtual = false
-): TamanhoFonte {
-  const numero = Number(valor);
-
-  if (
-    versaoAtual &&
-    FONT_SCALE_VALUES.includes(numero as TamanhoFonte)
-  ) {
-    return numero as TamanhoFonte;
-  }
-
-  if (!Number.isFinite(numero)) {
-    return 3;
-  }
-
-  if (numero <= 1) {
-    return 1;
-  }
-
-  if (numero <= 3) {
-    return 2;
-  }
-
-  if (numero <= 5) {
-    return 3;
-  }
-
-  if (numero <= 8) {
-    return 4;
-  }
-
-  return 5;
-}
-
-function carregarPreferenciasLeitura(userId = ""): PreferenciasLeitura {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return {
-      tamanhoFonte: 3,
-      mostrarLinhaProgresso: false,
-      versaoTamanhoFonte: 2,
-    };
-  }
-
-  try {
-    const preferenciasTexto = lerStorageUsuarioLeitor(
-      READER_PREFERENCES_STORAGE_KEY,
-      userId
-    );
-    const preferenciasJson: unknown = preferenciasTexto
-      ? JSON.parse(preferenciasTexto)
-      : null;
-
-    if (
-      !preferenciasJson ||
-      typeof preferenciasJson !== "object" ||
-      Array.isArray(preferenciasJson)
-    ) {
-      return {
-        tamanhoFonte: 3,
-        mostrarLinhaProgresso: false,
-        versaoTamanhoFonte: 2,
-      };
-    }
-
-    const preferencias = preferenciasJson as Partial<PreferenciasLeitura>;
-
-    return {
-      tamanhoFonte: normalizarTamanhoFonte(
-        preferencias.tamanhoFonte,
-        preferencias.versaoTamanhoFonte === 2
-      ),
-      mostrarLinhaProgresso: Boolean(preferencias.mostrarLinhaProgresso),
-      versaoTamanhoFonte: 2,
-    };
-  } catch {
-    return {
-      tamanhoFonte: 3,
-      mostrarLinhaProgresso: false,
-      versaoTamanhoFonte: 2,
-    };
-  }
-}
-
-function salvarPreferenciasLeitura(
-  preferencias: PreferenciasLeitura,
-  userId = ""
-) {
-  salvarJsonStorageUsuarioLeitor(
-    READER_PREFERENCES_STORAGE_KEY,
-    userId,
-    preferencias
-  );
-}
-
 function criarTextoLeituraStyle(tamanhoFonte: TamanhoFonte): CSSProperties {
   const tamanhoLegado = FONT_SCALE_LEGACY_VALUES[tamanhoFonte];
   const fontSize = 12 + tamanhoLegado;
@@ -537,100 +308,6 @@ async function incrementarVisualizacaoCapituloSupabase(
   } catch {
     // A leitura continua mesmo se a contagem remota falhar.
     return null;
-  }
-}
-
-function carregarObrasLocaisNormalizadas(userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [] as ObraLocal[];
-  }
-
-  const obrasSalvasTexto = lerStorageUsuarioLeitor(STORAGE_KEY, userIdLimpo);
-  const obrasSalvasJson: unknown = obrasSalvasTexto
-    ? JSON.parse(obrasSalvasTexto)
-    : [];
-
-  const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-    ? obrasSalvasJson.map((obra, index) =>
-        normalizarObra(obra as Partial<ObraLocal>, index)
-      )
-    : [];
-
-  salvarJsonStorageUsuarioLeitor(STORAGE_KEY, userIdLimpo, obrasNormalizadas);
-
-  return obrasNormalizadas;
-}
-
-function obterAutorIdSeguro(obra: Pick<ObraLocal, "autorId">) {
-  return typeof obra.autorId === "string" ? obra.autorId.trim() : "";
-}
-
-function usuarioPodeAbrirObraNoLeitor(obra: ObraLocal, userId: string) {
-  const autorId = obterAutorIdSeguro(obra);
-
-  return obra.publicado || !autorId || Boolean(userId && autorId === userId);
-}
-
-function usuarioPodePersistirObraNoStorage(obra: ObraLocal, userId: string) {
-  const autorId = obterAutorIdSeguro(obra);
-
-  return !autorId || Boolean(userId && autorId === userId);
-}
-
-function salvarObrasPreservandoContas(
-  obrasAtualizadas: ObraLocal[],
-  userId: string
-) {
-  try {
-    const userIdLimpo = userId.trim();
-
-    if (!userIdLimpo) {
-      return;
-    }
-
-    const obrasAtuais = carregarObrasLocaisNormalizadas(userIdLimpo);
-    const obrasAtualizadasPorId = new Map(
-      obrasAtualizadas.map((obra, index) => [
-        obra.id,
-        normalizarObra(obra, index),
-      ])
-    );
-    const idsPersistidos = new Set<string>();
-
-    const obrasMescladas = obrasAtuais.map((obraAtual, index) => {
-      const obraNormalizada = normalizarObra(obraAtual, index);
-      const obraAtualizada = obrasAtualizadasPorId.get(obraNormalizada.id);
-
-      idsPersistidos.add(obraNormalizada.id);
-
-      if (!obraAtualizada) {
-        return obraNormalizada;
-      }
-
-      return usuarioPodePersistirObraNoStorage(obraAtualizada, userIdLimpo)
-        ? obraAtualizada
-        : obraNormalizada;
-    });
-
-    obrasAtualizadas.forEach((obra, index) => {
-      const obraNormalizada = normalizarObra(obra, index);
-
-      if (
-        idsPersistidos.has(obraNormalizada.id) ||
-        !usuarioPodePersistirObraNoStorage(obraNormalizada, userIdLimpo)
-      ) {
-        return;
-      }
-
-      obrasMescladas.unshift(obraNormalizada);
-      idsPersistidos.add(obraNormalizada.id);
-    });
-
-    salvarJsonStorageUsuarioLeitor(STORAGE_KEY, userIdLimpo, obrasMescladas);
-  } catch {
-    // A leitura deve continuar mesmo se o armazenamento local estiver indisponível.
   }
 }
 

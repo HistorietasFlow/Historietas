@@ -55,3 +55,8 @@
 
 - Extraiu os helpers de perfil e o carregamento de comentários, perfis e curtidas para um módulo de leitura dedicado, preservando consultas, paginação, autenticação de apoio, ordenação e fallbacks.
 - A página mantém os efeitos, estados, mutações e o armazenamento local; a aplicação das curtidas locais é fornecida explicitamente ao loader, sem mudança intencional de comportamento.
+
+## Fase 834 — Persistência local e preferências do leitor
+
+- Extraiu os helpers de storage por usuário, obras locais e curtidas de comentários, assim como as preferências de leitura, para módulos dedicados.
+- Preservou chaves, serialização, normalização, acesso por autor, isolamento entre contas, escala de fonte e fallbacks; efeitos da página e operações Supabase permanecem inalterados.
