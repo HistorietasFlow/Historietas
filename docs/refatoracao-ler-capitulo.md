@@ -70,3 +70,8 @@
 
 - Extraiu as ações de envio, remoção e curtida de comentários e a identificação das respostas para uma fronteira dedicada, recebendo estados e dependências explicitamente.
 - Preservou a ordem das operações, autenticação, mensagens, atualizações otimistas, reversões e contratos Supabase; estados e efeitos permanecem na página.
+
+## Fase 837 — Ações de interação do capítulo
+
+- Extraiu as ações relacionadas de curtir e salvar capítulo para uma fronteira dedicada, com estados e dependências recebidos explicitamente.
+- Preservou autenticação, atualização otimista, sincronização, reversão em falha, notificações e atividade do Diário; o progresso de leitura e os efeitos permanecem na página.

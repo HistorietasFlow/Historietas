@@ -57,6 +57,7 @@ import {
   carregarObraSupabase,
 } from "./lib/ler-capitulo-work-read-loader";
 import { criarAcoesComentariosCapitulo } from "./lib/ler-capitulo-comment-actions";
+import { criarAcoesInteracoesCapitulo } from "./lib/ler-capitulo-interaction-actions";
 import {
   focusPageStyle,
   fixedReadingProgressOuterStyle,
@@ -1327,164 +1328,28 @@ export default function LerCapituloPage() {
     salvarObras(novasObras);
   }
 
-  async function alternarCurtida() {
-    if (!capituloAtual || curtidaCapituloSalvandoRef.current) {
-      return;
-    }
-
-    if (!(await exigirLogin("Entre na sua conta para curtir este capítulo."))) {
-      return;
-    }
-
-    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-
-    if (!userIdAtual) {
-      return;
-    }
-
-    const estadoAnteriorCurtida = metricasCapitulo.curtiu;
-    const totalAnteriorCurtidas = metricasCapitulo.totalCurtidas;
-    const novoStatusCurtida = !estadoAnteriorCurtida;
-
-    curtidaCapituloSalvandoRef.current = true;
-    setCurtidaCapituloSalvando(true);
-    setMensagemAcao("");
-
-    atualizarCapitulo({
-      curtiu: novoStatusCurtida,
-    });
-    setMetricasCapitulo((metricasAtuais) => ({
-      ...metricasAtuais,
-      curtiu: novoStatusCurtida,
-      totalCurtidas: Math.max(
-        0,
-        metricasAtuais.totalCurtidas + (novoStatusCurtida ? 1 : -1)
-      ),
-      carregado: true,
-    }));
-
-    try {
-      const curtidaSalva = await salvarRegistroCapituloSupabase(
-        "curtidas_capitulos",
-        capituloAtual.id,
-        novoStatusCurtida
-      );
-
-      if (!curtidaSalva) {
-        atualizarCapitulo({
-          curtiu: estadoAnteriorCurtida,
-        });
-        setMetricasCapitulo((metricasAtuais) => ({
-          ...metricasAtuais,
-          curtiu: estadoAnteriorCurtida,
-          totalCurtidas: totalAnteriorCurtidas,
-          carregado: true,
-        }));
-        setMensagemAcao("Não foi possível atualizar a curtida agora.");
-        return;
-      }
-
-      await recarregarMetricasCapituloAtual();
-      setMensagemAcao("");
-
-      if (novoStatusCurtida && obraAtual) {
-        const perfilAtual = await carregarPerfilComentarioLeitor(userIdAtual);
-
-        void registrarNotificacaoInteracaoCapituloSupabase({
-          tipo: "curtida-capitulo",
-          obra: obraAtual,
-          capitulo: capituloAtual,
-          titulo: "Nova curtida no capítulo",
-          mensagem: `${perfilAtual.nome || "Um leitor"} curtiu ${capituloAtual.titulo}.`,
-          link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
-        });
-      }
-    } finally {
-      curtidaCapituloSalvandoRef.current = false;
-      setCurtidaCapituloSalvando(false);
-    }
-  }
-
-  async function alternarSalvo() {
-    if (!capituloAtual || salvoCapituloSalvandoRef.current) {
-      return;
-    }
-
-    if (!(await exigirLogin("Entre na sua conta para salvar este capítulo."))) {
-      return;
-    }
-
-    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-
-    if (!userIdAtual) {
-      return;
-    }
-
-    const estadoAnteriorSalvo = metricasCapitulo.salvo;
-    const totalAnteriorSalvos = metricasCapitulo.totalSalvos;
-    const novoStatusSalvo = !estadoAnteriorSalvo;
-
-    salvoCapituloSalvandoRef.current = true;
-    setSalvoCapituloSalvando(true);
-    setMensagemAcao("");
-
-    atualizarCapitulo({
-      salvo: novoStatusSalvo,
-    });
-    setMetricasCapitulo((metricasAtuais) => ({
-      ...metricasAtuais,
-      salvo: novoStatusSalvo,
-      totalSalvos: Math.max(
-        0,
-        metricasAtuais.totalSalvos + (novoStatusSalvo ? 1 : -1)
-      ),
-      carregado: true,
-    }));
-
-    try {
-      const salvoSincronizado = await salvarRegistroCapituloSupabase(
-        "salvos_capitulos",
-        capituloAtual.id,
-        novoStatusSalvo
-      );
-
-      if (!salvoSincronizado) {
-        atualizarCapitulo({
-          salvo: estadoAnteriorSalvo,
-        });
-        setMetricasCapitulo((metricasAtuais) => ({
-          ...metricasAtuais,
-          salvo: estadoAnteriorSalvo,
-          totalSalvos: totalAnteriorSalvos,
-          carregado: true,
-        }));
-        setMensagemAcao("Não foi possível atualizar o capítulo salvo agora.");
-        return;
-      }
-
-      await recarregarMetricasCapituloAtual();
-      setMensagemAcao("");
-
-      if (novoStatusSalvo && obraAtual) {
-        void registrarAtividadeDiarioLeitor({
-          userId: userIdAtual,
-          tipo: "salvou_obra",
-          obra: obraAtual,
-          capituloId: capituloAtual.id,
-          visibilidade: "publico",
-          texto: `Salvou ${capituloAtual.titulo}`,
-          metadata: {
-            capitulo_titulo: capituloAtual.titulo,
-            capitulo_numero: numeroCapitulo,
-            origem: "salvar_capitulo",
-          },
-        });
-      }
-    } finally {
-      salvoCapituloSalvandoRef.current = false;
-      setSalvoCapituloSalvando(false);
-    }
-  }
+  const { alternarCurtida, alternarSalvo } = criarAcoesInteracoesCapitulo({
+    obraAtual,
+    capituloAtual,
+    usuarioIdLogado,
+    numeroCapitulo,
+    metricasCapitulo,
+    curtidaCapituloSalvandoRef,
+    salvoCapituloSalvandoRef,
+    exigirLogin,
+    obterUsuarioLogadoIdAtual,
+    atualizarCapitulo,
+    salvarRegistroCapituloSupabase,
+    recarregarMetricasCapituloAtual,
+    carregarPerfilComentarioLeitor,
+    registrarNotificacaoInteracaoCapituloSupabase,
+    criarHrefLeituraCapituloLeitor,
+    registrarAtividadeDiarioLeitor,
+    setCurtidaCapituloSalvando,
+    setSalvoCapituloSalvando,
+    setMensagemAcao,
+    setMetricasCapitulo,
+  });
 
   async function alternarLido() {
     if (
