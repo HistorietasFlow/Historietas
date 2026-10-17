@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const estilos = readFileSync(
+  new URL("../../app/explorar/lib/explorar-content-styles.ts", import.meta.url),
+  "utf8",
+);
 
 test("useExplorarDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -59,7 +63,11 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 76);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 74);
+  assert.equal((estilos.match(/\bisDesktop\b/g) || []).length, 2);
+  assert.match(estilos, /export function criarCardPrimaryActionStyle\(\s*isDesktop\?: boolean/);
+  assert.match(estilos, /isDesktop \? desktopCardPrimaryActionStyle : cardPrimaryActionStyle/);
+  assert.match(pagina, /criarCardPrimaryActionStyle\(isDesktop\)/);
   assert.match(
     pagina,
     /import \{ useExplorarAdvancedFiltersBodyLock \} from "\.\/hooks\/use-explorar-advanced-filters-body-lock";/,

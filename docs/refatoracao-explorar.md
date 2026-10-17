@@ -34,3 +34,8 @@
 
 - Extraiu os estilos do shell, cabeçalho, busca, categorias, filtros e confirmação 18+ para `app/explorar/lib/explorar-layout-styles.ts`.
 - Preservou objetos, spreads, variantes e helpers visuais; os estilos próprios dos cards permaneceram na página.
+
+## Fase 847 — estilos de seções e cards
+
+- Extraiu os estilos de seções, carrosséis, autores e obras para `app/explorar/lib/explorar-content-styles.ts`.
+- Preservou literalmente os valores, spreads, variantes desktop/mobile e helpers visuais, sem alterar o JSX ou comportamento.
