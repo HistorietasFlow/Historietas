@@ -2177,6 +2177,13 @@ const emAltaSupabaseWorksLoader = fs.existsSync(
 )
   ? fs.readFileSync(emAltaSupabaseWorksLoaderPath, "utf8")
   : "";
+const readerWorkLoaderPath = path.join(
+  ROOT_DIR,
+  "app/ler-capitulo/lib/ler-capitulo-work-read-loader.ts"
+);
+const readerWorkLoader = fs.existsSync(readerWorkLoaderPath)
+  ? fs.readFileSync(readerWorkLoaderPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2207,6 +2214,10 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   }${
     relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"
       ? `\n${publicWorkChaptersQuery}\n${publicWorkCommentRepliesQuery}`
+      : ""
+  }${
+    relativePath === "app/ler-capitulo/page.tsx"
+      ? `\n${readerWorkLoader}`
       : ""
   }`
 }));
