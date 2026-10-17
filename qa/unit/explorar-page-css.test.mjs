@@ -63,6 +63,10 @@ test("Explorar consome themePageCss sem alterar as fronteiras da página", () =>
   );
   assert.match(pagina, /async function carregarExplorar\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /listarSelecaoCatalogo/);
+  assert.match(pagina, /carregarObrasPublicadasSupabase/);
+  assert.match(
+    readFileSync(new URL("../../app/explorar/lib/explorar-remote-loader.ts", import.meta.url), "utf8"),
+    /listarSelecaoCatalogo/,
+  );
   assert.match(pagina, /acessoConteudo18Confirmado/);
 });

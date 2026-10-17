@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (caminho) =>
   readFileSync(new URL(caminho, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const pagina = ler("../../app/explorar/page.tsx");
+const loaderRemoto = ler("../../app/explorar/lib/explorar-remote-loader.ts");
 const codigo = ler("../../app/explorar/lib/explorar-author-profile-utils.ts");
 const compilar = (fonte) =>
   typescript.transpileModule(fonte, {
@@ -251,9 +252,11 @@ test("a página delega perfis e preserva catálogo, métricas de obras e efeitos
     assert.doesNotMatch(pagina, new RegExp(`(?:async )?function ${nome}\\(`));
   }
   assert.match(pagina, /from "\.\/lib\/explorar-author-profile-utils"/);
-  assert.match(pagina, /carregarNomesProfilesExplorar\(/);
+  assert.match(loaderRemoto, /carregarNomesProfilesExplorar\(/);
+  assert.match(loaderRemoto, /aplicarNomesProfilesEmObrasExplorar\(/);
+  assert.match(pagina, /carregarObrasPublicadasSupabase\(/);
   assert.match(pagina, /carregarPerfisAutoresExplorar\(autorIds\)/);
   assert.match(pagina, /carregarAvaliacoesAutoresExplorar\(autorIds\)/);
-  assert.match(pagina, /carregarMetricasConteudos\(\{ obraIds, capituloIds \}\)/);
+  assert.match(loaderRemoto, /carregarMetricasConteudos\(\{ obraIds, capituloIds \}\)/);
   assert.doesNotMatch(codigo, /\b(?:localStorage|useEffect|useState)\b/);
 });

@@ -54,3 +54,8 @@
 
 - Extraiu os helpers de perfis públicos, nomes, bios, iniciais e avaliações para `app/explorar/lib/explorar-author-profile-utils.ts`.
 - Preservou consultas, aliases, deduplicação, traduções, formatação e falhas complementares sem alterar o catálogo ou as métricas de obras.
+
+## Fase 851 — carregamento remoto do Explorar
+
+- Extraiu a leitura das coleções, catálogo, capítulos e métricas para `app/explorar/lib/explorar-remote-loader.ts`.
+- Preservou consultas, paginação, limites, fallbacks, métricas privadas e persistência local, mantendo os efeitos na página.

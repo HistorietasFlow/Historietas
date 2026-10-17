@@ -1092,7 +1092,7 @@ if (!metricsContractMigrationName) {
 const metricsConsumerFiles = [
   "app/lib/home-supabase-works-loader.ts",
   "app/em-alta/lib/em-alta-supabase-works-loader.ts",
-  "app/explorar/page.tsx",
+  "app/explorar/lib/explorar-remote-loader.ts",
   "app/listas/lib/listas-published-works-loader.ts",
   "app/seguindo/page.tsx",
   "app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
@@ -2183,6 +2183,13 @@ const emAltaSupabaseWorksLoader = fs.existsSync(
 )
   ? fs.readFileSync(emAltaSupabaseWorksLoaderPath, "utf8")
   : "";
+const explorarRemoteLoaderPath = path.join(
+  ROOT_DIR,
+  "app/explorar/lib/explorar-remote-loader.ts"
+);
+const explorarRemoteLoader = fs.existsSync(explorarRemoteLoaderPath)
+  ? fs.readFileSync(explorarRemoteLoaderPath, "utf8")
+  : "";
 const readerWorkLoaderPath = path.join(
   ROOT_DIR,
   "app/ler-capitulo/lib/ler-capitulo-work-read-loader.ts"
@@ -2216,6 +2223,10 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   }${
     relativePath === "app/em-alta/page.tsx"
       ? `\n${emAltaCollectionSupabaseLoader}\n${emAltaSupabaseWorksLoader}`
+      : ""
+  }${
+    relativePath === "app/explorar/page.tsx"
+      ? `\n${explorarRemoteLoader}`
       : ""
   }${
     relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"
