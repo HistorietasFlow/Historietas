@@ -77,6 +77,11 @@ import {
   obterParametrosSociaisSeguindoUrl,
 } from "./lib/seguindo-route-utils";
 import {
+  AUTHOR_FOLLOW_STORAGE_KEY,
+  COMPLETED_STORAGE_KEY,
+  FAVORITES_STORAGE_KEY,
+  FOLLOW_STORAGE_KEY,
+  STORAGE_KEY,
   lerJsonStorageUsuarioSeguindo,
   salvarJsonStorageUsuarioSeguindo,
 } from "./lib/seguindo-storage-utils";
@@ -237,13 +242,6 @@ type AbaSeguimentoPagina = "seguidores" | "seguindo";
 type OrdenacaoSeguindo = "padrao" | "recentes" | "antigos" | "titulo" | "progresso" | "capitulos";
 
 type AbaConteudoSeguindo = "seguidores" | "obras" | "pessoas";
-
-const STORAGE_KEY = "historietas-obras";
-const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
-const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
-const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
-const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
 
 async function carregarSeguindoSupabase(
   obrasLocais: ObraLocal[],
