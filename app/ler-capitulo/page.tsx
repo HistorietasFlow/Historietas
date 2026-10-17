@@ -46,6 +46,7 @@ import {
 import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load";
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
 import { useLerCapituloInteractionData, type MetricasCapituloLeitor } from "./hooks/use-ler-capitulo-interaction-data";
+import { useLerCapituloViewRegistration, useLerCapituloEntryActivity } from "./hooks/use-ler-capitulo-entry-lifecycle";
 import { criarAcoesComentariosCapitulo } from "./lib/ler-capitulo-comment-actions";
 import { criarAcoesInteracoesCapitulo } from "./lib/ler-capitulo-interaction-actions";
 import { criarAcaoProgressoLeituraCapitulo } from "./lib/ler-capitulo-reading-progress-action";
@@ -788,42 +789,13 @@ export default function LerCapituloPage() {
       }
     : null;
 
-  useEffect(() => {
-    if (
-      statusAcesso18 !== "permitido" ||
-      !capituloAtual ||
-      !idObraSupabaseValido(capituloAtual.id)
-    ) {
-      return;
-    }
-
-    const capituloIdAtual = capituloAtual.id;
-
-    if (visualizacaoCapituloRegistradaRef.current === capituloIdAtual) {
-      return;
-    }
-
-    visualizacaoCapituloRegistradaRef.current = capituloIdAtual;
-
-    async function registrarVisualizacaoCapituloAtual() {
-      const totalVisualizacoes =
-        await incrementarVisualizacaoCapituloSupabase(capituloIdAtual);
-
-      if (totalVisualizacoes === null) {
-        return;
-      }
-
-      setMetricasCapitulo((metricasAtuais) => ({
-        ...metricasAtuais,
-        totalVisualizacoes: Math.max(
-          metricasAtuais.totalVisualizacoes,
-          totalVisualizacoes
-        ),
-      }));
-    }
-
-    void registrarVisualizacaoCapituloAtual();
-  }, [capituloAtual, statusAcesso18]);
+  useLerCapituloViewRegistration({
+    capituloAtual,
+    statusAcesso18,
+    visualizacaoCapituloRegistradaRef,
+    setMetricasCapitulo,
+    incrementarVisualizacaoCapituloSupabase,
+  });
 
   useEffect(() => {
     const atualizarComentarioTimer = window.setTimeout(() => {
@@ -866,54 +838,16 @@ export default function LerCapituloPage() {
     };
   }, [capituloAtual?.id]);
 
-  useEffect(() => {
-    if (
-      statusAcesso18 !== "permitido" ||
-      !usuarioIdLogado ||
-      !obraAtual ||
-      !capituloAtual
-    ) {
-      return;
-    }
-
-    const chaveAtividade = `${usuarioIdLogado}:${obraAtual.id}:${capituloAtual.id}`;
-
-    if (atividadeDiarioRegistradaRef.current === chaveAtividade) {
-      return;
-    }
-
-    atividadeDiarioRegistradaRef.current = chaveAtividade;
-
-    void marcarNotificacaoCapituloComoLidaSupabase(
-      usuarioIdLogado,
-      obraAtual.id,
-      capituloAtual.id
-    );
-
-    const obraJaIniciada =
-      obraAtual.progressoLeitura > 0 ||
-      Boolean(obraAtual.ultimoCapituloLidoId) ||
-      obraAtual.capitulos.some((capitulo) => capitulo.lido);
-
-    if (obraJaIniciada) {
-      return;
-    }
-
-    void registrarAtividadeDiarioLeitor({
-      userId: usuarioIdLogado,
-      tipo: "comecou_ler",
-      obra: obraAtual,
-      capituloId: capituloAtual.id,
-      visibilidade: "publico",
-      texto: `Começou a ler ${obraAtual.titulo}`,
-      metadata: {
-        capitulo_titulo: capituloAtual.titulo,
-        capitulo_numero: numeroCapitulo,
-        progresso_obra: obraAtual.progressoLeitura,
-        origem: "abertura_capitulo",
-      },
-    });
-  }, [usuarioIdLogado, obraAtual, capituloAtual, numeroCapitulo, statusAcesso18]);
+  useLerCapituloEntryActivity({
+    usuarioIdLogado,
+    obraAtual,
+    capituloAtual,
+    numeroCapitulo,
+    statusAcesso18,
+    atividadeDiarioRegistradaRef,
+    marcarNotificacaoCapituloComoLidaSupabase,
+    registrarAtividadeDiarioLeitor,
+  });
 
   async function obterUsuarioLogadoIdAtual() {
     if (usuarioIdLogado) {

@@ -96,3 +96,9 @@
 - Agrupou os efeitos de carregamento de comentários e sincronização de métricas em um hook, mantendo estados, refs, helpers de métricas e ações na página.
 - Preservou loading, cancelamento, curtidas locais, ordem das métricas, guardas de salvamento, visualizações e atualização do capítulo, sem mudança intencional de comportamento.
 - Documentou exceções localizadas de lint para as fábricas existentes, que acessam refs somente nos callbacks de ação.
+
+## Fase 842 — Entrada e acompanhamento do capítulo
+
+- Isolou os efeitos de registro de visualização e de entrada no capítulo em uma fronteira dedicada, mantendo suas posições relativas aos demais efeitos.
+- Preservou guardas de acesso, refs de deduplicação, métricas, notificações, atividade do Diário e dependências, sem mudança intencional de comportamento.
+- Documentou exceções locais de dependências de lint para refs, setter e helpers estáveis da página.
