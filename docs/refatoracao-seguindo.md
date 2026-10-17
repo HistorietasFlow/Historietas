@@ -38,3 +38,10 @@
 - Preservou parsing dos parâmetros sociais, fallbacks de abas/conteúdo, validação UUID e construção das rotas de login e perfil.
 - Adicionou cobertura focada e manteve os consumidores da página sem alterar navegação ou fluxo de autenticação.
 - Sem alterações de UI, Supabase, schema ou RLS.
+
+## Fase 859 — normalização e formatação
+
+- Extraiu `normalizarNomeAutor`, `formatarGeneroSeguindo`, `normalizarListaTexto` e `normalizarNumeroSeguindo` para `app/seguindo/lib/seguindo-format-utils.ts`.
+- Preservou aliases de gênero, normalização de nomes/listas, parsing numérico, arredondamento, piso zero e fallbacks.
+- Adicionou cobertura focada e manteve todos os consumidores existentes da página.
+- Sem alterações de UI, autenticação, Supabase, schema ou RLS.
