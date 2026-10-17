@@ -116,7 +116,11 @@ test("remoção elimina todas as chaves equivalentes e preserva as demais", () =
 test("página delega coleções de obra ao módulo dedicado", () => {
   assert.match(
     pagina,
-    /criarChavesObra,[\s\S]*?obraEstaNaLista,[\s\S]*?removerObraDaLista,[\s\S]*?from "\.\/lib\/seguindo-work-collection-utils";/,
+    /obraEstaNaLista,[\s\S]*?removerObraDaLista,[\s\S]*?from "\.\/lib\/seguindo-work-collection-utils";/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /\bcriarChavesObra\b/,
   );
 
   for (const nome of [
