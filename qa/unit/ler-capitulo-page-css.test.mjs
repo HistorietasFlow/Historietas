@@ -4,6 +4,7 @@ import test from "node:test";
 import "./ler-capitulo-comments-styles.test.mjs";
 import "./ler-capitulo-layout-styles.test.mjs";
 import "./ler-capitulo-comments-sheet.test.mjs";
+import "./ler-capitulo-work-normalization.test.mjs";
 
 const cssSource = readFileSync(
   new URL(

@@ -40,3 +40,8 @@
 
 - Extraiu `ComentariosCapituloSheet` e seus helpers exclusivos de apresentação para componente dedicado, preservando literalmente estados, efeitos, props, callbacks, JSX e estilos.
 - A página continua responsável pelos dados, autenticação, carregamento e mutações de comentários, sem alteração dos contratos Supabase ou de storage.
+
+## Fase 831 — Normalização e composição de obras do leitor
+
+- Extraiu os modelos e as transformações puras de obras, capítulos, arquivos e progresso, incluindo a composição dos dados locais e remotos, para um módulo dedicado.
+- Preservou os fallbacks e a ordem da implementação; consultas Supabase, autenticação, storage, efeitos e mutações continuam na página, sem mudança intencional de comportamento.
