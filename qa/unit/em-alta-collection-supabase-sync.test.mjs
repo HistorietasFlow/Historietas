@@ -5,6 +5,7 @@ import typescript from "typescript";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-collection-supabase-sync.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
+const hook = readFileSync(new URL("../../app/em-alta/hooks/use-em-alta-ranking-collection-actions.ts", import.meta.url), "utf8");
 const estado = { usuario: { id: "usuario-1" }, chamadas: [], respostasInsert: [], falharAuth: null, falharDelete: null };
 globalThis.__emAltaCollectionSyncState = estado;
 const executavel = modulo
@@ -58,8 +59,8 @@ test("fronteira mantém somente a sincronização esperada", () => {
   assert.match(modulo, /\.from\(tabela\)\s*\.delete\(\)\s*\.eq\("user_id", userId\)\s*\.eq\("obra_id", obraId\)/);
   assert.match(modulo, /visibilidade: "parcial"/); assert.match(modulo, /await supabase\.from\(tabela\)\.insert\(payloadBase\)/);
   for (const proibido of [/\.upsert\(/, /\.update\(/, /diario_atividades/, /localStorage/, /from ["']react["']/i, /\buse[A-Z]\w*\b/, /<[A-Z][\w.]*\s+[\w-]+=/]) assert.doesNotMatch(modulo, proibido);
-  assert.match(pagina, /import \{ sincronizarColecaoRankingSupabase \} from "\.\/lib\/em-alta-collection-supabase-sync";/);
+  assert.match(hook, /import \{ sincronizarColecaoRankingSupabase \} from "\.\.\/lib\/em-alta-collection-supabase-sync";/);
   assert.doesNotMatch(pagina, /async function sincronizarColecaoRankingSupabase\b/);
-  assert.match(pagina, /sincronizarColecaoRankingSupabase\(\s*"favoritos",\s*obraRanking,\s*obraVaiFicarFavorita/);
-  assert.match(pagina, /sincronizarColecaoRankingSupabase\(\s*"concluidas",\s*obraRanking,\s*obraVaiFicarConcluida/);
+  assert.match(hook, /sincronizarColecaoRankingSupabase\(\s*"favoritos",\s*obraRanking,\s*obraVaiFicarFavorita/);
+  assert.match(hook, /sincronizarColecaoRankingSupabase\(\s*"concluidas",\s*obraRanking,\s*obraVaiFicarConcluida/);
 });

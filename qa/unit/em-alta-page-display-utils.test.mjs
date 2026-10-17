@@ -79,8 +79,9 @@ test("a fronteira de exibição permanece pura e a página delega somente os dad
   );
   assert.match(pagina, /const tituloCabecalho = obterTituloCabecalhoEmAlta\(/);
   assert.match(pagina, /async function carregarRanking\(/);
-  assert.match(pagina, /async function alternarFavorito\(/);
-  assert.match(pagina, /async function alternarConcluido\(/);
+  assert.match(pagina, /useEmAltaRankingCollectionActions\(/);
+  assert.doesNotMatch(pagina, /async function alternarFavorito\(/);
+  assert.doesNotMatch(pagina, /async function alternarConcluido\(/);
 
   for (const proibido of [
     /react/i,

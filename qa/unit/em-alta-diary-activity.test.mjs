@@ -5,6 +5,7 @@ import typescript from "typescript";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-diary-activity.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
+const hook = readFileSync(new URL("../../app/em-alta/hooks/use-em-alta-ranking-collection-actions.ts", import.meta.url), "utf8");
 const estado = { usuario: { id: "usuario-1" }, inserts: [], respostas: [], erroAuth: null, erroInsert: null };
 globalThis.__emAltaDiaryActivityState = estado;
 const executavel = modulo
@@ -54,8 +55,8 @@ test("fronteira preserva somente a persistência de atividade", () => {
   assert.match(modulo, /from\("diario_atividades"\)\.insert\(payload\)/);
   assert.match(modulo, /origem: "em-alta"/); assert.match(modulo, /O ranking não deve falhar por causa do Diário\./);
   for (const proibido of [/\.upsert\(/, /\.update\(/, /\.delete\(/, /localStorage/, /from ["']react["']/i, /\buse[A-Z]\w*\b/, /<[A-Z][\w.]*\s+[\w-]+=/]) assert.doesNotMatch(modulo, proibido);
-  assert.match(pagina, /import \{ registrarColecaoRankingNoDiario \} from "\.\/lib\/em-alta-diary-activity";/);
+  assert.match(hook, /import \{ registrarColecaoRankingNoDiario \} from "\.\.\/lib\/em-alta-diary-activity";/);
   assert.doesNotMatch(pagina, /async function registrarColecaoRankingNoDiario\b/);
-  assert.match(pagina, /void registrarColecaoRankingNoDiario\("favoritou_obra", obraRanking\)/);
-  assert.match(pagina, /void registrarColecaoRankingNoDiario\("concluiu_obra", obraRanking\)/);
+  assert.match(hook, /void registrarColecaoRankingNoDiario\("favoritou_obra", obraRanking\)/);
+  assert.match(hook, /void registrarColecaoRankingNoDiario\("concluiu_obra", obraRanking\)/);
 });

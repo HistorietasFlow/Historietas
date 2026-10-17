@@ -255,3 +255,9 @@
 - Isolou a proteção das coleções pessoais e o título derivado do cabeçalho em helper puro.
 - Preservou os fallbacks de usuário não autenticado e os três títulos de estado literalmente.
 - Carregamento, Supabase, storage, autenticação, estados e mutações permaneceram na página.
+
+## Fase 888 — ações de coleção do ranking
+
+- Moveu as ações de favoritar e concluir para um hook dedicado.
+- Preservou a sessão, os aliases de obras, o storage local, a sincronização Supabase e o registro no Diário.
+- O carregamento, os estados e o adaptador de redirecionamento de login permaneceram na página.
