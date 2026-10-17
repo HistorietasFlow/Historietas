@@ -20,7 +20,7 @@ type CapituloLocalConversao = {
   publicado?: boolean;
 };
 
-type ObraLocalConversao = {
+export type ObraLocalConversao = {
   id: string;
   titulo: string;
   autor: string;
