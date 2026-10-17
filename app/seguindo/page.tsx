@@ -42,6 +42,11 @@ import {
   obterTotalSalvosObraSeguindo,
 } from "./lib/seguindo-work-metrics-utils";
 import {
+  dataAtividadeObra,
+  mostrarClassificacao,
+  textoBuscaObra,
+} from "./lib/seguindo-work-presentation-utils";
+import {
   criarHrefPerfilAutorSeguindo,
   criarHrefPerfilUsuarioSeguindo,
   criarLoginHrefSeguindo,
@@ -445,38 +450,6 @@ function criarAvatarUsuarioSeguindoStyle(avatar: string): CSSProperties {
     color: "transparent",
     WebkitTextFillColor: "transparent",
   };
-}
-
-function dataAtividadeObra(obra: ObraLocal) {
-  const datas = [obra.ultimaLeituraEm, obra.criadaEm]
-    .map((data) => new Date(data).getTime())
-    .filter((data) => Number.isFinite(data));
-
-  return datas.length > 0 ? Math.max(...datas) : 0;
-}
-
-function textoBuscaObra(obra: ObraLocal) {
-  return normalizarTexto(
-    [
-      obra.titulo,
-      obra.autor,
-      obra.genero,
-      formatarGeneroSeguindo(obra.genero),
-      obra.formato,
-      obra.classificacaoIndicativa,
-      obra.sinopse,
-      obra.tags.join(" "),
-      obra.capaNome,
-      obra.capitulos.map((capitulo) => capitulo.titulo).join(" "),
-    ].join(" ")
-  );
-}
-
-function mostrarClassificacao(obra: ObraLocal) {
-  return (
-    obra.classificacaoIndicativa &&
-    obra.classificacaoIndicativa !== "Não informada"
-  );
 }
 
 function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
