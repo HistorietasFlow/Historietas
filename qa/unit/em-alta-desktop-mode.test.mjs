@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/em-alta/page.tsx", import.meta.url),
   "utf8",
 );
+const interacoesLocaisRanking = readFileSync(
+  new URL(
+    "../../app/em-alta/lib/em-alta-ranking-local-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const bridge = readFileSync(
   new URL(
     "../../app/em-alta/components/em-alta-language-bridge.tsx",
@@ -156,7 +163,12 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
 
   assert.match(pagina, /async function carregarRanking\(\)/);
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /localStorage\.getItem/);
+  assert.match(
+    pagina,
+    /import \{ carregarInteracoesLocaisRankingEmAlta \} from "\.\/lib\/em-alta-ranking-local-interactions";/,
+  );
+  assert.match(pagina, /carregarInteracoesLocaisRankingEmAlta\(userIdAtual\)/);
+  assert.match(interacoesLocaisRanking, /localStorage\.getItem/);
   assert.match(
     pagina,
     /import \{ EmAltaPageShell \} from "\.\/components\/em-alta-page-shell";/,
