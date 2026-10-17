@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-comments-read-loader.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
+const lifecycle = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-interaction-data.ts");
 const storage = ler("../../app/ler-capitulo/lib/ler-capitulo-local-storage.ts");
 
 const fonteMockada = fonte
@@ -94,10 +95,12 @@ test("a movimentação preserva literalmente o corpo dos helpers e das consultas
     .replace(/export async function carregarComentariosCapituloSupabase\(\n  capituloId: string,\n  usuarioLogadoId: string,\n  \{[\s\S]*?TABELA_COMENTARIOS_CAPITULOS_CURTIDAS: "comentarios_capitulos_curtidas";\n  \},\n\)/, "async function carregarComentariosCapituloSupabase(\n  capituloId: string,\n  usuarioLogadoId: string,\n)")
     .trimEnd();
   assert.equal(createHash("sha256").update(corpo).digest("hex"), "42c4e3d4240f6ff33a14f5a6ff87482137cba88eec5117044efaa57a891ddede");
-  assert.match(pagina, /import \{[\s\S]*?carregarComentariosCapituloSupabase,[\s\S]*?carregarPerfilComentarioLeitor,[\s\S]*?obterTextoRegistroLeitor,[\s\S]*?type PerfilComentarioLeitor,[\s\S]*?\} from "\.\/lib\/ler-capitulo-comments-read-loader";/);
+  assert.match(pagina, /import \{[\s\S]*?carregarPerfilComentarioLeitor,[\s\S]*?obterTextoRegistroLeitor,[\s\S]*?type PerfilComentarioLeitor,[\s\S]*?\} from "\.\/lib\/ler-capitulo-comments-read-loader";/);
+  assert.match(pagina, /useLerCapituloInteractionData\(\{/);
+  assert.match(lifecycle, /import \{ carregarComentariosCapituloSupabase \} from "\.\.\/lib\/ler-capitulo-comments-read-loader";/);
   assert.doesNotMatch(pagina, /(?:async )?function carregarComentariosCapituloSupabase\(/);
-  assert.match(pagina, /await carregarComentariosCapituloSupabase\(\s*capituloAtual\.id,\s*usuarioIdLogado,\s*\{\s*aplicarCurtidasComentariosCapitulosLocais,\s*TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,/);
-  assert.match(pagina, /import \{[\s\S]*?aplicarCurtidasComentariosCapitulosLocais,[\s\S]*?\} from "\.\/lib\/ler-capitulo-local-storage";/);
+  assert.match(lifecycle, /await carregarComentariosCapituloSupabase\(\s*capituloAtual\.id,\s*usuarioIdLogado,\s*\{\s*aplicarCurtidasComentariosCapitulosLocais,\s*TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,/);
+  assert.match(lifecycle, /import \{ aplicarCurtidasComentariosCapitulosLocais \} from "\.\.\/lib\/ler-capitulo-local-storage";/);
   assert.match(storage, /export function aplicarCurtidasComentariosCapitulosLocais\(/);
   assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
   assert.doesNotMatch(fonte, /\.(?:insert|update|delete|upsert)\s*\(/);

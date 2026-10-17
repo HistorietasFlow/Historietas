@@ -90,3 +90,9 @@
 
 - Agrupou os efeitos de sessão, perfil de comentário e preferências de leitura em um hook dedicado, mantendo os estados na página.
 - Preservou autenticação, cancelamento, assinatura, temporização, dependências, defaults e storage por usuário, sem alteração intencional de comportamento.
+
+## Fase 841 — Dados de interação do capítulo
+
+- Agrupou os efeitos de carregamento de comentários e sincronização de métricas em um hook, mantendo estados, refs, helpers de métricas e ações na página.
+- Preservou loading, cancelamento, curtidas locais, ordem das métricas, guardas de salvamento, visualizações e atualização do capítulo, sem mudança intencional de comportamento.
+- Documentou exceções localizadas de lint para as fábricas existentes, que acessam refs somente nos callbacks de ação.
