@@ -90,3 +90,37 @@ export function mesclarIdsColecaoSeguindo(
 ) {
   return Array.from(new Set([...listaLocal, ...listaRemota]));
 }
+
+export function criarResultadoColecoesSeguindo<T>({
+  obras,
+  obrasSeguidasLocais,
+  obrasFavoritasLocais,
+  obrasConcluidasLocais,
+  obrasSeguidasRemotas = [],
+  obrasFavoritasRemotas = [],
+  obrasConcluidasRemotas = [],
+}: {
+  obras: T[];
+  obrasSeguidasLocais: string[];
+  obrasFavoritasLocais: string[];
+  obrasConcluidasLocais: string[];
+  obrasSeguidasRemotas?: Iterable<string>;
+  obrasFavoritasRemotas?: Iterable<string>;
+  obrasConcluidasRemotas?: Iterable<string>;
+}) {
+  return {
+    obras,
+    obrasSeguidas: mesclarIdsColecaoSeguindo(
+      obrasSeguidasLocais,
+      obrasSeguidasRemotas,
+    ),
+    obrasFavoritas: mesclarIdsColecaoSeguindo(
+      obrasFavoritasLocais,
+      obrasFavoritasRemotas,
+    ),
+    obrasConcluidas: mesclarIdsColecaoSeguindo(
+      obrasConcluidasLocais,
+      obrasConcluidasRemotas,
+    ),
+  };
+}
