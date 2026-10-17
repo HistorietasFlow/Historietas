@@ -38,7 +38,6 @@ import { carregarAtividadesSeguindoSupabase } from "./lib/seguindo-activity-feed
 import {
   criarMapaComentariosPorCapitulo,
   criarSetObrasPorRegistro,
-  obterTextoRegistro,
 } from "./lib/seguindo-record-utils";
 import {
   calcularProgressoLeitura,
