@@ -1,3 +1,4 @@
+import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { supabase } from "../../../lib/supabase/client";
 import {
   carregarTodasPaginasPorLotesSupabase,
@@ -86,6 +87,35 @@ export async function carregarComentariosCapitulosUsuarioSupabase(
   }
 
   return [];
+}
+
+
+export async function carregarDadosRelacionadosObrasSeguindoSupabase({
+  userId,
+  userIdObrasSeguidas,
+  obraIds,
+  capituloIds,
+}: {
+  userId: string;
+  userIdObrasSeguidas: string;
+  obraIds: string[];
+  capituloIds: string[];
+}) {
+  const [seguidasBanco, comentariosCapitulosBanco, metricas] =
+    await Promise.all([
+      carregarIdsObrasUsuarioSupabase(
+        "seguindo_obras",
+        userIdObrasSeguidas,
+      ),
+      carregarComentariosCapitulosUsuarioSupabase(userId, capituloIds),
+      carregarMetricasConteudos({ obraIds, capituloIds }),
+    ]);
+
+  return {
+    seguidasBanco,
+    comentariosCapitulosBanco,
+    metricas,
+  };
 }
 
 export type SupabaseObraSeguindoRow = {
