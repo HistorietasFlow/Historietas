@@ -24,7 +24,6 @@ import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
-  criarChavesObra,
   obraEstaNaLista,
   removerObraDaLista,
 } from "./lib/seguindo-work-collection-utils";
