@@ -1094,7 +1094,7 @@ const metricsConsumerFiles = [
   "app/em-alta/lib/em-alta-supabase-works-loader.ts",
   "app/explorar/lib/explorar-remote-loader.ts",
   "app/listas/lib/listas-published-works-loader.ts",
-  "app/seguindo/page.tsx",
+  "app/seguindo/lib/seguindo-work-query-utils.ts",
   "app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
   "app/painel-autor/page.tsx",
   "app/obra/[slug]/ObraDinamicaClient.tsx",
