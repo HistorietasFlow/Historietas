@@ -74,6 +74,7 @@ import {
   carregarComentariosCapitulosUsuarioSupabase,
   carregarIdsObrasUsuarioSupabase,
 } from "./lib/seguindo-work-query-utils";
+import { buscarUsuariosParaSeguirSupabase } from "./lib/seguindo-user-search-utils";
 import { sincronizarObraUsuarioSupabase } from "./lib/seguindo-work-sync-utils";
 import {
   criarHrefPerfilAutorSeguindo,
@@ -264,119 +265,6 @@ const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 
-
-function normalizarUsuarioBuscaSeguindo(
-  profile: RegistroSupabaseGenerico
-): UsuarioSeguido | null {
-  const id =
-    obterTextoRegistro(profile, "user_id") ||
-    obterTextoRegistro(profile, "id");
-  const nome = obterNomeProfileSeguindo(profile);
-
-  if (!idUsuarioSupabaseValido(id) || !nome) {
-    return null;
-  }
-
-  const handleSalvo =
-    obterTextoRegistro(profile, "username") ||
-    obterTextoRegistro(profile, "nome_usuario") ||
-    obterTextoRegistro(profile, "apelido");
-
-  return {
-    id,
-    nome: nome.slice(0, 80),
-    handle: criarHandleUsuarioSeguindo(nome, handleSalvo, id),
-    bio: (
-      obterBioProfileSeguindo(profile) ||
-      "Perfil de leitor no Historietas."
-    ).slice(0, 140),
-    avatar: obterAvatarProfileSeguindo(profile),
-    criadoEm: "",
-  };
-}
-
-async function buscarUsuariosParaSeguirSupabase(termo: string) {
-  const termoLimpo = termo.trim().replace(/^@+/, "").slice(0, 80);
-
-  if (termoLimpo.length < 2) {
-    return [] as UsuarioSeguido[];
-  }
-
-  const termoSeguro = termoLimpo.replace(/[%_]/g, "");
-  const padraoBusca = `%${termoSeguro}%`;
-  const consultas = [
-    {
-      coluna: "nome",
-      campos: "id,user_id,nome,avatar_url",
-    },
-    {
-      coluna: "username",
-      campos: "id,user_id,nome,avatar_url,username",
-    },
-    {
-      coluna: "nome_usuario",
-      campos: "id,user_id,nome,avatar_url,nome_usuario",
-    },
-  ] as const;
-
-  const resultados = await Promise.all(
-    consultas.map(async ({ coluna, campos }) => {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(campos)
-          .ilike(coluna, padraoBusca)
-          .limit(20);
-
-        if (error || !Array.isArray(data)) {
-          return [] as RegistroSupabaseGenerico[];
-        }
-
-        return normalizarRegistrosSupabaseGenericos(data);
-      } catch {
-        return [] as RegistroSupabaseGenerico[];
-      }
-    })
-  );
-
-  const usuariosPorId = new Map<string, UsuarioSeguido>();
-
-  resultados.flat().forEach((profile) => {
-    const usuarioEncontrado = normalizarUsuarioBuscaSeguindo(profile);
-
-    if (usuarioEncontrado) {
-      usuariosPorId.set(usuarioEncontrado.id, usuarioEncontrado);
-    }
-  });
-
-  const termoNormalizado = normalizarTexto(termoLimpo);
-
-  return Array.from(usuariosPorId.values())
-    .filter((usuarioEncontrado) => {
-      const textoUsuario = normalizarTexto(
-        [
-          usuarioEncontrado.nome,
-          usuarioEncontrado.handle,
-          usuarioEncontrado.bio,
-        ].join(" ")
-      );
-
-      return textoUsuario.includes(termoNormalizado);
-    })
-    .sort((usuarioA, usuarioB) => {
-      const textoA = normalizarTexto(`${usuarioA.nome} ${usuarioA.handle}`);
-      const textoB = normalizarTexto(`${usuarioB.nome} ${usuarioB.handle}`);
-      const iniciaA = textoA.startsWith(termoNormalizado);
-      const iniciaB = textoB.startsWith(termoNormalizado);
-
-      if (iniciaA !== iniciaB) {
-        return iniciaA ? -1 : 1;
-      }
-
-      return usuarioA.nome.localeCompare(usuarioB.nome, "pt-BR");
-    })
-    .slice(0, 12);
-}
 
 function criarAvatarUsuarioSeguindoStyle(avatar: string): CSSProperties {
   const avatarLimpo = avatar.trim();
