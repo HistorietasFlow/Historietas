@@ -84,7 +84,11 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
     pagina,
     /const \[mostrarFiltrosAvancados, setMostrarFiltrosAvancados\] = useState\(false\);/,
   );
-  assert.match(pagina, /async function carregarExplorar\(\)/);
+  assert.match(pagina, /useExplorarInitialLoad\(\{/);
+  assert.match(
+    readFileSync(new URL("../../app/explorar/hooks/use-explorar-initial-load.ts", import.meta.url), "utf8"),
+    /async function carregarExplorar\(\)/,
+  );
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /carregarObrasPublicadasSupabase/);
   assert.match(
@@ -92,6 +96,9 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
     /listarSelecaoCatalogo/,
   );
   assert.match(pagina, /from "\.\/lib\/explorar-local-storage"/);
-  assert.match(pagina, /lerStorageUsuarioExplorar\(/);
+  assert.match(
+    readFileSync(new URL("../../app/explorar/hooks/use-explorar-initial-load.ts", import.meta.url), "utf8"),
+    /lerStorageUsuarioExplorar\(/,
+  );
   assert.match(storage, /localStorage\.getItem/);
 });

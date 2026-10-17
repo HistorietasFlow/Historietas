@@ -82,7 +82,11 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
     pagina,
     /import \{ Children, useEffect, useMemo, useRef, useState \} from "react";/,
   );
-  assert.match(pagina, /async function carregarExplorar\(\)/);
+  assert.match(pagina, /useExplorarInitialLoad\(\{/);
+  assert.match(
+    readFileSync(new URL("../../app/explorar/hooks/use-explorar-initial-load.ts", import.meta.url), "utf8"),
+    /async function carregarExplorar\(\)/,
+  );
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /carregarObrasPublicadasSupabase/);
   assert.match(

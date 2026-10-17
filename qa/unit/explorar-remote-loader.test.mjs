@@ -327,7 +327,11 @@ test("fronteira mant√©m queries, fallback e consumidores sem hooks ou autentica√
   }
   assert.match(pagina, /from "\.\/lib\/explorar-remote-loader"/);
   assert.match(pagina, /carregarObrasPublicadasSupabase\(/);
-  assert.match(pagina, /carregarColecoesUsuarioExplorar\(/);
+  assert.match(pagina, /useExplorarInitialLoad\(\{/);
+  assert.match(
+    ler("../../app/explorar/hooks/use-explorar-initial-load.ts"),
+    /carregarColecoesUsuarioExplorar\(userIdAtual\)/,
+  );
   assert.match(codigo, /\.eq\("publicado", true\)/);
   assert.match(codigo, /\.in\("id", \[\.\.\.obraIdsCatalogo\]\)/);
   assert.match(codigo, /carregarTodasPaginasPorLotesSupabase/);

@@ -64,3 +64,8 @@
 
 - Extraiu filtros, ordenações, agregação de autores e composição das seções para `app/explorar/lib/explorar-derived-utils.ts`.
 - Manteve os `useMemo` e suas dependências na página, preservando busca, coleções, regras 18+, pontuações, desempates, títulos e limites, sem mover efeitos, storage ou carregamento remoto.
+
+## Fase 853 — carregamento inicial do Explorar
+
+- Extraiu apenas o lifecycle inicial para `app/explorar/hooks/use-explorar-initial-load.ts`, mantendo estados e refs na página.
+- Preservou a ordem da autenticação, leitura e persistência locais, coleções, catálogo remoto, cancelamento e finalização do carregamento. Os demais lifecycles permaneceram na página.
