@@ -60,7 +60,7 @@ test("os corpos originais permanecem literais e a página preserva os estados e 
   assert.match(pagina, /criarAcoesInteracoesCapitulo\(\{[\s\S]*?curtidaCapituloSalvandoRef,[\s\S]*?salvoCapituloSalvandoRef,[\s\S]*?exigirLogin,[\s\S]*?setMetricasCapitulo,/);
   assert.doesNotMatch(pagina, /async function alternarCurtida\(/);
   assert.doesNotMatch(pagina, /async function alternarSalvo\(/);
-  assert.match(pagina, /async function alternarLido\(/);
+  assert.match(pagina, /const \{ alternarLido \} = criarAcaoProgressoLeituraCapitulo\(\{/);
   assert.match(pagina, /async function salvarRegistroCapituloSupabase\(/);
   assert.match(pagina, /const curtidaCapituloSalvandoRef = useRef\(false\)/);
   assert.match(pagina, /const salvoCapituloSalvandoRef = useRef\(false\)/);
