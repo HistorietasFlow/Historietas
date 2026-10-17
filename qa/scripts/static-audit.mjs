@@ -783,16 +783,22 @@ const chapterPage = fs.readFileSync(
   path.join(ROOT_DIR, "app/ler-capitulo/page.tsx"),
   "utf8"
 );
+const chapterInteractionPersistence = fs.readFileSync(
+  path.join(ROOT_DIR, "app/ler-capitulo/lib/ler-capitulo-interaction-persistence.ts"),
+  "utf8"
+);
 
 if (
   /criarChaveProtecao\(\s*"visualizacao_visitante"/m.test(viewRoute) &&
   viewRoute.includes('"registrar_visualizacao_obra"') &&
   viewRoute.includes('"registrar_visualizacao_capitulo"') &&
   workMetricUtils.includes('fetch("/api/visualizacoes"') &&
-  chapterPage.includes('fetch("/api/visualizacoes"') &&
+  chapterPage.includes('from "./lib/ler-capitulo-interaction-persistence"') &&
+  chapterInteractionPersistence.includes('fetch("/api/visualizacoes"') &&
   !workPage.includes('rpc("incrementar_visualizacao_obra"') &&
   !workMetricUtils.includes('rpc("incrementar_visualizacao_obra"') &&
-  !chapterPage.includes('"incrementar_visualizacao_capitulo"')
+  !chapterPage.includes('"incrementar_visualizacao_capitulo"') &&
+  !chapterInteractionPersistence.includes('"incrementar_visualizacao_capitulo"')
 ) {
   pass(
     "visualizações passam exclusivamente pelo servidor",
@@ -1092,7 +1098,7 @@ const metricsConsumerFiles = [
   "app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
   "app/painel-autor/page.tsx",
   "app/obra/[slug]/ObraDinamicaClient.tsx",
-  "app/ler-capitulo/page.tsx"
+  "app/ler-capitulo/lib/ler-capitulo-metrics.ts"
 ];
 const consumersOutsideMetricsContract = metricsConsumerFiles.filter(
   (relative) => {

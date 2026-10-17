@@ -17,8 +17,7 @@ import { supabase } from "../../lib/supabase/client";
 import DenunciaModal from "../../components/DenunciaModal";
 import AdultContentGate from "../../components/AdultContentGate";
 import { historietasThemeCss } from "../../lib/historietasTheme";
-import { criarSlugBase, formatarData, idObraSupabaseValido, obterNumeroSeguro } from "../../lib/utils";
-import { carregarMetricasConteudos } from "../../lib/metricas";
+import { criarSlugBase, formatarData, idObraSupabaseValido } from "../../lib/utils";
 import {
   acessoConteudo18Confirmado,
   ehClassificacao18,
@@ -47,6 +46,8 @@ import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
 import { useLerCapituloInteractionData, type MetricasCapituloLeitor } from "./hooks/use-ler-capitulo-interaction-data";
 import { useLerCapituloViewRegistration, useLerCapituloEntryActivity } from "./hooks/use-ler-capitulo-entry-lifecycle";
+import { incrementarVisualizacaoCapituloSupabase, salvarProgressoLeituraSupabase, salvarRegistroCapituloSupabase } from "./lib/ler-capitulo-interaction-persistence";
+import { metricasCapituloVazias, criarMetricasCapituloLocais, carregarMetricasCapituloSupabase, formatarContadorCapituloLeitor } from "./lib/ler-capitulo-metrics";
 import { criarAcoesComentariosCapitulo } from "./lib/ler-capitulo-comment-actions";
 import { criarAcoesInteracoesCapitulo } from "./lib/ler-capitulo-interaction-actions";
 import { criarAcaoProgressoLeituraCapitulo } from "./lib/ler-capitulo-reading-progress-action";
@@ -71,21 +72,6 @@ type TipoNotificacaoInteracaoCapitulo =
   | "curtida-capitulo"
   | "comentario-capitulo"
   | "curtida-comentario-capitulo";
-
-
-
-
-
-
-const metricasCapituloVazias: MetricasCapituloLeitor = {
-  totalVisualizacoes: 0,
-  totalCurtidas: 0,
-  totalSalvos: 0,
-  totalComentarios: 0,
-  curtiu: false,
-  salvo: false,
-  carregado: false,
-};
 
 const FONT_SCALE_LEGACY_VALUES: Record<TamanhoFonte, 1 | 3 | 5 | 7 | 10> = {
   1: 1,
@@ -255,98 +241,6 @@ function criarHrefLeituraCapituloLeitor(
   )}&capituloId=${encodeURIComponent(capituloId)}`;
 }
 
-async function incrementarVisualizacaoCapituloSupabase(
-  capituloId: string
-): Promise<number | null> {
-  const capituloIdLimpo = capituloId.trim();
-
-  if (!idObraSupabaseValido(capituloIdLimpo)) {
-    return null;
-  }
-
-  try {
-    const response = await fetch("/api/visualizacoes", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tipo: "capitulo",
-        conteudoId: capituloIdLimpo,
-      }),
-    });
-    const data = (await response.json().catch(() => null)) as
-      | { ok?: boolean; total?: unknown }
-      | null;
-
-    if (!response.ok || !data?.ok || typeof data.total !== "number") {
-      return null;
-    }
-
-    return Math.max(0, obterNumeroSeguro(data.total, 0));
-  } catch {
-    // A leitura continua mesmo se a contagem remota falhar.
-    return null;
-  }
-}
-
-async function salvarProgressoLeituraSupabase(
-  obra: ObraLocal,
-  capituloId: string,
-  lido: boolean
-) {
-  try {
-    const { data: dadosUsuario } = await supabase.auth.getUser();
-    const userId = dadosUsuario.user?.id || "";
-    const capituloIdLimpo = capituloId.trim();
-
-    if (
-      !userId ||
-      !idObraSupabaseValido(obra.id) ||
-      !capituloIdLimpo
-    ) {
-      return false;
-    }
-
-    if (!lido) {
-      const { error: erroDelete } = await supabase
-        .from("progresso_leitura")
-        .delete()
-        .eq("user_id", userId)
-        .eq("obra_id", obra.id)
-        .eq("capitulo_id", capituloIdLimpo);
-
-      if (erroDelete) {
-        throw erroDelete;
-      }
-
-      return true;
-    }
-
-    const payload = {
-      user_id: userId,
-      obra_id: obra.id,
-      capitulo_id: capituloIdLimpo,
-      progresso: calcularProgressoLeitura(obra.capitulos),
-      lido: true,
-      atualizado_em: new Date().toISOString(),
-    };
-
-    const { error: erroUpsert } = await supabase
-      .from("progresso_leitura")
-      .upsert(payload, {
-        onConflict: "user_id,obra_id,capitulo_id",
-      });
-
-    if (erroUpsert) {
-      throw erroUpsert;
-    }
-
-    return true;
-  } catch (error) {
-    console.warn("Não consegui salvar progresso de leitura no Supabase:", error);
-    return false;
-  }
-}
 
 type TipoAtividadeDiarioLeitor =
   | "comecou_ler"
@@ -403,114 +297,6 @@ async function registrarAtividadeDiarioLeitor({
     // O Diário é camada social. A leitura nunca deve travar se o log falhar.
     return false;
   }
-}
-
-
-async function salvarRegistroCapituloSupabase(
-  tabela: "curtidas_capitulos" | "salvos_capitulos",
-  capituloId: string,
-  ativo: boolean
-) {
-  try {
-    const { data: dadosUsuario } = await supabase.auth.getUser();
-    const userId = dadosUsuario.user?.id || "";
-
-    if (!userId || !capituloId.trim()) {
-      return false;
-    }
-
-    const { error: erroDelete } = await supabase
-      .from(tabela)
-      .delete()
-      .eq("user_id", userId)
-      .eq("capitulo_id", capituloId);
-
-    if (erroDelete) {
-      throw erroDelete;
-    }
-
-    if (!ativo) {
-      return true;
-    }
-
-    const payloadBase = {
-      user_id: userId,
-      capitulo_id: capituloId,
-    };
-
-    const { error: erroSemVisibilidade } = await supabase
-      .from(tabela)
-      .insert(payloadBase);
-
-    if (erroSemVisibilidade) {
-      throw erroSemVisibilidade;
-    }
-
-    return true;
-  } catch (error) {
-    console.warn(`Não consegui salvar registro em ${tabela}:`, error);
-    return false;
-  }
-}
-
-
-function criarMetricasCapituloLocais(
-  capitulo: CapituloLocal | null,
-  totalComentarios = 0
-): MetricasCapituloLeitor {
-  if (!capitulo) {
-    return metricasCapituloVazias;
-  }
-
-  return {
-    totalVisualizacoes: Math.max(0, capitulo.visualizacoes || 0),
-    totalCurtidas: capitulo.curtiu ? 1 : 0,
-    totalSalvos: capitulo.salvo ? 1 : 0,
-    totalComentarios,
-    curtiu: capitulo.curtiu,
-    salvo: capitulo.salvo,
-    carregado: false,
-  };
-}
-
-async function carregarMetricasCapituloSupabase(
-  capitulo: CapituloLocal,
-  totalComentariosFallback: number
-): Promise<MetricasCapituloLeitor> {
-  const capituloId = capitulo.id.trim();
-
-  if (!capituloId) {
-    return criarMetricasCapituloLocais(capitulo, totalComentariosFallback);
-  }
-
-  const contrato = await carregarMetricasConteudos({
-    capituloIds: [capituloId],
-  });
-  const metrica = contrato.capitulos.get(capituloId);
-
-  if (!contrato.carregado || !metrica) {
-    return {
-      ...criarMetricasCapituloLocais(capitulo, totalComentariosFallback),
-      carregado: true,
-    };
-  }
-
-  return {
-    totalVisualizacoes: metrica.visualizacoes,
-    totalCurtidas: metrica.interacoes.curtidas,
-    totalSalvos: metrica.interacoes.salvos,
-    totalComentarios: Math.max(
-      metrica.interacoes.comentarios,
-      totalComentariosFallback
-    ),
-    curtiu: metrica.usuario.curtiu,
-    salvo: metrica.usuario.salvou,
-    carregado: true,
-  };
-}
-
-function formatarContadorCapituloLeitor(valor: number) {
-  return Math.max(0, Math.round(valor)).toLocaleString("pt-BR");
 }
 
 async function salvarComentarioCapituloSupabase(

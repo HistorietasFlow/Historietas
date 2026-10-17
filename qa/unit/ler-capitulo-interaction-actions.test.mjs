@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-interaction-actions.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
+const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-interaction-persistence.ts");
 const js = typescript.transpileModule(fonte, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
@@ -61,7 +62,9 @@ test("os corpos originais permanecem literais e a página preserva os estados e 
   assert.doesNotMatch(pagina, /async function alternarCurtida\(/);
   assert.doesNotMatch(pagina, /async function alternarSalvo\(/);
   assert.match(pagina, /const \{ alternarLido \} = criarAcaoProgressoLeituraCapitulo\(\{/);
-  assert.match(pagina, /async function salvarRegistroCapituloSupabase\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-interaction-persistence";/);
+  assert.match(persistencia, /export async function salvarRegistroCapituloSupabase\(/);
+  assert.doesNotMatch(pagina, /async function salvarRegistroCapituloSupabase\(/);
   assert.match(pagina, /const curtidaCapituloSalvandoRef = useRef\(false\)/);
   assert.match(pagina, /const salvoCapituloSalvandoRef = useRef\(false\)/);
   assert.doesNotMatch(fonte, /\b(?:useState|useEffect|useRef|supabase|localStorage)\b/);
