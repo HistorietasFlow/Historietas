@@ -33,11 +33,7 @@ import {
   salvarCurtidaComentarioCapituloLocal,
   salvarObrasPreservandoContas,
 } from "./lib/ler-capitulo-local-storage";
-import {
-  carregarPreferenciasLeitura,
-  FONT_SCALE_VALUES,
-  salvarPreferenciasLeitura,
-} from "./lib/ler-capitulo-reading-preferences";
+import { FONT_SCALE_VALUES } from "./lib/ler-capitulo-reading-preferences";
 import {
   carregarComentariosCapituloSupabase,
   carregarPerfilComentarioLeitor,
@@ -51,6 +47,7 @@ import {
   type ObraLocal,
 } from "./lib/ler-capitulo-work-normalization";
 import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load";
+import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
 import { criarAcoesComentariosCapitulo } from "./lib/ler-capitulo-comment-actions";
 import { criarAcoesInteracoesCapitulo } from "./lib/ler-capitulo-interaction-actions";
 import { criarAcaoProgressoLeituraCapitulo } from "./lib/ler-capitulo-reading-progress-action";
@@ -681,104 +678,17 @@ export default function LerCapituloPage() {
     };
   }, [mostrarComentario]);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarUsuarioLogado() {
-      try {
-        const { data } = await supabase.auth.getUser();
-
-        if (!cancelado) {
-          setUsuarioIdLogado(data.user?.id || "");
-        }
-      } catch {
-        if (!cancelado) {
-          setUsuarioIdLogado("");
-        }
-      }
-    }
-
-    void carregarUsuarioLogado();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelado) {
-        setUsuarioIdLogado(session?.user?.id || "");
-      }
-    });
-
-    return () => {
-      cancelado = true;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-
-
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarPerfilComentario() {
-      if (!usuarioIdLogado) {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setPerfilComentarioLeitor({
-              userId: "",
-              nome: "Usuário",
-              avatar: "",
-            });
-          }
-        }, 0);
-        return;
-      }
-
-      const perfil = await carregarPerfilComentarioLeitor(usuarioIdLogado);
-
-      if (!cancelado) {
-        setPerfilComentarioLeitor(perfil);
-      }
-    }
-
-    void carregarPerfilComentario();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [usuarioIdLogado]);
-
-  useEffect(() => {
-    if (!usuarioIdLogado.trim()) {
-      return;
-    }
-
-    const carregarPreferenciasTimer = window.setTimeout(() => {
-      const preferencias = carregarPreferenciasLeitura(usuarioIdLogado);
-
-      setTamanhoFonte(preferencias.tamanhoFonte);
-      setMostrarLinhaProgresso(preferencias.mostrarLinhaProgresso);
-      setPreferenciasCarregadas(true);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(carregarPreferenciasTimer);
-    };
-  }, [usuarioIdLogado]);
-
-  useEffect(() => {
-    if (!preferenciasCarregadas) {
-      return;
-    }
-
-    salvarPreferenciasLeitura(
-      {
-        tamanhoFonte,
-        mostrarLinhaProgresso,
-        versaoTamanhoFonte: 2,
-      },
-      usuarioIdLogado
-    );
-  }, [preferenciasCarregadas, tamanhoFonte, mostrarLinhaProgresso, usuarioIdLogado]);
+  useLerCapituloSessionPreferences({
+    usuarioIdLogado,
+    tamanhoFonte,
+    mostrarLinhaProgresso,
+    preferenciasCarregadas,
+    setUsuarioIdLogado,
+    setPerfilComentarioLeitor,
+    setTamanhoFonte,
+    setMostrarLinhaProgresso,
+    setPreferenciasCarregadas,
+  });
 
   useLerCapituloInitialLoad({
     setObraId,

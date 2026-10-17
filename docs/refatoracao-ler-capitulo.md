@@ -85,3 +85,8 @@
 
 - Isolou o efeito de carregamento inicial de obra e capítulo em um hook dedicado, mantendo os estados na página.
 - Preservou a autenticação, permissões, capítulos publicados, dados locais e remotos, persistência, temporização, cancelamento e tratamento de erros, sem alteração intencional de comportamento.
+
+## Fase 840 — Sessão, perfil e preferências do leitor
+
+- Agrupou os efeitos de sessão, perfil de comentário e preferências de leitura em um hook dedicado, mantendo os estados na página.
+- Preservou autenticação, cancelamento, assinatura, temporização, dependências, defaults e storage por usuário, sem alteração intencional de comportamento.
