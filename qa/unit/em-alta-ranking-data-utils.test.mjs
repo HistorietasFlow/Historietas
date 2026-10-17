@@ -17,6 +17,7 @@ import "./em-alta-header.test.mjs";
 import "./em-alta-page-decorations.test.mjs";
 import "./em-alta-page-shell.test.mjs";
 import "./use-em-alta-ranking-derived-data.test.mjs";
+import "./em-alta-page-display-utils.test.mjs";
 
 const modulo = readFileSync(new URL("../../app/em-alta/lib/em-alta-ranking-data-utils.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/em-alta/page.tsx", import.meta.url), "utf8");
