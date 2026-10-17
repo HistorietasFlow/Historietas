@@ -106,7 +106,8 @@ test("corpo do efeito é literalmente equivalente à base e permanece isolado", 
   }
   assert.match(pagina, /supabase\.auth\.onAuthStateChange/);
   assert.match(pagina, /async function carregarDadosAutores\(/);
-  assert.match(pagina, /consultaCatalogoRef/);
+  assert.match(pagina, /useExplorarCatalogQuery\(\{/);
+  assert.match(ler("../../app/explorar/hooks/use-explorar-catalog-query.ts"), /consultaCatalogoRef/);
   assert.doesNotMatch(codigo, /onAuthStateChange|carregarDadosAutores|consultaCatalogoRef/);
 });
 

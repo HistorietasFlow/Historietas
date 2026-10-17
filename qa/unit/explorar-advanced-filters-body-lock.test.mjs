@@ -88,7 +88,11 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
     /async function carregarExplorar\(\)/,
   );
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /carregarObrasPublicadasSupabase/);
+  assert.match(pagina, /useExplorarCatalogQuery\(\{/);
+  assert.match(
+    readFileSync(new URL("../../app/explorar/hooks/use-explorar-catalog-query.ts", import.meta.url), "utf8"),
+    /carregarObrasPublicadasSupabase\(/,
+  );
   assert.match(
     readFileSync(new URL("../../app/explorar/lib/explorar-remote-loader.ts", import.meta.url), "utf8"),
     /listarSelecaoCatalogo/,

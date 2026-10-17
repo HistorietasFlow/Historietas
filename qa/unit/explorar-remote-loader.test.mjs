@@ -325,8 +325,9 @@ test("fronteira mant√©m queries, fallback e consumidores sem hooks ou autentica√
     assert.match(codigo, new RegExp(`export async function ${nome}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`async function ${nome}\\(`));
   }
-  assert.match(pagina, /from "\.\/lib\/explorar-remote-loader"/);
-  assert.match(pagina, /carregarObrasPublicadasSupabase\(/);
+  assert.match(ler("../../app/explorar/hooks/use-explorar-catalog-query.ts"), /from "\.\.\/lib\/explorar-remote-loader"/);
+  assert.match(pagina, /useExplorarCatalogQuery\(\{/);
+  assert.match(ler("../../app/explorar/hooks/use-explorar-catalog-query.ts"), /carregarObrasPublicadasSupabase\(/);
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.match(
     ler("../../app/explorar/hooks/use-explorar-initial-load.ts"),
