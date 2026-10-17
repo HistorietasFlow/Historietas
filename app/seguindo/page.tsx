@@ -44,6 +44,7 @@ import {
   obterTotalSalvosObraSeguindo,
 } from "./lib/seguindo-work-metrics-utils";
 import { normalizarObraSalva } from "./lib/seguindo-saved-work-utils";
+import { carregarDadosLocaisSeguindo } from "./lib/seguindo-local-data-utils";
 import { carregarSeguindoSupabase } from "./lib/seguindo-work-loader";
 import {
   dataAtividadeObra,
@@ -68,7 +69,6 @@ import {
   FAVORITES_STORAGE_KEY,
   FOLLOW_STORAGE_KEY,
   STORAGE_KEY,
-  lerJsonStorageUsuarioSeguindo,
   salvarJsonStorageUsuarioSeguindo,
 } from "./lib/seguindo-storage-utils";
 
@@ -249,72 +249,13 @@ export default function SeguindoPage() {
       setCarregando(true);
     }, 0);
 
-    let obrasNormalizadas: ObraLocal[] = [];
-    let seguindoNormalizado: string[] = [];
-    let autoresNormalizados: string[] = [];
-    let favoritasNormalizadas: string[] = [];
-    let concluidasNormalizadas: string[] = [];
-
-    try {
-      const obrasJson = lerJsonStorageUsuarioSeguindo(STORAGE_KEY, usuarioLogadoId);
-
-      obrasNormalizadas = Array.isArray(obrasJson)
-        ? (obrasJson as ObraSalva[]).map((obra, obraIndex) =>
-            normalizarObraSalva(obra, obraIndex)
-          )
-        : [];
-
-      const seguindoJson = lerJsonStorageUsuarioSeguindo(
-        FOLLOW_STORAGE_KEY,
-        usuarioLogadoId
-      );
-
-      seguindoNormalizado = Array.isArray(seguindoJson)
-        ? normalizarListaTexto(
-            seguindoJson.filter((id): id is string => typeof id === "string")
-          )
-        : [];
-
-      const autoresJson = lerJsonStorageUsuarioSeguindo(
-        AUTHOR_FOLLOW_STORAGE_KEY,
-        usuarioLogadoId
-      );
-
-      autoresNormalizados = Array.isArray(autoresJson)
-        ? autoresJson
-            .filter((autor): autor is string => typeof autor === "string")
-            .map((autor) => normalizarNomeAutor(autor))
-        : [];
-
-      const favoritasJson = lerJsonStorageUsuarioSeguindo(
-        FAVORITES_STORAGE_KEY,
-        usuarioLogadoId
-      );
-
-      favoritasNormalizadas = Array.isArray(favoritasJson)
-        ? normalizarListaTexto(
-            favoritasJson.filter((id): id is string => typeof id === "string")
-          )
-        : [];
-
-      const concluidasJson = lerJsonStorageUsuarioSeguindo(
-        COMPLETED_STORAGE_KEY,
-        usuarioLogadoId
-      );
-
-      concluidasNormalizadas = Array.isArray(concluidasJson)
-        ? normalizarListaTexto(
-            concluidasJson.filter((id): id is string => typeof id === "string")
-          )
-        : [];
-
-    } catch {
-      obrasNormalizadas = [];
-      seguindoNormalizado = [];
-      autoresNormalizados = [];
-      favoritasNormalizadas = [];
-      concluidasNormalizadas = [];
-    }
+    let {
+      obras: obrasNormalizadas,
+      obrasSeguidas: seguindoNormalizado,
+      autoresSeguidos: autoresNormalizados,
+      obrasFavoritas: favoritasNormalizadas,
+      obrasConcluidas: concluidasNormalizadas,
+    } = carregarDadosLocaisSeguindo(usuarioLogadoId);
 
     window.setTimeout(() => {
       setObras(obrasNormalizadas);
