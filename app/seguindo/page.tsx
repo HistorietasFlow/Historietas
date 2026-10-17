@@ -20,7 +20,7 @@ import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
-  mesclarIdsColecaoSeguindo,
+  criarResultadoColecoesSeguindo,
   mesclarObrasSeguindo,
   obraEstaNaLista,
   removerObraDaLista,
@@ -227,12 +227,12 @@ async function carregarSeguindoSupabase(
       .filter((obraId) => Boolean(obraId));
 
     if (obraIds.length === 0) {
-      return {
+      return criarResultadoColecoesSeguindo({
         obras: obrasLocais,
-        obrasSeguidas: obrasSeguidasLocais,
-        obrasFavoritas: obrasFavoritasLocais,
-        obrasConcluidas: obrasConcluidasLocais,
-      };
+        obrasSeguidasLocais,
+        obrasFavoritasLocais,
+        obrasConcluidasLocais,
+      });
     }
 
     const capitulosSupabaseBanco =
@@ -275,30 +275,24 @@ async function carregarSeguindoSupabase(
 
     const obrasMescladas = mesclarObrasSeguindo(obrasLocais, obrasSupabase);
 
-    return {
+    return criarResultadoColecoesSeguindo({
       obras: obrasMescladas,
-      obrasSeguidas: mesclarIdsColecaoSeguindo(
-        obrasSeguidasLocais,
-        seguidasSupabase,
-      ),
-      obrasFavoritas: mesclarIdsColecaoSeguindo(
-        obrasFavoritasLocais,
-        favoritasSupabase,
-      ),
-      obrasConcluidas: mesclarIdsColecaoSeguindo(
-        obrasConcluidasLocais,
-        concluidasSupabase,
-      ),
-    };
+      obrasSeguidasLocais,
+      obrasFavoritasLocais,
+      obrasConcluidasLocais,
+      obrasSeguidasRemotas: seguidasSupabase,
+      obrasFavoritasRemotas: favoritasSupabase,
+      obrasConcluidasRemotas: concluidasSupabase,
+    });
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Seguindo:", error);
 
-    return {
+    return criarResultadoColecoesSeguindo({
       obras: obrasLocais,
-      obrasSeguidas: obrasSeguidasLocais,
-      obrasFavoritas: obrasFavoritasLocais,
-      obrasConcluidas: obrasConcluidasLocais,
-    };
+      obrasSeguidasLocais,
+      obrasFavoritasLocais,
+      obrasConcluidasLocais,
+    });
   }
 }
 
