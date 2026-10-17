@@ -45,3 +45,8 @@
 
 - Extraiu os modelos e as transformações puras de obras, capítulos, arquivos e progresso, incluindo a composição dos dados locais e remotos, para um módulo dedicado.
 - Preservou os fallbacks e a ordem da implementação; consultas Supabase, autenticação, storage, efeitos e mutações continuam na página, sem mudança intencional de comportamento.
+
+## Fase 832 — Composição visual principal do leitor
+
+- Extraiu a composição do cabeçalho, ajustes, conteúdo do capítulo, ações e navegação para um componente dedicado, mantendo as 368 linhas de JSX literalmente iguais.
+- Estados, callbacks, acesso, autenticação, storage, consultas e mutações permanecem na página; sem mudança intencional de comportamento ou apresentação.
