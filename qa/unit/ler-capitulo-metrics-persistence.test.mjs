@@ -8,6 +8,7 @@ const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").repla
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-interaction-persistence.ts");
 const metricas = ler("../../app/ler-capitulo/lib/ler-capitulo-metrics.ts");
+const social = ler("../../app/ler-capitulo/lib/ler-capitulo-social-persistence.ts");
 const transpilar = (codigo) => typescript.transpileModule(codigo, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
@@ -40,9 +41,12 @@ test("os seis helpers preservam literalmente os corpos e a nova fronteira", () =
   }
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-interaction-persistence";/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-metrics";/);
-  for (const mantido of ["marcarNotificacaoCapituloComoLidaSupabase", "registrarAtividadeDiarioLeitor", "salvarComentarioCapituloSupabase"]) {
-    assert.match(pagina, new RegExp(`async function ${mantido}\\(`));
-    assert.doesNotMatch(persistencia + metricas, new RegExp(`function ${mantido}\\(`));
+  assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.doesNotMatch(persistencia + metricas, /function salvarComentarioCapituloSupabase\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-social-persistence"/);
+  for (const movido of ["marcarNotificacaoCapituloComoLidaSupabase", "registrarAtividadeDiarioLeitor"]) {
+    assert.match(social, new RegExp(`export async function ${movido}\\(`));
+    assert.doesNotMatch(persistencia + metricas, new RegExp(`function ${movido}\\(`));
   }
 });
 

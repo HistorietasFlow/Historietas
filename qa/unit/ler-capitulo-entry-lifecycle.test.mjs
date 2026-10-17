@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-entry-lifecycle.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
+const social = ler("../../app/ler-capitulo/lib/ler-capitulo-social-persistence.ts");
 const mockada = fonte
   .replace('import { useEffect } from "react";', 'const useEffect = (...args) => globalThis.__entradaLeitor.useEffect(...args);')
   .replace('import { idObraSupabaseValido } from "../../../lib/utils";', 'const idObraSupabaseValido = (...args) => globalThis.__entradaLeitor.idValido(...args);');
@@ -73,8 +74,10 @@ test("dependências e ordem dos efeitos entre comentários e scroll permanecem n
   const atividade = pagina.indexOf("  useLerCapituloEntryActivity({", scroll);
   assert.ok(visualizacao >= 0 && comentario > visualizacao && scroll > comentario && atividade > scroll);
   assert.doesNotMatch(pagina, /async function registrarVisualizacaoCapituloAtual\(/);
-  assert.match(pagina, /async function marcarNotificacaoCapituloComoLidaSupabase\(/);
-  assert.match(pagina, /async function registrarAtividadeDiarioLeitor\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-social-persistence"/);
+  assert.match(social, /export async function marcarNotificacaoCapituloComoLidaSupabase\(/);
+  assert.match(social, /export async function registrarAtividadeDiarioLeitor\(/);
+  assert.doesNotMatch(pagina, /async function (?:marcarNotificacaoCapituloComoLidaSupabase|registrarAtividadeDiarioLeitor)\(/);
   await cenario({}, async ({ efeitos }) => {
     assert.deepEqual(efeitos.map(({ deps }) => deps), [[capitulo, "permitido"], ["usuario-1", obra, capitulo, 3, "permitido"]]);
   });
