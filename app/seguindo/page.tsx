@@ -21,7 +21,7 @@ import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sh
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
   criarResultadoColecoesSeguindo,
-  mesclarObrasSeguindo,
+  finalizarObrasSeguindo,
   obraEstaNaLista,
   removerObraDaLista,
 } from "./lib/seguindo-work-collection-utils";
@@ -273,10 +273,9 @@ async function carregarSeguindoSupabase(
       totaisReais,
     });
 
-    const obrasMescladas = mesclarObrasSeguindo(obrasLocais, obrasSupabase);
-
-    return criarResultadoColecoesSeguindo({
-      obras: obrasMescladas,
+    return finalizarObrasSeguindo({
+      obrasLocais,
+      obrasRemotas: obrasSupabase,
       obrasSeguidasLocais,
       obrasFavoritasLocais,
       obrasConcluidasLocais,
