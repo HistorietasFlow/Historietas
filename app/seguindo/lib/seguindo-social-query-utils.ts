@@ -299,3 +299,151 @@ export async function carregarUsuariosSeguidoresSupabase(userId: string) {
     return [] as UsuarioSocialSeguindo[];
   }
 }
+
+type SolicitacaoSocialSeguindo = {
+  id: string;
+  usuario: UsuarioSocialSeguindo;
+  criadoEm: string;
+};
+
+export async function carregarSolicitacoesSeguidoresSupabase(
+  userId: string,
+): Promise<SolicitacaoSocialSeguindo[]> {
+  const userIdLimpo = userId.trim();
+
+  if (!idUsuarioSupabaseValido(userIdLimpo)) {
+    return [];
+  }
+
+  try {
+    const { data: solicitacoesData, error: solicitacoesError } = await supabase
+      .from("solicitacoes_seguidores")
+      .select("id,solicitante_id,criado_em")
+      .eq("destinatario_id", userIdLimpo)
+      .order("criado_em", { ascending: false })
+      .limit(120);
+
+    if (solicitacoesError || !Array.isArray(solicitacoesData)) {
+      return [];
+    }
+
+    const registrosSolicitacoes = normalizarRegistrosSupabaseGenericos(
+      solicitacoesData,
+    );
+    const solicitantesIds = Array.from(
+      new Set(
+        registrosSolicitacoes
+          .map((registro) => obterTextoRegistro(registro, "solicitante_id"))
+          .filter(
+            (solicitanteId) =>
+              idUsuarioSupabaseValido(solicitanteId) &&
+              solicitanteId !== userIdLimpo,
+          ),
+      ),
+    );
+
+    if (solicitantesIds.length === 0) {
+      return [];
+    }
+
+    const profilesPorUsuario = new Map<string, RegistroSupabaseGenerico>();
+
+    try {
+      const { data: profilesData } = await supabase
+        .from("profiles_publicos")
+        .select("id,user_id,nome,username,avatar_url,bio,sobre_bio")
+        .in("user_id", solicitantesIds)
+        .limit(120);
+
+      if (Array.isArray(profilesData)) {
+        normalizarRegistrosSupabaseGenericos(profilesData).forEach((profile) => {
+          const profileUserId = obterTextoRegistro(profile, "user_id");
+
+          if (profileUserId) {
+            profilesPorUsuario.set(profileUserId, profile);
+          }
+        });
+      }
+    } catch {
+      // Algumas bases antigas usam id no lugar de user_id.
+    }
+
+    const usuariosSemProfile = solicitantesIds.filter(
+      (solicitanteId) => !profilesPorUsuario.has(solicitanteId),
+    );
+
+    if (usuariosSemProfile.length > 0) {
+      try {
+        const { data: profilesDataPorId } = await supabase
+          .from("profiles_publicos")
+          .select("id,user_id,nome,username,avatar_url,bio,sobre_bio")
+          .in("id", usuariosSemProfile)
+          .limit(120);
+
+        if (Array.isArray(profilesDataPorId)) {
+          normalizarRegistrosSupabaseGenericos(profilesDataPorId).forEach(
+            (profile) => {
+              const profileUserId =
+                obterTextoRegistro(profile, "user_id") ||
+                obterTextoRegistro(profile, "id");
+
+              if (profileUserId) {
+                profilesPorUsuario.set(profileUserId, profile);
+              }
+            },
+          );
+        }
+      } catch {
+        // O perfil básico continua disponível com valores padrão.
+      }
+    }
+
+    return registrosSolicitacoes
+      .map((registro) => {
+        const solicitacaoId = obterTextoRegistro(registro, "id");
+        const solicitanteId = obterTextoRegistro(registro, "solicitante_id");
+
+        if (
+          !idUsuarioSupabaseValido(solicitacaoId) ||
+          !idUsuarioSupabaseValido(solicitanteId)
+        ) {
+          return null;
+        }
+
+        const profile = profilesPorUsuario.get(solicitanteId);
+        const nome = obterNomeProfileSeguindo(profile) || "Usuário";
+        const handleSalvo =
+          obterTextoRegistro(profile || {}, "username") ||
+          obterTextoRegistro(profile || {}, "nome_usuario") ||
+          obterTextoRegistro(profile || {}, "apelido");
+        const usuario: UsuarioSocialSeguindo = {
+          id: solicitanteId,
+          nome: nome.slice(0, 80),
+          handle: criarHandleUsuarioSeguindo(
+            nome,
+            handleSalvo,
+            solicitanteId,
+          ),
+          bio: (
+            obterBioProfileSeguindo(profile) ||
+            "Perfil de leitor no Historietas."
+          ).slice(0, 140),
+          avatar: obterAvatarProfileSeguindo(profile),
+          criadoEm: obterTextoRegistro(registro, "criado_em"),
+        };
+
+        return {
+          id: solicitacaoId,
+          usuario,
+          criadoEm: obterTextoRegistro(registro, "criado_em"),
+        } satisfies SolicitacaoSocialSeguindo;
+      })
+      .filter(
+        (solicitacao): solicitacao is SolicitacaoSocialSeguindo =>
+          Boolean(solicitacao),
+      );
+  } catch (error) {
+    console.warn("Não consegui carregar solicitações de seguidores:", error);
+    return [];
+  }
+}
