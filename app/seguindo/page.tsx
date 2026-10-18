@@ -20,6 +20,14 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import {
+  suggestedUserFollowButtonStyle,
+  suggestedUserRequestPendingButtonStyle,
+  followRequestContentStyle,
+  followRequestActionsStyle,
+  followRequestAcceptButtonStyle,
+  followRequestDeclineButtonStyle,
+} from "./lib/seguindo-suggested-user-action-styles";
 import { suggestedUsersLoadingStyle, suggestedUserInfoStyle, suggestedUserNameStyle, suggestedUserHandleStyle } from "./lib/seguindo-suggested-user-text-styles";
 import { seguindoHeaderFilterIconStyle } from "./lib/seguindo-header-icon-style";
 import { seguindoSearchToggleStyle, seguindoHeaderFilterButtonStyle, desktopSeguindoHeaderFilterButtonStyle } from "./lib/seguindo-header-controls-styles";
@@ -1662,63 +1670,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const suggestedUserFollowButtonStyle: CSSProperties = {
-  minWidth: "76px",
-  minHeight: "30px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  alignSelf: "center",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
-  padding: "0 12px",
-  fontFamily: "inherit",
-  fontSize: "10px",
-  fontWeight: 950,
-  whiteSpace: "nowrap",
-};
-
-const suggestedUserRequestPendingButtonStyle: CSSProperties = {
-  ...suggestedUserFollowButtonStyle,
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
-  background: "var(--historietas-seguindo-surface, #0A0A0A)",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-};
-
-const followRequestContentStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  minWidth: 0,
-};
-
-const followRequestActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "6px",
-  flex: "0 0 auto",
-};
-
-const followRequestAcceptButtonStyle: CSSProperties = {
-  ...suggestedUserFollowButtonStyle,
-  minWidth: "68px",
-  minHeight: "28px",
-  padding: "0 10px",
-};
-
-const followRequestDeclineButtonStyle: CSSProperties = {
-  ...followRequestAcceptButtonStyle,
-  border: "1px solid var(--historietas-seguindo-danger-border, rgba(239,68,68,0.18))",
-  background: "var(--historietas-seguindo-danger-bg, rgba(239,68,68,0.075))",
-  color: "var(--historietas-seguindo-danger-text, #FCA5A5)",
-};
-
-
 
 const socialToolbarStyle: CSSProperties = {
   display: "grid",
