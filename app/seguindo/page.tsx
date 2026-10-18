@@ -19,6 +19,18 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import type {
+  CapituloLocal,
+  ObraLocal,
+  AutorSeguido,
+  UsuarioSeguido,
+  SolicitacaoSeguidor,
+  AtividadeSeguindo,
+  FiltroSeguindo,
+  AbaSeguimentoPagina,
+  OrdenacaoSeguindo,
+  AbaConteudoSeguindo,
+} from "./lib/seguindo-page-types";
 import { authorNameStyle } from "./lib/seguindo-author-name-style";
 import { desktopAuthorAvatarStyle, desktopAuthorFollowedCardStyle, desktopAuthorFollowedAvatarStyle } from "./lib/seguindo-desktop-author-avatar-styles";
 import {
@@ -145,112 +157,6 @@ import {
   criarHrefPerfilAutorSeguindo,
   criarHrefPerfilUsuarioSeguindo,
 } from "./lib/seguindo-route-utils";
-
-type CapituloLocal = {
-  id: string;
-  titulo: string;
-  texto: string;
-  curtiu: boolean;
-  salvo: boolean;
-  comentario: string;
-  criadoEm: string;
-  lido: boolean;
-  lidoEm: string;
-  publicado?: boolean;
-};
-
-type ObraLocal = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId?: string;
-  genero: string;
-  formato: string;
-  classificacaoIndicativa: string;
-  sinopse: string;
-  tags: string[];
-  capa: string;
-  capaNome: string;
-  publicado: boolean;
-  capitulos: CapituloLocal[];
-  criadaEm: string;
-  ultimoCapituloLidoId: string;
-  ultimaLeituraEm: string;
-  progressoLeitura: number;
-  slug: string;
-  link: string;
-  totalCurtidas?: number;
-  totalComentarios?: number;
-  totalSalvos?: number;
-  totalLidos?: number;
-  totalSeguidores?: number;
-  totalFavoritas?: number;
-  totalConcluidas?: number;
-};
-
-type AutorSeguido = {
-  chave: string;
-  nome: string;
-  autorId: string;
-  obras: ObraLocal[];
-  totalCapitulos: number;
-  totalPublicadas: number;
-  totalRascunhos: number;
-  totalCurtidas: number;
-  totalComentarios: number;
-  totalSalvos: number;
-  totalFavoritas: number;
-  totalConcluidas: number;
-  totalComClassificacao: number;
-  totalLidos: number;
-  totalEmLeitura: number;
-  progressoMedio: number;
-};
-
-type UsuarioSeguido = {
-  id: string;
-  nome: string;
-  handle: string;
-  bio: string;
-  avatar: string;
-  criadoEm: string;
-};
-
-type SolicitacaoSeguidor = {
-  id: string;
-  usuario: UsuarioSeguido;
-  criadoEm: string;
-};
-
-type AtividadeSeguindo = {
-  id: string;
-  usuarioId: string;
-  usuarioNome: string;
-  usuarioHandle: string;
-  usuarioAvatar: string;
-  tipo: string;
-  tipoRotulo: string;
-  titulo: string;
-  descricao: string;
-  data: string;
-  href: string;
-};
-
-
-type FiltroSeguindo =
-  | "todos"
-  | "obras"
-  | "autores"
-  | "usuarios"
-  | "em-leitura"
-  | "favoritas"
-  | "concluidas";
-
-type AbaSeguimentoPagina = "seguidores" | "seguindo";
-
-type OrdenacaoSeguindo = "padrao" | "recentes" | "antigos" | "titulo" | "progresso" | "capitulos";
-
-type AbaConteudoSeguindo = "seguidores" | "obras" | "pessoas";
 
 export default function SeguindoPage() {
   const router = useRouter();
