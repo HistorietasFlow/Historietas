@@ -11,6 +11,8 @@ test("estilos dos controles de ordenação mantêm as referências", () => {
     assert.match(styles, new RegExp(`export const ${name}: CSSProperties =`));
     assert.doesNotMatch(page, new RegExp(`const ${name}: CSSProperties =`));
   }
+  assert.match(styles, /import \{ safeTextStyle \} from "\.\/seguindo-surface-styles";/);
+  assert.match(styles, /\.\.\.safeTextStyle/);
   assert.match(styles, /\.\.\.sortingOptionStyle/);
   assert.match(styles, /\.\.\.sortingOptionRadioStyle/);
 });
