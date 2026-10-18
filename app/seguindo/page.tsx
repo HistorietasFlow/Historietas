@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoRequestActionState } from "./hooks/use-seguindo-request-action-state";
 import { useSeguindoSuggestionState } from "./hooks/use-seguindo-suggestion-state";
 import { useSeguindoFollowTabState } from "./hooks/use-seguindo-follow-tab-state";
 import { useSeguindoAccessState } from "./hooks/use-seguindo-access-state";
@@ -173,12 +174,10 @@ export default function SeguindoPage() {
   const [solicitacoesEnviadasIds, setSolicitacoesEnviadasIds] = useState<
     string[]
   >([]);
-  const [solicitacaoRespondendoId, setSolicitacaoRespondendoId] = useState<
-    string | null
-  >(null);
-  const [usuarioListaAlterandoId, setUsuarioListaAlterandoId] = useState<
-    string | null
-  >(null);
+  const {
+    solicitacaoRespondendoId, setSolicitacaoRespondendoId,
+    usuarioListaAlterandoId, setUsuarioListaAlterandoId,
+  } = useSeguindoRequestActionState();
   const [, setAtividadesSeguindo] = useState<AtividadeSeguindo[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
