@@ -14,6 +14,20 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const followerActions = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-follower-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const userFollowActions = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-user-follow-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -153,7 +167,15 @@ test("rotas de perfil preservam parâmetros e fallbacks", () => {
 test("página delega rotas e validação ao módulo dedicado", () => {
   assert.match(
     pagina,
-    /criarHrefPerfilAutorSeguindo,[\s\S]*?criarHrefPerfilUsuarioSeguindo,[\s\S]*?idUsuarioSupabaseValido,[\s\S]*?from "\.\/lib\/seguindo-route-utils";/,
+    /criarHrefPerfilAutorSeguindo,[\s\S]*?criarHrefPerfilUsuarioSeguindo,[\s\S]*?from "\.\/lib\/seguindo-route-utils";/,
+  );
+  assert.match(
+    followerActions,
+    /import \{ idUsuarioSupabaseValido \} from "\.\.\/lib\/seguindo-route-utils";/,
+  );
+  assert.match(
+    userFollowActions,
+    /import \{ idUsuarioSupabaseValido \} from "\.\.\/lib\/seguindo-route-utils";/,
   );
   for (const nome of [
     "criarLoginHrefSeguindo",
