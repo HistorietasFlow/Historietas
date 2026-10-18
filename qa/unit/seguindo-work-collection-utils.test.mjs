@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const acoesObraAutor = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-work-author-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsSource = readFileSync(
   new URL("../../lib/utils.ts", import.meta.url),
   "utf8",
@@ -113,23 +120,27 @@ test("remoção elimina todas as chaves equivalentes e preserva as demais", () =
   );
 });
 
-test("página delega coleções de obra ao módulo dedicado", () => {
+test("página e hook delegam coleções de obra ao módulo dedicado", () => {
   assert.match(
     pagina,
-    /obraEstaNaLista,[\s\S]*?removerObraDaLista,[\s\S]*?from "\.\/lib\/seguindo-work-collection-utils";/,
+    /import \{ obraEstaNaLista \} from "\.\/lib\/seguindo-work-collection-utils";/,
+  );
+  assert.match(
+    acoesObraAutor,
+    /import \{ removerObraDaLista \} from "\.\.\/lib\/seguindo-work-collection-utils";/,
   );
   assert.doesNotMatch(
     pagina,
     /\bcriarChavesObra\b/,
   );
 
-  for (const nome of [
-    "criarChavesObra",
-    "obraEstaNaLista",
-    "removerObraDaLista",
+  for (const [nome, consumidor] of [
+    ["criarChavesObra", pagina],
+    ["obraEstaNaLista", pagina],
+    ["removerObraDaLista", acoesObraAutor],
   ]) {
     assert.doesNotMatch(
-      pagina,
+      consumidor,
       new RegExp(`function ${nome}\\(`),
     );
   }

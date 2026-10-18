@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const acoesObraAutor = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-work-author-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const dadosLocais = readFileSync(
   new URL(
     "../../app/seguindo/lib/seguindo-local-data-utils.ts",
@@ -122,17 +129,17 @@ test("escrita preserva chave por usuário, JSON e falhas silenciosas", () => {
   }
 });
 
-test("página e snapshot local delegam storage por usuário ao módulo dedicado", () => {
+test("consumidores delegam storage por usuário ao módulo dedicado", () => {
   assert.match(
-    pagina,
-    /salvarJsonStorageUsuarioSeguindo,[\s\S]*?from "\.\/lib\/seguindo-storage-utils";/,
+    acoesObraAutor,
+    /salvarJsonStorageUsuarioSeguindo,[\s\S]*?from "\.\.\/lib\/seguindo-storage-utils";/,
   );
   assert.match(
     dadosLocais,
     /lerJsonStorageUsuarioSeguindo,[\s\S]*?from "\.\/seguindo-storage-utils";/,
   );
 
-  for (const source of [pagina, dadosLocais]) {
+  for (const source of [pagina, dadosLocais, acoesObraAutor]) {
     assert.doesNotMatch(
       source,
       /function criarStorageKeyUsuarioSeguindo\(/,
