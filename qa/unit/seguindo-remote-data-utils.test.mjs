@@ -50,7 +50,7 @@ test("carregamento remoto preserva perfil social e consultas paralelas", () => {
 test("página delega o bloco remoto ao helper agregado", () => {
   assert.match(
     pagina,
-    /import \{ carregarDadosRemotosSeguindo \} from "\.\/lib\/seguindo-remote-data-utils";/,
+    /carregarDadosRemotosSeguindo,[\s\S]*?prepararDadosRemotosSeguindo,[\s\S]*?from "\.\/lib\/seguindo-remote-data-utils";/,
   );
   assert.match(
     pagina,
@@ -62,3 +62,32 @@ test("página delega o bloco remoto ao helper agregado", () => {
   assert.doesNotMatch(pagina, /carregarSolicitacoesSeguidoresSupabase/);
   assert.doesNotMatch(pagina, /carregarIdsSolicitacoesEnviadasSupabase/);
 });
+
+test("preparação remota preserva normalização e atividades", () => {
+  assert.match(
+    source,
+    /const obras = dadosSupabase\.obras\.map\(\(obra, index\) =>[\s\S]*?normalizarObraSalva\(/,
+  );
+  assert.match(
+    source,
+    /const atividades = await carregarAtividadesSeguindoSupabase\([\s\S]*?usuariosSeguidosSupabase,[\s\S]*?obras,[\s\S]*?usuarioLogadoId/,
+  );
+  for (const campo of [
+    "obrasSeguidas",
+    "obrasFavoritas",
+    "obrasConcluidas",
+  ]) {
+    assert.match(
+      source,
+      new RegExp(`${campo}: normalizarListaTexto\\(dadosSupabase\\.${campo}\\)`),
+    );
+  }
+
+  assert.match(
+    pagina,
+    /const dadosRemotosPreparados = await prepararDadosRemotosSeguindo\(\{[\s\S]*?dadosSupabase,[\s\S]*?usuariosSeguidosSupabase,[\s\S]*?usuarioLogadoId,[\s\S]*?\}\);/,
+  );
+  assert.doesNotMatch(pagina, /normalizarObraSalva/);
+  assert.doesNotMatch(pagina, /carregarAtividadesSeguindoSupabase/);
+});
+
