@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { safeTextStyle } from "./seguindo-surface-styles";
 
 export const seguindoSearchToggleStyle: CSSProperties = {
   appearance: "none",
