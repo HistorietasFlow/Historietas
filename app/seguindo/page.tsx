@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoProfileContextState } from "./hooks/use-seguindo-profile-context-state";
 import { useSeguindoSortingPanelState } from "./hooks/use-seguindo-sorting-panel-state";
 import { useSeguindoContentTabState } from "./hooks/use-seguindo-content-tab-state";
 import { useSeguindoFilterSortState } from "./hooks/use-seguindo-filter-sort-state";
@@ -196,8 +197,7 @@ export default function SeguindoPage() {
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const [, setAbaSeguimento] =
     useState<AbaSeguimentoPagina>("seguindo");
-  const [perfilSocialId, setPerfilSocialId] = useState("");
-  const [perfilSocialNome, setPerfilSocialNome] = useState("");
+  const { perfilSocialId, setPerfilSocialId, perfilSocialNome, setPerfilSocialNome } = useSeguindoProfileContextState();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useSeguindoSortingSheetBodyLock(mostrarPainelOrdenacao);
