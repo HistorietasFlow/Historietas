@@ -1,0 +1,55 @@
+import type { CSSProperties } from "react";
+
+export const sortingBackdropStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  height: "100dvh",
+  zIndex: 240,
+  background: "rgba(0,0,0,0.68)",
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  padding: 0,
+  boxSizing: "border-box",
+  overflow: "hidden",
+  overscrollBehavior: "none",
+  touchAction: "none",
+};
+
+export const sortingSheetStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  zIndex: 241,
+  width: "min(820px, 100%)",
+  maxHeight: "calc(100dvh - 116px)",
+  display: "grid",
+  gap: 0,
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
+  borderRadius: "24px 24px 0 0",
+  background: "var(--historietas-bg-start, var(--historietas-seguindo-bg-page, #070212))",
+  border: "none",
+  borderBottom: "0",
+  overflowY: "auto",
+  overflowX: "hidden",
+  overscrollBehavior: "none",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
+  boxSizing: "border-box",
+  touchAction: "none",
+};
+
+export const desktopSortingSheetStyle: CSSProperties = {
+  ...sortingSheetStyle,
+  left: "50%",
+  right: "auto",
+  bottom: "24px",
+  width: "min(560px, calc(100vw - 24px))",
+  maxWidth: "560px",
+  maxHeight: "82vh",
+  transform: "translateX(-50%)",
+  borderRadius: "24px",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  margin: 0,
+  paddingBottom: "18px",
+};
