@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoContentTabState } from "./hooks/use-seguindo-content-tab-state";
 import { useSeguindoFilterSortState } from "./hooks/use-seguindo-filter-sort-state";
 import { useSeguindoSearchState } from "./hooks/use-seguindo-search-state";
 import { useSeguindoFilteredFollowerRequests } from "./hooks/use-seguindo-filtered-follower-requests";
@@ -39,7 +40,6 @@ import type {
   SolicitacaoSeguidor,
   AtividadeSeguindo,
   AbaSeguimentoPagina,
-  AbaConteudoSeguindo,
 } from "./lib/seguindo-page-types";
 import { authorNameStyle } from "./lib/seguindo-author-name-style";
 import { desktopAuthorAvatarStyle, desktopAuthorFollowedCardStyle, desktopAuthorFollowedAvatarStyle } from "./lib/seguindo-desktop-author-avatar-styles";
@@ -188,8 +188,7 @@ export default function SeguindoPage() {
   const [usuarioSugestaoSeguindoId, setUsuarioSugestaoSeguindoId] =
     useState<string | null>(null);
   const { filtro, setFiltro, ordenacao, setOrdenacao } = useSeguindoFilterSortState();
-  const [abaConteudo, setAbaConteudo] =
-    useState<AbaConteudoSeguindo>("obras");
+  const { abaConteudo, setAbaConteudo } = useSeguindoContentTabState();
   const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
   const isDesktop = useSeguindoDesktopMode();
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
