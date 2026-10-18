@@ -10,6 +10,7 @@ import {
   FOLLOW_STORAGE_KEY,
   STORAGE_KEY,
   lerJsonStorageUsuarioSeguindo,
+  salvarJsonStorageUsuarioSeguindo,
 } from "./seguindo-storage-utils";
 
 type ObraSalvaEntrada = Record<string, unknown> & {
@@ -78,4 +79,42 @@ export function carregarDadosLocaisSeguindo(userId: string) {
       obrasConcluidas: [],
     };
   }
+}
+
+export function salvarDadosLocaisSeguindo({
+  userId,
+  obras,
+  obrasSeguidas,
+  autoresSeguidos,
+  obrasFavoritas,
+  obrasConcluidas,
+}: {
+  userId: string;
+  obras: unknown;
+  obrasSeguidas: string[];
+  autoresSeguidos: string[];
+  obrasFavoritas: string[];
+  obrasConcluidas: string[];
+}) {
+  salvarJsonStorageUsuarioSeguindo(STORAGE_KEY, userId, obras);
+  salvarJsonStorageUsuarioSeguindo(
+    FOLLOW_STORAGE_KEY,
+    userId,
+    obrasSeguidas,
+  );
+  salvarJsonStorageUsuarioSeguindo(
+    AUTHOR_FOLLOW_STORAGE_KEY,
+    userId,
+    autoresSeguidos,
+  );
+  salvarJsonStorageUsuarioSeguindo(
+    FAVORITES_STORAGE_KEY,
+    userId,
+    obrasFavoritas,
+  );
+  salvarJsonStorageUsuarioSeguindo(
+    COMPLETED_STORAGE_KEY,
+    userId,
+    obrasConcluidas,
+  );
 }
