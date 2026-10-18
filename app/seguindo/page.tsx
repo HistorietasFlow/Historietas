@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoFilteredUsers } from "./hooks/use-seguindo-filtered-users";
 import { useSeguindoFilteredAuthors } from "./hooks/use-seguindo-filtered-authors";
 import { useSeguindoFilteredWorks } from "./hooks/use-seguindo-filtered-works";
 import { useSeguindoAuthorsBase } from "./hooks/use-seguindo-authors-base";
@@ -25,7 +26,6 @@ import { seguindoPageCss } from "./lib/seguindo-page-css";
 import { calcularTotaisSeguindo } from "./lib/seguindo-list-counts";
 import { obterOpcoesOrdenacaoSeguindo } from "./lib/seguindo-sort-options";
 import { filtrarSolicitacoesSeguidores } from "./lib/seguindo-filtered-follower-requests";
-import { filtrarUsuariosSeguindo } from "./lib/seguindo-filtered-users";
 import { selecionarUsuariosBaseSocial } from "./lib/seguindo-social-users-selector";
 import { obterContextoListaSocial } from "./lib/seguindo-social-list-context";
 import { buscaSugestoesUsuariosEstaAtiva } from "./lib/seguindo-social-search-eligibility";
@@ -335,11 +335,8 @@ export default function SeguindoPage() {
     autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
   );
 
-  const usuariosFiltrados = useMemo<UsuarioSeguido[]>(
-    () => filtrarUsuariosSeguindo(
-      usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
-    ),
-    [usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil],
+  const usuariosFiltrados = useSeguindoFilteredUsers(
+    usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
   );
 
   const solicitacoesSeguidoresFiltradas = useMemo(
