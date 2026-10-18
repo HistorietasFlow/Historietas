@@ -1,0 +1,64 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+const source = readFileSync(
+  new URL(
+    "../../app/seguindo/lib/seguindo-remote-data-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const pagina = readFileSync(
+  new URL("../../app/seguindo/page.tsx", import.meta.url),
+  "utf8",
+);
+
+test("carregamento remoto preserva perfil social e consultas paralelas", () => {
+  assert.match(
+    source,
+    /const perfilIdParaListaSocial = perfilSocialId \|\| usuarioLogadoId;/,
+  );
+  assert.match(
+    source,
+    /const listaSocialEhDoUsuarioLogado =\s*!perfilSocialId \|\| perfilSocialId === usuarioLogadoId;/,
+  );
+  assert.match(source, /await Promise\.all\(\[/);
+  assert.match(source, /carregarSeguindoSupabase\(/);
+  assert.match(
+    source,
+    /perfilSocialId \? \[\] : obrasSeguidasLocais/,
+  );
+  assert.match(
+    source,
+    /carregarUsuariosSeguidosSupabase\(perfilIdParaListaSocial\)/,
+  );
+  assert.match(
+    source,
+    /carregarUsuariosSeguidoresSupabase\(perfilIdParaListaSocial\)/,
+  );
+  assert.match(
+    source,
+    /listaSocialEhDoUsuarioLogado[\s\S]*?carregarSolicitacoesSeguidoresSupabase\(usuarioLogadoId\)/,
+  );
+  assert.match(
+    source,
+    /listaSocialEhDoUsuarioLogado[\s\S]*?carregarIdsSolicitacoesEnviadasSupabase\(usuarioLogadoId\)/,
+  );
+});
+
+test("página delega o bloco remoto ao helper agregado", () => {
+  assert.match(
+    pagina,
+    /import \{ carregarDadosRemotosSeguindo \} from "\.\/lib\/seguindo-remote-data-utils";/,
+  );
+  assert.match(
+    pagina,
+    /await carregarDadosRemotosSeguindo\(\{[\s\S]*?obrasLocais: obrasNormalizadas,[\s\S]*?obrasSeguidasLocais: seguindoNormalizado,[\s\S]*?obrasFavoritasLocais: favoritasNormalizadas,[\s\S]*?obrasConcluidasLocais: concluidasNormalizadas,[\s\S]*?perfilSocialId,[\s\S]*?usuarioLogadoId,[\s\S]*?\}\);/,
+  );
+  assert.doesNotMatch(pagina, /carregarSeguindoSupabase/);
+  assert.doesNotMatch(pagina, /carregarUsuariosSeguidosSupabase/);
+  assert.doesNotMatch(pagina, /carregarUsuariosSeguidoresSupabase/);
+  assert.doesNotMatch(pagina, /carregarSolicitacoesSeguidoresSupabase/);
+  assert.doesNotMatch(pagina, /carregarIdsSolicitacoesEnviadasSupabase/);
+});
