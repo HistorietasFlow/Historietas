@@ -48,7 +48,7 @@ test("p\u00e1gina delega apenas o lifecycle e mant\u00e9m o painel de ordena\u00
   );
   assert.match(
     pagina,
-    /const \[mostrarPainelOrdenacao, setMostrarPainelOrdenacao\] = useState\(false\);/,
+    /const \{ mostrarPainelOrdenacao, setMostrarPainelOrdenacao \} = useSeguindoSortingPanelState\(\);/,
   );
   assert.match(
     pagina,
