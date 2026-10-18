@@ -18,6 +18,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { filtrarAutoresSeguindo } from "./lib/seguindo-filtered-authors";
 import { filtrarObrasSeguindo } from "./lib/seguindo-filtered-works";
 import { montarAutoresBaseSeguindo } from "./lib/seguindo-author-base-builder";
 import { filtrarObrasVisiveisSeguindo, filtrarObrasSeguidasBase } from "./lib/seguindo-visible-works";
@@ -349,50 +350,12 @@ export default function SeguindoPage() {
     [obrasSeguidasBase, termoBusca, filtro, ordenacao, obrasFavoritas, obrasConcluidas, abaConteudo],
   );
 
-  const autoresFiltrados = useMemo<AutorSeguido[]>(() => {
-    if (visualizandoListaSocialDoPerfil || abaConteudo !== "pessoas") {
-      return [] as AutorSeguido[];
-    }
-
-    const filtrados = autoresBase.filter((autor) => {
-      if (filtro === "obras" || filtro === "usuarios") {
-        return false;
-      }
-
-      const textoAutor = normalizarTexto(
-        [
-          autor.nome,
-          autor.obras.map((obra) => obra.titulo).join(" "),
-          autor.obras.map((obra) => obra.genero).join(" "),
-          autor.obras.map((obra) => formatarGeneroSeguindo(obra.genero)).join(" "),
-          autor.obras.map((obra) => obra.tags.join(" ")).join(" "),
-        ].join(" ")
-      );
-
-      const passaBusca = termoBusca ? textoAutor.includes(termoBusca) : true;
-
-      const passaFiltro =
-        filtro === "todos" ||
-        filtro === "autores" ||
-        (filtro === "em-leitura" && autor.totalEmLeitura > 0) ||
-        (filtro === "favoritas" && autor.totalFavoritas > 0) ||
-        (filtro === "concluidas" && autor.totalConcluidas > 0);
-
-      return passaBusca && passaFiltro;
-    });
-
-    return [...filtrados].sort((autorA, autorB) => {
-      if (ordenacao === "progresso") {
-        return autorB.progressoMedio - autorA.progressoMedio;
-      }
-
-      if (ordenacao === "capitulos") {
-        return autorB.totalCapitulos - autorA.totalCapitulos;
-      }
-
-      return autorA.nome.localeCompare(autorB.nome);
-    });
-  }, [autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil]);
+  const autoresFiltrados = useMemo<AutorSeguido[]>(
+    () => filtrarAutoresSeguindo(
+      autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
+    ),
+    [autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil],
+  );
 
   const usuariosFiltrados = useMemo<UsuarioSeguido[]>(() => {
     const filtrados = usuariosBaseSocial.filter((usuarioSeguido) => {
