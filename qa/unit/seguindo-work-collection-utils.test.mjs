@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const filtroObras = readFileSync(
+  new URL("../../app/seguindo/lib/seguindo-filtered-works.ts", import.meta.url),
+  "utf8",
+);
 const acoesObraAutor = readFileSync(
   new URL(
     "../../app/seguindo/hooks/use-seguindo-work-author-actions.ts",
@@ -122,8 +126,8 @@ test("remoção elimina todas as chaves equivalentes e preserva as demais", () =
 
 test("página e hook delegam coleções de obra ao módulo dedicado", () => {
   assert.match(
-    pagina,
-    /import \{ obraEstaNaLista \} from "\.\/lib\/seguindo-work-collection-utils";/,
+    filtroObras,
+    /import \{ obraEstaNaLista \} from "\.\/seguindo-work-collection-utils";/,
   );
   assert.match(
     acoesObraAutor,
@@ -136,7 +140,7 @@ test("página e hook delegam coleções de obra ao módulo dedicado", () => {
 
   for (const [nome, consumidor] of [
     ["criarChavesObra", pagina],
-    ["obraEstaNaLista", pagina],
+    ["obraEstaNaLista", filtroObras],
     ["removerObraDaLista", acoesObraAutor],
   ]) {
     assert.doesNotMatch(
