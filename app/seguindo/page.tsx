@@ -137,7 +137,6 @@ import {
   desktopTopWaterFadeStyle,
   mobileTopWaterFadeStyle,
 } from "./lib/seguindo-surface-styles";
-import { obraEstaNaLista } from "./lib/seguindo-work-collection-utils";
 import {
   formatarGeneroSeguindo,
 } from "./lib/seguindo-format-utils";
@@ -146,13 +145,9 @@ import {
   criarCoverStyle,
 } from "./lib/seguindo-image-style-utils";
 import {
-  calcularProgressoLeitura,
-  obraEmLeitura,
 } from "./lib/seguindo-work-metrics-utils";
 import {
-  dataAtividadeObra,
   mostrarClassificacao,
-  textoBuscaObra,
 } from "./lib/seguindo-work-presentation-utils";
 import {
   criarHrefPerfilAutorSeguindo,
