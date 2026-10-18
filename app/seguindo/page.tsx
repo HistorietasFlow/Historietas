@@ -19,6 +19,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { obterContextoListaSocial } from "./lib/seguindo-social-list-context";
 import { buscaSugestoesUsuariosEstaAtiva } from "./lib/seguindo-social-search-eligibility";
 import { obterPermissoesListaSocial } from "./lib/seguindo-social-list-permissions";
 import { obterRotulosListaSocial } from "./lib/seguindo-social-list-labels";
@@ -283,12 +284,8 @@ export default function SeguindoPage() {
   });
 
   const termoBusca = normalizarTexto(busca);
-  const listaSocialEhDoUsuarioLogado = Boolean(
-    usuarioLogadoId && (!perfilSocialId || perfilSocialId === usuarioLogadoId),
-  );
-  const visualizandoListaSocialDoPerfil = Boolean(
-    perfilSocialId && perfilSocialId !== usuarioLogadoId,
-  );
+  const { listaSocialEhDoUsuarioLogado, visualizandoListaSocialDoPerfil } =
+    obterContextoListaSocial(usuarioLogadoId, perfilSocialId);
   const trocarAbaConteudo = useSeguindoContentTabNavigation({
     perfilSocialId,
     perfilSocialNome,
