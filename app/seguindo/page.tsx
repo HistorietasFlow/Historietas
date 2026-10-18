@@ -19,6 +19,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { obterRotulosListaSocial } from "./lib/seguindo-social-list-labels";
 import type {
   ObraLocal,
   AutorSeguido,
@@ -305,15 +306,10 @@ export default function SeguindoPage() {
   );
   const usuariosBaseSocial =
     abaConteudo === "seguidores" ? usuariosSeguidores : usuariosSeguidos;
-  const tituloListaSocial =
-    abaConteudo === "seguidores"
-      ? "SEGUIDORES"
-      : abaConteudo === "pessoas"
-        ? "PESSOAS SEGUIDAS"
-        : "OBRAS SEGUIDAS";
-  const descricaoListaSocial = perfilSocialNome.trim()
-    ? `${tituloListaSocial.toLowerCase()} de ${perfilSocialNome.trim()}`
-    : tituloListaSocial.toLowerCase();
+  const { tituloListaSocial, descricaoListaSocial } = obterRotulosListaSocial(
+    abaConteudo,
+    perfilSocialNome,
+  );
   const podeRemoverUsuariosDaLista =
     listaSocialEhDoUsuarioLogado && abaConteudo === "pessoas";
   const podeRemoverSeguidoresDaLista =
