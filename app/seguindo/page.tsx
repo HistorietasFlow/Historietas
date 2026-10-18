@@ -145,8 +145,6 @@ import {
   criarCoverStyle,
 } from "./lib/seguindo-image-style-utils";
 import {
-} from "./lib/seguindo-work-metrics-utils";
-import {
   mostrarClassificacao,
 } from "./lib/seguindo-work-presentation-utils";
 import {
