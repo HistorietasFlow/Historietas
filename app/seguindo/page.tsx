@@ -20,6 +20,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { actionsStyle, readButtonStyle, unfollowButtonStyle } from "./lib/seguindo-card-action-styles";
 import { cardTitleStyle, authorLinkStyle } from "./lib/seguindo-card-title-link-styles";
 import {
   badgeRowStyle,
@@ -1733,66 +1734,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const actionsStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-
-
-
-
-const readButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  borderRadius: "999px",
-  background: "var(--historietas-seguindo-surface, #0A0A0A)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 9px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle
-};
-
-
-
-
-
-
-
-const unfollowButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-seguindo-danger-border, rgba(239,68,68,0.18))",
-  background: "var(--historietas-seguindo-danger-bg, rgba(239,68,68,0.075))",
-  color: "var(--historietas-seguindo-danger-text, #FCA5A5)",
-  fontSize: "10px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  padding: "0 7px",
-  textAlign: "center",
-  lineHeight: 1.12,
-  boxShadow: "none",
-  ...safeTextStyle
-};
 
 const authorCardStyle: CSSProperties = {
   display: "grid",
