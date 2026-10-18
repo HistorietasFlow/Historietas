@@ -20,6 +20,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { desktopAuthorAvatarStyle, desktopAuthorFollowedCardStyle, desktopAuthorFollowedAvatarStyle } from "./lib/seguindo-desktop-author-avatar-styles";
 import {
   desktopSocialTabsStyle,
   desktopSocialTabStyle,
@@ -1749,29 +1750,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const desktopAuthorAvatarStyle: CSSProperties = {
-  ...authorAvatarStyle,
-  width: "58px",
-  height: "58px",
-  borderRadius: "17px",
-  fontSize: "25px",
-};
-
-const desktopAuthorFollowedCardStyle: CSSProperties = {
-  ...desktopAuthorCardStyle,
-  gridTemplateColumns: "68px minmax(0, 1fr)",
-  minHeight: "94px",
-  padding: "12px",
-};
-
-const desktopAuthorFollowedAvatarStyle: CSSProperties = {
-  ...authorAvatarStyle,
-  width: "68px",
-  height: "68px",
-  borderRadius: "20px",
-  fontSize: "28px",
-};
 
 const authorNameStyle: CSSProperties = {
   margin: 0,
