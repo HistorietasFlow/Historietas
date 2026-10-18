@@ -20,6 +20,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
 import {
   desktopTopWaterFadeStyle,
   mobileTopWaterFadeStyle,
@@ -1655,34 +1656,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const pageStyle: CSSProperties = {
-  position: "relative",
-  minHeight: "100vh",
-  width: "100%",
-  maxWidth: "100%",
-  overflowX: "hidden",
-  background: "var(--historietas-seguindo-bg-page, #070212)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const containerStyle: CSSProperties = {
-  position: "relative",
-  width: "min(900px, calc(100% - 28px))",
-  maxWidth: "100%",
-  margin: "0 auto",
-  padding: "14px 0 calc(24px + env(safe-area-inset-bottom))",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const desktopContainerStyle: CSSProperties = {
-  ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  maxWidth: "100%",
-  padding: "34px 0 64px",
-};
 
 const seguindoHeaderStyle: CSSProperties = {
   display: "flex",
