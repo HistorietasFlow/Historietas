@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const carregador = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("snapshot local preserva as cinco coleções e seus normalizadores", () => {
   for (const chave of [
@@ -34,13 +41,13 @@ test("snapshot local preserva as cinco coleções e seus normalizadores", () => 
   );
 });
 
-test("página delega a leitura e normalização local ao snapshot", () => {
+test("carregador principal delega a leitura e normalização local ao snapshot", () => {
   assert.match(
-    pagina,
-    /carregarDadosLocaisSeguindo,[\s\S]*?salvarDadosLocaisSeguindo,[\s\S]*?from "\.\/lib\/seguindo-local-data-utils";/,
+    carregador,
+    /carregarDadosLocaisSeguindo,[\s\S]*?salvarDadosLocaisSeguindo,[\s\S]*?from "\.\.\/lib\/seguindo-local-data-utils";/,
   );
   assert.match(
-    pagina,
+    carregador,
     /const dadosLocaisSeguindo = carregarDadosLocaisSeguindo\(usuarioLogadoId\);/,
   );
   assert.doesNotMatch(pagina, /lerJsonStorageUsuarioSeguindo/);
@@ -61,7 +68,7 @@ test("persistência local preserva as cinco coleções do snapshot", () => {
   }
 
   assert.match(
-    pagina,
+    carregador,
     /salvarDadosLocaisSeguindo\(\{[\s\S]*?userId: usuarioLogadoId,[\s\S]*?obras: obrasNormalizadas,[\s\S]*?obrasSeguidas: seguindoNormalizado,[\s\S]*?autoresSeguidos: autoresNormalizados,[\s\S]*?obrasFavoritas: favoritasNormalizadas,[\s\S]*?obrasConcluidas: concluidasNormalizadas,[\s\S]*?\}\);/,
   );
 });
