@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
-import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
@@ -19,6 +18,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { filtrarObrasVisiveisSeguindo, filtrarObrasSeguidasBase } from "./lib/seguindo-visible-works";
 import { selecionarUsuariosBaseSocial } from "./lib/seguindo-social-users-selector";
 import { obterContextoListaSocial } from "./lib/seguindo-social-list-context";
 import { buscaSugestoesUsuariosEstaAtiva } from "./lib/seguindo-social-search-eligibility";
@@ -326,17 +326,15 @@ export default function SeguindoPage() {
   });
 
 
-  const obrasVisiveisSeguindo = useMemo(() => {
-    return obras.filter(
-      (obra) => !ehClassificacao18(obra.classificacaoIndicativa),
-    );
-  }, [obras]);
+  const obrasVisiveisSeguindo = useMemo(
+    () => filtrarObrasVisiveisSeguindo(obras),
+    [obras],
+  );
 
-  const obrasSeguidasBase = useMemo(() => {
-    return obrasVisiveisSeguindo.filter((obra) =>
-      obraEstaNaLista(obra, obrasSeguidas),
-    );
-  }, [obrasVisiveisSeguindo, obrasSeguidas]);
+  const obrasSeguidasBase = useMemo(
+    () => filtrarObrasSeguidasBase(obrasVisiveisSeguindo, obrasSeguidas),
+    [obrasVisiveisSeguindo, obrasSeguidas],
+  );
 
   const autoresBase = useMemo<AutorSeguido[]>(() => {
     const mapa = new Map<string, { nome: string; obras: ObraLocal[] }>();
