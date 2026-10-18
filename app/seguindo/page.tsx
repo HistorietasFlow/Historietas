@@ -20,6 +20,12 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import {
+  authorContentStyle,
+  authorBadgeRowStyle,
+  authorActionsGridStyle,
+  desktopAuthorActionsGridStyle,
+} from "./lib/seguindo-author-content-styles";
 import { authorCardStyle, desktopAuthorCardStyle, authorAvatarStyle } from "./lib/seguindo-author-card-styles";
 import { actionsStyle, readButtonStyle, unfollowButtonStyle } from "./lib/seguindo-card-action-styles";
 import { cardTitleStyle, authorLinkStyle } from "./lib/seguindo-card-title-link-styles";
@@ -1735,39 +1741,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const authorContentStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  alignContent: "center",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const authorBadgeRowStyle: CSSProperties = {
-  display: "flex",
-  gap: "5px",
-  flexWrap: "wrap",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const authorActionsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const desktopAuthorActionsGridStyle: CSSProperties = {
-  ...authorActionsGridStyle,
-  gap: "8px",
-};
-
 
 const desktopSocialTabsStyle: CSSProperties = {
   ...socialTabsStyle,
