@@ -18,6 +18,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { filtrarUsuariosSeguindo } from "./lib/seguindo-filtered-users";
 import { filtrarAutoresSeguindo } from "./lib/seguindo-filtered-authors";
 import { filtrarObrasSeguindo } from "./lib/seguindo-filtered-works";
 import { montarAutoresBaseSeguindo } from "./lib/seguindo-author-base-builder";
@@ -357,47 +358,12 @@ export default function SeguindoPage() {
     [autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil],
   );
 
-  const usuariosFiltrados = useMemo<UsuarioSeguido[]>(() => {
-    const filtrados = usuariosBaseSocial.filter((usuarioSeguido) => {
-      if (
-        abaConteudo !== "pessoas" &&
-        abaConteudo !== "seguidores"
-      ) {
-        return false;
-      }
-
-      if (
-        !visualizandoListaSocialDoPerfil &&
-        filtro !== "todos" &&
-        filtro !== "usuarios"
-      ) {
-        return false;
-      }
-
-      const textoUsuario = normalizarTexto(
-        [usuarioSeguido.nome, usuarioSeguido.handle, usuarioSeguido.bio].join(" ")
-      );
-
-      return termoBusca ? textoUsuario.includes(termoBusca) : true;
-    });
-
-    return [...filtrados].sort((usuarioA, usuarioB) => {
-      if (ordenacao === "titulo") {
-        return usuarioA.nome.localeCompare(usuarioB.nome);
-      }
-
-      if (ordenacao === "antigos") {
-        return (
-          new Date(usuarioA.criadoEm).getTime() -
-          new Date(usuarioB.criadoEm).getTime()
-        );
-      }
-
-      return (
-        new Date(usuarioB.criadoEm).getTime() - new Date(usuarioA.criadoEm).getTime()
-      );
-    });
-  }, [usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil]);
+  const usuariosFiltrados = useMemo<UsuarioSeguido[]>(
+    () => filtrarUsuariosSeguindo(
+      usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
+    ),
+    [usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil],
+  );
 
   const solicitacoesSeguidoresFiltradas = useMemo(() => {
     if (!listaSocialEhDoUsuarioLogado || abaConteudo !== "seguidores") {
