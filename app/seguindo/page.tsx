@@ -44,7 +44,10 @@ import {
   obterTotalSalvosObraSeguindo,
 } from "./lib/seguindo-work-metrics-utils";
 import { normalizarObraSalva } from "./lib/seguindo-saved-work-utils";
-import { carregarDadosLocaisSeguindo } from "./lib/seguindo-local-data-utils";
+import {
+  carregarDadosLocaisSeguindo,
+  salvarDadosLocaisSeguindo,
+} from "./lib/seguindo-local-data-utils";
 import { carregarSeguindoSupabase } from "./lib/seguindo-work-loader";
 import {
   dataAtividadeObra,
@@ -65,10 +68,7 @@ import {
 } from "./lib/seguindo-route-utils";
 import {
   AUTHOR_FOLLOW_STORAGE_KEY,
-  COMPLETED_STORAGE_KEY,
-  FAVORITES_STORAGE_KEY,
   FOLLOW_STORAGE_KEY,
-  STORAGE_KEY,
   salvarJsonStorageUsuarioSeguindo,
 } from "./lib/seguindo-storage-utils";
 
@@ -306,31 +306,14 @@ export default function SeguindoPage() {
     favoritasNormalizadas = normalizarListaTexto(dadosSupabase.obrasFavoritas);
     concluidasNormalizadas = normalizarListaTexto(dadosSupabase.obrasConcluidas);
 
-    salvarJsonStorageUsuarioSeguindo(
-      STORAGE_KEY,
-      usuarioLogadoId,
-      obrasNormalizadas
-    );
-    salvarJsonStorageUsuarioSeguindo(
-      FOLLOW_STORAGE_KEY,
-      usuarioLogadoId,
-      seguindoNormalizado
-    );
-    salvarJsonStorageUsuarioSeguindo(
-      AUTHOR_FOLLOW_STORAGE_KEY,
-      usuarioLogadoId,
-      autoresNormalizados
-    );
-    salvarJsonStorageUsuarioSeguindo(
-      FAVORITES_STORAGE_KEY,
-      usuarioLogadoId,
-      favoritasNormalizadas
-    );
-    salvarJsonStorageUsuarioSeguindo(
-      COMPLETED_STORAGE_KEY,
-      usuarioLogadoId,
-      concluidasNormalizadas
-    );
+    salvarDadosLocaisSeguindo({
+      userId: usuarioLogadoId,
+      obras: obrasNormalizadas,
+      obrasSeguidas: seguindoNormalizado,
+      autoresSeguidos: autoresNormalizados,
+      obrasFavoritas: favoritasNormalizadas,
+      obrasConcluidas: concluidasNormalizadas,
+    });
 
     window.setTimeout(() => {
       setObras(obrasNormalizadas);
