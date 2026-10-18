@@ -22,9 +22,7 @@ import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-a
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
   badgeRowStyle,
-  badgeStyleSmall,
   classificationBadgeStyle,
-  readingBadgeStyle,
   authorWorksMetaStyle,
   authorReadingMetaStyle,
 } from "./lib/seguindo-card-badges-styles";
