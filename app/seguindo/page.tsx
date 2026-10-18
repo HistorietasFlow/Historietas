@@ -18,6 +18,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { obterOpcoesOrdenacaoSeguindo } from "./lib/seguindo-sort-options";
 import { filtrarSolicitacoesSeguidores } from "./lib/seguindo-filtered-follower-requests";
 import { filtrarUsuariosSeguindo } from "./lib/seguindo-filtered-users";
 import { filtrarAutoresSeguindo } from "./lib/seguindo-filtered-authors";
@@ -398,28 +399,7 @@ export default function SeguindoPage() {
           (visualizandoListaSocialDoPerfil ? 0 : autoresFiltrados.length);
 
 
-  const opcoesOrdenacao: Array<{ valor: OrdenacaoSeguindo; rotulo: string }> =
-    abaConteudo === "obras"
-      ? [
-          { valor: "padrao", rotulo: "Padrão" },
-          { valor: "recentes", rotulo: "Mais recentes" },
-          { valor: "antigos", rotulo: "Mais antigos" },
-          { valor: "titulo", rotulo: "A-Z" },
-          { valor: "progresso", rotulo: "Maior progresso" },
-          { valor: "capitulos", rotulo: "Mais capítulos" },
-        ]
-      : [
-          { valor: "padrao", rotulo: "Padrão" },
-          { valor: "recentes", rotulo: "Mais recentes" },
-          { valor: "antigos", rotulo: "Mais antigos" },
-          { valor: "titulo", rotulo: "A-Z" },
-        ];
-
-
-
-
-
-
+  const opcoesOrdenacao = obterOpcoesOrdenacaoSeguindo(abaConteudo);
 
   if (verificandoAcesso || carregando) {
     return (
