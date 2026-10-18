@@ -21,6 +21,12 @@ import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
+  gridStyle,
+  desktopGridStyle,
+  authorsGridStyle,
+  desktopAuthorsGridStyle,
+} from "./lib/seguindo-grid-layout-styles";
+import {
   sectionStyle,
   desktopSectionStyle,
   sectionHeaderStyle,
@@ -1708,40 +1714,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const gridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "12px",
-  minWidth: 0,
-  maxWidth: "100%"
-};
-
-const desktopGridStyle: CSSProperties = {
-  ...gridStyle,
-  width: "100%",
-  margin: "0 auto",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "16px",
-  alignItems: "stretch",
-};
-
-const authorsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "12px",
-  minWidth: 0,
-  maxWidth: "100%"
-};
-
-const desktopAuthorsGridStyle: CSSProperties = {
-  ...authorsGridStyle,
-  width: "100%",
-  margin: "0 auto",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "14px",
-  alignItems: "stretch",
-};
 
 const cardStyle: CSSProperties = {
   position: "relative",
