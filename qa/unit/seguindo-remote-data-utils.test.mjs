@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const carregador = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("carregamento remoto preserva perfil social e consultas paralelas", () => {
   assert.match(
@@ -47,13 +54,13 @@ test("carregamento remoto preserva perfil social e consultas paralelas", () => {
   );
 });
 
-test("página delega o bloco remoto ao helper agregado", () => {
+test("carregador principal delega o bloco remoto ao helper agregado", () => {
   assert.match(
-    pagina,
-    /carregarDadosRemotosSeguindo,[\s\S]*?prepararDadosRemotosSeguindo,[\s\S]*?from "\.\/lib\/seguindo-remote-data-utils";/,
+    carregador,
+    /carregarDadosRemotosSeguindo,[\s\S]*?prepararDadosRemotosSeguindo,[\s\S]*?from "\.\.\/lib\/seguindo-remote-data-utils";/,
   );
   assert.match(
-    pagina,
+    carregador,
     /await carregarDadosRemotosSeguindo\(\{[\s\S]*?obrasLocais: obrasNormalizadas,[\s\S]*?obrasSeguidasLocais: seguindoNormalizado,[\s\S]*?obrasFavoritasLocais: favoritasNormalizadas,[\s\S]*?obrasConcluidasLocais: concluidasNormalizadas,[\s\S]*?perfilSocialId,[\s\S]*?usuarioLogadoId,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /carregarSeguindoSupabase/);
@@ -84,7 +91,7 @@ test("preparação remota preserva normalização e atividades", () => {
   }
 
   assert.match(
-    pagina,
+    carregador,
     /const dadosRemotosPreparados = await prepararDadosRemotosSeguindo\(\{[\s\S]*?dadosSupabase,[\s\S]*?usuariosSeguidosSupabase,[\s\S]*?usuarioLogadoId,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /normalizarObraSalva/);
