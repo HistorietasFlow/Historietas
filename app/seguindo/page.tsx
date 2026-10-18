@@ -48,18 +48,12 @@ import {
   carregarDadosLocaisSeguindo,
   salvarDadosLocaisSeguindo,
 } from "./lib/seguindo-local-data-utils";
-import { carregarSeguindoSupabase } from "./lib/seguindo-work-loader";
+import { carregarDadosRemotosSeguindo } from "./lib/seguindo-remote-data-utils";
 import {
   dataAtividadeObra,
   mostrarClassificacao,
   textoBuscaObra,
 } from "./lib/seguindo-work-presentation-utils";
-import {
-  carregarIdsSolicitacoesEnviadasSupabase,
-  carregarSolicitacoesSeguidoresSupabase,
-  carregarUsuariosSeguidoresSupabase,
-  carregarUsuariosSeguidosSupabase,
-} from "./lib/seguindo-social-query-utils";
 import { sincronizarObraUsuarioSupabase } from "./lib/seguindo-work-sync-utils";
 import {
   criarHrefPerfilAutorSeguindo,
@@ -267,32 +261,20 @@ export default function SeguindoPage() {
       setCarregando(false);
     }, 0);
 
-    const perfilIdParaListaSocial = perfilSocialId || usuarioLogadoId;
-    const listaSocialEhDoUsuarioLogado =
-      !perfilSocialId || perfilSocialId === usuarioLogadoId;
-    const [
+    const {
       dadosSupabase,
       usuariosSeguidosSupabase,
       usuariosSeguidoresSupabase,
       solicitacoesSeguidoresSupabase,
       solicitacoesEnviadasSupabase,
-    ] = await Promise.all([
-      carregarSeguindoSupabase(
-        obrasNormalizadas,
-        perfilSocialId ? [] : seguindoNormalizado,
-        favoritasNormalizadas,
-        concluidasNormalizadas,
-        perfilSocialId
-      ),
-      carregarUsuariosSeguidosSupabase(perfilIdParaListaSocial),
-      carregarUsuariosSeguidoresSupabase(perfilIdParaListaSocial),
-      listaSocialEhDoUsuarioLogado
-        ? carregarSolicitacoesSeguidoresSupabase(usuarioLogadoId)
-        : Promise.resolve([] as SolicitacaoSeguidor[]),
-      listaSocialEhDoUsuarioLogado
-        ? carregarIdsSolicitacoesEnviadasSupabase(usuarioLogadoId)
-        : Promise.resolve([] as string[]),
-    ]);
+    } = await carregarDadosRemotosSeguindo({
+      obrasLocais: obrasNormalizadas,
+      obrasSeguidasLocais: seguindoNormalizado,
+      obrasFavoritasLocais: favoritasNormalizadas,
+      obrasConcluidasLocais: concluidasNormalizadas,
+      perfilSocialId,
+      usuarioLogadoId,
+    });
 
     obrasNormalizadas = dadosSupabase.obras.map((obra, index) =>
       normalizarObraSalva(obra as ObraSalva, index)
