@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoFilteredAuthors } from "./hooks/use-seguindo-filtered-authors";
 import { useSeguindoFilteredWorks } from "./hooks/use-seguindo-filtered-works";
 import { useSeguindoAuthorsBase } from "./hooks/use-seguindo-authors-base";
 import { useSeguindoVisibleWorks } from "./hooks/use-seguindo-visible-works";
@@ -25,7 +26,6 @@ import { calcularTotaisSeguindo } from "./lib/seguindo-list-counts";
 import { obterOpcoesOrdenacaoSeguindo } from "./lib/seguindo-sort-options";
 import { filtrarSolicitacoesSeguidores } from "./lib/seguindo-filtered-follower-requests";
 import { filtrarUsuariosSeguindo } from "./lib/seguindo-filtered-users";
-import { filtrarAutoresSeguindo } from "./lib/seguindo-filtered-authors";
 import { selecionarUsuariosBaseSocial } from "./lib/seguindo-social-users-selector";
 import { obterContextoListaSocial } from "./lib/seguindo-social-list-context";
 import { buscaSugestoesUsuariosEstaAtiva } from "./lib/seguindo-social-search-eligibility";
@@ -33,7 +33,6 @@ import { obterPermissoesListaSocial } from "./lib/seguindo-social-list-permissio
 import { obterRotulosListaSocial } from "./lib/seguindo-social-list-labels";
 import type {
   ObraLocal,
-  AutorSeguido,
   UsuarioSeguido,
   SolicitacaoSeguidor,
   AtividadeSeguindo,
@@ -332,11 +331,8 @@ export default function SeguindoPage() {
     obrasSeguidasBase, termoBusca, filtro, ordenacao, obrasFavoritas, obrasConcluidas, abaConteudo,
   );
 
-  const autoresFiltrados = useMemo<AutorSeguido[]>(
-    () => filtrarAutoresSeguindo(
-      autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
-    ),
-    [autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil],
+  const autoresFiltrados = useSeguindoFilteredAuthors(
+    autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
   );
 
   const usuariosFiltrados = useMemo<UsuarioSeguido[]>(
