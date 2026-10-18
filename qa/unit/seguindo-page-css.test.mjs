@@ -11,6 +11,7 @@ const lerArquivo = (caminho) =>
 
 const pagina = lerArquivo("app/seguindo/page.tsx");
 const css = lerArquivo("app/seguindo/lib/seguindo-page-css.ts");
+const surfaceStyles = lerArquivo("app/seguindo/lib/seguindo-surface-styles.ts");
 
 test("seguindoPageCss preserva o CSS global crítico de Seguindo", () => {
   assert.match(css, /export const seguindoPageCss = `/);
@@ -38,8 +39,9 @@ test("Seguindo consome o CSS extraído sem mover responsabilidades da página", 
     pagina.includes("${seguindoPageCss}${historietasThemeCss}"),
     false,
   );
-  assert.match(pagina, /const mobileTopWaterFadeStyle: CSSProperties =/);
-  assert.match(pagina, /const desktopTopWaterFadeStyle: CSSProperties =/);
+  assert.match(surfaceStyles, /export const mobileTopWaterFadeStyle: CSSProperties =/);
+  assert.match(surfaceStyles, /export const desktopTopWaterFadeStyle: CSSProperties =/);
+  assert.match(pagina, /from "\.\/lib\/seguindo-surface-styles";/);
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/seguindo-loading-spinner";/,
