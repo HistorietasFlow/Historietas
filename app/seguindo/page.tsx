@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -16,6 +16,7 @@ import {
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
+import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
@@ -41,14 +42,6 @@ import {
   obterTotalLidosObraSeguindo,
   obterTotalSalvosObraSeguindo,
 } from "./lib/seguindo-work-metrics-utils";
-import {
-  carregarDadosLocaisSeguindo,
-  salvarDadosLocaisSeguindo,
-} from "./lib/seguindo-local-data-utils";
-import {
-  carregarDadosRemotosSeguindo,
-  prepararDadosRemotosSeguindo,
-} from "./lib/seguindo-remote-data-utils";
 import {
   dataAtividadeObra,
   mostrarClassificacao,
@@ -232,78 +225,22 @@ export default function SeguindoPage() {
 
 
 
-  const carregarDadosSeguindo = useCallback(async () => {
-    window.setTimeout(() => {
-      setCarregando(true);
-    }, 0);
+  const carregarDadosSeguindo = useSeguindoDataLoader({
+    perfilSocialId,
+    usuarioLogadoId,
+    setObras,
+    setObrasSeguidas,
+    setAutoresSeguidos,
+    setUsuariosSeguidos,
+    setUsuariosSeguidores,
+    setSolicitacoesSeguidores,
+    setSolicitacoesEnviadasIds,
+    setAtividadesSeguindo,
+    setObrasFavoritas,
+    setObrasConcluidas,
+    setCarregando,
+  });
 
-    const dadosLocaisSeguindo = carregarDadosLocaisSeguindo(usuarioLogadoId);
-    let {
-      obras: obrasNormalizadas,
-      obrasSeguidas: seguindoNormalizado,
-      obrasFavoritas: favoritasNormalizadas,
-      obrasConcluidas: concluidasNormalizadas,
-    } = dadosLocaisSeguindo;
-    const autoresNormalizados = dadosLocaisSeguindo.autoresSeguidos;
-
-    window.setTimeout(() => {
-      setObras(obrasNormalizadas);
-      setObrasSeguidas(perfilSocialId ? [] : seguindoNormalizado);
-      setAutoresSeguidos(autoresNormalizados);
-      setObrasFavoritas(favoritasNormalizadas);
-      setObrasConcluidas(concluidasNormalizadas);
-      setCarregando(false);
-    }, 0);
-
-    const {
-      dadosSupabase,
-      usuariosSeguidosSupabase,
-      usuariosSeguidoresSupabase,
-      solicitacoesSeguidoresSupabase,
-      solicitacoesEnviadasSupabase,
-    } = await carregarDadosRemotosSeguindo({
-      obrasLocais: obrasNormalizadas,
-      obrasSeguidasLocais: seguindoNormalizado,
-      obrasFavoritasLocais: favoritasNormalizadas,
-      obrasConcluidasLocais: concluidasNormalizadas,
-      perfilSocialId,
-      usuarioLogadoId,
-    });
-
-    const dadosRemotosPreparados = await prepararDadosRemotosSeguindo({
-      dadosSupabase,
-      usuariosSeguidosSupabase,
-      usuarioLogadoId,
-    });
-    obrasNormalizadas = dadosRemotosPreparados.obras;
-    seguindoNormalizado = dadosRemotosPreparados.obrasSeguidas;
-    favoritasNormalizadas = dadosRemotosPreparados.obrasFavoritas;
-    concluidasNormalizadas = dadosRemotosPreparados.obrasConcluidas;
-    const atividadesSeguindoSupabase = dadosRemotosPreparados.atividades;
-
-    salvarDadosLocaisSeguindo({
-      userId: usuarioLogadoId,
-      obras: obrasNormalizadas,
-      obrasSeguidas: seguindoNormalizado,
-      autoresSeguidos: autoresNormalizados,
-      obrasFavoritas: favoritasNormalizadas,
-      obrasConcluidas: concluidasNormalizadas,
-    });
-
-    window.setTimeout(() => {
-      setObras(obrasNormalizadas);
-      setObrasSeguidas(seguindoNormalizado);
-      setAutoresSeguidos(autoresNormalizados);
-      setUsuariosSeguidos(usuariosSeguidosSupabase);
-      setUsuariosSeguidores(usuariosSeguidoresSupabase);
-      setSolicitacoesSeguidores(solicitacoesSeguidoresSupabase);
-      setSolicitacoesEnviadasIds(solicitacoesEnviadasSupabase);
-      setAtividadesSeguindo(atividadesSeguindoSupabase);
-      setObrasFavoritas(favoritasNormalizadas);
-      setObrasConcluidas(concluidasNormalizadas);
-      setCarregando(false);
-    }, 0);
-  }, [perfilSocialId, usuarioLogadoId]);
 
   useSeguindoDataLoadTrigger({
     usuarioLogadoId,
