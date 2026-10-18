@@ -50,5 +50,5 @@ test("Seguindo consome o CSS extraído sem mover responsabilidades da página", 
   );
   assert.match(pagina, /useSeguindoDesktopMode/);
   assert.match(pagina, /carregarAtividadesSeguindoSupabase/);
-  assert.match(pagina, /lerJsonStorageUsuarioSeguindo/);
+  assert.match(pagina, /carregarDadosLocaisSeguindo/);
 });

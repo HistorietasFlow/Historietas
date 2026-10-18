@@ -74,5 +74,5 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
   );
   assert.match(pagina, /useSeguindoAccessSync\(\{/);
   assert.match(pagina, /carregarAtividadesSeguindoSupabase/);
-  assert.match(pagina, /lerJsonStorageUsuarioSeguindo/);
+  assert.match(pagina, /carregarDadosLocaisSeguindo/);
 });
