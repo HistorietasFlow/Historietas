@@ -18,6 +18,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { filtrarSolicitacoesSeguidores } from "./lib/seguindo-filtered-follower-requests";
 import { filtrarUsuariosSeguindo } from "./lib/seguindo-filtered-users";
 import { filtrarAutoresSeguindo } from "./lib/seguindo-filtered-authors";
 import { filtrarObrasSeguindo } from "./lib/seguindo-filtered-works";
@@ -365,38 +366,12 @@ export default function SeguindoPage() {
     [usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil],
   );
 
-  const solicitacoesSeguidoresFiltradas = useMemo(() => {
-    if (!listaSocialEhDoUsuarioLogado || abaConteudo !== "seguidores") {
-      return [] as SolicitacaoSeguidor[];
-    }
-
-    const filtradas = solicitacoesSeguidores.filter((solicitacao) => {
-      if (!termoBusca) {
-        return true;
-      }
-
-      const textoSolicitacao = normalizarTexto(
-        [
-          solicitacao.usuario.nome,
-          solicitacao.usuario.handle,
-          solicitacao.usuario.bio,
-        ].join(" "),
-      );
-
-      return textoSolicitacao.includes(termoBusca);
-    });
-
-    return [...filtradas].sort(
-      (solicitacaoA, solicitacaoB) =>
-        new Date(solicitacaoB.criadoEm).getTime() -
-        new Date(solicitacaoA.criadoEm).getTime(),
-    );
-  }, [
-    abaConteudo,
-    listaSocialEhDoUsuarioLogado,
-    solicitacoesSeguidores,
-    termoBusca,
-  ]);
+  const solicitacoesSeguidoresFiltradas = useMemo(
+    () => filtrarSolicitacoesSeguidores(
+      abaConteudo, listaSocialEhDoUsuarioLogado, solicitacoesSeguidores, termoBusca,
+    ),
+    [abaConteudo, listaSocialEhDoUsuarioLogado, solicitacoesSeguidores, termoBusca],
+  );
 
   const totalDisponivelGeral =
     obrasSeguidasBase.length +
