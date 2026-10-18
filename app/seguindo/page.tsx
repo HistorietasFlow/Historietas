@@ -20,6 +20,11 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import {
+  desktopTopWaterFadeStyle,
+  mobileTopWaterFadeStyle,
+  safeTextStyle,
+} from "./lib/seguindo-surface-styles";
 import { obraEstaNaLista } from "./lib/seguindo-work-collection-utils";
 import {
   formatarGeneroSeguindo,
@@ -1650,40 +1655,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const safeTextStyle: CSSProperties = {
-  overflowWrap: "anywhere",
-  wordBreak: "break-word",
-};
-
-const mobileTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(340px, 48vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-  opacity: 0,
-};
-
-const desktopTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(620px, 68vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-  opacity: 0,
-};
-
 
 const pageStyle: CSSProperties = {
   position: "relative",
