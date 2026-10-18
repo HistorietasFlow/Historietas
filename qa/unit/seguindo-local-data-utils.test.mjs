@@ -37,7 +37,7 @@ test("snapshot local preserva as cinco coleções e seus normalizadores", () => 
 test("página delega a leitura e normalização local ao snapshot", () => {
   assert.match(
     pagina,
-    /import \{ carregarDadosLocaisSeguindo \} from "\.\/lib\/seguindo-local-data-utils";/,
+    /carregarDadosLocaisSeguindo,[\s\S]*?salvarDadosLocaisSeguindo,[\s\S]*?from "\.\/lib\/seguindo-local-data-utils";/,
   );
   assert.match(
     pagina,
@@ -45,3 +45,24 @@ test("página delega a leitura e normalização local ao snapshot", () => {
   );
   assert.doesNotMatch(pagina, /lerJsonStorageUsuarioSeguindo/);
 });
+
+test("persistência local preserva as cinco coleções do snapshot", () => {
+  for (const chave of [
+    "STORAGE_KEY",
+    "FOLLOW_STORAGE_KEY",
+    "AUTHOR_FOLLOW_STORAGE_KEY",
+    "FAVORITES_STORAGE_KEY",
+    "COMPLETED_STORAGE_KEY",
+  ]) {
+    assert.match(
+      source,
+      new RegExp(`salvarJsonStorageUsuarioSeguindo\\(\\s*${chave}`),
+    );
+  }
+
+  assert.match(
+    pagina,
+    /salvarDadosLocaisSeguindo\(\{[\s\S]*?userId: usuarioLogadoId,[\s\S]*?obras: obrasNormalizadas,[\s\S]*?obrasSeguidas: seguindoNormalizado,[\s\S]*?autoresSeguidos: autoresNormalizados,[\s\S]*?obrasFavoritas: favoritasNormalizadas,[\s\S]*?obrasConcluidas: concluidasNormalizadas,[\s\S]*?\}\);/,
+  );
+});
+
