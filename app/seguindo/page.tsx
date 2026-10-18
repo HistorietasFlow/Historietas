@@ -17,11 +17,9 @@ import { useSeguindoFollowerActions } from "./hooks/use-seguindo-follower-action
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-actions";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
+import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
-import {
-  obraEstaNaLista,
-  removerObraDaLista,
-} from "./lib/seguindo-work-collection-utils";
+import { obraEstaNaLista } from "./lib/seguindo-work-collection-utils";
 import {
   formatarGeneroSeguindo,
   normalizarNomeAutor,
@@ -43,16 +41,10 @@ import {
   mostrarClassificacao,
   textoBuscaObra,
 } from "./lib/seguindo-work-presentation-utils";
-import { sincronizarObraUsuarioSupabase } from "./lib/seguindo-work-sync-utils";
 import {
   criarHrefPerfilAutorSeguindo,
   criarHrefPerfilUsuarioSeguindo,
 } from "./lib/seguindo-route-utils";
-import {
-  AUTHOR_FOLLOW_STORAGE_KEY,
-  FOLLOW_STORAGE_KEY,
-  salvarJsonStorageUsuarioSeguindo,
-} from "./lib/seguindo-storage-utils";
 
 type CapituloLocal = {
   id: string;
@@ -269,6 +261,17 @@ export default function SeguindoPage() {
     setAtividadesSeguindo,
     setSolicitacoesEnviadasIds,
     setUsuariosSugestoesBusca,
+  });
+
+  const {
+    deixarDeSeguirObra,
+    deixarDeSeguirAutor,
+  } = useSeguindoWorkAuthorActions({
+    usuarioLogadoId,
+    obrasSeguidas,
+    autoresSeguidos,
+    setObrasSeguidas,
+    setAutoresSeguidos,
   });
 
   const termoBusca = normalizarTexto(busca);
@@ -685,32 +688,6 @@ export default function SeguindoPage() {
     window.history.replaceState(null, "", `/seguindo?${params.toString()}`);
   }
 
-  function deixarDeSeguirObra(obra: ObraLocal) {
-    const novasObrasSeguidas = removerObraDaLista(obra, obrasSeguidas);
-
-    salvarJsonStorageUsuarioSeguindo(
-      FOLLOW_STORAGE_KEY,
-      usuarioLogadoId,
-      novasObrasSeguidas
-    );
-
-    setObrasSeguidas(novasObrasSeguidas);
-    void sincronizarObraUsuarioSupabase("seguindo_obras", obra.id, false);
-  }
-
-  function deixarDeSeguirAutor(autorChave: string) {
-    const novosAutoresSeguidos = autoresSeguidos.filter(
-      (autor) => autor !== autorChave
-    );
-
-    salvarJsonStorageUsuarioSeguindo(
-      AUTHOR_FOLLOW_STORAGE_KEY,
-      usuarioLogadoId,
-      novosAutoresSeguidos
-    );
-
-    setAutoresSeguidos(novosAutoresSeguidos);
-  }
 
 
 
