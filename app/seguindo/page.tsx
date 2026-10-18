@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
@@ -20,6 +19,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { authorNameStyle } from "./lib/seguindo-author-name-style";
 import { desktopAuthorAvatarStyle, desktopAuthorFollowedCardStyle, desktopAuthorFollowedAvatarStyle } from "./lib/seguindo-desktop-author-avatar-styles";
 import {
   desktopSocialTabsStyle,
@@ -118,7 +118,6 @@ import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo
 import {
   desktopTopWaterFadeStyle,
   mobileTopWaterFadeStyle,
-  safeTextStyle,
 } from "./lib/seguindo-surface-styles";
 import { obraEstaNaLista } from "./lib/seguindo-work-collection-utils";
 import {
@@ -1751,15 +1750,3 @@ export default function SeguindoPage() {
   );
 }
 
-const authorNameStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "23px",
-  lineHeight: 1,
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 500,
-  letterSpacing: "-0.01em",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
