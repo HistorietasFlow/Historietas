@@ -70,7 +70,7 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
   );
   assert.match(
     pagina,
-    /const \[mostrarPainelOrdenacao, setMostrarPainelOrdenacao\] = useState\(false\);/,
+    /const \{ mostrarPainelOrdenacao, setMostrarPainelOrdenacao \} = useSeguindoSortingPanelState\(\);/,
   );
   assert.match(pagina, /useSeguindoAccessSync\(\{/);
   assert.match(pagina, /useSeguindoDataLoader/);
