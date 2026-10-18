@@ -21,6 +21,14 @@ import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
+  desktopSocialTabsStyle,
+  desktopSocialTabStyle,
+  desktopSocialTabActiveStyle,
+  desktopSectionHeaderTextStyle,
+  desktopSectionTitleStyle,
+  desktopSectionCounterStyle,
+} from "./lib/seguindo-desktop-social-section-styles";
+import {
   authorContentStyle,
   authorBadgeRowStyle,
   authorActionsGridStyle,
@@ -1741,50 +1749,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const desktopSocialTabsStyle: CSSProperties = {
-  ...socialTabsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  alignItems: "stretch",
-  gap: "8px",
-  paddingBottom: "1px",
-};
-
-const desktopSocialTabStyle: CSSProperties = {
-  ...socialTabStyle,
-  minHeight: "48px",
-  padding: "0 12px 11px",
-  fontSize: "13px",
-  overflow: "visible",
-  textOverflow: "clip",
-};
-
-const desktopSocialTabActiveStyle: CSSProperties = {
-  ...desktopSocialTabStyle,
-  color: "#FFFFFF",
-  borderBottom: "2px solid #FFFFFF",
-};
-
-const desktopSectionHeaderTextStyle: CSSProperties = {
-  ...sectionHeaderTextStyle,
-  justifyItems: "start",
-  textAlign: "left",
-};
-
-const desktopSectionTitleStyle: CSSProperties = {
-  ...sectionTitleStyle,
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  fontSize: "22px",
-  textAlign: "left",
-};
-
-const desktopSectionCounterStyle: CSSProperties = {
-  ...sectionCounterStyle,
-  width: "34px",
-  height: "34px",
-  fontSize: "14px",
-};
 
 const desktopAuthorAvatarStyle: CSSProperties = {
   ...authorAvatarStyle,
