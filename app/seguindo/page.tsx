@@ -20,6 +20,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { desktopSeguindoHeaderStyle, seguindoHeaderStyle } from "./lib/seguindo-header-base-styles";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
 import {
   desktopTopWaterFadeStyle,
@@ -1656,32 +1657,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const seguindoHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "nowrap",
-  marginBottom: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const desktopSeguindoHeaderStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "58px",
-  margin: "0 0 18px",
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "24px",
-  minWidth: 0,
-  boxSizing: "border-box",
-  position: "relative",
-  zIndex: 2,
-};
 
 const desktopSeguindoHeaderTitleStyle: CSSProperties = {
   margin: 0,
