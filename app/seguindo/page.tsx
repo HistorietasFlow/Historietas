@@ -7,11 +7,6 @@ import type { CSSProperties } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
-import {
-  cancelarSolicitacaoSeguidor,
-  deixarDeSeguirUsuario as deixarDeSeguirUsuarioPrivacidade,
-  solicitarOuSeguirUsuario,
-} from "../../lib/historietasPrivacy";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
@@ -20,6 +15,7 @@ import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigg
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoFollowerActions } from "./hooks/use-seguindo-follower-actions";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
+import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-actions";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
@@ -51,7 +47,6 @@ import { sincronizarObraUsuarioSupabase } from "./lib/seguindo-work-sync-utils";
 import {
   criarHrefPerfilAutorSeguindo,
   criarHrefPerfilUsuarioSeguindo,
-  idUsuarioSupabaseValido,
 } from "./lib/seguindo-route-utils";
 import {
   AUTHOR_FOLLOW_STORAGE_KEY,
@@ -258,6 +253,22 @@ export default function SeguindoPage() {
     setSolicitacaoRespondendoId,
     setUsuariosSeguidores,
     setSolicitacoesSeguidores,
+  });
+
+  const {
+    deixarDeSeguirUsuario,
+    seguirUsuarioSugestao,
+  } = useSeguindoUserFollowActions({
+    usuarioLogadoId,
+    usuarioListaAlterandoId,
+    usuarioSugestaoSeguindoId,
+    solicitacoesEnviadasIds,
+    setUsuarioListaAlterandoId,
+    setUsuarioSugestaoSeguindoId,
+    setUsuariosSeguidos,
+    setAtividadesSeguindo,
+    setSolicitacoesEnviadasIds,
+    setUsuariosSugestoesBusca,
   });
 
   const termoBusca = normalizarTexto(busca);
@@ -701,127 +712,6 @@ export default function SeguindoPage() {
     setAutoresSeguidos(novosAutoresSeguidos);
   }
 
-  async function deixarDeSeguirUsuario(usuarioId: string) {
-    const usuarioIdLimpo = usuarioId.trim();
-
-    if (
-      !idUsuarioSupabaseValido(usuarioLogadoId) ||
-      !idUsuarioSupabaseValido(usuarioIdLimpo) ||
-      usuarioListaAlterandoId
-    ) {
-      return;
-    }
-
-    setUsuarioListaAlterandoId(usuarioIdLimpo);
-
-    try {
-      const resultado = await deixarDeSeguirUsuarioPrivacidade(usuarioIdLimpo);
-
-      if (!resultado.ok) {
-        console.warn("Não consegui deixar de seguir o usuário:", resultado.erro);
-        return;
-      }
-
-      setUsuariosSeguidos((usuariosAtuais) =>
-        usuariosAtuais.filter(
-          (usuarioSeguido) => usuarioSeguido.id !== usuarioIdLimpo,
-        ),
-      );
-      setAtividadesSeguindo((atividadesAtuais) =>
-        atividadesAtuais.filter(
-          (atividade) => atividade.usuarioId !== usuarioIdLimpo,
-        ),
-      );
-    } finally {
-      setUsuarioListaAlterandoId((idAtual) =>
-        idAtual === usuarioIdLimpo ? null : idAtual,
-      );
-    }
-  }
-
-
-
-
-  async function seguirUsuarioSugestao(usuarioSugestao: UsuarioSeguido) {
-    const usuarioId = usuarioSugestao.id.trim();
-    const solicitacaoPendente = solicitacoesEnviadasIds.includes(usuarioId);
-
-    if (
-      !idUsuarioSupabaseValido(usuarioLogadoId) ||
-      !idUsuarioSupabaseValido(usuarioId) ||
-      usuarioId === usuarioLogadoId ||
-      usuarioSugestaoSeguindoId
-    ) {
-      return;
-    }
-
-    setUsuarioSugestaoSeguindoId(usuarioId);
-
-    try {
-      if (solicitacaoPendente) {
-        const resultadoCancelamento = await cancelarSolicitacaoSeguidor(usuarioId);
-
-        if (!resultadoCancelamento.ok) {
-          console.warn(
-            "Não consegui cancelar a solicitação:",
-            resultadoCancelamento.erro,
-          );
-          return;
-        }
-
-        setSolicitacoesEnviadasIds((idsAtuais) =>
-          idsAtuais.filter((idAtual) => idAtual !== usuarioId),
-        );
-        return;
-      }
-
-      const resultado = await solicitarOuSeguirUsuario(usuarioId);
-
-      if (!resultado.ok) {
-        console.warn("Não consegui seguir o usuário:", resultado.erro);
-        return;
-      }
-
-      if (resultado.estado === "solicitado") {
-        setSolicitacoesEnviadasIds((idsAtuais) =>
-          idsAtuais.includes(usuarioId)
-            ? idsAtuais
-            : [usuarioId, ...idsAtuais],
-        );
-        return;
-      }
-
-      if (resultado.estado !== "seguindo") {
-        return;
-      }
-
-      const usuarioSeguido: UsuarioSeguido = {
-        ...usuarioSugestao,
-        criadoEm: new Date().toISOString(),
-      };
-
-      setUsuariosSeguidos((usuariosAtuais) => {
-        if (usuariosAtuais.some((usuarioAtual) => usuarioAtual.id === usuarioId)) {
-          return usuariosAtuais;
-        }
-
-        return [usuarioSeguido, ...usuariosAtuais];
-      });
-
-      setSolicitacoesEnviadasIds((idsAtuais) =>
-        idsAtuais.filter((idAtual) => idAtual !== usuarioId),
-      );
-      setUsuariosSugestoesBusca((usuariosAtuais) =>
-        usuariosAtuais.filter((usuarioAtual) => usuarioAtual.id !== usuarioId),
-      );
-    } catch (error) {
-      console.warn("Não consegui seguir o usuário:", error);
-    } finally {
-      setUsuarioSugestaoSeguindoId((idAtual) =>
-        idAtual === usuarioId ? null : idAtual,
-      );
-    }
-  }
 
 
 
