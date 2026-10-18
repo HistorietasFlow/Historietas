@@ -18,6 +18,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { calcularTotaisSeguindo } from "./lib/seguindo-list-counts";
 import { obterOpcoesOrdenacaoSeguindo } from "./lib/seguindo-sort-options";
 import { filtrarSolicitacoesSeguidores } from "./lib/seguindo-filtered-follower-requests";
 import { filtrarUsuariosSeguindo } from "./lib/seguindo-filtered-users";
@@ -374,30 +375,20 @@ export default function SeguindoPage() {
     [abaConteudo, listaSocialEhDoUsuarioLogado, solicitacoesSeguidores, termoBusca],
   );
 
-  const totalDisponivelGeral =
-    obrasSeguidasBase.length +
-    usuariosSeguidos.length +
-    usuariosSeguidores.length +
-    solicitacoesSeguidores.length +
-    (visualizandoListaSocialDoPerfil ? 0 : autoresBase.length);
-
-  const totalSemFiltros =
-    abaConteudo === "seguidores"
-      ? usuariosSeguidores.length +
-        (listaSocialEhDoUsuarioLogado ? solicitacoesSeguidores.length : 0)
-      : abaConteudo === "obras"
-        ? obrasSeguidasBase.length
-        : usuariosSeguidos.length +
-          (visualizandoListaSocialDoPerfil ? 0 : autoresBase.length);
-
-  const totalSeguindo =
-    abaConteudo === "seguidores"
-      ? usuariosFiltrados.length + solicitacoesSeguidoresFiltradas.length
-      : abaConteudo === "obras"
-        ? obrasFiltradas.length
-        : usuariosFiltrados.length +
-          (visualizandoListaSocialDoPerfil ? 0 : autoresFiltrados.length);
-
+  const { totalDisponivelGeral, totalSemFiltros, totalSeguindo } = calcularTotaisSeguindo({
+    abaConteudo,
+    listaSocialEhDoUsuarioLogado,
+    visualizandoListaSocialDoPerfil,
+    obrasSeguidasBase,
+    usuariosSeguidos,
+    usuariosSeguidores,
+    solicitacoesSeguidores,
+    autoresBase,
+    usuariosFiltrados,
+    solicitacoesSeguidoresFiltradas,
+    obrasFiltradas,
+    autoresFiltrados,
+  });
 
   const opcoesOrdenacao = obterOpcoesOrdenacaoSeguindo(abaConteudo);
 
