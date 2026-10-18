@@ -18,7 +18,17 @@ type UsuarioSeguindo = {
 };
 
 type AtividadeSeguindo = {
+  id: string;
   usuarioId: string;
+  usuarioNome: string;
+  usuarioHandle: string;
+  usuarioAvatar: string;
+  tipo: string;
+  tipoRotulo: string;
+  titulo: string;
+  descricao: string;
+  data: string;
+  href: string;
 };
 
 type UseSeguindoUserFollowActionsParams = {
