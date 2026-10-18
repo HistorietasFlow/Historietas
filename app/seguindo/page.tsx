@@ -33,7 +33,6 @@ import { obterPermissoesListaSocial } from "./lib/seguindo-social-list-permissio
 import { obterRotulosListaSocial } from "./lib/seguindo-social-list-labels";
 import type {
   ObraLocal,
-  AutorSeguido,
   UsuarioSeguido,
   SolicitacaoSeguidor,
   AtividadeSeguindo,
