@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoFilteredFollowerRequests } from "./hooks/use-seguindo-filtered-follower-requests";
 import { useSeguindoFilteredUsers } from "./hooks/use-seguindo-filtered-users";
 import { useSeguindoFilteredAuthors } from "./hooks/use-seguindo-filtered-authors";
 import { useSeguindoFilteredWorks } from "./hooks/use-seguindo-filtered-works";
@@ -25,7 +26,6 @@ import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-a
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import { calcularTotaisSeguindo } from "./lib/seguindo-list-counts";
 import { obterOpcoesOrdenacaoSeguindo } from "./lib/seguindo-sort-options";
-import { filtrarSolicitacoesSeguidores } from "./lib/seguindo-filtered-follower-requests";
 import { selecionarUsuariosBaseSocial } from "./lib/seguindo-social-users-selector";
 import { obterContextoListaSocial } from "./lib/seguindo-social-list-context";
 import { buscaSugestoesUsuariosEstaAtiva } from "./lib/seguindo-social-search-eligibility";
@@ -339,11 +339,8 @@ export default function SeguindoPage() {
     usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
   );
 
-  const solicitacoesSeguidoresFiltradas = useMemo(
-    () => filtrarSolicitacoesSeguidores(
-      abaConteudo, listaSocialEhDoUsuarioLogado, solicitacoesSeguidores, termoBusca,
-    ),
-    [abaConteudo, listaSocialEhDoUsuarioLogado, solicitacoesSeguidores, termoBusca],
+  const solicitacoesSeguidoresFiltradas = useSeguindoFilteredFollowerRequests(
+    abaConteudo, listaSocialEhDoUsuarioLogado, solicitacoesSeguidores, termoBusca,
   );
 
   const { totalDisponivelGeral, totalSemFiltros, totalSeguindo } = calcularTotaisSeguindo({

@@ -65,5 +65,5 @@ test("p\u00e1gina delega apenas o lifecycle e mant\u00e9m o painel de ordena\u00
     /onClick=\{\(\) => setMostrarPainelOrdenacao\(false\)\}/,
   );
   assert.match(pagina, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
-  assert.match(pagina, /import \{ useMemo, useState \} from "react";/);
+  assert.match(pagina, /import \{ useState \} from "react";/);
 });
