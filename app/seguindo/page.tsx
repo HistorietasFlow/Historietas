@@ -19,6 +19,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { obterPermissoesListaSocial } from "./lib/seguindo-social-list-permissions";
 import { obterRotulosListaSocial } from "./lib/seguindo-social-list-labels";
 import type {
   ObraLocal,
@@ -310,10 +311,8 @@ export default function SeguindoPage() {
     abaConteudo,
     perfilSocialNome,
   );
-  const podeRemoverUsuariosDaLista =
-    listaSocialEhDoUsuarioLogado && abaConteudo === "pessoas";
-  const podeRemoverSeguidoresDaLista =
-    listaSocialEhDoUsuarioLogado && abaConteudo === "seguidores";
+  const { podeRemoverUsuariosDaLista, podeRemoverSeguidoresDaLista } =
+    obterPermissoesListaSocial(listaSocialEhDoUsuarioLogado, abaConteudo);
 
   useSeguindoUserSearchSync({
     busca,
