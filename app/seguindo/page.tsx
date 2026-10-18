@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoSearchState } from "./hooks/use-seguindo-search-state";
 import { useSeguindoFilteredFollowerRequests } from "./hooks/use-seguindo-filtered-follower-requests";
 import { useSeguindoFilteredUsers } from "./hooks/use-seguindo-filtered-users";
 import { useSeguindoFilteredAuthors } from "./hooks/use-seguindo-filtered-authors";
@@ -179,8 +180,7 @@ export default function SeguindoPage() {
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [busca, setBusca] = useState("");
-  const [buscaSeguindoAberta, setBuscaSeguindoAberta] = useState(false);
+  const { busca, setBusca, buscaSeguindoAberta, setBuscaSeguindoAberta } = useSeguindoSearchState();
   const [usuariosSugestoesBusca, setUsuariosSugestoesBusca] = useState<
     UsuarioSeguido[]
   >([]);
