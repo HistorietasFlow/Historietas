@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
@@ -19,6 +18,7 @@ import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoFollowerActions } from "./hooks/use-seguindo-follower-actions";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
@@ -245,6 +245,19 @@ export default function SeguindoPage() {
   useSeguindoDataLoadTrigger({
     usuarioLogadoId,
     carregarDadosSeguindo,
+  });
+
+  const {
+    removerSeguidorUsuario,
+    responderSolicitacaoSeguidor,
+  } = useSeguindoFollowerActions({
+    usuarioLogadoId,
+    usuarioListaAlterandoId,
+    solicitacaoRespondendoId,
+    setUsuarioListaAlterandoId,
+    setSolicitacaoRespondendoId,
+    setUsuariosSeguidores,
+    setSolicitacoesSeguidores,
   });
 
   const termoBusca = normalizarTexto(busca);
@@ -726,105 +739,7 @@ export default function SeguindoPage() {
     }
   }
 
-  async function removerSeguidorUsuario(usuarioId: string) {
-    const usuarioIdLimpo = usuarioId.trim();
 
-    if (
-      !idUsuarioSupabaseValido(usuarioLogadoId) ||
-      !idUsuarioSupabaseValido(usuarioIdLimpo) ||
-      usuarioListaAlterandoId
-    ) {
-      return;
-    }
-
-    setUsuarioListaAlterandoId(usuarioIdLimpo);
-
-    try {
-      const { data, error } = await supabase.rpc("remover_seguidor", {
-        p_seguidor_id: usuarioIdLimpo,
-      });
-
-      if (error || data !== true) {
-        console.warn(
-          "Não consegui remover o seguidor:",
-          error?.message || "A remoção não foi confirmada.",
-        );
-        return;
-      }
-
-      setUsuariosSeguidores((usuariosAtuais) =>
-        usuariosAtuais.filter(
-          (usuarioSeguidor) => usuarioSeguidor.id !== usuarioIdLimpo,
-        ),
-      );
-    } finally {
-      setUsuarioListaAlterandoId((idAtual) =>
-        idAtual === usuarioIdLimpo ? null : idAtual,
-      );
-    }
-  }
-
-  async function responderSolicitacaoSeguidor(
-    solicitacao: SolicitacaoSeguidor,
-    aceitar: boolean,
-  ) {
-    if (
-      !idUsuarioSupabaseValido(solicitacao.id) ||
-      solicitacaoRespondendoId
-    ) {
-      return;
-    }
-
-    setSolicitacaoRespondendoId(solicitacao.id);
-
-    try {
-      const { data, error } = await supabase.rpc(
-        "responder_solicitacao_seguidor",
-        {
-          p_solicitacao_id: solicitacao.id,
-          p_aceitar: aceitar,
-        },
-      );
-
-      if (error || (data !== "aceita" && data !== "recusada")) {
-        console.warn(
-          "Não consegui responder a solicitação:",
-          error?.message || "A resposta não foi confirmada.",
-        );
-        return;
-      }
-
-      setSolicitacoesSeguidores((solicitacoesAtuais) =>
-        solicitacoesAtuais.filter(
-          (solicitacaoAtual) => solicitacaoAtual.id !== solicitacao.id,
-        ),
-      );
-
-      if (data === "aceita") {
-        setUsuariosSeguidores((usuariosAtuais) => {
-          if (
-            usuariosAtuais.some(
-              (usuarioAtual) => usuarioAtual.id === solicitacao.usuario.id,
-            )
-          ) {
-            return usuariosAtuais;
-          }
-
-          return [
-            {
-              ...solicitacao.usuario,
-              criadoEm: new Date().toISOString(),
-            },
-            ...usuariosAtuais,
-          ];
-        });
-      }
-    } finally {
-      setSolicitacaoRespondendoId((idAtual) =>
-        idAtual === solicitacao.id ? null : idAtual,
-      );
-    }
-  }
 
 
   async function seguirUsuarioSugestao(usuarioSugestao: UsuarioSeguido) {
