@@ -10,6 +10,7 @@ import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
+import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
@@ -281,6 +282,17 @@ export default function SeguindoPage() {
   const visualizandoListaSocialDoPerfil = Boolean(
     perfilSocialId && perfilSocialId !== usuarioLogadoId,
   );
+  const trocarAbaConteudo = useSeguindoContentTabNavigation({
+    perfilSocialId,
+    perfilSocialNome,
+    usuarioLogadoId,
+    visualizandoListaSocialDoPerfil,
+    setAbaConteudo,
+    setAbaSeguimento,
+    setBusca,
+    setFiltro,
+    setOrdenacao,
+  });
   const buscaSugestoesUsuariosAtiva = Boolean(
     buscaSeguindoAberta &&
       termoBusca.length >= 2 &&
@@ -650,43 +662,6 @@ export default function SeguindoPage() {
           { valor: "titulo", rotulo: "A-Z" },
         ];
 
-  function trocarAbaConteudo(novaAba: AbaConteudoSeguindo) {
-    setAbaConteudo(novaAba);
-    setAbaSeguimento(
-      novaAba === "seguidores" ? "seguidores" : "seguindo"
-    );
-    setBusca("");
-    setFiltro(novaAba === "obras" ? "todos" : "usuarios");
-    setOrdenacao("padrao");
-
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const perfilIdParaUrl = perfilSocialId || usuarioLogadoId;
-
-    params.set("conteudo", novaAba);
-
-    if (novaAba === "seguidores") {
-      params.set("aba", "seguidores");
-    } else if (novaAba === "pessoas") {
-      params.set("aba", "seguindo");
-    } else {
-      params.delete("aba");
-    }
-
-    if (perfilIdParaUrl && visualizandoListaSocialDoPerfil) {
-      params.set("userId", perfilIdParaUrl);
-      params.set("autorId", perfilIdParaUrl);
-    }
-
-    if (perfilSocialNome.trim()) {
-      params.set("autor", perfilSocialNome.trim());
-    }
-
-    window.history.replaceState(null, "", `/seguindo?${params.toString()}`);
-  }
 
 
 
