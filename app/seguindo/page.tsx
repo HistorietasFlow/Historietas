@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
@@ -119,7 +118,6 @@ import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo
 import {
   desktopTopWaterFadeStyle,
   mobileTopWaterFadeStyle,
-  safeTextStyle,
 } from "./lib/seguindo-surface-styles";
 import { obraEstaNaLista } from "./lib/seguindo-work-collection-utils";
 import {
