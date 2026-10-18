@@ -20,6 +20,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { desktopSeguindoHeaderActionsStyle, desktopSeguindoHeaderTitleStyle } from "./lib/seguindo-header-typography-styles";
 import { desktopSeguindoHeaderStyle, seguindoHeaderStyle } from "./lib/seguindo-header-base-styles";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
 import {
@@ -1657,24 +1658,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const desktopSeguindoHeaderTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "32px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  ...safeTextStyle,
-};
-
-const desktopSeguindoHeaderActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "10px",
-  minWidth: 0,
-};
 
 const desktopSeguindoHeaderSearchIconStyle: CSSProperties = {
   position: "absolute",
