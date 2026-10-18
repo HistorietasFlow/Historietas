@@ -139,7 +139,6 @@ import {
 import { obraEstaNaLista } from "./lib/seguindo-work-collection-utils";
 import {
   formatarGeneroSeguindo,
-  normalizarNomeAutor,
 } from "./lib/seguindo-format-utils";
 import {
   criarAvatarUsuarioSeguindoStyle,
@@ -148,10 +147,6 @@ import {
 import {
   calcularProgressoLeitura,
   obraEmLeitura,
-  obterTotalComentariosObraSeguindo,
-  obterTotalCurtidasObraSeguindo,
-  obterTotalLidosObraSeguindo,
-  obterTotalSalvosObraSeguindo,
 } from "./lib/seguindo-work-metrics-utils";
 import {
   dataAtividadeObra,
