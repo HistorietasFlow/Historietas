@@ -20,6 +20,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { desktopSeguindoHeaderSearchIconStyle, desktopSeguindoHeaderSearchInputStyle } from "./lib/seguindo-header-search-styles";
 import { desktopSeguindoHeaderActionsStyle, desktopSeguindoHeaderTitleStyle } from "./lib/seguindo-header-typography-styles";
 import { desktopSeguindoHeaderStyle, seguindoHeaderStyle } from "./lib/seguindo-header-base-styles";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
@@ -1658,31 +1659,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const desktopSeguindoHeaderSearchIconStyle: CSSProperties = {
-  position: "absolute",
-  left: "13px",
-  top: "50%",
-  transform: "translateY(-50%)",
-  color: "rgba(255,255,255,0.56)",
-  pointerEvents: "none",
-};
-
-const desktopSeguindoHeaderSearchInputStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "100%",
-  height: "100%",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  outline: "none",
-  padding: "0 14px 0 42px",
-  fontFamily: "inherit",
-  fontSize: "13px",
-  fontWeight: 800,
-  boxSizing: "border-box",
-};
 
 const seguindoSearchToggleStyle: CSSProperties = {
   appearance: "none",
