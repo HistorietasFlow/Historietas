@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoVisibleWorks } from "./hooks/use-seguindo-visible-works";
 import { useSeguindoFollowerActions } from "./hooks/use-seguindo-follower-actions";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-actions";
@@ -25,7 +26,6 @@ import { filtrarUsuariosSeguindo } from "./lib/seguindo-filtered-users";
 import { filtrarAutoresSeguindo } from "./lib/seguindo-filtered-authors";
 import { filtrarObrasSeguindo } from "./lib/seguindo-filtered-works";
 import { montarAutoresBaseSeguindo } from "./lib/seguindo-author-base-builder";
-import { filtrarObrasVisiveisSeguindo, filtrarObrasSeguidasBase } from "./lib/seguindo-visible-works";
 import { selecionarUsuariosBaseSocial } from "./lib/seguindo-social-users-selector";
 import { obterContextoListaSocial } from "./lib/seguindo-social-list-context";
 import { buscaSugestoesUsuariosEstaAtiva } from "./lib/seguindo-social-search-eligibility";
@@ -321,15 +321,8 @@ export default function SeguindoPage() {
   });
 
 
-  const obrasVisiveisSeguindo = useMemo(
-    () => filtrarObrasVisiveisSeguindo(obras),
-    [obras],
-  );
-
-  const obrasSeguidasBase = useMemo(
-    () => filtrarObrasSeguidasBase(obrasVisiveisSeguindo, obrasSeguidas),
-    [obrasVisiveisSeguindo, obrasSeguidas],
-  );
+  const { obrasVisiveisSeguindo, obrasSeguidasBase } =
+    useSeguindoVisibleWorks(obras, obrasSeguidas);
 
   const autoresBase = useMemo<AutorSeguido[]>(
     () => montarAutoresBaseSeguindo(
