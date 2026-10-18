@@ -21,6 +21,14 @@ import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import {
+  badgeRowStyle,
+  badgeStyleSmall,
+  classificationBadgeStyle,
+  readingBadgeStyle,
+  authorWorksMetaStyle,
+  authorReadingMetaStyle,
+} from "./lib/seguindo-card-badges-styles";
+import {
   overlayStyle,
   genreStyle,
   contentStyle,
@@ -1726,63 +1734,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const badgeRowStyle: CSSProperties = {
-  display: "flex",
-  gap: "4px",
-  flexWrap: "wrap",
-  alignItems: "center",
-  minWidth: 0,
-};
-
-const badgeStyleSmall: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const classificationBadgeStyle: CSSProperties = {
-  ...genreStyle,
-  background: "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.08)",
-};
-
-const readingBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const authorWorksMetaStyle: CSSProperties = {
-  ...badgeStyleSmall,
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 450,
-  lineHeight: 1.25,
-};
-
-const authorReadingMetaStyle: CSSProperties = {
-  ...readingBadgeStyle,
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 450,
-  lineHeight: 1.25,
-};
-
 
 const cardTitleStyle: CSSProperties = {
   margin: 0,
