@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoFilterSortState } from "./hooks/use-seguindo-filter-sort-state";
 import { useSeguindoSearchState } from "./hooks/use-seguindo-search-state";
 import { useSeguindoFilteredFollowerRequests } from "./hooks/use-seguindo-filtered-follower-requests";
 import { useSeguindoFilteredUsers } from "./hooks/use-seguindo-filtered-users";
@@ -188,9 +189,7 @@ export default function SeguindoPage() {
     useState(false);
   const [usuarioSugestaoSeguindoId, setUsuarioSugestaoSeguindoId] =
     useState<string | null>(null);
-  const [filtro, setFiltro] = useState<FiltroSeguindo>("todos");
-  const [ordenacao, setOrdenacao] =
-    useState<OrdenacaoSeguindo>("padrao");
+  const { filtro, setFiltro, ordenacao, setOrdenacao } = useSeguindoFilterSortState();
   const [abaConteudo, setAbaConteudo] =
     useState<AbaConteudoSeguindo>("obras");
   const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
