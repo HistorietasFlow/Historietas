@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoSuggestionState } from "./hooks/use-seguindo-suggestion-state";
 import { useSeguindoFollowTabState } from "./hooks/use-seguindo-follow-tab-state";
 import { useSeguindoAccessState } from "./hooks/use-seguindo-access-state";
 import { useSeguindoProfileContextState } from "./hooks/use-seguindo-profile-context-state";
@@ -183,13 +184,11 @@ export default function SeguindoPage() {
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [carregando, setCarregando] = useState(true);
   const { busca, setBusca, buscaSeguindoAberta, setBuscaSeguindoAberta } = useSeguindoSearchState();
-  const [usuariosSugestoesBusca, setUsuariosSugestoesBusca] = useState<
-    UsuarioSeguido[]
-  >([]);
-  const [carregandoUsuariosSugestoes, setCarregandoUsuariosSugestoes] =
-    useState(false);
-  const [usuarioSugestaoSeguindoId, setUsuarioSugestaoSeguindoId] =
-    useState<string | null>(null);
+  const {
+    usuariosSugestoesBusca, setUsuariosSugestoesBusca,
+    carregandoUsuariosSugestoes, setCarregandoUsuariosSugestoes,
+    usuarioSugestaoSeguindoId, setUsuarioSugestaoSeguindoId,
+  } = useSeguindoSuggestionState();
   const { filtro, setFiltro, ordenacao, setOrdenacao } = useSeguindoFilterSortState();
   const { abaConteudo, setAbaConteudo } = useSeguindoContentTabState();
   const { mostrarPainelOrdenacao, setMostrarPainelOrdenacao } = useSeguindoSortingPanelState();
