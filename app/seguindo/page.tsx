@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoAccessState } from "./hooks/use-seguindo-access-state";
 import { useSeguindoProfileContextState } from "./hooks/use-seguindo-profile-context-state";
 import { useSeguindoSortingPanelState } from "./hooks/use-seguindo-sorting-panel-state";
 import { useSeguindoContentTabState } from "./hooks/use-seguindo-content-tab-state";
@@ -193,8 +194,7 @@ export default function SeguindoPage() {
   const { abaConteudo, setAbaConteudo } = useSeguindoContentTabState();
   const { mostrarPainelOrdenacao, setMostrarPainelOrdenacao } = useSeguindoSortingPanelState();
   const isDesktop = useSeguindoDesktopMode();
-  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
-  const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
+  const { verificandoAcesso, setVerificandoAcesso, usuarioLogadoId, setUsuarioLogadoId } = useSeguindoAccessState();
   const [, setAbaSeguimento] =
     useState<AbaSeguimentoPagina>("seguindo");
   const { perfilSocialId, setPerfilSocialId, perfilSocialNome, setPerfilSocialNome } = useSeguindoProfileContextState();
