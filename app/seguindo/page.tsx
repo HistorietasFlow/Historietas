@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
-import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
