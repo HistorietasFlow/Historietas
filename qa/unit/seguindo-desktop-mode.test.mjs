@@ -73,6 +73,6 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
     /const \[mostrarPainelOrdenacao, setMostrarPainelOrdenacao\] = useState\(false\);/,
   );
   assert.match(pagina, /useSeguindoAccessSync\(\{/);
-  assert.match(pagina, /carregarAtividadesSeguindoSupabase/);
+  assert.match(pagina, /prepararDadosRemotosSeguindo/);
   assert.match(pagina, /carregarDadosLocaisSeguindo/);
 });

@@ -21,6 +21,13 @@ const converter = readFileSync(
   ),
   "utf8",
 );
+const dadosRemotos = readFileSync(
+  new URL(
+    "../../app/seguindo/lib/seguindo-remote-data-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsSource = readFileSync(
   new URL("../../lib/utils.ts", import.meta.url),
   "utf8",
@@ -83,7 +90,11 @@ test("número preserva arredondamento, formato pt-BR, piso zero e fallback", () 
 test("página delega normalização e formatação ao módulo dedicado", () => {
   assert.match(
     pagina,
-    /formatarGeneroSeguindo,[\s\S]*?normalizarListaTexto,[\s\S]*?normalizarNomeAutor,[\s\S]*?from "\.\/lib\/seguindo-format-utils";/,
+    /formatarGeneroSeguindo,[\s\S]*?normalizarNomeAutor,[\s\S]*?from "\.\/lib\/seguindo-format-utils";/,
+  );
+  assert.match(
+    dadosRemotos,
+    /import \{ normalizarListaTexto \} from "\.\/seguindo-format-utils";/,
   );
   assert.match(
     converter,

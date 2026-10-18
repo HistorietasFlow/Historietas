@@ -49,6 +49,6 @@ test("Seguindo consome o CSS extraído sem mover responsabilidades da página", 
     /import \{ SeguindoLanguageBridge \} from "\.\/components\/seguindo-language-bridge";/,
   );
   assert.match(pagina, /useSeguindoDesktopMode/);
-  assert.match(pagina, /carregarAtividadesSeguindoSupabase/);
+  assert.match(pagina, /prepararDadosRemotosSeguindo/);
   assert.match(pagina, /carregarDadosLocaisSeguindo/);
 });

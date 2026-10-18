@@ -27,10 +27,8 @@ import {
 } from "./lib/seguindo-work-collection-utils";
 import {
   formatarGeneroSeguindo,
-  normalizarListaTexto,
   normalizarNomeAutor,
 } from "./lib/seguindo-format-utils";
-import { carregarAtividadesSeguindoSupabase } from "./lib/seguindo-activity-feed-utils";
 import {
   criarAvatarUsuarioSeguindoStyle,
   criarCoverStyle,
@@ -43,12 +41,14 @@ import {
   obterTotalLidosObraSeguindo,
   obterTotalSalvosObraSeguindo,
 } from "./lib/seguindo-work-metrics-utils";
-import { normalizarObraSalva } from "./lib/seguindo-saved-work-utils";
 import {
   carregarDadosLocaisSeguindo,
   salvarDadosLocaisSeguindo,
 } from "./lib/seguindo-local-data-utils";
-import { carregarDadosRemotosSeguindo } from "./lib/seguindo-remote-data-utils";
+import {
+  carregarDadosRemotosSeguindo,
+  prepararDadosRemotosSeguindo,
+} from "./lib/seguindo-remote-data-utils";
 import {
   dataAtividadeObra,
   mostrarClassificacao,
@@ -107,12 +107,6 @@ type ObraLocal = {
   totalFavoritas?: number;
   totalConcluidas?: number;
 };
-
-type CapituloSalvo = Partial<CapituloLocal> & Record<string, unknown>;
-
-type ObraSalva = Partial<ObraLocal> & {
-  capitulos?: CapituloSalvo[];
-} & Record<string, unknown>;
 
 type AutorSeguido = {
   chave: string;
@@ -276,17 +270,16 @@ export default function SeguindoPage() {
       usuarioLogadoId,
     });
 
-    obrasNormalizadas = dadosSupabase.obras.map((obra, index) =>
-      normalizarObraSalva(obra as ObraSalva, index)
-    );
-    const atividadesSeguindoSupabase = await carregarAtividadesSeguindoSupabase(
+    const dadosRemotosPreparados = await prepararDadosRemotosSeguindo({
+      dadosSupabase,
       usuariosSeguidosSupabase,
-      obrasNormalizadas,
-      usuarioLogadoId
-    );
-    seguindoNormalizado = normalizarListaTexto(dadosSupabase.obrasSeguidas);
-    favoritasNormalizadas = normalizarListaTexto(dadosSupabase.obrasFavoritas);
-    concluidasNormalizadas = normalizarListaTexto(dadosSupabase.obrasConcluidas);
+      usuarioLogadoId,
+    });
+    obrasNormalizadas = dadosRemotosPreparados.obras;
+    seguindoNormalizado = dadosRemotosPreparados.obrasSeguidas;
+    favoritasNormalizadas = dadosRemotosPreparados.obrasFavoritas;
+    concluidasNormalizadas = dadosRemotosPreparados.obrasConcluidas;
+    const atividadesSeguindoSupabase = dadosRemotosPreparados.atividades;
 
     salvarDadosLocaisSeguindo({
       userId: usuarioLogadoId,
