@@ -20,7 +20,6 @@ import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
 import type {
-  CapituloLocal,
   ObraLocal,
   AutorSeguido,
   UsuarioSeguido,
