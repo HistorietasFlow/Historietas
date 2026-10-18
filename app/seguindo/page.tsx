@@ -19,6 +19,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { buscaSugestoesUsuariosEstaAtiva } from "./lib/seguindo-social-search-eligibility";
 import { obterPermissoesListaSocial } from "./lib/seguindo-social-list-permissions";
 import { obterRotulosListaSocial } from "./lib/seguindo-social-list-labels";
 import type {
@@ -299,11 +300,11 @@ export default function SeguindoPage() {
     setFiltro,
     setOrdenacao,
   });
-  const buscaSugestoesUsuariosAtiva = Boolean(
-    buscaSeguindoAberta &&
-      termoBusca.length >= 2 &&
-      !visualizandoListaSocialDoPerfil &&
-      (abaConteudo === "pessoas" || abaConteudo === "seguidores")
+  const buscaSugestoesUsuariosAtiva = buscaSugestoesUsuariosEstaAtiva(
+    buscaSeguindoAberta,
+    termoBusca,
+    visualizandoListaSocialDoPerfil,
+    abaConteudo,
   );
   const usuariosBaseSocial =
     abaConteudo === "seguidores" ? usuariosSeguidores : usuariosSeguidos;
