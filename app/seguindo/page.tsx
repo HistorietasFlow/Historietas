@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
