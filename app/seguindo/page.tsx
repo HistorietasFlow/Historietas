@@ -306,7 +306,7 @@ export default function SeguindoPage() {
   );
   const usuariosBaseSocial =
     abaConteudo === "seguidores" ? usuariosSeguidores : usuariosSeguidos;
-  const { tituloListaSocial, descricaoListaSocial } = obterRotulosListaSocial(
+  const { descricaoListaSocial } = obterRotulosListaSocial(
     abaConteudo,
     perfilSocialNome,
   );
