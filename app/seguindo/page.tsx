@@ -12,6 +12,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoSortingPanelState } from "./hooks/use-seguindo-sorting-panel-state";
 import { useSeguindoContentTabState } from "./hooks/use-seguindo-content-tab-state";
 import { useSeguindoFilterSortState } from "./hooks/use-seguindo-filter-sort-state";
 import { useSeguindoSearchState } from "./hooks/use-seguindo-search-state";
@@ -189,7 +190,7 @@ export default function SeguindoPage() {
     useState<string | null>(null);
   const { filtro, setFiltro, ordenacao, setOrdenacao } = useSeguindoFilterSortState();
   const { abaConteudo, setAbaConteudo } = useSeguindoContentTabState();
-  const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
+  const { mostrarPainelOrdenacao, setMostrarPainelOrdenacao } = useSeguindoSortingPanelState();
   const isDesktop = useSeguindoDesktopMode();
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
