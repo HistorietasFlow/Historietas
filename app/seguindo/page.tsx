@@ -38,9 +38,7 @@ import type {
   UsuarioSeguido,
   SolicitacaoSeguidor,
   AtividadeSeguindo,
-  FiltroSeguindo,
   AbaSeguimentoPagina,
-  OrdenacaoSeguindo,
   AbaConteudoSeguindo,
 } from "./lib/seguindo-page-types";
 import { authorNameStyle } from "./lib/seguindo-author-name-style";
