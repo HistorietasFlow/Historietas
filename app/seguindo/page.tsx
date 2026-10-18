@@ -20,6 +20,7 @@ import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-a
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { seguindoSearchToggleStyle, seguindoHeaderFilterButtonStyle, desktopSeguindoHeaderFilterButtonStyle } from "./lib/seguindo-header-controls-styles";
 import { desktopSeguindoHeaderSearchIconStyle, desktopSeguindoHeaderSearchInputStyle } from "./lib/seguindo-header-search-styles";
 import { desktopSeguindoHeaderActionsStyle, desktopSeguindoHeaderTitleStyle } from "./lib/seguindo-header-typography-styles";
 import { desktopSeguindoHeaderStyle, seguindoHeaderStyle } from "./lib/seguindo-header-base-styles";
@@ -1659,76 +1660,6 @@ export default function SeguindoPage() {
     </main>
   );
 }
-
-const seguindoSearchToggleStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "34px",
-  height: "34px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "24px",
-  lineHeight: 1,
-  fontWeight: 950,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  padding: 0,
-  boxShadow: "none",
-  flex: "0 0 auto",
-  outline: "none",
-  WebkitTapHighlightColor: "transparent",
-};
-
-const seguindoHeaderFilterButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  padding: 0,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "46%",
-  flex: "0 1 auto",
-  fontSize: "16px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  textAlign: "left",
-  letterSpacing: "-0.04em",
-  boxShadow: "none",
-  outline: "none",
-  WebkitTapHighlightColor: "transparent",
-  ...safeTextStyle,
-};
-
-const desktopSeguindoHeaderFilterButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  minHeight: "42px",
-  padding: "0 16px",
-  borderRadius: "10px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "transparent",
-  color: "#FFFFFF",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  fontFamily: "inherit",
-  fontSize: "12px",
-  fontWeight: 900,
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-};
 
 const seguindoHeaderFilterIconStyle: CSSProperties = {
   color: "#FFFFFF",
