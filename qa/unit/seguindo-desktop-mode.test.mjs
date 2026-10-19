@@ -17,6 +17,10 @@ const painel = readFileSync(
   new URL("../../app/seguindo/components/seguindo-sorting-panel.tsx", import.meta.url),
   "utf8",
 );
+const toolbar = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-social-toolbar.tsx", import.meta.url),
+  "utf8",
+);
 
 test("useSeguindoDesktopMode preserva o lifecycle responsivo de Seguindo", () => {
   assert.match(hook, /^"use client";/);
@@ -63,9 +67,10 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 97);
   assert.match(pagina, /<SeguindoHeader\s+isDesktop=\{isDesktop\}/);
+  assert.match(pagina, /<SeguindoSocialToolbar\s+isDesktop=\{isDesktop\}/);
   assert.match(pagina, /<SeguindoSortingPanel\s+isDesktop=\{isDesktop\}/);
+  assert.match(toolbar, /isDesktop \? desktopSocialToolbarStyle : socialToolbarStyle/);
   assert.match(painel, /isDesktop \? desktopSortingSheetStyle : sortingSheetStyle/);
   assert.match(
     pagina,
