@@ -63,7 +63,8 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 96);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 97);
+  assert.match(pagina, /<SeguindoHeader\s+isDesktop=\{isDesktop\}/);
   assert.match(pagina, /<SeguindoSortingPanel\s+isDesktop=\{isDesktop\}/);
   assert.match(painel, /isDesktop \? desktopSortingSheetStyle : sortingSheetStyle/);
   assert.match(

@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 963 — cabeçalho de busca e ordenação
+
+- Extraiu somente a composição visual do cabeçalho desktop/mobile para `SeguindoHeader`.
+- Preservou busca, acessibilidade, variantes responsivas e o gatilho do painel, mantendo estados e callbacks na página.
+
 ## Fase 962 — painel de ordenação
 
 - Extraiu somente a composição visual do painel de ordenação para `SeguindoSortingPanel`, preservando as opções, estilos, fechamento e ordem dos callbacks.
