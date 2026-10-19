@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const painel = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-sorting-panel.tsx", import.meta.url),
+  "utf8",
+);
 
 test("useSeguindoDesktopMode preserva o lifecycle responsivo de Seguindo", () => {
   assert.match(hook, /^"use client";/);
@@ -59,7 +63,9 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 95);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 96);
+  assert.match(pagina, /<SeguindoSortingPanel\s+isDesktop=\{isDesktop\}/);
+  assert.match(painel, /isDesktop \? desktopSortingSheetStyle : sortingSheetStyle/);
   assert.match(
     pagina,
     /import \{ useSeguindoSortingSheetBodyLock \} from "\.\/hooks\/use-seguindo-sorting-sheet-body-lock";/,

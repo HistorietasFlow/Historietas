@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 962 — painel de ordenação
+
+- Extraiu somente a composição visual do painel de ordenação para `SeguindoSortingPanel`, preservando as opções, estilos, fechamento e ordem dos callbacks.
+- A página continua responsável pelo estado, pelo lifecycle de bloqueio da rolagem e pela condição de exibição.
+
 ## Fase 828 — modo desktop
 
 - Extraiu o estado e o lifecycle responsivo para `useSeguindoDesktopMode`.
