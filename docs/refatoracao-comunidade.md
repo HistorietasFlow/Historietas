@@ -521,6 +521,10 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 
 - O painel visual de ordenação de Seguindo foi extraído sem alterar opções, estilos, callbacks ou o lifecycle de bloqueio de rolagem.
 
+## Registro da Fase 963 — Seguindo
+
+- O cabeçalho visual de Seguindo foi isolado sem alterar estados, busca, acessibilidade ou o acionamento do painel de ordenação.
+
 ## Contrato de preservação
 
 A extração deve preservar exatamente:
