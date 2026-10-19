@@ -517,6 +517,10 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 - Fase 852: mover literalmente `adminComunidadePageCss` para módulo local, preservando os quatro consumidores e a ordem de precedência do CSS no cliente.
 - Fase 853: extrair `AdminComunidadeLanguageBridge`, sua tabela de traduções e helpers exclusivos para componente local, preservando observer, cleanup e os quatro mounts na página.
 
+## Registro da Fase 962 — Seguindo
+
+- O painel visual de ordenação de Seguindo foi extraído sem alterar opções, estilos, callbacks ou o lifecycle de bloqueio de rolagem.
+
 ## Contrato de preservação
 
 A extração deve preservar exatamente:
