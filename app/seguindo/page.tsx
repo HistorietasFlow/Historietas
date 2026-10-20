@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoPageContent } from "./components/seguindo-page-content";
@@ -10,6 +9,7 @@ import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
+import { useSeguindoDataState } from "./hooks/use-seguindo-data-state";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoDerivedContent } from "./hooks/use-seguindo-derived-content";
 import { useSeguindoReadingStatusState } from "./hooks/use-seguindo-reading-status-state";
@@ -27,33 +27,33 @@ import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sh
 import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-actions";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
-import type {
-  ObraLocal,
-  UsuarioSeguido,
-  SolicitacaoSeguidor,
-  AtividadeSeguindo,
-} from "./lib/seguindo-page-types";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
 
 export default function SeguindoPage() {
-  const [obras, setObras] = useState<ObraLocal[]>([]);
-  const [obrasSeguidas, setObrasSeguidas] = useState<string[]>([]);
-  const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
-  const [usuariosSeguidos, setUsuariosSeguidos] = useState<UsuarioSeguido[]>([]);
-  const [usuariosSeguidores, setUsuariosSeguidores] = useState<UsuarioSeguido[]>([]);
-  const [solicitacoesSeguidores, setSolicitacoesSeguidores] = useState<
-    SolicitacaoSeguidor[]
-  >([]);
-  const [solicitacoesEnviadasIds, setSolicitacoesEnviadasIds] = useState<
-    string[]
-  >([]);
+  const {
+    obras,
+    setObras,
+    obrasSeguidas,
+    setObrasSeguidas,
+    autoresSeguidos,
+    setAutoresSeguidos,
+    usuariosSeguidos,
+    setUsuariosSeguidos,
+    usuariosSeguidores,
+    setUsuariosSeguidores,
+    solicitacoesSeguidores,
+    setSolicitacoesSeguidores,
+    solicitacoesEnviadasIds,
+    setSolicitacoesEnviadasIds,
+    setAtividadesSeguindo,
+    carregando,
+    setCarregando,
+  } = useSeguindoDataState();
   const {
     solicitacaoRespondendoId, setSolicitacaoRespondendoId,
     usuarioListaAlterandoId, setUsuarioListaAlterandoId,
   } = useSeguindoRequestActionState();
-  const [, setAtividadesSeguindo] = useState<AtividadeSeguindo[]>([]);
   const { obrasFavoritas, setObrasFavoritas, obrasConcluidas, setObrasConcluidas } = useSeguindoReadingStatusState();
-  const [carregando, setCarregando] = useState(true);
   const { busca, setBusca, buscaSeguindoAberta, setBuscaSeguindoAberta } = useSeguindoSearchState();
   const {
     usuariosSugestoesBusca, setUsuariosSugestoesBusca,

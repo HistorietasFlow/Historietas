@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 972 — estado de dados
+
+- Moveu o estado bruto de obras, relações sociais, solicitações, atividades e carregamento para `useSeguindoDataState`.
+- Preservou os defaults e setters consumidos pelos hooks de carregamento e ações, sem mudança intencional de comportamento.
+
 ## Fase 971 — dados derivados
 
 - Agrupou a composição de contexto social, filtros, totais e opções de ordenação no hook `useSeguindoDerivedContent`.
