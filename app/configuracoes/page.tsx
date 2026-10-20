@@ -60,6 +60,11 @@ import type {
 } from "./lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
 import { criarStorageKeyUsuarioConfiguracoes } from "./lib/configuracoes-storage-key-utils";
+import {
+  CHAVES_RESUMO,
+  CONFIG_STORAGE_KEY,
+  CONFIGURACOES_ATUALIZADAS_EVENT,
+} from "./lib/configuracoes-account-storage-constants";
 import { criarChaveItemResumo } from "./lib/configuracoes-summary-item-utils";
 import { carregarJsonArrayConfiguracoes } from "./lib/configuracoes-json-array-utils";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
@@ -77,21 +82,6 @@ import {
   traduzirErroSenhaConfiguracoes,
   traduzirErroUsernameConfiguracoes,
 } from "./lib/configuracoes-error-messages";
-
-const CONFIG_STORAGE_KEY = "historietas-configuracoes-conta";
-const CONFIGURACOES_ATUALIZADAS_EVENT =
-  "historietas:configuracoes-atualizadas";
-const CHAVES_RESUMO = [
-  "historietas-obras",
-  "historietas-notificacoes",
-  "historietas-lancamentos-salvos",
-  "historietas-obras-favoritas",
-  "historietas-obras-concluidas",
-  "historietas-obras-seguidas",
-  "historietas-autores-seguidos",
-  "historietas-perfis-autores",
-  "historietas-privacidade",
-];
 
 function lerStorageUsuarioConfiguracoes(chave: string, userId = "") {
   const userIdLimpo = userId.trim();

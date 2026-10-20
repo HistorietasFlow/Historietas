@@ -38,6 +38,13 @@ const errorMessagesSource = readFileSync(
   ),
   "utf8",
 );
+const storageConstantsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-storage-constants.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -119,6 +126,9 @@ test("modelos e traduções de erro de Configurações preservam contratos", () 
     errorMessagesSource,
     /supabase|localStorage|useState|useEffect|window|document/,
   );
+  assert.match(storageConstantsSource, /CONFIG_STORAGE_KEY = "historietas-configuracoes-conta"/);
+  assert.match(storageConstantsSource, /CONFIGURACOES_ATUALIZADAS_EVENT/);
+  assert.match(storageConstantsSource, /"historietas-privacidade"/);
 });
 
 test("Configurações delega as fronteiras extraídas", () => {
@@ -130,6 +140,10 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.match(pagina, /from "\.\/lib\/configuracoes-error-messages";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-models";/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-storage-constants";/,
+  );
 
   for (const helper of [
     "textoIdioma",
