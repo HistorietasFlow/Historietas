@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 2 — Notificações
+
+- A rota de login, o estilo de avatar e a deduplicação de notificações foram isolados em helpers puros, preservando a ordem de prioridade, os fallbacks e os consumidores existentes.
+
 ## Registro da Fase 1 — Notificações
 
 - Modelos locais, persistência isolada por usuário e normalizadores puros foram movidos para módulos dedicados, preservando chaves, fallbacks e contratos de dados sem alterar o comportamento da página.

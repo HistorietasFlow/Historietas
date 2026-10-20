@@ -1,5 +1,6 @@
 import { normalizarTexto } from "../../../lib/utils";
 import { notificacaoEhComunidade } from "./notificacoes-filter-utils";
+import type { CSSProperties } from "react";
 
 type NotificacaoParaExibicao = {
   tipo: string;
@@ -7,7 +8,29 @@ type NotificacaoParaExibicao = {
   mensagem: string;
   lida: boolean;
   autorNome?: string;
+  autorAvatar?: string;
 };
+
+export function criarAvatarNotificacaoStyle(
+  notificacao: NotificacaoParaExibicao,
+  fallbackStyle: CSSProperties
+): CSSProperties {
+  const avatar = notificacao.autorAvatar?.trim() || "";
+
+  if (!avatar) {
+    return fallbackStyle;
+  }
+
+  return {
+    ...fallbackStyle,
+    backgroundImage: `url(${avatar})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    color: "transparent",
+    textDecoration: "none",
+    overflow: "hidden",
+  };
+}
 
 function notificacaoEhDiario(notificacao: NotificacaoParaExibicao) {
   return (

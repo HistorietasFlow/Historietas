@@ -1,6 +1,14 @@
 import { criarSlugBase, idObraSupabaseValido } from "../../../lib/utils";
 import { notificacaoEhCapitulo } from "./notificacoes-filter-utils";
 
+export function criarLoginHrefNotificacoes() {
+  const params = new URLSearchParams({
+    redirectTo: "/notificacoes",
+  });
+
+  return `/login?${params.toString()}`;
+}
+
 type CapituloParaLinkNotificacao = {
   id: string;
 };

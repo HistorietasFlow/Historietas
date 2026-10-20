@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
 import "./notificacoes-local-data.test.mjs";
+import "./notificacoes-merge-utils.test.mjs";
 
 const displayUtils = readFileSync(
   new URL(
@@ -306,7 +307,6 @@ test("página importa os helpers extraídos e preserva as fronteiras locais", ()
   for (const helperLocal of [
     "normalizarNotificacaoParaExibicao",
     "prepararNotificacaoTexto",
-    "criarAvatarNotificacaoStyle",
   ]) {
     assert.match(pagina, new RegExp(`function ${helperLocal}\\(`));
   }
@@ -316,6 +316,11 @@ test("página importa os helpers extraídos e preserva as fronteiras locais", ()
     /import \{[\s\S]*?normalizarNotificacao,[\s\S]*?\} from "\.\/lib\/notificacoes-local-normalizers";/,
   );
   assert.doesNotMatch(pagina, /function normalizarNotificacao\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?criarAvatarNotificacaoStyle,[\s\S]*?\} from "\.\/lib\/notificacoes-display-utils";/,
+  );
+  assert.doesNotMatch(pagina, /function criarAvatarNotificacaoStyle\(/);
   assert.match(pagina, /obterDetalheNotificacao\(\{\s*id,/);
   assert.match(pagina, /notificacaoUsaCardSocial\(notificacao\)/);
   assert.match(pagina, /obterTituloBlocoSocialNotificacao\(notificacao\)/);
