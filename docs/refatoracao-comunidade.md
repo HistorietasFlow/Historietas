@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 16 — Notificações
+
+- As mutações remotas de leitura e remoção foram isoladas em `notificacoes-supabase-sync`, preservando RPCs, fallbacks por tabela, escopo de usuário e falhas não bloqueantes.
+- O estado local e todos os callbacks continuam sob responsabilidade da página.
+
 ## Registro da Fase 15 — Notificações
 
 - A moldura visual compartilhada de Notificações foi isolada em `NotificacoesPageShell`, preservando tema, stylesheet, ponte de idioma, fades responsivos e os dois fluxos de renderização.
