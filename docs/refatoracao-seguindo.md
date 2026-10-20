@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 967 — cards de obras e autores seguidos
+
+- Extraiu os cards visuais de obras e autores seguidos.
+- Preservou rotas, variantes desktop/mobile, ações e regras de visibilidade na página.
+
 ## Fase 966 — cards sociais
 
 - Extraiu os cards visuais de solicitações, perfis da lista social e sugestões de perfil.

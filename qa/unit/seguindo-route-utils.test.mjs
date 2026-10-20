@@ -49,6 +49,20 @@ const suggestedUserCard = readFileSync(
   ),
   "utf8",
 );
+const workCard = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const followedAuthorCard = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-followed-author-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -186,10 +200,7 @@ test("rotas de perfil preservam parâmetros e fallbacks", () => {
 });
 
 test("página delega rotas e validação ao módulo dedicado", () => {
-  assert.match(
-    pagina,
-    /import \{ criarHrefPerfilAutorSeguindo \} from "\.\/lib\/seguindo-route-utils";/,
-  );
+  assert.doesNotMatch(pagina, /from "\.\/lib\/seguindo-route-utils";/);
   assert.match(
     followerActions,
     /import \{ idUsuarioSupabaseValido \} from "\.\.\/lib\/seguindo-route-utils";/,
@@ -208,6 +219,13 @@ test("página delega rotas e validação ao módulo dedicado", () => {
       /import \{ criarHrefPerfilUsuarioSeguindo \} from "\.\.\/lib\/seguindo-route-utils";/,
     );
     assert.match(card, /criarHrefPerfilUsuarioSeguindo\(/);
+  }
+  for (const card of [workCard, followedAuthorCard]) {
+    assert.match(
+      card,
+      /import \{ criarHrefPerfilAutorSeguindo \} from "\.\.\/lib\/seguindo-route-utils";/,
+    );
+    assert.match(card, /criarHrefPerfilAutorSeguindo\(/);
   }
   for (const nome of [
     "criarLoginHrefSeguindo",

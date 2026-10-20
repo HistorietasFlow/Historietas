@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 967 — Seguindo
+
+- Os cards de obras e autores seguidos foram isolados, preservando dados e callbacks na página.
+
 ## Registro da Fase 966 — Seguindo
 
 - Os três cards sociais de Seguindo foram isolados, mantendo a página como responsável por dados e ações.
