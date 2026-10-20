@@ -20,6 +20,13 @@ const painelOrdenacao = readFileSync(
   ),
   "utf8",
 );
+const painelAcoes = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-actions-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("portal preserva o lifecycle de montagem adiada", () => {
   assert.match(portal, /"use client";/);
@@ -37,14 +44,10 @@ test("portal preserva o lifecycle de montagem adiada", () => {
   assert.match(portal, /createPortal\(children, document\.body\)/);
 });
 
-test("página e painel de ordenação preservam os dois overlays pelo portal", () => {
-  assert.match(
-    pagina,
-    /import NotificacoesOverlayPortal from "\.\/components\/notificacoes-overlay-portal";/,
-  );
+test("painéis de ordenação e ações preservam os dois overlays pelo portal", () => {
   assert.equal(
     (pagina.match(/<NotificacoesOverlayPortal>/g) || []).length,
-    1,
+    0,
   );
   assert.match(
     painelOrdenacao,
@@ -52,6 +55,14 @@ test("página e painel de ordenação preservam os dois overlays pelo portal", (
   );
   assert.equal(
     (painelOrdenacao.match(/<NotificacoesOverlayPortal>/g) || []).length,
+    1,
+  );
+  assert.match(
+    painelAcoes,
+    /import NotificacoesOverlayPortal from "\.\/notificacoes-overlay-portal";/,
+  );
+  assert.equal(
+    (painelAcoes.match(/<NotificacoesOverlayPortal>/g) || []).length,
     1,
   );
   assert.doesNotMatch(pagina, /function NotificacoesOverlayPortal/);

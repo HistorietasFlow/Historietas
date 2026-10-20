@@ -16,6 +16,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const painelAcoes = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-actions-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const localStateUtils = readFileSync(
   new URL(
     "../../app/notificacoes/lib/notificacoes-local-state-utils.ts",
@@ -300,7 +307,7 @@ test("preserva textos, autores e iniciais dos blocos sociais", () => {
 test("página importa os helpers extraídos e preserva as fronteiras locais", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?notificacaoTemAutorSocial,[\s\S]*?notificacaoUsaCardSocial,[\s\S]*?obterAcaoPrincipalNotificacao,[\s\S]*?obterDetalheNotificacao,[\s\S]*?obterIconeNotificacao,[\s\S]*?obterInicialNotificacao,[\s\S]*?obterNomeAutorNotificacao,[\s\S]*?obterTextoBlocoSocialNotificacao,[\s\S]*?obterTituloBlocoSocialNotificacao,[\s\S]*?obterTituloExibicaoNotificacao,[\s\S]*?\} from "\.\/lib\/notificacoes-display-utils";/,
+    /import \{[\s\S]*?notificacaoTemAutorSocial,[\s\S]*?notificacaoUsaCardSocial,[\s\S]*?obterDetalheNotificacao,[\s\S]*?obterIconeNotificacao,[\s\S]*?obterInicialNotificacao,[\s\S]*?obterNomeAutorNotificacao,[\s\S]*?obterTextoBlocoSocialNotificacao,[\s\S]*?obterTituloBlocoSocialNotificacao,[\s\S]*?obterTituloExibicaoNotificacao,[\s\S]*?\} from "\.\/lib\/notificacoes-display-utils";/,
   );
 
   for (const helper of [
@@ -345,5 +352,9 @@ test("página importa os helpers extraídos e preserva as fronteiras locais", ()
   assert.match(recordNormalizers, /obterDetalheNotificacao\(\{\s*id,/);
   assert.match(pagina, /notificacaoUsaCardSocial\(notificacao\)/);
   assert.match(pagina, /obterTituloBlocoSocialNotificacao\(notificacao\)/);
-  assert.match(pagina, /obterAcaoPrincipalNotificacao\(notificacao\)/);
+  assert.match(
+    painelAcoes,
+    /import \{[\s\S]*?obterAcaoPrincipalNotificacao,[\s\S]*?obterNomeAutorNotificacao,[\s\S]*?\} from "\.\.\/lib\/notificacoes-display-utils";/,
+  );
+  assert.match(painelAcoes, /obterAcaoPrincipalNotificacao\(notificacao\)/);
 });
