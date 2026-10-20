@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const capitulosSeguidos = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-followed-chapters-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const navigationUtilsExecutavel = navigationUtils
   .replace(
     'import { criarSlugBase, idObraSupabaseValido } from "../../../lib/utils";',
@@ -272,7 +279,10 @@ test("pagina delega somente os helpers de navegacao extraidos", () => {
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
-  assert.match(pagina, /criarHrefLeituraCapitulo\(obra, capitulo\.id, indiceCapitulo \+ 1\)/);
+  assert.match(
+    capitulosSeguidos,
+    /criarHrefLeituraCapitulo\(obra, capitulo\.id, indiceCapitulo \+ 1\)/,
+  );
   assert.match(pagina, /criarPerfilHrefNotificacao\(seguidorId, perfilSeguidor\.nome\)/);
   assert.match(pagina, /criarDiarioPerfilHrefNotificacao\(userId\)/);
   assert.match(pagina, /montarLinkNotificacao\(notificacao, obra\)/);
