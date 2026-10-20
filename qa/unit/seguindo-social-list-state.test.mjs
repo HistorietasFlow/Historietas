@@ -14,9 +14,9 @@ const hook = readFileSync(
 test("listas sociais preservam arrays iniciais e setters", () => {
   assert.match(
     page,
-    /import \{ useSeguindoSocialListState \} from "\.\/hooks\/use-seguindo-social-list-state";/,
+    /import \{ useSeguindoPageSocialState \} from "\.\/hooks\/use-seguindo-page-social-state";/,
   );
-  assert.match(page, /\} = useSeguindoSocialListState\(\);/);
+  assert.match(page, /\} = useSeguindoPageSocialState\(\);/);
   assert.match(hook, /^"use client";/);
   assert.match(hook, /useState<UsuarioSeguido\[\]>\(\[\]\)/);
   assert.match(hook, /useState<\s*SolicitacaoSeguidor\[\]\s*>\(\[\]\)/);

@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 976 — grupos de estado de interface e social
+
+- Agrupou estados locais de listas/ações sociais e de busca/filtros/abas/ordenação em dois hooks de composição.
+- Preservou a ordem dos hooks, valores iniciais, setters e consumidores existentes, sem alterar lifecycles ou regras de negócio.
+
 ## Fase 974 — orquestração de ações
 
 - Agrupou a ligação dos hooks de ações de seguidores, usuários e obras/autores em `useSeguindoPageActions`.
