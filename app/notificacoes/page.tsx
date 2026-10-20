@@ -51,8 +51,15 @@ import {
   notificacoesRepresentamMesmoEvento,
 } from "./lib/notificacoes-merge-utils";
 import {
-  limparTextoExibicao,
-} from "./lib/notificacoes-text-utils";
+  pegarBooleano,
+  pegarTagsSupabase,
+  pegarTexto,
+} from "./lib/notificacoes-data-normalizers";
+import {
+  normalizarPerfilNotificacao,
+  obterPerfilNotificacao,
+  type PerfilNotificacao,
+} from "./lib/notificacoes-profile-utils";
 import {
   obterRotuloTipoAnotacaoDiarioNotificacao,
   obterStatusProblemaTecnicoNotificacao,
@@ -247,51 +254,6 @@ type EstadoSupabaseNotificacoes = {
   notificacoesDiretas: NotificacaoLocal[];
 };
 
-function pegarTexto(valor: unknown, fallback = "") {
-  const texto = typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
-
-  return limparTextoExibicao(texto);
-}
-
-function pegarBooleano(valor: unknown, fallback = false) {
-  return typeof valor === "boolean" ? valor : fallback;
-}
-
-type PerfilNotificacao = {
-  userId: string;
-  nome: string;
-  avatar: string;
-};
-
-function normalizarPerfilNotificacao(
-  row: Record<string, unknown>,
-  userIdFallback: string,
-  nomeFallback: string
-): PerfilNotificacao {
-  const userId =
-    pegarTexto(row.user_id) || pegarTexto(row.id) || userIdFallback.trim();
-  const nome =
-    pegarTexto(row.nome) ||
-    pegarTexto(row.nome_usuario) ||
-    pegarTexto(row.username) ||
-    pegarTexto(row.display_name) ||
-    pegarTexto(row.apelido) ||
-    nomeFallback.trim() ||
-    "Usuário";
-  const avatar =
-    pegarTexto(row.avatar_url) ||
-    pegarTexto(row.avatar) ||
-    pegarTexto(row.foto_url) ||
-    pegarTexto(row.imagem_url) ||
-    pegarTexto(row.photo_url);
-
-  return {
-    userId,
-    nome: nome.slice(0, 80),
-    avatar,
-  };
-}
-
 async function carregarPerfisNotificacoes(userIds: string[]) {
   const ids = Array.from(
     new Set(
@@ -357,44 +319,6 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
   await carregarPorColuna("id", idsFaltantes);
 
   return perfis;
-}
-
-function obterPerfilNotificacao(
-  perfis: Map<string, PerfilNotificacao>,
-  userId: string,
-  nomeFallback: string
-) {
-  const userIdLimpo = userId.trim();
-  const perfil = userIdLimpo ? perfis.get(userIdLimpo) : null;
-
-  return (
-    perfil || {
-      userId: userIdLimpo,
-      nome: nomeFallback.trim() || "Usuário",
-      avatar: "",
-    }
-  );
-}
-
-function pegarTagsSupabase(valor: unknown): string[] {
-  if (Array.isArray(valor)) {
-    const tags = valor
-      .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
-      .map((tag) => limparTextoExibicao(tag));
-
-    return tags.length > 0 ? tags : ["sem tags"];
-  }
-
-  if (typeof valor === "string" && valor.trim()) {
-    const tags = valor
-      .split(",")
-      .map((tag) => limparTextoExibicao(tag))
-      .filter(Boolean);
-
-    return tags.length > 0 ? tags : ["sem tags"];
-  }
-
-  return ["sem tags"];
 }
 
 function normalizarObraSupabase(row: SupabaseObraRow, index: number): ObraLocal {

@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 6 — Notificações
+
+- Normalizadores puros de dados e perfis foram separados, preservando aliases Supabase, fallbacks, limites de apresentação e consumidores da página.
+
 ## Registro da Fase 5 — Notificações
 
 - Os textos puros de status de denúncias, chamados técnicos e anotações do Diário foram isolados sem alterar consultas, estados ou mensagens apresentadas.
