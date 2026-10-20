@@ -44,7 +44,6 @@ import {
 } from "./lib/notificacoes-supabase-sync";
 import {
   mesclarNotificacoes,
-  notificacoesRepresentamMesmoEvento,
 } from "./lib/notificacoes-merge-utils";
 import {
   prepararNotificacaoTexto,
@@ -64,6 +63,17 @@ import {
   encontrarObraNotificacao,
   obterNotificacaoMenuAberta,
 } from "./lib/notificacoes-view-state-utils";
+import {
+  atualizarEstadoLeituraNotificacao,
+  marcarNotificacoesFiltradasComoLidasLocal,
+  marcarTodasNotificacoesComoLidasLocal,
+  removerNotificacaoLocal,
+  separarNotificacoesLidasLocal,
+} from "./lib/notificacoes-local-actions-utils";
+import {
+  criarIdsNotificacoesRelacionadas,
+  encontrarNotificacoesRelacionadasSolicitacaoSeguidor,
+} from "./lib/notificacoes-follow-request-utils";
 
 export default function NotificacoesPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -157,16 +167,11 @@ export default function NotificacoesPage() {
 
   function marcarComoLida(id: string) {
     const notificacaoAtual = notificacoes.find((notificacao) => notificacao.id === id);
-    const novasNotificacoes = notificacoes.map((notificacao) => {
-      if (notificacao.id !== id) {
-        return notificacao;
-      }
-
-      return {
-        ...notificacao,
-        lida: true,
-      };
-    });
+    const novasNotificacoes = atualizarEstadoLeituraNotificacao(
+      notificacoes,
+      id,
+      true,
+    );
 
     atualizarNotificacoes(novasNotificacoes);
 
@@ -177,16 +182,11 @@ export default function NotificacoesPage() {
 
   function marcarComoNaoLida(id: string) {
     const notificacaoAtual = notificacoes.find((notificacao) => notificacao.id === id);
-    const novasNotificacoes = notificacoes.map((notificacao) => {
-      if (notificacao.id !== id) {
-        return notificacao;
-      }
-
-      return {
-        ...notificacao,
-        lida: false,
-      };
-    });
+    const novasNotificacoes = atualizarEstadoLeituraNotificacao(
+      notificacoes,
+      id,
+      false,
+    );
 
     atualizarNotificacoes(novasNotificacoes);
 
@@ -231,19 +231,14 @@ export default function NotificacoesPage() {
         return;
       }
 
-      const notificacoesRelacionadas = notificacoes.filter(
-        (notificacaoAtual) =>
-          notificacaoAtual.tipo === "solicitacao-seguidor" &&
-          (notificacaoAtual.solicitacaoId?.trim() === solicitacaoId ||
-            notificacoesRepresentamMesmoEvento(
-              notificacaoAtual,
-              notificacao
-            ))
-      );
-      const idsRelacionados = new Set(
-        notificacoesRelacionadas.map((notificacaoAtual) =>
-          notificacaoAtual.id.trim()
-        )
+      const notificacoesRelacionadas =
+        encontrarNotificacoesRelacionadasSolicitacaoSeguidor(
+          notificacoes,
+          notificacao,
+          solicitacaoId,
+        );
+      const idsRelacionados = criarIdsNotificacoesRelacionadas(
+        notificacoesRelacionadas,
       );
 
       registrarNotificacoesApagadas(
@@ -276,13 +271,8 @@ export default function NotificacoesPage() {
   }
 
   function marcarTodasComoLidas() {
-    const notificacoesParaSincronizar = notificacoes.filter(
-      (notificacao) => !notificacao.lida
-    );
-    const novasNotificacoes = notificacoes.map((notificacao) => ({
-      ...notificacao,
-      lida: true,
-    }));
+    const { notificacoesParaSincronizar, novasNotificacoes } =
+      marcarTodasNotificacoesComoLidasLocal(notificacoes);
 
     atualizarNotificacoes(novasNotificacoes);
     void sincronizarNotificacoesLidasSupabase(
@@ -293,23 +283,11 @@ export default function NotificacoesPage() {
   }
 
   function marcarFiltradasComoLidas() {
-    const idsFiltrados = new Set(
-      notificacoesFiltradas.map((notificacao) => notificacao.id)
-    );
-    const notificacoesParaSincronizar = notificacoes.filter((notificacao) => {
-      return idsFiltrados.has(notificacao.id) && !notificacao.lida;
-    });
-
-    const novasNotificacoes = notificacoes.map((notificacao) => {
-      if (!idsFiltrados.has(notificacao.id)) {
-        return notificacao;
-      }
-
-      return {
-        ...notificacao,
-        lida: true,
-      };
-    });
+    const { notificacoesParaSincronizar, novasNotificacoes } =
+      marcarNotificacoesFiltradasComoLidasLocal(
+        notificacoes,
+        notificacoesFiltradas,
+      );
 
     atualizarNotificacoes(novasNotificacoes);
     void sincronizarNotificacoesLidasSupabase(
@@ -321,9 +299,7 @@ export default function NotificacoesPage() {
 
   function apagarNotificacao(id: string) {
     const notificacaoAtual = notificacoes.find((notificacao) => notificacao.id === id);
-    const novasNotificacoes = notificacoes.filter((notificacao) => {
-      return notificacao.id !== id;
-    });
+    const novasNotificacoes = removerNotificacaoLocal(notificacoes, id);
 
     if (notificacaoAtual) {
       registrarNotificacoesApagadas(usuarioNotificacoesId, [notificacaoAtual.id]);
@@ -351,10 +327,8 @@ export default function NotificacoesPage() {
   }
 
   function limparLidas() {
-    const notificacoesLidas = notificacoes.filter((notificacao) => notificacao.lida);
-    const novasNotificacoes = notificacoes.filter(
-      (notificacao) => !notificacao.lida
-    );
+    const { notificacoesLidas, novasNotificacoes } =
+      separarNotificacoesLidasLocal(notificacoes);
 
     registrarNotificacoesApagadas(
       usuarioNotificacoesId,
