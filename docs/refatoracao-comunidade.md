@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 25 — Notificações
+
+- As transições locais das notificações e a identificação de solicitações de seguidor relacionadas foram isoladas em helpers puros, preservando a ordem de atualização local, sincronização e remoção remota.
+
 ## Registro da Fase 24 — Notificações
 
 - As opções de filtro/ordenação e os dados derivados de visualização de Notificações foram isolados em helpers puros, preservando rótulos, contagens, buscas de obra/capítulo e estado do menu.

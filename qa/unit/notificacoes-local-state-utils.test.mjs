@@ -11,6 +11,8 @@ import "./notificacoes-supabase-community-loader.test.mjs";
 import "./use-notificacoes-initial-load.test.mjs";
 import "./notificacoes-filter-options.test.mjs";
 import "./notificacoes-view-state-utils.test.mjs";
+import "./notificacoes-local-actions-utils.test.mjs";
+import "./notificacoes-follow-request-utils.test.mjs";
 
 const helpers = readFileSync(
   new URL(
