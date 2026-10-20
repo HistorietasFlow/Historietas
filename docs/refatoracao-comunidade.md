@@ -797,3 +797,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 13 — Configurações
 
 - As chaves estáticas de storage, evento de atualização e inventário do backup foram isolados sem alterar valores ou consumidores.
+
+## Registro da Fase 14 — Configurações
+
+- A leitura/escrita local isolada por usuário e a composição do resumo local foram extraídas sem alterar chaves, fallbacks ou contagens.
