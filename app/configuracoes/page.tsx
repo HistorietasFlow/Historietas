@@ -63,23 +63,9 @@ import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
 import { criarStorageKeyUsuarioConfiguracoes } from "./lib/configuracoes-storage-key-utils";
 import { criarChaveItemResumo } from "./lib/configuracoes-summary-item-utils";
 import { carregarJsonArrayConfiguracoes } from "./lib/configuracoes-json-array-utils";
+import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
+import type { PreferenciasConta, ResumoLocal } from "./lib/configuracoes-account-models";
 
-type PreferenciasConta = {
-  nomeExibicao: string;
-  username: string;
-  emailContato: string;
-  receberAvisos: boolean;
-};
-
-type ResumoLocal = {
-  obras: number;
-  notificacoes: number;
-  lancamentos: number;
-  favoritas: number;
-  concluidas: number;
-  seguindoObras: number;
-  seguindoAutores: number;
-};
 
 type UsuarioConfiguracoes = {
   id: string;
@@ -110,23 +96,6 @@ const CHAVES_RESUMO = [
   "historietas-perfis-autores",
   "historietas-privacidade",
 ];
-
-const preferenciasPadrao: PreferenciasConta = {
-  nomeExibicao: "",
-  username: "",
-  emailContato: "",
-  receberAvisos: true,
-};
-
-const resumoPadrao: ResumoLocal = {
-  obras: 0,
-  notificacoes: 0,
-  lancamentos: 0,
-  favoritas: 0,
-  concluidas: 0,
-  seguindoObras: 0,
-  seguindoAutores: 0,
-};
 
 function lerStorageUsuarioConfiguracoes(chave: string, userId = "") {
   const userIdLimpo = userId.trim();
