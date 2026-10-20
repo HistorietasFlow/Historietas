@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const normalizadores = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-local-normalizers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const textoUtilsJavascript = typescript.transpileModule(textoUtils, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -92,11 +99,15 @@ test("limparTextoExibicao delega para a correcao e aplica trim", () => {
 test("pagina delega a correcao e a limpeza aos helpers extraidos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?corrigirTextoQuebrado,[\s\S]*?limparTextoExibicao,[\s\S]*?\} from "\.\/lib\/notificacoes-text-utils";/,
+    /import \{[\s\S]*?limparTextoExibicao,[\s\S]*?\} from "\.\/lib\/notificacoes-text-utils";/,
+  );
+  assert.match(
+    normalizadores,
+    /import \{[\s\S]*?corrigirTextoQuebrado,[\s\S]*?limparTextoExibicao,[\s\S]*?\} from "\.\/notificacoes-text-utils";/,
   );
   assert.doesNotMatch(pagina, /function corrigirTextoQuebrado/);
   assert.doesNotMatch(pagina, /function limparTextoExibicao/);
-  assert.match(pagina, /limparTextoExibicao\(capitulo\.titulo\)/);
-  assert.match(pagina, /corrigirTextoQuebrado\(capitulo\.texto\)/);
+  assert.match(normalizadores, /limparTextoExibicao\(capitulo\.titulo\)/);
+  assert.match(normalizadores, /corrigirTextoQuebrado\(capitulo\.texto\)/);
   assert.match(pagina, /return limparTextoExibicao\(texto\);/);
 });

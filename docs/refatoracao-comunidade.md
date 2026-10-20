@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 1 — Notificações
+
+- Modelos locais, persistência isolada por usuário e normalizadores puros foram movidos para módulos dedicados, preservando chaves, fallbacks e contratos de dados sem alterar o comportamento da página.
+
 ## Registro da Fase 982 — Seguindo
 
 - A refatoração estrutural de Seguindo foi considerada concluída por enquanto: a página permanece como orquestrador enxuto, sem abstrações adicionais artificiais.

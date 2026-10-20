@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+import "./notificacoes-local-data.test.mjs";
 
 const displayUtils = readFileSync(
   new URL(
@@ -306,11 +307,15 @@ test("página importa os helpers extraídos e preserva as fronteiras locais", ()
     "normalizarNotificacaoParaExibicao",
     "prepararNotificacaoTexto",
     "criarAvatarNotificacaoStyle",
-    "normalizarNotificacao",
   ]) {
     assert.match(pagina, new RegExp(`function ${helperLocal}\\(`));
   }
 
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?normalizarNotificacao,[\s\S]*?\} from "\.\/lib\/notificacoes-local-normalizers";/,
+  );
+  assert.doesNotMatch(pagina, /function normalizarNotificacao\(/);
   assert.match(pagina, /obterDetalheNotificacao\(\{\s*id,/);
   assert.match(pagina, /notificacaoUsaCardSocial\(notificacao\)/);
   assert.match(pagina, /obterTituloBlocoSocialNotificacao\(notificacao\)/);
