@@ -20,6 +20,13 @@ const carregamentoPagina = readFileSync(
   ),
   "utf8",
 );
+const sincronizacaoInicial = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-initial-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 test("hook preserva a orquestração local, remota e persistência", () => {
   assert.match(hook, /^"use client";/);
   assert.match(hook, /return useCallback\(async \(\) => \{/);
@@ -59,24 +66,29 @@ test("a página delega o carregamento principal à fronteira de dados", () => {
     /const carregarDadosSeguindo = useSeguindoDataLoader\(parametros\);/,
   );
   assert.match(
-    pagina,
-    /import \{ useSeguindoPageDataLoading \} from "\.\/hooks\/use-seguindo-page-data-loading";/,
+    sincronizacaoInicial,
+    /import \{ useSeguindoPageDataLoading \} from "\.\/use-seguindo-page-data-loading";/,
+  );
+  assert.match(
+    sincronizacaoInicial,
+    /useSeguindoPageDataLoading\(\{[\s\S]*?perfilSocialId,[\s\S]*?usuarioLogadoId,[\s\S]*?setObras,[\s\S]*?setCarregando,[\s\S]*?\}\);/,
   );
   assert.match(
     pagina,
-    /useSeguindoPageDataLoading\(\{[\s\S]*?perfilSocialId,[\s\S]*?usuarioLogadoId,[\s\S]*?setObras,[\s\S]*?setCarregando,[\s\S]*?\}\);/,
+    /import \{ useSeguindoPageInitialSync \} from "\.\/hooks\/use-seguindo-page-initial-sync";/,
   );
+  assert.match(pagina, /useSeguindoPageInitialSync\(\{/);
   assert.doesNotMatch(pagina, /carregarDadosLocaisSeguindo/);
   assert.doesNotMatch(pagina, /carregarDadosRemotosSeguindo/);
   assert.doesNotMatch(pagina, /prepararDadosRemotosSeguindo/);
   assert.doesNotMatch(pagina, /salvarDadosLocaisSeguindo/);
   assert.match(
     pagina,
-    /import \{ useSeguindoWorkFollowState \} from "\.\/hooks\/use-seguindo-work-follow-state";/,
+    /import \{ useSeguindoPageDataState \} from "\.\/hooks\/use-seguindo-page-data-state";/,
   );
   assert.match(
     pagina,
-    /import \{ useSeguindoPageLoadState \} from "\.\/hooks\/use-seguindo-page-load-state";/,
+    /import \{ useSeguindoPageDataState \} from "\.\/hooks\/use-seguindo-page-data-state";/,
   );
 });
 

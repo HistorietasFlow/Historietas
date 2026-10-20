@@ -17,8 +17,7 @@ test("Seguindo delega o frame e os controles visuais sem mover seus lifecycles",
   assert.match(pagina, /import \{ SeguindoPageControls \} from "\.\/components\/seguindo-page-controls";/);
   assert.equal((pagina.match(/<SeguindoPageFrame /g) || []).length, 2);
   assert.match(pagina, /<SeguindoPageControls\s+isDesktop=\{isDesktop\}/);
-  assert.match(pagina, /useSeguindoPageDataLoading\(/);
-  assert.match(pagina, /useSeguindoAccessSync\(/);
+  assert.match(pagina, /useSeguindoPageInitialSync\(/);
   assert.match(pagina, /useSeguindoSortingSheetBodyLock\(mostrarPainelOrdenacao\);/);
 });
 

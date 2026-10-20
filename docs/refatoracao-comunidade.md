@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 978 — Seguindo
+
+- A composição dos lifecycles de acesso e carregamento inicial foi isolada, mantendo autenticação, timers e carregamento remoto nas fronteiras existentes.
+
 ## Registro da Fase 977 — Seguindo
 
 - Os estados locais de dados e de contexto de acesso foram agrupados em hooks de composição, sem alterar carregamento, autenticação ou ações.

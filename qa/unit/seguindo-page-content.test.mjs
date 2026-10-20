@@ -17,8 +17,7 @@ test("Seguindo preserva a orquestração na página e delega somente o conteúdo
     /import \{ SeguindoPageContent \} from "\.\/components\/seguindo-page-content";/,
   );
   assert.match(page, /<SeguindoPageContent[\s\S]*?totalSemFiltros=\{totalSemFiltros\}/);
-  assert.match(page, /useSeguindoPageDataLoading\(/);
-  assert.match(page, /useSeguindoAccessSync\(/);
+  assert.match(page, /useSeguindoPageInitialSync\(/);
   assert.match(page, /useSeguindoUserSearchSync\(/);
   assert.match(page, /useSeguindoContentTabNavigation\(/);
 });
