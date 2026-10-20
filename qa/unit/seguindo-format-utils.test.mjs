@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const workCard = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const autorBase = readFileSync(
   new URL("../../app/seguindo/lib/seguindo-author-base-builder.ts", import.meta.url),
   "utf8",
@@ -91,10 +98,10 @@ test("número preserva arredondamento, formato pt-BR, piso zero e fallback", () 
   assert.equal(normalizarNumeroSeguindo(null, 9), 9);
 });
 
-test("página delega normalização e formatação ao módulo dedicado", () => {
+test("consumidores delegam normalização e formatação ao módulo dedicado", () => {
   assert.match(
-    pagina,
-    /import \{\s*formatarGeneroSeguindo,?\s*\} from "\.\/lib\/seguindo-format-utils";/,
+    workCard,
+    /import \{ formatarGeneroSeguindo \} from "\.\.\/lib\/seguindo-format-utils";/,
   );
   assert.match(
     autorBase,
