@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 977 — Seguindo
+
+- Os estados locais de dados e de contexto de acesso foram agrupados em hooks de composição, sem alterar carregamento, autenticação ou ações.
+
 ## Registro da Fase 974 — Seguindo
 
 - A orquestração dos hooks de ações sociais e de obras foi isolada, mantendo as mutações nos módulos existentes.
