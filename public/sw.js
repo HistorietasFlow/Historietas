@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "historietas-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v2`;
 
 const STATIC_ASSETS = [
   "/icon-192.png",
