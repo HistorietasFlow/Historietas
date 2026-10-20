@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 30 — Notificações
+
+- A estrutura atual de `app/notificacoes/page.tsx` foi revisada e mantida como orquestradora enxuta: estados locais, hooks, componentes visuais, mutações e carregamento já possuem fronteiras dedicadas.
+- Não foram criadas abstrações adicionais para evitar fragmentar callbacks, composição de props e comportamento existente.
+
 ## Registro da Fase 29 — Notificações
 
 - Os callbacks do painel de ordenação foram isolados em `notificacoes-sorting-action-callbacks`, preservando a execução de cada ação antes do fechamento visual do painel, sem alterar as mutações, o carregamento ou a autenticação.
