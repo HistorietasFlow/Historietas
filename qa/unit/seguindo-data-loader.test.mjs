@@ -84,11 +84,11 @@ test("a página delega o carregamento principal à fronteira de dados", () => {
   assert.doesNotMatch(pagina, /salvarDadosLocaisSeguindo/);
   assert.match(
     pagina,
-    /import \{ useSeguindoPageDataState \} from "\.\/hooks\/use-seguindo-page-data-state";/,
+    /import \{ useSeguindoPageState \} from "\.\/hooks\/use-seguindo-page-state";/,
   );
   assert.match(
     pagina,
-    /import \{ useSeguindoPageDataState \} from "\.\/hooks\/use-seguindo-page-data-state";/,
+    /import \{ useSeguindoPageState \} from "\.\/hooks\/use-seguindo-page-state";/,
   );
 });
 

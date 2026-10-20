@@ -23,6 +23,13 @@ const visualizacao = readFileSync(
   ),
   "utf8",
 );
+const contexto = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-context.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const painel = readFileSync(
   new URL("../../app/seguindo/components/seguindo-sorting-panel.tsx", import.meta.url),
   "utf8",
@@ -70,13 +77,13 @@ test("a fronteira visual mant\u00e9m o lifecycle e a p\u00e1gina delega o painel
   );
   assert.match(
     pagina,
-    /useSeguindoPageDiscoveryState\(\);/,
+    /useSeguindoPageState\(\);/,
   );
   assert.match(
     visualizacao,
     /useSeguindoSortingSheetBodyLock\(mostrarPainelOrdenacao\);/,
   );
-  assert.match(pagina, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
+  assert.match(contexto, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
   assert.doesNotMatch(
     pagina,
     /useEffect\(\(\) => \{[\s\S]*?const overflowAnterior = document\.body\.style\.overflow;[\s\S]*?\}, \[mostrarPainelOrdenacao\]\);/,

@@ -2,42 +2,35 @@
 
 import { SeguindoPageLoadingState } from "./components/seguindo-page-loading-state";
 import { SeguindoPageLoadedState } from "./components/seguindo-page-loaded-state";
-import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoDerivedContent } from "./hooks/use-seguindo-derived-content";
 import { useSeguindoPageActions } from "./hooks/use-seguindo-page-actions";
-import { useSeguindoPageAccessContextState } from "./hooks/use-seguindo-page-access-context-state";
 import { useSeguindoPageContentInteractions } from "./hooks/use-seguindo-page-content-interactions";
-import { useSeguindoPageDataState } from "./hooks/use-seguindo-page-data-state";
-import { useSeguindoPageDiscoveryState } from "./hooks/use-seguindo-page-discovery-state";
+import { useSeguindoPageContext } from "./hooks/use-seguindo-page-context";
 import { useSeguindoPageInitialSync } from "./hooks/use-seguindo-page-initial-sync";
-import { useSeguindoPageSocialState } from "./hooks/use-seguindo-page-social-state";
-import { useSeguindoPageView } from "./hooks/use-seguindo-page-view";
+import { useSeguindoPageState } from "./hooks/use-seguindo-page-state";
 
 export default function SeguindoPage() {
   const {
     obras, setObras, obrasSeguidas, setObrasSeguidas, autoresSeguidos, setAutoresSeguidos,
     obrasFavoritas, setObrasFavoritas, obrasConcluidas, setObrasConcluidas,
     setAtividadesSeguindo, carregando, setCarregando,
-  } = useSeguindoPageDataState();
-  const {
     usuariosSeguidos, setUsuariosSeguidos, usuariosSeguidores, setUsuariosSeguidores,
     solicitacoesSeguidores, setSolicitacoesSeguidores, solicitacoesEnviadasIds, setSolicitacoesEnviadasIds,
     solicitacaoRespondendoId, setSolicitacaoRespondendoId, usuarioListaAlterandoId, setUsuarioListaAlterandoId,
-  } = useSeguindoPageSocialState();
-  const {
     busca, setBusca, buscaSeguindoAberta, setBuscaSeguindoAberta,
     usuariosSugestoesBusca, setUsuariosSugestoesBusca,
     carregandoUsuariosSugestoes, setCarregandoUsuariosSugestoes,
     usuarioSugestaoSeguindoId, setUsuarioSugestaoSeguindoId,
     filtro, setFiltro, ordenacao, setOrdenacao,
     abaConteudo, setAbaConteudo, mostrarPainelOrdenacao, setMostrarPainelOrdenacao,
-  } = useSeguindoPageDiscoveryState();
-  const isDesktop = useSeguindoDesktopMode();
+  } = useSeguindoPageState();
   const {
+    isDesktop, pageThemeStyle,
     verificandoAcesso, setVerificandoAcesso, usuarioLogadoId, setUsuarioLogadoId,
     setAbaSeguimento, perfilSocialId, setPerfilSocialId, perfilSocialNome, setPerfilSocialNome,
-  } = useSeguindoPageAccessContextState();
-  const { pageThemeStyle } = useSeguindoPageView(mostrarPainelOrdenacao);
+  } = useSeguindoPageContext(
+    mostrarPainelOrdenacao,
+  );
 
   useSeguindoPageInitialSync({
     setUsuarioLogadoId,

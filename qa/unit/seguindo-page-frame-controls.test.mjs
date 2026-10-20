@@ -24,7 +24,7 @@ test("Seguindo delega o frame e os controles visuais sem mover seus lifecycles",
   assert.equal((carregamento.match(/<SeguindoPageFrame /g) || []).length, 1);
   assert.match(carregado, /<SeguindoPageControls \{\.\.\.controls\} \/>/);
   assert.match(pagina, /useSeguindoPageInitialSync\(/);
-  assert.match(pagina, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
+  assert.match(pagina, /useSeguindoPageContext\(\s*mostrarPainelOrdenacao,?\s*\)/);
 });
 
 test("o frame preserva tema, bridge e fades sem dependencias de dados", () => {
