@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 28 — Notificações
+
+- O estado derivado da página foi isolado em `use-notificacoes-page-view-state`, preservando memos, filtros, totais, busca de obras/capítulos e bloqueio 18+; os callbacks de controles visuais foram concentrados em `use-notificacoes-page-controls` sem alterar o carregamento ou as mutações.
+
 ## Registro da Fase 27 — Notificações
 
 - Os controles locais de busca, filtro, ordenação e menus foram isolados em `use-notificacoes-page-controls`; o atualizador local de notificações foi separado em `notificacoes-state-update-action`, preservando normalização, contagem de não lidas e persistência sem alterar o carregamento, os dados remotos ou as ações de negócio.

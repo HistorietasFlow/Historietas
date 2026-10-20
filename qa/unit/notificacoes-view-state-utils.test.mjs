@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hook = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-page-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = viewState.replace(
   /import type \{[\s\S]*?\} from "\.\/notificacoes-models";\n/,
   "",
@@ -74,25 +81,29 @@ test("contagens e menu preservam totais e notificacao aberta", () => {
   assert.equal(obterNotificacaoMenuAberta("", notificacoes), null);
 });
 
-test("pagina delega estado visual e preserva os memos da pagina", () => {
+test("hook de estado visual delega consultas puras e preserva os memos", () => {
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-view-state-utils";/,
+    hook,
+    /from "\.\.\/lib\/notificacoes-view-state-utils";/,
   );
   assert.match(
-    pagina,
+    hook,
     /const obrasPorId = useMemo\(\(\) => \{\s*return criarObrasPorIdNotificacoes\(obras\);\s*\}, \[obras\]\);/,
   );
   assert.match(
-    pagina,
+    hook,
     /const totalNaoLidas = useMemo\(\(\) => \{\s*return contarNotificacoesNaoLidas\(notificacoes\);\s*\}, \[notificacoes\]\);/,
   );
-  assert.match(pagina, /return encontrarObraNotificacao\(obrasPorId, obraId\);/);
+  assert.match(hook, /return encontrarObraNotificacao\(obrasPorId, obraId\);/);
   assert.match(
-    pagina,
+    hook,
     /return encontrarCapituloNotificacao\(obrasPorId, obraId, capituloId\);/,
   );
-  assert.match(pagina, /obterNotificacaoMenuAberta\(/);
+  assert.match(hook, /obterNotificacaoMenuAberta\(/);
+  assert.match(
+    pagina,
+    /from "\.\/hooks\/use-notificacoes-page-view-state";/,
+  );
 });
 
 test("modulo de estado visual nao adiciona React, Supabase ou storage", () => {

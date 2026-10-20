@@ -31,12 +31,23 @@ test("controles locais de Notificações preservam estados e transições", () =
     "function limparFiltros()",
     'setFiltro("todas")',
     'setOrdenacao("recentes")',
+    "function atualizarBusca(proximaBusca: string)",
+    "function alternarPainelOrdenacao()",
+    "function abrirBusca()",
+    "function fecharBusca()",
+    "function fecharPainelOrdenacao()",
+    "function atualizarFiltro(proximoFiltro: FiltroNotificacao)",
+    "function atualizarOrdenacao(proximaOrdenacao: OrdenacaoNotificacao)",
   ]) {
     assert.ok(hook.includes(contrato), "contrato ausente: " + contrato);
   }
 
   assert.match(pagina, /from "\.\/hooks\/use-notificacoes-page-controls"/);
   assert.match(pagina, /} = useNotificacoesPageControls\(\);/);
+  assert.match(pagina, /onBuscaChange=\{atualizarBusca\}/);
+  assert.match(pagina, /onAlternarPainelOrdenacao=\{alternarPainelOrdenacao\}/);
+  assert.match(pagina, /onAbrirBusca=\{abrirBusca\}/);
+  assert.match(pagina, /onFecharBusca=\{fecharBusca\}/);
   for (const estado of [
     "busca",
     "buscaTopoAberta",

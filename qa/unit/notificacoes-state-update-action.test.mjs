@@ -18,7 +18,6 @@ test("atualizador de Notificações preserva normalização, contagem e persist�
   for (const contrato of [
     "export function criarAtualizadorNotificacoes",
     "return function atualizarNotificacoes(novasNotificacoes: NotificacaoLocal[])",
-    "mesclarNotificacoes(\n      [],\n      novasNotificacoes",
     "prepararNotificacaoTexto(notificacao)",
     "setNotificacoes(notificacoesNormalizadas)",
     "notificacoesNormalizadas.filter((notificacao) => !notificacao.lida).length",
@@ -26,6 +25,8 @@ test("atualizador de Notificações preserva normalização, contagem e persist�
   ]) {
     assert.ok(action.includes(contrato), "contrato ausente: " + contrato);
   }
+
+  assert.match(action, /mesclarNotificacoes\(\s*\[\],\s*novasNotificacoes/);
 
   assert.match(pagina, /from "\.\/lib\/notificacoes-state-update-action"/);
   assert.match(pagina, /const atualizarNotificacoes = criarAtualizadorNotificacoes\(/);

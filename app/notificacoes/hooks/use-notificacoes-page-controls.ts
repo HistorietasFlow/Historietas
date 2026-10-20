@@ -36,6 +36,41 @@ export function useNotificacoesPageControls() {
     setOrdenacao("recentes");
   }
 
+  function atualizarBusca(proximaBusca: string) {
+    fecharMenusNotificacoes();
+    setBusca(proximaBusca);
+  }
+
+  function alternarPainelOrdenacao() {
+    fecharMenusNotificacoes();
+    setMostrarPainelOrdenacao((aberto) => !aberto);
+  }
+
+  function abrirBusca() {
+    fecharMenusNotificacoes();
+    setBuscaTopoAberta(true);
+  }
+
+  function fecharBusca() {
+    fecharMenusNotificacoes();
+    setBusca("");
+    setBuscaTopoAberta(false);
+  }
+
+  function fecharPainelOrdenacao() {
+    setMostrarPainelOrdenacao(false);
+  }
+
+  function atualizarFiltro(proximoFiltro: FiltroNotificacao) {
+    setFiltro(proximoFiltro);
+    setMostrarPainelOrdenacao(false);
+  }
+
+  function atualizarOrdenacao(proximaOrdenacao: OrdenacaoNotificacao) {
+    setOrdenacao(proximaOrdenacao);
+    setMostrarPainelOrdenacao(false);
+  }
+
   return {
     busca,
     buscaTopoAberta,
@@ -52,5 +87,12 @@ export function useNotificacoesPageControls() {
     fecharMenuNotificacao,
     fecharMenusNotificacoes,
     limparFiltros,
+    atualizarBusca,
+    alternarPainelOrdenacao,
+    abrirBusca,
+    fecharBusca,
+    fecharPainelOrdenacao,
+    atualizarFiltro,
+    atualizarOrdenacao,
   };
 }
