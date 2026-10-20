@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties, FormEvent, ReactNode } from "react";
+import type { CSSProperties, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import {
   historietasThemeCss,
@@ -16,8 +16,14 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
 import { SvgIcon } from "./components/configuracoes-svg-icon";
-import type { IconName } from "./components/configuracoes-svg-icon";
 import { Toggle } from "./components/configuracoes-toggle";
+import {
+  SettingsInput,
+  SettingsRow,
+  SettingsSection,
+  SectionTitle,
+  ValorLinha,
+} from "./components/configuracoes-settings-primitives";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
 import {
@@ -25,6 +31,10 @@ import {
   normalizarTextoBuscaConfiguracoes,
   textoIdioma,
 } from "./lib/configuracoes-search-utils";
+import {
+  safeTextStyle,
+  sectionStyle,
+} from "./lib/configuracoes-settings-primitives-styles";
 import {
   idUsuarioSupabaseValido,
   metadataTemAdminConfiguracoes,
@@ -1131,144 +1141,6 @@ async function salvarPerfilConfiguracoesSupabase({
       erro: error instanceof Error ? error.message : "Erro inesperado.",
     };
   }
-}
-
-function ValorLinha({ children, danger = false }: { children: ReactNode; danger?: boolean }) {
-  return (
-    <span style={danger ? rowValueDangerStyle : rowValueStyle}>
-      {children}
-    </span>
-  );
-}
-
-function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 style={sectionTitleStyle}>{children}</h2>;
-}
-
-function SettingsSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section style={sectionStyle}>
-      <SectionTitle>{title}</SectionTitle>
-      <div style={listCardStyle}>{children}</div>
-    </section>
-  );
-}
-
-function SettingsRow({
-  icon,
-  title,
-  subtitle,
-  right,
-  href,
-  onClick,
-  danger = false,
-  hideChevron = false,
-}: {
-  icon: IconName;
-  title: string;
-  subtitle?: string;
-  right?: ReactNode;
-  href?: string;
-  onClick?: () => void;
-  danger?: boolean;
-  hideChevron?: boolean;
-}) {
-  const content = (
-    <>
-      <span style={rowIconStyle}>
-        <SvgIcon name={icon} size={23} strokeWidth={2.15} />
-      </span>
-
-      <span style={rowTextBoxStyle}>
-        <span style={danger ? rowTitleDangerStyle : rowTitleStyle}>{title}</span>
-        {subtitle ? <span style={rowSubtitleStyle}>{subtitle}</span> : null}
-      </span>
-
-      {right ? <span style={rowRightStyle}>{right}</span> : null}
-
-      {!hideChevron ? (
-        <span style={rowChevronStyle}>
-          <SvgIcon name="chevronRight" size={22} strokeWidth={2.6} />
-        </span>
-      ) : null}
-    </>
-  );
-
-  if (href) {
-    return (
-      <Link href={href} style={rowLinkStyle}>
-        {content}
-      </Link>
-    );
-  }
-
-  if (onClick) {
-    return (
-      <button type="button" onClick={onClick} style={rowButtonStyle}>
-        {content}
-      </button>
-    );
-  }
-
-  return <div style={rowStaticStyle}>{content}</div>;
-}
-
-function SettingsInput({
-  icon,
-  label,
-  value,
-  placeholder,
-  type = "text",
-  helperText,
-  error = false,
-  maxLength,
-  autoComplete,
-  onChange,
-}: {
-  icon: IconName;
-  label: string;
-  value: string;
-  placeholder: string;
-  type?: string;
-  helperText?: string;
-  error?: boolean;
-  maxLength?: number;
-  autoComplete?: string;
-  onChange: (valor: string) => void;
-}) {
-  return (
-    <label style={inputRowStyle}>
-      <span style={rowIconStyle}>
-        <SvgIcon name={icon} size={23} strokeWidth={2.15} />
-      </span>
-
-      <span style={inputTextBoxStyle}>
-        <span style={inputLabelStyle}>{label}</span>
-        <input
-          className="configuracoes-input configuracoes-input-transparente"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          type={type}
-          maxLength={maxLength}
-          autoComplete={autoComplete}
-          style={inputStyle}
-        />
-
-        {helperText ? (
-          <span style={error ? inputErrorStyle : inputHelperStyle}>
-            {helperText}
-          </span>
-        ) : null}
-      </span>
-    </label>
-  );
 }
 
 export default function ConfiguracoesPage() {
@@ -4048,11 +3920,6 @@ export default function ConfiguracoesPage() {
   );
 }
 
-const safeTextStyle: CSSProperties = {
-  overflowWrap: "anywhere",
-  wordBreak: "break-word",
-};
-
 const pageStyle: CSSProperties = {
   minHeight: "100vh",
   width: "100%",
@@ -4195,185 +4062,10 @@ const profileEmailStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const sectionStyle: CSSProperties = {
-  marginTop: "18px",
-  minWidth: 0,
-};
-
-const sectionTitleStyle: CSSProperties = {
-  margin: "0 0 8px",
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
-  fontSize: "13px",
-  lineHeight: 1.15,
-  fontWeight: 760,
-  letterSpacing: "-0.01em",
-  ...safeTextStyle,
-};
-
-const listCardStyle: CSSProperties = {
-  overflow: "hidden",
-  borderRadius: "18px",
-  background: "var(--configuracoes-card-bg, rgba(255,255,255,0.09))",
-  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.045))",
-};
-
 const listCardTransparentStyle: CSSProperties = {
   overflow: "hidden",
   borderRadius: "20px",
   background: "transparent",
-};
-
-const rowBaseStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "58px",
-  display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr) auto 22px",
-  alignItems: "center",
-  gap: "9px",
-  padding: "8px 12px",
-  boxSizing: "border-box",
-  border: "0",
-  borderBottom: "1px solid var(--configuracoes-border, rgba(255,255,255,0.065))",
-  background: "transparent",
-  color: "inherit",
-  fontFamily: "inherit",
-  textAlign: "left",
-  textDecoration: "none",
-  cursor: "pointer",
-};
-
-const rowButtonStyle: CSSProperties = {
-  ...rowBaseStyle,
-};
-
-const rowLinkStyle: CSSProperties = {
-  ...rowBaseStyle,
-};
-
-const rowStaticStyle: CSSProperties = {
-  ...rowBaseStyle,
-  cursor: "default",
-};
-
-const rowIconStyle: CSSProperties = {
-  width: "32px",
-  height: "32px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.78))",
-  flex: "0 0 auto",
-};
-
-const rowTextBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-};
-
-const rowTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "16px",
-  lineHeight: 1.1,
-  fontWeight: 760,
-  letterSpacing: "-0.02em",
-  ...safeTextStyle,
-};
-
-const rowTitleDangerStyle: CSSProperties = {
-  ...rowTitleStyle,
-  color: "var(--configuracoes-danger-text, #FCA5A5)",
-};
-
-const rowSubtitleStyle: CSSProperties = {
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
-  fontSize: "12px",
-  lineHeight: 1.22,
-  fontWeight: 520,
-  ...safeTextStyle,
-};
-
-const rowRightStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  minWidth: 0,
-};
-
-const rowValueStyle: CSSProperties = {
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.56))",
-  fontSize: "13px",
-  lineHeight: 1,
-  fontWeight: 650,
-  whiteSpace: "nowrap",
-};
-
-const rowValueDangerStyle: CSSProperties = {
-  ...rowValueStyle,
-  color: "var(--configuracoes-danger-text, #FCA5A5)",
-};
-
-const rowChevronStyle: CSSProperties = {
-  width: "22px",
-  height: "22px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.46))",
-};
-
-const inputRowStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "76px",
-  display: "grid",
-  gridTemplateColumns: "40px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "10px",
-  padding: "12px 14px",
-  boxSizing: "border-box",
-  borderBottom: "1px solid var(--configuracoes-border, rgba(255,255,255,0.065))",
-};
-
-const inputTextBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  minWidth: 0,
-};
-
-const inputLabelStyle: CSSProperties = {
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.60))",
-  fontSize: "12px",
-  lineHeight: 1,
-  fontWeight: 880,
-  textTransform: "uppercase",
-  letterSpacing: "0.03em",
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  border: "0",
-  outline: "none",
-  background: "transparent",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  fontSize: "17px",
-  lineHeight: 1.2,
-  fontWeight: 760,
-  fontFamily: "inherit",
-  padding: 0,
-  minWidth: 0,
-};
-
-const inputHelperStyle: CSSProperties = {
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.46))",
-  fontSize: "12px",
-  lineHeight: 1.25,
-  fontWeight: 620,
-  ...safeTextStyle,
-};
-
-const inputErrorStyle: CSSProperties = {
-  ...inputHelperStyle,
-  color: "var(--configuracoes-danger-text, #FCA5A5)",
 };
 
 const actionToastBaseStyle: CSSProperties = {

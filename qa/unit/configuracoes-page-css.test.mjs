@@ -10,6 +10,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const styles = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-settings-primitives-styles.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("configuracoesPageCss preserva as regras globais de Configurações", () => {
   assert.match(css, /export const configuracoesPageCss = `/);
@@ -41,7 +48,14 @@ test("Configurações mantém os dois consumidores e suas fronteiras", () => {
     pagina,
     /\$\{configuracoesPageCss\}\$\{historietasThemeCss\}/,
   );
-  assert.match(pagina, /const safeTextStyle: CSSProperties =/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-settings-primitives-styles";/,
+  );
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties =/);
+  assert.match(styles, /export const safeTextStyle: CSSProperties =/);
+  assert.match(styles, /overflowWrap: "anywhere"/);
+  assert.match(styles, /wordBreak: "break-word"/);
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/configuracoes-loading-spinner";/,
