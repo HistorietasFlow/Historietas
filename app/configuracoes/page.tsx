@@ -64,7 +64,7 @@ import { criarStorageKeyUsuarioConfiguracoes } from "./lib/configuracoes-storage
 import { criarChaveItemResumo } from "./lib/configuracoes-summary-item-utils";
 import { carregarJsonArrayConfiguracoes } from "./lib/configuracoes-json-array-utils";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
-import type { PreferenciasConta, ResumoLocal } from "./lib/configuracoes-account-models";
+import type { PreferenciasConta, ResumoLocal, UsuarioBloqueadoConfiguracoes } from "./lib/configuracoes-account-models";
 
 
 type UsuarioConfiguracoes = {
@@ -72,14 +72,6 @@ type UsuarioConfiguracoes = {
   nome: string;
   username: string;
   email: string;
-};
-
-type UsuarioBloqueadoConfiguracoes = {
-  userId: string;
-  nome: string;
-  username: string;
-  avatar: string;
-  bloqueadoEm: string;
 };
 
 const CONFIG_STORAGE_KEY = "historietas-configuracoes-conta";

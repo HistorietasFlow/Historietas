@@ -15,6 +15,14 @@ export type ResumoLocal = {
   seguindoAutores: number;
 };
 
+export type UsuarioBloqueadoConfiguracoes = {
+  userId: string;
+  nome: string;
+  username: string;
+  avatar: string;
+  bloqueadoEm: string;
+};
+
 export const preferenciasPadrao: PreferenciasConta = {
   nomeExibicao: "",
   username: "",

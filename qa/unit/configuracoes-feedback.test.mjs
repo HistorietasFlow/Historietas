@@ -54,6 +54,14 @@ test("feedback de Configurações preserva toast, acessibilidade e traduções",
 test("painel de bloqueados preserva fallbacks, ações e estados", () => {
   assert.match(blockedUsers, /export function ConfiguracoesBlockedUsersPanel\(/);
   assert.match(blockedUsers, /import Image from "next\/image";/);
+  assert.match(
+    blockedUsers,
+    /import type \{ UsuarioBloqueadoConfiguracoes \} from "\.\.\/lib\/configuracoes-account-models";/,
+  );
+  assert.doesNotMatch(
+    blockedUsers,
+    /type UsuarioBloqueadoConfiguracoesVisual = \{/,
+  );
   assert.match(blockedUsers, /onClick=\{\(\) => void onRecarregar\(\)\}/);
   assert.match(blockedUsers, /disabled=\{carregando\}/);
   assert.match(blockedUsers, /!carregando && !erro && usuarios\.length === 0/);
@@ -130,6 +138,11 @@ test("página delega feedback visual e mantém ações e estados", () => {
   assert.match(pagina, /async function carregarUsuariosBloqueados\(\)/);
   assert.match(pagina, /async function desbloquearUsuarioConfiguracoes\(/);
   assert.match(pagina, /useConfiguracoesActionMessage\(\)/);
+  assert.match(
+    pagina,
+    /import type \{ PreferenciasConta, ResumoLocal, UsuarioBloqueadoConfiguracoes \} from "\.\/lib\/configuracoes-account-models";/,
+  );
+  assert.doesNotMatch(pagina, /type UsuarioBloqueadoConfiguracoes = \{/);
 
   for (const style of [
     "actionToastBaseStyle",

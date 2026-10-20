@@ -782,3 +782,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 8 — Configurações
 
 - A normalização da chave dos itens de resumo foi isolada, preservando identificação, serialização e fallbacks.
+
+## Registro da Fase 11 — Configurações
+
+- O tipo estrutural de usuário bloqueado foi centralizado nos modelos de conta e reutilizado pela página e pelo painel visual.
+- Não houve alteração intencional de comportamento, dados ou ações.
