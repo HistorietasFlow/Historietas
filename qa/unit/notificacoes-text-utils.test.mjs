@@ -28,6 +28,13 @@ const normalizadoresDados = readFileSync(
   ),
   "utf8",
 );
+const loaderComunidade = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-supabase-community-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const textoUtilsJavascript = typescript.transpileModule(textoUtils, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -103,7 +110,7 @@ test("limparTextoExibicao delega para a correcao e aplica trim", () => {
   assert.equal(limparTextoExibicao("  Ol\u00c3\u00a1 mundo  "), "Ol\u00e1mundo");
 });
 
-test("página e normalizadores delegam a correção e a limpeza aos helpers extraídos", () => {
+test("fronteiras delegam a correção e a limpeza aos helpers extraídos", () => {
   assert.match(
     normalizadoresDados,
     /import \{ limparTextoExibicao \} from "\.\/notificacoes-text-utils";/,
@@ -118,7 +125,7 @@ test("página e normalizadores delegam a correção e a limpeza aos helpers extr
   assert.match(normalizadores, /corrigirTextoQuebrado\(capitulo\.texto\)/);
   assert.match(normalizadoresDados, /return limparTextoExibicao\(texto\);/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?pegarTexto,[\s\S]*?\} from "\.\/lib\/notificacoes-data-normalizers";/,
+    loaderComunidade,
+    /import \{[\s\S]*?pegarTexto,[\s\S]*?\} from "\.\/notificacoes-data-normalizers";/,
   );
 });
