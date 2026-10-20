@@ -15,6 +15,9 @@ import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
+import { ConfiguracoesPageHeader } from "./components/configuracoes-page-header";
+import { ConfiguracoesProfileCard } from "./components/configuracoes-profile-card";
+import { ConfiguracoesSearch } from "./components/configuracoes-search";
 import { SvgIcon } from "./components/configuracoes-svg-icon";
 import { Toggle } from "./components/configuracoes-toggle";
 import {
@@ -35,11 +38,11 @@ import {
   safeTextStyle,
   sectionStyle,
 } from "./lib/configuracoes-settings-primitives-styles";
+import { containerStyle } from "./lib/configuracoes-shell-styles";
 import {
   idUsuarioSupabaseValido,
   metadataTemAdminConfiguracoes,
   normalizarUsernameConfiguracoes,
-  obterIniciais,
   pegarTexto,
 } from "./lib/configuracoes-account-utils";
 import type { AppMetadataAdminConfiguracoes } from "./lib/configuracoes-account-utils";
@@ -2235,74 +2238,25 @@ export default function ConfiguracoesPage() {
       <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
 
       <section style={containerStyle}>
-        <header style={headerStyle}>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            style={backButtonStyle}
-            aria-label={t("Voltar", "Back", "Volver")}
-          >
-            <SvgIcon name="arrowLeft" size={25} strokeWidth={2.4} />
-          </button>
+        <ConfiguracoesPageHeader
+          onVoltar={() => router.back()}
+          traduzirTexto={t}
+        />
 
-          <h1 style={pageTitleStyle}>
-            {t(
-              "Configurações e atividade",
-              "Settings and activity",
-              "Configuración y actividad",
-            )}
-          </h1>
-        </header>
+        <ConfiguracoesSearch
+          busca={busca}
+          onBuscaChange={setBusca}
+          traduzirTexto={t}
+        />
 
-        <label style={searchBoxStyle} htmlFor="buscar-configuracoes">
-          <SvgIcon name="search" size={23} strokeWidth={2.3} />
-          <input
-            id="buscar-configuracoes"
-            className="configuracoes-input configuracoes-input-transparente"
-            value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            placeholder={t("Pesquisar", "Search", "Buscar")}
-            maxLength={80}
-            autoComplete="off"
-            style={searchInputStyle}
-          />
-        </label>
-
-        <section style={profileCardStyle}>
-          <div style={avatarStyle}>
-            {obterIniciais(preferencias.nomeExibicao, preferencias.emailContato)}
-          </div>
-
-          <div style={profileTextStyle}>
-            <strong style={profileNameStyle}>
-              {preferencias.nomeExibicao ||
-                usuario?.nome ||
-                t(
-                  "Conta Historietas",
-                  "Historietas account",
-                  "Cuenta de Historietas",
-                )}
-            </strong>
-            <span style={profileUsernameStyle}>
-              {preferencias.username
-                ? `@${preferencias.username}`
-                : t(
-                    "@username não definido",
-                    "@username not set",
-                    "@username no definido",
-                  )}
-            </span>
-            <span style={profileEmailStyle}>
-              {preferencias.emailContato ||
-                usuario?.email ||
-                t(
-                  "E-mail não informado",
-                  "Email not provided",
-                  "Correo no informado",
-                )}
-            </span>
-          </div>
-        </section>
+        <ConfiguracoesProfileCard
+          nomeExibicao={preferencias.nomeExibicao}
+          username={preferencias.username}
+          emailContato={preferencias.emailContato}
+          usuarioNome={usuario?.nome}
+          usuarioEmail={usuario?.email}
+          traduzirTexto={t}
+        />
 
         {deveMostrar(
           "conta",
@@ -3932,135 +3886,6 @@ const pageStyle: CSSProperties = {
     "Inter, Poppins, Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
 };
 
-const containerStyle: CSSProperties = {
-  width: "min(760px, calc(100% - 32px))",
-  maxWidth: "100%",
-  margin: "0 auto",
-  padding: "16px 0 120px",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const headerStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "40px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "10px",
-  marginBottom: "16px",
-};
-
-const backButtonStyle: CSSProperties = {
-  width: "40px",
-  height: "40px",
-  border: "0",
-  borderRadius: "999px",
-  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-};
-
-const pageTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "clamp(20px, 5.2vw, 25px)",
-  lineHeight: 1.08,
-  fontWeight: 900,
-  letterSpacing: "-0.04em",
-  textAlign: "left",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
-const searchBoxStyle: CSSProperties = {
-  minHeight: "48px",
-  borderRadius: "15px",
-  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.11))",
-  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.05))",
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.55))",
-  display: "grid",
-  gridTemplateColumns: "23px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "10px",
-  padding: "0 15px",
-  marginBottom: "18px",
-};
-
-const searchInputStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  minHeight: "46px",
-  border: "0",
-  outline: "none",
-  background: "transparent",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  fontSize: "16px",
-  fontWeight: 650,
-  fontFamily: "inherit",
-  minWidth: 0,
-};
-
-const profileCardStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "52px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "12px",
-  padding: "14px",
-  borderRadius: "20px",
-  background: "var(--configuracoes-card-bg, rgba(255,255,255,0.09))",
-  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.06))",
-  marginBottom: "18px",
-};
-
-const avatarStyle: CSSProperties = {
-  width: "52px",
-  height: "52px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "#FFFFFF",
-  background:
-    "linear-gradient(135deg, rgba(148,163,184,0.90), rgba(75,85,99,0.95))",
-  fontSize: "21px",
-  fontWeight: 760,
-  letterSpacing: "-0.035em",
-  flex: "0 0 auto",
-};
-
-const profileTextStyle: CSSProperties = {
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-};
-
-const profileNameStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "17px",
-  lineHeight: 1.08,
-  fontWeight: 780,
-  letterSpacing: "-0.025em",
-  ...safeTextStyle,
-};
-
-const profileUsernameStyle: CSSProperties = {
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "13px",
-  lineHeight: 1.15,
-  fontWeight: 760,
-  ...safeTextStyle,
-};
-
-const profileEmailStyle: CSSProperties = {
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
-  fontSize: "13px",
-  lineHeight: 1.18,
-  fontWeight: 520,
-  ...safeTextStyle,
-};
 
 const listCardTransparentStyle: CSSProperties = {
   overflow: "hidden",

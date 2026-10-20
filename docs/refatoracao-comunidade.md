@@ -754,3 +754,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As primitives visuais reutilizáveis de seções, linhas e inputs foram isoladas com seus estilos literais.
 - A página permaneceu responsável pela orquestração, estados, autenticação, storage e operações remotas, sem alteração intencional de comportamento.
+
+## Registro da Fase 3 — Configurações
+
+- O cabeçalho, a busca e o resumo visual do perfil foram movidos para componentes dedicados, com os estilos literais do shell isolados.
+- Estados, traduções, navegação, autenticação, storage e operações remotas permaneceram na página sem alteração intencional de comportamento.
