@@ -16,6 +16,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const localStateUtils = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-local-state-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const displayUtilsExecutavel = displayUtils
   .replace(
     'import { normalizarTexto } from "../../../lib/utils";',
@@ -304,11 +311,16 @@ test("página importa os helpers extraídos e preserva as fronteiras locais", ()
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?prepararNotificacaoTexto,[\s\S]*?\} from "\.\/lib\/notificacoes-local-state-utils";/,
+  );
   for (const helperLocal of [
     "normalizarNotificacaoParaExibicao",
     "prepararNotificacaoTexto",
   ]) {
-    assert.match(pagina, new RegExp(`function ${helperLocal}\\(`));
+    assert.match(localStateUtils, new RegExp(`export function ${helperLocal}\\(`));
+    assert.doesNotMatch(pagina, new RegExp(`function ${helperLocal}\\(`));
   }
 
   assert.match(

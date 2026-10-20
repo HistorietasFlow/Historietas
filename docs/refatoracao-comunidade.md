@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 9 — Notificações
+
+- A persistência local e a preparação de notificações foram isoladas, preservando isolamento por usuário, guards SSR, normalização, exclusões e o evento de atualização.
+
 ## Registro da Fase 8 — Notificações
 
 - A composição pura de notificações de capítulos das obras seguidas foi isolada, preservando identificação, filtros de autoria, links, leitura e ordenação.
