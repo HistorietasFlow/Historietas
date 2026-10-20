@@ -6,7 +6,7 @@ const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url
 const hook = readFileSync(new URL("../../app/seguindo/hooks/use-seguindo-sorting-panel-state.ts", import.meta.url), "utf8");
 
 test("painel de ordenação mantém estado fechado e setter", () => {
-  assert.match(page, /useSeguindoSortingPanelState\(\)/);
+  assert.match(page, /useSeguindoPageDiscoveryState\(\)/);
   assert.match(hook, /const \[mostrarPainelOrdenacao, setMostrarPainelOrdenacao\] = useState\(false\)/);
   assert.match(hook, /return \{ mostrarPainelOrdenacao, setMostrarPainelOrdenacao \}/);
   assert.match(page, /useSeguindoSortingSheetBodyLock\(mostrarPainelOrdenacao\)/);

@@ -590,3 +590,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição do carregamento da página Seguindo foi extraída para `useSeguindoPageDataLoading`.
 - Loader, gatilho, ordem de execução, estados e contratos existentes foram preservados sem alteração de comportamento.
+
+## Registro da Fase 976 — Seguindo
+
+- Estados locais sociais e de descoberta foram agrupados em hooks de composição, sem alterar valores iniciais, setters ou ordem de hooks.

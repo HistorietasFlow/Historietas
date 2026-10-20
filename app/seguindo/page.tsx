@@ -8,22 +8,17 @@ import { SeguindoPageFrame } from "./components/seguindo-page-frame";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoPageLoadState } from "./hooks/use-seguindo-page-load-state";
-import { useSeguindoSocialListState } from "./hooks/use-seguindo-social-list-state";
 import { useSeguindoWorkFollowState } from "./hooks/use-seguindo-work-follow-state";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoDerivedContent } from "./hooks/use-seguindo-derived-content";
 import { useSeguindoReadingStatusState } from "./hooks/use-seguindo-reading-status-state";
-import { useSeguindoRequestActionState } from "./hooks/use-seguindo-request-action-state";
-import { useSeguindoSuggestionState } from "./hooks/use-seguindo-suggestion-state";
 import { useSeguindoFollowTabState } from "./hooks/use-seguindo-follow-tab-state";
 import { useSeguindoAccessState } from "./hooks/use-seguindo-access-state";
 import { useSeguindoProfileContextState } from "./hooks/use-seguindo-profile-context-state";
-import { useSeguindoSortingPanelState } from "./hooks/use-seguindo-sorting-panel-state";
-import { useSeguindoContentTabState } from "./hooks/use-seguindo-content-tab-state";
-import { useSeguindoFilterSortState } from "./hooks/use-seguindo-filter-sort-state";
-import { useSeguindoSearchState } from "./hooks/use-seguindo-search-state";
 import { useSeguindoPageActions } from "./hooks/use-seguindo-page-actions";
 import { useSeguindoPageDataLoading } from "./hooks/use-seguindo-page-data-loading";
+import { useSeguindoPageDiscoveryState } from "./hooks/use-seguindo-page-discovery-state";
+import { useSeguindoPageSocialState } from "./hooks/use-seguindo-page-social-state";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
@@ -38,30 +33,20 @@ export default function SeguindoPage() {
     setAutoresSeguidos,
   } = useSeguindoWorkFollowState();
   const {
-    usuariosSeguidos,
-    setUsuariosSeguidos,
-    usuariosSeguidores,
-    setUsuariosSeguidores,
-    solicitacoesSeguidores,
-    setSolicitacoesSeguidores,
-    solicitacoesEnviadasIds,
-    setSolicitacoesEnviadasIds,
-  } = useSeguindoSocialListState();
-  const {
-    solicitacaoRespondendoId, setSolicitacaoRespondendoId,
-    usuarioListaAlterandoId, setUsuarioListaAlterandoId,
-  } = useSeguindoRequestActionState();
+    usuariosSeguidos, setUsuariosSeguidos, usuariosSeguidores, setUsuariosSeguidores,
+    solicitacoesSeguidores, setSolicitacoesSeguidores, solicitacoesEnviadasIds, setSolicitacoesEnviadasIds,
+    solicitacaoRespondendoId, setSolicitacaoRespondendoId, usuarioListaAlterandoId, setUsuarioListaAlterandoId,
+  } = useSeguindoPageSocialState();
   const { obrasFavoritas, setObrasFavoritas, obrasConcluidas, setObrasConcluidas } = useSeguindoReadingStatusState();
   const { setAtividadesSeguindo, carregando, setCarregando } = useSeguindoPageLoadState();
-  const { busca, setBusca, buscaSeguindoAberta, setBuscaSeguindoAberta } = useSeguindoSearchState();
   const {
+    busca, setBusca, buscaSeguindoAberta, setBuscaSeguindoAberta,
     usuariosSugestoesBusca, setUsuariosSugestoesBusca,
     carregandoUsuariosSugestoes, setCarregandoUsuariosSugestoes,
     usuarioSugestaoSeguindoId, setUsuarioSugestaoSeguindoId,
-  } = useSeguindoSuggestionState();
-  const { filtro, setFiltro, ordenacao, setOrdenacao } = useSeguindoFilterSortState();
-  const { abaConteudo, setAbaConteudo } = useSeguindoContentTabState();
-  const { mostrarPainelOrdenacao, setMostrarPainelOrdenacao } = useSeguindoSortingPanelState();
+    filtro, setFiltro, ordenacao, setOrdenacao,
+    abaConteudo, setAbaConteudo, mostrarPainelOrdenacao, setMostrarPainelOrdenacao,
+  } = useSeguindoPageDiscoveryState();
   const isDesktop = useSeguindoDesktopMode();
   const { verificandoAcesso, setVerificandoAcesso, usuarioLogadoId, setUsuarioLogadoId } = useSeguindoAccessState();
   const { setAbaSeguimento } = useSeguindoFollowTabState();
