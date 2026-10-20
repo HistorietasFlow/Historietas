@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 12 — Notificações
+
+- O painel visual de ordenação e ações foi isolado em componente dedicado, preservando portal, opções, estados desabilitados e callbacks de mutação na página.
+
 ## Registro da Fase 11 — Notificações
 
 - Os estilos estáticos do shell, controles e cards foram isolados em módulos visuais, preservando valores, spreads e variantes desktop sem alterar o JSX.

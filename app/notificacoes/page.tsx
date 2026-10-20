@@ -23,6 +23,7 @@ import NotificacoesLanguageBridge from "./components/notificacoes-language-bridg
 import NotificacoesEmptyState from "./components/notificacoes-empty-state";
 import NotificacoesLoadingSpinner from "./components/notificacoes-loading-spinner";
 import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal";
+import NotificacoesSortingSheet from "./components/notificacoes-sorting-sheet";
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
 import { useNotificacoesOverlayBodyLock } from "./hooks/use-notificacoes-overlay-body-lock";
 import {
@@ -43,7 +44,6 @@ import {
   containerStyle,
   desktopContainerStyle,
   desktopNotificationActionsSheetStyle,
-  desktopNotificationSortingSheetStyle,
   desktopNotificationsControlsStyle,
   desktopNotificationsFilterButtonStyle,
   desktopNotificationsSearchIconStyle,
@@ -68,13 +68,7 @@ import {
   notificationSearchShellStyle,
   notificationSortingBackdropStyle,
   notificationSortingHandleStyle,
-  notificationSortingOptionActiveStyle,
-  notificationSortingOptionRadioActiveStyle,
-  notificationSortingOptionRadioStyle,
-  notificationSortingOptionStyle,
   notificationSortingOptionsListStyle,
-  notificationSortingSectionLabelStyle,
-  notificationSortingSheetStyle,
   notificationSortingTitleStyle,
   notificacoesHeaderFilterButtonStyle,
   notificacoesHeaderFilterIconStyle,
@@ -2688,158 +2682,41 @@ export default function NotificacoesPage() {
         )}
 
         {mostrarPainelOrdenacao && (
-              <NotificacoesOverlayPortal>
-                <div
-                data-historietas-notificacoes-overlay="true"
-                style={notificationSortingBackdropStyle}
-                onClick={() => setMostrarPainelOrdenacao(false)}
-              >
-                <div
-                  style={isDesktop ? desktopNotificationSortingSheetStyle : notificationSortingSheetStyle}
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <span style={notificationSortingHandleStyle} />
-
-                  <strong style={notificationSortingTitleStyle}>Opções de notificações</strong>
-
-                  <div style={notificationSortingOptionsListStyle}>
-                    <span style={notificationSortingSectionLabelStyle}>Mostrar</span>
-
-                    {opcoesFiltro.map((opcao) => {
-                      const ativo = filtro === opcao.valor;
-
-                      return (
-                        <button
-                          key={opcao.valor}
-                          type="button"
-                          onClick={() => {
-                            setFiltro(opcao.valor);
-                            setMostrarPainelOrdenacao(false);
-                          }}
-                          style={
-                            ativo
-                              ? notificationSortingOptionActiveStyle
-                              : notificationSortingOptionStyle
-                          }
-                        >
-                          <span>{opcao.rotulo}</span>
-
-                          <span
-                            style={
-                              ativo
-                                ? notificationSortingOptionRadioActiveStyle
-                                : notificationSortingOptionRadioStyle
-                            }
-                          >
-                            {ativo ? "✓" : ""}
-                          </span>
-                        </button>
-                      );
-                    })}
-
-                    <span style={notificationSortingSectionLabelStyle}>Classificar por</span>
-
-                    {opcoesOrdenacao.map((opcao) => {
-                      const ativo = ordenacao === opcao.valor;
-
-                      return (
-                        <button
-                          key={opcao.valor}
-                          type="button"
-                          onClick={() => {
-                            setOrdenacao(opcao.valor);
-                            setMostrarPainelOrdenacao(false);
-                          }}
-                          style={
-                            ativo
-                              ? notificationSortingOptionActiveStyle
-                              : notificationSortingOptionStyle
-                          }
-                        >
-                          <span>{opcao.rotulo}</span>
-
-                          <span
-                            style={
-                              ativo
-                                ? notificationSortingOptionRadioActiveStyle
-                                : notificationSortingOptionRadioStyle
-                            }
-                          >
-                            {ativo ? "✓" : ""}
-                          </span>
-                        </button>
-                      );
-                    })}
-
-                    <span style={notificationSortingSectionLabelStyle}>Ações</span>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        marcarTodasComoLidas();
-                        setMostrarPainelOrdenacao(false);
-                      }}
-                      style={
-                        notificacoes.length === 0
-                          ? notificationActionsOptionDisabledStyle
-                          : notificationActionsOptionStyle
-                      }
-                      disabled={notificacoes.length === 0}
-                    >
-                      Marcar todas como lidas
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        marcarFiltradasComoLidas();
-                        setMostrarPainelOrdenacao(false);
-                      }}
-                      style={
-                        notificacoesFiltradas.length === 0
-                          ? notificationActionsOptionDisabledStyle
-                          : notificationActionsOptionStyle
-                      }
-                      disabled={notificacoesFiltradas.length === 0}
-                    >
-                      Marcar seleção
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        limparLidas();
-                        setMostrarPainelOrdenacao(false);
-                      }}
-                      style={
-                        totalLidas === 0
-                          ? notificationActionsOptionDisabledStyle
-                          : notificationActionsOptionStyle
-                      }
-                      disabled={totalLidas === 0}
-                    >
-                      Apagar lidas
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        limparTodas();
-                        setMostrarPainelOrdenacao(false);
-                      }}
-                      style={
-                        notificacoes.length === 0
-                          ? notificationActionsDangerOptionDisabledStyle
-                          : notificationActionsDangerOptionStyle
-                      }
-                      disabled={notificacoes.length === 0}
-                    >
-                      Limpar todos
-                    </button>
-                  </div>
-                </div>
-              </div>
-              </NotificacoesOverlayPortal>
+          <NotificacoesSortingSheet
+            isDesktop={isDesktop}
+            filtro={filtro}
+            ordenacao={ordenacao}
+            opcoesFiltro={opcoesFiltro}
+            opcoesOrdenacao={opcoesOrdenacao}
+            totalNotificacoes={notificacoes.length}
+            totalNotificacoesFiltradas={notificacoesFiltradas.length}
+            totalLidas={totalLidas}
+            onClose={() => setMostrarPainelOrdenacao(false)}
+            onFiltroChange={(proximoFiltro) => {
+              setFiltro(proximoFiltro);
+              setMostrarPainelOrdenacao(false);
+            }}
+            onOrdenacaoChange={(proximaOrdenacao) => {
+              setOrdenacao(proximaOrdenacao);
+              setMostrarPainelOrdenacao(false);
+            }}
+            onMarcarTodasComoLidas={() => {
+              marcarTodasComoLidas();
+              setMostrarPainelOrdenacao(false);
+            }}
+            onMarcarFiltradasComoLidas={() => {
+              marcarFiltradasComoLidas();
+              setMostrarPainelOrdenacao(false);
+            }}
+            onLimparLidas={() => {
+              limparLidas();
+              setMostrarPainelOrdenacao(false);
+            }}
+            onLimparTodas={() => {
+              limparTodas();
+              setMostrarPainelOrdenacao(false);
+            }}
+          />
         )}
 
         {notificacoes.length === 0 ? (

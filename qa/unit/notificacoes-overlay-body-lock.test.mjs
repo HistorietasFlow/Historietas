@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const painelOrdenacao = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-sorting-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const css = readFileSync(
   new URL(
     "../../app/notificacoes/lib/notificacoes-page-css.ts",
@@ -71,7 +78,12 @@ test("página delega somente o lifecycle e preserva derivação, CSS e overlays"
   );
   assert.equal(
     (pagina.match(/data-historietas-notificacoes-overlay="true"/g) || []).length,
-    2,
+    1,
+  );
+  assert.equal(
+    (painelOrdenacao.match(/data-historietas-notificacoes-overlay="true"/g) || [])
+      .length,
+    1,
   );
   assert.match(
     css,
