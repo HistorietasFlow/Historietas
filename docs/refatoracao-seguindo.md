@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 978 — sincronização inicial da página
+
+- Agrupou a composição dos lifecycles adjacentes de acesso e carregamento inicial de dados.
+- Preservou a ordem de execução, argumentos, autenticação, timers, cancelamentos e carregamento remoto existentes.
+
 ## Fase 977 — grupos de dados e contexto de acesso
 
 - Agrupou os estados de obras/leitura/carregamento e de acesso/aba/perfil em dois hooks de composição.

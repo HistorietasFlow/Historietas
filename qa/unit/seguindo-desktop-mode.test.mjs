@@ -89,6 +89,5 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
     pagina,
     /useSeguindoPageDiscoveryState\(\);/,
   );
-  assert.match(pagina, /useSeguindoAccessSync\(\{/);
-  assert.match(pagina, /useSeguindoPageDataLoading/);
+  assert.match(pagina, /useSeguindoPageInitialSync\(\{/);
 });

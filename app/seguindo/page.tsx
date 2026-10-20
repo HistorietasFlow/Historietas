@@ -5,15 +5,14 @@ import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoPageContent } from "./components/seguindo-page-content";
 import { SeguindoPageControls } from "./components/seguindo-page-controls";
 import { SeguindoPageFrame } from "./components/seguindo-page-frame";
-import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoDerivedContent } from "./hooks/use-seguindo-derived-content";
 import { useSeguindoPageActions } from "./hooks/use-seguindo-page-actions";
 import { useSeguindoPageAccessContextState } from "./hooks/use-seguindo-page-access-context-state";
 import { useSeguindoPageDataState } from "./hooks/use-seguindo-page-data-state";
-import { useSeguindoPageDataLoading } from "./hooks/use-seguindo-page-data-loading";
 import { useSeguindoPageDiscoveryState } from "./hooks/use-seguindo-page-discovery-state";
+import { useSeguindoPageInitialSync } from "./hooks/use-seguindo-page-initial-sync";
 import { useSeguindoPageSocialState } from "./hooks/use-seguindo-page-social-state";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
@@ -47,16 +46,13 @@ export default function SeguindoPage() {
 
   useSeguindoSortingSheetBodyLock(mostrarPainelOrdenacao);
 
-  useSeguindoAccessSync({
+  useSeguindoPageInitialSync({
     setUsuarioLogadoId,
     setAbaSeguimento,
     setAbaConteudo,
     setPerfilSocialId,
     setPerfilSocialNome,
     setVerificandoAcesso,
-  });
-
-  useSeguindoPageDataLoading({
     perfilSocialId,
     usuarioLogadoId,
     setObras,

@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const sincronizacaoInicial = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-initial-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("a fronteira de carregamento preserva a composição do loader e gatilho", () => {
   assert.match(hook, /^"use client";/);
@@ -37,13 +44,14 @@ test("a fronteira de carregamento preserva a composição do loader e gatilho", 
 
 test("a página delega a orquestração de carregamento sem alterar seus estados", () => {
   assert.match(
-    pagina,
-    /import \{ useSeguindoPageDataLoading \} from "\.\/hooks\/use-seguindo-page-data-loading";/,
+    sincronizacaoInicial,
+    /import \{ useSeguindoPageDataLoading \} from "\.\/use-seguindo-page-data-loading";/,
   );
   assert.match(
-    pagina,
+    sincronizacaoInicial,
     /useSeguindoPageDataLoading\(\{[\s\S]*?perfilSocialId,[\s\S]*?usuarioLogadoId,[\s\S]*?setObras,[\s\S]*?setObrasConcluidas,[\s\S]*?setCarregando,[\s\S]*?\}\);/,
   );
+  assert.match(pagina, /useSeguindoPageInitialSync\(\{/);
   assert.doesNotMatch(pagina, /const carregarDadosSeguindo =/);
   assert.doesNotMatch(pagina, /useSeguindoDataLoadTrigger/);
 });

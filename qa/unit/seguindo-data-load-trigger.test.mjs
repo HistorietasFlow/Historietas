@@ -20,6 +20,13 @@ const carregamentoPagina = readFileSync(
   ),
   "utf8",
 );
+const sincronizacaoInicial = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-initial-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook preserva guarda, timer e cleanup do carregamento", () => {
   assert.match(hook, /^"use client";/);
@@ -51,8 +58,12 @@ test("a fronteira de dados delega o gatilho de carregamento ao hook", () => {
     /useSeguindoDataLoadTrigger\(\{\s*usuarioLogadoId: parametros\.usuarioLogadoId,\s*carregarDadosSeguindo,\s*\}\);/,
   );
   assert.match(
+    sincronizacaoInicial,
+    /import \{ useSeguindoPageDataLoading \} from "\.\/use-seguindo-page-data-loading";/,
+  );
+  assert.match(
     pagina,
-    /import \{ useSeguindoPageDataLoading \} from "\.\/hooks\/use-seguindo-page-data-loading";/,
+    /import \{ useSeguindoPageInitialSync \} from "\.\/hooks\/use-seguindo-page-initial-sync";/,
   );
   assert.doesNotMatch(
     pagina,
