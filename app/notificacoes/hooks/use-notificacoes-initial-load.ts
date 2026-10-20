@@ -61,6 +61,8 @@ export function useNotificacoesInitialLoad({
   setUsuarioNotificacoesId,
 }: UseNotificacoesInitialLoadProps) {
   const router = useRouter();
+  // Os setters recebidos são estáveis; as dependências preservam literalmente o efeito original.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let componenteAtivo = true;
 

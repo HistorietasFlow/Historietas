@@ -16,6 +16,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const painelAcoes = readFileSync(
   new URL(
     "../../app/notificacoes/components/notificacoes-actions-sheet.tsx",
@@ -353,9 +360,10 @@ test("componentes visuais importam os helpers extraídos e preservam as fronteir
   }
 
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-supabase-direct-loader";/,
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-direct-loader";/,
   );
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.match(
     directLoader,
     /import \{ normalizarNotificacaoSupabase \} from "\.\/notificacoes-record-normalizers";/,

@@ -11,6 +11,11 @@ const normalizadores = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url), "utf8");
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ), "utf8");
 const storageUtils = readFileSync(
   new URL(
     "../../app/notificacoes/lib/notificacoes-storage-utils.ts",
@@ -45,9 +50,13 @@ test("normalizadores de registros preservam aliases, defaults e merge de obras",
   assert.doesNotMatch(normalizadores, /localStorage|useEffect|useState|from "react"/i);
 });
 
-test("página delega a normalização de registros e IDs locais", () => {
-  assert.match(pagina, /from "\.\/lib\/notificacoes-record-normalizers";/);
-  assert.match(pagina, /lerIdsLocalStorage,/);
+test("página delega ao hook a normalização de registros e IDs locais", () => {
+  assert.match(
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-record-normalizers";/,
+  );
+  assert.match(hookInicial, /lerIdsLocalStorage,/);
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
 
   for (const helper of [
     "normalizarObraSupabase",

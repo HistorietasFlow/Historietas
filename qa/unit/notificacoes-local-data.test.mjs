@@ -25,6 +25,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const loaderObrasSupabase = readFileSync(
   new URL(
     "../../app/notificacoes/lib/notificacoes-supabase-work-loader.ts",
@@ -173,13 +180,17 @@ test("normalizadores preservam progresso, defaults, aliases e fallback", () => {
   assert.doesNotMatch(normalizadores, /supabase|localStorage|useEffect|useState|from "react"/i);
 });
 
-test("pagina importa as fronteiras locais e nao retem implementacoes duplicadas", () => {
-  assert.match(pagina, /from "\.\/lib\/notificacoes-storage-utils";/);
+test("pagina e hook inicial importam as fronteiras locais sem reter implementacoes duplicadas", () => {
+  assert.match(
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-storage-utils";/,
+  );
   assert.match(pagina, /from "\.\/lib\/notificacoes-models";/);
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-supabase-work-loader";/,
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-work-loader";/,
   );
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.match(
     loaderObrasSupabase,
     /import \{ calcularProgressoLeitura \} from "\.\/notificacoes-local-normalizers";/,
