@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 24 — Notificações
+
+- As opções de filtro/ordenação e os dados derivados de visualização de Notificações foram isolados em helpers puros, preservando rótulos, contagens, buscas de obra/capítulo e estado do menu.
+
 ## Registro da Fase 23 — Notificações
 
 - O lifecycle inicial de Notificações foi isolado em `use-notificacoes-initial-load`.
