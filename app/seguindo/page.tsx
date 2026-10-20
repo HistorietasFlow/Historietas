@@ -7,8 +7,6 @@ import { SeguindoPageControls } from "./components/seguindo-page-controls";
 import { SeguindoPageFrame } from "./components/seguindo-page-frame";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
-import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
-import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoPageLoadState } from "./hooks/use-seguindo-page-load-state";
 import { useSeguindoSocialListState } from "./hooks/use-seguindo-social-list-state";
 import { useSeguindoWorkFollowState } from "./hooks/use-seguindo-work-follow-state";
@@ -25,6 +23,7 @@ import { useSeguindoContentTabState } from "./hooks/use-seguindo-content-tab-sta
 import { useSeguindoFilterSortState } from "./hooks/use-seguindo-filter-sort-state";
 import { useSeguindoSearchState } from "./hooks/use-seguindo-search-state";
 import { useSeguindoPageActions } from "./hooks/use-seguindo-page-actions";
+import { useSeguindoPageDataLoading } from "./hooks/use-seguindo-page-data-loading";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
@@ -80,9 +79,7 @@ export default function SeguindoPage() {
     setVerificandoAcesso,
   });
 
-
-
-  const carregarDadosSeguindo = useSeguindoDataLoader({
+  useSeguindoPageDataLoading({
     perfilSocialId,
     usuarioLogadoId,
     setObras,
@@ -96,12 +93,6 @@ export default function SeguindoPage() {
     setObrasFavoritas,
     setObrasConcluidas,
     setCarregando,
-  });
-
-
-  useSeguindoDataLoadTrigger({
-    usuarioLogadoId,
-    carregarDadosSeguindo,
   });
 
   const {

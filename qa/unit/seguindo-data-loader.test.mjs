@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const carregamentoPagina = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-data-loading.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 test("hook preserva a orquestração local, remota e persistência", () => {
   assert.match(hook, /^"use client";/);
   assert.match(hook, /return useCallback\(async \(\) => \{/);
@@ -38,14 +45,26 @@ test("hook preserva a orquestração local, remota e persistência", () => {
   assert.match(hook, /setCarregando\(false\);/);
 });
 
-test("página delega o carregamento principal ao hook", () => {
+test("a página delega o carregamento principal à fronteira de dados", () => {
   assert.match(
-    pagina,
-    /import \{ useSeguindoDataLoader \} from "\.\/hooks\/use-seguindo-data-loader";/,
+    carregamentoPagina,
+    /^"use client";/,
+  );
+  assert.match(
+    carregamentoPagina,
+    /import \{ useSeguindoDataLoader \} from "\.\/use-seguindo-data-loader";/,
+  );
+  assert.match(
+    carregamentoPagina,
+    /const carregarDadosSeguindo = useSeguindoDataLoader\(parametros\);/,
   );
   assert.match(
     pagina,
-    /const carregarDadosSeguindo = useSeguindoDataLoader\(\{[\s\S]*?perfilSocialId,[\s\S]*?usuarioLogadoId,[\s\S]*?setObras,[\s\S]*?setCarregando,[\s\S]*?\}\);/,
+    /import \{ useSeguindoPageDataLoading \} from "\.\/hooks\/use-seguindo-page-data-loading";/,
+  );
+  assert.match(
+    pagina,
+    /useSeguindoPageDataLoading\(\{[\s\S]*?perfilSocialId,[\s\S]*?usuarioLogadoId,[\s\S]*?setObras,[\s\S]*?setCarregando,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /carregarDadosLocaisSeguindo/);
   assert.doesNotMatch(pagina, /carregarDadosRemotosSeguindo/);
