@@ -103,6 +103,7 @@ test("storage preserva chaves, isolamento por usuario, SSR e fallback silencioso
   for (const helper of [
     "criarStorageKeyUsuarioNotificacoes",
     "lerStorageUsuarioNotificacoes",
+    "lerIdsLocalStorage",
     "salvarJsonStorageUsuarioNotificacoes",
   ]) {
     assert.match(storageUtils, new RegExp(`export function ${helper}\\(`));

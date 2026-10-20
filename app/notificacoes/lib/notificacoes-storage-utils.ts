@@ -25,6 +25,25 @@ export function lerStorageUsuarioNotificacoes(chave: string, userId: string) {
   }
 }
 
+export function lerIdsLocalStorage(chave: string, userId = ""): string[] {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return [];
+  }
+
+  try {
+    const texto = lerStorageUsuarioNotificacoes(chave, userIdLimpo);
+    const json = texto ? JSON.parse(texto) : [];
+
+    return Array.isArray(json)
+      ? json.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export function salvarJsonStorageUsuarioNotificacoes(
   chave: string,
   userId: string,
