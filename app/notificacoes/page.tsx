@@ -12,7 +12,6 @@ import {
   dataNotificacao,
   filtrarEOrdenarNotificacoes,
   notificacaoEhCapitulo,
-  notificacaoEhComunidade,
   type FiltroNotificacao,
   type OrdenacaoNotificacao,
 } from "./lib/notificacoes-filter-utils";
@@ -22,15 +21,15 @@ import { useEffect, useMemo, useState } from "react";
 import NotificacoesLanguageBridge from "./components/notificacoes-language-bridge";
 import NotificacoesEmptyState from "./components/notificacoes-empty-state";
 import NotificacoesLoadingSpinner from "./components/notificacoes-loading-spinner";
-import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal";
 import NotificacoesSortingSheet from "./components/notificacoes-sorting-sheet";
+import NotificacoesTopControls from "./components/notificacoes-top-controls";
+import NotificacoesActionsSheet from "./components/notificacoes-actions-sheet";
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
 import { useNotificacoesOverlayBodyLock } from "./hooks/use-notificacoes-overlay-body-lock";
 import {
   criarAvatarNotificacaoStyle,
   notificacaoTemAutorSocial,
   notificacaoUsaCardSocial,
-  obterAcaoPrincipalNotificacao,
   obterDetalheNotificacao,
   obterIconeNotificacao,
   obterInicialNotificacao,
@@ -43,39 +42,15 @@ import { notificacoesPageCss } from "./lib/notificacoes-page-css";
 import {
   containerStyle,
   desktopContainerStyle,
-  desktopNotificationActionsSheetStyle,
   desktopNotificationsControlsStyle,
-  desktopNotificationsFilterButtonStyle,
-  desktopNotificationsSearchIconStyle,
-  desktopNotificationsSearchInputStyle,
-  desktopNotificationsSearchShellStyle,
-  desktopNotificationsTitleStyle,
-  desktopNotificationsTopActionsStyle,
-  desktopTitleHeaderStyle,
   desktopTopWaterFadeStyle,
   loadingPageStyle,
   loadingSpinnerStyle,
-  mobileSearchToggleStyle,
   mobileTopWaterFadeStyle,
-  notificationActionsDangerOptionDisabledStyle,
-  notificationActionsDangerOptionStyle,
-  notificationActionsOptionDisabledStyle,
-  notificationActionsOptionLinkStyle,
-  notificationActionsOptionStyle,
-  notificationActionsSheetStyle,
   notificationClearButtonStyle,
-  notificationSearchInputStyle,
-  notificationSearchShellStyle,
-  notificationSortingBackdropStyle,
-  notificationSortingHandleStyle,
-  notificationSortingOptionsListStyle,
-  notificationSortingTitleStyle,
-  notificacoesHeaderFilterButtonStyle,
-  notificacoesHeaderFilterIconStyle,
   notificacoesTopFilterBoxStyle,
   notificationsControlsStyle,
   pageStyle,
-  titleHeaderStyle,
 } from "./lib/notificacoes-shell-styles";
 import {
   cardHeaderStyle,
@@ -123,7 +98,6 @@ import {
   criarHrefLeituraCapitulo,
   criarLoginHrefNotificacoes,
   criarPerfilHrefNotificacao,
-  montarLinkNotificacao,
 } from "./lib/notificacoes-navigation-utils";
 import {
   mesclarNotificacoes,
@@ -2486,181 +2460,29 @@ export default function NotificacoesPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <section style={notificacoesTopFilterBoxStyle}>
-          {isDesktop ? (
-            <div style={desktopTitleHeaderStyle}>
-              <h1 style={desktopNotificationsTitleStyle}>Notificações</h1>
-
-              <div style={desktopNotificationsTopActionsStyle}>
-                <label style={desktopNotificationsSearchShellStyle}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                    style={desktopNotificationsSearchIconStyle}
-                  >
-                    <circle
-                      cx="10.85"
-                      cy="10.85"
-                      r="6.65"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M16.05 16.05L20.25 20.25"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-
-                  <input
-                    value={busca}
-                    onChange={(event) => {
-                      fecharMenusNotificacoes();
-                      setBusca(event.target.value);
-                    }}
-                    className="notificacoes-search-input"
-                    aria-label="Buscar notificações..."
-                    placeholder="Buscar notificações..."
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    maxLength={90}
-                    style={desktopNotificationsSearchInputStyle}
-                    type="text"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    fecharMenusNotificacoes();
-                    setMostrarPainelOrdenacao((aberto) => !aberto);
-                  }}
-                  style={desktopNotificationsFilterButtonStyle}
-                  aria-label="Abrir opções das notificações"
-                  aria-expanded={mostrarPainelOrdenacao}
-                >
-                  <span>Filtros</span>
-                  <span aria-hidden="true">+</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div style={titleHeaderStyle}>
-              <button
-                type="button"
-                onClick={() => {
-                  fecharMenusNotificacoes();
-                  setMostrarPainelOrdenacao((aberto) => !aberto);
-                }}
-                style={notificacoesHeaderFilterButtonStyle}
-                aria-label="Abrir opções das notificações"
-                aria-expanded={mostrarPainelOrdenacao}
-              >
-                <span>Notificações</span>
-                <span style={notificacoesHeaderFilterIconStyle} aria-hidden="true">
-                  +
-                </span>
-              </button>
-
-              {buscaTopoAberta || Boolean(busca.trim()) ? (
-                <>
-                  <label style={notificationSearchShellStyle}>
-                    <input
-                      value={busca}
-                      onChange={(event) => {
-                        fecharMenusNotificacoes();
-                        setBusca(event.target.value);
-                      }}
-                      className="notificacoes-search-input"
-                      aria-label="Buscar notificações..."
-                    placeholder="Buscar notificações..."
-                      autoComplete="off"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      maxLength={90}
-                      style={notificationSearchInputStyle}
-                      type="text"
-                      autoFocus
-                    />
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      fecharMenusNotificacoes();
-                      setBusca("");
-                      setBuscaTopoAberta(false);
-                    }}
-                    aria-label="Fechar busca"
-                    aria-expanded="true"
-                    style={mobileSearchToggleStyle}
-                  >
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        cx="10.85"
-                        cy="10.85"
-                        r="6.65"
-                        stroke="currentColor"
-                        strokeWidth="2.15"
-                      />
-                      <path
-                        d="M16.05 16.05L20.25 20.25"
-                        stroke="currentColor"
-                        strokeWidth="2.15"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    fecharMenusNotificacoes();
-                    setBuscaTopoAberta(true);
-                  }}
-                  aria-label="Abrir busca"
-                  aria-expanded="false"
-                  style={mobileSearchToggleStyle}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      cx="10.85"
-                      cy="10.85"
-                      r="6.65"
-                      stroke="currentColor"
-                      strokeWidth="2.15"
-                    />
-                    <path
-                      d="M16.05 16.05L20.25 20.25"
-                      stroke="currentColor"
-                      strokeWidth="2.15"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              )}
-            </div>
-          )}
+          <NotificacoesTopControls
+            isDesktop={isDesktop}
+            busca={busca}
+            buscaTopoAberta={buscaTopoAberta}
+            mostrarPainelOrdenacao={mostrarPainelOrdenacao}
+            onBuscaChange={(proximaBusca) => {
+              fecharMenusNotificacoes();
+              setBusca(proximaBusca);
+            }}
+            onAlternarPainelOrdenacao={() => {
+              fecharMenusNotificacoes();
+              setMostrarPainelOrdenacao((aberto) => !aberto);
+            }}
+            onAbrirBusca={() => {
+              fecharMenusNotificacoes();
+              setBuscaTopoAberta(true);
+            }}
+            onFecharBusca={() => {
+              fecharMenusNotificacoes();
+              setBusca("");
+              setBuscaTopoAberta(false);
+            }}
+          />
         </section>
 
         {totalNotificacoes > 0 && filtrosAtivos && (
@@ -2949,152 +2771,20 @@ export default function NotificacoesPage() {
         )}
 
         {notificacaoMenuAberta && (
-          <NotificacoesOverlayPortal>
-            {(() => {
-              const notificacao = prepararNotificacaoTexto(notificacaoMenuAberta);
-              const obra = encontrarObra(notificacao.obraId);
-              const ehComunidade = notificacaoEhComunidade(notificacao);
-              const autorNotificacaoNome = obterNomeAutorNotificacao(notificacao);
-              const autorNotificacaoHref = criarPerfilHrefNotificacao(
-                notificacao.autorId || "",
-                autorNotificacaoNome
-              );
-              const linkNotificacao = montarLinkNotificacao(notificacao, obra);
-              const labelAcaoPrincipal = obterAcaoPrincipalNotificacao(notificacao);
-
-              return (
-                <div
-                  data-historietas-notificacoes-overlay="true"
-                  style={notificationSortingBackdropStyle}
-                  onClick={fecharMenuNotificacao}
-                >
-                  <div
-                    style={isDesktop ? desktopNotificationActionsSheetStyle : notificationActionsSheetStyle}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <span style={notificationSortingHandleStyle} />
-
-                    <h2 style={notificationSortingTitleStyle}>AÇÕES DA NOTIFICAÇÃO</h2>
-
-                    <div style={notificationSortingOptionsListStyle}>
-                      <Link
-                        href={linkNotificacao}
-                        style={notificationActionsOptionLinkStyle}
-                        onClick={() => {
-                          abrirNotificacao(notificacao.id);
-                          fecharMenuNotificacao();
-                        }}
-                      >
-                        {labelAcaoPrincipal}
-                      </Link>
-
-                      {notificacao.autorId && (
-                        <Link
-                          href={autorNotificacaoHref}
-                          style={notificationActionsOptionLinkStyle}
-                          onClick={fecharMenuNotificacao}
-                        >
-                          Abrir perfil
-                        </Link>
-                      )}
-
-                      {notificacao.tipo === "solicitacao-seguidor" &&
-                      notificacao.solicitacaoId ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void responderSolicitacaoSeguidorNotificacao(
-                                notificacao,
-                                true
-                              )
-                            }
-                            style={
-                              solicitacaoRespondendoId
-                                ? notificationActionsOptionDisabledStyle
-                                : notificationActionsOptionStyle
-                            }
-                            disabled={Boolean(solicitacaoRespondendoId)}
-                          >
-                            {solicitacaoRespondendoId ===
-                            notificacao.solicitacaoId
-                              ? "Aceitando..."
-                              : "Aceitar"}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void responderSolicitacaoSeguidorNotificacao(
-                                notificacao,
-                                false
-                              )
-                            }
-                            style={
-                              solicitacaoRespondendoId
-                                ? notificationActionsDangerOptionDisabledStyle
-                                : notificationActionsDangerOptionStyle
-                            }
-                            disabled={Boolean(solicitacaoRespondendoId)}
-                          >
-                            {solicitacaoRespondendoId ===
-                            notificacao.solicitacaoId
-                              ? "Recusando..."
-                              : "Recusar"}
-                          </button>
-                        </>
-                      ) : null}
-
-                      {notificacao.lida ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            marcarComoNaoLida(notificacao.id);
-                            fecharMenuNotificacao();
-                          }}
-                          style={notificationActionsOptionStyle}
-                        >
-                          Marcar como nova
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            marcarComoLida(notificacao.id);
-                            fecharMenuNotificacao();
-                          }}
-                          style={notificationActionsOptionStyle}
-                        >
-                          Marcar como lida
-                        </button>
-                      )}
-
-                      {obra && !ehComunidade && (
-                        <Link
-                          href={`/obra/${obra.slug || criarSlugBase(obra.titulo)}`}
-                          style={notificationActionsOptionLinkStyle}
-                          onClick={fecharMenuNotificacao}
-                        >
-                          Abrir obra
-                        </Link>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          apagarNotificacao(notificacao.id);
-                          fecharMenuNotificacao();
-                        }}
-                        style={notificationActionsDangerOptionStyle}
-                      >
-                        Apagar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </NotificacoesOverlayPortal>
+          <NotificacoesActionsSheet
+            isDesktop={isDesktop}
+            notificacaoOriginal={notificacaoMenuAberta}
+            encontrarObra={encontrarObra}
+            solicitacaoRespondendoId={solicitacaoRespondendoId}
+            onClose={fecharMenuNotificacao}
+            onAbrirNotificacao={abrirNotificacao}
+            onResponderSolicitacaoSeguidor={(notificacao, aceitar) => {
+              void responderSolicitacaoSeguidorNotificacao(notificacao, aceitar);
+            }}
+            onMarcarComoLida={marcarComoLida}
+            onMarcarComoNaoLida={marcarComoNaoLida}
+            onApagarNotificacao={apagarNotificacao}
+          />
         )}
       </section>
     </main>

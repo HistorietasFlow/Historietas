@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 13 — Notificações
+
+- Os controles superiores e o menu de ações por notificação foram isolados em componentes visuais, preservando busca, filtros, portal, navegação e callbacks de mutação na página.
+
 ## Registro da Fase 12 — Notificações
 
 - O painel visual de ordenação e ações foi isolado em componente dedicado, preservando portal, opções, estados desabilitados e callbacks de mutação na página.

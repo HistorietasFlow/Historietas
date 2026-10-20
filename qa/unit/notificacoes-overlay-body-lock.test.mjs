@@ -20,6 +20,13 @@ const painelOrdenacao = readFileSync(
   ),
   "utf8",
 );
+const painelAcoes = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-actions-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const css = readFileSync(
   new URL(
     "../../app/notificacoes/lib/notificacoes-page-css.ts",
@@ -78,10 +85,15 @@ test("página delega somente o lifecycle e preserva derivação, CSS e overlays"
   );
   assert.equal(
     (pagina.match(/data-historietas-notificacoes-overlay="true"/g) || []).length,
-    1,
+    0,
   );
   assert.equal(
     (painelOrdenacao.match(/data-historietas-notificacoes-overlay="true"/g) || [])
+      .length,
+    1,
+  );
+  assert.equal(
+    (painelAcoes.match(/data-historietas-notificacoes-overlay="true"/g) || [])
       .length,
     1,
   );

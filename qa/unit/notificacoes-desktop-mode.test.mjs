@@ -20,6 +20,20 @@ const painelOrdenacao = readFileSync(
   ),
   "utf8",
 );
+const controles = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-top-controls.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const acoes = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-actions-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook preserva o modo desktop imediato e os dois modelos de listener", () => {
   assert.match(hook, /export function useNotificacoesDesktopMode\(\)/);
@@ -69,5 +83,17 @@ test("pagina delega somente o lifecycle e preserva os consumidores visuais", () 
     painelOrdenacao,
     /isDesktop\s*\?\s*desktopNotificationSortingSheetStyle\s*:\s*notificationSortingSheetStyle/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 18);
+  assert.match(
+    pagina,
+    /<NotificacoesTopControls[\s\S]*?isDesktop=\{isDesktop\}/,
+  );
+  assert.match(
+    pagina,
+    /<NotificacoesActionsSheet[\s\S]*?isDesktop=\{isDesktop\}/,
+  );
+  assert.match(controles, /if \(isDesktop\)/);
+  assert.match(
+    acoes,
+    /isDesktop\s*\?\s*desktopNotificationActionsSheetStyle\s*:\s*notificationActionsSheetStyle/,
+  );
 });
