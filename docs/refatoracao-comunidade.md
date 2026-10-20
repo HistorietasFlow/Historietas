@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 29 — Notificações
+
+- Os callbacks do painel de ordenação foram isolados em `notificacoes-sorting-action-callbacks`, preservando a execução de cada ação antes do fechamento visual do painel, sem alterar as mutações, o carregamento ou a autenticação.
+
 ## Registro da Fase 28 — Notificações
 
 - O estado derivado da página foi isolado em `use-notificacoes-page-view-state`, preservando memos, filtros, totais, busca de obras/capítulos e bloqueio 18+; os callbacks de controles visuais foram concentrados em `use-notificacoes-page-controls` sem alterar o carregamento ou as mutações.

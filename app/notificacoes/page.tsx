@@ -31,6 +31,7 @@ import type {
 import { useNotificacoesInitialLoad } from "./hooks/use-notificacoes-initial-load";
 import { criarAcoesMutacaoNotificacoes } from "./lib/notificacoes-mutation-actions";
 import { criarAtualizadorNotificacoes } from "./lib/notificacoes-state-update-action";
+import { criarAcoesPainelOrdenacaoNotificacoes } from "./lib/notificacoes-sorting-action-callbacks";
 
 export default function NotificacoesPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -113,6 +114,19 @@ export default function NotificacoesPage() {
     setSolicitacaoRespondendoId,
   });
 
+  const {
+    onMarcarTodasComoLidas,
+    onMarcarFiltradasComoLidas,
+    onLimparLidas,
+    onLimparTodas,
+  } = criarAcoesPainelOrdenacaoNotificacoes({
+    marcarTodasComoLidas,
+    marcarFiltradasComoLidas,
+    limparLidas,
+    limparTodas,
+    setMostrarPainelOrdenacao,
+  });
+
   const menuOverlayAberto = Boolean(
     mostrarPainelOrdenacao || notificacaoMenuAberta
   );
@@ -183,22 +197,10 @@ export default function NotificacoesPage() {
             onClose={fecharPainelOrdenacao}
             onFiltroChange={atualizarFiltro}
             onOrdenacaoChange={atualizarOrdenacao}
-            onMarcarTodasComoLidas={() => {
-              marcarTodasComoLidas();
-              setMostrarPainelOrdenacao(false);
-            }}
-            onMarcarFiltradasComoLidas={() => {
-              marcarFiltradasComoLidas();
-              setMostrarPainelOrdenacao(false);
-            }}
-            onLimparLidas={() => {
-              limparLidas();
-              setMostrarPainelOrdenacao(false);
-            }}
-            onLimparTodas={() => {
-              limparTodas();
-              setMostrarPainelOrdenacao(false);
-            }}
+            onMarcarTodasComoLidas={onMarcarTodasComoLidas}
+            onMarcarFiltradasComoLidas={onMarcarFiltradasComoLidas}
+            onLimparLidas={onLimparLidas}
+            onLimparTodas={onLimparTodas}
           />
         )}
 
