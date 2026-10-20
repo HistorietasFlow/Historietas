@@ -16,6 +16,13 @@ const problemasTecnicosLoader = readFileSync(
   ),
   "utf8",
 );
+const comunidadeLoader = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-supabase-community-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
@@ -62,18 +69,18 @@ test("loader de problemas tecnicos preserva RPC, fallback e ordenacao", () => {
   assert.match(problemasTecnicosLoader, /catch \{\s*return \[\];/);
 });
 
-test("pagina delega os loaders de suporte sem reter implementacoes locais", () => {
+test("fronteiras delegam os loaders de suporte sem reter implementacoes locais", () => {
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-supabase-profile-loader";/,
+    comunidadeLoader,
+    /from "\.\/notificacoes-supabase-profile-loader";/,
   );
   assert.match(
     pagina,
     /from "\.\/lib\/notificacoes-supabase-technical-issues-loader";/,
   );
-  assert.match(pagina, /await carregarPerfisNotificacoes\(/);
+  assert.match(comunidadeLoader, /await carregarPerfisNotificacoes\(/);
   assert.match(pagina, /carregarNotificacoesProblemasTecnicosSupabase\(/);
-  assert.doesNotMatch(pagina, /async function carregarPerfisNotificacoes\(/);
+  assert.doesNotMatch(comunidadeLoader, /async function carregarPerfisNotificacoes\(/);
   assert.doesNotMatch(
     pagina,
     /async function carregarNotificacoesProblemasTecnicosSupabase\(/,

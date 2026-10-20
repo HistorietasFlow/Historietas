@@ -35,6 +35,13 @@ const loaderDiario = readFileSync(
   ),
   "utf8",
 );
+const loaderComunidade = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-supabase-community-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const navigationUtilsExecutavel = navigationUtils
   .replace(
     'import { criarSlugBase, idObraSupabaseValido } from "../../../lib/utils";',
@@ -281,7 +288,7 @@ test("monta links de capitulo e preserva fallbacks finais", () => {
 test("pagina delega somente os helpers de navegacao extraidos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarHrefLeituraCapitulo,[\s\S]*?criarPerfilHrefNotificacao,[\s\S]*?\} from "\.\/lib\/notificacoes-navigation-utils";/,
+    /import \{[\s\S]*?criarLoginHrefNotificacoes,[\s\S]*?\} from "\.\/lib\/notificacoes-navigation-utils";/,
   );
   for (const helper of [
     "criarHrefLeituraCapitulo",
@@ -297,7 +304,15 @@ test("pagina delega somente os helpers de navegacao extraidos", () => {
     capitulosSeguidos,
     /criarHrefLeituraCapitulo\(obra, capitulo\.id, indiceCapitulo \+ 1\)/,
   );
-  assert.match(pagina, /criarPerfilHrefNotificacao\(seguidorId, perfilSeguidor\.nome\)/);
+  assert.match(
+    loaderComunidade,
+    /import \{[\s\S]*?criarHrefLeituraCapitulo,[\s\S]*?criarPerfilHrefNotificacao,[\s\S]*?\} from "\.\/notificacoes-navigation-utils";/,
+  );
+  assert.match(
+    loaderComunidade,
+    /criarPerfilHrefNotificacao\(seguidorId, perfilSeguidor\.nome\)/,
+  );
+  assert.match(loaderComunidade, /criarHrefLeituraCapitulo\(/);
   assert.match(
     loaderDiario,
     /import \{[\s\S]*?criarDiarioPerfilHrefNotificacao,[\s\S]*?\} from "\.\/notificacoes-navigation-utils";/,
