@@ -1,21 +1,17 @@
 "use client";
 
-import { SeguindoPageContent } from "./components/seguindo-page-content";
-import { SeguindoPageControls } from "./components/seguindo-page-controls";
-import { SeguindoPageFrame } from "./components/seguindo-page-frame";
 import { SeguindoPageLoadingState } from "./components/seguindo-page-loading-state";
-import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
+import { SeguindoPageLoadedState } from "./components/seguindo-page-loaded-state";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoDerivedContent } from "./hooks/use-seguindo-derived-content";
 import { useSeguindoPageActions } from "./hooks/use-seguindo-page-actions";
 import { useSeguindoPageAccessContextState } from "./hooks/use-seguindo-page-access-context-state";
+import { useSeguindoPageContentInteractions } from "./hooks/use-seguindo-page-content-interactions";
 import { useSeguindoPageDataState } from "./hooks/use-seguindo-page-data-state";
 import { useSeguindoPageDiscoveryState } from "./hooks/use-seguindo-page-discovery-state";
 import { useSeguindoPageInitialSync } from "./hooks/use-seguindo-page-initial-sync";
 import { useSeguindoPageSocialState } from "./hooks/use-seguindo-page-social-state";
-import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoPageView } from "./hooks/use-seguindo-page-view";
-import { containerStyle, desktopContainerStyle } from "./lib/seguindo-layout-styles";
 
 export default function SeguindoPage() {
   const {
@@ -127,7 +123,7 @@ export default function SeguindoPage() {
     usuariosSeguidores,
     solicitacoesSeguidores,
   });
-  const trocarAbaConteudo = useSeguindoContentTabNavigation({
+  const trocarAbaConteudo = useSeguindoPageContentInteractions({
     perfilSocialId,
     perfilSocialNome,
     usuarioLogadoId,
@@ -137,11 +133,8 @@ export default function SeguindoPage() {
     setBusca,
     setFiltro,
     setOrdenacao,
-  });
-  useSeguindoUserSearchSync({
     busca,
     buscaSugestoesUsuariosAtiva,
-    usuarioLogadoId,
     usuariosSeguidos,
     setUsuariosSugestoesBusca,
     setCarregandoUsuariosSugestoes,
@@ -151,58 +144,57 @@ export default function SeguindoPage() {
   }
 
   return (
-    <SeguindoPageFrame isDesktop={isDesktop} pageThemeStyle={pageThemeStyle}>
-      <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <SeguindoPageControls
-          isDesktop={isDesktop}
-          busca={busca}
-          setBusca={setBusca}
-          buscaSeguindoAberta={buscaSeguindoAberta}
-          setBuscaSeguindoAberta={setBuscaSeguindoAberta}
-          setMostrarPainelOrdenacao={setMostrarPainelOrdenacao}
-          visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
-          descricaoListaSocial={descricaoListaSocial}
-          abaConteudo={abaConteudo}
-          totalDisponivelGeral={totalDisponivelGeral}
-          trocarAbaConteudo={trocarAbaConteudo}
-          totalSeguidores={usuariosSeguidores.length}
-          totalObrasSeguidas={obrasSeguidasBase.length}
-          totalPessoasSeguidas={usuariosSeguidos.length}
-          mostrarPainelOrdenacao={mostrarPainelOrdenacao}
-          opcoesOrdenacao={opcoesOrdenacao}
-          ordenacao={ordenacao}
-          setOrdenacao={setOrdenacao}
-        />
-
-        <SeguindoPageContent
-          isDesktop={isDesktop}
-          totalSemFiltros={totalSemFiltros}
-          buscaSugestoesUsuariosAtiva={buscaSugestoesUsuariosAtiva}
-          abaConteudo={abaConteudo}
-          visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
-          totalSeguindo={totalSeguindo}
-          carregandoUsuariosSugestoes={carregandoUsuariosSugestoes}
-          usuariosSugestoesBusca={usuariosSugestoesBusca}
-          obrasFiltradas={obrasFiltradas}
-          onDeixarDeSeguirObra={deixarDeSeguirObra}
-          listaSocialEhDoUsuarioLogado={listaSocialEhDoUsuarioLogado}
-          solicitacoesSeguidoresFiltradas={solicitacoesSeguidoresFiltradas}
-          solicitacaoRespondendoId={solicitacaoRespondendoId}
-          onResponderSolicitacao={responderSolicitacaoSeguidor}
-          usuariosFiltrados={usuariosFiltrados}
-          podeRemoverUsuariosDaLista={podeRemoverUsuariosDaLista}
-          podeRemoverSeguidoresDaLista={podeRemoverSeguidoresDaLista}
-          usuarioListaAlterandoId={usuarioListaAlterandoId}
-          onRemoverSeguidorUsuario={removerSeguidorUsuario}
-          onDeixarDeSeguirUsuario={deixarDeSeguirUsuario}
-          usuarioSugestaoSeguindoId={usuarioSugestaoSeguindoId}
-          solicitacoesEnviadasIds={solicitacoesEnviadasIds}
-          onSeguirUsuarioSugestao={seguirUsuarioSugestao}
-          autoresFiltrados={autoresFiltrados}
-          onDeixarDeSeguirAutor={deixarDeSeguirAutor}
-        />
-      </section>
-    </SeguindoPageFrame>
+    <SeguindoPageLoadedState
+      isDesktop={isDesktop}
+      pageThemeStyle={pageThemeStyle}
+      controls={{
+        isDesktop,
+        busca,
+        setBusca,
+        buscaSeguindoAberta,
+        setBuscaSeguindoAberta,
+        setMostrarPainelOrdenacao,
+        visualizandoListaSocialDoPerfil,
+        descricaoListaSocial,
+        abaConteudo,
+        totalDisponivelGeral,
+        trocarAbaConteudo,
+        totalSeguidores: usuariosSeguidores.length,
+        totalObrasSeguidas: obrasSeguidasBase.length,
+        totalPessoasSeguidas: usuariosSeguidos.length,
+        mostrarPainelOrdenacao,
+        opcoesOrdenacao,
+        ordenacao,
+        setOrdenacao,
+      }}
+      content={{
+        isDesktop,
+        totalSemFiltros,
+        buscaSugestoesUsuariosAtiva,
+        abaConteudo,
+        visualizandoListaSocialDoPerfil,
+        totalSeguindo,
+        carregandoUsuariosSugestoes,
+        usuariosSugestoesBusca,
+        obrasFiltradas,
+        onDeixarDeSeguirObra: deixarDeSeguirObra,
+        listaSocialEhDoUsuarioLogado,
+        solicitacoesSeguidoresFiltradas,
+        solicitacaoRespondendoId,
+        onResponderSolicitacao: responderSolicitacaoSeguidor,
+        usuariosFiltrados,
+        podeRemoverUsuariosDaLista,
+        podeRemoverSeguidoresDaLista,
+        usuarioListaAlterandoId,
+        onRemoverSeguidorUsuario: removerSeguidorUsuario,
+        onDeixarDeSeguirUsuario: deixarDeSeguirUsuario,
+        usuarioSugestaoSeguindoId,
+        solicitacoesEnviadasIds,
+        onSeguirUsuarioSugestao: seguirUsuarioSugestao,
+        autoresFiltrados,
+        onDeixarDeSeguirAutor: deixarDeSeguirAutor,
+      }}
+    />
   );
 }
 

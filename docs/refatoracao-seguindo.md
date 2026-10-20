@@ -5,6 +5,12 @@
 - Agrupou a composição de tema e bloqueio do painel de ordenação em um hook visual dedicado.
 - Moveu a apresentação do estado inicial de carregamento para um componente dedicado, preservando frame, spinner, label e variantes responsivas.
 
+## Fase 980 — apresentação carregada e interações de conteúdo
+
+- Extraiu a apresentação carregada para `SeguindoPageLoadedState`, preservando frame, container, controles e conteúdo.
+- Agrupou a composição de navegação por abas e sincronização de busca em `useSeguindoPageContentInteractions`.
+- Preservou ordem de hooks, callbacks, estados, busca, rotas, acessibilidade e comportamento visual.
+
 ## Fase 978 — sincronização inicial da página
 
 - Agrupou a composição dos lifecycles adjacentes de acesso e carregamento inicial de dados.

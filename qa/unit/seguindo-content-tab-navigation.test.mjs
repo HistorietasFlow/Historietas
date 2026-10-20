@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const interacoes = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-content-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook preserva estados e URL ao trocar aba de conteúdo", () => {
   assert.match(hook, /^"use client";/);
@@ -60,11 +67,15 @@ test("hook preserva estados e URL ao trocar aba de conteúdo", () => {
 
 test("página delega a troca de aba ao hook de navegação", () => {
   assert.match(
-    pagina,
-    /import \{ useSeguindoContentTabNavigation \} from "\.\/hooks\/use-seguindo-content-tab-navigation";/,
+    interacoes,
+    /import \{ useSeguindoContentTabNavigation \} from "\.\/use-seguindo-content-tab-navigation";/,
   );
   assert.match(
     pagina,
+    /const trocarAbaConteudo = useSeguindoPageContentInteractions\(\{[\s\S]*?perfilSocialId,[\s\S]*?perfilSocialNome,[\s\S]*?usuarioLogadoId,[\s\S]*?visualizandoListaSocialDoPerfil,[\s\S]*?setAbaConteudo,[\s\S]*?setAbaSeguimento,[\s\S]*?setBusca,[\s\S]*?setFiltro,[\s\S]*?setOrdenacao,[\s\S]*?busca,[\s\S]*?buscaSugestoesUsuariosAtiva,[\s\S]*?usuariosSeguidos,[\s\S]*?setUsuariosSugestoesBusca,[\s\S]*?setCarregandoUsuariosSugestoes,[\s\S]*?\}\);/,
+  );
+  assert.match(
+    interacoes,
     /const trocarAbaConteudo = useSeguindoContentTabNavigation\(\{[\s\S]*?perfilSocialId,[\s\S]*?perfilSocialNome,[\s\S]*?usuarioLogadoId,[\s\S]*?visualizandoListaSocialDoPerfil,[\s\S]*?setAbaConteudo,[\s\S]*?setAbaSeguimento,[\s\S]*?setBusca,[\s\S]*?setFiltro,[\s\S]*?setOrdenacao,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(

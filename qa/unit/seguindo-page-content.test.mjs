@@ -10,16 +10,24 @@ const content = readFileSync(
   new URL("../../app/seguindo/components/seguindo-page-content.tsx", import.meta.url),
   "utf8",
 );
+const loadedState = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-page-loaded-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Seguindo preserva a orquestração na página e delega somente o conteúdo visual", () => {
   assert.match(
     page,
-    /import \{ SeguindoPageContent \} from "\.\/components\/seguindo-page-content";/,
+    /import \{ SeguindoPageLoadedState \} from "\.\/components\/seguindo-page-loaded-state";/,
   );
-  assert.match(page, /<SeguindoPageContent[\s\S]*?totalSemFiltros=\{totalSemFiltros\}/);
+  assert.match(page, /<SeguindoPageLoadedState[\s\S]*?totalSemFiltros,/);
+  assert.match(loadedState, /import \{ SeguindoPageContent \} from "\.\/seguindo-page-content";/);
+  assert.match(loadedState, /<SeguindoPageContent \{\.\.\.content\} \/>/);
   assert.match(page, /useSeguindoPageInitialSync\(/);
-  assert.match(page, /useSeguindoUserSearchSync\(/);
-  assert.match(page, /useSeguindoContentTabNavigation\(/);
+  assert.match(page, /useSeguindoPageContentInteractions\(/);
 });
 
 test("o conteúdo preserva estados vazios, obras e pessoas sem dados remotos", () => {

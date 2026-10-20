@@ -7,6 +7,13 @@ const pageContent = readFileSync(
   new URL("../../app/seguindo/components/seguindo-page-content.tsx", import.meta.url),
   "utf8",
 );
+const loadedState = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-page-loaded-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const worksSection = readFileSync(
   new URL("../../app/seguindo/components/seguindo-works-section.tsx", import.meta.url),
   "utf8",
@@ -17,10 +24,10 @@ const peopleSections = readFileSync(
 );
 
 test("Seguindo delega somente a composição visual das seções de conteúdo", () => {
-  assert.match(page, /import \{ SeguindoPageContent \} from "\.\/components\/seguindo-page-content";/);
-  assert.match(page, /<SeguindoPageContent[\s\S]*?obrasFiltradas=\{obrasFiltradas\}/);
-  assert.match(page, /onSeguirUsuarioSugestao=\{seguirUsuarioSugestao\}/);
-  assert.match(page, /onDeixarDeSeguirAutor=\{deixarDeSeguirAutor\}/);
+  assert.match(page, /import \{ SeguindoPageLoadedState \} from "\.\/components\/seguindo-page-loaded-state";/);
+  assert.match(page, /<SeguindoPageLoadedState[\s\S]*?obrasFiltradas,/);
+  assert.match(loadedState, /import \{ SeguindoPageContent \} from "\.\/seguindo-page-content";/);
+  assert.match(loadedState, /<SeguindoPageContent \{\.\.\.content\} \/>/);
   assert.match(pageContent, /totalSemFiltros === 0 && !buscaSugestoesUsuariosAtiva/);
   assert.match(pageContent, /<SeguindoWorksSection[\s\S]*?obrasFiltradas=\{obrasFiltradas\}/);
   assert.match(pageContent, /<SeguindoPeopleSections[\s\S]*?solicitacoesSeguidoresFiltradas=\{solicitacoesSeguidoresFiltradas\}/);

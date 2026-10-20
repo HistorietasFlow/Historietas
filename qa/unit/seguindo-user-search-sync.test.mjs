@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const interacoes = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-content-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook preserva debounce, filtros, cancelamento e cleanup da busca", () => {
   assert.match(hook, /^"use client";/);
@@ -48,13 +55,14 @@ test("hook preserva debounce, filtros, cancelamento e cleanup da busca", () => {
 
 test("página delega a busca de sugestões ao hook", () => {
   assert.match(
-    pagina,
-    /import \{ useSeguindoUserSearchSync \} from "\.\/hooks\/use-seguindo-user-search-sync";/,
+    interacoes,
+    /import \{ useSeguindoUserSearchSync \} from "\.\/use-seguindo-user-search-sync";/,
   );
   assert.match(
-    pagina,
+    interacoes,
     /useSeguindoUserSearchSync\(\{[\s\S]*?busca,[\s\S]*?buscaSugestoesUsuariosAtiva,[\s\S]*?usuarioLogadoId,[\s\S]*?usuariosSeguidos,[\s\S]*?setUsuariosSugestoesBusca,[\s\S]*?setCarregandoUsuariosSugestoes,[\s\S]*?\}\);/,
   );
+  assert.match(pagina, /useSeguindoPageContentInteractions\(/);
   assert.doesNotMatch(pagina, /buscarUsuariosParaSeguirSupabase/);
   assert.doesNotMatch(pagina, /const timerBusca = window\.setTimeout/);
 });

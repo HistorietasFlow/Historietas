@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const loadedState = readFileSync(new URL("../../app/seguindo/components/seguindo-page-loaded-state.tsx", import.meta.url), "utf8");
 const pageContent = readFileSync(new URL("../../app/seguindo/components/seguindo-page-content.tsx", import.meta.url), "utf8");
 const worksSection = readFileSync(new URL("../../app/seguindo/components/seguindo-works-section.tsx", import.meta.url), "utf8");
 const peopleSections = readFileSync(new URL("../../app/seguindo/components/seguindo-people-sections.tsx", import.meta.url), "utf8");
@@ -10,7 +11,8 @@ const emptyState = readFileSync(new URL("../../app/seguindo/components/seguindo-
 const sectionHeader = readFileSync(new URL("../../app/seguindo/components/seguindo-section-header.tsx", import.meta.url), "utf8");
 
 test("Seguindo delega estados vazios e cabeçalhos de seção visuais", () => {
-  assert.match(page, /import \{ SeguindoPageContent \} from "\.\/components\/seguindo-page-content";/);
+  assert.match(page, /import \{ SeguindoPageLoadedState \} from "\.\/components\/seguindo-page-loaded-state";/);
+  assert.match(loadedState, /import \{ SeguindoPageContent \} from "\.\/seguindo-page-content";/);
   assert.match(pageContent, /import \{ SeguindoEmptyState \} from "\.\/seguindo-empty-state";/);
   assert.match(pageContent, /import \{ SeguindoWorksSection \} from "\.\/seguindo-works-section";/);
   assert.match(pageContent, /import \{ SeguindoPeopleSections \} from "\.\/seguindo-people-sections";/);
