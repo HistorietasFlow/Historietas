@@ -13,6 +13,13 @@ const hook = readFileSync(
   ),
   "utf8",
 );
+const interacoes = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-content-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Seguindo delega a composição de dados derivados para um hook sem dados remotos", () => {
   assert.match(
@@ -20,8 +27,9 @@ test("Seguindo delega a composição de dados derivados para um hook sem dados r
     /import \{ useSeguindoDerivedContent \} from "\.\/hooks\/use-seguindo-derived-content";/,
   );
   assert.match(page, /const \{[\s\S]*?\} = useSeguindoDerivedContent\(\{/);
-  assert.match(page, /useSeguindoContentTabNavigation\(/);
-  assert.match(page, /useSeguindoUserSearchSync\(/);
+  assert.match(page, /useSeguindoPageContentInteractions\(/);
+  assert.match(interacoes, /useSeguindoContentTabNavigation\(/);
+  assert.match(interacoes, /useSeguindoUserSearchSync\(/);
 
   assert.match(hook, /^"use client";/);
   assert.match(hook, /normalizarTexto\(busca\)/);

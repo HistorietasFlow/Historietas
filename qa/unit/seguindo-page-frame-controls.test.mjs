@@ -11,16 +11,18 @@ const carregamento = lerArquivo(
   "../../app/seguindo/components/seguindo-page-loading-state.tsx",
 );
 const controls = lerArquivo("../../app/seguindo/components/seguindo-page-controls.tsx");
+const carregado = lerArquivo("../../app/seguindo/components/seguindo-page-loaded-state.tsx");
 const mensagemEstadoVazio = lerArquivo(
   "../../app/seguindo/lib/seguindo-empty-state-message.ts",
 );
 
 test("Seguindo delega o frame e os controles visuais sem mover seus lifecycles", () => {
-  assert.match(pagina, /import \{ SeguindoPageFrame \} from "\.\/components\/seguindo-page-frame";/);
-  assert.match(pagina, /import \{ SeguindoPageControls \} from "\.\/components\/seguindo-page-controls";/);
-  assert.equal((pagina.match(/<SeguindoPageFrame /g) || []).length, 1);
+  assert.match(pagina, /import \{ SeguindoPageLoadedState \} from "\.\/components\/seguindo-page-loaded-state";/);
+  assert.match(carregado, /import \{ SeguindoPageFrame \} from "\.\/seguindo-page-frame";/);
+  assert.match(carregado, /import \{ SeguindoPageControls \} from "\.\/seguindo-page-controls";/);
+  assert.equal((carregado.match(/<SeguindoPageFrame /g) || []).length, 1);
   assert.equal((carregamento.match(/<SeguindoPageFrame /g) || []).length, 1);
-  assert.match(pagina, /<SeguindoPageControls\s+isDesktop=\{isDesktop\}/);
+  assert.match(carregado, /<SeguindoPageControls \{\.\.\.controls\} \/>/);
   assert.match(pagina, /useSeguindoPageInitialSync\(/);
   assert.match(pagina, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
 });

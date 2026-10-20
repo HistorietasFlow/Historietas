@@ -32,6 +32,13 @@ const controls = readFileSync(
   new URL("../../app/seguindo/components/seguindo-page-controls.tsx", import.meta.url),
   "utf8",
 );
+const carregado = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-page-loaded-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useSeguindoDesktopMode preserva o lifecycle responsivo de Seguindo", () => {
   assert.match(hook, /^"use client";/);
@@ -78,7 +85,8 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.match(pagina, /<SeguindoPageControls\s+isDesktop=\{isDesktop\}/);
+  assert.match(pagina, /<SeguindoPageLoadedState\s+isDesktop=\{isDesktop\}/);
+  assert.match(carregado, /<SeguindoPageControls \{\.\.\.controls\} \/>/);
   assert.match(controls, /<SeguindoHeader\s+isDesktop=\{isDesktop\}/);
   assert.match(controls, /<SeguindoSocialToolbar\s+isDesktop=\{isDesktop\}/);
   assert.match(controls, /<SeguindoSortingPanel\s+isDesktop=\{isDesktop\}/);

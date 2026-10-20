@@ -31,6 +31,10 @@ const controls = readFileSync(
   new URL("../../app/seguindo/components/seguindo-page-controls.tsx", import.meta.url),
   "utf8",
 );
+const carregado = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-page-loaded-state.tsx", import.meta.url),
+  "utf8",
+);
 
 test("hook preserva o lifecycle de lock do painel de ordena\u00e7\u00e3o", () => {
   assert.match(hook, /"use client";/);
@@ -77,7 +81,8 @@ test("a fronteira visual mant\u00e9m o lifecycle e a p\u00e1gina delega o painel
     pagina,
     /useEffect\(\(\) => \{[\s\S]*?const overflowAnterior = document\.body\.style\.overflow;[\s\S]*?\}, \[mostrarPainelOrdenacao\]\);/,
   );
-  assert.match(pagina, /<SeguindoPageControls[\s\S]*?mostrarPainelOrdenacao=\{mostrarPainelOrdenacao\}/);
+  assert.match(pagina, /<SeguindoPageLoadedState[\s\S]*?mostrarPainelOrdenacao,/);
+  assert.match(carregado, /<SeguindoPageControls \{\.\.\.controls\} \/>/);
   assert.match(controls, /\{mostrarPainelOrdenacao && \(/);
   assert.match(controls, /<SeguindoSortingPanel[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?opcoesOrdenacao=\{opcoesOrdenacao\}[\s\S]*?ordenacao=\{ordenacao\}[\s\S]*?setOrdenacao=\{setOrdenacao\}[\s\S]*?setMostrarPainelOrdenacao=\{setMostrarPainelOrdenacao\}/);
   assert.match(painel, /style=\{sortingBackdropStyle\}/);
