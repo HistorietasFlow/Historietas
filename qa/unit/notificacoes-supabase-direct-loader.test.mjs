@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("loader direto preserva leitura, limite e fallbacks", () => {
   assert.match(loader, /export async function carregarNotificacoesDiretasSupabase\(/);
@@ -53,15 +60,16 @@ test("loader direto preserva normalizacao, perfis e ordenacao", () => {
   assert.match(loader, /\.sort\(\(a, b\) => dataNotificacao\(b\) - dataNotificacao\(a\)\)/);
 });
 
-test("pagina delega o loader direto sem reter a implementacao", () => {
+test("hook inicial delega o loader direto sem reter a implementacao", () => {
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-supabase-direct-loader";/,
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-direct-loader";/,
   );
   assert.match(
-    pagina,
+    hookInicial,
     /carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase\s*\)/,
   );
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(pagina, /async function carregarNotificacoesDiretasSupabase\(/);
 });
 

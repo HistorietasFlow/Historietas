@@ -11,6 +11,11 @@ const helpers = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url), "utf8");
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ), "utf8");
 
 test("notificações de capítulos seguidos preservam identificação, exclusões e criação", () => {
   for (const contrato of [
@@ -32,7 +37,8 @@ test("notificações de capítulos seguidos preservam identificação, exclusõe
     assert.ok(helpers.includes(contrato), "contrato ausente: " + contrato);
   }
 
-  assert.match(pagina, /from "\.\/lib\/notificacoes-followed-chapters-utils"/);
+  assert.match(hookInicial, /from "\.\.\/lib\/notificacoes-followed-chapters-utils"/);
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(pagina, /function criarChavesObraParaNotificacao/);
   assert.doesNotMatch(pagina, /function obraEstaNaListaSeguida/);
   assert.doesNotMatch(pagina, /function notificacaoCapituloPertenceAObraSeguida/);

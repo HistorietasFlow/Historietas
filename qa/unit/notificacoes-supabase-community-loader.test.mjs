@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("loader da Comunidade preserva consultas sociais, limites e fallbacks", () => {
   assert.match(loader, /export async function carregarNotificacoesComunidadeSupabase\(/);
@@ -50,9 +57,13 @@ test("loader da Comunidade preserva perfis, notificacoes e ordenacao", () => {
   assert.match(loader, /\.sort\(\s*\(a, b\) => dataNotificacao\(b\) - dataNotificacao\(a\)\s*\)/);
 });
 
-test("pagina delega o loader da Comunidade sem manter a implementacao", () => {
-  assert.match(pagina, /from "\.\/lib\/notificacoes-supabase-community-loader";/);
-  assert.match(pagina, /carregarNotificacoesComunidadeSupabase\(\s*usuarioAtualId,\s*notificacoesLidasIds\s*\)/);
+test("hook inicial delega o loader da Comunidade sem manter a implementacao", () => {
+  assert.match(
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-community-loader";/,
+  );
+  assert.match(hookInicial, /carregarNotificacoesComunidadeSupabase\(\s*usuarioAtualId,\s*notificacoesLidasIds\s*\)/);
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(pagina, /async function carregarNotificacoesComunidadeSupabase\(/);
 });
 

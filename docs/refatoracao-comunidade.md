@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 23 — Notificações
+
+- O lifecycle inicial de Notificações foi isolado em `use-notificacoes-initial-load`.
+- Autenticação, carregamento local/remoto, composição, persistência, cancelamento, fallbacks e ordem dos estados foram preservados sem alterar o comportamento da página.
+
 ## Registro da Fase 22 — Notificações
 
 - O carregador complementar de notificações da Comunidade foi isolado em `notificacoes-supabase-community-loader`.

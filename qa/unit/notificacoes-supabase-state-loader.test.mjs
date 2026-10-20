@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("loader do estado Supabase preserva obras seguidas e IDs lidos", () => {
   assert.match(loader, /\.from\("seguindo_obras"\)\s*\.select\("obra_id"\)\s*\.eq\("user_id", userId\)\s*\.limit\(1000\);/);
@@ -33,13 +40,17 @@ test("loader compoe o estado autenticado sem acoplar ao loader de notificacoes d
   assert.doesNotMatch(loader, /from "\.\.\/page"/);
 });
 
-test("pagina delega o estado remoto e importa o loader de notificacoes diretas", () => {
-  assert.match(pagina, /from "\.\/lib\/notificacoes-supabase-state-loader";/);
+test("hook inicial delega o estado remoto e importa o loader de notificacoes diretas", () => {
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-supabase-direct-loader";/,
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-state-loader";/,
   );
-  assert.match(pagina, /carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase\s*\)/);
+  assert.match(
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-direct-loader";/,
+  );
+  assert.match(hookInicial, /carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase\s*\)/);
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(pagina, /async function carregarNotificacoesDiretasSupabase\(/);
   assert.doesNotMatch(pagina, /async function carregarObrasSeguidasUsuario\(/);
   assert.doesNotMatch(pagina, /async function carregarNotificacoesLidasSupabase\(/);
