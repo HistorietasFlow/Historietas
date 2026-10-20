@@ -103,8 +103,12 @@ test("Configuracoes mantem os tres consumidores e a fronteira do Toggle", () => 
   );
   assert.equal((pagina.match(/ariaLabel=\{t\(/g) || []).length >= 3, true);
 
-  assert.match(pagina, /function SettingsRow\(/);
-  assert.match(pagina, /function SettingsInput\(/);
+  assert.match(
+    pagina,
+    /from "\.\/components\/configuracoes-settings-primitives";/,
+  );
+  assert.doesNotMatch(pagina, /function SettingsRow\(/);
+  assert.doesNotMatch(pagina, /function SettingsInput\(/);
   assert.match(
     pagina,
     /import \{ SvgIcon \} from "\.\/components\/configuracoes-svg-icon";/,

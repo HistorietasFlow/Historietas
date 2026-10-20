@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const primitives = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-settings-primitives.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const iconNames = [
   "user",
@@ -73,22 +80,22 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
     pagina,
     /import \{ SvgIcon \} from "\.\/components\/configuracoes-svg-icon";/,
   );
+  assert.match(primitives, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(
-    pagina,
-    /import type \{ IconName \} from "\.\/components\/configuracoes-svg-icon";/,
+    primitives,
+    /import type \{ IconName \} from "\.\/configuracoes-svg-icon";/,
   );
-  assert.match(pagina, /import type \{ CSSProperties, FormEvent, ReactNode \} from "react";/);
+  assert.match(pagina, /import type \{ CSSProperties, FormEvent \} from "react";/);
   assert.doesNotMatch(pagina, /type IconName =/);
   assert.doesNotMatch(pagina, /function SvgIcon\(/);
   assert.doesNotMatch(pagina, /const paths: Record<IconName, ReactNode> =/);
-  assert.match(pagina, /function SettingsRow\(/);
-  assert.match(pagina, /function SettingsInput\(/);
-  assert.match(pagina, /icon: IconName;/);
-  assert.equal((pagina.match(/<SvgIcon/g) || []).length, 9);
+  assert.doesNotMatch(pagina, /function SettingsRow\(/);
+  assert.doesNotMatch(pagina, /function SettingsInput\(/);
+  assert.match(primitives, /icon: IconName;/);
+  assert.equal((pagina.match(/<SvgIcon/g) || []).length, 6);
+  assert.equal((primitives.match(/<SvgIcon/g) || []).length, 3);
 
   for (const consumidor of [
-    '<SvgIcon name={icon} size={23} strokeWidth={2.15} />',
-    '<SvgIcon name="chevronRight" size={22} strokeWidth={2.6} />',
     '<SvgIcon name="arrowLeft" size={25} strokeWidth={2.4} />',
     '<SvgIcon name="search" size={23} strokeWidth={2.3} />',
     '<SvgIcon name="lock" size={24} strokeWidth={2.2} />',
@@ -97,6 +104,14 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
   ]) {
     assert.ok(pagina.includes(consumidor));
   }
+  assert.ok(
+    primitives.includes('<SvgIcon name={icon} size={23} strokeWidth={2.15} />'),
+  );
+  assert.ok(
+    primitives.includes(
+      '<SvgIcon name="chevronRight" size={22} strokeWidth={2.6} />',
+    ),
+  );
 
   assert.match(
     pagina,

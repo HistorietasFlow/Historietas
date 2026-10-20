@@ -749,3 +749,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 976 — Seguindo
 
 - Estados locais sociais e de descoberta foram agrupados em hooks de composição, sem alterar valores iniciais, setters ou ordem de hooks.
+
+## Registro da Fase 2 — Configurações
+
+- As primitives visuais reutilizáveis de seções, linhas e inputs foram isoladas com seus estilos literais.
+- A página permaneceu responsável pela orquestração, estados, autenticação, storage e operações remotas, sem alteração intencional de comportamento.
