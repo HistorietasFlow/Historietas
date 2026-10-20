@@ -73,6 +73,13 @@ const accountBackupSource = readFileSync(
   ),
   "utf8",
 );
+const searchVisibilitySource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-search-visibility-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -109,6 +116,21 @@ test("busca de Configurações preserva idioma, normalização e aliases", () =>
   assert.equal(search.normalizarTextoBuscaConfiguracoes("  PÚBLICO  "), "publico");
   assert.deepEqual(search.ALIASES_BUSCA_CONFIGURACOES.privacidade, ["privacy", "privacidad"]);
   assert.deepEqual(search.ALIASES_BUSCA_CONFIGURACOES.login, ["login", "inicio de sesion"]);
+});
+
+test("visibilidade da busca preserva aliases e fallbacks", () => {
+  assert.match(
+    searchVisibilitySource,
+    /export function deveMostrarSecaoConfiguracoes\(/,
+  );
+  assert.match(searchVisibilitySource, /ALIASES_BUSCA_CONFIGURACOES/);
+  assert.match(searchVisibilitySource, /termos\.flatMap/);
+  assert.match(searchVisibilitySource, /\.join\(" "\)/);
+  assert.match(searchVisibilitySource, /\.includes\(buscaNormalizada\)/);
+  assert.doesNotMatch(
+    searchVisibilitySource,
+    /useState|useEffect|supabase|localStorage|window|document/,
+  );
 });
 
 test("identidade de Configurações preserva limpeza, UUID, perfil administrativo e iniciais", () => {
@@ -189,6 +211,10 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /from "\.\/lib\/configuracoes-profile-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-backup";/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-search-visibility-utils";/,
+  );
 
   for (const helper of [
     "textoIdioma",
@@ -207,9 +233,16 @@ test("Configurações delega as fronteiras extraídas", () => {
     "carregarPreferencias",
     "salvarPreferencias",
     "criarBackupLocal",
+    "deveMostrarSecaoConfiguracoes",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
+
+  assert.doesNotMatch(pagina, /function deveMostrar\(/);
+  assert.match(
+    pagina,
+    /deveMostrarSecaoConfiguracoes\(buscaNormalizada, \.\.\.termos\)/,
+  );
 
   assert.doesNotMatch(
     pagina,
