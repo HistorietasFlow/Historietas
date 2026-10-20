@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 22 — Notificações
+
+- O carregador complementar de notificações da Comunidade foi isolado em `notificacoes-supabase-community-loader`.
+- Consultas sociais, denúncias, capítulos, reviews, bloqueio 18+, perfis, links, fallbacks e ordenação foram preservados sem alterar o lifecycle ou o estado remoto da página.
+
 ## Registro da Fase 21 — Notificações
 
 - O carregador complementar de interações e atividades do Diário foi isolado em `notificacoes-supabase-diary-loader`.
