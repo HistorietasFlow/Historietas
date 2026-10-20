@@ -59,14 +59,16 @@ import type {
   VisibilidadeAbaPerfil,
 } from "./lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
-import { criarStorageKeyUsuarioConfiguracoes } from "./lib/configuracoes-storage-key-utils";
 import {
   CHAVES_RESUMO,
   CONFIG_STORAGE_KEY,
   CONFIGURACOES_ATUALIZADAS_EVENT,
 } from "./lib/configuracoes-account-storage-constants";
-import { criarChaveItemResumo } from "./lib/configuracoes-summary-item-utils";
-import { carregarJsonArrayConfiguracoes } from "./lib/configuracoes-json-array-utils";
+import {
+  criarResumoLocal,
+  lerStorageUsuarioConfiguracoes,
+  salvarJsonStorageUsuarioConfiguracoes,
+} from "./lib/configuracoes-local-summary-utils";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PerfilConfiguracoesSupabase,
@@ -82,76 +84,6 @@ import {
   traduzirErroSenhaConfiguracoes,
   traduzirErroUsernameConfiguracoes,
 } from "./lib/configuracoes-error-messages";
-
-function lerStorageUsuarioConfiguracoes(chave: string, userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioConfiguracoes(chave, userIdLimpo);
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioConfiguracoes(
-  chave: string,
-  userId: string,
-  valor: unknown,
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioConfiguracoes(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; as configurações continuam em memória.
-  }
-}
-
-
-
-function carregarJsonArray(chave: string, userId = "") {
-  return carregarJsonArrayConfiguracoes(
-    chave,
-    userId,
-    lerStorageUsuarioConfiguracoes,
-  );
-}
-
-function contarItens(chave: string, userId = "") {
-  const itens = carregarJsonArray(chave, userId);
-
-  return new Set(
-    itens.map((item, index) => criarChaveItemResumo(item, index)),
-  ).size;
-}
-
-function criarResumoLocal(userId = ""): ResumoLocal {
-  return {
-    obras: contarItens("historietas-obras", userId),
-    notificacoes: contarItens("historietas-notificacoes", userId),
-    lancamentos: contarItens("historietas-lancamentos-salvos", userId),
-    favoritas: contarItens("historietas-obras-favoritas", userId),
-    concluidas: contarItens("historietas-obras-concluidas", userId),
-    seguindoObras: contarItens("historietas-obras-seguidas", userId),
-    seguindoAutores: contarItens("historietas-autores-seguidos", userId),
-  };
-}
 
 async function contarRegistrosResumoSupabase({
   tabela,

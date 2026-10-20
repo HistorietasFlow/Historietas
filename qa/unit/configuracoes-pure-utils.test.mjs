@@ -45,6 +45,13 @@ const storageConstantsSource = readFileSync(
   ),
   "utf8",
 );
+const localSummarySource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-local-summary-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -129,6 +136,11 @@ test("modelos e traduções de erro de Configurações preservam contratos", () 
   assert.match(storageConstantsSource, /CONFIG_STORAGE_KEY = "historietas-configuracoes-conta"/);
   assert.match(storageConstantsSource, /CONFIGURACOES_ATUALIZADAS_EVENT/);
   assert.match(storageConstantsSource, /"historietas-privacidade"/);
+  assert.match(localSummarySource, /export function lerStorageUsuarioConfiguracoes/);
+  assert.match(localSummarySource, /export function salvarJsonStorageUsuarioConfiguracoes/);
+  assert.match(localSummarySource, /export function criarResumoLocal/);
+  assert.match(localSummarySource, /typeof window === "undefined"/);
+  assert.match(localSummarySource, /new Set\(/);
 });
 
 test("Configurações delega as fronteiras extraídas", () => {
@@ -144,6 +156,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-account-storage-constants";/,
   );
+  assert.match(pagina, /from "\.\/lib\/configuracoes-local-summary-utils";/);
 
   for (const helper of [
     "textoIdioma",
@@ -155,6 +168,9 @@ test("Configurações delega as fronteiras extraídas", () => {
     "obterIniciais",
     "traduzirErroSenhaConfiguracoes",
     "traduzirErroUsernameConfiguracoes",
+    "lerStorageUsuarioConfiguracoes",
+    "salvarJsonStorageUsuarioConfiguracoes",
+    "criarResumoLocal",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
