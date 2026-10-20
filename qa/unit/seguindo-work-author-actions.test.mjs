@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const pageActions = readFileSync(
+  new URL("../../app/seguindo/hooks/use-seguindo-page-actions.ts", import.meta.url),
+  "utf8",
+);
 
 test("hook preserva ações de deixar de seguir obra e autor", () => {
   assert.match(hook, /^"use client";/);
@@ -42,12 +46,13 @@ test("hook preserva ações de deixar de seguir obra e autor", () => {
 test("página delega as ações de obra e autor ao hook", () => {
   assert.match(
     pagina,
-    /import \{ useSeguindoWorkAuthorActions \} from "\.\/hooks\/use-seguindo-work-author-actions";/,
+    /import \{ useSeguindoPageActions \} from "\.\/hooks\/use-seguindo-page-actions";/,
   );
   assert.match(
     pagina,
-    /const \{[\s\S]*?deixarDeSeguirObra,[\s\S]*?deixarDeSeguirAutor,[\s\S]*?\} = useSeguindoWorkAuthorActions\(\{[\s\S]*?usuarioLogadoId,[\s\S]*?obrasSeguidas,[\s\S]*?autoresSeguidos,[\s\S]*?setObrasSeguidas,[\s\S]*?setAutoresSeguidos,[\s\S]*?\}\);/,
+    /const \{[\s\S]*?deixarDeSeguirObra,[\s\S]*?deixarDeSeguirAutor,[\s\S]*?\} = useSeguindoPageActions\(\{[\s\S]*?usuarioLogadoId,[\s\S]*?obrasSeguidas,[\s\S]*?autoresSeguidos,[\s\S]*?setObrasSeguidas,[\s\S]*?setAutoresSeguidos,[\s\S]*?\}\);/,
   );
+  assert.match(pageActions, /useSeguindoWorkAuthorActions\(\{/);
   assert.doesNotMatch(pagina, /function deixarDeSeguirObra\(/);
   assert.doesNotMatch(pagina, /function deixarDeSeguirAutor\(/);
   assert.doesNotMatch(pagina, /sincronizarObraUsuarioSupabase/);

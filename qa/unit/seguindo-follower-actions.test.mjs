@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const pageActions = readFileSync(
+  new URL("../../app/seguindo/hooks/use-seguindo-page-actions.ts", import.meta.url),
+  "utf8",
+);
 
 test("hook preserva remoção de seguidor e resposta de solicitação", () => {
   assert.match(hook, /^"use client";/);
@@ -45,12 +49,13 @@ test("hook preserva remoção de seguidor e resposta de solicitação", () => {
 test("página delega as ações de seguidores ao hook", () => {
   assert.match(
     pagina,
-    /import \{ useSeguindoFollowerActions \} from "\.\/hooks\/use-seguindo-follower-actions";/,
+    /import \{ useSeguindoPageActions \} from "\.\/hooks\/use-seguindo-page-actions";/,
   );
   assert.match(
     pagina,
-    /const \{[\s\S]*?removerSeguidorUsuario,[\s\S]*?responderSolicitacaoSeguidor,[\s\S]*?\} = useSeguindoFollowerActions\(\{[\s\S]*?usuarioLogadoId,[\s\S]*?usuarioListaAlterandoId,[\s\S]*?solicitacaoRespondendoId,[\s\S]*?setUsuariosSeguidores,[\s\S]*?setSolicitacoesSeguidores,[\s\S]*?\}\);/,
+    /const \{[\s\S]*?removerSeguidorUsuario,[\s\S]*?responderSolicitacaoSeguidor,[\s\S]*?\} = useSeguindoPageActions\(\{[\s\S]*?usuarioLogadoId,[\s\S]*?usuarioListaAlterandoId,[\s\S]*?solicitacaoRespondendoId,[\s\S]*?setUsuariosSeguidores,[\s\S]*?setSolicitacoesSeguidores,[\s\S]*?\}\);/,
   );
+  assert.match(pageActions, /useSeguindoFollowerActions\(\{/);
   assert.doesNotMatch(
     pagina,
     /async function removerSeguidorUsuario\(/,

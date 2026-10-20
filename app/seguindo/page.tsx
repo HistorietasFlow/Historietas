@@ -24,11 +24,9 @@ import { useSeguindoSortingPanelState } from "./hooks/use-seguindo-sorting-panel
 import { useSeguindoContentTabState } from "./hooks/use-seguindo-content-tab-state";
 import { useSeguindoFilterSortState } from "./hooks/use-seguindo-filter-sort-state";
 import { useSeguindoSearchState } from "./hooks/use-seguindo-search-state";
-import { useSeguindoFollowerActions } from "./hooks/use-seguindo-follower-actions";
+import { useSeguindoPageActions } from "./hooks/use-seguindo-page-actions";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
-import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-actions";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
-import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
 
 export default function SeguindoPage() {
@@ -109,39 +107,27 @@ export default function SeguindoPage() {
   const {
     removerSeguidorUsuario,
     responderSolicitacaoSeguidor,
-  } = useSeguindoFollowerActions({
+    deixarDeSeguirUsuario,
+    seguirUsuarioSugestao,
+    deixarDeSeguirObra,
+    deixarDeSeguirAutor,
+  } = useSeguindoPageActions({
     usuarioLogadoId,
     usuarioListaAlterandoId,
     solicitacaoRespondendoId,
+    usuarioSugestaoSeguindoId,
+    solicitacoesEnviadasIds,
+    obrasSeguidas,
+    autoresSeguidos,
     setUsuarioListaAlterandoId,
     setSolicitacaoRespondendoId,
     setUsuariosSeguidores,
     setSolicitacoesSeguidores,
-  });
-
-  const {
-    deixarDeSeguirUsuario,
-    seguirUsuarioSugestao,
-  } = useSeguindoUserFollowActions({
-    usuarioLogadoId,
-    usuarioListaAlterandoId,
-    usuarioSugestaoSeguindoId,
-    solicitacoesEnviadasIds,
-    setUsuarioListaAlterandoId,
     setUsuarioSugestaoSeguindoId,
     setUsuariosSeguidos,
     setAtividadesSeguindo,
     setSolicitacoesEnviadasIds,
     setUsuariosSugestoesBusca,
-  });
-
-  const {
-    deixarDeSeguirObra,
-    deixarDeSeguirAutor,
-  } = useSeguindoWorkAuthorActions({
-    usuarioLogadoId,
-    obrasSeguidas,
-    autoresSeguidos,
     setObrasSeguidas,
     setAutoresSeguidos,
   });
