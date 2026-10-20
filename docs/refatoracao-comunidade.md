@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 18 — Notificações
+
+- Os loaders remotos de obras publicadas e de obras referenciadas por notificações diretas foram isolados em `notificacoes-supabase-work-loader`.
+- Consultas, tentativas de seleção, normalização, fallbacks de obra/capítulo e progresso de leitura foram preservados sem alterar o lifecycle da página.
+
 ## Registro da Fase 17 — Notificações
 
 - A leitura remota do estado de obras seguidas e notificações lidas foi isolada em `notificacoes-supabase-state-loader`, preservando autenticação, queries, limites, deduplicação e fallbacks.
