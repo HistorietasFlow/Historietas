@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 20 — Notificações
+
+- O carregador de notificações diretas foi isolado em `notificacoes-supabase-direct-loader`.
+- Leitura, filtragem fechada de conteúdo 18+, consultas auxiliares de obras, normalização, complementação de perfis e ordenação foram preservadas sem alterar o estado remoto da página.
+
 ## Registro da Fase 19 — Notificações
 
 - A leitura complementar de perfis e o carregador de atualizações de chamados técnicos foram isolados em loaders Supabase dedicados.

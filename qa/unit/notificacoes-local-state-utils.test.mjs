@@ -5,6 +5,7 @@ import "./notificacoes-supabase-sync.test.mjs";
 import "./notificacoes-supabase-state-loader.test.mjs";
 import "./notificacoes-supabase-work-loader.test.mjs";
 import "./notificacoes-supabase-support-loaders.test.mjs";
+import "./notificacoes-supabase-direct-loader.test.mjs";
 
 const helpers = readFileSync(
   new URL(

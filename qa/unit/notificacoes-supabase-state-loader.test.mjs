@@ -33,10 +33,14 @@ test("loader compoe o estado autenticado sem acoplar ao loader de notificacoes d
   assert.doesNotMatch(loader, /from "\.\.\/page"/);
 });
 
-test("pagina delega o estado remoto e mantem o loader de notificacoes diretas", () => {
+test("pagina delega o estado remoto e importa o loader de notificacoes diretas", () => {
   assert.match(pagina, /from "\.\/lib\/notificacoes-supabase-state-loader";/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/notificacoes-supabase-direct-loader";/,
+  );
   assert.match(pagina, /carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase\s*\)/);
-  assert.match(pagina, /async function carregarNotificacoesDiretasSupabase\(/);
+  assert.doesNotMatch(pagina, /async function carregarNotificacoesDiretasSupabase\(/);
   assert.doesNotMatch(pagina, /async function carregarObrasSeguidasUsuario\(/);
   assert.doesNotMatch(pagina, /async function carregarNotificacoesLidasSupabase\(/);
   assert.doesNotMatch(pagina, /async function carregarEstadoSupabaseNotificacoes\(/);
