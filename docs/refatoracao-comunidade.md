@@ -557,6 +557,10 @@ A auditoria final foi concluída. A hierarquia entre o modal de denúncia e o co
 
 - O cabeçalho visual de Seguindo foi isolado sem alterar estados, busca, acessibilidade ou o acionamento do painel de ordenação.
 
+## Registro da Fase 972 — Seguindo
+
+- Os estados locais de obras/seguimentos, listas sociais e carregamento/atividades foram agrupados em três hooks dedicados, preservando valores iniciais, setters e consumidores existentes.
+
 ## Contrato de preservação
 
 A extração deve preservar exatamente:
