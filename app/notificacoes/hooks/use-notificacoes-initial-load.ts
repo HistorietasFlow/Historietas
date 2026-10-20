@@ -62,7 +62,6 @@ export function useNotificacoesInitialLoad({
 }: UseNotificacoesInitialLoadProps) {
   const router = useRouter();
   // Os setters recebidos são estáveis; as dependências preservam literalmente o efeito original.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let componenteAtivo = true;
 
@@ -221,5 +220,6 @@ export function useNotificacoesInitialLoad({
     return () => {
       componenteAtivo = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, definirNotificacoesNaoLidas]);
 }
