@@ -8,6 +8,11 @@ import {
   type FiltroNotificacao,
   type OrdenacaoNotificacao,
 } from "./lib/notificacoes-filter-utils";
+import {
+  criarOpcoesFiltroNotificacoes,
+  criarOpcoesOrdenacaoNotificacoes,
+  filtrosNotificacoesEstaoAtivos,
+} from "./lib/notificacoes-filter-options";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { useMemo, useState } from "react";
@@ -51,6 +56,14 @@ import type {
   ObraLocal,
 } from "./lib/notificacoes-models";
 import { useNotificacoesInitialLoad } from "./hooks/use-notificacoes-initial-load";
+import {
+  calcularTotalNotificacoesLidas,
+  contarNotificacoesNaoLidas,
+  criarObrasPorIdNotificacoes,
+  encontrarCapituloNotificacao,
+  encontrarObraNotificacao,
+  obterNotificacaoMenuAberta,
+} from "./lib/notificacoes-view-state-utils";
 
 export default function NotificacoesPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -76,16 +89,19 @@ export default function NotificacoesPage() {
   });
 
   const obrasPorId = useMemo(() => {
-    return new Map(obras.map((obra) => [obra.id, obra]));
+    return criarObrasPorIdNotificacoes(obras);
   }, [obras]);
 
   const totalNotificacoes = notificacoes.length;
 
   const totalNaoLidas = useMemo(() => {
-    return notificacoes.filter((notificacao) => !notificacao.lida).length;
+    return contarNotificacoesNaoLidas(notificacoes);
   }, [notificacoes]);
 
-  const totalLidas = Math.max(totalNotificacoes - totalNaoLidas, 0);
+  const totalLidas = calcularTotalNotificacoesLidas(
+    totalNotificacoes,
+    totalNaoLidas,
+  );
   const termoBusca = normalizarTexto(busca);
 
   const acessoConteudo18Liberado = acessoConteudo18Confirmado();
@@ -108,35 +124,22 @@ export default function NotificacoesPage() {
     acessoConteudo18Liberado,
   ]);
 
-  const filtrosAtivos = Boolean(
-    busca.trim() || filtro !== "todas" || ordenacao !== "recentes"
+  const filtrosAtivos = filtrosNotificacoesEstaoAtivos(
+    busca,
+    filtro,
+    ordenacao,
   );
 
-  const opcoesFiltro: Array<{ valor: FiltroNotificacao; rotulo: string }> = [
-    { valor: "todas", rotulo: "Todas" },
-    { valor: "nao-lidas", rotulo: "Novas" },
-    { valor: "lidas", rotulo: "Lidas" },
-    { valor: "capitulos", rotulo: "Capítulos" },
-    { valor: "comunidade", rotulo: "Comunidade" },
-  ];
+  const opcoesFiltro = criarOpcoesFiltroNotificacoes();
 
-  const opcoesOrdenacao: Array<{ valor: OrdenacaoNotificacao; rotulo: string }> = [
-    { valor: "recentes", rotulo: "Mais recentes" },
-    { valor: "antigas", rotulo: "Mais antigas" },
-  ];
+  const opcoesOrdenacao = criarOpcoesOrdenacaoNotificacoes();
 
   function encontrarObra(obraId: string) {
-    return obrasPorId.get(obraId) || null;
+    return encontrarObraNotificacao(obrasPorId, obraId);
   }
 
   function encontrarCapitulo(obraId: string, capituloId: string) {
-    const obra = encontrarObra(obraId);
-
-    if (!obra) {
-      return null;
-    }
-
-    return obra.capitulos.find((capitulo) => capitulo.id === capituloId) || null;
+    return encontrarCapituloNotificacao(obrasPorId, obraId, capituloId);
   }
 
   function atualizarNotificacoes(novasNotificacoes: NotificacaoLocal[]) {
@@ -390,9 +393,10 @@ export default function NotificacoesPage() {
     setOrdenacao("recentes");
   }
 
-  const notificacaoMenuAberta = menuNotificacaoAbertoId
-    ? notificacoes.find((notificacao) => notificacao.id === menuNotificacaoAbertoId) || null
-    : null;
+  const notificacaoMenuAberta = obterNotificacaoMenuAberta(
+    menuNotificacaoAbertoId,
+    notificacoes,
+  );
 
   const menuOverlayAberto = Boolean(
     mostrarPainelOrdenacao || notificacaoMenuAberta
