@@ -1,19 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import { criarSlugBase, normalizarTexto } from "../../lib/utils";
+import { normalizarTexto } from "../../lib/utils";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoHeader } from "./components/seguindo-header";
 import { SeguindoEmptyState } from "./components/seguindo-empty-state";
 import { SeguindoFollowRequestCard } from "./components/seguindo-follow-request-card";
+import { SeguindoFollowedAuthorCard } from "./components/seguindo-followed-author-card";
 import { SeguindoSectionHeader } from "./components/seguindo-section-header";
 import { SeguindoSocialToolbar } from "./components/seguindo-social-toolbar";
 import { SeguindoSocialUserCard } from "./components/seguindo-social-user-card";
 import { SeguindoSortingPanel } from "./components/seguindo-sorting-panel";
 import { SeguindoSuggestedUserCard } from "./components/seguindo-suggested-user-card";
+import { SeguindoWorkCard } from "./components/seguindo-work-card";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
@@ -54,38 +55,6 @@ import type {
   SolicitacaoSeguidor,
   AtividadeSeguindo,
 } from "./lib/seguindo-page-types";
-import { authorNameStyle } from "./lib/seguindo-author-name-style";
-import {
-  desktopAuthorFollowedCardStyle,
-  desktopAuthorFollowedAvatarStyle,
-} from "./lib/seguindo-desktop-author-avatar-styles";
-import {
-  authorContentStyle,
-  authorBadgeRowStyle,
-  authorActionsGridStyle,
-  desktopAuthorActionsGridStyle,
-} from "./lib/seguindo-author-content-styles";
-import { authorAvatarStyle, authorCardStyle } from "./lib/seguindo-author-card-styles";
-import { actionsStyle, readButtonStyle, unfollowButtonStyle } from "./lib/seguindo-card-action-styles";
-import { cardTitleStyle, authorLinkStyle } from "./lib/seguindo-card-title-link-styles";
-import {
-  badgeRowStyle,
-  classificationBadgeStyle,
-  authorWorksMetaStyle,
-  authorReadingMetaStyle,
-} from "./lib/seguindo-card-badges-styles";
-import {
-  overlayStyle,
-  genreStyle,
-  contentStyle,
-  desktopContentStyle,
-} from "./lib/seguindo-card-overlay-styles";
-import {
-  cardStyle,
-  desktopCardStyle,
-  coverStyle,
-  desktopCoverStyle,
-} from "./lib/seguindo-card-base-styles";
 import {
   gridStyle,
   desktopGridStyle,
@@ -102,14 +71,6 @@ import {
   desktopTopWaterFadeStyle,
   mobileTopWaterFadeStyle,
 } from "./lib/seguindo-surface-styles";
-import {
-  formatarGeneroSeguindo,
-} from "./lib/seguindo-format-utils";
-import { criarCoverStyle } from "./lib/seguindo-image-style-utils";
-import {
-  mostrarClassificacao,
-} from "./lib/seguindo-work-presentation-utils";
-import { criarHrefPerfilAutorSeguindo } from "./lib/seguindo-route-utils";
 
 export default function SeguindoPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -392,88 +353,17 @@ export default function SeguindoPage() {
                 </SeguindoEmptyState>
               ) : (
                 <div style={isDesktop ? desktopGridStyle : gridStyle}>
-                  {obrasFiltradas.map((obra) => {
-                    const obraHref =
-                      obra.link ||
-                      `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-
-                    return (
-                      <article key={obra.id} style={isDesktop ? desktopCardStyle : cardStyle}>
-                        <div style={criarCoverStyle(obra.capa, isDesktop ? desktopCoverStyle : coverStyle)}>
-                          <div style={overlayStyle} />
-
-                        </div>
-
-                        <div style={isDesktop ? desktopContentStyle : contentStyle}>
-                          <div style={badgeRowStyle}>
-                            <span style={genreStyle}>
-                              {obra.formato || "Obra"}
-                            </span>
-
-                            <span style={genreStyle}>
-                              {formatarGeneroSeguindo(obra.genero)}
-                            </span>
-
-                            {mostrarClassificacao(obra) && (
-                              <span style={classificationBadgeStyle}>
-                                {obra.classificacaoIndicativa}
-                              </span>
-                            )}
-
-                          </div>
-
-                          <h3 data-historietas-i18n-ignore="true" style={cardTitleStyle}>{obra.titulo}</h3>
-
-                          <Link
-                            href={criarHrefPerfilAutorSeguindo(
-                              obra.autor,
-                              obra.autorId
-                            )}
-                            style={authorLinkStyle}
-                          >
-                            Por <span data-historietas-i18n-ignore="true">{obra.autor}</span>
-                          </Link>
-
-                          <div
-                            style={{
-                              ...actionsStyle,
-                              gridTemplateColumns:
-                                visualizandoListaSocialDoPerfil
-                                  ? "minmax(0, 1fr)"
-                                  : "minmax(0, 1fr) auto",
-                              alignItems: "stretch",
-                              marginTop: isDesktop ? "auto" : undefined,
-                            }}
-                          >
-                            <Link
-                              href={obraHref}
-                              style={{
-                                ...readButtonStyle,
-                                width: "100%",
-                                minHeight: isDesktop ? "32px" : "28px",
-                              }}
-                            >
-                              Ver obra
-                            </Link>
-
-                            {!visualizandoListaSocialDoPerfil && (
-                              <button
-                                type="button"
-                                onClick={() => deixarDeSeguirObra(obra)}
-                                style={{
-                                  ...unfollowButtonStyle,
-                                  minWidth: isDesktop ? "112px" : "104px",
-                                  minHeight: isDesktop ? "32px" : "28px",
-                                }}
-                              >
-                                Deixar de seguir
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
+                  {obrasFiltradas.map((obra) => (
+                    <SeguindoWorkCard
+                      key={obra.id}
+                      obra={obra}
+                      isDesktop={isDesktop}
+                      visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
+                      onDeixarDeSeguirObra={(obraSeguida) =>
+                        void deixarDeSeguirObra(obraSeguida)
+                      }
+                    />
+                  ))}
                 </div>
               )}
               </section>
@@ -587,63 +477,14 @@ export default function SeguindoPage() {
 
                 <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
                   {autoresFiltrados.map((autor) => (
-                    <article
+                    <SeguindoFollowedAuthorCard
                       key={autor.chave}
-                      style={
-                        isDesktop
-                          ? desktopAuthorFollowedCardStyle
-                          : authorCardStyle
+                      autor={autor}
+                      isDesktop={isDesktop}
+                      onDeixarDeSeguirAutor={(chaveAutor) =>
+                        void deixarDeSeguirAutor(chaveAutor)
                       }
-                    >
-                      <div
-                        style={
-                          isDesktop
-                            ? desktopAuthorFollowedAvatarStyle
-                            : authorAvatarStyle
-                        }
-                      >
-                        {autor.nome.slice(0, 1).toUpperCase()}
-                      </div>
-
-                      <div style={authorContentStyle}>
-                        <div style={authorBadgeRowStyle}>
-                          <span style={authorWorksMetaStyle}>
-                            {autor.obras.length} {" "}
-                            {autor.obras.length === 1 ? "obra" : "obras"}
-                          </span>
-
-                          {autor.totalEmLeitura > 0 && (
-                            <span style={authorReadingMetaStyle}>
-                              {autor.totalEmLeitura} em leitura
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 data-historietas-i18n-ignore="true" style={authorNameStyle}>{autor.nome}</h3>
-
-                        <div style={actionsStyle}>
-                          <div style={isDesktop ? desktopAuthorActionsGridStyle : authorActionsGridStyle}>
-                            <Link
-                              href={criarHrefPerfilAutorSeguindo(
-                                autor.nome,
-                                autor.autorId
-                              )}
-                              style={readButtonStyle}
-                            >
-                              Abrir perfil
-                            </Link>
-
-                            <button
-                              type="button"
-                              onClick={() => deixarDeSeguirAutor(autor.chave)}
-                              style={unfollowButtonStyle}
-                            >
-                              Deixar de seguir
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </article>
+                    />
                   ))}
                 </div>
               </section>
