@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 10 — Notificações
+
+- A normalização pura de registros remotos, o merge de obras e a leitura local de IDs foram isolados, preservando aliases, defaults, deduplicação e guards SSR.
+
 ## Registro da Fase 9 — Notificações
 
 - A persistência local e a preparação de notificações foram isoladas, preservando isolamento por usuário, guards SSR, normalização, exclusões e o evento de atualização.
