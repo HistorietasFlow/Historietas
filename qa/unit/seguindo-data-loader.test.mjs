@@ -13,11 +13,6 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
-const dataState = readFileSync(
-  new URL("../../app/seguindo/hooks/use-seguindo-data-state.ts", import.meta.url),
-  "utf8",
-);
-
 test("hook preserva a orquestração local, remota e persistência", () => {
   assert.match(hook, /^"use client";/);
   assert.match(hook, /return useCallback\(async \(\) => \{/);
@@ -58,9 +53,11 @@ test("página delega o carregamento principal ao hook", () => {
   assert.doesNotMatch(pagina, /salvarDadosLocaisSeguindo/);
   assert.match(
     pagina,
-    /import \{ useSeguindoDataState \} from "\.\/hooks\/use-seguindo-data-state";/,
+    /import \{ useSeguindoWorkFollowState \} from "\.\/hooks\/use-seguindo-work-follow-state";/,
   );
-  assert.match(dataState, /setObras,/);
-  assert.match(dataState, /setCarregando,/);
+  assert.match(
+    pagina,
+    /import \{ useSeguindoPageLoadState \} from "\.\/hooks\/use-seguindo-page-load-state";/,
+  );
 });
 

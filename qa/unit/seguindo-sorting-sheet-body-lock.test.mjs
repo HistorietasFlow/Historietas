@@ -78,10 +78,6 @@ test("p\u00e1gina mant\u00e9m o lifecycle e delega o painel de ordena\u00e7\u00e
     /onClick=\{\(\) => setMostrarPainelOrdenacao\(false\)\}/,
   );
   assert.match(painel, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
-  assert.match(
-    pagina,
-    /import \{ useSeguindoDataState \} from "\.\/hooks\/use-seguindo-data-state";/,
-  );
 });
 
 test("painel preserva variantes, seleção e ordem dos callbacks", () => {
