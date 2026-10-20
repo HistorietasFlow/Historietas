@@ -90,5 +90,5 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
     /const \{ mostrarPainelOrdenacao, setMostrarPainelOrdenacao \} = useSeguindoSortingPanelState\(\);/,
   );
   assert.match(pagina, /useSeguindoAccessSync\(\{/);
-  assert.match(pagina, /useSeguindoDataLoader/);
+  assert.match(pagina, /useSeguindoPageDataLoading/);
 });

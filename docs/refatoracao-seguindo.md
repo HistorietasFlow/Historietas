@@ -117,3 +117,8 @@
 - Preservou IDs, slug, slug derivado do título, título normalizado, link, deduplicação e remoção por equivalência.
 - Adicionou cobertura focada e manteve todos os consumidores existentes da página.
 - Sem alterações de UI, autenticação, Supabase, schema ou RLS.
+## Fase 975 — composição do carregamento da página
+
+- Agrupou a composição de `useSeguindoDataLoader` e `useSeguindoDataLoadTrigger` em `useSeguindoPageDataLoading`.
+- Preservou o loader, o gatilho, a ordem de chamada, os parâmetros, os estados e os contratos de carregamento existentes.
+- Sem alterações de UI, autenticação, Supabase, schema, RLS ou regras de negócio.
