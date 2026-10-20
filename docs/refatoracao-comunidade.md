@@ -793,3 +793,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 - Os tipos estruturais de conta e contratos Supabase foram centralizados nos modelos da conta.
 - As traduções puras de erros de senha e username foram isoladas, preservando condições, textos e fallbacks.
 - Não houve alteração intencional de comportamento, dados ou ações.
+
+## Registro da Fase 13 — Configurações
+
+- As chaves estáticas de storage, evento de atualização e inventário do backup foram isolados sem alterar valores ou consumidores.
