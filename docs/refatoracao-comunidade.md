@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 11 — Notificações
+
+- Os estilos estáticos do shell, controles e cards foram isolados em módulos visuais, preservando valores, spreads e variantes desktop sem alterar o JSX.
+
 ## Registro da Fase 10 — Notificações
 
 - A normalização pura de registros remotos, o merge de obras e a leitura local de IDs foram isolados, preservando aliases, defaults, deduplicação e guards SSR.
