@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { normalizarTexto } from "../../lib/utils";
-import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
-import { SeguindoHeader } from "./components/seguindo-header";
 import { SeguindoEmptyState } from "./components/seguindo-empty-state";
 import { SeguindoPeopleSections } from "./components/seguindo-people-sections";
-import { SeguindoSocialToolbar } from "./components/seguindo-social-toolbar";
-import { SeguindoSortingPanel } from "./components/seguindo-sorting-panel";
+import { SeguindoPageControls } from "./components/seguindo-page-controls";
+import { SeguindoPageFrame } from "./components/seguindo-page-frame";
 import { SeguindoWorksSection } from "./components/seguindo-works-section";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
@@ -37,7 +35,7 @@ import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sh
 import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-actions";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
-import { seguindoPageCss } from "./lib/seguindo-page-css";
+import { obterMensagemEstadoVazioSeguindo } from "./lib/seguindo-empty-state-message";
 import { calcularTotaisSeguindo } from "./lib/seguindo-list-counts";
 import { obterOpcoesOrdenacaoSeguindo } from "./lib/seguindo-sort-options";
 import { selecionarUsuariosBaseSocial } from "./lib/seguindo-social-users-selector";
@@ -52,10 +50,6 @@ import type {
   AtividadeSeguindo,
 } from "./lib/seguindo-page-types";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
-import {
-  desktopTopWaterFadeStyle,
-  mobileTopWaterFadeStyle,
-} from "./lib/seguindo-surface-styles";
 
 export default function SeguindoPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -250,30 +244,16 @@ export default function SeguindoPage() {
 
   if (verificandoAcesso || carregando) {
     return (
-      <main data-historietas-seguindo-root="true" style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${seguindoPageCss}`}</style>
-        <SeguindoLanguageBridge />
-
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
+      <SeguindoPageFrame isDesktop={isDesktop} pageThemeStyle={pageThemeStyle}>
         <LoadingSpinner label="Carregando seguindo" />
-      </main>
+      </SeguindoPageFrame>
     );
   }
 
   return (
-    <main data-historietas-seguindo-root="true" style={pageThemeStyle}>
-      <style>{`${historietasThemeCss}${seguindoPageCss}`}</style>
-      <SeguindoLanguageBridge />
-
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
+    <SeguindoPageFrame isDesktop={isDesktop} pageThemeStyle={pageThemeStyle}>
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <SeguindoHeader
+        <SeguindoPageControls
           isDesktop={isDesktop}
           busca={busca}
           setBusca={setBusca}
@@ -283,42 +263,23 @@ export default function SeguindoPage() {
           visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
           descricaoListaSocial={descricaoListaSocial}
           abaConteudo={abaConteudo}
+          totalDisponivelGeral={totalDisponivelGeral}
+          trocarAbaConteudo={trocarAbaConteudo}
+          totalSeguidores={usuariosSeguidores.length}
+          totalObrasSeguidas={obrasSeguidasBase.length}
+          totalPessoasSeguidas={usuariosSeguidos.length}
+          mostrarPainelOrdenacao={mostrarPainelOrdenacao}
+          opcoesOrdenacao={opcoesOrdenacao}
+          ordenacao={ordenacao}
+          setOrdenacao={setOrdenacao}
         />
-
-        {totalDisponivelGeral > 0 && (
-          <>
-            <SeguindoSocialToolbar
-              isDesktop={isDesktop}
-              abaConteudo={abaConteudo}
-              trocarAbaConteudo={trocarAbaConteudo}
-              totalSeguidores={usuariosSeguidores.length}
-              totalObrasSeguidas={obrasSeguidasBase.length}
-              totalPessoasSeguidas={usuariosSeguidos.length}
-            />
-
-            {mostrarPainelOrdenacao && (
-              <SeguindoSortingPanel
-                isDesktop={isDesktop}
-                opcoesOrdenacao={opcoesOrdenacao}
-                ordenacao={ordenacao}
-                setOrdenacao={setOrdenacao}
-                setMostrarPainelOrdenacao={setMostrarPainelOrdenacao}
-              />
-            )}
-          </>
-        )}
 
         {totalSemFiltros === 0 && !buscaSugestoesUsuariosAtiva ? (
           <SeguindoEmptyState>
-            {abaConteudo === "seguidores"
-              ? visualizandoListaSocialDoPerfil
-                ? "Nenhum seguidor ainda"
-                : "Você ainda não tem seguidores"
-              : abaConteudo === "obras"
-                ? "Nenhuma obra seguida ainda"
-                : visualizandoListaSocialDoPerfil
-                  ? "Nenhum perfil seguido ainda"
-                  : "Você ainda não segue nada"}
+            {obterMensagemEstadoVazioSeguindo(
+              abaConteudo,
+              visualizandoListaSocialDoPerfil,
+            )}
           </SeguindoEmptyState>
         ) : (
           <>
@@ -365,7 +326,7 @@ export default function SeguindoPage() {
           </>
         )}
       </section>
-    </main>
+    </SeguindoPageFrame>
   );
 }
 

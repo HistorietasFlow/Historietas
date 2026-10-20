@@ -10,6 +10,7 @@ const lerArquivo = (caminho) =>
   readFileSync(path.join(raizProjeto, caminho), "utf8").replace(/\r\n/g, "\n");
 
 const pagina = lerArquivo("app/seguindo/page.tsx");
+const frame = lerArquivo("app/seguindo/components/seguindo-page-frame.tsx");
 const css = lerArquivo("app/seguindo/lib/seguindo-page-css.ts");
 const surfaceStyles = lerArquivo("app/seguindo/lib/seguindo-surface-styles.ts");
 
@@ -30,25 +31,25 @@ test("Seguindo consome o CSS extraído sem mover responsabilidades da página", 
     "<style>{`${historietasThemeCss}${seguindoPageCss}`}</style>";
 
   assert.match(
-    pagina,
-    /import \{ seguindoPageCss \} from "\.\/lib\/seguindo-page-css";/,
+    frame,
+    /import \{ seguindoPageCss \} from "\.\.\/lib\/seguindo-page-css";/,
   );
   assert.doesNotMatch(pagina, /const seguindoPageCss = `/);
-  assert.equal(pagina.split(consumidor).length - 1, 2);
+  assert.equal(frame.split(consumidor).length - 1, 1);
   assert.equal(
     pagina.includes("${seguindoPageCss}${historietasThemeCss}"),
     false,
   );
   assert.match(surfaceStyles, /export const mobileTopWaterFadeStyle: CSSProperties =/);
   assert.match(surfaceStyles, /export const desktopTopWaterFadeStyle: CSSProperties =/);
-  assert.match(pagina, /from "\.\/lib\/seguindo-surface-styles";/);
+  assert.match(frame, /from "\.\.\/lib\/seguindo-surface-styles";/);
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/seguindo-loading-spinner";/,
   );
   assert.match(
-    pagina,
-    /import \{ SeguindoLanguageBridge \} from "\.\/components\/seguindo-language-bridge";/,
+    frame,
+    /import \{ SeguindoLanguageBridge \} from "\.\/seguindo-language-bridge";/,
   );
   assert.match(pagina, /useSeguindoDesktopMode/);
   assert.match(pagina, /useSeguindoDataLoader/);

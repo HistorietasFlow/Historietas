@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const frame = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-page-frame.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const bridgeNormalizado = bridge.replace(/\r\n/g, "\n");
 const bridgeExecutavel = bridgeNormalizado
   .replace('"use client";\n\n', "")
@@ -145,19 +152,20 @@ test("preserva o lifecycle e os filtros de DOM do bridge", () => {
   assert.match(bridge, /return null;/);
 });
 
-test("a p\u00e1gina mant\u00e9m somente os dois mounts e a raiz de tradu\u00e7\u00e3o", () => {
+test("a p\u00e1gina delega os mounts e a raiz de tradu\u00e7\u00e3o ao frame", () => {
+  assert.match(
+    frame,
+    /import \{ SeguindoLanguageBridge \} from "\.\/seguindo-language-bridge";/,
+  );
+  assert.equal((frame.match(/<SeguindoLanguageBridge \/>/g) || []).length, 1);
   assert.match(
     pagina,
-    /import \{ SeguindoLanguageBridge \} from "\.\/components\/seguindo-language-bridge";/,
+    /if \(verificandoAcesso \|\| carregando\) \{[\s\S]*?<SeguindoPageFrame /,
   );
-  assert.equal((pagina.match(/<SeguindoLanguageBridge \/>/g) || []).length, 2);
-  assert.match(
-    pagina,
-    /if \(verificandoAcesso \|\| carregando\) \{[\s\S]*?<SeguindoLanguageBridge \/>/,
-  );
+  assert.equal((pagina.match(/<SeguindoPageFrame /g) || []).length, 2);
   assert.equal(
-    (pagina.match(/data-historietas-seguindo-root="true"/g) || []).length,
-    2,
+    (frame.match(/data-historietas-seguindo-root="true"/g) || []).length,
+    1,
   );
   assert.doesNotMatch(pagina, /function SeguindoLanguageBridge\(/);
   assert.doesNotMatch(pagina, /SEGUINDO_UI_TRANSLATIONS/);

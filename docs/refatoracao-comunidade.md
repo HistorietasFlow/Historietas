@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 969 — Seguindo
+
+- O frame, os controles visuais e as mensagens de estado vazio de Seguindo foram isolados sem alterar dados, estados, ações ou comportamentos.
+
 ## Registro da Fase 968 — Seguindo
 
 - As composições visuais das seções de obras e pessoas seguidas foram isoladas, mantendo dados, estados e ações na página.

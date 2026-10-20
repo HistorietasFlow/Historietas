@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 969 — frame, controles e estado vazio
+
+- Extraiu o frame visual comum, a composição de cabeçalho/controles e a mensagem pura de estado vazio para fronteiras dedicadas.
+- Preservou tema, bridge de idioma, fades, condições, contagens, callbacks, textos e lifecycles na página.
+
 ## Fase 968 — seções de conteúdo
 
 - Extraiu a composição visual das seções de obras e pessoas seguidas para componentes dedicados.
