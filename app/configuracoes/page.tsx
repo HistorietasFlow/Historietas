@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
@@ -15,6 +14,8 @@ import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
+import { ConfiguracoesActionToast } from "./components/configuracoes-action-toast";
+import { ConfiguracoesBlockedUsersPanel } from "./components/configuracoes-blocked-users-panel";
 import { ConfiguracoesPageHeader } from "./components/configuracoes-page-header";
 import { ConfiguracoesProfileCard } from "./components/configuracoes-profile-card";
 import { ConfiguracoesSearch } from "./components/configuracoes-search";
@@ -2522,117 +2523,15 @@ export default function ConfiguracoesPage() {
                 />
 
                 {mostrarUsuariosBloqueados ? (
-                  <div style={blockedUsersPanelStyle}>
-                    {erroUsuariosBloqueados ? (
-                      <div style={blockedUsersErrorStyle}>
-                        <span>{erroUsuariosBloqueados}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void carregarUsuariosBloqueados()
-                          }
-                          disabled={carregandoUsuariosBloqueados}
-                          style={blockedUsersRetryButtonStyle}
-                        >
-                          {t(
-                            "Tentar novamente",
-                            "Try again",
-                            "Intentar de nuevo",
-                          )}
-                        </button>
-                      </div>
-                    ) : null}
-
-                    {!carregandoUsuariosBloqueados &&
-                    !erroUsuariosBloqueados &&
-                    usuariosBloqueados.length === 0 ? (
-                      <p style={blockedUsersEmptyStyle}>
-                        {t(
-                          "Você não bloqueou nenhum usuário.",
-                          "You have not blocked any users.",
-                          "No has bloqueado a ningún usuario.",
-                        )}
-                      </p>
-                    ) : null}
-
-                    {usuariosBloqueados.map((usuarioBloqueado) => {
-                      const desbloqueando =
-                        desbloqueandoUsuarioId ===
-                        usuarioBloqueado.userId;
-                      const inicial =
-                        usuarioBloqueado.nome.trim().charAt(0)
-                          .toUpperCase() || "U";
-
-                      return (
-                        <div
-                          key={usuarioBloqueado.userId}
-                          style={blockedUserRowStyle}
-                        >
-                          {usuarioBloqueado.avatar ? (
-                            <Image
-                              src={usuarioBloqueado.avatar}
-                              alt=""
-                              width={38}
-                              height={38}
-                              unoptimized
-                              style={blockedUserAvatarStyle}
-                            />
-                          ) : (
-                            <span
-                              aria-hidden="true"
-                              style={blockedUserAvatarFallbackStyle}
-                            >
-                              {inicial}
-                            </span>
-                          )}
-
-                          <span style={blockedUserTextStyle}>
-                            <strong style={blockedUserNameStyle}>
-                              {usuarioBloqueado.nome}
-                            </strong>
-                            <span style={blockedUserUsernameStyle}>
-                              {usuarioBloqueado.username
-                                ? `@${usuarioBloqueado.username}`
-                                : t(
-                                    "Sem @username",
-                                    "No @username",
-                                    "Sin @username",
-                                  )}
-                            </span>
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void desbloquearUsuarioConfiguracoes(
-                                usuarioBloqueado,
-                              )
-                            }
-                            disabled={Boolean(
-                              desbloqueandoUsuarioId,
-                            )}
-                            style={
-                              desbloqueando
-                                ? blockedUserButtonDisabledStyle
-                                : blockedUserButtonStyle
-                            }
-                          >
-                            {desbloqueando
-                              ? t(
-                                  "Desbloqueando...",
-                                  "Unblocking...",
-                                  "Desbloqueando...",
-                                )
-                              : t(
-                                  "Desbloquear",
-                                  "Unblock",
-                                  "Desbloquear",
-                                )}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <ConfiguracoesBlockedUsersPanel
+                    usuarios={usuariosBloqueados}
+                    carregando={carregandoUsuariosBloqueados}
+                    erro={erroUsuariosBloqueados}
+                    desbloqueandoUsuarioId={desbloqueandoUsuarioId}
+                    onRecarregar={carregarUsuariosBloqueados}
+                    onDesbloquear={desbloquearUsuarioConfiguracoes}
+                    traduzirTexto={t}
+                  />
                 ) : null}
               </>
             ) : null}
@@ -3823,52 +3722,11 @@ export default function ConfiguracoesPage() {
       ) : null}
 
       {mensagemAcao ? (
-        <div
-          role={mensagemAcao.tipo === "erro" ? "alert" : "status"}
-          aria-live={mensagemAcao.tipo === "erro" ? "assertive" : "polite"}
-          aria-atomic="true"
-          style={
-            mensagemAcao.tipo === "sucesso"
-              ? actionToastSuccessStyle
-              : mensagemAcao.tipo === "aviso"
-                ? actionToastWarningStyle
-                : actionToastErrorStyle
-          }
-        >
-          <span style={actionToastIconStyle}>
-            <SvgIcon
-              name={
-                mensagemAcao.tipo === "sucesso"
-                  ? "check"
-                  : mensagemAcao.tipo === "aviso"
-                    ? "shield"
-                    : "file"
-              }
-              size={23}
-              strokeWidth={2.25}
-            />
-          </span>
-
-          <span style={actionToastTextBoxStyle}>
-            <strong style={actionToastTitleStyle}>
-              {mensagemAcao.tipo === "sucesso"
-                ? t("Sucesso", "Success", "Éxito")
-                : mensagemAcao.tipo === "aviso"
-                  ? t("Atenção", "Attention", "Atención")
-                  : t("Não foi possível", "Something went wrong", "No fue posible")}
-            </strong>
-            <span style={actionToastMessageStyle}>{mensagemAcao.texto}</span>
-          </span>
-
-          <button
-            type="button"
-            onClick={() => setMensagemAcao(null)}
-            aria-label={t("Fechar mensagem", "Close message", "Cerrar mensaje")}
-            style={actionToastCloseStyle}
-          >
-            ×
-          </button>
-        </div>
+        <ConfiguracoesActionToast
+          mensagem={mensagemAcao}
+          onFechar={() => setMensagemAcao(null)}
+          traduzirTexto={t}
+        />
       ) : null}
     </main>
   );
@@ -3891,95 +3749,6 @@ const listCardTransparentStyle: CSSProperties = {
   overflow: "hidden",
   borderRadius: "20px",
   background: "transparent",
-};
-
-const actionToastBaseStyle: CSSProperties = {
-  position: "fixed",
-  right: "16px",
-  bottom: "16px",
-  zIndex: 1400,
-  width: "min(390px, calc(100vw - 32px))",
-  boxSizing: "border-box",
-  display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr) 32px",
-  alignItems: "start",
-  gap: "10px",
-  padding: "13px",
-  borderRadius: "16px",
-  boxShadow: "0 20px 60px rgba(0,0,0,0.52)",
-  backdropFilter: "blur(14px)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-};
-
-const actionToastSuccessStyle: CSSProperties = {
-  ...actionToastBaseStyle,
-  background: "rgba(20,83,45,0.94)",
-  border: "1px solid rgba(74,222,128,0.36)",
-  color: "#DCFCE7",
-};
-
-const actionToastWarningStyle: CSSProperties = {
-  ...actionToastBaseStyle,
-  background: "rgba(113,63,18,0.95)",
-  border: "1px solid rgba(251,191,36,0.40)",
-  color: "#FEF3C7",
-};
-
-const actionToastErrorStyle: CSSProperties = {
-  ...actionToastBaseStyle,
-  background: "rgba(127,29,29,0.95)",
-  border: "1px solid rgba(248,113,113,0.40)",
-  color: "#FEE2E2",
-};
-
-const actionToastIconStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "rgba(255,255,255,0.12)",
-  color: "inherit",
-};
-
-const actionToastTextBoxStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  gap: "4px",
-  paddingTop: "1px",
-};
-
-const actionToastTitleStyle: CSSProperties = {
-  color: "inherit",
-  fontSize: "13px",
-  lineHeight: 1.1,
-  fontWeight: 900,
-};
-
-const actionToastMessageStyle: CSSProperties = {
-  color: "inherit",
-  fontSize: "12px",
-  lineHeight: 1.4,
-  fontWeight: 650,
-  opacity: 0.94,
-  ...safeTextStyle,
-};
-
-const actionToastCloseStyle: CSSProperties = {
-  width: "32px",
-  height: "32px",
-  border: 0,
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "rgba(255,255,255,0.10)",
-  color: "inherit",
-  fontFamily: "inherit",
-  fontSize: "22px",
-  lineHeight: 1,
-  cursor: "pointer",
 };
 
 const securityOverlayStyle: CSSProperties = {
@@ -4247,120 +4016,6 @@ const securityDoneButtonStyle: CSSProperties = {
   ...securityPrimaryButtonStyle,
   width: "100%",
   marginTop: "15px",
-};
-
-const blockedUsersPanelStyle: CSSProperties = {
-  display: "grid",
-  borderTop:
-    "1px solid var(--configuracoes-border, rgba(255,255,255,0.065))",
-};
-
-const blockedUserRowStyle: CSSProperties = {
-  minHeight: 64,
-  display: "grid",
-  gridTemplateColumns: "38px minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: 10,
-  padding: "10px 12px",
-  borderBottom:
-    "1px solid var(--configuracoes-border, rgba(255,255,255,0.055))",
-};
-
-const blockedUserAvatarStyle: CSSProperties = {
-  width: 38,
-  height: 38,
-  borderRadius: "50%",
-  objectFit: "cover",
-  background: "rgba(255,255,255,0.08)",
-};
-
-const blockedUserAvatarFallbackStyle: CSSProperties = {
-  width: 38,
-  height: 38,
-  borderRadius: "50%",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
-  fontSize: 15,
-  fontWeight: 900,
-};
-
-const blockedUserTextStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  gap: 3,
-};
-
-const blockedUserNameStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: 14,
-  lineHeight: 1.15,
-  fontWeight: 800,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const blockedUserUsernameStyle: CSSProperties = {
-  color:
-    "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
-  fontSize: 12,
-  lineHeight: 1.15,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const blockedUserButtonStyle: CSSProperties = {
-  minHeight: 34,
-  padding: "7px 10px",
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: 12,
-  fontWeight: 850,
-  cursor: "pointer",
-};
-
-const blockedUserButtonDisabledStyle: CSSProperties = {
-  ...blockedUserButtonStyle,
-  opacity: 0.58,
-  cursor: "wait",
-};
-
-const blockedUsersEmptyStyle: CSSProperties = {
-  margin: 0,
-  padding: "16px 14px",
-  color:
-    "var(--configuracoes-text-secondary, rgba(255,255,255,0.58))",
-  fontSize: 13,
-  lineHeight: 1.4,
-  textAlign: "center",
-};
-
-const blockedUsersErrorStyle: CSSProperties = {
-  display: "grid",
-  gap: 10,
-  padding: "14px",
-  color: "var(--configuracoes-danger-text, #FCA5A5)",
-  fontSize: 13,
-  lineHeight: 1.35,
-};
-
-const blockedUsersRetryButtonStyle: CSSProperties = {
-  justifySelf: "start",
-  minHeight: 34,
-  padding: "7px 11px",
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: 12,
-  fontWeight: 850,
-  cursor: "pointer",
 };
 
 const privacySelectStyle: CSSProperties = {

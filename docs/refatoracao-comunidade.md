@@ -759,3 +759,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O cabeçalho, a busca e o resumo visual do perfil foram movidos para componentes dedicados, com os estilos literais do shell isolados.
 - Estados, traduções, navegação, autenticação, storage e operações remotas permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 4 — Configurações
+
+- O toast de feedback e o painel visual de usuários bloqueados foram isolados com seus estilos literais.
+- Estados, confirmações, callbacks, autenticação, storage e operações remotas continuaram na página sem alteração intencional de comportamento.
