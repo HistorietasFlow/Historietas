@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 965 — Seguindo
+
+- Os primitives visuais de estado vazio e cabeçalho de seção de Seguindo foram isolados sem alterar callbacks ou dados.
+
 ## Registro da Fase 964 — Seguindo
 
 - A barra social visual de Seguindo foi extraída para componente dedicado, preservando abas, contagens e callbacks.

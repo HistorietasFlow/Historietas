@@ -8,6 +8,8 @@ import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoHeader } from "./components/seguindo-header";
+import { SeguindoEmptyState } from "./components/seguindo-empty-state";
+import { SeguindoSectionHeader } from "./components/seguindo-section-header";
 import { SeguindoSocialToolbar } from "./components/seguindo-social-toolbar";
 import { SeguindoSortingPanel } from "./components/seguindo-sorting-panel";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
@@ -53,11 +55,6 @@ import type {
 import { authorNameStyle } from "./lib/seguindo-author-name-style";
 import { desktopAuthorAvatarStyle, desktopAuthorFollowedCardStyle, desktopAuthorFollowedAvatarStyle } from "./lib/seguindo-desktop-author-avatar-styles";
 import {
-  desktopSectionHeaderTextStyle,
-  desktopSectionTitleStyle,
-  desktopSectionCounterStyle,
-} from "./lib/seguindo-desktop-social-section-styles";
-import {
   authorContentStyle,
   authorBadgeRowStyle,
   authorActionsGridStyle,
@@ -93,11 +90,6 @@ import {
 import {
   sectionStyle,
   desktopSectionStyle,
-  sectionHeaderStyle,
-  desktopSectionHeaderStyle,
-  sectionHeaderTextStyle,
-  sectionTitleStyle,
-  sectionCounterStyle,
 } from "./lib/seguindo-section-header-styles";
 import {
   suggestedUserFollowButtonStyle,
@@ -381,15 +373,7 @@ export default function SeguindoPage() {
         )}
 
         {totalSemFiltros === 0 && !buscaSugestoesUsuariosAtiva ? (
-          <p
-            style={{
-              margin: "10px 0 0",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              fontWeight: 800,
-              textAlign: "center",
-            }}
-          >
+          <SeguindoEmptyState>
             {abaConteudo === "seguidores"
               ? visualizandoListaSocialDoPerfil
                 ? "Nenhum seguidor ainda"
@@ -399,39 +383,23 @@ export default function SeguindoPage() {
                 : visualizandoListaSocialDoPerfil
                   ? "Nenhum perfil seguido ainda"
                   : "Você ainda não segue nada"}
-          </p>
+          </SeguindoEmptyState>
         ) : (
           <>
             {totalSeguindo === 0 &&
               !carregandoUsuariosSugestoes &&
               usuariosSugestoesBusca.length === 0 && (
-              <p
-                style={{
-                  margin: "10px 0 0",
-                  color: "#FFFFFF",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  textAlign: "center",
-                }}
-              >
+              <SeguindoEmptyState>
                 Nada encontrado
-              </p>
+              </SeguindoEmptyState>
             )}
 
             {abaConteudo === "obras" && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
               {obrasFiltradas.length === 0 ? (
-                <p
-                  style={{
-                    margin: "10px 0 0",
-                    color: "#FFFFFF",
-                    fontSize: "12px",
-                    fontWeight: 800,
-                    textAlign: "center",
-                  }}
-                >
+                <SeguindoEmptyState>
                   Nenhuma obra seguida encontrada
-                </p>
+                </SeguindoEmptyState>
               ) : (
                 <div style={isDesktop ? desktopGridStyle : gridStyle}>
                   {obrasFiltradas.map((obra) => {
@@ -525,23 +493,11 @@ export default function SeguindoPage() {
               listaSocialEhDoUsuarioLogado &&
               solicitacoesSeguidoresFiltradas.length > 0 && (
                 <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                  <div
-                    style={
-                      isDesktop
-                        ? desktopSectionHeaderStyle
-                        : sectionHeaderStyle
-                    }
-                  >
-                    <div style={isDesktop ? desktopSectionHeaderTextStyle : sectionHeaderTextStyle}>
-                      <h2 style={isDesktop ? desktopSectionTitleStyle : sectionTitleStyle}>
-                        SOLICITAÇÕES PARA SEGUIR
-                      </h2>
-                    </div>
-
-                    <span style={isDesktop ? desktopSectionCounterStyle : sectionCounterStyle}>
-                      {solicitacoesSeguidoresFiltradas.length}
-                    </span>
-                  </div>
+                  <SeguindoSectionHeader
+                    isDesktop={isDesktop}
+                    titulo="SOLICITAÇÕES PARA SEGUIR"
+                    total={solicitacoesSeguidoresFiltradas.length}
+                  />
 
                   <div
                     style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}
@@ -827,17 +783,15 @@ export default function SeguindoPage() {
 
             {buscaSugestoesUsuariosAtiva && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-                  <div style={isDesktop ? desktopSectionHeaderTextStyle : sectionHeaderTextStyle}>
-                    <h2 style={isDesktop ? desktopSectionTitleStyle : sectionTitleStyle}>SUGESTÕES PARA SEGUIR</h2>
-                  </div>
-
-                  <span style={isDesktop ? desktopSectionCounterStyle : sectionCounterStyle}>
-                    {carregandoUsuariosSugestoes
+                <SeguindoSectionHeader
+                  isDesktop={isDesktop}
+                  titulo="SUGESTÕES PARA SEGUIR"
+                  total={
+                    carregandoUsuariosSugestoes
                       ? "..."
-                      : usuariosSugestoesBusca.length}
-                  </span>
-                </div>
+                      : usuariosSugestoesBusca.length
+                  }
+                />
 
                 {carregandoUsuariosSugestoes ? (
                   <div style={suggestedUsersLoadingStyle}>
@@ -942,15 +896,11 @@ export default function SeguindoPage() {
 
             {!visualizandoListaSocialDoPerfil && abaConteudo === "pessoas" && autoresFiltrados.length > 0 && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-                  <div style={isDesktop ? desktopSectionHeaderTextStyle : sectionHeaderTextStyle}>
-                    <h2 style={isDesktop ? desktopSectionTitleStyle : sectionTitleStyle}>AUTORES SEGUIDOS</h2>
-                  </div>
-
-                  <span style={isDesktop ? desktopSectionCounterStyle : sectionCounterStyle}>
-                    {autoresFiltrados.length}
-                  </span>
-                </div>
+                <SeguindoSectionHeader
+                  isDesktop={isDesktop}
+                  titulo="AUTORES SEGUIDOS"
+                  total={autoresFiltrados.length}
+                />
 
                 <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
                   {autoresFiltrados.map((autor) => (

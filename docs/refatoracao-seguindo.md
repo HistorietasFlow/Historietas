@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 965 — primitives de seção
+
+- Extraiu os estados vazios e os cabeçalhos visuais de seção para componentes pequenos e sem estado.
+- Preservou textos, contagens, variantes desktop/mobile e condições de exibição na página.
+
 ## Fase 964 — barra social
 
 - Extraiu somente a composição visual das abas sociais para `SeguindoSocialToolbar`.
