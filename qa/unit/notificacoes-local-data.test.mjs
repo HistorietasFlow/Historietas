@@ -25,6 +25,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const loaderObrasSupabase = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-supabase-work-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const normalizadoresExecutaveis = normalizadores
   .replace(
@@ -167,9 +174,16 @@ test("normalizadores preservam progresso, defaults, aliases e fallback", () => {
 });
 
 test("pagina importa as fronteiras locais e nao retem implementacoes duplicadas", () => {
-  assert.match(pagina, /from "\.\/lib\/notificacoes-local-normalizers";/);
   assert.match(pagina, /from "\.\/lib\/notificacoes-storage-utils";/);
   assert.match(pagina, /from "\.\/lib\/notificacoes-models";/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/notificacoes-supabase-work-loader";/,
+  );
+  assert.match(
+    loaderObrasSupabase,
+    /import \{ calcularProgressoLeitura \} from "\.\/notificacoes-local-normalizers";/,
+  );
 
   for (const declaracao of [
     "type CapituloLocal =",
