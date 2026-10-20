@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 17 — Notificações
+
+- A leitura remota do estado de obras seguidas e notificações lidas foi isolada em `notificacoes-supabase-state-loader`, preservando autenticação, queries, limites, deduplicação e fallbacks.
+- O carregador de notificações diretas permaneceu na página e é injetado na composição do estado para evitar dependência circular.
+
 ## Registro da Fase 16 — Notificações
 
 - As mutações remotas de leitura e remoção foram isoladas em `notificacoes-supabase-sync`, preservando RPCs, fallbacks por tabela, escopo de usuário e falhas não bloqueantes.
