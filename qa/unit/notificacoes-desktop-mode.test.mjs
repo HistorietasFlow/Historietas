@@ -34,6 +34,20 @@ const acoes = readFileSync(
   ),
   "utf8",
 );
+const feed = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-feed.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const feedCard = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-feed-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook preserva o modo desktop imediato e os dois modelos de listener", () => {
   assert.match(hook, /export function useNotificacoesDesktopMode\(\)/);
@@ -91,9 +105,15 @@ test("pagina delega somente o lifecycle e preserva os consumidores visuais", () 
     pagina,
     /<NotificacoesActionsSheet[\s\S]*?isDesktop=\{isDesktop\}/,
   );
+  assert.match(
+    pagina,
+    /<NotificacoesFeed[\s\S]*?isDesktop=\{isDesktop\}/,
+  );
   assert.match(controles, /if \(isDesktop\)/);
   assert.match(
     acoes,
     /isDesktop\s*\?\s*desktopNotificationActionsSheetStyle\s*:\s*notificationActionsSheetStyle/,
   );
+  assert.match(feed, /isDesktop \? desktopListStyle : listStyle/);
+  assert.match(feedCard, /isDesktop[\s\S]*?desktopReadCommunityCardStyle/);
 });
