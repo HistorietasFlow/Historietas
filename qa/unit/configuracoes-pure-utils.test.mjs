@@ -17,6 +17,13 @@ const accountSource = readFileSync(
   ),
   "utf8",
 );
+const privacySource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-privacy-preferences.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -60,9 +67,13 @@ test("identidade de Configurações preserva limpeza, UUID, perfil administrativ
   assert.equal(account.obterIniciais("", "autor@example.com"), "AU");
 });
 
-test("Configurações delega apenas as duas fronteiras puras", () => {
+test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /from "\.\/lib\/configuracoes-search-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-utils";/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-privacy-preferences";/,
+  );
 
   for (const helper of [
     "textoIdioma",
@@ -76,10 +87,27 @@ test("Configurações delega apenas as duas fronteiras puras", () => {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
 
-  assert.match(pagina, /async function carregarPreferenciasPrivacidade\(/);
+  assert.doesNotMatch(
+    pagina,
+    /async function carregarPreferenciasPrivacidade\(/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /async function salvarPreferenciasPrivacidade\(/,
+  );
+  assert.match(
+    pagina,
+    /useState<PreferenciasPrivacidadeHistorietas>\(/,
+  );
+  assert.match(
+    pagina,
+    /carregarPreferenciasPrivacidade\(usuarioCarregado\.id,/,
+  );
+  assert.match(pagina, /salvarPreferenciasPrivacidade\(/);
   assert.match(pagina, /async function salvarPerfilConfiguracoesSupabase\(/);
   assert.match(pagina, /localStorage/);
   assert.match(pagina, /supabase\./);
   assert.doesNotMatch(searchSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(accountSource, /useState|useEffect|supabase|localStorage/);
+  assert.doesNotMatch(privacySource, /useState|useEffect|useMemo/);
 });

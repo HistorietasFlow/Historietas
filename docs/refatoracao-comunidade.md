@@ -764,3 +764,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O toast de feedback e o painel visual de usuários bloqueados foram isolados com seus estilos literais.
 - Estados, confirmações, callbacks, autenticação, storage e operações remotas continuaram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 5 — Configurações
+
+- A fronteira de preferências de privacidade foi movida para um módulo dedicado, preservando normalização, compatibilidade, cache local e contratos Supabase.
+- Estados e lifecycle da página continuaram como orquestradores, sem alteração intencional de comportamento.
