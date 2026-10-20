@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 972 — Seguindo
+
+- O estado bruto de dados de Seguindo foi isolado em hook próprio, mantendo carregamento e ações na página.
+
 ## Registro da Fase 971 — Seguindo
 
 - Os dados derivados de Seguindo foram isolados em um hook de composição, mantendo efeitos, ações e estados na página.

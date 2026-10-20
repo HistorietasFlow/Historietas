@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const dataState = readFileSync(
+  new URL("../../app/seguindo/hooks/use-seguindo-data-state.ts", import.meta.url),
+  "utf8",
+);
 
 test("hook preserva a orquestração local, remota e persistência", () => {
   assert.match(hook, /^"use client";/);
@@ -52,6 +56,11 @@ test("página delega o carregamento principal ao hook", () => {
   assert.doesNotMatch(pagina, /carregarDadosRemotosSeguindo/);
   assert.doesNotMatch(pagina, /prepararDadosRemotosSeguindo/);
   assert.doesNotMatch(pagina, /salvarDadosLocaisSeguindo/);
-  assert.match(pagina, /import \{ useMemo, useState \} from "react";/);
+  assert.match(
+    pagina,
+    /import \{ useSeguindoDataState \} from "\.\/hooks\/use-seguindo-data-state";/,
+  );
+  assert.match(dataState, /setObras,/);
+  assert.match(dataState, /setCarregando,/);
 });
 
