@@ -59,9 +59,7 @@ import {
   pegarTexto,
 } from "./lib/notificacoes-data-normalizers";
 import {
-  normalizarPerfilNotificacao,
   obterPerfilNotificacao,
-  type PerfilNotificacao,
 } from "./lib/notificacoes-profile-utils";
 import {
   extrairSlugObraDeLinkNotificacao,
@@ -81,7 +79,6 @@ import {
 } from "./lib/notificacoes-local-state-utils";
 import {
   obterRotuloTipoAnotacaoDiarioNotificacao,
-  obterStatusProblemaTecnicoNotificacao,
   obterTextoStatusDenunciaComunidadeNotificacao,
 } from "./lib/notificacoes-status-text-utils";
 import {
@@ -102,73 +99,8 @@ import {
   carregarObrasDasNotificacoesDiretasSupabase,
   carregarObrasPublicadasSupabase,
 } from "./lib/notificacoes-supabase-work-loader";
-
-async function carregarPerfisNotificacoes(userIds: string[]) {
-  const ids = Array.from(
-    new Set(
-      userIds
-        .map((id) => id.trim())
-        .filter((id) => idObraSupabaseValido(id))
-    )
-  );
-  const perfis = new Map<string, PerfilNotificacao>();
-
-  if (ids.length === 0) {
-    return perfis;
-  }
-
-  const selecoesProfiles = [
-    "id,user_id,nome,avatar_url",
-    "id,user_id,nome_usuario,avatar_url",
-    "id,user_id,username,avatar_url",
-    "id,user_id,display_name,avatar_url",
-    "id,user_id,apelido,avatar_url",
-  ] as const;
-
-  async function carregarPorColuna(
-    coluna: "user_id" | "id",
-    idsBusca: string[]
-  ) {
-    if (idsBusca.length === 0) {
-      return;
-    }
-
-    for (const campos of selecoesProfiles) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(campos)
-          .in(coluna, idsBusca)
-          .limit(1000);
-
-        if (error || !Array.isArray(data)) {
-          continue;
-        }
-
-        data.forEach((item) => {
-          const row = item as Record<string, unknown>;
-          const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
-
-          if (perfil.userId && idObraSupabaseValido(perfil.userId)) {
-            perfis.set(perfil.userId, perfil);
-          }
-        });
-
-        return;
-      } catch {
-        // Tenta uma seleção menor ou outra coluna.
-      }
-    }
-  }
-
-  await carregarPorColuna("user_id", ids);
-
-  const idsFaltantes = ids.filter((id) => !perfis.has(id));
-
-  await carregarPorColuna("id", idsFaltantes);
-
-  return perfis;
-}
+import { carregarPerfisNotificacoes } from "./lib/notificacoes-supabase-profile-loader";
+import { carregarNotificacoesProblemasTecnicosSupabase } from "./lib/notificacoes-supabase-technical-issues-loader";
 
 async function carregarNotificacoesDiretasSupabase(
   userId: string
@@ -938,84 +870,6 @@ async function carregarNotificacoesComunidadeSupabase(
   );
 }
 
-
-async function carregarNotificacoesProblemasTecnicosSupabase(
-  userId: string,
-  notificacoesLidasIds: string[]
-): Promise<NotificacaoLocal[]> {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [];
-  }
-
-  try {
-    const { data, error } = await supabase.rpc(
-      "listar_meus_problemas_tecnicos",
-      {
-        p_limite: 80,
-      }
-    );
-
-    if (error || !Array.isArray(data)) {
-      return [];
-    }
-
-    const idsLidos = new Set(notificacoesLidasIds);
-    const notificacoesCriadas: NotificacaoLocal[] = [];
-
-    data.forEach((item) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) {
-        return;
-      }
-
-      const registro = item as Record<string, unknown>;
-      const problemaId =
-        pegarTexto(registro.problema_id) || pegarTexto(registro.id);
-      const status = pegarTexto(
-        registro.status ?? registro.problema_status
-      );
-      const statusNotificacao =
-        obterStatusProblemaTecnicoNotificacao(status);
-
-      if (!problemaId || !statusNotificacao) {
-        return;
-      }
-
-      const tituloChamado = pegarTexto(
-        registro.titulo,
-        "Problema técnico"
-      ).slice(0, 120);
-      const id = `problema-tecnico-${problemaId}-${status}`;
-
-      notificacoesCriadas.push({
-        id,
-        obraId: "",
-        capituloId: "",
-        link: "/ajuda#problema-tecnico",
-        titulo: statusNotificacao.titulo,
-        mensagem: `Seu chamado técnico "${tituloChamado}" foi atualizado para ${statusNotificacao.texto}.`,
-        tipo: "problema-tecnico",
-        lida: idsLidos.has(id),
-        criadaEm: pegarTexto(
-          registro.atualizado_em ??
-            registro.analisado_em ??
-            registro.criado_em,
-          new Date().toISOString()
-        ),
-        autorId: "",
-        autorNome: "Suporte técnico",
-        autorAvatar: "",
-      });
-    });
-
-    return notificacoesCriadas.sort(
-      (a, b) => dataNotificacao(b) - dataNotificacao(a)
-    );
-  } catch {
-    return [];
-  }
-}
 
 async function carregarNotificacoesDiarioSupabase(
   userId: string,

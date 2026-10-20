@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 19 — Notificações
+
+- A leitura complementar de perfis e o carregador de atualizações de chamados técnicos foram isolados em loaders Supabase dedicados.
+- Seleções de perfis, RPC, fallbacks, ordenação, estados de leitura e o lifecycle da página foram preservados sem mudança de comportamento.
+
 ## Registro da Fase 18 — Notificações
 
 - Os loaders remotos de obras publicadas e de obras referenciadas por notificações diretas foram isolados em `notificacoes-supabase-work-loader`.
