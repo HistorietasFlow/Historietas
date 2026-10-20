@@ -54,6 +54,11 @@ import {
   limparTextoExibicao,
 } from "./lib/notificacoes-text-utils";
 import {
+  obterRotuloTipoAnotacaoDiarioNotificacao,
+  obterStatusProblemaTecnicoNotificacao,
+  obterTextoStatusDenunciaComunidadeNotificacao,
+} from "./lib/notificacoes-status-text-utils";
+import {
   calcularProgressoLeitura,
   normalizarNotificacao,
   normalizarObra,
@@ -1925,12 +1930,7 @@ async function carregarNotificacoesComunidadeSupabase(
     }
 
     const id = `comunidade-denuncia-${denunciaId}-${status}`;
-    const statusTexto =
-      status === "resolvida"
-        ? "resolvida"
-        : status === "rejeitada"
-          ? "rejeitada"
-          : "em análise";
+    const statusTexto = obterTextoStatusDenunciaComunidadeNotificacao(status);
     const alvoTipo = pegarTexto(registro.alvo_tipo, "conteúdo");
     const alvoId = pegarTexto(registro.alvo_id);
     const link =
@@ -1962,38 +1962,6 @@ async function carregarNotificacoesComunidadeSupabase(
   );
 }
 
-
-function obterStatusProblemaTecnicoNotificacao(status: string) {
-  if (status === "em_analise") {
-    return {
-      titulo: "Problema técnico em análise",
-      texto: "em análise",
-    };
-  }
-
-  if (status === "aguardando_usuario") {
-    return {
-      titulo: "Problema técnico aguardando informações",
-      texto: "aguardando informações",
-    };
-  }
-
-  if (status === "resolvido") {
-    return {
-      titulo: "Problema técnico resolvido",
-      texto: "resolvido",
-    };
-  }
-
-  if (status === "fechado") {
-    return {
-      titulo: "Problema técnico fechado",
-      texto: "fechado",
-    };
-  }
-
-  return null;
-}
 
 async function carregarNotificacoesProblemasTecnicosSupabase(
   userId: string,
@@ -2072,35 +2040,6 @@ async function carregarNotificacoesProblemasTecnicosSupabase(
     return [];
   }
 }
-
-function obterRotuloTipoAnotacaoDiarioNotificacao(tipo: string) {
-  if (tipo === "lendo") {
-    return "leitura";
-  }
-
-  if (tipo === "quero_ler") {
-    return "Quero ler";
-  }
-
-  if (tipo === "favorita") {
-    return "favorita";
-  }
-
-  if (tipo === "concluida") {
-    return "obra concluída";
-  }
-
-  if (tipo === "avaliacao") {
-    return "avaliação";
-  }
-
-  if (tipo === "review") {
-    return "review";
-  }
-
-  return "anotação";
-}
-
 
 async function carregarNotificacoesDiarioSupabase(
   userId: string,

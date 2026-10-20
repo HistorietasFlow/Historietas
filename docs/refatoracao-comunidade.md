@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 5 — Notificações
+
+- Os textos puros de status de denúncias, chamados técnicos e anotações do Diário foram isolados sem alterar consultas, estados ou mensagens apresentadas.
+
 ## Registro da Fase 4 — Notificações
 
 - O estado vazio visual da lista foi isolado em componente dedicado, preservando prioridade das mensagens, textos e estilos sem alterar o fluxo da página.
