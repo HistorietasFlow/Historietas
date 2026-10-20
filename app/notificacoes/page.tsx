@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
-import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useHistorietasTheme } from "../../lib/historietasTheme";
 import {
   acessoConteudo18Confirmado,
   ehClassificacao18,
@@ -17,23 +17,20 @@ import {
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
-import NotificacoesLanguageBridge from "./components/notificacoes-language-bridge";
 import NotificacoesLoadingSpinner from "./components/notificacoes-loading-spinner";
 import NotificacoesSortingSheet from "./components/notificacoes-sorting-sheet";
 import NotificacoesTopControls from "./components/notificacoes-top-controls";
 import NotificacoesActionsSheet from "./components/notificacoes-actions-sheet";
 import NotificacoesFeed from "./components/notificacoes-feed";
+import NotificacoesPageShell from "./components/notificacoes-page-shell";
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
 import { useNotificacoesOverlayBodyLock } from "./hooks/use-notificacoes-overlay-body-lock";
-import { notificacoesPageCss } from "./lib/notificacoes-page-css";
 import {
   containerStyle,
   desktopContainerStyle,
   desktopNotificationsControlsStyle,
-  desktopTopWaterFadeStyle,
   loadingPageStyle,
   loadingSpinnerStyle,
-  mobileTopWaterFadeStyle,
   notificationClearButtonStyle,
   notificacoesTopFilterBoxStyle,
   notificationsControlsStyle,
@@ -2379,30 +2376,24 @@ export default function NotificacoesPage() {
 
   if (carregando) {
     return (
-      <main data-historietas-notificacoes-root="true" style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${notificacoesPageCss}`}</style>
-        <NotificacoesLanguageBridge />
-
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
+      <NotificacoesPageShell
+        isDesktop={isDesktop}
+        pageThemeStyle={pageThemeStyle}
+      >
         <NotificacoesLoadingSpinner
           label="Carregando notificações"
           pageStyle={loadingPageStyle}
           spinnerStyle={loadingSpinnerStyle}
         />
-      </main>
+      </NotificacoesPageShell>
     );
   }
 
   return (
-    <main data-historietas-notificacoes-root="true" style={pageThemeStyle}>
-      <style>{`${historietasThemeCss}${notificacoesPageCss}`}</style>
-      <NotificacoesLanguageBridge />
-
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
+    <NotificacoesPageShell
+      isDesktop={isDesktop}
+      pageThemeStyle={pageThemeStyle}
+    >
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <section style={notificacoesTopFilterBoxStyle}>
           <NotificacoesTopControls
@@ -2517,6 +2508,6 @@ export default function NotificacoesPage() {
           />
         )}
       </section>
-    </main>
+    </NotificacoesPageShell>
   );
 }

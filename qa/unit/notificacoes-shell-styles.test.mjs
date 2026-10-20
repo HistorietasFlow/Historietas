@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const moldura = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-page-shell.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const exportsEsperados = [
   "safeTextStyle",
@@ -93,6 +100,14 @@ test("página consome o shell extraído sem redefinir estilos", () => {
       new RegExp(`const ${nome}: CSSProperties =`),
     );
   }
+
+  assert.match(
+    moldura,
+    /desktopTopWaterFadeStyle,[\s\S]*?mobileTopWaterFadeStyle,/,
+  );
+  assert.match(moldura, /isDesktop && <div style=\{desktopTopWaterFadeStyle\}/);
+  assert.match(moldura, /!isDesktop && <div style=\{mobileTopWaterFadeStyle\}/);
+  assert.match(pagina, /import NotificacoesPageShell from "\.\/components\/notificacoes-page-shell";/);
 });
 
 test("módulo visual não carrega runtime, efeitos ou persistência", () => {
