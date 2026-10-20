@@ -20,6 +20,13 @@ const controls = readFileSync(
   ),
   "utf8",
 );
+const callbacks = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-sorting-action-callbacks.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("painel de ordenação preserva portal, acessibilidade e opções", () => {
   for (const contrato of [
@@ -71,9 +78,16 @@ test("página delega o painel e os controles preservam os callbacks de estado", 
     controls,
     /function atualizarOrdenacao\(proximaOrdenacao: OrdenacaoNotificacao\) \{\s*setOrdenacao\(proximaOrdenacao\);\s*setMostrarPainelOrdenacao\(false\);\s*\}/,
   );
-  assert.match(pagina, /onMarcarTodasComoLidas=\{\(\) => \{/);
-  assert.match(pagina, /onMarcarFiltradasComoLidas=\{\(\) => \{/);
-  assert.match(pagina, /onLimparLidas=\{\(\) => \{/);
-  assert.match(pagina, /onLimparTodas=\{\(\) => \{/);
+  assert.match(pagina, /onMarcarTodasComoLidas=\{onMarcarTodasComoLidas\}/);
+  assert.match(
+    pagina,
+    /onMarcarFiltradasComoLidas=\{onMarcarFiltradasComoLidas\}/,
+  );
+  assert.match(pagina, /onLimparLidas=\{onLimparLidas\}/);
+  assert.match(pagina, /onLimparTodas=\{onLimparTodas\}/);
+  assert.match(callbacks, /marcarTodasComoLidas\(\);\s*setMostrarPainelOrdenacao\(false\);/);
+  assert.match(callbacks, /marcarFiltradasComoLidas\(\);\s*setMostrarPainelOrdenacao\(false\);/);
+  assert.match(callbacks, /limparLidas\(\);\s*setMostrarPainelOrdenacao\(false\);/);
+  assert.match(callbacks, /limparTodas\(\);\s*setMostrarPainelOrdenacao\(false\);/);
   assert.doesNotMatch(pagina, /<NotificacoesOverlayPortal>[\s\S]*?Opções de notificações/);
 });

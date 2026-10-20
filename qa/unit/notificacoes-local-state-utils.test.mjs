@@ -17,6 +17,7 @@ import "./notificacoes-mutation-actions.test.mjs";
 import "./notificacoes-state-update-action.test.mjs";
 import "./use-notificacoes-page-controls.test.mjs";
 import "./use-notificacoes-page-view-state.test.mjs";
+import "./notificacoes-sorting-action-callbacks.test.mjs";
 
 const helpers = readFileSync(
   new URL(
