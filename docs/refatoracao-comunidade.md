@@ -778,3 +778,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 7 — Configurações
 
 - A criação da chave de storage isolada por usuário foi movida para um helper dedicado, sem alteração intencional de comportamento.
+
+## Registro da Fase 8 — Configurações
+
+- A normalização da chave dos itens de resumo foi isolada, preservando identificação, serialização e fallbacks.
