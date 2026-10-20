@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 970 — Seguindo
+
+- A composição visual condicional do conteúdo de Seguindo foi isolada, mantendo dados, estados e ações no orquestrador da página.
+
 ## Registro da Fase 969 — Seguindo
 
 - O frame, os controles visuais e as mensagens de estado vazio de Seguindo foram isolados sem alterar dados, estados, ações ou comportamentos.

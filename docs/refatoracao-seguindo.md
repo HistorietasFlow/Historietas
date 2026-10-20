@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 970 — composição do conteúdo
+
+- Extraiu a composição condicional dos estados vazios e das seções de obras e pessoas para `SeguindoPageContent`.
+- Preservou na página a orquestração de dados, estados, hooks e callbacks, sem mudança de comportamento visual ou funcional.
+
 ## Fase 969 — frame, controles e estado vazio
 
 - Extraiu o frame visual comum, a composição de cabeçalho/controles e a mensagem pura de estado vazio para fronteiras dedicadas.
