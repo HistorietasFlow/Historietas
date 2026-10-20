@@ -264,6 +264,7 @@ test("pagina delega somente os helpers de navegacao extraidos", () => {
   );
   for (const helper of [
     "criarHrefLeituraCapitulo",
+    "criarLoginHrefNotificacoes",
     "linkDiretoValido",
     "criarPerfilHrefNotificacao",
     "criarDiarioPerfilHrefNotificacao",

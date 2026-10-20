@@ -24,6 +24,7 @@ import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal"
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
 import { useNotificacoesOverlayBodyLock } from "./hooks/use-notificacoes-overlay-body-lock";
 import {
+  criarAvatarNotificacaoStyle,
   notificacaoTemAutorSocial,
   notificacaoUsaCardSocial,
   obterAcaoPrincipalNotificacao,
@@ -39,9 +40,14 @@ import { notificacoesPageCss } from "./lib/notificacoes-page-css";
 import {
   criarDiarioPerfilHrefNotificacao,
   criarHrefLeituraCapitulo,
+  criarLoginHrefNotificacoes,
   criarPerfilHrefNotificacao,
   montarLinkNotificacao,
 } from "./lib/notificacoes-navigation-utils";
+import {
+  mesclarNotificacoes,
+  notificacoesRepresentamMesmoEvento,
+} from "./lib/notificacoes-merge-utils";
 import {
   limparTextoExibicao,
 } from "./lib/notificacoes-text-utils";
@@ -65,14 +71,6 @@ import type {
   ObraLocal,
 } from "./lib/notificacoes-models";
 import type { CSSProperties } from "react";
-
-function criarLoginHrefNotificacoes() {
-  const params = new URLSearchParams({
-    redirectTo: "/notificacoes",
-  });
-
-  return `/login?${params.toString()}`;
-}
 
 function carregarObras(userId = ""): ObraLocal[] {
   const userIdLimpo = userId.trim();
@@ -231,28 +229,6 @@ function normalizarNotificacaoParaExibicao(notificacao: NotificacaoLocal) {
 function prepararNotificacaoTexto(notificacao: NotificacaoLocal) {
   return normalizarNotificacaoParaExibicao(notificacao);
 }
-
-function criarAvatarNotificacaoStyle(
-  notificacao: NotificacaoLocal,
-  fallbackStyle: CSSProperties
-): CSSProperties {
-  const avatar = notificacao.autorAvatar?.trim() || "";
-
-  if (!avatar) {
-    return fallbackStyle;
-  }
-
-  return {
-    ...fallbackStyle,
-    backgroundImage: `url(${avatar})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    color: "transparent",
-    textDecoration: "none",
-    overflow: "hidden",
-  };
-}
-
 
 type SupabaseObraRow = Record<string, unknown>;
 type SupabaseCapituloRow = Record<string, unknown>;
@@ -533,140 +509,6 @@ function mesclarObrasPorIdSlug(obrasBase: ObraLocal[], obrasNovas: ObraLocal[]) 
   });
 
   return obrasMescladas;
-}
-
-function notificacaoSinteticaDeCapitulo(notificacao: NotificacaoLocal) {
-  return (
-    notificacao.tipo === "novo-capitulo" &&
-    notificacao.id.startsWith("capitulo-")
-  );
-}
-
-function obterAutorChaveNotificacao(notificacao: NotificacaoLocal) {
-  const autorId = notificacao.autorId?.trim() || "";
-
-  if (autorId) {
-    return autorId;
-  }
-
-  const autorNome = normalizarTexto(notificacao.autorNome || "");
-
-  return autorNome || "";
-}
-
-function criarChaveMesclagemNotificacao(notificacao: NotificacaoLocal) {
-  const id = notificacao.id.trim();
-  const autor = obterAutorChaveNotificacao(notificacao);
-  const obraId = notificacao.obraId.trim();
-  const capituloId = notificacao.capituloId.trim();
-  const link = notificacao.link.trim();
-
-  if (notificacao.tipo === "novo-capitulo" && capituloId) {
-    return `novo-capitulo:${capituloId}`;
-  }
-
-  if (notificacao.tipo === "solicitacao-seguidor") {
-    if (autor) {
-      return `solicitacao-seguidor:${autor}`;
-    }
-
-    const solicitacaoId = notificacao.solicitacaoId?.trim() || "";
-
-    if (solicitacaoId) {
-      return `solicitacao-seguidor-id:${solicitacaoId}`;
-    }
-  }
-
-  if (notificacao.tipo === "novo-seguidor" && autor) {
-    return `novo-seguidor:${autor}`;
-  }
-
-  if (notificacao.tipo === "curtida-obra" && autor && (obraId || link)) {
-    return `curtida-obra:${autor}:${obraId || link}`;
-  }
-
-  if (notificacao.tipo === "curtida-capitulo" && autor && capituloId) {
-    return `curtida-capitulo:${autor}:${capituloId}`;
-  }
-
-  if (notificacao.tipo === "curtida-comunidade" && autor && link) {
-    return `curtida-comunidade:${autor}:${link}`;
-  }
-
-  return id;
-}
-
-function notificacoesRepresentamMesmoEvento(
-  primeira: NotificacaoLocal,
-  segunda: NotificacaoLocal
-) {
-  const primeiraChave = criarChaveMesclagemNotificacao(primeira);
-  const segundaChave = criarChaveMesclagemNotificacao(segunda);
-
-  return Boolean(primeiraChave && primeiraChave === segundaChave);
-}
-
-function mesclarNotificacoes(
-  notificacoesLocais: NotificacaoLocal[],
-  notificacoesSupabase: NotificacaoLocal[]
-) {
-  const mapa = new Map<string, NotificacaoLocal>();
-
-  [...notificacoesLocais, ...notificacoesSupabase].forEach((notificacao) => {
-    const notificacaoNormalizada =
-      normalizarNotificacaoParaExibicao(notificacao);
-    const chave = criarChaveMesclagemNotificacao(notificacaoNormalizada);
-
-    if (!chave) {
-      return;
-    }
-
-    const existente = mapa.get(chave);
-
-    if (!existente) {
-      mapa.set(chave, notificacaoNormalizada);
-      return;
-    }
-
-    const existenteSintetica = notificacaoSinteticaDeCapitulo(existente);
-    const novaSintetica = notificacaoSinteticaDeCapitulo(
-      notificacaoNormalizada
-    );
-    const existenteMaisRecente =
-      dataNotificacao(existente) > dataNotificacao(notificacaoNormalizada);
-    const preferida =
-      existenteSintetica && !novaSintetica
-        ? notificacaoNormalizada
-        : !existenteSintetica && novaSintetica
-          ? existente
-          : existenteMaisRecente
-            ? existente
-            : notificacaoNormalizada;
-    const secundaria = preferida === notificacaoNormalizada
-      ? existente
-      : notificacaoNormalizada;
-    const mesmoId = existente.id.trim() === notificacaoNormalizada.id.trim();
-
-    mapa.set(chave, {
-      ...secundaria,
-      ...preferida,
-      obraId: preferida.obraId || secundaria.obraId,
-      capituloId: preferida.capituloId || secundaria.capituloId,
-      link: preferida.link || secundaria.link,
-      autorId: preferida.autorId || secundaria.autorId,
-      autorNome: preferida.autorNome || secundaria.autorNome,
-      autorAvatar: preferida.autorAvatar || secundaria.autorAvatar,
-      solicitacaoId:
-        preferida.solicitacaoId || secundaria.solicitacaoId,
-      lida: mesmoId
-        ? existente.lida || notificacaoNormalizada.lida
-        : preferida.lida,
-    });
-  });
-
-  return Array.from(mapa.values()).sort(
-    (a, b) => dataNotificacao(b) - dataNotificacao(a)
-  );
 }
 
 function lerIdsLocalStorage(chave: string, userId = ""): string[] {
