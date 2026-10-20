@@ -14,6 +14,8 @@ import "./notificacoes-view-state-utils.test.mjs";
 import "./notificacoes-local-actions-utils.test.mjs";
 import "./notificacoes-follow-request-utils.test.mjs";
 import "./notificacoes-mutation-actions.test.mjs";
+import "./notificacoes-state-update-action.test.mjs";
+import "./use-notificacoes-page-controls.test.mjs";
 
 const helpers = readFileSync(
   new URL(
@@ -24,6 +26,13 @@ const helpers = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url), "utf8");
+const atualizador = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-state-update-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estado local de notificações preserva isolamento, fallbacks e evento", () => {
   for (const contrato of [
@@ -45,7 +54,14 @@ test("estado local de notificações preserva isolamento, fallbacks e evento", (
     assert.ok(helpers.includes(contrato), "contrato ausente: " + contrato);
   }
 
-  assert.match(pagina, /from "\.\/lib\/notificacoes-local-state-utils"/);
+  assert.match(
+    atualizador,
+    /from "\.\/notificacoes-local-state-utils"/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/notificacoes-state-update-action"/,
+  );
   for (const helper of [
     "carregarObras",
     "carregarNotificacoes",
@@ -57,5 +73,6 @@ test("estado local de notificações preserva isolamento, fallbacks e evento", (
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
+  assert.doesNotMatch(pagina, /from "\.\/lib\/notificacoes-local-state-utils"/);
   assert.doesNotMatch(helpers, /React|use[A-Z]|supabase/);
 });

@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const atualizador = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-state-update-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("preserva a deduplicacao, prioridades e fronteira pura", () => {
   for (const contrato of [
@@ -33,7 +40,12 @@ test("preserva a deduplicacao, prioridades e fronteira pura", () => {
     mergeUtils,
     /from ["'][^"']*supabase|localStorage|useEffect|useState|from "react"/i,
   );
-  assert.match(pagina, /from "\.\/lib\/notificacoes-merge-utils";/);
+  assert.match(atualizador, /from "\.\/notificacoes-merge-utils";/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/notificacoes-state-update-action";/,
+  );
+  assert.doesNotMatch(pagina, /from "\.\/lib\/notificacoes-merge-utils";/);
   assert.doesNotMatch(pagina, /function mesclarNotificacoes\(/);
   assert.doesNotMatch(pagina, /function notificacoesRepresentamMesmoEvento\(/);
 });
