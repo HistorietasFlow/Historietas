@@ -787,3 +787,9 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O tipo estrutural de usuário bloqueado foi centralizado nos modelos de conta e reutilizado pela página e pelo painel visual.
 - Não houve alteração intencional de comportamento, dados ou ações.
+
+## Registro da Fase 12 — Configurações
+
+- Os tipos estruturais de conta e contratos Supabase foram centralizados nos modelos da conta.
+- As traduções puras de erros de senha e username foram isoladas, preservando condições, textos e fallbacks.
+- Não houve alteração intencional de comportamento, dados ou ações.

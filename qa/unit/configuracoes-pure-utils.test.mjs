@@ -24,6 +24,20 @@ const privacySource = readFileSync(
   ),
   "utf8",
 );
+const accountModelsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-models.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const errorMessagesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-error-messages.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -45,6 +59,13 @@ function importarTypescript(source) {
 
 const search = await importarTypescript(searchSource);
 const account = await importarTypescript(accountSource);
+const errorMessages = await importarTypescript(
+  errorMessagesSource.replace(
+    /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/lib\/i18n";\r?\nimport \{ textoIdioma \} from "\.\/configuracoes-search-utils";/,
+    `const textoIdioma = (language, portugues, ingles, espanhol) =>
+  language === "en" ? ingles : language === "es" ? espanhol : portugues;`,
+  ),
+);
 
 test("busca de Configurações preserva idioma, normalização e aliases", () => {
   assert.equal(search.textoIdioma("pt-BR", "Conta", "Account", "Cuenta"), "Conta");
@@ -67,6 +88,39 @@ test("identidade de Configurações preserva limpeza, UUID, perfil administrativ
   assert.equal(account.obterIniciais("", "autor@example.com"), "AU");
 });
 
+test("modelos e traduções de erro de Configurações preservam contratos", () => {
+  for (const tipo of [
+    "UsuarioConfiguracoes",
+    "ResultadoContagemResumoSupabase",
+    "TabelaResumoSupabase",
+    "PerfilConfiguracoesSupabase",
+    "UsuarioBloqueadoConfiguracoesRpcRow",
+  ]) {
+    assert.match(accountModelsSource, new RegExp("export type " + tipo));
+  }
+
+  assert.equal(
+    errorMessages.traduzirErroSenhaConfiguracoes("weak password", "pt-BR"),
+    "A nova senha não atende aos requisitos de segurança.",
+  );
+  assert.equal(
+    errorMessages.traduzirErroSenhaConfiguracoes("session expired", "en"),
+    "For security, sign in again and try changing the password.",
+  );
+  assert.equal(
+    errorMessages.traduzirErroUsernameConfiguracoes("duplicate", "es"),
+    "Este @username ya está en uso.",
+  );
+  assert.equal(
+    errorMessages.traduzirErroUsernameConfiguracoes("unknown", "pt-BR"),
+    "Não consegui salvar esse @username agora.",
+  );
+  assert.doesNotMatch(
+    errorMessagesSource,
+    /supabase|localStorage|useState|useEffect|window|document/,
+  );
+});
+
 test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /from "\.\/lib\/configuracoes-search-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-utils";/);
@@ -74,6 +128,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-privacy-preferences";/,
   );
+  assert.match(pagina, /from "\.\/lib\/configuracoes-error-messages";/);
+  assert.match(pagina, /from "\.\/lib\/configuracoes-account-models";/);
 
   for (const helper of [
     "textoIdioma",
@@ -83,6 +139,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     "idUsuarioSupabaseValido",
     "metadataTemAdminConfiguracoes",
     "obterIniciais",
+    "traduzirErroSenhaConfiguracoes",
+    "traduzirErroUsernameConfiguracoes",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
