@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 1 — Configurações
+
+- As regras puras de busca, aliases e idioma foram isoladas em configuracoes-search-utils; a limpeza de identidade, UUID, metadata administrativa e iniciais foi isolada em configuracoes-account-utils.
+- Os fluxos de autenticação, Supabase, localStorage, estados, efeitos e apresentação permaneceram em app/configuracoes/page.tsx, sem mudança intencional de comportamento.
+
 ## Registro da Fase 30 — Notificações
 
 - A estrutura atual de `app/notificacoes/page.tsx` foi revisada e mantida como orquestradora enxuta: estados locais, hooks, componentes visuais, mutações e carregamento já possuem fronteiras dedicadas.
