@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const secoesPessoas = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-people-sections.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const cssSeguindo = readFileSync(
   new URL("../../app/seguindo/lib/seguindo-page-css.ts", import.meta.url),
   "utf8",
@@ -61,7 +68,7 @@ test("LoadingSpinner de Seguindo preserva os estilos exclusivos e o CSS global",
   assert.match(cssSeguindo, /\.historietas-loading-spinner/);
 });
 
-test("Seguindo delega somente os dois spinners e preserva labels", () => {
+test("Seguindo delega os dois spinners e preserva labels nas fronteiras visuais", () => {
   assert.match(
     pagina,
     /import \{ LoadingSpinner \} from "\.\/components\/seguindo-loading-spinner";/,
@@ -71,11 +78,16 @@ test("Seguindo delega somente os dois spinners e preserva labels", () => {
   assert.doesNotMatch(pagina, /const loadingInlineStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const loadingSpinnerStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const loadingSpinnerCompactStyle: CSSProperties/);
-  assert.equal((pagina.match(/<LoadingSpinner/g) || []).length, 2);
-  assert.equal((pagina.match(/compacto/g) || []).length, 1);
+  assert.equal((pagina.match(/<LoadingSpinner/g) || []).length, 1);
   assert.match(pagina, /<LoadingSpinner label="Carregando seguindo" \/>/);
   assert.match(
-    pagina,
+    secoesPessoas,
+    /import \{ LoadingSpinner \} from "\.\/seguindo-loading-spinner";/,
+  );
+  assert.equal((secoesPessoas.match(/<LoadingSpinner/g) || []).length, 1);
+  assert.equal((secoesPessoas.match(/compacto/g) || []).length, 1);
+  assert.match(
+    secoesPessoas,
     /<LoadingSpinner\s+compacto\s+label="Carregando sugestões para seguir"\s+\/>/,
   );
 });
