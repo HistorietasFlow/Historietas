@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 8 — Notificações
+
+- A composição pura de notificações de capítulos das obras seguidas foi isolada, preservando identificação, filtros de autoria, links, leitura e ordenação.
+
 ## Registro da Fase 7 — Notificações
 
 - O fallback puro de obras e capítulos de notificações diretas foi extraído, preservando parsing, títulos, defaults, progresso e links locais.
