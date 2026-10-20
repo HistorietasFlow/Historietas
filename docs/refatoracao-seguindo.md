@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 974 — orquestração de ações
+
+- Agrupou a ligação dos hooks de ações de seguidores, usuários e obras/autores em `useSeguindoPageActions`.
+- Preservou a ordem dos hooks, parâmetros, callbacks e responsabilidades de mutação existentes.
+
 ## Fase 973 — grupos de estado da página
 
 - Dividiu o estado bruto em hooks coesos de obras/seguimentos, listas sociais e carregamento/atividades.

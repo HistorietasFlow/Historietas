@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const pageActions = readFileSync(
+  new URL("../../app/seguindo/hooks/use-seguindo-page-actions.ts", import.meta.url),
+  "utf8",
+);
 
 test("hook preserva seguir, cancelar solicitação e deixar de seguir usuário", () => {
   assert.match(hook, /^"use client";/);
@@ -61,12 +65,13 @@ test("hook preserva seguir, cancelar solicitação e deixar de seguir usuário",
 test("página delega as ações de seguir usuário ao hook", () => {
   assert.match(
     pagina,
-    /import \{ useSeguindoUserFollowActions \} from "\.\/hooks\/use-seguindo-user-follow-actions";/,
+    /import \{ useSeguindoPageActions \} from "\.\/hooks\/use-seguindo-page-actions";/,
   );
   assert.match(
     pagina,
-    /const \{[\s\S]*?deixarDeSeguirUsuario,[\s\S]*?seguirUsuarioSugestao,[\s\S]*?\} = useSeguindoUserFollowActions\(\{[\s\S]*?usuarioLogadoId,[\s\S]*?usuarioListaAlterandoId,[\s\S]*?usuarioSugestaoSeguindoId,[\s\S]*?solicitacoesEnviadasIds,[\s\S]*?setUsuariosSeguidos,[\s\S]*?setAtividadesSeguindo,[\s\S]*?setSolicitacoesEnviadasIds,[\s\S]*?setUsuariosSugestoesBusca,[\s\S]*?\}\);/,
+    /const \{[\s\S]*?deixarDeSeguirUsuario,[\s\S]*?seguirUsuarioSugestao,[\s\S]*?\} = useSeguindoPageActions\(\{[\s\S]*?usuarioLogadoId,[\s\S]*?usuarioListaAlterandoId,[\s\S]*?usuarioSugestaoSeguindoId,[\s\S]*?solicitacoesEnviadasIds,[\s\S]*?setUsuariosSeguidos,[\s\S]*?setAtividadesSeguindo,[\s\S]*?setSolicitacoesEnviadasIds,[\s\S]*?setUsuariosSugestoesBusca,[\s\S]*?\}\);/,
   );
+  assert.match(pageActions, /useSeguindoUserFollowActions\(\{/);
   assert.doesNotMatch(
     pagina,
     /async function deixarDeSeguirUsuario\(/,
