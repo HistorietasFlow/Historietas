@@ -4,11 +4,9 @@ import { useState } from "react";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { normalizarTexto } from "../../lib/utils";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
-import { SeguindoEmptyState } from "./components/seguindo-empty-state";
-import { SeguindoPeopleSections } from "./components/seguindo-people-sections";
+import { SeguindoPageContent } from "./components/seguindo-page-content";
 import { SeguindoPageControls } from "./components/seguindo-page-controls";
 import { SeguindoPageFrame } from "./components/seguindo-page-frame";
-import { SeguindoWorksSection } from "./components/seguindo-works-section";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
@@ -35,7 +33,6 @@ import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sh
 import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-actions";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
-import { obterMensagemEstadoVazioSeguindo } from "./lib/seguindo-empty-state-message";
 import { calcularTotaisSeguindo } from "./lib/seguindo-list-counts";
 import { obterOpcoesOrdenacaoSeguindo } from "./lib/seguindo-sort-options";
 import { selecionarUsuariosBaseSocial } from "./lib/seguindo-social-users-selector";
@@ -274,57 +271,33 @@ export default function SeguindoPage() {
           setOrdenacao={setOrdenacao}
         />
 
-        {totalSemFiltros === 0 && !buscaSugestoesUsuariosAtiva ? (
-          <SeguindoEmptyState>
-            {obterMensagemEstadoVazioSeguindo(
-              abaConteudo,
-              visualizandoListaSocialDoPerfil,
-            )}
-          </SeguindoEmptyState>
-        ) : (
-          <>
-            {totalSeguindo === 0 &&
-              !carregandoUsuariosSugestoes &&
-              usuariosSugestoesBusca.length === 0 && (
-              <SeguindoEmptyState>
-                Nada encontrado
-              </SeguindoEmptyState>
-            )}
-
-            {abaConteudo === "obras" && (
-              <SeguindoWorksSection
-                isDesktop={isDesktop}
-                obrasFiltradas={obrasFiltradas}
-                visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
-                onDeixarDeSeguirObra={deixarDeSeguirObra}
-              />
-            )}
-
-            <SeguindoPeopleSections
-              isDesktop={isDesktop}
-              abaConteudo={abaConteudo}
-              listaSocialEhDoUsuarioLogado={listaSocialEhDoUsuarioLogado}
-              solicitacoesSeguidoresFiltradas={solicitacoesSeguidoresFiltradas}
-              solicitacaoRespondendoId={solicitacaoRespondendoId}
-              onResponderSolicitacao={responderSolicitacaoSeguidor}
-              usuariosFiltrados={usuariosFiltrados}
-              podeRemoverUsuariosDaLista={podeRemoverUsuariosDaLista}
-              podeRemoverSeguidoresDaLista={podeRemoverSeguidoresDaLista}
-              usuarioListaAlterandoId={usuarioListaAlterandoId}
-              onRemoverSeguidorUsuario={removerSeguidorUsuario}
-              onDeixarDeSeguirUsuario={deixarDeSeguirUsuario}
-              buscaSugestoesUsuariosAtiva={buscaSugestoesUsuariosAtiva}
-              carregandoUsuariosSugestoes={carregandoUsuariosSugestoes}
-              usuariosSugestoesBusca={usuariosSugestoesBusca}
-              usuarioSugestaoSeguindoId={usuarioSugestaoSeguindoId}
-              solicitacoesEnviadasIds={solicitacoesEnviadasIds}
-              onSeguirUsuarioSugestao={seguirUsuarioSugestao}
-              visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
-              autoresFiltrados={autoresFiltrados}
-              onDeixarDeSeguirAutor={deixarDeSeguirAutor}
-            />
-          </>
-        )}
+        <SeguindoPageContent
+          isDesktop={isDesktop}
+          totalSemFiltros={totalSemFiltros}
+          buscaSugestoesUsuariosAtiva={buscaSugestoesUsuariosAtiva}
+          abaConteudo={abaConteudo}
+          visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
+          totalSeguindo={totalSeguindo}
+          carregandoUsuariosSugestoes={carregandoUsuariosSugestoes}
+          usuariosSugestoesBusca={usuariosSugestoesBusca}
+          obrasFiltradas={obrasFiltradas}
+          onDeixarDeSeguirObra={deixarDeSeguirObra}
+          listaSocialEhDoUsuarioLogado={listaSocialEhDoUsuarioLogado}
+          solicitacoesSeguidoresFiltradas={solicitacoesSeguidoresFiltradas}
+          solicitacaoRespondendoId={solicitacaoRespondendoId}
+          onResponderSolicitacao={responderSolicitacaoSeguidor}
+          usuariosFiltrados={usuariosFiltrados}
+          podeRemoverUsuariosDaLista={podeRemoverUsuariosDaLista}
+          podeRemoverSeguidoresDaLista={podeRemoverSeguidoresDaLista}
+          usuarioListaAlterandoId={usuarioListaAlterandoId}
+          onRemoverSeguidorUsuario={removerSeguidorUsuario}
+          onDeixarDeSeguirUsuario={deixarDeSeguirUsuario}
+          usuarioSugestaoSeguindoId={usuarioSugestaoSeguindoId}
+          solicitacoesEnviadasIds={solicitacoesEnviadasIds}
+          onSeguirUsuarioSugestao={seguirUsuarioSugestao}
+          autoresFiltrados={autoresFiltrados}
+          onDeixarDeSeguirAutor={deixarDeSeguirAutor}
+        />
       </section>
     </SeguindoPageFrame>
   );

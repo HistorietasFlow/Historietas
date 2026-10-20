@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const pageContent = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-page-content.tsx", import.meta.url),
+  "utf8",
+);
 const worksSection = readFileSync(
   new URL("../../app/seguindo/components/seguindo-works-section.tsx", import.meta.url),
   "utf8",
@@ -13,10 +17,15 @@ const peopleSections = readFileSync(
 );
 
 test("Seguindo delega somente a composição visual das seções de conteúdo", () => {
-  assert.match(page, /<SeguindoWorksSection[\s\S]*?obrasFiltradas=\{obrasFiltradas\}/);
-  assert.match(page, /<SeguindoPeopleSections[\s\S]*?solicitacoesSeguidoresFiltradas=\{solicitacoesSeguidoresFiltradas\}/);
+  assert.match(page, /import \{ SeguindoPageContent \} from "\.\/components\/seguindo-page-content";/);
+  assert.match(page, /<SeguindoPageContent[\s\S]*?obrasFiltradas=\{obrasFiltradas\}/);
   assert.match(page, /onSeguirUsuarioSugestao=\{seguirUsuarioSugestao\}/);
   assert.match(page, /onDeixarDeSeguirAutor=\{deixarDeSeguirAutor\}/);
+  assert.match(pageContent, /totalSemFiltros === 0 && !buscaSugestoesUsuariosAtiva/);
+  assert.match(pageContent, /<SeguindoWorksSection[\s\S]*?obrasFiltradas=\{obrasFiltradas\}/);
+  assert.match(pageContent, /<SeguindoPeopleSections[\s\S]*?solicitacoesSeguidoresFiltradas=\{solicitacoesSeguidoresFiltradas\}/);
+  assert.match(pageContent, /onSeguirUsuarioSugestao=\{onSeguirUsuarioSugestao\}/);
+  assert.match(pageContent, /onDeixarDeSeguirAutor=\{onDeixarDeSeguirAutor\}/);
 
   assert.match(worksSection, /^"use client";/);
   assert.match(worksSection, /Nenhuma obra seguida encontrada/);
@@ -32,7 +41,7 @@ test("Seguindo delega somente a composição visual das seções de conteúdo", 
   assert.match(peopleSections, /solicitacoesEnviadasIds\.includes/);
   assert.match(peopleSections, /!visualizandoListaSocialDoPerfil && abaConteudo === "pessoas"/);
 
-  for (const component of [worksSection, peopleSections]) {
+  for (const component of [pageContent, worksSection, peopleSections]) {
     assert.doesNotMatch(component, /supabase|localStorage|useEffect|useState/);
   }
 });
