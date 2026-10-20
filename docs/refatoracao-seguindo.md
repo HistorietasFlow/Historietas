@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 973 — grupos de estado da página
+
+- Dividiu o estado bruto em hooks coesos de obras/seguimentos, listas sociais e carregamento/atividades.
+- Preservou valores iniciais e setters usados pelos carregamentos e ações, sem mudança intencional de comportamento.
+
 ## Fase 972 — estado de dados
 
 - Moveu o estado bruto de obras, relações sociais, solicitações, atividades e carregamento para `useSeguindoDataState`.

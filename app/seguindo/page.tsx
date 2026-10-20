@@ -9,7 +9,9 @@ import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
-import { useSeguindoDataState } from "./hooks/use-seguindo-data-state";
+import { useSeguindoPageLoadState } from "./hooks/use-seguindo-page-load-state";
+import { useSeguindoSocialListState } from "./hooks/use-seguindo-social-list-state";
+import { useSeguindoWorkFollowState } from "./hooks/use-seguindo-work-follow-state";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoDerivedContent } from "./hooks/use-seguindo-derived-content";
 import { useSeguindoReadingStatusState } from "./hooks/use-seguindo-reading-status-state";
@@ -37,6 +39,8 @@ export default function SeguindoPage() {
     setObrasSeguidas,
     autoresSeguidos,
     setAutoresSeguidos,
+  } = useSeguindoWorkFollowState();
+  const {
     usuariosSeguidos,
     setUsuariosSeguidos,
     usuariosSeguidores,
@@ -45,15 +49,13 @@ export default function SeguindoPage() {
     setSolicitacoesSeguidores,
     solicitacoesEnviadasIds,
     setSolicitacoesEnviadasIds,
-    setAtividadesSeguindo,
-    carregando,
-    setCarregando,
-  } = useSeguindoDataState();
+  } = useSeguindoSocialListState();
   const {
     solicitacaoRespondendoId, setSolicitacaoRespondendoId,
     usuarioListaAlterandoId, setUsuarioListaAlterandoId,
   } = useSeguindoRequestActionState();
   const { obrasFavoritas, setObrasFavoritas, obrasConcluidas, setObrasConcluidas } = useSeguindoReadingStatusState();
+  const { setAtividadesSeguindo, carregando, setCarregando } = useSeguindoPageLoadState();
   const { busca, setBusca, buscaSeguindoAberta, setBuscaSeguindoAberta } = useSeguindoSearchState();
   const {
     usuariosSugestoesBusca, setUsuariosSugestoesBusca,

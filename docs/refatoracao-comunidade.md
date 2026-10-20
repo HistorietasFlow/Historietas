@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 973 — Seguindo
+
+- Os grupos de estado de obras/seguimentos, listas sociais e carregamento/atividades foram isolados em hooks próprios, sem alterar carregamento ou ações.
+
 ## Registro da Fase 972 — Seguindo
 
 - O estado bruto de dados de Seguindo foi isolado em hook próprio, mantendo carregamento e ações na página.
