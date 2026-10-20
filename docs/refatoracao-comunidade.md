@@ -809,3 +809,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 16 — Configurações
 
 - A leitura e persistência das preferências locais da conta foram isoladas, preservando normalização, evento e fallbacks.
+
+## Registro da Fase 17 — Configurações
+
+- A composição do backup local da conta foi isolada, preservando inventário, serialização e fallbacks.

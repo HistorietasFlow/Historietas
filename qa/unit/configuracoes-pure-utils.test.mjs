@@ -66,6 +66,13 @@ const accountPreferencesSource = readFileSync(
   ),
   "utf8",
 );
+const accountBackupSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-backup.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -160,6 +167,9 @@ test("modelos e traduções de erro de Configurações preservam contratos", () 
   assert.match(accountPreferencesSource, /export function carregarPreferencias/);
   assert.match(accountPreferencesSource, /export function salvarPreferencias/);
   assert.match(accountPreferencesSource, /new CustomEvent\(CONFIGURACOES_ATUALIZADAS_EVENT/);
+  assert.match(accountBackupSource, /export function criarBackupLocal/);
+  assert.match(accountBackupSource, /CHAVES_RESUMO\.forEach/);
+  assert.match(accountBackupSource, /backup\[CONFIG_STORAGE_KEY\] = carregarPreferencias/);
 });
 
 test("Configurações delega as fronteiras extraídas", () => {
@@ -171,13 +181,14 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.match(pagina, /from "\.\/lib\/configuracoes-error-messages";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-models";/);
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/configuracoes-account-storage-constants";/,
   );
   assert.match(pagina, /from "\.\/lib\/configuracoes-local-summary-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-profile-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
+  assert.match(pagina, /from "\.\/lib\/configuracoes-account-backup";/);
 
   for (const helper of [
     "textoIdioma",
@@ -195,6 +206,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     "normalizarPerfilConfiguracoesSupabase",
     "carregarPreferencias",
     "salvarPreferencias",
+    "criarBackupLocal",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
