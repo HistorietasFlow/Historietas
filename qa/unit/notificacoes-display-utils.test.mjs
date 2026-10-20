@@ -44,6 +44,13 @@ const recordNormalizers = readFileSync(
   ),
   "utf8",
 );
+const directLoader = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-supabase-direct-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const displayUtilsExecutavel = displayUtils
   .replace(
     'import { normalizarTexto } from "../../../lib/utils";',
@@ -347,7 +354,11 @@ test("componentes visuais importam os helpers extraídos e preservam as fronteir
 
   assert.match(
     pagina,
-    /import \{[\s\S]*?normalizarNotificacaoSupabase,[\s\S]*?\} from "\.\/lib\/notificacoes-record-normalizers";/,
+    /from "\.\/lib\/notificacoes-supabase-direct-loader";/,
+  );
+  assert.match(
+    directLoader,
+    /import \{ normalizarNotificacaoSupabase \} from "\.\/notificacoes-record-normalizers";/,
   );
   assert.match(recordNormalizers, /export function normalizarNotificacaoSupabase\(/);
   assert.doesNotMatch(pagina, /function normalizarNotificacao\(/);
