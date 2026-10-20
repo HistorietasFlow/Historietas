@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const painelOrdenacao = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-sorting-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook preserva o modo desktop imediato e os dois modelos de listener", () => {
   assert.match(hook, /export function useNotificacoesDesktopMode\(\)/);
@@ -54,5 +61,13 @@ test("pagina delega somente o lifecycle e preserva os consumidores visuais", () 
   );
   assert.doesNotMatch(pagina, /setIsDesktop/);
   assert.doesNotMatch(pagina, /window\.matchMedia/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 17);
+  assert.match(
+    pagina,
+    /<NotificacoesSortingSheet[\s\S]*?isDesktop=\{isDesktop\}/,
+  );
+  assert.match(
+    painelOrdenacao,
+    /isDesktop\s*\?\s*desktopNotificationSortingSheetStyle\s*:\s*notificationSortingSheetStyle/,
+  );
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 18);
 });
