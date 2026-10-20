@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const controls = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-page-controls.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("painel de ordenação preserva portal, acessibilidade e opções", () => {
   for (const contrato of [
@@ -48,14 +55,22 @@ test("painel usa estilos externos sem hooks, Supabase ou storage", () => {
   }
 });
 
-test("página delega o painel preservando os callbacks de estado", () => {
+test("página delega o painel e os controles preservam os callbacks de estado", () => {
   assert.match(pagina, /import NotificacoesSortingSheet/);
   assert.match(
     pagina,
     /<NotificacoesSortingSheet[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?filtro=\{filtro\}[\s\S]*?ordenacao=\{ordenacao\}/,
   );
-  assert.match(pagina, /onFiltroChange=\{\(proximoFiltro\) => \{/);
-  assert.match(pagina, /onOrdenacaoChange=\{\(proximaOrdenacao\) => \{/);
+  assert.match(pagina, /onFiltroChange=\{atualizarFiltro\}/);
+  assert.match(pagina, /onOrdenacaoChange=\{atualizarOrdenacao\}/);
+  assert.match(
+    controls,
+    /function atualizarFiltro\(proximoFiltro: FiltroNotificacao\) \{\s*setFiltro\(proximoFiltro\);\s*setMostrarPainelOrdenacao\(false\);\s*\}/,
+  );
+  assert.match(
+    controls,
+    /function atualizarOrdenacao\(proximaOrdenacao: OrdenacaoNotificacao\) \{\s*setOrdenacao\(proximaOrdenacao\);\s*setMostrarPainelOrdenacao\(false\);\s*\}/,
+  );
   assert.match(pagina, /onMarcarTodasComoLidas=\{\(\) => \{/);
   assert.match(pagina, /onMarcarFiltradasComoLidas=\{\(\) => \{/);
   assert.match(pagina, /onLimparLidas=\{\(\) => \{/);

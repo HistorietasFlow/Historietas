@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const viewState = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-page-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const filtroUtilsExecutavel = filtroUtils
   .replace(
     'import { ehClassificacao18 } from "../../../lib/historietasAdultContent";',
@@ -376,25 +383,29 @@ test("consulta preserva integralmente a politica de acesso 18+", () => {
   assert.match(filtroUtils, /return false;/);
 });
 
-test("pagina mantem o memo e delega somente a consulta", () => {
+test("hook de estado visual mantem o memo e delega somente a consulta", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?filtrarEOrdenarNotificacoes,[\s\S]*?\} from "\.\/lib\/notificacoes-filter-utils";/,
+    viewState,
+    /import \{[\s\S]*?filtrarEOrdenarNotificacoes,[\s\S]*?\} from "\.\.\/lib\/notificacoes-filter-utils";/,
   );
   assert.match(
-    pagina,
+    viewState,
     /const notificacoesFiltradas = useMemo\(\(\) => \{\s*return filtrarEOrdenarNotificacoes\(\{[\s\S]*?notificacoes,[\s\S]*?obrasPorId,[\s\S]*?termoBusca,[\s\S]*?filtro,[\s\S]*?ordenacao,[\s\S]*?acessoConteudo18Liberado,[\s\S]*?\}\);\s*\}, \[/,
   );
-  assert.match(pagina, /const termoBusca = normalizarTexto\(busca\);/);
+  assert.match(viewState, /const termoBusca = normalizarTexto\(busca\);/);
   assert.match(
-    pagina,
+    viewState,
     /const acessoConteudo18Liberado = acessoConteudo18Confirmado\(\);/,
   );
   assert.doesNotMatch(
-    pagina.slice(
-      pagina.indexOf("const notificacoesFiltradas = useMemo"),
-      pagina.indexOf("const filtrosAtivos"),
+    viewState.slice(
+      viewState.indexOf("const notificacoesFiltradas = useMemo"),
+      viewState.indexOf("const filtrosAtivos"),
     ),
     /notificacoes\.filter\(|ehClassificacao18\(|formatarData\(/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/hooks\/use-notificacoes-page-view-state";/,
   );
 });

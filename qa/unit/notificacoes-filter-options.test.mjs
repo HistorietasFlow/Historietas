@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const viewState = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-page-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = opcoes.replace(
   /import type \{[\s\S]*?\} from "\.\/notificacoes-filter-utils";\n/,
   "",
@@ -65,16 +72,20 @@ test("estado de filtros preserva busca, filtro e ordenacao", () => {
   );
 });
 
-test("pagina delega opcoes e estado de filtros ao modulo puro", () => {
+test("hook de estado visual delega opcoes e estado de filtros ao modulo puro", () => {
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-filter-options";/,
+    viewState,
+    /from "\.\.\/lib\/notificacoes-filter-options";/,
   );
-  assert.match(pagina, /criarOpcoesFiltroNotificacoes\(\)/);
-  assert.match(pagina, /criarOpcoesOrdenacaoNotificacoes\(\)/);
+  assert.match(viewState, /criarOpcoesFiltroNotificacoes\(\)/);
+  assert.match(viewState, /criarOpcoesOrdenacaoNotificacoes\(\)/);
+  assert.match(
+    viewState,
+    /filtrosNotificacoesEstaoAtivos\(\s*busca,\s*filtro,\s*ordenacao,\s*\)/,
+  );
   assert.match(
     pagina,
-    /filtrosNotificacoesEstaoAtivos\(\s*busca,\s*filtro,\s*ordenacao,\s*\)/,
+    /from "\.\/hooks\/use-notificacoes-page-view-state";/,
   );
   assert.doesNotMatch(pagina, /rotulo: "Capítulos"/);
 });

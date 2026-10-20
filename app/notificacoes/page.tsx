@@ -1,18 +1,8 @@
 "use client";
 
 import { useHistorietasTheme } from "../../lib/historietasTheme";
-import { acessoConteudo18Confirmado } from "../../lib/historietasAdultContent";
-import {
-  filtrarEOrdenarNotificacoes,
-} from "./lib/notificacoes-filter-utils";
-import {
-  criarOpcoesFiltroNotificacoes,
-  criarOpcoesOrdenacaoNotificacoes,
-  filtrosNotificacoesEstaoAtivos,
-} from "./lib/notificacoes-filter-options";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
-import { normalizarTexto } from "../../lib/utils";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import NotificacoesLoadingSpinner from "./components/notificacoes-loading-spinner";
 import NotificacoesSortingSheet from "./components/notificacoes-sorting-sheet";
 import NotificacoesTopControls from "./components/notificacoes-top-controls";
@@ -21,6 +11,7 @@ import NotificacoesFeed from "./components/notificacoes-feed";
 import NotificacoesPageShell from "./components/notificacoes-page-shell";
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
 import { useNotificacoesPageControls } from "./hooks/use-notificacoes-page-controls";
+import { useNotificacoesPageViewState } from "./hooks/use-notificacoes-page-view-state";
 import { useNotificacoesOverlayBodyLock } from "./hooks/use-notificacoes-overlay-body-lock";
 import {
   containerStyle,
@@ -38,14 +29,6 @@ import type {
   ObraLocal,
 } from "./lib/notificacoes-models";
 import { useNotificacoesInitialLoad } from "./hooks/use-notificacoes-initial-load";
-import {
-  calcularTotalNotificacoesLidas,
-  contarNotificacoesNaoLidas,
-  criarObrasPorIdNotificacoes,
-  encontrarCapituloNotificacao,
-  encontrarObraNotificacao,
-  obterNotificacaoMenuAberta,
-} from "./lib/notificacoes-view-state-utils";
 import { criarAcoesMutacaoNotificacoes } from "./lib/notificacoes-mutation-actions";
 import { criarAtualizadorNotificacoes } from "./lib/notificacoes-state-update-action";
 
@@ -62,15 +45,17 @@ export default function NotificacoesPage() {
     ordenacao,
     menuNotificacaoAbertoId,
     mostrarPainelOrdenacao,
-    setBusca,
-    setBuscaTopoAberta,
-    setFiltro,
-    setOrdenacao,
     setMostrarPainelOrdenacao,
     alternarMenuNotificacao,
     fecharMenuNotificacao,
-    fecharMenusNotificacoes,
     limparFiltros,
+    atualizarBusca,
+    alternarPainelOrdenacao,
+    abrirBusca,
+    fecharBusca,
+    fecharPainelOrdenacao,
+    atualizarFiltro,
+    atualizarOrdenacao,
   } = useNotificacoesPageControls();
   const { definirNotificacoesNaoLidas } = useNotificacoes();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -83,59 +68,24 @@ export default function NotificacoesPage() {
     setUsuarioNotificacoesId,
   });
 
-  const obrasPorId = useMemo(() => {
-    return criarObrasPorIdNotificacoes(obras);
-  }, [obras]);
-
-  const totalNotificacoes = notificacoes.length;
-
-  const totalNaoLidas = useMemo(() => {
-    return contarNotificacoesNaoLidas(notificacoes);
-  }, [notificacoes]);
-
-  const totalLidas = calcularTotalNotificacoesLidas(
+  const {
     totalNotificacoes,
-    totalNaoLidas,
-  );
-  const termoBusca = normalizarTexto(busca);
-
-  const acessoConteudo18Liberado = acessoConteudo18Confirmado();
-
-  const notificacoesFiltradas = useMemo(() => {
-    return filtrarEOrdenarNotificacoes({
-      notificacoes,
-      obrasPorId,
-      termoBusca,
-      filtro,
-      ordenacao,
-      acessoConteudo18Liberado,
-    });
-  }, [
+    totalLidas,
+    notificacoesFiltradas,
+    filtrosAtivos,
+    opcoesFiltro,
+    opcoesOrdenacao,
+    encontrarObra,
+    encontrarCapitulo,
+    notificacaoMenuAberta,
+  } = useNotificacoesPageViewState({
+    obras,
     notificacoes,
-    obrasPorId,
-    termoBusca,
-    filtro,
-    ordenacao,
-    acessoConteudo18Liberado,
-  ]);
-
-  const filtrosAtivos = filtrosNotificacoesEstaoAtivos(
     busca,
     filtro,
     ordenacao,
-  );
-
-  const opcoesFiltro = criarOpcoesFiltroNotificacoes();
-
-  const opcoesOrdenacao = criarOpcoesOrdenacaoNotificacoes();
-
-  function encontrarObra(obraId: string) {
-    return encontrarObraNotificacao(obrasPorId, obraId);
-  }
-
-  function encontrarCapitulo(obraId: string, capituloId: string) {
-    return encontrarCapituloNotificacao(obrasPorId, obraId, capituloId);
-  }
+    menuNotificacaoAbertoId,
+  });
 
   const atualizarNotificacoes = criarAtualizadorNotificacoes({
     setNotificacoes,
@@ -162,11 +112,6 @@ export default function NotificacoesPage() {
     fecharMenuNotificacao,
     setSolicitacaoRespondendoId,
   });
-
-  const notificacaoMenuAberta = obterNotificacaoMenuAberta(
-    menuNotificacaoAbertoId,
-    notificacoes,
-  );
 
   const menuOverlayAberto = Boolean(
     mostrarPainelOrdenacao || notificacaoMenuAberta
@@ -200,23 +145,10 @@ export default function NotificacoesPage() {
             busca={busca}
             buscaTopoAberta={buscaTopoAberta}
             mostrarPainelOrdenacao={mostrarPainelOrdenacao}
-            onBuscaChange={(proximaBusca) => {
-              fecharMenusNotificacoes();
-              setBusca(proximaBusca);
-            }}
-            onAlternarPainelOrdenacao={() => {
-              fecharMenusNotificacoes();
-              setMostrarPainelOrdenacao((aberto) => !aberto);
-            }}
-            onAbrirBusca={() => {
-              fecharMenusNotificacoes();
-              setBuscaTopoAberta(true);
-            }}
-            onFecharBusca={() => {
-              fecharMenusNotificacoes();
-              setBusca("");
-              setBuscaTopoAberta(false);
-            }}
+            onBuscaChange={atualizarBusca}
+            onAlternarPainelOrdenacao={alternarPainelOrdenacao}
+            onAbrirBusca={abrirBusca}
+            onFecharBusca={fecharBusca}
           />
         </section>
 
@@ -248,15 +180,9 @@ export default function NotificacoesPage() {
             totalNotificacoes={notificacoes.length}
             totalNotificacoesFiltradas={notificacoesFiltradas.length}
             totalLidas={totalLidas}
-            onClose={() => setMostrarPainelOrdenacao(false)}
-            onFiltroChange={(proximoFiltro) => {
-              setFiltro(proximoFiltro);
-              setMostrarPainelOrdenacao(false);
-            }}
-            onOrdenacaoChange={(proximaOrdenacao) => {
-              setOrdenacao(proximaOrdenacao);
-              setMostrarPainelOrdenacao(false);
-            }}
+            onClose={fecharPainelOrdenacao}
+            onFiltroChange={atualizarFiltro}
+            onOrdenacaoChange={atualizarOrdenacao}
             onMarcarTodasComoLidas={() => {
               marcarTodasComoLidas();
               setMostrarPainelOrdenacao(false);
