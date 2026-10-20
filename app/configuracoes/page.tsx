@@ -60,17 +60,13 @@ import type {
 } from "./lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
 import {
-  CHAVES_RESUMO,
-  CONFIG_STORAGE_KEY,
-} from "./lib/configuracoes-account-storage-constants";
-import {
   criarResumoLocal,
-  lerStorageUsuarioConfiguracoes,
 } from "./lib/configuracoes-local-summary-utils";
 import {
   carregarPreferencias,
   salvarPreferencias,
 } from "./lib/configuracoes-account-preferences";
+import { criarBackupLocal } from "./lib/configuracoes-account-backup";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PerfilConfiguracoesSupabase,
@@ -198,35 +194,6 @@ async function carregarResumoContaSupabase(
       ? seguindoAutores.total
       : fallbackLocal.seguindoAutores,
   };
-}
-
-function criarBackupLocal(userId = "") {
-  const userIdLimpo = userId.trim();
-  const backup: Record<string, unknown> = {};
-
-  if (!userIdLimpo) {
-    backup.exportadoEm = new Date().toISOString();
-    backup.projeto = "Historietas";
-    backup.userId = "";
-
-    return JSON.stringify(backup, null, 2);
-  }
-
-  CHAVES_RESUMO.forEach((chave) => {
-    try {
-      const valor = lerStorageUsuarioConfiguracoes(chave, userIdLimpo);
-      backup[chave] = valor ? JSON.parse(valor) : null;
-    } catch {
-      backup[chave] = null;
-    }
-  });
-
-  backup[CONFIG_STORAGE_KEY] = carregarPreferencias(userIdLimpo);
-  backup.exportadoEm = new Date().toISOString();
-  backup.projeto = "Historietas";
-  backup.userId = userIdLimpo;
-
-  return JSON.stringify(backup, null, 2);
 }
 
 async function listarUsuariosBloqueadosConfiguracoes(): Promise<
