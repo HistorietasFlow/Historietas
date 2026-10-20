@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 4 — Notificações
+
+- O estado vazio visual da lista foi isolado em componente dedicado, preservando prioridade das mensagens, textos e estilos sem alterar o fluxo da página.
+
 ## Registro da Fase 2 — Notificações
 
 - A rota de login, o estilo de avatar e a deduplicação de notificações foram isolados em helpers puros, preservando a ordem de prioridade, os fallbacks e os consumidores existentes.
