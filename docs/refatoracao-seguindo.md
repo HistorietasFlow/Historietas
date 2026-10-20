@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 964 — barra social
+
+- Extraiu somente a composição visual das abas sociais para `SeguindoSocialToolbar`.
+- Preservou contagens, callbacks, variantes desktop/mobile e a condição de exibição na página.
+
 ## Fase 963 — cabeçalho de busca e ordenação
 
 - Extraiu somente a composição visual do cabeçalho desktop/mobile para `SeguindoHeader`.

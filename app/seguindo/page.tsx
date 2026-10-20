@@ -8,6 +8,7 @@ import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoHeader } from "./components/seguindo-header";
+import { SeguindoSocialToolbar } from "./components/seguindo-social-toolbar";
 import { SeguindoSortingPanel } from "./components/seguindo-sorting-panel";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
@@ -52,9 +53,6 @@ import type {
 import { authorNameStyle } from "./lib/seguindo-author-name-style";
 import { desktopAuthorAvatarStyle, desktopAuthorFollowedCardStyle, desktopAuthorFollowedAvatarStyle } from "./lib/seguindo-desktop-author-avatar-styles";
 import {
-  desktopSocialTabsStyle,
-  desktopSocialTabStyle,
-  desktopSocialTabActiveStyle,
   desktopSectionHeaderTextStyle,
   desktopSectionTitleStyle,
   desktopSectionCounterStyle,
@@ -101,16 +99,6 @@ import {
   sectionTitleStyle,
   sectionCounterStyle,
 } from "./lib/seguindo-section-header-styles";
-import {
-  socialToolbarStyle,
-  desktopSocialToolbarStyle,
-  socialTabsStyle,
-  socialTabStyle,
-  socialTabActiveStyle,
-  mobileThreeSocialTabStyle,
-  socialTabCountStyle,
-  mobileThreeSocialTabCountStyle,
-} from "./lib/seguindo-social-toolbar-styles";
 import {
   suggestedUserFollowButtonStyle,
   suggestedUserRequestPendingButtonStyle,
@@ -371,81 +359,14 @@ export default function SeguindoPage() {
 
         {totalDisponivelGeral > 0 && (
           <>
-            <section style={isDesktop ? desktopSocialToolbarStyle : socialToolbarStyle}>
-              <div
-                style={
-                  isDesktop
-                    ? desktopSocialTabsStyle
-                    : {
-                        ...socialTabsStyle,
-                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                      }
-                }
-              >
-                <>
-                  <button
-                    type="button"
-                    onClick={() => trocarAbaConteudo("seguidores")}
-                    style={{
-                      ...(abaConteudo === "seguidores"
-                        ? socialTabActiveStyle
-                        : socialTabStyle),
-                      ...(isDesktop
-                        ? abaConteudo === "seguidores"
-                          ? desktopSocialTabActiveStyle
-                          : desktopSocialTabStyle
-                        : mobileThreeSocialTabStyle),
-                    }}
-                  >
-                    Seguidores
-                    <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
-                      {usuariosSeguidores.length}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => trocarAbaConteudo("obras")}
-                    style={{
-                      ...(abaConteudo === "obras"
-                        ? socialTabActiveStyle
-                        : socialTabStyle),
-                      ...(isDesktop
-                        ? abaConteudo === "obras"
-                          ? desktopSocialTabActiveStyle
-                          : desktopSocialTabStyle
-                        : mobileThreeSocialTabStyle),
-                    }}
-                  >
-                    Obras seguidas
-                    <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
-                      {obrasSeguidasBase.length}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => trocarAbaConteudo("pessoas")}
-                    style={{
-                      ...(abaConteudo === "pessoas"
-                        ? socialTabActiveStyle
-                        : socialTabStyle),
-                      ...(isDesktop
-                        ? abaConteudo === "pessoas"
-                          ? desktopSocialTabActiveStyle
-                          : desktopSocialTabStyle
-                        : mobileThreeSocialTabStyle),
-                    }}
-                  >
-                    Pessoas seguidas
-                    <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
-                      {usuariosSeguidos.length}
-                    </span>
-                  </button>
-                </>
-              </div>
-
-            </section>
+            <SeguindoSocialToolbar
+              isDesktop={isDesktop}
+              abaConteudo={abaConteudo}
+              trocarAbaConteudo={trocarAbaConteudo}
+              totalSeguidores={usuariosSeguidores.length}
+              totalObrasSeguidas={obrasSeguidasBase.length}
+              totalPessoasSeguidas={usuariosSeguidos.length}
+            />
 
             {mostrarPainelOrdenacao && (
               <SeguindoSortingPanel

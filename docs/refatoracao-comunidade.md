@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 964 — Seguindo
+
+- A barra social visual de Seguindo foi extraída para componente dedicado, preservando abas, contagens e callbacks.
+
 ## Estado atual
 
 - A Fase 297 extraiu somente `compartilharPublicacao` e foi concluída com o PR #419 mesclado.
