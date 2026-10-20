@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 27 — Notificações
+
+- Os controles locais de busca, filtro, ordenação e menus foram isolados em `use-notificacoes-page-controls`; o atualizador local de notificações foi separado em `notificacoes-state-update-action`, preservando normalização, contagem de não lidas e persistência sem alterar o carregamento, os dados remotos ou as ações de negócio.
+
 ## Registro da Fase 26 — Notificações
 
 - A orquestração das ações mutáveis de leitura, limpeza, remoção e resposta de solicitação foi isolada em `app/notificacoes/lib/notificacoes-mutation-actions.ts`, preservando transições locais, RPC, sincronização remota, fallbacks e persistência.

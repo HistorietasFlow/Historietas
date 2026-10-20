@@ -44,6 +44,13 @@ const localStateUtils = readFileSync(
   ),
   "utf8",
 );
+const atualizadorNotificacoes = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-state-update-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const recordNormalizers = readFileSync(
   new URL(
     "../../app/notificacoes/lib/notificacoes-record-normalizers.ts",
@@ -348,8 +355,12 @@ test("componentes visuais importam os helpers extraídos e preservam as fronteir
   }
 
   assert.match(
+    atualizadorNotificacoes,
+    /import \{[\s\S]*?prepararNotificacaoTexto,[\s\S]*?\} from "\.\/notificacoes-local-state-utils";/,
+  );
+  assert.match(
     pagina,
-    /import \{[\s\S]*?prepararNotificacaoTexto,[\s\S]*?\} from "\.\/lib\/notificacoes-local-state-utils";/,
+    /from "\.\/lib\/notificacoes-state-update-action";/,
   );
   for (const helperLocal of [
     "normalizarNotificacaoParaExibicao",

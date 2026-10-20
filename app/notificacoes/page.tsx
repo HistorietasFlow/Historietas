@@ -4,8 +4,6 @@ import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { acessoConteudo18Confirmado } from "../../lib/historietasAdultContent";
 import {
   filtrarEOrdenarNotificacoes,
-  type FiltroNotificacao,
-  type OrdenacaoNotificacao,
 } from "./lib/notificacoes-filter-utils";
 import {
   criarOpcoesFiltroNotificacoes,
@@ -22,6 +20,7 @@ import NotificacoesActionsSheet from "./components/notificacoes-actions-sheet";
 import NotificacoesFeed from "./components/notificacoes-feed";
 import NotificacoesPageShell from "./components/notificacoes-page-shell";
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
+import { useNotificacoesPageControls } from "./hooks/use-notificacoes-page-controls";
 import { useNotificacoesOverlayBodyLock } from "./hooks/use-notificacoes-overlay-body-lock";
 import {
   containerStyle,
@@ -34,13 +33,6 @@ import {
   notificationsControlsStyle,
   pageStyle,
 } from "./lib/notificacoes-shell-styles";
-import {
-  mesclarNotificacoes,
-} from "./lib/notificacoes-merge-utils";
-import {
-  prepararNotificacaoTexto,
-  salvarNotificacoes,
-} from "./lib/notificacoes-local-state-utils";
 import type {
   NotificacaoLocal,
   ObraLocal,
@@ -55,19 +47,31 @@ import {
   obterNotificacaoMenuAberta,
 } from "./lib/notificacoes-view-state-utils";
 import { criarAcoesMutacaoNotificacoes } from "./lib/notificacoes-mutation-actions";
+import { criarAtualizadorNotificacoes } from "./lib/notificacoes-state-update-action";
 
 export default function NotificacoesPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [notificacoes, setNotificacoes] = useState<NotificacaoLocal[]>([]);
-  const [busca, setBusca] = useState("");
-  const [buscaTopoAberta, setBuscaTopoAberta] = useState(false);
-  const [filtro, setFiltro] = useState<FiltroNotificacao>("todas");
-  const [ordenacao, setOrdenacao] = useState<OrdenacaoNotificacao>("recentes");
   const [carregando, setCarregando] = useState(true);
   const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("");
-  const [menuNotificacaoAbertoId, setMenuNotificacaoAbertoId] = useState("");
   const [solicitacaoRespondendoId, setSolicitacaoRespondendoId] = useState("");
-  const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
+  const {
+    busca,
+    buscaTopoAberta,
+    filtro,
+    ordenacao,
+    menuNotificacaoAbertoId,
+    mostrarPainelOrdenacao,
+    setBusca,
+    setBuscaTopoAberta,
+    setFiltro,
+    setOrdenacao,
+    setMostrarPainelOrdenacao,
+    alternarMenuNotificacao,
+    fecharMenuNotificacao,
+    fecharMenusNotificacoes,
+    limparFiltros,
+  } = useNotificacoesPageControls();
   const { definirNotificacoesNaoLidas } = useNotificacoes();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const isDesktop = useNotificacoesDesktopMode();
@@ -133,32 +137,11 @@ export default function NotificacoesPage() {
     return encontrarCapituloNotificacao(obrasPorId, obraId, capituloId);
   }
 
-  function atualizarNotificacoes(novasNotificacoes: NotificacaoLocal[]) {
-    const notificacoesNormalizadas = mesclarNotificacoes(
-      [],
-      novasNotificacoes
-    ).map((notificacao) => prepararNotificacaoTexto(notificacao));
-
-    setNotificacoes(notificacoesNormalizadas);
-    definirNotificacoesNaoLidas(
-      notificacoesNormalizadas.filter((notificacao) => !notificacao.lida).length
-    );
-    salvarNotificacoes(notificacoesNormalizadas, usuarioNotificacoesId);
-  }
-
-  function alternarMenuNotificacao(id: string) {
-    setMostrarPainelOrdenacao(false);
-    setMenuNotificacaoAbertoId((idAtual) => (idAtual === id ? "" : id));
-  }
-
-  function fecharMenuNotificacao() {
-    setMenuNotificacaoAbertoId("");
-  }
-
-  function fecharMenusNotificacoes() {
-    setMenuNotificacaoAbertoId("");
-    setMostrarPainelOrdenacao(false);
-  }
+  const atualizarNotificacoes = criarAtualizadorNotificacoes({
+    setNotificacoes,
+    definirNotificacoesNaoLidas,
+    usuarioNotificacoesId,
+  });
 
   const {
     abrirNotificacao,
@@ -179,14 +162,6 @@ export default function NotificacoesPage() {
     fecharMenuNotificacao,
     setSolicitacaoRespondendoId,
   });
-
-  function limparFiltros() {
-    fecharMenusNotificacoes();
-    setBusca("");
-    setBuscaTopoAberta(false);
-    setFiltro("todas");
-    setOrdenacao("recentes");
-  }
 
   const notificacaoMenuAberta = obterNotificacaoMenuAberta(
     menuNotificacaoAbertoId,

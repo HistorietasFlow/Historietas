@@ -82,16 +82,18 @@ test("resposta de solicitacao preserva RPC, validacao e remocao relacionada", ()
   assert.match(acoes, /setSolicitacaoRespondendoId\(""\)/);
 });
 
-test("pagina delega somente a orquestracao mutavel e preserva persistencia local", () => {
+test("pagina delega orquestracao mutavel e atualizador local", () => {
   assert.match(
     pagina,
     /import \{ criarAcoesMutacaoNotificacoes \} from "\.\/lib\/notificacoes-mutation-actions";/,
   );
   assert.match(pagina, /\} = criarAcoesMutacaoNotificacoes\(\{/);
-  assert.match(pagina, /function atualizarNotificacoes\(/);
-  assert.match(pagina, /mesclarNotificacoes\(/);
-  assert.match(pagina, /prepararNotificacaoTexto\(/);
-  assert.match(pagina, /salvarNotificacoes\(/);
+  assert.match(
+    pagina,
+    /import \{ criarAtualizadorNotificacoes \} from "\.\/lib\/notificacoes-state-update-action";/,
+  );
+  assert.match(pagina, /const atualizarNotificacoes = criarAtualizadorNotificacoes\(/);
+  assert.doesNotMatch(pagina, /function atualizarNotificacoes\(/);
   assert.doesNotMatch(pagina, /async function responderSolicitacaoSeguidorNotificacao\(/);
   assert.doesNotMatch(pagina, /function marcarTodasComoLidas\(\)/);
   assert.doesNotMatch(pagina, /function limparLidas\(\)/);
