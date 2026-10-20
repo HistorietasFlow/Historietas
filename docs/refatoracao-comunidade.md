@@ -769,3 +769,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A fronteira de preferências de privacidade foi movida para um módulo dedicado, preservando normalização, compatibilidade, cache local e contratos Supabase.
 - Estados e lifecycle da página continuaram como orquestradores, sem alteração intencional de comportamento.
+
+## Registro da Fase 6 — Configurações
+
+- Os helpers independentes de cópia do backup e rota de login foram isolados.
+- O fallback de Clipboard, a URL de retorno e todos os consumidores permaneceram sem alteração intencional de comportamento.
