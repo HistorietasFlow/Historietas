@@ -774,3 +774,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers independentes de cópia do backup e rota de login foram isolados.
 - O fallback de Clipboard, a URL de retorno e todos os consumidores permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 7 — Configurações
+
+- A criação da chave de storage isolada por usuário foi movida para um helper dedicado, sem alteração intencional de comportamento.

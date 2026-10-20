@@ -60,6 +60,7 @@ import type {
   VisibilidadeAbaPerfil,
 } from "./lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
+import { criarStorageKeyUsuarioConfiguracoes } from "./lib/configuracoes-storage-key-utils";
 
 type PreferenciasConta = {
   nomeExibicao: string;
@@ -124,12 +125,6 @@ const resumoPadrao: ResumoLocal = {
   seguindoObras: 0,
   seguindoAutores: 0,
 };
-
-function criarStorageKeyUsuarioConfiguracoes(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
 
 function lerStorageUsuarioConfiguracoes(chave: string, userId = "") {
   const userIdLimpo = userId.trim();
