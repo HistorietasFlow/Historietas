@@ -1,5 +1,11 @@
 # Refatoração de Seguindo
 
+## Fase 981 — composição de estados e contexto da página
+
+- Reuniu os grupos de dados, social e descoberta em `useSeguindoPageState`.
+- Reuniu modo desktop, contexto de acesso e apresentação em `useSeguindoPageContext`, preservando a ordem original dos hooks.
+- Não houve alteração intencional de dados, autenticação, rotas, comportamento visual ou regras de negócio.
+
 ## Fase 979 — apresentação e carregamento da página
 
 - Agrupou a composição de tema e bloqueio do painel de ordenação em um hook visual dedicado.

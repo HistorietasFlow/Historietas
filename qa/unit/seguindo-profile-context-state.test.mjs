@@ -6,7 +6,7 @@ const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url
 const hook = readFileSync(new URL("../../app/seguindo/hooks/use-seguindo-profile-context-state.ts", import.meta.url), "utf8");
 
 test("contexto de perfil social preserva IDs, nome e seus setters", () => {
-  assert.match(page, /useSeguindoPageAccessContextState\(\)/);
+  assert.match(page, /useSeguindoPageContext\(\s*mostrarPainelOrdenacao,?\s*\)/);
   assert.match(hook, /const \[perfilSocialId, setPerfilSocialId\] = useState\(""\)/);
   assert.match(hook, /const \[perfilSocialNome, setPerfilSocialNome\] = useState\(""\)/);
   assert.match(hook, /return \{ perfilSocialId, setPerfilSocialId, perfilSocialNome, setPerfilSocialNome \}/);

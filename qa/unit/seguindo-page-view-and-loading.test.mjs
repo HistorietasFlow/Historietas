@@ -13,6 +13,13 @@ const visualizacao = readFileSync(
   ),
   "utf8",
 );
+const contexto = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-context.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const carregamento = readFileSync(
   new URL(
     "../../app/seguindo/components/seguindo-page-loading-state.tsx",
@@ -40,15 +47,20 @@ test("o estado de carregamento preserva frame, spinner e acessibilidade", () => 
   assert.doesNotMatch(carregamento, /supabase|localStorage|useEffect/);
 });
 
-test("a página delega apenas as duas fronteiras de apresentação", () => {
+test("a página delega a fronteira de apresentação pelo contexto", () => {
   assert.match(
-    pagina,
-    /import \{ useSeguindoPageView \} from "\.\/hooks\/use-seguindo-page-view";/,
+    contexto,
+    /import \{ useSeguindoPageView \} from "\.\/use-seguindo-page-view";/,
   );
   assert.match(
-    pagina,
+    contexto,
     /const \{ pageThemeStyle \} = useSeguindoPageView\(mostrarPainelOrdenacao\);/,
   );
+  assert.match(
+    pagina,
+    /import \{ useSeguindoPageContext \} from "\.\/hooks\/use-seguindo-page-context";/,
+  );
+  assert.match(pagina, /useSeguindoPageContext\(\s*mostrarPainelOrdenacao,?\s*\)/);
   assert.match(
     pagina,
     /<SeguindoPageLoadingState isDesktop=\{isDesktop\} pageThemeStyle=\{pageThemeStyle\} \/>/,

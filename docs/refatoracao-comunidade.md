@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 981 — Seguindo
+
+- Os grupos de estado e contexto da página foram compostos em hooks dedicados, preservando a ordem dos hooks e todas as responsabilidades existentes.
+
 ## Registro da Fase 979 — Seguindo
 
 - A composição visual de tema e lock do painel e o estado de carregamento inicial foram isolados sem alterar autenticação, dados ou ações.

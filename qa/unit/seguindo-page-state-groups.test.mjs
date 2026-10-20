@@ -20,6 +20,13 @@ const estadoDescoberta = readFileSync(
   ),
   "utf8",
 );
+const estadoPagina = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("os grupos de estado preservam a ordem dos hooks sociais", () => {
   assert.match(estadoSocial, /^"use client";/);
@@ -49,15 +56,14 @@ test("os grupos de estado preservam a ordem dos hooks de descoberta", () => {
 
 test("a página delega somente os grupos de estado locais", () => {
   assert.match(
-    pagina,
-    /import \{ useSeguindoPageSocialState \} from "\.\/hooks\/use-seguindo-page-social-state";/,
+    estadoPagina,
+    /import \{ useSeguindoPageSocialState \} from "\.\/use-seguindo-page-social-state";/,
   );
   assert.match(
-    pagina,
-    /import \{ useSeguindoPageDiscoveryState \} from "\.\/hooks\/use-seguindo-page-discovery-state";/,
+    estadoPagina,
+    /import \{ useSeguindoPageDiscoveryState \} from "\.\/use-seguindo-page-discovery-state";/,
   );
-  assert.match(pagina, /\} = useSeguindoPageSocialState\(\);/);
-  assert.match(pagina, /\} = useSeguindoPageDiscoveryState\(\);/);
+  assert.match(pagina, /\} = useSeguindoPageState\(\);/);
   assert.doesNotMatch(pagina, /useSeguindoSocialListState/);
   assert.doesNotMatch(pagina, /useSeguindoSearchState/);
 });

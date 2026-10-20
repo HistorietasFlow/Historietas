@@ -6,7 +6,7 @@ const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url
 const hook = readFileSync(new URL("../../app/seguindo/hooks/use-seguindo-suggestion-state.ts", import.meta.url), "utf8");
 
 test("sugestões preservam lista vazia, carregamento e identificador pendente", () => {
-  assert.match(page, /useSeguindoPageDiscoveryState\(\)/);
+  assert.match(page, /useSeguindoPageState\(\)/);
   assert.match(hook, /useState<\s*UsuarioSeguido\[\]\s*>\(\[\]\)/);
   assert.match(hook, /const \[carregandoUsuariosSugestoes, setCarregandoUsuariosSugestoes\]\s*=\s*useState\(false\)/);
   assert.match(hook, /const \[usuarioSugestaoSeguindoId, setUsuarioSugestaoSeguindoId\]\s*=\s*useState<string \| null>\(null\)/);

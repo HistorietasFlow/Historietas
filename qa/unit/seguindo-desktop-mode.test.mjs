@@ -20,6 +20,13 @@ const visualizacao = readFileSync(
   ),
   "utf8",
 );
+const contexto = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-context.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const painel = readFileSync(
   new URL("../../app/seguindo/components/seguindo-sorting-panel.tsx", import.meta.url),
   "utf8",
@@ -70,12 +77,13 @@ test("useSeguindoDesktopMode preserva o lifecycle responsivo de Seguindo", () =>
   assert.match(hook, /return isDesktop;/);
 });
 
-test("Seguindo delega somente o modo desktop e preserva os consumidores", () => {
+test("Seguindo delega o modo desktop pelo contexto e preserva os consumidores", () => {
   assert.match(
-    pagina,
-    /import \{ useSeguindoDesktopMode \} from "\.\/hooks\/use-seguindo-desktop-mode";/,
+    contexto,
+    /import \{ useSeguindoDesktopMode \} from "\.\/use-seguindo-desktop-mode";/,
   );
-  assert.match(pagina, /const isDesktop = useSeguindoDesktopMode\(\);/);
+  assert.match(contexto, /const isDesktop = useSeguindoDesktopMode\(\);/);
+  assert.match(pagina, /useSeguindoPageContext\(\s*mostrarPainelOrdenacao,?\s*\)/);
   assert.doesNotMatch(
     pagina,
     /const \[isDesktop, setIsDesktop\] = useState\(false\);/,
@@ -100,10 +108,10 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
     visualizacao,
     /useSeguindoSortingSheetBodyLock\(mostrarPainelOrdenacao\);/,
   );
-  assert.match(pagina, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
+  assert.match(contexto, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
   assert.match(
     pagina,
-    /useSeguindoPageDiscoveryState\(\);/,
+    /useSeguindoPageState\(\);/,
   );
   assert.match(pagina, /useSeguindoPageInitialSync\(\{/);
 });
