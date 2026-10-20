@@ -47,6 +47,7 @@ import {
   pegarTexto,
 } from "./lib/configuracoes-account-utils";
 import type { AppMetadataAdminConfiguracoes } from "./lib/configuracoes-account-utils";
+import { copiarTextoConfiguracoes } from "./lib/configuracoes-copy-utils";
 import {
   carregarPreferenciasPrivacidade,
   preferenciasPrivacidadePadrao,
@@ -58,6 +59,7 @@ import type {
   QuemPodeComentarDiario,
   VisibilidadeAbaPerfil,
 } from "./lib/configuracoes-privacy-preferences";
+import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
 
 type PreferenciasConta = {
   nomeExibicao: string;
@@ -448,43 +450,6 @@ function criarBackupLocal(userId = "") {
   backup.userId = userIdLimpo;
 
   return JSON.stringify(backup, null, 2);
-}
-
-async function copiarTexto(texto: string) {
-  if (navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(texto);
-      return;
-    } catch {
-      // Em alguns navegadores o Clipboard API existe, mas é bloqueado.
-    }
-  }
-
-  const campoTemporario = document.createElement("textarea");
-
-  campoTemporario.value = texto;
-  campoTemporario.setAttribute("readonly", "true");
-  campoTemporario.style.position = "fixed";
-  campoTemporario.style.left = "-9999px";
-  document.body.appendChild(campoTemporario);
-
-  try {
-    campoTemporario.select();
-
-    if (!document.execCommand("copy")) {
-      throw new Error("Não foi possível copiar os dados.");
-    }
-  } finally {
-    campoTemporario.remove();
-  }
-}
-
-function criarLoginHrefConfiguracoes() {
-  const params = new URLSearchParams({
-    redirectTo: "/configuracoes",
-  });
-
-  return `/login?${params.toString()}`;
 }
 
 type PerfilConfiguracoesSupabase = {
@@ -1780,7 +1745,7 @@ export default function ConfiguracoesPage() {
     setMensagemAcao(null);
 
     try {
-      await copiarTexto(criarBackupLocal(usuarioIdLogado));
+      await copiarTextoConfiguracoes(criarBackupLocal(usuarioIdLogado));
       mostrarMensagemAcao(
         "sucesso",
         t(
