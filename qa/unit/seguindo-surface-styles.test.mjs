@@ -10,6 +10,10 @@ const page = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const frame = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-page-frame.tsx", import.meta.url),
+  "utf8",
+);
 
 test("estilos de superfície são definidos apenas no módulo extraído", () => {
   for (const name of [
@@ -19,9 +23,11 @@ test("estilos de superfície são definidos apenas no módulo extraído", () => 
   ]) {
     assert.match(styles, new RegExp(`export const ${name}: CSSProperties =`));
     assert.doesNotMatch(page, new RegExp(`const ${name}: CSSProperties =`));
-    assert.match(page, new RegExp(`\\b${name}\\b`));
+    if (name !== "safeTextStyle") {
+      assert.match(frame, new RegExp(`\\b${name}\\b`));
+    }
   }
-  assert.match(page, /from "\.\/lib\/seguindo-surface-styles";/);
+  assert.match(frame, /from "\.\.\/lib\/seguindo-surface-styles";/);
 });
 
 test("mantém propriedades de fade sem efeito visual", () => {

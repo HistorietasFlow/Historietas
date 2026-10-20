@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const card = readFileSync(new URL("../../app/seguindo/components/seguindo-followed-author-card.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../../app/seguindo/lib/seguindo-desktop-author-avatar-styles.ts", import.meta.url), "utf8");
 
 test("avatares e cards desktop de autores preservam estilos derivados", () => {
-  assert.match(page, /from "\.\/lib\/seguindo-desktop-author-avatar-styles";/);
+  assert.match(card, /from "\.\.\/lib\/seguindo-desktop-author-avatar-styles";/);
   for (const name of ["desktopAuthorAvatarStyle", "desktopAuthorFollowedCardStyle", "desktopAuthorFollowedAvatarStyle"]) {
     assert.match(styles, new RegExp(`export const ${name}: CSSProperties =`));
     assert.doesNotMatch(page, new RegExp(`const ${name}: CSSProperties =`));
