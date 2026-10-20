@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const acoesMutaveis = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-mutation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = acoes.replace(
   'import type { NotificacaoLocal } from "./notificacoes-models";\n',
   "",
@@ -110,8 +117,8 @@ test("remoção e separação preservam as listas locais", () => {
 
 test("pagina delega transições locais e preserva sincronização na orquestração", () => {
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-local-actions-utils";/,
+    acoesMutaveis,
+    /from "\.\/notificacoes-local-actions-utils";/,
   );
   for (const helper of [
     "atualizarEstadoLeituraNotificacao",
@@ -120,11 +127,15 @@ test("pagina delega transições locais e preserva sincronização na orquestra�
     "removerNotificacaoLocal",
     "separarNotificacoesLidasLocal",
   ]) {
-    assert.match(pagina, new RegExp(`${helper}\\(`));
+    assert.match(acoesMutaveis, new RegExp(`${helper}\\(`));
   }
-  assert.match(pagina, /sincronizarNotificacaoLidaSupabase\(/);
-  assert.match(pagina, /sincronizarNotificacoesLidasSupabase\(/);
-  assert.match(pagina, /apagarNotificacaoSupabase\(/);
+  assert.match(acoesMutaveis, /sincronizarNotificacaoLidaSupabase\(/);
+  assert.match(acoesMutaveis, /sincronizarNotificacoesLidasSupabase\(/);
+  assert.match(acoesMutaveis, /apagarNotificacaoSupabase\(/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/notificacoes-mutation-actions";/,
+  );
 });
 
 test("transições locais não adicionam React, Supabase ou storage", () => {

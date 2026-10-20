@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const acoesMutaveis = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-mutation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("sincronizacao Supabase preserva as mutacoes de leitura e remocao", () => {
   for (const nome of [
@@ -35,8 +42,11 @@ test("sincronizacao Supabase preserva as mutacoes de leitura e remocao", () => {
   assert.match(sincronizacao, /idObraSupabaseValido/);
 });
 
-test("pagina delega a sincronizacao sem manter implementacoes locais", () => {
-  assert.match(pagina, /from "\.\/lib\/notificacoes-supabase-sync";/);
+test("orquestracao mutavel delega a sincronizacao sem manter implementacoes locais", () => {
+  assert.match(
+    acoesMutaveis,
+    /from "\.\/notificacoes-supabase-sync";/,
+  );
 
   for (const nome of [
     "sincronizarNotificacoesLidasSupabase",
@@ -45,8 +55,12 @@ test("pagina delega a sincronizacao sem manter implementacoes locais", () => {
     "apagarNotificacaoSupabase",
     "excluirNotificacoesLidasSupabase",
   ]) {
-    assert.doesNotMatch(pagina, new RegExp(`async function ${nome}`));
+    assert.doesNotMatch(acoesMutaveis, new RegExp(`async function ${nome}`));
   }
+  assert.match(
+    pagina,
+    /from "\.\/lib\/notificacoes-mutation-actions";/,
+  );
 });
 
 test("modulo de sincronizacao nao adiciona estado visual ou persistencia local", () => {

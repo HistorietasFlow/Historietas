@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 26 — Notificações
+
+- A orquestração das ações mutáveis de leitura, limpeza, remoção e resposta de solicitação foi isolada em `app/notificacoes/lib/notificacoes-mutation-actions.ts`, preservando transições locais, RPC, sincronização remota, fallbacks e persistência.
+
 ## Registro da Fase 25 — Notificações
 
 - As transições locais das notificações e a identificação de solicitações de seguidor relacionadas foram isoladas em helpers puros, preservando a ordem de atualização local, sincronização e remoção remota.

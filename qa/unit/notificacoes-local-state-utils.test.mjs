@@ -13,6 +13,7 @@ import "./notificacoes-filter-options.test.mjs";
 import "./notificacoes-view-state-utils.test.mjs";
 import "./notificacoes-local-actions-utils.test.mjs";
 import "./notificacoes-follow-request-utils.test.mjs";
+import "./notificacoes-mutation-actions.test.mjs";
 
 const helpers = readFileSync(
   new URL(
