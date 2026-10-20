@@ -20,6 +20,7 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import NotificacoesLanguageBridge from "./components/notificacoes-language-bridge";
+import NotificacoesEmptyState from "./components/notificacoes-empty-state";
 import NotificacoesLoadingSpinner from "./components/notificacoes-loading-spinner";
 import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal";
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
@@ -3489,29 +3490,9 @@ export default function NotificacoesPage() {
         )}
 
         {notificacoes.length === 0 ? (
-          <p
-            style={{
-              margin: "10px 0 0",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              fontWeight: 800,
-              textAlign: "center",
-            }}
-          >
-            Nenhuma notificação
-          </p>
+          <NotificacoesEmptyState mensagem="Nenhuma notificação" />
         ) : notificacoesFiltradas.length === 0 ? (
-          <p
-            style={{
-              margin: "10px 0 0",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              fontWeight: 800,
-              textAlign: "center",
-            }}
-          >
-            Nada encontrado
-          </p>
+          <NotificacoesEmptyState mensagem="Nada encontrado" />
         ) : (
           <section style={isDesktop ? desktopListStyle : listStyle} aria-label="Lista de notificações">
             {notificacoesFiltradas.map((notificacaoOriginal, notificacaoIndex) => {
