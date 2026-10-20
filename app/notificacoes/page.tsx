@@ -20,6 +20,7 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import NotificacoesLanguageBridge from "./components/notificacoes-language-bridge";
+import NotificacoesLoadingSpinner from "./components/notificacoes-loading-spinner";
 import NotificacoesOverlayPortal from "./components/notificacoes-overlay-portal";
 import { useNotificacoesDesktopMode } from "./hooks/use-notificacoes-desktop-mode";
 import { useNotificacoesOverlayBodyLock } from "./hooks/use-notificacoes-overlay-body-lock";
@@ -2609,23 +2610,6 @@ async function excluirNotificacoesLidasSupabase(userIdAtual = "") {
     return false;
   }
 }
-function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={label}
-      style={loadingPageStyle}
-    >
-      <span
-        className="historietas-loading-spinner"
-        style={loadingSpinnerStyle}
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
-
 export default function NotificacoesPage() {
   const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -3135,7 +3119,11 @@ export default function NotificacoesPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
-        <LoadingSpinner label="Carregando notificações" />
+        <NotificacoesLoadingSpinner
+          label="Carregando notificações"
+          pageStyle={loadingPageStyle}
+          spinnerStyle={loadingSpinnerStyle}
+        />
       </main>
     );
   }
