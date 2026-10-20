@@ -3,6 +3,14 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const loadedState = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-page-loaded-state.tsx", import.meta.url),
+  "utf8",
+);
+const pageContent = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-page-content.tsx", import.meta.url),
+  "utf8",
+);
 const peopleSections = readFileSync(
   new URL("../../app/seguindo/components/seguindo-people-sections.tsx", import.meta.url),
   "utf8",
@@ -21,8 +29,10 @@ const suggestedUserCard = readFileSync(
 );
 
 test("Seguindo delega os cards sociais sem mover dados ou ações", () => {
-  assert.match(page, /import \{ SeguindoPeopleSections \} from "\.\/components\/seguindo-people-sections";/);
-  assert.match(page, /<SeguindoPeopleSections/);
+  assert.match(page, /import \{ SeguindoPageLoadedState \} from "\.\/components\/seguindo-page-loaded-state";/);
+  assert.match(loadedState, /import \{ SeguindoPageContent \} from "\.\/seguindo-page-content";/);
+  assert.match(pageContent, /import \{ SeguindoPeopleSections \} from "\.\/seguindo-people-sections";/);
+  assert.match(pageContent, /<SeguindoPeopleSections/);
   assert.match(peopleSections, /import \{ SeguindoFollowRequestCard \} from "\.\/seguindo-follow-request-card";/);
   assert.match(peopleSections, /import \{ SeguindoSocialUserCard \} from "\.\/seguindo-social-user-card";/);
   assert.match(peopleSections, /import \{ SeguindoSuggestedUserCard \} from "\.\/seguindo-suggested-user-card";/);

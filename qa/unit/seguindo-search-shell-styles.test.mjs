@@ -12,7 +12,8 @@ test("estilos da caixa de busca são extraídos preservando referências", () =>
     assert.match(styles, new RegExp(`export const ${name}: CSSProperties =`));
     assert.doesNotMatch(page, new RegExp(`const ${name}: CSSProperties =`));
   }
-  assert.match(styles, /\.\.\.seguindoHeaderSearchShellStyle/);
+  assert.match(styles, /maxWidth: "calc\(100% - 104px\)"/);
+  assert.match(styles, /width: "min\(390px, 34vw\)"/);
   assert.match(header, /style=\{desktopSeguindoHeaderSearchShellStyle\}/);
   assert.match(header, /style=\{seguindoHeaderSearchShellStyle\}/);
 });

@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const derived = readFileSync(new URL("../../app/seguindo/hooks/use-seguindo-derived-content.ts", import.meta.url), "utf8");
 const models = readFileSync(new URL("../../app/seguindo/lib/seguindo-page-types.ts", import.meta.url), "utf8");
 
 test("tipos de Seguindo vivem no módulo dedicado sem lógica de execução", () => {
-  assert.match(page, /from "\.\/lib\/seguindo-page-types";/);
+  assert.match(derived, /from "\.\.\/lib\/seguindo-page-types";/);
   for (const name of ["CapituloLocal", "ObraLocal", "AutorSeguido", "UsuarioSeguido", "SolicitacaoSeguidor", "AtividadeSeguindo", "FiltroSeguindo", "AbaSeguimentoPagina", "OrdenacaoSeguindo", "AbaConteudoSeguindo"]) {
     assert.match(models, new RegExp(`export type ${name} =`));
     assert.doesNotMatch(page, new RegExp(`^type ${name} =`, "m"));
