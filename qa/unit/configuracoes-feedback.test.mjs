@@ -140,7 +140,7 @@ test("página delega feedback visual e mantém ações e estados", () => {
   assert.match(pagina, /useConfiguracoesActionMessage\(\)/);
   assert.match(
     pagina,
-    /import type \{ PreferenciasConta, ResumoLocal, UsuarioBloqueadoConfiguracoes \} from "\.\/lib\/configuracoes-account-models";/,
+    /import type \{[\s\S]*UsuarioBloqueadoConfiguracoes,[\s\S]*\} from "\.\/lib\/configuracoes-account-models";/,
   );
   assert.doesNotMatch(pagina, /type UsuarioBloqueadoConfiguracoes = \{/);
 

@@ -15,6 +15,38 @@ export type ResumoLocal = {
   seguindoAutores: number;
 };
 
+export type UsuarioConfiguracoes = {
+  id: string;
+  nome: string;
+  username: string;
+  email: string;
+};
+
+export type ResultadoContagemResumoSupabase = {
+  ok: boolean;
+  total: number;
+};
+
+export type TabelaResumoSupabase =
+  | "obras"
+  | "favoritos"
+  | "concluidas"
+  | "seguindo_obras"
+  | "seguindo_usuarios";
+
+export type PerfilConfiguracoesSupabase = {
+  nome: string;
+  username: string;
+};
+
+export type UsuarioBloqueadoConfiguracoesRpcRow = {
+  user_id: string | null;
+  nome: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  bloqueado_em: string | null;
+};
+
 export type UsuarioBloqueadoConfiguracoes = {
   userId: string;
   nome: string;
