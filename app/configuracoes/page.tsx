@@ -20,6 +20,19 @@ import type { IconName } from "./components/configuracoes-svg-icon";
 import { Toggle } from "./components/configuracoes-toggle";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
+import {
+  ALIASES_BUSCA_CONFIGURACOES,
+  normalizarTextoBuscaConfiguracoes,
+  textoIdioma,
+} from "./lib/configuracoes-search-utils";
+import {
+  idUsuarioSupabaseValido,
+  metadataTemAdminConfiguracoes,
+  normalizarUsernameConfiguracoes,
+  obterIniciais,
+  pegarTexto,
+} from "./lib/configuracoes-account-utils";
+import type { AppMetadataAdminConfiguracoes } from "./lib/configuracoes-account-utils";
 
 type QuemPodeComentarDiario =
   | "todos"
@@ -379,103 +392,6 @@ salvarPreferenciasPrivacidadeLocal(preferenciasSeguras, userIdLimpo);
   }
 }
 
-function textoIdioma(
-  language: HistorietasLanguage,
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) {
-  if (language === "en") {
-    return ingles;
-  }
-
-  if (language === "es") {
-    return espanhol;
-  }
-
-  return portugues;
-}
-
-function normalizarTextoBuscaConfiguracoes(valor: string) {
-  return valor
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
-const ALIASES_BUSCA_CONFIGURACOES: Record<string, string[]> = {
-  conta: ["account", "cuenta"],
-  nome: ["name", "nombre"],
-  exibicao: ["display", "visualizacion"],
-  autor: ["author", "autor"],
-  usuario: ["user", "usuario"],
-  perfil: ["profile", "perfil"],
-  arroba: ["handle", "usuario"],
-  email: ["email", "correo"],
-  contato: ["contact", "contacto"],
-  senha: ["password", "contrasena"],
-  seguranca: ["security", "seguridad"],
-  privacidade: ["privacy", "privacidad"],
-  privado: ["private", "privado"],
-  bloqueio: ["block", "blocking", "bloqueo"],
-  bloqueados: ["blocked users", "usuarios bloqueados"],
-  desbloquear: ["unblock", "desbloquear"],
-  visibilidade: ["visibility", "visibilidad"],
-  publico: ["public", "público"],
-  somente: ["only", "solo"],
-  pessoas: ["people", "personas"],
-  sigo: ["following", "sigo"],
-  progresso: ["progress", "progreso"],
-  avaliacoes: ["ratings", "reviews", "valoraciones", "resenas"],
-  avaliar: ["rate", "rating", "review", "evaluar", "valorar"],
-  comentarios: ["comments", "comentarios"],
-  seguidores: ["followers", "seguidores"],
-  aprovacao: ["approval", "aprobacion"],
-  aprovar: ["approve", "aprobar"],
-  solicitacoes: ["requests", "solicitudes"],
-  salvar: ["save", "guardar"],
-  alteracoes: ["changes", "cambios"],
-  configuracoes: ["settings", "configuracion"],
-  moderacao: ["moderation", "moderacion"],
-  comunidade: ["community", "comunidad"],
-  obras: ["works", "stories", "obras", "historias"],
-  criadas: ["created", "creadas"],
-  biblioteca: ["library", "biblioteca"],
-  lista: ["list", "lista"],
-  favoritas: ["favorites", "favoritas"],
-  concluidas: ["completed", "completadas"],
-  notificacoes: ["notifications", "notificaciones"],
-  avisos: ["alerts", "notices", "avisos"],
-  historico: ["history", "historial"],
-  leitura: ["reading", "lectura"],
-  diario: ["journal", "diario"],
-  preferencias: ["preferences", "preferencias"],
-  tema: ["theme", "tema"],
-  visual: ["appearance", "apariencia"],
-  aparencia: ["appearance", "apariencia"],
-  idioma: ["language", "idioma"],
-  lingua: ["language", "idioma"],
-  receber: ["receive", "recibir"],
-  dados: ["data", "datos"],
-  backup: ["backup", "copia"],
-  copiar: ["copy", "copiar"],
-  baixar: ["download", "descargar"],
-  resumo: ["summary", "resumen"],
-  suporte: ["support", "soporte"],
-  ajuda: ["help", "ayuda"],
-  termos: ["terms", "terminos"],
-  politicas: ["policies", "politicas"],
-  sobre: ["about", "acerca"],
-  versao: ["version", "version"],
-  sair: ["sign out", "logout", "cerrar sesion"],
-  excluir: ["delete", "remove", "eliminar"],
-  apagar: ["delete", "erase", "borrar"],
-  permanente: ["permanent", "permanente"],
-  login: ["login", "inicio de sesion"],
-};
-
-
 type PreferenciasConta = {
   nomeExibicao: string;
   username: string;
@@ -506,16 +422,6 @@ type UsuarioBloqueadoConfiguracoes = {
   username: string;
   avatar: string;
   bloqueadoEm: string;
-};
-
-type AppMetadataAdminConfiguracoes = {
-  role?: unknown;
-  roles?: unknown;
-  cargo?: unknown;
-  tipo_usuario?: unknown;
-  admin?: unknown;
-  is_admin?: unknown;
-  moderator?: unknown;
 };
 
 const CONFIG_STORAGE_KEY = "historietas-configuracoes-conta";
@@ -914,56 +820,6 @@ function criarLoginHrefConfiguracoes() {
   return `/login?${params.toString()}`;
 }
 
-function pegarTexto(valor: unknown, fallback = "") {
-  return typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
-}
-
-function normalizarUsernameConfiguracoes(valor: string) {
-  return valor
-    .trim()
-    .replace(/^@+/, "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9._]+/g, ".")
-    .replace(/[._]{2,}/g, ".")
-    .replace(/^[._]+|[._]+$/g, "")
-    .slice(0, 30);
-}
-
-function idUsuarioSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-}
-
-function valorTextoAdminConfiguracoes(valor: unknown) {
-  return typeof valor === "string" ? valor.trim().toLowerCase() : "";
-}
-
-function metadataTemAdminConfiguracoes(
-  appMetadata: AppMetadataAdminConfiguracoes | null | undefined,
-) {
-  if (!appMetadata || typeof appMetadata !== "object") {
-    return false;
-  }
-
-  const cargosPermitidos = new Set(["admin", "moderador", "moderator"]);
-  const roles = Array.isArray(appMetadata.roles)
-    ? appMetadata.roles.map(valorTextoAdminConfiguracoes)
-    : [];
-
-  return (
-    [
-      valorTextoAdminConfiguracoes(appMetadata.role),
-      valorTextoAdminConfiguracoes(appMetadata.cargo),
-      valorTextoAdminConfiguracoes(appMetadata.tipo_usuario),
-      ...roles,
-    ].some((valor) => cargosPermitidos.has(valor)) ||
-    appMetadata.admin === true ||
-    appMetadata.is_admin === true ||
-    appMetadata.moderator === true
-  );
-}
-
 type PerfilConfiguracoesSupabase = {
   nome: string;
   username: string;
@@ -1275,20 +1131,6 @@ async function salvarPerfilConfiguracoesSupabase({
       erro: error instanceof Error ? error.message : "Erro inesperado.",
     };
   }
-}
-
-function obterIniciais(nome: string, email: string) {
-  const base = nome.trim() || email.trim() || "Historietas";
-  const partes = base
-    .replace(/@.*/, "")
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (partes.length >= 2) {
-    return `${partes[0][0]}${partes[1][0]}`.toUpperCase();
-  }
-
-  return (partes[0] || "H").slice(0, 2).toUpperCase();
 }
 
 function ValorLinha({ children, danger = false }: { children: ReactNode; danger?: boolean }) {
