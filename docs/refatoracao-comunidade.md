@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 7 — Notificações
+
+- O fallback puro de obras e capítulos de notificações diretas foi extraído, preservando parsing, títulos, defaults, progresso e links locais.
+
 ## Registro da Fase 6 — Notificações
 
 - Normalizadores puros de dados e perfis foram separados, preservando aliases Supabase, fallbacks, limites de apresentação e consumidores da página.
