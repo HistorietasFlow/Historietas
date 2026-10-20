@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const toast = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-action-toast.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
   assert.match(hook, /^"use client";/);
@@ -61,10 +68,15 @@ test("Configurações mantém domínio e toast na página", () => {
 
   const chamadasDominio = pagina.match(/mostrarMensagemAcao\(/g);
   assert.equal(chamadasDominio?.length, 15);
-  assert.ok((pagina.match(/setMensagemAcao\(null\)/g) || []).length >= 1);
-  assert.match(pagina, /\{mensagemAcao \? \(/);
-  assert.match(pagina, /onClick=\{\(\) => setMensagemAcao\(null\)\}/);
-  assert.match(pagina, /role=\{mensagemAcao\.tipo === "erro" \? "alert" : "status"\}/);
+  assert.match(
+    pagina,
+    /import \{ ConfiguracoesActionToast \} from "\.\/components\/configuracoes-action-toast";/,
+  );
+  assert.match(pagina, /<ConfiguracoesActionToast/);
+  assert.match(pagina, /mensagem=\{mensagemAcao\}/);
+  assert.match(pagina, /onFechar=\{\(\) => setMensagemAcao\(null\)\}/);
+  assert.match(toast, /onClick=\{onFechar\}/);
+  assert.match(toast, /role=\{mensagem\.tipo === "erro" \? "alert" : "status"\}/);
   assert.match(pagina, /function salvar\(/);
   assert.match(pagina, /function alterarSenha\(/);
   assert.match(pagina, /function excluirConta\(/);

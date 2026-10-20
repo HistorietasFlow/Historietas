@@ -34,6 +34,13 @@ const busca = readFileSync(
   ),
   "utf8",
 );
+const toast = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-action-toast.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const iconNames = [
   "user",
@@ -101,6 +108,7 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
   );
   assert.match(header, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(busca, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
+  assert.match(toast, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(pagina, /import type \{ CSSProperties, FormEvent \} from "react";/);
   assert.doesNotMatch(pagina, /type IconName =/);
   assert.doesNotMatch(pagina, /function SvgIcon\(/);
@@ -108,10 +116,11 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
   assert.doesNotMatch(pagina, /function SettingsRow\(/);
   assert.doesNotMatch(pagina, /function SettingsInput\(/);
   assert.match(primitives, /icon: IconName;/);
-  assert.equal((pagina.match(/<SvgIcon/g) || []).length, 4);
+  assert.equal((pagina.match(/<SvgIcon/g) || []).length, 3);
   assert.equal((primitives.match(/<SvgIcon/g) || []).length, 3);
   assert.equal((header.match(/<SvgIcon/g) || []).length, 1);
   assert.equal((busca.match(/<SvgIcon/g) || []).length, 1);
+  assert.equal((toast.match(/<SvgIcon/g) || []).length, 1);
 
   for (const consumidor of [
     '<SvgIcon name="lock" size={24} strokeWidth={2.2} />',
@@ -136,7 +145,7 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
   );
 
   assert.match(
-    pagina,
-    /name=\{\s*mensagemAcao\.tipo === "sucesso"\s*\? "check"/,
+    toast,
+    /name=\{\s*mensagem\.tipo === "sucesso"\s*\? "check"/,
   );
 });
