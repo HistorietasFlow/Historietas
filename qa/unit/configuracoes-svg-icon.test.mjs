@@ -20,6 +20,20 @@ const primitives = readFileSync(
   ),
   "utf8",
 );
+const header = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-header.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const busca = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-search.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const iconNames = [
   "user",
@@ -85,6 +99,8 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
     primitives,
     /import type \{ IconName \} from "\.\/configuracoes-svg-icon";/,
   );
+  assert.match(header, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
+  assert.match(busca, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(pagina, /import type \{ CSSProperties, FormEvent \} from "react";/);
   assert.doesNotMatch(pagina, /type IconName =/);
   assert.doesNotMatch(pagina, /function SvgIcon\(/);
@@ -92,18 +108,24 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
   assert.doesNotMatch(pagina, /function SettingsRow\(/);
   assert.doesNotMatch(pagina, /function SettingsInput\(/);
   assert.match(primitives, /icon: IconName;/);
-  assert.equal((pagina.match(/<SvgIcon/g) || []).length, 6);
+  assert.equal((pagina.match(/<SvgIcon/g) || []).length, 4);
   assert.equal((primitives.match(/<SvgIcon/g) || []).length, 3);
+  assert.equal((header.match(/<SvgIcon/g) || []).length, 1);
+  assert.equal((busca.match(/<SvgIcon/g) || []).length, 1);
 
   for (const consumidor of [
-    '<SvgIcon name="arrowLeft" size={25} strokeWidth={2.4} />',
-    '<SvgIcon name="search" size={23} strokeWidth={2.3} />',
     '<SvgIcon name="lock" size={24} strokeWidth={2.2} />',
     '<SvgIcon name="check" size={25} strokeWidth={2.4} />',
     '<SvgIcon name="trash" size={24} strokeWidth={2.2} />',
   ]) {
     assert.ok(pagina.includes(consumidor));
   }
+  assert.ok(
+    header.includes('<SvgIcon name="arrowLeft" size={25} strokeWidth={2.4} />'),
+  );
+  assert.ok(
+    busca.includes('<SvgIcon name="search" size={23} strokeWidth={2.3} />'),
+  );
   assert.ok(
     primitives.includes('<SvgIcon name={icon} size={23} strokeWidth={2.15} />'),
   );
