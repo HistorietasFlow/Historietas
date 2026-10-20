@@ -7,14 +7,10 @@ import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoHeader } from "./components/seguindo-header";
 import { SeguindoEmptyState } from "./components/seguindo-empty-state";
-import { SeguindoFollowRequestCard } from "./components/seguindo-follow-request-card";
-import { SeguindoFollowedAuthorCard } from "./components/seguindo-followed-author-card";
-import { SeguindoSectionHeader } from "./components/seguindo-section-header";
+import { SeguindoPeopleSections } from "./components/seguindo-people-sections";
 import { SeguindoSocialToolbar } from "./components/seguindo-social-toolbar";
-import { SeguindoSocialUserCard } from "./components/seguindo-social-user-card";
 import { SeguindoSortingPanel } from "./components/seguindo-sorting-panel";
-import { SeguindoSuggestedUserCard } from "./components/seguindo-suggested-user-card";
-import { SeguindoWorkCard } from "./components/seguindo-work-card";
+import { SeguindoWorksSection } from "./components/seguindo-works-section";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
@@ -55,17 +51,6 @@ import type {
   SolicitacaoSeguidor,
   AtividadeSeguindo,
 } from "./lib/seguindo-page-types";
-import {
-  gridStyle,
-  desktopGridStyle,
-  authorsGridStyle,
-  desktopAuthorsGridStyle,
-} from "./lib/seguindo-grid-layout-styles";
-import {
-  sectionStyle,
-  desktopSectionStyle,
-} from "./lib/seguindo-section-header-styles";
-import { suggestedUsersLoadingStyle } from "./lib/seguindo-suggested-user-text-styles";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
 import {
   desktopTopWaterFadeStyle,
@@ -346,149 +331,37 @@ export default function SeguindoPage() {
             )}
 
             {abaConteudo === "obras" && (
-              <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-              {obrasFiltradas.length === 0 ? (
-                <SeguindoEmptyState>
-                  Nenhuma obra seguida encontrada
-                </SeguindoEmptyState>
-              ) : (
-                <div style={isDesktop ? desktopGridStyle : gridStyle}>
-                  {obrasFiltradas.map((obra) => (
-                    <SeguindoWorkCard
-                      key={obra.id}
-                      obra={obra}
-                      isDesktop={isDesktop}
-                      visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
-                      onDeixarDeSeguirObra={(obraSeguida) =>
-                        void deixarDeSeguirObra(obraSeguida)
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-              </section>
+              <SeguindoWorksSection
+                isDesktop={isDesktop}
+                obrasFiltradas={obrasFiltradas}
+                visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
+                onDeixarDeSeguirObra={deixarDeSeguirObra}
+              />
             )}
 
-            {abaConteudo === "seguidores" &&
-              listaSocialEhDoUsuarioLogado &&
-              solicitacoesSeguidoresFiltradas.length > 0 && (
-                <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                  <SeguindoSectionHeader
-                    isDesktop={isDesktop}
-                    titulo="SOLICITAÇÕES PARA SEGUIR"
-                    total={solicitacoesSeguidoresFiltradas.length}
-                  />
-
-                  <div
-                    style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}
-                  >
-                    {solicitacoesSeguidoresFiltradas.map((solicitacao) => (
-                      <SeguindoFollowRequestCard
-                        key={solicitacao.id}
-                        solicitacao={solicitacao}
-                        isDesktop={isDesktop}
-                        respondendo={solicitacaoRespondendoId === solicitacao.id}
-                        onResponderSolicitacao={(solicitacaoRespondida, aceitar) =>
-                          void responderSolicitacaoSeguidor(
-                            solicitacaoRespondida,
-                            aceitar,
-                          )
-                        }
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-            {(abaConteudo === "pessoas" ||
-              abaConteudo === "seguidores") &&
-              usuariosFiltrados.length > 0 && (
-              <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
-                  {usuariosFiltrados.map((usuarioSeguido) => (
-                    <SeguindoSocialUserCard
-                      key={usuarioSeguido.id}
-                      usuario={usuarioSeguido}
-                      isDesktop={isDesktop}
-                      podeRemoverUsuariosDaLista={podeRemoverUsuariosDaLista}
-                      podeRemoverSeguidoresDaLista={podeRemoverSeguidoresDaLista}
-                      usuarioListaAlterandoId={usuarioListaAlterandoId}
-                      onRemoverSeguidorUsuario={(usuarioId) =>
-                        void removerSeguidorUsuario(usuarioId)
-                      }
-                      onDeixarDeSeguirUsuario={(usuarioId) =>
-                        void deixarDeSeguirUsuario(usuarioId)
-                      }
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {buscaSugestoesUsuariosAtiva && (
-              <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                <SeguindoSectionHeader
-                  isDesktop={isDesktop}
-                  titulo="SUGESTÕES PARA SEGUIR"
-                  total={
-                    carregandoUsuariosSugestoes
-                      ? "..."
-                      : usuariosSugestoesBusca.length
-                  }
-                />
-
-                {carregandoUsuariosSugestoes ? (
-                  <div style={suggestedUsersLoadingStyle}>
-                    <LoadingSpinner
-                      compacto
-                      label="Carregando sugestões para seguir"
-                    />
-                  </div>
-                ) : usuariosSugestoesBusca.length > 0 ? (
-                  <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
-                    {usuariosSugestoesBusca.map((usuarioSugestao) => (
-                      <SeguindoSuggestedUserCard
-                        key={usuarioSugestao.id}
-                        usuario={usuarioSugestao}
-                        isDesktop={isDesktop}
-                        seguindoAgora={
-                          usuarioSugestaoSeguindoId === usuarioSugestao.id
-                        }
-                        solicitacaoPendente={solicitacoesEnviadasIds.includes(
-                          usuarioSugestao.id,
-                        )}
-                        onSeguirUsuarioSugestao={(usuario) =>
-                          void seguirUsuarioSugestao(usuario)
-                        }
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </section>
-            )}
-
-            {!visualizandoListaSocialDoPerfil && abaConteudo === "pessoas" && autoresFiltrados.length > 0 && (
-              <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                <SeguindoSectionHeader
-                  isDesktop={isDesktop}
-                  titulo="AUTORES SEGUIDOS"
-                  total={autoresFiltrados.length}
-                />
-
-                <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
-                  {autoresFiltrados.map((autor) => (
-                    <SeguindoFollowedAuthorCard
-                      key={autor.chave}
-                      autor={autor}
-                      isDesktop={isDesktop}
-                      onDeixarDeSeguirAutor={(chaveAutor) =>
-                        void deixarDeSeguirAutor(chaveAutor)
-                      }
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+            <SeguindoPeopleSections
+              isDesktop={isDesktop}
+              abaConteudo={abaConteudo}
+              listaSocialEhDoUsuarioLogado={listaSocialEhDoUsuarioLogado}
+              solicitacoesSeguidoresFiltradas={solicitacoesSeguidoresFiltradas}
+              solicitacaoRespondendoId={solicitacaoRespondendoId}
+              onResponderSolicitacao={responderSolicitacaoSeguidor}
+              usuariosFiltrados={usuariosFiltrados}
+              podeRemoverUsuariosDaLista={podeRemoverUsuariosDaLista}
+              podeRemoverSeguidoresDaLista={podeRemoverSeguidoresDaLista}
+              usuarioListaAlterandoId={usuarioListaAlterandoId}
+              onRemoverSeguidorUsuario={removerSeguidorUsuario}
+              onDeixarDeSeguirUsuario={deixarDeSeguirUsuario}
+              buscaSugestoesUsuariosAtiva={buscaSugestoesUsuariosAtiva}
+              carregandoUsuariosSugestoes={carregandoUsuariosSugestoes}
+              usuariosSugestoesBusca={usuariosSugestoesBusca}
+              usuarioSugestaoSeguindoId={usuarioSugestaoSeguindoId}
+              solicitacoesEnviadasIds={solicitacoesEnviadasIds}
+              onSeguirUsuarioSugestao={seguirUsuarioSugestao}
+              visualizandoListaSocialDoPerfil={visualizandoListaSocialDoPerfil}
+              autoresFiltrados={autoresFiltrados}
+              onDeixarDeSeguirAutor={deixarDeSeguirAutor}
+            />
           </>
         )}
       </section>

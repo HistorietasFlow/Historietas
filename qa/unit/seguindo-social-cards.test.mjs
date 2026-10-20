@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const peopleSections = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-people-sections.tsx", import.meta.url),
+  "utf8",
+);
 const followRequestCard = readFileSync(
   new URL("../../app/seguindo/components/seguindo-follow-request-card.tsx", import.meta.url),
   "utf8",
@@ -17,16 +21,15 @@ const suggestedUserCard = readFileSync(
 );
 
 test("Seguindo delega os cards sociais sem mover dados ou ações", () => {
-  assert.match(page, /import \{ SeguindoFollowRequestCard \} from "\.\/components\/seguindo-follow-request-card";/);
-  assert.match(page, /import \{ SeguindoSocialUserCard \} from "\.\/components\/seguindo-social-user-card";/);
-  assert.match(page, /import \{ SeguindoSuggestedUserCard \} from "\.\/components\/seguindo-suggested-user-card";/);
-  assert.match(page, /<SeguindoFollowRequestCard/);
-  assert.match(page, /<SeguindoSocialUserCard/);
-  assert.match(page, /<SeguindoSuggestedUserCard/);
-  assert.match(page, /void responderSolicitacaoSeguidor\(/);
-  assert.match(page, /void removerSeguidorUsuario\(/);
-  assert.match(page, /void deixarDeSeguirUsuario\(/);
-  assert.match(page, /void seguirUsuarioSugestao\(/);
+  assert.match(page, /import \{ SeguindoPeopleSections \} from "\.\/components\/seguindo-people-sections";/);
+  assert.match(page, /<SeguindoPeopleSections/);
+  assert.match(peopleSections, /import \{ SeguindoFollowRequestCard \} from "\.\/seguindo-follow-request-card";/);
+  assert.match(peopleSections, /import \{ SeguindoSocialUserCard \} from "\.\/seguindo-social-user-card";/);
+  assert.match(peopleSections, /import \{ SeguindoSuggestedUserCard \} from "\.\/seguindo-suggested-user-card";/);
+  assert.match(peopleSections, /void onResponderSolicitacao\(/);
+  assert.match(peopleSections, /void onRemoverSeguidorUsuario\(/);
+  assert.match(peopleSections, /void onDeixarDeSeguirUsuario\(/);
+  assert.match(peopleSections, /void onSeguirUsuarioSugestao\(/);
 
   assert.match(followRequestCard, /^"use client";/);
   assert.match(followRequestCard, /criarHrefPerfilUsuarioSeguindo/);

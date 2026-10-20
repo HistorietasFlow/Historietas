@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 968 — seções de conteúdo
+
+- Extraiu a composição visual das seções de obras e pessoas seguidas para componentes dedicados.
+- Preservou condições, textos, variantes desktop/mobile, grids, ações e estados de carregamento, mantendo dados e callbacks na página.
+
 ## Fase 967 — cards de obras e autores seguidos
 
 - Extraiu os cards visuais de obras e autores seguidos.

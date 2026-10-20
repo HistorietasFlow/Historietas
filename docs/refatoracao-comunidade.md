@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 968 — Seguindo
+
+- As composições visuais das seções de obras e pessoas seguidas foram isoladas, mantendo dados, estados e ações na página.
+
 ## Registro da Fase 967 — Seguindo
 
 - Os cards de obras e autores seguidos foram isolados, preservando dados e callbacks na página.

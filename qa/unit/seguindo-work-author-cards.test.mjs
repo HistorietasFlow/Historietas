@@ -3,6 +3,14 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const worksSection = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-works-section.tsx", import.meta.url),
+  "utf8",
+);
+const peopleSections = readFileSync(
+  new URL("../../app/seguindo/components/seguindo-people-sections.tsx", import.meta.url),
+  "utf8",
+);
 const workCard = readFileSync(
   new URL("../../app/seguindo/components/seguindo-work-card.tsx", import.meta.url),
   "utf8",
@@ -13,12 +21,14 @@ const followedAuthorCard = readFileSync(
 );
 
 test("Seguindo delega os cards de obras e autores sem mover dados ou ações", () => {
-  assert.match(page, /import \{ SeguindoWorkCard \} from "\.\/components\/seguindo-work-card";/);
-  assert.match(page, /import \{ SeguindoFollowedAuthorCard \} from "\.\/components\/seguindo-followed-author-card";/);
-  assert.match(page, /<SeguindoWorkCard/);
-  assert.match(page, /<SeguindoFollowedAuthorCard/);
-  assert.match(page, /void deixarDeSeguirObra\(/);
-  assert.match(page, /void deixarDeSeguirAutor\(/);
+  assert.match(page, /import \{ SeguindoWorksSection \} from "\.\/components\/seguindo-works-section";/);
+  assert.match(page, /import \{ SeguindoPeopleSections \} from "\.\/components\/seguindo-people-sections";/);
+  assert.match(page, /<SeguindoWorksSection/);
+  assert.match(page, /<SeguindoPeopleSections/);
+  assert.match(worksSection, /import \{ SeguindoWorkCard \} from "\.\/seguindo-work-card";/);
+  assert.match(worksSection, /void onDeixarDeSeguirObra\(obraSeguida\)/);
+  assert.match(peopleSections, /import \{ SeguindoFollowedAuthorCard \} from "\.\/seguindo-followed-author-card";/);
+  assert.match(peopleSections, /void onDeixarDeSeguirAutor\(chaveAutor\)/);
 
   assert.match(workCard, /^"use client";/);
   assert.match(workCard, /criarSlugBase/);
