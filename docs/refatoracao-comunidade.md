@@ -805,3 +805,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 15 — Configurações
 
 - A normalização pura do perfil Supabase foi isolada, preservando limpeza de texto e username.
+
+## Registro da Fase 16 — Configurações
+
+- A leitura e persistência das preferências locais da conta foram isoladas, preservando normalização, evento e fallbacks.
