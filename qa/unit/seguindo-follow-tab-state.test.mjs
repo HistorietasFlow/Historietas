@@ -6,7 +6,7 @@ const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url
 const hook = readFileSync(new URL("../../app/seguindo/hooks/use-seguindo-follow-tab-state.ts", import.meta.url), "utf8");
 
 test("aba de seguimento mantém estado inicial e setter", () => {
-  assert.match(page, /const \{ setAbaSeguimento \} = useSeguindoFollowTabState\(\)/);
+  assert.match(page, /\} = useSeguindoPageAccessContextState\(\)/);
   assert.match(hook, /useState<AbaSeguimentoPagina>\("seguindo"\)/);
   assert.match(hook, /return \{ setAbaSeguimento \}/);
 });

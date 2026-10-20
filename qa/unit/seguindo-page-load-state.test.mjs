@@ -14,9 +14,9 @@ const hook = readFileSync(
 test("carregamento e atividades preservam estados iniciais", () => {
   assert.match(
     page,
-    /import \{ useSeguindoPageLoadState \} from "\.\/hooks\/use-seguindo-page-load-state";/,
+    /import \{ useSeguindoPageDataState \} from "\.\/hooks\/use-seguindo-page-data-state";/,
   );
-  assert.match(page, /\} = useSeguindoPageLoadState\(\);/);
+  assert.match(page, /\} = useSeguindoPageDataState\(\);/);
   assert.match(hook, /^"use client";/);
   assert.match(hook, /useState<AtividadeSeguindo\[\]>\(\[\]\)/);
   assert.match(hook, /useState\(true\)/);

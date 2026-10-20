@@ -14,9 +14,9 @@ const hook = readFileSync(
 test("estado de obras e seguimentos preserva arrays iniciais e setters", () => {
   assert.match(
     page,
-    /import \{ useSeguindoWorkFollowState \} from "\.\/hooks\/use-seguindo-work-follow-state";/,
+    /import \{ useSeguindoPageDataState \} from "\.\/hooks\/use-seguindo-page-data-state";/,
   );
-  assert.match(page, /\} = useSeguindoWorkFollowState\(\);/);
+  assert.match(page, /\} = useSeguindoPageDataState\(\);/);
   assert.match(hook, /^"use client";/);
   assert.match(hook, /useState<ObraLocal\[\]>\(\[\]\)/);
   assert.match(hook, /useState<string\[\]>\(\[\]\)/);

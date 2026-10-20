@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 977 — grupos de dados e contexto de acesso
+
+- Agrupou os estados de obras/leitura/carregamento e de acesso/aba/perfil em dois hooks de composição.
+- Preservou a ordem dos hooks, valores iniciais, setters e consumidores existentes, sem alterar lifecycles ou regras de negócio.
+
 ## Fase 976 — grupos de estado de interface e social
 
 - Agrupou estados locais de listas/ações sociais e de busca/filtros/abas/ordenação em dois hooks de composição.
