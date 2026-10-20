@@ -62,6 +62,7 @@ import type {
 import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
 import { criarStorageKeyUsuarioConfiguracoes } from "./lib/configuracoes-storage-key-utils";
 import { criarChaveItemResumo } from "./lib/configuracoes-summary-item-utils";
+import { carregarJsonArrayConfiguracoes } from "./lib/configuracoes-json-array-utils";
 
 type PreferenciasConta = {
   nomeExibicao: string;
@@ -170,14 +171,11 @@ function salvarJsonStorageUsuarioConfiguracoes(
 
 
 function carregarJsonArray(chave: string, userId = "") {
-  try {
-    const texto = lerStorageUsuarioConfiguracoes(chave, userId);
-    const json: unknown = texto ? JSON.parse(texto) : [];
-
-    return Array.isArray(json) ? json : [];
-  } catch {
-    return [];
-  }
+  return carregarJsonArrayConfiguracoes(
+    chave,
+    userId,
+    lerStorageUsuarioConfiguracoes,
+  );
 }
 
 function contarItens(chave: string, userId = "") {
