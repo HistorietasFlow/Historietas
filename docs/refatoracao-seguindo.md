@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 971 — dados derivados
+
+- Agrupou a composição de contexto social, filtros, totais e opções de ordenação no hook `useSeguindoDerivedContent`.
+- Preservou os hooks de efeitos, carregamento, ações e navegação no orquestrador da página, sem mudança intencional de comportamento.
+
 ## Fase 970 — composição do conteúdo
 
 - Extraiu a composição condicional dos estados vazios e das seções de obras e pessoas para `SeguindoPageContent`.
