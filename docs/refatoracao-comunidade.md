@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 15 — Notificações
+
+- A moldura visual compartilhada de Notificações foi isolada em `NotificacoesPageShell`, preservando tema, stylesheet, ponte de idioma, fades responsivos e os dois fluxos de renderização.
+- Nenhum comportamento, dado, consulta ou callback da página foi alterado.
+
 ## Registro da Fase 14 — Notificações
 
 - A lista e o cartão de notificações foram isolados em componentes visuais, preservando estados vazios, variantes desktop, acessibilidade, navegação e callbacks de interação na página.

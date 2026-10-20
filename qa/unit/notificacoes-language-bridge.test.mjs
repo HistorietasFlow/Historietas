@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const moldura = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-page-shell.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const bridgeExecutavel = bridge
   .replace('import { useEffect } from "react";\n', "")
   .replace(
@@ -117,14 +124,13 @@ test("mantem a ponte de idioma isolada da pagina e com o contrato do observador"
     bridge,
     /registro\.elemento\.isConnected[\s\S]*?getAttribute\(registro\.atributo\) ===\s*estado\.traduzido/,
   );
-  assert.match(
-    pagina,
-    /import NotificacoesLanguageBridge from "\.\/components\/notificacoes-language-bridge";/,
-  );
+  assert.match(moldura, /import NotificacoesLanguageBridge from "\.\/notificacoes-language-bridge";/);
   assert.equal(
-    (pagina.match(/<NotificacoesLanguageBridge \/>/g) || []).length,
-    2,
+    (moldura.match(/<NotificacoesLanguageBridge \/>/g) || []).length,
+    1,
   );
+  assert.match(pagina, /import NotificacoesPageShell from "\.\/components\/notificacoes-page-shell";/);
+  assert.equal((pagina.match(/<NotificacoesPageShell/g) || []).length, 2);
   assert.doesNotMatch(pagina, /function NotificacoesLanguageBridge/);
   assert.doesNotMatch(pagina, /NOTIFICACOES_UI_TRANSLATIONS/);
 });
