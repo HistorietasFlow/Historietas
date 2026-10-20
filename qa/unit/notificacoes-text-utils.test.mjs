@@ -21,6 +21,13 @@ const normalizadores = readFileSync(
   ),
   "utf8",
 );
+const normalizadoresDados = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-data-normalizers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const textoUtilsJavascript = typescript.transpileModule(textoUtils, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -96,10 +103,10 @@ test("limparTextoExibicao delega para a correcao e aplica trim", () => {
   assert.equal(limparTextoExibicao("  Ol\u00c3\u00a1 mundo  "), "Ol\u00e1mundo");
 });
 
-test("pagina delega a correcao e a limpeza aos helpers extraidos", () => {
+test("página e normalizadores delegam a correção e a limpeza aos helpers extraídos", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?limparTextoExibicao,[\s\S]*?\} from "\.\/lib\/notificacoes-text-utils";/,
+    normalizadoresDados,
+    /import \{ limparTextoExibicao \} from "\.\/notificacoes-text-utils";/,
   );
   assert.match(
     normalizadores,
@@ -109,5 +116,9 @@ test("pagina delega a correcao e a limpeza aos helpers extraidos", () => {
   assert.doesNotMatch(pagina, /function limparTextoExibicao/);
   assert.match(normalizadores, /limparTextoExibicao\(capitulo\.titulo\)/);
   assert.match(normalizadores, /corrigirTextoQuebrado\(capitulo\.texto\)/);
-  assert.match(pagina, /return limparTextoExibicao\(texto\);/);
+  assert.match(normalizadoresDados, /return limparTextoExibicao\(texto\);/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?pegarTexto,[\s\S]*?\} from "\.\/lib\/notificacoes-data-normalizers";/,
+  );
 });
