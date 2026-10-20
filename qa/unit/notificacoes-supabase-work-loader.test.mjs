@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("loader de obras publicadas preserva consulta, capitulos e progresso", () => {
   assert.match(loader, /export async function carregarObrasPublicadasSupabase\(\)/);
@@ -35,10 +42,14 @@ test("loader de obras diretas preserva tentativas, fallback e deduplicacao", () 
   assert.match(loader, /!capitulosAtuais\.some\(/);
 });
 
-test("pagina delega os loaders de obras sem manter as implementacoes locais", () => {
-  assert.match(pagina, /from "\.\/lib\/notificacoes-supabase-work-loader";/);
-  assert.match(pagina, /await carregarObrasPublicadasSupabase\(\);/);
-  assert.match(pagina, /await carregarObrasDasNotificacoesDiretasSupabase\(\s*notificacoesDiretasSupabase\s*\)/);
+test("hook inicial delega os loaders de obras sem manter as implementacoes locais", () => {
+  assert.match(
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-work-loader";/,
+  );
+  assert.match(hookInicial, /await carregarObrasPublicadasSupabase\(\);/);
+  assert.match(hookInicial, /await carregarObrasDasNotificacoesDiretasSupabase\(\s*notificacoesDiretasSupabase\s*\)/);
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(pagina, /async function carregarObrasPublicadasSupabase\(/);
   assert.doesNotMatch(pagina, /async function carregarObrasDasNotificacoesDiretasSupabase\(/);
 });

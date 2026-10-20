@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const painelAcoes = readFileSync(
   new URL(
     "../../app/notificacoes/components/notificacoes-actions-sheet.tsx",
@@ -285,10 +292,10 @@ test("monta links de capitulo e preserva fallbacks finais", () => {
   assert.equal(montarLinkNotificacao(criarNotificacao()), "/comunidade");
 });
 
-test("pagina delega somente os helpers de navegacao extraidos", () => {
+test("fronteiras delegam somente os helpers de navegacao extraidos", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?criarLoginHrefNotificacoes,[\s\S]*?\} from "\.\/lib\/notificacoes-navigation-utils";/,
+    hookInicial,
+    /import \{ criarLoginHrefNotificacoes \} from "\.\.\/lib\/notificacoes-navigation-utils";/,
   );
   for (const helper of [
     "criarHrefLeituraCapitulo",

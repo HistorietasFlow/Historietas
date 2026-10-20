@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("loader do Diario preserva anotacoes, interacoes e fallbacks complementares", () => {
   assert.match(loader, /export async function carregarNotificacoesDiarioSupabase\(/);
@@ -43,9 +50,13 @@ test("loader do Diario preserva perfis, textos, leitura e ordenacao", () => {
   );
 });
 
-test("pagina delega o loader do Diario sem manter a implementacao", () => {
-  assert.match(pagina, /from "\.\/lib\/notificacoes-supabase-diary-loader";/);
-  assert.match(pagina, /carregarNotificacoesDiarioSupabase\(\s*usuarioAtualId,\s*notificacoesLidasIds\s*\)/);
+test("hook inicial delega o loader do Diario sem manter a implementacao", () => {
+  assert.match(
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-diary-loader";/,
+  );
+  assert.match(hookInicial, /carregarNotificacoesDiarioSupabase\(\s*usuarioAtualId,\s*notificacoesLidasIds\s*\)/);
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(pagina, /async function carregarNotificacoesDiarioSupabase\(/);
 });
 

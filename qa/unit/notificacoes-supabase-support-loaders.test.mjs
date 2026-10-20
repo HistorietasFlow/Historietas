@@ -27,6 +27,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const hookInicial = readFileSync(
+  new URL(
+    "../../app/notificacoes/hooks/use-notificacoes-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("loader de perfis preserva selecoes complementares e aliases", () => {
   assert.match(perfilLoader, /export async function carregarPerfisNotificacoes\(/);
@@ -75,11 +82,12 @@ test("fronteiras delegam os loaders de suporte sem reter implementacoes locais",
     /from "\.\/notificacoes-supabase-profile-loader";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-supabase-technical-issues-loader";/,
+    hookInicial,
+    /from "\.\.\/lib\/notificacoes-supabase-technical-issues-loader";/,
   );
   assert.match(comunidadeLoader, /await carregarPerfisNotificacoes\(/);
-  assert.match(pagina, /carregarNotificacoesProblemasTecnicosSupabase\(/);
+  assert.match(hookInicial, /carregarNotificacoesProblemasTecnicosSupabase\(/);
+  assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(comunidadeLoader, /async function carregarPerfisNotificacoes\(/);
   assert.doesNotMatch(
     pagina,
