@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const acoesMutaveis = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-mutation-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = solicitacoes
   .replace(
     'import { notificacoesRepresentamMesmoEvento } from "./notificacoes-merge-utils";',
@@ -85,16 +92,20 @@ test("cria IDs normalizados para registrar e remover solicitações relacionadas
 
 test("pagina delega somente a identificação da solicitação relacionada", () => {
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-follow-request-utils";/,
+    acoesMutaveis,
+    /from "\.\/notificacoes-follow-request-utils";/,
   );
   assert.match(
-    pagina,
+    acoesMutaveis,
     /encontrarNotificacoesRelacionadasSolicitacaoSeguidor\(\s*notificacoes,\s*notificacao,\s*solicitacaoId,\s*\)/,
   );
-  assert.match(pagina, /criarIdsNotificacoesRelacionadas\(/);
-  assert.match(pagina, /supabase\.rpc\(/);
-  assert.match(pagina, /apagarNotificacoesSupabase\(/);
+  assert.match(acoesMutaveis, /criarIdsNotificacoesRelacionadas\(/);
+  assert.match(acoesMutaveis, /supabase\.rpc\(/);
+  assert.match(acoesMutaveis, /apagarNotificacoesSupabase\(/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/notificacoes-mutation-actions";/,
+  );
 });
 
 test("identificação relacionada não adiciona React, Supabase ou storage", () => {
