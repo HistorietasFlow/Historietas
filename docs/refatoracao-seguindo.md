@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 966 — cards sociais
+
+- Extraiu os cards visuais de solicitações, perfis da lista social e sugestões de perfil.
+- Preservou rotas, acessibilidade, ações, estados de carregamento e variantes desktop/mobile na página.
+
 ## Fase 965 — primitives de seção
 
 - Extraiu os estados vazios e os cabeçalhos visuais de seção para componentes pequenos e sem estado.

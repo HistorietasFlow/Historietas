@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 966 — Seguindo
+
+- Os três cards sociais de Seguindo foram isolados, mantendo a página como responsável por dados e ações.
+
 ## Registro da Fase 965 — Seguindo
 
 - Os primitives visuais de estado vazio e cabeçalho de seção de Seguindo foram isolados sem alterar callbacks ou dados.

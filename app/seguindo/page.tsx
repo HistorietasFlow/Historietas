@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
@@ -9,9 +8,12 @@ import { SeguindoLanguageBridge } from "./components/seguindo-language-bridge";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoHeader } from "./components/seguindo-header";
 import { SeguindoEmptyState } from "./components/seguindo-empty-state";
+import { SeguindoFollowRequestCard } from "./components/seguindo-follow-request-card";
 import { SeguindoSectionHeader } from "./components/seguindo-section-header";
 import { SeguindoSocialToolbar } from "./components/seguindo-social-toolbar";
+import { SeguindoSocialUserCard } from "./components/seguindo-social-user-card";
 import { SeguindoSortingPanel } from "./components/seguindo-sorting-panel";
+import { SeguindoSuggestedUserCard } from "./components/seguindo-suggested-user-card";
 import { useSeguindoAccessSync } from "./hooks/use-seguindo-access-sync";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
@@ -53,14 +55,17 @@ import type {
   AtividadeSeguindo,
 } from "./lib/seguindo-page-types";
 import { authorNameStyle } from "./lib/seguindo-author-name-style";
-import { desktopAuthorAvatarStyle, desktopAuthorFollowedCardStyle, desktopAuthorFollowedAvatarStyle } from "./lib/seguindo-desktop-author-avatar-styles";
+import {
+  desktopAuthorFollowedCardStyle,
+  desktopAuthorFollowedAvatarStyle,
+} from "./lib/seguindo-desktop-author-avatar-styles";
 import {
   authorContentStyle,
   authorBadgeRowStyle,
   authorActionsGridStyle,
   desktopAuthorActionsGridStyle,
 } from "./lib/seguindo-author-content-styles";
-import { authorCardStyle, desktopAuthorCardStyle, authorAvatarStyle } from "./lib/seguindo-author-card-styles";
+import { authorAvatarStyle, authorCardStyle } from "./lib/seguindo-author-card-styles";
 import { actionsStyle, readButtonStyle, unfollowButtonStyle } from "./lib/seguindo-card-action-styles";
 import { cardTitleStyle, authorLinkStyle } from "./lib/seguindo-card-title-link-styles";
 import {
@@ -91,15 +96,7 @@ import {
   sectionStyle,
   desktopSectionStyle,
 } from "./lib/seguindo-section-header-styles";
-import {
-  suggestedUserFollowButtonStyle,
-  suggestedUserRequestPendingButtonStyle,
-  followRequestContentStyle,
-  followRequestActionsStyle,
-  followRequestAcceptButtonStyle,
-  followRequestDeclineButtonStyle,
-} from "./lib/seguindo-suggested-user-action-styles";
-import { suggestedUsersLoadingStyle, suggestedUserInfoStyle, suggestedUserNameStyle, suggestedUserHandleStyle } from "./lib/seguindo-suggested-user-text-styles";
+import { suggestedUsersLoadingStyle } from "./lib/seguindo-suggested-user-text-styles";
 import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
 import {
   desktopTopWaterFadeStyle,
@@ -108,20 +105,13 @@ import {
 import {
   formatarGeneroSeguindo,
 } from "./lib/seguindo-format-utils";
-import {
-  criarAvatarUsuarioSeguindoStyle,
-  criarCoverStyle,
-} from "./lib/seguindo-image-style-utils";
+import { criarCoverStyle } from "./lib/seguindo-image-style-utils";
 import {
   mostrarClassificacao,
 } from "./lib/seguindo-work-presentation-utils";
-import {
-  criarHrefPerfilAutorSeguindo,
-  criarHrefPerfilUsuarioSeguindo,
-} from "./lib/seguindo-route-utils";
+import { criarHrefPerfilAutorSeguindo } from "./lib/seguindo-route-utils";
 
 export default function SeguindoPage() {
-  const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasSeguidas, setObrasSeguidas] = useState<string[]>([]);
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
@@ -502,126 +492,20 @@ export default function SeguindoPage() {
                   <div
                     style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}
                   >
-                    {solicitacoesSeguidoresFiltradas.map((solicitacao) => {
-                      const usuarioSolicitante = solicitacao.usuario;
-                      const hrefPerfilUsuario =
-                        criarHrefPerfilUsuarioSeguindo(usuarioSolicitante);
-                      const respondendo =
-                        solicitacaoRespondendoId === solicitacao.id;
-
-                      return (
-                        <article
-                          key={solicitacao.id}
-                          style={{
-                            ...(isDesktop
-                              ? desktopAuthorCardStyle
-                              : authorCardStyle),
-                            gridTemplateColumns: isDesktop
-                              ? "58px minmax(0, 1fr)"
-                              : "52px minmax(0, 1fr)",
-                            gap: isDesktop ? "10px" : "7px",
-                            width: isDesktop ? "100%" : "102%",
-                            margin: isDesktop ? 0 : "0 auto",
-                            padding: isDesktop
-                              ? "11px"
-                              : "6px 8px 6px 0",
-                            borderRadius: isDesktop ? "20px" : 0,
-                            background: isDesktop
-                              ? "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))"
-                              : "transparent",
-                            border: isDesktop
-                              ? "1px solid rgba(255,255,255,0.06)"
-                              : "none",
-                            boxShadow: "none",
-                          }}
-                        >
-                          <Link
-                            href={hrefPerfilUsuario}
-                            aria-label={`Abrir perfil de ${usuarioSolicitante.nome}`}
-                            style={{
-                              ...criarAvatarUsuarioSeguindoStyle(
-                                usuarioSolicitante.avatar,
-                                authorAvatarStyle,
-                              ),
-                              ...(isDesktop ? desktopAuthorAvatarStyle : {}),
-                              width: isDesktop ? "58px" : "52px",
-                              height: isDesktop ? "58px" : "52px",
-                              borderRadius: isDesktop ? "17px" : "16px",
-                              fontSize: isDesktop ? "25px" : "22px",
-                            }}
-                          >
-                            {!usuarioSolicitante.avatar &&
-                              usuarioSolicitante.nome
-                                .slice(0, 1)
-                                .toUpperCase()}
-                          </Link>
-
-                          <div style={followRequestContentStyle}>
-                            <div style={suggestedUserInfoStyle}>
-                              <Link
-                                href={hrefPerfilUsuario}
-                                data-historietas-i18n-ignore="true"
-                                style={suggestedUserNameStyle}
-                              >
-                                {usuarioSolicitante.nome}
-                              </Link>
-
-                              <span
-                                data-historietas-i18n-ignore="true"
-                                style={suggestedUserHandleStyle}
-                              >
-                                {usuarioSolicitante.handle}
-                              </span>
-                            </div>
-
-                            <div
-                              aria-label="Responder solicitação"
-                              style={followRequestActionsStyle}
-                            >
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void responderSolicitacaoSeguidor(
-                                    solicitacao,
-                                    true,
-                                  )
-                                }
-                                disabled={respondendo}
-                                style={{
-                                  ...followRequestAcceptButtonStyle,
-                                  opacity: respondendo ? 0.58 : 1,
-                                  cursor: respondendo
-                                    ? "not-allowed"
-                                    : "pointer",
-                                }}
-                              >
-                                {respondendo ? "..." : "Aceitar"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void responderSolicitacaoSeguidor(
-                                    solicitacao,
-                                    false,
-                                  )
-                                }
-                                disabled={respondendo}
-                                style={{
-                                  ...followRequestDeclineButtonStyle,
-                                  opacity: respondendo ? 0.58 : 1,
-                                  cursor: respondendo
-                                    ? "not-allowed"
-                                    : "pointer",
-                                }}
-                              >
-                                {respondendo ? "..." : "Recusar"}
-                              </button>
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
+                    {solicitacoesSeguidoresFiltradas.map((solicitacao) => (
+                      <SeguindoFollowRequestCard
+                        key={solicitacao.id}
+                        solicitacao={solicitacao}
+                        isDesktop={isDesktop}
+                        respondendo={solicitacaoRespondendoId === solicitacao.id}
+                        onResponderSolicitacao={(solicitacaoRespondida, aceitar) =>
+                          void responderSolicitacaoSeguidor(
+                            solicitacaoRespondida,
+                            aceitar,
+                          )
+                        }
+                      />
+                    ))}
                   </div>
                 </section>
               )}
@@ -631,152 +515,22 @@ export default function SeguindoPage() {
               usuariosFiltrados.length > 0 && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
                 <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
-                  {usuariosFiltrados.map((usuarioSeguido) => {
-                    const hrefPerfilUsuario = criarHrefPerfilUsuarioSeguindo(usuarioSeguido);
-
-                    return (
-                      <article
-                        key={usuarioSeguido.id}
-                        role="link"
-                        tabIndex={0}
-                        aria-label={`Abrir perfil de ${usuarioSeguido.nome}`}
-                        onClick={() => router.push(hrefPerfilUsuario)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            router.push(hrefPerfilUsuario);
-                          }
-                        }}
-                        style={{
-                          ...(isDesktop ? desktopAuthorCardStyle : authorCardStyle),
-                          gridTemplateColumns: isDesktop
-                            ? "58px minmax(0, 1fr)"
-                            : "52px minmax(0, 1fr)",
-                          gap: isDesktop ? "7px" : "6px",
-                          width: isDesktop ? "100%" : "102%",
-                          margin: isDesktop ? 0 : "0 auto",
-                          padding: isDesktop ? "11px" : "4px 7px 4px 0",
-                          borderRadius: isDesktop ? "20px" : 0,
-                          background: isDesktop
-                            ? "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))"
-                            : "transparent",
-                          border: isDesktop
-                            ? "1px solid rgba(255,255,255,0.06)"
-                            : "none",
-                          boxShadow: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <div
-                          style={{
-                            ...criarAvatarUsuarioSeguindoStyle(
-                              usuarioSeguido.avatar,
-                              authorAvatarStyle,
-                            ),
-                            ...(isDesktop ? desktopAuthorAvatarStyle : {}),
-                            width: isDesktop ? "58px" : "52px",
-                            height: isDesktop ? "58px" : "52px",
-                            borderRadius: isDesktop ? "17px" : "16px",
-                            fontSize: isDesktop ? "25px" : "22px",
-                          }}
-                        >
-                          {!usuarioSeguido.avatar && usuarioSeguido.nome.slice(0, 1).toUpperCase()}
-                        </div>
-
-                        <div
-                          style={{
-                            ...authorContentStyle,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: isDesktop ? "10px" : "7px",
-                            minWidth: 0,
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "grid",
-                              gap: "2px",
-                              minWidth: 0,
-                              flex: "1 1 auto",
-                            }}
-                          >
-                            <h3
-                              data-historietas-i18n-ignore="true"
-                              style={{
-                                ...authorNameStyle,
-                                fontSize: isDesktop ? "17px" : "15px",
-                                lineHeight: 1.05,
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {usuarioSeguido.nome}
-                            </h3>
-
-                            <span
-                              data-historietas-i18n-ignore="true"
-                              style={{
-                                ...authorLinkStyle,
-                                fontSize: isDesktop ? "11px" : "10px",
-                                lineHeight: 1,
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {usuarioSeguido.handle}
-                            </span>
-                          </div>
-
-                          {(podeRemoverUsuariosDaLista ||
-                            podeRemoverSeguidoresDaLista) && (
-                            <button
-                              type="button"
-                              disabled={
-                                usuarioListaAlterandoId === usuarioSeguido.id
-                              }
-                              onClick={(event) => {
-                                event.stopPropagation();
-
-                                if (podeRemoverSeguidoresDaLista) {
-                                  void removerSeguidorUsuario(usuarioSeguido.id);
-                                  return;
-                                }
-
-                                void deixarDeSeguirUsuario(usuarioSeguido.id);
-                              }}
-                              onKeyDown={(event) => event.stopPropagation()}
-                              style={{
-                                ...unfollowButtonStyle,
-                                width: isDesktop ? "112px" : "92px",
-                                minWidth: isDesktop ? "112px" : "92px",
-                                minHeight: "25px",
-                                padding: "0 3px",
-                                fontSize: "9px",
-                                flex: "0 0 auto",
-                                opacity:
-                                  usuarioListaAlterandoId === usuarioSeguido.id
-                                    ? 0.58
-                                    : 1,
-                                cursor:
-                                  usuarioListaAlterandoId === usuarioSeguido.id
-                                    ? "not-allowed"
-                                    : "pointer",
-                              }}
-                            >
-                              {usuarioListaAlterandoId === usuarioSeguido.id
-                                ? "..."
-                                : podeRemoverSeguidoresDaLista
-                                  ? "Remover seguidor"
-                                  : "Deixar de seguir"}
-                            </button>
-                          )}
-                        </div>
-                      </article>
-                    );
-                  })}
+                  {usuariosFiltrados.map((usuarioSeguido) => (
+                    <SeguindoSocialUserCard
+                      key={usuarioSeguido.id}
+                      usuario={usuarioSeguido}
+                      isDesktop={isDesktop}
+                      podeRemoverUsuariosDaLista={podeRemoverUsuariosDaLista}
+                      podeRemoverSeguidoresDaLista={podeRemoverSeguidoresDaLista}
+                      usuarioListaAlterandoId={usuarioListaAlterandoId}
+                      onRemoverSeguidorUsuario={(usuarioId) =>
+                        void removerSeguidorUsuario(usuarioId)
+                      }
+                      onDeixarDeSeguirUsuario={(usuarioId) =>
+                        void deixarDeSeguirUsuario(usuarioId)
+                      }
+                    />
+                  ))}
                 </div>
               </section>
             )}
@@ -802,93 +556,22 @@ export default function SeguindoPage() {
                   </div>
                 ) : usuariosSugestoesBusca.length > 0 ? (
                   <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
-                    {usuariosSugestoesBusca.map((usuarioSugestao) => {
-                      const hrefPerfil = criarHrefPerfilUsuarioSeguindo(
-                        usuarioSugestao
-                      );
-                      const seguindoAgora =
-                        usuarioSugestaoSeguindoId === usuarioSugestao.id;
-                      const solicitacaoPendente =
-                        solicitacoesEnviadasIds.includes(usuarioSugestao.id);
-
-                      return (
-                        <article
-                          key={usuarioSugestao.id}
-                          style={{
-                            ...(isDesktop ? desktopAuthorCardStyle : authorCardStyle),
-                            gridTemplateColumns: isDesktop
-                              ? "58px minmax(0, 1fr) auto"
-                              : "52px minmax(0, 1fr) auto",
-                            gap: isDesktop ? "10px" : "7px",
-                            width: isDesktop ? "100%" : "102%",
-                            margin: isDesktop ? 0 : "0 auto",
-                            padding: isDesktop ? "11px" : "4px 7px 4px 0",
-                            borderRadius: isDesktop ? "20px" : 0,
-                            background: isDesktop
-                              ? "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))"
-                              : "transparent",
-                            border: isDesktop
-                              ? "1px solid rgba(255,255,255,0.06)"
-                              : "none",
-                            boxShadow: "none",
-                          }}
-                        >
-                          <Link
-                            href={hrefPerfil}
-                            aria-label={`Abrir perfil de ${usuarioSugestao.nome}`}
-                            style={{
-                              ...criarAvatarUsuarioSeguindoStyle(
-                                usuarioSugestao.avatar,
-                                authorAvatarStyle,
-                              ),
-                              ...(isDesktop ? desktopAuthorAvatarStyle : {}),
-                              width: isDesktop ? "58px" : "52px",
-                              height: isDesktop ? "58px" : "52px",
-                              borderRadius: isDesktop ? "17px" : "16px",
-                              fontSize: isDesktop ? "25px" : "22px",
-                            }}
-                          >
-                            {!usuarioSugestao.avatar &&
-                              usuarioSugestao.nome.slice(0, 1).toUpperCase()}
-                          </Link>
-
-                          <div style={suggestedUserInfoStyle}>
-                            <Link
-                              href={hrefPerfil}
-                              data-historietas-i18n-ignore="true"
-                              style={suggestedUserNameStyle}
-                            >
-                              {usuarioSugestao.nome}
-                            </Link>
-
-                            <span data-historietas-i18n-ignore="true" style={suggestedUserHandleStyle}>
-                              {usuarioSugestao.handle}
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              seguirUsuarioSugestao(usuarioSugestao)
-                            }
-                            disabled={seguindoAgora}
-                            style={{
-                              ...(solicitacaoPendente
-                                ? suggestedUserRequestPendingButtonStyle
-                                : suggestedUserFollowButtonStyle),
-                              opacity: seguindoAgora ? 0.58 : 1,
-                              cursor: seguindoAgora ? "not-allowed" : "pointer",
-                            }}
-                          >
-                            {seguindoAgora
-                              ? "..."
-                              : solicitacaoPendente
-                                ? "Cancelar"
-                                : "Seguir"}
-                          </button>
-                        </article>
-                      );
-                    })}
+                    {usuariosSugestoesBusca.map((usuarioSugestao) => (
+                      <SeguindoSuggestedUserCard
+                        key={usuarioSugestao.id}
+                        usuario={usuarioSugestao}
+                        isDesktop={isDesktop}
+                        seguindoAgora={
+                          usuarioSugestaoSeguindoId === usuarioSugestao.id
+                        }
+                        solicitacaoPendente={solicitacoesEnviadasIds.includes(
+                          usuarioSugestao.id,
+                        )}
+                        onSeguirUsuarioSugestao={(usuario) =>
+                          void seguirUsuarioSugestao(usuario)
+                        }
+                      />
+                    ))}
                   </div>
                 ) : null}
               </section>
