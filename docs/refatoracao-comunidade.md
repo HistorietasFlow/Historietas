@@ -1,5 +1,10 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 21 — Notificações
+
+- O carregador complementar de interações e atividades do Diário foi isolado em `notificacoes-supabase-diary-loader`.
+- Consultas de anotação, interações, perfis seguidos, obras, filtragem 18+, fallbacks e ordenação foram preservados sem alterar o lifecycle ou o estado remoto da página.
+
 ## Registro da Fase 20 — Notificações
 
 - O carregador de notificações diretas foi isolado em `notificacoes-supabase-direct-loader`.
