@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 982 — Seguindo
+
+- A refatoração estrutural de Seguindo foi considerada concluída por enquanto: a página permanece como orquestrador enxuto, sem abstrações adicionais artificiais.
+
 ## Registro da Fase 981 — Seguindo
 
 - Os grupos de estado e contexto da página foram compostos em hooks dedicados, preservando a ordem dos hooks e todas as responsabilidades existentes.

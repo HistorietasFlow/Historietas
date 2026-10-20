@@ -1,5 +1,11 @@
 # Refatoração de Seguindo
 
+## Fase 982 — encerramento estrutural
+
+- A auditoria final confirmou que `app/seguindo/page.tsx` atua como orquestrador enxuto, com 186 linhas.
+- Estados, contexto, sincronização inicial, ações, dados derivados, interações e apresentações já permanecem em fronteiras dedicadas.
+- Nenhuma nova extração foi feita para evitar encapsulamento artificial de props ou um mega-hook; não houve alteração intencional de comportamento.
+
 ## Fase 981 — composição de estados e contexto da página
 
 - Reuniu os grupos de dados, social e descoberta em `useSeguindoPageState`.
