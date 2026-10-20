@@ -30,10 +30,10 @@ import {
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
 import {
-  ALIASES_BUSCA_CONFIGURACOES,
   normalizarTextoBuscaConfiguracoes,
   textoIdioma,
 } from "./lib/configuracoes-search-utils";
+import { deveMostrarSecaoConfiguracoes } from "./lib/configuracoes-search-visibility-utils";
 import {
   safeTextStyle,
   sectionStyle,
@@ -613,23 +613,8 @@ export default function ConfiguracoesPage() {
 
   const buscaNormalizada = normalizarTextoBuscaConfiguracoes(busca);
 
-  function deveMostrar(...termos: string[]) {
-    if (!buscaNormalizada) {
-      return true;
-    }
-
-    const termosExpandidos = termos.flatMap((termo) => {
-      const termoNormalizado = normalizarTextoBuscaConfiguracoes(termo);
-      const aliases = ALIASES_BUSCA_CONFIGURACOES[termoNormalizado] || [];
-
-      return [termoNormalizado, ...aliases];
-    });
-
-    return termosExpandidos
-      .map(normalizarTextoBuscaConfiguracoes)
-      .join(" ")
-      .includes(buscaNormalizada);
-  }
+  const deveMostrar = (...termos: string[]) =>
+    deveMostrarSecaoConfiguracoes(buscaNormalizada, ...termos);
 
   const totalBiblioteca = useMemo(
     () => resumo.favoritas + resumo.concluidas + resumo.seguindoObras,

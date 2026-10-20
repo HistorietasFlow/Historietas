@@ -813,3 +813,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 17 — Configurações
 
 - A composição do backup local da conta foi isolada, preservando inventário, serialização e fallbacks.
+
+## Registro da Fase 18 — Configurações
+
+- A visibilidade das seções pela busca foi isolada em helper puro, preservando normalização, aliases e fallback.
+- Estados, JSX e operações remotas continuaram na página sem alteração intencional de comportamento.
