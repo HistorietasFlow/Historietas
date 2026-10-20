@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { UsuarioBloqueadoConfiguracoes } from "../lib/configuracoes-account-models";
 import {
   blockedUserAvatarFallbackStyle,
   blockedUserAvatarStyle,
@@ -20,22 +21,14 @@ type TraduzirTextoConfiguracoes = (
   espanhol: string,
 ) => string;
 
-type UsuarioBloqueadoConfiguracoesVisual = {
-  userId: string;
-  nome: string;
-  username: string;
-  avatar: string;
-  bloqueadoEm: string;
-};
-
 type ConfiguracoesBlockedUsersPanelProps = {
-  usuarios: UsuarioBloqueadoConfiguracoesVisual[];
+  usuarios: UsuarioBloqueadoConfiguracoes[];
   carregando: boolean;
   erro: string;
   desbloqueandoUsuarioId: string;
   onRecarregar: () => Promise<void>;
   onDesbloquear: (
-    usuario: UsuarioBloqueadoConfiguracoesVisual,
+    usuario: UsuarioBloqueadoConfiguracoes,
   ) => Promise<void>;
   traduzirTexto: TraduzirTextoConfiguracoes;
 };
