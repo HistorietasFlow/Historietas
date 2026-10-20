@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 971 — Seguindo
+
+- Os dados derivados de Seguindo foram isolados em um hook de composição, mantendo efeitos, ações e estados na página.
+
 ## Registro da Fase 970 — Seguindo
 
 - A composição visual condicional do conteúdo de Seguindo foi isolada, mantendo dados, estados e ações no orquestrador da página.

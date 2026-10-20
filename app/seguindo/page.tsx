@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
-import { normalizarTexto } from "../../lib/utils";
 import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoPageContent } from "./components/seguindo-page-content";
 import { SeguindoPageControls } from "./components/seguindo-page-controls";
@@ -12,6 +11,7 @@ import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-ta
 import { useSeguindoDataLoader } from "./hooks/use-seguindo-data-loader";
 import { useSeguindoDataLoadTrigger } from "./hooks/use-seguindo-data-load-trigger";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
+import { useSeguindoDerivedContent } from "./hooks/use-seguindo-derived-content";
 import { useSeguindoReadingStatusState } from "./hooks/use-seguindo-reading-status-state";
 import { useSeguindoRequestActionState } from "./hooks/use-seguindo-request-action-state";
 import { useSeguindoSuggestionState } from "./hooks/use-seguindo-suggestion-state";
@@ -22,24 +22,11 @@ import { useSeguindoSortingPanelState } from "./hooks/use-seguindo-sorting-panel
 import { useSeguindoContentTabState } from "./hooks/use-seguindo-content-tab-state";
 import { useSeguindoFilterSortState } from "./hooks/use-seguindo-filter-sort-state";
 import { useSeguindoSearchState } from "./hooks/use-seguindo-search-state";
-import { useSeguindoFilteredFollowerRequests } from "./hooks/use-seguindo-filtered-follower-requests";
-import { useSeguindoFilteredUsers } from "./hooks/use-seguindo-filtered-users";
-import { useSeguindoFilteredAuthors } from "./hooks/use-seguindo-filtered-authors";
-import { useSeguindoFilteredWorks } from "./hooks/use-seguindo-filtered-works";
-import { useSeguindoAuthorsBase } from "./hooks/use-seguindo-authors-base";
-import { useSeguindoVisibleWorks } from "./hooks/use-seguindo-visible-works";
 import { useSeguindoFollowerActions } from "./hooks/use-seguindo-follower-actions";
 import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { useSeguindoUserFollowActions } from "./hooks/use-seguindo-user-follow-actions";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
 import { useSeguindoWorkAuthorActions } from "./hooks/use-seguindo-work-author-actions";
-import { calcularTotaisSeguindo } from "./lib/seguindo-list-counts";
-import { obterOpcoesOrdenacaoSeguindo } from "./lib/seguindo-sort-options";
-import { selecionarUsuariosBaseSocial } from "./lib/seguindo-social-users-selector";
-import { obterContextoListaSocial } from "./lib/seguindo-social-list-context";
-import { buscaSugestoesUsuariosEstaAtiva } from "./lib/seguindo-social-search-eligibility";
-import { obterPermissoesListaSocial } from "./lib/seguindo-social-list-permissions";
-import { obterRotulosListaSocial } from "./lib/seguindo-social-list-labels";
 import type {
   ObraLocal,
   UsuarioSeguido,
@@ -157,9 +144,40 @@ export default function SeguindoPage() {
     setAutoresSeguidos,
   });
 
-  const termoBusca = normalizarTexto(busca);
-  const { listaSocialEhDoUsuarioLogado, visualizandoListaSocialDoPerfil } =
-    obterContextoListaSocial(usuarioLogadoId, perfilSocialId);
+  const {
+    listaSocialEhDoUsuarioLogado,
+    visualizandoListaSocialDoPerfil,
+    buscaSugestoesUsuariosAtiva,
+    descricaoListaSocial,
+    podeRemoverUsuariosDaLista,
+    podeRemoverSeguidoresDaLista,
+    obrasSeguidasBase,
+    obrasFiltradas,
+    autoresFiltrados,
+    usuariosFiltrados,
+    solicitacoesSeguidoresFiltradas,
+    totalDisponivelGeral,
+    totalSemFiltros,
+    totalSeguindo,
+    opcoesOrdenacao,
+  } = useSeguindoDerivedContent({
+    obras,
+    obrasSeguidas,
+    autoresSeguidos,
+    obrasFavoritas,
+    obrasConcluidas,
+    busca,
+    buscaSeguindoAberta,
+    abaConteudo,
+    filtro,
+    ordenacao,
+    usuarioLogadoId,
+    perfilSocialId,
+    perfilSocialNome,
+    usuariosSeguidos,
+    usuariosSeguidores,
+    solicitacoesSeguidores,
+  });
   const trocarAbaConteudo = useSeguindoContentTabNavigation({
     perfilSocialId,
     perfilSocialNome,
@@ -171,24 +189,6 @@ export default function SeguindoPage() {
     setFiltro,
     setOrdenacao,
   });
-  const buscaSugestoesUsuariosAtiva = buscaSugestoesUsuariosEstaAtiva(
-    buscaSeguindoAberta,
-    termoBusca,
-    visualizandoListaSocialDoPerfil,
-    abaConteudo,
-  );
-  const usuariosBaseSocial = selecionarUsuariosBaseSocial(
-    abaConteudo,
-    usuariosSeguidores,
-    usuariosSeguidos,
-  );
-  const { descricaoListaSocial } = obterRotulosListaSocial(
-    abaConteudo,
-    perfilSocialNome,
-  );
-  const { podeRemoverUsuariosDaLista, podeRemoverSeguidoresDaLista } =
-    obterPermissoesListaSocial(listaSocialEhDoUsuarioLogado, abaConteudo);
-
   useSeguindoUserSearchSync({
     busca,
     buscaSugestoesUsuariosAtiva,
@@ -197,48 +197,6 @@ export default function SeguindoPage() {
     setUsuariosSugestoesBusca,
     setCarregandoUsuariosSugestoes,
   });
-
-
-  const { obrasVisiveisSeguindo, obrasSeguidasBase } =
-    useSeguindoVisibleWorks(obras, obrasSeguidas);
-
-  const autoresBase = useSeguindoAuthorsBase(
-    obrasVisiveisSeguindo, autoresSeguidos, obrasFavoritas, obrasConcluidas,
-  );
-
-  const obrasFiltradas = useSeguindoFilteredWorks(
-    obrasSeguidasBase, termoBusca, filtro, ordenacao, obrasFavoritas, obrasConcluidas, abaConteudo,
-  );
-
-  const autoresFiltrados = useSeguindoFilteredAuthors(
-    autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
-  );
-
-  const usuariosFiltrados = useSeguindoFilteredUsers(
-    usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,
-  );
-
-  const solicitacoesSeguidoresFiltradas = useSeguindoFilteredFollowerRequests(
-    abaConteudo, listaSocialEhDoUsuarioLogado, solicitacoesSeguidores, termoBusca,
-  );
-
-  const { totalDisponivelGeral, totalSemFiltros, totalSeguindo } = calcularTotaisSeguindo({
-    abaConteudo,
-    listaSocialEhDoUsuarioLogado,
-    visualizandoListaSocialDoPerfil,
-    obrasSeguidasBase,
-    usuariosSeguidos,
-    usuariosSeguidores,
-    solicitacoesSeguidores,
-    autoresBase,
-    usuariosFiltrados,
-    solicitacoesSeguidoresFiltradas,
-    obrasFiltradas,
-    autoresFiltrados,
-  });
-
-  const opcoesOrdenacao = obterOpcoesOrdenacaoSeguindo(abaConteudo);
-
   if (verificandoAcesso || carregando) {
     return (
       <SeguindoPageFrame isDesktop={isDesktop} pageThemeStyle={pageThemeStyle}>

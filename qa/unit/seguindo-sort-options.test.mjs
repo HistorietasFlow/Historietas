@@ -3,10 +3,12 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const derived = readFileSync(new URL("../../app/seguindo/hooks/use-seguindo-derived-content.ts", import.meta.url), "utf8");
 const helper = readFileSync(new URL("../../app/seguindo/lib/seguindo-sort-options.ts", import.meta.url), "utf8");
 
 test("opções de ordenação preservam alternativas específicas de obras", () => {
-  assert.match(page, /obterOpcoesOrdenacaoSeguindo\(abaConteudo\)/);
+  assert.match(page, /useSeguindoDerivedContent\(/);
+  assert.match(derived, /obterOpcoesOrdenacaoSeguindo\(abaConteudo\)/);
   assert.match(helper, /abaConteudo === "obras"/);
   assert.equal((helper.match(/valor: "padrao"/g) ?? []).length, 2);
   assert.equal((helper.match(/valor: "recentes"/g) ?? []).length, 2);

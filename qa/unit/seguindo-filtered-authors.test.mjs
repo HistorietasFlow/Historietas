@@ -3,10 +3,12 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../../app/seguindo/page.tsx", import.meta.url), "utf8");
+const derived = readFileSync(new URL("../../app/seguindo/hooks/use-seguindo-derived-content.ts", import.meta.url), "utf8");
 const helper = readFileSync(new URL("../../app/seguindo/lib/seguindo-filtered-authors.ts", import.meta.url), "utf8");
 
 test("filtro de autores preserva campos, visibilidade e ordenações", () => {
-  assert.match(page, /filtrarAutoresSeguindo\(\s*autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil,/);
+  assert.match(page, /useSeguindoDerivedContent\(/);
+  assert.match(derived, /useSeguindoFilteredAuthors\(\s*autoresBase,\s*termoBusca,\s*filtro,\s*ordenacao,\s*abaConteudo,\s*visualizandoListaSocialDoPerfil,/);
   assert.match(helper, /visualizandoListaSocialDoPerfil \|\| abaConteudo !== "pessoas"/);
   assert.match(helper, /formatarGeneroSeguindo\(obra\.genero\)/);
   assert.match(helper, /textoAutor\.includes\(termoBusca\)/);
@@ -16,5 +18,5 @@ test("filtro de autores preserva campos, visibilidade e ordenações", () => {
   assert.match(helper, /autorB\.progressoMedio - autorA\.progressoMedio/);
   assert.match(helper, /autorB\.totalCapitulos - autorA\.totalCapitulos/);
   assert.match(helper, /autorA\.nome\.localeCompare\(autorB\.nome\)/);
-  assert.match(page, /\[autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil\]/);
+  assert.match(derived, /useSeguindoFilteredAuthors\(/);
 });
