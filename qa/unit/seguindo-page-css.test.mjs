@@ -11,6 +11,9 @@ const lerArquivo = (caminho) =>
 
 const pagina = lerArquivo("app/seguindo/page.tsx");
 const frame = lerArquivo("app/seguindo/components/seguindo-page-frame.tsx");
+const carregamento = lerArquivo(
+  "app/seguindo/components/seguindo-page-loading-state.tsx",
+);
 const css = lerArquivo("app/seguindo/lib/seguindo-page-css.ts");
 const surfaceStyles = lerArquivo("app/seguindo/lib/seguindo-surface-styles.ts");
 
@@ -44,9 +47,10 @@ test("Seguindo consome o CSS extraído sem mover responsabilidades da página", 
   assert.match(surfaceStyles, /export const desktopTopWaterFadeStyle: CSSProperties =/);
   assert.match(frame, /from "\.\.\/lib\/seguindo-surface-styles";/);
   assert.match(
-    pagina,
-    /import \{ LoadingSpinner \} from "\.\/components\/seguindo-loading-spinner";/,
+    carregamento,
+    /import \{ LoadingSpinner \} from "\.\/seguindo-loading-spinner";/,
   );
+  assert.match(pagina, /SeguindoPageLoadingState/);
   assert.match(
     frame,
     /import \{ SeguindoLanguageBridge \} from "\.\/seguindo-language-bridge";/,
