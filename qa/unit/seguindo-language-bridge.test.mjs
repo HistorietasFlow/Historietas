@@ -21,6 +21,13 @@ const frame = readFileSync(
   ),
   "utf8",
 );
+const carregamento = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-page-loading-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const bridgeNormalizado = bridge.replace(/\r\n/g, "\n");
 const bridgeExecutavel = bridgeNormalizado
   .replace('"use client";\n\n', "")
@@ -160,9 +167,10 @@ test("a p\u00e1gina delega os mounts e a raiz de tradu\u00e7\u00e3o ao frame", (
   assert.equal((frame.match(/<SeguindoLanguageBridge \/>/g) || []).length, 1);
   assert.match(
     pagina,
-    /if \(verificandoAcesso \|\| carregando\) \{[\s\S]*?<SeguindoPageFrame /,
+    /if \(verificandoAcesso \|\| carregando\) \{[\s\S]*?<SeguindoPageLoadingState /,
   );
-  assert.equal((pagina.match(/<SeguindoPageFrame /g) || []).length, 2);
+  assert.equal((pagina.match(/<SeguindoPageFrame /g) || []).length, 1);
+  assert.equal((carregamento.match(/<SeguindoPageFrame /g) || []).length, 1);
   assert.equal(
     (frame.match(/data-historietas-seguindo-root="true"/g) || []).length,
     1,

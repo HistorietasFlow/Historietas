@@ -1,5 +1,10 @@
 # Refatoração de Seguindo
 
+## Fase 979 — apresentação e carregamento da página
+
+- Agrupou a composição de tema e bloqueio do painel de ordenação em um hook visual dedicado.
+- Moveu a apresentação do estado inicial de carregamento para um componente dedicado, preservando frame, spinner, label e variantes responsivas.
+
 ## Fase 978 — sincronização inicial da página
 
 - Agrupou a composição dos lifecycles adjacentes de acesso e carregamento inicial de dados.

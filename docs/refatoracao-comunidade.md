@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 979 — Seguindo
+
+- A composição visual de tema e lock do painel e o estado de carregamento inicial foram isolados sem alterar autenticação, dados ou ações.
+
 ## Registro da Fase 978 — Seguindo
 
 - A composição dos lifecycles de acesso e carregamento inicial foi isolada, mantendo autenticação, timers e carregamento remoto nas fronteiras existentes.

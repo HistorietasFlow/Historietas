@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const visualizacao = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-view.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const painel = readFileSync(
   new URL("../../app/seguindo/components/seguindo-sorting-panel.tsx", import.meta.url),
   "utf8",
@@ -78,13 +85,14 @@ test("Seguindo delega somente o modo desktop e preserva os consumidores", () => 
   assert.match(toolbar, /isDesktop \? desktopSocialToolbarStyle : socialToolbarStyle/);
   assert.match(painel, /isDesktop \? desktopSortingSheetStyle : sortingSheetStyle/);
   assert.match(
-    pagina,
-    /import \{ useSeguindoSortingSheetBodyLock \} from "\.\/hooks\/use-seguindo-sorting-sheet-body-lock";/,
+    visualizacao,
+    /import \{ useSeguindoSortingSheetBodyLock \} from "\.\/use-seguindo-sorting-sheet-body-lock";/,
   );
   assert.match(
-    pagina,
+    visualizacao,
     /useSeguindoSortingSheetBodyLock\(mostrarPainelOrdenacao\);/,
   );
+  assert.match(pagina, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
   assert.match(
     pagina,
     /useSeguindoPageDiscoveryState\(\);/,

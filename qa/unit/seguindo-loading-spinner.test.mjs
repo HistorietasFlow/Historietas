@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const carregamento = readFileSync(
+  new URL(
+    "../../app/seguindo/components/seguindo-page-loading-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const secoesPessoas = readFileSync(
   new URL(
     "../../app/seguindo/components/seguindo-people-sections.tsx",
@@ -70,16 +77,19 @@ test("LoadingSpinner de Seguindo preserva os estilos exclusivos e o CSS global",
 
 test("Seguindo delega os dois spinners e preserva labels nas fronteiras visuais", () => {
   assert.match(
-    pagina,
-    /import \{ LoadingSpinner \} from "\.\/components\/seguindo-loading-spinner";/,
+    carregamento,
+    /import \{ LoadingSpinner \} from "\.\/seguindo-loading-spinner";/,
   );
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.doesNotMatch(pagina, /const loadingPageStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const loadingInlineStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const loadingSpinnerStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const loadingSpinnerCompactStyle: CSSProperties/);
-  assert.equal((pagina.match(/<LoadingSpinner/g) || []).length, 1);
-  assert.match(pagina, /<LoadingSpinner label="Carregando seguindo" \/>/);
+  assert.match(
+    pagina,
+    /import \{ SeguindoPageLoadingState \} from "\.\/components\/seguindo-page-loading-state";/,
+  );
+  assert.match(carregamento, /<LoadingSpinner label="Carregando seguindo" \/>/);
   assert.match(
     secoesPessoas,
     /import \{ LoadingSpinner \} from "\.\/seguindo-loading-spinner";/,

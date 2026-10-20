@@ -7,6 +7,9 @@ const lerArquivo = (caminho) =>
 
 const pagina = lerArquivo("../../app/seguindo/page.tsx");
 const frame = lerArquivo("../../app/seguindo/components/seguindo-page-frame.tsx");
+const carregamento = lerArquivo(
+  "../../app/seguindo/components/seguindo-page-loading-state.tsx",
+);
 const controls = lerArquivo("../../app/seguindo/components/seguindo-page-controls.tsx");
 const mensagemEstadoVazio = lerArquivo(
   "../../app/seguindo/lib/seguindo-empty-state-message.ts",
@@ -15,10 +18,11 @@ const mensagemEstadoVazio = lerArquivo(
 test("Seguindo delega o frame e os controles visuais sem mover seus lifecycles", () => {
   assert.match(pagina, /import \{ SeguindoPageFrame \} from "\.\/components\/seguindo-page-frame";/);
   assert.match(pagina, /import \{ SeguindoPageControls \} from "\.\/components\/seguindo-page-controls";/);
-  assert.equal((pagina.match(/<SeguindoPageFrame /g) || []).length, 2);
+  assert.equal((pagina.match(/<SeguindoPageFrame /g) || []).length, 1);
+  assert.equal((carregamento.match(/<SeguindoPageFrame /g) || []).length, 1);
   assert.match(pagina, /<SeguindoPageControls\s+isDesktop=\{isDesktop\}/);
   assert.match(pagina, /useSeguindoPageInitialSync\(/);
-  assert.match(pagina, /useSeguindoSortingSheetBodyLock\(mostrarPainelOrdenacao\);/);
+  assert.match(pagina, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
 });
 
 test("o frame preserva tema, bridge e fades sem dependencias de dados", () => {

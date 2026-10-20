@@ -1,10 +1,9 @@
 "use client";
 
-import { useHistorietasTheme } from "../../lib/historietasTheme";
-import { LoadingSpinner } from "./components/seguindo-loading-spinner";
 import { SeguindoPageContent } from "./components/seguindo-page-content";
 import { SeguindoPageControls } from "./components/seguindo-page-controls";
 import { SeguindoPageFrame } from "./components/seguindo-page-frame";
+import { SeguindoPageLoadingState } from "./components/seguindo-page-loading-state";
 import { useSeguindoContentTabNavigation } from "./hooks/use-seguindo-content-tab-navigation";
 import { useSeguindoDesktopMode } from "./hooks/use-seguindo-desktop-mode";
 import { useSeguindoDerivedContent } from "./hooks/use-seguindo-derived-content";
@@ -14,9 +13,9 @@ import { useSeguindoPageDataState } from "./hooks/use-seguindo-page-data-state";
 import { useSeguindoPageDiscoveryState } from "./hooks/use-seguindo-page-discovery-state";
 import { useSeguindoPageInitialSync } from "./hooks/use-seguindo-page-initial-sync";
 import { useSeguindoPageSocialState } from "./hooks/use-seguindo-page-social-state";
-import { useSeguindoSortingSheetBodyLock } from "./hooks/use-seguindo-sorting-sheet-body-lock";
 import { useSeguindoUserSearchSync } from "./hooks/use-seguindo-user-search-sync";
-import { containerStyle, desktopContainerStyle, pageStyle } from "./lib/seguindo-layout-styles";
+import { useSeguindoPageView } from "./hooks/use-seguindo-page-view";
+import { containerStyle, desktopContainerStyle } from "./lib/seguindo-layout-styles";
 
 export default function SeguindoPage() {
   const {
@@ -42,9 +41,7 @@ export default function SeguindoPage() {
     verificandoAcesso, setVerificandoAcesso, usuarioLogadoId, setUsuarioLogadoId,
     setAbaSeguimento, perfilSocialId, setPerfilSocialId, perfilSocialNome, setPerfilSocialNome,
   } = useSeguindoPageAccessContextState();
-  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-
-  useSeguindoSortingSheetBodyLock(mostrarPainelOrdenacao);
+  const { pageThemeStyle } = useSeguindoPageView(mostrarPainelOrdenacao);
 
   useSeguindoPageInitialSync({
     setUsuarioLogadoId,
@@ -150,11 +147,7 @@ export default function SeguindoPage() {
     setCarregandoUsuariosSugestoes,
   });
   if (verificandoAcesso || carregando) {
-    return (
-      <SeguindoPageFrame isDesktop={isDesktop} pageThemeStyle={pageThemeStyle}>
-        <LoadingSpinner label="Carregando seguindo" />
-      </SeguindoPageFrame>
-    );
+    return <SeguindoPageLoadingState isDesktop={isDesktop} pageThemeStyle={pageThemeStyle} />;
   }
 
   return (

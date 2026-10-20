@@ -16,6 +16,13 @@ const pagina = readFileSync(
   new URL("../../app/seguindo/page.tsx", import.meta.url),
   "utf8",
 );
+const visualizacao = readFileSync(
+  new URL(
+    "../../app/seguindo/hooks/use-seguindo-page-view.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const painel = readFileSync(
   new URL("../../app/seguindo/components/seguindo-sorting-panel.tsx", import.meta.url),
   "utf8",
@@ -52,19 +59,20 @@ test("hook preserva o lifecycle de lock do painel de ordena\u00e7\u00e3o", () =>
   assert.doesNotMatch(hook, /useState|set[A-Z]/);
 });
 
-test("p\u00e1gina mant\u00e9m o lifecycle e delega o painel de ordena\u00e7\u00e3o", () => {
+test("a fronteira visual mant\u00e9m o lifecycle e a p\u00e1gina delega o painel de ordena\u00e7\u00e3o", () => {
   assert.match(
-    pagina,
-    /import \{ useSeguindoSortingSheetBodyLock \} from "\.\/hooks\/use-seguindo-sorting-sheet-body-lock";/,
+    visualizacao,
+    /import \{ useSeguindoSortingSheetBodyLock \} from "\.\/use-seguindo-sorting-sheet-body-lock";/,
   );
   assert.match(
     pagina,
     /useSeguindoPageDiscoveryState\(\);/,
   );
   assert.match(
-    pagina,
+    visualizacao,
     /useSeguindoSortingSheetBodyLock\(mostrarPainelOrdenacao\);/,
   );
+  assert.match(pagina, /useSeguindoPageView\(mostrarPainelOrdenacao\);/);
   assert.doesNotMatch(
     pagina,
     /useEffect\(\(\) => \{[\s\S]*?const overflowAnterior = document\.body\.style\.overflow;[\s\S]*?\}, \[mostrarPainelOrdenacao\]\);/,
