@@ -801,3 +801,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 14 — Configurações
 
 - A leitura/escrita local isolada por usuário e a composição do resumo local foram extraídas sem alterar chaves, fallbacks ou contagens.
+
+## Registro da Fase 15 — Configurações
+
+- A normalização pura do perfil Supabase foi isolada, preservando limpeza de texto e username.

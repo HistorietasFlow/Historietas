@@ -84,6 +84,7 @@ import {
   traduzirErroSenhaConfiguracoes,
   traduzirErroUsernameConfiguracoes,
 } from "./lib/configuracoes-error-messages";
+import { normalizarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-utils";
 
 async function contarRegistrosResumoSupabase({
   tabela,
@@ -280,15 +281,6 @@ function criarBackupLocal(userId = "") {
   backup.userId = userIdLimpo;
 
   return JSON.stringify(backup, null, 2);
-}
-
-function normalizarPerfilConfiguracoesSupabase(
-  perfil: Record<string, unknown>,
-): PerfilConfiguracoesSupabase {
-  return {
-    nome: pegarTexto(perfil.nome),
-    username: normalizarUsernameConfiguracoes(pegarTexto(perfil.username)),
-  };
 }
 
 async function listarUsuariosBloqueadosConfiguracoes(): Promise<
