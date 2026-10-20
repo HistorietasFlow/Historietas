@@ -23,6 +23,13 @@ const localStateUtils = readFileSync(
   ),
   "utf8",
 );
+const recordNormalizers = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-record-normalizers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const displayUtilsExecutavel = displayUtils
   .replace(
     'import { normalizarTexto } from "../../../lib/utils";',
@@ -325,15 +332,17 @@ test("página importa os helpers extraídos e preserva as fronteiras locais", ()
 
   assert.match(
     pagina,
-    /import \{[\s\S]*?normalizarNotificacao,[\s\S]*?\} from "\.\/lib\/notificacoes-local-normalizers";/,
+    /import \{[\s\S]*?normalizarNotificacaoSupabase,[\s\S]*?\} from "\.\/lib\/notificacoes-record-normalizers";/,
   );
+  assert.match(recordNormalizers, /export function normalizarNotificacaoSupabase\(/);
   assert.doesNotMatch(pagina, /function normalizarNotificacao\(/);
+  assert.doesNotMatch(pagina, /function normalizarNotificacaoSupabase\(/);
   assert.match(
     pagina,
     /import \{[\s\S]*?criarAvatarNotificacaoStyle,[\s\S]*?\} from "\.\/lib\/notificacoes-display-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarAvatarNotificacaoStyle\(/);
-  assert.match(pagina, /obterDetalheNotificacao\(\{\s*id,/);
+  assert.match(recordNormalizers, /obterDetalheNotificacao\(\{\s*id,/);
   assert.match(pagina, /notificacaoUsaCardSocial\(notificacao\)/);
   assert.match(pagina, /obterTituloBlocoSocialNotificacao\(notificacao\)/);
   assert.match(pagina, /obterAcaoPrincipalNotificacao\(notificacao\)/);
