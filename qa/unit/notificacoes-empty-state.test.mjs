@@ -11,6 +11,13 @@ const componente = readFileSync(
 );
 const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url), "utf8");
+const feed = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-feed.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estado vazio preserva prioridade, textos, estilos e consumidor da página", () => {
   for (const contrato of [
@@ -26,11 +33,11 @@ test("estado vazio preserva prioridade, textos, estilos e consumidor da página"
     assert.ok(componente.includes(contrato), "contrato ausente: " + contrato);
   }
 
-  assert.match(pagina, /import NotificacoesEmptyState/);
+  assert.match(pagina, /import NotificacoesFeed/);
   assert.match(
-    pagina,
-    /notificacoes\.length === 0 \? \([\s\S]*?<NotificacoesEmptyState mensagem="Nenhuma notificação" \/>[\s\S]*?notificacoesFiltradas\.length === 0 \? \([\s\S]*?<NotificacoesEmptyState mensagem="Nada encontrado" \/>/,
+    feed,
+    /if \(notificacoes\.length === 0\) \{\s*return <NotificacoesEmptyState mensagem="Nenhuma notificação" \/>;[\s\S]*?if \(notificacoesFiltradas\.length === 0\) \{\s*return <NotificacoesEmptyState mensagem="Nada encontrado" \/>;/,
   );
-  assert.doesNotMatch(pagina, /Nenhuma notificação\s*<\/p>/);
-  assert.doesNotMatch(pagina, /Nada encontrado\s*<\/p>/);
+  assert.doesNotMatch(feed, /Nenhuma notificação\s*<\/p>/);
+  assert.doesNotMatch(feed, /Nada encontrado\s*<\/p>/);
 });

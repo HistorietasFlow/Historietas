@@ -23,6 +23,13 @@ const painelAcoes = readFileSync(
   ),
   "utf8",
 );
+const cartaoFeed = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-feed-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const localStateUtils = readFileSync(
   new URL(
     "../../app/notificacoes/lib/notificacoes-local-state-utils.ts",
@@ -304,11 +311,12 @@ test("preserva textos, autores e iniciais dos blocos sociais", () => {
   );
 });
 
-test("página importa os helpers extraídos e preserva as fronteiras locais", () => {
+test("componentes visuais importam os helpers extraídos e preservam as fronteiras locais", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?notificacaoTemAutorSocial,[\s\S]*?notificacaoUsaCardSocial,[\s\S]*?obterDetalheNotificacao,[\s\S]*?obterIconeNotificacao,[\s\S]*?obterInicialNotificacao,[\s\S]*?obterNomeAutorNotificacao,[\s\S]*?obterTextoBlocoSocialNotificacao,[\s\S]*?obterTituloBlocoSocialNotificacao,[\s\S]*?obterTituloExibicaoNotificacao,[\s\S]*?\} from "\.\/lib\/notificacoes-display-utils";/,
+    cartaoFeed,
+    /import \{[\s\S]*?criarAvatarNotificacaoStyle,[\s\S]*?notificacaoTemAutorSocial,[\s\S]*?notificacaoUsaCardSocial,[\s\S]*?obterDetalheNotificacao,[\s\S]*?obterIconeNotificacao,[\s\S]*?obterInicialNotificacao,[\s\S]*?obterNomeAutorNotificacao,[\s\S]*?obterTextoBlocoSocialNotificacao,[\s\S]*?obterTituloBlocoSocialNotificacao,[\s\S]*?obterTituloExibicaoNotificacao,[\s\S]*?\} from "\.\.\/lib\/notificacoes-display-utils";/,
   );
+  assert.match(pagina, /import NotificacoesFeed/);
 
   for (const helper of [
     "notificacaoUsaCardSocial",
@@ -345,13 +353,13 @@ test("página importa os helpers extraídos e preserva as fronteiras locais", ()
   assert.doesNotMatch(pagina, /function normalizarNotificacao\(/);
   assert.doesNotMatch(pagina, /function normalizarNotificacaoSupabase\(/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?criarAvatarNotificacaoStyle,[\s\S]*?\} from "\.\/lib\/notificacoes-display-utils";/,
+    cartaoFeed,
+    /import \{[\s\S]*?criarAvatarNotificacaoStyle,[\s\S]*?\} from "\.\.\/lib\/notificacoes-display-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarAvatarNotificacaoStyle\(/);
   assert.match(recordNormalizers, /obterDetalheNotificacao\(\{\s*id,/);
-  assert.match(pagina, /notificacaoUsaCardSocial\(notificacao\)/);
-  assert.match(pagina, /obterTituloBlocoSocialNotificacao\(notificacao\)/);
+  assert.match(cartaoFeed, /notificacaoUsaCardSocial\(notificacao\)/);
+  assert.match(cartaoFeed, /obterTituloBlocoSocialNotificacao\(notificacao\)/);
   assert.match(
     painelAcoes,
     /import \{[\s\S]*?obterAcaoPrincipalNotificacao,[\s\S]*?obterNomeAutorNotificacao,[\s\S]*?\} from "\.\.\/lib\/notificacoes-display-utils";/,

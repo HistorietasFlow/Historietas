@@ -13,6 +13,20 @@ const pagina = readFileSync(
   new URL("../../app/notificacoes/page.tsx", import.meta.url),
   "utf8",
 );
+const feedCard = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-feed-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const feed = readFileSync(
+  new URL(
+    "../../app/notificacoes/components/notificacoes-feed.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const exportsEsperados = [
   "listStyle",
@@ -82,15 +96,16 @@ test("cards de Notificações exportam estilos e variantes literais", () => {
   }
 });
 
-test("página delega os estilos de card sem definições duplicadas", () => {
+test("componente do feed delega os estilos de card sem definições duplicadas", () => {
   assert.match(
-    pagina,
-    /from "\.\/lib\/notificacoes-card-styles";/,
+    feedCard,
+    /from "\.\.\/lib\/notificacoes-card-styles";/,
   );
+  assert.match(pagina, /import NotificacoesFeed/);
 
   for (const nome of exportsEsperados) {
     assert.doesNotMatch(
-      pagina,
+      feedCard,
       new RegExp(`const ${nome}: CSSProperties =`),
     );
   }
@@ -99,5 +114,42 @@ test("página delega os estilos de card sem definições duplicadas", () => {
 test("módulo de cards não contém efeitos, Supabase ou storage", () => {
   for (const proibido of ["useEffect", "useState", "supabase", "localStorage", "window", "document", "<"]) {
     assert.ok(!estilos.includes(proibido), `referência indevida: ${proibido}`);
+  }
+});
+
+test("feed e cartão preservam a nova fronteira visual e seus contratos", () => {
+  for (const contrato of [
+    'import NotificacoesEmptyState from "./notificacoes-empty-state"',
+    'import NotificacoesFeedCard from "./notificacoes-feed-card"',
+    'mensagem="Nenhuma notificação"',
+    'mensagem="Nada encontrado"',
+    'aria-label="Lista de notificações"',
+    "notificacoesFiltradas.map",
+    "prepararNotificacaoTexto(notificacaoOriginal)",
+    "key={notificacao.id}",
+    "totalNotificacoes={notificacoesFiltradas.length}",
+  ]) {
+    assert.ok(feed.includes(contrato), `contrato ausente: ${contrato}`);
+  }
+
+  for (const contrato of [
+    '"use client"',
+    "criarAvatarNotificacaoStyle",
+    "desktopReadCommunityCardStyle",
+    "desktopCommunityCardStyle",
+    "desktopReadCardStyle",
+    "desktopCardStyle",
+    "Abrir ações de ${tituloExibicao}",
+    "Aceitando...",
+    "Recusando...",
+    "onAlternarMenuNotificacao(notificacao.id)",
+    "onResponderSolicitacaoSeguidor(notificacao, true)",
+    "onResponderSolicitacaoSeguidor(notificacao, false)",
+  ]) {
+    assert.ok(feedCard.includes(contrato), `contrato ausente: ${contrato}`);
+  }
+
+  for (const proibido of ["supabase", "localStorage", "useEffect", "useState"]) {
+    assert.ok(!feedCard.includes(proibido), `referência indevida: ${proibido}`);
   }
 });

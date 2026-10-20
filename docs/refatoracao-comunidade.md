@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Registro da Fase 14 — Notificações
+
+- A lista e o cartão de notificações foram isolados em componentes visuais, preservando estados vazios, variantes desktop, acessibilidade, navegação e callbacks de interação na página.
+
 ## Registro da Fase 13 — Notificações
 
 - Os controles superiores e o menu de ações por notificação foram isolados em componentes visuais, preservando busca, filtros, portal, navegação e callbacks de mutação na página.
