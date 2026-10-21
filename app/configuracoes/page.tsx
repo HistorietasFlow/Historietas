@@ -28,6 +28,7 @@ import {
   ValorLinha,
 } from "./components/configuracoes-settings-primitives";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
+import { useConfiguracoesBlockedUsers } from "./hooks/use-configuracoes-blocked-users";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
@@ -80,7 +81,6 @@ import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-mo
 import type {
   PreferenciasConta,
   ResumoLocal,
-  UsuarioBloqueadoConfiguracoes,
   UsuarioConfiguracoes,
 } from "./lib/configuracoes-account-models";
 import {
@@ -146,17 +146,6 @@ export default function ConfiguracoesPage() {
   const [salvando, setSalvando] = useState(false);
   const [busca, setBusca] = useState("");
   const [adminLiberado, setAdminLiberado] = useState(false);
-  const [mostrarUsuariosBloqueados, setMostrarUsuariosBloqueados] =
-    useState(false);
-  const [usuariosBloqueados, setUsuariosBloqueados] = useState<
-    UsuarioBloqueadoConfiguracoes[]
-  >([]);
-  const [carregandoUsuariosBloqueados, setCarregandoUsuariosBloqueados] =
-    useState(false);
-  const [desbloqueandoUsuarioId, setDesbloqueandoUsuarioId] =
-    useState("");
-  const [erroUsuariosBloqueados, setErroUsuariosBloqueados] =
-    useState("");
   const {
     mostrarSeguranca,
     setMostrarSeguranca,
@@ -200,6 +189,21 @@ export default function ConfiguracoesPage() {
   function t(portugues: string, ingles: string, espanhol: string) {
     return textoIdioma(language, portugues, ingles, espanhol);
   }
+
+  const {
+    mostrarUsuariosBloqueados,
+    usuariosBloqueados,
+    setUsuariosBloqueados,
+    carregandoUsuariosBloqueados,
+    desbloqueandoUsuarioId,
+    erroUsuariosBloqueados,
+    carregarUsuariosBloqueados,
+    alternarUsuariosBloqueados,
+    desbloquearUsuarioConfiguracoes,
+  } = useConfiguracoesBlockedUsers({
+    traduzirTexto: t,
+    mostrarMensagemAcao,
+  });
 
   useEffect(() => {
     let cancelado = false;
@@ -279,6 +283,8 @@ export default function ConfiguracoesPage() {
     return () => {
       cancelado = true;
     };
+    // setUsuariosBloqueados é um setter React estável exposto pelo hook.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
 
@@ -796,114 +802,6 @@ export default function ConfiguracoesPage() {
       );
     } finally {
       setSalvandoSenha(false);
-    }
-  }
-
-  async function carregarUsuariosBloqueados() {
-    if (carregandoUsuariosBloqueados) {
-      return;
-    }
-
-    setCarregandoUsuariosBloqueados(true);
-    setErroUsuariosBloqueados("");
-
-    try {
-      const lista = await listarUsuariosBloqueadosConfiguracoes();
-      setUsuariosBloqueados(lista);
-    } catch (error) {
-      setErroUsuariosBloqueados(
-        error instanceof Error && error.message.trim()
-          ? error.message
-          : t(
-              "Não foi possível carregar os usuários bloqueados.",
-              "Blocked users could not be loaded.",
-              "No se pudieron cargar los usuarios bloqueados.",
-            ),
-      );
-    } finally {
-      setCarregandoUsuariosBloqueados(false);
-    }
-  }
-
-  function alternarUsuariosBloqueados() {
-    setMostrarUsuariosBloqueados((mostrarAtual) => {
-      const proximo = !mostrarAtual;
-
-      if (proximo) {
-        void carregarUsuariosBloqueados();
-      }
-
-      return proximo;
-    });
-  }
-
-  async function desbloquearUsuarioConfiguracoes(
-    usuarioBloqueado: UsuarioBloqueadoConfiguracoes,
-  ) {
-    if (
-      desbloqueandoUsuarioId ||
-      !idUsuarioSupabaseValido(usuarioBloqueado.userId)
-    ) {
-      return;
-    }
-
-    const confirmou = window.confirm(
-      t(
-        `Desbloquear ${usuarioBloqueado.nome}?`,
-        `Unblock ${usuarioBloqueado.nome}?`,
-        `¿Desbloquear a ${usuarioBloqueado.nome}?`,
-      ),
-    );
-
-    if (!confirmou) {
-      return;
-    }
-
-    setDesbloqueandoUsuarioId(usuarioBloqueado.userId);
-    setErroUsuariosBloqueados("");
-
-    try {
-      const { data, error } = await supabase.rpc(
-        "desbloquear_usuario",
-        { p_bloqueado_id: usuarioBloqueado.userId },
-      );
-
-      if (error || data !== true) {
-        throw error || new Error(
-          t(
-            "O desbloqueio não foi confirmado.",
-            "The unblock action was not confirmed.",
-            "No se confirmó el desbloqueo.",
-          ),
-        );
-      }
-
-      setUsuariosBloqueados((usuariosAtuais) =>
-        usuariosAtuais.filter(
-          (item) => item.userId !== usuarioBloqueado.userId,
-        ),
-      );
-
-      mostrarMensagemAcao(
-        "sucesso",
-        t(
-          `${usuarioBloqueado.nome} foi desbloqueado.`,
-          `${usuarioBloqueado.nome} was unblocked.`,
-          `${usuarioBloqueado.nome} fue desbloqueado.`,
-        ),
-      );
-    } catch (error) {
-      setErroUsuariosBloqueados(
-        error instanceof Error && error.message.trim()
-          ? error.message
-          : t(
-              "Não foi possível desbloquear este usuário.",
-              "This user could not be unblocked.",
-              "No se pudo desbloquear a este usuario.",
-            ),
-      );
-    } finally {
-      setDesbloqueandoUsuarioId("");
     }
   }
 

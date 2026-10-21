@@ -30,6 +30,13 @@ const blockedUsersStyles = readFileSync(
   ),
   "utf8",
 );
+const blockedUsersHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-blocked-users.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -121,6 +128,46 @@ test("estilos de feedback preservam valores e permanecem puros", () => {
   }
 });
 
+test("painel de bloqueados preserva lifecycle, confirmação e RPC", () => {
+  assert.match(blockedUsersHook, /^"use client";/);
+  assert.match(
+    blockedUsersHook,
+    /export function useConfiguracoesBlockedUsers\(/,
+  );
+  assert.match(
+    blockedUsersHook,
+    /from "\.\.\/\.\.\/\.\.\/lib\/supabase\/client";/,
+  );
+  assert.match(
+    blockedUsersHook,
+    /from "\.\.\/lib\/configuracoes-blocked-users-loader";/,
+  );
+  assert.match(
+    blockedUsersHook,
+    /useState<\s*UsuarioBloqueadoConfiguracoes\[\]\s*>/,
+  );
+  assert.match(blockedUsersHook, /async function carregarUsuariosBloqueados\(\)/);
+  assert.match(blockedUsersHook, /if \(carregandoUsuariosBloqueados\)/);
+  assert.match(blockedUsersHook, /function alternarUsuariosBloqueados\(\)/);
+  assert.match(blockedUsersHook, /void carregarUsuariosBloqueados\(\)/);
+  assert.match(
+    blockedUsersHook,
+    /async function desbloquearUsuarioConfiguracoes\(/,
+  );
+  assert.match(blockedUsersHook, /idUsuarioSupabaseValido\(usuarioBloqueado\.userId\)/);
+  assert.match(blockedUsersHook, /window\.confirm/);
+  assert.match(blockedUsersHook, /supabase\.rpc\(\s*"desbloquear_usuario"/);
+  assert.match(blockedUsersHook, /p_bloqueado_id: usuarioBloqueado\.userId/);
+  assert.match(blockedUsersHook, /data !== true/);
+  assert.match(blockedUsersHook, /usuariosAtuais\.filter/);
+  assert.match(blockedUsersHook, /mostrarMensagemAcao\(\s*"sucesso"/);
+  assert.match(blockedUsersHook, /setDesbloqueandoUsuarioId\(""\)/);
+  assert.doesNotMatch(
+    blockedUsersHook,
+    /localStorage|sessionStorage|useEffect|JSX/,
+  );
+});
+
 test("página delega feedback visual e mantém ações e estados", () => {
   assert.match(
     pagina,
@@ -135,13 +182,16 @@ test("página delega feedback visual e mantém ações e estados", () => {
   assert.match(pagina, /onRecarregar=\{carregarUsuariosBloqueados\}/);
   assert.match(pagina, /onDesbloquear=\{desbloquearUsuarioConfiguracoes\}/);
   assert.match(pagina, /onFechar=\{\(\) => setMensagemAcao\(null\)\}/);
-  assert.match(pagina, /async function carregarUsuariosBloqueados\(\)/);
-  assert.match(pagina, /async function desbloquearUsuarioConfiguracoes\(/);
-  assert.match(pagina, /useConfiguracoesActionMessage\(\)/);
   assert.match(
     pagina,
-    /import type \{[\s\S]*UsuarioBloqueadoConfiguracoes,[\s\S]*\} from "\.\/lib\/configuracoes-account-models";/,
+    /from "\.\/hooks\/use-configuracoes-blocked-users";/,
   );
+  assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
+  assert.match(pagina, /setUsuariosBloqueados\(usuariosBloqueadosCarregados\)/);
+  assert.doesNotMatch(pagina, /async function carregarUsuariosBloqueados\(\)/);
+  assert.doesNotMatch(pagina, /async function desbloquearUsuarioConfiguracoes\(/);
+  assert.match(pagina, /useConfiguracoesActionMessage\(\)/);
+  assert.doesNotMatch(pagina, /UsuarioBloqueadoConfiguracoes/);
   assert.doesNotMatch(pagina, /type UsuarioBloqueadoConfiguracoes = \{/);
 
   for (const style of [

@@ -171,6 +171,13 @@ const securityModalStateHookSource = readFileSync(
   ),
   "utf8",
 );
+const blockedUsersHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-blocked-users.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -654,6 +661,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/hooks\/use-configuracoes-security-modal-state";/,
   );
   assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-blocked-users";/,
+  );
+  assert.match(
     accountBackupActionsSource,
     /from "\.\/configuracoes-account-backup";/,
   );
@@ -764,6 +775,7 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
   assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
   assert.match(pagina, /useConfiguracoesSecurityModalState\(\)/);
+  assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
   assert.match(pagina, /validarExclusaoContaConfiguracoes\(\s*senhaExclusaoConta,/);
   assert.match(pagina, /validarAlteracaoSenhaConfiguracoes\(\s*senhaAtual,/);
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
@@ -908,4 +920,24 @@ test("hook dos modais preserva os estados e delega as transições puras", () =>
   assert.doesNotMatch(pagina, /const \[mostrarSeguranca, setMostrarSeguranca\]/);
   assert.doesNotMatch(pagina, /function abrirSeguranca\(\)/);
   assert.doesNotMatch(pagina, /function fecharExclusaoConta\(\)/);
+});
+
+test("hook de bloqueados preserva a fronteira de estado e interação", () => {
+  assert.match(blockedUsersHookSource, /^"use client";/);
+  assert.match(
+    blockedUsersHookSource,
+    /export function useConfiguracoesBlockedUsers\(/,
+  );
+  assert.match(
+    blockedUsersHookSource,
+    /import type \{ UsuarioBloqueadoConfiguracoes \}/,
+  );
+  assert.match(blockedUsersHookSource, /listarUsuariosBloqueadosConfiguracoes/);
+  assert.match(blockedUsersHookSource, /idUsuarioSupabaseValido/);
+  assert.match(blockedUsersHookSource, /supabase\.rpc/);
+  assert.match(blockedUsersHookSource, /window\.confirm/);
+  assert.doesNotMatch(
+    blockedUsersHookSource,
+    /localStorage|sessionStorage|useEffect|JSX/,
+  );
 });
