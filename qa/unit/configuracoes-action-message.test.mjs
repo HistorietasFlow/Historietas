@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const overlays = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-overlays.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const backupActions = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-backup-actions.ts",
@@ -126,11 +133,18 @@ test("Configurações mantém domínio e toast na página", () => {
   assert.match(accountActionHandlers, /from "\.\.\/lib\/configuracoes-profile-save-action";/);
   assert.match(
     pagina,
-    /import \{ ConfiguracoesActionToast \} from "\.\/components\/configuracoes-action-toast";/,
+    /import \{ ConfiguracoesPageOverlays \} from "\.\/components\/configuracoes-page-overlays";/,
   );
-  assert.match(pagina, /<ConfiguracoesActionToast/);
-  assert.match(pagina, /mensagem=\{mensagemAcao\}/);
-  assert.match(pagina, /onFechar=\{\(\) => setMensagemAcao\(null\)\}/);
+  assert.match(pagina, /<ConfiguracoesPageOverlays/);
+  assert.match(pagina, /mensagemAcao=\{mensagemAcao\}/);
+  assert.match(pagina, /onFecharMensagemAcao=\{\(\) => setMensagemAcao\(null\)\}/);
+  assert.match(
+    overlays,
+    /import \{ ConfiguracoesActionToast \} from "\.\/configuracoes-action-toast";/,
+  );
+  assert.match(overlays, /<ConfiguracoesActionToast/);
+  assert.match(overlays, /mensagem=\{mensagemAcao\}/);
+  assert.match(overlays, /onFechar=\{onFecharMensagemAcao\}/);
   assert.match(toast, /onClick=\{onFechar\}/);
   assert.match(toast, /role=\{mensagem\.tipo === "erro" \? "alert" : "status"\}/);
   assert.match(accountActionHandlers, /async function salvar\(/);

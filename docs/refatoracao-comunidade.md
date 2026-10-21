@@ -938,3 +938,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As seções visuais de privacidade do perfil, visibilidade das abas e interações do Diário foram movidas para componentes dedicados, preservando filtros, traduções, selects, controles, usuários bloqueados e callbacks.
 - Estados, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 44 — Configurações
+
+- A seção visual “Sua conta” e a composição dos overlays de senha, exclusão e feedback foram movidas para componentes dedicados, preservando filtros, inputs, normalização de username, carregamento, traduções, modais e callbacks.
+- Estados, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.

@@ -79,6 +79,13 @@ const secaoPrivacidadeDiario = readFileSync(
   ),
   "utf8",
 );
+const secaoConta = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-account-details-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -167,6 +174,10 @@ test("estilos das primitives preservam valores e spreads", () => {
 
 test("a página delega primitives visuais e preserva a orquestração", () => {
   assert.match(
+    secaoConta,
+    /from "\.\/configuracoes-settings-primitives";/,
+  );
+  assert.doesNotMatch(
     pagina,
     /from "\.\/components\/configuracoes-settings-primitives";/,
   );
@@ -227,6 +238,7 @@ test("a página delega primitives visuais e preserva a orquestração", () => {
     secaoPrivacidadePerfil,
     secaoVisibilidadeAbas,
     secaoPrivacidadeDiario,
+    secaoConta,
   ];
   const totalSecoes = consumidoresPrimitives.reduce(
     (total, source) => total + (source.match(/<SettingsSection/g) || []).length,
@@ -239,7 +251,8 @@ test("a página delega primitives visuais e preserva a orquestração", () => {
 
   assert.equal(totalSecoes >= 8, true);
   assert.equal(totalLinhas >= 30, true);
-  assert.equal((pagina.match(/<SettingsInput/g) || []).length, 3);
+  assert.equal((pagina.match(/<SettingsInput/g) || []).length, 0);
+  assert.equal((secaoConta.match(/<SettingsInput/g) || []).length, 3);
   assert.match(
     pagina,
     /from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
