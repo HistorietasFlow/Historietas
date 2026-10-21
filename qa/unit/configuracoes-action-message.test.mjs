@@ -55,6 +55,13 @@ const profileSaveAction = readFileSync(
   ),
   "utf8",
 );
+const accountActionHandlers = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
   assert.match(hook, /^"use client";/);
@@ -102,7 +109,7 @@ test("Configurações mantém domínio e toast na página", () => {
   assert.doesNotMatch(pagina, /type MensagemAcaoConfiguracoes =/);
 
   const chamadasDominio = [
-    pagina,
+    accountActionHandlers,
     backupActions,
     blockedUsersHook,
     preferenceActions,
@@ -112,12 +119,11 @@ test("Configurações mantém domínio e toast na página", () => {
   assert.equal(chamadasDominio.length, 15);
   assert.match(
     pagina,
-    /from "\.\/lib\/configuracoes-account-backup-actions";/,
+    /import \{ useConfiguracoesAccountActionHandlers \} from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
   );
-  assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-profile-save-action";/,
-  );
+  assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
+  assert.match(accountActionHandlers, /from "\.\.\/lib\/configuracoes-account-backup-actions";/);
+  assert.match(accountActionHandlers, /from "\.\.\/lib\/configuracoes-profile-save-action";/);
   assert.match(
     pagina,
     /import \{ ConfiguracoesActionToast \} from "\.\/components\/configuracoes-action-toast";/,
@@ -127,9 +133,12 @@ test("Configurações mantém domínio e toast na página", () => {
   assert.match(pagina, /onFechar=\{\(\) => setMensagemAcao\(null\)\}/);
   assert.match(toast, /onClick=\{onFechar\}/);
   assert.match(toast, /role=\{mensagem\.tipo === "erro" \? "alert" : "status"\}/);
-  assert.match(pagina, /function salvar\(/);
-  assert.match(pagina, /function alterarSenha\(/);
-  assert.match(pagina, /function excluirConta\(/);
+  assert.match(accountActionHandlers, /async function salvar\(/);
+  assert.match(accountActionHandlers, /async function alterarSenha\(/);
+  assert.match(accountActionHandlers, /async function excluirConta\(/);
+  assert.doesNotMatch(pagina, /async function salvar\(/);
+  assert.doesNotMatch(pagina, /async function alterarSenha\(/);
+  assert.doesNotMatch(pagina, /async function excluirConta\(/);
 });
 
 test("ação de saída preserva limpeza, fallback e navegação", () => {
@@ -141,12 +150,9 @@ test("ação de saída preserva limpeza, fallback e navegação", () => {
   assert.match(signOutAction, /N\\u00e3o foi poss\\u00edvel sair da conta agora/);
   assert.match(signOutAction, /redirecionarLogin\(\);\s*atualizarRota\(\);/);
   assert.doesNotMatch(signOutAction, /useState|useEffect|localStorage|supabase\./);
-  assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-sign-out-action";/,
-  );
-  assert.match(pagina, /sairDaContaConfiguracoes\(\{/);
-  assert.match(pagina, /encerrarSessao: \(\) => supabase\.auth\.signOut\(\)/);
-  assert.match(pagina, /redirecionarLogin: \(\) => router\.replace\("\/login"\)/);
-  assert.match(pagina, /atualizarRota: \(\) => router\.refresh\(\)/);
+  assert.match(accountActionHandlers, /from "\.\.\/lib\/configuracoes-sign-out-action";/);
+  assert.match(accountActionHandlers, /sairDaContaConfiguracoes\(\{/);
+  assert.match(accountActionHandlers, /encerrarSessao: \(\) => supabase\.auth\.signOut\(\)/);
+  assert.match(accountActionHandlers, /redirecionarLogin: \(\) => router\.replace\("\/login"\)/);
+  assert.match(accountActionHandlers, /atualizarRota: \(\) => router\.refresh\(\)/);
 });

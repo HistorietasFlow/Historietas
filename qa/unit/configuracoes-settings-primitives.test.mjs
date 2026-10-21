@@ -20,6 +20,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const accountActionHandlers = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("primitives de Configurações preservam seções, linhas e inputs", () => {
   assert.match(componente, /import Link from "next\/link";/);
@@ -148,13 +155,18 @@ test("a página delega primitives visuais e preserva a orquestração", () => {
   assert.equal((pagina.match(/<SettingsSection/g) || []).length >= 8, true);
   assert.equal((pagina.match(/<SettingsRow/g) || []).length >= 30, true);
   assert.equal((pagina.match(/<SettingsInput/g) || []).length, 3);
-  assert.match(pagina, /async function salvar\(/);
-  assert.match(pagina, /supabase\./);
   assert.match(
     pagina,
-    /from "\.\/lib\/configuracoes-account-deletion-action";/,
+    /from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
   );
-  assert.match(pagina, /excluirContaConfiguracoes\(\{/);
+  assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
+  assert.match(accountActionHandlers, /async function salvar\(/);
+  assert.match(accountActionHandlers, /supabase\./);
+  assert.match(
+    accountActionHandlers,
+    /from "\.\.\/lib\/configuracoes-account-deletion-action";/,
+  );
+  assert.match(accountActionHandlers, /excluirContaConfiguracoes\(\{/);
   assert.doesNotMatch(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
   assert.doesNotMatch(pagina, /localStorage/);
 });

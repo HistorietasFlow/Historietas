@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import type { FormEvent } from "react";
-import { supabase } from "../../lib/supabase/client";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -31,6 +29,7 @@ import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-
 import { useConfiguracoesBlockedUsers } from "./hooks/use-configuracoes-blocked-users";
 import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-access";
 import { useConfiguracoesInitialAccess } from "./hooks/use-configuracoes-initial-access";
+import { useConfiguracoesAccountActionHandlers } from "./hooks/use-configuracoes-account-action-handlers";
 import { useConfiguracoesPreferenceActions } from "./hooks/use-configuracoes-preference-actions";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
@@ -52,18 +51,9 @@ import type {
   QuemPodeComentarDiario,
   VisibilidadeAbaPerfil,
 } from "./lib/configuracoes-privacy-preferences";
-import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
-import { salvarConfiguracoesPerfil } from "./lib/configuracoes-profile-save-action";
-import { excluirContaConfiguracoes } from "./lib/configuracoes-account-deletion-action";
-import { alterarSenhaConfiguracoes } from "./lib/configuracoes-password-change-action";
-import {
-  baixarBackupContaConfiguracoes,
-  copiarBackupConfiguracoes,
-} from "./lib/configuracoes-account-backup-actions";
 import {
   calcularTotalBibliotecaConfiguracoes,
 } from "./lib/configuracoes-account-preference-state-utils";
-import { sairDaContaConfiguracoes } from "./lib/configuracoes-sign-out-action";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -240,88 +230,46 @@ export default function ConfiguracoesPage() {
   });
 
 
-  async function salvar() {
-    await salvarConfiguracoesPerfil({
-      salvando,
-      usuarioIdLogado,
-      preferencias,
-      privacidade,
-      usuario,
-      language,
-      redirecionarLogin: () => router.replace(criarLoginHrefConfiguracoes()),
-      setMensagemAcao,
-      mostrarMensagemAcao,
-      traduzirTexto: t,
-      setErroUsername,
-      setSalvando,
-      setPreferencias,
-      setUsuario,
-      setResumo,
-    });
-  }
-
-  async function excluirConta(event: FormEvent<HTMLFormElement>) {
-    await excluirContaConfiguracoes({
-      event,
-      excluindoConta,
-      senhaExclusaoConta,
-      confirmacaoExclusaoConta,
-      language,
-      usuarioIdLogado,
-      setErroExclusaoConta,
-      setExcluindoConta,
-      redirecionarLogin: () => router.replace("/login"),
-      atualizarRota: () => router.refresh(),
-      traduzirTexto: t,
-    });
-  }
-
-  async function alterarSenha(event: FormEvent<HTMLFormElement>) {
-    await alterarSenhaConfiguracoes({
-      event,
-      salvandoSenha,
-      senhaAlterada,
-      senhaAtual,
-      novaSenha,
-      confirmarNovaSenha,
-      language,
-      usuarioIdLogado,
-      setSenhaAtual,
-      setNovaSenha,
-      setConfirmarNovaSenha,
-      setSalvandoSenha,
-      setErroSenha,
-      setSenhaAlterada,
-      traduzirTexto: t,
-    });
-  }
-
-  const copiarBackup = () =>
-    copiarBackupConfiguracoes({
-      usuarioIdLogado,
-      setMensagemAcao,
-      mostrarMensagemAcao,
-      traduzirTexto: t,
-    });
-
-  const baixarBackup = () =>
-    baixarBackupContaConfiguracoes({
-      usuarioIdLogado,
-      setMensagemAcao,
-      mostrarMensagemAcao,
-      traduzirTexto: t,
-    });
-
-  async function sairDaConta() {
-    await sairDaContaConfiguracoes({
-      limparMensagem: () => setMensagemAcao(null),
-      encerrarSessao: () => supabase.auth.signOut(),
-      redirecionarLogin: () => router.replace("/login"),
-      atualizarRota: () => router.refresh(),
-      mostrarMensagemAcao,
-      traduzirTexto: t,
-    });
-  }
+  const {
+    salvar,
+    excluirConta,
+    alterarSenha,
+    copiarBackup,
+    baixarBackup,
+    sairDaConta,
+  } = useConfiguracoesAccountActionHandlers({
+    router,
+    salvando,
+    usuarioIdLogado,
+    preferencias,
+    privacidade,
+    usuario,
+    language,
+    setMensagemAcao,
+    mostrarMensagemAcao,
+    traduzirTexto: t,
+    setErroUsername,
+    setSalvando,
+    setPreferencias,
+    setUsuario,
+    setResumo,
+    excluindoConta,
+    senhaExclusaoConta,
+    confirmacaoExclusaoConta,
+    setErroExclusaoConta,
+    setExcluindoConta,
+    salvandoSenha,
+    senhaAlterada,
+    senhaAtual,
+    novaSenha,
+    confirmarNovaSenha,
+    setSenhaAtual,
+    setNovaSenha,
+    setConfirmarNovaSenha,
+    setSalvandoSenha,
+    setErroSenha,
+    setSenhaAlterada,
+  });
 
   if (verificandoAcesso) {
     return (
