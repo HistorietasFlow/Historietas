@@ -108,6 +108,13 @@ const profileSupabaseSaverSource = readFileSync(
   ),
   "utf8",
 );
+const profileSaveActionSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-profile-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountDeletionLocalCleanupSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-deletion-local-cleanup.ts",
@@ -641,7 +648,7 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.match(
     pagina,
-    /from "\.\/lib\/configuracoes-profile-supabase-saver";/,
+    /from "\.\/lib\/configuracoes-profile-save-action";/,
   );
   assert.match(
     pagina,
@@ -688,6 +695,10 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-account-summary-supabase";/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-profile-save-action";/,
   );
   assert.match(
     pagina,
@@ -764,10 +775,16 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /carregarPreferenciasPrivacidade\(usuarioCarregado\.id,/,
   );
-  assert.match(pagina, /salvarPreferenciasPrivacidade\(/);
-  assert.doesNotMatch(pagina, /async function salvarPerfilConfiguracoesSupabase\(/);
+  assert.match(profileSaveActionSource, /export async function salvarConfiguracoesPerfil\(/);
+  assert.match(profileSaveActionSource, /salvarPerfilConfiguracoesSupabase\(\{/);
+  assert.match(profileSaveActionSource, /salvarPreferencias\(preferenciasNormalizadas, userIdSeguro\)/);
+  assert.match(profileSaveActionSource, /salvarPreferenciasPrivacidade\(/);
+  assert.match(profileSaveActionSource, /supabase\.auth\.getUser\(\)/);
+  assert.match(profileSaveActionSource, /supabase\.auth\.updateUser\(\{/);
+  assert.match(profileSaveActionSource, /carregarResumoContaSupabase\(userIdSeguro\)/);
+  assert.doesNotMatch(pagina, /async function salvarConfiguracoesPerfil\(/);
   assert.doesNotMatch(pagina, /function limparDadosLocaisContaExcluida\(/);
-  assert.match(pagina, /salvarPerfilConfiguracoesSupabase\(\{/);
+  assert.match(pagina, /salvarConfiguracoesPerfil\(\{/);
   assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
   assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
   assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);

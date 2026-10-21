@@ -883,3 +883,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de saída da conta foi isolada, preservando limpeza de mensagem, encerramento de sessão, fallback de erro, redirecionamento e atualização da rota.
 - Autenticação, RLS, estados, apresentação e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 33 — Configurações
+
+- A orquestração de salvamento do perfil, preferências e privacidade foi isolada, preservando validações, autenticação, persistência local, sincronização remota, mensagens, ordem dos setters e fallbacks.
+- Estados, lifecycle, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
