@@ -18,17 +18,10 @@ import { salvarConfiguracoesPerfil } from "../lib/configuracoes-profile-save-act
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "../lib/configuracoes-route-utils";
 import { sairDaContaConfiguracoes } from "../lib/configuracoes-sign-out-action";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
-
-type MostrarMensagemAcaoConfiguracoes = (
-  tipo: "sucesso" | "erro" | "aviso",
-  texto: string,
-) => void;
+import type {
+  MostrarMensagemAcaoConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type RouterConfiguracoes = {
   replace: (href: string) => void;

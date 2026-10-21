@@ -3,12 +3,7 @@ import type { HistorietasLanguage } from "../../../lib/i18n";
 import { supabase } from "../../../lib/supabase/client";
 import { traduzirErroSenhaConfiguracoes } from "./configuracoes-error-messages";
 import { validarAlteracaoSenhaConfiguracoes } from "./configuracoes-security-form-validation";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "./configuracoes-callback-types";
 
 export async function alterarSenhaConfiguracoes({
   event,

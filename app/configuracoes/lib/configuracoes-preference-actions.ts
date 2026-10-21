@@ -9,17 +9,10 @@ import {
   salvarPreferenciasPrivacidade,
 } from "./configuracoes-privacy-preferences";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
-
-type MostrarMensagemAcaoConfiguracoes = (
-  tipo: "sucesso" | "erro" | "aviso",
-  texto: string,
-) => void;
+import type {
+  MostrarMensagemAcaoConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "./configuracoes-callback-types";
 
 export function atualizarPreferenciaConfiguracoes<
   K extends keyof PreferenciasConta,

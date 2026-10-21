@@ -1,6 +1,10 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
+import type {
+  MostrarMensagemAcaoConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 import type { PreferenciasConta } from "../lib/configuracoes-account-models";
 import {
   alternarReceberAvisosConfiguracoes,
@@ -13,17 +17,6 @@ import {
   atualizarPrivacidadeConfiguracoes,
 } from "../lib/configuracoes-privacy-actions";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
-
-type MostrarMensagemAcaoConfiguracoes = (
-  tipo: "sucesso" | "erro" | "aviso",
-  texto: string,
-) => void;
 
 export function useConfiguracoesPreferenceActions({
   preferencias,

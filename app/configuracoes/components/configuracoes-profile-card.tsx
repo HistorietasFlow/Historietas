@@ -7,12 +7,7 @@ import {
   profileTextStyle,
   profileUsernameStyle,
 } from "../lib/configuracoes-shell-styles";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesProfileCardProps = {
   nomeExibicao: string;
