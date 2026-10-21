@@ -59,6 +59,8 @@ import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
 import { carregarResumoContaSupabase } from "./lib/configuracoes-account-summary-supabase";
 import { listarUsuariosBloqueadosConfiguracoes } from "./lib/configuracoes-blocked-users-loader";
 import { carregarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-supabase-loader";
+import { salvarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-supabase-saver";
+import { limparDadosLocaisContaExcluida } from "./lib/configuracoes-account-deletion-local-cleanup";
 import {
   carregarPreferencias,
   salvarPreferencias,
@@ -109,125 +111,6 @@ import {
   securitySecondaryButtonStyle,
   securitySuccessStyle,
 } from "./lib/configuracoes-security-styles";
-
-async function salvarPerfilConfiguracoesSupabase({
-  userId,
-  nome,
-  username,
-}: {
-  userId: string;
-  nome: string;
-  username: string;
-}) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo || !idUsuarioSupabaseValido(userIdLimpo)) {
-    return { ok: false, erro: "Usuário inválido." };
-  }
-
-  const usernameLimpo = normalizarUsernameConfiguracoes(username);
-  const nomeLimpo = nome.trim() || "Usuário";
-  const atualizadoEm = new Date().toISOString();
-
-  try {
-    let perfilId = "";
-    let erroBusca = "";
-
-    const { data: perfilPorUserId, error: erroUserId } = await supabase
-      .from("profiles")
-      .select("id,user_id")
-      .eq("user_id", userIdLimpo)
-      .limit(1)
-      .maybeSingle();
-
-    if (erroUserId) {
-      erroBusca = erroUserId.message;
-    } else if (perfilPorUserId && typeof perfilPorUserId === "object") {
-      perfilId = pegarTexto(
-        (perfilPorUserId as Record<string, unknown>).id,
-      );
-    }
-
-    if (!perfilId) {
-      const { data: perfilPorId, error: erroId } = await supabase
-        .from("profiles")
-        .select("id,user_id")
-        .eq("id", userIdLimpo)
-        .limit(1)
-        .maybeSingle();
-
-      if (erroId) {
-        erroBusca = erroBusca || erroId.message;
-      } else if (perfilPorId && typeof perfilPorId === "object") {
-        perfilId = pegarTexto((perfilPorId as Record<string, unknown>).id);
-      }
-    }
-
-    const payloadAtualizacao = {
-      nome: nomeLimpo,
-      username: usernameLimpo || null,
-      atualizado_em: atualizadoEm,
-    };
-
-    if (perfilId) {
-      const { data: perfilAtualizado, error } = await supabase
-        .from("profiles")
-        .update(payloadAtualizacao)
-        .eq("id", perfilId)
-        .select("id")
-        .maybeSingle();
-
-      if (error) {
-        return { ok: false, erro: error.message };
-      }
-
-      if (!perfilAtualizado) {
-        return {
-          ok: false,
-          erro: "A atualização do perfil não foi confirmada.",
-        };
-      }
-
-      return { ok: true, erro: "" };
-    }
-
-    if (erroBusca) {
-      return { ok: false, erro: erroBusca };
-    }
-
-    const { data: perfilCriado, error } = await supabase
-      .from("profiles")
-      .insert({
-        id: userIdLimpo,
-        user_id: userIdLimpo,
-        tipo: "leitor",
-        avatar_url: "",
-        bio: "",
-        sobre_bio: "",
-        ...payloadAtualizacao,
-      })
-      .select("id")
-      .maybeSingle();
-
-    if (error) {
-      return { ok: false, erro: error.message };
-    }
-
-    if (!perfilCriado) {
-      return {
-        ok: false,
-        erro: "A criação do perfil não foi confirmada.",
-      };
-    }
-
-    return { ok: true, erro: "" };
-  } catch (error) {
-    return {
-      ok: false,
-      erro: error instanceof Error ? error.message : "Erro inesperado.",
-    };
-  }
-}
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
@@ -792,38 +675,6 @@ export default function ConfiguracoesPage() {
     const traducao = mensagens[codigo];
 
     return traducao ? t(...traducao) : mensagem;
-  }
-
-  function limparDadosLocaisContaExcluida(userId: string) {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const sufixoUsuario = `:${userId.trim()}`;
-
-    try {
-      for (let indice = localStorage.length - 1; indice >= 0; indice -= 1) {
-        const chave = localStorage.key(indice);
-
-        if (chave?.endsWith(sufixoUsuario)) {
-          localStorage.removeItem(chave);
-        }
-      }
-    } catch {
-      // A exclusão remota já foi concluída; falhas locais não devem bloquear a saída.
-    }
-
-    try {
-      for (let indice = sessionStorage.length - 1; indice >= 0; indice -= 1) {
-        const chave = sessionStorage.key(indice);
-
-        if (chave?.endsWith(sufixoUsuario)) {
-          sessionStorage.removeItem(chave);
-        }
-      }
-    } catch {
-      // A sessão do navegador será encerrada em seguida.
-    }
   }
 
   async function excluirConta(event: FormEvent<HTMLFormElement>) {

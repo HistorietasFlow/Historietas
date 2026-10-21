@@ -833,3 +833,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A leitura de perfil no Supabase foi isolada, preservando as duas consultas, validação, normalização e fallback.
 - Os estilos estáticos da página, dos modais de segurança/exclusão e dos selects de privacidade foram movidos sem alteração visual intencional.
+
+## Registro da Fase 22 — Configurações
+
+- A persistência do perfil no Supabase foi isolada, preservando busca, atualização, criação e fallbacks.
+- A limpeza local posterior à exclusão de conta foi movida para helper dedicado, preservando isolamento por usuário e falhas não bloqueantes.
