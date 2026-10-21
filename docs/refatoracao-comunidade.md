@@ -963,3 +963,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os adaptadores de voltar e de limpar o erro de username foram isolados, preservando a navegação e a ordem dos callbacks da seção de conta.
 - Estados, hooks, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 49 — Configurações
+
+- Os contratos compartilhados de tradução e de mensagens de ação foram centralizados, preservando literalmente as assinaturas utilizadas por hooks, ações e componentes.
+- Runtime, estados, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

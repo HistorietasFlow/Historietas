@@ -9,12 +9,7 @@ import {
   actionToastTitleStyle,
   actionToastWarningStyle,
 } from "../lib/configuracoes-action-toast-styles";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type MensagemAcaoConfiguracoesVisual = {
   tipo: "sucesso" | "erro" | "aviso";

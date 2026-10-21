@@ -5,17 +5,10 @@ import { supabase } from "../../../lib/supabase/client";
 import type { UsuarioBloqueadoConfiguracoes } from "../lib/configuracoes-account-models";
 import { idUsuarioSupabaseValido } from "../lib/configuracoes-account-utils";
 import { listarUsuariosBloqueadosConfiguracoes } from "../lib/configuracoes-blocked-users-loader";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
-
-type MostrarMensagemAcaoConfiguracoes = (
-  tipo: "sucesso" | "erro" | "aviso",
-  texto: string,
-) => void;
+import type {
+  MostrarMensagemAcaoConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type UseConfiguracoesBlockedUsersArgs = {
   traduzirTexto: TraduzirTextoConfiguracoes;

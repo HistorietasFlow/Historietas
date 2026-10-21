@@ -26,12 +26,7 @@ import {
   securitySecondaryButtonStyle,
   securitySuccessStyle,
 } from "../lib/configuracoes-security-styles";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesSecurityPasswordModalProps = {
   onFechar: () => void;

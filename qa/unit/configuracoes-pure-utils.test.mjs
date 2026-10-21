@@ -24,6 +24,13 @@ const privacySource = readFileSync(
   ),
   "utf8",
 );
+const callbackTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-callback-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const adminAccessHookSource = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-admin-access.ts",
@@ -1259,4 +1266,45 @@ test("hook de bloqueados preserva a fronteira de estado e interação", () => {
     blockedUsersHookSource,
     /localStorage|sessionStorage|useEffect|JSX/,
   );
+});
+
+test("contratos de callback compartilhados preservam assinaturas e consumidores", () => {
+  assert.match(
+    callbackTypesSource,
+    /export type TraduzirTextoConfiguracoes = \(\s+portugues: string,\s+ingles: string,\s+espanhol: string,\s+\) => string;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type MostrarMensagemAcaoConfiguracoes = \(\s+tipo: "sucesso" \| "erro" \| "aviso",\s+texto: string,\s+\) => void;/,
+  );
+  assert.doesNotMatch(
+    callbackTypesSource,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
+
+  for (const arquivo of [
+    "hooks/use-configuracoes-account-action-handlers.ts",
+    "hooks/use-configuracoes-blocked-users.ts",
+    "hooks/use-configuracoes-preference-actions.ts",
+    "lib/configuracoes-account-backup-actions.ts",
+    "lib/configuracoes-account-deletion-action.ts",
+    "lib/configuracoes-password-change-action.ts",
+    "lib/configuracoes-preference-actions.ts",
+    "lib/configuracoes-profile-save-action.ts",
+    "lib/configuracoes-sign-out-action.ts",
+    "components/configuracoes-account-deletion-modal.tsx",
+    "components/configuracoes-action-toast.tsx",
+    "components/configuracoes-blocked-users-panel.tsx",
+    "components/configuracoes-page-header.tsx",
+    "components/configuracoes-profile-card.tsx",
+    "components/configuracoes-search.tsx",
+    "components/configuracoes-security-password-modal.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /configuracoes-callback-types/);
+    assert.doesNotMatch(source, /type TraduzirTextoConfiguracoes/);
+  }
 });

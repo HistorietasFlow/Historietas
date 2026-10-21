@@ -1,13 +1,7 @@
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
-
-type MostrarMensagemAcaoConfiguracoes = (
-  tipo: "sucesso" | "erro" | "aviso",
-  texto: string,
-) => void;
+import type {
+  MostrarMensagemAcaoConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "./configuracoes-callback-types";
 
 export async function sairDaContaConfiguracoes({
   limparMensagem,

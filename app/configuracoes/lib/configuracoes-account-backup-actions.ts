@@ -1,17 +1,10 @@
 import { criarBackupLocal } from "./configuracoes-account-backup";
 import { baixarBackupConfiguracoes } from "./configuracoes-account-backup-download";
 import { copiarTextoConfiguracoes } from "./configuracoes-copy-utils";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
-
-type MostrarMensagemAcaoConfiguracoes = (
-  tipo: "sucesso" | "erro" | "aviso",
-  texto: string,
-) => void;
+import type {
+  MostrarMensagemAcaoConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "./configuracoes-callback-types";
 
 type AcoesBackupConfiguracoes = {
   usuarioIdLogado: string;

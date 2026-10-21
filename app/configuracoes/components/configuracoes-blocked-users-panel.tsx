@@ -14,12 +14,7 @@ import {
   blockedUsersPanelStyle,
   blockedUsersRetryButtonStyle,
 } from "../lib/configuracoes-blocked-users-styles";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesBlockedUsersPanelProps = {
   usuarios: UsuarioBloqueadoConfiguracoes[];

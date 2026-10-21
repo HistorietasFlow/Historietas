@@ -16,17 +16,10 @@ import { traduzirErroUsernameConfiguracoes } from "./configuracoes-error-message
 import { salvarPreferenciasPrivacidade } from "./configuracoes-privacy-preferences";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 import { salvarPerfilConfiguracoesSupabase } from "./configuracoes-profile-supabase-saver";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
-
-type MostrarMensagemAcaoConfiguracoes = (
-  tipo: "sucesso" | "erro" | "aviso",
-  texto: string,
-) => void;
+import type {
+  MostrarMensagemAcaoConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "./configuracoes-callback-types";
 
 export async function salvarConfiguracoesPerfil({
   salvando,

@@ -4,12 +4,7 @@ import { supabase } from "../../../lib/supabase/client";
 import { limparDadosLocaisContaExcluida } from "./configuracoes-account-deletion-local-cleanup";
 import { traduzirErroExclusaoContaConfiguracoes } from "./configuracoes-account-deletion-error-messages";
 import { validarExclusaoContaConfiguracoes } from "./configuracoes-security-form-validation";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "./configuracoes-callback-types";
 
 export async function excluirContaConfiguracoes({
   event,

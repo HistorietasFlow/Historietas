@@ -27,12 +27,7 @@ import {
   securitySecondaryButtonDisabledStyle,
   securitySecondaryButtonStyle,
 } from "../lib/configuracoes-security-styles";
-
-type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesAccountDeletionModalProps = {
   onFechar: () => void;
