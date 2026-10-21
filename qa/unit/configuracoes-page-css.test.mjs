@@ -10,6 +10,20 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const loadingState = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-loading-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const styles = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-settings-primitives-styles.ts",
@@ -50,7 +64,11 @@ test("Configurações mantém os dois consumidores e suas fronteiras", () => {
   const consumidores = pagina.match(
     /<style>\{`\$\{historietasThemeCss\}\$\{configuracoesPageCss\}`\}<\/style>/g,
   );
-  assert.equal(consumidores?.length, 2);
+  assert.equal(consumidores?.length, 1);
+  assert.match(
+    loadingState,
+    /<style>\{`\$\{themeCss\}\$\{pageCss\}`\}<\/style>/,
+  );
   assert.doesNotMatch(
     pagina,
     /\$\{configuracoesPageCss\}\$\{historietasThemeCss\}/,
@@ -59,14 +77,14 @@ test("Configurações mantém os dois consumidores e suas fronteiras", () => {
     secoesAcoesConta,
     /from "\.\.\/lib\/configuracoes-settings-primitives-styles";/,
   );
-  assert.match(pagina, /<ConfiguracoesAccountActionsSection/);
+  assert.match(content, /<ConfiguracoesAccountActionsSection/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties =/);
   assert.match(styles, /export const safeTextStyle: CSSProperties =/);
   assert.match(styles, /overflowWrap: "anywhere"/);
   assert.match(styles, /wordBreak: "break-word"/);
   assert.match(
-    pagina,
-    /import \{ LoadingSpinner \} from "\.\/components\/configuracoes-loading-spinner";/,
+    loadingState,
+    /import \{ LoadingSpinner \} from "\.\/configuracoes-loading-spinner";/,
   );
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.match(pagina, /if \(verificandoAcesso\) \{/);

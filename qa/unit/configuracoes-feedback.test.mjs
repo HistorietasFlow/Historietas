@@ -48,6 +48,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const overlays = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-page-overlays.tsx",
@@ -200,7 +207,8 @@ test("página delega feedback visual e mantém ações e estados", () => {
   );
   assert.match(pagina, /<ConfiguracoesPageOverlays/);
   assert.match(overlays, /<ConfiguracoesActionToast/);
-  assert.match(pagina, /<ConfiguracoesProfilePrivacySection/);
+  assert.match(pagina, /<ConfiguracoesPageContent/);
+  assert.match(content, /<ConfiguracoesProfilePrivacySection/);
   assert.match(profilePrivacySection, /<ConfiguracoesBlockedUsersPanel/);
   assert.match(profilePrivacySection, /onRecarregar=\{onCarregarUsuariosBloqueados\}/);
   assert.match(profilePrivacySection, /onDesbloquear=\{onDesbloquearUsuario\}/);

@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const secoesPreferencias = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-preferences-section.tsx",
@@ -124,12 +131,12 @@ test("Configuracoes mantem os consumidores e a fronteira do Toggle", () => {
     /checked=\{preferencias\.receberAvisos\}[\s\S]*?onChange=\{onAlternarReceberAvisos\}/,
   );
   assert.match(
-    pagina,
-    /<ConfiguracoesPreferencesSection[\s\S]*?onAlternarReceberAvisos=\{alternarReceberAvisos\}/,
+    content,
+    /<ConfiguracoesPreferencesSection[\s\S]*?onAlternarReceberAvisos=\{onAlternarReceberAvisos\}/,
   );
   assert.match(
-    pagina,
-    /<ConfiguracoesProfilePrivacySection[\s\S]*?onAlternarPerfilPrivado=\{alternarPerfilPrivado\}/,
+    content,
+    /<ConfiguracoesProfilePrivacySection[\s\S]*?onAlternarPerfilPrivado=\{onAlternarPerfilPrivado\}/,
   );
   assert.equal(
     (secaoPrivacidadePerfil.match(/ariaLabel=\{t\(/g) || []).length,

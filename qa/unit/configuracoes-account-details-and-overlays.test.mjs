@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const secaoConta = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-account-details-section.tsx",
@@ -69,16 +76,17 @@ test("overlays preservam as condições, handlers e componentes existentes", () 
 });
 
 test("página preserva a orquestração e delega apenas a apresentação", () => {
+  assert.match(pagina, /<ConfiguracoesPageContent/);
   assert.match(
-    pagina,
-    /import \{ ConfiguracoesAccountDetailsSection \} from "\.\/components\/configuracoes-account-details-section";/,
+    content,
+    /import \{ ConfiguracoesAccountDetailsSection \} from "\.\/configuracoes-account-details-section";/,
   );
   assert.match(
     pagina,
     /import \{ ConfiguracoesPageOverlays \} from "\.\/components\/configuracoes-page-overlays";/,
   );
-  assert.match(pagina, /<ConfiguracoesAccountDetailsSection/);
-  assert.match(pagina, /onAtualizarPreferencia=\{atualizarPreferencia\}/);
+  assert.match(content, /<ConfiguracoesAccountDetailsSection/);
+  assert.match(content, /onAtualizarPreferencia=\{onAtualizarPreferencia\}/);
   assert.match(pagina, /onLimparErroUsername=\{\(\) => setErroUsername\(""\)\}/);
   assert.match(pagina, /onSalvar=\{salvar\}/);
   assert.match(pagina, /onAbrirSeguranca=\{abrirSeguranca\}/);

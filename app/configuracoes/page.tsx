@@ -8,21 +8,9 @@ import {
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import { ConfiguracoesAccountActionsSection } from "./components/configuracoes-account-actions-section";
-import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
-import { ConfiguracoesAccountDetailsSection } from "./components/configuracoes-account-details-section";
-import { ConfiguracoesDiaryPrivacySection } from "./components/configuracoes-diary-privacy-section";
+import { ConfiguracoesPageContent } from "./components/configuracoes-page-content";
+import { ConfiguracoesPageLoadingState } from "./components/configuracoes-page-loading-state";
 import { ConfiguracoesPageOverlays } from "./components/configuracoes-page-overlays";
-import { ConfiguracoesPageHeader } from "./components/configuracoes-page-header";
-import { ConfiguracoesProfileCard } from "./components/configuracoes-profile-card";
-import { ConfiguracoesProfilePrivacySection } from "./components/configuracoes-profile-privacy-section";
-import { ConfiguracoesProfileTabVisibilitySection } from "./components/configuracoes-profile-tab-visibility-section";
-import { ConfiguracoesSearch } from "./components/configuracoes-search";
-import { ConfiguracoesDataSection } from "./components/configuracoes-data-section";
-import { ConfiguracoesModerationSection } from "./components/configuracoes-moderation-section";
-import { ConfiguracoesPreferencesSection } from "./components/configuracoes-preferences-section";
-import { ConfiguracoesSupportSection } from "./components/configuracoes-support-section";
-import { ConfiguracoesUsageSummarySection } from "./components/configuracoes-usage-summary-section";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { useConfiguracoesBlockedUsers } from "./hooks/use-configuracoes-blocked-users";
 import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-access";
@@ -37,7 +25,6 @@ import {
   textoIdioma,
 } from "./lib/configuracoes-search-utils";
 import { deveMostrarSecaoConfiguracoes } from "./lib/configuracoes-search-visibility-utils";
-import { containerStyle } from "./lib/configuracoes-shell-styles";
 import {
   preferenciasPrivacidadePadrao,
 } from "./lib/configuracoes-privacy-preferences";
@@ -233,16 +220,16 @@ export default function ConfiguracoesPage() {
 
   if (verificandoAcesso) {
     return (
-      <main style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
-        <LoadingSpinner
-          label={t(
-            "Carregando configurações",
-            "Loading settings",
-            "Cargando configuración",
-          )}
-        />
-      </main>
+      <ConfiguracoesPageLoadingState
+        pageThemeStyle={pageThemeStyle}
+        themeCss={historietasThemeCss}
+        pageCss={configuracoesPageCss}
+        label={t(
+          "Carregando configurações",
+          "Loading settings",
+          "Cargando configuración",
+        )}
+      />
     );
   }
 
@@ -250,111 +237,44 @@ export default function ConfiguracoesPage() {
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
 
-      <section style={containerStyle}>
-        <ConfiguracoesPageHeader
-          onVoltar={() => router.back()}
-          traduzirTexto={t}
-        />
-
-        <ConfiguracoesSearch
-          busca={busca}
-          onBuscaChange={setBusca}
-          traduzirTexto={t}
-        />
-
-        <ConfiguracoesProfileCard
-          nomeExibicao={preferencias.nomeExibicao}
-          username={preferencias.username}
-          emailContato={preferencias.emailContato}
-          usuarioNome={usuario?.nome}
-          usuarioEmail={usuario?.email}
-          traduzirTexto={t}
-        />
-
-        <ConfiguracoesAccountDetailsSection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-          preferencias={preferencias}
-          erroUsername={erroUsername}
-          salvando={salvando}
-          onAtualizarPreferencia={atualizarPreferencia}
-          onLimparErroUsername={() => setErroUsername("")}
-          onSalvar={salvar}
-          onAbrirSeguranca={abrirSeguranca}
-        />
-
-        <ConfiguracoesProfilePrivacySection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-          privacidade={privacidade}
-          onAlternarPerfilPrivado={alternarPerfilPrivado}
-          onAlternarAprovacaoNovosSeguidores={alternarAprovacaoNovosSeguidores}
-          mostrarUsuariosBloqueados={mostrarUsuariosBloqueados}
-          usuariosBloqueados={usuariosBloqueados}
-          carregandoUsuariosBloqueados={carregandoUsuariosBloqueados}
-          desbloqueandoUsuarioId={desbloqueandoUsuarioId}
-          erroUsuariosBloqueados={erroUsuariosBloqueados}
-          onCarregarUsuariosBloqueados={carregarUsuariosBloqueados}
-          onAlternarUsuariosBloqueados={alternarUsuariosBloqueados}
-          onDesbloquearUsuario={desbloquearUsuarioConfiguracoes}
-        />
-
-        <ConfiguracoesProfileTabVisibilitySection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-          privacidade={privacidade}
-          onAtualizarPrivacidade={atualizarPrivacidade}
-        />
-
-        <ConfiguracoesDiaryPrivacySection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-          privacidade={privacidade}
-          onAplicarPrivacidadeAtualizada={aplicarPrivacidadeAtualizada}
-          onAtualizarPrivacidade={atualizarPrivacidade}
-        />
-
-        <ConfiguracoesModerationSection
-          adminLiberado={adminLiberado}
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-        />
-
-        <ConfiguracoesUsageSummarySection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-          resumo={resumo}
-          totalBiblioteca={totalBiblioteca}
-          notificacoesNaoLidas={notificacoesNaoLidas}
-        />
-
-        <ConfiguracoesPreferencesSection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-          preferencias={preferencias}
-          onAlternarReceberAvisos={alternarReceberAvisos}
-        />
-
-        <ConfiguracoesDataSection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-          resumo={resumo}
-          onCopiarBackup={copiarBackup}
-          onBaixarBackup={baixarBackup}
-        />
-
-        <ConfiguracoesSupportSection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-        />
-
-        <ConfiguracoesAccountActionsSection
-          deveMostrar={deveMostrar}
-          traduzirTexto={t}
-          onAbrirExclusaoConta={abrirExclusaoConta}
-          onSairDaConta={sairDaConta}
-        />
-      </section>
+      <ConfiguracoesPageContent
+        busca={busca}
+        onBuscaChange={setBusca}
+        onVoltar={() => router.back()}
+        traduzirTexto={t}
+        deveMostrar={deveMostrar}
+        preferencias={preferencias}
+        privacidade={privacidade}
+        resumo={resumo}
+        totalBiblioteca={totalBiblioteca}
+        notificacoesNaoLidas={notificacoesNaoLidas}
+        usuarioNome={usuario?.nome}
+        usuarioEmail={usuario?.email}
+        erroUsername={erroUsername}
+        salvando={salvando}
+        adminLiberado={adminLiberado}
+        mostrarUsuariosBloqueados={mostrarUsuariosBloqueados}
+        usuariosBloqueados={usuariosBloqueados}
+        carregandoUsuariosBloqueados={carregandoUsuariosBloqueados}
+        desbloqueandoUsuarioId={desbloqueandoUsuarioId}
+        erroUsuariosBloqueados={erroUsuariosBloqueados}
+        onAtualizarPreferencia={atualizarPreferencia}
+        onLimparErroUsername={() => setErroUsername("")}
+        onSalvar={salvar}
+        onAbrirSeguranca={abrirSeguranca}
+        onAlternarPerfilPrivado={alternarPerfilPrivado}
+        onAlternarAprovacaoNovosSeguidores={alternarAprovacaoNovosSeguidores}
+        onCarregarUsuariosBloqueados={carregarUsuariosBloqueados}
+        onAlternarUsuariosBloqueados={alternarUsuariosBloqueados}
+        onDesbloquearUsuario={desbloquearUsuarioConfiguracoes}
+        onAtualizarPrivacidade={atualizarPrivacidade}
+        onAplicarPrivacidadeAtualizada={aplicarPrivacidadeAtualizada}
+        onAlternarReceberAvisos={alternarReceberAvisos}
+        onCopiarBackup={copiarBackup}
+        onBaixarBackup={baixarBackup}
+        onAbrirExclusaoConta={abrirExclusaoConta}
+        onSairDaConta={sairDaConta}
+      />
 
       <ConfiguracoesPageOverlays
         mostrarSeguranca={mostrarSeguranca}

@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const perfil = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
@@ -65,27 +72,28 @@ test("seções de privacidade preservam controles, filtros e textos", () => {
 });
 
 test("Configurações delega somente a apresentação das seções de privacidade", () => {
+  assert.match(pagina, /<ConfiguracoesPageContent/);
   for (const componente of [
     "ConfiguracoesProfilePrivacySection",
     "ConfiguracoesProfileTabVisibilitySection",
     "ConfiguracoesDiaryPrivacySection",
   ]) {
-    assert.match(pagina, new RegExp(`import \\{ ${componente} \\}`));
-    assert.match(pagina, new RegExp(`<${componente}`));
+    assert.match(content, new RegExp(`import \\{ ${componente} \\}`));
+    assert.match(content, new RegExp(`<${componente}`));
   }
 
-  assert.match(pagina, /onAlternarPerfilPrivado=\{alternarPerfilPrivado\}/);
+  assert.match(content, /onAlternarPerfilPrivado=\{onAlternarPerfilPrivado\}/);
   assert.match(
-    pagina,
-    /onAlternarAprovacaoNovosSeguidores=\{alternarAprovacaoNovosSeguidores\}/,
+    content,
+    /onAlternarAprovacaoNovosSeguidores=\{onAlternarAprovacaoNovosSeguidores\}/,
   );
   assert.match(
-    pagina,
-    /onAplicarPrivacidadeAtualizada=\{aplicarPrivacidadeAtualizada\}/,
+    content,
+    /onAplicarPrivacidadeAtualizada=\{onAplicarPrivacidadeAtualizada\}/,
   );
-  assert.match(pagina, /onAtualizarPrivacidade=\{atualizarPrivacidade\}/);
-  assert.doesNotMatch(pagina, /<ConfiguracoesBlockedUsersPanel/);
-  assert.doesNotMatch(pagina, /<Toggle/);
+  assert.match(content, /onAtualizarPrivacidade=\{onAtualizarPrivacidade\}/);
+  assert.doesNotMatch(content, /<ConfiguracoesBlockedUsersPanel/);
+  assert.doesNotMatch(content, /<Toggle/);
 });
 
 test("seções de privacidade não introduzem runtime de dados", () => {
