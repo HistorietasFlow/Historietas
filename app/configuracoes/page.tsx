@@ -68,6 +68,11 @@ import {
 } from "./lib/configuracoes-account-preferences";
 import { criarBackupLocal } from "./lib/configuracoes-account-backup";
 import { baixarBackupConfiguracoes } from "./lib/configuracoes-account-backup-download";
+import {
+  calcularTotalBibliotecaConfiguracoes,
+  criarPreferenciaAtualizadaConfiguracoes,
+  criarPreferenciasComAvisosAlternadosConfiguracoes,
+} from "./lib/configuracoes-account-preference-state-utils";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -79,6 +84,11 @@ import {
   traduzirErroSenhaConfiguracoes,
   traduzirErroUsernameConfiguracoes,
 } from "./lib/configuracoes-error-messages";
+import {
+  criarPrivacidadeAtualizadaConfiguracoes,
+  criarPrivacidadeComAprovacaoAlternadaConfiguracoes,
+  criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes,
+} from "./lib/configuracoes-privacy-preference-state-utils";
 import {
   deleteDangerButtonDisabledStyle,
   deleteDangerButtonStyle,
@@ -339,7 +349,12 @@ export default function ConfiguracoesPage() {
     deveMostrarSecaoConfiguracoes(buscaNormalizada, ...termos);
 
   const totalBiblioteca = useMemo(
-    () => resumo.favoritas + resumo.concluidas + resumo.seguindoObras,
+    () =>
+      calcularTotalBibliotecaConfiguracoes(
+        resumo.favoritas,
+        resumo.concluidas,
+        resumo.seguindoObras,
+      ),
     [resumo.concluidas, resumo.favoritas, resumo.seguindoObras],
   );
 
@@ -347,17 +362,18 @@ export default function ConfiguracoesPage() {
     campo: K,
     valor: PreferenciasConta[K],
   ) {
-    setPreferencias((preferenciasAtuais) => ({
-      ...preferenciasAtuais,
-      [campo]: valor,
-    }));
+    setPreferencias((preferenciasAtuais) =>
+      criarPreferenciaAtualizadaConfiguracoes(
+        preferenciasAtuais,
+        campo,
+        valor,
+      ),
+    );
   }
 
   function alternarReceberAvisos() {
-    const preferenciasAtualizadas: PreferenciasConta = {
-      ...preferencias,
-      receberAvisos: !preferencias.receberAvisos,
-    };
+    const preferenciasAtualizadas =
+      criarPreferenciasComAvisosAlternadosConfiguracoes(preferencias);
 
     setPreferencias(preferenciasAtualizadas);
 
@@ -429,34 +445,21 @@ export default function ConfiguracoesPage() {
   function atualizarPrivacidade<
     K extends keyof PreferenciasPrivacidadeHistorietas,
   >(campo: K, valor: PreferenciasPrivacidadeHistorietas[K]) {
-    aplicarPrivacidadeAtualizada({
-      ...privacidade,
-      [campo]: valor,
-    });
+    aplicarPrivacidadeAtualizada(
+      criarPrivacidadeAtualizadaConfiguracoes(privacidade, campo, valor),
+    );
   }
 
   function alternarPerfilPrivado() {
-    const perfilPrivado = !privacidade.perfilPrivado;
-
-    aplicarPrivacidadeAtualizada({
-      ...privacidade,
-      perfilPrivado,
-      aprovarNovosSeguidores: perfilPrivado
-        ? true
-        : privacidade.aprovarNovosSeguidores,
-    });
+    aplicarPrivacidadeAtualizada(
+      criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes(privacidade),
+    );
   }
 
   function alternarAprovacaoNovosSeguidores() {
-    const aprovarNovosSeguidores = !privacidade.aprovarNovosSeguidores;
-
-    aplicarPrivacidadeAtualizada({
-      ...privacidade,
-      aprovarNovosSeguidores,
-      perfilPrivado: aprovarNovosSeguidores
-        ? privacidade.perfilPrivado
-        : false,
-    });
+    aplicarPrivacidadeAtualizada(
+      criarPrivacidadeComAprovacaoAlternadaConfiguracoes(privacidade),
+    );
   }
 
 

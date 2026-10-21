@@ -843,3 +843,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As mensagens de erro da exclusão de conta foram isoladas, preservando códigos, idiomas e fallback original.
 - A preparação do download do backup foi movida para helper dedicado, preservando Blob, URL temporária, nome do arquivo e limpeza adiada.
+
+## Registro da Fase 24 — Configurações
+
+- As transições puras de preferências de conta e privacidade foram isoladas, preservando spreads, regras de alternância e o total da Biblioteca.
+- Persistência, autenticação, sincronização remota, estados e apresentação permaneceram na página sem alteração intencional de comportamento.
