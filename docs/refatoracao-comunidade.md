@@ -863,3 +863,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As ações locais de copiar e baixar o backup foram isoladas, preservando geração, mensagens, fallback e download.
 - Estados, autenticação, operações remotas e apresentação permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 28 — Configurações
+
+- As transições locais de abertura e fechamento dos modais de segurança e exclusão de conta foram isoladas, preservando resets, guardas de carregamento e ordem dos setters.
+- Validação, autenticação, operações remotas, lifecycle e apresentação permaneceram na página sem alteração intencional de comportamento.
