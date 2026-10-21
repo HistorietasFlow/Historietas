@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const secoesPreferencias = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-preferences-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", () => {
   assert.match(componente, /import type \{ CSSProperties \} from "react";/);
@@ -70,7 +77,7 @@ test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", ()
   assert.equal((componente.match(/\.\.\.toggleKnobBaseStyle,/g) || []).length, 2);
 });
 
-test("Configuracoes mantem os tres consumidores e a fronteira do Toggle", () => {
+test("Configuracoes mantem os consumidores e a fronteira do Toggle", () => {
   assert.match(
     pagina,
     /import \{ Toggle \} from "\.\/components\/configuracoes-toggle";/,
@@ -88,7 +95,7 @@ test("Configuracoes mantem os tres consumidores e a fronteira do Toggle", () => 
     assert.doesNotMatch(pagina, new RegExp(`const ${estilo}: CSSProperties =`));
   }
 
-  assert.equal((pagina.match(/<Toggle/g) || []).length, 3);
+  assert.equal((pagina.match(/<Toggle/g) || []).length, 2);
   assert.match(
     pagina,
     /checked=\{privacidade\.perfilPrivado\}[\s\S]*?onChange=\{alternarPerfilPrivado\}/,
@@ -98,10 +105,18 @@ test("Configuracoes mantem os tres consumidores e a fronteira do Toggle", () => 
     /checked=\{privacidade\.aprovarNovosSeguidores\}[\s\S]*?onChange=\{alternarAprovacaoNovosSeguidores\}/,
   );
   assert.match(
-    pagina,
-    /checked=\{preferencias\.receberAvisos\}[\s\S]*?onChange=\{alternarReceberAvisos\}/,
+    secoesPreferencias,
+    /checked=\{preferencias\.receberAvisos\}[\s\S]*?onChange=\{onAlternarReceberAvisos\}/,
   );
-  assert.equal((pagina.match(/ariaLabel=\{t\(/g) || []).length >= 3, true);
+  assert.match(
+    pagina,
+    /<ConfiguracoesPreferencesSection[\s\S]*?onAlternarReceberAvisos=\{alternarReceberAvisos\}/,
+  );
+  assert.equal((pagina.match(/ariaLabel=\{t\(/g) || []).length >= 2, true);
+  assert.equal(
+    (secoesPreferencias.match(/ariaLabel=\{t\(/g) || []).length,
+    1,
+  );
 
   assert.match(
     pagina,
