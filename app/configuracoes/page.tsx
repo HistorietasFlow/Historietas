@@ -28,6 +28,7 @@ import type {
   PreferenciasPrivacidadeHistorietas,
 } from "./lib/configuracoes-privacy-preferences";
 import { criarAcoesCamposOverlayConfiguracoes } from "./lib/configuracoes-overlay-field-actions";
+import { criarAcoesConteudoConfiguracoes } from "./lib/configuracoes-content-actions";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -216,6 +217,11 @@ export default function ConfiguracoesPage() {
     setErroExclusaoConta,
     setMensagemAcao,
   });
+  const { onVoltar, onLimparErroUsername } =
+    criarAcoesConteudoConfiguracoes({
+      router,
+      setErroUsername,
+    });
 
   if (verificandoAcesso) {
     return (
@@ -239,7 +245,7 @@ export default function ConfiguracoesPage() {
       <ConfiguracoesPageContent
         busca={busca}
         onBuscaChange={setBusca}
-        onVoltar={() => router.back()}
+        onVoltar={onVoltar}
         traduzirTexto={t}
         deveMostrar={deveMostrar}
         preferencias={preferencias}
@@ -258,7 +264,7 @@ export default function ConfiguracoesPage() {
         desbloqueandoUsuarioId={desbloqueandoUsuarioId}
         erroUsuariosBloqueados={erroUsuariosBloqueados}
         onAtualizarPreferencia={atualizarPreferencia}
-        onLimparErroUsername={() => setErroUsername("")}
+        onLimparErroUsername={onLimparErroUsername}
         onSalvar={salvar}
         onAbrirSeguranca={abrirSeguranca}
         onAlternarPerfilPrivado={alternarPerfilPrivado}
