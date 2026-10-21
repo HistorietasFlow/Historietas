@@ -1275,7 +1275,19 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type MostrarMensagemAcaoConfiguracoes = \(\s+tipo: "sucesso" \| "erro" \| "aviso",\s+texto: string,\s+\) => void;/,
+    /export type TipoMensagemAcaoConfiguracoes = "sucesso" \| "erro" \| "aviso";/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type MensagemAcaoConfiguracoesVisual = \{\s+tipo: TipoMensagemAcaoConfiguracoes;\s+texto: string;\s+\};/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & \{\s+id: number;\s+\};/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type MostrarMensagemAcaoConfiguracoes = \(\s+tipo: TipoMensagemAcaoConfiguracoes,\s+texto: string,\s+\) => void;/,
   );
   assert.doesNotMatch(
     callbackTypesSource,
@@ -1284,6 +1296,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
 
   for (const arquivo of [
     "hooks/use-configuracoes-account-action-handlers.ts",
+    "hooks/use-configuracoes-action-message.ts",
     "hooks/use-configuracoes-blocked-users.ts",
     "hooks/use-configuracoes-preference-actions.ts",
     "lib/configuracoes-account-backup-actions.ts",

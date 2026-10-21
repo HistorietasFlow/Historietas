@@ -1,14 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-type TipoMensagemAcaoConfiguracoes = "sucesso" | "erro" | "aviso";
-
-type MensagemAcaoConfiguracoes = {
-  id: number;
-  tipo: TipoMensagemAcaoConfiguracoes;
-  texto: string;
-};
+import type {
+  MensagemAcaoConfiguracoes,
+  TipoMensagemAcaoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 export function useConfiguracoesActionMessage() {
   const [mensagemAcao, setMensagemAcao] =
