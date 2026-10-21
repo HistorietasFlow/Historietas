@@ -87,6 +87,13 @@ const accountSummarySupabaseSource = readFileSync(
   ),
   "utf8",
 );
+const blockedUsersLoaderSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-blocked-users-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -171,6 +178,23 @@ test("resumo remoto da conta preserva queries, fallbacks e contagens", () => {
   assert.match(accountSummarySupabaseSource, /console\.warn/);
   assert.doesNotMatch(
     accountSummarySupabaseSource,
+    /\.insert\(|\.update\(|\.delete\(|\.upsert\(|localStorage|useState|useEffect/,
+  );
+});
+
+test("loader de usuários bloqueados preserva RPC e normalização", () => {
+  assert.match(
+    blockedUsersLoaderSource,
+    /export async function listarUsuariosBloqueadosConfiguracoes\(/,
+  );
+  assert.match(blockedUsersLoaderSource, /supabase\.rpc\(/);
+  assert.match(blockedUsersLoaderSource, /"listar_usuarios_bloqueados"/);
+  assert.match(blockedUsersLoaderSource, /p_limite: 100/);
+  assert.match(blockedUsersLoaderSource, /normalizarUsernameConfiguracoes/);
+  assert.match(blockedUsersLoaderSource, /idUsuarioSupabaseValido/);
+  assert.match(blockedUsersLoaderSource, /throw error/);
+  assert.doesNotMatch(
+    blockedUsersLoaderSource,
     /\.insert\(|\.update\(|\.delete\(|\.upsert\(|localStorage|useState|useEffect/,
   );
 });
@@ -264,6 +288,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-account-summary-supabase";/,
   );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-blocked-users-loader";/,
+  );
 
   for (const helper of [
     "textoIdioma",
@@ -284,6 +312,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     "criarBackupLocal",
     "deveMostrarSecaoConfiguracoes",
     "carregarResumoContaSupabase",
+    "listarUsuariosBloqueadosConfiguracoes",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
@@ -294,7 +323,9 @@ test("Configurações delega as fronteiras extraídas", () => {
     /deveMostrarSecaoConfiguracoes\(buscaNormalizada, \.\.\.termos\)/,
   );
   assert.doesNotMatch(pagina, /async function contarRegistrosResumoSupabase\(/);
+  assert.doesNotMatch(pagina, /async function listarUsuariosBloqueadosConfiguracoes\(/);
   assert.match(pagina, /carregarResumoContaSupabase\(usuarioCarregado\.id\)/);
+  assert.match(pagina, /listarUsuariosBloqueadosConfiguracoes\(\)\.catch/);
 
   assert.doesNotMatch(
     pagina,

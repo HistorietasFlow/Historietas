@@ -823,3 +823,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A leitura remota do resumo da conta foi isolada, preservando consultas, contagens, fallbacks locais e avisos.
 - Autenticação, estado, JSX e demais operações da página continuaram sem alteração intencional de comportamento.
+
+## Registro da Fase 20 — Configurações
+
+- A leitura RPC de usuários bloqueados foi isolada, preservando limite, normalização, validação e propagação de erro.
+- Estados, ações e apresentação da página continuaram sem alteração intencional de comportamento.

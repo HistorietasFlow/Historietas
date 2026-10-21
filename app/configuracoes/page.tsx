@@ -60,6 +60,7 @@ import type {
 } from "./lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
 import { carregarResumoContaSupabase } from "./lib/configuracoes-account-summary-supabase";
+import { listarUsuariosBloqueadosConfiguracoes } from "./lib/configuracoes-blocked-users-loader";
 import {
   carregarPreferencias,
   salvarPreferencias,
@@ -71,7 +72,6 @@ import type {
   PreferenciasConta,
   ResumoLocal,
   UsuarioBloqueadoConfiguracoes,
-  UsuarioBloqueadoConfiguracoesRpcRow,
   UsuarioConfiguracoes,
 } from "./lib/configuracoes-account-models";
 import {
@@ -79,31 +79,6 @@ import {
   traduzirErroUsernameConfiguracoes,
 } from "./lib/configuracoes-error-messages";
 import { normalizarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-utils";
-
-async function listarUsuariosBloqueadosConfiguracoes(): Promise<
-  UsuarioBloqueadoConfiguracoes[]
-> {
-  const { data, error } = await supabase.rpc(
-    "listar_usuarios_bloqueados",
-    { p_limite: 100 },
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return (data || []).map(
-    (item: UsuarioBloqueadoConfiguracoesRpcRow) => ({
-      userId: pegarTexto(item.user_id),
-      nome: pegarTexto(item.nome, "Usuário"),
-      username: normalizarUsernameConfiguracoes(
-        pegarTexto(item.username),
-      ),
-      avatar: pegarTexto(item.avatar_url),
-      bloqueadoEm: pegarTexto(item.bloqueado_em),
-    }),
-  ).filter((item: UsuarioBloqueadoConfiguracoes) => idUsuarioSupabaseValido(item.userId));
-}
 
 async function carregarPerfilConfiguracoesSupabase(
   userId: string,
