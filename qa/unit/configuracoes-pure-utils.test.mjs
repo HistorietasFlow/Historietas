@@ -129,6 +129,20 @@ const accountBackupDownloadSource = readFileSync(
   ),
   "utf8",
 );
+const accountPreferenceStateSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-preference-state-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const privacyPreferenceStateSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-privacy-preference-state-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -239,6 +253,12 @@ const accountDeletionErrorMessages = await importarTypescript(
     `const textoIdioma = (language, portugues, ingles, espanhol) =>
   language === "en" ? ingles : language === "es" ? espanhol : portugues;`,
   ),
+);
+const accountPreferenceState = await importarTypescript(
+  accountPreferenceStateSource,
+);
+const privacyPreferenceState = await importarTypescript(
+  privacyPreferenceStateSource,
 );
 
 test("busca de Configurações preserva idioma, normalização e aliases", () => {
@@ -445,6 +465,75 @@ test("download do backup preserva Blob, URL e limpeza adiada", () => {
   );
 });
 
+test("transições das preferências da conta preservam campos e total", () => {
+  const preferencias = {
+    nomeExibicao: "Ana",
+    username: "ana",
+    emailContato: "ana@example.com",
+    receberAvisos: true,
+  };
+
+  assert.equal(
+    accountPreferenceState.calcularTotalBibliotecaConfiguracoes({
+      favoritas: 2,
+      concluidas: 3,
+      seguindoObras: 4,
+    }),
+    9,
+  );
+  assert.deepEqual(
+    accountPreferenceState.criarPreferenciaAtualizadaConfiguracoes(
+      preferencias,
+      "nomeExibicao",
+      "Bea",
+    ),
+    { ...preferencias, nomeExibicao: "Bea" },
+  );
+  assert.deepEqual(
+    accountPreferenceState.criarPreferenciasComAvisosAlternadosConfiguracoes(
+      preferencias,
+    ),
+    { ...preferencias, receberAvisos: false },
+  );
+  assert.doesNotMatch(
+    accountPreferenceStateSource,
+    /supabase|localStorage|useState|useEffect|window|document/,
+  );
+});
+
+test("transições das preferências de privacidade preservam dependências", () => {
+  const privacidade = {
+    perfilPrivado: false,
+    aprovarNovosSeguidores: true,
+    mostrarSeguidores: true,
+  };
+
+  assert.deepEqual(
+    privacyPreferenceState.criarPrivacidadeAtualizadaConfiguracoes(
+      privacidade,
+      "mostrarSeguidores",
+      false,
+    ),
+    { ...privacidade, mostrarSeguidores: false },
+  );
+  assert.deepEqual(
+    privacyPreferenceState.criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes(
+      privacidade,
+    ),
+    { ...privacidade, perfilPrivado: true, aprovarNovosSeguidores: true },
+  );
+  assert.deepEqual(
+    privacyPreferenceState.criarPrivacidadeComAprovacaoAlternadaConfiguracoes(
+      privacidade,
+    ),
+    { ...privacidade, aprovarNovosSeguidores: false, perfilPrivado: false },
+  );
+  assert.doesNotMatch(
+    privacyPreferenceStateSource,
+    /supabase|localStorage|useState|useEffect|window|document/,
+  );
+});
+
 test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /from "\.\/lib\/configuracoes-search-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-utils";/);
@@ -486,6 +575,14 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.match(
     pagina,
+    /from "\.\/lib\/configuracoes-account-preference-state-utils";/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-privacy-preference-state-utils";/,
+  );
+  assert.match(
+    pagina,
     /from "\.\/lib\/configuracoes-search-visibility-utils";/,
   );
   assert.match(
@@ -522,6 +619,12 @@ test("Configurações delega as fronteiras extraídas", () => {
     "limparDadosLocaisContaExcluida",
     "traduzirErroExclusaoContaConfiguracoes",
     "baixarBackupConfiguracoes",
+    "calcularTotalBibliotecaConfiguracoes",
+    "criarPreferenciaAtualizadaConfiguracoes",
+    "criarPreferenciasComAvisosAlternadosConfiguracoes",
+    "criarPrivacidadeAtualizadaConfiguracoes",
+    "criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes",
+    "criarPrivacidadeComAprovacaoAlternadaConfiguracoes",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
