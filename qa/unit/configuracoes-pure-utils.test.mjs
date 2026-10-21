@@ -157,6 +157,20 @@ const securityFormValidationSource = readFileSync(
   ),
   "utf8",
 );
+const modalStateActionsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-modal-state-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const securityModalStateHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-security-modal-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -281,6 +295,7 @@ const securityFormValidation = await importarTypescript(
   language === "en" ? ingles : language === "es" ? espanhol : portugues;`,
   ),
 );
+const modalStateActions = await importarTypescript(modalStateActionsSource);
 
 test("busca de Configurações preserva idioma, normalização e aliases", () => {
   assert.equal(search.textoIdioma("pt-BR", "Conta", "Account", "Cuenta"), "Conta");
@@ -635,6 +650,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/lib\/configuracoes-account-backup-actions";/,
   );
   assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-security-modal-state";/,
+  );
+  assert.match(
     accountBackupActionsSource,
     /from "\.\/configuracoes-account-backup";/,
   );
@@ -701,6 +720,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     "criarPrivacidadeComAprovacaoAlternadaConfiguracoes",
     "validarExclusaoContaConfiguracoes",
     "validarAlteracaoSenhaConfiguracoes",
+    "abrirExclusaoContaConfiguracoes",
+    "fecharExclusaoContaConfiguracoes",
+    "abrirSegurancaConfiguracoes",
+    "fecharSegurancaConfiguracoes",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
@@ -740,6 +763,7 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
   assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
   assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
+  assert.match(pagina, /useConfiguracoesSecurityModalState\(\)/);
   assert.match(pagina, /validarExclusaoContaConfiguracoes\(\s*senhaExclusaoConta,/);
   assert.match(pagina, /validarAlteracaoSenhaConfiguracoes\(\s*senhaAtual,/);
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
@@ -749,4 +773,139 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(searchSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(accountSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(privacySource, /useState|useEffect|useMemo/);
+});
+
+test("ações dos modais preservam resets, guardas e fronteira local", () => {
+  const chamadas = [];
+  const acoesExclusao = {
+    setSenhaExclusaoConta: (valor) => chamadas.push(["senhaExclusao", valor]),
+    setConfirmacaoExclusaoConta: (valor) =>
+      chamadas.push(["confirmacaoExclusao", valor]),
+    setErroExclusaoConta: (valor) => chamadas.push(["erroExclusao", valor]),
+    setMostrarExclusaoConta: (valor) =>
+      chamadas.push(["mostrarExclusao", valor]),
+  };
+  const acoesSeguranca = {
+    setSenhaAtual: (valor) => chamadas.push(["senhaAtual", valor]),
+    setNovaSenha: (valor) => chamadas.push(["novaSenha", valor]),
+    setConfirmarNovaSenha: (valor) =>
+      chamadas.push(["confirmarNovaSenha", valor]),
+    setErroSenha: (valor) => chamadas.push(["erroSenha", valor]),
+    setSenhaAlterada: (valor) => chamadas.push(["senhaAlterada", valor]),
+    setMostrarSeguranca: (valor) => chamadas.push(["mostrarSeguranca", valor]),
+  };
+
+  modalStateActions.abrirExclusaoContaConfiguracoes(acoesExclusao);
+  modalStateActions.abrirSegurancaConfiguracoes(acoesSeguranca);
+  assert.deepEqual(chamadas, [
+    ["senhaExclusao", ""],
+    ["confirmacaoExclusao", ""],
+    ["erroExclusao", ""],
+    ["mostrarExclusao", true],
+    ["senhaAtual", ""],
+    ["novaSenha", ""],
+    ["confirmarNovaSenha", ""],
+    ["erroSenha", ""],
+    ["senhaAlterada", false],
+    ["mostrarSeguranca", true],
+  ]);
+
+  chamadas.length = 0;
+  modalStateActions.fecharExclusaoContaConfiguracoes({
+    ...acoesExclusao,
+    excluindoConta: true,
+  });
+  modalStateActions.fecharSegurancaConfiguracoes({
+    ...acoesSeguranca,
+    salvandoSenha: true,
+  });
+  assert.deepEqual(chamadas, []);
+
+  modalStateActions.fecharExclusaoContaConfiguracoes({
+    ...acoesExclusao,
+    excluindoConta: false,
+  });
+  modalStateActions.fecharSegurancaConfiguracoes({
+    ...acoesSeguranca,
+    salvandoSenha: false,
+  });
+  assert.deepEqual(chamadas, [
+    ["mostrarExclusao", false],
+    ["senhaExclusao", ""],
+    ["confirmacaoExclusao", ""],
+    ["erroExclusao", ""],
+    ["mostrarSeguranca", false],
+    ["senhaAtual", ""],
+    ["novaSenha", ""],
+    ["confirmarNovaSenha", ""],
+    ["erroSenha", ""],
+    ["senhaAlterada", false],
+  ]);
+
+  for (const helper of [
+    "abrirExclusaoContaConfiguracoes",
+    "fecharExclusaoContaConfiguracoes",
+    "abrirSegurancaConfiguracoes",
+    "fecharSegurancaConfiguracoes",
+  ]) {
+    assert.match(modalStateActionsSource, new RegExp("export function " + helper));
+  }
+  assert.doesNotMatch(
+    modalStateActionsSource,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
+});
+
+test("hook dos modais preserva os estados e delega as transições puras", () => {
+  assert.match(securityModalStateHookSource, /^"use client";/);
+  assert.match(
+    securityModalStateHookSource,
+    /import \{ useState \} from "react";/,
+  );
+  assert.match(
+    securityModalStateHookSource,
+    /from "\.\.\/lib\/configuracoes-modal-state-actions";/,
+  );
+  assert.match(
+    securityModalStateHookSource,
+    /export function useConfiguracoesSecurityModalState\(\)/,
+  );
+
+  for (const state of [
+    "mostrarSeguranca",
+    "senhaAtual",
+    "novaSenha",
+    "confirmarNovaSenha",
+    "salvandoSenha",
+    "erroSenha",
+    "senhaAlterada",
+    "mostrarExclusaoConta",
+    "senhaExclusaoConta",
+    "confirmacaoExclusaoConta",
+    "excluindoConta",
+    "erroExclusaoConta",
+  ]) {
+    assert.match(
+      securityModalStateHookSource,
+      new RegExp("const \\[" + state + ", set"),
+    );
+  }
+
+  for (const action of [
+    "abrirExclusaoConta",
+    "fecharExclusaoConta",
+    "abrirSeguranca",
+    "fecharSeguranca",
+  ]) {
+    assert.match(securityModalStateHookSource, new RegExp("function " + action));
+    assert.match(securityModalStateHookSource, new RegExp("\\n    " + action + ","));
+  }
+
+  assert.doesNotMatch(
+    securityModalStateHookSource,
+    /supabase|localStorage|sessionStorage|window|document|fetch|JSX/,
+  );
+  assert.doesNotMatch(pagina, /const \[mostrarSeguranca, setMostrarSeguranca\]/);
+  assert.doesNotMatch(pagina, /function abrirSeguranca\(\)/);
+  assert.doesNotMatch(pagina, /function fecharExclusaoConta\(\)/);
 });

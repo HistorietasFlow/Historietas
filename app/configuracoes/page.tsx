@@ -29,6 +29,7 @@ import {
 } from "./components/configuracoes-settings-primitives";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
+import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
 import {
   normalizarTextoBuscaConfiguracoes,
@@ -156,18 +157,35 @@ export default function ConfiguracoesPage() {
     useState("");
   const [erroUsuariosBloqueados, setErroUsuariosBloqueados] =
     useState("");
-  const [mostrarSeguranca, setMostrarSeguranca] = useState(false);
-  const [senhaAtual, setSenhaAtual] = useState("");
-  const [novaSenha, setNovaSenha] = useState("");
-  const [confirmarNovaSenha, setConfirmarNovaSenha] = useState("");
-  const [salvandoSenha, setSalvandoSenha] = useState(false);
-  const [erroSenha, setErroSenha] = useState("");
-  const [senhaAlterada, setSenhaAlterada] = useState(false);
-  const [mostrarExclusaoConta, setMostrarExclusaoConta] = useState(false);
-  const [senhaExclusaoConta, setSenhaExclusaoConta] = useState("");
-  const [confirmacaoExclusaoConta, setConfirmacaoExclusaoConta] = useState("");
-  const [excluindoConta, setExcluindoConta] = useState(false);
-  const [erroExclusaoConta, setErroExclusaoConta] = useState("");
+  const {
+    mostrarSeguranca,
+    setMostrarSeguranca,
+    senhaAtual,
+    setSenhaAtual,
+    novaSenha,
+    setNovaSenha,
+    confirmarNovaSenha,
+    setConfirmarNovaSenha,
+    salvandoSenha,
+    setSalvandoSenha,
+    erroSenha,
+    setErroSenha,
+    senhaAlterada,
+    setSenhaAlterada,
+    mostrarExclusaoConta,
+    senhaExclusaoConta,
+    setSenhaExclusaoConta,
+    confirmacaoExclusaoConta,
+    setConfirmacaoExclusaoConta,
+    excluindoConta,
+    setExcluindoConta,
+    erroExclusaoConta,
+    setErroExclusaoConta,
+    abrirExclusaoConta,
+    fecharExclusaoConta,
+    abrirSeguranca,
+    fecharSeguranca,
+  } = useConfiguracoesSecurityModalState();
   const {
     mensagemAcao,
     setMensagemAcao,
@@ -606,24 +624,6 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  function abrirExclusaoConta() {
-    setSenhaExclusaoConta("");
-    setConfirmacaoExclusaoConta("");
-    setErroExclusaoConta("");
-    setMostrarExclusaoConta(true);
-  }
-
-  function fecharExclusaoConta() {
-    if (excluindoConta) {
-      return;
-    }
-
-    setMostrarExclusaoConta(false);
-    setSenhaExclusaoConta("");
-    setConfirmacaoExclusaoConta("");
-    setErroExclusaoConta("");
-  }
-
   async function excluirConta(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -697,28 +697,6 @@ export default function ConfiguracoesPage() {
     } finally {
       setExcluindoConta(false);
     }
-  }
-
-  function abrirSeguranca() {
-    setSenhaAtual("");
-    setNovaSenha("");
-    setConfirmarNovaSenha("");
-    setErroSenha("");
-    setSenhaAlterada(false);
-    setMostrarSeguranca(true);
-  }
-
-  function fecharSeguranca() {
-    if (salvandoSenha) {
-      return;
-    }
-
-    setMostrarSeguranca(false);
-    setSenhaAtual("");
-    setNovaSenha("");
-    setConfirmarNovaSenha("");
-    setErroSenha("");
-    setSenhaAlterada(false);
   }
 
   async function alterarSenha(event: FormEvent<HTMLFormElement>) {
