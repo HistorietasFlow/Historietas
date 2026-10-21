@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const accountActionHandlers = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const primitives = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-settings-primitives.tsx",
@@ -109,7 +116,8 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
   assert.match(header, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(busca, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(toast, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
-  assert.match(pagina, /import type \{ FormEvent \} from "react";/);
+  assert.match(accountActionHandlers, /import type \{ Dispatch, FormEvent, SetStateAction \} from "react";/);
+  assert.doesNotMatch(pagina, /import type \{ FormEvent \} from "react";/);
   assert.doesNotMatch(pagina, /type IconName =/);
   assert.doesNotMatch(pagina, /function SvgIcon\(/);
   assert.doesNotMatch(pagina, /const paths: Record<IconName, ReactNode> =/);
