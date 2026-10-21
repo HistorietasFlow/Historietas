@@ -27,6 +27,13 @@ const privacyActions = readFileSync(
   ),
   "utf8",
 );
+const profileSaveAction = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-profile-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("preferências de privacidade preservam tipos, defaults e compatibilidade", () => {
   assert.match(
@@ -89,7 +96,7 @@ test("preferências de privacidade preservam cache e contratos Supabase", () => 
 test("Configurações consome a fronteira de privacidade sem manter duplicação", () => {
   assert.match(
     page,
-    /import \{\s*carregarPreferenciasPrivacidade,\s*preferenciasPrivacidadePadrao,\s*salvarPreferenciasPrivacidade,\s*\} from "\.\/lib\/configuracoes-privacy-preferences";/,
+    /import \{\s*carregarPreferenciasPrivacidade,\s*preferenciasPrivacidadePadrao,\s*\} from "\.\/lib\/configuracoes-privacy-preferences";/,
   );
   assert.match(
     page,
@@ -105,6 +112,11 @@ test("Configurações consome a fronteira de privacidade sem manter duplicação
   ]) {
     assert.doesNotMatch(page, new RegExp(declaracao));
   }
+
+  assert.match(profileSaveAction, /salvarPreferenciasPrivacidade\(/);
+  assert.match(profileSaveAction, /salvarPerfilConfiguracoesSupabase\(\{/);
+  assert.match(page, /salvarConfiguracoesPerfil\(\{/);
+  assert.doesNotMatch(page, /salvarPreferenciasPrivacidade\(/);
 });
 
 test("ações de preferências preservam estado, persistência e sincronização", () => {

@@ -6,6 +6,13 @@ const copy = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-cop
 const route = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-route-utils.ts", import.meta.url), "utf8");
 const backupActions = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-account-backup-actions.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../../app/configuracoes/page.tsx", import.meta.url), "utf8");
+const profileSaveAction = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-profile-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("cópia de Configurações preserva Clipboard e fallback temporário", () => {
   assert.match(copy, /export async function copiarTextoConfiguracoes\(texto: string\)/);
@@ -22,9 +29,11 @@ test("rota de login e consumidores de Configurações permanecem idênticos", ()
   assert.match(route, /return `\/login\?\$\{params\.toString\(\)\}`;/);
   assert.match(page, /from "\.\/lib\/configuracoes-account-backup-actions";/);
   assert.match(page, /from "\.\/lib\/configuracoes-route-utils";/);
+  assert.match(page, /from "\.\/lib\/configuracoes-profile-save-action";/);
   assert.doesNotMatch(page, /async function copiarTexto\(/);
   assert.doesNotMatch(page, /function criarLoginHrefConfiguracoes\(/);
-  assert.equal((page.match(/criarLoginHrefConfiguracoes\(/g) || []).length, 4);
+  assert.equal((page.match(/criarLoginHrefConfiguracoes\(/g) || []).length, 3);
+  assert.match(profileSaveAction, /redirecionarLogin\(\);/);
   assert.match(
     backupActions,
     /await copiarTextoConfiguracoes\(criarBackupLocal\(usuarioIdLogado\)\)/,

@@ -48,6 +48,13 @@ const signOutAction = readFileSync(
   ),
   "utf8",
 );
+const profileSaveAction = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-profile-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
   assert.match(hook, /^"use client";/);
@@ -100,11 +107,16 @@ test("Configurações mantém domínio e toast na página", () => {
     blockedUsersHook,
     preferenceActions,
     signOutAction,
+    profileSaveAction,
   ].flatMap((fonte) => fonte.match(/mostrarMensagemAcao\(/g) || []);
   assert.equal(chamadasDominio.length, 15);
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-account-backup-actions";/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-profile-save-action";/,
   );
   assert.match(
     pagina,
