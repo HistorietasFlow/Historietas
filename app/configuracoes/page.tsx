@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { historietasThemeCss } from "../../lib/historietasTheme";
 import { ConfiguracoesPageContent } from "./components/configuracoes-page-content";
 import { ConfiguracoesPageLoadingState } from "./components/configuracoes-page-loading-state";
@@ -13,39 +12,35 @@ import { useConfiguracoesInitialAccess } from "./hooks/use-configuracoes-initial
 import { useConfiguracoesAccountActionHandlers } from "./hooks/use-configuracoes-account-action-handlers";
 import { useConfiguracoesPreferenceActions } from "./hooks/use-configuracoes-preference-actions";
 import { useConfiguracoesPagePresentation } from "./hooks/use-configuracoes-page-presentation";
+import { useConfiguracoesPageState } from "./hooks/use-configuracoes-page-state";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
-import {
-  preferenciasPrivacidadePadrao,
-} from "./lib/configuracoes-privacy-preferences";
-import type {
-  PreferenciasPrivacidadeHistorietas,
-} from "./lib/configuracoes-privacy-preferences";
 import { criarAcoesCamposOverlayConfiguracoes } from "./lib/configuracoes-overlay-field-actions";
 import { criarAcoesConteudoConfiguracoes } from "./lib/configuracoes-content-actions";
-import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
-import type {
-  PreferenciasConta,
-  ResumoLocal,
-  UsuarioConfiguracoes,
-} from "./lib/configuracoes-account-models";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
-  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
-  const [usuario, setUsuario] = useState<UsuarioConfiguracoes | null>(null);
-  const [preferencias, setPreferencias] =
-    useState<PreferenciasConta>(preferenciasPadrao);
-  const [privacidade, setPrivacidade] =
-    useState<PreferenciasPrivacidadeHistorietas>(
-      preferenciasPrivacidadePadrao,
-    );
-  const [resumo, setResumo] = useState<ResumoLocal>(resumoPadrao);
-  const [erroUsername, setErroUsername] = useState("");
-  const [salvando, setSalvando] = useState(false);
-  const [busca, setBusca] = useState("");
-  const [adminLiberado, setAdminLiberado] = useState(false);
+  const {
+    verificandoAcesso,
+    setVerificandoAcesso,
+    usuario,
+    setUsuario,
+    preferencias,
+    setPreferencias,
+    privacidade,
+    setPrivacidade,
+    resumo,
+    setResumo,
+    erroUsername,
+    setErroUsername,
+    salvando,
+    setSalvando,
+    busca,
+    setBusca,
+    adminLiberado,
+    setAdminLiberado,
+  } = useConfiguracoesPageState();
   const {
     mostrarSeguranca,
     setMostrarSeguranca,

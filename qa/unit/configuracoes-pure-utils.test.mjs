@@ -59,6 +59,13 @@ const pagePresentationHookSource = readFileSync(
   ),
   "utf8",
 );
+const pageStateHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-page-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-models.ts",
@@ -706,14 +713,17 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.doesNotMatch(pagina, /from "\.\/lib\/configuracoes-account-utils";/);
   assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-privacy-preferences";/,
+    pageStateHookSource,
+    /from "\.\.\/lib\/configuracoes-privacy-preferences";/,
   );
   assert.match(
     pagina,
     /from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
   );
-  assert.match(pagina, /from "\.\/lib\/configuracoes-account-models";/);
+  assert.match(
+    pageStateHookSource,
+    /from "\.\.\/lib\/configuracoes-account-models";/,
+  );
   assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/configuracoes-account-storage-constants";/,
@@ -841,6 +851,39 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(pagina, /useHistorietasTheme\(pageStyle\)/);
   assert.doesNotMatch(pagina, /useNotificacoes\(\)/);
   assert.doesNotMatch(pagina, /useHistorietasLanguage\(\)/);
+  assert.match(
+    pagina,
+    /import \{ useConfiguracoesPageState \} from "\.\/hooks\/use-configuracoes-page-state";/,
+  );
+  assert.match(pagina, /\} = useConfiguracoesPageState\(\);/);
+  assert.doesNotMatch(pagina, /const \[verificandoAcesso, setVerificandoAcesso\] = useState\(true\);/);
+  assert.match(pageStateHookSource, /^"use client";/);
+  assert.match(pageStateHookSource, /import \{ useState \} from "react";/);
+  assert.match(pageStateHookSource, /export function useConfiguracoesPageState\(\)/);
+  assert.match(pageStateHookSource, /useState<UsuarioConfiguracoes \| null>\(null\)/);
+  assert.match(pageStateHookSource, /useState<PreferenciasConta>\(preferenciasPadrao\)/);
+  assert.match(
+    pageStateHookSource,
+    /useState<PreferenciasPrivacidadeHistorietas>\(\s*preferenciasPrivacidadePadrao,\s*\)/,
+  );
+  assert.match(pageStateHookSource, /useState<ResumoLocal>\(resumoPadrao\)/);
+  for (const state of [
+    "verificandoAcesso",
+    "usuario",
+    "preferencias",
+    "privacidade",
+    "resumo",
+    "erroUsername",
+    "salvando",
+    "busca",
+    "adminLiberado",
+  ]) {
+    assert.match(pageStateHookSource, new RegExp("\\b" + state + ","));
+  }
+  assert.doesNotMatch(
+    pageStateHookSource,
+    /useEffect|useMemo|supabase|localStorage|sessionStorage|window|document|fetch|JSX/,
+  );
   assert.match(pagePresentationHookSource, /^"use client";/);
   assert.match(
     pagePresentationHookSource,
@@ -902,7 +945,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     /async function salvarPreferenciasPrivacidade\(/,
   );
   assert.match(
-    pagina,
+    pageStateHookSource,
     /useState<PreferenciasPrivacidadeHistorietas>\(/,
   );
   assert.doesNotMatch(

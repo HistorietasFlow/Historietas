@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const pageStateHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-page-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountActionHandlers = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
@@ -116,12 +123,12 @@ test("preferências de privacidade preservam cache e contratos Supabase", () => 
 
 test("Configurações consome a fronteira de privacidade sem manter duplicação", () => {
   assert.match(
-    page,
-    /import \{\s*preferenciasPrivacidadePadrao,\s*\} from "\.\/lib\/configuracoes-privacy-preferences";/,
+    pageStateHook,
+    /import \{\s*preferenciasPrivacidadePadrao,\s*\} from "\.\.\/lib\/configuracoes-privacy-preferences";/,
   );
   assert.match(
-    page,
-    /import type \{\s*PreferenciasPrivacidadeHistorietas,[\s\S]*?\} from "\.\/lib\/configuracoes-privacy-preferences";/,
+    pageStateHook,
+    /import type \{\s*PreferenciasPrivacidadeHistorietas,[\s\S]*?\} from "\.\.\/lib\/configuracoes-privacy-preferences";/,
   );
 
   for (const declaracao of [
@@ -137,6 +144,14 @@ test("Configurações consome a fronteira de privacidade sem manter duplicação
   assert.match(
     page,
     /import \{ useConfiguracoesInitialAccess \} from "\.\/hooks\/use-configuracoes-initial-access";/,
+  );
+  assert.match(
+    page,
+    /import \{ useConfiguracoesPageState \} from "\.\/hooks\/use-configuracoes-page-state";/,
+  );
+  assert.match(
+    pageStateHook,
+    /useState<PreferenciasPrivacidadeHistorietas>\(\s*preferenciasPrivacidadePadrao,\s*\)/,
   );
   assert.match(page, /useConfiguracoesInitialAccess\(\{/);
   assert.match(
