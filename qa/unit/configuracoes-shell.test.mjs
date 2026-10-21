@@ -34,6 +34,13 @@ const securityStyles = readFileSync(
   ),
   "utf8",
 );
+const securityModalBodyLock = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-security-modal-body-lock.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estilos de segurança preservam modais, privacidade e spreads", () => {
   for (const style of [
@@ -170,6 +177,12 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   assert.match(pagina, /onVoltar=\{\(\) => router\.back\(\)\}/);
   assert.match(pagina, /onBuscaChange=\{setBusca\}/);
   assert.match(pagina, /usuarioNome=\{usuario\?\.nome\}/);
+  assert.match(
+    pagina,
+    /import \{ useConfiguracoesSecurityModalBodyLock \} from "\.\/hooks\/use-configuracoes-security-modal-body-lock";/,
+  );
+  assert.match(pagina, /useConfiguracoesSecurityModalBodyLock\(\{/);
+  assert.doesNotMatch(pagina, /document\.body\.style\.overflow = "hidden"/);
   assert.match(pagina, /supabase\./);
   assert.match(
     pagina,
@@ -238,4 +251,29 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
       new RegExp("const " + style + ": CSSProperties ="),
     );
   }
+});
+
+test("hook do modal de segurança preserva body lock, Escape e limpeza", () => {
+  assert.match(securityModalBodyLock, /^"use client";/);
+  assert.match(
+    securityModalBodyLock,
+    /export function useConfiguracoesSecurityModalBodyLock\(/,
+  );
+  assert.match(securityModalBodyLock, /!mostrarSeguranca \|\| typeof document === "undefined"/);
+  assert.match(securityModalBodyLock, /const overflowAnterior = document\.body\.style\.overflow/);
+  assert.match(securityModalBodyLock, /document\.body\.style\.overflow = "hidden"/);
+  assert.match(securityModalBodyLock, /event\.key === "Escape" && !salvandoSenha/);
+  assert.match(securityModalBodyLock, /setMostrarSeguranca\(false\)/);
+  assert.match(securityModalBodyLock, /setSenhaAtual\(""\)/);
+  assert.match(securityModalBodyLock, /setNovaSenha\(""\)/);
+  assert.match(securityModalBodyLock, /setConfirmarNovaSenha\(""\)/);
+  assert.match(securityModalBodyLock, /setErroSenha\(""\)/);
+  assert.match(securityModalBodyLock, /setSenhaAlterada\(false\)/);
+  assert.match(securityModalBodyLock, /window\.addEventListener\("keydown", fecharComEscape\)/);
+  assert.match(securityModalBodyLock, /window\.removeEventListener\("keydown", fecharComEscape\)/);
+  assert.match(securityModalBodyLock, /document\.body\.style\.overflow = overflowAnterior/);
+  assert.doesNotMatch(
+    securityModalBodyLock,
+    /supabase|localStorage|sessionStorage|fetch|JSX/,
+  );
 });

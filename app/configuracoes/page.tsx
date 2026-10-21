@@ -28,6 +28,7 @@ import {
   ValorLinha,
 } from "./components/configuracoes-settings-primitives";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
+import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
 import {
   normalizarTextoBuscaConfiguracoes,
@@ -320,32 +321,16 @@ export default function ConfiguracoesPage() {
     };
   }, [verificandoAcesso]);
 
-  useEffect(() => {
-    if (!mostrarSeguranca || typeof document === "undefined") {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    function fecharComEscape(event: KeyboardEvent) {
-      if (event.key === "Escape" && !salvandoSenha) {
-        setMostrarSeguranca(false);
-        setSenhaAtual("");
-        setNovaSenha("");
-        setConfirmarNovaSenha("");
-        setErroSenha("");
-        setSenhaAlterada(false);
-      }
-    }
-
-    window.addEventListener("keydown", fecharComEscape);
-
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      window.removeEventListener("keydown", fecharComEscape);
-    };
-  }, [mostrarSeguranca, salvandoSenha]);
+  useConfiguracoesSecurityModalBodyLock({
+    mostrarSeguranca,
+    salvandoSenha,
+    setMostrarSeguranca,
+    setSenhaAtual,
+    setNovaSenha,
+    setConfirmarNovaSenha,
+    setErroSenha,
+    setSenhaAlterada,
+  });
 
   const buscaNormalizada = normalizarTextoBuscaConfiguracoes(busca);
 

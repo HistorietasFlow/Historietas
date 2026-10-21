@@ -853,3 +853,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As validações puras dos formulários de alteração de senha e exclusão de conta foram isoladas, preservando ordem, mensagens e idiomas.
 - Autenticação, chamadas remotas, estados, redirecionamento e apresentação permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 26 — Configurações
+
+- O lifecycle visual do modal de segurança foi isolado em hook, preservando body lock, Escape, limpeza dos campos e cleanup.
+- Estados, validação, autenticação, chamadas remotas e apresentação permaneceram na página sem alteração intencional de comportamento.
