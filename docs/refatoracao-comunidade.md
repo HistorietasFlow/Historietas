@@ -973,3 +973,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os modelos compartilhados de mensagens de ação foram centralizados, preservando literalmente tipo, texto e identificador consumidos pelo hook e pelo toast.
 - Runtime, temporização, estados, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 51 — Configurações
+
+- O contexto de apresentação da página — tema, idioma, notificações e derivados de visualização — foi agrupado em um hook dedicado, preservando os mesmos inputs e valores retornados.
+- Estados, lifecycles, ações, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
