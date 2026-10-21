@@ -20,6 +20,13 @@ const actions = readFileSync(
   ),
   "utf8",
 );
+const privacyActions = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-privacy-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("preferências de privacidade preservam tipos, defaults e compatibilidade", () => {
   assert.match(
@@ -137,4 +144,15 @@ test("ações de preferências preservam estado, persistência e sincronização
   assert.match(page, /aplicarPrivacidadeAtualizadaConfiguracoes\(\{/);
   assert.doesNotMatch(page, /void salvarPreferenciasPrivacidade\(/);
   assert.doesNotMatch(page, /criarPreferenciasComAvisosAlternadosConfiguracoes/);
+});
+
+test("ações de privacidade preservam as três composições da página", () => {
+  assert.match(privacyActions, /export function atualizarPrivacidadeConfiguracoes/);
+  assert.match(privacyActions, /criarPrivacidadeAtualizadaConfiguracoes/);
+  assert.match(privacyActions, /export function alternarPerfilPrivadoConfiguracoes/);
+  assert.match(privacyActions, /criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes/);
+  assert.match(privacyActions, /export function alternarAprovacaoNovosSeguidoresConfiguracoes/);
+  assert.match(privacyActions, /criarPrivacidadeComAprovacaoAlternadaConfiguracoes/);
+  assert.doesNotMatch(privacyActions, /useState|useEffect|localStorage|supabase\./);
+  assert.match(page, /from "\.\/lib\/configuracoes-privacy-actions";/);
 });
