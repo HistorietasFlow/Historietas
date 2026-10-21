@@ -27,6 +27,13 @@ const secaoPrivacidadePerfil = readFileSync(
   ),
   "utf8",
 );
+const secaoConta = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-account-details-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", () => {
   assert.match(componente, /import type \{ CSSProperties \} from "react";/);
@@ -134,6 +141,10 @@ test("Configuracoes mantem os consumidores e a fronteira do Toggle", () => {
   );
 
   assert.match(
+    secaoConta,
+    /from "\.\/configuracoes-settings-primitives";/,
+  );
+  assert.doesNotMatch(
     pagina,
     /from "\.\/components\/configuracoes-settings-primitives";/,
   );
