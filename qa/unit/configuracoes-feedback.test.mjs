@@ -48,6 +48,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const profilePrivacySection = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("feedback de Configurações preserva toast, acessibilidade e traduções", () => {
   assert.match(toast, /export function ConfiguracoesActionToast\(/);
@@ -181,13 +188,22 @@ test("página delega feedback visual e mantém ações e estados", () => {
     /from "\.\/components\/configuracoes-action-toast";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/components\/configuracoes-blocked-users-panel";/,
+    profilePrivacySection,
+    /from "\.\/configuracoes-blocked-users-panel";/,
   );
   assert.match(pagina, /<ConfiguracoesActionToast/);
-  assert.match(pagina, /<ConfiguracoesBlockedUsersPanel/);
-  assert.match(pagina, /onRecarregar=\{carregarUsuariosBloqueados\}/);
-  assert.match(pagina, /onDesbloquear=\{desbloquearUsuarioConfiguracoes\}/);
+  assert.match(pagina, /<ConfiguracoesProfilePrivacySection/);
+  assert.match(profilePrivacySection, /<ConfiguracoesBlockedUsersPanel/);
+  assert.match(profilePrivacySection, /onRecarregar=\{onCarregarUsuariosBloqueados\}/);
+  assert.match(profilePrivacySection, /onDesbloquear=\{onDesbloquearUsuario\}/);
+  assert.match(
+    pagina,
+    /onCarregarUsuariosBloqueados=\{carregarUsuariosBloqueados\}/,
+  );
+  assert.match(
+    pagina,
+    /onDesbloquearUsuario=\{desbloquearUsuarioConfiguracoes\}/,
+  );
   assert.match(pagina, /onFechar=\{\(\) => setMensagemAcao\(null\)\}/);
   assert.match(
     pagina,

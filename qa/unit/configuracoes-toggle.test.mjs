@@ -20,6 +20,13 @@ const secoesPreferencias = readFileSync(
   ),
   "utf8",
 );
+const secaoPrivacidadePerfil = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", () => {
   assert.match(componente, /import type \{ CSSProperties \} from "react";/);
@@ -79,8 +86,8 @@ test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", ()
 
 test("Configuracoes mantem os consumidores e a fronteira do Toggle", () => {
   assert.match(
-    pagina,
-    /import \{ Toggle \} from "\.\/components\/configuracoes-toggle";/,
+    secaoPrivacidadePerfil,
+    /import \{ Toggle \} from "\.\/configuracoes-toggle";/,
   );
   assert.doesNotMatch(pagina, /function Toggle\(/);
 
@@ -95,14 +102,15 @@ test("Configuracoes mantem os consumidores e a fronteira do Toggle", () => {
     assert.doesNotMatch(pagina, new RegExp(`const ${estilo}: CSSProperties =`));
   }
 
-  assert.equal((pagina.match(/<Toggle/g) || []).length, 2);
+  assert.equal((pagina.match(/<Toggle/g) || []).length, 0);
+  assert.equal((secaoPrivacidadePerfil.match(/<Toggle/g) || []).length, 2);
   assert.match(
-    pagina,
-    /checked=\{privacidade\.perfilPrivado\}[\s\S]*?onChange=\{alternarPerfilPrivado\}/,
+    secaoPrivacidadePerfil,
+    /checked=\{privacidade\.perfilPrivado\}[\s\S]*?onChange=\{onAlternarPerfilPrivado\}/,
   );
   assert.match(
-    pagina,
-    /checked=\{privacidade\.aprovarNovosSeguidores\}[\s\S]*?onChange=\{alternarAprovacaoNovosSeguidores\}/,
+    secaoPrivacidadePerfil,
+    /checked=\{privacidade\.aprovarNovosSeguidores\}[\s\S]*?onChange=\{onAlternarAprovacaoNovosSeguidores\}/,
   );
   assert.match(
     secoesPreferencias,
@@ -112,7 +120,14 @@ test("Configuracoes mantem os consumidores e a fronteira do Toggle", () => {
     pagina,
     /<ConfiguracoesPreferencesSection[\s\S]*?onAlternarReceberAvisos=\{alternarReceberAvisos\}/,
   );
-  assert.equal((pagina.match(/ariaLabel=\{t\(/g) || []).length >= 2, true);
+  assert.match(
+    pagina,
+    /<ConfiguracoesProfilePrivacySection[\s\S]*?onAlternarPerfilPrivado=\{alternarPerfilPrivado\}/,
+  );
+  assert.equal(
+    (secaoPrivacidadePerfil.match(/ariaLabel=\{t\(/g) || []).length,
+    2,
+  );
   assert.equal(
     (secoesPreferencias.match(/ariaLabel=\{t\(/g) || []).length,
     1,
