@@ -1,7 +1,11 @@
-import type { PreferenciasConta, ResumoLocal } from "./configuracoes-account-models";
+import type { PreferenciasConta } from "./configuracoes-account-models";
 
-export function calcularTotalBibliotecaConfiguracoes(resumo: ResumoLocal) {
-  return resumo.favoritas + resumo.concluidas + resumo.seguindoObras;
+export function calcularTotalBibliotecaConfiguracoes(
+  favoritas: number,
+  concluidas: number,
+  seguindoObras: number,
+) {
+  return favoritas + concluidas + seguindoObras;
 }
 
 export function criarPreferenciaAtualizadaConfiguracoes<

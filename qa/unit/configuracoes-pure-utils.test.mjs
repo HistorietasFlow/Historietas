@@ -474,11 +474,7 @@ test("transições das preferências da conta preservam campos e total", () => {
   };
 
   assert.equal(
-    accountPreferenceState.calcularTotalBibliotecaConfiguracoes({
-      favoritas: 2,
-      concluidas: 3,
-      seguindoObras: 4,
-    }),
+    accountPreferenceState.calcularTotalBibliotecaConfiguracoes(2, 3, 4),
     9,
   );
   assert.deepEqual(

@@ -349,7 +349,12 @@ export default function ConfiguracoesPage() {
     deveMostrarSecaoConfiguracoes(buscaNormalizada, ...termos);
 
   const totalBiblioteca = useMemo(
-    () => calcularTotalBibliotecaConfiguracoes(resumo),
+    () =>
+      calcularTotalBibliotecaConfiguracoes(
+        resumo.favoritas,
+        resumo.concluidas,
+        resumo.seguindoObras,
+      ),
     [resumo.concluidas, resumo.favoritas, resumo.seguindoObras],
   );
 
