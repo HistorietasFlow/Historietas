@@ -136,6 +136,13 @@ const accountDeletionActionSource = readFileSync(
   ),
   "utf8",
 );
+const passwordChangeActionSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-password-change-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountBackupDownloadSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-backup-download.ts",
@@ -639,7 +646,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-privacy-preferences";/,
   );
-  assert.match(pagina, /from "\.\/lib\/configuracoes-error-messages";/);
+  assert.match(pagina, /from "\.\/lib\/configuracoes-password-change-action";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-models";/);
   assert.doesNotMatch(
     pagina,
@@ -684,10 +691,6 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/lib\/configuracoes-account-preference-state-utils";/,
   );
   assert.match(pagina, /from "\.\/lib\/configuracoes-privacy-actions";/);
-  assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-security-form-validation";/,
-  );
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-search-visibility-utils";/,
@@ -817,11 +820,48 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /excluirContaConfiguracoes\(\{/);
   assert.match(pagina, /redirecionarLogin: \(\) => router\.replace\("\/login"\)/);
   assert.match(pagina, /atualizarRota: \(\) => router\.refresh\(\)/);
+  assert.match(passwordChangeActionSource, /export async function alterarSenhaConfiguracoes\(/);
+  assert.match(passwordChangeActionSource, /event\.preventDefault\(\);/);
+  assert.match(
+    passwordChangeActionSource,
+    /if \(salvandoSenha \|\| senhaAlterada\) \{/,
+  );
+  assert.match(
+    passwordChangeActionSource,
+    /validarAlteracaoSenhaConfiguracoes\(\s*senhaAtual,\s*novaSenha,\s*confirmarNovaSenha,\s*language,/,
+  );
+  assert.match(passwordChangeActionSource, /await supabase\.auth\.getUser\(\)/);
+  assert.match(
+    passwordChangeActionSource,
+    /dadosUsuario\.user\.id !== usuarioIdLogado/,
+  );
+  assert.match(
+    passwordChangeActionSource,
+    /dadosUsuario\.user\.email\?\.trim\(\)\.toLowerCase\(\) \|\| ""/,
+  );
+  assert.match(passwordChangeActionSource, /supabase\.auth\.signInWithPassword\(\{/);
+  assert.match(passwordChangeActionSource, /password: senhaAtual/);
+  assert.match(passwordChangeActionSource, /supabase\.auth\.updateUser\(\{/);
+  assert.match(passwordChangeActionSource, /password: novaSenha/);
+  assert.match(
+    passwordChangeActionSource,
+    /traduzirErroSenhaConfiguracoes\(/,
+  );
+  assert.match(
+    passwordChangeActionSource,
+    /setSenhaAtual\(""\);\s*setNovaSenha\(""\);\s*setConfirmarNovaSenha\(""\);\s*setSenhaAlterada\(true\);/,
+  );
+  assert.match(passwordChangeActionSource, /finally \{\s*setSalvandoSenha\(false\);/);
+  assert.doesNotMatch(
+    passwordChangeActionSource,
+    /useState|useEffect|localStorage|sessionStorage|JSX/,
+  );
+  assert.doesNotMatch(pagina, /async function alterarSenhaConfiguracoes\(/);
+  assert.match(pagina, /alterarSenhaConfiguracoes\(\{/);
   assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
   assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
   assert.match(pagina, /useConfiguracoesSecurityModalState\(\)/);
   assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
-  assert.match(pagina, /validarAlteracaoSenhaConfiguracoes\(\s*senhaAtual,/);
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
   assert.doesNotMatch(pagina, /!\/\[A-Za-zÀ-ÖØ-öø-ÿ\]\/.test\(novaSenha\)/);
   assert.doesNotMatch(pagina, /localStorage/);

@@ -61,6 +61,7 @@ import { listarUsuariosBloqueadosConfiguracoes } from "./lib/configuracoes-block
 import { carregarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-supabase-loader";
 import { salvarConfiguracoesPerfil } from "./lib/configuracoes-profile-save-action";
 import { excluirContaConfiguracoes } from "./lib/configuracoes-account-deletion-action";
+import { alterarSenhaConfiguracoes } from "./lib/configuracoes-password-change-action";
 import {
   carregarPreferencias,
 } from "./lib/configuracoes-account-preferences";
@@ -88,10 +89,6 @@ import type {
   ResumoLocal,
   UsuarioConfiguracoes,
 } from "./lib/configuracoes-account-models";
-import {
-  traduzirErroSenhaConfiguracoes,
-} from "./lib/configuracoes-error-messages";
-import { validarAlteracaoSenhaConfiguracoes } from "./lib/configuracoes-security-form-validation";
 import {
   deleteDangerButtonDisabledStyle,
   deleteDangerButtonStyle,
@@ -463,103 +460,23 @@ export default function ConfiguracoesPage() {
   }
 
   async function alterarSenha(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (salvandoSenha || senhaAlterada) {
-      return;
-    }
-
-    setErroSenha("");
-
-    const erroValidacao = validarAlteracaoSenhaConfiguracoes(
+    await alterarSenhaConfiguracoes({
+      event,
+      salvandoSenha,
+      senhaAlterada,
       senhaAtual,
       novaSenha,
       confirmarNovaSenha,
       language,
-    );
-
-    if (erroValidacao) {
-      setErroSenha(erroValidacao);
-      return;
-    }
-
-    setSalvandoSenha(true);
-
-    try {
-      const { data: dadosUsuario, error: erroUsuario } =
-        await supabase.auth.getUser();
-
-      if (
-        erroUsuario ||
-        !dadosUsuario.user ||
-        dadosUsuario.user.id !== usuarioIdLogado
-      ) {
-        setErroSenha(
-          t(
-            "Sua sessão expirou. Entre novamente na conta.",
-            "Your session has expired. Sign in again.",
-            "Tu sesión expiró. Inicia sesión de nuevo.",
-          ),
-        );
-        return;
-      }
-
-      const emailUsuario = dadosUsuario.user.email?.trim().toLowerCase() || "";
-
-      if (!emailUsuario) {
-        setErroSenha(
-          t(
-            "Não foi possível confirmar o e-mail da sua conta. Entre novamente e tente de novo.",
-            "Your account email could not be confirmed. Sign in again and try once more.",
-            "No se pudo confirmar el correo de tu cuenta. Inicia sesión de nuevo e inténtalo otra vez.",
-          ),
-        );
-        return;
-      }
-
-      const { data: autenticacaoSenhaAtual, error: erroSenhaAtual } =
-        await supabase.auth.signInWithPassword({
-          email: emailUsuario,
-          password: senhaAtual,
-        });
-
-      if (
-        erroSenhaAtual ||
-        !autenticacaoSenhaAtual.user ||
-        autenticacaoSenhaAtual.user.id !== usuarioIdLogado
-      ) {
-        setErroSenha(
-          traduzirErroSenhaConfiguracoes(
-            erroSenhaAtual?.message || "invalid login credentials",
-            language,
-          ),
-        );
-        return;
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        password: novaSenha,
-      });
-
-      if (error) {
-        setErroSenha(traduzirErroSenhaConfiguracoes(error.message, language));
-        return;
-      }
-
-      setSenhaAtual("");
-      setNovaSenha("");
-      setConfirmarNovaSenha("");
-      setSenhaAlterada(true);
-    } catch (error) {
-      setErroSenha(
-        traduzirErroSenhaConfiguracoes(
-          error instanceof Error ? error.message : "",
-          language,
-        ),
-      );
-    } finally {
-      setSalvandoSenha(false);
-    }
+      usuarioIdLogado,
+      setSenhaAtual,
+      setNovaSenha,
+      setConfirmarNovaSenha,
+      setSalvandoSenha,
+      setErroSenha,
+      setSenhaAlterada,
+      traduzirTexto: t,
+    });
   }
 
   const copiarBackup = () =>

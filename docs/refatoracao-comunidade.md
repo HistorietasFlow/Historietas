@@ -893,3 +893,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de exclusão de conta foi isolada, preservando validação, endpoint, limpeza local, encerramento de sessão, redirecionamento, atualização de rota, mensagens e fallbacks.
 - Estados, lifecycle, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 35 — Configurações
+
+- A ação de alteração de senha foi isolada, preservando validação, reautenticação, atualização da credencial, mensagens, resets e fallbacks.
+- Estados, lifecycle, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
