@@ -60,8 +60,7 @@ import { carregarResumoContaSupabase } from "./lib/configuracoes-account-summary
 import { listarUsuariosBloqueadosConfiguracoes } from "./lib/configuracoes-blocked-users-loader";
 import { carregarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-supabase-loader";
 import { salvarConfiguracoesPerfil } from "./lib/configuracoes-profile-save-action";
-import { limparDadosLocaisContaExcluida } from "./lib/configuracoes-account-deletion-local-cleanup";
-import { traduzirErroExclusaoContaConfiguracoes } from "./lib/configuracoes-account-deletion-error-messages";
+import { excluirContaConfiguracoes } from "./lib/configuracoes-account-deletion-action";
 import {
   carregarPreferencias,
 } from "./lib/configuracoes-account-preferences";
@@ -92,10 +91,7 @@ import type {
 import {
   traduzirErroSenhaConfiguracoes,
 } from "./lib/configuracoes-error-messages";
-import {
-  validarAlteracaoSenhaConfiguracoes,
-  validarExclusaoContaConfiguracoes,
-} from "./lib/configuracoes-security-form-validation";
+import { validarAlteracaoSenhaConfiguracoes } from "./lib/configuracoes-security-form-validation";
 import {
   deleteDangerButtonDisabledStyle,
   deleteDangerButtonStyle,
@@ -451,78 +447,19 @@ export default function ConfiguracoesPage() {
   }
 
   async function excluirConta(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (excluindoConta) {
-      return;
-    }
-
-    setErroExclusaoConta("");
-
-    const erroValidacao = validarExclusaoContaConfiguracoes(
+    await excluirContaConfiguracoes({
+      event,
+      excluindoConta,
       senhaExclusaoConta,
       confirmacaoExclusaoConta,
       language,
-    );
-
-    if (erroValidacao) {
-      setErroExclusaoConta(erroValidacao);
-      return;
-    }
-
-    setExcluindoConta(true);
-
-    try {
-      const response = await fetch("/api/conta/excluir", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senha: senhaExclusaoConta,
-          confirmacao: "EXCLUIR",
-        }),
-      });
-      const data = (await response.json().catch(() => null)) as
-        | { ok?: boolean; codigo?: string; mensagem?: string }
-        | null;
-
-      if (!response.ok || !data?.ok) {
-        setErroExclusaoConta(
-          traduzirErroExclusaoContaConfiguracoes(
-            data?.codigo || "",
-            data?.mensagem ||
-              t(
-                "Não foi possível excluir sua conta agora.",
-                "Your account could not be deleted right now.",
-                "No se pudo eliminar tu cuenta ahora.",
-              ),
-            language,
-          ),
-        );
-        return;
-      }
-
-      limparDadosLocaisContaExcluida(usuarioIdLogado);
-
-      try {
-        await supabase.auth.signOut();
-      } catch {
-        // A conta já foi removida no servidor.
-      }
-
-      router.replace("/login");
-      router.refresh();
-    } catch {
-      setErroExclusaoConta(
-        t(
-          "Não foi possível excluir sua conta agora. Verifique sua conexão e tente novamente.",
-          "Your account could not be deleted right now. Check your connection and try again.",
-          "No se pudo eliminar tu cuenta ahora. Revisa tu conexión e inténtalo de nuevo.",
-        ),
-      );
-    } finally {
-      setExcluindoConta(false);
-    }
+      usuarioIdLogado,
+      setErroExclusaoConta,
+      setExcluindoConta,
+      redirecionarLogin: () => router.replace("/login"),
+      atualizarRota: () => router.refresh(),
+      traduzirTexto: t,
+    });
   }
 
   async function alterarSenha(event: FormEvent<HTMLFormElement>) {

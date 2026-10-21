@@ -888,3 +888,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A orquestração de salvamento do perfil, preferências e privacidade foi isolada, preservando validações, autenticação, persistência local, sincronização remota, mensagens, ordem dos setters e fallbacks.
 - Estados, lifecycle, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 34 — Configurações
+
+- A ação de exclusão de conta foi isolada, preservando validação, endpoint, limpeza local, encerramento de sessão, redirecionamento, atualização de rota, mensagens e fallbacks.
+- Estados, lifecycle, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.

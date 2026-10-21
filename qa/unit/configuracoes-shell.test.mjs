@@ -193,7 +193,7 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   assert.match(pagina, /supabase\./);
   assert.match(
     pagina,
-    /from "\.\/lib\/configuracoes-account-deletion-local-cleanup";/,
+    /from "\.\/lib\/configuracoes-account-deletion-action";/,
   );
   assert.match(
     pagina,
@@ -201,7 +201,8 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   );
   assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
   assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
-  assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
+  assert.match(pagina, /excluirContaConfiguracoes\(\{/);
+  assert.doesNotMatch(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
   assert.doesNotMatch(pagina, /localStorage/);
 
   for (const style of [
