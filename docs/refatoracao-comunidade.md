@@ -868,3 +868,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As transições locais de abertura e fechamento dos modais de segurança e exclusão de conta foram isoladas, preservando resets, guardas de carregamento e ordem dos setters.
 - Validação, autenticação, operações remotas, lifecycle e apresentação permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 29 — Configurações
+
+- O lifecycle e as ações do painel de usuários bloqueados foram isolados em hook, preservando carregamento, confirmação, RPC, mensagens, guardas e atualizações de estado.
+- A carga inicial, autenticação, RLS, estados e apresentação da página permaneceram sem alteração intencional de comportamento.
