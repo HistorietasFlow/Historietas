@@ -17,6 +17,9 @@ import { ConfiguracoesPageHeader } from "./components/configuracoes-page-header"
 import { ConfiguracoesProfileCard } from "./components/configuracoes-profile-card";
 import { ConfiguracoesSearch } from "./components/configuracoes-search";
 import { ConfiguracoesSecurityPasswordModal } from "./components/configuracoes-security-password-modal";
+import { ConfiguracoesUsageSummarySection } from "./components/configuracoes-usage-summary-section";
+import { ConfiguracoesDataSection } from "./components/configuracoes-data-section";
+import { ConfiguracoesSupportSection } from "./components/configuracoes-support-section";
 import { Toggle } from "./components/configuracoes-toggle";
 import {
   SettingsInput,
@@ -971,125 +974,13 @@ export default function ConfiguracoesPage() {
           </SettingsSection>
         ) : null}
 
-        {deveMostrar(
-          "historietas",
-          "obras",
-          "biblioteca",
-          "notificações",
-          "comunidade",
-          "top 5",
-          "diário",
-        ) ? (
-          <SettingsSection
-            title={t(
-              "Como você usa o Historietas",
-              "How you use Historietas",
-              "Cómo usas Historietas",
-            )}
-          >
-            {deveMostrar("obras", "criadas") ? (
-              <SettingsRow
-                icon="book"
-                title={t(
-                  "Obras criadas",
-                  "Created works",
-                  "Obras creadas",
-                )}
-                subtitle={t(
-                  "Total de obras criadas na sua conta",
-                  "Total works created on your account",
-                  "Total de obras creadas en tu cuenta",
-                )}
-                right={<ValorLinha>{resumo.obras}</ValorLinha>}
-                href="/perfil-autor?aba=obras"
-              />
-            ) : null}
-
-            {deveMostrar(
-              "biblioteca",
-              "lista",
-              "favoritas",
-              "concluidas",
-            ) ? (
-              <SettingsRow
-                icon="bookmark"
-                title={t("Biblioteca", "Library", "Biblioteca")}
-                subtitle={t(
-                  "Favoritas, concluídas e obras seguidas",
-                  "Favorites, completed and followed works",
-                  "Favoritas, completadas y obras seguidas",
-                )}
-                right={<ValorLinha>{totalBiblioteca}</ValorLinha>}
-                href="/perfil-autor?aba=biblioteca"
-              />
-            ) : null}
-
-            {deveMostrar("notificações", "avisos") ? (
-              <SettingsRow
-                icon="bell"
-                title={t(
-                  "Notificações",
-                  "Notifications",
-                  "Notificaciones",
-                )}
-                subtitle={t(
-                  "Mensagens, avisos e atividade recente",
-                  "Messages, alerts and recent activity",
-                  "Mensajes, avisos y actividad reciente",
-                )}
-                right={<ValorLinha>{notificacoesNaoLidas}</ValorLinha>}
-                href="/notificacoes"
-              />
-            ) : null}
-
-            {deveMostrar("comunidade", "autor") ? (
-              <SettingsRow
-                icon="comment"
-                title={t(
-                  "Comunidade do autor",
-                  "Author community",
-                  "Comunidad del autor",
-                )}
-                subtitle={t(
-                  "Interações e publicações da comunidade",
-                  "Community interactions and posts",
-                  "Interacciones y publicaciones de la comunidad",
-                )}
-                href="/perfil-autor?aba=comunidade"
-              />
-            ) : null}
-
-            {deveMostrar("top 5", "favoritas") ? (
-              <SettingsRow
-                icon="trophy"
-                title="TOP 5"
-                subtitle={t(
-                  "Escolha suas cinco obras favoritas",
-                  "Choose your five favorite works",
-                  "Elige tus cinco obras favoritas",
-                )}
-                href="/perfil-autor/top-5"
-              />
-            ) : null}
-
-            {deveMostrar("histórico", "leitura", "diário") ? (
-              <SettingsRow
-                icon="clock"
-                title={t(
-                  "Histórico de leitura",
-                  "Reading history",
-                  "Historial de lectura",
-                )}
-                subtitle={t(
-                  "Diário, leituras recentes e avaliações",
-                  "Journal, recent reads and ratings",
-                  "Diario, lecturas recientes y valoraciones",
-                )}
-                href="/perfil-autor?aba=diario"
-              />
-            ) : null}
-          </SettingsSection>
-        ) : null}
+        <ConfiguracoesUsageSummarySection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+          resumo={resumo}
+          totalBiblioteca={totalBiblioteca}
+          notificacoesNaoLidas={notificacoesNaoLidas}
+        />
 
         {deveMostrar(
           "preferências",
@@ -1157,142 +1048,18 @@ export default function ConfiguracoesPage() {
           </SettingsSection>
         ) : null}
 
-        {deveMostrar(
-          "dados",
-          "backup",
-          "copiar",
-          "baixar",
-          "download",
-        ) ? (
-          <SettingsSection
-            title={t(
-              "Dados e arquivos",
-              "Data and files",
-              "Datos y archivos",
-            )}
-          >
-            {deveMostrar("copiar", "dados") ? (
-              <SettingsRow
-                icon="copy"
-                title={t("Copiar dados", "Copy data", "Copiar datos")}
-                subtitle={t(
-                  "Copia um backup em texto para a área de transferência",
-                  "Copies a text backup to the clipboard",
-                  "Copia una copia de seguridad en texto al portapapeles",
-                )}
-                onClick={copiarBackup}
-              />
-            ) : null}
+        <ConfiguracoesDataSection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+          resumo={resumo}
+          onCopiarBackup={copiarBackup}
+          onBaixarBackup={baixarBackup}
+        />
 
-            {deveMostrar("baixar", "backup", "download") ? (
-              <SettingsRow
-                icon="download"
-                title={t(
-                  "Baixar backup",
-                  "Download backup",
-                  "Descargar copia",
-                )}
-                subtitle={t(
-                  "Salva um arquivo JSON com seus dados locais",
-                  "Saves a JSON file with your local data",
-                  "Guarda un archivo JSON con tus datos locales",
-                )}
-                onClick={baixarBackup}
-              />
-            ) : null}
-
-            {deveMostrar("resumo", "dados") ? (
-              <SettingsRow
-                icon="database"
-                title={t(
-                  "Resumo da conta",
-                  "Account summary",
-                  "Resumen de la cuenta",
-                )}
-                subtitle={t(
-                  `${resumo.obras} obras, ${resumo.favoritas} na lista, ${
-                    resumo.seguindoObras + resumo.seguindoAutores
-                  } seguindo`,
-                  `${resumo.obras} works, ${resumo.favoritas} in the list, ${
-                    resumo.seguindoObras + resumo.seguindoAutores
-                  } following`,
-                  `${resumo.obras} obras, ${resumo.favoritas} en la lista, ${
-                    resumo.seguindoObras + resumo.seguindoAutores
-                  } siguiendo`,
-                )}
-                hideChevron
-              />
-            ) : null}
-          </SettingsSection>
-        ) : null}
-
-        {deveMostrar(
-          "suporte",
-          "ajuda",
-          "termos",
-          "políticas",
-          "sobre",
-        ) ? (
-          <SettingsSection
-            title={t(
-              "Suporte e sobre",
-              "Support and about",
-              "Soporte y acerca de",
-            )}
-          >
-            {deveMostrar("ajuda", "suporte") ? (
-              <SettingsRow
-                icon="help"
-                title={t(
-                  "Central de ajuda",
-                  "Help center",
-                  "Centro de ayuda",
-                )}
-                subtitle={t(
-                  "Dúvidas, problemas e orientação",
-                  "Questions, problems and guidance",
-                  "Dudas, problemas y orientación",
-                )}
-                href="/ajuda"
-              />
-            ) : null}
-
-            {deveMostrar("termos", "políticas", "privacidade") ? (
-              <SettingsRow
-                icon="file"
-                title={t(
-                  "Termos e políticas",
-                  "Terms and policies",
-                  "Términos y políticas",
-                )}
-                subtitle={t(
-                  "Privacidade, uso da plataforma e regras",
-                  "Privacy, platform use and rules",
-                  "Privacidad, uso de la plataforma y reglas",
-                )}
-                href="/termos"
-              />
-            ) : null}
-
-            {deveMostrar("sobre", "versão") ? (
-              <SettingsRow
-                icon="settings"
-                title={t(
-                  "Sobre o Historietas",
-                  "About Historietas",
-                  "Acerca de Historietas",
-                )}
-                subtitle={t(
-                  "Versão local de desenvolvimento",
-                  "Local development version",
-                  "Versión local de desarrollo",
-                )}
-                right={<ValorLinha>Beta</ValorLinha>}
-                hideChevron
-              />
-            ) : null}
-          </SettingsSection>
-        ) : null}
+        <ConfiguracoesSupportSection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+        />
 
         {deveMostrar("excluir", "apagar", "conta", "dados", "permanente") ? (
           <section style={sectionStyle}>
