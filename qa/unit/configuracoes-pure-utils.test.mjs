@@ -143,6 +143,13 @@ const privacyPreferenceStateSource = readFileSync(
   ),
   "utf8",
 );
+const securityFormValidationSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-security-form-validation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -259,6 +266,13 @@ const accountPreferenceState = await importarTypescript(
 );
 const privacyPreferenceState = await importarTypescript(
   privacyPreferenceStateSource,
+);
+const securityFormValidation = await importarTypescript(
+  securityFormValidationSource.replace(
+    /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/lib\/i18n";\r?\nimport \{ textoIdioma \} from "\.\/configuracoes-search-utils";/,
+    `const textoIdioma = (language, portugues, ingles, espanhol) =>
+  language === "en" ? ingles : language === "es" ? espanhol : portugues;`,
+  ),
 );
 
 test("busca de Configurações preserva idioma, normalização e aliases", () => {
@@ -530,6 +544,51 @@ test("transições das preferências de privacidade preservam dependências", ()
   );
 });
 
+test("validações dos formulários de segurança preservam ordem, idiomas e regras", () => {
+  assert.equal(
+    securityFormValidation.validarExclusaoContaConfiguracoes("", "EXCLUIR", "pt-BR"),
+    "Digite sua senha atual.",
+  );
+  assert.equal(
+    securityFormValidation.validarExclusaoContaConfiguracoes("senha", "delete", "en"),
+    "",
+  );
+  assert.equal(
+    securityFormValidation.validarExclusaoContaConfiguracoes("senha", "excluir", "es"),
+    "Escribe ELIMINAR exactamente como aparece para confirmar.",
+  );
+  assert.equal(
+    securityFormValidation.validarAlteracaoSenhaConfiguracoes("", "Senha123", "Senha123", "pt-BR"),
+    "Digite sua senha atual.",
+  );
+  assert.equal(
+    securityFormValidation.validarAlteracaoSenhaConfiguracoes("Atual123", "Nova1", "Nova1", "en"),
+    "The new password must be at least 8 characters long.",
+  );
+  assert.equal(
+    securityFormValidation.validarAlteracaoSenhaConfiguracoes("Atual123", "NovaSenha", "NovaSenha", "es"),
+    "Usa al menos una letra y un número en la nueva contraseña.",
+  );
+  assert.equal(
+    securityFormValidation.validarAlteracaoSenhaConfiguracoes("Atual123", "Atual123", "Atual123", "pt-BR"),
+    "A nova senha precisa ser diferente da senha atual.",
+  );
+  assert.equal(
+    securityFormValidation.validarAlteracaoSenhaConfiguracoes("Atual123", "NovaSenha1", "OutraSenha1", "en"),
+    "The confirmation does not match the new password.",
+  );
+  assert.equal(
+    securityFormValidation.validarAlteracaoSenhaConfiguracoes("Atual123", "NovaSenha1", "NovaSenha1", "pt-BR"),
+    "",
+  );
+  assert.match(securityFormValidationSource, /export function validarExclusaoContaConfiguracoes/);
+  assert.match(securityFormValidationSource, /export function validarAlteracaoSenhaConfiguracoes/);
+  assert.doesNotMatch(
+    securityFormValidationSource,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
+});
+
 test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /from "\.\/lib\/configuracoes-search-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-utils";/);
@@ -579,6 +638,10 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.match(
     pagina,
+    /from "\.\/lib\/configuracoes-security-form-validation";/,
+  );
+  assert.match(
+    pagina,
     /from "\.\/lib\/configuracoes-search-visibility-utils";/,
   );
   assert.match(
@@ -621,6 +684,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     "criarPrivacidadeAtualizadaConfiguracoes",
     "criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes",
     "criarPrivacidadeComAprovacaoAlternadaConfiguracoes",
+    "validarExclusaoContaConfiguracoes",
+    "validarAlteracaoSenhaConfiguracoes",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
@@ -658,6 +723,10 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(pagina, /function limparDadosLocaisContaExcluida\(/);
   assert.match(pagina, /salvarPerfilConfiguracoesSupabase\(\{/);
   assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
+  assert.match(pagina, /validarExclusaoContaConfiguracoes\(\s*senhaExclusaoConta,/);
+  assert.match(pagina, /validarAlteracaoSenhaConfiguracoes\(\s*senhaAtual,/);
+  assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
+  assert.doesNotMatch(pagina, /!\/\[A-Za-zÀ-ÖØ-öø-ÿ\]\/.test\(novaSenha\)/);
   assert.doesNotMatch(pagina, /localStorage/);
   assert.match(pagina, /supabase\./);
   assert.doesNotMatch(searchSource, /useState|useEffect|supabase|localStorage/);
