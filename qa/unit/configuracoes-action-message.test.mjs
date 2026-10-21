@@ -69,6 +69,13 @@ const accountActionHandlers = readFileSync(
   ),
   "utf8",
 );
+const acoesCamposOverlay = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-overlay-field-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
   assert.match(hook, /^"use client";/);
@@ -137,7 +144,11 @@ test("Configurações mantém domínio e toast na página", () => {
   );
   assert.match(pagina, /<ConfiguracoesPageOverlays/);
   assert.match(pagina, /mensagemAcao=\{mensagemAcao\}/);
-  assert.match(pagina, /onFecharMensagemAcao=\{\(\) => setMensagemAcao\(null\)\}/);
+  assert.match(pagina, /onFecharMensagemAcao=\{onFecharMensagemAcao\}/);
+  assert.match(
+    acoesCamposOverlay,
+    /onFecharMensagemAcao\(\) \{\s+setMensagemAcao\(null\);/,
+  );
   assert.match(
     overlays,
     /import \{ ConfiguracoesActionToast \} from "\.\/configuracoes-action-toast";/,

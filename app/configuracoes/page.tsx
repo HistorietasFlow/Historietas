@@ -34,6 +34,7 @@ import type {
 import {
   calcularTotalBibliotecaConfiguracoes,
 } from "./lib/configuracoes-account-preference-state-utils";
+import { criarAcoesCamposOverlayConfiguracoes } from "./lib/configuracoes-overlay-field-actions";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -218,6 +219,24 @@ export default function ConfiguracoesPage() {
     setSenhaAlterada,
   });
 
+  const {
+    onSenhaAtualChange,
+    onNovaSenhaChange,
+    onConfirmarNovaSenhaChange,
+    onSenhaExclusaoContaChange,
+    onConfirmacaoExclusaoContaChange,
+    onFecharMensagemAcao,
+  } = criarAcoesCamposOverlayConfiguracoes({
+    setSenhaAtual,
+    setNovaSenha,
+    setConfirmarNovaSenha,
+    setErroSenha,
+    setSenhaExclusaoConta,
+    setConfirmacaoExclusaoConta,
+    setErroExclusaoConta,
+    setMensagemAcao,
+  });
+
   if (verificandoAcesso) {
     return (
       <ConfiguracoesPageLoadingState
@@ -281,20 +300,11 @@ export default function ConfiguracoesPage() {
         onFecharSeguranca={fecharSeguranca}
         onAlterarSenha={alterarSenha}
         senhaAtual={senhaAtual}
-        onSenhaAtualChange={(valor) => {
-          setSenhaAtual(valor);
-          setErroSenha("");
-        }}
+        onSenhaAtualChange={onSenhaAtualChange}
         novaSenha={novaSenha}
-        onNovaSenhaChange={(valor) => {
-          setNovaSenha(valor);
-          setErroSenha("");
-        }}
+        onNovaSenhaChange={onNovaSenhaChange}
         confirmarNovaSenha={confirmarNovaSenha}
-        onConfirmarNovaSenhaChange={(valor) => {
-          setConfirmarNovaSenha(valor);
-          setErroSenha("");
-        }}
+        onConfirmarNovaSenhaChange={onConfirmarNovaSenhaChange}
         salvandoSenha={salvandoSenha}
         erroSenha={erroSenha}
         senhaAlterada={senhaAlterada}
@@ -302,19 +312,13 @@ export default function ConfiguracoesPage() {
         onFecharExclusaoConta={fecharExclusaoConta}
         onExcluirConta={excluirConta}
         senhaExclusaoConta={senhaExclusaoConta}
-        onSenhaExclusaoContaChange={(valor) => {
-          setSenhaExclusaoConta(valor);
-          setErroExclusaoConta("");
-        }}
+        onSenhaExclusaoContaChange={onSenhaExclusaoContaChange}
         confirmacaoExclusaoConta={confirmacaoExclusaoConta}
-        onConfirmacaoExclusaoContaChange={(valor) => {
-          setConfirmacaoExclusaoConta(valor);
-          setErroExclusaoConta("");
-        }}
+        onConfirmacaoExclusaoContaChange={onConfirmacaoExclusaoContaChange}
         excluindoConta={excluindoConta}
         erroExclusaoConta={erroExclusaoConta}
         mensagemAcao={mensagemAcao}
-        onFecharMensagemAcao={() => setMensagemAcao(null)}
+        onFecharMensagemAcao={onFecharMensagemAcao}
         traduzirTexto={t}
       />
     </main>

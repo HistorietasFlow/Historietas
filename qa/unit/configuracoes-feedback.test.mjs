@@ -62,6 +62,13 @@ const overlays = readFileSync(
   ),
   "utf8",
 );
+const acoesCamposOverlay = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-overlay-field-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profilePrivacySection = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
@@ -220,9 +227,10 @@ test("página delega feedback visual e mantém ações e estados", () => {
     pagina,
     /onDesbloquearUsuario=\{desbloquearUsuarioConfiguracoes\}/,
   );
+  assert.match(pagina, /onFecharMensagemAcao=\{onFecharMensagemAcao\}/);
   assert.match(
-    pagina,
-    /onFecharMensagemAcao=\{\(\) => setMensagemAcao\(null\)\}/,
+    acoesCamposOverlay,
+    /onFecharMensagemAcao\(\) \{\s+setMensagemAcao\(null\);/,
   );
   assert.match(
     pagina,

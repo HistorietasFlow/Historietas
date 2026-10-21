@@ -948,3 +948,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição visual das seções de Configurações e o estado de carregamento foram movidos para componentes dedicados, preservando a ordem das seções, props, filtros, estilos, traduções e callbacks.
 - Estados, hooks, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 46 — Configurações
+
+- Os adaptadores dos campos dos overlays de senha, exclusão e feedback foram isolados, preservando a ordem dos setters e a limpeza de mensagens de erro.
+- Estados, hooks, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
