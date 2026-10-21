@@ -898,3 +898,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de alteração de senha foi isolada, preservando validação, reautenticação, atualização da credencial, mensagens, resets e fallbacks.
 - Estados, lifecycle, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 36 — Configurações
+
+- O lifecycle de verificação de acesso administrativo foi isolado, preservando autenticação, fallback pelo token, RPC, assinatura de sessão, cancelamento e cleanup.
+- Estados, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.

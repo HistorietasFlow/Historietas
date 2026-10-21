@@ -24,6 +24,13 @@ const privacySource = readFileSync(
   ),
   "utf8",
 );
+const adminAccessHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-admin-access.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-models.ts",
@@ -679,6 +686,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/hooks\/use-configuracoes-blocked-users";/,
   );
   assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-admin-access";/,
+  );
+  assert.match(
     accountBackupActionsSource,
     /from "\.\/configuracoes-account-backup";/,
   );
@@ -862,6 +873,11 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
   assert.match(pagina, /useConfiguracoesSecurityModalState\(\)/);
   assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
+  assert.match(
+    pagina,
+    /useConfiguracoesAdminAccess\(\{\s*verificandoAcesso,\s*setAdminLiberado,\s*\}\);/,
+  );
+  assert.doesNotMatch(pagina, /async function verificarAdmin\(/);
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
   assert.doesNotMatch(pagina, /!\/\[A-Za-zÀ-ÖØ-öø-ÿ\]\/.test\(novaSenha\)/);
   assert.doesNotMatch(pagina, /localStorage/);
@@ -869,6 +885,41 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(searchSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(accountSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(privacySource, /useState|useEffect|useMemo/);
+});
+
+test("hook de acesso administrativo preserva autenticacao, RPC e cleanup", () => {
+  assert.match(adminAccessHookSource, /^"use client";/);
+  assert.match(adminAccessHookSource, /import \{ useEffect \} from "react";/);
+  assert.match(
+    adminAccessHookSource,
+    /export function useConfiguracoesAdminAccess\(/,
+  );
+  assert.match(adminAccessHookSource, /if \(verificandoAcesso\) \{\s*return;/);
+  assert.match(adminAccessHookSource, /let cancelado = false;/);
+  assert.match(adminAccessHookSource, /async function verificarAdmin\(\)/);
+  assert.match(adminAccessHookSource, /await supabase\.auth\.getUser\(\)/);
+  assert.match(adminAccessHookSource, /const user = data\.user \|\| null;/);
+  assert.match(adminAccessHookSource, /if \(!user \|\| userError\)/);
+  assert.match(
+    adminAccessHookSource,
+    /metadataTemAdminConfiguracoes\(\s*user\.app_metadata as AppMetadataAdminConfiguracoes \| null \| undefined,/,
+  );
+  assert.match(adminAccessHookSource, /supabase\.rpc\(\s*"usuario_e_admin",/);
+  assert.match(
+    adminAccessHookSource,
+    /error \? adminPeloToken : adminLiberadoResposta === true/,
+  );
+  assert.match(adminAccessHookSource, /supabase\.auth\.onAuthStateChange\(\(event\) =>/);
+  assert.match(
+    adminAccessHookSource,
+    /if \(event === "SIGNED_OUT"\) \{\s*setAdminLiberado\(false\);\s*return;/,
+  );
+  assert.match(
+    adminAccessHookSource,
+    /return \(\) => \{\s*cancelado = true;\s*subscription\.unsubscribe\(\);\s*\};/,
+  );
+  assert.match(adminAccessHookSource, /\}, \[verificandoAcesso\]\);/);
+  assert.doesNotMatch(adminAccessHookSource, /localStorage|sessionStorage|window|document|JSX/);
 });
 
 test("ações dos modais preservam resets, guardas e fronteira local", () => {
