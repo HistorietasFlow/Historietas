@@ -943,3 +943,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A seção visual “Sua conta” e a composição dos overlays de senha, exclusão e feedback foram movidas para componentes dedicados, preservando filtros, inputs, normalização de username, carregamento, traduções, modais e callbacks.
 - Estados, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 45 — Configurações
+
+- A composição visual das seções de Configurações e o estado de carregamento foram movidos para componentes dedicados, preservando a ordem das seções, props, filtros, estilos, traduções e callbacks.
+- Estados, hooks, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.

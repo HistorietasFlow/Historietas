@@ -118,6 +118,20 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const loadingState = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-loading-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("shell de Configurações preserva cabeçalho, busca e perfil", () => {
   assert.match(header, /export function ConfiguracoesPageHeader\(/);
@@ -175,22 +189,43 @@ test("estilos do shell preservam valores, spreads e fronteira visual", () => {
 });
 
 test("a página delega somente o shell visual e preserva a orquestração", () => {
+  assert.match(
+    pagina,
+    /import \{ ConfiguracoesPageContent \} from "\.\/components\/configuracoes-page-content";/,
+  );
+  assert.match(
+    pagina,
+    /import \{ ConfiguracoesPageLoadingState \} from "\.\/components\/configuracoes-page-loading-state";/,
+  );
+  assert.match(pagina, /<ConfiguracoesPageContent/);
+  assert.match(pagina, /<ConfiguracoesPageLoadingState/);
+
   for (const component of [
     "ConfiguracoesPageHeader",
     "ConfiguracoesSearch",
     "ConfiguracoesProfileCard",
   ]) {
-    assert.match(pagina, new RegExp("import \\{ " + component));
-    assert.match(pagina, new RegExp("<" + component));
+    assert.match(content, new RegExp("import \\{ " + component));
+    assert.match(content, new RegExp("<" + component));
   }
 
-  assert.match(pagina, /from "\.\/lib\/configuracoes-shell-styles";/);
+  assert.match(content, /from "\.\.\/lib\/configuracoes-shell-styles";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-security-styles";/);
-  assert.match(pagina, /<section style=\{containerStyle\}>/);
+  assert.match(content, /<section style=\{containerStyle\}>/);
   assert.match(pagina, /const \[busca, setBusca\] = useState\(""\);/);
   assert.match(pagina, /onVoltar=\{\(\) => router\.back\(\)\}/);
   assert.match(pagina, /onBuscaChange=\{setBusca\}/);
   assert.match(pagina, /usuarioNome=\{usuario\?\.nome\}/);
+  assert.match(loadingState, /<LoadingSpinner label=\{label\} \/>/);
+  assert.match(loadingState, /<style>\{`\$\{themeCss\}\$\{pageCss\}`\}<\/style>/);
+  assert.doesNotMatch(
+    content,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch/,
+  );
+  assert.doesNotMatch(
+    loadingState,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch/,
+  );
   assert.match(
     pagina,
     /import \{ useConfiguracoesSecurityModalBodyLock \} from "\.\/hooks\/use-configuracoes-security-modal-body-lock";/,

@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const moderacao = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-moderation-section.tsx",
@@ -66,28 +73,29 @@ test("seções secundárias preservam permissões, preferências e ações da co
 });
 
 test("Configurações mantém estados e handlers, delegando somente as seções secundárias", () => {
+  assert.match(pagina, /<ConfiguracoesPageContent/);
   assert.match(
-    pagina,
-    /import \{ ConfiguracoesModerationSection \} from "\.\/components\/configuracoes-moderation-section";/,
+    content,
+    /import \{ ConfiguracoesModerationSection \} from "\.\/configuracoes-moderation-section";/,
   );
   assert.match(
-    pagina,
-    /import \{ ConfiguracoesPreferencesSection \} from "\.\/components\/configuracoes-preferences-section";/,
+    content,
+    /import \{ ConfiguracoesPreferencesSection \} from "\.\/configuracoes-preferences-section";/,
   );
   assert.match(
-    pagina,
-    /import \{ ConfiguracoesAccountActionsSection \} from "\.\/components\/configuracoes-account-actions-section";/,
+    content,
+    /import \{ ConfiguracoesAccountActionsSection \} from "\.\/configuracoes-account-actions-section";/,
   );
-  assert.match(pagina, /<ConfiguracoesModerationSection/);
-  assert.match(pagina, /adminLiberado=\{adminLiberado\}/);
-  assert.match(pagina, /<ConfiguracoesPreferencesSection/);
-  assert.match(pagina, /onAlternarReceberAvisos=\{alternarReceberAvisos\}/);
-  assert.match(pagina, /<ConfiguracoesAccountActionsSection/);
-  assert.match(pagina, /onAbrirExclusaoConta=\{abrirExclusaoConta\}/);
-  assert.match(pagina, /onSairDaConta=\{sairDaConta\}/);
-  assert.doesNotMatch(pagina, /href="\/admin\/comunidade"/);
-  assert.doesNotMatch(pagina, /title=\{t\("Idioma do site", "Site language", "Idioma del sitio"\)\}/);
-  assert.doesNotMatch(pagina, /title=\{t\("Excluir minha conta",/);
+  assert.match(content, /<ConfiguracoesModerationSection/);
+  assert.match(content, /adminLiberado=\{adminLiberado\}/);
+  assert.match(content, /<ConfiguracoesPreferencesSection/);
+  assert.match(content, /onAlternarReceberAvisos=\{onAlternarReceberAvisos\}/);
+  assert.match(content, /<ConfiguracoesAccountActionsSection/);
+  assert.match(content, /onAbrirExclusaoConta=\{onAbrirExclusaoConta\}/);
+  assert.match(content, /onSairDaConta=\{onSairDaConta\}/);
+  assert.doesNotMatch(content, /href="\/admin\/comunidade"/);
+  assert.doesNotMatch(content, /title=\{t\("Idioma do site", "Site language", "Idioma del sitio"\)\}/);
+  assert.doesNotMatch(content, /title=\{t\("Excluir minha conta",/);
 });
 
 test("componentes secundários não introduzem runtime de dados", () => {

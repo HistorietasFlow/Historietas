@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const secoesUso = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-usage-summary-section.tsx",
@@ -71,28 +78,29 @@ test("seções informativas preservam dados, rotas, traduções e filtros", () =
 });
 
 test("página delega somente a apresentação das seções informativas", () => {
+  assert.match(pagina, /<ConfiguracoesPageContent/);
   assert.match(
-    pagina,
-    /import \{ ConfiguracoesUsageSummarySection \} from "\.\/components\/configuracoes-usage-summary-section";/,
+    content,
+    /import \{ ConfiguracoesUsageSummarySection \} from "\.\/configuracoes-usage-summary-section";/,
   );
   assert.match(
-    pagina,
-    /import \{ ConfiguracoesDataSection \} from "\.\/components\/configuracoes-data-section";/,
+    content,
+    /import \{ ConfiguracoesDataSection \} from "\.\/configuracoes-data-section";/,
   );
   assert.match(
-    pagina,
-    /import \{ ConfiguracoesSupportSection \} from "\.\/components\/configuracoes-support-section";/,
+    content,
+    /import \{ ConfiguracoesSupportSection \} from "\.\/configuracoes-support-section";/,
   );
-  assert.match(pagina, /<ConfiguracoesUsageSummarySection/);
-  assert.match(pagina, /totalBiblioteca=\{totalBiblioteca\}/);
-  assert.match(pagina, /notificacoesNaoLidas=\{notificacoesNaoLidas\}/);
-  assert.match(pagina, /<ConfiguracoesDataSection/);
-  assert.match(pagina, /onCopiarBackup=\{copiarBackup\}/);
-  assert.match(pagina, /onBaixarBackup=\{baixarBackup\}/);
-  assert.match(pagina, /<ConfiguracoesSupportSection/);
-  assert.doesNotMatch(pagina, /href="\/perfil-autor\/top-5"/);
-  assert.doesNotMatch(pagina, /href="\/ajuda"/);
-  assert.doesNotMatch(pagina, /title=\{t\("Copiar dados", "Copy data", "Copiar datos"\)\}/);
+  assert.match(content, /<ConfiguracoesUsageSummarySection/);
+  assert.match(content, /totalBiblioteca=\{totalBiblioteca\}/);
+  assert.match(content, /notificacoesNaoLidas=\{notificacoesNaoLidas\}/);
+  assert.match(content, /<ConfiguracoesDataSection/);
+  assert.match(content, /onCopiarBackup=\{onCopiarBackup\}/);
+  assert.match(content, /onBaixarBackup=\{onBaixarBackup\}/);
+  assert.match(content, /<ConfiguracoesSupportSection/);
+  assert.doesNotMatch(content, /href="\/perfil-autor\/top-5"/);
+  assert.doesNotMatch(content, /href="\/ajuda"/);
+  assert.doesNotMatch(content, /title=\{t\("Copiar dados", "Copy data", "Copiar datos"\)\}/);
 });
 
 test("componentes de apresentação não incorporam runtime de dados", () => {
