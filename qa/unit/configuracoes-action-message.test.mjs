@@ -20,6 +20,13 @@ const backupActions = readFileSync(
   ),
   "utf8",
 );
+const blockedUsersHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-blocked-users.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const toast = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-action-toast.tsx",
@@ -73,7 +80,7 @@ test("Configurações mantém domínio e toast na página", () => {
   assert.doesNotMatch(pagina, /type TipoMensagemAcaoConfiguracoes =/);
   assert.doesNotMatch(pagina, /type MensagemAcaoConfiguracoes =/);
 
-  const chamadasDominio = [pagina, backupActions].flatMap(
+  const chamadasDominio = [pagina, backupActions, blockedUsersHook].flatMap(
     (fonte) => fonte.match(/mostrarMensagemAcao\(/g) || [],
   );
   assert.equal(chamadasDominio.length, 15);
