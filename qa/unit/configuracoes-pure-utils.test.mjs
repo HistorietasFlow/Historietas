@@ -31,6 +31,13 @@ const adminAccessHookSource = readFileSync(
   ),
   "utf8",
 );
+const initialAccessHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-initial-access.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-models.ts",
@@ -665,14 +672,17 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.match(
     pagina,
-    /from "\.\/lib\/configuracoes-profile-supabase-loader";/,
+    /from "\.\/hooks\/use-configuracoes-initial-access";/,
   );
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-profile-save-action";/,
   );
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-deletion-action";/);
-  assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
+  assert.doesNotMatch(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-preferences";/,
+  );
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-account-backup-actions";/,
@@ -706,7 +716,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-search-visibility-utils";/,
   );
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/configuracoes-account-summary-supabase";/,
   );
@@ -714,7 +724,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-profile-save-action";/,
   );
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/configuracoes-blocked-users-loader";/,
   );
@@ -770,9 +780,9 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(pagina, /async function contarRegistrosResumoSupabase\(/);
   assert.doesNotMatch(pagina, /async function listarUsuariosBloqueadosConfiguracoes\(/);
   assert.doesNotMatch(pagina, /async function carregarPerfilConfiguracoesSupabase\(/);
-  assert.match(pagina, /carregarResumoContaSupabase\(usuarioCarregado\.id\)/);
-  assert.match(pagina, /listarUsuariosBloqueadosConfiguracoes\(\)\.catch/);
-  assert.match(pagina, /carregarPerfilConfiguracoesSupabase\(data\.user\.id\)/);
+  assert.doesNotMatch(pagina, /carregarResumoContaSupabase\(usuarioCarregado\.id\)/);
+  assert.doesNotMatch(pagina, /listarUsuariosBloqueadosConfiguracoes\(\)\.catch/);
+  assert.doesNotMatch(pagina, /carregarPerfilConfiguracoesSupabase\(data\.user\.id\)/);
 
   assert.doesNotMatch(
     pagina,
@@ -786,7 +796,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /useState<PreferenciasPrivacidadeHistorietas>\(/,
   );
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /carregarPreferenciasPrivacidade\(usuarioCarregado\.id,/,
   );
@@ -875,6 +885,11 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
   assert.match(
     pagina,
+    /useConfiguracoesInitialAccess\(\{\s*router,\s*setVerificandoAcesso,\s*setUsuario,\s*setPreferencias,\s*setPrivacidade,\s*setResumo,\s*setUsuariosBloqueados,\s*\}\);/,
+  );
+  assert.doesNotMatch(pagina, /async function verificarAcesso\(/);
+  assert.match(
+    pagina,
     /useConfiguracoesAdminAccess\(\{\s*verificandoAcesso,\s*setAdminLiberado,\s*\}\);/,
   );
   assert.doesNotMatch(pagina, /async function verificarAdmin\(/);
@@ -920,6 +935,50 @@ test("hook de acesso administrativo preserva autenticacao, RPC e cleanup", () =>
   );
   assert.match(adminAccessHookSource, /\}, \[verificandoAcesso\]\);/);
   assert.doesNotMatch(adminAccessHookSource, /localStorage|sessionStorage|window|document|JSX/);
+});
+
+test("hook inicial preserva autenticacao, cargas paralelas e cancelamento", () => {
+  assert.match(initialAccessHookSource, /^"use client";/);
+  assert.match(initialAccessHookSource, /import \{ useEffect \} from "react";/);
+  assert.match(
+    initialAccessHookSource,
+    /export function useConfiguracoesInitialAccess\(/,
+  );
+  assert.match(initialAccessHookSource, /let cancelado = false;/);
+  assert.match(initialAccessHookSource, /async function verificarAcesso\(\)/);
+  assert.match(initialAccessHookSource, /await supabase\.auth\.getUser\(\)/);
+  assert.match(initialAccessHookSource, /if \(cancelado\) \{\s*return;/);
+  assert.match(
+    initialAccessHookSource,
+    /if \(error \|\| !data\.user\) \{\s*router\.replace\(criarLoginHrefConfiguracoes\(\)\);/,
+  );
+  assert.match(
+    initialAccessHookSource,
+    /carregarPerfilConfiguracoesSupabase\(data\.user\.id\)/,
+  );
+  assert.match(initialAccessHookSource, /const preferenciasCarregadas = carregarPreferencias\(usuarioCarregado\.id\)/);
+  assert.match(initialAccessHookSource, /await Promise\.all\(\[/);
+  assert.match(
+    initialAccessHookSource,
+    /carregarPreferenciasPrivacidade\(usuarioCarregado\.id, \{\s*usarFallbackLocal: true,/,
+  );
+  assert.match(initialAccessHookSource, /carregarResumoContaSupabase\(usuarioCarregado\.id\)/);
+  assert.match(initialAccessHookSource, /listarUsuariosBloqueadosConfiguracoes\(\)\.catch\(\(\) => \[\]\)/);
+  assert.match(
+    initialAccessHookSource,
+    /setUsuario\(usuarioCarregado\);\s*setPrivacidade\(privacidadeCarregada\);\s*setUsuariosBloqueados\(usuariosBloqueadosCarregados\);/,
+  );
+  assert.match(
+    initialAccessHookSource,
+    /setResumo\(resumoCarregado\);\s*setVerificandoAcesso\(false\);/,
+  );
+  assert.match(
+    initialAccessHookSource,
+    /catch \{\s*if \(!cancelado\) \{\s*router\.replace\(criarLoginHrefConfiguracoes\(\)\);/,
+  );
+  assert.match(initialAccessHookSource, /return \(\) => \{\s*cancelado = true;\s*\};/);
+  assert.match(initialAccessHookSource, /\}, \[router\]\);/);
+  assert.doesNotMatch(initialAccessHookSource, /localStorage|sessionStorage|window|document|JSX/);
 });
 
 test("ações dos modais preservam resets, guardas e fronteira local", () => {

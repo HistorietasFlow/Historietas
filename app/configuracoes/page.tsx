@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import {
@@ -30,6 +30,7 @@ import {
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { useConfiguracoesBlockedUsers } from "./hooks/use-configuracoes-blocked-users";
 import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-access";
+import { useConfiguracoesInitialAccess } from "./hooks/use-configuracoes-initial-access";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
@@ -40,12 +41,8 @@ import {
 import { deveMostrarSecaoConfiguracoes } from "./lib/configuracoes-search-visibility-utils";
 import { sectionStyle } from "./lib/configuracoes-settings-primitives-styles";
 import { containerStyle } from "./lib/configuracoes-shell-styles";
+import { normalizarUsernameConfiguracoes } from "./lib/configuracoes-account-utils";
 import {
-  normalizarUsernameConfiguracoes,
-  pegarTexto,
-} from "./lib/configuracoes-account-utils";
-import {
-  carregarPreferenciasPrivacidade,
   preferenciasPrivacidadePadrao,
 } from "./lib/configuracoes-privacy-preferences";
 import type {
@@ -55,15 +52,9 @@ import type {
   VisibilidadeAbaPerfil,
 } from "./lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "./lib/configuracoes-route-utils";
-import { carregarResumoContaSupabase } from "./lib/configuracoes-account-summary-supabase";
-import { listarUsuariosBloqueadosConfiguracoes } from "./lib/configuracoes-blocked-users-loader";
-import { carregarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-supabase-loader";
 import { salvarConfiguracoesPerfil } from "./lib/configuracoes-profile-save-action";
 import { excluirContaConfiguracoes } from "./lib/configuracoes-account-deletion-action";
 import { alterarSenhaConfiguracoes } from "./lib/configuracoes-password-change-action";
-import {
-  carregarPreferencias,
-} from "./lib/configuracoes-account-preferences";
 import {
   baixarBackupContaConfiguracoes,
   copiarBackupConfiguracoes,
@@ -197,87 +188,15 @@ export default function ConfiguracoesPage() {
     mostrarMensagemAcao,
   });
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function verificarAcesso() {
-      try {
-        const { data, error } = await supabase.auth.getUser();
-
-        if (cancelado) {
-          return;
-        }
-
-        if (error || !data.user) {
-          router.replace(criarLoginHrefConfiguracoes());
-          return;
-        }
-
-        const perfilRemoto = await carregarPerfilConfiguracoesSupabase(data.user.id);
-        const nome =
-          pegarTexto(perfilRemoto?.nome) ||
-          pegarTexto(data.user.user_metadata?.nome) ||
-          pegarTexto(data.user.user_metadata?.name) ||
-          pegarTexto(data.user.email) ||
-          "Usuário";
-        const username =
-          perfilRemoto?.username ||
-          normalizarUsernameConfiguracoes(
-            pegarTexto(data.user.user_metadata?.username),
-          );
-
-        const usuarioCarregado: UsuarioConfiguracoes = {
-          id: data.user.id,
-          nome,
-          username,
-          email: data.user.email || "",
-        };
-        const preferenciasCarregadas = carregarPreferencias(usuarioCarregado.id);
-        const [
-          privacidadeCarregada,
-          resumoCarregado,
-          usuariosBloqueadosCarregados,
-        ] = await Promise.all([
-          carregarPreferenciasPrivacidade(usuarioCarregado.id, {
-            usarFallbackLocal: true,
-          }),
-          carregarResumoContaSupabase(usuarioCarregado.id),
-          listarUsuariosBloqueadosConfiguracoes().catch(() => []),
-        ]);
-
-        setUsuario(usuarioCarregado);
-        setPrivacidade(privacidadeCarregada);
-        setUsuariosBloqueados(usuariosBloqueadosCarregados);
-        setPreferencias({
-          ...preferenciasCarregadas,
-          nomeExibicao:
-            perfilRemoto?.nome ||
-            preferenciasCarregadas.nomeExibicao ||
-            usuarioCarregado.nome,
-          username:
-            perfilRemoto?.username ||
-            preferenciasCarregadas.username ||
-            usuarioCarregado.username,
-          emailContato:
-            preferenciasCarregadas.emailContato || usuarioCarregado.email,
-        });
-        setResumo(resumoCarregado);
-        setVerificandoAcesso(false);
-      } catch {
-        if (!cancelado) {
-          router.replace(criarLoginHrefConfiguracoes());
-        }
-      }
-    }
-
-    verificarAcesso();
-
-    return () => {
-      cancelado = true;
-    };
-    // setUsuariosBloqueados é um setter React estável exposto pelo hook.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  useConfiguracoesInitialAccess({
+    router,
+    setVerificandoAcesso,
+    setUsuario,
+    setPreferencias,
+    setPrivacidade,
+    setResumo,
+    setUsuariosBloqueados,
+  });
 
 
   useConfiguracoesAdminAccess({
