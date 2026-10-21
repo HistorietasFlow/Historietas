@@ -48,6 +48,20 @@ const toast = readFileSync(
   ),
   "utf8",
 );
+const modalSenha = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-security-password-modal.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const modalExclusao = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-account-deletion-modal.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const iconNames = [
   "user",
@@ -103,10 +117,14 @@ test("ConfiguracoesSvgIcon preserva o renderer SVG literal", () => {
   assert.match(componente, /\{paths\[name\]\}/);
 });
 
-test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
+test("Configuracoes mantém os consumidores e a fronteira do ícone", () => {
   assert.match(
-    pagina,
-    /import \{ SvgIcon \} from "\.\/components\/configuracoes-svg-icon";/,
+    modalSenha,
+    /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/,
+  );
+  assert.match(
+    modalExclusao,
+    /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/,
   );
   assert.match(primitives, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(
@@ -124,19 +142,25 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
   assert.doesNotMatch(pagina, /function SettingsRow\(/);
   assert.doesNotMatch(pagina, /function SettingsInput\(/);
   assert.match(primitives, /icon: IconName;/);
-  assert.equal((pagina.match(/<SvgIcon/g) || []).length, 3);
+  assert.equal((pagina.match(/<SvgIcon/g) || []).length, 0);
   assert.equal((primitives.match(/<SvgIcon/g) || []).length, 3);
   assert.equal((header.match(/<SvgIcon/g) || []).length, 1);
   assert.equal((busca.match(/<SvgIcon/g) || []).length, 1);
   assert.equal((toast.match(/<SvgIcon/g) || []).length, 1);
+  assert.equal((modalSenha.match(/<SvgIcon/g) || []).length, 2);
+  assert.equal((modalExclusao.match(/<SvgIcon/g) || []).length, 1);
 
   for (const consumidor of [
     '<SvgIcon name="lock" size={24} strokeWidth={2.2} />',
     '<SvgIcon name="check" size={25} strokeWidth={2.4} />',
-    '<SvgIcon name="trash" size={24} strokeWidth={2.2} />',
   ]) {
-    assert.ok(pagina.includes(consumidor));
+    assert.ok(modalSenha.includes(consumidor));
   }
+  assert.ok(
+    modalExclusao.includes(
+    '<SvgIcon name="trash" size={24} strokeWidth={2.2} />',
+    ),
+  );
   assert.ok(
     header.includes('<SvgIcon name="arrowLeft" size={25} strokeWidth={2.4} />'),
   );

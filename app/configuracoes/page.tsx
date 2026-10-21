@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
@@ -11,12 +10,13 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
+import { ConfiguracoesAccountDeletionModal } from "./components/configuracoes-account-deletion-modal";
 import { ConfiguracoesActionToast } from "./components/configuracoes-action-toast";
 import { ConfiguracoesBlockedUsersPanel } from "./components/configuracoes-blocked-users-panel";
 import { ConfiguracoesPageHeader } from "./components/configuracoes-page-header";
 import { ConfiguracoesProfileCard } from "./components/configuracoes-profile-card";
 import { ConfiguracoesSearch } from "./components/configuracoes-search";
-import { SvgIcon } from "./components/configuracoes-svg-icon";
+import { ConfiguracoesSecurityPasswordModal } from "./components/configuracoes-security-password-modal";
 import { Toggle } from "./components/configuracoes-toggle";
 import {
   SettingsInput,
@@ -61,38 +61,9 @@ import type {
   UsuarioConfiguracoes,
 } from "./lib/configuracoes-account-models";
 import {
-  deleteDangerButtonDisabledStyle,
-  deleteDangerButtonStyle,
-  deleteModalIconStyle,
-  deletePublicLinkStyle,
-  deleteWarningListStyle,
-  deleteWarningStyle,
   listCardTransparentStyle,
   pageStyle,
   privacySelectStyle,
-  securityActionsStyle,
-  securityCloseButtonDisabledStyle,
-  securityCloseButtonStyle,
-  securityDoneButtonStyle,
-  securityErrorStyle,
-  securityFeedbackTextStyle,
-  securityFieldLabelStyle,
-  securityFieldStyle,
-  securityFormStyle,
-  securityHintStyle,
-  securityModalHeaderStyle,
-  securityModalHeadingStyle,
-  securityModalIconStyle,
-  securityModalStyle,
-  securityModalSubtitleStyle,
-  securityModalTitleStyle,
-  securityOverlayStyle,
-  securityPasswordInputStyle,
-  securityPrimaryButtonDisabledStyle,
-  securityPrimaryButtonStyle,
-  securitySecondaryButtonDisabledStyle,
-  securitySecondaryButtonStyle,
-  securitySuccessStyle,
 } from "./lib/configuracoes-security-styles";
 
 export default function ConfiguracoesPage() {
@@ -1372,405 +1343,49 @@ export default function ConfiguracoesPage() {
       </section>
 
       {mostrarSeguranca ? (
-        <div
-          role="presentation"
-          style={securityOverlayStyle}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              fecharSeguranca();
-            }
+        <ConfiguracoesSecurityPasswordModal
+          onFechar={fecharSeguranca}
+          onSubmit={alterarSenha}
+          senhaAtual={senhaAtual}
+          onSenhaAtualChange={(valor) => {
+            setSenhaAtual(valor);
+            setErroSenha("");
           }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="titulo-seguranca-configuracoes"
-            style={securityModalStyle}
-          >
-            <header style={securityModalHeaderStyle}>
-              <span style={securityModalIconStyle}>
-                <SvgIcon name="lock" size={24} strokeWidth={2.2} />
-              </span>
-
-              <div style={securityModalHeadingStyle}>
-                <h2
-                  id="titulo-seguranca-configuracoes"
-                  style={securityModalTitleStyle}
-                >
-                  {t(
-                    "Alterar senha",
-                    "Change password",
-                    "Cambiar contraseña",
-                  )}
-                </h2>
-                <p style={securityModalSubtitleStyle}>
-                  {t(
-                    "Confirme sua senha atual e escolha uma nova senha.",
-                    "Confirm your current password and choose a new one.",
-                    "Confirma tu contraseña actual y elige una nueva.",
-                  )}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={fecharSeguranca}
-                disabled={salvandoSenha}
-                aria-label={t("Fechar", "Close", "Cerrar")}
-                style={
-                  salvandoSenha
-                    ? securityCloseButtonDisabledStyle
-                    : securityCloseButtonStyle
-                }
-              >
-                ×
-              </button>
-            </header>
-
-            {senhaAlterada ? (
-              <div role="status" aria-live="polite" style={securitySuccessStyle}>
-                <SvgIcon name="check" size={25} strokeWidth={2.4} />
-                <div style={securityFeedbackTextStyle}>
-                  <strong>
-                    {t(
-                      "Senha alterada com sucesso",
-                      "Password changed successfully",
-                      "Contraseña cambiada correctamente",
-                    )}
-                  </strong>
-                  <span>
-                    {t(
-                      "A nova senha já está ativa na sua conta.",
-                      "The new password is now active on your account.",
-                      "La nueva contraseña ya está activa en tu cuenta.",
-                    )}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={alterarSenha} style={securityFormStyle}>
-                <label style={securityFieldStyle}>
-                  <span style={securityFieldLabelStyle}>
-                    {t(
-                      "Senha atual",
-                      "Current password",
-                      "Contraseña actual",
-                    )}
-                  </span>
-                  <input
-                    className="configuracoes-input"
-                    type="password"
-                    value={senhaAtual}
-                    onChange={(event) => {
-                      setSenhaAtual(event.target.value);
-                      setErroSenha("");
-                    }}
-                    autoComplete="current-password"
-                    disabled={salvandoSenha}
-                    style={securityPasswordInputStyle}
-                  />
-                </label>
-
-                <label style={securityFieldStyle}>
-                  <span style={securityFieldLabelStyle}>
-                    {t("Nova senha", "New password", "Nueva contraseña")}
-                  </span>
-                  <input
-                    className="configuracoes-input"
-                    type="password"
-                    value={novaSenha}
-                    onChange={(event) => {
-                      setNovaSenha(event.target.value);
-                      setErroSenha("");
-                    }}
-                    autoComplete="new-password"
-                    minLength={8}
-                    disabled={salvandoSenha}
-                    style={securityPasswordInputStyle}
-                  />
-                </label>
-
-                <label style={securityFieldStyle}>
-                  <span style={securityFieldLabelStyle}>
-                    {t(
-                      "Confirmar nova senha",
-                      "Confirm new password",
-                      "Confirmar nueva contraseña",
-                    )}
-                  </span>
-                  <input
-                    className="configuracoes-input"
-                    type="password"
-                    value={confirmarNovaSenha}
-                    onChange={(event) => {
-                      setConfirmarNovaSenha(event.target.value);
-                      setErroSenha("");
-                    }}
-                    autoComplete="new-password"
-                    minLength={8}
-                    disabled={salvandoSenha}
-                    style={securityPasswordInputStyle}
-                  />
-                </label>
-
-                <p style={securityHintStyle}>
-                  {t(
-                    "Use no mínimo 8 caracteres, incluindo uma letra e um número.",
-                    "Use at least 8 characters, including a letter and a number.",
-                    "Usa al menos 8 caracteres, incluyendo una letra y un número.",
-                  )}
-                </p>
-
-                {erroSenha ? (
-                  <div role="alert" aria-live="assertive" style={securityErrorStyle}>
-                    {erroSenha}
-                  </div>
-                ) : null}
-
-                <div style={securityActionsStyle}>
-                  <button
-                    type="button"
-                    onClick={fecharSeguranca}
-                    disabled={salvandoSenha}
-                    style={
-                      salvandoSenha
-                        ? securitySecondaryButtonDisabledStyle
-                        : securitySecondaryButtonStyle
-                    }
-                  >
-                    {t("Cancelar", "Cancel", "Cancelar")}
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={salvandoSenha}
-                    style={
-                      salvandoSenha
-                        ? securityPrimaryButtonDisabledStyle
-                        : securityPrimaryButtonStyle
-                    }
-                  >
-                    {salvandoSenha ? (
-                      <>
-                        <LoadingSpinner
-                          compacto
-                          label={t(
-                            "Alterando senha",
-                            "Changing password",
-                            "Cambiando contraseña",
-                          )}
-                        />
-                        <span>
-                          {t(
-                            "Alterando...",
-                            "Changing...",
-                            "Cambiando...",
-                          )}
-                        </span>
-                      </>
-                    ) : (
-                      t(
-                        "Alterar senha",
-                        "Change password",
-                        "Cambiar contraseña",
-                      )
-                    )}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {senhaAlterada ? (
-              <button
-                type="button"
-                onClick={fecharSeguranca}
-                style={securityDoneButtonStyle}
-              >
-                {t("Concluído", "Done", "Listo")}
-              </button>
-            ) : null}
-          </section>
-        </div>
+          novaSenha={novaSenha}
+          onNovaSenhaChange={(valor) => {
+            setNovaSenha(valor);
+            setErroSenha("");
+          }}
+          confirmarNovaSenha={confirmarNovaSenha}
+          onConfirmarNovaSenhaChange={(valor) => {
+            setConfirmarNovaSenha(valor);
+            setErroSenha("");
+          }}
+          salvandoSenha={salvandoSenha}
+          erroSenha={erroSenha}
+          senhaAlterada={senhaAlterada}
+          traduzirTexto={t}
+        />
       ) : null}
 
       {mostrarExclusaoConta ? (
-        <div
-          role="presentation"
-          style={securityOverlayStyle}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              fecharExclusaoConta();
-            }
+        <ConfiguracoesAccountDeletionModal
+          onFechar={fecharExclusaoConta}
+          onSubmit={excluirConta}
+          senhaExclusaoConta={senhaExclusaoConta}
+          onSenhaExclusaoContaChange={(valor) => {
+            setSenhaExclusaoConta(valor);
+            setErroExclusaoConta("");
           }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="titulo-exclusao-conta"
-            style={securityModalStyle}
-          >
-            <header style={securityModalHeaderStyle}>
-              <span style={deleteModalIconStyle}>
-                <SvgIcon name="trash" size={24} strokeWidth={2.2} />
-              </span>
-
-              <div style={securityModalHeadingStyle}>
-                <h2 id="titulo-exclusao-conta" style={securityModalTitleStyle}>
-                  {t(
-                    "Excluir minha conta",
-                    "Delete my account",
-                    "Eliminar mi cuenta",
-                  )}
-                </h2>
-                <p style={securityModalSubtitleStyle}>
-                  {t(
-                    "Esta ação é permanente e não pode ser desfeita.",
-                    "This action is permanent and cannot be undone.",
-                    "Esta acción es permanente y no se puede deshacer.",
-                  )}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={fecharExclusaoConta}
-                disabled={excluindoConta}
-                aria-label={t("Fechar", "Close", "Cerrar")}
-                style={
-                  excluindoConta
-                    ? securityCloseButtonDisabledStyle
-                    : securityCloseButtonStyle
-                }
-              >
-                ×
-              </button>
-            </header>
-
-            <div style={deleteWarningStyle}>
-              <strong>
-                {t(
-                  "Serão excluídos:",
-                  "The following will be deleted:",
-                  "Se eliminarán:",
-                )}
-              </strong>
-              <ul style={deleteWarningListStyle}>
-                <li>{t("conta, perfil e acesso;", "account, profile, and access;", "cuenta, perfil y acceso;")}</li>
-                <li>{t("obras, capítulos, capas e arquivos;", "works, chapters, covers, and files;", "obras, capítulos, portadas y archivos;")}</li>
-                <li>{t("comentários, curtidas, avaliações, seguidores e progresso.", "comments, likes, ratings, followers, and progress.", "comentarios, me gusta, valoraciones, seguidores y progreso.")}</li>
-              </ul>
-              <Link href="/excluir-conta" style={deletePublicLinkStyle}>
-                {t(
-                  "Ver página pública de exclusão",
-                  "View public deletion page",
-                  "Ver página pública de eliminación",
-                )}
-              </Link>
-            </div>
-
-            <form onSubmit={excluirConta} style={securityFormStyle}>
-              <label style={securityFieldStyle}>
-                <span style={securityFieldLabelStyle}>
-                  {t("Senha atual", "Current password", "Contraseña actual")}
-                </span>
-                <input
-                  className="configuracoes-input"
-                  type="password"
-                  value={senhaExclusaoConta}
-                  onChange={(event) => {
-                    setSenhaExclusaoConta(event.target.value);
-                    setErroExclusaoConta("");
-                  }}
-                  autoComplete="current-password"
-                  disabled={excluindoConta}
-                  style={securityPasswordInputStyle}
-                />
-              </label>
-
-              <label style={securityFieldStyle}>
-                <span style={securityFieldLabelStyle}>
-                  {t(
-                    "Digite EXCLUIR para confirmar",
-                    "Type DELETE to confirm",
-                    "Escribe ELIMINAR para confirmar",
-                  )}
-                </span>
-                <input
-                  className="configuracoes-input"
-                  type="text"
-                  value={confirmacaoExclusaoConta}
-                  onChange={(event) => {
-                    setConfirmacaoExclusaoConta(event.target.value);
-                    setErroExclusaoConta("");
-                  }}
-                  autoComplete="off"
-                  spellCheck={false}
-                  disabled={excluindoConta}
-                  style={securityPasswordInputStyle}
-                />
-              </label>
-
-              <p style={securityHintStyle}>
-                {t(
-                  "Antes de continuar, você pode baixar um backup no Resumo da conta.",
-                  "Before continuing, you can download a backup from Account summary.",
-                  "Antes de continuar, puedes descargar una copia en Resumen de la cuenta.",
-                )}
-              </p>
-
-              {erroExclusaoConta ? (
-                <div role="alert" aria-live="assertive" style={securityErrorStyle}>
-                  {erroExclusaoConta}
-                </div>
-              ) : null}
-
-              <div style={securityActionsStyle}>
-                <button
-                  type="button"
-                  onClick={fecharExclusaoConta}
-                  disabled={excluindoConta}
-                  style={
-                    excluindoConta
-                      ? securitySecondaryButtonDisabledStyle
-                      : securitySecondaryButtonStyle
-                  }
-                >
-                  {t("Cancelar", "Cancel", "Cancelar")}
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={excluindoConta}
-                  style={
-                    excluindoConta
-                      ? deleteDangerButtonDisabledStyle
-                      : deleteDangerButtonStyle
-                  }
-                >
-                  {excluindoConta ? (
-                    <>
-                      <LoadingSpinner
-                        compacto
-                        label={t(
-                          "Excluindo conta",
-                          "Deleting account",
-                          "Eliminando cuenta",
-                        )}
-                      />
-                      <span>{t("Excluindo...", "Deleting...", "Eliminando...")}</span>
-                    </>
-                  ) : (
-                    t(
-                      "Excluir definitivamente",
-                      "Delete permanently",
-                      "Eliminar definitivamente",
-                    )
-                  )}
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
+          confirmacaoExclusaoConta={confirmacaoExclusaoConta}
+          onConfirmacaoExclusaoContaChange={(valor) => {
+            setConfirmacaoExclusaoConta(valor);
+            setErroExclusaoConta("");
+          }}
+          excluindoConta={excluindoConta}
+          erroExclusaoConta={erroExclusaoConta}
+          traduzirTexto={t}
+        />
       ) : null}
 
       {mensagemAcao ? (
