@@ -90,6 +90,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const content = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountActionHandlers = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
@@ -185,7 +192,8 @@ test("a página delega primitives visuais e preserva a orquestração", () => {
     secoesAcoesConta,
     /from "\.\.\/lib\/configuracoes-settings-primitives-styles";/,
   );
-  assert.match(pagina, /<ConfiguracoesAccountActionsSection/);
+  assert.match(pagina, /<ConfiguracoesPageContent/);
+  assert.match(content, /<ConfiguracoesAccountActionsSection/);
 
   for (const primitive of [
     "ValorLinha",
