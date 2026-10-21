@@ -109,7 +109,7 @@ test("Configuracoes mantem os tres consumidores e a fronteira do Toggle", () => 
   );
   assert.doesNotMatch(pagina, /function SettingsRow\(/);
   assert.doesNotMatch(pagina, /function SettingsInput\(/);
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /import \{ SvgIcon \} from "\.\/components\/configuracoes-svg-icon";/,
   );
