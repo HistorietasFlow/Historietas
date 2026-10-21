@@ -58,6 +58,27 @@ const secoesAcoesConta = readFileSync(
   ),
   "utf8",
 );
+const secaoPrivacidadePerfil = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const secaoVisibilidadeAbas = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-profile-tab-visibility-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const secaoPrivacidadeDiario = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-diary-privacy-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -203,6 +224,9 @@ test("a página delega primitives visuais e preserva a orquestração", () => {
     secaoModeracao,
     secaoPreferencias,
     secoesAcoesConta,
+    secaoPrivacidadePerfil,
+    secaoVisibilidadeAbas,
+    secaoPrivacidadeDiario,
   ];
   const totalSecoes = consumidoresPrimitives.reduce(
     (total, source) => total + (source.match(/<SettingsSection/g) || []).length,

@@ -12,9 +12,11 @@ import { ConfiguracoesAccountActionsSection } from "./components/configuracoes-a
 import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
 import { ConfiguracoesAccountDeletionModal } from "./components/configuracoes-account-deletion-modal";
 import { ConfiguracoesActionToast } from "./components/configuracoes-action-toast";
-import { ConfiguracoesBlockedUsersPanel } from "./components/configuracoes-blocked-users-panel";
+import { ConfiguracoesDiaryPrivacySection } from "./components/configuracoes-diary-privacy-section";
 import { ConfiguracoesPageHeader } from "./components/configuracoes-page-header";
 import { ConfiguracoesProfileCard } from "./components/configuracoes-profile-card";
+import { ConfiguracoesProfilePrivacySection } from "./components/configuracoes-profile-privacy-section";
+import { ConfiguracoesProfileTabVisibilitySection } from "./components/configuracoes-profile-tab-visibility-section";
 import { ConfiguracoesSearch } from "./components/configuracoes-search";
 import { ConfiguracoesSecurityPasswordModal } from "./components/configuracoes-security-password-modal";
 import { ConfiguracoesDataSection } from "./components/configuracoes-data-section";
@@ -22,7 +24,6 @@ import { ConfiguracoesModerationSection } from "./components/configuracoes-moder
 import { ConfiguracoesPreferencesSection } from "./components/configuracoes-preferences-section";
 import { ConfiguracoesSupportSection } from "./components/configuracoes-support-section";
 import { ConfiguracoesUsageSummarySection } from "./components/configuracoes-usage-summary-section";
-import { Toggle } from "./components/configuracoes-toggle";
 import {
   SettingsInput,
   SettingsRow,
@@ -50,9 +51,6 @@ import {
 } from "./lib/configuracoes-privacy-preferences";
 import type {
   PreferenciasPrivacidadeHistorietas,
-  QuemPodeAvaliarDiario,
-  QuemPodeComentarDiario,
-  VisibilidadeAbaPerfil,
 } from "./lib/configuracoes-privacy-preferences";
 import {
   calcularTotalBibliotecaConfiguracoes,
@@ -63,7 +61,7 @@ import type {
   ResumoLocal,
   UsuarioConfiguracoes,
 } from "./lib/configuracoes-account-models";
-import { pageStyle, privacySelectStyle } from "./lib/configuracoes-security-styles";
+import { pageStyle } from "./lib/configuracoes-security-styles";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
@@ -421,532 +419,36 @@ export default function ConfiguracoesPage() {
           </SettingsSection>
         ) : null}
 
-        {deveMostrar(
-          "privacidade",
-          "perfil",
-          "privado",
-          "seguidores",
-          "aprovação",
-          "solicitações",
-          "bloqueio",
-          "bloqueados",
-          "desbloquear",
-        ) ? (
-          <SettingsSection
-            title={t(
-              "Privacidade do perfil",
-              "Profile privacy",
-              "Privacidad del perfil",
-            )}
-          >
-            {deveMostrar("perfil", "privado", "visibilidade") ? (
-              <SettingsRow
-                icon="lock"
-                title={t(
-                  "Perfil privado",
-                  "Private profile",
-                  "Perfil privado",
-                )}
-                subtitle={t(
-                  "Controla quem pode seguir você.",
-                  "Controls who can follow you.",
-                  "Controla quién puede seguirte.",
-                )}
-                right={
-                  <Toggle
-                    checked={privacidade.perfilPrivado}
-                    onChange={alternarPerfilPrivado}
-                    ariaLabel={t(
-                      "Ativar ou desativar perfil privado",
-                      "Enable or disable private profile",
-                      "Activar o desactivar el perfil privado",
-                    )}
-                  />
-                }
-                hideChevron
-              />
-            ) : null}
+        <ConfiguracoesProfilePrivacySection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+          privacidade={privacidade}
+          onAlternarPerfilPrivado={alternarPerfilPrivado}
+          onAlternarAprovacaoNovosSeguidores={alternarAprovacaoNovosSeguidores}
+          mostrarUsuariosBloqueados={mostrarUsuariosBloqueados}
+          usuariosBloqueados={usuariosBloqueados}
+          carregandoUsuariosBloqueados={carregandoUsuariosBloqueados}
+          desbloqueandoUsuarioId={desbloqueandoUsuarioId}
+          erroUsuariosBloqueados={erroUsuariosBloqueados}
+          onCarregarUsuariosBloqueados={carregarUsuariosBloqueados}
+          onAlternarUsuariosBloqueados={alternarUsuariosBloqueados}
+          onDesbloquearUsuario={desbloquearUsuarioConfiguracoes}
+        />
 
-            {deveMostrar(
-              "aprovar",
-              "aprovação",
-              "seguidores",
-              "solicitações",
-            ) ? (
-              <SettingsRow
-                icon="user"
-                title={t(
-                  "Aprovar novos seguidores",
-                  "Approve new followers",
-                  "Aprobar nuevos seguidores",
-                )}
-                subtitle={
-                  privacidade.perfilPrivado
-                    ? t(
-                        "Novos seguidores precisam da sua aprovação",
-                        "New followers need your approval",
-                        "Los nuevos seguidores necesitan tu aprobación",
-                      )
-                    : t(
-                        "Ative para receber solicitações antes de alguém seguir você",
-                        "Turn this on to receive requests before someone follows you",
-                        "Actívalo para recibir solicitudes antes de que alguien te siga",
-                      )
-                }
-                right={
-                  <Toggle
-                    checked={privacidade.aprovarNovosSeguidores}
-                    onChange={alternarAprovacaoNovosSeguidores}
-                    ariaLabel={t(
-                      "Ativar ou desativar aprovação de novos seguidores",
-                      "Enable or disable approval of new followers",
-                      "Activar o desactivar la aprobación de nuevos seguidores",
-                    )}
-                  />
-                }
-                hideChevron
-              />
-            ) : null}
+        <ConfiguracoesProfileTabVisibilitySection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+          privacidade={privacidade}
+          onAtualizarPrivacidade={atualizarPrivacidade}
+        />
 
-            {deveMostrar(
-              "bloqueio",
-              "bloqueados",
-              "desbloquear",
-              "privacidade",
-            ) ? (
-              <>
-                <SettingsRow
-                  icon="shield"
-                  title={t(
-                    "Usuários bloqueados",
-                    "Blocked users",
-                    "Usuarios bloqueados",
-                  )}
-                  subtitle={t(
-                    "Revise e desbloqueie perfis da sua lista",
-                    "Review and unblock profiles on your list",
-                    "Revisa y desbloquea perfiles de tu lista",
-                  )}
-                  right={
-                    carregandoUsuariosBloqueados ? (
-                      <LoadingSpinner
-                        compacto
-                        label={t(
-                          "Carregando usuários bloqueados",
-                          "Loading blocked users",
-                          "Cargando usuarios bloqueados",
-                        )}
-                      />
-                    ) : (
-                      <ValorLinha>{usuariosBloqueados.length}</ValorLinha>
-                    )
-                  }
-                  onClick={alternarUsuariosBloqueados}
-                />
-
-                {mostrarUsuariosBloqueados ? (
-                  <ConfiguracoesBlockedUsersPanel
-                    usuarios={usuariosBloqueados}
-                    carregando={carregandoUsuariosBloqueados}
-                    erro={erroUsuariosBloqueados}
-                    desbloqueandoUsuarioId={desbloqueandoUsuarioId}
-                    onRecarregar={carregarUsuariosBloqueados}
-                    onDesbloquear={desbloquearUsuarioConfiguracoes}
-                    traduzirTexto={t}
-                  />
-                ) : null}
-              </>
-            ) : null}
-          </SettingsSection>
-        ) : null}
-
-        {deveMostrar(
-          "privacidade",
-          "visibilidade",
-          "obras",
-          "sobre",
-          "diário",
-          "comunidade",
-          "biblioteca",
-          "atividades",
-          "público",
-          "seguidores",
-          "pessoas que sigo",
-          "somente eu",
-        ) ? (
-          <SettingsSection
-            title={t(
-              "Visibilidade das abas",
-              "Tab visibility",
-              "Visibilidad de las pestañas",
-            )}
-          >
-            {deveMostrar("obras", "publicadas", "visibilidade") ? (
-              <SettingsRow
-                icon="book"
-                title={t("Obras", "Works", "Obras")}
-                right={
-                  <select
-                    value={privacidade.visibilidadeObras}
-                    onChange={(event) =>
-                      atualizarPrivacidade(
-                        "visibilidadeObras",
-                        event.target.value as VisibilidadeAbaPerfil,
-                      )
-                    }
-                    aria-label={t(
-                      "Visibilidade da aba Obras",
-                      "Works tab visibility",
-                      "Visibilidad de la pestaña Obras",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="publico">{t("Público", "Public", "Público")}</option>
-                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
-                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
-                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar("sobre", "perfil", "visibilidade") ? (
-              <SettingsRow
-                icon="file"
-                title={t("Sobre", "About", "Acerca de")}
-                right={
-                  <select
-                    value={privacidade.visibilidadeSobre}
-                    onChange={(event) =>
-                      atualizarPrivacidade(
-                        "visibilidadeSobre",
-                        event.target.value as VisibilidadeAbaPerfil,
-                      )
-                    }
-                    aria-label={t(
-                      "Visibilidade da aba Sobre",
-                      "About tab visibility",
-                      "Visibilidad de la pestaña Acerca de",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="publico">{t("Público", "Public", "Público")}</option>
-                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
-                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
-                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar("diário", "visibilidade") ? (
-              <SettingsRow
-                icon="pen"
-                title={t("Diário", "Journal", "Diario")}
-                right={
-                  <select
-                    value={privacidade.visibilidadeDiario}
-                    onChange={(event) =>
-                      atualizarPrivacidade(
-                        "visibilidadeDiario",
-                        event.target.value as VisibilidadeAbaPerfil,
-                      )
-                    }
-                    aria-label={t(
-                      "Visibilidade da aba Diário",
-                      "Journal tab visibility",
-                      "Visibilidad de la pestaña Diario",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="publico">{t("Público", "Public", "Público")}</option>
-                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
-                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
-                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar("comunidade", "publicações", "visibilidade") ? (
-              <SettingsRow
-                icon="comment"
-                title={t("Comunidade", "Community", "Comunidad")}
-                right={
-                  <select
-                    value={privacidade.visibilidadeComunidade}
-                    onChange={(event) =>
-                      atualizarPrivacidade(
-                        "visibilidadeComunidade",
-                        event.target.value as VisibilidadeAbaPerfil,
-                      )
-                    }
-                    aria-label={t(
-                      "Visibilidade da aba Comunidade",
-                      "Community tab visibility",
-                      "Visibilidad de la pestaña Comunidad",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="publico">{t("Público", "Public", "Público")}</option>
-                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
-                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
-                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar("biblioteca", "listas", "visibilidade") ? (
-              <SettingsRow
-                icon="bookmark"
-                title={t("Biblioteca", "Library", "Biblioteca")}
-                right={
-                  <select
-                    value={privacidade.visibilidadeBiblioteca}
-                    onChange={(event) =>
-                      atualizarPrivacidade(
-                        "visibilidadeBiblioteca",
-                        event.target.value as VisibilidadeAbaPerfil,
-                      )
-                    }
-                    aria-label={t(
-                      "Visibilidade da aba Biblioteca",
-                      "Library tab visibility",
-                      "Visibilidad de la pestaña Biblioteca",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="publico">{t("Público", "Public", "Público")}</option>
-                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
-                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
-                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar("atividades", "leitura", "visibilidade") ? (
-              <SettingsRow
-                icon="clock"
-                title={t("Atividades", "Activity", "Actividad")}
-                right={
-                  <select
-                    value={privacidade.visibilidadeAtividades}
-                    onChange={(event) =>
-                      atualizarPrivacidade(
-                        "visibilidadeAtividades",
-                        event.target.value as VisibilidadeAbaPerfil,
-                      )
-                    }
-                    aria-label={t(
-                      "Visibilidade das atividades",
-                      "Activity visibility",
-                      "Visibilidad de la actividad",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="publico">{t("Público", "Public", "Público")}</option>
-                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
-                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
-                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-          </SettingsSection>
-        ) : null}
-
-        {deveMostrar(
-          "diário",
-          "avaliações",
-          "avaliar",
-          "comentários",
-          "seguidores",
-          "privacidade",
-        ) ? (
-          <SettingsSection
-            title={t(
-              "Privacidade e interações do Diário",
-              "Journal privacy and interactions",
-              "Privacidad e interacciones del Diario",
-            )}
-          >
-            {deveMostrar(
-              "avaliações",
-              "mostrar",
-              "perfil",
-              "diário",
-              "visibilidade",
-            ) ? (
-              <SettingsRow
-                icon="star"
-                title={t(
-                  "Mostrar avaliações do Diário",
-                  "Show Journal ratings",
-                  "Mostrar valoraciones del Diario",
-                )}
-                right={
-                  <select
-                    value={privacidade.visibilidadeAvaliacaoDiario}
-                    onChange={(event) => {
-                      const visibilidade = event.target
-                        .value as VisibilidadeAbaPerfil;
-
-                      aplicarPrivacidadeAtualizada({
-                        ...privacidade,
-                        visibilidadeAvaliacaoDiario: visibilidade,
-                        mostrarAvaliacaoDiario:
-                          visibilidade !== "somente_eu",
-                      });
-                    }}
-                    aria-label={t(
-                      "Quem pode ver as avaliações do meu Diário",
-                      "Who can see my Journal ratings",
-                      "Quién puede ver las valoraciones de mi Diario",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="publico">
-                      {t("Público", "Public", "Público")}
-                    </option>
-                    <option value="seguidores">
-                      {t("Seguidores", "Followers", "Seguidores")}
-                    </option>
-                    <option value="seguindo">
-                      {t(
-                        "Pessoas que sigo",
-                        "People I follow",
-                        "Personas que sigo",
-                      )}
-                    </option>
-                    <option value="somente_eu">
-                      {t("Somente eu", "Only me", "Solo yo")}
-                    </option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar(
-              "avaliações",
-              "permitir",
-              "avaliar",
-              "seguidores",
-              "pessoas que sigo",
-              "diário",
-            ) ? (
-              <SettingsRow
-                icon="user"
-                title={t(
-                  "Permitir novas avaliações",
-                  "Allow new ratings",
-                  "Permitir nuevas valoraciones",
-                )}
-                right={
-                  <select
-                    value={privacidade.quemPodeAvaliarDiario}
-                    onChange={(event) => {
-                      const quemPodeAvaliar = event.target
-                        .value as QuemPodeAvaliarDiario;
-
-                      aplicarPrivacidadeAtualizada({
-                        ...privacidade,
-                        permitirAvaliacaoDiario:
-                          quemPodeAvaliar !== "ninguem",
-                        quemPodeAvaliarDiario: quemPodeAvaliar,
-                      });
-                    }}
-                    aria-label={t(
-                      "Quem pode avaliar meu Diário",
-                      "Who can rate my Journal",
-                      "Quién puede valorar mi Diario",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="todos">
-                      {t("Público", "Public", "Público")}
-                    </option>
-                    <option value="seguidores">
-                      {t("Seguidores", "Followers", "Seguidores")}
-                    </option>
-                    <option value="seguindo">
-                      {t(
-                        "Pessoas que sigo",
-                        "People I follow",
-                        "Personas que sigo",
-                      )}
-                    </option>
-                    <option value="ninguem">
-                      {t("Ninguém", "No one", "Nadie")}
-                    </option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar(
-              "comentários",
-              "público",
-              "seguidores",
-              "pessoas que sigo",
-              "ninguém",
-              "diário",
-            ) ? (
-              <SettingsRow
-                icon="comment"
-                title={t(
-                  "Quem pode comentar no meu Diário",
-                  "Who can comment on my Journal",
-                  "Quién puede comentar en mi Diario",
-                )}
-                right={
-                  <select
-                    value={privacidade.quemPodeComentarDiario}
-                    onChange={(event) =>
-                      atualizarPrivacidade(
-                        "quemPodeComentarDiario",
-                        event.target.value as QuemPodeComentarDiario,
-                      )
-                    }
-                    aria-label={t(
-                      "Quem pode comentar no meu Diário",
-                      "Who can comment on my Journal",
-                      "Quién puede comentar en mi Diario",
-                    )}
-                    style={privacySelectStyle}
-                  >
-                    <option value="todos">
-                      {t("Público", "Public", "Público")}
-                    </option>
-                    <option value="seguidores">
-                      {t("Seguidores", "Followers", "Seguidores")}
-                    </option>
-                    <option value="seguindo">
-                      {t(
-                        "Pessoas que sigo",
-                        "People I follow",
-                        "Personas que sigo",
-                      )}
-                    </option>
-                    <option value="ninguem">
-                      {t("Ninguém", "No one", "Nadie")}
-                    </option>
-                  </select>
-                }
-                hideChevron
-              />
-            ) : null}
-          </SettingsSection>
-        ) : null}
+        <ConfiguracoesDiaryPrivacySection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+          privacidade={privacidade}
+          onAplicarPrivacidadeAtualizada={aplicarPrivacidadeAtualizada}
+          onAtualizarPrivacidade={atualizarPrivacidade}
+        />
 
         <ConfiguracoesModerationSection
           adminLiberado={adminLiberado}
