@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const secaoPrivacidadePerfil = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountActionHandlers = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
@@ -85,13 +92,27 @@ test("Configurações mantém os cinco consumidores nas fronteiras visuais", () 
     modalExclusao,
     /import \{ LoadingSpinner \} from "\.\/configuracoes-loading-spinner";/,
   );
+  assert.match(
+    secaoPrivacidadePerfil,
+    /import \{ LoadingSpinner \} from "\.\/configuracoes-loading-spinner";/,
+  );
 
-  const consumidores = [pagina, modalSenha, modalExclusao].reduce(
+  const consumidores = [
+    pagina,
+    secaoPrivacidadePerfil,
+    modalSenha,
+    modalExclusao,
+  ].reduce(
     (total, source) => total + (source.match(/<LoadingSpinner/g) || []).length,
     0,
   );
   assert.equal(consumidores, 5);
-  const compactos = [pagina, modalSenha, modalExclusao].reduce(
+  const compactos = [
+    pagina,
+    secaoPrivacidadePerfil,
+    modalSenha,
+    modalExclusao,
+  ].reduce(
     (total, source) =>
       total + (source.match(/<LoadingSpinner[\s\S]*?compacto/g) || []).length,
     0,
@@ -101,10 +122,10 @@ test("Configurações mantém os cinco consumidores nas fronteiras visuais", () 
   for (const label of [
     "Carregando configurações",
     "Salvando alterações",
-    "Carregando usuários bloqueados",
   ]) {
     assert.match(pagina, new RegExp(`t\\(\\s*"${label}"`));
   }
+  assert.match(secaoPrivacidadePerfil, /"Carregando usuários bloqueados",/);
   assert.match(modalSenha, /"Alterando senha",/);
   assert.match(modalExclusao, /"Excluindo conta",/);
 
