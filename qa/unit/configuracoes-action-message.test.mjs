@@ -41,6 +41,13 @@ const toast = readFileSync(
   ),
   "utf8",
 );
+const signOutAction = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-sign-out-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
   assert.match(hook, /^"use client";/);
@@ -92,6 +99,7 @@ test("Configurações mantém domínio e toast na página", () => {
     backupActions,
     blockedUsersHook,
     preferenceActions,
+    signOutAction,
   ].flatMap((fonte) => fonte.match(/mostrarMensagemAcao\(/g) || []);
   assert.equal(chamadasDominio.length, 15);
   assert.match(
@@ -110,4 +118,23 @@ test("Configurações mantém domínio e toast na página", () => {
   assert.match(pagina, /function salvar\(/);
   assert.match(pagina, /function alterarSenha\(/);
   assert.match(pagina, /function excluirConta\(/);
+});
+
+test("ação de saída preserva limpeza, fallback e navegação", () => {
+  assert.match(signOutAction, /export async function sairDaContaConfiguracoes/);
+  assert.match(signOutAction, /limparMensagem\(\);/);
+  assert.match(signOutAction, /const \{ error \} = await encerrarSessao\(\);/);
+  assert.match(signOutAction, /if \(error\) \{/);
+  assert.match(signOutAction, /mostrarMensagemAcao\(\s*"erro"/);
+  assert.match(signOutAction, /N\\u00e3o foi poss\\u00edvel sair da conta agora/);
+  assert.match(signOutAction, /redirecionarLogin\(\);\s*atualizarRota\(\);/);
+  assert.doesNotMatch(signOutAction, /useState|useEffect|localStorage|supabase\./);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-sign-out-action";/,
+  );
+  assert.match(pagina, /sairDaContaConfiguracoes\(\{/);
+  assert.match(pagina, /encerrarSessao: \(\) => supabase\.auth\.signOut\(\)/);
+  assert.match(pagina, /redirecionarLogin: \(\) => router\.replace\("\/login"\)/);
+  assert.match(pagina, /atualizarRota: \(\) => router\.refresh\(\)/);
 });

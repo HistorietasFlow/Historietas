@@ -80,6 +80,7 @@ import {
   aplicarPrivacidadeAtualizadaConfiguracoes,
   atualizarPreferenciaConfiguracoes,
 } from "./lib/configuracoes-preference-actions";
+import { sairDaContaConfiguracoes } from "./lib/configuracoes-sign-out-action";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -773,35 +774,14 @@ export default function ConfiguracoesPage() {
     });
 
   async function sairDaConta() {
-    setMensagemAcao(null);
-
-    try {
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        mostrarMensagemAcao(
-          "erro",
-          t(
-            "N\u00e3o foi poss\u00edvel sair da conta agora. Tente novamente.",
-            "Could not sign out right now. Please try again.",
-            "No se pudo cerrar la sesi\u00f3n ahora. Int\u00e9ntalo de nuevo.",
-          ),
-        );
-        return;
-      }
-
-      router.replace("/login");
-      router.refresh();
-    } catch {
-      mostrarMensagemAcao(
-        "erro",
-        t(
-          "N\u00e3o foi poss\u00edvel sair da conta agora. Tente novamente.",
-          "Could not sign out right now. Please try again.",
-          "No se pudo cerrar la sesi\u00f3n ahora. Int\u00e9ntalo de nuevo.",
-        ),
-      );
-    }
+    await sairDaContaConfiguracoes({
+      limparMensagem: () => setMensagemAcao(null),
+      encerrarSessao: () => supabase.auth.signOut(),
+      redirecionarLogin: () => router.replace("/login"),
+      atualizarRota: () => router.refresh(),
+      mostrarMensagemAcao,
+      traduzirTexto: t,
+    });
   }
 
   if (verificandoAcesso) {
