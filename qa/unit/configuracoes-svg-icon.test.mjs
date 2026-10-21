@@ -109,7 +109,7 @@ test("Configuracoes mantem os consumidores e a fronteira do icone", () => {
   assert.match(header, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(busca, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(toast, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
-  assert.match(pagina, /import type \{ CSSProperties, FormEvent \} from "react";/);
+  assert.match(pagina, /import type \{ FormEvent \} from "react";/);
   assert.doesNotMatch(pagina, /type IconName =/);
   assert.doesNotMatch(pagina, /function SvgIcon\(/);
   assert.doesNotMatch(pagina, /const paths: Record<IconName, ReactNode> =/);

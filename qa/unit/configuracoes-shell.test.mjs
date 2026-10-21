@@ -27,6 +27,72 @@ const styles = readFileSync(
   ),
   "utf8",
 );
+const securityStyles = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-security-styles.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+test("estilos de segurança preservam modais, privacidade e spreads", () => {
+  for (const style of [
+    "pageStyle",
+    "listCardTransparentStyle",
+    "securityOverlayStyle",
+    "securityModalStyle",
+    "securityModalHeaderStyle",
+    "securityModalIconStyle",
+    "deleteModalIconStyle",
+    "securityModalHeadingStyle",
+    "securityModalTitleStyle",
+    "securityModalSubtitleStyle",
+    "securityCloseButtonStyle",
+    "securityCloseButtonDisabledStyle",
+    "securityFormStyle",
+    "securityFieldStyle",
+    "securityFieldLabelStyle",
+    "securityPasswordInputStyle",
+    "securityHintStyle",
+    "securityErrorStyle",
+    "securitySuccessStyle",
+    "securityFeedbackTextStyle",
+    "deleteWarningStyle",
+    "deleteWarningListStyle",
+    "deletePublicLinkStyle",
+    "securityActionsStyle",
+    "securityButtonBaseStyle",
+    "securitySecondaryButtonStyle",
+    "securityPrimaryButtonStyle",
+    "deleteDangerButtonStyle",
+    "deleteDangerButtonDisabledStyle",
+    "securitySecondaryButtonDisabledStyle",
+    "securityPrimaryButtonDisabledStyle",
+    "securityDoneButtonStyle",
+    "privacySelectStyle",
+  ]) {
+    assert.match(
+      securityStyles,
+      new RegExp("export const " + style + ": CSSProperties ="),
+    );
+  }
+
+  assert.match(
+    securityStyles,
+    /import \{ safeTextStyle \} from "\.\/configuracoes-settings-primitives-styles";/,
+  );
+  assert.match(securityStyles, /zIndex: 1200/);
+  assert.match(securityStyles, /width: "min\(440px, 100%\)"/);
+  assert.match(securityStyles, /gridTemplateColumns: "42px minmax\(0, 1fr\) 36px"/);
+  assert.match(securityStyles, /transform: "translateX\(22px\)"/);
+  assert.equal((securityStyles.match(/\.\.\.safeTextStyle,/g) || []).length, 4);
+  assert.equal((securityStyles.match(/\.\.\.securityButtonBaseStyle,/g) || []).length, 3);
+  assert.doesNotMatch(
+    securityStyles,
+    /supabase|localStorage|useState|useEffect|window|document|=>/,
+  );
+});
+
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -98,6 +164,7 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   }
 
   assert.match(pagina, /from "\.\/lib\/configuracoes-shell-styles";/);
+  assert.match(pagina, /from "\.\/lib\/configuracoes-security-styles";/);
   assert.match(pagina, /<section style=\{containerStyle\}>/);
   assert.match(pagina, /const \[busca, setBusca\] = useState\(""\);/);
   assert.match(pagina, /onVoltar=\{\(\) => router\.back\(\)\}/);
@@ -119,6 +186,47 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
     "profileNameStyle",
     "profileUsernameStyle",
     "profileEmailStyle",
+  ]) {
+    assert.doesNotMatch(
+      pagina,
+      new RegExp("const " + style + ": CSSProperties ="),
+    );
+  }
+
+  for (const style of [
+    "pageStyle",
+    "listCardTransparentStyle",
+    "securityOverlayStyle",
+    "securityModalStyle",
+    "securityModalHeaderStyle",
+    "securityModalIconStyle",
+    "deleteModalIconStyle",
+    "securityModalHeadingStyle",
+    "securityModalTitleStyle",
+    "securityModalSubtitleStyle",
+    "securityCloseButtonStyle",
+    "securityCloseButtonDisabledStyle",
+    "securityFormStyle",
+    "securityFieldStyle",
+    "securityFieldLabelStyle",
+    "securityPasswordInputStyle",
+    "securityHintStyle",
+    "securityErrorStyle",
+    "securitySuccessStyle",
+    "securityFeedbackTextStyle",
+    "deleteWarningStyle",
+    "deleteWarningListStyle",
+    "deletePublicLinkStyle",
+    "securityActionsStyle",
+    "securityButtonBaseStyle",
+    "securitySecondaryButtonStyle",
+    "securityPrimaryButtonStyle",
+    "deleteDangerButtonStyle",
+    "deleteDangerButtonDisabledStyle",
+    "securitySecondaryButtonDisabledStyle",
+    "securityPrimaryButtonDisabledStyle",
+    "securityDoneButtonStyle",
+    "privacySelectStyle",
   ]) {
     assert.doesNotMatch(
       pagina,

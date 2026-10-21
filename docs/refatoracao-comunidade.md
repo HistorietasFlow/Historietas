@@ -828,3 +828,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A leitura RPC de usuários bloqueados foi isolada, preservando limite, normalização, validação e propagação de erro.
 - Estados, ações e apresentação da página continuaram sem alteração intencional de comportamento.
+
+## Registro da Fase 21 — Configurações
+
+- A leitura de perfil no Supabase foi isolada, preservando as duas consultas, validação, normalização e fallback.
+- Os estilos estáticos da página, dos modais de segurança/exclusão e dos selects de privacidade foram movidos sem alteração visual intencional.
