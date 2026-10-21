@@ -129,6 +129,13 @@ const accountDeletionErrorMessagesSource = readFileSync(
   ),
   "utf8",
 );
+const accountDeletionActionSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-deletion-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountBackupDownloadSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-backup-download.ts",
@@ -650,14 +657,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-profile-save-action";/,
   );
-  assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-account-deletion-local-cleanup";/,
-  );
-  assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-account-deletion-error-messages";/,
-  );
+  assert.match(pagina, /from "\.\/lib\/configuracoes-account-deletion-action";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
   assert.match(
     pagina,
@@ -730,6 +730,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     "salvarPerfilConfiguracoesSupabase",
     "limparDadosLocaisContaExcluida",
     "traduzirErroExclusaoContaConfiguracoes",
+    "excluirContaConfiguracoes",
     "baixarBackupConfiguracoes",
     "calcularTotalBibliotecaConfiguracoes",
     "criarPreferenciaAtualizadaConfiguracoes",
@@ -785,12 +786,41 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(pagina, /async function salvarConfiguracoesPerfil\(/);
   assert.doesNotMatch(pagina, /function limparDadosLocaisContaExcluida\(/);
   assert.match(pagina, /salvarConfiguracoesPerfil\(\{/);
-  assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
+  assert.match(accountDeletionActionSource, /export async function excluirContaConfiguracoes\(/);
+  assert.match(accountDeletionActionSource, /event\.preventDefault\(\);/);
+  assert.match(
+    accountDeletionActionSource,
+    /validarExclusaoContaConfiguracoes\(\s*senhaExclusaoConta,\s*confirmacaoExclusaoConta,\s*language,/,
+  );
+  assert.match(accountDeletionActionSource, /fetch\("\/api\/conta\/excluir"/);
+  assert.match(accountDeletionActionSource, /credentials: "same-origin"/);
+  assert.match(accountDeletionActionSource, /confirmacao: "EXCLUIR"/);
+  assert.match(
+    accountDeletionActionSource,
+    /traduzirErroExclusaoContaConfiguracoes\(/,
+  );
+  assert.match(
+    accountDeletionActionSource,
+    /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/,
+  );
+  assert.match(accountDeletionActionSource, /await supabase\.auth\.signOut\(\)/);
+  assert.match(
+    accountDeletionActionSource,
+    /redirecionarLogin\(\);\s*atualizarRota\(\);/,
+  );
+  assert.match(accountDeletionActionSource, /finally \{\s*setExcluindoConta\(false\);/);
+  assert.doesNotMatch(
+    accountDeletionActionSource,
+    /useState|useEffect|localStorage|sessionStorage|JSX/,
+  );
+  assert.doesNotMatch(pagina, /async function excluirContaConfiguracoes\(/);
+  assert.match(pagina, /excluirContaConfiguracoes\(\{/);
+  assert.match(pagina, /redirecionarLogin: \(\) => router\.replace\("\/login"\)/);
+  assert.match(pagina, /atualizarRota: \(\) => router\.refresh\(\)/);
   assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
   assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
   assert.match(pagina, /useConfiguracoesSecurityModalState\(\)/);
   assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
-  assert.match(pagina, /validarExclusaoContaConfiguracoes\(\s*senhaExclusaoConta,/);
   assert.match(pagina, /validarAlteracaoSenhaConfiguracoes\(\s*senhaAtual,/);
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
   assert.doesNotMatch(pagina, /!\/\[A-Za-zÀ-ÖØ-öø-ÿ\]\/.test\(novaSenha\)/);
