@@ -81,6 +81,11 @@ import {
   atualizarPreferenciaConfiguracoes,
 } from "./lib/configuracoes-preference-actions";
 import { sairDaContaConfiguracoes } from "./lib/configuracoes-sign-out-action";
+import {
+  alternarAprovacaoNovosSeguidoresConfiguracoes,
+  alternarPerfilPrivadoConfiguracoes,
+  atualizarPrivacidadeConfiguracoes,
+} from "./lib/configuracoes-privacy-actions";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -91,11 +96,6 @@ import {
   traduzirErroSenhaConfiguracoes,
   traduzirErroUsernameConfiguracoes,
 } from "./lib/configuracoes-error-messages";
-import {
-  criarPrivacidadeAtualizadaConfiguracoes,
-  criarPrivacidadeComAprovacaoAlternadaConfiguracoes,
-  criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes,
-} from "./lib/configuracoes-privacy-preference-state-utils";
 import {
   validarAlteracaoSenhaConfiguracoes,
   validarExclusaoContaConfiguracoes,
@@ -411,21 +411,26 @@ export default function ConfiguracoesPage() {
   function atualizarPrivacidade<
     K extends keyof PreferenciasPrivacidadeHistorietas,
   >(campo: K, valor: PreferenciasPrivacidadeHistorietas[K]) {
-    aplicarPrivacidadeAtualizada(
-      criarPrivacidadeAtualizadaConfiguracoes(privacidade, campo, valor),
-    );
+    atualizarPrivacidadeConfiguracoes({
+      privacidade,
+      campo,
+      valor,
+      aplicarPrivacidadeAtualizada,
+    });
   }
 
   function alternarPerfilPrivado() {
-    aplicarPrivacidadeAtualizada(
-      criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes(privacidade),
-    );
+    alternarPerfilPrivadoConfiguracoes({
+      privacidade,
+      aplicarPrivacidadeAtualizada,
+    });
   }
 
   function alternarAprovacaoNovosSeguidores() {
-    aplicarPrivacidadeAtualizada(
-      criarPrivacidadeComAprovacaoAlternadaConfiguracoes(privacidade),
-    );
+    alternarAprovacaoNovosSeguidoresConfiguracoes({
+      privacidade,
+      aplicarPrivacidadeAtualizada,
+    });
   }
 
 
