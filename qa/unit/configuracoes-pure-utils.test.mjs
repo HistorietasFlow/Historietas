@@ -101,6 +101,20 @@ const profileSupabaseLoaderSource = readFileSync(
   ),
   "utf8",
 );
+const profileSupabaseSaverSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-profile-supabase-saver.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const accountDeletionLocalCleanupSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-deletion-local-cleanup.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -144,6 +158,57 @@ test("loader de perfil preserva as duas consultas e fallbacks", () => {
   assert.doesNotMatch(
     profileSupabaseLoaderSource,
     /\.insert\(|\.update\(|\.delete\(|\.upsert\(|localStorage|useState|useEffect/,
+  );
+});
+
+test("persistência de perfil preserva busca, atualização, criação e fallbacks", () => {
+  assert.match(
+    profileSupabaseSaverSource,
+    /export async function salvarPerfilConfiguracoesSupabase\(/,
+  );
+  assert.match(profileSupabaseSaverSource, /userId\.trim\(\)/);
+  assert.match(
+    profileSupabaseSaverSource,
+    /idUsuarioSupabaseValido\(userIdLimpo\)/,
+  );
+  assert.equal(
+    (profileSupabaseSaverSource.match(/\.from\("profiles"\)/g) || []).length,
+    4,
+  );
+  assert.match(profileSupabaseSaverSource, /\.eq\("user_id", userIdLimpo\)/);
+  assert.match(profileSupabaseSaverSource, /\.eq\("id", userIdLimpo\)/);
+  assert.match(profileSupabaseSaverSource, /\.update\(payloadAtualizacao\)/);
+  assert.match(profileSupabaseSaverSource, /\.insert\(\{/);
+  assert.match(profileSupabaseSaverSource, /tipo: "leitor"/);
+  assert.match(profileSupabaseSaverSource, /avatar_url: ""/);
+  assert.match(profileSupabaseSaverSource, /bio: ""/);
+  assert.match(profileSupabaseSaverSource, /sobre_bio: ""/);
+  assert.match(profileSupabaseSaverSource, /catch \(error\)/);
+  assert.doesNotMatch(
+    profileSupabaseSaverSource,
+    /localStorage|sessionStorage|useState|useEffect|window|document|JSX/,
+  );
+});
+
+test("limpeza local após exclusão preserva isolamento e fallbacks", () => {
+  assert.match(
+    accountDeletionLocalCleanupSource,
+    /export function limparDadosLocaisContaExcluida\(/,
+  );
+  assert.match(accountDeletionLocalCleanupSource, /typeof window === "undefined"/);
+  assert.match(accountDeletionLocalCleanupSource, /`:\$\{userId\.trim\(\)\}`/);
+  assert.match(accountDeletionLocalCleanupSource, /localStorage\.length/);
+  assert.match(accountDeletionLocalCleanupSource, /localStorage\.removeItem/);
+  assert.match(accountDeletionLocalCleanupSource, /sessionStorage\.length/);
+  assert.match(accountDeletionLocalCleanupSource, /sessionStorage\.removeItem/);
+  assert.equal(
+    (accountDeletionLocalCleanupSource.match(/endsWith\(sufixoUsuario\)/g) || [])
+      .length,
+    2,
+  );
+  assert.doesNotMatch(
+    accountDeletionLocalCleanupSource,
+    /supabase|useState|useEffect|JSX/,
   );
 });
 const account = await importarTypescript(accountSource);
@@ -313,6 +378,14 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-profile-supabase-loader";/,
   );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-profile-supabase-saver";/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-deletion-local-cleanup";/,
+  );
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-backup";/);
   assert.match(
@@ -349,6 +422,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     "carregarResumoContaSupabase",
     "listarUsuariosBloqueadosConfiguracoes",
     "carregarPerfilConfiguracoesSupabase",
+    "salvarPerfilConfiguracoesSupabase",
+    "limparDadosLocaisContaExcluida",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
@@ -382,8 +457,11 @@ test("Configurações delega as fronteiras extraídas", () => {
     /carregarPreferenciasPrivacidade\(usuarioCarregado\.id,/,
   );
   assert.match(pagina, /salvarPreferenciasPrivacidade\(/);
-  assert.match(pagina, /async function salvarPerfilConfiguracoesSupabase\(/);
-  assert.match(pagina, /localStorage/);
+  assert.doesNotMatch(pagina, /async function salvarPerfilConfiguracoesSupabase\(/);
+  assert.doesNotMatch(pagina, /function limparDadosLocaisContaExcluida\(/);
+  assert.match(pagina, /salvarPerfilConfiguracoesSupabase\(\{/);
+  assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
+  assert.doesNotMatch(pagina, /localStorage/);
   assert.match(pagina, /supabase\./);
   assert.doesNotMatch(searchSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(accountSource, /useState|useEffect|supabase|localStorage/);

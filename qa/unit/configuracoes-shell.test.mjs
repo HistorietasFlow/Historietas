@@ -171,7 +171,12 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   assert.match(pagina, /onBuscaChange=\{setBusca\}/);
   assert.match(pagina, /usuarioNome=\{usuario\?\.nome\}/);
   assert.match(pagina, /supabase\./);
-  assert.match(pagina, /localStorage/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-deletion-local-cleanup";/,
+  );
+  assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
+  assert.doesNotMatch(pagina, /localStorage/);
 
   for (const style of [
     "containerStyle",
