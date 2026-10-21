@@ -9,12 +9,10 @@ import {
   actionToastTitleStyle,
   actionToastWarningStyle,
 } from "../lib/configuracoes-action-toast-styles";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
-
-type MensagemAcaoConfiguracoesVisual = {
-  tipo: "sucesso" | "erro" | "aviso";
-  texto: string;
-};
+import type {
+  MensagemAcaoConfiguracoesVisual,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesActionToastProps = {
   mensagem: MensagemAcaoConfiguracoesVisual;

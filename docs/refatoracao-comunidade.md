@@ -968,3 +968,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos compartilhados de tradução e de mensagens de ação foram centralizados, preservando literalmente as assinaturas utilizadas por hooks, ações e componentes.
 - Runtime, estados, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 50 — Configurações
+
+- Os modelos compartilhados de mensagens de ação foram centralizados, preservando literalmente tipo, texto e identificador consumidos pelo hook e pelo toast.
+- Runtime, temporização, estados, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

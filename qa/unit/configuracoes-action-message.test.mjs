@@ -9,6 +9,13 @@ const hook = readFileSync(
   ),
   "utf8",
 );
+const callbackTypes = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-callback-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -84,7 +91,10 @@ test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
     hook,
     /useState<MensagemAcaoConfiguracoes \| null>\(null\)/,
   );
-  assert.match(hook, /type TipoMensagemAcaoConfiguracoes = "sucesso" \| "erro" \| "aviso";/);
+  assert.match(
+    hook,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
   assert.match(hook, /function mostrarMensagemAcao\(\s*tipo: TipoMensagemAcaoConfiguracoes,\s*texto: string,/);
   assert.match(hook, /setMensagemAcao\(\(mensagemAtual\) => \(\{/);
   assert.match(hook, /id: \(mensagemAtual\?\.id \?\? 0\) \+ 1,/);
@@ -102,6 +112,35 @@ test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
   assert.match(hook, /window\.clearTimeout\(timer\)/);
   assert.match(hook, /\}, \[mensagemAcao\]\);/);
   assert.match(hook, /return \{\s*mensagemAcao,\s*setMensagemAcao,\s*mostrarMensagemAcao,\s*\};/);
+});
+
+test("modelos compartilhados da mensagem de ação preservam contratos e consumidores", () => {
+  assert.match(
+    callbackTypes,
+    /export type TipoMensagemAcaoConfiguracoes = "sucesso" \| "erro" \| "aviso";/,
+  );
+  assert.match(
+    callbackTypes,
+    /export type MensagemAcaoConfiguracoesVisual = \{\s+tipo: TipoMensagemAcaoConfiguracoes;\s+texto: string;\s+\};/,
+  );
+  assert.match(
+    callbackTypes,
+    /export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & \{\s+id: number;\s+\};/,
+  );
+  assert.match(
+    callbackTypes,
+    /export type MostrarMensagemAcaoConfiguracoes = \(\s+tipo: TipoMensagemAcaoConfiguracoes,\s+texto: string,\s+\) => void;/,
+  );
+  assert.doesNotMatch(
+    callbackTypes,
+    /React|useState|useEffect|supabase|localStorage|window|document|JSX/,
+  );
+  assert.match(hook, /MensagemAcaoConfiguracoes,/);
+  assert.match(hook, /TipoMensagemAcaoConfiguracoes,/);
+  assert.doesNotMatch(hook, /type TipoMensagemAcaoConfiguracoes =/);
+  assert.doesNotMatch(hook, /type MensagemAcaoConfiguracoes =/);
+  assert.match(toast, /MensagemAcaoConfiguracoesVisual,/);
+  assert.doesNotMatch(toast, /type MensagemAcaoConfiguracoesVisual =/);
 });
 
 test("Configurações mantém domínio e toast na página", () => {

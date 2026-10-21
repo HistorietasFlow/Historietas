@@ -4,7 +4,18 @@ export type TraduzirTextoConfiguracoes = (
   espanhol: string,
 ) => string;
 
+export type TipoMensagemAcaoConfiguracoes = "sucesso" | "erro" | "aviso";
+
+export type MensagemAcaoConfiguracoesVisual = {
+  tipo: TipoMensagemAcaoConfiguracoes;
+  texto: string;
+};
+
+export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & {
+  id: number;
+};
+
 export type MostrarMensagemAcaoConfiguracoes = (
-  tipo: "sucesso" | "erro" | "aviso",
+  tipo: TipoMensagemAcaoConfiguracoes,
   texto: string,
 ) => void;
