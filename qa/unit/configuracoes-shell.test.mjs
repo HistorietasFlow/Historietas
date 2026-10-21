@@ -41,6 +41,13 @@ const securityModalBodyLock = readFileSync(
   ),
   "utf8",
 );
+const backupActions = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-backup-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estilos de segurança preservam modais, privacidade e spreads", () => {
   for (const style of [
@@ -188,6 +195,12 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
     pagina,
     /from "\.\/lib\/configuracoes-account-deletion-local-cleanup";/,
   );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-backup-actions";/,
+  );
+  assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
+  assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
   assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
   assert.doesNotMatch(pagina, /localStorage/);
 
@@ -251,6 +264,43 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
       new RegExp("const " + style + ": CSSProperties ="),
     );
   }
+});
+
+test("ações de backup preservam cópia, download, mensagens e fronteira local", () => {
+  assert.match(
+    backupActions,
+    /export async function copiarBackupConfiguracoes\(/,
+  );
+  assert.match(
+    backupActions,
+    /export function baixarBackupContaConfiguracoes\(/,
+  );
+  assert.match(
+    backupActions,
+    /import \{ criarBackupLocal \} from "\.\/configuracoes-account-backup";/,
+  );
+  assert.match(
+    backupActions,
+    /import \{ baixarBackupConfiguracoes \} from "\.\/configuracoes-account-backup-download";/,
+  );
+  assert.match(
+    backupActions,
+    /import \{ copiarTextoConfiguracoes \} from "\.\/configuracoes-copy-utils";/,
+  );
+  assert.match(backupActions, /setMensagemAcao\(null\)/);
+  assert.match(
+    backupActions,
+    /await copiarTextoConfiguracoes\(criarBackupLocal\(usuarioIdLogado\)\)/,
+  );
+  assert.match(backupActions, /baixarBackupConfiguracoes\(backup\)/);
+  assert.match(backupActions, /Dados copiados para a área de transferência\./);
+  assert.match(backupActions, /Backup preparado e download iniciado\./);
+  assert.match(backupActions, /Não foi possível copiar os dados\./);
+  assert.match(backupActions, /Não foi possível baixar o backup\./);
+  assert.doesNotMatch(
+    backupActions,
+    /supabase|useState|useEffect|window|document|JSX/,
+  );
 });
 
 test("hook do modal de segurança preserva body lock, Escape e limpeza", () => {

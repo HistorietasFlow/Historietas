@@ -129,6 +129,13 @@ const accountBackupDownloadSource = readFileSync(
   ),
   "utf8",
 );
+const accountBackupActionsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-backup-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountPreferenceStateSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-preference-state-utils.ts",
@@ -623,10 +630,17 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/lib\/configuracoes-account-deletion-error-messages";/,
   );
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
-  assert.match(pagina, /from "\.\/lib\/configuracoes-account-backup";/);
   assert.match(
     pagina,
-    /from "\.\/lib\/configuracoes-account-backup-download";/,
+    /from "\.\/lib\/configuracoes-account-backup-actions";/,
+  );
+  assert.match(
+    accountBackupActionsSource,
+    /from "\.\/configuracoes-account-backup";/,
+  );
+  assert.match(
+    accountBackupActionsSource,
+    /from "\.\/configuracoes-account-backup-download";/,
   );
   assert.match(
     pagina,
@@ -669,7 +683,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     "normalizarPerfilConfiguracoesSupabase",
     "carregarPreferencias",
     "salvarPreferencias",
-    "criarBackupLocal",
+    "copiarBackupConfiguracoes",
+    "baixarBackupContaConfiguracoes",
     "deveMostrarSecaoConfiguracoes",
     "carregarResumoContaSupabase",
     "listarUsuariosBloqueadosConfiguracoes",
@@ -723,6 +738,8 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(pagina, /function limparDadosLocaisContaExcluida\(/);
   assert.match(pagina, /salvarPerfilConfiguracoesSupabase\(\{/);
   assert.match(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
+  assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
+  assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
   assert.match(pagina, /validarExclusaoContaConfiguracoes\(\s*senhaExclusaoConta,/);
   assert.match(pagina, /validarAlteracaoSenhaConfiguracoes\(\s*senhaAtual,/);
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);

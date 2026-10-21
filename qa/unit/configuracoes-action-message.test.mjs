@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const backupActions = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-backup-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const toast = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-action-toast.tsx",
@@ -66,8 +73,14 @@ test("Configurações mantém domínio e toast na página", () => {
   assert.doesNotMatch(pagina, /type TipoMensagemAcaoConfiguracoes =/);
   assert.doesNotMatch(pagina, /type MensagemAcaoConfiguracoes =/);
 
-  const chamadasDominio = pagina.match(/mostrarMensagemAcao\(/g);
-  assert.equal(chamadasDominio?.length, 15);
+  const chamadasDominio = [pagina, backupActions].flatMap(
+    (fonte) => fonte.match(/mostrarMensagemAcao\(/g) || [],
+  );
+  assert.equal(chamadasDominio.length, 15);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-backup-actions";/,
+  );
   assert.match(
     pagina,
     /import \{ ConfiguracoesActionToast \} from "\.\/components\/configuracoes-action-toast";/,
