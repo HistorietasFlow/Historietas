@@ -44,7 +44,6 @@ import {
   pegarTexto,
 } from "./lib/configuracoes-account-utils";
 import type { AppMetadataAdminConfiguracoes } from "./lib/configuracoes-account-utils";
-import { copiarTextoConfiguracoes } from "./lib/configuracoes-copy-utils";
 import {
   carregarPreferenciasPrivacidade,
   preferenciasPrivacidadePadrao,
@@ -67,8 +66,10 @@ import {
   carregarPreferencias,
   salvarPreferencias,
 } from "./lib/configuracoes-account-preferences";
-import { criarBackupLocal } from "./lib/configuracoes-account-backup";
-import { baixarBackupConfiguracoes } from "./lib/configuracoes-account-backup-download";
+import {
+  baixarBackupContaConfiguracoes,
+  copiarBackupConfiguracoes,
+} from "./lib/configuracoes-account-backup-actions";
 import {
   calcularTotalBibliotecaConfiguracoes,
   criarPreferenciaAtualizadaConfiguracoes,
@@ -928,57 +929,21 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  async function copiarBackup() {
-    setMensagemAcao(null);
+  const copiarBackup = () =>
+    copiarBackupConfiguracoes({
+      usuarioIdLogado,
+      setMensagemAcao,
+      mostrarMensagemAcao,
+      traduzirTexto: t,
+    });
 
-    try {
-      await copiarTextoConfiguracoes(criarBackupLocal(usuarioIdLogado));
-      mostrarMensagemAcao(
-        "sucesso",
-        t(
-          "Dados copiados para a área de transferência.",
-          "Data copied to the clipboard.",
-          "Datos copiados al portapapeles.",
-        ),
-      );
-    } catch {
-      mostrarMensagemAcao(
-        "erro",
-        t(
-          "Não foi possível copiar os dados.",
-          "The data could not be copied.",
-          "No se pudieron copiar los datos.",
-        ),
-      );
-    }
-  }
-
-  function baixarBackup() {
-    setMensagemAcao(null);
-
-    try {
-      const backup = criarBackupLocal(usuarioIdLogado);
-      baixarBackupConfiguracoes(backup);
-
-      mostrarMensagemAcao(
-        "sucesso",
-        t(
-          "Backup preparado e download iniciado.",
-          "Backup prepared and download started.",
-          "Copia preparada y descarga iniciada.",
-        ),
-      );
-    } catch {
-      mostrarMensagemAcao(
-        "erro",
-        t(
-          "Não foi possível baixar o backup.",
-          "The backup could not be downloaded.",
-          "No se pudo descargar la copia.",
-        ),
-      );
-    }
-  }
+  const baixarBackup = () =>
+    baixarBackupContaConfiguracoes({
+      usuarioIdLogado,
+      setMensagemAcao,
+      mostrarMensagemAcao,
+      traduzirTexto: t,
+    });
 
   async function sairDaConta() {
     setMensagemAcao(null);
