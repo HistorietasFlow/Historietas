@@ -213,7 +213,11 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   assert.match(pagina, /from "\.\/lib\/configuracoes-security-styles";/);
   assert.match(content, /<section style=\{containerStyle\}>/);
   assert.match(pagina, /const \[busca, setBusca\] = useState\(""\);/);
-  assert.match(pagina, /onVoltar=\{\(\) => router\.back\(\)\}/);
+  assert.match(
+    pagina,
+    /import \{ criarAcoesConteudoConfiguracoes \} from "\.\/lib\/configuracoes-content-actions";/,
+  );
+  assert.match(pagina, /onVoltar=\{onVoltar\}/);
   assert.match(pagina, /onBuscaChange=\{setBusca\}/);
   assert.match(pagina, /usuarioNome=\{usuario\?\.nome\}/);
   assert.match(loadingState, /<LoadingSpinner label=\{label\} \/>/);

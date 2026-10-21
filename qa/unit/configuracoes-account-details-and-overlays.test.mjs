@@ -34,6 +34,13 @@ const acoesCamposOverlay = readFileSync(
   ),
   "utf8",
 );
+const acoesConteudo = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-content-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("seção da conta preserva inputs, filtro, loading e segurança", () => {
   assert.match(secaoConta, /export function ConfiguracoesAccountDetailsSection\(/);
@@ -94,7 +101,12 @@ test("página preserva a orquestração e delega apenas a apresentação", () =>
   );
   assert.match(content, /<ConfiguracoesAccountDetailsSection/);
   assert.match(content, /onAtualizarPreferencia=\{onAtualizarPreferencia\}/);
-  assert.match(pagina, /onLimparErroUsername=\{\(\) => setErroUsername\(""\)\}/);
+  assert.match(
+    pagina,
+    /import \{ criarAcoesConteudoConfiguracoes \} from "\.\/lib\/configuracoes-content-actions";/,
+  );
+  assert.match(pagina, /criarAcoesConteudoConfiguracoes\(\{/);
+  assert.match(pagina, /onLimparErroUsername=\{onLimparErroUsername\}/);
   assert.match(pagina, /onSalvar=\{salvar\}/);
   assert.match(pagina, /onAbrirSeguranca=\{abrirSeguranca\}/);
   assert.match(pagina, /<ConfiguracoesPageOverlays/);
@@ -111,6 +123,22 @@ test("página preserva a orquestração e delega apenas a apresentação", () =>
   assert.doesNotMatch(pagina, /<ConfiguracoesSecurityPasswordModal/);
   assert.doesNotMatch(pagina, /<ConfiguracoesAccountDeletionModal/);
   assert.doesNotMatch(pagina, /<ConfiguracoesActionToast/);
+});
+
+test("aÃ§Ãµes de conteÃºdo preservam a navegaÃ§Ã£o e a limpeza do username", () => {
+  assert.match(
+    acoesConteudo,
+    /export function criarAcoesConteudoConfiguracoes\(/,
+  );
+  assert.match(acoesConteudo, /onVoltar\(\) \{\s+router\.back\(\);/);
+  assert.match(
+    acoesConteudo,
+    /onLimparErroUsername\(\) \{\s+setErroUsername\(""\);/,
+  );
+  assert.doesNotMatch(
+    acoesConteudo,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
 });
 
 test("ações dos campos dos overlays preservam as limpezas de feedback", () => {

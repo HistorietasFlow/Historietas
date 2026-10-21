@@ -958,3 +958,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os derivados de apresentação da página — tradução, visibilidade da busca e total da biblioteca — foram agrupados em um hook dedicado, preservando as dependências e os cálculos existentes.
 - Estados, ações, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 48 — Configurações
+
+- Os adaptadores de voltar e de limpar o erro de username foram isolados, preservando a navegação e a ordem dos callbacks da seção de conta.
+- Estados, hooks, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
