@@ -94,6 +94,13 @@ const blockedUsersLoaderSource = readFileSync(
   ),
   "utf8",
 );
+const profileSupabaseLoaderSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-profile-supabase-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -114,6 +121,31 @@ function importarTypescript(source) {
 }
 
 const search = await importarTypescript(searchSource);
+
+test("loader de perfil preserva as duas consultas e fallbacks", () => {
+  assert.match(
+    profileSupabaseLoaderSource,
+    /export async function carregarPerfilConfiguracoesSupabase\(/,
+  );
+  assert.match(profileSupabaseLoaderSource, /userId\.trim\(\)/);
+  assert.match(profileSupabaseLoaderSource, /idUsuarioSupabaseValido\(userIdLimpo\)/);
+  assert.equal(
+    (profileSupabaseLoaderSource.match(/\.from\("profiles"\)/g) || []).length,
+    2,
+  );
+  assert.match(profileSupabaseLoaderSource, /\.eq\("user_id", userIdLimpo\)/);
+  assert.match(profileSupabaseLoaderSource, /\.eq\("id", userIdLimpo\)/);
+  assert.equal(
+    (profileSupabaseLoaderSource.match(/\.maybeSingle\(\)/g) || []).length,
+    2,
+  );
+  assert.match(profileSupabaseLoaderSource, /normalizarPerfilConfiguracoesSupabase/);
+  assert.match(profileSupabaseLoaderSource, /catch \{\s+return null;/);
+  assert.doesNotMatch(
+    profileSupabaseLoaderSource,
+    /\.insert\(|\.update\(|\.delete\(|\.upsert\(|localStorage|useState|useEffect/,
+  );
+});
 const account = await importarTypescript(accountSource);
 const errorMessages = await importarTypescript(
   errorMessagesSource.replace(
@@ -277,7 +309,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-local-summary-utils";/,
   );
-  assert.match(pagina, /from "\.\/lib\/configuracoes-profile-utils";/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-profile-supabase-loader";/,
+  );
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-backup";/);
   assert.match(
@@ -313,6 +348,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     "deveMostrarSecaoConfiguracoes",
     "carregarResumoContaSupabase",
     "listarUsuariosBloqueadosConfiguracoes",
+    "carregarPerfilConfiguracoesSupabase",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
@@ -324,8 +360,10 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.doesNotMatch(pagina, /async function contarRegistrosResumoSupabase\(/);
   assert.doesNotMatch(pagina, /async function listarUsuariosBloqueadosConfiguracoes\(/);
+  assert.doesNotMatch(pagina, /async function carregarPerfilConfiguracoesSupabase\(/);
   assert.match(pagina, /carregarResumoContaSupabase\(usuarioCarregado\.id\)/);
   assert.match(pagina, /listarUsuariosBloqueadosConfiguracoes\(\)\.catch/);
+  assert.match(pagina, /carregarPerfilConfiguracoesSupabase\(data\.user\.id\)/);
 
   assert.doesNotMatch(
     pagina,
