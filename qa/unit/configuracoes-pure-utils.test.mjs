@@ -52,6 +52,13 @@ const preferenceActionsHookSource = readFileSync(
   ),
   "utf8",
 );
+const pagePresentationHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-page-presentation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-models.ts",
@@ -691,7 +698,7 @@ test("validações dos formulários de segurança preservam ordem, idiomas e reg
 test("Configurações delega as fronteiras extraídas", () => {
   assert.match(
     pagina,
-    /from "\.\/hooks\/use-configuracoes-page-view-model";/,
+    /from "\.\/hooks\/use-configuracoes-page-presentation";/,
   );
   assert.match(
     secaoConta,
@@ -825,7 +832,37 @@ test("Configurações delega as fronteiras extraídas", () => {
   }
 
   assert.doesNotMatch(pagina, /function deveMostrar\(/);
-  assert.match(pagina, /useConfiguracoesPageViewModel\(\{/);
+  assert.match(
+    pagina,
+    /import \{ useConfiguracoesPagePresentation \} from "\.\/hooks\/use-configuracoes-page-presentation";/,
+  );
+  assert.match(pagina, /useConfiguracoesPagePresentation\(\{/);
+  assert.doesNotMatch(pagina, /useConfiguracoesPageViewModel\(\{/);
+  assert.doesNotMatch(pagina, /useHistorietasTheme\(pageStyle\)/);
+  assert.doesNotMatch(pagina, /useNotificacoes\(\)/);
+  assert.doesNotMatch(pagina, /useHistorietasLanguage\(\)/);
+  assert.match(pagePresentationHookSource, /^"use client";/);
+  assert.match(
+    pagePresentationHookSource,
+    /import \{ useHistorietasTheme \} from "\.\.\/\.\.\/\.\.\/lib\/historietasTheme";/,
+  );
+  assert.match(
+    pagePresentationHookSource,
+    /import \{ useNotificacoes \} from "\.\.\/\.\.\/\.\.\/components\/NotificacoesProvider";/,
+  );
+  assert.match(
+    pagePresentationHookSource,
+    /import \{ useHistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/components\/HistorietasLanguageProvider";/,
+  );
+  assert.match(pagePresentationHookSource, /useHistorietasTheme\(pageStyle\)/);
+  assert.match(pagePresentationHookSource, /useNotificacoes\(\)/);
+  assert.match(pagePresentationHookSource, /useHistorietasLanguage\(\)/);
+  assert.match(pagePresentationHookSource, /const usuarioIdLogado = usuario\?\.id \|\| "";/);
+  assert.match(pagePresentationHookSource, /useConfiguracoesPageViewModel\(\{/);
+  assert.match(
+    pagePresentationHookSource,
+    /return \{\s+pageThemeStyle,\s+notificacoesNaoLidas,\s+language,\s+usuarioIdLogado,\s+t,\s+deveMostrar,\s+totalBiblioteca,\s+\};/,
+  );
   assert.match(pageViewModelHookSource, /^"use client";/);
   assert.match(pageViewModelHookSource, /import \{ useMemo \} from "react";/);
   assert.match(

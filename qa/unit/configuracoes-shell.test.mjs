@@ -41,6 +41,13 @@ const securityModalBodyLock = readFileSync(
   ),
   "utf8",
 );
+const pagePresentation = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-page-presentation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const backupActions = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-backup-actions.ts",
@@ -210,7 +217,23 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   }
 
   assert.match(content, /from "\.\.\/lib\/configuracoes-shell-styles";/);
-  assert.match(pagina, /from "\.\/lib\/configuracoes-security-styles";/);
+  assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-page-presentation";/,
+  );
+  assert.match(pagina, /useConfiguracoesPagePresentation\(\{/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/configuracoes-security-styles";/);
+  assert.match(
+    pagePresentation,
+    /import \{ pageStyle \} from "\.\.\/lib\/configuracoes-security-styles";/,
+  );
+  assert.match(pagePresentation, /useHistorietasTheme\(pageStyle\)/);
+  assert.match(pagePresentation, /useNotificacoes\(\)/);
+  assert.match(pagePresentation, /useHistorietasLanguage\(\)/);
+  assert.doesNotMatch(
+    pagePresentation,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
   assert.match(content, /<section style=\{containerStyle\}>/);
   assert.match(pagina, /const \[busca, setBusca\] = useState\(""\);/);
   assert.match(

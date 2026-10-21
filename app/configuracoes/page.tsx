@@ -2,12 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  historietasThemeCss,
-  useHistorietasTheme,
-} from "../../lib/historietasTheme";
-import { useNotificacoes } from "../../components/NotificacoesProvider";
-import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import { historietasThemeCss } from "../../lib/historietasTheme";
 import { ConfiguracoesPageContent } from "./components/configuracoes-page-content";
 import { ConfiguracoesPageLoadingState } from "./components/configuracoes-page-loading-state";
 import { ConfiguracoesPageOverlays } from "./components/configuracoes-page-overlays";
@@ -17,7 +12,7 @@ import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-acc
 import { useConfiguracoesInitialAccess } from "./hooks/use-configuracoes-initial-access";
 import { useConfiguracoesAccountActionHandlers } from "./hooks/use-configuracoes-account-action-handlers";
 import { useConfiguracoesPreferenceActions } from "./hooks/use-configuracoes-preference-actions";
-import { useConfiguracoesPageViewModel } from "./hooks/use-configuracoes-page-view-model";
+import { useConfiguracoesPagePresentation } from "./hooks/use-configuracoes-page-presentation";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
@@ -35,7 +30,6 @@ import type {
   ResumoLocal,
   UsuarioConfiguracoes,
 } from "./lib/configuracoes-account-models";
-import { pageStyle } from "./lib/configuracoes-security-styles";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
@@ -86,17 +80,19 @@ export default function ConfiguracoesPage() {
     setMensagemAcao,
     mostrarMensagemAcao,
   } = useConfiguracoesActionMessage();
-  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const { notificacoesNaoLidas } = useNotificacoes();
-  const { language } = useHistorietasLanguage();
-
-  const usuarioIdLogado = usuario?.id || "";
-  const { t, deveMostrar, totalBiblioteca } =
-    useConfiguracoesPageViewModel({
-      language,
-      busca,
-      resumo,
-    });
+  const {
+    pageThemeStyle,
+    notificacoesNaoLidas,
+    language,
+    usuarioIdLogado,
+    t,
+    deveMostrar,
+    totalBiblioteca,
+  } = useConfiguracoesPagePresentation({
+    busca,
+    resumo,
+    usuario,
+  });
 
   const {
     mostrarUsuariosBloqueados,
