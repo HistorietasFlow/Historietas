@@ -838,3 +838,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A persistência do perfil no Supabase foi isolada, preservando busca, atualização, criação e fallbacks.
 - A limpeza local posterior à exclusão de conta foi movida para helper dedicado, preservando isolamento por usuário e falhas não bloqueantes.
+
+## Registro da Fase 23 — Configurações
+
+- As mensagens de erro da exclusão de conta foram isoladas, preservando códigos, idiomas e fallback original.
+- A preparação do download do backup foi movida para helper dedicado, preservando Blob, URL temporária, nome do arquivo e limpeza adiada.

@@ -115,6 +115,20 @@ const accountDeletionLocalCleanupSource = readFileSync(
   ),
   "utf8",
 );
+const accountDeletionErrorMessagesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-deletion-error-messages.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const accountBackupDownloadSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-backup-download.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -214,6 +228,13 @@ test("limpeza local após exclusão preserva isolamento e fallbacks", () => {
 const account = await importarTypescript(accountSource);
 const errorMessages = await importarTypescript(
   errorMessagesSource.replace(
+    /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/lib\/i18n";\r?\nimport \{ textoIdioma \} from "\.\/configuracoes-search-utils";/,
+    `const textoIdioma = (language, portugues, ingles, espanhol) =>
+  language === "en" ? ingles : language === "es" ? espanhol : portugues;`,
+  ),
+);
+const accountDeletionErrorMessages = await importarTypescript(
+  accountDeletionErrorMessagesSource.replace(
     /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/lib\/i18n";\r?\nimport \{ textoIdioma \} from "\.\/configuracoes-search-utils";/,
     `const textoIdioma = (language, portugues, ingles, espanhol) =>
   language === "en" ? ingles : language === "es" ? espanhol : portugues;`,
@@ -357,6 +378,73 @@ test("modelos e traduções de erro de Configurações preservam contratos", () 
   assert.match(accountBackupSource, /backup\[CONFIG_STORAGE_KEY\] = carregarPreferencias/);
 });
 
+test("mensagens de exclusão de conta preservam idiomas e fallback", () => {
+  assert.equal(
+    accountDeletionErrorMessages.traduzirErroExclusaoContaConfiguracoes(
+      "senha_incorreta",
+      "fallback",
+      "pt-BR",
+    ),
+    "A senha atual está incorreta.",
+  );
+  assert.equal(
+    accountDeletionErrorMessages.traduzirErroExclusaoContaConfiguracoes(
+      "muitas_tentativas",
+      "fallback",
+      "en",
+    ),
+    "Too many confirmation attempts. Wait before trying again.",
+  );
+  assert.equal(
+    accountDeletionErrorMessages.traduzirErroExclusaoContaConfiguracoes(
+      "protecao_indisponivel",
+      "fallback",
+      "es",
+    ),
+    "No se pudo validar la seguridad de la operación ahora. Inténtalo de nuevo.",
+  );
+  assert.equal(
+    accountDeletionErrorMessages.traduzirErroExclusaoContaConfiguracoes(
+      "desconhecido",
+      "fallback",
+      "pt-BR",
+    ),
+    "fallback",
+  );
+  assert.match(accountDeletionErrorMessagesSource, /exclusao_falhou/);
+  assert.doesNotMatch(
+    accountDeletionErrorMessagesSource,
+    /supabase|localStorage|useState|useEffect|window|document/,
+  );
+});
+
+test("download do backup preserva Blob, URL e limpeza adiada", () => {
+  assert.match(
+    accountBackupDownloadSource,
+    /export function baixarBackupConfiguracoes\(backup: string\)/,
+  );
+  assert.match(accountBackupDownloadSource, /new Blob\(\[backup\]/);
+  assert.match(
+    accountBackupDownloadSource,
+    /type: "application\/json;charset=utf-8"/,
+  );
+  assert.match(accountBackupDownloadSource, /URL\.createObjectURL\(arquivo\)/);
+  assert.match(
+    accountBackupDownloadSource,
+    /historietas-backup-\$\{dataAtual\}\.json/,
+  );
+  assert.match(accountBackupDownloadSource, /document\.body\.appendChild\(link\)/);
+  assert.match(accountBackupDownloadSource, /document\.body\.removeChild\(link\)/);
+  assert.match(
+    accountBackupDownloadSource,
+    /window\.setTimeout\(\(\) => URL\.revokeObjectURL\(url\), 0\)/,
+  );
+  assert.doesNotMatch(
+    accountBackupDownloadSource,
+    /supabase|localStorage|useState|useEffect|JSX/,
+  );
+});
+
 test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /from "\.\/lib\/configuracoes-search-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-utils";/);
@@ -386,8 +474,16 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-account-deletion-local-cleanup";/,
   );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-deletion-error-messages";/,
+  );
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-backup";/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-backup-download";/,
+  );
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-search-visibility-utils";/,
@@ -424,6 +520,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     "carregarPerfilConfiguracoesSupabase",
     "salvarPerfilConfiguracoesSupabase",
     "limparDadosLocaisContaExcluida",
+    "traduzirErroExclusaoContaConfiguracoes",
+    "baixarBackupConfiguracoes",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
