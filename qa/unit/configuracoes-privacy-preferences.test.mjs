@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const accountActionHandlers = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const initialAccessHook = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-initial-access.ts",
@@ -142,7 +149,12 @@ test("Configurações consome a fronteira de privacidade sem manter duplicação
   );
   assert.match(profileSaveAction, /salvarPreferenciasPrivacidade\(/);
   assert.match(profileSaveAction, /salvarPerfilConfiguracoesSupabase\(\{/);
-  assert.match(page, /salvarConfiguracoesPerfil\(\{/);
+  assert.match(
+    page,
+    /from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
+  );
+  assert.match(page, /useConfiguracoesAccountActionHandlers\(\{/);
+  assert.match(accountActionHandlers, /salvarConfiguracoesPerfil\(\{/);
   assert.doesNotMatch(page, /salvarPreferenciasPrivacidade\(/);
 });
 

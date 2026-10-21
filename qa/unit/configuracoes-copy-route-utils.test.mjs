@@ -6,6 +6,13 @@ const copy = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-cop
 const route = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-route-utils.ts", import.meta.url), "utf8");
 const backupActions = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-account-backup-actions.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../../app/configuracoes/page.tsx", import.meta.url), "utf8");
+const accountActionHandlers = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const initialAccessHook = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-initial-access.ts",
@@ -34,9 +41,16 @@ test("rota de login e consumidores de Configurações permanecem idênticos", ()
   assert.match(route, /export function criarLoginHrefConfiguracoes\(\)/);
   assert.match(route, /redirectTo: "\/configuracoes"/);
   assert.match(route, /return `\/login\?\$\{params\.toString\(\)\}`;/);
-  assert.match(page, /from "\.\/lib\/configuracoes-account-backup-actions";/);
-  assert.match(page, /from "\.\/lib\/configuracoes-route-utils";/);
-  assert.match(page, /from "\.\/lib\/configuracoes-profile-save-action";/);
+  assert.match(
+    page,
+    /from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
+  );
+  assert.match(
+    accountActionHandlers,
+    /from "\.\.\/lib\/configuracoes-account-backup-actions";/,
+  );
+  assert.match(accountActionHandlers, /from "\.\.\/lib\/configuracoes-route-utils";/);
+  assert.match(accountActionHandlers, /from "\.\.\/lib\/configuracoes-profile-save-action";/);
   assert.match(
     page,
     /import \{ useConfiguracoesInitialAccess \} from "\.\/hooks\/use-configuracoes-initial-access";/,
@@ -46,7 +60,11 @@ test("rota de login e consumidores de Configurações permanecem idênticos", ()
   assert.doesNotMatch(page, /function criarLoginHrefConfiguracoes\(/);
   assert.doesNotMatch(page, /async function verificarAcesso\(/);
   assert.match(page, /useConfiguracoesInitialAccess\(\{/);
-  assert.equal((page.match(/criarLoginHrefConfiguracoes\(/g) || []).length, 1);
+  assert.doesNotMatch(page, /criarLoginHrefConfiguracoes\(/);
+  assert.equal(
+    (accountActionHandlers.match(/criarLoginHrefConfiguracoes\(/g) || []).length,
+    1,
+  );
   assert.equal(
     (initialAccessHook.match(/criarLoginHrefConfiguracoes\(\)/g) || []).length,
     2,

@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const accountActionHandlers = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const cssGlobal = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-page-css.ts",
@@ -72,7 +79,12 @@ test("Configurações mantém os cinco consumidores na página", () => {
   }
 
   assert.match(pagina, /if \(verificandoAcesso\) \{/);
-  assert.match(pagina, /function salvar\(/);
-  assert.match(pagina, /function alterarSenha\(/);
-  assert.match(pagina, /function excluirConta\(/);
+  assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
+  );
+  assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
+  assert.match(accountActionHandlers, /async function salvar\(/);
+  assert.match(accountActionHandlers, /async function alterarSenha\(/);
+  assert.match(accountActionHandlers, /async function excluirConta\(/);
 });

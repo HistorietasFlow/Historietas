@@ -913,3 +913,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição das ações de preferências e privacidade foi isolada em hook, preservando argumentos, ordem das chamadas, persistência e mensagens.
 - Estados, apresentação, autenticação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 39 — Configurações
+
+- Os adaptadores das ações de salvar perfil, alterar senha, excluir conta, copiar/baixar backup e sair da conta foram isolados em hook, preservando argumentos, redirecionamentos, atualização de rota, mensagens e ordem das chamadas.
+- As ações de domínio, autenticação, persistência, RLS, estados e apresentação permaneceram sem alteração intencional de comportamento.

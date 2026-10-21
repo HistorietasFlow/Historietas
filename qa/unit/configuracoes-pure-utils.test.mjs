@@ -220,6 +220,13 @@ const blockedUsersHookSource = readFileSync(
   ),
   "utf8",
 );
+const accountActionHandlersHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -667,7 +674,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-privacy-preferences";/,
   );
-  assert.match(pagina, /from "\.\/lib\/configuracoes-password-change-action";/);
+  assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
+  );
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-models";/);
   assert.doesNotMatch(
     pagina,
@@ -682,17 +692,20 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/hooks\/use-configuracoes-initial-access";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-profile-save-action";/,
+    accountActionHandlersHookSource,
+    /from "\.\.\/lib\/configuracoes-profile-save-action";/,
   );
-  assert.match(pagina, /from "\.\/lib\/configuracoes-account-deletion-action";/);
+  assert.match(
+    accountActionHandlersHookSource,
+    /from "\.\.\/lib\/configuracoes-account-deletion-action";/,
+  );
   assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/configuracoes-account-preferences";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-account-backup-actions";/,
+    accountActionHandlersHookSource,
+    /from "\.\.\/lib\/configuracoes-account-backup-actions";/,
   );
   assert.match(
     pagina,
@@ -732,8 +745,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/lib\/configuracoes-account-summary-supabase";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-profile-save-action";/,
+    accountActionHandlersHookSource,
+    /from "\.\.\/lib\/configuracoes-profile-save-action";/,
   );
   assert.doesNotMatch(
     pagina,
@@ -820,7 +833,7 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(profileSaveActionSource, /carregarResumoContaSupabase\(userIdSeguro\)/);
   assert.doesNotMatch(pagina, /async function salvarConfiguracoesPerfil\(/);
   assert.doesNotMatch(pagina, /function limparDadosLocaisContaExcluida\(/);
-  assert.match(pagina, /salvarConfiguracoesPerfil\(\{/);
+  assert.match(accountActionHandlersHookSource, /salvarConfiguracoesPerfil\(\{/);
   assert.match(accountDeletionActionSource, /export async function excluirContaConfiguracoes\(/);
   assert.match(accountDeletionActionSource, /event\.preventDefault\(\);/);
   assert.match(
@@ -849,9 +862,9 @@ test("Configurações delega as fronteiras extraídas", () => {
     /useState|useEffect|localStorage|sessionStorage|JSX/,
   );
   assert.doesNotMatch(pagina, /async function excluirContaConfiguracoes\(/);
-  assert.match(pagina, /excluirContaConfiguracoes\(\{/);
-  assert.match(pagina, /redirecionarLogin: \(\) => router\.replace\("\/login"\)/);
-  assert.match(pagina, /atualizarRota: \(\) => router\.refresh\(\)/);
+  assert.match(accountActionHandlersHookSource, /excluirContaConfiguracoes\(\{/);
+  assert.match(accountActionHandlersHookSource, /redirecionarLogin: \(\) => router\.replace\("\/login"\)/);
+  assert.match(accountActionHandlersHookSource, /atualizarRota: \(\) => router\.refresh\(\)/);
   assert.match(passwordChangeActionSource, /export async function alterarSenhaConfiguracoes\(/);
   assert.match(passwordChangeActionSource, /event\.preventDefault\(\);/);
   assert.match(
@@ -889,9 +902,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     /useState|useEffect|localStorage|sessionStorage|JSX/,
   );
   assert.doesNotMatch(pagina, /async function alterarSenhaConfiguracoes\(/);
-  assert.match(pagina, /alterarSenhaConfiguracoes\(\{/);
-  assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
-  assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
+  assert.match(accountActionHandlersHookSource, /alterarSenhaConfiguracoes\(\{/);
+  assert.match(accountActionHandlersHookSource, /copiarBackupConfiguracoes\(\{/);
+  assert.match(accountActionHandlersHookSource, /baixarBackupContaConfiguracoes\(\{/);
+  assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
   assert.match(pagina, /useConfiguracoesSecurityModalState\(\)/);
   assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
   assert.match(
@@ -917,7 +931,8 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
   assert.doesNotMatch(pagina, /!\/\[A-Za-zÀ-ÖØ-öø-ÿ\]\/.test\(novaSenha\)/);
   assert.doesNotMatch(pagina, /localStorage/);
-  assert.match(pagina, /supabase\./);
+  assert.doesNotMatch(pagina, /supabase\./);
+  assert.match(accountActionHandlersHookSource, /supabase\.auth\.signOut\(\)/);
   assert.doesNotMatch(searchSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(accountSource, /useState|useEffect|supabase|localStorage/);
   assert.doesNotMatch(privacySource, /useState|useEffect|useMemo/);

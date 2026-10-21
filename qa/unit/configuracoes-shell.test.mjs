@@ -48,6 +48,13 @@ const backupActions = readFileSync(
   ),
   "utf8",
 );
+const accountActionHandlers = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estilos de segurança preservam modais, privacidade e spreads", () => {
   for (const style of [
@@ -190,18 +197,23 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   );
   assert.match(pagina, /useConfiguracoesSecurityModalBodyLock\(\{/);
   assert.doesNotMatch(pagina, /document\.body\.style\.overflow = "hidden"/);
-  assert.match(pagina, /supabase\./);
   assert.match(
     pagina,
-    /from "\.\/lib\/configuracoes-account-deletion-action";/,
+    /from "\.\/hooks\/use-configuracoes-account-action-handlers";/,
+  );
+  assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
+  assert.match(accountActionHandlers, /supabase\./);
+  assert.match(
+    accountActionHandlers,
+    /from "\.\.\/lib\/configuracoes-account-deletion-action";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-account-backup-actions";/,
+    accountActionHandlers,
+    /from "\.\.\/lib\/configuracoes-account-backup-actions";/,
   );
-  assert.match(pagina, /copiarBackupConfiguracoes\(\{/);
-  assert.match(pagina, /baixarBackupContaConfiguracoes\(\{/);
-  assert.match(pagina, /excluirContaConfiguracoes\(\{/);
+  assert.match(accountActionHandlers, /copiarBackupConfiguracoes\(\{/);
+  assert.match(accountActionHandlers, /baixarBackupContaConfiguracoes\(\{/);
+  assert.match(accountActionHandlers, /excluirContaConfiguracoes\(\{/);
   assert.doesNotMatch(pagina, /limparDadosLocaisContaExcluida\(usuarioIdLogado\)/);
   assert.doesNotMatch(pagina, /localStorage/);
 
