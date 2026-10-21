@@ -38,6 +38,13 @@ const initialAccessHookSource = readFileSync(
   ),
   "utf8",
 );
+const preferenceActionsHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-preference-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-models.ts",
@@ -700,6 +707,10 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/hooks\/use-configuracoes-admin-access";/,
   );
   assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-preference-actions";/,
+  );
+  assert.match(
     accountBackupActionsSource,
     /from "\.\/configuracoes-account-backup";/,
   );
@@ -711,7 +722,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-account-preference-state-utils";/,
   );
-  assert.match(pagina, /from "\.\/lib\/configuracoes-privacy-actions";/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/configuracoes-privacy-actions";/);
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-search-visibility-utils";/,
@@ -893,6 +904,16 @@ test("Configurações delega as fronteiras extraídas", () => {
     /useConfiguracoesAdminAccess\(\{\s*verificandoAcesso,\s*setAdminLiberado,\s*\}\);/,
   );
   assert.doesNotMatch(pagina, /async function verificarAdmin\(/);
+  assert.doesNotMatch(pagina, /function atualizarPreferencia</);
+  assert.doesNotMatch(pagina, /function alternarReceberAvisos\(/);
+  assert.doesNotMatch(pagina, /function aplicarPrivacidadeAtualizada\(/);
+  assert.doesNotMatch(pagina, /function atualizarPrivacidade</);
+  assert.doesNotMatch(pagina, /function alternarPerfilPrivado\(/);
+  assert.doesNotMatch(pagina, /function alternarAprovacaoNovosSeguidores\(/);
+  assert.match(
+    pagina,
+    /useConfiguracoesPreferenceActions\(\{\s*preferencias,\s*privacidade,\s*usuarioIdLogado,\s*setPreferencias,\s*setPrivacidade,\s*setMensagemAcao,\s*mostrarMensagemAcao,\s*traduzirTexto: t,\s*\}\);/,
+  );
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
   assert.doesNotMatch(pagina, /!\/\[A-Za-zÀ-ÖØ-öø-ÿ\]\/.test\(novaSenha\)/);
   assert.doesNotMatch(pagina, /localStorage/);
@@ -979,6 +1000,54 @@ test("hook inicial preserva autenticacao, cargas paralelas e cancelamento", () =
   assert.match(initialAccessHookSource, /return \(\) => \{\s*cancelado = true;\s*\};/);
   assert.match(initialAccessHookSource, /\}, \[router\]\);/);
   assert.doesNotMatch(initialAccessHookSource, /localStorage|sessionStorage|window|document|JSX/);
+});
+
+test("hook de acoes de preferencias preserva as composicoes da pagina", () => {
+  assert.match(preferenceActionsHookSource, /^"use client";/);
+  assert.match(
+    preferenceActionsHookSource,
+    /export function useConfiguracoesPreferenceActions\(/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /from "\.\.\/lib\/configuracoes-preference-actions";/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /from "\.\.\/lib\/configuracoes-privacy-actions";/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /atualizarPreferenciaConfiguracoes\(\{\s*campo,\s*valor,\s*setPreferencias,\s*\}\)/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /alternarReceberAvisosConfiguracoes\(\{\s*preferencias,\s*setPreferencias,\s*usuarioIdLogado,\s*\}\)/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /aplicarPrivacidadeAtualizadaConfiguracoes\(\{[\s\S]*?privacidadeAtualizada,[\s\S]*?setPrivacidade,[\s\S]*?setMensagemAcao,[\s\S]*?usuarioIdLogado,[\s\S]*?mostrarMensagemAcao,[\s\S]*?traduzirTexto,[\s\S]*?\}\)/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /atualizarPrivacidadeConfiguracoes\(\{\s*privacidade,\s*campo,\s*valor,\s*aplicarPrivacidadeAtualizada,\s*\}\)/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /alternarPerfilPrivadoConfiguracoes\(\{\s*privacidade,\s*aplicarPrivacidadeAtualizada,\s*\}\)/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /alternarAprovacaoNovosSeguidoresConfiguracoes\(\{\s*privacidade,\s*aplicarPrivacidadeAtualizada,\s*\}\)/,
+  );
+  assert.match(
+    preferenceActionsHookSource,
+    /return \{[\s\S]*?atualizarPreferencia,[\s\S]*?alternarReceberAvisos,[\s\S]*?aplicarPrivacidadeAtualizada,[\s\S]*?atualizarPrivacidade,[\s\S]*?alternarPerfilPrivado,[\s\S]*?alternarAprovacaoNovosSeguidores,[\s\S]*?\};/,
+  );
+  assert.doesNotMatch(
+    preferenceActionsHookSource,
+    /supabase|localStorage|sessionStorage|window|document|JSX/,
+  );
 });
 
 test("ações dos modais preservam resets, guardas e fronteira local", () => {

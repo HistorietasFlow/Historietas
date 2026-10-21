@@ -31,6 +31,7 @@ import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-
 import { useConfiguracoesBlockedUsers } from "./hooks/use-configuracoes-blocked-users";
 import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-access";
 import { useConfiguracoesInitialAccess } from "./hooks/use-configuracoes-initial-access";
+import { useConfiguracoesPreferenceActions } from "./hooks/use-configuracoes-preference-actions";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
@@ -62,17 +63,7 @@ import {
 import {
   calcularTotalBibliotecaConfiguracoes,
 } from "./lib/configuracoes-account-preference-state-utils";
-import {
-  alternarReceberAvisosConfiguracoes,
-  aplicarPrivacidadeAtualizadaConfiguracoes,
-  atualizarPreferenciaConfiguracoes,
-} from "./lib/configuracoes-preference-actions";
 import { sairDaContaConfiguracoes } from "./lib/configuracoes-sign-out-action";
-import {
-  alternarAprovacaoNovosSeguidoresConfiguracoes,
-  alternarPerfilPrivadoConfiguracoes,
-  atualizarPrivacidadeConfiguracoes,
-} from "./lib/configuracoes-privacy-actions";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -230,62 +221,23 @@ export default function ConfiguracoesPage() {
     [resumo.concluidas, resumo.favoritas, resumo.seguindoObras],
   );
 
-  function atualizarPreferencia<K extends keyof PreferenciasConta>(
-    campo: K,
-    valor: PreferenciasConta[K],
-  ) {
-    atualizarPreferenciaConfiguracoes({
-      campo,
-      valor,
-      setPreferencias,
-    });
-  }
-
-  function alternarReceberAvisos() {
-    alternarReceberAvisosConfiguracoes({
-      preferencias,
-      setPreferencias,
-      usuarioIdLogado,
-    });
-  }
-
-  function aplicarPrivacidadeAtualizada(
-    privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
-  ) {
-    aplicarPrivacidadeAtualizadaConfiguracoes({
-      privacidadeAtualizada,
-      setPrivacidade,
-      setMensagemAcao,
-      usuarioIdLogado,
-      mostrarMensagemAcao,
-      traduzirTexto: t,
-    });
-  }
-
-  function atualizarPrivacidade<
-    K extends keyof PreferenciasPrivacidadeHistorietas,
-  >(campo: K, valor: PreferenciasPrivacidadeHistorietas[K]) {
-    atualizarPrivacidadeConfiguracoes({
-      privacidade,
-      campo,
-      valor,
-      aplicarPrivacidadeAtualizada,
-    });
-  }
-
-  function alternarPerfilPrivado() {
-    alternarPerfilPrivadoConfiguracoes({
-      privacidade,
-      aplicarPrivacidadeAtualizada,
-    });
-  }
-
-  function alternarAprovacaoNovosSeguidores() {
-    alternarAprovacaoNovosSeguidoresConfiguracoes({
-      privacidade,
-      aplicarPrivacidadeAtualizada,
-    });
-  }
+  const {
+    atualizarPreferencia,
+    alternarReceberAvisos,
+    aplicarPrivacidadeAtualizada,
+    atualizarPrivacidade,
+    alternarPerfilPrivado,
+    alternarAprovacaoNovosSeguidores,
+  } = useConfiguracoesPreferenceActions({
+    preferencias,
+    privacidade,
+    usuarioIdLogado,
+    setPreferencias,
+    setPrivacidade,
+    setMensagemAcao,
+    mostrarMensagemAcao,
+    traduzirTexto: t,
+  });
 
 
   async function salvar() {

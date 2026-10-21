@@ -20,6 +20,13 @@ const initialAccessHook = readFileSync(
   ),
   "utf8",
 );
+const preferenceActionsHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-preference-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const actions = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-preference-actions.ts",
@@ -169,11 +176,12 @@ test("ações de preferências preservam estado, persistência e sincronização
 
   assert.match(
     page,
-    /from "\.\/lib\/configuracoes-preference-actions";/,
+    /from "\.\/hooks\/use-configuracoes-preference-actions";/,
   );
-  assert.match(page, /atualizarPreferenciaConfiguracoes\(\{/);
-  assert.match(page, /alternarReceberAvisosConfiguracoes\(\{/);
-  assert.match(page, /aplicarPrivacidadeAtualizadaConfiguracoes\(\{/);
+  assert.match(page, /useConfiguracoesPreferenceActions\(\{/);
+  assert.match(preferenceActionsHook, /atualizarPreferenciaConfiguracoes\(\{/);
+  assert.match(preferenceActionsHook, /alternarReceberAvisosConfiguracoes\(\{/);
+  assert.match(preferenceActionsHook, /aplicarPrivacidadeAtualizadaConfiguracoes\(\{/);
   assert.doesNotMatch(page, /void salvarPreferenciasPrivacidade\(/);
   assert.doesNotMatch(page, /criarPreferenciasComAvisosAlternadosConfiguracoes/);
 });
@@ -186,5 +194,14 @@ test("ações de privacidade preservam as três composições da página", () =>
   assert.match(privacyActions, /export function alternarAprovacaoNovosSeguidoresConfiguracoes/);
   assert.match(privacyActions, /criarPrivacidadeComAprovacaoAlternadaConfiguracoes/);
   assert.doesNotMatch(privacyActions, /useState|useEffect|localStorage|supabase\./);
-  assert.match(page, /from "\.\/lib\/configuracoes-privacy-actions";/);
+  assert.match(
+    page,
+    /from "\.\/hooks\/use-configuracoes-preference-actions";/,
+  );
+  assert.match(preferenceActionsHook, /atualizarPrivacidadeConfiguracoes\(\{/);
+  assert.match(preferenceActionsHook, /alternarPerfilPrivadoConfiguracoes\(\{/);
+  assert.match(
+    preferenceActionsHook,
+    /alternarAprovacaoNovosSeguidoresConfiguracoes\(\{/,
+  );
 });

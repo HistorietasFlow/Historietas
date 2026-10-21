@@ -908,3 +908,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle inicial de acesso foi isolado, preservando autenticação, perfil, preferências, resumo, usuários bloqueados, cargas paralelas, ordem dos setters, redirecionamento e cancelamento.
 - Estados, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 38 — Configurações
+
+- A composição das ações de preferências e privacidade foi isolada em hook, preservando argumentos, ordem das chamadas, persistência e mensagens.
+- Estados, apresentação, autenticação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
