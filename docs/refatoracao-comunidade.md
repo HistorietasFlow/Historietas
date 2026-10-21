@@ -818,3 +818,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A visibilidade das seções pela busca foi isolada em helper puro, preservando normalização, aliases e fallback.
 - Estados, JSX e operações remotas continuaram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 19 — Configurações
+
+- A leitura remota do resumo da conta foi isolada, preservando consultas, contagens, fallbacks locais e avisos.
+- Autenticação, estado, JSX e demais operações da página continuaram sem alteração intencional de comportamento.

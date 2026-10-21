@@ -80,6 +80,13 @@ const searchVisibilitySource = readFileSync(
   ),
   "utf8",
 );
+const accountSummarySupabaseSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-summary-supabase.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -130,6 +137,41 @@ test("visibilidade da busca preserva aliases e fallbacks", () => {
   assert.doesNotMatch(
     searchVisibilitySource,
     /useState|useEffect|supabase|localStorage|window|document/,
+  );
+});
+
+test("resumo remoto da conta preserva queries, fallbacks e contagens", () => {
+  assert.match(
+    accountSummarySupabaseSource,
+    /export async function carregarResumoContaSupabase\(/,
+  );
+  assert.match(
+    accountSummarySupabaseSource,
+    /async function contarRegistrosResumoSupabase\(/,
+  );
+  assert.match(accountSummarySupabaseSource, /userId\.trim\(\)/);
+  assert.match(accountSummarySupabaseSource, /criarResumoLocal\(userIdLimpo\)/);
+  assert.match(accountSummarySupabaseSource, /idUsuarioSupabaseValido\(userIdLimpo\)/);
+  assert.match(accountSummarySupabaseSource, /Promise\.all\(\[/);
+
+  for (const tabela of [
+    "obras",
+    "favoritos",
+    "concluidas",
+    "seguindo_obras",
+    "seguindo_usuarios",
+  ]) {
+    assert.match(
+      accountSummarySupabaseSource,
+      new RegExp(`from\\("${tabela}"\\)`),
+    );
+  }
+
+  assert.match(accountSummarySupabaseSource, /count: "exact", head: true/);
+  assert.match(accountSummarySupabaseSource, /console\.warn/);
+  assert.doesNotMatch(
+    accountSummarySupabaseSource,
+    /\.insert\(|\.update\(|\.delete\(|\.upsert\(|localStorage|useState|useEffect/,
   );
 });
 
@@ -207,13 +249,20 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-account-storage-constants";/,
   );
-  assert.match(pagina, /from "\.\/lib\/configuracoes-local-summary-utils";/);
+  assert.doesNotMatch(
+    pagina,
+    /from "\.\/lib\/configuracoes-local-summary-utils";/,
+  );
   assert.match(pagina, /from "\.\/lib\/configuracoes-profile-utils";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-preferences";/);
   assert.match(pagina, /from "\.\/lib\/configuracoes-account-backup";/);
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-search-visibility-utils";/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/configuracoes-account-summary-supabase";/,
   );
 
   for (const helper of [
@@ -234,6 +283,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     "salvarPreferencias",
     "criarBackupLocal",
     "deveMostrarSecaoConfiguracoes",
+    "carregarResumoContaSupabase",
   ]) {
     assert.doesNotMatch(pagina, new RegExp("function " + helper + "\\("));
   }
@@ -243,6 +293,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /deveMostrarSecaoConfiguracoes\(buscaNormalizada, \.\.\.termos\)/,
   );
+  assert.doesNotMatch(pagina, /async function contarRegistrosResumoSupabase\(/);
+  assert.match(pagina, /carregarResumoContaSupabase\(usuarioCarregado\.id\)/);
 
   assert.doesNotMatch(
     pagina,
