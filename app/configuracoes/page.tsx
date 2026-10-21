@@ -61,11 +61,13 @@ import { listarUsuariosBloqueadosConfiguracoes } from "./lib/configuracoes-block
 import { carregarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-supabase-loader";
 import { salvarPerfilConfiguracoesSupabase } from "./lib/configuracoes-profile-supabase-saver";
 import { limparDadosLocaisContaExcluida } from "./lib/configuracoes-account-deletion-local-cleanup";
+import { traduzirErroExclusaoContaConfiguracoes } from "./lib/configuracoes-account-deletion-error-messages";
 import {
   carregarPreferencias,
   salvarPreferencias,
 } from "./lib/configuracoes-account-preferences";
 import { criarBackupLocal } from "./lib/configuracoes-account-backup";
+import { baixarBackupConfiguracoes } from "./lib/configuracoes-account-backup-download";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -629,54 +631,6 @@ export default function ConfiguracoesPage() {
     setErroExclusaoConta("");
   }
 
-  function traduzirErroExclusaoConta(codigo: string, mensagem: string) {
-    const mensagens: Record<string, [string, string, string]> = {
-      senha_obrigatoria: [
-        "Digite sua senha atual.",
-        "Enter your current password.",
-        "Escribe tu contraseña actual.",
-      ],
-      confirmacao_invalida: [
-        "Digite EXCLUIR exatamente como aparece para confirmar.",
-        "Type DELETE exactly as shown to confirm.",
-        "Escribe ELIMINAR exactamente como aparece para confirmar.",
-      ],
-      senha_incorreta: [
-        "A senha atual está incorreta.",
-        "The current password is incorrect.",
-        "La contraseña actual es incorrecta.",
-      ],
-      muitas_tentativas: [
-        "Muitas tentativas de confirmação. Aguarde antes de tentar novamente.",
-        "Too many confirmation attempts. Wait before trying again.",
-        "Demasiados intentos de confirmación. Espera antes de volver a intentarlo.",
-      ],
-      protecao_indisponivel: [
-        "Não foi possível validar a segurança da operação agora. Tente novamente.",
-        "The operation's security could not be validated right now. Try again.",
-        "No se pudo validar la seguridad de la operación ahora. Inténtalo de nuevo.",
-      ],
-      conta_nao_autenticada: [
-        "Sua sessão expirou. Entre novamente e tente de novo.",
-        "Your session has expired. Sign in again and try once more.",
-        "Tu sesión expiró. Inicia sesión de nuevo e inténtalo otra vez.",
-      ],
-      configuracao_servidor: [
-        "A exclusão ainda não foi configurada no servidor. Verifique a chave SUPABASE_SERVICE_ROLE_KEY na Vercel.",
-        "Account deletion has not been configured on the server yet. Check SUPABASE_SERVICE_ROLE_KEY in Vercel.",
-        "La eliminación aún no está configurada en el servidor. Revisa SUPABASE_SERVICE_ROLE_KEY en Vercel.",
-      ],
-      exclusao_falhou: [
-        "Não foi possível excluir sua conta agora. Tente novamente ou use a página pública de exclusão.",
-        "Your account could not be deleted right now. Try again or use the public deletion page.",
-        "No se pudo eliminar tu cuenta ahora. Inténtalo de nuevo o usa la página pública de eliminación.",
-      ],
-    };
-    const traducao = mensagens[codigo];
-
-    return traducao ? t(...traducao) : mensagem;
-  }
-
   async function excluirConta(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -729,7 +683,7 @@ export default function ConfiguracoesPage() {
 
       if (!response.ok || !data?.ok) {
         setErroExclusaoConta(
-          traduzirErroExclusaoConta(
+          traduzirErroExclusaoContaConfiguracoes(
             data?.codigo || "",
             data?.mensagem ||
               t(
@@ -737,6 +691,7 @@ export default function ConfiguracoesPage() {
                 "Your account could not be deleted right now.",
                 "No se pudo eliminar tu cuenta ahora.",
               ),
+            language,
           ),
         );
         return;
@@ -1071,19 +1026,7 @@ export default function ConfiguracoesPage() {
 
     try {
       const backup = criarBackupLocal(usuarioIdLogado);
-      const dataAtual = new Date().toISOString().slice(0, 10);
-      const arquivo = new Blob([backup], {
-        type: "application/json;charset=utf-8",
-      });
-      const url = URL.createObjectURL(arquivo);
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = `historietas-backup-${dataAtual}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      baixarBackupConfiguracoes(backup);
 
       mostrarMensagemAcao(
         "sucesso",
