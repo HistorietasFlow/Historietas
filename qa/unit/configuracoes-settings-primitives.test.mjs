@@ -37,6 +37,27 @@ const secaoSuporte = readFileSync(
   ),
   "utf8",
 );
+const secaoModeracao = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-moderation-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const secaoPreferencias = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-preferences-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const secoesAcoesConta = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-account-actions-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -129,9 +150,10 @@ test("a página delega primitives visuais e preserva a orquestração", () => {
     /from "\.\/components\/configuracoes-settings-primitives";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-settings-primitives-styles";/,
+    secoesAcoesConta,
+    /from "\.\.\/lib\/configuracoes-settings-primitives-styles";/,
   );
+  assert.match(pagina, /<ConfiguracoesAccountActionsSection/);
 
   for (const primitive of [
     "ValorLinha",
@@ -178,6 +200,9 @@ test("a página delega primitives visuais e preserva a orquestração", () => {
     secaoUso,
     secaoDados,
     secaoSuporte,
+    secaoModeracao,
+    secaoPreferencias,
+    secoesAcoesConta,
   ];
   const totalSecoes = consumidoresPrimitives.reduce(
     (total, source) => total + (source.match(/<SettingsSection/g) || []).length,
