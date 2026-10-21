@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const loadingState = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-loading-state.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const secaoPrivacidadePerfil = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
@@ -82,8 +89,8 @@ test("LoadingSpinner de Configurações preserva seus modos e estilos", () => {
 
 test("Configurações mantém os cinco consumidores nas fronteiras visuais", () => {
   assert.match(
-    pagina,
-    /import \{ LoadingSpinner \} from "\.\/components\/configuracoes-loading-spinner";/,
+    loadingState,
+    /import \{ LoadingSpinner \} from "\.\/configuracoes-loading-spinner";/,
   );
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.doesNotMatch(pagina, /const loadingPageStyle: CSSProperties =/);
@@ -109,7 +116,7 @@ test("Configurações mantém os cinco consumidores nas fronteiras visuais", () 
   );
 
   const consumidores = [
-    pagina,
+    loadingState,
     secaoConta,
     secaoPrivacidadePerfil,
     modalSenha,
@@ -120,7 +127,7 @@ test("Configurações mantém os cinco consumidores nas fronteiras visuais", () 
   );
   assert.equal(consumidores, 5);
   const compactos = [
-    pagina,
+    loadingState,
     secaoConta,
     secaoPrivacidadePerfil,
     modalSenha,
@@ -135,7 +142,7 @@ test("Configurações mantém os cinco consumidores nas fronteiras visuais", () 
   for (const label of [
     "Carregando configurações",
   ]) {
-    assert.match(pagina, new RegExp(`t\\(\\s*"${label}"`));
+    assert.match(pagina, new RegExp(`label=\\{t\\(\\s*"${label}"`));
   }
   assert.match(secaoConta, /"Salvando alterações",/);
   assert.match(secaoPrivacidadePerfil, /"Carregando usuários bloqueados",/);
