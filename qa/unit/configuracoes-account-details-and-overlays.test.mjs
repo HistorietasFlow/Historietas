@@ -27,6 +27,13 @@ const overlays = readFileSync(
   ),
   "utf8",
 );
+const acoesCamposOverlay = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-overlay-field-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("seção da conta preserva inputs, filtro, loading e segurança", () => {
   assert.match(secaoConta, /export function ConfiguracoesAccountDetailsSection\(/);
@@ -93,10 +100,49 @@ test("página preserva a orquestração e delega apenas a apresentação", () =>
   assert.match(pagina, /<ConfiguracoesPageOverlays/);
   assert.match(pagina, /onAlterarSenha=\{alterarSenha\}/);
   assert.match(pagina, /onExcluirConta=\{excluirConta\}/);
-  assert.match(pagina, /onFecharMensagemAcao=\{\(\) => setMensagemAcao\(null\)\}/);
+  assert.match(
+    pagina,
+    /import \{ criarAcoesCamposOverlayConfiguracoes \} from "\.\/lib\/configuracoes-overlay-field-actions";/,
+  );
+  assert.match(pagina, /criarAcoesCamposOverlayConfiguracoes\(\{/);
+  assert.match(pagina, /onFecharMensagemAcao=\{onFecharMensagemAcao\}/);
   assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
   assert.doesNotMatch(pagina, /<SettingsInput/);
   assert.doesNotMatch(pagina, /<ConfiguracoesSecurityPasswordModal/);
   assert.doesNotMatch(pagina, /<ConfiguracoesAccountDeletionModal/);
   assert.doesNotMatch(pagina, /<ConfiguracoesActionToast/);
+});
+
+test("ações dos campos dos overlays preservam as limpezas de feedback", () => {
+  assert.match(
+    acoesCamposOverlay,
+    /export function criarAcoesCamposOverlayConfiguracoes\(/,
+  );
+  assert.match(acoesCamposOverlay, /onSenhaAtualChange\(valor: string\)/);
+  assert.match(acoesCamposOverlay, /onNovaSenhaChange\(valor: string\)/);
+  assert.match(
+    acoesCamposOverlay,
+    /onConfirmarNovaSenhaChange\(valor: string\)/,
+  );
+  assert.match(
+    acoesCamposOverlay,
+    /onSenhaExclusaoContaChange\(valor: string\)/,
+  );
+  assert.match(
+    acoesCamposOverlay,
+    /onConfirmacaoExclusaoContaChange\(valor: string\)/,
+  );
+  assert.equal((acoesCamposOverlay.match(/setErroSenha\(""\);/g) || []).length, 3);
+  assert.equal(
+    (acoesCamposOverlay.match(/setErroExclusaoConta\(""\);/g) || []).length,
+    2,
+  );
+  assert.match(
+    acoesCamposOverlay,
+    /onFecharMensagemAcao\(\) \{\s+setMensagemAcao\(null\);/,
+  );
+  assert.doesNotMatch(
+    acoesCamposOverlay,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
 });
