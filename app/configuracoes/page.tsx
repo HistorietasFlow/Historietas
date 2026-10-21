@@ -7,8 +7,8 @@ import {
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
-import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import { ConfiguracoesAccountActionsSection } from "./components/configuracoes-account-actions-section";
 import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
 import { ConfiguracoesAccountDeletionModal } from "./components/configuracoes-account-deletion-modal";
 import { ConfiguracoesActionToast } from "./components/configuracoes-action-toast";
@@ -17,15 +17,16 @@ import { ConfiguracoesPageHeader } from "./components/configuracoes-page-header"
 import { ConfiguracoesProfileCard } from "./components/configuracoes-profile-card";
 import { ConfiguracoesSearch } from "./components/configuracoes-search";
 import { ConfiguracoesSecurityPasswordModal } from "./components/configuracoes-security-password-modal";
-import { ConfiguracoesUsageSummarySection } from "./components/configuracoes-usage-summary-section";
 import { ConfiguracoesDataSection } from "./components/configuracoes-data-section";
+import { ConfiguracoesModerationSection } from "./components/configuracoes-moderation-section";
+import { ConfiguracoesPreferencesSection } from "./components/configuracoes-preferences-section";
 import { ConfiguracoesSupportSection } from "./components/configuracoes-support-section";
+import { ConfiguracoesUsageSummarySection } from "./components/configuracoes-usage-summary-section";
 import { Toggle } from "./components/configuracoes-toggle";
 import {
   SettingsInput,
   SettingsRow,
   SettingsSection,
-  SectionTitle,
   ValorLinha,
 } from "./components/configuracoes-settings-primitives";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
@@ -42,7 +43,6 @@ import {
   textoIdioma,
 } from "./lib/configuracoes-search-utils";
 import { deveMostrarSecaoConfiguracoes } from "./lib/configuracoes-search-visibility-utils";
-import { sectionStyle } from "./lib/configuracoes-settings-primitives-styles";
 import { containerStyle } from "./lib/configuracoes-shell-styles";
 import { normalizarUsernameConfiguracoes } from "./lib/configuracoes-account-utils";
 import {
@@ -63,11 +63,7 @@ import type {
   ResumoLocal,
   UsuarioConfiguracoes,
 } from "./lib/configuracoes-account-models";
-import {
-  listCardTransparentStyle,
-  pageStyle,
-  privacySelectStyle,
-} from "./lib/configuracoes-security-styles";
+import { pageStyle, privacySelectStyle } from "./lib/configuracoes-security-styles";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
@@ -952,27 +948,11 @@ export default function ConfiguracoesPage() {
           </SettingsSection>
         ) : null}
 
-        {adminLiberado &&
-        deveMostrar("moderação", "admin", "comunidade") ? (
-          <SettingsSection
-            title={t("Moderação", "Moderation", "Moderación")}
-          >
-            <SettingsRow
-              icon="admin"
-              title={t(
-                "Área de moderação",
-                "Moderation area",
-                "Área de moderación",
-              )}
-              subtitle={t(
-                "Revisar denúncias e conteúdos enviados",
-                "Review reports and submitted content",
-                "Revisar denuncias y contenidos enviados",
-              )}
-              href="/admin/comunidade"
-            />
-          </SettingsSection>
-        ) : null}
+        <ConfiguracoesModerationSection
+          adminLiberado={adminLiberado}
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+        />
 
         <ConfiguracoesUsageSummarySection
           deveMostrar={deveMostrar}
@@ -982,71 +962,12 @@ export default function ConfiguracoesPage() {
           notificacoesNaoLidas={notificacoesNaoLidas}
         />
 
-        {deveMostrar(
-          "preferências",
-          "tema",
-          "aparência",
-          "avisos",
-          "idioma",
-          "língua",
-        ) ? (
-          <SettingsSection
-            title={t("Preferências", "Preferences", "Preferencias")}
-          >
-            {deveMostrar("idioma", "língua") ? (
-              <SettingsRow
-                icon="layers"
-                title={t(
-                  "Idioma do site",
-                  "Site language",
-                  "Idioma del sitio",
-                )}
-                right={
-                  <LanguageSelect
-                    showLabel={false}
-                    style={{
-                      width: "clamp(120px, 34vw, 128px)",
-                      maxWidth: "100%",
-                      transform: "translateX(22px)",
-                    }}
-                    selectStyle={{
-                      width: "100%",
-                      minHeight: 38,
-                      padding: "7px 8px",
-                      borderRadius: 10,
-                      fontSize: 13,
-                    }}
-                  />
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar("receber", "avisos") ? (
-              <SettingsRow
-                icon="bell"
-                title={t(
-                  "Receber avisos",
-                  "Receive alerts",
-                  "Recibir avisos",
-                )}
-                right={
-                  <Toggle
-                    checked={preferencias.receberAvisos}
-                    onChange={alternarReceberAvisos}
-                    ariaLabel={t(
-                      "Ativar ou desativar avisos",
-                      "Enable or disable alerts",
-                      "Activar o desactivar avisos",
-                    )}
-                  />
-                }
-                hideChevron
-              />
-            ) : null}
-
-          </SettingsSection>
-        ) : null}
+        <ConfiguracoesPreferencesSection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+          preferencias={preferencias}
+          onAlternarReceberAvisos={alternarReceberAvisos}
+        />
 
         <ConfiguracoesDataSection
           deveMostrar={deveMostrar}
@@ -1061,52 +982,12 @@ export default function ConfiguracoesPage() {
           traduzirTexto={t}
         />
 
-        {deveMostrar("excluir", "apagar", "conta", "dados", "permanente") ? (
-          <section style={sectionStyle}>
-            <SectionTitle>
-              {t("Zona de risco", "Danger zone", "Zona de riesgo")}
-            </SectionTitle>
-            <div style={listCardTransparentStyle}>
-              <SettingsRow
-                icon="trash"
-                title={t(
-                  "Excluir minha conta",
-                  "Delete my account",
-                  "Eliminar mi cuenta",
-                )}
-                subtitle={t(
-                  "Apagar permanentemente a conta e os dados associados",
-                  "Permanently delete the account and associated data",
-                  "Eliminar permanentemente la cuenta y los datos asociados",
-                )}
-                onClick={abrirExclusaoConta}
-                danger
-              />
-            </div>
-          </section>
-        ) : null}
-
-        {deveMostrar("sair", "conta", "login") ? (
-          <section style={sectionStyle}>
-            <div style={listCardTransparentStyle}>
-              <SettingsRow
-                icon="logout"
-                title={t(
-                  "Sair da conta",
-                  "Sign out",
-                  "Cerrar sesión",
-                )}
-                subtitle={t(
-                  "Encerrar sessão neste dispositivo",
-                  "End the session on this device",
-                  "Cerrar la sesión en este dispositivo",
-                )}
-                onClick={sairDaConta}
-                danger
-              />
-            </div>
-          </section>
-        ) : null}
+        <ConfiguracoesAccountActionsSection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+          onAbrirExclusaoConta={abrirExclusaoConta}
+          onSairDaConta={sairDaConta}
+        />
       </section>
 
       {mostrarSeguranca ? (

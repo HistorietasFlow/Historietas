@@ -928,3 +928,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As seções informativas de uso da conta, dados/backup e suporte foram movidas para componentes de apresentação dedicados, preservando filtros de busca, textos, traduções, contadores, rotas e callbacks.
 - Estados, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 42 — Configurações
+
+- As seções visuais de moderação, preferências e ações da conta foram movidas para componentes dedicados, preservando permissão administrativa, filtros, traduções, estilos, controles e callbacks.
+- Estados, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.

@@ -17,6 +17,13 @@ const styles = readFileSync(
   ),
   "utf8",
 );
+const secoesAcoesConta = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-account-actions-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("configuracoesPageCss preserva as regras globais de Configurações", () => {
   assert.match(css, /export const configuracoesPageCss = `/);
@@ -49,9 +56,10 @@ test("Configurações mantém os dois consumidores e suas fronteiras", () => {
     /\$\{configuracoesPageCss\}\$\{historietasThemeCss\}/,
   );
   assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-settings-primitives-styles";/,
+    secoesAcoesConta,
+    /from "\.\.\/lib\/configuracoes-settings-primitives-styles";/,
   );
+  assert.match(pagina, /<ConfiguracoesAccountActionsSection/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties =/);
   assert.match(styles, /export const safeTextStyle: CSSProperties =/);
   assert.match(styles, /overflowWrap: "anywhere"/);
