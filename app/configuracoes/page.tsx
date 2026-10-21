@@ -29,6 +29,7 @@ import {
 } from "./components/configuracoes-settings-primitives";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { useConfiguracoesBlockedUsers } from "./hooks/use-configuracoes-blocked-users";
+import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-access";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
@@ -40,11 +41,9 @@ import { deveMostrarSecaoConfiguracoes } from "./lib/configuracoes-search-visibi
 import { sectionStyle } from "./lib/configuracoes-settings-primitives-styles";
 import { containerStyle } from "./lib/configuracoes-shell-styles";
 import {
-  metadataTemAdminConfiguracoes,
   normalizarUsernameConfiguracoes,
   pegarTexto,
 } from "./lib/configuracoes-account-utils";
-import type { AppMetadataAdminConfiguracoes } from "./lib/configuracoes-account-utils";
 import {
   carregarPreferenciasPrivacidade,
   preferenciasPrivacidadePadrao,
@@ -281,63 +280,10 @@ export default function ConfiguracoesPage() {
   }, [router]);
 
 
-  useEffect(() => {
-    if (verificandoAcesso) {
-      return;
-    }
-
-    let cancelado = false;
-
-    async function verificarAdmin() {
-      try {
-        const { data, error: userError } = await supabase.auth.getUser();
-        const user = data.user || null;
-
-        if (!user || userError) {
-          if (!cancelado) {
-            setAdminLiberado(false);
-          }
-
-          return;
-        }
-
-        const adminPeloToken = metadataTemAdminConfiguracoes(
-          user.app_metadata as AppMetadataAdminConfiguracoes | null | undefined,
-        );
-        const { data: adminLiberadoResposta, error } = await supabase.rpc(
-          "usuario_e_admin",
-        );
-
-        if (!cancelado) {
-          setAdminLiberado(
-            error ? adminPeloToken : adminLiberadoResposta === true,
-          );
-        }
-      } catch {
-        if (!cancelado) {
-          setAdminLiberado(false);
-        }
-      }
-    }
-
-    void verificarAdmin();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
-        setAdminLiberado(false);
-        return;
-      }
-
-      void verificarAdmin();
-    });
-
-    return () => {
-      cancelado = true;
-      subscription.unsubscribe();
-    };
-  }, [verificandoAcesso]);
+  useConfiguracoesAdminAccess({
+    verificandoAcesso,
+    setAdminLiberado,
+  });
 
   useConfiguracoesSecurityModalBodyLock({
     mostrarSeguranca,
