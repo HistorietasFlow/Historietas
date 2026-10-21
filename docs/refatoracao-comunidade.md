@@ -918,3 +918,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os adaptadores das ações de salvar perfil, alterar senha, excluir conta, copiar/baixar backup e sair da conta foram isolados em hook, preservando argumentos, redirecionamentos, atualização de rota, mensagens e ordem das chamadas.
 - As ações de domínio, autenticação, persistência, RLS, estados e apresentação permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 40 — Configurações
+
+- Os modais de alteração de senha e exclusão de conta foram movidos para componentes de apresentação dedicados, preservando campos, traduções, acessibilidade, feedback, botões, estilos e handlers.
+- Estados, lifecycle, validação, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
