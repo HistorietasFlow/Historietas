@@ -873,3 +873,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle e as ações do painel de usuários bloqueados foram isolados em hook, preservando carregamento, confirmação, RPC, mensagens, guardas e atualizações de estado.
 - A carga inicial, autenticação, RLS, estados e apresentação da página permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 30 — Configurações
+
+- As ações de atualização das preferências, alternância de avisos e sincronização de privacidade foram isoladas, preservando ordem dos setters, persistência local, fallbacks e mensagens.
+- Autenticação, salvamento integral da conta, lifecycle, RLS, estados e apresentação permaneceram na página sem alteração intencional de comportamento.

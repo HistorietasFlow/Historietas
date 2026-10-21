@@ -74,9 +74,12 @@ import {
 } from "./lib/configuracoes-account-backup-actions";
 import {
   calcularTotalBibliotecaConfiguracoes,
-  criarPreferenciaAtualizadaConfiguracoes,
-  criarPreferenciasComAvisosAlternadosConfiguracoes,
 } from "./lib/configuracoes-account-preference-state-utils";
+import {
+  alternarReceberAvisosConfiguracoes,
+  aplicarPrivacidadeAtualizadaConfiguracoes,
+  atualizarPreferenciaConfiguracoes,
+} from "./lib/configuracoes-preference-actions";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
   PreferenciasConta,
@@ -376,84 +379,32 @@ export default function ConfiguracoesPage() {
     campo: K,
     valor: PreferenciasConta[K],
   ) {
-    setPreferencias((preferenciasAtuais) =>
-      criarPreferenciaAtualizadaConfiguracoes(
-        preferenciasAtuais,
-        campo,
-        valor,
-      ),
-    );
+    atualizarPreferenciaConfiguracoes({
+      campo,
+      valor,
+      setPreferencias,
+    });
   }
 
   function alternarReceberAvisos() {
-    const preferenciasAtualizadas =
-      criarPreferenciasComAvisosAlternadosConfiguracoes(preferencias);
-
-    setPreferencias(preferenciasAtualizadas);
-
-    if (usuarioIdLogado) {
-      salvarPreferencias(preferenciasAtualizadas, usuarioIdLogado);
-    }
+    alternarReceberAvisosConfiguracoes({
+      preferencias,
+      setPreferencias,
+      usuarioIdLogado,
+    });
   }
 
   function aplicarPrivacidadeAtualizada(
     privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
   ) {
-    setPrivacidade(privacidadeAtualizada);
-    setMensagemAcao(null);
-
-    const userIdSeguro = usuarioIdLogado.trim();
-
-    if (!userIdSeguro) {
-      mostrarMensagemAcao(
-        "aviso",
-        t(
-          "A preferência ficou salva apenas neste aparelho porque sua conta não pôde ser confirmada.",
-          "The preference was saved only on this device because your account could not be confirmed.",
-          "La preferencia se guardó solo en este dispositivo porque no se pudo confirmar tu cuenta.",
-        ),
-      );
-      return;
-    }
-
-    void salvarPreferenciasPrivacidade(
+    aplicarPrivacidadeAtualizadaConfiguracoes({
       privacidadeAtualizada,
-      userIdSeguro,
-    )
-      .then((resultado) => {
-        if (resultado.ok) {
-          return;
-        }
-
-        console.warn(
-          "A privacidade ficou salva neste aparelho, mas não sincronizou:",
-          resultado.erro,
-        );
-
-        mostrarMensagemAcao(
-          "aviso",
-          t(
-            "A preferência foi salva neste aparelho, mas não sincronizou com sua conta. Verifique sua conexão e tente novamente.",
-            "The preference was saved on this device, but it did not sync with your account. Check your connection and try again.",
-            "La preferencia se guardó en este dispositivo, pero no se sincronizó con tu cuenta. Comprueba tu conexión e inténtalo de nuevo.",
-          ),
-        );
-      })
-      .catch((error) => {
-        console.warn(
-          "Não foi possível sincronizar a preferência de privacidade:",
-          error,
-        );
-
-        mostrarMensagemAcao(
-          "aviso",
-          t(
-            "A preferência foi salva neste aparelho, mas não sincronizou com sua conta. Verifique sua conexão e tente novamente.",
-            "The preference was saved on this device, but it did not sync with your account. Check your connection and try again.",
-            "La preferencia se guardó en este dispositivo, pero no se sincronizó con tu cuenta. Comprueba tu conexión e inténtalo de nuevo.",
-          ),
-        );
-      });
+      setPrivacidade,
+      setMensagemAcao,
+      usuarioIdLogado,
+      mostrarMensagemAcao,
+      traduzirTexto: t,
+    });
   }
 
   function atualizarPrivacidade<
