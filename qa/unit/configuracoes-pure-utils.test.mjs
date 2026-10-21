@@ -676,10 +676,7 @@ test("Configurações delega as fronteiras extraídas", () => {
     pagina,
     /from "\.\/lib\/configuracoes-account-preference-state-utils";/,
   );
-  assert.match(
-    pagina,
-    /from "\.\/lib\/configuracoes-privacy-preference-state-utils";/,
-  );
+  assert.match(pagina, /from "\.\/lib\/configuracoes-privacy-actions";/);
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-security-form-validation";/,
