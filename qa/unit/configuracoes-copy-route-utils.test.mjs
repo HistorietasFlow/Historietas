@@ -6,6 +6,13 @@ const copy = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-cop
 const route = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-route-utils.ts", import.meta.url), "utf8");
 const backupActions = readFileSync(new URL("../../app/configuracoes/lib/configuracoes-account-backup-actions.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../../app/configuracoes/page.tsx", import.meta.url), "utf8");
+const initialAccessHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-initial-access.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileSaveAction = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-profile-save-action.ts",
@@ -30,9 +37,20 @@ test("rota de login e consumidores de Configurações permanecem idênticos", ()
   assert.match(page, /from "\.\/lib\/configuracoes-account-backup-actions";/);
   assert.match(page, /from "\.\/lib\/configuracoes-route-utils";/);
   assert.match(page, /from "\.\/lib\/configuracoes-profile-save-action";/);
+  assert.match(
+    page,
+    /import \{ useConfiguracoesInitialAccess \} from "\.\/hooks\/use-configuracoes-initial-access";/,
+  );
+  assert.match(initialAccessHook, /from "\.\.\/lib\/configuracoes-route-utils";/);
   assert.doesNotMatch(page, /async function copiarTexto\(/);
   assert.doesNotMatch(page, /function criarLoginHrefConfiguracoes\(/);
-  assert.equal((page.match(/criarLoginHrefConfiguracoes\(/g) || []).length, 3);
+  assert.doesNotMatch(page, /async function verificarAcesso\(/);
+  assert.match(page, /useConfiguracoesInitialAccess\(\{/);
+  assert.equal((page.match(/criarLoginHrefConfiguracoes\(/g) || []).length, 1);
+  assert.equal(
+    (initialAccessHook.match(/criarLoginHrefConfiguracoes\(\)/g) || []).length,
+    2,
+  );
   assert.match(profileSaveAction, /redirecionarLogin\(\);/);
   assert.match(
     backupActions,

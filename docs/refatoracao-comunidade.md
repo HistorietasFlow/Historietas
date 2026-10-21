@@ -903,3 +903,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle de verificação de acesso administrativo foi isolado, preservando autenticação, fallback pelo token, RPC, assinatura de sessão, cancelamento e cleanup.
 - Estados, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 37 — Configurações
+
+- O lifecycle inicial de acesso foi isolado, preservando autenticação, perfil, preferências, resumo, usuários bloqueados, cargas paralelas, ordem dos setters, redirecionamento e cancelamento.
+- Estados, apresentação, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.

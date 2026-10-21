@@ -37,6 +37,13 @@ const blockedUsersHook = readFileSync(
   ),
   "utf8",
 );
+const initialAccessHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-initial-access.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -187,7 +194,18 @@ test("página delega feedback visual e mantém ações e estados", () => {
     /from "\.\/hooks\/use-configuracoes-blocked-users";/,
   );
   assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
-  assert.match(pagina, /setUsuariosBloqueados\(usuariosBloqueadosCarregados\)/);
+  assert.match(
+    pagina,
+    /useConfiguracoesInitialAccess\(\{[\s\S]*?setUsuariosBloqueados,[\s\S]*?\}\);/,
+  );
+  assert.match(
+    initialAccessHook,
+    /listarUsuariosBloqueadosConfiguracoes\(\)\.catch\(\(\) => \[\]\)/,
+  );
+  assert.match(
+    initialAccessHook,
+    /setUsuariosBloqueados\(usuariosBloqueadosCarregados\)/,
+  );
   assert.doesNotMatch(pagina, /async function carregarUsuariosBloqueados\(\)/);
   assert.doesNotMatch(pagina, /async function desbloquearUsuarioConfiguracoes\(/);
   assert.match(pagina, /useConfiguracoesActionMessage\(\)/);

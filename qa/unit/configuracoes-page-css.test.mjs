@@ -62,5 +62,10 @@ test("Configurações mantém os dois consumidores e suas fronteiras", () => {
   );
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.match(pagina, /if \(verificandoAcesso\) \{/);
-  assert.match(pagina, /useEffect\(/);
+  assert.match(
+    pagina,
+    /import \{ useConfiguracoesInitialAccess \} from "\.\/hooks\/use-configuracoes-initial-access";/,
+  );
+  assert.match(pagina, /useConfiguracoesInitialAccess\(\{/);
+  assert.doesNotMatch(pagina, /async function verificarAcesso\(/);
 });
