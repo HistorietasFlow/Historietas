@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const actions = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-preference-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("preferências de privacidade preservam tipos, defaults e compatibilidade", () => {
   assert.match(
@@ -91,4 +98,43 @@ test("Configurações consome a fronteira de privacidade sem manter duplicação
   ]) {
     assert.doesNotMatch(page, new RegExp(declaracao));
   }
+});
+
+test("ações de preferências preservam estado, persistência e sincronização", () => {
+  assert.match(
+    actions,
+    /export function atualizarPreferenciaConfiguracoes[\s\S]*?criarPreferenciaAtualizadaConfiguracoes/,
+  );
+  assert.match(
+    actions,
+    /export function alternarReceberAvisosConfiguracoes[\s\S]*?criarPreferenciasComAvisosAlternadosConfiguracoes/,
+  );
+  assert.match(actions, /if \(usuarioIdLogado\) \{\s*salvarPreferencias/);
+  assert.match(
+    actions,
+    /export function aplicarPrivacidadeAtualizadaConfiguracoes/,
+  );
+  assert.match(actions, /setPrivacidade\(privacidadeAtualizada\);/);
+  assert.match(actions, /setMensagemAcao\(null\);/);
+  assert.match(actions, /const userIdSeguro = usuarioIdLogado\.trim\(\);/);
+  assert.match(actions, /void salvarPreferenciasPrivacidade\(/);
+  assert.match(actions, /resultado\.ok/);
+  assert.match(actions, /"A privacidade ficou salva neste aparelho, mas não sincronizou:"/);
+  assert.match(
+    actions,
+    /"Não foi possível sincronizar a preferência de privacidade:"/,
+  );
+  assert.match(actions, /The preference was saved only on this device/);
+  assert.match(actions, /La preferencia se guardó solo en este dispositivo/);
+  assert.doesNotMatch(actions, /useState|useEffect|localStorage|supabase\./);
+
+  assert.match(
+    page,
+    /from "\.\/lib\/configuracoes-preference-actions";/,
+  );
+  assert.match(page, /atualizarPreferenciaConfiguracoes\(\{/);
+  assert.match(page, /alternarReceberAvisosConfiguracoes\(\{/);
+  assert.match(page, /aplicarPrivacidadeAtualizadaConfiguracoes\(\{/);
+  assert.doesNotMatch(page, /void salvarPreferenciasPrivacidade\(/);
+  assert.doesNotMatch(page, /criarPreferenciasComAvisosAlternadosConfiguracoes/);
 });
