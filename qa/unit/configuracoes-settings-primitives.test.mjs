@@ -16,6 +16,27 @@ const estilos = readFileSync(
   ),
   "utf8",
 );
+const secaoUso = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-usage-summary-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const secaoDados = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-data-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const secaoSuporte = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-support-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -152,8 +173,23 @@ test("a página delega primitives visuais e preserva a orquestração", () => {
     );
   }
 
-  assert.equal((pagina.match(/<SettingsSection/g) || []).length >= 8, true);
-  assert.equal((pagina.match(/<SettingsRow/g) || []).length >= 30, true);
+  const consumidoresPrimitives = [
+    pagina,
+    secaoUso,
+    secaoDados,
+    secaoSuporte,
+  ];
+  const totalSecoes = consumidoresPrimitives.reduce(
+    (total, source) => total + (source.match(/<SettingsSection/g) || []).length,
+    0,
+  );
+  const totalLinhas = consumidoresPrimitives.reduce(
+    (total, source) => total + (source.match(/<SettingsRow/g) || []).length,
+    0,
+  );
+
+  assert.equal(totalSecoes >= 8, true);
+  assert.equal(totalLinhas >= 30, true);
   assert.equal((pagina.match(/<SettingsInput/g) || []).length, 3);
   assert.match(
     pagina,
