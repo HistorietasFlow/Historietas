@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -17,23 +17,16 @@ import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-acc
 import { useConfiguracoesInitialAccess } from "./hooks/use-configuracoes-initial-access";
 import { useConfiguracoesAccountActionHandlers } from "./hooks/use-configuracoes-account-action-handlers";
 import { useConfiguracoesPreferenceActions } from "./hooks/use-configuracoes-preference-actions";
+import { useConfiguracoesPageViewModel } from "./hooks/use-configuracoes-page-view-model";
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
-import {
-  normalizarTextoBuscaConfiguracoes,
-  textoIdioma,
-} from "./lib/configuracoes-search-utils";
-import { deveMostrarSecaoConfiguracoes } from "./lib/configuracoes-search-visibility-utils";
 import {
   preferenciasPrivacidadePadrao,
 } from "./lib/configuracoes-privacy-preferences";
 import type {
   PreferenciasPrivacidadeHistorietas,
 } from "./lib/configuracoes-privacy-preferences";
-import {
-  calcularTotalBibliotecaConfiguracoes,
-} from "./lib/configuracoes-account-preference-state-utils";
 import { criarAcoesCamposOverlayConfiguracoes } from "./lib/configuracoes-overlay-field-actions";
 import { preferenciasPadrao, resumoPadrao } from "./lib/configuracoes-account-models";
 import type {
@@ -97,10 +90,12 @@ export default function ConfiguracoesPage() {
   const { language } = useHistorietasLanguage();
 
   const usuarioIdLogado = usuario?.id || "";
-
-  function t(portugues: string, ingles: string, espanhol: string) {
-    return textoIdioma(language, portugues, ingles, espanhol);
-  }
+  const { t, deveMostrar, totalBiblioteca } =
+    useConfiguracoesPageViewModel({
+      language,
+      busca,
+      resumo,
+    });
 
   const {
     mostrarUsuariosBloqueados,
@@ -143,21 +138,6 @@ export default function ConfiguracoesPage() {
     setErroSenha,
     setSenhaAlterada,
   });
-
-  const buscaNormalizada = normalizarTextoBuscaConfiguracoes(busca);
-
-  const deveMostrar = (...termos: string[]) =>
-    deveMostrarSecaoConfiguracoes(buscaNormalizada, ...termos);
-
-  const totalBiblioteca = useMemo(
-    () =>
-      calcularTotalBibliotecaConfiguracoes(
-        resumo.favoritas,
-        resumo.concluidas,
-        resumo.seguindoObras,
-      ),
-    [resumo.concluidas, resumo.favoritas, resumo.seguindoObras],
-  );
 
   const {
     atualizarPreferencia,

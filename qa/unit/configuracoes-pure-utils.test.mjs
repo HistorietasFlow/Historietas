@@ -213,6 +213,13 @@ const securityModalStateHookSource = readFileSync(
   ),
   "utf8",
 );
+const pageViewModelHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-page-view-model.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const blockedUsersHookSource = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-blocked-users.ts",
@@ -675,7 +682,10 @@ test("validações dos formulários de segurança preservam ordem, idiomas e reg
 });
 
 test("Configurações delega as fronteiras extraídas", () => {
-  assert.match(pagina, /from "\.\/lib\/configuracoes-search-utils";/);
+  assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-page-view-model";/,
+  );
   assert.match(
     secaoConta,
     /from "\.\.\/lib\/configuracoes-account-utils";/,
@@ -742,12 +752,12 @@ test("Configurações delega as fronteiras extraídas", () => {
     accountBackupActionsSource,
     /from "\.\/configuracoes-account-backup-download";/,
   );
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/configuracoes-account-preference-state-utils";/,
   );
   assert.doesNotMatch(pagina, /from "\.\/lib\/configuracoes-privacy-actions";/);
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/configuracoes-search-visibility-utils";/,
   );
@@ -808,9 +818,29 @@ test("Configurações delega as fronteiras extraídas", () => {
   }
 
   assert.doesNotMatch(pagina, /function deveMostrar\(/);
+  assert.match(pagina, /useConfiguracoesPageViewModel\(\{/);
+  assert.match(pageViewModelHookSource, /^"use client";/);
+  assert.match(pageViewModelHookSource, /import \{ useMemo \} from "react";/);
   assert.match(
-    pagina,
+    pageViewModelHookSource,
+    /export function useConfiguracoesPageViewModel\(/,
+  );
+  assert.match(pageViewModelHookSource, /textoIdioma\(language, portugues, ingles, espanhol\)/);
+  assert.match(
+    pageViewModelHookSource,
     /deveMostrarSecaoConfiguracoes\(buscaNormalizada, \.\.\.termos\)/,
+  );
+  assert.match(
+    pageViewModelHookSource,
+    /calcularTotalBibliotecaConfiguracoes\(\s*resumo\.favoritas,\s*resumo\.concluidas,\s*resumo\.seguindoObras,\s*\)/,
+  );
+  assert.match(
+    pageViewModelHookSource,
+    /\[resumo\.concluidas, resumo\.favoritas, resumo\.seguindoObras\]/,
+  );
+  assert.doesNotMatch(
+    pageViewModelHookSource,
+    /supabase|localStorage|sessionStorage|window|document|fetch|JSX/,
   );
   assert.doesNotMatch(pagina, /async function contarRegistrosResumoSupabase\(/);
   assert.doesNotMatch(pagina, /async function listarUsuariosBloqueadosConfiguracoes\(/);
