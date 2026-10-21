@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const overlays = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-overlays.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const modalSenha = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-security-password-modal.tsx",
@@ -60,18 +67,25 @@ test("modais de segurança preservam diálogos, ações e tradução", () => {
 test("Configurações orquestra os modais sem manter os JSXs duplicados", () => {
   assert.match(
     pagina,
-    /import \{ ConfiguracoesSecurityPasswordModal \} from "\.\/components\/configuracoes-security-password-modal";/,
+    /import \{ ConfiguracoesPageOverlays \} from "\.\/components\/configuracoes-page-overlays";/,
+  );
+  assert.match(pagina, /<ConfiguracoesPageOverlays/);
+  assert.match(pagina, /onAlterarSenha=\{alterarSenha\}/);
+  assert.match(pagina, /onExcluirConta=\{excluirConta\}/);
+  assert.match(
+    overlays,
+    /import \{ ConfiguracoesSecurityPasswordModal \} from "\.\/configuracoes-security-password-modal";/,
   );
   assert.match(
-    pagina,
-    /import \{ ConfiguracoesAccountDeletionModal \} from "\.\/components\/configuracoes-account-deletion-modal";/,
+    overlays,
+    /import \{ ConfiguracoesAccountDeletionModal \} from "\.\/configuracoes-account-deletion-modal";/,
   );
-  assert.match(pagina, /mostrarSeguranca \? \(/);
-  assert.match(pagina, /<ConfiguracoesSecurityPasswordModal/);
-  assert.match(pagina, /onSubmit=\{alterarSenha\}/);
-  assert.match(pagina, /mostrarExclusaoConta \? \(/);
-  assert.match(pagina, /<ConfiguracoesAccountDeletionModal/);
-  assert.match(pagina, /onSubmit=\{excluirConta\}/);
+  assert.match(overlays, /mostrarSeguranca \?/);
+  assert.match(overlays, /<ConfiguracoesSecurityPasswordModal/);
+  assert.match(overlays, /onSubmit=\{onAlterarSenha\}/);
+  assert.match(overlays, /mostrarExclusaoConta \?/);
+  assert.match(overlays, /<ConfiguracoesAccountDeletionModal/);
+  assert.match(overlays, /onSubmit=\{onExcluirConta\}/);
   assert.doesNotMatch(pagina, /aria-labelledby="titulo-seguranca-configuracoes"/);
   assert.doesNotMatch(pagina, /aria-labelledby="titulo-exclusao-conta"/);
   assert.doesNotMatch(pagina, /href="\/excluir-conta"/);

@@ -231,6 +231,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const secaoConta = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-account-details-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function importarTypescript(source) {
   const javascript = typescript.transpileModule(source, {
@@ -669,7 +676,11 @@ test("validações dos formulários de segurança preservam ordem, idiomas e reg
 
 test("Configurações delega as fronteiras extraídas", () => {
   assert.match(pagina, /from "\.\/lib\/configuracoes-search-utils";/);
-  assert.match(pagina, /from "\.\/lib\/configuracoes-account-utils";/);
+  assert.match(
+    secaoConta,
+    /from "\.\.\/lib\/configuracoes-account-utils";/,
+  );
+  assert.doesNotMatch(pagina, /from "\.\/lib\/configuracoes-account-utils";/);
   assert.match(
     pagina,
     /from "\.\/lib\/configuracoes-privacy-preferences";/,

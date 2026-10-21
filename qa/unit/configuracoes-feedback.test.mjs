@@ -48,6 +48,13 @@ const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
 );
+const overlays = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-overlays.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profilePrivacySection = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
@@ -185,13 +192,14 @@ test("painel de bloqueados preserva lifecycle, confirmação e RPC", () => {
 test("página delega feedback visual e mantém ações e estados", () => {
   assert.match(
     pagina,
-    /from "\.\/components\/configuracoes-action-toast";/,
+    /from "\.\/components\/configuracoes-page-overlays";/,
   );
   assert.match(
     profilePrivacySection,
     /from "\.\/configuracoes-blocked-users-panel";/,
   );
-  assert.match(pagina, /<ConfiguracoesActionToast/);
+  assert.match(pagina, /<ConfiguracoesPageOverlays/);
+  assert.match(overlays, /<ConfiguracoesActionToast/);
   assert.match(pagina, /<ConfiguracoesProfilePrivacySection/);
   assert.match(profilePrivacySection, /<ConfiguracoesBlockedUsersPanel/);
   assert.match(profilePrivacySection, /onRecarregar=\{onCarregarUsuariosBloqueados\}/);
@@ -204,7 +212,10 @@ test("página delega feedback visual e mantém ações e estados", () => {
     pagina,
     /onDesbloquearUsuario=\{desbloquearUsuarioConfiguracoes\}/,
   );
-  assert.match(pagina, /onFechar=\{\(\) => setMensagemAcao\(null\)\}/);
+  assert.match(
+    pagina,
+    /onFecharMensagemAcao=\{\(\) => setMensagemAcao\(null\)\}/,
+  );
   assert.match(
     pagina,
     /from "\.\/hooks\/use-configuracoes-blocked-users";/,

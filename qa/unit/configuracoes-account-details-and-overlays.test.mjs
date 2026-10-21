@@ -1,0 +1,94 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+const pagina = readFileSync(
+  new URL("../../app/configuracoes/page.tsx", import.meta.url),
+  "utf8",
+);
+const secaoConta = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-account-details-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const overlays = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-overlays.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+test("seção da conta preserva inputs, filtro, loading e segurança", () => {
+  assert.match(secaoConta, /export function ConfiguracoesAccountDetailsSection\(/);
+  assert.match(secaoConta, /PreferenciasConta/);
+  assert.match(secaoConta, /normalizarUsernameConfiguracoes/);
+  assert.match(secaoConta, /"Sua conta", "Your account", "Tu cuenta"/);
+  assert.match(secaoConta, /nomeExibicao/);
+  assert.match(secaoConta, /emailContato/);
+  assert.match(secaoConta, /@username/);
+  assert.match(secaoConta, /onLimparErroUsername\(\);/);
+  assert.match(secaoConta, /helperText=\{erroUsername \|\| undefined\}/);
+  assert.match(secaoConta, /error=\{Boolean\(erroUsername\)\}/);
+  assert.match(secaoConta, /<LoadingSpinner/);
+  assert.match(secaoConta, /hideChevron=\{salvando\}/);
+  assert.match(secaoConta, /onClick=\{onSalvar\}/);
+  assert.match(secaoConta, /onClick=\{onAbrirSeguranca\}/);
+  assert.doesNotMatch(
+    secaoConta,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch/,
+  );
+});
+
+test("overlays preservam as condições, handlers e componentes existentes", () => {
+  assert.match(overlays, /export function ConfiguracoesPageOverlays\(/);
+  assert.match(
+    overlays,
+    /from "\.\/configuracoes-security-password-modal";/,
+  );
+  assert.match(
+    overlays,
+    /from "\.\/configuracoes-account-deletion-modal";/,
+  );
+  assert.match(overlays, /from "\.\/configuracoes-action-toast";/);
+  assert.match(overlays, /mostrarSeguranca \?/);
+  assert.match(overlays, /<ConfiguracoesSecurityPasswordModal/);
+  assert.match(overlays, /onSubmit=\{onAlterarSenha\}/);
+  assert.match(overlays, /mostrarExclusaoConta \?/);
+  assert.match(overlays, /<ConfiguracoesAccountDeletionModal/);
+  assert.match(overlays, /onSubmit=\{onExcluirConta\}/);
+  assert.match(overlays, /mensagemAcao \?/);
+  assert.match(overlays, /<ConfiguracoesActionToast/);
+  assert.match(overlays, /onFechar=\{onFecharMensagemAcao\}/);
+  assert.doesNotMatch(
+    overlays,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch/,
+  );
+});
+
+test("página preserva a orquestração e delega apenas a apresentação", () => {
+  assert.match(
+    pagina,
+    /import \{ ConfiguracoesAccountDetailsSection \} from "\.\/components\/configuracoes-account-details-section";/,
+  );
+  assert.match(
+    pagina,
+    /import \{ ConfiguracoesPageOverlays \} from "\.\/components\/configuracoes-page-overlays";/,
+  );
+  assert.match(pagina, /<ConfiguracoesAccountDetailsSection/);
+  assert.match(pagina, /onAtualizarPreferencia=\{atualizarPreferencia\}/);
+  assert.match(pagina, /onLimparErroUsername=\{\(\) => setErroUsername\(""\)\}/);
+  assert.match(pagina, /onSalvar=\{salvar\}/);
+  assert.match(pagina, /onAbrirSeguranca=\{abrirSeguranca\}/);
+  assert.match(pagina, /<ConfiguracoesPageOverlays/);
+  assert.match(pagina, /onAlterarSenha=\{alterarSenha\}/);
+  assert.match(pagina, /onExcluirConta=\{excluirConta\}/);
+  assert.match(pagina, /onFecharMensagemAcao=\{\(\) => setMensagemAcao\(null\)\}/);
+  assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
+  assert.doesNotMatch(pagina, /<SettingsInput/);
+  assert.doesNotMatch(pagina, /<ConfiguracoesSecurityPasswordModal/);
+  assert.doesNotMatch(pagina, /<ConfiguracoesAccountDeletionModal/);
+  assert.doesNotMatch(pagina, /<ConfiguracoesActionToast/);
+});

@@ -10,26 +10,19 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { ConfiguracoesAccountActionsSection } from "./components/configuracoes-account-actions-section";
 import { LoadingSpinner } from "./components/configuracoes-loading-spinner";
-import { ConfiguracoesAccountDeletionModal } from "./components/configuracoes-account-deletion-modal";
-import { ConfiguracoesActionToast } from "./components/configuracoes-action-toast";
+import { ConfiguracoesAccountDetailsSection } from "./components/configuracoes-account-details-section";
 import { ConfiguracoesDiaryPrivacySection } from "./components/configuracoes-diary-privacy-section";
+import { ConfiguracoesPageOverlays } from "./components/configuracoes-page-overlays";
 import { ConfiguracoesPageHeader } from "./components/configuracoes-page-header";
 import { ConfiguracoesProfileCard } from "./components/configuracoes-profile-card";
 import { ConfiguracoesProfilePrivacySection } from "./components/configuracoes-profile-privacy-section";
 import { ConfiguracoesProfileTabVisibilitySection } from "./components/configuracoes-profile-tab-visibility-section";
 import { ConfiguracoesSearch } from "./components/configuracoes-search";
-import { ConfiguracoesSecurityPasswordModal } from "./components/configuracoes-security-password-modal";
 import { ConfiguracoesDataSection } from "./components/configuracoes-data-section";
 import { ConfiguracoesModerationSection } from "./components/configuracoes-moderation-section";
 import { ConfiguracoesPreferencesSection } from "./components/configuracoes-preferences-section";
 import { ConfiguracoesSupportSection } from "./components/configuracoes-support-section";
 import { ConfiguracoesUsageSummarySection } from "./components/configuracoes-usage-summary-section";
-import {
-  SettingsInput,
-  SettingsRow,
-  SettingsSection,
-  ValorLinha,
-} from "./components/configuracoes-settings-primitives";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
 import { useConfiguracoesBlockedUsers } from "./hooks/use-configuracoes-blocked-users";
 import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-access";
@@ -45,7 +38,6 @@ import {
 } from "./lib/configuracoes-search-utils";
 import { deveMostrarSecaoConfiguracoes } from "./lib/configuracoes-search-visibility-utils";
 import { containerStyle } from "./lib/configuracoes-shell-styles";
-import { normalizarUsernameConfiguracoes } from "./lib/configuracoes-account-utils";
 import {
   preferenciasPrivacidadePadrao,
 } from "./lib/configuracoes-privacy-preferences";
@@ -279,145 +271,17 @@ export default function ConfiguracoesPage() {
           traduzirTexto={t}
         />
 
-        {deveMostrar(
-          "conta",
-          "nome",
-          "username",
-          "usuário",
-          "email",
-          "senha",
-          "privacidade",
-          "salvar",
-        ) ? (
-          <SettingsSection
-            title={t("Sua conta", "Your account", "Tu cuenta")}
-          >
-            {deveMostrar("nome", "exibição", "autor") ? (
-              <SettingsInput
-                icon="user"
-                label={t(
-                  "Nome de exibição",
-                  "Display name",
-                  "Nombre visible",
-                )}
-                value={preferencias.nomeExibicao}
-                onChange={(valor) =>
-                  atualizarPreferencia("nomeExibicao", valor)
-                }
-                placeholder={t(
-                  "Ex: Nome do autor",
-                  "Example: Author name",
-                  "Ejemplo: Nombre del autor",
-                )}
-                maxLength={80}
-                autoComplete="name"
-              />
-            ) : null}
-
-            {deveMostrar("username", "usuário", "perfil", "arroba") ? (
-              <SettingsInput
-                icon="user"
-                label="@username"
-                value={preferencias.username}
-                onChange={(valor) => {
-                  setErroUsername("");
-                  atualizarPreferencia(
-                    "username",
-                    normalizarUsernameConfiguracoes(valor),
-                  );
-                }}
-                placeholder={t(
-                  "ex: username",
-                  "example: username",
-                  "ejemplo: username",
-                )}
-                maxLength={30}
-                autoComplete="username"
-                helperText={erroUsername || undefined}
-                error={Boolean(erroUsername)}
-              />
-            ) : null}
-
-            {deveMostrar("email", "contato") ? (
-              <SettingsInput
-                icon="mail"
-                label={t(
-                  "E-mail de contato",
-                  "Contact email",
-                  "Correo de contacto",
-                )}
-                value={preferencias.emailContato}
-                onChange={(valor) =>
-                  atualizarPreferencia("emailContato", valor)
-                }
-                placeholder={t(
-                  "Ex: seuemail@email.com",
-                  "Example: youremail@email.com",
-                  "Ejemplo: tucorreo@email.com",
-                )}
-                type="email"
-                maxLength={254}
-                autoComplete="email"
-              />
-            ) : null}
-
-            {deveMostrar("salvar", "alterações", "configurações") ? (
-              <SettingsRow
-                icon="check"
-                title={
-                  salvando
-                    ? t("Salvando...", "Saving...", "Guardando...")
-                    : t(
-                        "Salvar alterações",
-                        "Save changes",
-                        "Guardar cambios",
-                      )
-                }
-                subtitle={t(
-                  "Grava suas preferências nesta conta",
-                  "Saves your preferences to this account",
-                  "Guarda tus preferencias en esta cuenta",
-                )}
-                right={
-                  salvando ? (
-                    <LoadingSpinner
-                      compacto
-                      label={t(
-                        "Salvando alterações",
-                        "Saving changes",
-                        "Guardando cambios",
-                      )}
-                    />
-                  ) : undefined
-                }
-                onClick={salvar}
-                hideChevron={salvando}
-              />
-            ) : null}
-
-            {deveMostrar("senha", "segurança") ? (
-              <SettingsRow
-                icon="lock"
-                title={t(
-                  "Senha e segurança",
-                  "Password and security",
-                  "Contraseña y seguridad",
-                )}
-                subtitle={t(
-                  "Altere com segurança sua senha de acesso",
-                  "Securely change your access password",
-                  "Cambia de forma segura tu contraseña de acceso",
-                )}
-                right={
-                  <ValorLinha>
-                    {t("Alterar", "Change", "Cambiar")}
-                  </ValorLinha>
-                }
-                onClick={abrirSeguranca}
-              />
-            ) : null}
-          </SettingsSection>
-        ) : null}
+        <ConfiguracoesAccountDetailsSection
+          deveMostrar={deveMostrar}
+          traduzirTexto={t}
+          preferencias={preferencias}
+          erroUsername={erroUsername}
+          salvando={salvando}
+          onAtualizarPreferencia={atualizarPreferencia}
+          onLimparErroUsername={() => setErroUsername("")}
+          onSalvar={salvar}
+          onAbrirSeguranca={abrirSeguranca}
+        />
 
         <ConfiguracoesProfilePrivacySection
           deveMostrar={deveMostrar}
@@ -492,59 +356,47 @@ export default function ConfiguracoesPage() {
         />
       </section>
 
-      {mostrarSeguranca ? (
-        <ConfiguracoesSecurityPasswordModal
-          onFechar={fecharSeguranca}
-          onSubmit={alterarSenha}
-          senhaAtual={senhaAtual}
-          onSenhaAtualChange={(valor) => {
-            setSenhaAtual(valor);
-            setErroSenha("");
-          }}
-          novaSenha={novaSenha}
-          onNovaSenhaChange={(valor) => {
-            setNovaSenha(valor);
-            setErroSenha("");
-          }}
-          confirmarNovaSenha={confirmarNovaSenha}
-          onConfirmarNovaSenhaChange={(valor) => {
-            setConfirmarNovaSenha(valor);
-            setErroSenha("");
-          }}
-          salvandoSenha={salvandoSenha}
-          erroSenha={erroSenha}
-          senhaAlterada={senhaAlterada}
-          traduzirTexto={t}
-        />
-      ) : null}
-
-      {mostrarExclusaoConta ? (
-        <ConfiguracoesAccountDeletionModal
-          onFechar={fecharExclusaoConta}
-          onSubmit={excluirConta}
-          senhaExclusaoConta={senhaExclusaoConta}
-          onSenhaExclusaoContaChange={(valor) => {
-            setSenhaExclusaoConta(valor);
-            setErroExclusaoConta("");
-          }}
-          confirmacaoExclusaoConta={confirmacaoExclusaoConta}
-          onConfirmacaoExclusaoContaChange={(valor) => {
-            setConfirmacaoExclusaoConta(valor);
-            setErroExclusaoConta("");
-          }}
-          excluindoConta={excluindoConta}
-          erroExclusaoConta={erroExclusaoConta}
-          traduzirTexto={t}
-        />
-      ) : null}
-
-      {mensagemAcao ? (
-        <ConfiguracoesActionToast
-          mensagem={mensagemAcao}
-          onFechar={() => setMensagemAcao(null)}
-          traduzirTexto={t}
-        />
-      ) : null}
+      <ConfiguracoesPageOverlays
+        mostrarSeguranca={mostrarSeguranca}
+        onFecharSeguranca={fecharSeguranca}
+        onAlterarSenha={alterarSenha}
+        senhaAtual={senhaAtual}
+        onSenhaAtualChange={(valor) => {
+          setSenhaAtual(valor);
+          setErroSenha("");
+        }}
+        novaSenha={novaSenha}
+        onNovaSenhaChange={(valor) => {
+          setNovaSenha(valor);
+          setErroSenha("");
+        }}
+        confirmarNovaSenha={confirmarNovaSenha}
+        onConfirmarNovaSenhaChange={(valor) => {
+          setConfirmarNovaSenha(valor);
+          setErroSenha("");
+        }}
+        salvandoSenha={salvandoSenha}
+        erroSenha={erroSenha}
+        senhaAlterada={senhaAlterada}
+        mostrarExclusaoConta={mostrarExclusaoConta}
+        onFecharExclusaoConta={fecharExclusaoConta}
+        onExcluirConta={excluirConta}
+        senhaExclusaoConta={senhaExclusaoConta}
+        onSenhaExclusaoContaChange={(valor) => {
+          setSenhaExclusaoConta(valor);
+          setErroExclusaoConta("");
+        }}
+        confirmacaoExclusaoConta={confirmacaoExclusaoConta}
+        onConfirmacaoExclusaoContaChange={(valor) => {
+          setConfirmacaoExclusaoConta(valor);
+          setErroExclusaoConta("");
+        }}
+        excluindoConta={excluindoConta}
+        erroExclusaoConta={erroExclusaoConta}
+        mensagemAcao={mensagemAcao}
+        onFecharMensagemAcao={() => setMensagemAcao(null)}
+        traduzirTexto={t}
+      />
     </main>
   );
 }
