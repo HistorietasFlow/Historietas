@@ -953,3 +953,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os adaptadores dos campos dos overlays de senha, exclusão e feedback foram isolados, preservando a ordem dos setters e a limpeza de mensagens de erro.
 - Estados, hooks, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 47 — Configurações
+
+- Os derivados de apresentação da página — tradução, visibilidade da busca e total da biblioteca — foram agrupados em um hook dedicado, preservando as dependências e os cálculos existentes.
+- Estados, ações, autenticação, persistência, RLS e regras de negócio permaneceram na página sem alteração intencional de comportamento.
