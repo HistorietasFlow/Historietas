@@ -848,3 +848,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As transições puras de preferências de conta e privacidade foram isoladas, preservando spreads, regras de alternância e o total da Biblioteca.
 - Persistência, autenticação, sincronização remota, estados e apresentação permaneceram na página sem alteração intencional de comportamento.
+
+## Registro da Fase 25 — Configurações
+
+- As validações puras dos formulários de alteração de senha e exclusão de conta foram isoladas, preservando ordem, mensagens e idiomas.
+- Autenticação, chamadas remotas, estados, redirecionamento e apresentação permaneceram na página sem alteração intencional de comportamento.

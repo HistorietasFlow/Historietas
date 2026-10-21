@@ -90,6 +90,10 @@ import {
   criarPrivacidadeComPerfilPrivadoAlternadoConfiguracoes,
 } from "./lib/configuracoes-privacy-preference-state-utils";
 import {
+  validarAlteracaoSenhaConfiguracoes,
+  validarExclusaoContaConfiguracoes,
+} from "./lib/configuracoes-security-form-validation";
+import {
   deleteDangerButtonDisabledStyle,
   deleteDangerButtonStyle,
   deleteModalIconStyle,
@@ -643,28 +647,14 @@ export default function ConfiguracoesPage() {
 
     setErroExclusaoConta("");
 
-    if (!senhaExclusaoConta) {
-      setErroExclusaoConta(
-        t(
-          "Digite sua senha atual.",
-          "Enter your current password.",
-          "Escribe tu contraseña actual.",
-        ),
-      );
-      return;
-    }
+    const erroValidacao = validarExclusaoContaConfiguracoes(
+      senhaExclusaoConta,
+      confirmacaoExclusaoConta,
+      language,
+    );
 
-    const confirmacaoEsperada =
-      language === "en" ? "DELETE" : language === "es" ? "ELIMINAR" : "EXCLUIR";
-
-    if (confirmacaoExclusaoConta.trim().toUpperCase() !== confirmacaoEsperada) {
-      setErroExclusaoConta(
-        t(
-          "Digite EXCLUIR exatamente como aparece para confirmar.",
-          "Type DELETE exactly as shown to confirm.",
-          "Escribe ELIMINAR exactamente como aparece para confirmar.",
-        ),
-      );
+    if (erroValidacao) {
+      setErroExclusaoConta(erroValidacao);
       return;
     }
 
@@ -754,61 +744,15 @@ export default function ConfiguracoesPage() {
 
     setErroSenha("");
 
-    if (!senhaAtual) {
-      setErroSenha(
-        t(
-          "Digite sua senha atual.",
-          "Enter your current password.",
-          "Escribe tu contraseña actual.",
-        ),
-      );
-      return;
-    }
+    const erroValidacao = validarAlteracaoSenhaConfiguracoes(
+      senhaAtual,
+      novaSenha,
+      confirmarNovaSenha,
+      language,
+    );
 
-    if (novaSenha.length < 8) {
-      setErroSenha(
-        t(
-          "A nova senha precisa ter pelo menos 8 caracteres.",
-          "The new password must be at least 8 characters long.",
-          "La nueva contraseña debe tener al menos 8 caracteres.",
-        ),
-      );
-      return;
-    }
-
-    if (
-      !/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(novaSenha) ||
-      !/[0-9]/.test(novaSenha)
-    ) {
-      setErroSenha(
-        t(
-          "Use pelo menos uma letra e um número na nova senha.",
-          "Use at least one letter and one number in the new password.",
-          "Usa al menos una letra y un número en la nueva contraseña.",
-        ),
-      );
-      return;
-    }
-
-    if (novaSenha === senhaAtual) {
-      setErroSenha(
-        t(
-          "A nova senha precisa ser diferente da senha atual.",
-          "The new password must be different from the current password.",
-          "La nueva contraseña debe ser diferente de la contraseña actual.",
-        ),
-      );
-      return;
-    }
-
-    if (novaSenha !== confirmarNovaSenha) {
-      setErroSenha(
-        t(
-          "A confirmação não corresponde à nova senha.",
-          "The confirmation does not match the new password.",
-          "La confirmación no coincide con la nueva contraseña.",
-        ),
-      );
+    if (erroValidacao) {
+      setErroSenha(erroValidacao);
       return;
     }
 
