@@ -1068,3 +1068,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos tipados de limpeza da mensagem de ação e fechamento do toast foram centralizados e reutilizados pelos hooks, ações e componente de feedback correspondentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 70 — Configurações
+
+- Os contratos de setters textuais e booleanos dos controles de conteúdo e modais foram centralizados e reutilizados nas ações correspondentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

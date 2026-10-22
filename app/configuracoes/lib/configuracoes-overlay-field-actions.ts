@@ -1,13 +1,16 @@
-import type { LimparMensagemAcaoConfiguracoes } from "./configuracoes-callback-types";
+import type {
+  AtualizarTextoConfiguracoes,
+  LimparMensagemAcaoConfiguracoes,
+} from "./configuracoes-callback-types";
 
 type AcoesCamposOverlayConfiguracoes = {
-  setSenhaAtual: (senha: string) => void;
-  setNovaSenha: (senha: string) => void;
-  setConfirmarNovaSenha: (senha: string) => void;
-  setErroSenha: (erro: string) => void;
-  setSenhaExclusaoConta: (senha: string) => void;
-  setConfirmacaoExclusaoConta: (confirmacao: string) => void;
-  setErroExclusaoConta: (erro: string) => void;
+  setSenhaAtual: AtualizarTextoConfiguracoes;
+  setNovaSenha: AtualizarTextoConfiguracoes;
+  setConfirmarNovaSenha: AtualizarTextoConfiguracoes;
+  setErroSenha: AtualizarTextoConfiguracoes;
+  setSenhaExclusaoConta: AtualizarTextoConfiguracoes;
+  setConfirmacaoExclusaoConta: AtualizarTextoConfiguracoes;
+  setErroExclusaoConta: AtualizarTextoConfiguracoes;
   setMensagemAcao: LimparMensagemAcaoConfiguracoes;
 };
 

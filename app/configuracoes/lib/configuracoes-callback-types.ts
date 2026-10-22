@@ -78,6 +78,8 @@ export type EnviarFormularioConfiguracoes =
 
 export type AtualizarTextoConfiguracoes = (valor: string) => void;
 
+export type AtualizarBooleanoConfiguracoes = (valor: boolean) => void;
+
 export type CarregarUsuariosBloqueadosConfiguracoes = () => Promise<void>;
 
 export type AlternarUsuariosBloqueadosConfiguracoes = () => void;
