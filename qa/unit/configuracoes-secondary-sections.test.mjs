@@ -83,8 +83,10 @@ test("seções secundárias preservam permissões, preferências e ações da co
   assert.match(acoesConta, /traduzirTexto: TraduzirTextoConfiguracoes;/);
   assert.match(acoesConta, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(acoesConta, /type TraduzirTexto =/);
-  assert.match(acoesConta, /onAbrirExclusaoConta: \(\) => void/);
-  assert.match(acoesConta, /onSairDaConta: \(\) => void/);
+  assert.match(acoesConta, /AbrirExclusaoContaConfiguracoes/);
+  assert.match(acoesConta, /SairDaContaConfiguracoes/);
+  assert.doesNotMatch(acoesConta, /onAbrirExclusaoConta: \(\) => void/);
+  assert.doesNotMatch(acoesConta, /onSairDaConta: \(\) => void/);
   assert.match(acoesConta, /Zona de risco/);
   assert.match(acoesConta, /Excluir minha conta/);
   assert.match(acoesConta, /onClick=\{onAbrirExclusaoConta\}/);
