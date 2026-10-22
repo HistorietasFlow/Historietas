@@ -2,6 +2,10 @@ import type {
   MostrarMensagemAcaoConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "./configuracoes-callback-types";
+import type {
+  AtualizarRotaConfiguracoes,
+  RedirecionarLoginConfiguracoes,
+} from "./configuracoes-navigation-types";
 
 export async function sairDaContaConfiguracoes({
   limparMensagem,
@@ -13,8 +17,8 @@ export async function sairDaContaConfiguracoes({
 }: {
   limparMensagem: () => void;
   encerrarSessao: () => Promise<{ error: unknown }>;
-  redirecionarLogin: () => void;
-  atualizarRota: () => void;
+  redirecionarLogin: RedirecionarLoginConfiguracoes;
+  atualizarRota: AtualizarRotaConfiguracoes;
   mostrarMensagemAcao: MostrarMensagemAcaoConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 }) {

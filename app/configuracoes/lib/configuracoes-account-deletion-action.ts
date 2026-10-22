@@ -5,6 +5,10 @@ import { limparDadosLocaisContaExcluida } from "./configuracoes-account-deletion
 import { traduzirErroExclusaoContaConfiguracoes } from "./configuracoes-account-deletion-error-messages";
 import { validarExclusaoContaConfiguracoes } from "./configuracoes-security-form-validation";
 import type { TraduzirTextoConfiguracoes } from "./configuracoes-callback-types";
+import type {
+  AtualizarRotaConfiguracoes,
+  RedirecionarLoginConfiguracoes,
+} from "./configuracoes-navigation-types";
 
 export async function excluirContaConfiguracoes({
   event,
@@ -27,8 +31,8 @@ export async function excluirContaConfiguracoes({
   usuarioIdLogado: string;
   setErroExclusaoConta: Dispatch<SetStateAction<string>>;
   setExcluindoConta: Dispatch<SetStateAction<boolean>>;
-  redirecionarLogin: () => void;
-  atualizarRota: () => void;
+  redirecionarLogin: RedirecionarLoginConfiguracoes;
+  atualizarRota: AtualizarRotaConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 }) {
   event.preventDefault();

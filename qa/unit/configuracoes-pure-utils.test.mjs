@@ -1790,3 +1790,51 @@ test("contratos de navegacao compartilhados preservam os routers dos hooks e aco
     assert.doesNotMatch(source, new RegExp("type " + contrato + " ="));
   }
 });
+
+test("contratos de navegacao das acoes de conta preservam redirecionamento e atualizacao", () => {
+  assert.match(
+    navigationTypesSource,
+    /export type RedirecionarLoginConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    navigationTypesSource,
+    /export type AtualizarRotaConfiguracoes = \(\) => void;/,
+  );
+
+  for (const [arquivo, contratos, assinaturasLocais] of [
+    [
+      "lib/configuracoes-account-deletion-action.ts",
+      ["RedirecionarLoginConfiguracoes", "AtualizarRotaConfiguracoes"],
+      [
+        /redirecionarLogin: \(\) => void;/,
+        /atualizarRota: \(\) => void;/,
+      ],
+    ],
+    [
+      "lib/configuracoes-profile-save-action.ts",
+      ["RedirecionarLoginConfiguracoes"],
+      [/redirecionarLogin: \(\) => void;/],
+    ],
+    [
+      "lib/configuracoes-sign-out-action.ts",
+      ["RedirecionarLoginConfiguracoes", "AtualizarRotaConfiguracoes"],
+      [
+        /redirecionarLogin: \(\) => void;/,
+        /atualizarRota: \(\) => void;/,
+      ],
+    ],
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+
+    assert.match(source, /configuracoes-navigation-types/);
+    for (const contrato of contratos) {
+      assert.match(source, new RegExp(contrato));
+    }
+    for (const assinaturaLocal of assinaturasLocais) {
+      assert.doesNotMatch(source, assinaturaLocal);
+    }
+  }
+});

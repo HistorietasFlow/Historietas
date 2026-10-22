@@ -16,6 +16,7 @@ import { traduzirErroUsernameConfiguracoes } from "./configuracoes-error-message
 import { salvarPreferenciasPrivacidade } from "./configuracoes-privacy-preferences";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 import { salvarPerfilConfiguracoesSupabase } from "./configuracoes-profile-supabase-saver";
+import type { RedirecionarLoginConfiguracoes } from "./configuracoes-navigation-types";
 import type {
   MostrarMensagemAcaoConfiguracoes,
   TraduzirTextoConfiguracoes,
@@ -44,7 +45,7 @@ export async function salvarConfiguracoesPerfil({
   privacidade: PreferenciasPrivacidadeHistorietas;
   usuario: UsuarioConfiguracoes | null;
   language: HistorietasLanguage;
-  redirecionarLogin: () => void;
+  redirecionarLogin: RedirecionarLoginConfiguracoes;
   setMensagemAcao: (mensagem: null) => void;
   mostrarMensagemAcao: MostrarMensagemAcaoConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
