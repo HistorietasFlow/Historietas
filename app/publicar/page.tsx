@@ -92,6 +92,7 @@ import {
 import { registrarDiarioPublicacao } from "./lib/publicar-diary-activity";
 import { criarSlugUnicoSupabase } from "./lib/publicar-slug-supabase-loader";
 import { carregarNomePerfilPublicar } from "./lib/publicar-profile-loader";
+import { criarDecoracaoPaginaStyle } from "./lib/publicar-page-decoration-style";
 
 
 type ChaveTextoPublicar = keyof (typeof TEXTOS_PUBLICAR)["pt-BR"];
@@ -464,13 +465,6 @@ function criarCoverUploadIconBoxStyle(capaAtual: string): CSSProperties {
     backgroundPosition: "center",
   };
 }
-
-function criarDecoracaoPaginaStyle(): CSSProperties {
-  return {
-    display: "none",
-  };
-}
-
 
 export default function PublicarPage() {
   const router = useRouter();
