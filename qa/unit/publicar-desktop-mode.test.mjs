@@ -4,6 +4,9 @@ import test from "node:test";
 
 const hook = readFileSync(new URL("../../app/publicar/hooks/use-publicar-desktop-mode.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/publicar/page.tsx", import.meta.url), "utf8");
+const cabecalho = readFileSync(new URL("../../app/publicar/components/PublicarPageHeader.tsx", import.meta.url), "utf8");
+const progresso = readFileSync(new URL("../../app/publicar/components/PublicarProgress.tsx", import.meta.url), "utf8");
+const previa = readFileSync(new URL("../../app/publicar/components/PublicarWorkPreview.tsx", import.meta.url), "utf8");
 
 test("usePublicarDesktopMode preserva o lifecycle responsivo", () => {
   assert.match(hook, /^"use client";/);
@@ -25,7 +28,12 @@ test("Publicar delega somente o modo desktop", () => {
   assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
   assert.doesNotMatch(pagina, /setIsDesktop/);
   assert.doesNotMatch(pagina, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 41);
+  assert.match(pagina, /<PublicarPageHeader[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(pagina, /<PublicarProgress[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(pagina, /<PublicarWorkPreview[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(cabecalho, /isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle/);
+  assert.match(progresso, /isDesktop[\s\S]*?desktopProgressBoxStyle[\s\S]*?progressBoxStyle/);
+  assert.match(previa, /isDesktop \? desktopPreviewPanelStyle : previewPanelStyle/);
   assert.match(pagina, /async function salvarObra/);
   assert.match(pagina, /supabase\.auth\.getUser/);
 });
