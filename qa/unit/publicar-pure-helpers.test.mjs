@@ -116,6 +116,7 @@ test("Publicar delega os helpers puros às fronteiras extraídas", () => {
   }
 
   assert.match(pagina, /async function enviarArquivoStorage\(/);
-  assert.match(pagina, /function salvarObrasLocalmente\(/);
+  assert.match(pagina, /from "\.\/lib\/publicar-file-backup-storage-utils";/);
+  assert.doesNotMatch(pagina, /function salvarObrasLocalmente\(/);
   assert.match(pagina, /function salvarObra\(/);
 });

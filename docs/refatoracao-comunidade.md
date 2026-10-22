@@ -1168,3 +1168,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A normalização local de obras, o storage isolado por usuário e os helpers de login/metadata foram isolados em módulos dedicados, preservando serialização, fallbacks, chaves, backups e retorno de autenticação.
 - JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 4 — Publicar
+
+- A leitura, sincronização e persistência local dos backups de arquivos foram isoladas em `publicar-file-backup-storage-utils.ts`, preservando chaves, normalização, isolamento por autor e falhas silenciosas.
+- JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

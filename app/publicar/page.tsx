@@ -33,22 +33,18 @@ import {
   normalizarClassificacaoIndicativaPublicar,
 } from "./lib/publicar-work-utils";
 import {
-  obterChavesBackupArquivoPublicar,
-  normalizarArquivoObra,
   normalizarObraSalva,
   obraPertenceAoUsuarioPublicar,
-  prepararObraParaLocalStorage,
 } from "./lib/publicar-local-work-utils";
+import { salvarObrasLocalmente } from "./lib/publicar-file-backup-storage-utils";
 import {
   lerStorageUsuarioPublicar,
-  salvarJsonStorageUsuarioPublicar,
 } from "./lib/publicar-user-storage-utils";
 import {
   criarLoginHrefPublicar,
   obterNomeMetadataPublicar,
 } from "./lib/publicar-auth-utils";
 import {
-  FILE_BACKUP_STORAGE_KEY,
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
   LIMITE_TAGS_OBRA,
@@ -772,94 +768,6 @@ async function carregarNomePerfilPublicar(userId: string, fallback = "") {
   }
 
   return fallbackLimpo;
-}
-
-function carregarBackupArquivosPublicar(userId = "") {
-  if (!userId.trim()) {
-    return {} as Record<string, ArquivoObraLocal>;
-  }
-
-  try {
-    const backupTexto = lerStorageUsuarioPublicar(
-      FILE_BACKUP_STORAGE_KEY,
-      userId
-    );
-    const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
-
-    if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
-      return {} as Record<string, ArquivoObraLocal>;
-    }
-
-    return Object.entries(backupJson as Record<string, unknown>).reduce<
-      Record<string, ArquivoObraLocal>
-    >((backup, [chave, arquivo]) => {
-      const arquivoNormalizado = normalizarArquivoObra(arquivo);
-
-      if (chave.trim() && arquivoNormalizado) {
-        backup[chave] = arquivoNormalizado;
-      }
-
-      return backup;
-    }, {});
-  } catch {
-    return {} as Record<string, ArquivoObraLocal>;
-  }
-}
-
-function sincronizarBackupArquivoPublicar(
-  obrasParaSalvar: ObraLocal[],
-  userId = ""
-) {
-  if (!userId.trim()) {
-    return;
-  }
-
-  try {
-    const backupAtual = carregarBackupArquivosPublicar(userId);
-
-    obrasParaSalvar.forEach((obra) => {
-      const arquivo = normalizarArquivoObra(obra.arquivoObra);
-
-      if (!arquivo) {
-        return;
-      }
-
-      obterChavesBackupArquivoPublicar(obra).forEach((chave) => {
-        backupAtual[chave] = arquivo;
-      });
-    });
-
-    salvarJsonStorageUsuarioPublicar(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupAtual
-    );
-  } catch {
-    // Backup local é camada de proteção. Não bloqueia a publicação.
-  }
-}
-
-function salvarObrasLocalmente(obrasParaSalvar: ObraLocal[], userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return;
-  }
-
-  const obrasSemArquivosPesados = obrasParaSalvar.map(prepararObraParaLocalStorage);
-  const obrasParaStorage = userIdLimpo
-    ? obrasSemArquivosPesados.filter((obra) =>
-        obraPertenceAoUsuarioPublicar(obra, userIdLimpo),
-      )
-    : obrasSemArquivosPesados;
-
-  salvarJsonStorageUsuarioPublicar(
-    STORAGE_KEY,
-    userIdLimpo,
-    obrasParaStorage
-  );
-
-  sincronizarBackupArquivoPublicar(obrasParaSalvar, userIdLimpo);
 }
 
 async function registrarDiarioPublicacao({

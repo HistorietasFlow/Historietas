@@ -115,6 +115,7 @@ test("Publicar delega fronteiras locais, storage e autenticação extraídas", (
 
   assert.match(pagina, /async function enviarArquivoStorage\(/);
   assert.match(pagina, /async function carregarNomePerfilPublicar\(/);
-  assert.match(pagina, /function carregarBackupArquivosPublicar\(/);
+  assert.match(pagina, /from "\.\/lib\/publicar-file-backup-storage-utils";/);
+  assert.doesNotMatch(pagina, /function carregarBackupArquivosPublicar\(/);
   assert.match(pagina, /async function salvarObra\(/);
 });
