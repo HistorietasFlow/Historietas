@@ -17,6 +17,13 @@ const loadingState = readFileSync(
   ),
   "utf8",
 );
+const accessOrchestrationHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-access-orchestration.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const content = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-page-content.tsx",
@@ -89,9 +96,10 @@ test("Configurações mantém os dois consumidores e suas fronteiras", () => {
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.match(pagina, /if \(verificandoAcesso\) \{/);
   assert.match(
-    pagina,
-    /import \{ useConfiguracoesInitialAccess \} from "\.\/hooks\/use-configuracoes-initial-access";/,
+    accessOrchestrationHook,
+    /import \{ useConfiguracoesInitialAccess \} from "\.\/use-configuracoes-initial-access";/,
   );
-  assert.match(pagina, /useConfiguracoesInitialAccess\(\{/);
+  assert.match(pagina, /useConfiguracoesAccessOrchestration\(\{/);
+  assert.match(accessOrchestrationHook, /useConfiguracoesInitialAccess\(\{/);
   assert.doesNotMatch(pagina, /async function verificarAcesso\(/);
 });

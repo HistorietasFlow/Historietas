@@ -983,3 +983,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O estado local não modal da página foi agrupado em um hook dedicado, preservando literalmente defaults, tipos e setters usados pela orquestração.
 - Lifecycles, ações, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 53 — Configurações
+
+- A composição dos controllers de acesso — carga inicial, acesso administrativo e usuários bloqueados — foi agrupada em um hook dedicado, preservando a ordem de chamadas e os mesmos setters.
+- Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

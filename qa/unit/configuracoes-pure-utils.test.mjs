@@ -66,6 +66,13 @@ const pageStateHookSource = readFileSync(
   ),
   "utf8",
 );
+const accessOrchestrationHookSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-access-orchestration.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-models.ts",
@@ -733,8 +740,8 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/lib\/configuracoes-local-summary-utils";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/hooks\/use-configuracoes-initial-access";/,
+    accessOrchestrationHookSource,
+    /from "\.\/use-configuracoes-initial-access";/,
   );
   assert.match(
     accountActionHandlersHookSource,
@@ -757,12 +764,12 @@ test("Configurações delega as fronteiras extraídas", () => {
     /from "\.\/hooks\/use-configuracoes-security-modal-state";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/hooks\/use-configuracoes-blocked-users";/,
+    accessOrchestrationHookSource,
+    /from "\.\/use-configuracoes-blocked-users";/,
   );
   assert.match(
-    pagina,
-    /from "\.\/hooks\/use-configuracoes-admin-access";/,
+    accessOrchestrationHookSource,
+    /from "\.\/use-configuracoes-admin-access";/,
   );
   assert.match(
     pagina,
@@ -1035,15 +1042,32 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(accountActionHandlersHookSource, /baixarBackupContaConfiguracoes\(\{/);
   assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
   assert.match(pagina, /useConfiguracoesSecurityModalState\(\)/);
-  assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
   assert.match(
     pagina,
-    /useConfiguracoesInitialAccess\(\{\s*router,\s*setVerificandoAcesso,\s*setUsuario,\s*setPreferencias,\s*setPrivacidade,\s*setResumo,\s*setUsuariosBloqueados,\s*\}\);/,
+    /import \{ useConfiguracoesAccessOrchestration \} from "\.\/hooks\/use-configuracoes-access-orchestration";/,
+  );
+  assert.match(pagina, /useConfiguracoesAccessOrchestration\(\{/);
+  assert.match(accessOrchestrationHookSource, /^"use client";/);
+  assert.match(accessOrchestrationHookSource, /useConfiguracoesBlockedUsers\(\{/);
+  assert.match(
+    accessOrchestrationHookSource,
+    /useConfiguracoesInitialAccess\(\{\s*router,\s*setVerificandoAcesso,\s*setUsuario,\s*setPreferencias,\s*setPrivacidade,\s*setResumo,\s*setUsuariosBloqueados: blockedUsers\.setUsuariosBloqueados,\s*\}\);/,
   );
   assert.doesNotMatch(pagina, /async function verificarAcesso\(/);
   assert.match(
-    pagina,
+    accessOrchestrationHookSource,
     /useConfiguracoesAdminAccess\(\{\s*verificandoAcesso,\s*setAdminLiberado,\s*\}\);/,
+  );
+  assert.match(accessOrchestrationHookSource, /return blockedUsers;/);
+  assert.ok(
+    accessOrchestrationHookSource.indexOf("useConfiguracoesBlockedUsers({") <
+      accessOrchestrationHookSource.indexOf("useConfiguracoesInitialAccess({") &&
+      accessOrchestrationHookSource.indexOf("useConfiguracoesInitialAccess({") <
+        accessOrchestrationHookSource.indexOf("useConfiguracoesAdminAccess({"),
+  );
+  assert.doesNotMatch(
+    accessOrchestrationHookSource,
+    /supabase|localStorage|sessionStorage|window|document|fetch|JSX/,
   );
   assert.doesNotMatch(pagina, /async function verificarAdmin\(/);
   assert.doesNotMatch(pagina, /function atualizarPreferencia</);
