@@ -2,12 +2,12 @@ import { ConfiguracoesAccountDeletionModal } from "./configuracoes-account-delet
 import { ConfiguracoesActionToast } from "./configuracoes-action-toast";
 import { ConfiguracoesSecurityPasswordModal } from "./configuracoes-security-password-modal";
 import type {
-  MensagemAcaoConfiguracoesVisual,
   AtualizarTextoConfiguracoes,
   EnviarFormularioConfiguracoes,
   FecharOverlayConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
+import type { MensagemAcaoConfiguracoesVisual } from "../lib/configuracoes-action-message-models";
 
 type ConfiguracoesPageOverlaysProps = {
   mostrarSeguranca: boolean;

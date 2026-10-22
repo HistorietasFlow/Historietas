@@ -3,6 +3,7 @@ import type {
   PreferenciasConta,
   UsuarioBloqueadoConfiguracoes,
 } from "./configuracoes-account-models";
+import type { TipoMensagemAcaoConfiguracoes } from "./configuracoes-action-message-models";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 
 export type TraduzirTextoConfiguracoes = (
@@ -10,17 +11,6 @@ export type TraduzirTextoConfiguracoes = (
   ingles: string,
   espanhol: string,
 ) => string;
-
-export type TipoMensagemAcaoConfiguracoes = "sucesso" | "erro" | "aviso";
-
-export type MensagemAcaoConfiguracoesVisual = {
-  tipo: TipoMensagemAcaoConfiguracoes;
-  texto: string;
-};
-
-export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & {
-  id: number;
-};
 
 export type ExecutarAcaoComArgumentosConfiguracoes<
   Argumentos extends unknown[],

@@ -16,6 +16,13 @@ const callbackTypes = readFileSync(
   ),
   "utf8",
 );
+const actionMessageModels = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-action-message-models.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -93,7 +100,7 @@ test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
   );
   assert.match(
     hook,
-    /from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-action-message-models";/,
   );
   assert.match(hook, /function mostrarMensagemAcao\(\s*tipo: TipoMensagemAcaoConfiguracoes,\s*texto: string,/);
   assert.match(hook, /setMensagemAcao\(\(mensagemAtual\) => \(\{/);
@@ -116,15 +123,15 @@ test("useConfiguracoesActionMessage preserva ID e expiração segura", () => {
 
 test("modelos compartilhados da mensagem de ação preservam contratos e consumidores", () => {
   assert.match(
-    callbackTypes,
+    actionMessageModels,
     /export type TipoMensagemAcaoConfiguracoes = "sucesso" \| "erro" \| "aviso";/,
   );
   assert.match(
-    callbackTypes,
+    actionMessageModels,
     /export type MensagemAcaoConfiguracoesVisual = \{\s+tipo: TipoMensagemAcaoConfiguracoes;\s+texto: string;\s+\};/,
   );
   assert.match(
-    callbackTypes,
+    actionMessageModels,
     /export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & \{\s+id: number;\s+\};/,
   );
   assert.match(
@@ -135,6 +142,14 @@ test("modelos compartilhados da mensagem de ação preservam contratos e consumi
     callbackTypes,
     /export type MostrarMensagemAcaoConfiguracoes =\s+ExecutarAcaoComArgumentosConfiguracoes<\s+\[TipoMensagemAcaoConfiguracoes, string\]\s+>;/,
   );
+  assert.match(
+    callbackTypes,
+    /import type \{ TipoMensagemAcaoConfiguracoes \} from "\.\/configuracoes-action-message-models";/,
+  );
+  assert.doesNotMatch(
+    actionMessageModels,
+    /React|useState|useEffect|supabase|localStorage|window|document|JSX/,
+  );
   assert.doesNotMatch(
     callbackTypes,
     /React|useState|useEffect|supabase|localStorage|window|document|JSX/,
@@ -143,8 +158,16 @@ test("modelos compartilhados da mensagem de ação preservam contratos e consumi
   assert.match(hook, /TipoMensagemAcaoConfiguracoes,/);
   assert.doesNotMatch(hook, /type TipoMensagemAcaoConfiguracoes =/);
   assert.doesNotMatch(hook, /type MensagemAcaoConfiguracoes =/);
-  assert.match(toast, /MensagemAcaoConfiguracoesVisual,/);
+  assert.match(toast, /MensagemAcaoConfiguracoesVisual/);
+  assert.match(
+    toast,
+    /from "\.\.\/lib\/configuracoes-action-message-models";/,
+  );
   assert.doesNotMatch(toast, /type MensagemAcaoConfiguracoesVisual =/);
+  assert.match(
+    overlays,
+    /from "\.\.\/lib\/configuracoes-action-message-models";/,
+  );
 });
 
 test("Configurações mantém domínio e toast na página", () => {
