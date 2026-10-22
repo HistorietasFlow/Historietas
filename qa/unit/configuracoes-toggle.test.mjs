@@ -23,6 +23,13 @@ const callbackPrimitives = readFileSync(
   ),
   "utf8",
 );
+const toggleTypes = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-toggle-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -119,7 +126,7 @@ test("Toggle reutiliza o contrato compartilhado de alternância", () => {
     /export type ExecutarAcaoConfiguracoes = \(\) => void;/,
   );
   assert.match(
-    callbackTypes,
+    toggleTypes,
     /export type AlternarConfiguracao = ExecutarAcaoConfiguracoes;/,
   );
   for (const contrato of [
@@ -129,7 +136,7 @@ test("Toggle reutiliza o contrato compartilhado de alternância", () => {
     "AlternarUsuariosBloqueadosConfiguracoes",
   ]) {
     assert.match(
-      callbackTypes,
+      toggleTypes,
       new RegExp("export type " + contrato + " =\\s+AlternarConfiguracao;"),
     );
   }

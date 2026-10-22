@@ -1123,3 +1123,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos puros de apresentação — tradução, predicado de visibilidade e atualização de busca — foram isolados em `configuracoes-presentation-types.ts`, preservando os aliases públicos existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 81 — Configurações
+
+- Os contratos puros de feedback, preferências/privacidade e alternâncias foram isolados em módulos próprios, preservando os aliases públicos existentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

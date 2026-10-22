@@ -45,6 +45,27 @@ const presentationTypesSource = readFileSync(
   ),
   "utf8",
 );
+const feedbackActionTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-feedback-action-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const preferenceActionTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-preference-action-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const toggleTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-toggle-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const actionMessageModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-action-message-models.ts",
@@ -1418,7 +1439,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & \{\s+id: number;\s+\};/,
   );
   assert.match(
-    callbackTypesSource,
+    feedbackActionTypesSource,
     /import type \{ TipoMensagemAcaoConfiguracoes \} from "\.\/configuracoes-action-message-models";/,
   );
   assert.match(
@@ -1434,11 +1455,23 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type \{\s+AtualizarBuscaConfiguracoes,\s+DeveMostrarConfiguracoes,\s+TraduzirTextoConfiguracoes,\s+\} from "\.\/configuracoes-presentation-types";/,
   );
   assert.match(
+    callbackTypesSource,
+    /export type \{\s+LimparMensagemAcaoConfiguracoes,\s+MostrarMensagemAcaoConfiguracoes,\s+\} from "\.\/configuracoes-feedback-action-types";/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type \{\s+AplicarPrivacidadeAtualizadaConfiguracoes,\s+AtualizarPreferenciaConfiguracoes,\s+AtualizarPrivacidadeConfiguracoes,\s+\} from "\.\/configuracoes-preference-action-types";/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type \{\s+AlternarAprovacaoNovosSeguidoresConfiguracoes,\s+AlternarConfiguracao,\s+AlternarPerfilPrivadoConfiguracoes,\s+AlternarReceberAvisosConfiguracoes,\s+AlternarUsuariosBloqueadosConfiguracoes,\s+\} from "\.\/configuracoes-toggle-types";/,
+  );
+  assert.match(
     presentationTypesSource,
     /import type \{\s+AtualizarTextoConfiguracoes,\s+VerificarCondicaoConfiguracoes,\s+\} from "\.\/configuracoes-callback-primitives";/,
   );
   assert.match(
-    callbackTypesSource,
+    feedbackActionTypesSource,
     /export type MostrarMensagemAcaoConfiguracoes =\s+ExecutarAcaoComArgumentosConfiguracoes<\s+\[TipoMensagemAcaoConfiguracoes, string\]\s+>;/,
   );
   assert.match(
@@ -1454,11 +1487,11 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type AtualizarCampoConfiguracoes<Objeto> = <K extends keyof Objeto>\(\s+campo: K,\s+valor: Objeto\[K\],\s+\) => void;/,
   );
   assert.match(
-    callbackTypesSource,
+    preferenceActionTypesSource,
     /export type AtualizarPreferenciaConfiguracoes =\s+AtualizarCampoConfiguracoes<PreferenciasConta>;/,
   );
   assert.match(
-    callbackTypesSource,
+    preferenceActionTypesSource,
     /export type AtualizarPrivacidadeConfiguracoes =\s+AtualizarCampoConfiguracoes<PreferenciasPrivacidadeHistorietas>;/,
   );
   assert.match(
@@ -1466,19 +1499,19 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type ExecutarAcaoConfiguracoes = \(\) => void;/,
   );
   assert.match(
-    callbackTypesSource,
+    toggleTypesSource,
     /export type AlternarConfiguracao = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    toggleTypesSource,
     /export type AlternarPerfilPrivadoConfiguracoes = AlternarConfiguracao;/,
   );
   assert.match(
-    callbackTypesSource,
+    toggleTypesSource,
     /export type AlternarAprovacaoNovosSeguidoresConfiguracoes =\s+AlternarConfiguracao;/,
   );
   assert.match(
-    callbackTypesSource,
+    preferenceActionTypesSource,
     /export type AplicarPrivacidadeAtualizadaConfiguracoes =\s+AtualizarValorConfiguracoes<PreferenciasPrivacidadeHistorietas>;/,
   );
   assert.match(
@@ -1530,7 +1563,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type CarregarUsuariosBloqueadosConfiguracoes =\s+ExecutarAcaoAssincronaConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    toggleTypesSource,
     /export type AlternarUsuariosBloqueadosConfiguracoes = AlternarConfiguracao;/,
   );
   assert.match(
@@ -1553,6 +1586,16 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     callbackPrimitivesSource,
     /React|supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
   );
+  for (const source of [
+    feedbackActionTypesSource,
+    preferenceActionTypesSource,
+    toggleTypesSource,
+  ]) {
+    assert.doesNotMatch(
+      source,
+      /React|supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+    );
+  }
 
   for (const arquivo of [
     "hooks/use-configuracoes-account-action-handlers.ts",
@@ -1942,7 +1985,7 @@ test("contratos de navegacao das acoes de conta preservam redirecionamento e atu
 
 test("contratos de feedback de acoes preservam a limpeza compartilhada", () => {
   assert.match(
-    callbackTypesSource,
+    feedbackActionTypesSource,
     /export type LimparMensagemAcaoConfiguracoes = AtualizarValorConfiguracoes<null>;/,
   );
 
