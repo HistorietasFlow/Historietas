@@ -1158,3 +1158,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os modelos locais e as opções estáticas de Publicar foram isolados em módulos dedicados, preservando contratos, limites, formatos, gêneros, tags, classificações, MIME types e chaves fixas.
 - JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 2 — Publicar
+
+- Os helpers puros de identificadores, validação de arquivos e normalização de obras foram isolados em módulos dedicados, preservando UUIDs, nomes de storage, categorias, MIME types, classificação, slugs e progresso de leitura.
+- JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
