@@ -8,6 +8,8 @@ import {
 import { Toggle } from "./configuracoes-toggle";
 import type { UsuarioBloqueadoConfiguracoes } from "../lib/configuracoes-account-models";
 import type {
+  AlternarAprovacaoNovosSeguidoresConfiguracoes,
+  AlternarPerfilPrivadoConfiguracoes,
   AlternarUsuariosBloqueadosConfiguracoes,
   CarregarUsuariosBloqueadosConfiguracoes,
   DeveMostrarConfiguracoes,
@@ -20,8 +22,8 @@ type ConfiguracoesProfilePrivacySectionProps = {
   deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   privacidade: PreferenciasPrivacidadeHistorietas;
-  onAlternarPerfilPrivado: () => void;
-  onAlternarAprovacaoNovosSeguidores: () => void;
+  onAlternarPerfilPrivado: AlternarPerfilPrivadoConfiguracoes;
+  onAlternarAprovacaoNovosSeguidores: AlternarAprovacaoNovosSeguidoresConfiguracoes;
   mostrarUsuariosBloqueados: boolean;
   usuariosBloqueados: UsuarioBloqueadoConfiguracoes[];
   carregandoUsuariosBloqueados: boolean;

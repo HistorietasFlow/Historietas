@@ -41,6 +41,14 @@ export type AtualizarPrivacidadeConfiguracoes = <
   valor: PreferenciasPrivacidadeHistorietas[K],
 ) => void;
 
+export type AlternarPerfilPrivadoConfiguracoes = () => void;
+
+export type AlternarAprovacaoNovosSeguidoresConfiguracoes = () => void;
+
+export type AplicarPrivacidadeAtualizadaConfiguracoes = (
+  privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
+) => void;
+
 export type FecharOverlayConfiguracoes = () => void;
 
 export type EnviarFormularioConfiguracoes =

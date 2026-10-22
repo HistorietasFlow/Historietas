@@ -18,8 +18,11 @@ import type {
   UsuarioBloqueadoConfiguracoes,
 } from "../lib/configuracoes-account-models";
 import type {
+  AlternarAprovacaoNovosSeguidoresConfiguracoes,
+  AlternarPerfilPrivadoConfiguracoes,
   AtualizarPreferenciaConfiguracoes,
   AtualizarPrivacidadeConfiguracoes,
+  AplicarPrivacidadeAtualizadaConfiguracoes,
   AlternarUsuariosBloqueadosConfiguracoes,
   CarregarUsuariosBloqueadosConfiguracoes,
   DeveMostrarConfiguracoes,
@@ -53,15 +56,13 @@ type ConfiguracoesPageContentProps = {
   onLimparErroUsername: () => void;
   onSalvar: () => void;
   onAbrirSeguranca: () => void;
-  onAlternarPerfilPrivado: () => void;
-  onAlternarAprovacaoNovosSeguidores: () => void;
+  onAlternarPerfilPrivado: AlternarPerfilPrivadoConfiguracoes;
+  onAlternarAprovacaoNovosSeguidores: AlternarAprovacaoNovosSeguidoresConfiguracoes;
   onCarregarUsuariosBloqueados: CarregarUsuariosBloqueadosConfiguracoes;
   onAlternarUsuariosBloqueados: AlternarUsuariosBloqueadosConfiguracoes;
   onDesbloquearUsuario: DesbloquearUsuarioConfiguracoes;
   onAtualizarPrivacidade: AtualizarPrivacidadeConfiguracoes;
-  onAplicarPrivacidadeAtualizada: (
-    proximaPrivacidade: PreferenciasPrivacidadeHistorietas,
-  ) => void;
+  onAplicarPrivacidadeAtualizada: AplicarPrivacidadeAtualizadaConfiguracoes;
   onAlternarReceberAvisos: () => void;
   onCopiarBackup: () => void;
   onBaixarBackup: () => void;
