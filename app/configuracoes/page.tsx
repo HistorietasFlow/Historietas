@@ -14,8 +14,7 @@ import { useConfiguracoesPageState } from "./hooks/use-configuracoes-page-state"
 import { useConfiguracoesSecurityModalBodyLock } from "./hooks/use-configuracoes-security-modal-body-lock";
 import { useConfiguracoesSecurityModalState } from "./hooks/use-configuracoes-security-modal-state";
 import { configuracoesPageCss } from "./lib/configuracoes-page-css";
-import { criarAcoesCamposOverlayConfiguracoes } from "./lib/configuracoes-overlay-field-actions";
-import { criarAcoesConteudoConfiguracoes } from "./lib/configuracoes-content-actions";
+import { criarAcoesPaginaConfiguracoes } from "./lib/configuracoes-page-actions";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
@@ -187,7 +186,11 @@ export default function ConfiguracoesPage() {
     onSenhaExclusaoContaChange,
     onConfirmacaoExclusaoContaChange,
     onFecharMensagemAcao,
-  } = criarAcoesCamposOverlayConfiguracoes({
+    onVoltar,
+    onLimparErroUsername,
+  } = criarAcoesPaginaConfiguracoes({
+    router,
+    setErroUsername,
     setSenhaAtual,
     setNovaSenha,
     setConfirmarNovaSenha,
@@ -197,11 +200,6 @@ export default function ConfiguracoesPage() {
     setErroExclusaoConta,
     setMensagemAcao,
   });
-  const { onVoltar, onLimparErroUsername } =
-    criarAcoesConteudoConfiguracoes({
-      router,
-      setErroUsername,
-    });
 
   if (verificandoAcesso) {
     return (
