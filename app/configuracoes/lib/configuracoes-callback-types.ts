@@ -55,6 +55,10 @@ export type SalvarConfiguracoes = () => void;
 
 export type AbrirSegurancaConfiguracoes = () => void;
 
+export type AbrirExclusaoContaConfiguracoes = () => void;
+
+export type SairDaContaConfiguracoes = () => void;
+
 export type FecharOverlayConfiguracoes = () => void;
 
 export type EnviarFormularioConfiguracoes =

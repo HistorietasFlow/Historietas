@@ -1048,3 +1048,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos tipados dos detalhes da conta — limpeza de erro de username, salvamento e abertura de segurança — foram centralizados e reutilizados pela composição e pela seção correspondente.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 66 — Configurações
+
+- Os contratos tipados das ações de conta — abertura de exclusão e saída — foram centralizados e reutilizados pela composição e pela seção correspondente.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
