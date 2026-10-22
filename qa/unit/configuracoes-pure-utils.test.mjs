@@ -1838,3 +1838,36 @@ test("contratos de navegacao das acoes de conta preservam redirecionamento e atu
     }
   }
 });
+
+test("contratos de feedback de acoes preservam a limpeza compartilhada", () => {
+  assert.match(
+    callbackTypesSource,
+    /export type LimparMensagemAcaoConfiguracoes = \(mensagem: null\) => void;/,
+  );
+
+  for (const arquivo of [
+    "hooks/use-configuracoes-account-action-handlers.ts",
+    "hooks/use-configuracoes-preference-actions.ts",
+    "lib/configuracoes-account-backup-actions.ts",
+    "lib/configuracoes-overlay-field-actions.ts",
+    "lib/configuracoes-preference-actions.ts",
+    "lib/configuracoes-profile-save-action.ts",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /LimparMensagemAcaoConfiguracoes/);
+    assert.doesNotMatch(source, /setMensagemAcao: \(mensagem: null\) => void;/);
+  }
+
+  const toast = readFileSync(
+    new URL(
+      "../../app/configuracoes/components/configuracoes-action-toast.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assert.match(toast, /FecharOverlayConfiguracoes/);
+  assert.doesNotMatch(toast, /onFechar: \(\) => void;/);
+});

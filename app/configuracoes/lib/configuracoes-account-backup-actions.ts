@@ -2,13 +2,14 @@ import { criarBackupLocal } from "./configuracoes-account-backup";
 import { baixarBackupConfiguracoes } from "./configuracoes-account-backup-download";
 import { copiarTextoConfiguracoes } from "./configuracoes-copy-utils";
 import type {
+  LimparMensagemAcaoConfiguracoes,
   MostrarMensagemAcaoConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "./configuracoes-callback-types";
 
 type AcoesBackupConfiguracoes = {
   usuarioIdLogado: string;
-  setMensagemAcao: (mensagem: null) => void;
+  setMensagemAcao: LimparMensagemAcaoConfiguracoes;
   mostrarMensagemAcao: MostrarMensagemAcaoConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 };

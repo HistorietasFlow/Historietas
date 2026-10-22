@@ -20,6 +20,7 @@ import { criarLoginHrefConfiguracoes } from "../lib/configuracoes-route-utils";
 import { sairDaContaConfiguracoes } from "../lib/configuracoes-sign-out-action";
 import type { RouterConfiguracoesAtualizavel } from "../lib/configuracoes-navigation-types";
 import type {
+  LimparMensagemAcaoConfiguracoes,
   MostrarMensagemAcaoConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
@@ -64,7 +65,7 @@ export function useConfiguracoesAccountActionHandlers({
   privacidade: PreferenciasPrivacidadeHistorietas;
   usuario: UsuarioConfiguracoes | null;
   language: HistorietasLanguage;
-  setMensagemAcao: (mensagem: null) => void;
+  setMensagemAcao: LimparMensagemAcaoConfiguracoes;
   mostrarMensagemAcao: MostrarMensagemAcaoConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   setErroUsername: Dispatch<SetStateAction<string>>;

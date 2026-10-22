@@ -1063,3 +1063,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos tipados de redirecionamento para login e atualização de rota foram centralizados e reutilizados pelas ações de salvar perfil, exclusão e saída da conta.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 69 — Configurações
+
+- Os contratos tipados de limpeza da mensagem de ação e fechamento do toast foram centralizados e reutilizados pelos hooks, ações e componente de feedback correspondentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
