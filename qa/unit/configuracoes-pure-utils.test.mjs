@@ -1424,6 +1424,18 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     callbackTypesSource,
     /export type AtualizarTextoConfiguracoes = \(valor: string\) => void;/,
   );
+  assert.match(
+    callbackTypesSource,
+    /export type CarregarUsuariosBloqueadosConfiguracoes = \(\) => Promise<void>;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AlternarUsuariosBloqueadosConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type DesbloquearUsuarioConfiguracoes = \(\s+usuario: UsuarioBloqueadoConfiguracoes,\s+\) => Promise<void>;/,
+  );
   assert.doesNotMatch(
     callbackTypesSource,
     /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
@@ -1544,6 +1556,42 @@ test("contratos compartilhados dos overlays preservam fechamento, formulario e c
     assert.doesNotMatch(source, /onSubmit: FormEventHandler<HTMLFormElement>;/);
     assert.doesNotMatch(source, /on\w+Change: \(valor: string\) => void;/);
   }
+});
+
+test("contratos compartilhados de bloqueados preservam carregamento, painel e desbloqueio", () => {
+  for (const arquivo of [
+    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-profile-privacy-section.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /CarregarUsuariosBloqueadosConfiguracoes/);
+    assert.match(source, /AlternarUsuariosBloqueadosConfiguracoes/);
+    assert.match(source, /DesbloquearUsuarioConfiguracoes/);
+    assert.doesNotMatch(source, /onCarregarUsuariosBloqueados: \(\) => Promise<void>;/);
+    assert.doesNotMatch(source, /onAlternarUsuariosBloqueados: \(\) => void;/);
+    assert.doesNotMatch(
+      source,
+      /onDesbloquearUsuario: \(\s+usuario: UsuarioBloqueadoConfiguracoes,\s+\) => Promise<void>;/,
+    );
+  }
+
+  const painel = readFileSync(
+    new URL(
+      "../../app/configuracoes/components/configuracoes-blocked-users-panel.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assert.match(painel, /CarregarUsuariosBloqueadosConfiguracoes/);
+  assert.match(painel, /DesbloquearUsuarioConfiguracoes/);
+  assert.doesNotMatch(painel, /onRecarregar: \(\) => Promise<void>;/);
+  assert.doesNotMatch(
+    painel,
+    /onDesbloquear: \(\s+usuario: UsuarioBloqueadoConfiguracoes,\s+\) => Promise<void>;/,
+  );
 });
 
 test("contratos de navegacao compartilhados preservam os routers dos hooks e acoes", () => {

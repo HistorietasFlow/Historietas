@@ -8,7 +8,10 @@ import {
 import { Toggle } from "./configuracoes-toggle";
 import type { UsuarioBloqueadoConfiguracoes } from "../lib/configuracoes-account-models";
 import type {
+  AlternarUsuariosBloqueadosConfiguracoes,
+  CarregarUsuariosBloqueadosConfiguracoes,
   DeveMostrarConfiguracoes,
+  DesbloquearUsuarioConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
@@ -24,11 +27,9 @@ type ConfiguracoesProfilePrivacySectionProps = {
   carregandoUsuariosBloqueados: boolean;
   desbloqueandoUsuarioId: string;
   erroUsuariosBloqueados: string;
-  onCarregarUsuariosBloqueados: () => Promise<void>;
-  onAlternarUsuariosBloqueados: () => void;
-  onDesbloquearUsuario: (
-    usuario: UsuarioBloqueadoConfiguracoes,
-  ) => Promise<void>;
+  onCarregarUsuariosBloqueados: CarregarUsuariosBloqueadosConfiguracoes;
+  onAlternarUsuariosBloqueados: AlternarUsuariosBloqueadosConfiguracoes;
+  onDesbloquearUsuario: DesbloquearUsuarioConfiguracoes;
 };
 
 export function ConfiguracoesProfilePrivacySection({

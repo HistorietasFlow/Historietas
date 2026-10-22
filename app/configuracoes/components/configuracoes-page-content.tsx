@@ -20,7 +20,10 @@ import type {
 import type {
   AtualizarPreferenciaConfiguracoes,
   AtualizarPrivacidadeConfiguracoes,
+  AlternarUsuariosBloqueadosConfiguracoes,
+  CarregarUsuariosBloqueadosConfiguracoes,
   DeveMostrarConfiguracoes,
+  DesbloquearUsuarioConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
@@ -52,11 +55,9 @@ type ConfiguracoesPageContentProps = {
   onAbrirSeguranca: () => void;
   onAlternarPerfilPrivado: () => void;
   onAlternarAprovacaoNovosSeguidores: () => void;
-  onCarregarUsuariosBloqueados: () => Promise<void>;
-  onAlternarUsuariosBloqueados: () => void;
-  onDesbloquearUsuario: (
-    usuario: UsuarioBloqueadoConfiguracoes,
-  ) => Promise<void>;
+  onCarregarUsuariosBloqueados: CarregarUsuariosBloqueadosConfiguracoes;
+  onAlternarUsuariosBloqueados: AlternarUsuariosBloqueadosConfiguracoes;
+  onDesbloquearUsuario: DesbloquearUsuarioConfiguracoes;
   onAtualizarPrivacidade: AtualizarPrivacidadeConfiguracoes;
   onAplicarPrivacidadeAtualizada: (
     proximaPrivacidade: PreferenciasPrivacidadeHistorietas,
