@@ -66,6 +66,27 @@ const toggleTypesSource = readFileSync(
   ),
   "utf8",
 );
+const accountActionTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-account-action-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const overlayActionTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-overlay-action-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const blockedUsersActionTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-blocked-users-action-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const actionMessageModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-action-message-models.ts",
@@ -1467,6 +1488,18 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type \{\s+AlternarAprovacaoNovosSeguidoresConfiguracoes,\s+AlternarConfiguracao,\s+AlternarPerfilPrivadoConfiguracoes,\s+AlternarReceberAvisosConfiguracoes,\s+AlternarUsuariosBloqueadosConfiguracoes,\s+\} from "\.\/configuracoes-toggle-types";/,
   );
   assert.match(
+    callbackTypesSource,
+    /export type \{\s+LimparErroUsernameConfiguracoes,\s+SalvarConfiguracoes,\s+SairDaContaConfiguracoes,\s+CopiarBackupConfiguracoes,\s+BaixarBackupConfiguracoes,\s+\} from "\.\/configuracoes-account-action-types";/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type \{\s+AbrirSegurancaConfiguracoes,\s+AbrirExclusaoContaConfiguracoes,\s+FecharOverlayConfiguracoes,\s+EnviarFormularioConfiguracoes,\s+AtualizarBooleanoConfiguracoes,\s+\} from "\.\/configuracoes-overlay-action-types";/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type \{\s+CarregarUsuariosBloqueadosConfiguracoes,\s+DesbloquearUsuarioConfiguracoes,\s+\} from "\.\/configuracoes-blocked-users-action-types";/,
+  );
+  assert.match(
     presentationTypesSource,
     /import type \{\s+AtualizarTextoConfiguracoes,\s+VerificarCondicaoConfiguracoes,\s+\} from "\.\/configuracoes-callback-primitives";/,
   );
@@ -1515,31 +1548,31 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type AplicarPrivacidadeAtualizadaConfiguracoes =\s+AtualizarValorConfiguracoes<PreferenciasPrivacidadeHistorietas>;/,
   );
   assert.match(
-    callbackTypesSource,
+    accountActionTypesSource,
     /export type LimparErroUsernameConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    accountActionTypesSource,
     /export type SalvarConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    overlayActionTypesSource,
     /export type AbrirSegurancaConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    overlayActionTypesSource,
     /export type AbrirExclusaoContaConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    accountActionTypesSource,
     /export type SairDaContaConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    overlayActionTypesSource,
     /export type FecharOverlayConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    overlayActionTypesSource,
     /export type EnviarFormularioConfiguracoes =\s+FormEventHandler<HTMLFormElement>;/,
   );
   assert.match(
@@ -1559,7 +1592,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type ExecutarAcaoAssincronaConfiguracoes = \(\) => Promise<void>;/,
   );
   assert.match(
-    callbackTypesSource,
+    blockedUsersActionTypesSource,
     /export type CarregarUsuariosBloqueadosConfiguracoes =\s+ExecutarAcaoAssincronaConfiguracoes;/,
   );
   assert.match(
@@ -1571,7 +1604,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type ExecutarAcaoAssincronaComArgumentoConfiguracoes<Argumento> = \(\s+argumento: Argumento,\s+\) => Promise<void>;/,
   );
   assert.match(
-    callbackTypesSource,
+    blockedUsersActionTypesSource,
     /export type DesbloquearUsuarioConfiguracoes =\s+ExecutarAcaoAssincronaComArgumentoConfiguracoes<UsuarioBloqueadoConfiguracoes>;/,
   );
   assert.doesNotMatch(
@@ -1590,6 +1623,9 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     feedbackActionTypesSource,
     preferenceActionTypesSource,
     toggleTypesSource,
+    accountActionTypesSource,
+    overlayActionTypesSource,
+    blockedUsersActionTypesSource,
   ]) {
     assert.doesNotMatch(
       source,
@@ -2022,7 +2058,7 @@ test("contratos de setters preservam texto e booleanos compartilhados", () => {
     /export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;/,
   );
   assert.match(
-    callbackTypesSource,
+    overlayActionTypesSource,
     /export type AtualizarBooleanoConfiguracoes = AtualizarValorConfiguracoes<boolean>;/,
   );
 
