@@ -1412,6 +1412,18 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     callbackTypesSource,
     /export type AtualizarPrivacidadeConfiguracoes = <\s+K extends keyof PreferenciasPrivacidadeHistorietas,\s+>\(\s+campo: K,\s+valor: PreferenciasPrivacidadeHistorietas\[K\],\s+\) => void;/,
   );
+  assert.match(
+    callbackTypesSource,
+    /export type FecharOverlayConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type EnviarFormularioConfiguracoes =\s+FormEventHandler<HTMLFormElement>;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AtualizarTextoConfiguracoes = \(valor: string\) => void;/,
+  );
   assert.doesNotMatch(
     callbackTypesSource,
     /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
@@ -1512,6 +1524,25 @@ test("contratos de apresentacao compartilhados preservam filtro e atualizacoes",
       source,
       /onAtualizarPrivacidade: <K extends keyof PreferenciasPrivacidadeHistorietas>/,
     );
+  }
+});
+
+test("contratos compartilhados dos overlays preservam fechamento, formulario e campos", () => {
+  for (const arquivo of [
+    "components/configuracoes-page-overlays.tsx",
+    "components/configuracoes-security-password-modal.tsx",
+    "components/configuracoes-account-deletion-modal.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /FecharOverlayConfiguracoes/);
+    assert.match(source, /EnviarFormularioConfiguracoes/);
+    assert.match(source, /AtualizarTextoConfiguracoes/);
+    assert.doesNotMatch(source, /FormEventHandler/);
+    assert.doesNotMatch(source, /onSubmit: FormEventHandler<HTMLFormElement>;/);
+    assert.doesNotMatch(source, /on\w+Change: \(valor: string\) => void;/);
   }
 });
 

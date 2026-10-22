@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { FormEventHandler } from "react";
 import { LoadingSpinner } from "./configuracoes-loading-spinner";
 import { SvgIcon } from "./configuracoes-svg-icon";
 import {
@@ -27,15 +26,20 @@ import {
   securitySecondaryButtonDisabledStyle,
   securitySecondaryButtonStyle,
 } from "../lib/configuracoes-security-styles";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  AtualizarTextoConfiguracoes,
+  EnviarFormularioConfiguracoes,
+  FecharOverlayConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesAccountDeletionModalProps = {
-  onFechar: () => void;
-  onSubmit: FormEventHandler<HTMLFormElement>;
+  onFechar: FecharOverlayConfiguracoes;
+  onSubmit: EnviarFormularioConfiguracoes;
   senhaExclusaoConta: string;
-  onSenhaExclusaoContaChange: (valor: string) => void;
+  onSenhaExclusaoContaChange: AtualizarTextoConfiguracoes;
   confirmacaoExclusaoConta: string;
-  onConfirmacaoExclusaoContaChange: (valor: string) => void;
+  onConfirmacaoExclusaoContaChange: AtualizarTextoConfiguracoes;
   excluindoConta: boolean;
   erroExclusaoConta: string;
   traduzirTexto: TraduzirTextoConfiguracoes;
