@@ -1178,3 +1178,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os rótulos puros de formato, gênero e tag foram isolados em `publicar-option-translations.ts`, preservando traduções, fallbacks e os consumidores existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 6 — Publicar
+
+- As operações de upload, limpeza e rollback de arquivos foram isoladas em `publicar-storage-operations.ts`, preservando buckets, consultas, fallbacks e mensagens.
