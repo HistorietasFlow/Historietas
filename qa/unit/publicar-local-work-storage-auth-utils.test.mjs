@@ -18,6 +18,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const perfil = readFileSync(
+  new URL("../../app/publicar/lib/publicar-profile-loader.ts", import.meta.url),
+  "utf8",
+);
 
 test("helpers de autenticação de Publicar preservam retorno e nome de metadata", () => {
   for (const helper of ["criarLoginHrefPublicar", "obterNomeMetadataPublicar"]) {
@@ -116,7 +120,11 @@ test("Publicar delega fronteiras locais, storage e autenticação extraídas", (
   assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
   assert.doesNotMatch(pagina, /async function enviarArquivoStorage\(/);
   assert.doesNotMatch(pagina, /async function desfazerPublicacaoParcialPublicar\(/);
-  assert.match(pagina, /async function carregarNomePerfilPublicar\(/);
+  assert.match(pagina, /from "\.\/lib\/publicar-profile-loader";/);
+  assert.doesNotMatch(pagina, /async function carregarNomePerfilPublicar\(/);
+  assert.match(perfil, /export async function carregarNomePerfilPublicar\(/);
+  assert.match(perfil, /from\("profiles"\)\s*\.select\("nome"\)\s*\.eq\("user_id", userId\)/);
+  assert.match(perfil, /from\("profiles"\)\s*\.select\("nome"\)\s*\.eq\("id", userId\)/);
   assert.match(pagina, /from "\.\/lib\/publicar-file-backup-storage-utils";/);
   assert.doesNotMatch(pagina, /function carregarBackupArquivosPublicar\(/);
   assert.match(pagina, /async function salvarObra\(/);
