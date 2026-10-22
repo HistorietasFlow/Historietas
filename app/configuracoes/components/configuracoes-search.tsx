@@ -3,16 +3,7 @@ import {
   searchBoxStyle,
   searchInputStyle,
 } from "../lib/configuracoes-shell-styles";
-import type {
-  AtualizarBuscaConfiguracoes,
-  TraduzirTextoConfiguracoes,
-} from "../lib/configuracoes-callback-types";
-
-type ConfiguracoesSearchProps = {
-  busca: string;
-  onBuscaChange: AtualizarBuscaConfiguracoes;
-  traduzirTexto: TraduzirTextoConfiguracoes;
-};
+import type { ConfiguracoesSearchProps } from "./configuracoes-search-props";
 
 export function ConfiguracoesSearch({
   busca,

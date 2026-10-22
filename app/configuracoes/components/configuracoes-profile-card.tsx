@@ -7,16 +7,7 @@ import {
   profileTextStyle,
   profileUsernameStyle,
 } from "../lib/configuracoes-shell-styles";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
-
-type ConfiguracoesProfileCardProps = {
-  nomeExibicao: string;
-  username: string;
-  emailContato: string;
-  usuarioNome: string | undefined;
-  usuarioEmail: string | undefined;
-  traduzirTexto: TraduzirTextoConfiguracoes;
-};
+import type { ConfiguracoesProfileCardProps } from "./configuracoes-profile-card-props";
 
 export function ConfiguracoesProfileCard({
   nomeExibicao,
