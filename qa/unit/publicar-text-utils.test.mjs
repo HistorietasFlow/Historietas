@@ -19,6 +19,10 @@ const helpersStorageUsuario = readFileSync(
   new URL("../../app/publicar/lib/publicar-user-storage-utils.ts", import.meta.url),
   "utf8",
 );
+const helpersOperacoesStorage = readFileSync(
+  new URL("../../app/publicar/lib/publicar-storage-operations.ts", import.meta.url),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -100,7 +104,11 @@ test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.match(helpersArquivo, /export function arquivoTextoAceito\(/);
   assert.match(helpersArquivo, /arquivoTemExtensao\(arquivo\.name, \["\.txt", "\.md"\]\)/);
   assert.match(pagina, /async function salvarObra\(/);
-  assert.match(pagina, /supabase\.storage/);
+  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.match(pagina, /enviarArquivoStorage,/);
+  assert.match(pagina, /desfazerPublicacaoParcialPublicar,/);
+  assert.doesNotMatch(pagina, /supabase\.storage/);
+  assert.match(helpersOperacoesStorage, /supabase\.storage/);
   assert.match(pagina, /from "\.\/lib\/publicar-user-storage-utils";/);
   assert.doesNotMatch(pagina, /localStorage/);
   assert.match(helpersStorageUsuario, /localStorage\.getItem\(chaveStorage\)/);
