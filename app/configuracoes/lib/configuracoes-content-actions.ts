@@ -1,9 +1,7 @@
-type RouterConfiguracoes = {
-  back: () => void;
-};
+import type { RouterConfiguracoesHistorico } from "./configuracoes-navigation-types";
 
 type AcoesConteudoConfiguracoes = {
-  router: RouterConfiguracoes;
+  router: RouterConfiguracoesHistorico;
   setErroUsername: (erro: string) => void;
 };
 

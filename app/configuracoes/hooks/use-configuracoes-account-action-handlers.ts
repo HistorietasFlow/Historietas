@@ -18,15 +18,11 @@ import { salvarConfiguracoesPerfil } from "../lib/configuracoes-profile-save-act
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "../lib/configuracoes-route-utils";
 import { sairDaContaConfiguracoes } from "../lib/configuracoes-sign-out-action";
+import type { RouterConfiguracoesAtualizavel } from "../lib/configuracoes-navigation-types";
 import type {
   MostrarMensagemAcaoConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
-
-type RouterConfiguracoes = {
-  replace: (href: string) => void;
-  refresh: () => void;
-};
 
 export function useConfiguracoesAccountActionHandlers({
   router,
@@ -61,7 +57,7 @@ export function useConfiguracoesAccountActionHandlers({
   setErroSenha,
   setSenhaAlterada,
 }: {
-  router: RouterConfiguracoes;
+  router: RouterConfiguracoesAtualizavel;
   salvando: boolean;
   usuarioIdLogado: string;
   preferencias: PreferenciasConta;

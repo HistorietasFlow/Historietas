@@ -31,6 +31,13 @@ const callbackTypesSource = readFileSync(
   ),
   "utf8",
 );
+const navigationTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-navigation-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const adminAccessHookSource = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-admin-access.ts",
@@ -1436,5 +1443,44 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     assert.match(source, /configuracoes-callback-types/);
     assert.doesNotMatch(source, /type TraduzirTextoConfiguracoes/);
     assert.doesNotMatch(source, /type TraduzirTexto =/);
+  }
+});
+
+test("contratos de navegacao compartilhados preservam os routers dos hooks e acoes", () => {
+  assert.match(
+    navigationTypesSource,
+    /export type RouterConfiguracoes = \{\s+replace: \(href: string\) => void;\s+\};/,
+  );
+  assert.match(
+    navigationTypesSource,
+    /export type RouterConfiguracoesAtualizavel = RouterConfiguracoes & \{\s+refresh: \(\) => void;\s+\};/,
+  );
+  assert.match(
+    navigationTypesSource,
+    /export type RouterConfiguracoesHistorico = \{\s+back: \(\) => void;\s+\};/,
+  );
+  assert.doesNotMatch(
+    navigationTypesSource,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
+
+  for (const [arquivo, contrato] of [
+    [
+      "hooks/use-configuracoes-account-action-handlers.ts",
+      "RouterConfiguracoesAtualizavel",
+    ],
+    ["hooks/use-configuracoes-initial-access.ts", "RouterConfiguracoes"],
+    [
+      "lib/configuracoes-content-actions.ts",
+      "RouterConfiguracoesHistorico",
+    ],
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /configuracoes-navigation-types/);
+    assert.match(source, new RegExp("import type \\{ " + contrato + " \\}"));
+    assert.doesNotMatch(source, new RegExp("type " + contrato + " ="));
   }
 });
