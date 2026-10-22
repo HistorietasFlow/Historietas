@@ -43,17 +43,16 @@ export type AtualizarValorConfiguracoes<Valor> = (valor: Valor) => void;
 
 export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;
 
-export type AtualizarPreferenciaConfiguracoes = <K extends keyof PreferenciasConta>(
+export type AtualizarCampoConfiguracoes<Objeto> = <K extends keyof Objeto>(
   campo: K,
-  valor: PreferenciasConta[K],
+  valor: Objeto[K],
 ) => void;
 
-export type AtualizarPrivacidadeConfiguracoes = <
-  K extends keyof PreferenciasPrivacidadeHistorietas,
->(
-  campo: K,
-  valor: PreferenciasPrivacidadeHistorietas[K],
-) => void;
+export type AtualizarPreferenciaConfiguracoes =
+  AtualizarCampoConfiguracoes<PreferenciasConta>;
+
+export type AtualizarPrivacidadeConfiguracoes =
+  AtualizarCampoConfiguracoes<PreferenciasPrivacidadeHistorietas>;
 
 export type AlternarConfiguracao = ExecutarAcaoConfiguracoes;
 
@@ -62,9 +61,8 @@ export type AlternarPerfilPrivadoConfiguracoes = AlternarConfiguracao;
 export type AlternarAprovacaoNovosSeguidoresConfiguracoes =
   AlternarConfiguracao;
 
-export type AplicarPrivacidadeAtualizadaConfiguracoes = (
-  privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
-) => void;
+export type AplicarPrivacidadeAtualizadaConfiguracoes =
+  AtualizarValorConfiguracoes<PreferenciasPrivacidadeHistorietas>;
 
 export type LimparErroUsernameConfiguracoes = ExecutarAcaoConfiguracoes;
 

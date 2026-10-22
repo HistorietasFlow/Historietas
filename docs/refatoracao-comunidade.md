@@ -1088,3 +1088,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos genéricos de atualização de valor e de ações assíncronas passaram a compor os aliases textuais, booleanos e de usuários bloqueados já existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 74 — Configurações
+
+- O contrato genérico de atualização por campo passou a compor as preferências de conta e privacidade, enquanto a aplicação integral de privacidade reutiliza o contrato de valor já existente.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
