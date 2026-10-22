@@ -1182,3 +1182,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 6 — Publicar
 
 - As operações de upload, limpeza e rollback de arquivos foram isoladas em `publicar-storage-operations.ts`, preservando buckets, consultas, fallbacks e mensagens.
+
+## Registro da Fase 7 — Publicar
+
+- O registro não bloqueante de publicação no Diário foi isolado em `publicar-diary-activity.ts`, preservando payload, fallback e aviso de erro.

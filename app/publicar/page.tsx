@@ -90,6 +90,7 @@ import {
   desfazerPublicacaoParcialPublicar,
   enviarArquivoStorage,
 } from "./lib/publicar-storage-operations";
+import { registrarDiarioPublicacao } from "./lib/publicar-diary-activity";
 
 
 type ChaveTextoPublicar = keyof (typeof TEXTOS_PUBLICAR)["pt-BR"];
@@ -509,60 +510,6 @@ async function carregarNomePerfilPublicar(userId: string, fallback = "") {
   }
 
   return fallbackLimpo;
-}
-
-async function registrarDiarioPublicacao({
-  userId,
-  obraId,
-  capituloId = null,
-  tipo,
-  tituloObra,
-  tituloCapitulo = "",
-  criadaEm,
-}: {
-  userId: string;
-  obraId: string;
-  capituloId?: string | null;
-  tipo: "publicou_obra" | "publicou_capitulo";
-  tituloObra: string;
-  tituloCapitulo?: string;
-  criadaEm: string;
-}) {
-  try {
-    const payload = {
-      user_id: userId,
-      tipo,
-      obra_id: obraId,
-      capitulo_id: capituloId,
-      texto: "",
-      visibilidade: "publico",
-      metadata: {
-        obra_titulo: tituloObra,
-        titulo_obra: tituloObra,
-        capitulo_titulo: tituloCapitulo,
-      },
-      criado_em: criadaEm,
-      atualizado_em: criadaEm,
-    };
-
-    const { error } = await supabase.from("diario_atividades").insert(payload);
-
-    if (!error) {
-      return;
-    }
-
-    await supabase.from("diario_atividades").insert({
-      user_id: userId,
-      tipo,
-      obra_id: obraId,
-      capitulo_id: capituloId,
-      texto: "",
-      visibilidade: "publico",
-      criado_em: criadaEm,
-    });
-  } catch (error) {
-    console.warn("Não consegui registrar a publicação no Diário:", error);
-  }
 }
 
 function criarPreviewCoverStyle(capa: string): CSSProperties {
