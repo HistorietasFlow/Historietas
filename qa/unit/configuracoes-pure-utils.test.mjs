@@ -1462,7 +1462,11 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type AtualizarTextoConfiguracoes = \(valor: string\) => void;/,
+    /export type AtualizarValorConfiguracoes<Valor> = \(valor: Valor\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;/,
   );
   assert.match(
     callbackTypesSource,
@@ -1470,7 +1474,11 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type CarregarUsuariosBloqueadosConfiguracoes = \(\) => Promise<void>;/,
+    /export type ExecutarAcaoAssincronaConfiguracoes = \(\) => Promise<void>;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type CarregarUsuariosBloqueadosConfiguracoes =\s+ExecutarAcaoAssincronaConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,
@@ -1478,7 +1486,11 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type DesbloquearUsuarioConfiguracoes = \(\s+usuario: UsuarioBloqueadoConfiguracoes,\s+\) => Promise<void>;/,
+    /export type ExecutarAcaoAssincronaComArgumentoConfiguracoes<Argumento> = \(\s+argumento: Argumento,\s+\) => Promise<void>;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type DesbloquearUsuarioConfiguracoes =\s+ExecutarAcaoAssincronaComArgumentoConfiguracoes<UsuarioBloqueadoConfiguracoes>;/,
   );
   assert.doesNotMatch(
     callbackTypesSource,
@@ -1887,11 +1899,11 @@ test("contratos de feedback de acoes preservam a limpeza compartilhada", () => {
 test("contratos de setters preservam texto e booleanos compartilhados", () => {
   assert.match(
     callbackTypesSource,
-    /export type AtualizarTextoConfiguracoes = \(valor: string\) => void;/,
+    /export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type AtualizarBooleanoConfiguracoes = \(valor: boolean\) => void;/,
+    /export type AtualizarBooleanoConfiguracoes = AtualizarValorConfiguracoes<boolean>;/,
   );
 
   for (const arquivo of [
