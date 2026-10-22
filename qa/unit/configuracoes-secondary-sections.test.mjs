@@ -62,6 +62,12 @@ test("seções secundárias preservam permissões, preferências e ações da co
     acoesConta,
     /export function ConfiguracoesAccountActionsSection\(/,
   );
+  assert.match(
+    acoesConta,
+    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(acoesConta, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.doesNotMatch(acoesConta, /type TraduzirTexto =/);
   assert.match(acoesConta, /onAbrirExclusaoConta: \(\) => void/);
   assert.match(acoesConta, /onSairDaConta: \(\) => void/);
   assert.match(acoesConta, /Zona de risco/);

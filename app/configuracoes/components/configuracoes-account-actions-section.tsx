@@ -4,16 +4,11 @@ import {
 } from "./configuracoes-settings-primitives";
 import { sectionStyle } from "../lib/configuracoes-settings-primitives-styles";
 import { listCardTransparentStyle } from "../lib/configuracoes-security-styles";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesAccountActionsSectionProps = {
   deveMostrar: (...termos: string[]) => boolean;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
   onAbrirExclusaoConta: () => void;
   onSairDaConta: () => void;
 };

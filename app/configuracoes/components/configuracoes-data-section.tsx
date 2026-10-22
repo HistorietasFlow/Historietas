@@ -3,16 +3,11 @@ import {
   SettingsSection,
 } from "./configuracoes-settings-primitives";
 import type { ResumoLocal } from "../lib/configuracoes-account-models";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesDataSectionProps = {
   deveMostrar: (...termos: string[]) => boolean;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
   resumo: ResumoLocal;
   onCopiarBackup: () => void;
   onBaixarBackup: () => void;
