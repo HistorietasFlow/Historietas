@@ -8,8 +8,11 @@ import { LoadingSpinner } from "./configuracoes-loading-spinner";
 import { normalizarUsernameConfiguracoes } from "../lib/configuracoes-account-utils";
 import type { PreferenciasConta } from "../lib/configuracoes-account-models";
 import type {
+  AbrirSegurancaConfiguracoes,
   AtualizarPreferenciaConfiguracoes,
   DeveMostrarConfiguracoes,
+  LimparErroUsernameConfiguracoes,
+  SalvarConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 
@@ -20,9 +23,9 @@ type ConfiguracoesAccountDetailsSectionProps = {
   erroUsername: string;
   salvando: boolean;
   onAtualizarPreferencia: AtualizarPreferenciaConfiguracoes;
-  onLimparErroUsername: () => void;
-  onSalvar: () => void;
-  onAbrirSeguranca: () => void;
+  onLimparErroUsername: LimparErroUsernameConfiguracoes;
+  onSalvar: SalvarConfiguracoes;
+  onAbrirSeguranca: AbrirSegurancaConfiguracoes;
 };
 
 export function ConfiguracoesAccountDetailsSection({

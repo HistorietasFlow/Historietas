@@ -1043,3 +1043,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos tipados de alternância do perfil, aprovação de seguidores e aplicação de privacidade foram centralizados e reutilizados pela composição e pelas seções de privacidade.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 65 — Configurações
+
+- Os contratos tipados dos detalhes da conta — limpeza de erro de username, salvamento e abertura de segurança — foram centralizados e reutilizados pela composição e pela seção correspondente.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

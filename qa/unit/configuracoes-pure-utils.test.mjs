@@ -1426,6 +1426,18 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
+    /export type LimparErroUsernameConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type SalvarConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AbrirSegurancaConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
     /export type FecharOverlayConfiguracoes = \(\) => void;/,
   );
   assert.match(
@@ -1637,6 +1649,24 @@ test("contratos compartilhados de privacidade do perfil preservam as secoes", ()
       source,
       /onAplicarPrivacidadeAtualizada: \(\s+privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,\s+\) => void;/,
     );
+  }
+});
+
+test("contratos compartilhados dos detalhes da conta preservam as acoes", () => {
+  for (const arquivo of [
+    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-account-details-section.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /LimparErroUsernameConfiguracoes/);
+    assert.match(source, /SalvarConfiguracoes/);
+    assert.match(source, /AbrirSegurancaConfiguracoes/);
+    assert.doesNotMatch(source, /onLimparErroUsername: \(\) => void;/);
+    assert.doesNotMatch(source, /onSalvar: \(\) => void;/);
+    assert.doesNotMatch(source, /onAbrirSeguranca: \(\) => void;/);
   }
 });
 

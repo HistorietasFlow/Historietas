@@ -49,6 +49,12 @@ export type AplicarPrivacidadeAtualizadaConfiguracoes = (
   privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
 ) => void;
 
+export type LimparErroUsernameConfiguracoes = () => void;
+
+export type SalvarConfiguracoes = () => void;
+
+export type AbrirSegurancaConfiguracoes = () => void;
+
 export type FecharOverlayConfiguracoes = () => void;
 
 export type EnviarFormularioConfiguracoes =
