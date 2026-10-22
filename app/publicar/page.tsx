@@ -16,6 +16,34 @@ import {
   nomeArquivoParaTitulo,
   textoPersonalizadoValido,
 } from "./lib/publicar-text-utils";
+import {
+  CLASSIFICACOES_INDICATIVAS_OBRA,
+  EXTENSOES_IMAGEM_ACEITAS,
+  FILE_BACKUP_STORAGE_KEY,
+  LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
+  LIMITE_CARACTERES_TAG_PERSONALIZADA,
+  LIMITE_TAGS_OBRA,
+  OPCOES_FORMATO_OBRA,
+  OPCOES_GENERO_OBRA,
+  OPCOES_TAGS_OBRA,
+  OUTRA_TAG_VALUE,
+  OUTRO_FORMATO_VALUE,
+  OUTRO_GENERO_VALUE,
+  STORAGE_KEY,
+  TAMANHO_MAXIMO_ARQUIVO_OBRA,
+  TAMANHO_MAXIMO_ARQUIVO_TEXTO,
+  TAMANHO_MAXIMO_CAPA,
+  TIPOS_MIME_IMAGEM_ACEITOS,
+  TIPOS_MIME_PDF_ACEITOS,
+  TIPOS_MIME_TEXTO_ACEITOS,
+} from "./lib/publicar-static-options";
+import type {
+  ArquivoObraLocal,
+  ArquivoStoragePublicar,
+  CapituloLocal,
+  ObraLocal,
+  ObraSalva,
+} from "./lib/publicar-models";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -34,167 +62,10 @@ import {
   type AvisoConteudo18,
 } from "../../lib/historietasAdultContent";
 import {
-  LIMITES_BYTES_STORAGE,
   mensagemAmigavelErroUploadStorage,
   obterCacheControlUploadStorage,
   obterTipoMimeUploadStorage,
 } from "../../lib/storageUploads";
-
-type CapituloLocal = {
-  id: string;
-  titulo: string;
-  texto: string;
-  curtiu: boolean;
-  salvo: boolean;
-  comentario: string;
-  criadoEm: string;
-  lido: boolean;
-  lidoEm: string;
-};
-
-type ArquivoObraLocal = {
-  nome: string;
-  tipo: string;
-  tamanho: number;
-  conteudo: string;
-  categoria: "texto" | "documento" | "imagem" | "outro";
-  criadoEm: string;
-};
-
-type ObraLocal = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId?: string;
-  genero: string;
-  formato: string;
-  classificacaoIndicativa: string;
-  avisosConteudo: AvisoConteudo18[];
-  sinopse: string;
-  tags: string[];
-  capa: string;
-  capaNome: string;
-  arquivoObra?: ArquivoObraLocal | null;
-  publicado: boolean;
-  capitulos: CapituloLocal[];
-  criadaEm: string;
-  ultimoCapituloLidoId: string;
-  ultimaLeituraEm: string;
-  progressoLeitura: number;
-  visualizacoes: number;
-  totalCurtidas: number;
-  totalComentarios: number;
-  totalSalvos: number;
-  totalLidos: number;
-  slug: string;
-  link: string;
-};
-
-type CapituloSalvo = Partial<CapituloLocal> & Record<string, unknown>;
-
-type ObraSalva = Partial<ObraLocal> & {
-  capitulos?: CapituloSalvo[];
-} & Record<string, unknown>;
-
-type ArquivoStoragePublicar = {
-  bucket: "capas-obras" | "arquivos-obras";
-  caminho: string;
-  publicUrl: string;
-};
-
-const STORAGE_KEY = "historietas-obras";
-const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
-const TAMANHO_MAXIMO_CAPA = LIMITES_BYTES_STORAGE["capas-obras"];
-const TAMANHO_MAXIMO_ARQUIVO_TEXTO = 900 * 1024;
-const TAMANHO_MAXIMO_ARQUIVO_OBRA =
-  LIMITES_BYTES_STORAGE["arquivos-obras"];
-const EXTENSOES_IMAGEM_ACEITAS = [
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".webp",
-  ".gif",
-] as const;
-const TIPOS_MIME_IMAGEM_ACEITOS = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-]);
-const TIPOS_MIME_TEXTO_ACEITOS = new Set([
-  "text/plain",
-  "text/markdown",
-  "text/x-markdown",
-]);
-const TIPOS_MIME_PDF_ACEITOS = new Set(["application/pdf"]);
-
-const OUTRO_FORMATO_VALUE = "__outro_formato__";
-const OUTRO_GENERO_VALUE = "__outro_genero__";
-const OUTRA_TAG_VALUE = "__outra_tag__";
-const LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO = 14;
-const LIMITE_CARACTERES_TAG_PERSONALIZADA = 10;
-
-const LIMITE_TAGS_OBRA = 1;
-const OPCOES_FORMATO_OBRA = [
-  "Webnovel",
-  "Light novel",
-  "Romance",
-  "Conto",
-  "Poesia",
-  "HQ",
-  "Mangá",
-  "Fanfic",
-] as const;
-
-const OPCOES_GENERO_OBRA = [
-  "Fantasia",
-  "Terror",
-  "Ficção",
-  "Romance",
-  "Drama",
-  "Ação",
-  "Mistério",
-  "Suspense",
-  "Aventura",
-  "Comédia",
-] as const;
-
-const OPCOES_TAGS_OBRA = [
-  "Sombria",
-  "Psicológico",
-  "Sci-fi",
-  "Cyberpunk",
-  "Espacial",
-  "Isekai",
-  "Distopia",
-  "Apocalipse",
-  "Escolar",
-  "Máfia",
-  "Investigação",
-  "Religioso",
-  "Mitologia",
-  "Folclore",
-  "Vampiro",
-  "Lobisomem",
-  "Zumbi",
-  "Super-herói",
-  "Magia",
-  "Guerra",
-  "Família",
-  "Amizade",
-  "Traição",
-  "Vingança",
-  "Sobrevivência",
-] as const;
-
-const CLASSIFICACOES_INDICATIVAS_OBRA = [
-  "Livre",
-  "10+",
-  "12+",
-  "14+",
-  "16+",
-  "18+",
-] as const;
 
 
 type ChaveTextoPublicar = keyof (typeof TEXTOS_PUBLICAR)["pt-BR"];

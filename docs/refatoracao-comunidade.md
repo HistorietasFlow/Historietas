@@ -1153,3 +1153,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos de props da busca, do cartão de perfil e do resumo de uso foram isolados junto aos respectivos componentes, preservando campos, assinaturas e consumidores existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 1 — Publicar
+
+- Os modelos locais e as opções estáticas de Publicar foram isolados em módulos dedicados, preservando contratos, limites, formatos, gêneros, tags, classificações, MIME types e chaves fixas.
+- JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
