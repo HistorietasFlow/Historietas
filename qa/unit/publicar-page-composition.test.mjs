@@ -18,6 +18,14 @@ const previa = readFileSync(
   new URL("../../app/publicar/components/PublicarWorkPreview.tsx", import.meta.url),
   "utf8",
 );
+const capa = readFileSync(
+  new URL("../../app/publicar/components/PublicarCoverUpload.tsx", import.meta.url),
+  "utf8",
+);
+const arquivo = readFileSync(
+  new URL("../../app/publicar/components/PublicarContentFileUpload.tsx", import.meta.url),
+  "utf8",
+);
 
 test("Publicar delega a composição visual do cabeçalho e progresso", () => {
   assert.match(pagina, /import \{ PublicarPageHeader \} from "\.\/components\/PublicarPageHeader";/);
@@ -46,8 +54,29 @@ test("Publicar delega a prévia sem deslocar estados ou regras de publicação",
   assert.match(previa, /t\("dicaPrevia"\)/);
 });
 
+test("Publicar delega os uploads visuais sem deslocar estado ou leitura de arquivos", () => {
+  assert.match(pagina, /import \{ PublicarCoverUpload \} from "\.\/components\/PublicarCoverUpload";/);
+  assert.match(pagina, /import \{ PublicarContentFileUpload \} from "\.\/components\/PublicarContentFileUpload";/);
+  assert.match(pagina, /<PublicarCoverUpload[\s\S]*?capaInputRef=\{capaInputRef\}[\s\S]*?onRemoverCapa=\{removerCapa\}[\s\S]*?onSelecionarCapa=\{selecionarCapa\}/);
+  assert.match(pagina, /<PublicarContentFileUpload[\s\S]*?arquivoConteudoInputRef=\{arquivoConteudoInputRef\}[\s\S]*?onAnexarArquivoCompleto=\{anexarArquivoCompleto\}[\s\S]*?onSelecionarConteudoArquivo=\{selecionarConteudoArquivo\}[\s\S]*?onTransformarArquivoTextoEmCapitulo=\{transformarArquivoTextoEmCapitulo\}/);
+  assert.doesNotMatch(pagina, /ref=\{capaInputRef\}/);
+  assert.doesNotMatch(pagina, /ref=\{arquivoConteudoInputRef\}/);
+
+  assert.match(capa, /accept="\.png,\.jpg,\.jpeg,\.webp,\.gif,image\/png,image\/jpeg,image\/webp,image\/gif"/);
+  assert.match(capa, /criarCoverUploadIconBoxStyle\(capa\)/);
+  assert.match(capa, /isDesktop \? desktopCoverButtonStyle : coverButtonStyle/);
+  assert.match(capa, /onClick=\{onRemoverCapa\}/);
+
+  assert.match(arquivo, /accept="\.pdf,\.txt,\.md,\.png,\.jpg,\.jpeg,\.webp,\.gif,application\/pdf,text\/plain,text\/markdown,image\/png,image\/jpeg,image\/webp,image\/gif"/);
+  assert.match(arquivo, /temCapituloImportado \? "⇧" : "▣"/);
+  assert.match(arquivo, /onTransformarArquivoTextoEmCapitulo\(arquivoTextoPendente\)/);
+  assert.match(arquivo, /onAnexarArquivoCompleto\(arquivoTextoPendente\)/);
+  assert.match(arquivo, /arquivoConteudoInputRef\.current\?\.click\(\)/);
+  assert.match(arquivo, /isDesktop \? desktopFullWidthArquivoObraBoxStyle : chapterImportBoxStyle/);
+});
+
 test("componentes visuais de Publicar permanecem sem runtime de dados", () => {
-  for (const componente of [cabecalho, progresso, previa]) {
+  for (const componente of [cabecalho, progresso, previa, capa, arquivo]) {
     assert.doesNotMatch(componente, /supabase|localStorage|useEffect|useState|window\.|document\./);
   }
 });

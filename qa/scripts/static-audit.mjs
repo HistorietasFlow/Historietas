@@ -476,8 +476,8 @@ if (uniqueServiceRoleIssues.length) {
   );
 }
 
-const publish = fs.readFileSync(
-  path.join(ROOT_DIR, "app/publicar/page.tsx"),
+const publishContentFileUpload = fs.readFileSync(
+  path.join(ROOT_DIR, "app/publicar/components/PublicarContentFileUpload.tsx"),
   "utf8"
 );
 
@@ -493,7 +493,7 @@ const accepted = [
 ];
 
 const missingAccepted = accepted.filter(
-  (extension) => !publish.includes(extension)
+  (extension) => !publishContentFileUpload.includes(extension)
 );
 
 if (missingAccepted.length) {
