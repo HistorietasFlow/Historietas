@@ -33,7 +33,15 @@ export type DeveMostrarConfiguracoes = (...termos: string[]) => boolean;
 
 export type ExecutarAcaoConfiguracoes = () => void;
 
-export type AtualizarTextoConfiguracoes = (valor: string) => void;
+export type ExecutarAcaoAssincronaConfiguracoes = () => Promise<void>;
+
+export type ExecutarAcaoAssincronaComArgumentoConfiguracoes<Argumento> = (
+  argumento: Argumento,
+) => Promise<void>;
+
+export type AtualizarValorConfiguracoes<Valor> = (valor: Valor) => void;
+
+export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;
 
 export type AtualizarPreferenciaConfiguracoes = <K extends keyof PreferenciasConta>(
   campo: K,
@@ -83,12 +91,12 @@ export type FecharOverlayConfiguracoes = ExecutarAcaoConfiguracoes;
 export type EnviarFormularioConfiguracoes =
   FormEventHandler<HTMLFormElement>;
 
-export type AtualizarBooleanoConfiguracoes = (valor: boolean) => void;
+export type AtualizarBooleanoConfiguracoes = AtualizarValorConfiguracoes<boolean>;
 
-export type CarregarUsuariosBloqueadosConfiguracoes = () => Promise<void>;
+export type CarregarUsuariosBloqueadosConfiguracoes =
+  ExecutarAcaoAssincronaConfiguracoes;
 
 export type AlternarUsuariosBloqueadosConfiguracoes = AlternarConfiguracao;
 
-export type DesbloquearUsuarioConfiguracoes = (
-  usuario: UsuarioBloqueadoConfiguracoes,
-) => Promise<void>;
+export type DesbloquearUsuarioConfiguracoes =
+  ExecutarAcaoAssincronaComArgumentoConfiguracoes<UsuarioBloqueadoConfiguracoes>;
