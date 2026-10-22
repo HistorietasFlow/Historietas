@@ -1058,3 +1058,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos tipados de busca e retorno, alternância de avisos e ações de backup foram centralizados e reutilizados pela composição e pelas seções correspondentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 68 — Configurações
+
+- Os contratos tipados de redirecionamento para login e atualização de rota foram centralizados e reutilizados pelas ações de salvar perfil, exclusão e saída da conta.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

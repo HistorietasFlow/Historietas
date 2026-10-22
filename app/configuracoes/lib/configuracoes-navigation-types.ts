@@ -9,3 +9,7 @@ export type RouterConfiguracoesAtualizavel = RouterConfiguracoes & {
 export type RouterConfiguracoesHistorico = {
   back: () => void;
 };
+
+export type RedirecionarLoginConfiguracoes = () => void;
+
+export type AtualizarRotaConfiguracoes = () => void;
