@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
@@ -78,11 +77,8 @@ import {
 } from "../../lib/aceiteTermos";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
-  AVISOS_CONTEUDO_18,
   ehClassificacao18,
   normalizarAvisosConteudo18,
-  traduzirAvisoConteudo18,
-  traduzirTextoConteudo18,
   type AvisoConteudo18,
 } from "../../lib/historietasAdultContent";
 import {
@@ -94,10 +90,12 @@ import { criarSlugUnicoSupabase } from "./lib/publicar-slug-supabase-loader";
 import { carregarNomePerfilPublicar } from "./lib/publicar-profile-loader";
 import { criarDecoracaoPaginaStyle } from "./lib/publicar-page-decoration-style";
 import { PublicarPageHeader } from "./components/PublicarPageHeader";
-import { PublicarProgress } from "./components/PublicarProgress";
 import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
 import { PublicarCoverUpload } from "./components/PublicarCoverUpload";
 import { PublicarContentFileUpload } from "./components/PublicarContentFileUpload";
+import { PublicarAdultWarnings } from "./components/PublicarAdultWarnings";
+import { PublicarSynopsisField } from "./components/PublicarSynopsisField";
+import { PublicarFormActions } from "./components/PublicarFormActions";
 import {
   desktopContainerStyle,
   desktopTopWaterFadeStyle,
@@ -108,38 +106,19 @@ import {
   containerStyle,
 } from "./lib/publicar-layout-styles";
 import {
-  adultWarningCheckboxStyle,
-  adultWarningOptionSelectedStyle,
-  adultWarningOptionStyle,
-  adultWarningsBoxStyle,
-  adultWarningsCounterStyle,
-  adultWarningsDescriptionStyle,
-  adultWarningsGridStyle,
-  adultWarningsHeaderStyle,
-  adultWarningsTitleStyle,
-  buttonAreaStyle,
-  desktopButtonAreaStyle,
   desktopFormPanelStyle,
   desktopFullWidthDoubleFieldStyle,
   desktopFullWidthErrorBoxStyle,
-  desktopFullWidthFieldStyle,
   desktopHalfFieldStyle,
   desktopMainGridSingleStyle,
-  disabledButtonStyle,
   doubleFieldStyle,
   errorBoxStyle,
   fieldGroupStyle,
   formPanelStyle,
   hintStyle,
   inputStyle,
-  labelRowStyle,
   labelStyle,
   mainGridStyle,
-  miniCounterOkStyle,
-  miniCounterWarningStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
-  textareaStyle,
 } from "./lib/publicar-form-upload-styles";
 
 
@@ -818,6 +797,20 @@ export default function PublicarPage() {
     setArquivoCapituloTitulo("");
     setArquivoCapituloTexto("");
     setArquivoCapituloErro("");
+  }
+
+  function alternarAvisoConteudo18(aviso: AvisoConteudo18) {
+    setAvisosConteudo18((avisosAtuais) =>
+      avisosAtuais.includes(aviso)
+        ? avisosAtuais.filter((item) => item !== aviso)
+        : [...avisosAtuais, aviso],
+    );
+    setErro("");
+  }
+
+  function atualizarSinopse(valor: string) {
+    setSinopse(valor);
+    setErro("");
   }
 
   function limparSelecaoConteudoArquivo() {
@@ -1579,76 +1572,23 @@ export default function PublicarPage() {
               </select>
 
               {classificacao18Selecionada ? (
-                <section style={adultWarningsBoxStyle} aria-label="Avisos de conteúdo 18+">
-                  <div style={adultWarningsHeaderStyle}>
-                    <strong style={adultWarningsTitleStyle}>{traduzirTextoConteudo18("avisosObrigatorios", idioma)}</strong>
-                    <span style={adultWarningsCounterStyle}>
-                      {avisosConteudo18.length} {traduzirTextoConteudo18(avisosConteudo18.length === 1 ? "selecionado" : "selecionados", idioma)}
-                    </span>
-                  </div>
-
-                  <p style={adultWarningsDescriptionStyle}>
-                    {traduzirTextoConteudo18("descricaoPublicacao", idioma)}
-                  </p>
-
-                  <div style={adultWarningsGridStyle}>
-                    {AVISOS_CONTEUDO_18.map((aviso) => {
-                      const selecionado = avisosConteudo18.includes(aviso);
-
-                      return (
-                        <label
-                          key={aviso}
-                          style={{
-                            ...adultWarningOptionStyle,
-                            ...(selecionado ? adultWarningOptionSelectedStyle : {}),
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selecionado}
-                            onChange={() => {
-                              setAvisosConteudo18((avisosAtuais) =>
-                                avisosAtuais.includes(aviso)
-                                  ? avisosAtuais.filter((item) => item !== aviso)
-                                  : [...avisosAtuais, aviso],
-                              );
-                              setErro("");
-                            }}
-                            style={adultWarningCheckboxStyle}
-                          />
-                          <span>{traduzirAvisoConteudo18(aviso, idioma)}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </section>
+                <PublicarAdultWarnings
+                  avisosConteudo18={avisosConteudo18}
+                  idioma={idioma}
+                  onAlternarAviso={alternarAvisoConteudo18}
+                />
               ) : null}
             </div>
 
-            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
-              <div style={labelRowStyle}>
-                <label htmlFor="publicar-sinopse" style={labelStyle}>{t("sinopse")}</label>
-
-                <span
-                  style={
-                    sinopseValida ? miniCounterOkStyle : miniCounterWarningStyle
-                  }
-                >
-                  {sinopseCaracteresValidos}/20
-                </span>
-              </div>
-
-              <textarea
-                id="publicar-sinopse"
-                value={sinopse}
-                onChange={(event) => {
-                  setSinopse(event.target.value);
-                  setErro("");
-                }}
-                style={textareaStyle}
-                placeholder={`${t("resumoChamativo")}\n${t("minimoSinopse")} ${sinopsePalavras} ${t("palavras")}.`}
-              />
-            </div>
+            <PublicarSynopsisField
+              caracteresValidos={sinopseCaracteresValidos}
+              isDesktop={isDesktop}
+              onSinopseChange={atualizarSinopse}
+              palavras={sinopsePalavras}
+              sinopse={sinopse}
+              sinopseValida={sinopseValida}
+              t={t}
+            />
 
 
             <PublicarContentFileUpload
@@ -1676,24 +1616,14 @@ export default function PublicarPage() {
               traduzirMensagem={(mensagem) => traduzirMensagemPublicar(idioma, mensagem)}
             />
 
-            <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
-              <Link href="/" style={secondaryButtonStyle}>
-                {t("cancelar")}
-              </Link>
-
-              <button
-                type="submit"
-                style={processando ? disabledButtonStyle : primaryButtonStyle}
-                disabled={processando}
-              >
-                {processando ? t("salvando") : t("criarObra")}
-              </button>
-            </div>
-
-            <PublicarProgress
+            <PublicarFormActions
+              cancelar={t("cancelar")}
+              criarObra={t("criarObra")}
               isDesktop={isDesktop}
+              processando={processando}
               progresso={progresso}
-              rotulo={t("progresso")}
+              progressoRotulo={t("progresso")}
+              salvando={t("salvando")}
             />
           </form>
 
