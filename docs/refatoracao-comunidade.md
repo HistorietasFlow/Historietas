@@ -1194,3 +1194,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 9 — Publicar
 
 - O carregamento complementar do nome público de perfil foi isolado em `publicar-profile-loader.ts`, preservando as consultas e fallbacks.
+
+## Registro da Fase 10 — Publicar
+
+- Os estilos locais foram separados em `publicar-layout-styles.ts`, `publicar-form-upload-styles.ts` e `publicar-preview-styles.ts`, preservando valores, spreads, variantes desktop e helpers dinâmicos de capa.
+- JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, CSSProperties } from "react";
+import type { ChangeEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { publicarPageCss } from "./lib/publicar-page-css";
@@ -93,6 +93,127 @@ import { registrarDiarioPublicacao } from "./lib/publicar-diary-activity";
 import { criarSlugUnicoSupabase } from "./lib/publicar-slug-supabase-loader";
 import { carregarNomePerfilPublicar } from "./lib/publicar-profile-loader";
 import { criarDecoracaoPaginaStyle } from "./lib/publicar-page-decoration-style";
+import {
+  desktopContainerStyle,
+  desktopHeaderTitleLinkStyle,
+  desktopHeaderTitleTextStyle,
+  desktopProgressBoxStyle,
+  desktopTitleHeaderStyle,
+  desktopTopWaterFadeStyle,
+  headerTitleLinkStyle,
+  headerTitleTextStyle,
+  mobileTopWaterFadeStyle,
+  pageDecorationLayerStyle,
+  pageStyle,
+  progressBoxStyle,
+  progressFillStyle,
+  progressLabelStyle,
+  progressNumberStyle,
+  progressTopStyle,
+  progressTrackStyle,
+  safeTextStyle,
+  containerStyle,
+  titleHeaderStyle,
+} from "./lib/publicar-layout-styles";
+import {
+  adultWarningCheckboxStyle,
+  adultWarningOptionSelectedStyle,
+  adultWarningOptionStyle,
+  adultWarningsBoxStyle,
+  adultWarningsCounterStyle,
+  adultWarningsDescriptionStyle,
+  adultWarningsGridStyle,
+  adultWarningsHeaderStyle,
+  adultWarningsTitleStyle,
+  buttonAreaStyle,
+  chapterImportBoxStyle,
+  chapterImportContentStyle,
+  chapterImportIconBoxStyle,
+  chapterImportIconStyle,
+  chapterImportStatsStyle,
+  chapterImportTitleStyle,
+  coverButtonStyle,
+  coverButtonsStyle,
+  coverErrorStyle,
+  criarCoverUploadIconBoxStyle,
+  desktopButtonAreaStyle,
+  desktopChapterImportBoxStyle,
+  desktopChapterImportContentStyle,
+  desktopCoverButtonStyle,
+  desktopCoverButtonsStyle,
+  desktopCoverUploadIconBoxStyle,
+  desktopFileUploadIconBoxStyle,
+  desktopFormPanelStyle,
+  desktopFullWidthArquivoObraBoxStyle,
+  desktopFullWidthArquivoObraContentStyle,
+  desktopFullWidthDoubleFieldStyle,
+  desktopFullWidthErrorBoxStyle,
+  desktopFullWidthFieldStyle,
+  desktopHalfFieldStyle,
+  desktopMainGridSingleStyle,
+  desktopRemoveCoverButtonStyle,
+  disabledButtonStyle,
+  doubleFieldStyle,
+  errorBoxStyle,
+  fieldGroupStyle,
+  fileNameStyle,
+  fileOptionalBadgeStyle,
+  fileUploadLabelRowStyle,
+  formPanelStyle,
+  hiddenInputStyle,
+  hintStyle,
+  inlineStatStyle,
+  inputStyle,
+  labelRowStyle,
+  labelStyle,
+  mainGridStyle,
+  miniCounterOkStyle,
+  miniCounterWarningStyle,
+  primaryButtonStyle,
+  removeCoverButtonStyle,
+  secondaryButtonStyle,
+  textareaStyle,
+} from "./lib/publicar-form-upload-styles";
+import {
+  criarPreviewCoverStyle,
+  desktopEmptyPreviewBoxStyle,
+  desktopPreviewCardStyle,
+  desktopPreviewPanelStyle,
+  emptyPreviewBoxStyle,
+  emptyPreviewContentStyle,
+  emptyPreviewCoverStyle,
+  emptyPreviewIconStyle,
+  emptyPreviewTextStyle,
+  emptyPreviewTitleStyle,
+  previewActionBadgeStyle,
+  previewActionRowStyle,
+  previewAuthorStyle,
+  previewBadgeStyle,
+  previewBadgesStyle,
+  previewCardStyle,
+  previewContentStyle,
+  previewCoverGlowStyle,
+  previewGenreBadgeStyle,
+  previewHeaderStyle,
+  previewImportedChapterStyle,
+  previewImportedMiniStyle,
+  previewImportedTextStyle,
+  previewImportedTitleStyle,
+  previewMiniTitleStyle,
+  previewObraTitleStyle,
+  previewPanelStyle,
+  previewProgressCompactStyle,
+  previewProgressFillStyle,
+  previewProgressTextStyle,
+  previewProgressTrackStyle,
+  previewRatingBadgeStyle,
+  previewStatHeartIconStyle,
+  previewStatIconStyle,
+  previewStatItemStyle,
+  previewStatValueStyle,
+  previewStatsStyle,
+  previewTopRowStyle,
+} from "./lib/publicar-preview-styles";
 
 
 type ChaveTextoPublicar = keyof (typeof TEXTOS_PUBLICAR)["pt-BR"];
@@ -436,34 +557,6 @@ function traduzirMensagemPublicar(
   }
 
   return mensagem;
-}
-
-function criarPreviewCoverStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return previewCoverStyle;
-  }
-
-  return {
-    ...previewCoverStyle,
-    background: "var(--historietas-publicar-bg-deep, #000000)",
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarCoverUploadIconBoxStyle(capaAtual: string): CSSProperties {
-  if (!capaAtual) {
-    return chapterImportIconBoxStyle;
-  }
-
-  return {
-    ...chapterImportIconBoxStyle,
-    background: "var(--historietas-publicar-bg-deep, #000000)",
-    backgroundImage: `url(${capaAtual})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
 }
 
 export default function PublicarPage() {
@@ -2044,1238 +2137,3 @@ export default function PublicarPage() {
     </main>
   );
 }
-
-
-const safeTextStyle: CSSProperties = {
-  overflowWrap: "anywhere",
-  wordBreak: "break-word",
-};
-
-const pageDecorationLayerStyle: CSSProperties = {
-  display: "none",
-};
-
-const mobileTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(340px, 48vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-  opacity: 0,
-};
-
-const desktopTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(620px, 68vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-  opacity: 0,
-};
-
-
-
-const pageStyle: CSSProperties = {
-  position: "relative",
-  minHeight: "100vh",
-  width: "100%",
-  maxWidth: "100%",
-  overflowX: "hidden",
-  background: "var(--historietas-publicar-bg-page, #000000)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const containerStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  width: "min(900px, calc(100% - 24px))",
-  maxWidth: "100%",
-  margin: "0 auto",
-  padding: "14px 0 18px",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  marginBottom: "14px",
-  minWidth: 0,
-};
-
-
-
-
-const titleHeaderStyle: CSSProperties = {
-  ...topStyle,
-  justifyContent: "center",
-  flexWrap: "nowrap",
-  marginTop: 0,
-  marginBottom: "14px",
-  textAlign: "center",
-};
-
-const desktopTitleHeaderStyle: CSSProperties = {
-  ...titleHeaderStyle,
-  position: "relative",
-  justifyContent: "center",
-  minHeight: "48px",
-  marginBottom: "24px",
-  paddingRight: 0,
-  textAlign: "center",
-};
-
-const headerTitleLinkStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
-  flex: "0 1 auto",
-  ...safeTextStyle,
-};
-
-const desktopHeaderTitleLinkStyle: CSSProperties = {
-  ...headerTitleLinkStyle,
-  width: "100%",
-  justifyContent: "center",
-  textAlign: "center",
-  fontSize: "29px",
-};
-
-
-
-const headerTitleTextStyle: CSSProperties = {
-  display: "inline-block",
-  marginLeft: "-1px",
-  paddingRight: "0.2em",
-  paddingBottom: "0.04em",
-  whiteSpace: "nowrap",
-  overflow: "visible",
-  fontSize: "25px",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: 0,
-  wordSpacing: "normal",
-  background: "none",
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
-};
-
-const desktopHeaderTitleTextStyle: CSSProperties = {
-  ...headerTitleTextStyle,
-  fontSize: "29px",
-  letterSpacing: "-0.035em",
-};
-
-
-
-
-
-
-const progressBoxStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  display: "grid",
-  gap: "8px",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "0",
-  minWidth: 0,
-  width: "min(450px, 100%)",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-const progressTopStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
-
-const progressLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const progressNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const progressTrackStyle: CSSProperties = {
-  height: "7px",
-  overflow: "hidden",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  maxWidth: "100%",
-};
-
-const progressFillStyle: CSSProperties = {
-  height: "100%",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(90deg, var(--historietas-accent, var(--historietas-publicar-accent, #FFFFFF)) 0%, var(--historietas-secondary, var(--historietas-publicar-secondary, #A1A1AA)) 100%)",
-  transition: "width 0.2s ease",
-};
-
-
-
-const mainGridStyle: CSSProperties = {
-  display: "grid",
-  gap: "14px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const formPanelStyle: CSSProperties = {
-  display: "grid",
-  gap: "14px",
-  background: "transparent",
-  border: "0",
-  borderRadius: 0,
-  padding: 0,
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "visible",
-};
-
-const errorBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "5px",
-  padding: "11px",
-  borderRadius: "16px",
-  background: "var(--historietas-publicar-danger-bg, rgba(239,68,68,0.075))",
-  border: "1px solid var(--historietas-publicar-danger-border, rgba(239,68,68,0.18))",
-  color: "var(--historietas-publicar-danger-text, #FCA5A5)",
-  fontSize: "12px",
-  fontWeight: 850,
-  minWidth: 0,
-  ...safeTextStyle,
-};
-
-
-
-
-
-
-
-
-const fieldGroupStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const doubleFieldStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "12px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const labelRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  flexWrap: "wrap",
-};
-
-const fileUploadLabelRowStyle: CSSProperties = {
-  ...labelRowStyle,
-  alignItems: "center",
-};
-
-const fileOptionalBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.04em",
-  textTransform: "uppercase",
-  ...safeTextStyle,
-};
-
-const labelStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
-  fontWeight: 950,
-  letterSpacing: "-0.01em",
-  ...safeTextStyle,
-};
-
-const hiddenInputStyle: CSSProperties = {
-  display: "none",
-};
-
-
-
-
-
-
-
-
-const fileNameStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-publicar-accent-soft, #FFFFFF))",
-  fontSize: "11px",
-  fontWeight: 850,
-  ...safeTextStyle,
-};
-
-const coverErrorStyle: CSSProperties = {
-  color: "var(--historietas-publicar-danger-text, #FCA5A5)",
-  fontSize: "11px",
-  fontWeight: 850,
-  ...safeTextStyle,
-};
-
-const coverButtonsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "stretch",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const coverButtonStyle: CSSProperties = {
-  flex: "1 1 94px",
-  minHeight: "36px",
-  maxWidth: "100%",
-  padding: "0 12px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-publicar-surface, #050505)",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const removeCoverButtonStyle: CSSProperties = {
-  flex: "1 1 94px",
-  minHeight: "34px",
-  maxWidth: "100%",
-  padding: "0 11px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "46px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-publicar-bg-deep, #000000)",
-  color: "#FFFFFF",
-  padding: "0 14px",
-  outline: "none",
-  fontSize: "13px",
-  fontWeight: 700,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxShadow: "none",
-};
-
-const textareaStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "90px",
-  borderRadius: "20px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-publicar-bg-deep, #000000)",
-  color: "#FFFFFF",
-  padding: "14px",
-  outline: "none",
-  fontSize: "13px",
-  fontWeight: 700,
-  lineHeight: 1.58,
-  resize: "vertical",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const hintStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.45,
-  fontWeight: 650,
-  ...safeTextStyle,
-};
-
-
-const buttonAreaStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
-  gap: "9px",
-  marginTop: "2px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const primaryButtonStyle: CSSProperties = {
-  minHeight: "50px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-publicar-surface, #050505)",
-  color: "#FFFFFF",
-  fontSize: "14px",
-  fontWeight: 950,
-  cursor: "pointer",
-  boxShadow: "none",
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 14px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const disabledButtonStyle: CSSProperties = {
-  ...primaryButtonStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  boxShadow: "none",
-  cursor: "not-allowed",
-};
-
-const secondaryButtonStyle: CSSProperties = {
-  ...primaryButtonStyle,
-  textDecoration: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const chapterImportBoxStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(56px, 64px) minmax(0, 1fr)",
-  gap: "12px",
-  alignItems: "stretch",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "0",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "visible",
-  boxShadow: "none",
-};
-
-const chapterImportIconBoxStyle: CSSProperties = {
-  minHeight: "82px",
-  borderRadius: "18px",
-  background: "var(--historietas-publicar-bg-deep, #000000)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  boxShadow: "none",
-};
-
-const chapterImportIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "22px",
-  fontWeight: 950,
-  lineHeight: 1,
-  background: "transparent",
-  boxShadow: "none",
-};
-
-const chapterImportContentStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "center",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const chapterImportTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "16px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  ...safeTextStyle,
-};
-
-const chapterImportStatsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const inlineStatStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const previewPanelStyle: CSSProperties = {
-  display: "grid",
-  gap: "12px",
-  padding: 0,
-  background: "transparent",
-  border: "none",
-  borderRadius: 0,
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const previewHeaderStyle: CSSProperties = {
-  display: "grid",
-  gap: "4px",
-  justifyItems: "center",
-  textAlign: "center",
-  minWidth: 0,
-};
-
-const previewMiniTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  fontSize: "19px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
-  textAlign: "center",
-  textTransform: "uppercase",
-  ...safeTextStyle,
-};
-
-
-const previewCardStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(88px, 98px) minmax(0, 1fr)",
-  alignItems: "stretch",
-  gap: "14px",
-  padding: "11px",
-  borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const emptyPreviewBoxStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "80px minmax(0, 1fr)",
-  gap: "13px",
-  alignItems: "center",
-  padding: "13px",
-  borderRadius: "21px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-const emptyPreviewCoverStyle: CSSProperties = {
-  minHeight: "104px",
-  borderRadius: "18px",
-  background: "var(--historietas-publicar-bg-deep, #000000)",
-  backgroundImage: "linear-gradient(135deg, var(--historietas-publicar-surface, #050505) 0%, var(--historietas-publicar-bg-deep, #000000) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxShadow: "none",
-};
-
-const emptyPreviewIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "24px",
-  fontWeight: 950,
-  lineHeight: 1,
-  background: "transparent",
-};
-
-const emptyPreviewContentStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  minWidth: 0,
-};
-
-const emptyPreviewTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "16px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  ...safeTextStyle,
-};
-
-const emptyPreviewTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "12px",
-  lineHeight: 1.45,
-  fontWeight: 700,
-  ...safeTextStyle,
-};
-
-const previewCoverStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "116px",
-  height: "100%",
-  maxHeight: "none",
-  maxWidth: "100%",
-  alignSelf: "stretch",
-  borderRadius: "16px",
-  position: "relative",
-  overflow: "hidden",
-  background: "var(--historietas-publicar-bg-deep, #000000)",
-  backgroundImage: "linear-gradient(135deg, var(--historietas-publicar-surface, #050505) 0%, var(--historietas-publicar-bg-deep, #000000) 100%)",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  border: "1px solid rgba(255,255,255,0.08)",
-  minWidth: 0,
-  boxSizing: "border-box",
-  flex: "0 0 auto",
-  boxShadow: "none",
-};
-
-const previewCoverGlowStyle: CSSProperties = {
-  display: "none",
-};
-
-
-
-
-
-const previewContentStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "center",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const previewBadgesStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  rowGap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const previewBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "10px",
-  fontWeight: 900,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const previewRatingBadgeStyle: CSSProperties = {
-  ...previewBadgeStyle,
-  color: "#FFFFFF",
-};
-
-
-
-const previewObraTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "20px",
-  lineHeight: 1.05,
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 500,
-  letterSpacing: "-0.01em",
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  textDecoration: "none",
-  borderBottom: "none",
-  ...safeTextStyle,
-};
-
-const previewAuthorStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  margin: 0,
-  color: "var(--historietas-text-secondary, var(--historietas-publicar-author-text, #D4D4D8))",
-  fontSize: "12px",
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 450,
-  lineHeight: 1.25,
-  textDecoration: "none",
-  borderBottom: "none",
-  ...safeTextStyle,
-};
-
-
-const previewImportedChapterStyle: CSSProperties = {
-  display: "grid",
-  gap: "3px",
-  padding: "7px",
-  borderRadius: "13px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-const previewImportedMiniStyle: CSSProperties = {
-  color: "var(--historietas-publicar-success, #86EFAC)",
-  fontSize: "8px",
-  fontWeight: 950,
-  letterSpacing: "0.055em",
-  textTransform: "uppercase",
-  ...safeTextStyle,
-};
-
-const previewImportedTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
-  lineHeight: 1.2,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const previewImportedTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const previewTopRowStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const previewStatsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 850,
-  maxWidth: "100%",
-  minWidth: 0,
-};
-
-const previewStatItemStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  whiteSpace: "nowrap",
-  lineHeight: 1,
-};
-
-const previewStatIconStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  lineHeight: 1,
-  flex: "0 0 auto",
-};
-
-const previewStatHeartIconStyle: CSSProperties = {
-  ...previewStatIconStyle,
-  color: "var(--historietas-publicar-heart, #E11D48)",
-};
-
-const previewStatValueStyle: CSSProperties = {
-  display: "inline-block",
-  lineHeight: 1,
-  whiteSpace: "nowrap",
-};
-
-const previewProgressCompactStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "8px",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const previewProgressTrackStyle: CSSProperties = {
-  width: "100%",
-  height: "7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const previewProgressFillStyle: CSSProperties = {
-  height: "100%",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(90deg, var(--historietas-accent, var(--historietas-publicar-accent, #FFFFFF)) 0%, var(--historietas-secondary, var(--historietas-publicar-secondary, #A1A1AA)) 100%)",
-};
-
-const previewProgressTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 850,
-  lineHeight: 1.2,
-  whiteSpace: "nowrap",
-};
-
-const previewActionRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  marginTop: "2px",
-  maxWidth: "100%",
-  minWidth: 0,
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const previewGenreBadgeStyle: CSSProperties = {
-  flex: "0 1 42%",
-  maxWidth: "42%",
-  minHeight: "34px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 900,
-  lineHeight: 1.12,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-const previewActionBadgeStyle: CSSProperties = {
-  flex: "1 1 auto",
-  minWidth: 0,
-  maxWidth: "100%",
-  minHeight: "34px",
-  padding: "0 12px",
-  borderRadius: "999px",
-  background: "var(--historietas-publicar-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-  lineHeight: 1.15,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-
-
-
-const miniCounterOkStyle: CSSProperties = {
-  width: "fit-content",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "0",
-  color: "#FFFFFF",
-  fontSize: "10px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const miniCounterWarningStyle: CSSProperties = {
-  ...miniCounterOkStyle,
-  color: "#FFFFFF",
-};
-
-const adultWarningsBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "11px",
-  marginTop: "10px",
-  padding: "14px",
-  borderRadius: "16px",
-  border: "1px solid rgba(255, 105, 130, 0.28)",
-  background: "rgba(94, 20, 44, 0.12)",
-};
-
-const adultWarningsHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-};
-
-const adultWarningsTitleStyle: CSSProperties = {
-  color: "#FFD7DE",
-  fontSize: "12px",
-  fontWeight: 900,
-};
-
-const adultWarningsCounterStyle: CSSProperties = {
-  color: "#D7C8E9",
-  fontSize: "10px",
-  fontWeight: 800,
-};
-
-const adultWarningsDescriptionStyle: CSSProperties = {
-  margin: 0,
-  color: "#C9BFD2",
-  fontSize: "11px",
-  lineHeight: 1.55,
-};
-
-const adultWarningsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-  gap: "8px",
-};
-
-const adultWarningOptionStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  gap: "9px",
-  padding: "10px 11px",
-  borderRadius: "12px",
-  borderWidth: "1px",
-  borderStyle: "solid",
-  borderColor: "rgba(255, 255, 255, 0.08)",
-  background: "rgba(255, 255, 255, 0.025)",
-  color: "#F2ECF8",
-  fontSize: "11px",
-  lineHeight: 1.4,
-  cursor: "pointer",
-};
-
-const adultWarningOptionSelectedStyle: CSSProperties = {
-  borderColor: "rgba(255, 113, 143, 0.5)",
-  background: "rgba(126, 35, 67, 0.2)",
-};
-
-const adultWarningCheckboxStyle: CSSProperties = {
-  width: "16px",
-  height: "16px",
-  marginTop: "1px",
-  accentColor: "#FF6680",
-  flex: "0 0 auto",
-};
-
-const desktopContainerStyle: CSSProperties = {
-  ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  maxWidth: "100%",
-  padding: "30px 0 72px",
-};
-
-
-
-
-
-
-
-
-const desktopProgressBoxStyle: CSSProperties = {
-  ...progressBoxStyle,
-  gridColumn: "1 / -1",
-  width: "100%",
-  padding: 0,
-};
-
-
-const desktopMainGridSingleStyle: CSSProperties = {
-  ...mainGridStyle,
-  gridTemplateColumns: "minmax(0, 760px)",
-  justifyContent: "center",
-  alignItems: "start",
-  gap: "28px",
-  width: "100%",
-};
-
-
-const desktopFormPanelStyle: CSSProperties = {
-  ...formPanelStyle,
-  gridTemplateColumns: "minmax(0, 1fr)",
-  alignItems: "start",
-  width: "100%",
-  maxWidth: "760px",
-  padding: 0,
-  borderRadius: 0,
-  gap: "16px",
-  background: "transparent",
-  border: "0",
-  boxShadow: "none",
-  overflow: "visible",
-};
-
-const desktopHalfFieldStyle: CSSProperties = {
-  ...fieldGroupStyle,
-  gridColumn: "auto",
-  minWidth: 0,
-};
-
-const desktopFullWidthFieldStyle: CSSProperties = {
-  ...fieldGroupStyle,
-  gridColumn: "1 / -1",
-  minWidth: 0,
-};
-
-const desktopFullWidthErrorBoxStyle: CSSProperties = {
-  ...errorBoxStyle,
-  gridColumn: "1 / -1",
-};
-
-
-
-const desktopDoubleFieldStyle: CSSProperties = {
-  ...doubleFieldStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "16px",
-};
-
-const desktopFullWidthDoubleFieldStyle: CSSProperties = {
-  ...desktopDoubleFieldStyle,
-  gridColumn: "1 / -1",
-};
-
-
-
-
-
-const desktopCoverButtonsStyle: CSSProperties = {
-  ...coverButtonsStyle,
-  justifyContent: "flex-start",
-  gap: "9px",
-};
-
-const desktopCoverButtonStyle: CSSProperties = {
-  ...coverButtonStyle,
-  flex: "0 1 auto",
-  width: "auto",
-  minWidth: "138px",
-  maxWidth: "220px",
-  padding: "0 17px",
-  whiteSpace: "normal",
-};
-
-const desktopRemoveCoverButtonStyle: CSSProperties = {
-  ...removeCoverButtonStyle,
-  flex: "0 1 auto",
-  width: "auto",
-  minWidth: "112px",
-  maxWidth: "180px",
-  padding: "0 16px",
-  whiteSpace: "normal",
-};
-
-const desktopChapterImportBoxStyle: CSSProperties = {
-  ...chapterImportBoxStyle,
-  gridTemplateColumns: "108px minmax(0, 1fr)",
-  gap: "16px",
-  alignItems: "center",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "0",
-  boxShadow: "none",
-  overflow: "visible",
-};
-
-const desktopCoverUploadIconBoxStyle: CSSProperties = {
-  width: "108px",
-  minWidth: "108px",
-  minHeight: "144px",
-  height: "144px",
-  alignSelf: "center",
-  borderRadius: "18px",
-};
-
-const desktopFileUploadIconBoxStyle: CSSProperties = {
-  width: "88px",
-  minWidth: "88px",
-  minHeight: "96px",
-  height: "96px",
-  alignSelf: "center",
-  borderRadius: "18px",
-};
-
-const desktopFullWidthArquivoObraBoxStyle: CSSProperties = {
-  ...chapterImportBoxStyle,
-  gridTemplateColumns: "88px minmax(0, 1fr)",
-  gap: "16px",
-  alignItems: "center",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "0",
-  boxShadow: "none",
-  overflow: "visible",
-};
-
-const desktopChapterImportContentStyle: CSSProperties = {
-  ...chapterImportContentStyle,
-  alignContent: "center",
-  gap: "9px",
-};
-
-const desktopFullWidthArquivoObraContentStyle: CSSProperties = {
-  ...chapterImportContentStyle,
-  alignContent: "center",
-  gap: "9px",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  maxWidth: "100%",
-};
-
-const desktopButtonAreaStyle: CSSProperties = {
-  ...buttonAreaStyle,
-  gridColumn: "1 / -1",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  justifyContent: "stretch",
-  gap: "10px",
-  marginTop: "4px",
-};
-
-const desktopPreviewPanelStyle: CSSProperties = {
-  ...previewPanelStyle,
-  position: "static",
-  top: "auto",
-  alignSelf: "stretch",
-  width: "100%",
-  maxWidth: "760px",
-  margin: "0 auto",
-};
-
-
-const desktopPreviewCardStyle: CSSProperties = {
-  ...previewCardStyle,
-  gridTemplateColumns: "132px minmax(0, 1fr)",
-  gap: "18px",
-  padding: "14px",
-  borderRadius: "22px",
-  width: "100%",
-};
-
-const desktopEmptyPreviewBoxStyle: CSSProperties = {
-  ...emptyPreviewBoxStyle,
-  gridTemplateColumns: "118px minmax(0, 1fr)",
-  gap: "18px",
-  padding: "14px",
-  borderRadius: "22px",
-  width: "100%",
-};
