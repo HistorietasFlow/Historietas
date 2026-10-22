@@ -1013,3 +1013,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As seções de moderação, preferências e suporte passaram a reutilizar o contrato compartilhado de tradução, sem alterar filtros, controles, props ou runtime.
 - Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 59 — Configurações
+
+- A seção de resumo de uso passou a reutilizar o contrato compartilhado de tradução, eliminando a última duplicação local dessa assinatura sem alterar props ou runtime.
+- Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

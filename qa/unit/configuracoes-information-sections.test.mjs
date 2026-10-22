@@ -40,6 +40,12 @@ test("seções informativas preservam dados, rotas, traduções e filtros", () =
     secoesUso,
     /export function ConfiguracoesUsageSummarySection\(/,
   );
+  assert.match(
+    secoesUso,
+    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(secoesUso, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.doesNotMatch(secoesUso, /type TraduzirTexto =/);
   assert.match(secoesUso, /deveMostrar: \(\.\.\.termos: string\[\]\) => boolean/);
   assert.match(secoesUso, /resumo: ResumoLocal/);
   assert.match(secoesUso, /totalBiblioteca: number/);
