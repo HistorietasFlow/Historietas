@@ -33,6 +33,21 @@ import {
   normalizarClassificacaoIndicativaPublicar,
 } from "./lib/publicar-work-utils";
 import {
+  obterChavesBackupArquivoPublicar,
+  normalizarArquivoObra,
+  normalizarObraSalva,
+  obraPertenceAoUsuarioPublicar,
+  prepararObraParaLocalStorage,
+} from "./lib/publicar-local-work-utils";
+import {
+  lerStorageUsuarioPublicar,
+  salvarJsonStorageUsuarioPublicar,
+} from "./lib/publicar-user-storage-utils";
+import {
+  criarLoginHrefPublicar,
+  obterNomeMetadataPublicar,
+} from "./lib/publicar-auth-utils";
+import {
   FILE_BACKUP_STORAGE_KEY,
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
@@ -590,52 +605,6 @@ function traduzirMensagemPublicar(
   return mensagem;
 }
 
-function criarStorageKeyUsuarioPublicar(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function lerStorageUsuarioPublicar(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioPublicar(chave, userIdLimpo);
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioPublicar(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioPublicar(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; a publicação principal fica no Supabase.
-  }
-}
-
 async function enviarArquivoStorage(
   bucket: "capas-obras" | "arquivos-obras",
   userId: string,
@@ -761,41 +730,6 @@ async function criarSlugUnicoSupabase(
   return `${slugBase}-${Date.now().toString(36)}`;
 }
 
-function criarLoginHrefPublicar() {
-  const params = new URLSearchParams({
-    redirectTo: "/publicar",
-  });
-
-  return `/login?${params.toString()}`;
-}
-
-function obterNomeMetadataPublicar(usuario: {
-  email?: string | null;
-  user_metadata?: Record<string, unknown> | null;
-}) {
-  const metadata = usuario.user_metadata || {};
-  const nomesPossiveis = [
-    metadata.nome,
-    metadata.name,
-    metadata.full_name,
-    metadata.username,
-    metadata.user_name,
-    metadata.preferred_username,
-  ];
-
-  const nomeMetadata = nomesPossiveis.find((valor): valor is string => {
-    return typeof valor === "string" && Boolean(valor.trim());
-  });
-
-  if (nomeMetadata?.trim()) {
-    return nomeMetadata.trim();
-  }
-
-  const email = typeof usuario.email === "string" ? usuario.email.trim() : "";
-
-  return email ? email.split("@")[0] || "" : "";
-}
-
 async function carregarNomePerfilPublicar(userId: string, fallback = "") {
   const fallbackLimpo = fallback.trim();
 
@@ -838,205 +772,6 @@ async function carregarNomePerfilPublicar(userId: string, fallback = "") {
   }
 
   return fallbackLimpo;
-}
-
-function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return null;
-  }
-
-  const arquivo = valor as Partial<ArquivoObraLocal>;
-
-  if (
-    typeof arquivo.nome !== "string" ||
-    !arquivo.nome.trim() ||
-    typeof arquivo.conteudo !== "string" ||
-    !arquivo.conteudo.trim()
-  ) {
-    return null;
-  }
-
-  let categoria: ArquivoObraLocal["categoria"] = "outro";
-
-  if (
-    arquivo.categoria === "texto" ||
-    arquivo.categoria === "documento" ||
-    arquivo.categoria === "imagem" ||
-    arquivo.categoria === "outro"
-  ) {
-    categoria = arquivo.categoria;
-  }
-
-  return {
-    nome: arquivo.nome,
-    tipo: typeof arquivo.tipo === "string" ? arquivo.tipo : "",
-    tamanho:
-      typeof arquivo.tamanho === "number" && Number.isFinite(arquivo.tamanho)
-        ? arquivo.tamanho
-        : 0,
-    conteudo: arquivo.conteudo,
-    categoria,
-    criadoEm: typeof arquivo.criadoEm === "string" ? arquivo.criadoEm : "",
-  };
-}
-
-function normalizarObraSalva(obra: ObraSalva, obraIndex: number): ObraLocal {
-  const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
-    ? obra.capitulos.map((capitulo, capituloIndex) => ({
-        ...capitulo,
-        id:
-          typeof capitulo.id === "string" && capitulo.id.trim()
-            ? capitulo.id
-            : `capitulo-${obraIndex + 1}-${capituloIndex + 1}`,
-        titulo:
-          typeof capitulo.titulo === "string" && capitulo.titulo.trim()
-            ? capitulo.titulo
-            : "Capítulo sem título",
-        texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
-        curtiu: Boolean(capitulo.curtiu),
-        salvo: Boolean(capitulo.salvo),
-        comentario:
-          typeof capitulo.comentario === "string" ? capitulo.comentario : "",
-        criadoEm:
-          typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
-        lido: Boolean(capitulo.lido),
-        lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
-      }))
-    : [];
-
-  return {
-    id:
-      typeof obra.id === "string" && obra.id.trim()
-        ? obra.id
-        : `obra-${obraIndex + 1}`,
-    titulo:
-      typeof obra.titulo === "string" && obra.titulo.trim()
-        ? obra.titulo
-        : "Obra sem título",
-    autor:
-      typeof obra.autor === "string" && obra.autor.trim()
-        ? obra.autor
-        : "Autor não informado",
-    autorId:
-      typeof obra.autorId === "string" && obra.autorId.trim()
-        ? obra.autorId.trim()
-        : typeof obra.user_id === "string" && obra.user_id.trim()
-        ? obra.user_id.trim()
-        : typeof obra.userId === "string" && obra.userId.trim()
-        ? obra.userId.trim()
-        : "",
-    genero:
-      typeof obra.genero === "string" && obra.genero.trim()
-        ? obra.genero
-        : "Não informado",
-    formato:
-      typeof obra.formato === "string" && obra.formato.trim()
-        ? obra.formato
-        : "Não informado",
-    classificacaoIndicativa:
-      typeof obra.classificacaoIndicativa === "string" &&
-      obra.classificacaoIndicativa.trim()
-        ? obra.classificacaoIndicativa
-        : "Não informada",
-    avisosConteudo: normalizarAvisosConteudo18(
-      obra.avisosConteudo,
-      obra.classificacaoIndicativa,
-    ),
-    sinopse:
-      typeof obra.sinopse === "string" && obra.sinopse.trim()
-        ? obra.sinopse
-        : "Nenhuma sinopse informada.",
-    tags: Array.isArray(obra.tags)
-      ? obra.tags.filter((tag): tag is string => typeof tag === "string")
-      : ["sem tags"],
-    capa: typeof obra.capa === "string" ? obra.capa : "",
-    capaNome: typeof obra.capaNome === "string" ? obra.capaNome : "",
-    arquivoObra: normalizarArquivoObra(obra.arquivoObra),
-    publicado: Boolean(obra.publicado),
-    capitulos: capitulosNormalizados,
-    criadaEm: typeof obra.criadaEm === "string" ? obra.criadaEm : "",
-    ultimoCapituloLidoId:
-      typeof obra.ultimoCapituloLidoId === "string"
-        ? obra.ultimoCapituloLidoId
-        : "",
-    ultimaLeituraEm:
-      typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
-    progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
-    visualizacoes: 0,
-    totalCurtidas: 0,
-    totalComentarios: 0,
-    totalSalvos: 0,
-    totalLidos: 0,
-    slug:
-      typeof obra.slug === "string" && obra.slug.trim()
-        ? obra.slug
-        : criarSlugBase(
-            typeof obra.titulo === "string" && obra.titulo.trim()
-              ? obra.titulo
-              : `obra-${obraIndex + 1}`
-          ),
-    link:
-      typeof obra.link === "string" && obra.link.trim()
-        ? obra.link
-        : `/obra/${
-            typeof obra.slug === "string" && obra.slug.trim()
-              ? obra.slug
-              : criarSlugBase(
-                  typeof obra.titulo === "string" && obra.titulo.trim()
-                    ? obra.titulo
-                    : `obra-${obraIndex + 1}`
-                )
-          }`,
-  };
-}
-
-
-function ehDataUrl(valor: string) {
-  return valor.startsWith("data:");
-}
-
-function prepararObraParaLocalStorage(obra: ObraLocal): ObraLocal {
-  return {
-    ...obra,
-    capa: ehDataUrl(obra.capa) ? "" : obra.capa,
-    arquivoObra: obra.arquivoObra
-      ? {
-          ...obra.arquivoObra,
-          conteudo: ehDataUrl(obra.arquivoObra.conteudo)
-            ? ""
-            : obra.arquivoObra.conteudo,
-        }
-      : null,
-  };
-}
-
-
-function obterAutorIdObraPublicar(obra: Pick<ObraLocal, "autorId">) {
-  return typeof obra.autorId === "string" ? obra.autorId.trim() : "";
-}
-
-function obraPertenceAoUsuarioPublicar(
-  obra: Pick<ObraLocal, "autorId">,
-  userId: string,
-) {
-  const userIdLimpo = userId.trim();
-
-  return Boolean(userIdLimpo && obterAutorIdObraPublicar(obra) === userIdLimpo);
-}
-
-function obterChavesBackupArquivoPublicar(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">,
-) {
-  return Array.from(
-    new Set(
-      [
-        `id:${obra.id}`,
-        `slug:${obra.slug || criarSlugBase(obra.titulo)}`,
-        `titulo:${normalizarTexto(obra.titulo)}`,
-        obra.link ? `link:${obra.link}` : "",
-      ].filter((chave) => Boolean(chave.trim())),
-    ),
-  );
 }
 
 function carregarBackupArquivosPublicar(userId = "") {
