@@ -1,8 +1,9 @@
+import type { AtualizarTextoConfiguracoes } from "./configuracoes-callback-types";
 import type { RouterConfiguracoesHistorico } from "./configuracoes-navigation-types";
 
 type AcoesConteudoConfiguracoes = {
   router: RouterConfiguracoesHistorico;
-  setErroUsername: (erro: string) => void;
+  setErroUsername: AtualizarTextoConfiguracoes;
 };
 
 export function criarAcoesConteudoConfiguracoes({

@@ -1871,3 +1871,37 @@ test("contratos de feedback de acoes preservam a limpeza compartilhada", () => {
   assert.match(toast, /FecharOverlayConfiguracoes/);
   assert.doesNotMatch(toast, /onFechar: \(\) => void;/);
 });
+
+test("contratos de setters preservam texto e booleanos compartilhados", () => {
+  assert.match(
+    callbackTypesSource,
+    /export type AtualizarTextoConfiguracoes = \(valor: string\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AtualizarBooleanoConfiguracoes = \(valor: boolean\) => void;/,
+  );
+
+  for (const arquivo of [
+    "lib/configuracoes-content-actions.ts",
+    "lib/configuracoes-overlay-field-actions.ts",
+    "lib/configuracoes-modal-state-actions.ts",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /AtualizarTextoConfiguracoes/);
+  }
+
+  const modalStateActions = readFileSync(
+    new URL(
+      "../../app/configuracoes/lib/configuracoes-modal-state-actions.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assert.match(modalStateActions, /AtualizarBooleanoConfiguracoes/);
+  assert.doesNotMatch(modalStateActions, /\(mostrar: boolean\) => void;/);
+  assert.doesNotMatch(modalStateActions, /\(alterada: boolean\) => void;/);
+});

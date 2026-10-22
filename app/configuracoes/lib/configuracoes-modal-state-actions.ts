@@ -1,8 +1,13 @@
+import type {
+  AtualizarBooleanoConfiguracoes,
+  AtualizarTextoConfiguracoes,
+} from "./configuracoes-callback-types";
+
 type AcoesAberturaExclusaoContaConfiguracoes = {
-  setSenhaExclusaoConta: (senha: string) => void;
-  setConfirmacaoExclusaoConta: (confirmacao: string) => void;
-  setErroExclusaoConta: (erro: string) => void;
-  setMostrarExclusaoConta: (mostrar: boolean) => void;
+  setSenhaExclusaoConta: AtualizarTextoConfiguracoes;
+  setConfirmacaoExclusaoConta: AtualizarTextoConfiguracoes;
+  setErroExclusaoConta: AtualizarTextoConfiguracoes;
+  setMostrarExclusaoConta: AtualizarBooleanoConfiguracoes;
 };
 
 type AcoesFechamentoExclusaoContaConfiguracoes =
@@ -11,12 +16,12 @@ type AcoesFechamentoExclusaoContaConfiguracoes =
   };
 
 type AcoesAberturaSegurancaConfiguracoes = {
-  setSenhaAtual: (senha: string) => void;
-  setNovaSenha: (senha: string) => void;
-  setConfirmarNovaSenha: (senha: string) => void;
-  setErroSenha: (erro: string) => void;
-  setSenhaAlterada: (alterada: boolean) => void;
-  setMostrarSeguranca: (mostrar: boolean) => void;
+  setSenhaAtual: AtualizarTextoConfiguracoes;
+  setNovaSenha: AtualizarTextoConfiguracoes;
+  setConfirmarNovaSenha: AtualizarTextoConfiguracoes;
+  setErroSenha: AtualizarTextoConfiguracoes;
+  setSenhaAlterada: AtualizarBooleanoConfiguracoes;
+  setMostrarSeguranca: AtualizarBooleanoConfiguracoes;
 };
 
 type AcoesFechamentoSegurancaConfiguracoes =
