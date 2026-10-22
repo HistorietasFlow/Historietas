@@ -48,6 +48,13 @@ const pagePresentation = readFileSync(
   ),
   "utf8",
 );
+const pageState = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-page-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const backupActions = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-backup-actions.ts",
@@ -235,7 +242,14 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
     /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
   );
   assert.match(content, /<section style=\{containerStyle\}>/);
-  assert.match(pagina, /const \[busca, setBusca\] = useState\(""\);/);
+  assert.match(
+    pagina,
+    /from "\.\/hooks\/use-configuracoes-page-state";/,
+  );
+  assert.match(pagina, /\} = useConfiguracoesPageState\(\);/);
+  assert.match(pageState, /const \[busca, setBusca\] = useState\(""\);/);
+  assert.match(pageState, /const \[salvando, setSalvando\] = useState\(false\);/);
+  assert.doesNotMatch(pagina, /const \[busca, setBusca\] = useState\(""\);/);
   assert.match(
     pagina,
     /import \{ criarAcoesConteudoConfiguracoes \} from "\.\/lib\/configuracoes-content-actions";/,

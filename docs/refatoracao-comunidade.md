@@ -978,3 +978,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O contexto de apresentação da página — tema, idioma, notificações e derivados de visualização — foi agrupado em um hook dedicado, preservando os mesmos inputs e valores retornados.
 - Estados, lifecycles, ações, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 52 — Configurações
+
+- O estado local não modal da página foi agrupado em um hook dedicado, preservando literalmente defaults, tipos e setters usados pela orquestração.
+- Lifecycles, ações, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
