@@ -22,24 +22,29 @@ import type {
   AbrirSegurancaConfiguracoes,
   AlternarAprovacaoNovosSeguidoresConfiguracoes,
   AlternarPerfilPrivadoConfiguracoes,
+  AlternarReceberAvisosConfiguracoes,
   AtualizarPreferenciaConfiguracoes,
   AtualizarPrivacidadeConfiguracoes,
+  AtualizarBuscaConfiguracoes,
   AplicarPrivacidadeAtualizadaConfiguracoes,
   AlternarUsuariosBloqueadosConfiguracoes,
+  BaixarBackupConfiguracoes,
   CarregarUsuariosBloqueadosConfiguracoes,
+  CopiarBackupConfiguracoes,
   DeveMostrarConfiguracoes,
   DesbloquearUsuarioConfiguracoes,
   LimparErroUsernameConfiguracoes,
   SalvarConfiguracoes,
   SairDaContaConfiguracoes,
   TraduzirTextoConfiguracoes,
+  VoltarConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
 
 type ConfiguracoesPageContentProps = {
   busca: string;
-  onBuscaChange: (valor: string) => void;
-  onVoltar: () => void;
+  onBuscaChange: AtualizarBuscaConfiguracoes;
+  onVoltar: VoltarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   deveMostrar: DeveMostrarConfiguracoes;
   preferencias: PreferenciasConta;
@@ -68,9 +73,9 @@ type ConfiguracoesPageContentProps = {
   onDesbloquearUsuario: DesbloquearUsuarioConfiguracoes;
   onAtualizarPrivacidade: AtualizarPrivacidadeConfiguracoes;
   onAplicarPrivacidadeAtualizada: AplicarPrivacidadeAtualizadaConfiguracoes;
-  onAlternarReceberAvisos: () => void;
-  onCopiarBackup: () => void;
-  onBaixarBackup: () => void;
+  onAlternarReceberAvisos: AlternarReceberAvisosConfiguracoes;
+  onCopiarBackup: CopiarBackupConfiguracoes;
+  onBaixarBackup: BaixarBackupConfiguracoes;
   onAbrirExclusaoConta: AbrirExclusaoContaConfiguracoes;
   onSairDaConta: SairDaContaConfiguracoes;
 };

@@ -4,10 +4,13 @@ import {
   headerStyle,
   pageTitleStyle,
 } from "../lib/configuracoes-shell-styles";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  TraduzirTextoConfiguracoes,
+  VoltarConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesPageHeaderProps = {
-  onVoltar: () => void;
+  onVoltar: VoltarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 };
 

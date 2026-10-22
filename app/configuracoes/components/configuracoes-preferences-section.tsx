@@ -6,6 +6,7 @@ import {
 } from "./configuracoes-settings-primitives";
 import { Toggle } from "./configuracoes-toggle";
 import type {
+  AlternarReceberAvisosConfiguracoes,
   DeveMostrarConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
@@ -14,7 +15,7 @@ type ConfiguracoesPreferencesSectionProps = {
   deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   preferencias: PreferenciasConta;
-  onAlternarReceberAvisos: () => void;
+  onAlternarReceberAvisos: AlternarReceberAvisosConfiguracoes;
 };
 
 export function ConfiguracoesPreferencesSection({

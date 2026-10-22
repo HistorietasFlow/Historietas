@@ -4,6 +4,8 @@ import {
 } from "./configuracoes-settings-primitives";
 import type { ResumoLocal } from "../lib/configuracoes-account-models";
 import type {
+  BaixarBackupConfiguracoes,
+  CopiarBackupConfiguracoes,
   DeveMostrarConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
@@ -12,8 +14,8 @@ type ConfiguracoesDataSectionProps = {
   deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   resumo: ResumoLocal;
-  onCopiarBackup: () => void;
-  onBaixarBackup: () => void;
+  onCopiarBackup: CopiarBackupConfiguracoes;
+  onBaixarBackup: BaixarBackupConfiguracoes;
 };
 
 export function ConfiguracoesDataSection({
