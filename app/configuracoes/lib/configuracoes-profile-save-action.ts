@@ -18,6 +18,7 @@ import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy
 import { salvarPerfilConfiguracoesSupabase } from "./configuracoes-profile-supabase-saver";
 import type { RedirecionarLoginConfiguracoes } from "./configuracoes-navigation-types";
 import type {
+  LimparMensagemAcaoConfiguracoes,
   MostrarMensagemAcaoConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "./configuracoes-callback-types";
@@ -46,7 +47,7 @@ export async function salvarConfiguracoesPerfil({
   usuario: UsuarioConfiguracoes | null;
   language: HistorietasLanguage;
   redirecionarLogin: RedirecionarLoginConfiguracoes;
-  setMensagemAcao: (mensagem: null) => void;
+  setMensagemAcao: LimparMensagemAcaoConfiguracoes;
   mostrarMensagemAcao: MostrarMensagemAcaoConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   setErroUsername: Dispatch<SetStateAction<string>>;

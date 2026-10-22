@@ -1,3 +1,5 @@
+import type { LimparMensagemAcaoConfiguracoes } from "./configuracoes-callback-types";
+
 type AcoesCamposOverlayConfiguracoes = {
   setSenhaAtual: (senha: string) => void;
   setNovaSenha: (senha: string) => void;
@@ -6,7 +8,7 @@ type AcoesCamposOverlayConfiguracoes = {
   setSenhaExclusaoConta: (senha: string) => void;
   setConfirmacaoExclusaoConta: (confirmacao: string) => void;
   setErroExclusaoConta: (erro: string) => void;
-  setMensagemAcao: (mensagem: null) => void;
+  setMensagemAcao: LimparMensagemAcaoConfiguracoes;
 };
 
 export function criarAcoesCamposOverlayConfiguracoes({

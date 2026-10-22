@@ -10,6 +10,7 @@ import {
 } from "./configuracoes-privacy-preferences";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 import type {
+  LimparMensagemAcaoConfiguracoes,
   MostrarMensagemAcaoConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "./configuracoes-callback-types";
@@ -63,7 +64,7 @@ export function aplicarPrivacidadeAtualizadaConfiguracoes({
 }: {
   privacidadeAtualizada: PreferenciasPrivacidadeHistorietas;
   setPrivacidade: Dispatch<SetStateAction<PreferenciasPrivacidadeHistorietas>>;
-  setMensagemAcao: (mensagem: null) => void;
+  setMensagemAcao: LimparMensagemAcaoConfiguracoes;
   usuarioIdLogado: string;
   mostrarMensagemAcao: MostrarMensagemAcaoConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;

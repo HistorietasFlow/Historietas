@@ -2,6 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type {
+  LimparMensagemAcaoConfiguracoes,
   MostrarMensagemAcaoConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
@@ -33,7 +34,7 @@ export function useConfiguracoesPreferenceActions({
   usuarioIdLogado: string;
   setPreferencias: Dispatch<SetStateAction<PreferenciasConta>>;
   setPrivacidade: Dispatch<SetStateAction<PreferenciasPrivacidadeHistorietas>>;
-  setMensagemAcao: (mensagem: null) => void;
+  setMensagemAcao: LimparMensagemAcaoConfiguracoes;
   mostrarMensagemAcao: MostrarMensagemAcaoConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 }) {

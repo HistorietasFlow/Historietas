@@ -27,6 +27,8 @@ export type MostrarMensagemAcaoConfiguracoes = (
   texto: string,
 ) => void;
 
+export type LimparMensagemAcaoConfiguracoes = (mensagem: null) => void;
+
 export type DeveMostrarConfiguracoes = (...termos: string[]) => boolean;
 
 export type AtualizarPreferenciaConfiguracoes = <K extends keyof PreferenciasConta>(

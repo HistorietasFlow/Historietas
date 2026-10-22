@@ -10,13 +10,14 @@ import {
   actionToastWarningStyle,
 } from "../lib/configuracoes-action-toast-styles";
 import type {
+  FecharOverlayConfiguracoes,
   MensagemAcaoConfiguracoesVisual,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesActionToastProps = {
   mensagem: MensagemAcaoConfiguracoesVisual;
-  onFechar: () => void;
+  onFechar: FecharOverlayConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 };
 
