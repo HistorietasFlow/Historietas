@@ -9,17 +9,7 @@ import {
   actionToastTitleStyle,
   actionToastWarningStyle,
 } from "../lib/configuracoes-action-toast-styles";
-import type {
-  FecharOverlayConfiguracoes,
-  TraduzirTextoConfiguracoes,
-} from "../lib/configuracoes-callback-types";
-import type { MensagemAcaoConfiguracoesVisual } from "../lib/configuracoes-action-message-models";
-
-type ConfiguracoesActionToastProps = {
-  mensagem: MensagemAcaoConfiguracoesVisual;
-  onFechar: FecharOverlayConfiguracoes;
-  traduzirTexto: TraduzirTextoConfiguracoes;
-};
+import type { ConfiguracoesActionToastProps } from "./configuracoes-action-toast-props";
 
 export function ConfiguracoesActionToast({
   mensagem,

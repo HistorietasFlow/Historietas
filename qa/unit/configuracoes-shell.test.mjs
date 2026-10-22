@@ -9,6 +9,13 @@ const header = readFileSync(
   ),
   "utf8",
 );
+const headerProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-header-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const search = readFileSync(
   new URL("../../app/configuracoes/components/configuracoes-search.tsx", import.meta.url),
   "utf8",
@@ -157,6 +164,19 @@ const loadingState = readFileSync(
 test("shell de Configurações preserva cabeçalho, busca e perfil", () => {
   assert.match(header, /export function ConfiguracoesPageHeader\(/);
   assert.match(header, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
+  assert.match(
+    header,
+    /import type \{ ConfiguracoesPageHeaderProps \} from "\.\/configuracoes-page-header-props";/,
+  );
+  assert.match(
+    headerProps,
+    /import type \{\s+TraduzirTextoConfiguracoes,\s+VoltarConfiguracoes,\s+\} from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(
+    headerProps,
+    /export type ConfiguracoesPageHeaderProps = \{\s+onVoltar: VoltarConfiguracoes;\s+traduzirTexto: TraduzirTextoConfiguracoes;\s+\};/,
+  );
+  assert.doesNotMatch(header, /type ConfiguracoesPageHeaderProps =/);
   assert.match(header, /onClick=\{onVoltar\}/);
   assert.match(header, /aria-label=\{traduzirTexto\("Voltar", "Back", "Volver"\)\}/);
   assert.match(header, /name="arrowLeft" size=\{25\} strokeWidth=\{2\.4\}/);

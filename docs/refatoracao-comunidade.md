@@ -1143,3 +1143,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos puros de props da composição principal e dos overlays foram isolados junto aos seus componentes, preservando os campos, as assinaturas e os consumidores existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 85 — Configurações
+
+- Os contratos de props do estado de carregamento, cabeçalho e toast foram isolados junto aos respectivos componentes, mantendo campos, assinaturas e consumidores existentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
