@@ -1098,3 +1098,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos de navegação passaram a reutilizar as ações sem argumentos e a expor uma assinatura dedicada para rotas com `href`, preservando os tipos efetivos de router, retorno, atualização e login.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 76 — Configurações
+
+- Os contratos de exibição de mensagem e de predicado de busca passaram a compor assinaturas genéricas de argumentos, sem alterar os parâmetros ou retornos efetivos.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

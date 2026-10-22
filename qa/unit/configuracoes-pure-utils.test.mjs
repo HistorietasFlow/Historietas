@@ -1398,11 +1398,19 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type MostrarMensagemAcaoConfiguracoes = \(\s+tipo: TipoMensagemAcaoConfiguracoes,\s+texto: string,\s+\) => void;/,
+    /export type ExecutarAcaoComArgumentosConfiguracoes<\s+Argumentos extends unknown\[\],\s+> = \(\.\.\.argumentos: Argumentos\) => void;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type DeveMostrarConfiguracoes = \(\.\.\.termos: string\[\]\) => boolean;/,
+    /export type MostrarMensagemAcaoConfiguracoes =\s+ExecutarAcaoComArgumentosConfiguracoes<\s+\[TipoMensagemAcaoConfiguracoes, string\]\s+>;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type VerificarCondicaoConfiguracoes<Argumentos extends unknown\[\]> = \(\s+\.\.\.argumentos: Argumentos\s+\) => boolean;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type DeveMostrarConfiguracoes =\s+VerificarCondicaoConfiguracoes<string\[\]>;/,
   );
   assert.match(
     callbackTypesSource,
