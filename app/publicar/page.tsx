@@ -96,6 +96,8 @@ import { criarDecoracaoPaginaStyle } from "./lib/publicar-page-decoration-style"
 import { PublicarPageHeader } from "./components/PublicarPageHeader";
 import { PublicarProgress } from "./components/PublicarProgress";
 import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
+import { PublicarCoverUpload } from "./components/PublicarCoverUpload";
+import { PublicarContentFileUpload } from "./components/PublicarContentFileUpload";
 import {
   desktopContainerStyle,
   desktopTopWaterFadeStyle,
@@ -116,43 +118,19 @@ import {
   adultWarningsHeaderStyle,
   adultWarningsTitleStyle,
   buttonAreaStyle,
-  chapterImportBoxStyle,
-  chapterImportContentStyle,
-  chapterImportIconBoxStyle,
-  chapterImportIconStyle,
-  chapterImportStatsStyle,
-  chapterImportTitleStyle,
-  coverButtonStyle,
-  coverButtonsStyle,
-  coverErrorStyle,
-  criarCoverUploadIconBoxStyle,
   desktopButtonAreaStyle,
-  desktopChapterImportBoxStyle,
-  desktopChapterImportContentStyle,
-  desktopCoverButtonStyle,
-  desktopCoverButtonsStyle,
-  desktopCoverUploadIconBoxStyle,
-  desktopFileUploadIconBoxStyle,
   desktopFormPanelStyle,
-  desktopFullWidthArquivoObraBoxStyle,
-  desktopFullWidthArquivoObraContentStyle,
   desktopFullWidthDoubleFieldStyle,
   desktopFullWidthErrorBoxStyle,
   desktopFullWidthFieldStyle,
   desktopHalfFieldStyle,
   desktopMainGridSingleStyle,
-  desktopRemoveCoverButtonStyle,
   disabledButtonStyle,
   doubleFieldStyle,
   errorBoxStyle,
   fieldGroupStyle,
-  fileNameStyle,
-  fileOptionalBadgeStyle,
-  fileUploadLabelRowStyle,
   formPanelStyle,
-  hiddenInputStyle,
   hintStyle,
-  inlineStatStyle,
   inputStyle,
   labelRowStyle,
   labelStyle,
@@ -160,7 +138,6 @@ import {
   miniCounterOkStyle,
   miniCounterWarningStyle,
   primaryButtonStyle,
-  removeCoverButtonStyle,
   secondaryButtonStyle,
   textareaStyle,
 } from "./lib/publicar-form-upload-styles";
@@ -1380,68 +1357,17 @@ export default function PublicarPage() {
             )}
 
 
-            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
-              <input
-                ref={capaInputRef}
-                type="file"
-                accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
-                onChange={selecionarCapa}
-                style={hiddenInputStyle}
-              />
-
-              <div style={isDesktop ? desktopChapterImportBoxStyle : chapterImportBoxStyle}>
-                <div
-                  style={
-                    isDesktop
-                      ? {
-                          ...criarCoverUploadIconBoxStyle(capa),
-                          ...desktopCoverUploadIconBoxStyle,
-                        }
-                      : criarCoverUploadIconBoxStyle(capa)
-                  }
-                >
-                  {!capa && <span style={chapterImportIconStyle}>+</span>}
-                </div>
-
-                <div style={isDesktop ? desktopChapterImportContentStyle : chapterImportContentStyle}>
-                  <strong style={chapterImportTitleStyle}>
-                    {capa ? t("capaSelecionada") : t("adicionarCapa")}
-                  </strong>
-
-                  <span style={hintStyle}>
-                    {t("dicaCapa")}
-                  </span>
-
-                  {capaNome && <span style={fileNameStyle}>{capaNome}</span>}
-
-                  {capaErro && (
-                    <span style={coverErrorStyle}>
-                      {traduzirMensagemPublicar(idioma, capaErro)}
-                    </span>
-                  )}
-
-                  <div style={isDesktop ? desktopCoverButtonsStyle : coverButtonsStyle}>
-                    <button
-                      type="button"
-                      onClick={() => capaInputRef.current?.click()}
-                      style={isDesktop ? desktopCoverButtonStyle : coverButtonStyle}
-                    >
-                      {t("escolherImagem")}
-                    </button>
-
-                    {capa && (
-                      <button
-                        type="button"
-                        onClick={removerCapa}
-                        style={isDesktop ? desktopRemoveCoverButtonStyle : removeCoverButtonStyle}
-                      >
-                        {t("remover")}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PublicarCoverUpload
+              capa={capa}
+              capaErro={capaErro}
+              capaInputRef={capaInputRef}
+              capaNome={capaNome}
+              isDesktop={isDesktop}
+              onRemoverCapa={removerCapa}
+              onSelecionarCapa={selecionarCapa}
+              t={t}
+              traduzirMensagem={(mensagem) => traduzirMensagemPublicar(idioma, mensagem)}
+            />
 
 
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
@@ -1725,200 +1651,30 @@ export default function PublicarPage() {
             </div>
 
 
-            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
-              <div style={fileUploadLabelRowStyle}>
-                <label style={labelStyle}>{t("adicionarConteudoArquivo")}</label>
-                <span style={fileOptionalBadgeStyle}>{t("opcional")}</span>
-              </div>
-
-              <input
-                ref={arquivoConteudoInputRef}
-                type="file"
-                accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.gif,application/pdf,text/plain,text/markdown,image/png,image/jpeg,image/webp,image/gif"
-                onChange={selecionarConteudoArquivo}
-                style={hiddenInputStyle}
-              />
-
-              <div
-                style={
-                  isDesktop
-                    ? desktopFullWidthArquivoObraBoxStyle
-                    : chapterImportBoxStyle
-                }
-              >
-                <div
-                  style={
-                    isDesktop
-                      ? { ...chapterImportIconBoxStyle, ...desktopFileUploadIconBoxStyle }
-                      : chapterImportIconBoxStyle
-                  }
-                >
-                  <span style={chapterImportIconStyle}>
-                    {temCapituloImportado ? "⇧" : "▣"}
-                  </span>
-                </div>
-
-                <div
-                  style={
-                    isDesktop
-                      ? desktopFullWidthArquivoObraContentStyle
-                      : chapterImportContentStyle
-                  }
-                >
-                  <strong style={chapterImportTitleStyle}>
-                    {arquivoTextoPendente
-                      ? t("comoUsarArquivo")
-                      : arquivoObra
-                        ? t("arquivoCompletoAnexado")
-                        : temCapituloImportado
-                          ? t("primeiroCapituloImportado")
-                          : t("enviarArquivo")}
-                  </strong>
-
-                  <span style={hintStyle}>
-                    {arquivoTextoPendente
-                      ? t("dicaArquivoPendente")
-                      : t("dicaArquivo")}
-                  </span>
-
-                  {arquivoTextoPendente && (
-                    <span style={fileNameStyle}>
-                      {arquivoTextoPendente.name} • {t("texto")} •{" "}
-                      {arquivoTextoPendenteTamanhoTexto}
-                    </span>
-                  )}
-
-                  {arquivoObra && !arquivoTextoPendente && (
-                    <span style={fileNameStyle}>
-                      {arquivoObra.nome} • {arquivoObraTipoTexto} •{" "}
-                      {arquivoObraTamanhoTexto}
-                    </span>
-                  )}
-
-                  {temCapituloImportado && !arquivoTextoPendente && (
-                    <span style={fileNameStyle}>
-                      {arquivoCapituloNome} • {t("primeiroCapitulo")}
-                    </span>
-                  )}
-
-                  {arquivoObraErro && (
-                    <span style={coverErrorStyle}>
-                      {traduzirMensagemPublicar(idioma, arquivoObraErro)}
-                    </span>
-                  )}
-
-                  {arquivoCapituloErro && (
-                    <span style={coverErrorStyle}>
-                      {traduzirMensagemPublicar(idioma, arquivoCapituloErro)}
-                    </span>
-                  )}
-
-                  {arquivoTextoPendente ? (
-                    <div
-                      style={
-                        isDesktop ? desktopCoverButtonsStyle : coverButtonsStyle
-                      }
-                    >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          transformarArquivoTextoEmCapitulo(arquivoTextoPendente)
-                        }
-                        style={
-                          isDesktop
-                            ? desktopCoverButtonStyle
-                            : coverButtonStyle
-                        }
-                      >
-                        {t("transformarCapitulo")}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          anexarArquivoCompleto(arquivoTextoPendente)
-                        }
-                        style={
-                          isDesktop
-                            ? desktopCoverButtonStyle
-                            : coverButtonStyle
-                        }
-                      >
-                        {t("anexarArquivoCompleto")}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={cancelarEscolhaArquivoTexto}
-                        style={
-                          isDesktop
-                            ? desktopRemoveCoverButtonStyle
-                            : removeCoverButtonStyle
-                        }
-                      >
-                        {t("cancelar")}
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      style={
-                        isDesktop ? desktopCoverButtonsStyle : coverButtonsStyle
-                      }
-                    >
-                      <button
-                        type="button"
-                        onClick={() => arquivoConteudoInputRef.current?.click()}
-                        style={
-                          isDesktop
-                            ? desktopCoverButtonStyle
-                            : coverButtonStyle
-                        }
-                      >
-                        {temConteudoPorArquivo
-                          ? t("trocarArquivo")
-                          : t("escolherArquivo")}
-                      </button>
-
-                      {temConteudoPorArquivo && (
-                        <button
-                          type="button"
-                          onClick={limparSelecaoConteudoArquivo}
-                          style={
-                            isDesktop
-                              ? desktopRemoveCoverButtonStyle
-                              : removeCoverButtonStyle
-                          }
-                        >
-                          {t("remover")}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {arquivoObra && !arquivoTextoPendente && (
-                <div style={chapterImportStatsStyle}>
-                  <span style={inlineStatStyle}>{arquivoObraTipoTexto}</span>
-                  <span style={inlineStatStyle}>{arquivoObraTamanhoTexto}</span>
-                  <span style={inlineStatStyle}>{t("anexadoObra")}</span>
-                </div>
-              )}
-
-              {temCapituloImportado && !arquivoTextoPendente && (
-                <div style={chapterImportStatsStyle}>
-                  <span style={inlineStatStyle}>
-                    {t("titulo")}: {arquivoCapituloTitulo || `${t("primeiroCapitulo")} 1`}
-                  </span>
-                  <span style={inlineStatStyle}>
-                    {arquivoCapituloPalavras} {t("palavras")}
-                  </span>
-                  <span style={inlineStatStyle}>
-                    {arquivoCapituloMinutos} min
-                  </span>
-                </div>
-              )}
-            </div>
+            <PublicarContentFileUpload
+              arquivoCapituloErro={arquivoCapituloErro}
+              arquivoCapituloMinutos={arquivoCapituloMinutos}
+              arquivoCapituloNome={arquivoCapituloNome}
+              arquivoCapituloPalavras={arquivoCapituloPalavras}
+              arquivoCapituloTitulo={arquivoCapituloTitulo}
+              arquivoConteudoInputRef={arquivoConteudoInputRef}
+              arquivoObra={arquivoObra}
+              arquivoObraErro={arquivoObraErro}
+              arquivoObraTamanhoTexto={arquivoObraTamanhoTexto}
+              arquivoObraTipoTexto={arquivoObraTipoTexto}
+              arquivoTextoPendente={arquivoTextoPendente}
+              arquivoTextoPendenteTamanhoTexto={arquivoTextoPendenteTamanhoTexto}
+              isDesktop={isDesktop}
+              onAnexarArquivoCompleto={anexarArquivoCompleto}
+              onCancelarEscolhaArquivoTexto={cancelarEscolhaArquivoTexto}
+              onLimparSelecaoConteudoArquivo={limparSelecaoConteudoArquivo}
+              onSelecionarConteudoArquivo={selecionarConteudoArquivo}
+              onTransformarArquivoTextoEmCapitulo={transformarArquivoTextoEmCapitulo}
+              t={t}
+              temCapituloImportado={temCapituloImportado}
+              temConteudoPorArquivo={temConteudoPorArquivo}
+              traduzirMensagem={(mensagem) => traduzirMensagemPublicar(idioma, mensagem)}
+            />
 
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
               <Link href="/" style={secondaryButtonStyle}>

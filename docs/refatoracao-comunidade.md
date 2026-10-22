@@ -1204,3 +1204,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O cabeçalho, o indicador de progresso e a prévia visual da obra foram isolados em componentes dedicados, preservando responsividade, traduções, fallbacks e a composição existente.
 - Estados, lifecycle, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
+
+## Registro da Fase 12 — Publicar
+
+- Os seletores visuais de capa e de conteúdo por arquivo foram isolados em componentes dedicados, preservando formatos aceitos, feedbacks, variantes responsivas, fallbacks e chamadas dos callbacks existentes.
+- Estados, leitura de arquivos, lifecycle, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
