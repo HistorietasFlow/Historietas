@@ -1,18 +1,11 @@
 import type { FormEventHandler } from "react";
+import type { UsuarioBloqueadoConfiguracoes } from "./configuracoes-account-models";
 import type {
-  PreferenciasConta,
-  UsuarioBloqueadoConfiguracoes,
-} from "./configuracoes-account-models";
-import type { TipoMensagemAcaoConfiguracoes } from "./configuracoes-action-message-models";
-import type {
-  AtualizarCampoConfiguracoes,
   AtualizarValorConfiguracoes,
   ExecutarAcaoAssincronaComArgumentoConfiguracoes,
   ExecutarAcaoAssincronaConfiguracoes,
-  ExecutarAcaoComArgumentosConfiguracoes,
   ExecutarAcaoConfiguracoes,
 } from "./configuracoes-callback-primitives";
-import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 
 export type {
   AtualizarCampoConfiguracoes,
@@ -29,29 +22,22 @@ export type {
   DeveMostrarConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "./configuracoes-presentation-types";
-
-export type MostrarMensagemAcaoConfiguracoes =
-  ExecutarAcaoComArgumentosConfiguracoes<
-    [TipoMensagemAcaoConfiguracoes, string]
-  >;
-
-export type LimparMensagemAcaoConfiguracoes = AtualizarValorConfiguracoes<null>;
-
-export type AtualizarPreferenciaConfiguracoes =
-  AtualizarCampoConfiguracoes<PreferenciasConta>;
-
-export type AtualizarPrivacidadeConfiguracoes =
-  AtualizarCampoConfiguracoes<PreferenciasPrivacidadeHistorietas>;
-
-export type AlternarConfiguracao = ExecutarAcaoConfiguracoes;
-
-export type AlternarPerfilPrivadoConfiguracoes = AlternarConfiguracao;
-
-export type AlternarAprovacaoNovosSeguidoresConfiguracoes =
-  AlternarConfiguracao;
-
-export type AplicarPrivacidadeAtualizadaConfiguracoes =
-  AtualizarValorConfiguracoes<PreferenciasPrivacidadeHistorietas>;
+export type {
+  LimparMensagemAcaoConfiguracoes,
+  MostrarMensagemAcaoConfiguracoes,
+} from "./configuracoes-feedback-action-types";
+export type {
+  AplicarPrivacidadeAtualizadaConfiguracoes,
+  AtualizarPreferenciaConfiguracoes,
+  AtualizarPrivacidadeConfiguracoes,
+} from "./configuracoes-preference-action-types";
+export type {
+  AlternarAprovacaoNovosSeguidoresConfiguracoes,
+  AlternarConfiguracao,
+  AlternarPerfilPrivadoConfiguracoes,
+  AlternarReceberAvisosConfiguracoes,
+  AlternarUsuariosBloqueadosConfiguracoes,
+} from "./configuracoes-toggle-types";
 
 export type LimparErroUsernameConfiguracoes = ExecutarAcaoConfiguracoes;
 
@@ -64,8 +50,6 @@ export type AbrirExclusaoContaConfiguracoes = ExecutarAcaoConfiguracoes;
 export type SairDaContaConfiguracoes = ExecutarAcaoConfiguracoes;
 
 export type VoltarConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type AlternarReceberAvisosConfiguracoes = AlternarConfiguracao;
 
 export type CopiarBackupConfiguracoes = ExecutarAcaoConfiguracoes;
 
@@ -80,8 +64,6 @@ export type AtualizarBooleanoConfiguracoes = AtualizarValorConfiguracoes<boolean
 
 export type CarregarUsuariosBloqueadosConfiguracoes =
   ExecutarAcaoAssincronaConfiguracoes;
-
-export type AlternarUsuariosBloqueadosConfiguracoes = AlternarConfiguracao;
 
 export type DesbloquearUsuarioConfiguracoes =
   ExecutarAcaoAssincronaComArgumentoConfiguracoes<UsuarioBloqueadoConfiguracoes>;
