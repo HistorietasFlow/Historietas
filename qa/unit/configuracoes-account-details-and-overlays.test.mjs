@@ -41,6 +41,13 @@ const acoesConteudo = readFileSync(
   ),
   "utf8",
 );
+const acoesPagina = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-page-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("seção da conta preserva inputs, filtro, loading e segurança", () => {
   assert.match(secaoConta, /export function ConfiguracoesAccountDetailsSection\(/);
@@ -102,10 +109,11 @@ test("página preserva a orquestração e delega apenas a apresentação", () =>
   assert.match(content, /<ConfiguracoesAccountDetailsSection/);
   assert.match(content, /onAtualizarPreferencia=\{onAtualizarPreferencia\}/);
   assert.match(
-    pagina,
-    /import \{ criarAcoesConteudoConfiguracoes \} from "\.\/lib\/configuracoes-content-actions";/,
+    acoesPagina,
+    /import \{ criarAcoesConteudoConfiguracoes \} from "\.\/configuracoes-content-actions";/,
   );
-  assert.match(pagina, /criarAcoesConteudoConfiguracoes\(\{/);
+  assert.match(pagina, /criarAcoesPaginaConfiguracoes\(\{/);
+  assert.match(acoesPagina, /criarAcoesConteudoConfiguracoes\(\{/);
   assert.match(pagina, /onLimparErroUsername=\{onLimparErroUsername\}/);
   assert.match(pagina, /onSalvar=\{salvar\}/);
   assert.match(pagina, /onAbrirSeguranca=\{abrirSeguranca\}/);
@@ -113,10 +121,16 @@ test("página preserva a orquestração e delega apenas a apresentação", () =>
   assert.match(pagina, /onAlterarSenha=\{alterarSenha\}/);
   assert.match(pagina, /onExcluirConta=\{excluirConta\}/);
   assert.match(
-    pagina,
-    /import \{ criarAcoesCamposOverlayConfiguracoes \} from "\.\/lib\/configuracoes-overlay-field-actions";/,
+    acoesPagina,
+    /import \{ criarAcoesCamposOverlayConfiguracoes \} from "\.\/configuracoes-overlay-field-actions";/,
   );
-  assert.match(pagina, /criarAcoesCamposOverlayConfiguracoes\(\{/);
+  assert.match(acoesPagina, /criarAcoesCamposOverlayConfiguracoes\(\{/);
+  assert.ok(
+    acoesPagina.indexOf("criarAcoesCamposOverlayConfiguracoes({") <
+      acoesPagina.indexOf("criarAcoesConteudoConfiguracoes({"),
+  );
+  assert.match(acoesPagina, /\.\.\.acoesCamposOverlay,/);
+  assert.match(acoesPagina, /\.\.\.acoesConteudo,/);
   assert.match(pagina, /onFecharMensagemAcao=\{onFecharMensagemAcao\}/);
   assert.match(pagina, /useConfiguracoesAccountActionHandlers\(\{/);
   assert.doesNotMatch(pagina, /<SettingsInput/);
@@ -171,6 +185,10 @@ test("ações dos campos dos overlays preservam as limpezas de feedback", () => 
   );
   assert.doesNotMatch(
     acoesCamposOverlay,
+    /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
+  assert.doesNotMatch(
+    acoesPagina,
     /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
   );
 });

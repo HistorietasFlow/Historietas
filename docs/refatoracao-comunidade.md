@@ -988,3 +988,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição dos controllers de acesso — carga inicial, acesso administrativo e usuários bloqueados — foi agrupada em um hook dedicado, preservando a ordem de chamadas e os mesmos setters.
 - Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 54 — Configurações
+
+- Os adaptadores puros dos callbacks de conteúdo e dos campos dos overlays foram compostos em uma única fronteira, preservando os handlers, setters e a ordem de criação existentes.
+- Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

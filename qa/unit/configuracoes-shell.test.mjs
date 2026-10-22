@@ -69,6 +69,13 @@ const accountActionHandlers = readFileSync(
   ),
   "utf8",
 );
+const pageActions = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-page-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estilos de segurança preservam modais, privacidade e spreads", () => {
   for (const style of [
@@ -252,8 +259,10 @@ test("a página delega somente o shell visual e preserva a orquestração", () =
   assert.doesNotMatch(pagina, /const \[busca, setBusca\] = useState\(""\);/);
   assert.match(
     pagina,
-    /import \{ criarAcoesConteudoConfiguracoes \} from "\.\/lib\/configuracoes-content-actions";/,
+    /import \{ criarAcoesPaginaConfiguracoes \} from "\.\/lib\/configuracoes-page-actions";/,
   );
+  assert.match(pagina, /criarAcoesPaginaConfiguracoes\(\{/);
+  assert.match(pageActions, /criarAcoesConteudoConfiguracoes\(\{/);
   assert.match(pagina, /onVoltar=\{onVoltar\}/);
   assert.match(pagina, /onBuscaChange=\{setBusca\}/);
   assert.match(pagina, /usuarioNome=\{usuario\?\.nome\}/);
