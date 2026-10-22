@@ -16,6 +16,13 @@ const callbackTypes = readFileSync(
   ),
   "utf8",
 );
+const callbackPrimitives = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-callback-primitives.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const actionMessageModels = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-action-message-models.ts",
@@ -135,7 +142,7 @@ test("modelos compartilhados da mensagem de ação preservam contratos e consumi
     /export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & \{\s+id: number;\s+\};/,
   );
   assert.match(
-    callbackTypes,
+    callbackPrimitives,
     /export type ExecutarAcaoComArgumentosConfiguracoes<\s+Argumentos extends unknown\[\],\s+> = \(\.\.\.argumentos: Argumentos\) => void;/,
   );
   assert.match(
@@ -146,12 +153,20 @@ test("modelos compartilhados da mensagem de ação preservam contratos e consumi
     callbackTypes,
     /import type \{ TipoMensagemAcaoConfiguracoes \} from "\.\/configuracoes-action-message-models";/,
   );
+  assert.match(
+    callbackTypes,
+    /from "\.\/configuracoes-callback-primitives";/,
+  );
   assert.doesNotMatch(
     actionMessageModels,
     /React|useState|useEffect|supabase|localStorage|window|document|JSX/,
   );
   assert.doesNotMatch(
     callbackTypes,
+    /React|useState|useEffect|supabase|localStorage|window|document|JSX/,
+  );
+  assert.doesNotMatch(
+    callbackPrimitives,
     /React|useState|useEffect|supabase|localStorage|window|document|JSX/,
   );
   assert.match(hook, /MensagemAcaoConfiguracoes,/);

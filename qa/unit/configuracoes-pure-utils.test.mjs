@@ -31,6 +31,13 @@ const callbackTypesSource = readFileSync(
   ),
   "utf8",
 );
+const callbackPrimitivesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-callback-primitives.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const actionMessageModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-action-message-models.ts",
@@ -1408,15 +1415,19 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /import type \{ TipoMensagemAcaoConfiguracoes \} from "\.\/configuracoes-action-message-models";/,
   );
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type ExecutarAcaoComArgumentosConfiguracoes<\s+Argumentos extends unknown\[\],\s+> = \(\.\.\.argumentos: Argumentos\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type \{\s+AtualizarCampoConfiguracoes,\s+AtualizarTextoConfiguracoes,\s+AtualizarValorConfiguracoes,\s+ExecutarAcaoAssincronaComArgumentoConfiguracoes,\s+ExecutarAcaoAssincronaConfiguracoes,\s+ExecutarAcaoComArgumentosConfiguracoes,\s+ExecutarAcaoConfiguracoes,\s+VerificarCondicaoConfiguracoes,\s+\} from "\.\/configuracoes-callback-primitives";/,
   );
   assert.match(
     callbackTypesSource,
     /export type MostrarMensagemAcaoConfiguracoes =\s+ExecutarAcaoComArgumentosConfiguracoes<\s+\[TipoMensagemAcaoConfiguracoes, string\]\s+>;/,
   );
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type VerificarCondicaoConfiguracoes<Argumentos extends unknown\[\]> = \(\s+\.\.\.argumentos: Argumentos\s+\) => boolean;/,
   );
   assert.match(
@@ -1424,7 +1435,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type DeveMostrarConfiguracoes =\s+VerificarCondicaoConfiguracoes<string\[\]>;/,
   );
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type AtualizarCampoConfiguracoes<Objeto> = <K extends keyof Objeto>\(\s+campo: K,\s+valor: Objeto\[K\],\s+\) => void;/,
   );
   assert.match(
@@ -1436,7 +1447,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type AtualizarPrivacidadeConfiguracoes =\s+AtualizarCampoConfiguracoes<PreferenciasPrivacidadeHistorietas>;/,
   );
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type ExecutarAcaoConfiguracoes = \(\) => void;/,
   );
   assert.match(
@@ -1484,11 +1495,11 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type EnviarFormularioConfiguracoes =\s+FormEventHandler<HTMLFormElement>;/,
   );
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type AtualizarValorConfiguracoes<Valor> = \(valor: Valor\) => void;/,
   );
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;/,
   );
   assert.match(
@@ -1496,7 +1507,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type AtualizarBuscaConfiguracoes = AtualizarTextoConfiguracoes;/,
   );
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type ExecutarAcaoAssincronaConfiguracoes = \(\) => Promise<void>;/,
   );
   assert.match(
@@ -1508,7 +1519,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type AlternarUsuariosBloqueadosConfiguracoes = AlternarConfiguracao;/,
   );
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type ExecutarAcaoAssincronaComArgumentoConfiguracoes<Argumento> = \(\s+argumento: Argumento,\s+\) => Promise<void>;/,
   );
   assert.match(
@@ -1521,6 +1532,10 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.doesNotMatch(
     actionMessageModelsSource,
+    /React|supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
+  assert.doesNotMatch(
+    callbackPrimitivesSource,
     /React|supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
   );
 
@@ -1945,7 +1960,7 @@ test("contratos de feedback de acoes preservam a limpeza compartilhada", () => {
 
 test("contratos de setters preservam texto e booleanos compartilhados", () => {
   assert.match(
-    callbackTypesSource,
+    callbackPrimitivesSource,
     /export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;/,
   );
   assert.match(

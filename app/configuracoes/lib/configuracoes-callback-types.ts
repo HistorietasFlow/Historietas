@@ -4,21 +4,34 @@ import type {
   UsuarioBloqueadoConfiguracoes,
 } from "./configuracoes-account-models";
 import type { TipoMensagemAcaoConfiguracoes } from "./configuracoes-action-message-models";
+import type {
+  AtualizarCampoConfiguracoes,
+  AtualizarTextoConfiguracoes,
+  AtualizarValorConfiguracoes,
+  ExecutarAcaoAssincronaComArgumentoConfiguracoes,
+  ExecutarAcaoAssincronaConfiguracoes,
+  ExecutarAcaoComArgumentosConfiguracoes,
+  ExecutarAcaoConfiguracoes,
+  VerificarCondicaoConfiguracoes,
+} from "./configuracoes-callback-primitives";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
+
+export type {
+  AtualizarCampoConfiguracoes,
+  AtualizarTextoConfiguracoes,
+  AtualizarValorConfiguracoes,
+  ExecutarAcaoAssincronaComArgumentoConfiguracoes,
+  ExecutarAcaoAssincronaConfiguracoes,
+  ExecutarAcaoComArgumentosConfiguracoes,
+  ExecutarAcaoConfiguracoes,
+  VerificarCondicaoConfiguracoes,
+} from "./configuracoes-callback-primitives";
 
 export type TraduzirTextoConfiguracoes = (
   portugues: string,
   ingles: string,
   espanhol: string,
 ) => string;
-
-export type ExecutarAcaoComArgumentosConfiguracoes<
-  Argumentos extends unknown[],
-> = (...argumentos: Argumentos) => void;
-
-export type VerificarCondicaoConfiguracoes<Argumentos extends unknown[]> = (
-  ...argumentos: Argumentos
-) => boolean;
 
 export type MostrarMensagemAcaoConfiguracoes =
   ExecutarAcaoComArgumentosConfiguracoes<
@@ -29,23 +42,6 @@ export type LimparMensagemAcaoConfiguracoes = AtualizarValorConfiguracoes<null>;
 
 export type DeveMostrarConfiguracoes =
   VerificarCondicaoConfiguracoes<string[]>;
-
-export type ExecutarAcaoConfiguracoes = () => void;
-
-export type ExecutarAcaoAssincronaConfiguracoes = () => Promise<void>;
-
-export type ExecutarAcaoAssincronaComArgumentoConfiguracoes<Argumento> = (
-  argumento: Argumento,
-) => Promise<void>;
-
-export type AtualizarValorConfiguracoes<Valor> = (valor: Valor) => void;
-
-export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;
-
-export type AtualizarCampoConfiguracoes<Objeto> = <K extends keyof Objeto>(
-  campo: K,
-  valor: Objeto[K],
-) => void;
 
 export type AtualizarPreferenciaConfiguracoes =
   AtualizarCampoConfiguracoes<PreferenciasConta>;

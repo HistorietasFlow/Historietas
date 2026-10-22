@@ -1113,3 +1113,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os modelos puros da mensagem de ação — tipo, representação visual e mensagem identificada — foram isolados em `configuracoes-action-message-models.ts` e reutilizados pelos consumidores tipados.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 79 — Configurações
+
+- As primitives genéricas dos contratos de callback — ações, predicados, setters e variantes assíncronas — foram isoladas em `configuracoes-callback-primitives.ts`, preservando os aliases públicos existentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

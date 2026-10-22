@@ -16,6 +16,13 @@ const callbackTypes = readFileSync(
   ),
   "utf8",
 );
+const callbackPrimitives = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-callback-primitives.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -108,7 +115,7 @@ test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", ()
 
 test("Toggle reutiliza o contrato compartilhado de alternância", () => {
   assert.match(
-    callbackTypes,
+    callbackPrimitives,
     /export type ExecutarAcaoConfiguracoes = \(\) => void;/,
   );
   assert.match(
