@@ -22,10 +22,7 @@ import {
 } from "../lib/configuracoes-privacy-preferences";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "../lib/configuracoes-route-utils";
-
-type RouterConfiguracoes = {
-  replace: (href: string) => void;
-};
+import type { RouterConfiguracoes } from "../lib/configuracoes-navigation-types";
 
 export function useConfiguracoesInitialAccess({
   router,

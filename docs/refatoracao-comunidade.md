@@ -1018,3 +1018,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A seção de resumo de uso passou a reutilizar o contrato compartilhado de tradução, eliminando a última duplicação local dessa assinatura sem alterar props ou runtime.
 - Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 60 — Configurações
+
+- Os contratos tipados de navegação para redirecionamento, atualização de rota e retorno foram centralizados e reutilizados pelos hooks e ações correspondentes.
+- Runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
