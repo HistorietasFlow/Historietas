@@ -20,6 +20,13 @@ const pageStateHook = readFileSync(
   ),
   "utf8",
 );
+const accessOrchestrationHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-access-orchestration.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const accountActionHandlers = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-account-action-handlers.ts",
@@ -142,8 +149,8 @@ test("Configurações consome a fronteira de privacidade sem manter duplicação
   }
 
   assert.match(
-    page,
-    /import \{ useConfiguracoesInitialAccess \} from "\.\/hooks\/use-configuracoes-initial-access";/,
+    accessOrchestrationHook,
+    /import \{ useConfiguracoesInitialAccess \} from "\.\/use-configuracoes-initial-access";/,
   );
   assert.match(
     page,
@@ -153,7 +160,8 @@ test("Configurações consome a fronteira de privacidade sem manter duplicação
     pageStateHook,
     /useState<PreferenciasPrivacidadeHistorietas>\(\s*preferenciasPrivacidadePadrao,\s*\)/,
   );
-  assert.match(page, /useConfiguracoesInitialAccess\(\{/);
+  assert.match(page, /useConfiguracoesAccessOrchestration\(\{/);
+  assert.match(accessOrchestrationHook, /useConfiguracoesInitialAccess\(\{/);
   assert.match(
     initialAccessHook,
     /import \{\s*carregarPreferenciasPrivacidade,\s*\} from "\.\.\/lib\/configuracoes-privacy-preferences";/,

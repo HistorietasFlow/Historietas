@@ -37,6 +37,13 @@ const blockedUsersHook = readFileSync(
   ),
   "utf8",
 );
+const accessOrchestrationHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-access-orchestration.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const initialAccessHook = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-initial-access.ts",
@@ -233,13 +240,14 @@ test("página delega feedback visual e mantém ações e estados", () => {
     /onFecharMensagemAcao\(\) \{\s+setMensagemAcao\(null\);/,
   );
   assert.match(
-    pagina,
-    /from "\.\/hooks\/use-configuracoes-blocked-users";/,
+    accessOrchestrationHook,
+    /from "\.\/use-configuracoes-blocked-users";/,
   );
-  assert.match(pagina, /useConfiguracoesBlockedUsers\(\{/);
+  assert.match(pagina, /useConfiguracoesAccessOrchestration\(\{/);
+  assert.match(accessOrchestrationHook, /useConfiguracoesBlockedUsers\(\{/);
   assert.match(
-    pagina,
-    /useConfiguracoesInitialAccess\(\{[\s\S]*?setUsuariosBloqueados,[\s\S]*?\}\);/,
+    accessOrchestrationHook,
+    /useConfiguracoesInitialAccess\(\{[\s\S]*?setUsuariosBloqueados: blockedUsers\.setUsuariosBloqueados,[\s\S]*?\}\);/,
   );
   assert.match(
     initialAccessHook,

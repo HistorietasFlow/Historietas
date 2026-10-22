@@ -6,9 +6,7 @@ import { ConfiguracoesPageContent } from "./components/configuracoes-page-conten
 import { ConfiguracoesPageLoadingState } from "./components/configuracoes-page-loading-state";
 import { ConfiguracoesPageOverlays } from "./components/configuracoes-page-overlays";
 import { useConfiguracoesActionMessage } from "./hooks/use-configuracoes-action-message";
-import { useConfiguracoesBlockedUsers } from "./hooks/use-configuracoes-blocked-users";
-import { useConfiguracoesAdminAccess } from "./hooks/use-configuracoes-admin-access";
-import { useConfiguracoesInitialAccess } from "./hooks/use-configuracoes-initial-access";
+import { useConfiguracoesAccessOrchestration } from "./hooks/use-configuracoes-access-orchestration";
 import { useConfiguracoesAccountActionHandlers } from "./hooks/use-configuracoes-account-action-handlers";
 import { useConfiguracoesPreferenceActions } from "./hooks/use-configuracoes-preference-actions";
 import { useConfiguracoesPagePresentation } from "./hooks/use-configuracoes-page-presentation";
@@ -92,32 +90,23 @@ export default function ConfiguracoesPage() {
   const {
     mostrarUsuariosBloqueados,
     usuariosBloqueados,
-    setUsuariosBloqueados,
     carregandoUsuariosBloqueados,
     desbloqueandoUsuarioId,
     erroUsuariosBloqueados,
     carregarUsuariosBloqueados,
     alternarUsuariosBloqueados,
     desbloquearUsuarioConfiguracoes,
-  } = useConfiguracoesBlockedUsers({
-    traduzirTexto: t,
-    mostrarMensagemAcao,
-  });
-
-  useConfiguracoesInitialAccess({
+  } = useConfiguracoesAccessOrchestration({
     router,
     setVerificandoAcesso,
     setUsuario,
     setPreferencias,
     setPrivacidade,
     setResumo,
-    setUsuariosBloqueados,
-  });
-
-
-  useConfiguracoesAdminAccess({
     verificandoAcesso,
     setAdminLiberado,
+    traduzirTexto: t,
+    mostrarMensagemAcao,
   });
 
   useConfiguracoesSecurityModalBodyLock({

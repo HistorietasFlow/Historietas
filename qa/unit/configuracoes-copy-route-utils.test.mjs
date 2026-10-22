@@ -20,6 +20,13 @@ const initialAccessHook = readFileSync(
   ),
   "utf8",
 );
+const accessOrchestrationHook = readFileSync(
+  new URL(
+    "../../app/configuracoes/hooks/use-configuracoes-access-orchestration.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileSaveAction = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-profile-save-action.ts",
@@ -52,14 +59,19 @@ test("rota de login e consumidores de Configurações permanecem idênticos", ()
   assert.match(accountActionHandlers, /from "\.\.\/lib\/configuracoes-route-utils";/);
   assert.match(accountActionHandlers, /from "\.\.\/lib\/configuracoes-profile-save-action";/);
   assert.match(
-    page,
-    /import \{ useConfiguracoesInitialAccess \} from "\.\/hooks\/use-configuracoes-initial-access";/,
+    accessOrchestrationHook,
+    /import \{ useConfiguracoesInitialAccess \} from "\.\/use-configuracoes-initial-access";/,
   );
   assert.match(initialAccessHook, /from "\.\.\/lib\/configuracoes-route-utils";/);
   assert.doesNotMatch(page, /async function copiarTexto\(/);
   assert.doesNotMatch(page, /function criarLoginHrefConfiguracoes\(/);
   assert.doesNotMatch(page, /async function verificarAcesso\(/);
-  assert.match(page, /useConfiguracoesInitialAccess\(\{/);
+  assert.match(
+    page,
+    /import \{ useConfiguracoesAccessOrchestration \} from "\.\/hooks\/use-configuracoes-access-orchestration";/,
+  );
+  assert.match(page, /useConfiguracoesAccessOrchestration\(\{/);
+  assert.match(accessOrchestrationHook, /useConfiguracoesInitialAccess\(\{/);
   assert.doesNotMatch(page, /criarLoginHrefConfiguracoes\(/);
   assert.equal(
     (accountActionHandlers.match(/criarLoginHrefConfiguracoes\(/g) || []).length,
