@@ -18,6 +18,7 @@ import type {
   UsuarioBloqueadoConfiguracoes,
 } from "../lib/configuracoes-account-models";
 import type {
+  AbrirSegurancaConfiguracoes,
   AlternarAprovacaoNovosSeguidoresConfiguracoes,
   AlternarPerfilPrivadoConfiguracoes,
   AtualizarPreferenciaConfiguracoes,
@@ -27,6 +28,8 @@ import type {
   CarregarUsuariosBloqueadosConfiguracoes,
   DeveMostrarConfiguracoes,
   DesbloquearUsuarioConfiguracoes,
+  LimparErroUsernameConfiguracoes,
+  SalvarConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
@@ -53,9 +56,9 @@ type ConfiguracoesPageContentProps = {
   desbloqueandoUsuarioId: string;
   erroUsuariosBloqueados: string;
   onAtualizarPreferencia: AtualizarPreferenciaConfiguracoes;
-  onLimparErroUsername: () => void;
-  onSalvar: () => void;
-  onAbrirSeguranca: () => void;
+  onLimparErroUsername: LimparErroUsernameConfiguracoes;
+  onSalvar: SalvarConfiguracoes;
+  onAbrirSeguranca: AbrirSegurancaConfiguracoes;
   onAlternarPerfilPrivado: AlternarPerfilPrivadoConfiguracoes;
   onAlternarAprovacaoNovosSeguidores: AlternarAprovacaoNovosSeguidoresConfiguracoes;
   onCarregarUsuariosBloqueados: CarregarUsuariosBloqueadosConfiguracoes;
