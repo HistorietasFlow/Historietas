@@ -1093,3 +1093,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O contrato genérico de atualização por campo passou a compor as preferências de conta e privacidade, enquanto a aplicação integral de privacidade reutiliza o contrato de valor já existente.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 75 — Configurações
+
+- Os contratos de navegação passaram a reutilizar as ações sem argumentos e a expor uma assinatura dedicada para rotas com `href`, preservando os tipos efetivos de router, retorno, atualização e login.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
