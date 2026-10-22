@@ -1038,3 +1038,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos tipados do painel de usuários bloqueados — recarregamento, alternância e desbloqueio — foram centralizados e reutilizados pela composição e pelos componentes de privacidade.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 64 — Configurações
+
+- Os contratos tipados de alternância do perfil, aprovação de seguidores e aplicação de privacidade foram centralizados e reutilizados pela composição e pelas seções de privacidade.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

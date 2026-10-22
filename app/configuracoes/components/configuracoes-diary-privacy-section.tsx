@@ -10,6 +10,7 @@ import type {
 } from "../lib/configuracoes-privacy-preferences";
 import { privacySelectStyle } from "../lib/configuracoes-security-styles";
 import type {
+  AplicarPrivacidadeAtualizadaConfiguracoes,
   AtualizarPrivacidadeConfiguracoes,
   DeveMostrarConfiguracoes,
   TraduzirTextoConfiguracoes,
@@ -19,9 +20,7 @@ type ConfiguracoesDiaryPrivacySectionProps = {
   deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   privacidade: PreferenciasPrivacidadeHistorietas;
-  onAplicarPrivacidadeAtualizada: (
-    privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
-  ) => void;
+  onAplicarPrivacidadeAtualizada: AplicarPrivacidadeAtualizadaConfiguracoes;
   onAtualizarPrivacidade: AtualizarPrivacidadeConfiguracoes;
 };
 

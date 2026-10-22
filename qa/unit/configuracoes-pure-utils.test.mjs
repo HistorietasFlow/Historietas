@@ -1414,6 +1414,18 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
+    /export type AlternarPerfilPrivadoConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AlternarAprovacaoNovosSeguidoresConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AplicarPrivacidadeAtualizadaConfiguracoes = \(\s+privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,\s+\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
     /export type FecharOverlayConfiguracoes = \(\) => void;/,
   );
   assert.match(
@@ -1592,6 +1604,40 @@ test("contratos compartilhados de bloqueados preservam carregamento, painel e de
     painel,
     /onDesbloquear: \(\s+usuario: UsuarioBloqueadoConfiguracoes,\s+\) => Promise<void>;/,
   );
+});
+
+test("contratos compartilhados de privacidade do perfil preservam as secoes", () => {
+  for (const arquivo of [
+    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-profile-privacy-section.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /AlternarPerfilPrivadoConfiguracoes/);
+    assert.match(source, /AlternarAprovacaoNovosSeguidoresConfiguracoes/);
+    assert.doesNotMatch(source, /onAlternarPerfilPrivado: \(\) => void;/);
+    assert.doesNotMatch(
+      source,
+      /onAlternarAprovacaoNovosSeguidores: \(\) => void;/,
+    );
+  }
+
+  for (const arquivo of [
+    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-diary-privacy-section.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /AplicarPrivacidadeAtualizadaConfiguracoes/);
+    assert.doesNotMatch(
+      source,
+      /onAplicarPrivacidadeAtualizada: \(\s+privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,\s+\) => void;/,
+    );
+  }
 });
 
 test("contratos de navegacao compartilhados preservam os routers dos hooks e acoes", () => {
