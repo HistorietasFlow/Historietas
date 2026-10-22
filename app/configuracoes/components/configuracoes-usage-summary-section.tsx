@@ -4,16 +4,11 @@ import {
   ValorLinha,
 } from "./configuracoes-settings-primitives";
 import type { ResumoLocal } from "../lib/configuracoes-account-models";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesUsageSummarySectionProps = {
   deveMostrar: (...termos: string[]) => boolean;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
   resumo: ResumoLocal;
   totalBiblioteca: number;
   notificacoesNaoLidas: number;

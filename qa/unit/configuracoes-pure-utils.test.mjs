@@ -1427,6 +1427,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     "components/configuracoes-search.tsx",
     "components/configuracoes-security-password-modal.tsx",
     "components/configuracoes-support-section.tsx",
+    "components/configuracoes-usage-summary-section.tsx",
   ]) {
     const source = readFileSync(
       new URL("../../app/configuracoes/" + arquivo, import.meta.url),
