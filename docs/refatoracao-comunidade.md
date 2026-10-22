@@ -1190,3 +1190,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 8 — Publicar
 
 - A verificação de slug único no Supabase foi isolada em `publicar-slug-supabase-loader.ts`, preservando consulta, limites e fallback.
+
+## Registro da Fase 9 — Publicar
+
+- O carregamento complementar do nome público de perfil foi isolado em `publicar-profile-loader.ts`, preservando as consultas e fallbacks.
