@@ -1163,3 +1163,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de identificadores, validação de arquivos e normalização de obras foram isolados em módulos dedicados, preservando UUIDs, nomes de storage, categorias, MIME types, classificação, slugs e progresso de leitura.
 - JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 3 — Publicar
+
+- A normalização local de obras, o storage isolado por usuário e os helpers de login/metadata foram isolados em módulos dedicados, preservando serialização, fallbacks, chaves, backups e retorno de autenticação.
+- JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
