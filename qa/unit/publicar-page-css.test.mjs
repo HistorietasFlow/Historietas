@@ -41,7 +41,8 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
     /\$\{publicarPageCss\}\$\{historietasThemeCss\}/,
   );
 
-  assert.match(pagina, /const safeTextStyle: CSSProperties/);
+  assert.match(pagina, /from "\.\/lib\/publicar-layout-styles";/);
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
   assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
   assert.match(pagina, /enviarArquivoStorage,/);
