@@ -14,17 +14,19 @@ import {
   blockedUsersPanelStyle,
   blockedUsersRetryButtonStyle,
 } from "../lib/configuracoes-blocked-users-styles";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  CarregarUsuariosBloqueadosConfiguracoes,
+  DesbloquearUsuarioConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesBlockedUsersPanelProps = {
   usuarios: UsuarioBloqueadoConfiguracoes[];
   carregando: boolean;
   erro: string;
   desbloqueandoUsuarioId: string;
-  onRecarregar: () => Promise<void>;
-  onDesbloquear: (
-    usuario: UsuarioBloqueadoConfiguracoes,
-  ) => Promise<void>;
+  onRecarregar: CarregarUsuariosBloqueadosConfiguracoes;
+  onDesbloquear: DesbloquearUsuarioConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 };
 

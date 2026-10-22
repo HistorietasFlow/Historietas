@@ -1,5 +1,8 @@
 import type { FormEventHandler } from "react";
-import type { PreferenciasConta } from "./configuracoes-account-models";
+import type {
+  PreferenciasConta,
+  UsuarioBloqueadoConfiguracoes,
+} from "./configuracoes-account-models";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 
 export type TraduzirTextoConfiguracoes = (
@@ -44,3 +47,11 @@ export type EnviarFormularioConfiguracoes =
   FormEventHandler<HTMLFormElement>;
 
 export type AtualizarTextoConfiguracoes = (valor: string) => void;
+
+export type CarregarUsuariosBloqueadosConfiguracoes = () => Promise<void>;
+
+export type AlternarUsuariosBloqueadosConfiguracoes = () => void;
+
+export type DesbloquearUsuarioConfiguracoes = (
+  usuario: UsuarioBloqueadoConfiguracoes,
+) => Promise<void>;
