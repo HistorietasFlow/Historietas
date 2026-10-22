@@ -1,11 +1,4 @@
-import type { FormEventHandler } from "react";
-import type { UsuarioBloqueadoConfiguracoes } from "./configuracoes-account-models";
-import type {
-  AtualizarValorConfiguracoes,
-  ExecutarAcaoAssincronaComArgumentoConfiguracoes,
-  ExecutarAcaoAssincronaConfiguracoes,
-  ExecutarAcaoConfiguracoes,
-} from "./configuracoes-callback-primitives";
+import type { ExecutarAcaoConfiguracoes } from "./configuracoes-callback-primitives";
 
 export type {
   AtualizarCampoConfiguracoes,
@@ -38,32 +31,23 @@ export type {
   AlternarReceberAvisosConfiguracoes,
   AlternarUsuariosBloqueadosConfiguracoes,
 } from "./configuracoes-toggle-types";
-
-export type LimparErroUsernameConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type SalvarConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type AbrirSegurancaConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type AbrirExclusaoContaConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type SairDaContaConfiguracoes = ExecutarAcaoConfiguracoes;
+export type {
+  LimparErroUsernameConfiguracoes,
+  SalvarConfiguracoes,
+  SairDaContaConfiguracoes,
+  CopiarBackupConfiguracoes,
+  BaixarBackupConfiguracoes,
+} from "./configuracoes-account-action-types";
+export type {
+  AbrirSegurancaConfiguracoes,
+  AbrirExclusaoContaConfiguracoes,
+  FecharOverlayConfiguracoes,
+  EnviarFormularioConfiguracoes,
+  AtualizarBooleanoConfiguracoes,
+} from "./configuracoes-overlay-action-types";
+export type {
+  CarregarUsuariosBloqueadosConfiguracoes,
+  DesbloquearUsuarioConfiguracoes,
+} from "./configuracoes-blocked-users-action-types";
 
 export type VoltarConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type CopiarBackupConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type BaixarBackupConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type FecharOverlayConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type EnviarFormularioConfiguracoes =
-  FormEventHandler<HTMLFormElement>;
-
-export type AtualizarBooleanoConfiguracoes = AtualizarValorConfiguracoes<boolean>;
-
-export type CarregarUsuariosBloqueadosConfiguracoes =
-  ExecutarAcaoAssincronaConfiguracoes;
-
-export type DesbloquearUsuarioConfiguracoes =
-  ExecutarAcaoAssincronaComArgumentoConfiguracoes<UsuarioBloqueadoConfiguracoes>;

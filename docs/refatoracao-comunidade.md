@@ -1128,3 +1128,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos puros de feedback, preferências/privacidade e alternâncias foram isolados em módulos próprios, preservando os aliases públicos existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 82 — Configurações
+
+- Os contratos puros das operações de conta, overlays e usuários bloqueados foram isolados em módulos próprios, preservando os aliases públicos existentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
