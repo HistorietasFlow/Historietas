@@ -1414,11 +1414,15 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type AlternarPerfilPrivadoConfiguracoes = \(\) => void;/,
+    /export type AlternarConfiguracao = \(\) => void;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type AlternarAprovacaoNovosSeguidoresConfiguracoes = \(\) => void;/,
+    /export type AlternarPerfilPrivadoConfiguracoes = AlternarConfiguracao;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AlternarAprovacaoNovosSeguidoresConfiguracoes =\s+AlternarConfiguracao;/,
   );
   assert.match(
     callbackTypesSource,
@@ -1462,7 +1466,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type AlternarUsuariosBloqueadosConfiguracoes = \(\) => void;/,
+    /export type AlternarUsuariosBloqueadosConfiguracoes = AlternarConfiguracao;/,
   );
   assert.match(
     callbackTypesSource,

@@ -1073,3 +1073,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos de setters textuais e booleanos dos controles de conteúdo e modais foram centralizados e reutilizados nas ações correspondentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 71 — Configurações
+
+- O contrato de alternância foi compartilhado entre os toggles e as ações de preferência, e a primitive de input passou a reutilizar o contrato textual já centralizado.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { AtualizarTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 import { SvgIcon } from "./configuracoes-svg-icon";
 import type { IconName } from "./configuracoes-svg-icon";
 import {
@@ -139,7 +140,7 @@ export function SettingsInput({
   error?: boolean;
   maxLength?: number;
   autoComplete?: string;
-  onChange: (valor: string) => void;
+  onChange: AtualizarTextoConfiguracoes;
 }) {
   return (
     <label style={inputRowStyle}>
