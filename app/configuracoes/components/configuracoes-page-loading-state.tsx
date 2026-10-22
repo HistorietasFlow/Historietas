@@ -1,12 +1,5 @@
-import type { CSSProperties } from "react";
 import { LoadingSpinner } from "./configuracoes-loading-spinner";
-
-type ConfiguracoesPageLoadingStateProps = {
-  pageThemeStyle: CSSProperties;
-  themeCss: string;
-  pageCss: string;
-  label: string;
-};
+import type { ConfiguracoesPageLoadingStateProps } from "./configuracoes-page-loading-state-props";
 
 export function ConfiguracoesPageLoadingState({
   pageThemeStyle,

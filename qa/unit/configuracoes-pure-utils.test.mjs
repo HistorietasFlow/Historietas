@@ -115,6 +115,20 @@ const pageOverlaysPropsSource = readFileSync(
   ),
   "utf8",
 );
+const pageHeaderPropsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-header-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const actionToastPropsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-action-toast-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const adminAccessHookSource = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-admin-access.ts",
@@ -1517,6 +1531,8 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     callbackTypesSource,
     /export type \{ VoltarConfiguracoes \} from "\.\/configuracoes-navigation-types";/,
   );
+  assert.match(pageHeaderPropsSource, /VoltarConfiguracoes/);
+  assert.match(actionToastPropsSource, /FecharOverlayConfiguracoes/);
   assert.match(
     presentationTypesSource,
     /import type \{\s+AtualizarTextoConfiguracoes,\s+VerificarCondicaoConfiguracoes,\s+\} from "\.\/configuracoes-callback-primitives";/,
@@ -1664,10 +1680,10 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     "components/configuracoes-account-deletion-modal.tsx",
     "components/configuracoes-account-details-section.tsx",
     "components/configuracoes-account-actions-section.tsx",
-    "components/configuracoes-action-toast.tsx",
+    "components/configuracoes-action-toast-props.ts",
     "components/configuracoes-blocked-users-panel.tsx",
     "components/configuracoes-page-content-props.ts",
-    "components/configuracoes-page-header.tsx",
+    "components/configuracoes-page-header-props.ts",
     "components/configuracoes-page-overlays-props.ts",
     "components/configuracoes-data-section.tsx",
     "components/configuracoes-diary-privacy-section.tsx",
@@ -1926,7 +1942,7 @@ test("contratos compartilhados de conteudo preservam busca, retorno, avisos e ba
       [/onBuscaChange: \(busca: string\) => void;/],
     ],
     [
-      "components/configuracoes-page-header.tsx",
+      "components/configuracoes-page-header-props.ts",
       ["VoltarConfiguracoes"],
       [/onVoltar: \(\) => void;/],
     ],
@@ -2080,15 +2096,8 @@ test("contratos de feedback de acoes preservam a limpeza compartilhada", () => {
     assert.doesNotMatch(source, /setMensagemAcao: \(mensagem: null\) => void;/);
   }
 
-  const toast = readFileSync(
-    new URL(
-      "../../app/configuracoes/components/configuracoes-action-toast.tsx",
-      import.meta.url,
-    ),
-    "utf8",
-  );
-  assert.match(toast, /FecharOverlayConfiguracoes/);
-  assert.doesNotMatch(toast, /onFechar: \(\) => void;/);
+  assert.match(actionToastPropsSource, /FecharOverlayConfiguracoes/);
+  assert.doesNotMatch(actionToastPropsSource, /onFechar: \(\) => void;/);
 });
 
 test("contratos de setters preservam texto e booleanos compartilhados", () => {

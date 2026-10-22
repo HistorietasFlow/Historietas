@@ -83,6 +83,13 @@ const toast = readFileSync(
   ),
   "utf8",
 );
+const toastProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-action-toast-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const signOutAction = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-sign-out-action.ts",
@@ -191,12 +198,20 @@ test("modelos compartilhados da mensagem de ação preservam contratos e consumi
   assert.match(hook, /TipoMensagemAcaoConfiguracoes,/);
   assert.doesNotMatch(hook, /type TipoMensagemAcaoConfiguracoes =/);
   assert.doesNotMatch(hook, /type MensagemAcaoConfiguracoes =/);
-  assert.match(toast, /MensagemAcaoConfiguracoesVisual/);
   assert.match(
     toast,
+    /import type \{ ConfiguracoesActionToastProps \} from "\.\/configuracoes-action-toast-props";/,
+  );
+  assert.match(
+    toastProps,
     /from "\.\.\/lib\/configuracoes-action-message-models";/,
   );
-  assert.doesNotMatch(toast, /type MensagemAcaoConfiguracoesVisual =/);
+  assert.match(toastProps, /MensagemAcaoConfiguracoesVisual/);
+  assert.match(
+    toastProps,
+    /export type ConfiguracoesActionToastProps = \{\s+mensagem: MensagemAcaoConfiguracoesVisual;\s+onFechar: FecharOverlayConfiguracoes;\s+traduzirTexto: TraduzirTextoConfiguracoes;\s+\};/,
+  );
+  assert.doesNotMatch(toast, /type ConfiguracoesActionToastProps =/);
   assert.match(
     overlays,
     /import type \{ ConfiguracoesPageOverlaysProps \} from "\.\/configuracoes-page-overlays-props";/,

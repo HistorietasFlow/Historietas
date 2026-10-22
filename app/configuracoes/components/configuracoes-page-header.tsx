@@ -4,15 +4,7 @@ import {
   headerStyle,
   pageTitleStyle,
 } from "../lib/configuracoes-shell-styles";
-import type {
-  TraduzirTextoConfiguracoes,
-  VoltarConfiguracoes,
-} from "../lib/configuracoes-callback-types";
-
-type ConfiguracoesPageHeaderProps = {
-  onVoltar: VoltarConfiguracoes;
-  traduzirTexto: TraduzirTextoConfiguracoes;
-};
+import type { ConfiguracoesPageHeaderProps } from "./configuracoes-page-header-props";
 
 export function ConfiguracoesPageHeader({
   onVoltar,

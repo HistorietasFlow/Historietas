@@ -20,6 +20,13 @@ const loadingState = readFileSync(
   ),
   "utf8",
 );
+const loadingStateProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-loading-state-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const secaoPrivacidadePerfil = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-profile-privacy-section.tsx",
@@ -92,6 +99,19 @@ test("Configurações mantém os cinco consumidores nas fronteiras visuais", () 
     loadingState,
     /import \{ LoadingSpinner \} from "\.\/configuracoes-loading-spinner";/,
   );
+  assert.match(
+    loadingState,
+    /import type \{ ConfiguracoesPageLoadingStateProps \} from "\.\/configuracoes-page-loading-state-props";/,
+  );
+  assert.match(
+    loadingStateProps,
+    /import type \{ CSSProperties \} from "react";/,
+  );
+  assert.match(
+    loadingStateProps,
+    /export type ConfiguracoesPageLoadingStateProps = \{\s+pageThemeStyle: CSSProperties;\s+themeCss: string;\s+pageCss: string;\s+label: string;\s+\};/,
+  );
+  assert.doesNotMatch(loadingState, /type ConfiguracoesPageLoadingStateProps =/);
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.doesNotMatch(pagina, /const loadingPageStyle: CSSProperties =/);
   assert.doesNotMatch(pagina, /const loadingInlineStyle: CSSProperties =/);
