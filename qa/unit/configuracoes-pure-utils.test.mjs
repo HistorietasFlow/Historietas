@@ -31,6 +31,13 @@ const callbackTypesSource = readFileSync(
   ),
   "utf8",
 );
+const actionMessageModelsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-action-message-models.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const navigationTypesSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-navigation-types.ts",
@@ -1385,16 +1392,20 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type TraduzirTextoConfiguracoes = \(\s+portugues: string,\s+ingles: string,\s+espanhol: string,\s+\) => string;/,
   );
   assert.match(
-    callbackTypesSource,
+    actionMessageModelsSource,
     /export type TipoMensagemAcaoConfiguracoes = "sucesso" \| "erro" \| "aviso";/,
   );
   assert.match(
-    callbackTypesSource,
+    actionMessageModelsSource,
     /export type MensagemAcaoConfiguracoesVisual = \{\s+tipo: TipoMensagemAcaoConfiguracoes;\s+texto: string;\s+\};/,
   );
   assert.match(
-    callbackTypesSource,
+    actionMessageModelsSource,
     /export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & \{\s+id: number;\s+\};/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /import type \{ TipoMensagemAcaoConfiguracoes \} from "\.\/configuracoes-action-message-models";/,
   );
   assert.match(
     callbackTypesSource,
@@ -1508,10 +1519,13 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     callbackTypesSource,
     /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
   );
+  assert.doesNotMatch(
+    actionMessageModelsSource,
+    /React|supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
+  );
 
   for (const arquivo of [
     "hooks/use-configuracoes-account-action-handlers.ts",
-    "hooks/use-configuracoes-action-message.ts",
     "hooks/use-configuracoes-blocked-users.ts",
     "hooks/use-configuracoes-preference-actions.ts",
     "lib/configuracoes-account-backup-actions.ts",
@@ -1548,6 +1562,19 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     assert.doesNotMatch(source, /type TraduzirTextoConfiguracoes/);
     assert.doesNotMatch(source, /type TraduzirTexto =/);
   }
+
+  const actionMessageHookSource = readFileSync(
+    new URL(
+      "../../app/configuracoes/hooks/use-configuracoes-action-message.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assert.match(
+    actionMessageHookSource,
+    /configuracoes-action-message-models/,
+  );
+  assert.doesNotMatch(actionMessageHookSource, /configuracoes-callback-types/);
 });
 
 test("contratos de apresentacao compartilhados preservam filtro e atualizacoes", () => {

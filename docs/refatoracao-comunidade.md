@@ -1108,3 +1108,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A limpeza da mensagem de ação passou a reutilizar o contrato genérico de atualização de valor com `null`, preservando exatamente a assinatura efetiva.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 78 — Configurações
+
+- Os modelos puros da mensagem de ação — tipo, representação visual e mensagem identificada — foram isolados em `configuracoes-action-message-models.ts` e reutilizados pelos consumidores tipados.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

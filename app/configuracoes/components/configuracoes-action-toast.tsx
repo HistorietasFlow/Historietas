@@ -11,9 +11,9 @@ import {
 } from "../lib/configuracoes-action-toast-styles";
 import type {
   FecharOverlayConfiguracoes,
-  MensagemAcaoConfiguracoesVisual,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
+import type { MensagemAcaoConfiguracoesVisual } from "../lib/configuracoes-action-message-models";
 
 type ConfiguracoesActionToastProps = {
   mensagem: MensagemAcaoConfiguracoesVisual;

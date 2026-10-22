@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type {
   MensagemAcaoConfiguracoes,
   TipoMensagemAcaoConfiguracoes,
-} from "../lib/configuracoes-callback-types";
+} from "../lib/configuracoes-action-message-models";
 
 export function useConfiguracoesActionMessage() {
   const [mensagemAcao, setMensagemAcao] =
