@@ -7,17 +7,12 @@ import {
 } from "./configuracoes-settings-primitives";
 import { Toggle } from "./configuracoes-toggle";
 import type { UsuarioBloqueadoConfiguracoes } from "../lib/configuracoes-account-models";
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
 
 type ConfiguracoesProfilePrivacySectionProps = {
   deveMostrar: (...termos: string[]) => boolean;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
   privacidade: PreferenciasPrivacidadeHistorietas;
   onAlternarPerfilPrivado: () => void;
   onAlternarAprovacaoNovosSeguidores: () => void;

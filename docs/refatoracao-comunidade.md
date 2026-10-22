@@ -1003,3 +1003,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As seções de detalhes, ações e dados da conta passaram a reutilizar o contrato compartilhado de tradução, sem alterar props ou runtime.
 - Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 57 — Configurações
+
+- As três subseções visuais de privacidade passaram a reutilizar o contrato compartilhado de tradução, sem alterar filtros, controles, props ou runtime.
+- Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

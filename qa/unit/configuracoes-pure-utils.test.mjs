@@ -1418,7 +1418,10 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     "components/configuracoes-page-header.tsx",
     "components/configuracoes-page-overlays.tsx",
     "components/configuracoes-data-section.tsx",
+    "components/configuracoes-diary-privacy-section.tsx",
+    "components/configuracoes-profile-privacy-section.tsx",
     "components/configuracoes-profile-card.tsx",
+    "components/configuracoes-profile-tab-visibility-section.tsx",
     "components/configuracoes-search.tsx",
     "components/configuracoes-security-password-modal.tsx",
   ]) {
