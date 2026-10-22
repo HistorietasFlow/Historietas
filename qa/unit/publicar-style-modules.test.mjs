@@ -18,6 +18,10 @@ const previa = readFileSync(
   new URL("../../app/publicar/lib/publicar-preview-styles.ts", import.meta.url),
   "utf8",
 );
+const componentePrevia = readFileSync(
+  new URL("../../app/publicar/components/PublicarWorkPreview.tsx", import.meta.url),
+  "utf8",
+);
 
 test("Publicar isola a base e o layout responsivo", () => {
   for (const nome of [
@@ -88,9 +92,11 @@ test("Publicar isola a previa e mantem modulos visuais puros", () => {
   assert.match(previa, /\.\.\.previewCoverStyle/);
   assert.match(previa, /backgroundImage: `url\(\$\{capa\}\)`/);
   assert.match(previa, /\.\.\.previewPanelStyle/);
-  assert.match(pagina, /from "\.\/lib\/publicar-preview-styles";/);
+  assert.match(pagina, /from "\.\/components\/PublicarWorkPreview";/);
+  assert.match(componentePrevia, /from "\.\.\/lib\/publicar-preview-styles";/);
   assert.doesNotMatch(pagina, /const previewPanelStyle: CSSProperties =/);
   assert.doesNotMatch(pagina, /function criarPreviewCoverStyle\(/);
+  assert.match(componentePrevia, /criarPreviewCoverStyle\(capa\)/);
 
   for (const modulo of [layout, formulario, previa]) {
     assert.doesNotMatch(modulo, /supabase|localStorage|useEffect|window\.|document\.|<\w/);

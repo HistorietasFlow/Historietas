@@ -93,27 +93,17 @@ import { registrarDiarioPublicacao } from "./lib/publicar-diary-activity";
 import { criarSlugUnicoSupabase } from "./lib/publicar-slug-supabase-loader";
 import { carregarNomePerfilPublicar } from "./lib/publicar-profile-loader";
 import { criarDecoracaoPaginaStyle } from "./lib/publicar-page-decoration-style";
+import { PublicarPageHeader } from "./components/PublicarPageHeader";
+import { PublicarProgress } from "./components/PublicarProgress";
+import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
 import {
   desktopContainerStyle,
-  desktopHeaderTitleLinkStyle,
-  desktopHeaderTitleTextStyle,
-  desktopProgressBoxStyle,
-  desktopTitleHeaderStyle,
   desktopTopWaterFadeStyle,
-  headerTitleLinkStyle,
-  headerTitleTextStyle,
   mobileTopWaterFadeStyle,
   pageDecorationLayerStyle,
   pageStyle,
-  progressBoxStyle,
-  progressFillStyle,
-  progressLabelStyle,
-  progressNumberStyle,
-  progressTopStyle,
-  progressTrackStyle,
   safeTextStyle,
   containerStyle,
-  titleHeaderStyle,
 } from "./lib/publicar-layout-styles";
 import {
   adultWarningCheckboxStyle,
@@ -174,46 +164,6 @@ import {
   secondaryButtonStyle,
   textareaStyle,
 } from "./lib/publicar-form-upload-styles";
-import {
-  criarPreviewCoverStyle,
-  desktopEmptyPreviewBoxStyle,
-  desktopPreviewCardStyle,
-  desktopPreviewPanelStyle,
-  emptyPreviewBoxStyle,
-  emptyPreviewContentStyle,
-  emptyPreviewCoverStyle,
-  emptyPreviewIconStyle,
-  emptyPreviewTextStyle,
-  emptyPreviewTitleStyle,
-  previewActionBadgeStyle,
-  previewActionRowStyle,
-  previewAuthorStyle,
-  previewBadgeStyle,
-  previewBadgesStyle,
-  previewCardStyle,
-  previewContentStyle,
-  previewCoverGlowStyle,
-  previewGenreBadgeStyle,
-  previewHeaderStyle,
-  previewImportedChapterStyle,
-  previewImportedMiniStyle,
-  previewImportedTextStyle,
-  previewImportedTitleStyle,
-  previewMiniTitleStyle,
-  previewObraTitleStyle,
-  previewPanelStyle,
-  previewProgressCompactStyle,
-  previewProgressFillStyle,
-  previewProgressTextStyle,
-  previewProgressTrackStyle,
-  previewRatingBadgeStyle,
-  previewStatHeartIconStyle,
-  previewStatIconStyle,
-  previewStatItemStyle,
-  previewStatValueStyle,
-  previewStatsStyle,
-  previewTopRowStyle,
-} from "./lib/publicar-preview-styles";
 
 
 type ChaveTextoPublicar = keyof (typeof TEXTOS_PUBLICAR)["pt-BR"];
@@ -1414,21 +1364,11 @@ export default function PublicarPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-          <Link
-            href="/"
-            style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
-            aria-label={t("voltarHome")}
-          >
-            <span
-              className="historietas-theme-title"
-              style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
-            >
-              {t("novaObra")}
-            </span>
-          </Link>
-
-        </header>
+        <PublicarPageHeader
+          isDesktop={isDesktop}
+          voltarHome={t("voltarHome")}
+          novaObra={t("novaObra")}
+        />
 
         <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
           <form onSubmit={salvarObra} style={isDesktop ? desktopFormPanelStyle : formPanelStyle}>
@@ -1994,144 +1934,33 @@ export default function PublicarPage() {
               </button>
             </div>
 
-            <div
-              style={
-                isDesktop
-                  ? { ...desktopProgressBoxStyle, width: "100%" }
-                  : { ...progressBoxStyle, width: "100%" }
-              }
-            >
-              <div style={progressTopStyle}>
-                <span style={progressLabelStyle}>{t("progresso")}</span>
-                <strong style={progressNumberStyle}>{progresso}%</strong>
-              </div>
-
-              <div style={progressTrackStyle}>
-                <div style={{ ...progressFillStyle, width: `${progresso}%` }} />
-              </div>
-            </div>
+            <PublicarProgress
+              isDesktop={isDesktop}
+              progresso={progresso}
+              rotulo={t("progresso")}
+            />
           </form>
 
-          <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
-            <div style={previewHeaderStyle}>
-              <span style={previewMiniTitleStyle}>{t("previaObra")}</span>
-            </div>
-
-            {previewTemConteudo ? (
-              <article style={isDesktop ? desktopPreviewCardStyle : previewCardStyle}>
-                <div style={criarPreviewCoverStyle(capa)}>
-                  <div style={previewCoverGlowStyle} />
-
-                </div>
-
-                <div style={previewContentStyle}>
-                  <div style={previewTopRowStyle}>
-                    <h3 style={previewObraTitleStyle}>
-                      {titulo.trim() || t("obraSemTitulo")}
-                    </h3>
-
-                    <div style={previewBadgesStyle}>
-                      <span style={previewBadgeStyle}>
-                        {formatoFinal ? traduzirFormatoPublicar(idioma, formatoFinal) : t("formato")}
-                      </span>
-
-                      <span style={previewRatingBadgeStyle}>
-                        {classificacaoFinal ? traduzirClassificacaoPublicar(idioma, classificacaoFinal) : t("classificacao")}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p style={previewAuthorStyle}>
-                    {t("por")} {autor.trim() || t("autorNaoInformado")}
-                  </p>
-
-                  <div style={previewStatsStyle}>
-                    <span style={previewStatItemStyle}>
-                      <span style={previewStatIconStyle}>👁</span>
-                      <span style={previewStatValueStyle}>0</span>
-                    </span>
-
-                    <span style={previewStatItemStyle}>
-                      <span style={previewStatHeartIconStyle}>♥</span>
-                      <span style={previewStatValueStyle}>0</span>
-                    </span>
-
-                    <span style={previewStatItemStyle}>
-                      <span style={previewStatIconStyle}>💬</span>
-                      <span style={previewStatValueStyle}>0</span>
-                    </span>
-
-                    <span style={previewStatItemStyle}>
-                      <span style={previewStatIconStyle}>📚</span>
-                      <span style={previewStatValueStyle}>
-                        {temCapituloImportado ? `1 ${t("capituloAbreviado")}` : `0 ${t("capituloAbreviado")}`}
-                      </span>
-                    </span>
-                  </div>
-
-                  <div style={previewProgressCompactStyle}>
-                    <div style={previewProgressTrackStyle}>
-                      <div
-                        style={{
-                          ...previewProgressFillStyle,
-                          width: temCapituloImportado ? "100%" : "0%",
-                        }}
-                      />
-                    </div>
-
-                    <span style={previewProgressTextStyle}>
-                      {temCapituloImportado ? t("capituloPronto") : t("semCapitulo")}
-                    </span>
-                  </div>
-
-
-                  {temCapituloImportado && (
-                    <div style={previewImportedChapterStyle}>
-                      <span style={previewImportedMiniStyle}>
-                        {t("primeiroCapituloMaiusculo")}
-                      </span>
-
-                      <strong style={previewImportedTitleStyle}>
-                        {arquivoCapituloTitulo || `${t("primeiroCapitulo")} 1`}
-                      </strong>
-
-                      <span style={previewImportedTextStyle}>
-                        {arquivoCapituloPalavras} {t("palavras")} • {arquivoCapituloMinutos} {t("minLeitura")}
-                      </span>
-                    </div>
-                  )}
-
-                  <div style={previewActionRowStyle}>
-                    <span style={previewGenreBadgeStyle}>
-                      {generoFinal ? traduzirGeneroPublicar(idioma, generoFinal) : t("genero")}
-                    </span>
-
-                    <span style={previewActionBadgeStyle}>
-                      {t("previa")}
-                    </span>
-                  </div>
-                </div>
-              </article>
-            ) : (
-              <div
-                style={isDesktop ? desktopEmptyPreviewBoxStyle : emptyPreviewBoxStyle}
-              >
-                <div style={emptyPreviewCoverStyle}>
-                  <span style={emptyPreviewIconStyle}>+</span>
-                </div>
-
-                <div style={emptyPreviewContentStyle}>
-                  <strong style={emptyPreviewTitleStyle}>
-                    {t("previaAqui")}
-                  </strong>
-
-                  <span style={emptyPreviewTextStyle}>
-                    {t("dicaPrevia")}
-                  </span>
-                </div>
-              </div>
-            )}
-          </aside>
+          <PublicarWorkPreview
+            arquivoCapituloMinutos={arquivoCapituloMinutos}
+            arquivoCapituloPalavras={arquivoCapituloPalavras}
+            arquivoCapituloTitulo={arquivoCapituloTitulo}
+            autor={autor}
+            capa={capa}
+            classificacaoTexto={
+              classificacaoFinal
+                ? traduzirClassificacaoPublicar(idioma, classificacaoFinal)
+                : t("classificacao")
+            }
+            formatoFinal={formatoFinal}
+            generoFinal={generoFinal}
+            idioma={idioma}
+            isDesktop={isDesktop}
+            previewTemConteudo={previewTemConteudo}
+            t={(chave) => t(chave as ChaveTextoPublicar)}
+            temCapituloImportado={temCapituloImportado}
+            titulo={titulo}
+          />
         </section>
       </section>
     </main>
