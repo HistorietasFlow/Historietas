@@ -42,9 +42,10 @@ test("seções secundárias preservam permissões, preferências e ações da co
   );
   assert.match(
     moderacao,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(moderacao, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(moderacao, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(moderacao, /type TraduzirTexto =/);
   assert.match(moderacao, /adminLiberado: boolean/);
   assert.match(moderacao, /!adminLiberado \|\| !deveMostrar\("moderação", "admin", "comunidade"\)/);
@@ -57,9 +58,10 @@ test("seções secundárias preservam permissões, preferências e ações da co
   );
   assert.match(
     preferencias,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(preferencias, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(preferencias, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(preferencias, /type TraduzirTexto =/);
   assert.match(preferencias, /preferencias: PreferenciasConta/);
   assert.match(preferencias, /onAlternarReceberAvisos: \(\) => void/);
@@ -76,9 +78,10 @@ test("seções secundárias preservam permissões, preferências e ações da co
   );
   assert.match(
     acoesConta,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(acoesConta, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(acoesConta, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(acoesConta, /type TraduzirTexto =/);
   assert.match(acoesConta, /onAbrirExclusaoConta: \(\) => void/);
   assert.match(acoesConta, /onSairDaConta: \(\) => void/);

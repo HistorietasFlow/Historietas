@@ -54,9 +54,11 @@ test("seção da conta preserva inputs, filtro, loading e segurança", () => {
   assert.match(secaoConta, /PreferenciasConta/);
   assert.match(
     secaoConta,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(secaoConta, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(secaoConta, /DeveMostrarConfiguracoes/);
+  assert.match(secaoConta, /AtualizarPreferenciaConfiguracoes/);
   assert.doesNotMatch(secaoConta, /type TraduzirTexto =/);
   assert.match(secaoConta, /normalizarUsernameConfiguracoes/);
   assert.match(secaoConta, /"Sua conta", "Your account", "Tu cuenta"/);
@@ -123,9 +125,12 @@ test("página preserva a orquestração e delega apenas a apresentação", () =>
   assert.match(content, /<ConfiguracoesAccountDetailsSection/);
   assert.match(
     content,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(content, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(content, /DeveMostrarConfiguracoes/);
+  assert.match(content, /AtualizarPreferenciaConfiguracoes/);
+  assert.match(content, /AtualizarPrivacidadeConfiguracoes/);
   assert.doesNotMatch(content, /type TraduzirTexto =/);
   assert.match(content, /onAtualizarPreferencia=\{onAtualizarPreferencia\}/);
   assert.match(

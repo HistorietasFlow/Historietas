@@ -1400,6 +1400,18 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     callbackTypesSource,
     /export type MostrarMensagemAcaoConfiguracoes = \(\s+tipo: TipoMensagemAcaoConfiguracoes,\s+texto: string,\s+\) => void;/,
   );
+  assert.match(
+    callbackTypesSource,
+    /export type DeveMostrarConfiguracoes = \(\.\.\.termos: string\[\]\) => boolean;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AtualizarPreferenciaConfiguracoes = <K extends keyof PreferenciasConta>\(\s+campo: K,\s+valor: PreferenciasConta\[K\],\s+\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AtualizarPrivacidadeConfiguracoes = <\s+K extends keyof PreferenciasPrivacidadeHistorietas,\s+>\(\s+campo: K,\s+valor: PreferenciasPrivacidadeHistorietas\[K\],\s+\) => void;/,
+  );
   assert.doesNotMatch(
     callbackTypesSource,
     /supabase|localStorage|sessionStorage|useState|useEffect|window|document|fetch|JSX/,
@@ -1443,6 +1455,63 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     assert.match(source, /configuracoes-callback-types/);
     assert.doesNotMatch(source, /type TraduzirTextoConfiguracoes/);
     assert.doesNotMatch(source, /type TraduzirTexto =/);
+  }
+});
+
+test("contratos de apresentacao compartilhados preservam filtro e atualizacoes", () => {
+  for (const arquivo of [
+    "components/configuracoes-account-actions-section.tsx",
+    "components/configuracoes-account-details-section.tsx",
+    "components/configuracoes-data-section.tsx",
+    "components/configuracoes-diary-privacy-section.tsx",
+    "components/configuracoes-moderation-section.tsx",
+    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-preferences-section.tsx",
+    "components/configuracoes-profile-privacy-section.tsx",
+    "components/configuracoes-profile-tab-visibility-section.tsx",
+    "components/configuracoes-support-section.tsx",
+    "components/configuracoes-usage-summary-section.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /DeveMostrarConfiguracoes/);
+    assert.doesNotMatch(
+      source,
+      /deveMostrar: \(\.\.\.termos: string\[\]\) => boolean;/,
+    );
+  }
+
+  for (const arquivo of [
+    "components/configuracoes-account-details-section.tsx",
+    "components/configuracoes-page-content.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /AtualizarPreferenciaConfiguracoes/);
+    assert.doesNotMatch(
+      source,
+      /onAtualizarPreferencia: <K extends keyof PreferenciasConta>/,
+    );
+  }
+
+  for (const arquivo of [
+    "components/configuracoes-diary-privacy-section.tsx",
+    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-profile-tab-visibility-section.tsx",
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /AtualizarPrivacidadeConfiguracoes/);
+    assert.doesNotMatch(
+      source,
+      /onAtualizarPrivacidade: <K extends keyof PreferenciasPrivacidadeHistorietas>/,
+    );
   }
 });
 

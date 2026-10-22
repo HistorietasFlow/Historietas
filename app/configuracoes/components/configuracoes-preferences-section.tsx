@@ -5,10 +5,13 @@ import {
   SettingsSection,
 } from "./configuracoes-settings-primitives";
 import { Toggle } from "./configuracoes-toggle";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesPreferencesSectionProps = {
-  deveMostrar: (...termos: string[]) => boolean;
+  deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   preferencias: PreferenciasConta;
   onAlternarReceberAvisos: () => void;

@@ -7,11 +7,14 @@ import {
 } from "./configuracoes-settings-primitives";
 import { Toggle } from "./configuracoes-toggle";
 import type { UsuarioBloqueadoConfiguracoes } from "../lib/configuracoes-account-models";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
 
 type ConfiguracoesProfilePrivacySectionProps = {
-  deveMostrar: (...termos: string[]) => boolean;
+  deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   privacidade: PreferenciasPrivacidadeHistorietas;
   onAlternarPerfilPrivado: () => void;

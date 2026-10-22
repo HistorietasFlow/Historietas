@@ -4,10 +4,13 @@ import {
   ValorLinha,
 } from "./configuracoes-settings-primitives";
 import type { ResumoLocal } from "../lib/configuracoes-account-models";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesUsageSummarySectionProps = {
-  deveMostrar: (...termos: string[]) => boolean;
+  deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   resumo: ResumoLocal;
   totalBiblioteca: number;

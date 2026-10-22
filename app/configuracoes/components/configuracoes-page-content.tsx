@@ -17,7 +17,12 @@ import type {
   ResumoLocal,
   UsuarioBloqueadoConfiguracoes,
 } from "../lib/configuracoes-account-models";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  AtualizarPreferenciaConfiguracoes,
+  AtualizarPrivacidadeConfiguracoes,
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
 
 type ConfiguracoesPageContentProps = {
@@ -25,7 +30,7 @@ type ConfiguracoesPageContentProps = {
   onBuscaChange: (valor: string) => void;
   onVoltar: () => void;
   traduzirTexto: TraduzirTextoConfiguracoes;
-  deveMostrar: (...termos: string[]) => boolean;
+  deveMostrar: DeveMostrarConfiguracoes;
   preferencias: PreferenciasConta;
   privacidade: PreferenciasPrivacidadeHistorietas;
   resumo: ResumoLocal;
@@ -41,10 +46,7 @@ type ConfiguracoesPageContentProps = {
   carregandoUsuariosBloqueados: boolean;
   desbloqueandoUsuarioId: string;
   erroUsuariosBloqueados: string;
-  onAtualizarPreferencia: <K extends keyof PreferenciasConta>(
-    campo: K,
-    valor: PreferenciasConta[K],
-  ) => void;
+  onAtualizarPreferencia: AtualizarPreferenciaConfiguracoes;
   onLimparErroUsername: () => void;
   onSalvar: () => void;
   onAbrirSeguranca: () => void;
@@ -55,10 +57,7 @@ type ConfiguracoesPageContentProps = {
   onDesbloquearUsuario: (
     usuario: UsuarioBloqueadoConfiguracoes,
   ) => Promise<void>;
-  onAtualizarPrivacidade: <K extends keyof PreferenciasPrivacidadeHistorietas>(
-    campo: K,
-    valor: PreferenciasPrivacidadeHistorietas[K],
-  ) => void;
+  onAtualizarPrivacidade: AtualizarPrivacidadeConfiguracoes;
   onAplicarPrivacidadeAtualizada: (
     proximaPrivacidade: PreferenciasPrivacidadeHistorietas,
   ) => void;
