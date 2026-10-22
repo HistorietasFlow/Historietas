@@ -1694,6 +1694,64 @@ test("contratos compartilhados das acoes da conta preservam exclusao e saida", (
   }
 });
 
+test("contratos compartilhados de conteudo preservam busca, retorno, avisos e backup", () => {
+  for (const [arquivo, contratos, assinaturasLocais] of [
+    [
+      "components/configuracoes-page-content.tsx",
+      [
+        "AtualizarBuscaConfiguracoes",
+        "VoltarConfiguracoes",
+        "AlternarReceberAvisosConfiguracoes",
+        "CopiarBackupConfiguracoes",
+        "BaixarBackupConfiguracoes",
+      ],
+      [
+        /onBuscaChange: \(valor: string\) => void;/,
+        /onVoltar: \(\) => void;/,
+        /onAlternarReceberAvisos: \(\) => void;/,
+        /onCopiarBackup: \(\) => void;/,
+        /onBaixarBackup: \(\) => void;/,
+      ],
+    ],
+    [
+      "components/configuracoes-search.tsx",
+      ["AtualizarBuscaConfiguracoes"],
+      [/onBuscaChange: \(busca: string\) => void;/],
+    ],
+    [
+      "components/configuracoes-page-header.tsx",
+      ["VoltarConfiguracoes"],
+      [/onVoltar: \(\) => void;/],
+    ],
+    [
+      "components/configuracoes-preferences-section.tsx",
+      ["AlternarReceberAvisosConfiguracoes"],
+      [/onAlternarReceberAvisos: \(\) => void;/],
+    ],
+    [
+      "components/configuracoes-data-section.tsx",
+      ["CopiarBackupConfiguracoes", "BaixarBackupConfiguracoes"],
+      [
+        /onCopiarBackup: \(\) => void;/,
+        /onBaixarBackup: \(\) => void;/,
+      ],
+    ],
+  ]) {
+    const source = readFileSync(
+      new URL("../../app/configuracoes/" + arquivo, import.meta.url),
+      "utf8",
+    );
+
+    for (const contrato of contratos) {
+      assert.match(source, new RegExp(contrato));
+    }
+
+    for (const assinaturaLocal of assinaturasLocais) {
+      assert.doesNotMatch(source, assinaturaLocal);
+    }
+  }
+});
+
 test("contratos de navegacao compartilhados preservam os routers dos hooks e acoes", () => {
   assert.match(
     navigationTypesSource,

@@ -64,7 +64,8 @@ test("seções secundárias preservam permissões, preferências e ações da co
   assert.match(preferencias, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(preferencias, /type TraduzirTexto =/);
   assert.match(preferencias, /preferencias: PreferenciasConta/);
-  assert.match(preferencias, /onAlternarReceberAvisos: \(\) => void/);
+  assert.match(preferencias, /AlternarReceberAvisosConfiguracoes/);
+  assert.doesNotMatch(preferencias, /onAlternarReceberAvisos: \(\) => void/);
   assert.match(preferencias, /import LanguageSelect from "\.\.\/\.\.\/\.\.\/components\/LanguageSelect"/);
   assert.match(preferencias, /width: "clamp\(120px, 34vw, 128px\)"/);
   assert.match(preferencias, /transform: "translateX\(22px\)"/);

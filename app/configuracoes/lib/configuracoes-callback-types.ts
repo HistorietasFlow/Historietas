@@ -59,6 +59,16 @@ export type AbrirExclusaoContaConfiguracoes = () => void;
 
 export type SairDaContaConfiguracoes = () => void;
 
+export type AtualizarBuscaConfiguracoes = (valor: string) => void;
+
+export type VoltarConfiguracoes = () => void;
+
+export type AlternarReceberAvisosConfiguracoes = () => void;
+
+export type CopiarBackupConfiguracoes = () => void;
+
+export type BaixarBackupConfiguracoes = () => void;
+
 export type FecharOverlayConfiguracoes = () => void;
 
 export type EnviarFormularioConfiguracoes =

@@ -71,8 +71,10 @@ test("seções informativas preservam dados, rotas, traduções e filtros", () =
   assert.match(secaoDados, /traduzirTexto: TraduzirTextoConfiguracoes;/);
   assert.match(secaoDados, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(secaoDados, /type TraduzirTexto =/);
-  assert.match(secaoDados, /onCopiarBackup: \(\) => void/);
-  assert.match(secaoDados, /onBaixarBackup: \(\) => void/);
+  assert.match(secaoDados, /CopiarBackupConfiguracoes/);
+  assert.match(secaoDados, /BaixarBackupConfiguracoes/);
+  assert.doesNotMatch(secaoDados, /onCopiarBackup: \(\) => void/);
+  assert.doesNotMatch(secaoDados, /onBaixarBackup: \(\) => void/);
   assert.match(secaoDados, /Dados e arquivos/);
   assert.match(secaoDados, /onClick=\{onCopiarBackup\}/);
   assert.match(secaoDados, /onClick=\{onBaixarBackup\}/);
