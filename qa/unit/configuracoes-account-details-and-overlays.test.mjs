@@ -27,6 +27,20 @@ const overlays = readFileSync(
   ),
   "utf8",
 );
+const contentProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const overlaysProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-overlays-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const acoesCamposOverlay = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-overlay-field-actions.ts",
@@ -82,10 +96,10 @@ test("overlays preservam as condições, handlers e componentes existentes", () 
   assert.match(overlays, /export function ConfiguracoesPageOverlays\(/);
   assert.match(
     overlays,
-    /from "\.\.\/lib\/configuracoes-callback-types";/,
+    /import type \{ ConfiguracoesPageOverlaysProps \} from "\.\/configuracoes-page-overlays-props";/,
   );
-  assert.match(overlays, /MensagemAcaoConfiguracoesVisual \| null/);
-  assert.match(overlays, /TraduzirTextoConfiguracoes/);
+  assert.match(overlaysProps, /MensagemAcaoConfiguracoesVisual \| null/);
+  assert.match(overlaysProps, /TraduzirTextoConfiguracoes/);
   assert.doesNotMatch(overlays, /type MensagemAcao =/);
   assert.doesNotMatch(overlays, /type TraduzirTexto =/);
   assert.match(
@@ -125,12 +139,12 @@ test("página preserva a orquestração e delega apenas a apresentação", () =>
   assert.match(content, /<ConfiguracoesAccountDetailsSection/);
   assert.match(
     content,
-    /from "\.\.\/lib\/configuracoes-callback-types";/,
+    /import type \{ ConfiguracoesPageContentProps \} from "\.\/configuracoes-page-content-props";/,
   );
-  assert.match(content, /traduzirTexto: TraduzirTextoConfiguracoes;/);
-  assert.match(content, /DeveMostrarConfiguracoes/);
-  assert.match(content, /AtualizarPreferenciaConfiguracoes/);
-  assert.match(content, /AtualizarPrivacidadeConfiguracoes/);
+  assert.match(contentProps, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(contentProps, /DeveMostrarConfiguracoes/);
+  assert.match(contentProps, /AtualizarPreferenciaConfiguracoes/);
+  assert.match(contentProps, /AtualizarPrivacidadeConfiguracoes/);
   assert.doesNotMatch(content, /type TraduzirTexto =/);
   assert.match(content, /onAtualizarPreferencia=\{onAtualizarPreferencia\}/);
   assert.match(

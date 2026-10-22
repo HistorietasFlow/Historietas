@@ -48,6 +48,13 @@ const overlays = readFileSync(
   ),
   "utf8",
 );
+const overlaysProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-overlays-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const backupActions = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-account-backup-actions.ts",
@@ -192,6 +199,10 @@ test("modelos compartilhados da mensagem de ação preservam contratos e consumi
   assert.doesNotMatch(toast, /type MensagemAcaoConfiguracoesVisual =/);
   assert.match(
     overlays,
+    /import type \{ ConfiguracoesPageOverlaysProps \} from "\.\/configuracoes-page-overlays-props";/,
+  );
+  assert.match(
+    overlaysProps,
     /from "\.\.\/lib\/configuracoes-action-message-models";/,
   );
 });

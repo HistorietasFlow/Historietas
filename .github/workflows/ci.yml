@@ -104,7 +104,7 @@ jobs:
         run: npm run test:session
 
       - name: Instalar Supabase CLI
-        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        uses: supabase/setup-cli@afb1b15109756ea5cf9d8985a359d9095235ca2b # v2.1.2
         with:
           version: 2.116.0
 
@@ -114,7 +114,20 @@ jobs:
           cp \
             qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
             supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql
-          supabase start
+          for tentativa in 1 2 3; do
+            if supabase start; then
+              break
+            fi
+
+            if [ "$tentativa" -eq 3 ]; then
+              echo "Falha ao iniciar o Supabase local após 3 tentativas."
+              exit 1
+            fi
+
+            espera=$((tentativa * 10))
+            echo "Tentativa $tentativa falhou; aguardando ${espera}s antes de tentar novamente."
+            sleep "$espera"
+          done
 
       - name: Executar paginação real pela Data API
         run: npm run test:pagination:integration
