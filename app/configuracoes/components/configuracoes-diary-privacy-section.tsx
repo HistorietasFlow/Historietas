@@ -9,16 +9,11 @@ import type {
   VisibilidadeAbaPerfil,
 } from "../lib/configuracoes-privacy-preferences";
 import { privacySelectStyle } from "../lib/configuracoes-security-styles";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesDiaryPrivacySectionProps = {
   deveMostrar: (...termos: string[]) => boolean;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
   privacidade: PreferenciasPrivacidadeHistorietas;
   onAplicarPrivacidadeAtualizada: (
     privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
