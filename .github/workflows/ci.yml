@@ -114,7 +114,20 @@ jobs:
           cp \
             qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
             supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql
-          supabase start
+          for tentativa in 1 2 3; do
+            if supabase start; then
+              break
+            fi
+
+            if [ "$tentativa" -eq 3 ]; then
+              echo "Falha ao iniciar o Supabase local após 3 tentativas."
+              exit 1
+            fi
+
+            espera=$((tentativa * 10))
+            echo "Tentativa $tentativa falhou; aguardando ${espera}s antes de tentar novamente."
+            sleep "$espera"
+          done
 
       - name: Executar paginação real pela Data API
         run: npm run test:pagination:integration
