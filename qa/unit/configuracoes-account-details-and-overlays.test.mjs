@@ -52,6 +52,12 @@ const acoesPagina = readFileSync(
 test("seção da conta preserva inputs, filtro, loading e segurança", () => {
   assert.match(secaoConta, /export function ConfiguracoesAccountDetailsSection\(/);
   assert.match(secaoConta, /PreferenciasConta/);
+  assert.match(
+    secaoConta,
+    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(secaoConta, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.doesNotMatch(secaoConta, /type TraduzirTexto =/);
   assert.match(secaoConta, /normalizarUsernameConfiguracoes/);
   assert.match(secaoConta, /"Sua conta", "Your account", "Tu cuenta"/);
   assert.match(secaoConta, /nomeExibicao/);

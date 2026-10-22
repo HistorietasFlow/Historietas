@@ -1410,11 +1410,14 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     "lib/configuracoes-profile-save-action.ts",
     "lib/configuracoes-sign-out-action.ts",
     "components/configuracoes-account-deletion-modal.tsx",
+    "components/configuracoes-account-details-section.tsx",
+    "components/configuracoes-account-actions-section.tsx",
     "components/configuracoes-action-toast.tsx",
     "components/configuracoes-blocked-users-panel.tsx",
     "components/configuracoes-page-content.tsx",
     "components/configuracoes-page-header.tsx",
     "components/configuracoes-page-overlays.tsx",
+    "components/configuracoes-data-section.tsx",
     "components/configuracoes-profile-card.tsx",
     "components/configuracoes-search.tsx",
     "components/configuracoes-security-password-modal.tsx",
@@ -1425,5 +1428,6 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     );
     assert.match(source, /configuracoes-callback-types/);
     assert.doesNotMatch(source, /type TraduzirTextoConfiguracoes/);
+    assert.doesNotMatch(source, /type TraduzirTexto =/);
   }
 });

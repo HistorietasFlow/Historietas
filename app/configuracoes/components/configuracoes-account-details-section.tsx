@@ -7,16 +7,11 @@ import {
 import { LoadingSpinner } from "./configuracoes-loading-spinner";
 import { normalizarUsernameConfiguracoes } from "../lib/configuracoes-account-utils";
 import type { PreferenciasConta } from "../lib/configuracoes-account-models";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesAccountDetailsSectionProps = {
   deveMostrar: (...termos: string[]) => boolean;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
   preferencias: PreferenciasConta;
   erroUsername: string;
   salvando: boolean;
