@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const helpersArquivo = readFileSync(
+  new URL("../../app/publicar/lib/publicar-file-utils.ts", import.meta.url),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -66,7 +70,7 @@ test("nomeArquivoParaTitulo preserva extensoes, separadores e espacos", () => {
   assert.equal(nomeArquivoParaTitulo("imagem.pdf"), "imagem.pdf");
 });
 
-test("Publicar delega somente os helpers puros de texto", () => {
+test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.match(
     pagina,
     /import \{[\s\S]*?calcularMinutosLeitura,[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?contarPalavras,[\s\S]*?limparTextoPersonalizado,[\s\S]*?nomeArquivoParaTitulo,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/publicar-text-utils";/,
@@ -87,7 +91,10 @@ test("Publicar delega somente os helpers puros de texto", () => {
     assert.equal((pagina.match(new RegExp(`\\b${helper}\\b`, "g")) || []).length, ocorrencias);
   }
 
-  assert.match(pagina, /function arquivoTextoAceito\(/);
+  assert.match(pagina, /from "\.\/lib\/publicar-file-utils";/);
+  assert.doesNotMatch(pagina, /function arquivoTextoAceito\(/);
+  assert.match(helpersArquivo, /export function arquivoTextoAceito\(/);
+  assert.match(helpersArquivo, /arquivoTemExtensao\(arquivo\.name, \["\.txt", "\.md"\]\)/);
   assert.match(pagina, /async function salvarObra\(/);
   assert.match(pagina, /supabase\.storage/);
   assert.match(pagina, /localStorage/);
