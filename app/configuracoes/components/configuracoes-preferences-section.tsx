@@ -5,16 +5,11 @@ import {
   SettingsSection,
 } from "./configuracoes-settings-primitives";
 import { Toggle } from "./configuracoes-toggle";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesPreferencesSectionProps = {
   deveMostrar: (...termos: string[]) => boolean;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
   preferencias: PreferenciasConta;
   onAlternarReceberAvisos: () => void;
 };

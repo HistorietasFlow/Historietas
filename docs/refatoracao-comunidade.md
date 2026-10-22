@@ -1008,3 +1008,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As três subseções visuais de privacidade passaram a reutilizar o contrato compartilhado de tradução, sem alterar filtros, controles, props ou runtime.
 - Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 58 — Configurações
+
+- As seções de moderação, preferências e suporte passaram a reutilizar o contrato compartilhado de tradução, sem alterar filtros, controles, props ou runtime.
+- Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

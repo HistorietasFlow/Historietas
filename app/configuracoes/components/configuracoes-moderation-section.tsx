@@ -2,17 +2,12 @@ import {
   SettingsRow,
   SettingsSection,
 } from "./configuracoes-settings-primitives";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesModerationSectionProps = {
   adminLiberado: boolean;
   deveMostrar: (...termos: string[]) => boolean;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
 };
 
 export function ConfiguracoesModerationSection({

@@ -40,6 +40,12 @@ test("seções secundárias preservam permissões, preferências e ações da co
     moderacao,
     /export function ConfiguracoesModerationSection\(/,
   );
+  assert.match(
+    moderacao,
+    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(moderacao, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.doesNotMatch(moderacao, /type TraduzirTexto =/);
   assert.match(moderacao, /adminLiberado: boolean/);
   assert.match(moderacao, /!adminLiberado \|\| !deveMostrar\("moderação", "admin", "comunidade"\)/);
   assert.match(moderacao, /Área de moderação/);
@@ -49,6 +55,12 @@ test("seções secundárias preservam permissões, preferências e ações da co
     preferencias,
     /export function ConfiguracoesPreferencesSection\(/,
   );
+  assert.match(
+    preferencias,
+    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(preferencias, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.doesNotMatch(preferencias, /type TraduzirTexto =/);
   assert.match(preferencias, /preferencias: PreferenciasConta/);
   assert.match(preferencias, /onAlternarReceberAvisos: \(\) => void/);
   assert.match(preferencias, /import LanguageSelect from "\.\.\/\.\.\/\.\.\/components\/LanguageSelect"/);
