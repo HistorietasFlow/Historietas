@@ -1173,3 +1173,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A leitura, sincronização e persistência local dos backups de arquivos foram isoladas em `publicar-file-backup-storage-utils.ts`, preservando chaves, normalização, isolamento por autor e falhas silenciosas.
 - JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 5 — Publicar
+
+- Os rótulos puros de formato, gênero e tag foram isolados em `publicar-option-translations.ts`, preservando traduções, fallbacks e os consumidores existentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

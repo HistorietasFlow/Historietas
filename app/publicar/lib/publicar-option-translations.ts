@@ -1,0 +1,171 @@
+import type { HistorietasLanguage } from "../../../lib/i18n";
+
+const ROTULOS_FORMATO_PUBLICAR: Record<HistorietasLanguage, Record<string, string>> = {
+  "pt-BR": {
+    Webnovel: "Webnovel",
+    "Light novel": "Light novel",
+    Romance: "Romance",
+    Conto: "Conto",
+    Poesia: "Poesia",
+    HQ: "HQ",
+    Mangá: "Mangá",
+    Fanfic: "Fanfic",
+  },
+  en: {
+    Webnovel: "Web novel",
+    "Light novel": "Light novel",
+    Romance: "Novel",
+    Conto: "Short story",
+    Poesia: "Poetry",
+    HQ: "Comic",
+    Mangá: "Manga",
+    Fanfic: "Fanfic",
+  },
+  es: {
+    Webnovel: "Webnovela",
+    "Light novel": "Novela ligera",
+    Romance: "Novela",
+    Conto: "Cuento",
+    Poesia: "Poesía",
+    HQ: "Cómic",
+    Mangá: "Manga",
+    Fanfic: "Fanfic",
+  },
+};
+
+const ROTULOS_GENERO_PUBLICAR: Record<HistorietasLanguage, Record<string, string>> = {
+  "pt-BR": {
+    Fantasia: "Fantasia",
+    Terror: "Terror",
+    Ficção: "Ficção",
+    Romance: "Romance",
+    Drama: "Drama",
+    Ação: "Ação",
+    Mistério: "Mistério",
+    Suspense: "Suspense",
+    Aventura: "Aventura",
+    Comédia: "Comédia",
+  },
+  en: {
+    Fantasia: "Fantasy",
+    Terror: "Horror",
+    Ficção: "Fiction",
+    Romance: "Romance",
+    Drama: "Drama",
+    Ação: "Action",
+    Mistério: "Mystery",
+    Suspense: "Thriller",
+    Aventura: "Adventure",
+    Comédia: "Comedy",
+  },
+  es: {
+    Fantasia: "Fantasía",
+    Terror: "Terror",
+    Ficção: "Ficción",
+    Romance: "Romance",
+    Drama: "Drama",
+    Ação: "Acción",
+    Mistério: "Misterio",
+    Suspense: "Suspenso",
+    Aventura: "Aventura",
+    Comédia: "Comedia",
+  },
+};
+
+const ROTULOS_TAG_PUBLICAR: Record<HistorietasLanguage, Record<string, string>> = {
+  "pt-BR": {
+    Sombria: "Sombria",
+    Psicológico: "Psicológico",
+    "Sci-fi": "Sci-fi",
+    Cyberpunk: "Cyberpunk",
+    Espacial: "Espacial",
+    Isekai: "Isekai",
+    Distopia: "Distopia",
+    Apocalipse: "Apocalipse",
+    Escolar: "Escolar",
+    Máfia: "Máfia",
+    Investigação: "Investigação",
+    Religioso: "Religioso",
+    Mitologia: "Mitologia",
+    Folclore: "Folclore",
+    Vampiro: "Vampiro",
+    Lobisomem: "Lobisomem",
+    Zumbi: "Zumbi",
+    "Super-herói": "Super-herói",
+    Magia: "Magia",
+    Guerra: "Guerra",
+    Família: "Família",
+    Amizade: "Amizade",
+    Traição: "Traição",
+    Vingança: "Vingança",
+    Sobrevivência: "Sobrevivência",
+  },
+  en: {
+    Sombria: "Dark",
+    Psicológico: "Psychological",
+    "Sci-fi": "Sci-fi",
+    Cyberpunk: "Cyberpunk",
+    Espacial: "Space",
+    Isekai: "Isekai",
+    Distopia: "Dystopia",
+    Apocalipse: "Apocalypse",
+    Escolar: "School",
+    Máfia: "Mafia",
+    Investigação: "Investigation",
+    Religioso: "Religious",
+    Mitologia: "Mythology",
+    Folclore: "Folklore",
+    Vampiro: "Vampire",
+    Lobisomem: "Werewolf",
+    Zumbi: "Zombie",
+    "Super-herói": "Superhero",
+    Magia: "Magic",
+    Guerra: "War",
+    Família: "Family",
+    Amizade: "Friendship",
+    Traição: "Betrayal",
+    Vingança: "Revenge",
+    Sobrevivência: "Survival",
+  },
+  es: {
+    Sombria: "Oscura",
+    Psicológico: "Psicológico",
+    "Sci-fi": "Sci-fi",
+    Cyberpunk: "Cyberpunk",
+    Espacial: "Espacial",
+    Isekai: "Isekai",
+    Distopia: "Distopía",
+    Apocalipse: "Apocalipsis",
+    Escolar: "Escolar",
+    Máfia: "Mafia",
+    Investigação: "Investigación",
+    Religioso: "Religioso",
+    Mitologia: "Mitología",
+    Folclore: "Folclore",
+    Vampiro: "Vampiro",
+    Lobisomem: "Hombre lobo",
+    Zumbi: "Zombi",
+    "Super-herói": "Superhéroe",
+    Magia: "Magia",
+    Guerra: "Guerra",
+    Família: "Familia",
+    Amizade: "Amistad",
+    Traição: "Traición",
+    Vingança: "Venganza",
+    Sobrevivência: "Supervivencia",
+  },
+};
+
+export function traduzirFormatoPublicar(idioma: HistorietasLanguage, formato: string) {
+  return ROTULOS_FORMATO_PUBLICAR[idioma][formato] || formato;
+}
+
+export function traduzirGeneroPublicar(idioma: HistorietasLanguage, genero: string) {
+  return ROTULOS_GENERO_PUBLICAR[idioma][genero] || genero;
+}
+
+export function traduzirTagPublicar(idioma: HistorietasLanguage, tag: string) {
+  return ROTULOS_TAG_PUBLICAR[idioma][tag] || tag;
+}
+
+
