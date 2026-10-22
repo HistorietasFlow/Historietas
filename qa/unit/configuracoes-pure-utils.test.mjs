@@ -38,6 +38,13 @@ const callbackPrimitivesSource = readFileSync(
   ),
   "utf8",
 );
+const presentationTypesSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-presentation-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const actionMessageModelsSource = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-action-message-models.ts",
@@ -1395,7 +1402,7 @@ test("hook de bloqueados preserva a fronteira de estado e interação", () => {
 
 test("contratos de callback compartilhados preservam assinaturas e consumidores", () => {
   assert.match(
-    callbackTypesSource,
+    presentationTypesSource,
     /export type TraduzirTextoConfiguracoes = \(\s+portugues: string,\s+ingles: string,\s+espanhol: string,\s+\) => string;/,
   );
   assert.match(
@@ -1424,6 +1431,14 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
+    /export type \{\s+AtualizarBuscaConfiguracoes,\s+DeveMostrarConfiguracoes,\s+TraduzirTextoConfiguracoes,\s+\} from "\.\/configuracoes-presentation-types";/,
+  );
+  assert.match(
+    presentationTypesSource,
+    /import type \{\s+AtualizarTextoConfiguracoes,\s+VerificarCondicaoConfiguracoes,\s+\} from "\.\/configuracoes-callback-primitives";/,
+  );
+  assert.match(
+    callbackTypesSource,
     /export type MostrarMensagemAcaoConfiguracoes =\s+ExecutarAcaoComArgumentosConfiguracoes<\s+\[TipoMensagemAcaoConfiguracoes, string\]\s+>;/,
   );
   assert.match(
@@ -1431,7 +1446,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type VerificarCondicaoConfiguracoes<Argumentos extends unknown\[\]> = \(\s+\.\.\.argumentos: Argumentos\s+\) => boolean;/,
   );
   assert.match(
-    callbackTypesSource,
+    presentationTypesSource,
     /export type DeveMostrarConfiguracoes =\s+VerificarCondicaoConfiguracoes<string\[\]>;/,
   );
   assert.match(
@@ -1503,7 +1518,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type AtualizarTextoConfiguracoes = AtualizarValorConfiguracoes<string>;/,
   );
   assert.match(
-    callbackTypesSource,
+    presentationTypesSource,
     /export type AtualizarBuscaConfiguracoes = AtualizarTextoConfiguracoes;/,
   );
   assert.match(

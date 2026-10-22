@@ -6,13 +6,11 @@ import type {
 import type { TipoMensagemAcaoConfiguracoes } from "./configuracoes-action-message-models";
 import type {
   AtualizarCampoConfiguracoes,
-  AtualizarTextoConfiguracoes,
   AtualizarValorConfiguracoes,
   ExecutarAcaoAssincronaComArgumentoConfiguracoes,
   ExecutarAcaoAssincronaConfiguracoes,
   ExecutarAcaoComArgumentosConfiguracoes,
   ExecutarAcaoConfiguracoes,
-  VerificarCondicaoConfiguracoes,
 } from "./configuracoes-callback-primitives";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 
@@ -26,12 +24,11 @@ export type {
   ExecutarAcaoConfiguracoes,
   VerificarCondicaoConfiguracoes,
 } from "./configuracoes-callback-primitives";
-
-export type TraduzirTextoConfiguracoes = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
+export type {
+  AtualizarBuscaConfiguracoes,
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "./configuracoes-presentation-types";
 
 export type MostrarMensagemAcaoConfiguracoes =
   ExecutarAcaoComArgumentosConfiguracoes<
@@ -39,9 +36,6 @@ export type MostrarMensagemAcaoConfiguracoes =
   >;
 
 export type LimparMensagemAcaoConfiguracoes = AtualizarValorConfiguracoes<null>;
-
-export type DeveMostrarConfiguracoes =
-  VerificarCondicaoConfiguracoes<string[]>;
 
 export type AtualizarPreferenciaConfiguracoes =
   AtualizarCampoConfiguracoes<PreferenciasConta>;
@@ -68,8 +62,6 @@ export type AbrirSegurancaConfiguracoes = ExecutarAcaoConfiguracoes;
 export type AbrirExclusaoContaConfiguracoes = ExecutarAcaoConfiguracoes;
 
 export type SairDaContaConfiguracoes = ExecutarAcaoConfiguracoes;
-
-export type AtualizarBuscaConfiguracoes = AtualizarTextoConfiguracoes;
 
 export type VoltarConfiguracoes = ExecutarAcaoConfiguracoes;
 

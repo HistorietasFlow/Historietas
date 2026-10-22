@@ -1118,3 +1118,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As primitives genéricas dos contratos de callback — ações, predicados, setters e variantes assíncronas — foram isoladas em `configuracoes-callback-primitives.ts`, preservando os aliases públicos existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 80 — Configurações
+
+- Os contratos puros de apresentação — tradução, predicado de visibilidade e atualização de busca — foram isolados em `configuracoes-presentation-types.ts`, preservando os aliases públicos existentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
