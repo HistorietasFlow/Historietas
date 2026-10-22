@@ -112,5 +112,6 @@ test("Publicar delega modelos e opções estáticas às fronteiras extraídas", 
 
   assert.match(pagina, /const TEXTOS_PUBLICAR = \{/);
   assert.match(pagina, /function salvarObra\(/);
-  assert.match(pagina, /supabase\.storage/);
+  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.doesNotMatch(pagina, /supabase\.storage/);
 });

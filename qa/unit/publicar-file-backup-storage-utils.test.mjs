@@ -51,5 +51,6 @@ test("Publicar delega backup e persistência local ao módulo dedicado", () => {
   }
   assert.match(pagina, /salvarObrasLocalmente\(novasObrasDoUsuario, userId\)/);
   assert.match(pagina, /async function salvarObra\(/);
-  assert.match(pagina, /async function enviarArquivoStorage\(/);
+  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.doesNotMatch(pagina, /async function enviarArquivoStorage\(/);
 });

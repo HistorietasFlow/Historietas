@@ -115,7 +115,8 @@ test("Publicar delega os helpers puros às fronteiras extraídas", () => {
     assert.equal(pagina.includes(declaracao), false, `declaração removida: ${declaracao}`);
   }
 
-  assert.match(pagina, /async function enviarArquivoStorage\(/);
+  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.doesNotMatch(pagina, /async function enviarArquivoStorage\(/);
   assert.match(pagina, /from "\.\/lib\/publicar-file-backup-storage-utils";/);
   assert.doesNotMatch(pagina, /function salvarObrasLocalmente\(/);
   assert.match(pagina, /function salvarObra\(/);
