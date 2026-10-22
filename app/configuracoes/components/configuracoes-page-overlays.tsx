@@ -2,17 +2,10 @@ import type { FormEventHandler } from "react";
 import { ConfiguracoesAccountDeletionModal } from "./configuracoes-account-deletion-modal";
 import { ConfiguracoesActionToast } from "./configuracoes-action-toast";
 import { ConfiguracoesSecurityPasswordModal } from "./configuracoes-security-password-modal";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
-
-type MensagemAcao = {
-  tipo: "sucesso" | "erro" | "aviso";
-  texto: string;
-};
+import type {
+  MensagemAcaoConfiguracoesVisual,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesPageOverlaysProps = {
   mostrarSeguranca: boolean;
@@ -36,9 +29,9 @@ type ConfiguracoesPageOverlaysProps = {
   onConfirmacaoExclusaoContaChange: (valor: string) => void;
   excluindoConta: boolean;
   erroExclusaoConta: string;
-  mensagemAcao: MensagemAcao | null;
+  mensagemAcao: MensagemAcaoConfiguracoesVisual | null;
   onFecharMensagemAcao: () => void;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
 };
 
 export function ConfiguracoesPageOverlays({

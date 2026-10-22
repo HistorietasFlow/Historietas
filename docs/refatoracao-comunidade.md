@@ -993,3 +993,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os adaptadores puros dos callbacks de conteúdo e dos campos dos overlays foram compostos em uma única fronteira, preservando os handlers, setters e a ordem de criação existentes.
 - Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 55 — Configurações
+
+- Os contratos de tradução e de mensagem visual dos componentes principais de conteúdo e overlays passaram a reutilizar a fronteira tipada compartilhada, sem alterar props ou runtime.
+- Estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

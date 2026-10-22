@@ -74,6 +74,14 @@ test("overlays preservam as condições, handlers e componentes existentes", () 
   assert.match(overlays, /export function ConfiguracoesPageOverlays\(/);
   assert.match(
     overlays,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(overlays, /MensagemAcaoConfiguracoesVisual \| null/);
+  assert.match(overlays, /TraduzirTextoConfiguracoes/);
+  assert.doesNotMatch(overlays, /type MensagemAcao =/);
+  assert.doesNotMatch(overlays, /type TraduzirTexto =/);
+  assert.match(
+    overlays,
     /from "\.\/configuracoes-security-password-modal";/,
   );
   assert.match(
@@ -107,6 +115,12 @@ test("página preserva a orquestração e delega apenas a apresentação", () =>
     /import \{ ConfiguracoesPageOverlays \} from "\.\/components\/configuracoes-page-overlays";/,
   );
   assert.match(content, /<ConfiguracoesAccountDetailsSection/);
+  assert.match(
+    content,
+    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(content, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.doesNotMatch(content, /type TraduzirTexto =/);
   assert.match(content, /onAtualizarPreferencia=\{onAtualizarPreferencia\}/);
   assert.match(
     acoesPagina,

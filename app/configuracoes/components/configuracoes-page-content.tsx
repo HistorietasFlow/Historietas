@@ -17,19 +17,14 @@ import type {
   ResumoLocal,
   UsuarioBloqueadoConfiguracoes,
 } from "../lib/configuracoes-account-models";
+import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
-
-type TraduzirTexto = (
-  portugues: string,
-  ingles: string,
-  espanhol: string,
-) => string;
 
 type ConfiguracoesPageContentProps = {
   busca: string;
   onBuscaChange: (valor: string) => void;
   onVoltar: () => void;
-  traduzirTexto: TraduzirTexto;
+  traduzirTexto: TraduzirTextoConfiguracoes;
   deveMostrar: (...termos: string[]) => boolean;
   preferencias: PreferenciasConta;
   privacidade: PreferenciasPrivacidadeHistorietas;
