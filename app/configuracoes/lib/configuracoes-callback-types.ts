@@ -1,3 +1,4 @@
+import type { FormEventHandler } from "react";
 import type { PreferenciasConta } from "./configuracoes-account-models";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 
@@ -36,3 +37,10 @@ export type AtualizarPrivacidadeConfiguracoes = <
   campo: K,
   valor: PreferenciasPrivacidadeHistorietas[K],
 ) => void;
+
+export type FecharOverlayConfiguracoes = () => void;
+
+export type EnviarFormularioConfiguracoes =
+  FormEventHandler<HTMLFormElement>;
+
+export type AtualizarTextoConfiguracoes = (valor: string) => void;

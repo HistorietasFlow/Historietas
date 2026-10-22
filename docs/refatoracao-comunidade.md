@@ -1028,3 +1028,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos compartilhados de filtro de apresentação e atualização de preferências e privacidade foram centralizados, preservando literalmente as assinaturas usadas pelos componentes.
 - Runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 62 — Configurações
+
+- Os contratos tipados dos overlays de Configurações — fechamento, submissão de formulário e atualização dos campos de texto — foram centralizados e reutilizados pelos componentes correspondentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

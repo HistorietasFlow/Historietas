@@ -1,36 +1,38 @@
-import type { FormEventHandler } from "react";
 import { ConfiguracoesAccountDeletionModal } from "./configuracoes-account-deletion-modal";
 import { ConfiguracoesActionToast } from "./configuracoes-action-toast";
 import { ConfiguracoesSecurityPasswordModal } from "./configuracoes-security-password-modal";
 import type {
   MensagemAcaoConfiguracoesVisual,
+  AtualizarTextoConfiguracoes,
+  EnviarFormularioConfiguracoes,
+  FecharOverlayConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesPageOverlaysProps = {
   mostrarSeguranca: boolean;
-  onFecharSeguranca: () => void;
-  onAlterarSenha: FormEventHandler<HTMLFormElement>;
+  onFecharSeguranca: FecharOverlayConfiguracoes;
+  onAlterarSenha: EnviarFormularioConfiguracoes;
   senhaAtual: string;
-  onSenhaAtualChange: (valor: string) => void;
+  onSenhaAtualChange: AtualizarTextoConfiguracoes;
   novaSenha: string;
-  onNovaSenhaChange: (valor: string) => void;
+  onNovaSenhaChange: AtualizarTextoConfiguracoes;
   confirmarNovaSenha: string;
-  onConfirmarNovaSenhaChange: (valor: string) => void;
+  onConfirmarNovaSenhaChange: AtualizarTextoConfiguracoes;
   salvandoSenha: boolean;
   erroSenha: string;
   senhaAlterada: boolean;
   mostrarExclusaoConta: boolean;
-  onFecharExclusaoConta: () => void;
-  onExcluirConta: FormEventHandler<HTMLFormElement>;
+  onFecharExclusaoConta: FecharOverlayConfiguracoes;
+  onExcluirConta: EnviarFormularioConfiguracoes;
   senhaExclusaoConta: string;
-  onSenhaExclusaoContaChange: (valor: string) => void;
+  onSenhaExclusaoContaChange: AtualizarTextoConfiguracoes;
   confirmacaoExclusaoConta: string;
-  onConfirmacaoExclusaoContaChange: (valor: string) => void;
+  onConfirmacaoExclusaoContaChange: AtualizarTextoConfiguracoes;
   excluindoConta: boolean;
   erroExclusaoConta: string;
   mensagemAcao: MensagemAcaoConfiguracoesVisual | null;
-  onFecharMensagemAcao: () => void;
+  onFecharMensagemAcao: FecharOverlayConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 };
 

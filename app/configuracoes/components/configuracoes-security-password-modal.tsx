@@ -1,4 +1,3 @@
-import type { FormEventHandler } from "react";
 import { LoadingSpinner } from "./configuracoes-loading-spinner";
 import { SvgIcon } from "./configuracoes-svg-icon";
 import {
@@ -26,17 +25,22 @@ import {
   securitySecondaryButtonStyle,
   securitySuccessStyle,
 } from "../lib/configuracoes-security-styles";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  AtualizarTextoConfiguracoes,
+  EnviarFormularioConfiguracoes,
+  FecharOverlayConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesSecurityPasswordModalProps = {
-  onFechar: () => void;
-  onSubmit: FormEventHandler<HTMLFormElement>;
+  onFechar: FecharOverlayConfiguracoes;
+  onSubmit: EnviarFormularioConfiguracoes;
   senhaAtual: string;
-  onSenhaAtualChange: (valor: string) => void;
+  onSenhaAtualChange: AtualizarTextoConfiguracoes;
   novaSenha: string;
-  onNovaSenhaChange: (valor: string) => void;
+  onNovaSenhaChange: AtualizarTextoConfiguracoes;
   confirmarNovaSenha: string;
-  onConfirmarNovaSenhaChange: (valor: string) => void;
+  onConfirmarNovaSenhaChange: AtualizarTextoConfiguracoes;
   salvandoSenha: boolean;
   erroSenha: string;
   senhaAlterada: boolean;
