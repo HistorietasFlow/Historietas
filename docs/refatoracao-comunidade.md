@@ -1199,3 +1199,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os estilos locais foram separados em `publicar-layout-styles.ts`, `publicar-form-upload-styles.ts` e `publicar-preview-styles.ts`, preservando valores, spreads, variantes desktop e helpers dinâmicos de capa.
 - JSX, runtime, estados, efeitos, autenticação, persistência, Supabase, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 11 — Publicar
+
+- O cabeçalho, o indicador de progresso e a prévia visual da obra foram isolados em componentes dedicados, preservando responsividade, traduções, fallbacks e a composição existente.
+- Estados, lifecycle, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
