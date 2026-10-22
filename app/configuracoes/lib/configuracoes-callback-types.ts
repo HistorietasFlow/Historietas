@@ -43,9 +43,12 @@ export type AtualizarPrivacidadeConfiguracoes = <
   valor: PreferenciasPrivacidadeHistorietas[K],
 ) => void;
 
-export type AlternarPerfilPrivadoConfiguracoes = () => void;
+export type AlternarConfiguracao = () => void;
 
-export type AlternarAprovacaoNovosSeguidoresConfiguracoes = () => void;
+export type AlternarPerfilPrivadoConfiguracoes = AlternarConfiguracao;
+
+export type AlternarAprovacaoNovosSeguidoresConfiguracoes =
+  AlternarConfiguracao;
 
 export type AplicarPrivacidadeAtualizadaConfiguracoes = (
   privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
@@ -65,7 +68,7 @@ export type AtualizarBuscaConfiguracoes = (valor: string) => void;
 
 export type VoltarConfiguracoes = () => void;
 
-export type AlternarReceberAvisosConfiguracoes = () => void;
+export type AlternarReceberAvisosConfiguracoes = AlternarConfiguracao;
 
 export type CopiarBackupConfiguracoes = () => void;
 
@@ -82,7 +85,7 @@ export type AtualizarBooleanoConfiguracoes = (valor: boolean) => void;
 
 export type CarregarUsuariosBloqueadosConfiguracoes = () => Promise<void>;
 
-export type AlternarUsuariosBloqueadosConfiguracoes = () => void;
+export type AlternarUsuariosBloqueadosConfiguracoes = AlternarConfiguracao;
 
 export type DesbloquearUsuarioConfiguracoes = (
   usuario: UsuarioBloqueadoConfiguracoes,

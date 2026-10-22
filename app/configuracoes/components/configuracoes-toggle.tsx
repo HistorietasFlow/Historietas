@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { AlternarConfiguracao } from "../lib/configuracoes-callback-types";
 
 export function Toggle({
   checked,
@@ -6,7 +7,7 @@ export function Toggle({
   ariaLabel,
 }: {
   checked: boolean;
-  onChange: () => void;
+  onChange: AlternarConfiguracao;
   ariaLabel: string;
 }) {
   return (

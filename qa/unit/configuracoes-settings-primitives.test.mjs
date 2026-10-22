@@ -108,6 +108,7 @@ const accountActionHandlers = readFileSync(
 test("primitives de Configurações preservam seções, linhas e inputs", () => {
   assert.match(componente, /import Link from "next\/link";/);
   assert.match(componente, /import type \{ ReactNode \} from "react";/);
+  assert.match(componente, /AtualizarTextoConfiguracoes/);
   assert.match(componente, /import \{ SvgIcon \} from "\.\/configuracoes-svg-icon";/);
   assert.match(componente, /import type \{ IconName \} from "\.\/configuracoes-svg-icon";/);
 
@@ -131,6 +132,7 @@ test("primitives de Configurações preservam seções, linhas e inputs", () => 
   assert.match(componente, /name="chevronRight" size=\{22\} strokeWidth=\{2\.6\}/);
   assert.match(componente, /className="configuracoes-input configuracoes-input-transparente"/);
   assert.match(componente, /onChange=\{\(event\) => onChange\(event\.target\.value\)\}/);
+  assert.match(componente, /onChange: AtualizarTextoConfiguracoes;/);
   assert.match(componente, /style=\{error \? inputErrorStyle : inputHelperStyle\}/);
 });
 

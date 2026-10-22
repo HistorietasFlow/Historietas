@@ -9,6 +9,13 @@ const componente = readFileSync(
   ),
   "utf8",
 );
+const callbackTypes = readFileSync(
+  new URL(
+    "../../app/configuracoes/lib/configuracoes-callback-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/configuracoes/page.tsx", import.meta.url),
   "utf8",
@@ -44,9 +51,10 @@ const secaoConta = readFileSync(
 
 test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", () => {
   assert.match(componente, /import type \{ CSSProperties \} from "react";/);
+  assert.match(componente, /AlternarConfiguracao/);
   assert.match(componente, /export function Toggle\(/);
   assert.match(componente, /checked: boolean;/);
-  assert.match(componente, /onChange: \(\) => void;/);
+  assert.match(componente, /onChange: AlternarConfiguracao;/);
   assert.match(componente, /ariaLabel: string;/);
   assert.match(componente, /type="button"/);
   assert.match(componente, /onClick=\{onChange\}/);
@@ -96,6 +104,24 @@ test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", ()
   );
   assert.match(componente, /boxShadow: "0 4px 10px rgba\(0,0,0,0\.28\)"/);
   assert.equal((componente.match(/\.\.\.toggleKnobBaseStyle,/g) || []).length, 2);
+});
+
+test("Toggle reutiliza o contrato compartilhado de alternância", () => {
+  assert.match(
+    callbackTypes,
+    /export type AlternarConfiguracao = \(\) => void;/,
+  );
+  for (const contrato of [
+    "AlternarPerfilPrivadoConfiguracoes",
+    "AlternarAprovacaoNovosSeguidoresConfiguracoes",
+    "AlternarReceberAvisosConfiguracoes",
+    "AlternarUsuariosBloqueadosConfiguracoes",
+  ]) {
+    assert.match(
+      callbackTypes,
+      new RegExp("export type " + contrato + " =\\s+AlternarConfiguracao;"),
+    );
+  }
 });
 
 test("Configuracoes mantem os consumidores e a fronteira do Toggle", () => {
