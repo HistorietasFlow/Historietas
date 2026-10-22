@@ -113,7 +113,9 @@ test("Publicar delega fronteiras locais, storage e autenticação extraídas", (
     assert.equal(pagina.includes(declaracao), false, `declaração removida: ${declaracao}`);
   }
 
-  assert.match(pagina, /async function enviarArquivoStorage\(/);
+  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.doesNotMatch(pagina, /async function enviarArquivoStorage\(/);
+  assert.doesNotMatch(pagina, /async function desfazerPublicacaoParcialPublicar\(/);
   assert.match(pagina, /async function carregarNomePerfilPublicar\(/);
   assert.match(pagina, /from "\.\/lib\/publicar-file-backup-storage-utils";/);
   assert.doesNotMatch(pagina, /function carregarBackupArquivosPublicar\(/);

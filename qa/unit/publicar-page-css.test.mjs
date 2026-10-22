@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const storage = readFileSync(
+  new URL("../../app/publicar/lib/publicar-storage-operations.ts", import.meta.url),
+  "utf8",
+);
 
 test("publicarPageCss preserva o CSS global de Publicar", () => {
   assert.match(css, /export const publicarPageCss = `/);
@@ -39,6 +43,10 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
 
   assert.match(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
-  assert.match(pagina, /supabase\.storage/);
+  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.match(pagina, /enviarArquivoStorage,/);
+  assert.match(pagina, /desfazerPublicacaoParcialPublicar,/);
+  assert.doesNotMatch(pagina, /supabase\.storage/);
+  assert.match(storage, /supabase\.storage/);
   assert.match(pagina, /async function salvarObra\(/);
 });
