@@ -17,8 +17,22 @@ import {
   textoPersonalizadoValido,
 } from "./lib/publicar-text-utils";
 import {
-  CLASSIFICACOES_INDICATIVAS_OBRA,
-  EXTENSOES_IMAGEM_ACEITAS,
+  criarId,
+  criarUuidSeguro,
+  limparNomeArquivoStorage,
+} from "./lib/publicar-id-utils";
+import {
+  arquivoImagemAceito,
+  arquivoObraAceito,
+  arquivoTextoAceito,
+  identificarCategoriaArquivo,
+} from "./lib/publicar-file-utils";
+import {
+  calcularProgressoLeitura,
+  criarSlugUnico,
+  normalizarClassificacaoIndicativaPublicar,
+} from "./lib/publicar-work-utils";
+import {
   FILE_BACKUP_STORAGE_KEY,
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
@@ -33,9 +47,6 @@ import {
   TAMANHO_MAXIMO_ARQUIVO_OBRA,
   TAMANHO_MAXIMO_ARQUIVO_TEXTO,
   TAMANHO_MAXIMO_CAPA,
-  TIPOS_MIME_IMAGEM_ACEITOS,
-  TIPOS_MIME_PDF_ACEITOS,
-  TIPOS_MIME_TEXTO_ACEITOS,
 } from "./lib/publicar-static-options";
 import type {
   ArquivoObraLocal,
@@ -625,82 +636,6 @@ function salvarJsonStorageUsuarioPublicar(
   }
 }
 
-function normalizarClassificacaoIndicativaPublicar(valor: string) {
-  const valorLimpo = valor.trim();
-  const valorNormalizado = normalizarTexto(valorLimpo);
-
-  if (valorNormalizado === "livre" || valorNormalizado === "l") {
-    return "Livre";
-  }
-
-  const classificacaoEncontrada = CLASSIFICACOES_INDICATIVAS_OBRA.find(
-    (classificacao) =>
-      normalizarTexto(classificacao) === valorNormalizado ||
-      normalizarTexto(classificacao.replace("+", "")) === valorNormalizado,
-  );
-
-  return classificacaoEncontrada || "";
-}
-
-
-function gerarUuidFallback() {
-  const bytes = new Uint8Array(16);
-  const cryptoGlobal =
-    typeof globalThis !== "undefined" && "crypto" in globalThis
-      ? globalThis.crypto
-      : null;
-
-  if (cryptoGlobal && typeof cryptoGlobal.getRandomValues === "function") {
-    cryptoGlobal.getRandomValues(bytes);
-  } else {
-    for (let index = 0; index < bytes.length; index += 1) {
-      bytes[index] = Math.floor(Math.random() * 256);
-    }
-  }
-
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
-
-  return `${hex[0]}${hex[1]}${hex[2]}${hex[3]}-${hex[4]}${hex[5]}-${hex[6]}${hex[7]}-${hex[8]}${hex[9]}-${hex[10]}${hex[11]}${hex[12]}${hex[13]}${hex[14]}${hex[15]}`;
-}
-
-function criarUuidSeguro() {
-  const cryptoGlobal =
-    typeof globalThis !== "undefined" && "crypto" in globalThis
-      ? globalThis.crypto
-      : null;
-
-  if (cryptoGlobal && typeof cryptoGlobal.randomUUID === "function") {
-    return cryptoGlobal.randomUUID();
-  }
-
-  return gerarUuidFallback();
-}
-
-function criarId() {
-  return criarUuidSeguro();
-}
-
-function limparNomeArquivoStorage(nomeArquivo: string) {
-  const partes = nomeArquivo.split(".");
-  const extensao =
-    partes.length > 1 ? `.${partes[partes.length - 1].toLowerCase()}` : "";
-  const nomeBase = partes
-    .slice(0, partes.length > 1 ? -1 : partes.length)
-    .join(".")
-    .trim();
-
-  const nomeSeguro =
-    normalizarTexto(nomeBase)
-      .replace(/[^a-z0-9-]/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "") || "arquivo";
-
-  return `${nomeSeguro}${extensao}`;
-}
-
 async function enviarArquivoStorage(
   bucket: "capas-obras" | "arquivos-obras",
   userId: string,
@@ -903,101 +838,6 @@ async function carregarNomePerfilPublicar(userId: string, fallback = "") {
   }
 
   return fallbackLimpo;
-}
-
-function criarSlugUnico(titulo: string, obrasExistentes: ObraLocal[]) {
-  const slugBase = criarSlugBase(titulo);
-  const slugsUsados = new Set(
-    obrasExistentes
-      .map((obra) => obra.slug || criarSlugBase(obra.titulo))
-      .filter(Boolean)
-  );
-
-  if (!slugsUsados.has(slugBase)) {
-    return slugBase;
-  }
-
-  let contador = 2;
-  let slugFinal = `${slugBase}-${contador}`;
-
-  while (slugsUsados.has(slugFinal)) {
-    contador += 1;
-    slugFinal = `${slugBase}-${contador}`;
-  }
-
-  return slugFinal;
-}
-
-function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  if (capitulos.length === 0) {
-    return 0;
-  }
-
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
-
-  return Math.round((capitulosLidos / capitulos.length) * 100);
-}
-
-function identificarCategoriaArquivo(arquivo: File): ArquivoObraLocal["categoria"] {
-  const nome = arquivo.name.toLowerCase();
-
-  if (arquivo.type.startsWith("image/")) {
-    return "imagem";
-  }
-
-  if (
-    nome.endsWith(".txt") ||
-    nome.endsWith(".md") ||
-    arquivo.type.startsWith("text/")
-  ) {
-    return "texto";
-  }
-
-  if (nome.endsWith(".pdf") || arquivo.type === "application/pdf") {
-    return "documento";
-  }
-
-  return "outro";
-}
-
-function arquivoTemExtensao(
-  nomeArquivo: string,
-  extensoes: readonly string[],
-) {
-  const nome = nomeArquivo.toLowerCase();
-
-  return extensoes.some((extensao) => nome.endsWith(extensao));
-}
-
-function arquivoImagemAceito(arquivo: File) {
-  return (
-    arquivoTemExtensao(arquivo.name, EXTENSOES_IMAGEM_ACEITAS) &&
-    tipoMimeCompativel(arquivo, TIPOS_MIME_IMAGEM_ACEITOS)
-  );
-}
-
-function tipoMimeCompativel(
-  arquivo: File,
-  tiposAceitos: ReadonlySet<string>,
-) {
-  const tipo = arquivo.type.trim().toLowerCase();
-
-  return !tipo || tipo === "application/octet-stream" || tiposAceitos.has(tipo);
-}
-
-function arquivoPdfAceito(arquivo: File) {
-  return (
-    arquivoTemExtensao(arquivo.name, [".pdf"]) &&
-    tipoMimeCompativel(arquivo, TIPOS_MIME_PDF_ACEITOS)
-  );
-}
-
-function arquivoObraAceito(arquivo: File) {
-  return (
-    arquivoPdfAceito(arquivo) ||
-    arquivoTextoAceito(arquivo) ||
-    arquivoImagemAceito(arquivo)
-  );
 }
 
 function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
@@ -1339,13 +1179,6 @@ async function registrarDiarioPublicacao({
   } catch (error) {
     console.warn("Não consegui registrar a publicação no Diário:", error);
   }
-}
-
-function arquivoTextoAceito(arquivo: File) {
-  return (
-    arquivoTemExtensao(arquivo.name, [".txt", ".md"]) &&
-    tipoMimeCompativel(arquivo, TIPOS_MIME_TEXTO_ACEITOS)
-  );
 }
 
 function criarPreviewCoverStyle(capa: string): CSSProperties {
