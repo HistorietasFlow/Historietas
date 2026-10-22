@@ -1186,3 +1186,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 7 — Publicar
 
 - O registro não bloqueante de publicação no Diário foi isolado em `publicar-diary-activity.ts`, preservando payload, fallback e aviso de erro.
+
+## Registro da Fase 8 — Publicar
+
+- A verificação de slug único no Supabase foi isolada em `publicar-slug-supabase-loader.ts`, preservando consulta, limites e fallback.

@@ -27,7 +27,6 @@ import {
 } from "./lib/publicar-file-utils";
 import {
   calcularProgressoLeitura,
-  criarSlugUnico,
   normalizarClassificacaoIndicativaPublicar,
 } from "./lib/publicar-work-utils";
 import {
@@ -65,7 +64,7 @@ import type {
   ObraSalva,
 } from "./lib/publicar-models";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import { criarSlugBase, formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
+import { formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
@@ -91,6 +90,7 @@ import {
   enviarArquivoStorage,
 } from "./lib/publicar-storage-operations";
 import { registrarDiarioPublicacao } from "./lib/publicar-diary-activity";
+import { criarSlugUnicoSupabase } from "./lib/publicar-slug-supabase-loader";
 
 
 type ChaveTextoPublicar = keyof (typeof TEXTOS_PUBLICAR)["pt-BR"];
@@ -434,38 +434,6 @@ function traduzirMensagemPublicar(
   }
 
   return mensagem;
-}
-
-async function criarSlugUnicoSupabase(
-  titulo: string,
-  obrasExistentes: ObraLocal[]
-) {
-  const slugLocal = criarSlugUnico(titulo, obrasExistentes);
-  const slugBase = criarSlugBase(slugLocal);
-  let contador = 1;
-
-  while (contador <= 20) {
-    const slugAtual = contador === 1 ? slugBase : `${slugBase}-${contador}`;
-
-    const { data, error } = await supabase
-      .from("obras")
-      .select("id")
-      .eq("slug", slugAtual)
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      throw new Error(`Não consegui preparar o endereço da obra: ${error.message}`);
-    }
-
-    if (!data) {
-      return slugAtual;
-    }
-
-    contador += 1;
-  }
-
-  return `${slugBase}-${Date.now().toString(36)}`;
 }
 
 async function carregarNomePerfilPublicar(userId: string, fallback = "") {
