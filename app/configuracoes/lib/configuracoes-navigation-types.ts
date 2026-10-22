@@ -1,15 +1,19 @@
+import type { ExecutarAcaoConfiguracoes } from "./configuracoes-callback-types";
+
+export type NavegarConfiguracoes = (href: string) => void;
+
 export type RouterConfiguracoes = {
-  replace: (href: string) => void;
+  replace: NavegarConfiguracoes;
 };
 
 export type RouterConfiguracoesAtualizavel = RouterConfiguracoes & {
-  refresh: () => void;
+  refresh: ExecutarAcaoConfiguracoes;
 };
 
 export type RouterConfiguracoesHistorico = {
-  back: () => void;
+  back: ExecutarAcaoConfiguracoes;
 };
 
-export type RedirecionarLoginConfiguracoes = () => void;
+export type RedirecionarLoginConfiguracoes = ExecutarAcaoConfiguracoes;
 
-export type AtualizarRotaConfiguracoes = () => void;
+export type AtualizarRotaConfiguracoes = ExecutarAcaoConfiguracoes;

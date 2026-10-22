@@ -1783,15 +1783,23 @@ test("contratos compartilhados de conteudo preservam busca, retorno, avisos e ba
 test("contratos de navegacao compartilhados preservam os routers dos hooks e acoes", () => {
   assert.match(
     navigationTypesSource,
-    /export type RouterConfiguracoes = \{\s+replace: \(href: string\) => void;\s+\};/,
+    /import type \{ ExecutarAcaoConfiguracoes \} from "\.\/configuracoes-callback-types";/,
   );
   assert.match(
     navigationTypesSource,
-    /export type RouterConfiguracoesAtualizavel = RouterConfiguracoes & \{\s+refresh: \(\) => void;\s+\};/,
+    /export type NavegarConfiguracoes = \(href: string\) => void;/,
   );
   assert.match(
     navigationTypesSource,
-    /export type RouterConfiguracoesHistorico = \{\s+back: \(\) => void;\s+\};/,
+    /export type RouterConfiguracoes = \{\s+replace: NavegarConfiguracoes;\s+\};/,
+  );
+  assert.match(
+    navigationTypesSource,
+    /export type RouterConfiguracoesAtualizavel = RouterConfiguracoes & \{\s+refresh: ExecutarAcaoConfiguracoes;\s+\};/,
+  );
+  assert.match(
+    navigationTypesSource,
+    /export type RouterConfiguracoesHistorico = \{\s+back: ExecutarAcaoConfiguracoes;\s+\};/,
   );
   assert.doesNotMatch(
     navigationTypesSource,
@@ -1822,11 +1830,11 @@ test("contratos de navegacao compartilhados preservam os routers dos hooks e aco
 test("contratos de navegacao das acoes de conta preservam redirecionamento e atualizacao", () => {
   assert.match(
     navigationTypesSource,
-    /export type RedirecionarLoginConfiguracoes = \(\) => void;/,
+    /export type RedirecionarLoginConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
     navigationTypesSource,
-    /export type AtualizarRotaConfiguracoes = \(\) => void;/,
+    /export type AtualizarRotaConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
 
   for (const [arquivo, contratos, assinaturasLocais] of [
