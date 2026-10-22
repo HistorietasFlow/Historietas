@@ -7,18 +7,19 @@ import {
 import { LoadingSpinner } from "./configuracoes-loading-spinner";
 import { normalizarUsernameConfiguracoes } from "../lib/configuracoes-account-utils";
 import type { PreferenciasConta } from "../lib/configuracoes-account-models";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  AtualizarPreferenciaConfiguracoes,
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesAccountDetailsSectionProps = {
-  deveMostrar: (...termos: string[]) => boolean;
+  deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   preferencias: PreferenciasConta;
   erroUsername: string;
   salvando: boolean;
-  onAtualizarPreferencia: <K extends keyof PreferenciasConta>(
-    campo: K,
-    valor: PreferenciasConta[K],
-  ) => void;
+  onAtualizarPreferencia: AtualizarPreferenciaConfiguracoes;
   onLimparErroUsername: () => void;
   onSalvar: () => void;
   onAbrirSeguranca: () => void;

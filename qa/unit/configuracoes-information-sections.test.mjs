@@ -42,11 +42,11 @@ test("seções informativas preservam dados, rotas, traduções e filtros", () =
   );
   assert.match(
     secoesUso,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(secoesUso, /traduzirTexto: TraduzirTextoConfiguracoes;/);
   assert.doesNotMatch(secoesUso, /type TraduzirTexto =/);
-  assert.match(secoesUso, /deveMostrar: \(\.\.\.termos: string\[\]\) => boolean/);
+  assert.match(secoesUso, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.match(secoesUso, /resumo: ResumoLocal/);
   assert.match(secoesUso, /totalBiblioteca: number/);
   assert.match(secoesUso, /notificacoesNaoLidas: number/);
@@ -66,9 +66,10 @@ test("seções informativas preservam dados, rotas, traduções e filtros", () =
   assert.match(secaoDados, /export function ConfiguracoesDataSection\(/);
   assert.match(
     secaoDados,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(secaoDados, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(secaoDados, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(secaoDados, /type TraduzirTexto =/);
   assert.match(secaoDados, /onCopiarBackup: \(\) => void/);
   assert.match(secaoDados, /onBaixarBackup: \(\) => void/);
@@ -83,9 +84,10 @@ test("seções informativas preservam dados, rotas, traduções e filtros", () =
   assert.match(secaoSuporte, /export function ConfiguracoesSupportSection\(/);
   assert.match(
     secaoSuporte,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(secaoSuporte, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(secaoSuporte, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(secaoSuporte, /type TraduzirTexto =/);
   assert.match(secaoSuporte, /Suporte e sobre/);
   assert.match(secaoSuporte, /href="\/ajuda"/);

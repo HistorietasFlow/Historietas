@@ -2,11 +2,14 @@ import {
   SettingsRow,
   SettingsSection,
 } from "./configuracoes-settings-primitives";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesModerationSectionProps = {
   adminLiberado: boolean;
-  deveMostrar: (...termos: string[]) => boolean;
+  deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 };
 

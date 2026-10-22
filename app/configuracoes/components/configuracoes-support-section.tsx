@@ -3,10 +3,13 @@ import {
   SettingsSection,
   ValorLinha,
 } from "./configuracoes-settings-primitives";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesSupportSectionProps = {
-  deveMostrar: (...termos: string[]) => boolean;
+  deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
 };
 

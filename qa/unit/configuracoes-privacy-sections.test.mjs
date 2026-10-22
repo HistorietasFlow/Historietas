@@ -39,9 +39,10 @@ test("seções de privacidade preservam controles, filtros e textos", () => {
   assert.match(perfil, /export function ConfiguracoesProfilePrivacySection\(/);
   assert.match(
     perfil,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(perfil, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(perfil, /deveMostrar: DeveMostrarConfiguracoes;/);
   assert.doesNotMatch(perfil, /type TraduzirTexto =/);
   assert.match(perfil, /checked=\{privacidade\.perfilPrivado\}/);
   assert.match(perfil, /onChange=\{onAlternarPerfilPrivado\}/);
@@ -58,9 +59,10 @@ test("seções de privacidade preservam controles, filtros e textos", () => {
   );
   assert.match(
     abas,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(abas, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(abas, /onAtualizarPrivacidade: AtualizarPrivacidadeConfiguracoes;/);
   assert.doesNotMatch(abas, /type TraduzirTexto =/);
   for (const campo of [
     "visibilidadeObras",
@@ -78,9 +80,10 @@ test("seções de privacidade preservam controles, filtros e textos", () => {
   assert.match(diario, /export function ConfiguracoesDiaryPrivacySection\(/);
   assert.match(
     diario,
-    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+    /from "\.\.\/lib\/configuracoes-callback-types";/,
   );
   assert.match(diario, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(diario, /onAtualizarPrivacidade: AtualizarPrivacidadeConfiguracoes;/);
   assert.doesNotMatch(diario, /type TraduzirTexto =/);
   assert.match(diario, /visibilidadeAvaliacaoDiario: visibilidade/);
   assert.match(diario, /mostrarAvaliacaoDiario: visibilidade !== "somente_eu"/);

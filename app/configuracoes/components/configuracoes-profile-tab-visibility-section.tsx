@@ -7,16 +7,17 @@ import type {
   VisibilidadeAbaPerfil,
 } from "../lib/configuracoes-privacy-preferences";
 import { privacySelectStyle } from "../lib/configuracoes-security-styles";
-import type { TraduzirTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  AtualizarPrivacidadeConfiguracoes,
+  DeveMostrarConfiguracoes,
+  TraduzirTextoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesProfileTabVisibilitySectionProps = {
-  deveMostrar: (...termos: string[]) => boolean;
+  deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
   privacidade: PreferenciasPrivacidadeHistorietas;
-  onAtualizarPrivacidade: <K extends keyof PreferenciasPrivacidadeHistorietas>(
-    campo: K,
-    valor: PreferenciasPrivacidadeHistorietas[K],
-  ) => void;
+  onAtualizarPrivacidade: AtualizarPrivacidadeConfiguracoes;
 };
 
 export function ConfiguracoesProfileTabVisibilitySection({

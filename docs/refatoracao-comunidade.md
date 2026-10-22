@@ -1023,3 +1023,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos tipados de navegação para redirecionamento, atualização de rota e retorno foram centralizados e reutilizados pelos hooks e ações correspondentes.
 - Runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 61 — Configurações
+
+- Os contratos compartilhados de filtro de apresentação e atualização de preferências e privacidade foram centralizados, preservando literalmente as assinaturas usadas pelos componentes.
+- Runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
