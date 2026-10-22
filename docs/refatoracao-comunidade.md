@@ -1148,3 +1148,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos de props do estado de carregamento, cabeçalho e toast foram isolados junto aos respectivos componentes, mantendo campos, assinaturas e consumidores existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 86 — Configurações
+
+- Os contratos de props da busca, do cartão de perfil e do resumo de uso foram isolados junto aos respectivos componentes, preservando campos, assinaturas e consumidores existentes.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

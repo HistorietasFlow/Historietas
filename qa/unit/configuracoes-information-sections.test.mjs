@@ -20,6 +20,13 @@ const secoesUso = readFileSync(
   ),
   "utf8",
 );
+const secoesUsoProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-usage-summary-section-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const secaoDados = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-data-section.tsx",
@@ -42,14 +49,16 @@ test("seções informativas preservam dados, rotas, traduções e filtros", () =
   );
   assert.match(
     secoesUso,
-    /from "\.\.\/lib\/configuracoes-callback-types";/,
+    /import type \{ ConfiguracoesUsageSummarySectionProps \} from "\.\/configuracoes-usage-summary-section-props";/,
   );
-  assert.match(secoesUso, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.match(
+    secoesUsoProps,
+    /export type ConfiguracoesUsageSummarySectionProps = \{\s+deveMostrar: DeveMostrarConfiguracoes;\s+traduzirTexto: TraduzirTextoConfiguracoes;\s+resumo: ResumoLocal;\s+totalBiblioteca: number;\s+notificacoesNaoLidas: number;\s+\};/,
+  );
+  assert.match(secoesUsoProps, /from "\.\.\/lib\/configuracoes-callback-types";/);
+  assert.match(secoesUsoProps, /from "\.\.\/lib\/configuracoes-account-models";/);
+  assert.doesNotMatch(secoesUso, /type ConfiguracoesUsageSummarySectionProps =/);
   assert.doesNotMatch(secoesUso, /type TraduzirTexto =/);
-  assert.match(secoesUso, /deveMostrar: DeveMostrarConfiguracoes;/);
-  assert.match(secoesUso, /resumo: ResumoLocal/);
-  assert.match(secoesUso, /totalBiblioteca: number/);
-  assert.match(secoesUso, /notificacoesNaoLidas: number/);
   assert.match(secoesUso, /Como você usa o Historietas/);
   assert.match(secoesUso, /href="\/perfil-autor\?aba=obras"/);
   assert.match(secoesUso, /href="\/perfil-autor\?aba=biblioteca"/);

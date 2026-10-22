@@ -129,6 +129,27 @@ const actionToastPropsSource = readFileSync(
   ),
   "utf8",
 );
+const searchPropsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-search-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const profileCardPropsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-profile-card-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const usageSummarySectionPropsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-usage-summary-section-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const adminAccessHookSource = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-admin-access.ts",
@@ -1533,6 +1554,9 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(pageHeaderPropsSource, /VoltarConfiguracoes/);
   assert.match(actionToastPropsSource, /FecharOverlayConfiguracoes/);
+  assert.match(searchPropsSource, /AtualizarBuscaConfiguracoes/);
+  assert.match(profileCardPropsSource, /TraduzirTextoConfiguracoes/);
+  assert.match(usageSummarySectionPropsSource, /DeveMostrarConfiguracoes/);
   assert.match(
     presentationTypesSource,
     /import type \{\s+AtualizarTextoConfiguracoes,\s+VerificarCondicaoConfiguracoes,\s+\} from "\.\/configuracoes-callback-primitives";/,
@@ -1690,12 +1714,12 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     "components/configuracoes-moderation-section.tsx",
     "components/configuracoes-preferences-section.tsx",
     "components/configuracoes-profile-privacy-section.tsx",
-    "components/configuracoes-profile-card.tsx",
+    "components/configuracoes-profile-card-props.ts",
     "components/configuracoes-profile-tab-visibility-section.tsx",
-    "components/configuracoes-search.tsx",
+    "components/configuracoes-search-props.ts",
     "components/configuracoes-security-password-modal.tsx",
     "components/configuracoes-support-section.tsx",
-    "components/configuracoes-usage-summary-section.tsx",
+    "components/configuracoes-usage-summary-section-props.ts",
   ]) {
     const source = readFileSync(
       new URL("../../app/configuracoes/" + arquivo, import.meta.url),
@@ -1732,7 +1756,7 @@ test("contratos de apresentacao compartilhados preservam filtro e atualizacoes",
     "components/configuracoes-profile-privacy-section.tsx",
     "components/configuracoes-profile-tab-visibility-section.tsx",
     "components/configuracoes-support-section.tsx",
-    "components/configuracoes-usage-summary-section.tsx",
+    "components/configuracoes-usage-summary-section-props.ts",
   ]) {
     const source = readFileSync(
       new URL("../../app/configuracoes/" + arquivo, import.meta.url),
@@ -1937,7 +1961,7 @@ test("contratos compartilhados de conteudo preservam busca, retorno, avisos e ba
       ],
     ],
     [
-      "components/configuracoes-search.tsx",
+      "components/configuracoes-search-props.ts",
       ["AtualizarBuscaConfiguracoes"],
       [/onBuscaChange: \(busca: string\) => void;/],
     ],

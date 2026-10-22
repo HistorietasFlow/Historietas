@@ -20,9 +20,23 @@ const search = readFileSync(
   new URL("../../app/configuracoes/components/configuracoes-search.tsx", import.meta.url),
   "utf8",
 );
+const searchProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-search-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profile = readFileSync(
   new URL(
     "../../app/configuracoes/components/configuracoes-profile-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const profileProps = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-profile-card-props.ts",
     import.meta.url,
   ),
   "utf8",
@@ -183,6 +197,15 @@ test("shell de Configurações preserva cabeçalho, busca e perfil", () => {
   assert.match(header, /"Configurações e atividade"/);
 
   assert.match(search, /export function ConfiguracoesSearch\(/);
+  assert.match(
+    search,
+    /import type \{ ConfiguracoesSearchProps \} from "\.\/configuracoes-search-props";/,
+  );
+  assert.match(
+    searchProps,
+    /export type ConfiguracoesSearchProps = \{\s+busca: string;\s+onBuscaChange: AtualizarBuscaConfiguracoes;\s+traduzirTexto: TraduzirTextoConfiguracoes;\s+\};/,
+  );
+  assert.doesNotMatch(search, /type ConfiguracoesSearchProps =/);
   assert.match(search, /htmlFor="buscar-configuracoes"/);
   assert.match(search, /id="buscar-configuracoes"/);
   assert.match(search, /className="configuracoes-input configuracoes-input-transparente"/);
@@ -192,6 +215,15 @@ test("shell de Configurações preserva cabeçalho, busca e perfil", () => {
   assert.match(search, /name="search" size=\{23\} strokeWidth=\{2\.3\}/);
 
   assert.match(profile, /export function ConfiguracoesProfileCard\(/);
+  assert.match(
+    profile,
+    /import type \{ ConfiguracoesProfileCardProps \} from "\.\/configuracoes-profile-card-props";/,
+  );
+  assert.match(
+    profileProps,
+    /export type ConfiguracoesProfileCardProps = \{\s+nomeExibicao: string;\s+username: string;\s+emailContato: string;\s+usuarioNome: string \| undefined;\s+usuarioEmail: string \| undefined;\s+traduzirTexto: TraduzirTextoConfiguracoes;\s+\};/,
+  );
+  assert.doesNotMatch(profile, /type ConfiguracoesProfileCardProps =/);
   assert.match(profile, /import \{ obterIniciais \} from "\.\.\/lib\/configuracoes-account-utils";/);
   assert.match(profile, /obterIniciais\(nomeExibicao, emailContato\)/);
   assert.match(profile, /Conta Historietas/);

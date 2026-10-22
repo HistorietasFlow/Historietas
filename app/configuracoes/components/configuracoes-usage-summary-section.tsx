@@ -3,19 +3,7 @@ import {
   SettingsSection,
   ValorLinha,
 } from "./configuracoes-settings-primitives";
-import type { ResumoLocal } from "../lib/configuracoes-account-models";
-import type {
-  DeveMostrarConfiguracoes,
-  TraduzirTextoConfiguracoes,
-} from "../lib/configuracoes-callback-types";
-
-type ConfiguracoesUsageSummarySectionProps = {
-  deveMostrar: DeveMostrarConfiguracoes;
-  traduzirTexto: TraduzirTextoConfiguracoes;
-  resumo: ResumoLocal;
-  totalBiblioteca: number;
-  notificacoesNaoLidas: number;
-};
+import type { ConfiguracoesUsageSummarySectionProps } from "./configuracoes-usage-summary-section-props";
 
 export function ConfiguracoesUsageSummarySection({
   deveMostrar,
