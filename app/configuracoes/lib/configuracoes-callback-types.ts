@@ -22,14 +22,23 @@ export type MensagemAcaoConfiguracoes = MensagemAcaoConfiguracoesVisual & {
   id: number;
 };
 
-export type MostrarMensagemAcaoConfiguracoes = (
-  tipo: TipoMensagemAcaoConfiguracoes,
-  texto: string,
-) => void;
+export type ExecutarAcaoComArgumentosConfiguracoes<
+  Argumentos extends unknown[],
+> = (...argumentos: Argumentos) => void;
+
+export type VerificarCondicaoConfiguracoes<Argumentos extends unknown[]> = (
+  ...argumentos: Argumentos
+) => boolean;
+
+export type MostrarMensagemAcaoConfiguracoes =
+  ExecutarAcaoComArgumentosConfiguracoes<
+    [TipoMensagemAcaoConfiguracoes, string]
+  >;
 
 export type LimparMensagemAcaoConfiguracoes = (mensagem: null) => void;
 
-export type DeveMostrarConfiguracoes = (...termos: string[]) => boolean;
+export type DeveMostrarConfiguracoes =
+  VerificarCondicaoConfiguracoes<string[]>;
 
 export type ExecutarAcaoConfiguracoes = () => void;
 

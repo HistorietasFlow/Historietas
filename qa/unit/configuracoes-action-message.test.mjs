@@ -129,7 +129,11 @@ test("modelos compartilhados da mensagem de ação preservam contratos e consumi
   );
   assert.match(
     callbackTypes,
-    /export type MostrarMensagemAcaoConfiguracoes = \(\s+tipo: TipoMensagemAcaoConfiguracoes,\s+texto: string,\s+\) => void;/,
+    /export type ExecutarAcaoComArgumentosConfiguracoes<\s+Argumentos extends unknown\[\],\s+> = \(\.\.\.argumentos: Argumentos\) => void;/,
+  );
+  assert.match(
+    callbackTypes,
+    /export type MostrarMensagemAcaoConfiguracoes =\s+ExecutarAcaoComArgumentosConfiguracoes<\s+\[TipoMensagemAcaoConfiguracoes, string\]\s+>;/,
   );
   assert.doesNotMatch(
     callbackTypes,
