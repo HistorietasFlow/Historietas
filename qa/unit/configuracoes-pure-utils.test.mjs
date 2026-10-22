@@ -1406,11 +1406,15 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type AtualizarPreferenciaConfiguracoes = <K extends keyof PreferenciasConta>\(\s+campo: K,\s+valor: PreferenciasConta\[K\],\s+\) => void;/,
+    /export type AtualizarCampoConfiguracoes<Objeto> = <K extends keyof Objeto>\(\s+campo: K,\s+valor: Objeto\[K\],\s+\) => void;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type AtualizarPrivacidadeConfiguracoes = <\s+K extends keyof PreferenciasPrivacidadeHistorietas,\s+>\(\s+campo: K,\s+valor: PreferenciasPrivacidadeHistorietas\[K\],\s+\) => void;/,
+    /export type AtualizarPreferenciaConfiguracoes =\s+AtualizarCampoConfiguracoes<PreferenciasConta>;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AtualizarPrivacidadeConfiguracoes =\s+AtualizarCampoConfiguracoes<PreferenciasPrivacidadeHistorietas>;/,
   );
   assert.match(
     callbackTypesSource,
@@ -1430,7 +1434,7 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type AplicarPrivacidadeAtualizadaConfiguracoes = \(\s+privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,\s+\) => void;/,
+    /export type AplicarPrivacidadeAtualizadaConfiguracoes =\s+AtualizarValorConfiguracoes<PreferenciasPrivacidadeHistorietas>;/,
   );
   assert.match(
     callbackTypesSource,
