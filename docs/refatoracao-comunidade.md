@@ -1103,3 +1103,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos de exibição de mensagem e de predicado de busca passaram a compor assinaturas genéricas de argumentos, sem alterar os parâmetros ou retornos efetivos.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 77 — Configurações
+
+- A limpeza da mensagem de ação passou a reutilizar o contrato genérico de atualização de valor com `null`, preservando exatamente a assinatura efetiva.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

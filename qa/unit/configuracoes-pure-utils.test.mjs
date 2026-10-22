@@ -1886,7 +1886,7 @@ test("contratos de navegacao das acoes de conta preservam redirecionamento e atu
 test("contratos de feedback de acoes preservam a limpeza compartilhada", () => {
   assert.match(
     callbackTypesSource,
-    /export type LimparMensagemAcaoConfiguracoes = \(mensagem: null\) => void;/,
+    /export type LimparMensagemAcaoConfiguracoes = AtualizarValorConfiguracoes<null>;/,
   );
 
   for (const arquivo of [

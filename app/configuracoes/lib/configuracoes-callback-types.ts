@@ -35,7 +35,7 @@ export type MostrarMensagemAcaoConfiguracoes =
     [TipoMensagemAcaoConfiguracoes, string]
   >;
 
-export type LimparMensagemAcaoConfiguracoes = (mensagem: null) => void;
+export type LimparMensagemAcaoConfiguracoes = AtualizarValorConfiguracoes<null>;
 
 export type DeveMostrarConfiguracoes =
   VerificarCondicaoConfiguracoes<string[]>;
