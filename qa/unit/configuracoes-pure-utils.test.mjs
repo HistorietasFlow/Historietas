@@ -101,6 +101,20 @@ const navigationTypesSource = readFileSync(
   ),
   "utf8",
 );
+const pageContentPropsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-content-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const pageOverlaysPropsSource = readFileSync(
+  new URL(
+    "../../app/configuracoes/components/configuracoes-page-overlays-props.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const adminAccessHookSource = readFileSync(
   new URL(
     "../../app/configuracoes/hooks/use-configuracoes-admin-access.ts",
@@ -1652,9 +1666,9 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     "components/configuracoes-account-actions-section.tsx",
     "components/configuracoes-action-toast.tsx",
     "components/configuracoes-blocked-users-panel.tsx",
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
     "components/configuracoes-page-header.tsx",
-    "components/configuracoes-page-overlays.tsx",
+    "components/configuracoes-page-overlays-props.ts",
     "components/configuracoes-data-section.tsx",
     "components/configuracoes-diary-privacy-section.tsx",
     "components/configuracoes-moderation-section.tsx",
@@ -1697,7 +1711,7 @@ test("contratos de apresentacao compartilhados preservam filtro e atualizacoes",
     "components/configuracoes-data-section.tsx",
     "components/configuracoes-diary-privacy-section.tsx",
     "components/configuracoes-moderation-section.tsx",
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
     "components/configuracoes-preferences-section.tsx",
     "components/configuracoes-profile-privacy-section.tsx",
     "components/configuracoes-profile-tab-visibility-section.tsx",
@@ -1717,7 +1731,7 @@ test("contratos de apresentacao compartilhados preservam filtro e atualizacoes",
 
   for (const arquivo of [
     "components/configuracoes-account-details-section.tsx",
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
   ]) {
     const source = readFileSync(
       new URL("../../app/configuracoes/" + arquivo, import.meta.url),
@@ -1732,7 +1746,7 @@ test("contratos de apresentacao compartilhados preservam filtro e atualizacoes",
 
   for (const arquivo of [
     "components/configuracoes-diary-privacy-section.tsx",
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
     "components/configuracoes-profile-tab-visibility-section.tsx",
   ]) {
     const source = readFileSync(
@@ -1748,8 +1762,16 @@ test("contratos de apresentacao compartilhados preservam filtro e atualizacoes",
 });
 
 test("contratos compartilhados dos overlays preservam fechamento, formulario e campos", () => {
+  assert.match(
+    pageOverlaysPropsSource,
+    /export type ConfiguracoesPageOverlaysProps = \{\s+mostrarSeguranca: boolean;/,
+  );
+  assert.match(
+    pageOverlaysPropsSource,
+    /mensagemAcao: MensagemAcaoConfiguracoesVisual \| null;/,
+  );
   for (const arquivo of [
-    "components/configuracoes-page-overlays.tsx",
+    "components/configuracoes-page-overlays-props.ts",
     "components/configuracoes-security-password-modal.tsx",
     "components/configuracoes-account-deletion-modal.tsx",
   ]) {
@@ -1768,7 +1790,7 @@ test("contratos compartilhados dos overlays preservam fechamento, formulario e c
 
 test("contratos compartilhados de bloqueados preservam carregamento, painel e desbloqueio", () => {
   for (const arquivo of [
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
     "components/configuracoes-profile-privacy-section.tsx",
   ]) {
     const source = readFileSync(
@@ -1804,7 +1826,7 @@ test("contratos compartilhados de bloqueados preservam carregamento, painel e de
 
 test("contratos compartilhados de privacidade do perfil preservam as secoes", () => {
   for (const arquivo of [
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
     "components/configuracoes-profile-privacy-section.tsx",
   ]) {
     const source = readFileSync(
@@ -1821,7 +1843,7 @@ test("contratos compartilhados de privacidade do perfil preservam as secoes", ()
   }
 
   for (const arquivo of [
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
     "components/configuracoes-diary-privacy-section.tsx",
   ]) {
     const source = readFileSync(
@@ -1837,8 +1859,17 @@ test("contratos compartilhados de privacidade do perfil preservam as secoes", ()
 });
 
 test("contratos compartilhados dos detalhes da conta preservam as acoes", () => {
+  assert.match(
+    pageContentPropsSource,
+    /export type ConfiguracoesPageContentProps = \{\s+busca: string;/,
+  );
+  assert.match(
+    pageContentPropsSource,
+    /onAtualizarPreferencia: AtualizarPreferenciaConfiguracoes;/,
+  );
+  assert.match(pageContentPropsSource, /onSairDaConta: SairDaContaConfiguracoes;/);
   for (const arquivo of [
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
     "components/configuracoes-account-details-section.tsx",
   ]) {
     const source = readFileSync(
@@ -1856,7 +1887,7 @@ test("contratos compartilhados dos detalhes da conta preservam as acoes", () => 
 
 test("contratos compartilhados das acoes da conta preservam exclusao e saida", () => {
   for (const arquivo of [
-    "components/configuracoes-page-content.tsx",
+    "components/configuracoes-page-content-props.ts",
     "components/configuracoes-account-actions-section.tsx",
   ]) {
     const source = readFileSync(
@@ -1873,7 +1904,7 @@ test("contratos compartilhados das acoes da conta preservam exclusao e saida", (
 test("contratos compartilhados de conteudo preservam busca, retorno, avisos e backup", () => {
   for (const [arquivo, contratos, assinaturasLocais] of [
     [
-      "components/configuracoes-page-content.tsx",
+      "components/configuracoes-page-content-props.ts",
       [
         "AtualizarBuscaConfiguracoes",
         "VoltarConfiguracoes",
