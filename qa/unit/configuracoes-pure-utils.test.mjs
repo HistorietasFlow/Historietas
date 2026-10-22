@@ -1500,6 +1500,10 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     /export type \{\s+CarregarUsuariosBloqueadosConfiguracoes,\s+DesbloquearUsuarioConfiguracoes,\s+\} from "\.\/configuracoes-blocked-users-action-types";/,
   );
   assert.match(
+    callbackTypesSource,
+    /export type \{ VoltarConfiguracoes \} from "\.\/configuracoes-navigation-types";/,
+  );
+  assert.match(
     presentationTypesSource,
     /import type \{\s+AtualizarTextoConfiguracoes,\s+VerificarCondicaoConfiguracoes,\s+\} from "\.\/configuracoes-callback-primitives";/,
   );
@@ -1927,7 +1931,7 @@ test("contratos compartilhados de conteudo preservam busca, retorno, avisos e ba
 test("contratos de navegacao compartilhados preservam os routers dos hooks e acoes", () => {
   assert.match(
     navigationTypesSource,
-    /import type \{ ExecutarAcaoConfiguracoes \} from "\.\/configuracoes-callback-types";/,
+    /import type \{ ExecutarAcaoConfiguracoes \} from "\.\/configuracoes-callback-primitives";/,
   );
   assert.match(
     navigationTypesSource,
@@ -1979,6 +1983,10 @@ test("contratos de navegacao das acoes de conta preservam redirecionamento e atu
   assert.match(
     navigationTypesSource,
     /export type AtualizarRotaConfiguracoes = ExecutarAcaoConfiguracoes;/,
+  );
+  assert.match(
+    navigationTypesSource,
+    /export type VoltarConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
 
   for (const [arquivo, contratos, assinaturasLocais] of [

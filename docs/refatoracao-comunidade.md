@@ -1133,3 +1133,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os contratos puros das operações de conta, overlays e usuários bloqueados foram isolados em módulos próprios, preservando os aliases públicos existentes.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 83 — Configurações
+
+- O contrato puro de retorno passou a pertencer à fronteira de navegação, preservando a reexportação pública e todas as assinaturas dos consumidores.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

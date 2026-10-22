@@ -1,5 +1,3 @@
-import type { ExecutarAcaoConfiguracoes } from "./configuracoes-callback-primitives";
-
 export type {
   AtualizarCampoConfiguracoes,
   AtualizarTextoConfiguracoes,
@@ -49,5 +47,4 @@ export type {
   CarregarUsuariosBloqueadosConfiguracoes,
   DesbloquearUsuarioConfiguracoes,
 } from "./configuracoes-blocked-users-action-types";
-
-export type VoltarConfiguracoes = ExecutarAcaoConfiguracoes;
+export type { VoltarConfiguracoes } from "./configuracoes-navigation-types";
