@@ -9,13 +9,6 @@ const componente = readFileSync(
   ),
   "utf8",
 );
-const callbackTypes = readFileSync(
-  new URL(
-    "../../app/configuracoes/lib/configuracoes-callback-types.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
 const callbackPrimitives = readFileSync(
   new URL(
     "../../app/configuracoes/lib/configuracoes-callback-primitives.ts",
