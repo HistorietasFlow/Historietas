@@ -109,7 +109,11 @@ test("ConfiguracoesToggle preserva a primitive visual e os estilos literais", ()
 test("Toggle reutiliza o contrato compartilhado de alternância", () => {
   assert.match(
     callbackTypes,
-    /export type AlternarConfiguracao = \(\) => void;/,
+    /export type ExecutarAcaoConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypes,
+    /export type AlternarConfiguracao = ExecutarAcaoConfiguracoes;/,
   );
   for (const contrato of [
     "AlternarPerfilPrivadoConfiguracoes",

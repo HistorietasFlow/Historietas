@@ -1078,3 +1078,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O contrato de alternância foi compartilhado entre os toggles e as ações de preferência, e a primitive de input passou a reutilizar o contrato textual já centralizado.
 - JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 72 — Configurações
+
+- O contrato de ações sem argumentos passou a ser compartilhado pelos aliases e pela primitive de linha, e o contrato textual passou a compor a atualização da busca.
+- JSX, runtime, estados, efeitos, autenticação, persistência, RLS e regras de negócio permaneceram sem alteração intencional de comportamento.

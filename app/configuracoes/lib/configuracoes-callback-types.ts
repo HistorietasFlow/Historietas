@@ -31,6 +31,10 @@ export type LimparMensagemAcaoConfiguracoes = (mensagem: null) => void;
 
 export type DeveMostrarConfiguracoes = (...termos: string[]) => boolean;
 
+export type ExecutarAcaoConfiguracoes = () => void;
+
+export type AtualizarTextoConfiguracoes = (valor: string) => void;
+
 export type AtualizarPreferenciaConfiguracoes = <K extends keyof PreferenciasConta>(
   campo: K,
   valor: PreferenciasConta[K],
@@ -43,7 +47,7 @@ export type AtualizarPrivacidadeConfiguracoes = <
   valor: PreferenciasPrivacidadeHistorietas[K],
 ) => void;
 
-export type AlternarConfiguracao = () => void;
+export type AlternarConfiguracao = ExecutarAcaoConfiguracoes;
 
 export type AlternarPerfilPrivadoConfiguracoes = AlternarConfiguracao;
 
@@ -54,32 +58,30 @@ export type AplicarPrivacidadeAtualizadaConfiguracoes = (
   privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
 ) => void;
 
-export type LimparErroUsernameConfiguracoes = () => void;
+export type LimparErroUsernameConfiguracoes = ExecutarAcaoConfiguracoes;
 
-export type SalvarConfiguracoes = () => void;
+export type SalvarConfiguracoes = ExecutarAcaoConfiguracoes;
 
-export type AbrirSegurancaConfiguracoes = () => void;
+export type AbrirSegurancaConfiguracoes = ExecutarAcaoConfiguracoes;
 
-export type AbrirExclusaoContaConfiguracoes = () => void;
+export type AbrirExclusaoContaConfiguracoes = ExecutarAcaoConfiguracoes;
 
-export type SairDaContaConfiguracoes = () => void;
+export type SairDaContaConfiguracoes = ExecutarAcaoConfiguracoes;
 
-export type AtualizarBuscaConfiguracoes = (valor: string) => void;
+export type AtualizarBuscaConfiguracoes = AtualizarTextoConfiguracoes;
 
-export type VoltarConfiguracoes = () => void;
+export type VoltarConfiguracoes = ExecutarAcaoConfiguracoes;
 
 export type AlternarReceberAvisosConfiguracoes = AlternarConfiguracao;
 
-export type CopiarBackupConfiguracoes = () => void;
+export type CopiarBackupConfiguracoes = ExecutarAcaoConfiguracoes;
 
-export type BaixarBackupConfiguracoes = () => void;
+export type BaixarBackupConfiguracoes = ExecutarAcaoConfiguracoes;
 
-export type FecharOverlayConfiguracoes = () => void;
+export type FecharOverlayConfiguracoes = ExecutarAcaoConfiguracoes;
 
 export type EnviarFormularioConfiguracoes =
   FormEventHandler<HTMLFormElement>;
-
-export type AtualizarTextoConfiguracoes = (valor: string) => void;
 
 export type AtualizarBooleanoConfiguracoes = (valor: boolean) => void;
 

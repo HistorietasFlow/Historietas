@@ -1414,7 +1414,11 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type AlternarConfiguracao = \(\) => void;/,
+    /export type ExecutarAcaoConfiguracoes = \(\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AlternarConfiguracao = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,
@@ -1430,27 +1434,27 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   );
   assert.match(
     callbackTypesSource,
-    /export type LimparErroUsernameConfiguracoes = \(\) => void;/,
+    /export type LimparErroUsernameConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type SalvarConfiguracoes = \(\) => void;/,
+    /export type SalvarConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type AbrirSegurancaConfiguracoes = \(\) => void;/,
+    /export type AbrirSegurancaConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type AbrirExclusaoContaConfiguracoes = \(\) => void;/,
+    /export type AbrirExclusaoContaConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type SairDaContaConfiguracoes = \(\) => void;/,
+    /export type SairDaContaConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,
-    /export type FecharOverlayConfiguracoes = \(\) => void;/,
+    /export type FecharOverlayConfiguracoes = ExecutarAcaoConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,
@@ -1459,6 +1463,10 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
   assert.match(
     callbackTypesSource,
     /export type AtualizarTextoConfiguracoes = \(valor: string\) => void;/,
+  );
+  assert.match(
+    callbackTypesSource,
+    /export type AtualizarBuscaConfiguracoes = AtualizarTextoConfiguracoes;/,
   );
   assert.match(
     callbackTypesSource,

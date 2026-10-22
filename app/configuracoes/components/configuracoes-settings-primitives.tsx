@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { AtualizarTextoConfiguracoes } from "../lib/configuracoes-callback-types";
+import type {
+  AtualizarTextoConfiguracoes,
+  ExecutarAcaoConfiguracoes,
+} from "../lib/configuracoes-callback-types";
 import { SvgIcon } from "./configuracoes-svg-icon";
 import type { IconName } from "./configuracoes-svg-icon";
 import {
@@ -75,7 +78,7 @@ export function SettingsRow({
   subtitle?: string;
   right?: ReactNode;
   href?: string;
-  onClick?: () => void;
+  onClick?: ExecutarAcaoConfiguracoes;
   danger?: boolean;
   hideChevron?: boolean;
 }) {
