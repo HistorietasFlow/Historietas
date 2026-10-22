@@ -1,4 +1,4 @@
-import type { ExecutarAcaoConfiguracoes } from "./configuracoes-callback-types";
+import type { ExecutarAcaoConfiguracoes } from "./configuracoes-callback-primitives";
 
 export type NavegarConfiguracoes = (href: string) => void;
 
@@ -17,3 +17,5 @@ export type RouterConfiguracoesHistorico = {
 export type RedirecionarLoginConfiguracoes = ExecutarAcaoConfiguracoes;
 
 export type AtualizarRotaConfiguracoes = ExecutarAcaoConfiguracoes;
+
+export type VoltarConfiguracoes = ExecutarAcaoConfiguracoes;
