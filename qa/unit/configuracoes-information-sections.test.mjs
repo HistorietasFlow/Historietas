@@ -75,6 +75,12 @@ test("seções informativas preservam dados, rotas, traduções e filtros", () =
   assert.match(secaoDados, /"Descargar copia"/);
 
   assert.match(secaoSuporte, /export function ConfiguracoesSupportSection\(/);
+  assert.match(
+    secaoSuporte,
+    /import type \{ TraduzirTextoConfiguracoes \} from "\.\.\/lib\/configuracoes-callback-types";/,
+  );
+  assert.match(secaoSuporte, /traduzirTexto: TraduzirTextoConfiguracoes;/);
+  assert.doesNotMatch(secaoSuporte, /type TraduzirTexto =/);
   assert.match(secaoSuporte, /Suporte e sobre/);
   assert.match(secaoSuporte, /href="\/ajuda"/);
   assert.match(secaoSuporte, /href="\/termos"/);

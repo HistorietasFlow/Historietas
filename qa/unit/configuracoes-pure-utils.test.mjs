@@ -1419,11 +1419,14 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     "components/configuracoes-page-overlays.tsx",
     "components/configuracoes-data-section.tsx",
     "components/configuracoes-diary-privacy-section.tsx",
+    "components/configuracoes-moderation-section.tsx",
+    "components/configuracoes-preferences-section.tsx",
     "components/configuracoes-profile-privacy-section.tsx",
     "components/configuracoes-profile-card.tsx",
     "components/configuracoes-profile-tab-visibility-section.tsx",
     "components/configuracoes-search.tsx",
     "components/configuracoes-security-password-modal.tsx",
+    "components/configuracoes-support-section.tsx",
   ]) {
     const source = readFileSync(
       new URL("../../app/configuracoes/" + arquivo, import.meta.url),
