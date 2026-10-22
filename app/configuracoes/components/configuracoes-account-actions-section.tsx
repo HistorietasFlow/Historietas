@@ -5,15 +5,17 @@ import {
 import { sectionStyle } from "../lib/configuracoes-settings-primitives-styles";
 import { listCardTransparentStyle } from "../lib/configuracoes-security-styles";
 import type {
+  AbrirExclusaoContaConfiguracoes,
   DeveMostrarConfiguracoes,
+  SairDaContaConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 
 type ConfiguracoesAccountActionsSectionProps = {
   deveMostrar: DeveMostrarConfiguracoes;
   traduzirTexto: TraduzirTextoConfiguracoes;
-  onAbrirExclusaoConta: () => void;
-  onSairDaConta: () => void;
+  onAbrirExclusaoConta: AbrirExclusaoContaConfiguracoes;
+  onSairDaConta: SairDaContaConfiguracoes;
 };
 
 export function ConfiguracoesAccountActionsSection({

@@ -18,6 +18,7 @@ import type {
   UsuarioBloqueadoConfiguracoes,
 } from "../lib/configuracoes-account-models";
 import type {
+  AbrirExclusaoContaConfiguracoes,
   AbrirSegurancaConfiguracoes,
   AlternarAprovacaoNovosSeguidoresConfiguracoes,
   AlternarPerfilPrivadoConfiguracoes,
@@ -30,6 +31,7 @@ import type {
   DesbloquearUsuarioConfiguracoes,
   LimparErroUsernameConfiguracoes,
   SalvarConfiguracoes,
+  SairDaContaConfiguracoes,
   TraduzirTextoConfiguracoes,
 } from "../lib/configuracoes-callback-types";
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
@@ -69,8 +71,8 @@ type ConfiguracoesPageContentProps = {
   onAlternarReceberAvisos: () => void;
   onCopiarBackup: () => void;
   onBaixarBackup: () => void;
-  onAbrirExclusaoConta: () => void;
-  onSairDaConta: () => void;
+  onAbrirExclusaoConta: AbrirExclusaoContaConfiguracoes;
+  onSairDaConta: SairDaContaConfiguracoes;
 };
 
 export function ConfiguracoesPageContent({
