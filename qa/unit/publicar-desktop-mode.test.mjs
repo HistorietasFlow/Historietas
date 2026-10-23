@@ -5,7 +5,6 @@ import test from "node:test";
 const hook = readFileSync(new URL("../../app/publicar/hooks/use-publicar-desktop-mode.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/publicar/page.tsx", import.meta.url), "utf8");
 const controladorFormulario = readFileSync(new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url), "utf8");
-const propsComponentesPagina = readFileSync(new URL("../../app/publicar/lib/publicar-page-component-props.ts", import.meta.url), "utf8");
 const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
@@ -15,7 +14,6 @@ const hookSubmissao = readFileSync(
   "utf8",
 );
 const shell = readFileSync(new URL("../../app/publicar/components/PublicarPageShell.tsx", import.meta.url), "utf8");
-const conteudoPagina = readFileSync(new URL("../../app/publicar/components/PublicarPageContent.tsx", import.meta.url), "utf8");
 const cabecalho = readFileSync(new URL("../../app/publicar/components/PublicarPageHeader.tsx", import.meta.url), "utf8");
 const progresso = readFileSync(new URL("../../app/publicar/components/PublicarProgress.tsx", import.meta.url), "utf8");
 const previa = readFileSync(new URL("../../app/publicar/components/PublicarWorkPreview.tsx", import.meta.url), "utf8");
@@ -45,14 +43,12 @@ test("Publicar delega somente o modo desktop", () => {
   assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
   assert.doesNotMatch(pagina, /setIsDesktop/);
   assert.doesNotMatch(pagina, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
-  assert.match(pagina, /from "\.\/components\/PublicarPageContent"/);
-  assert.match(pagina, /<PublicarPageContent[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(pagina, /from "\.\/components\/PublicarPageShell"/);
+  assert.match(pagina, /<PublicarPageShell[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(shell, /<PublicarPageHeader[\s\S]*?isDesktop=\{isDesktop\}/);
-  assert.match(conteudoPagina, /<PublicarPublicationForm \{\.\.\.publicationFormProps\} \/>/);
+  assert.match(pagina, /<PublicarPublicationForm[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(formularioPublicacao, /<PublicarFormActions[\s\S]*?isDesktop=\{isDesktop\}/);
-  assert.match(conteudoPagina, /<PublicarWorkPreview \{\.\.\.workPreviewProps\} \/>/);
-  assert.match(propsComponentesPagina, /publicationFormProps:[\s\S]*?isDesktop,/);
-  assert.match(propsComponentesPagina, /workPreviewProps:[\s\S]*?isDesktop,/);
+  assert.match(pagina, /<PublicarWorkPreview[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(cabecalho, /isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle/);
   assert.match(progresso, /isDesktop[\s\S]*?desktopProgressBoxStyle[\s\S]*?progressBoxStyle/);
   assert.match(acoesFormulario, /<PublicarProgress[\s\S]*?isDesktop=\{isDesktop\}/);

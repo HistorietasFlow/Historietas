@@ -14,16 +14,8 @@ const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
 );
-const propsComponentesPagina = readFileSync(
-  new URL("../../app/publicar/lib/publicar-page-component-props.ts", import.meta.url),
-  "utf8",
-);
 const formularioPublicacao = readFileSync(
   new URL("../../app/publicar/components/PublicarPublicationForm.tsx", import.meta.url),
-  "utf8",
-);
-const conteudoPagina = readFileSync(
-  new URL("../../app/publicar/components/PublicarPageContent.tsx", import.meta.url),
   "utf8",
 );
 
@@ -56,8 +48,6 @@ test("Publicar delega somente o estado e as ações da capa ao hook", () => {
   assert.doesNotMatch(pagina, /const \[capaErro, setCapaErro\] = useState/);
   assert.doesNotMatch(pagina, /function selecionarCapa\(event: ChangeEvent<HTMLInputElement>\)/);
   assert.doesNotMatch(pagina, /function removerCapa\(\)/);
-  assert.match(pagina, /<PublicarPageContent[\s\S]*?publicationFormProps=\{publicationFormProps\}/);
-  assert.match(conteudoPagina, /<PublicarPublicationForm \{\.\.\.publicationFormProps\} \/>/);
-  assert.match(propsComponentesPagina, /capaInputRef: formulario\.capaInputRef,[\s\S]*?onRemoverCapa: formulario\.removerCapa,[\s\S]*?onSelecionarCapa: formulario\.selecionarCapa,/);
+  assert.match(pagina, /<PublicarPublicationForm[\s\S]*?capaInputRef=\{capaInputRef\}[\s\S]*?onRemoverCapa=\{removerCapa\}[\s\S]*?onSelecionarCapa=\{selecionarCapa\}/);
   assert.match(formularioPublicacao, /<PublicarCoverUpload[\s\S]*?capaInputRef=\{capaInputRef\}[\s\S]*?onRemoverCapa=\{onRemoverCapa\}[\s\S]*?onSelecionarCapa=\{onSelecionarCapa\}/);
 });

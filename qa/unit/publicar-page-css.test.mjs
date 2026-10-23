@@ -26,10 +26,6 @@ const backdrop = readFileSync(
   new URL("../../app/publicar/components/PublicarPageBackdrop.tsx", import.meta.url),
   "utf8",
 );
-const conteudoPagina = readFileSync(
-  new URL("../../app/publicar/components/PublicarPageContent.tsx", import.meta.url),
-  "utf8",
-);
 const storage = readFileSync(
   new URL("../../app/publicar/lib/publicar-storage-operations.ts", import.meta.url),
   "utf8",
@@ -54,8 +50,7 @@ test("publicarPageCss preserva o CSS global de Publicar", () => {
 });
 
 test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () => {
-  assert.match(pagina, /import \{ PublicarPageContent \} from "\.\/components\/PublicarPageContent";/);
-  assert.match(conteudoPagina, /import \{ PublicarPageBackdrop \} from "\.\/PublicarPageBackdrop";/);
+  assert.match(pagina, /import \{ PublicarPageBackdrop \} from "\.\/components\/PublicarPageBackdrop";/);
   assert.match(
     backdrop,
     /import \{ publicarPageCss \} from "\.\.\/lib\/publicar-page-css";/,
