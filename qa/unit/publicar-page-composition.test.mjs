@@ -38,6 +38,18 @@ const acoesFormulario = readFileSync(
   new URL("../../app/publicar/components/PublicarFormActions.tsx", import.meta.url),
   "utf8",
 );
+const camposBasicos = readFileSync(
+  new URL("../../app/publicar/components/PublicarBasicFields.tsx", import.meta.url),
+  "utf8",
+);
+const camposFormatoGenero = readFileSync(
+  new URL("../../app/publicar/components/PublicarFormatGenreFields.tsx", import.meta.url),
+  "utf8",
+);
+const camposTagClassificacao = readFileSync(
+  new URL("../../app/publicar/components/PublicarTagClassificationFields.tsx", import.meta.url),
+  "utf8",
+);
 
 test("Publicar delega a composição visual do cabeçalho", () => {
   assert.match(pagina, /import \{ PublicarPageHeader \} from "\.\/components\/PublicarPageHeader";/);
@@ -84,10 +96,8 @@ test("Publicar delega os uploads visuais sem deslocar estado ou leitura de arqui
 });
 
 test("Publicar delega campos controlados sem deslocar seus estados e callbacks", () => {
-  assert.match(pagina, /import \{ PublicarAdultWarnings \} from "\.\/components\/PublicarAdultWarnings";/);
   assert.match(pagina, /import \{ PublicarSynopsisField \} from "\.\/components\/PublicarSynopsisField";/);
   assert.match(pagina, /import \{ PublicarFormActions \} from "\.\/components\/PublicarFormActions";/);
-  assert.match(pagina, /<PublicarAdultWarnings[\s\S]*?avisosConteudo18=\{avisosConteudo18\}[\s\S]*?onAlternarAviso=\{alternarAvisoConteudo18\}/);
   assert.match(pagina, /<PublicarSynopsisField[\s\S]*?onSinopseChange=\{atualizarSinopse\}[\s\S]*?sinopse=\{sinopse\}[\s\S]*?t=\{t\}/);
   assert.match(pagina, /<PublicarFormActions[\s\S]*?processando=\{processando\}[\s\S]*?progresso=\{progresso\}[\s\S]*?salvando=\{t\("salvando"\)\}/);
   assert.match(pagina, /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\)[\s\S]*?setAvisosConteudo18[\s\S]*?setErro\(""\)/);
@@ -106,8 +116,36 @@ test("Publicar delega campos controlados sem deslocar seus estados e callbacks",
   assert.match(acoesFormulario, /<PublicarProgress[\s\S]*?progresso=\{progresso\}[\s\S]*?rotulo=\{progressoRotulo\}/);
 });
 
+test("Publicar delega os metadados controlados e preserva os callbacks na pÃ¡gina", () => {
+  assert.match(pagina, /import \{ PublicarBasicFields \} from "\.\/components\/PublicarBasicFields";/);
+  assert.match(pagina, /import \{ PublicarFormatGenreFields \} from "\.\/components\/PublicarFormatGenreFields";/);
+  assert.match(pagina, /import \{ PublicarTagClassificationFields \} from "\.\/components\/PublicarTagClassificationFields";/);
+  assert.match(pagina, /<PublicarBasicFields[\s\S]*?onAutorChange=\{atualizarAutor\}[\s\S]*?onTituloChange=\{atualizarTitulo\}/);
+  assert.match(pagina, /<PublicarFormatGenreFields[\s\S]*?onFormatoChange=\{atualizarFormato\}[\s\S]*?onGeneroChange=\{atualizarGenero\}/);
+  assert.match(pagina, /<PublicarTagClassificationFields[\s\S]*?onAlternarAviso=\{alternarAvisoConteudo18\}[\s\S]*?onClassificacaoChange=\{atualizarClassificacaoIndicativa\}[\s\S]*?onTagChange=\{atualizarTagSelecionada\}/);
+  assert.match(pagina, /function atualizarFormato\(valor: string\)[\s\S]*?setFormato\(valor\)[\s\S]*?setErro\(""\)/);
+  assert.match(pagina, /function atualizarGenero\(valor: string\)[\s\S]*?setGenero\(valor\)[\s\S]*?setErro\(""\)/);
+  assert.match(pagina, /function atualizarClassificacaoIndicativa\(valor: string\)[\s\S]*?setClassificacaoIndicativa\(valor\)[\s\S]*?setAvisosConteudo18\(\[\]\)[\s\S]*?setErro\(""\)/);
+  assert.doesNotMatch(pagina, /id="publicar-formato"/);
+  assert.doesNotMatch(pagina, /id="publicar-genero"/);
+  assert.doesNotMatch(pagina, /id="publicar-tag"/);
+  assert.doesNotMatch(pagina, /id="publicar-classificacao"/);
+
+  assert.match(camposBasicos, /id="publicar-titulo"/);
+  assert.match(camposBasicos, /id="publicar-autor"/);
+  assert.match(camposBasicos, /onTituloChange\(event\.target\.value\)/);
+  assert.match(camposBasicos, /onAutorChange\(event\.target\.value\)/);
+  assert.match(camposFormatoGenero, /OPCOES_FORMATO_OBRA\.map/);
+  assert.match(camposFormatoGenero, /OPCOES_GENERO_OBRA\.map/);
+  assert.match(camposFormatoGenero, /traduzirFormatoPublicar\(idioma, opcao\)/);
+  assert.match(camposFormatoGenero, /traduzirGeneroPublicar\(idioma, opcao\)/);
+  assert.match(camposTagClassificacao, /OPCOES_TAGS_OBRA\.map/);
+  assert.match(camposTagClassificacao, /traduzirTagPublicar\(idioma, tag\)/);
+  assert.match(camposTagClassificacao, /<PublicarAdultWarnings[\s\S]*?onAlternarAviso=\{onAlternarAviso\}/);
+});
+
 test("componentes visuais de Publicar permanecem sem runtime de dados", () => {
-  for (const componente of [cabecalho, progresso, previa, capa, arquivo, avisosAdultos, sinopse, acoesFormulario]) {
+  for (const componente of [cabecalho, progresso, previa, capa, arquivo, avisosAdultos, sinopse, acoesFormulario, camposBasicos, camposFormatoGenero, camposTagClassificacao]) {
     assert.doesNotMatch(componente, /supabase|localStorage|useEffect|useState|window\.|document\./);
   }
 });

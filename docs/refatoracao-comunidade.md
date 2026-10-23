@@ -1214,3 +1214,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os avisos obrigatórios de conteúdo 18+, o campo de sinopse e as ações finais do formulário foram isolados em componentes controlados, preservando textos, traduções, contadores, callbacks e variantes responsivas.
 - Estados, validação, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
+
+## Registro da Fase 14 — Publicar
+
+- Os campos visuais controlados de metadados foram divididos em `PublicarBasicFields`, `PublicarFormatGenreFields` e `PublicarTagClassificationFields`, preservando opções, traduções, classificação 18+, responsividade e acessibilidade.
+- Estados, validação, callbacks, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
