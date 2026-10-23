@@ -32,6 +32,7 @@ import { removerComentarioComunidade } from "./components/community-comment-remo
 import { alternarSeguirUsuarioBuscaComunidade } from "./components/community-search-follow-action";
 import { atualizarVisibilidadePostComunidade } from "./components/community-post-visibility-action";
 import { alternarFixadoPostComunidade } from "./components/community-post-pinning-action";
+import { denunciarConteudoComunidade } from "./components/community-report-preparation-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
@@ -61,7 +62,6 @@ import type {
   AlvoDenunciaComunidade,
   DenunciaAlvoComunidade,
 } from "./components/community-report-target";
-import { obterTituloDenunciaComunidade } from "./components/community-report-title";
 import type {
   UsuarioBuscaComunidade,
   UsuarioComunidade,
@@ -524,35 +524,8 @@ export default function ComunidadePage() {
       feedbackTimerRef,
     });
 
-  function denunciarConteudo(
-    alvoTipo: AlvoDenunciaComunidade,
-    alvoId: string
-  ) {
-    if (!exigirLogin() || !usuario) {
-      return;
-    }
-
-    const alvoIdLimpo = alvoId.trim();
-
-    if (!alvoIdLimpo) {
-      setErro("O conteúdo que você tentou denunciar é inválido.");
-      return;
-    }
-
-    const alvoTitulo = obterTituloDenunciaComunidade(
-      alvoTipo,
-      alvoIdLimpo,
-      posts
-    );
-
-    setErro("");
-    setPostMenuAbertoId(null);
-    setDenunciaAlvo({
-      alvoTipo,
-      alvoId: alvoIdLimpo,
-      alvoTitulo,
-    });
-  }
+  const denunciarConteudo = (alvoTipo: AlvoDenunciaComunidade, alvoId: string) =>
+    denunciarConteudoComunidade({ alvoTipo, alvoId, exigirLogin, usuario, posts, setErro, setPostMenuAbertoId, setDenunciaAlvo });
 
   const removerComentario = (postId: string, comentarioId: string) =>
     removerComentarioComunidade({
