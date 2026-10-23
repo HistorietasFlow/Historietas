@@ -54,7 +54,7 @@ test("Comunidade delega apenas o modo desktop e preserva as fronteiras da pagina
   );
   assert.doesNotMatch(pagina, /setIsDesktop/);
   assert.doesNotMatch(pagina, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /useComunidadeAuthAccountLifecycle\(/);
   assert.match(pagina, /CommunityPostComposer/);
   assert.match(pagina, /ComentariosSheet/);
 });

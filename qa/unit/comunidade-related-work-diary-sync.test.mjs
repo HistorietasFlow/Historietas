@@ -70,5 +70,5 @@ test("Comunidade delega apenas os lifecycles de sugestões e reviews ao hook", (
   assert.match(pagina, /async function publicarPost\(/);
   assert.match(pagina, /async function atualizarVisibilidadePost\(/);
   assert.match(pagina, /async function removerPost\(/);
-  assert.match(pagina, /supabase\.auth\.onAuthStateChange/);
+  assert.match(pagina, /useComunidadeAuthAccountLifecycle\(/);
 });
