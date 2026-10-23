@@ -1224,3 +1224,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle inicial de acesso à publicação foi isolado em `use-publicar-initial-access.ts`, preservando autenticação, aceite de termos, perfil, cancelamento, redirecionamentos e a atualização postergada do autor.
 - Estados, envio, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
+
+## Registro da Fase 16 — Publicar
+
+- Os shells visuais de carregamento e da página foram isolados em `PublicarPageShell.tsx`, preservando tema, CSS, cabeçalho, decoração, fades e responsividade.
+- Formulário, estado, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
