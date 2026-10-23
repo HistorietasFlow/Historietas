@@ -41,6 +41,13 @@ const hookTags = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-tags.ts", import.meta.url),
   "utf8",
 );
+const hookValidacao = readFileSync(
+  new URL(
+    "../../app/publicar/hooks/use-publicar-form-validation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -99,13 +106,12 @@ test("nomeArquivoParaTitulo preserva extensoes, separadores e espacos", () => {
 test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?calcularMinutosLeitura,[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?contarPalavras,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/publicar-text-utils";/,
+    /import \{[\s\S]*?calcularMinutosLeitura,[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?contarPalavras,[\s\S]*?\} from "\.\/lib\/publicar-text-utils";/,
   );
 
   const consumidoresEsperados = {
-    contarCaracteresValidos: 3,
-    textoPersonalizadoValido: 4,
-    campoValido: 5,
+    contarCaracteresValidos: 2,
+    campoValido: 2,
     contarPalavras: 3,
     calcularMinutosLeitura: 2,
   };
@@ -145,6 +151,16 @@ test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.doesNotMatch(hookTags, /function textoPersonalizadoValido\(/);
   assert.equal((hookTags.match(/\blimparTextoPersonalizado\b/g) || []).length, 2);
   assert.equal((hookTags.match(/\btextoPersonalizadoValido\b/g) || []).length, 3);
+  assert.match(
+    hookValidacao,
+    /import \{[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\.\/lib\/publicar-text-utils";/,
+  );
+  assert.doesNotMatch(hookValidacao, /function campoValido\(/);
+  assert.doesNotMatch(hookValidacao, /function contarCaracteresValidos\(/);
+  assert.doesNotMatch(hookValidacao, /function textoPersonalizadoValido\(/);
+  assert.equal((hookValidacao.match(/\bcampoValido\b/g) || []).length, 4);
+  assert.equal((hookValidacao.match(/\bcontarCaracteresValidos\b/g) || []).length, 2);
+  assert.equal((hookValidacao.match(/\btextoPersonalizadoValido\b/g) || []).length, 4);
 
   assert.match(pagina, /usePublicarContentFileUpload/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-file-utils";/);

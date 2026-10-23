@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
@@ -10,19 +10,18 @@ import { usePublicarBasicFields } from "./hooks/use-publicar-basic-fields";
 import { usePublicarContentFileUpload } from "./hooks/use-publicar-content-file-upload";
 import { usePublicarPublicationOptions } from "./hooks/use-publicar-publication-options";
 import { usePublicarTags } from "./hooks/use-publicar-tags";
+import { usePublicarFormValidation } from "./hooks/use-publicar-form-validation";
 import {
   calcularMinutosLeitura,
   campoValido,
   contarCaracteresValidos,
   contarPalavras,
-  textoPersonalizadoValido,
 } from "./lib/publicar-text-utils";
 import {
   criarUuidSeguro,
 } from "./lib/publicar-id-utils";
 import {
   calcularProgressoLeitura,
-  normalizarClassificacaoIndicativaPublicar,
 } from "./lib/publicar-work-utils";
 import {
   normalizarObraSalva,
@@ -34,10 +33,6 @@ import {
 } from "./lib/publicar-user-storage-utils";
 import { obterNomeMetadataPublicar } from "./lib/publicar-auth-utils";
 import {
-  LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
-  LIMITE_CARACTERES_TAG_PERSONALIZADA,
-  OUTRO_FORMATO_VALUE,
-  OUTRO_GENERO_VALUE,
   STORAGE_KEY,
 } from "./lib/publicar-static-options";
 import type {
@@ -47,13 +42,12 @@ import type {
   ObraSalva,
 } from "./lib/publicar-models";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
-import { formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
+import { formatarTamanhoArquivo } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   ehClassificacao18,
-  normalizarAvisosConteudo18,
 } from "../../lib/historietasAdultContent";
 import {
   desfazerPublicacaoParcialPublicar,
@@ -505,58 +499,40 @@ export default function PublicarPage() {
 
   const jaSalvouRef = useRef(false);
 
-  const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;
-  const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;
-  const formatoFinal = formatoEhPersonalizado
-    ? formatoPersonalizado.trim().replace(/\s+/g, " ")
-    : formato.trim();
-  const generoFinal = generoEhPersonalizado
-    ? generoPersonalizado.trim().replace(/\s+/g, " ")
-    : genero.trim();
-  const tagPersonalizadaFinal = tagPersonalizada.trim().replace(/\s+/g, " ");
-  const formatoPersonalizadoValido =
-    !formatoEhPersonalizado ||
-    textoPersonalizadoValido(
-      formatoPersonalizado,
-      3,
-      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-    );
-  const generoPersonalizadoValido =
-    !generoEhPersonalizado ||
-    textoPersonalizadoValido(
-      generoPersonalizado,
-      3,
-      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-    );
-  const tagPersonalizadaValida =
-    !usarTagPersonalizada ||
-    (textoPersonalizadoValido(
-      tagPersonalizada,
-      2,
-      LIMITE_CARACTERES_TAG_PERSONALIZADA
-    ) &&
-      normalizarTexto(tagPersonalizadaFinal) !== normalizarTexto(formatoFinal) &&
-      normalizarTexto(tagPersonalizadaFinal) !== normalizarTexto(generoFinal));
-
-  const tituloValido = campoValido(titulo, 3);
-  const autorValido = campoValido(autor, 2);
-  const generoValido = Boolean(generoFinal) && generoPersonalizadoValido;
-  const formatoValido = Boolean(formatoFinal) && formatoPersonalizadoValido;
-  const classificacaoFinal = normalizarClassificacaoIndicativaPublicar(
-    classificacaoIndicativa,
-  );
-  const classificacao18Selecionada = ehClassificacao18(classificacaoFinal);
-  const avisosConteudo18Normalizados = normalizarAvisosConteudo18(
-    avisosConteudo18,
+  const {
+    avisosConteudo18Normalizados,
+    classificacao18Selecionada,
     classificacaoFinal,
-  );
-  const classificacaoValida = Boolean(classificacaoFinal) &&
-    (!classificacao18Selecionada || avisosConteudo18.length > 0);
-  const sinopseValida = campoValido(sinopse, 20);
+    formatoEhPersonalizado,
+    formatoFinal,
+    generoEhPersonalizado,
+    generoFinal,
+    progresso,
+    previewTemConteudo,
+    sinopseValida,
+    temCapituloImportado,
+    temConteudoPorArquivo,
+    validarFormulario,
+  } = usePublicarFormValidation({
+    arquivoCapituloTexto,
+    arquivoObra,
+    autor,
+    avisosConteudo18,
+    capa,
+    classificacaoIndicativa,
+    formato,
+    formatoPersonalizado,
+    genero,
+    generoPersonalizado,
+    sinopse,
+    tagPersonalizada,
+    tags,
+    titulo,
+    usarTagPersonalizada,
+  });
 
   const sinopseCaracteresValidos = contarCaracteresValidos(sinopse);
   const sinopsePalavras = contarPalavras(sinopse);
-  const temArquivoObra = Boolean(arquivoObra);
   const arquivoObraTamanhoTexto = arquivoObra
     ? formatarTamanhoArquivo(arquivoObra.tamanho)
     : "";
@@ -572,93 +548,8 @@ export default function PublicarPage() {
   const arquivoTextoPendenteTamanhoTexto = arquivoTextoPendente
     ? formatarTamanhoArquivo(arquivoTextoPendente.size)
     : "";
-  const temCapituloImportado = Boolean(arquivoCapituloTexto.trim());
-  const temConteudoPorArquivo = Boolean(arquivoObra || temCapituloImportado);
   const arquivoCapituloPalavras = contarPalavras(arquivoCapituloTexto);
   const arquivoCapituloMinutos = calcularMinutosLeitura(arquivoCapituloTexto);
-  const arquivoCapituloCaracteresValidos = contarCaracteresValidos(
-    arquivoCapituloTexto
-  );
-  const arquivoCapituloValido =
-    !temCapituloImportado || arquivoCapituloCaracteresValidos >= 20;
-
-  const progresso = useMemo(() => {
-    const camposValidos = [
-      tituloValido,
-      autorValido,
-      generoValido,
-      formatoValido,
-      classificacaoValida,
-      sinopseValida,
-    ].filter(Boolean).length;
-
-    return Math.round((camposValidos / 6) * 100);
-  }, [
-    tituloValido,
-    autorValido,
-    generoValido,
-    formatoValido,
-    classificacaoValida,
-    sinopseValida,
-  ]);
-
-  const previewTemConteudo = Boolean(
-    titulo.trim() ||
-      autor.trim() ||
-      generoFinal ||
-      formatoFinal ||
-      classificacaoIndicativa.trim() ||
-      sinopse.trim() ||
-      tags.trim() ||
-      capa ||
-      temArquivoObra ||
-      temCapituloImportado
-  );
-
-  function validarFormulario() {
-    if (!tituloValido) {
-      return "O título precisa ter pelo menos 3 letras ou números. Não pode ser só ponto.";
-    }
-
-    if (!autorValido) {
-      return "O nome do autor precisa ter pelo menos 2 letras ou números.";
-    }
-
-    if (!formatoValido) {
-      return formatoEhPersonalizado
-        ? "O formato personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho."
-        : "Escolha o formato da obra.";
-    }
-
-    if (!generoValido) {
-      return generoEhPersonalizado
-        ? "O gênero personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho."
-        : "Escolha o gênero principal da obra.";
-    }
-
-    if (!tagPersonalizadaValida) {
-      return "A tag personalizada precisa ter 2 a 10 caracteres, sem vírgula, emoji ou símbolo estranho, e não pode repetir gênero ou formato.";
-    }
-
-    if (!classificacaoFinal) {
-      return "Escolha a classificação indicativa da obra.";
-    }
-
-    if (classificacao18Selecionada && avisosConteudo18.length === 0) {
-      return "Selecione pelo menos um aviso de conteúdo para a obra 18+.";
-    }
-
-    if (!sinopseValida) {
-      return "A sinopse precisa ter pelo menos 20 letras ou números.";
-    }
-
-    if (temCapituloImportado && !arquivoCapituloValido) {
-      return "O arquivo importado precisa ter pelo menos 20 letras ou números para virar o primeiro capítulo.";
-    }
-
-    return "";
-  }
-
   async function salvarObra(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 

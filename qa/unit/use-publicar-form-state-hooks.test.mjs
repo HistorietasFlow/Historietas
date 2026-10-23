@@ -10,6 +10,13 @@ const upload = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-content-file-upload.ts", import.meta.url),
   "utf8",
 );
+const validacao = readFileSync(
+  new URL(
+    "../../app/publicar/hooks/use-publicar-form-validation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
@@ -47,10 +54,28 @@ test("usePublicarContentFileUpload preserva validação, leitura e limpeza do co
   assert.doesNotMatch(upload, /supabase|localStorage|useEffect|window\.|document\./);
 });
 
+test("usePublicarFormValidation preserva normalização, progresso, prévia e validação", () => {
+  assert.match(validacao, /^"use client";/);
+  assert.match(validacao, /const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;/);
+  assert.match(validacao, /const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;/);
+  assert.match(validacao, /formatoPersonalizado\.trim\(\)\.replace\(\/\\s\+\/g, " "\)/);
+  assert.match(validacao, /generoPersonalizado\.trim\(\)\.replace\(\/\\s\+\/g, " "\)/);
+  assert.match(validacao, /normalizarTexto\(tagPersonalizadaFinal\) !== normalizarTexto\(formatoFinal\)/);
+  assert.match(validacao, /normalizarClassificacaoIndicativaPublicar\([\s\S]*?classificacaoIndicativa/);
+  assert.match(validacao, /normalizarAvisosConteudo18\([\s\S]*?avisosConteudo18,[\s\S]*?classificacaoFinal/);
+  assert.match(validacao, /useMemo\(\(\) => \{[\s\S]*?tituloValido,[\s\S]*?autorValido,[\s\S]*?generoValido,[\s\S]*?formatoValido,[\s\S]*?classificacaoValida,[\s\S]*?sinopseValida,[\s\S]*?return Math\.round\(\(camposValidos \/ 6\) \* 100\);/);
+  assert.match(validacao, /const previewTemConteudo = Boolean\([\s\S]*?titulo\.trim\(\)[\s\S]*?tags\.trim\(\)[\s\S]*?temArquivoObra[\s\S]*?temCapituloImportado/);
+  assert.match(validacao, /function validarFormulario\(\)[\s\S]*?if \(!tituloValido\)[\s\S]*?if \(!autorValido\)[\s\S]*?if \(!formatoValido\)[\s\S]*?if \(!generoValido\)[\s\S]*?if \(!tagPersonalizadaValida\)[\s\S]*?if \(!classificacaoFinal\)[\s\S]*?if \(classificacao18Selecionada && avisosConteudo18\.length === 0\)[\s\S]*?if \(!sinopseValida\)[\s\S]*?if \(temCapituloImportado && !arquivoCapituloValido\)/);
+  assert.doesNotMatch(validacao, /supabase|localStorage|useEffect|window\.|document\.|router\./);
+});
+
 test("Publicar delega os dois estados locais sem reter implementações duplicadas", () => {
   assert.match(pagina, /usePublicarPublicationOptions\(\{ setErro \}\)/);
   assert.match(pagina, /usePublicarContentFileUpload\(\{ setErro \}\)/);
   assert.doesNotMatch(pagina, /function anexarArquivoCompleto\(arquivo: File\)/);
   assert.doesNotMatch(pagina, /function limparSelecaoConteudoArquivo\(\)/);
   assert.doesNotMatch(pagina, /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\)/);
+  assert.match(pagina, /import \{ usePublicarFormValidation \} from "\.\/hooks\/use-publicar-form-validation";/);
+  assert.match(pagina, /usePublicarFormValidation\(\{[\s\S]*?arquivoCapituloTexto,[\s\S]*?avisosConteudo18,[\s\S]*?classificacaoIndicativa,[\s\S]*?formato,[\s\S]*?genero,[\s\S]*?tagPersonalizada,[\s\S]*?usarTagPersonalizada,/);
+  assert.doesNotMatch(pagina, /function validarFormulario\(\)/);
 });
