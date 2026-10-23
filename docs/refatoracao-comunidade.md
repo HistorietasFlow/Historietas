@@ -1219,3 +1219,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os campos visuais controlados de metadados foram divididos em `PublicarBasicFields`, `PublicarFormatGenreFields` e `PublicarTagClassificationFields`, preservando opções, traduções, classificação 18+, responsividade e acessibilidade.
 - Estados, validação, callbacks, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
+
+## Registro da Fase 15 — Publicar
+
+- O lifecycle inicial de acesso à publicação foi isolado em `use-publicar-initial-access.ts`, preservando autenticação, aceite de termos, perfil, cancelamento, redirecionamentos e a atualização postergada do autor.
+- Estados, envio, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.

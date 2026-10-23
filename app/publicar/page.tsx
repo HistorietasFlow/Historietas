@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
+import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
 import { publicarPageCss } from "./lib/publicar-page-css";
 import {
   calcularMinutosLeitura,
@@ -36,10 +37,7 @@ import { salvarObrasLocalmente } from "./lib/publicar-file-backup-storage-utils"
 import {
   lerStorageUsuarioPublicar,
 } from "./lib/publicar-user-storage-utils";
-import {
-  criarLoginHrefPublicar,
-  obterNomeMetadataPublicar,
-} from "./lib/publicar-auth-utils";
+import { obterNomeMetadataPublicar } from "./lib/publicar-auth-utils";
 import {
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
@@ -63,10 +61,6 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
-import {
-  criarHrefAceiteTermos,
-  verificarAceiteTermosPublicacao,
-} from "../../lib/aceiteTermos";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   ehClassificacao18,
@@ -487,70 +481,11 @@ export default function PublicarPage() {
   const { language: idioma } = useHistorietasLanguage();
   const t = (chave: ChaveTextoPublicar) => obterTextoPublicar(idioma, chave);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function verificarAutenticacaoPublicacao() {
-      try {
-        const { data, error } = await supabase.auth.getUser();
-
-        if (cancelado) {
-          return;
-        }
-
-        if (error || !data.user) {
-          router.replace(criarLoginHrefPublicar());
-          return;
-        }
-
-        const statusAceite = await verificarAceiteTermosPublicacao();
-
-        if (cancelado) {
-          return;
-        }
-
-        if (!statusAceite.aceito) {
-          router.replace(criarHrefAceiteTermos("/publicar"));
-          return;
-        }
-
-        const nomeFallback = obterNomeMetadataPublicar({
-          email: data.user.email || "",
-          user_metadata: data.user.user_metadata || {},
-        });
-        const nomePerfil = await carregarNomePerfilPublicar(
-          data.user.id,
-          nomeFallback
-        );
-
-        if (cancelado) {
-          return;
-        }
-
-        window.setTimeout(() => {
-          if (!cancelado) {
-            if (nomePerfil) {
-              setAutor((autorAtual) =>
-                autorAtual.trim() ? autorAtual : nomePerfil
-              );
-            }
-
-            setVerificandoAutenticacao(false);
-          }
-        }, 0);
-      } catch {
-        if (!cancelado) {
-          router.replace(criarLoginHrefPublicar());
-        }
-      }
-    }
-
-    void verificarAutenticacaoPublicacao();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [router]);
+  usePublicarInitialAccess({
+    router,
+    setAutor,
+    setVerificandoAutenticacao,
+  });
 
   const jaSalvouRef = useRef(false);
   const capaInputRef = useRef<HTMLInputElement | null>(null);
