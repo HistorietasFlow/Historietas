@@ -88,7 +88,8 @@ test("Comunidade delega somente os lifecycles de dados pessoais aos hooks", () =
   );
   assert.doesNotMatch(pagina, /void carregarPostsSalvosSupabaseComunidade\(/);
   assert.doesNotMatch(pagina, /await carregarVotosEnquetesSupabase\(/);
-  assert.match(pagina, /function salvarPostComunidade\(postId: string\)/);
-  assert.match(pagina, /function votarEnquetePostComunidade\(postId: string, opcao: string\)/);
+  assert.match(pagina, /useComunidadePostEngagementActions\(\{/);
+  assert.doesNotMatch(pagina, /function salvarPostComunidade\(postId: string\)/);
+  assert.doesNotMatch(pagina, /function votarEnquetePostComunidade\(postId: string, opcao: string\)/);
   assert.match(pagina, /useComunidadeAuthAccountLifecycle\(/);
 });

@@ -26,6 +26,7 @@ import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-a
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
+import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -36,11 +37,7 @@ import { temFiltrosAtivosComunidade } from "./components/community-active-filter
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { obterEstadoApresentacaoPostComunidade } from "./components/community-post-presentation-state";
 import { criarAcoesPostComunidade } from "./components/community-post-action-factory";
-import {
-  atualizarCurtidaComentarioComunidade,
-  atualizarCurtidaPostComunidade,
-} from "./components/community-like-state-updaters";
-import { sincronizarCurtidaPostSupabaseComunidade } from "./components/community-post-like-sync";
+import { atualizarCurtidaComentarioComunidade } from "./components/community-like-state-updaters";
 import { sincronizarCurtidaComentarioSupabaseComunidade } from "./components/community-comment-like-sync";
 import {
   adicionarComentarioPostComunidade,
@@ -112,11 +109,7 @@ import {
   prepararEnqueteComunidade,
   selecionarTipoPublicacaoPost,
 } from "./components/community-poll-preparer";
-import { votarEnquete } from "./components/community-poll-voter";
-import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed-toggler";
 import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
-import { alternarPostSalvo } from "./components/community-saved-post-toggler";
-import { compartilharPublicacao } from "./components/community-post-sharer";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -556,80 +549,33 @@ export default function ComunidadePage() {
       feedbackTimerRef,
     });
 
-  async function alternarCurtida(postId: string) {
-    const chaveAcao = `curtir-post:${postId}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    setPostCurtindoId(postId);
-    setErro("");
-
-    try {
-      if (!exigirLogin() || !usuario) {
-        return;
-      }
-
-      const postAtual = posts.find((post) => post.id === postId);
-      const jaCurtiu = Boolean(postAtual?.curtidas.includes(usuario.id));
-
-      const resultadoSincronizacaoCurtida =
-        await sincronizarCurtidaPostSupabaseComunidade(
-          postId,
-          usuario.id,
-          jaCurtiu
-        );
-
-      if (!resultadoSincronizacaoCurtida.sucesso) {
-        if (resultadoSincronizacaoCurtida.etapa === "remocao") {
-          setErro(
-            formatarErroSupabase(
-              "Erro ao atualizar curtida",
-              resultadoSincronizacaoCurtida.erro
-            )
-          );
-        } else {
-          setErro(
-            formatarErroSupabase(
-              "Erro ao curtir",
-              resultadoSincronizacaoCurtida.erro
-            )
-          );
-        }
-
-        return;
-      }
-
-      if (!jaCurtiu) {
-        if (postAtual?.autorId) {
-          await criarNotificacaoComunidadeSupabase({
-            destinatarioId: postAtual.autorId,
-            tipo: "comunidade-curtida-post",
-            titulo: "Nova curtida na Comunidade",
-            mensagem: `${usuario.nome} curtiu sua publicação.`,
-            link: `/comunidade?post=${encodeURIComponent(postId)}`,
-            notificacaoId: `comunidade-curtida-post:${postId}:${usuario.id}`,
-          }, idSupabaseValidoComunidade);
-        }
-      }
-
-      setPosts((postsAtuais) => {
-        return atualizarCurtidaPostComunidade(
-          postsAtuais,
-          postId,
-          usuario.id,
-          jaCurtiu
-        );
-      });
-
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-      setPostCurtindoId((postAtualId) =>
-        postAtualId === postId ? null : postAtualId
-      );
-    }
-  }
+  const {
+    alternarCurtida,
+    salvarPostComunidade,
+    compartilharPostComunidade,
+    votarEnquetePostComunidade,
+    alternarSpoilerPostComunidade,
+  } = useComunidadePostEngagementActions({
+    acoesComunidadeRef,
+    setPostCurtindoId,
+    setErro,
+    exigirLogin,
+    usuario,
+    posts,
+    setPosts,
+    setPostSalvandoId,
+    postsSalvosIds,
+    setPostsSalvosIds,
+    setFeedbackAcao,
+    feedbackTimerRef,
+    setPostCompartilhandoId,
+    votandoEnqueteId,
+    votosEnquetes,
+    setVotandoEnqueteId,
+    setResultadosEnquetes,
+    setVotosEnquetes,
+    setSpoilersReveladosIds,
+  });
 
   async function comentarPost(
     postId: string,
@@ -1269,51 +1215,8 @@ export default function ComunidadePage() {
     setPostMenuAbertoId(null);
   }
 
-  function salvarPostComunidade(postId: string) {
-    alternarPostSalvo({
-      postId,
-      acoesComunidadeRef,
-      setErro,
-      exigirLogin,
-      usuario,
-      setPostSalvandoId,
-      postsSalvosIds,
-      setPostsSalvosIds,
-      setFeedbackAcao,
-      feedbackTimerRef,
-    });
-  }
-
-  function compartilharPostComunidade(post: PostComunidade) {
-    compartilharPublicacao({
-      post,
-      acoesComunidadeRef,
-      setPostCompartilhandoId,
-      setFeedbackAcao,
-      feedbackTimerRef,
-      setErro,
-    });
-  }
-
   function denunciarPostComunidade(postId: string) {
     denunciarConteudo("post", postId);
-  }
-
-  function votarEnquetePostComunidade(postId: string, opcao: string) {
-    return votarEnquete({
-      postId,
-      opcao,
-      votandoEnqueteId,
-      votosEnquetes,
-      exigirLogin,
-      usuario,
-      setVotandoEnqueteId,
-      setErro,
-      setFeedbackAcao,
-      feedbackTimerRef,
-      setResultadosEnquetes,
-      setVotosEnquetes,
-    });
   }
 
   function abrirComentariosPostComunidade(postId: string) {
@@ -1322,13 +1225,6 @@ export default function ComunidadePage() {
       setErro,
       comentarioUrlAplicadoRef,
       setComentariosPostId,
-    });
-  }
-
-  function alternarSpoilerPostComunidade(postId: string) {
-    alternarSpoilerRevelado({
-      postId,
-      setSpoilersReveladosIds,
     });
   }
 
