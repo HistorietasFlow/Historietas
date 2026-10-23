@@ -43,7 +43,8 @@ test("Comunidade delega somente comentarPost e preserva as outras acoes de comen
   assert.doesNotMatch(pagina, /async function comentarPost\(/);
   assert.doesNotMatch(pagina, /await inserirComentarioSupabaseComunidade\(/);
   assert.match(pagina, /async function removerComentario\(/);
-  assert.match(pagina, /async function alternarCurtidaComentario\(/);
+  assert.match(pagina, /alternarCurtidaComentarioComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function alternarCurtidaComentario\(/);
   assert.match(pagina, /function abrirComentariosPostComunidade\(/);
   assert.match(pagina, /onFechar=\{\(\) => fecharComentarios\(\{ setComentariosPostId \}\)\}/);
 });

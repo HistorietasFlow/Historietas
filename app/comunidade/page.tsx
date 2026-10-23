@@ -27,6 +27,7 @@ import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycl
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
 import { comentarPostComunidade } from "./components/community-comment-publication-action";
+import { alternarCurtidaComentarioComunidade } from "./components/community-comment-like-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
@@ -38,8 +39,6 @@ import { temFiltrosAtivosComunidade } from "./components/community-active-filter
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { obterEstadoApresentacaoPostComunidade } from "./components/community-post-presentation-state";
 import { criarAcoesPostComunidade } from "./components/community-post-action-factory";
-import { atualizarCurtidaComentarioComunidade } from "./components/community-like-state-updaters";
-import { sincronizarCurtidaComentarioSupabaseComunidade } from "./components/community-comment-like-sync";
 import {
   removerComentarioPostComunidade,
   removerComentariosPostComunidade,
@@ -89,12 +88,10 @@ import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-u
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
-import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
-import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
@@ -744,84 +741,20 @@ export default function ComunidadePage() {
     }
   }
 
-  async function alternarCurtidaComentario(postId: string, comentarioId: string) {
-    const chaveAcao = `curtir-comentario:${comentarioId}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    setErro("");
-
-    try {
-      if (!exigirLogin() || !usuario) {
-        return;
-      }
-
-      const postAtual = posts.find((post) => post.id === postId);
-      const comentarioAtual = postAtual?.comentarios.find(
-        (comentario) => comentario.id === comentarioId
-      );
-      const jaCurtiu = Boolean(comentarioAtual?.curtidas.includes(usuario.id));
-
-      const resultadoSincronizacaoCurtida =
-        await sincronizarCurtidaComentarioSupabaseComunidade(
-          comentarioId,
-          usuario.id,
-          jaCurtiu
-        );
-
-      if (!resultadoSincronizacaoCurtida.sucesso) {
-        if (resultadoSincronizacaoCurtida.etapa === "remocao") {
-          setErro(
-            formatarErroSupabase(
-              "Erro ao atualizar curtida do comentário",
-              resultadoSincronizacaoCurtida.erro
-            )
-          );
-        } else {
-          setErro(
-            formatarErroSupabase(
-              "Erro ao curtir comentário",
-              resultadoSincronizacaoCurtida.erro
-            )
-          );
-        }
-
-        return;
-      }
-
-      if (!jaCurtiu) {
-        if (comentarioAtual?.autorId) {
-          await criarNotificacaoComunidadeSupabase({
-            destinatarioId: comentarioAtual.autorId,
-            tipo: "comunidade-curtida-comentario",
-            titulo: "Nova curtida no seu comentário",
-            mensagem: `${usuario.nome} curtiu seu comentário na Comunidade.`,
-            link: `/comunidade?post=${encodeURIComponent(postId)}`,
-            notificacaoId: `comunidade-curtida-comentario:${comentarioId}:${usuario.id}`,
-          }, idSupabaseValidoComunidade);
-        }
-      }
-
-      setPosts((postsAtuais) =>
-        atualizarCurtidaComentarioComunidade(
-          postsAtuais,
-          postId,
-          comentarioId,
-          usuario.id,
-          jaCurtiu
-        )
-      );
-
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
-        jaCurtiu ? "Curtida do comentário removida." : "Comentário curtido."
-      );
-      await carregarPostsComunidadeDaPagina();
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-    }
-  }
+  const alternarCurtidaComentario = (postId: string, comentarioId: string) =>
+    alternarCurtidaComentarioComunidade({
+      postId,
+      comentarioId,
+      acoesComunidadeRef,
+      setErro,
+      exigirLogin,
+      usuario,
+      posts,
+      setPosts,
+      setFeedbackAcao,
+      feedbackTimerRef,
+      carregarPostsComunidadeDaPagina,
+    });
 
   async function atualizarVisibilidadePost(
     post: PostComunidade,

@@ -1344,3 +1344,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de envio de comentários foi isolada em `community-comment-publication-action.ts`.
 - Lock, guards, validação, INSERT, notificação de comentário raiz, estado local, feedback, retornos e cleanup foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 12 — Comunidade
+
+- A ação de curtir/descurtir comentário foi isolada em `community-comment-like-action.ts`.
+- Lock, guards, sincronização Supabase, notificação de curtida, estado local, feedback, recarregamento do feed e cleanup foram preservados sem alteração intencional de comportamento.
