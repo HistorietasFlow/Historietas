@@ -1334,3 +1334,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de publicação do composer foi isolada em `community-composer-publication-action.ts`.
 - Os guards de sessão, validações, INSERT/leitura separada, fallback do feed, sincronização com o Diário, limpeza e finalização do lock foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 10 — Comunidade
+
+- As ações de engajamento dos posts foram isoladas em `community-post-engagement-actions.ts`.
+- Locks, guards de login, sincronização Supabase, persistência local, notificações, feedbacks e estados de curtir, salvar, compartilhar, votar e spoiler foram preservados sem alteração intencional de comportamento.
