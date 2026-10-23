@@ -1264,3 +1264,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os metadados visuais derivados do formulário foram isolados em `publicar-form-display-metadata.ts`, preservando contadores, tempo de leitura, tamanhos de arquivo, rótulos de categoria e fallbacks.
 - Estado, JSX, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.
+
+## Registro da Fase 24 — Publicar
+
+- A ação de submissão foi isolada em `publicar-submission-action.ts`, preservando validação, upload, publicação, rollback, Diário, persistência local e navegação.
+- Estados, JSX, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram sem alteração intencional de comportamento.

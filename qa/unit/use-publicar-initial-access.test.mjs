@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const acaoSubmissao = readFileSync(
+  new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
+  "utf8",
+);
 
 test("usePublicarInitialAccess preserves the publication access lifecycle", () => {
   assert.match(hook, /^"use client";/);
@@ -31,6 +35,9 @@ test("Publicar delega apenas o lifecycle inicial de acesso ao hook", () => {
   assert.doesNotMatch(pagina, /async function verificarAutenticacaoPublicacao\(/);
   assert.doesNotMatch(pagina, /verificarAceiteTermosPublicacao/);
   assert.doesNotMatch(pagina, /criarHrefAceiteTermos/);
+  assert.match(pagina, /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/);
   assert.match(pagina, /async function salvarObra/);
-  assert.match(pagina, /supabase\.auth\.getUser/);
+  assert.doesNotMatch(pagina, /supabase\.auth\.getUser/);
+  assert.match(acaoSubmissao, /export async function salvarObraPublicar/);
+  assert.match(acaoSubmissao, /supabase\.auth\.getUser/);
 });

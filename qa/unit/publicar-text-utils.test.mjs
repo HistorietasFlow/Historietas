@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const acaoSubmissao = readFileSync(
+  new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
+  "utf8",
+);
 const helpersArquivo = readFileSync(
   new URL("../../app/publicar/lib/publicar-file-utils.ts", import.meta.url),
   "utf8",
@@ -112,12 +116,13 @@ test("nomeArquivoParaTitulo preserva extensoes, separadores e espacos", () => {
 
 test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.match(
-    pagina,
-    /import \{ campoValido \} from "\.\/lib\/publicar-text-utils";/,
+    acaoSubmissao,
+    /import \{ campoValido \} from "\.\/publicar-text-utils";/,
   );
 
   assert.doesNotMatch(pagina, /function campoValido\(/);
-  assert.equal((pagina.match(/\bcampoValido\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\bcampoValido\b/g) || []).length, 0);
+  assert.equal((acaoSubmissao.match(/\bcampoValido\b/g) || []).length, 2);
   for (const helper of [
     "calcularMinutosLeitura",
     "contarCaracteresValidos",
@@ -175,13 +180,14 @@ test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.doesNotMatch(hookConteudoArquivo, /function arquivoTextoAceito\(/);
   assert.match(helpersArquivo, /export function arquivoTextoAceito\(/);
   assert.match(helpersArquivo, /arquivoTemExtensao\(arquivo\.name, \["\.txt", "\.md"\]\)/);
-  assert.match(pagina, /async function salvarObra\(/);
-  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
-  assert.match(pagina, /enviarArquivoStorage,/);
-  assert.match(pagina, /desfazerPublicacaoParcialPublicar,/);
+  assert.match(pagina, /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/);
+  assert.match(pagina, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(acaoSubmissao, /from "\.\/publicar-storage-operations";/);
+  assert.match(acaoSubmissao, /enviarArquivoStorage,/);
+  assert.match(acaoSubmissao, /desfazerPublicacaoParcialPublicar,/);
   assert.doesNotMatch(pagina, /supabase\.storage/);
   assert.match(helpersOperacoesStorage, /supabase\.storage/);
-  assert.match(pagina, /from "\.\/lib\/publicar-user-storage-utils";/);
+  assert.match(acaoSubmissao, /from "\.\/publicar-user-storage-utils";/);
   assert.doesNotMatch(pagina, /localStorage/);
   assert.match(helpersStorageUsuario, /localStorage\.getItem\(chaveStorage\)/);
   assert.match(helpersStorageUsuario, /localStorage\.setItem\(chaveStorage, JSON\.stringify\(valor\)\)/);
