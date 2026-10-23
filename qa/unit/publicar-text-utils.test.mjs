@@ -208,6 +208,7 @@ test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.doesNotMatch(pagina, /localStorage/);
   assert.match(helpersStorageUsuario, /localStorage\.getItem\(chaveStorage\)/);
   assert.match(helpersStorageUsuario, /localStorage\.setItem\(chaveStorage, JSON\.stringify\(valor\)\)/);
-  assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
+  assert.match(pagina, /usePublicarPageController/);
+  assert.match(controladorPagina, /const isDesktop = usePublicarDesktopMode\(\);/);
   assert.doesNotMatch(utilsSource, /useState|useEffect|supabase|localStorage/);
 });

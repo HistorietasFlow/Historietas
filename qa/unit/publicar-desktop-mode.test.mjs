@@ -42,8 +42,9 @@ test("usePublicarDesktopMode preserva o lifecycle responsivo", () => {
 });
 
 test("Publicar delega somente o modo desktop", () => {
-  assert.match(pagina, /import \{ usePublicarDesktopMode \} from "\.\/hooks\/use-publicar-desktop-mode";/);
-  assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarDesktopMode \} from "\.\/use-publicar-desktop-mode";/);
+  assert.match(controladorPagina, /const isDesktop = usePublicarDesktopMode\(\);/);
   assert.doesNotMatch(pagina, /setIsDesktop/);
   assert.doesNotMatch(pagina, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
   assert.match(pagina, /from "\.\/components\/PublicarPageContent"/);
