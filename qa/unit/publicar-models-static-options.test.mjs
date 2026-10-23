@@ -18,6 +18,10 @@ const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
 );
+const propsComponentesPagina = readFileSync(
+  new URL("../../app/publicar/lib/publicar-page-component-props.ts", import.meta.url),
+  "utf8",
+);
 const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
@@ -127,7 +131,8 @@ test("Publicar delega modelos e opções estáticas às fronteiras extraídas", 
     assert.equal(pagina.includes(declaracao), false, "declaração removida: " + declaracao);
   }
 
-  assert.match(pagina, /from "\.\/lib\/publicar-translations";/);
+  assert.match(pagina, /from "\.\/lib\/publicar-page-component-props";/);
+  assert.match(propsComponentesPagina, /from "\.\/publicar-translations";/);
   assert.doesNotMatch(pagina, /const TEXTOS_PUBLICAR = \{/);
   assert.doesNotMatch(pagina, /const MENSAGENS_ERRO_PUBLICAR = \{/);
   assert.match(traducoes, /const TEXTOS_PUBLICAR = \{/);
