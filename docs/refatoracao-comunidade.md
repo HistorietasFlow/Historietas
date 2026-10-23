@@ -1374,3 +1374,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A preparação da denúncia foi isolada em `community-report-preparation-action.ts`.
 - Guards, normalização, título, fechamento do menu e abertura do alvo do modal foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 18 — Comunidade
+
+- A composição visual superior do feed foi isolada em `community-feed-top-composition.tsx`.
+- O cabeçalho desktop, os controles do feed e a sheet de ações recebem estados e callbacks explicitamente da página, que permanece orquestradora sem alteração intencional de comportamento.
