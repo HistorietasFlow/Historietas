@@ -1274,3 +1274,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O adapter de submissão e sua guarda contra envio duplicado foram isolados em `use-publicar-submission.ts`, preservando os parâmetros e a ordem da ação de publicação.
 - Estados, JSX, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 26 — Publicar
+
+- A composição visual do formulário foi isolada em `PublicarPublicationForm.tsx`, preservando a ordem dos campos, upload, avisos 18+, feedbacks e ações.
+- Estados, callbacks, validação, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
