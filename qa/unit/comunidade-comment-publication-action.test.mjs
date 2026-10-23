@@ -42,7 +42,8 @@ test("Comunidade delega somente comentarPost e preserva as outras acoes de comen
   assert.match(pagina, /const comentarPost = \([\s\S]*?\) =>[\s\S]*?comentarPostComunidade\(\{[\s\S]*?acoesComunidadeRef,[\s\S]*?feedbackTimerRef,[\s\S]*?\}\);/);
   assert.doesNotMatch(pagina, /async function comentarPost\(/);
   assert.doesNotMatch(pagina, /await inserirComentarioSupabaseComunidade\(/);
-  assert.match(pagina, /async function removerComentario\(/);
+  assert.match(pagina, /removerComentarioComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function removerComentario\(/);
   assert.match(pagina, /alternarCurtidaComentarioComunidade\(\{/);
   assert.doesNotMatch(pagina, /async function alternarCurtidaComentario\(/);
   assert.match(pagina, /function abrirComentariosPostComunidade\(/);
