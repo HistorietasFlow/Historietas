@@ -1369,3 +1369,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de fixar/desafixar posts foi isolada em `community-post-pinning-action.ts`.
 - Guard de administração, prevenção de duplicidade, atualização Supabase, estado local, feedback e cleanup foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 17 — Comunidade
+
+- A preparação da denúncia foi isolada em `community-report-preparation-action.ts`.
+- Guards, normalização, título, fechamento do menu e abertura do alvo do modal foram preservados sem alteração intencional de comportamento.
