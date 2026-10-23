@@ -6,6 +6,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const apresentacaoPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
+  "utf8",
+);
 const layout = readFileSync(
   new URL("../../app/publicar/lib/publicar-layout-styles.ts", import.meta.url),
   "utf8",
@@ -43,7 +47,15 @@ test("Publicar isola a base e o layout responsivo", () => {
   assert.match(layout, /\.\.\.progressBoxStyle/);
   assert.match(layout, /overflowWrap: "anywhere"/);
   assert.match(layout, /height: "min\(620px, 68vh\)"/);
-  assert.match(pagina, /from "\.\/lib\/publicar-layout-styles";/);
+  assert.match(
+    pagina,
+    /import \{ usePublicarPagePresentation \} from "\.\/hooks\/use-publicar-page-presentation";/,
+  );
+  assert.match(
+    apresentacaoPagina,
+    /from "\.\.\/lib\/publicar-layout-styles";/,
+  );
+  assert.match(apresentacaoPagina, /useHistorietasTheme\(pageStyle\)/);
   assert.doesNotMatch(pagina, /const pageStyle: CSSProperties =/);
   assert.doesNotMatch(pagina, /const desktopContainerStyle: CSSProperties =/);
 });

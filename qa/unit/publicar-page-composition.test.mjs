@@ -82,6 +82,10 @@ const tagsEstado = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-tags.ts", import.meta.url),
   "utf8",
 );
+const apresentacaoPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
+  "utf8",
+);
 
 test("Publicar delega a composição visual do cabeçalho", () => {
   assert.match(pagina, /from "\.\/components\/PublicarPageShell";/);
@@ -95,7 +99,8 @@ test("Publicar delega a composição visual do cabeçalho", () => {
 
 test("Publicar delega a prévia sem deslocar estados ou regras de publicação", () => {
   assert.match(pagina, /import \{ PublicarWorkPreview \} from "\.\/components\/PublicarWorkPreview";/);
-  assert.match(pagina, /<PublicarWorkPreview[\s\S]*?arquivoCapituloMinutos=\{arquivoCapituloMinutos\}[\s\S]*?classificacaoTexto=\{[\s\S]*?traduzirClassificacaoPublicar\(idioma, classificacaoFinal\)[\s\S]*?previewTemConteudo=\{previewTemConteudo\}/);
+  assert.match(pagina, /<PublicarWorkPreview[\s\S]*?arquivoCapituloMinutos=\{arquivoCapituloMinutos\}[\s\S]*?classificacaoTexto=\{[\s\S]*?traduzirClassificacao\(classificacaoFinal\)[\s\S]*?previewTemConteudo=\{previewTemConteudo\}/);
+  assert.match(apresentacaoPagina, /traduzirClassificacaoPublicar\(idioma, classificacao\)/);
   assert.doesNotMatch(pagina, /<aside style=\{isDesktop \? desktopPreviewPanelStyle : previewPanelStyle\}/);
 
   assert.match(previa, /export function PublicarWorkPreview\(/);
@@ -227,7 +232,8 @@ test("Publicar delegates backdrop and form feedback without moving publication s
   assert.match(pagina, /import \{ PublicarPageBackdrop \} from "\.\/components\/PublicarPageBackdrop";/);
   assert.match(pagina, /<PublicarPageBackdrop isDesktop=\{isDesktop\} \/>/);
   assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
-  assert.match(pagina, /<PublicarPublicationForm[\s\S]*?erro=\{erro\}[\s\S]*?traduzirMensagem=\{\(mensagem\) => traduzirMensagemPublicar\(idioma, mensagem\)\}/);
+  assert.match(pagina, /<PublicarPublicationForm[\s\S]*?erro=\{erro\}[\s\S]*?traduzirMensagem=\{traduzirMensagem\}/);
+  assert.match(apresentacaoPagina, /traduzirMensagemPublicar\(idioma, mensagem\)/);
   assert.match(formularioPublicacao, /import \{ PublicarFormError \} from "\.\/PublicarFormError";/);
   assert.match(formularioPublicacao, /\{erro && \([\s\S]*?<PublicarFormError[\s\S]*?mensagem=\{traduzirMensagem\(erro\)\}[\s\S]*?titulo=\{t\("ajusteNecessario"\)\}/);
   assert.doesNotMatch(pagina, /\["✦", "◇", "\+"\]\.map/);

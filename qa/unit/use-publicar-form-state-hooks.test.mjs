@@ -21,6 +21,30 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const estadoPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-state.ts", import.meta.url),
+  "utf8",
+);
+const apresentacaoPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
+  "utf8",
+);
+
+test("hooks de estado e apresentação preservam as fronteiras da página", () => {
+  assert.match(estadoPagina, /^"use client";/);
+  assert.match(estadoPagina, /const \[processando, setProcessando\] = useState\(false\);/);
+  assert.match(estadoPagina, /const \[erro, setErro\] = useState\(""\);/);
+  assert.match(estadoPagina, /const \[verificandoAutenticacao, setVerificandoAutenticacao\] = useState\(true\);/);
+  assert.doesNotMatch(estadoPagina, /supabase|localStorage|useEffect|window\.|document\./);
+
+  assert.match(apresentacaoPagina, /^"use client";/);
+  assert.match(apresentacaoPagina, /useHistorietasTheme\(pageStyle\)/);
+  assert.match(apresentacaoPagina, /useHistorietasLanguage\(\)/);
+  assert.match(apresentacaoPagina, /obterTextoPublicar\(idioma, chave\)/);
+  assert.match(apresentacaoPagina, /traduzirMensagemPublicar\(idioma, mensagem\)/);
+  assert.match(apresentacaoPagina, /traduzirClassificacaoPublicar\(idioma, classificacao\)/);
+  assert.doesNotMatch(apresentacaoPagina, /supabase|localStorage|useEffect|window\.|document\./);
+});
 
 test("usePublicarPublicationOptions preserva estados, limites e reset da classificação", () => {
   assert.match(opcoes, /^"use client";/);
@@ -70,6 +94,13 @@ test("usePublicarFormValidation preserva normalização, progresso, prévia e va
 });
 
 test("Publicar delega os dois estados locais sem reter implementações duplicadas", () => {
+  assert.match(pagina, /import \{ usePublicarPageState \} from "\.\/hooks\/use-publicar-page-state";/);
+  assert.match(pagina, /import \{ usePublicarPagePresentation \} from "\.\/hooks\/use-publicar-page-presentation";/);
+  assert.match(pagina, /\} = usePublicarPageState\(\);/);
+  assert.match(pagina, /\} = usePublicarPagePresentation\(\);/);
+  assert.doesNotMatch(pagina, /const \[processando, setProcessando\] = useState/);
+  assert.doesNotMatch(pagina, /const \[erro, setErro\] = useState/);
+  assert.doesNotMatch(pagina, /const \[verificandoAutenticacao, setVerificandoAutenticacao\] = useState/);
   assert.match(pagina, /usePublicarPublicationOptions\(\{ setErro \}\)/);
   assert.match(pagina, /usePublicarContentFileUpload\(\{ setErro \}\)/);
   assert.doesNotMatch(pagina, /function anexarArquivoCompleto\(arquivo: File\)/);
