@@ -1229,3 +1229,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os shells visuais de carregamento e da página foram isolados em `PublicarPageShell.tsx`, preservando tema, CSS, cabeçalho, decoração, fades e responsividade.
 - Formulário, estado, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
+
+## Registro da Fase 17 — Publicar
+
+- O backdrop visual e o aviso de erro do formulário foram isolados em componentes dedicados, preservando CSS, decoração, fades, responsividade, textos e acessibilidade.
+- Estados, traduções, validação, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram na página, sem alteração intencional de comportamento.

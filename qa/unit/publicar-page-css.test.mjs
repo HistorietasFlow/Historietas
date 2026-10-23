@@ -14,6 +14,10 @@ const shell = readFileSync(
   new URL("../../app/publicar/components/PublicarPageShell.tsx", import.meta.url),
   "utf8",
 );
+const backdrop = readFileSync(
+  new URL("../../app/publicar/components/PublicarPageBackdrop.tsx", import.meta.url),
+  "utf8",
+);
 const storage = readFileSync(
   new URL("../../app/publicar/lib/publicar-storage-operations.ts", import.meta.url),
   "utf8",
@@ -30,11 +34,13 @@ test("publicarPageCss preserva o CSS global de Publicar", () => {
 });
 
 test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () => {
+  assert.match(pagina, /import \{ PublicarPageBackdrop \} from "\.\/components\/PublicarPageBackdrop";/);
   assert.match(
-    pagina,
-    /import \{ publicarPageCss \} from "\.\/lib\/publicar-page-css";/,
+    backdrop,
+    /import \{ publicarPageCss \} from "\.\.\/lib\/publicar-page-css";/,
   );
   assert.doesNotMatch(pagina, /const publicarPageCss = `/);
+  assert.doesNotMatch(backdrop, /const publicarPageCss = `/);
 
   const consumidoresPagina = pagina.match(
     /<style>\{`\$\{historietasThemeCss\}\$\{publicarPageCss\}`\}<\/style>/g,
@@ -42,13 +48,25 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
   const consumidoresShell = shell.match(
     /<style>\{`\$\{historietasThemeCss\}\$\{publicarPageCss\}`\}<\/style>/g,
   );
-  assert.equal((consumidoresPagina?.length || 0) + (consumidoresShell?.length || 0), 2);
+  const consumidoresBackdrop = backdrop.match(
+    /<style>\{`\$\{historietasThemeCss\}\$\{publicarPageCss\}`\}<\/style>/g,
+  );
+  assert.equal(
+    (consumidoresPagina?.length || 0) +
+      (consumidoresShell?.length || 0) +
+      (consumidoresBackdrop?.length || 0),
+    2,
+  );
   assert.doesNotMatch(
     pagina,
     /\$\{publicarPageCss\}\$\{historietasThemeCss\}/,
   );
   assert.doesNotMatch(
     shell,
+    /\$\{publicarPageCss\}\$\{historietasThemeCss\}/,
+  );
+  assert.doesNotMatch(
+    backdrop,
     /\$\{publicarPageCss\}\$\{historietasThemeCss\}/,
   );
 

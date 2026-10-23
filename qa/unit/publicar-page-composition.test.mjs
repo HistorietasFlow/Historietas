@@ -14,6 +14,14 @@ const shell = readFileSync(
   new URL("../../app/publicar/components/PublicarPageShell.tsx", import.meta.url),
   "utf8",
 );
+const backdrop = readFileSync(
+  new URL("../../app/publicar/components/PublicarPageBackdrop.tsx", import.meta.url),
+  "utf8",
+);
+const erroFormulario = readFileSync(
+  new URL("../../app/publicar/components/PublicarFormError.tsx", import.meta.url),
+  "utf8",
+);
 const progresso = readFileSync(
   new URL("../../app/publicar/components/PublicarProgress.tsx", import.meta.url),
   "utf8",
@@ -164,8 +172,27 @@ test("Publicar delegates loading and page shells without moving composition", ()
   assert.doesNotMatch(shell, /supabase|localStorage|useEffect|useState|window\.|document\./);
 });
 
+test("Publicar delegates backdrop and form feedback without moving publication state", () => {
+  assert.match(pagina, /import \{ PublicarPageBackdrop \} from "\.\/components\/PublicarPageBackdrop";/);
+  assert.match(pagina, /<PublicarPageBackdrop isDesktop=\{isDesktop\} \/>/);
+  assert.match(pagina, /import \{ PublicarFormError \} from "\.\/components\/PublicarFormError";/);
+  assert.match(pagina, /\{erro && \([\s\S]*?<PublicarFormError[\s\S]*?mensagem=\{traduzirMensagemPublicar\(idioma, erro\)\}[\s\S]*?titulo=\{t\("ajusteNecessario"\)\}/);
+  assert.doesNotMatch(pagina, /\["✦", "◇", "\+"\]\.map/);
+  assert.doesNotMatch(pagina, /<strong style=\{safeTextStyle\}>\{t\("ajusteNecessario"\)\}<\/strong>/);
+
+  assert.match(backdrop, /<style>\{`\$\{historietasThemeCss\}\$\{publicarPageCss\}`\}<\/style>/);
+  assert.match(backdrop, /\["✦", "◇", "\+"\]\.map/);
+  assert.match(backdrop, /criarDecoracaoPaginaStyle\(\)/);
+  assert.match(backdrop, /isDesktop && <div style=\{desktopTopWaterFadeStyle\} aria-hidden="true" \/>/);
+  assert.match(backdrop, /!isDesktop && <div style=\{mobileTopWaterFadeStyle\} aria-hidden="true" \/>/);
+
+  assert.match(erroFormulario, /isDesktop \? desktopFullWidthErrorBoxStyle : errorBoxStyle/);
+  assert.match(erroFormulario, /<strong style=\{safeTextStyle\}>\{titulo\}<\/strong>/);
+  assert.match(erroFormulario, /<span style=\{safeTextStyle\}>\{mensagem\}<\/span>/);
+});
+
 test("componentes visuais de Publicar permanecem sem runtime de dados", () => {
-  for (const componente of [cabecalho, progresso, previa, capa, arquivo, avisosAdultos, sinopse, acoesFormulario, camposBasicos, camposFormatoGenero, camposTagClassificacao]) {
+  for (const componente of [cabecalho, shell, backdrop, erroFormulario, progresso, previa, capa, arquivo, avisosAdultos, sinopse, acoesFormulario, camposBasicos, camposFormatoGenero, camposTagClassificacao]) {
     assert.doesNotMatch(componente, /supabase|localStorage|useEffect|useState|window\.|document\./);
   }
 });

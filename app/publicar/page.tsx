@@ -6,7 +6,6 @@ import type { ChangeEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
-import { publicarPageCss } from "./lib/publicar-page-css";
 import {
   calcularMinutosLeitura,
   campoValido,
@@ -57,7 +56,7 @@ import type {
   ObraLocal,
   ObraSalva,
 } from "./lib/publicar-models";
-import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -78,6 +77,8 @@ import {
   PublicarLoadingShell,
   PublicarPageShell,
 } from "./components/PublicarPageShell";
+import { PublicarPageBackdrop } from "./components/PublicarPageBackdrop";
+import { PublicarFormError } from "./components/PublicarFormError";
 import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
 import { PublicarCoverUpload } from "./components/PublicarCoverUpload";
 import { PublicarContentFileUpload } from "./components/PublicarContentFileUpload";
@@ -88,17 +89,10 @@ import { PublicarFormatGenreFields } from "./components/PublicarFormatGenreField
 import { PublicarTagClassificationFields } from "./components/PublicarTagClassificationFields";
 import {
   pageStyle,
-  safeTextStyle,
-  desktopTopWaterFadeStyle,
-  mobileTopWaterFadeStyle,
-  pageDecorationLayerStyle,
 } from "./lib/publicar-layout-styles";
-import { criarDecoracaoPaginaStyle } from "./lib/publicar-page-decoration-style";
 import {
   desktopFormPanelStyle,
-  desktopFullWidthErrorBoxStyle,
   desktopMainGridSingleStyle,
-  errorBoxStyle,
   formPanelStyle,
   mainGridStyle,
 } from "./lib/publicar-form-upload-styles";
@@ -1308,18 +1302,7 @@ export default function PublicarPage() {
 
   return (
     <main style={pageThemeStyle}>
-      <style>{`${historietasThemeCss}${publicarPageCss}`}</style>
-
-      <div style={pageDecorationLayerStyle} aria-hidden="true">
-        {["✦", "◇", "+"].map((decoracao, index) => (
-          <span key={`${decoracao}-${index}`} style={criarDecoracaoPaginaStyle()}>
-            {decoracao}
-          </span>
-        ))}
-      </div>
-
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+      <PublicarPageBackdrop isDesktop={isDesktop} />
 
       <PublicarPageShell
         isDesktop={isDesktop}
@@ -1329,10 +1312,11 @@ export default function PublicarPage() {
         <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
           <form onSubmit={salvarObra} style={isDesktop ? desktopFormPanelStyle : formPanelStyle}>
             {erro && (
-              <div style={isDesktop ? desktopFullWidthErrorBoxStyle : errorBoxStyle}>
-                <strong style={safeTextStyle}>{t("ajusteNecessario")}</strong>
-                <span style={safeTextStyle}>{traduzirMensagemPublicar(idioma, erro)}</span>
-              </div>
+              <PublicarFormError
+                isDesktop={isDesktop}
+                mensagem={traduzirMensagemPublicar(idioma, erro)}
+                titulo={t("ajusteNecessario")}
+              />
             )}
 
 
