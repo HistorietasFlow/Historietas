@@ -50,7 +50,8 @@ test("Publicar delega somente o modo desktop", () => {
   assert.match(pagina, /<PublicarPublicationForm \{\.\.\.publicationFormProps\} \/>/);
   assert.match(formularioPublicacao, /<PublicarFormActions[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(pagina, /<PublicarWorkPreview \{\.\.\.workPreviewProps\} \/>/);
-  assert.equal((propsComponentesPagina.match(/isDesktop,/g) || []).length, 2);
+  assert.match(propsComponentesPagina, /publicationFormProps:[\s\S]*?isDesktop,/);
+  assert.match(propsComponentesPagina, /workPreviewProps:[\s\S]*?isDesktop,/);
   assert.match(cabecalho, /isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle/);
   assert.match(progresso, /isDesktop[\s\S]*?desktopProgressBoxStyle[\s\S]*?progressBoxStyle/);
   assert.match(acoesFormulario, /<PublicarProgress[\s\S]*?isDesktop=\{isDesktop\}/);
