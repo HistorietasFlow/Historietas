@@ -18,6 +18,10 @@ import { useComunidadeDesktopMode } from "./hooks/use-comunidade-desktop-mode";
 import { useComunidadeOverlayBodyLock } from "./hooks/use-comunidade-overlay-body-lock";
 import { useComunidadeUserSearchSync } from "./hooks/use-comunidade-user-search-sync";
 import { useComunidadeInitialUrlNavigation } from "./hooks/use-comunidade-initial-url-navigation";
+import {
+  useComunidadePollVotesSync,
+  useComunidadeSavedPostsSync,
+} from "./hooks/use-comunidade-personal-data-sync";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -104,7 +108,6 @@ import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-u
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
-import { carregarPostsSalvosSupabaseComunidade } from "./components/community-supabase-saved-posts-loader";
 import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
@@ -113,18 +116,13 @@ import { obterObraRelacionadaPermitida } from "./components/community-related-wo
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
 import { sincronizarReviewsPendentesSequencialmenteComunidade } from "./components/community-pending-reviews-sync";
-import { carregarVotosEnquetesLocais } from "./components/community-local-poll-votes-loader";
-import { carregarPostsSalvosLocaisComunidade } from "./components/community-local-saved-posts-loader";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
-import { carregarVotosEnquetesSupabase } from "./components/community-supabase-poll-votes-loader";
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
 import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
 import { fecharComentarios } from "./components/community-comments-closer";
 import { abrirComentarios } from "./components/community-comments-opener";
-import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
-import { postEhEnquete } from "./components/community-post-poll-check";
 import {
   prepararEnqueteComunidade,
   selecionarTipoPublicacaoPost,
@@ -179,7 +177,6 @@ import { CommunityLanguageBridge } from "./components/community-language-bridge"
 import {
   traduzirContagemResultadosComunidade,
 } from "./components/community-results-count-translator";
-import { carregarJsonUsuarioComunidade } from "./components/community-user-json-loader";
 import { salvarJsonUsuarioComunidade } from "./components/community-user-json-saver";
 
 export default function ComunidadePage() {
@@ -269,43 +266,11 @@ export default function ComunidadePage() {
       carregarPostsComunidadeDaPagina(mostrarCarregamento, pagina, obraFiltro),
   );
 
-  useEffect(() => {
-    const userId = usuario?.id || "";
-    let cancelado = false;
-
-    const carregarLocaisTimer = window.setTimeout(() => {
-      setPostsSalvosIds(
-        carregarPostsSalvosLocaisComunidade(
-          carregarJsonUsuarioComunidade,
-          userId
-        )
-      );
-
-      setVotosEnquetes(carregarVotosEnquetesLocais(carregarJsonUsuarioComunidade, userId));
-
-      if (!userId) {
-        return;
-      }
-
-      void carregarPostsSalvosSupabaseComunidade(userId).then((postsSalvosReais) => {
-        if (cancelado || !postsSalvosReais) {
-          return;
-        }
-
-        setPostsSalvosIds(postsSalvosReais);
-        salvarJsonUsuarioComunidade(
-          CHAVE_POSTS_SALVOS_COMUNIDADE,
-          userId,
-          postsSalvosReais
-        );
-      });
-    }, 0);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(carregarLocaisTimer);
-    };
-  }, [usuario?.id]);
+  useComunidadeSavedPostsSync({
+    usuarioId: usuario?.id,
+    setPostsSalvosIds,
+    setVotosEnquetes,
+  });
 
   useEffect(() => {
     const feedbackTimer = feedbackTimerRef;
@@ -317,81 +282,12 @@ export default function ComunidadePage() {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarVotosReaisEnquetes() {
-      const postsEnqueteIds = posts
-        .filter((post) => postEhEnquete(post))
-        .map((post) => post.id)
-        .filter(Boolean);
-
-      if (postsEnqueteIds.length === 0) {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setResultadosEnquetes({});
-          }
-        }, 0);
-        return;
-      }
-
-      const votosLocais = carregarVotosEnquetesLocais(
-        carregarJsonUsuarioComunidade,
-        usuario?.id || ""
-      );
-
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setVotosEnquetes((votosAtuais) => ({
-            ...votosLocais,
-            ...votosAtuais,
-          }));
-        }
-      }, 0);
-
-      if (!usuario?.id) {
-        return;
-      }
-
-      const votosReais = await carregarVotosEnquetesSupabase(
-        postsEnqueteIds,
-        usuario.id
-      );
-
-      if (cancelado || !votosReais) {
-        return;
-      }
-
-      window.setTimeout(() => {
-        if (cancelado) {
-          return;
-        }
-
-        setResultadosEnquetes(votosReais.resultados);
-
-        setVotosEnquetes((votosAtuais) => {
-          const votosAtualizados = {
-            ...votosAtuais,
-            ...votosReais.meusVotos,
-          };
-
-          salvarVotosEnquetesLocais(
-            salvarJsonUsuarioComunidade,
-            votosAtualizados,
-            usuario.id
-          );
-
-          return votosAtualizados;
-        });
-      }, 0);
-    }
-
-    void carregarVotosReaisEnquetes();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [posts, usuario?.id]);
+  useComunidadePollVotesSync({
+    posts,
+    usuarioId: usuario?.id,
+    setVotosEnquetes,
+    setResultadosEnquetes,
+  });
 
   useEffect(() => {
     let cancelado = false;

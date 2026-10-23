@@ -1304,3 +1304,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle inicial de parâmetros por URL e de abertura automática de comentários foi isolado em `use-comunidade-initial-url-navigation.ts`.
 - A leitura e aplicação dos parâmetros, timers, refs e cleanups foram preservados sem alteração intencional de comportamento; o efeito de scroll e disparo inicial do feed permaneceu na página por depender do `useEffectEvent` do carregador.
+
+## Registro da Fase 4 — Comunidade
+
+- Os lifecycles de posts salvos e de votos de enquete foram isolados em `use-comunidade-personal-data-sync.ts`.
+- As leituras locais, sincronizações Supabase, timers, cancelamentos, persistência e a reconciliação dos votos/resultados foram preservados sem alteração intencional de comportamento; as ações de salvar e votar permaneceram na página.
