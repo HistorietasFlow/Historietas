@@ -1249,3 +1249,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os campos básicos controlados e as tags foram isolados em `use-publicar-basic-fields.ts` e `use-publicar-tags.ts`, preservando estados, normalização, limites, deduplicação, callbacks e limpeza de erro.
 - Validação do formulário, JSX, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.
+
+## Registro da Fase 21 — Publicar
+
+- O estado derivado e a validação do formulário foram isolados em `use-publicar-form-validation.ts`, preservando normalização, classificação 18+, avisos, progresso, prévia e a ordem das mensagens de validação.
+- JSX, efeitos, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.
