@@ -22,6 +22,10 @@ const perfil = readFileSync(
   new URL("../../app/publicar/lib/publicar-profile-loader.ts", import.meta.url),
   "utf8",
 );
+const acaoSubmissao = readFileSync(
+  new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
+  "utf8",
+);
 
 test("helpers de autenticação de Publicar preservam retorno e nome de metadata", () => {
   for (const helper of ["criarLoginHrefPublicar", "obterNomeMetadataPublicar"]) {
@@ -92,12 +96,14 @@ test("normalização local de Publicar preserva capítulos, arquivos, backups e 
 });
 
 test("Publicar delega fronteiras locais, storage e autenticação extraídas", () => {
+  assert.match(pagina, /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/);
   for (const modulo of [
     "publicar-auth-utils",
     "publicar-user-storage-utils",
     "publicar-local-work-utils",
   ]) {
-    assert.match(pagina, new RegExp(`from "\\./lib/${modulo}";`));
+    assert.match(acaoSubmissao, new RegExp(`from "\\./${modulo}";`));
+    assert.doesNotMatch(pagina, new RegExp(`from "\\./lib/${modulo}";`));
   }
 
   for (const declaracao of [
@@ -117,15 +123,16 @@ test("Publicar delega fronteiras locais, storage e autenticação extraídas", (
     assert.equal(pagina.includes(declaracao), false, `declaração removida: ${declaracao}`);
   }
 
-  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.match(acaoSubmissao, /from "\.\/publicar-storage-operations";/);
   assert.doesNotMatch(pagina, /async function enviarArquivoStorage\(/);
   assert.doesNotMatch(pagina, /async function desfazerPublicacaoParcialPublicar\(/);
-  assert.match(pagina, /from "\.\/lib\/publicar-profile-loader";/);
+  assert.match(acaoSubmissao, /from "\.\/publicar-profile-loader";/);
   assert.doesNotMatch(pagina, /async function carregarNomePerfilPublicar\(/);
   assert.match(perfil, /export async function carregarNomePerfilPublicar\(/);
   assert.match(perfil, /from\("profiles"\)\s*\.select\("nome"\)\s*\.eq\("user_id", userId\)/);
   assert.match(perfil, /from\("profiles"\)\s*\.select\("nome"\)\s*\.eq\("id", userId\)/);
-  assert.match(pagina, /from "\.\/lib\/publicar-file-backup-storage-utils";/);
+  assert.match(acaoSubmissao, /from "\.\/publicar-file-backup-storage-utils";/);
   assert.doesNotMatch(pagina, /function carregarBackupArquivosPublicar\(/);
-  assert.match(pagina, /async function salvarObra\(/);
+  assert.match(pagina, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(acaoSubmissao, /export async function salvarObraPublicar\(/);
 });

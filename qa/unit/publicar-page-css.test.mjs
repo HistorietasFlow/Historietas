@@ -22,6 +22,10 @@ const storage = readFileSync(
   new URL("../../app/publicar/lib/publicar-storage-operations.ts", import.meta.url),
   "utf8",
 );
+const acaoSubmissao = readFileSync(
+  new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
+  "utf8",
+);
 
 test("publicarPageCss preserva o CSS global de Publicar", () => {
   assert.match(css, /export const publicarPageCss = `/);
@@ -73,10 +77,13 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
   assert.match(pagina, /from "\.\/lib\/publicar-layout-styles";/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
-  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
-  assert.match(pagina, /enviarArquivoStorage,/);
-  assert.match(pagina, /desfazerPublicacaoParcialPublicar,/);
+  assert.match(pagina, /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.match(acaoSubmissao, /from "\.\/publicar-storage-operations";/);
+  assert.match(acaoSubmissao, /enviarArquivoStorage,/);
+  assert.match(acaoSubmissao, /desfazerPublicacaoParcialPublicar,/);
   assert.doesNotMatch(pagina, /supabase\.storage/);
   assert.match(storage, /supabase\.storage/);
-  assert.match(pagina, /async function salvarObra\(/);
+  assert.match(pagina, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(acaoSubmissao, /export async function salvarObraPublicar\(/);
 });

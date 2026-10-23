@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const acaoSubmissao = readFileSync(
+  new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
+  "utf8",
+);
 const traducoes = readFileSync(
   new URL("../../app/publicar/lib/publicar-translations.ts", import.meta.url),
   "utf8",
@@ -95,8 +99,7 @@ test("opções estáticas de Publicar preservam limites, MIME, formatos e classi
 });
 
 test("Publicar delega modelos e opções estáticas às fronteiras extraídas", () => {
-  assert.match(pagina, /from "\.\/lib\/publicar-models";/);
-  assert.match(pagina, /from "\.\/lib\/publicar-static-options";/);
+  assert.match(pagina, /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/);
 
   for (const declaracao of [
     "type CapituloLocal =",
@@ -119,7 +122,9 @@ test("Publicar delega modelos e opções estáticas às fronteiras extraídas", 
   assert.doesNotMatch(pagina, /const MENSAGENS_ERRO_PUBLICAR = \{/);
   assert.match(traducoes, /const TEXTOS_PUBLICAR = \{/);
   assert.match(traducoes, /const MENSAGENS_ERRO_PUBLICAR/);
-  assert.match(pagina, /function salvarObra\(/);
-  assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
+  assert.match(pagina, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(acaoSubmissao, /from "\.\/publicar-models";/);
+  assert.match(acaoSubmissao, /from "\.\/publicar-static-options";/);
+  assert.match(acaoSubmissao, /export async function salvarObraPublicar\(/);
   assert.doesNotMatch(pagina, /supabase\.storage/);
 });
