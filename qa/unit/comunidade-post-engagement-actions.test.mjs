@@ -58,6 +58,7 @@ test("Comunidade delega somente as acoes de engajamento ao modulo dedicado", () 
   assert.doesNotMatch(pagina, /function compartilharPostComunidade\(/);
   assert.doesNotMatch(pagina, /function votarEnquetePostComunidade\(/);
   assert.doesNotMatch(pagina, /function alternarSpoilerPostComunidade\(/);
-  assert.match(pagina, /async function comentarPost\(/);
+  assert.match(pagina, /comentarPostComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function comentarPost\(/);
   assert.match(pagina, /function denunciarPostComunidade\(/);
 });
