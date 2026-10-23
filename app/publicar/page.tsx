@@ -24,22 +24,13 @@ import {
   PublicarPageShell,
 } from "./components/PublicarPageShell";
 import { PublicarPageBackdrop } from "./components/PublicarPageBackdrop";
-import { PublicarFormError } from "./components/PublicarFormError";
 import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
-import { PublicarCoverUpload } from "./components/PublicarCoverUpload";
-import { PublicarContentFileUpload } from "./components/PublicarContentFileUpload";
-import { PublicarSynopsisField } from "./components/PublicarSynopsisField";
-import { PublicarFormActions } from "./components/PublicarFormActions";
-import { PublicarBasicFields } from "./components/PublicarBasicFields";
-import { PublicarFormatGenreFields } from "./components/PublicarFormatGenreFields";
-import { PublicarTagClassificationFields } from "./components/PublicarTagClassificationFields";
+import { PublicarPublicationForm } from "./components/PublicarPublicationForm";
 import {
   pageStyle,
 } from "./lib/publicar-layout-styles";
 import {
-  desktopFormPanelStyle,
   desktopMainGridSingleStyle,
-  formPanelStyle,
   mainGridStyle,
 } from "./lib/publicar-form-upload-styles";
 import { obterMetadadosFormularioPublicar } from "./lib/publicar-form-display-metadata";
@@ -202,116 +193,70 @@ export default function PublicarPage() {
         voltarHome={t("voltarHome")}
       >
         <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
-          <form onSubmit={salvarObra} style={isDesktop ? desktopFormPanelStyle : formPanelStyle}>
-            {erro && (
-              <PublicarFormError
-                isDesktop={isDesktop}
-                mensagem={traduzirMensagemPublicar(idioma, erro)}
-                titulo={t("ajusteNecessario")}
-              />
-            )}
-
-
-            <PublicarCoverUpload
-              capa={capa}
-              capaErro={capaErro}
-              capaInputRef={capaInputRef}
-              capaNome={capaNome}
-              isDesktop={isDesktop}
-              onRemoverCapa={removerCapa}
-              onSelecionarCapa={selecionarCapa}
-              t={t}
-              traduzirMensagem={(mensagem) => traduzirMensagemPublicar(idioma, mensagem)}
-            />
-
-
-            <PublicarBasicFields
-              autor={autor}
-              isDesktop={isDesktop}
-              onAutorChange={atualizarAutor}
-              onTituloChange={atualizarTitulo}
-              t={t}
-              titulo={titulo}
-            />
-
-            <PublicarFormatGenreFields
-              formato={formato}
-              formatoEhPersonalizado={formatoEhPersonalizado}
-              formatoPersonalizado={formatoPersonalizado}
-              genero={genero}
-              generoEhPersonalizado={generoEhPersonalizado}
-              generoPersonalizado={generoPersonalizado}
-              idioma={idioma}
-              isDesktop={isDesktop}
-              onFormatoChange={atualizarFormato}
-              onFormatoPersonalizadoChange={atualizarFormatoPersonalizado}
-              onGeneroChange={atualizarGenero}
-              onGeneroPersonalizadoChange={atualizarGeneroPersonalizado}
-              t={t}
-            />
-
-            <PublicarTagClassificationFields
-              avisosConteudo18={avisosConteudo18}
-              classificacao18Selecionada={classificacao18Selecionada}
-              classificacaoIndicativa={classificacaoIndicativa}
-              idioma={idioma}
-              isDesktop={isDesktop}
-              onAlternarAviso={alternarAvisoConteudo18}
-              onClassificacaoChange={atualizarClassificacaoIndicativa}
-              onTagChange={atualizarTagSelecionada}
-              onTagPersonalizadaChange={atualizarTagPersonalizada}
-              t={t}
-              tagPersonalizada={tagPersonalizada}
-              tagsDaObra={tagsDaObra}
-              usarTagPersonalizada={usarTagPersonalizada}
-            />
-
-            <PublicarSynopsisField
-              caracteresValidos={sinopseCaracteresValidos}
-              isDesktop={isDesktop}
-              onSinopseChange={atualizarSinopse}
-              palavras={sinopsePalavras}
-              sinopse={sinopse}
-              sinopseValida={sinopseValida}
-              t={t}
-            />
-
-
-            <PublicarContentFileUpload
-              arquivoCapituloErro={arquivoCapituloErro}
-              arquivoCapituloMinutos={arquivoCapituloMinutos}
-              arquivoCapituloNome={arquivoCapituloNome}
-              arquivoCapituloPalavras={arquivoCapituloPalavras}
-              arquivoCapituloTitulo={arquivoCapituloTitulo}
-              arquivoConteudoInputRef={arquivoConteudoInputRef}
-              arquivoObra={arquivoObra}
-              arquivoObraErro={arquivoObraErro}
-              arquivoObraTamanhoTexto={arquivoObraTamanhoTexto}
-              arquivoObraTipoTexto={arquivoObraTipoTexto}
-              arquivoTextoPendente={arquivoTextoPendente}
-              arquivoTextoPendenteTamanhoTexto={arquivoTextoPendenteTamanhoTexto}
-              isDesktop={isDesktop}
-              onAnexarArquivoCompleto={anexarArquivoCompleto}
-              onCancelarEscolhaArquivoTexto={cancelarEscolhaArquivoTexto}
-              onLimparSelecaoConteudoArquivo={limparSelecaoConteudoArquivo}
-              onSelecionarConteudoArquivo={selecionarConteudoArquivo}
-              onTransformarArquivoTextoEmCapitulo={transformarArquivoTextoEmCapitulo}
-              t={t}
-              temCapituloImportado={temCapituloImportado}
-              temConteudoPorArquivo={temConteudoPorArquivo}
-              traduzirMensagem={(mensagem) => traduzirMensagemPublicar(idioma, mensagem)}
-            />
-
-            <PublicarFormActions
-              cancelar={t("cancelar")}
-              criarObra={t("criarObra")}
-              isDesktop={isDesktop}
-              processando={processando}
-              progresso={progresso}
-              progressoRotulo={t("progresso")}
-              salvando={t("salvando")}
-            />
-          </form>
+          <PublicarPublicationForm
+            arquivoCapituloErro={arquivoCapituloErro}
+            arquivoCapituloMinutos={arquivoCapituloMinutos}
+            arquivoCapituloNome={arquivoCapituloNome}
+            arquivoCapituloPalavras={arquivoCapituloPalavras}
+            arquivoCapituloTitulo={arquivoCapituloTitulo}
+            arquivoConteudoInputRef={arquivoConteudoInputRef}
+            arquivoObra={arquivoObra}
+            arquivoObraErro={arquivoObraErro}
+            arquivoObraTamanhoTexto={arquivoObraTamanhoTexto}
+            arquivoObraTipoTexto={arquivoObraTipoTexto}
+            arquivoTextoPendente={arquivoTextoPendente}
+            arquivoTextoPendenteTamanhoTexto={arquivoTextoPendenteTamanhoTexto}
+            autor={autor}
+            avisosConteudo18={avisosConteudo18}
+            capa={capa}
+            capaErro={capaErro}
+            capaInputRef={capaInputRef}
+            capaNome={capaNome}
+            caracteresValidos={sinopseCaracteresValidos}
+            classificacao18Selecionada={classificacao18Selecionada}
+            classificacaoIndicativa={classificacaoIndicativa}
+            erro={erro}
+            formato={formato}
+            formatoEhPersonalizado={formatoEhPersonalizado}
+            formatoPersonalizado={formatoPersonalizado}
+            genero={genero}
+            generoEhPersonalizado={generoEhPersonalizado}
+            generoPersonalizado={generoPersonalizado}
+            idioma={idioma}
+            isDesktop={isDesktop}
+            onAlternarAviso={alternarAvisoConteudo18}
+            onAnexarArquivoCompleto={anexarArquivoCompleto}
+            onAutorChange={atualizarAutor}
+            onCancelarEscolhaArquivoTexto={cancelarEscolhaArquivoTexto}
+            onClassificacaoChange={atualizarClassificacaoIndicativa}
+            onFormatoChange={atualizarFormato}
+            onFormatoPersonalizadoChange={atualizarFormatoPersonalizado}
+            onGeneroChange={atualizarGenero}
+            onGeneroPersonalizadoChange={atualizarGeneroPersonalizado}
+            onLimparSelecaoConteudoArquivo={limparSelecaoConteudoArquivo}
+            onRemoverCapa={removerCapa}
+            onSelecionarCapa={selecionarCapa}
+            onSelecionarConteudoArquivo={selecionarConteudoArquivo}
+            onSinopseChange={atualizarSinopse}
+            onSubmit={salvarObra}
+            onTagChange={atualizarTagSelecionada}
+            onTagPersonalizadaChange={atualizarTagPersonalizada}
+            onTituloChange={atualizarTitulo}
+            onTransformarArquivoTextoEmCapitulo={transformarArquivoTextoEmCapitulo}
+            palavras={sinopsePalavras}
+            processando={processando}
+            progresso={progresso}
+            sinopse={sinopse}
+            sinopseValida={sinopseValida}
+            t={t}
+            tagPersonalizada={tagPersonalizada}
+            tagsDaObra={tagsDaObra}
+            temCapituloImportado={temCapituloImportado}
+            temConteudoPorArquivo={temConteudoPorArquivo}
+            titulo={titulo}
+            traduzirMensagem={(mensagem) => traduzirMensagemPublicar(idioma, mensagem)}
+            usarTagPersonalizada={usarTagPersonalizada}
+          />
 
           <PublicarWorkPreview
             arquivoCapituloMinutos={arquivoCapituloMinutos}

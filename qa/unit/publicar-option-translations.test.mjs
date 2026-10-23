@@ -23,6 +23,10 @@ const camposTagClassificacao = readFileSync(
   new URL("../../app/publicar/components/PublicarTagClassificationFields.tsx", import.meta.url),
   "utf8",
 );
+const formularioPublicacao = readFileSync(
+  new URL("../../app/publicar/components/PublicarPublicationForm.tsx", import.meta.url),
+  "utf8",
+);
 const translationsJavascript = typescript.transpileModule(translationsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -100,8 +104,9 @@ test("módulo de opções de Publicar mantém a fronteira pura", () => {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(pagina, /import \{ PublicarFormatGenreFields \} from "\.\/components\/PublicarFormatGenreFields";/);
-  assert.match(pagina, /import \{ PublicarTagClassificationFields \} from "\.\/components\/PublicarTagClassificationFields";/);
+  assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
+  assert.match(formularioPublicacao, /from "\.\/PublicarFormatGenreFields";/);
+  assert.match(formularioPublicacao, /from "\.\/PublicarTagClassificationFields";/);
   assert.match(camposFormatoGenero, /from "\.\.\/lib\/publicar-option-translations";/);
   assert.match(camposTagClassificacao, /from "\.\.\/lib\/publicar-option-translations";/);
   assert.match(camposFormatoGenero, /traduzirFormatoPublicar\(idioma, opcao\)/);
