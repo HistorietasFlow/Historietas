@@ -1234,3 +1234,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O backdrop visual e o aviso de erro do formulário foram isolados em componentes dedicados, preservando CSS, decoração, fades, responsividade, textos e acessibilidade.
 - Estados, traduções, validação, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram na página, sem alteração intencional de comportamento.
+
+## Registro da Fase 18 — Publicar
+
+- O estado, a validação, a leitura e a limpeza do upload de capa foram isolados em `use-publicar-cover-upload.ts`, preservando limites, mensagens, `FileReader` e a ref do input.
+- Upload de conteúdo, validação do formulário, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.

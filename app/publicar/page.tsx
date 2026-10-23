@@ -6,6 +6,7 @@ import type { ChangeEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
+import { usePublicarCoverUpload } from "./hooks/use-publicar-cover-upload";
 import {
   calcularMinutosLeitura,
   campoValido,
@@ -19,7 +20,6 @@ import {
   criarUuidSeguro,
 } from "./lib/publicar-id-utils";
 import {
-  arquivoImagemAceito,
   arquivoObraAceito,
   arquivoTextoAceito,
   identificarCategoriaArquivo,
@@ -47,7 +47,6 @@ import {
   STORAGE_KEY,
   TAMANHO_MAXIMO_ARQUIVO_OBRA,
   TAMANHO_MAXIMO_ARQUIVO_TEXTO,
-  TAMANHO_MAXIMO_CAPA,
 } from "./lib/publicar-static-options";
 import type {
   ArquivoObraLocal,
@@ -456,10 +455,6 @@ export default function PublicarPage() {
   const [tags, setTags] = useState("");
   const [tagPersonalizada, setTagPersonalizada] = useState("");
   const [usarTagPersonalizada, setUsarTagPersonalizada] = useState(false);
-  const [capa, setCapa] = useState("");
-  const [capaNome, setCapaNome] = useState("");
-  const [capaArquivo, setCapaArquivo] = useState<File | null>(null);
-  const [capaErro, setCapaErro] = useState("");
   const [arquivoObra, setArquivoObra] = useState<ArquivoObraLocal | null>(null);
   const [arquivoObraArquivo, setArquivoObraArquivo] = useState<File | null>(null);
   const [arquivoObraErro, setArquivoObraErro] = useState("");
@@ -470,6 +465,15 @@ export default function PublicarPage() {
   const [arquivoTextoPendente, setArquivoTextoPendente] = useState<File | null>(null);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
+  const {
+    capa,
+    capaArquivo,
+    capaErro,
+    capaInputRef,
+    capaNome,
+    removerCapa,
+    selecionarCapa,
+  } = usePublicarCoverUpload({ setErro });
   const [verificandoAutenticacao, setVerificandoAutenticacao] = useState(true);
   const isDesktop = usePublicarDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -483,7 +487,6 @@ export default function PublicarPage() {
   });
 
   const jaSalvouRef = useRef(false);
-  const capaInputRef = useRef<HTMLInputElement | null>(null);
   const arquivoConteudoInputRef = useRef<HTMLInputElement | null>(null);
 
   const tagsDaObra = useMemo(() => {
@@ -646,61 +649,6 @@ export default function PublicarPage() {
     }
 
     return "";
-  }
-
-  function selecionarCapa(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0];
-
-    setCapaErro("");
-    setErro("");
-
-    if (!arquivo) {
-      return;
-    }
-
-    if (!arquivoImagemAceito(arquivo)) {
-      setCapaErro("Escolha um arquivo de imagem válido.");
-      event.target.value = "";
-      return;
-    }
-
-    if (arquivo.size > TAMANHO_MAXIMO_CAPA) {
-      setCapaErro("A capa precisa ter no máximo 2 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-
-      if (!resultado) {
-        setCapaErro("Não consegui carregar essa imagem.");
-        return;
-      }
-
-      setCapa(resultado);
-      setCapaNome(arquivo.name);
-      setCapaArquivo(arquivo);
-    };
-
-    leitor.onerror = () => {
-      setCapaErro("Não consegui carregar essa imagem.");
-    };
-
-    leitor.readAsDataURL(arquivo);
-  }
-
-  function removerCapa() {
-    setCapa("");
-    setCapaNome("");
-    setCapaArquivo(null);
-    setCapaErro("");
-
-    if (capaInputRef.current) {
-      capaInputRef.current.value = "";
-    }
   }
 
   function limparArquivoAnexado() {
