@@ -90,5 +90,5 @@ test("Comunidade delega somente os lifecycles de dados pessoais aos hooks", () =
   assert.doesNotMatch(pagina, /await carregarVotosEnquetesSupabase\(/);
   assert.match(pagina, /function salvarPostComunidade\(postId: string\)/);
   assert.match(pagina, /function votarEnquetePostComunidade\(postId: string, opcao: string\)/);
-  assert.match(pagina, /supabase\.auth\.onAuthStateChange/);
+  assert.match(pagina, /useComunidadeAuthAccountLifecycle\(/);
 });

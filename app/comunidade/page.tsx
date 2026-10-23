@@ -11,7 +11,6 @@ import {
   useState,
 } from "react";
 import type { FormEvent } from "react";
-import { supabase } from "../../lib/supabase/client";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { useComunidadeDesktopMode } from "./hooks/use-comunidade-desktop-mode";
@@ -23,6 +22,7 @@ import {
   useComunidadeSavedPostsSync,
 } from "./hooks/use-comunidade-personal-data-sync";
 import { useComunidadeRelatedWorkDiarySync } from "./hooks/use-comunidade-related-work-diary-sync";
+import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-account-lifecycle";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -52,7 +52,6 @@ import {
 import { consultarPostParaRemocaoComunidade } from "./components/community-post-removal-query";
 import { removerPostSupabaseComunidade } from "./components/community-post-removal-delete";
 import { consultarUsuarioEhAdminComunidade } from "./components/community-admin-status-query";
-import { prepararPerfilEStatusAdminComunidade } from "./components/community-authenticated-user-preparation";
 import {
   atualizarFixacaoPostNoEstadoComunidade,
   atualizarVisibilidadePostNoEstadoComunidade,
@@ -86,7 +85,6 @@ import type {
   UsuarioBuscaComunidade,
   UsuarioComunidade,
 } from "./components/community-user";
-import { obterNomeUsuario } from "./components/community-user-name";
 import { obterNomeSeguroUsuarioComunidade } from "./components/community-safe-user-name";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import { obterSugestoesObrasRelacionadasVisiveisComunidade } from "./components/community-visible-related-work-suggestions";
@@ -108,7 +106,6 @@ import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-u
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
-import { erroEhSessaoAusenteComunidade } from "./components/community-supabase-missing-session-error-check";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
 import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
@@ -288,171 +285,39 @@ export default function ComunidadePage() {
     setResultadosEnquetes,
   });
 
-  useEffect(() => {
-    let cancelado = false;
-    const timersAutenticacao = new Set<number>();
-
-    function limparEstadoContaAnterior() {
-      setUsuario(null);
-      setUsuarioEhAdmin(false);
-      setPostMenuAbertoId(null);
-      setMenuAcoesRapidasComunidadeAberto(false);
-      setComposerAberto(false);
-      setComentariosPostId(null);
-      setPostsSalvosIds([]);
-      setVotosEnquetes({});
-      setResultadosEnquetes({});
-      setUsuariosSeguidosIds([]);
-      setUsuarioSeguindoId(null);
-      setPostCurtindoId(null);
-      setPostSalvandoId(null);
-      setPostCompartilhandoId(null);
-      setPostRemovendoId(null);
-      setPostFixandoId(null);
-      setDenunciaAlvo(null);
-      setFeedbackAcao("");
-      setObraRelacionadaBusca("");
-      setCapituloRelacionadoPost("");
-      setSugestoesObrasAbertas(false);
-      reviewsDiarioSincronizadasRef.current.clear();
-      usuarioReviewsDiarioRef.current = "";
-      acoesComunidadeRef.current.clear();
-
-      if (textoPostRef.current) {
-        textoPostRef.current.value = "";
-      }
-
-      if (obraRelacionadaRef.current) {
-        obraRelacionadaRef.current.value = "";
-      }
-    }
-
-    async function carregarUsuario() {
-      const versaoCarregamento =
-        autenticacaoComunidadeVersaoRef.current + 1;
-
-      autenticacaoComunidadeVersaoRef.current = versaoCarregamento;
-      setCarregandoUsuario(true);
-
-      try {
-        const { data, error: usuarioErro } = await supabase.auth.getUser();
-
-        if (
-          cancelado ||
-          versaoCarregamento !== autenticacaoComunidadeVersaoRef.current
-        ) {
-          return;
-        }
-
-        if (usuarioErro) {
-          if (!erroEhSessaoAusenteComunidade(usuarioErro)) {
-            console.warn(
-              "Não consegui carregar usuário da Comunidade:",
-              usuarioErro.message
-            );
-          }
-
-          setUsuario(null);
-          setUsuarioEhAdmin(false);
-          return;
-        }
-
-        const user = data.user || null;
-
-        if (!user) {
-          setUsuario(null);
-          setUsuarioEhAdmin(false);
-          return;
-        }
-
-        const { nomeProfile, avatarProfile, usuarioAdmin } =
-          await prepararPerfilEStatusAdminComunidade(user.id);
-
-        if (
-          cancelado ||
-          versaoCarregamento !== autenticacaoComunidadeVersaoRef.current
-        ) {
-          return;
-        }
-
-        const usuarioConfirmado = await obterUsuarioAutenticadoComunidadeAtual();
-
-        if (
-          cancelado ||
-          versaoCarregamento !== autenticacaoComunidadeVersaoRef.current ||
-          !usuarioConfirmado ||
-          usuarioConfirmado.id !== user.id
-        ) {
-          return;
-        }
-
-        setUsuarioEhAdmin(usuarioAdmin);
-        setUsuario({
-          id: user.id,
-          email: user.email || "",
-          nome: obterNomeUsuario(user.email || "", nomeProfile),
-          avatar: avatarProfile,
-        });
-      } catch (error) {
-        if (!erroEhSessaoAusenteComunidade(error)) {
-          console.warn("Não consegui iniciar usuário da Comunidade:", error);
-        }
-
-        if (
-          !cancelado &&
-          versaoCarregamento === autenticacaoComunidadeVersaoRef.current
-        ) {
-          setUsuario(null);
-          setUsuarioEhAdmin(false);
-        }
-      } finally {
-        if (
-          !cancelado &&
-          versaoCarregamento === autenticacaoComunidadeVersaoRef.current
-        ) {
-          setCarregandoUsuario(false);
-        }
-      }
-    }
-
-    void carregarUsuario();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      autenticacaoComunidadeVersaoRef.current += 1;
-      limparEstadoContaAnterior();
-      setCarregandoUsuario(true);
-      setPosts([]);
-      setCarregandoFeed(true);
-
-      const timer = window.setTimeout(() => {
-        timersAutenticacao.delete(timer);
-
-        if (cancelado) {
-          return;
-        }
-
-        void carregarUsuario();
-
-        const obraFiltroUrl = obterParametroObraComunidade(
-          new URLSearchParams(window.location.search)
-        );
-
-        void carregarPostsComunidadeNoEfeito(true, 0, obraFiltroUrl);
-      }, 0);
-
-      timersAutenticacao.add(timer);
-    });
-
-    return () => {
-      cancelado = true;
-      autenticacaoComunidadeVersaoRef.current += 1;
-      timersAutenticacao.forEach((timer) => window.clearTimeout(timer));
-      timersAutenticacao.clear();
-      subscription.unsubscribe();
-    };
-  }, []);
+  useComunidadeAuthAccountLifecycle({
+    autenticacaoComunidadeVersaoRef,
+    reviewsDiarioSincronizadasRef,
+    usuarioReviewsDiarioRef,
+    acoesComunidadeRef,
+    textoPostRef,
+    obraRelacionadaRef,
+    setUsuario,
+    setUsuarioEhAdmin,
+    setCarregandoUsuario,
+    setPostMenuAbertoId,
+    setMenuAcoesRapidasComunidadeAberto,
+    setComposerAberto,
+    setComentariosPostId,
+    setPostsSalvosIds,
+    setVotosEnquetes,
+    setResultadosEnquetes,
+    setUsuariosSeguidosIds,
+    setUsuarioSeguindoId,
+    setPostCurtindoId,
+    setPostSalvandoId,
+    setPostCompartilhandoId,
+    setPostRemovendoId,
+    setPostFixandoId,
+    setDenunciaAlvo,
+    setFeedbackAcao,
+    setObraRelacionadaBusca,
+    setCapituloRelacionadoPost,
+    setSugestoesObrasAbertas,
+    setPosts,
+    setCarregandoFeed,
+    carregarPostsComunidade: carregarPostsComunidadeDaPagina,
+  });
 
   useComunidadeRelatedWorkDiarySync({
     usuarioId: usuario?.id,

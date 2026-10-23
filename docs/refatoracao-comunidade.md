@@ -1314,3 +1314,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O carregamento cancelável de sugestões de obras relacionadas e a sincronização sequencial das reviews pendentes com o Diário foram isolados em `use-comunidade-related-work-diary-sync.ts`.
 - A detecção, os refs por usuário, os resets, os cancelamentos, os payloads e as ações de publicação, visibilidade e remoção foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 6 — Comunidade
+
+- O lifecycle de autenticação e troca de conta foi isolado em `use-comunidade-auth-account-lifecycle.ts`.
+- O carregamento e a confirmação de identidade, os guards de versão, a assinatura, os timers, os resets de conta, a limpeza do composer e o recarregamento do feed foram preservados sem alteração intencional de comportamento.
