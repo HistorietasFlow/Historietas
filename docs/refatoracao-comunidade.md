@@ -1384,3 +1384,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição visual central do feed foi isolada em `community-feed-center-composition.tsx`.
 - Busca de usuários, cabeçalho/contagem de publicações e seção do feed recebem dados e callbacks explicitamente da página; estados, regras, renderização de cada post e ações permanecem em `page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 20 — Comunidade
+
+- O portal visual do composer foi isolado em `community-post-composer-portal.tsx`.
+- A condição de abertura, o portal para `document.body` e a apresentação recebem props explícitas; estados, regras e callbacks continuam na página sem alteração intencional de comportamento.

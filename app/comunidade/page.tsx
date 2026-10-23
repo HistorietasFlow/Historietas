@@ -1,6 +1,5 @@
 "use client";
 
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   useDeferredValue,
@@ -109,7 +108,7 @@ import {
 import {
   deveExibirResultadosBuscaComunidade,
 } from "./components/community-search-controls-visibility";
-import { CommunityPostComposer } from "./components/community-post-composer";
+import { CommunityPostComposerPortal } from "./components/community-post-composer-portal";
 import { CommunityActionFeedbackToast, emitirFeedbackAcao } from "./components/community-action-feedback-toast";
 import {
   finalizarAcaoComunidade,
@@ -962,103 +961,100 @@ export default function ComunidadePage() {
         </CommunityMainLayout>
       </CommunityContentContainer>
 
-      {composerAberto && usuario && typeof document !== "undefined"
-        ? createPortal(
-            <CommunityPostComposer
-              desktop={isDesktop}
-              publicandoPost={publicandoPost}
-              erro={erro}
-              temSpoilerPost={temSpoilerPost}
-              classificacao={{
-                categoriaPost,
-                tipoPublicacaoPost,
-                visibilidadePost,
-                onAlterarCategoria: (categoria) =>
-                  setCategoriaPost(categoria),
-                onAlterarTipoPublicacao: (tipo) =>
-                  selecionarTipoPublicacaoPost({
-                    tipo,
-                    setTipoPublicacaoPost,
-                    textoPostRef,
-                  }),
-                onAlterarVisibilidade: (visibilidade) =>
-                  setVisibilidadePost(
-                    normalizarVisibilidadePostComunidade(visibilidade),
-                  ),
-              }}
-              camposRelacionados={{
-                obraRelacionadaBusca,
-                capituloRelacionadoPost,
-                sugestoesObrasAbertas,
-                sugestoesObrasRelacionadasVisiveis,
-                obraRelacionadaRef,
-                onAlterarObraRelacionada: (valorDigitado) => {
-                  setObraRelacionadaBusca(valorDigitado);
-
-                  if (!valorDigitado.trim()) {
-                    setCapituloRelacionadoPost("");
-                  }
-
-                  setSugestoesObrasAbertas(Boolean(valorDigitado.trim()));
-                },
-                onFocarObraRelacionada: () => {
-                  setSugestoesObrasAbertas(
-                    Boolean(obraRelacionadaBusca.trim())
-                  );
-                },
-                onDesfocarObraRelacionada: () => {
-                  window.setTimeout(() => {
-                    setSugestoesObrasAbertas(false);
-                  }, 120);
-                },
-                onSelecionarObraRelacionada: (obra) => {
-                  selecionarObraRelacionada({
-                    titulo: obra.titulo,
-                    setObraRelacionadaBusca,
-                    setSugestoesObrasAbertas,
-                    obraRelacionadaRef,
-                  });
-                },
-                onAlterarCapituloRelacionado: (valor) =>
-                  setCapituloRelacionadoPost(valor),
-              }}
-              publicacao={{
+      <CommunityPostComposerPortal
+        composerAberto={composerAberto}
+        usuario={usuario}
+        composerProps={{
+          desktop: isDesktop,
+          publicandoPost,
+          erro,
+          temSpoilerPost,
+          classificacao: {
+            categoriaPost,
+            tipoPublicacaoPost,
+            visibilidadePost,
+            onAlterarCategoria: (categoria) => setCategoriaPost(categoria),
+            onAlterarTipoPublicacao: (tipo) =>
+              selecionarTipoPublicacaoPost({
+                tipo,
+                setTipoPublicacaoPost,
                 textoPostRef,
-                onPrepararEnquete: () =>
-                  prepararEnqueteComunidade({
-                    garantirAceiteAntesDePublicarComunidade,
-                    setErro,
-                    setCategoriaPost,
-                    setTipoPublicacaoPost,
-                    setTemSpoilerPost,
-                    setComposerAberto,
-                    textoPostRef,
-                  }),
-                onAplicarSugestao: (sugestao) =>
-                  aplicarSugestaoPublicacaoComunidade({
-                    sugestao,
-                    publicandoPost,
-                    setErro,
-                    setCategoriaPost,
-                    setTipoPublicacaoPost,
-                    textoPostRef,
-                    language,
-                  }),
-              }}
-              onFechar={() => {
-                if (!publicandoPost) {
-                  setErro("");
-                  setComposerAberto(false);
-                }
-              }}
-              onSubmit={publicarPost}
-              onAlternarSpoiler={() =>
-                setTemSpoilerPost((valorAtual) => !valorAtual)
+              }),
+            onAlterarVisibilidade: (visibilidade) =>
+              setVisibilidadePost(
+                normalizarVisibilidadePostComunidade(visibilidade),
+              ),
+          },
+          camposRelacionados: {
+            obraRelacionadaBusca,
+            capituloRelacionadoPost,
+            sugestoesObrasAbertas,
+            sugestoesObrasRelacionadasVisiveis,
+            obraRelacionadaRef,
+            onAlterarObraRelacionada: (valorDigitado) => {
+              setObraRelacionadaBusca(valorDigitado);
+
+              if (!valorDigitado.trim()) {
+                setCapituloRelacionadoPost("");
               }
-            />,
-            document.body
-          )
-        : null}
+
+              setSugestoesObrasAbertas(Boolean(valorDigitado.trim()));
+            },
+            onFocarObraRelacionada: () => {
+              setSugestoesObrasAbertas(
+                Boolean(obraRelacionadaBusca.trim()),
+              );
+            },
+            onDesfocarObraRelacionada: () => {
+              window.setTimeout(() => {
+                setSugestoesObrasAbertas(false);
+              }, 120);
+            },
+            onSelecionarObraRelacionada: (obra) => {
+              selecionarObraRelacionada({
+                titulo: obra.titulo,
+                setObraRelacionadaBusca,
+                setSugestoesObrasAbertas,
+                obraRelacionadaRef,
+              });
+            },
+            onAlterarCapituloRelacionado: (valor) =>
+              setCapituloRelacionadoPost(valor),
+          },
+          publicacao: {
+            textoPostRef,
+            onPrepararEnquete: () =>
+              prepararEnqueteComunidade({
+                garantirAceiteAntesDePublicarComunidade,
+                setErro,
+                setCategoriaPost,
+                setTipoPublicacaoPost,
+                setTemSpoilerPost,
+                setComposerAberto,
+                textoPostRef,
+              }),
+            onAplicarSugestao: (sugestao) =>
+              aplicarSugestaoPublicacaoComunidade({
+                sugestao,
+                publicandoPost,
+                setErro,
+                setCategoriaPost,
+                setTipoPublicacaoPost,
+                textoPostRef,
+                language,
+              }),
+          },
+          onFechar: () => {
+            if (!publicandoPost) {
+              setErro("");
+              setComposerAberto(false);
+            }
+          },
+          onSubmit: publicarPost,
+          onAlternarSpoiler: () =>
+            setTemSpoilerPost((valorAtual) => !valorAtual),
+        }}
+      />
 
       <ComentariosSheet
         key={postComentariosAberto?.id || "comentarios-fechados"}
