@@ -25,6 +25,7 @@ import { useComunidadeRelatedWorkDiarySync } from "./hooks/use-comunidade-relate
 import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-account-lifecycle";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
+import { publicarPostComunidade } from "./components/community-composer-publication-action";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -59,11 +60,6 @@ import {
 } from "./components/community-post-metadata-state-updaters";
 import { atualizarVisibilidadePostSupabaseComunidade } from "./components/community-post-visibility-update";
 import { atualizarFixacaoPostSupabaseComunidade } from "./components/community-post-pinning-update";
-import { validarConteudoPublicacaoComunidade } from "./components/community-post-publication-validation";
-import { prepararDadosInsercaoPostComunidade } from "./components/community-post-insert-payload";
-import { inserirPostSupabaseComunidade } from "./components/community-post-insert";
-import { consultarPostCriadoComunidade } from "./components/community-created-post-query";
-import { mapearPostCriadoComunidade } from "./components/community-created-post-mapper";
 import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
 import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
 import { inserirComentarioSupabaseComunidade } from "./components/community-comment-insert";
@@ -96,18 +92,13 @@ import { CommunityFeedLoadingState } from "./components/community-feed-loading-s
 import { communityPageStyle } from "./components/community-page-style";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
-import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
-import { consultarObrasPorTituloComunidade } from "./components/community-related-work-title-query";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
-import type { SupabasePostRow } from "./components/community-supabase-post-row";
 import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-user-saver";
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { idSupabaseValidoComunidade } from "./components/community-supabase-id-validator";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
-import { removerSugestoesObrasDuplicadas } from "./components/community-related-work-deduplicator";
-import { obterObraRelacionadaPermitida } from "./components/community-related-work-allowed-finder";
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
@@ -529,191 +520,41 @@ export default function ComunidadePage() {
     }
   }
 
-  async function publicarPost(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const chaveAcao = "publicar-post";
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    setPublicandoPost(true);
-    setErro("");
-
-    try {
-      if (!exigirLogin() || !usuario) {
-        return;
-      }
-
-      if (!(await garantirAceiteAntesDePublicarComunidade())) {
-        return;
-      }
-
-      const usuarioAutenticado = await obterUsuarioAutenticadoComunidadeAtual();
-      const usuarioAutenticadoId = usuarioAutenticado?.id?.trim() || "";
-      const usuarioEstadoId = usuario.id.trim();
-
-      if (
-        !usuarioAutenticadoId ||
-        usuarioAutenticadoId !== usuarioEstadoId
-      ) {
-        setUsuario(null);
-        setUsuarioEhAdmin(false);
-        setErro(
-          "Sua sessão expirou ou a conta mudou. Entre novamente antes de publicar."
-        );
-        return;
-      }
-
-      const visibilidadeSegura =
-        normalizarVisibilidadePostComunidade(visibilidadePost);
-      const textoLimpo = textoPostRef.current?.value.trim() || "";
-      const obraLimpa = obraRelacionadaRef.current?.value.trim() || "";
-      const capituloLimpo = capituloRelacionadoPost.trim();
-      let obraRelacionadaPermitida = obraLimpa
-        ? obterObraRelacionadaPermitida(
-            obraLimpa,
-            obrasRelacionadasSugestoes
-          )
-        : null;
-
-      if (capituloLimpo && !obraLimpa) {
-        setErro("Selecione uma obra antes de informar o capítulo.");
-        return;
-      }
-
-      if (obraLimpa && !obraRelacionadaPermitida) {
-        const resultadoConsultaObras =
-          await consultarObrasPorTituloComunidade(obraLimpa);
-
-        if (resultadoConsultaObras.sucesso) {
-          obraRelacionadaPermitida =
-            obterPrimeiraSugestaoObraSupabaseComunidade(
-              resultadoConsultaObras.obrasEncontradas
-            );
-
-          if (obraRelacionadaPermitida) {
-            setObrasRelacionadasSugestoes((obrasAtuais) =>
-              removerSugestoesObrasDuplicadas([
-                obraRelacionadaPermitida as ObraRelacionadaSugestao,
-                ...obrasAtuais,
-              ])
-            );
-          }
-        }
-      }
-
-      if (obraLimpa && !obraRelacionadaPermitida) {
-        setErro("Selecione uma obra publicada disponível nas sugestões.");
-        return;
-      }
-
-      const resultadoValidacaoConteudo = validarConteudoPublicacaoComunidade(
-        textoLimpo,
-        tipoPublicacaoPost
-      );
-
-      if (!resultadoValidacaoConteudo.valido) {
-        setErro(resultadoValidacaoConteudo.erro);
-        return;
-      }
-
-      const { publicacaoEhEnquete } = resultadoValidacaoConteudo;
-
-      const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
-
-      const { textoPostBanco, dadosPostBanco } =
-        prepararDadosInsercaoPostComunidade({
-          usuarioAutenticadoId,
-          autorNomeSeguro,
-          categoriaPost,
-          tipoPublicacaoPost,
-          publicacaoEhEnquete,
-          temSpoilerPost,
-          textoLimpo,
-          obraRelacionadaTitulo: obraRelacionadaPermitida?.titulo || "",
-          capituloLimpo,
-          visibilidadeSegura,
-        });
-
-      // Não use INSERT ... RETURNING aqui. O RETURNING também passa pela
-      // política SELECT da tabela e pode fazer um INSERT válido ser rejeitado.
-      const resultadoInsercaoPost =
-        await inserirPostSupabaseComunidade(dadosPostBanco);
-
-      if (!resultadoInsercaoPost.sucesso) {
-        setErro(
-          formatarErroSupabase("Erro ao publicar", resultadoInsercaoPost.erro)
-        );
-        return;
-      }
-
-      // A leitura é feita em uma consulta separada, depois que o INSERT termina.
-      const postCriado = await consultarPostCriadoComunidade(
-        usuarioAutenticadoId,
-        textoPostBanco
-      );
-
-      let novoPost: PostComunidade | null = null;
-
-      if (postCriado) {
-        novoPost = mapearPostCriadoComunidade({
-          postCriado: postCriado as SupabasePostRow,
-          usuarioAutenticadoId,
-          autorNomeSeguro,
-          usuarioAvatar: usuario.avatar,
-        });
-
-        setPosts((postsAtuais) => [novoPost as PostComunidade, ...postsAtuais]);
-      } else {
-        await carregarPostsComunidadeDaPagina(false, 0, obraRelacionadaFiltro);
-      }
-
-      if (
-        novoPost &&
-        !publicacaoEhEnquete &&
-        tipoPublicacaoPost === "Review"
-      ) {
-        reviewsDiarioSincronizadasRef.current.add(novoPost.id);
-
-        const reviewSincronizada = await registrarReviewComunidadeNoDiario({
-          userId: usuarioAutenticadoId,
-          texto: textoLimpo,
-          obraRelacionada: obraLimpa,
-          postId: novoPost.id,
-          criadaEm: novoPost.criadoEm,
-          sugestoesObras: obrasRelacionadasSugestoes,
-          visibilidade: novoPost.visibilidade,
-        });
-
-        if (!reviewSincronizada) {
-          reviewsDiarioSincronizadasRef.current.delete(novoPost.id);
-        }
-      }
-
-      if (textoPostRef.current) {
-        textoPostRef.current.value = "";
-      }
-
-      if (obraRelacionadaRef.current) {
-        obraRelacionadaRef.current.value = "";
-      }
-
-      setObraRelacionadaBusca("");
-      setCapituloRelacionadoPost("");
-      setSugestoesObrasAbertas(false);
-      setCategoriaPost("Geral");
-      setTipoPublicacaoPost("Discussão");
-      setVisibilidadePost("publico");
-      setTemSpoilerPost(false);
-      setComposerAberto(false);
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Publicação enviada para a Comunidade.");
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-      setPublicandoPost(false);
-    }
-  }
+  const publicarPost = (event: FormEvent<HTMLFormElement>) =>
+    publicarPostComunidade({
+      event,
+      acoesComunidadeRef,
+      setPublicandoPost,
+      setErro,
+      exigirLogin,
+      usuario,
+      garantirAceiteAntesDePublicarComunidade,
+      setUsuario,
+      setUsuarioEhAdmin,
+      visibilidadePost,
+      textoPostRef,
+      obraRelacionadaRef,
+      capituloRelacionadoPost,
+      obrasRelacionadasSugestoes,
+      setObrasRelacionadasSugestoes,
+      tipoPublicacaoPost,
+      categoriaPost,
+      temSpoilerPost,
+      setPosts,
+      carregarPostsComunidadeDaPagina,
+      obraRelacionadaFiltro,
+      reviewsDiarioSincronizadasRef,
+      setObraRelacionadaBusca,
+      setCapituloRelacionadoPost,
+      setSugestoesObrasAbertas,
+      setCategoriaPost,
+      setTipoPublicacaoPost,
+      setVisibilidadePost,
+      setTemSpoilerPost,
+      setComposerAberto,
+      setFeedbackAcao,
+      feedbackTimerRef,
+    });
 
   async function alternarCurtida(postId: string) {
     const chaveAcao = `curtir-post:${postId}`;

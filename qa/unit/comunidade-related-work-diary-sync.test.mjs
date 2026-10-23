@@ -67,7 +67,7 @@ test("Comunidade delega apenas os lifecycles de sugestões e reviews ao hook", (
   );
   assert.doesNotMatch(pagina, /void sincronizarReviewsPendentesSequencialmenteComunidade\(/);
   assert.doesNotMatch(pagina, /await prepararSugestoesObrasRelacionadasComunidade\(/);
-  assert.match(pagina, /async function publicarPost\(/);
+  assert.match(pagina, /publicarPostComunidade\(\{/);
   assert.match(pagina, /async function atualizarVisibilidadePost\(/);
   assert.match(pagina, /async function removerPost\(/);
   assert.match(pagina, /useComunidadeAuthAccountLifecycle\(/);

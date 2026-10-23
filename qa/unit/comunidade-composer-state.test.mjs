@@ -70,5 +70,5 @@ test("Comunidade delega somente o estado e lifecycle do composer ao hook", () =>
     pagina,
     /useComunidadeOverlayBodyLock\(\{\s*bloqueioPrimario: composerAberto,\s*focoComposerRef: textoPostRef,\s*\}\);/,
   );
-  assert.match(pagina, /async function publicarPost\(/);
+  assert.match(pagina, /publicarPostComunidade\(\{/);
 });

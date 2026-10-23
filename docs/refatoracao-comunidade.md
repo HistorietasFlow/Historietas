@@ -1329,3 +1329,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O estado e o lifecycle do composer foram isolados em `use-comunidade-composer-state.ts`.
 - Defaults, refs, limpeza postergada ao fechar e os consumidores da composição foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 9 — Comunidade
+
+- A ação de publicação do composer foi isolada em `community-composer-publication-action.ts`.
+- Os guards de sessão, validações, INSERT/leitura separada, fallback do feed, sincronização com o Diário, limpeza e finalização do lock foram preservados sem alteração intencional de comportamento.
