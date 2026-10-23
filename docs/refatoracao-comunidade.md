@@ -1324,3 +1324,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A orquestração de carregamento e paginação do feed foi isolada em `use-comunidade-feed-lifecycle.ts`.
 - O carregamento inicial, scroll, filtro de obra por URL, timer, cleanup, paginação e os estados de feed foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 8 — Comunidade
+
+- O estado e o lifecycle do composer foram isolados em `use-comunidade-composer-state.ts`.
+- Defaults, refs, limpeza postergada ao fechar e os consumidores da composição foram preservados sem alteração intencional de comportamento.

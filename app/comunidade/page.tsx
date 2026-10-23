@@ -24,11 +24,11 @@ import {
 import { useComunidadeRelatedWorkDiarySync } from "./hooks/use-comunidade-related-work-diary-sync";
 import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-account-lifecycle";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
+import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import { normalizarVisibilidadePostComunidade } from "./components/community-post-visibility-normalizer";
-import type { TipoPublicacaoComunidade } from "./components/community-publication-type";
 import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
 import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
@@ -186,13 +186,6 @@ export default function ComunidadePage() {
   const [obraRelacionadaFiltro, setObraRelacionadaFiltro] = useState("");
   const [grupoPublicacaoObra, setGrupoPublicacaoObra] =
     useState<GrupoPublicacaoObra>("");
-  const [categoriaPost, setCategoriaPost] =
-    useState<CategoriaComunidade>("Geral");
-  const [tipoPublicacaoPost, setTipoPublicacaoPost] =
-    useState<TipoPublicacaoComunidade>("Discussão");
-  const [visibilidadePost, setVisibilidadePost] =
-    useState<VisibilidadePostComunidade>("publico");
-  const [temSpoilerPost, setTemSpoilerPost] = useState(false);
   const [spoilersReveladosIds, setSpoilersReveladosIds] = useState<string[]>([]);
   const [termoBusca, setTermoBusca] = useState("");
   const termoBuscaAdiado = useDeferredValue(termoBusca);
@@ -226,14 +219,9 @@ export default function ComunidadePage() {
   const [carregandoMaisPostsComunidade, setCarregandoMaisPostsComunidade] = useState(false);
   const [erro, setErro] = useState("");
   const [comentariosPostId, setComentariosPostId] = useState<string | null>(null);
-  const [obraRelacionadaBusca, setObraRelacionadaBusca] = useState("");
-  const [capituloRelacionadoPost, setCapituloRelacionadoPost] = useState("");
   const [obrasRelacionadasSugestoes, setObrasRelacionadasSugestoes] = useState<
     ObraRelacionadaSugestao[]
   >([]);
-  const [sugestoesObrasAbertas, setSugestoesObrasAbertas] = useState(false);
-  const textoPostRef = useRef<HTMLTextAreaElement | null>(null);
-  const obraRelacionadaRef = useRef<HTMLInputElement | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
   const autenticacaoComunidadeVersaoRef = useRef(0);
   const reviewsDiarioSincronizadasRef = useRef<Set<string>>(new Set<string>());
@@ -247,7 +235,26 @@ export default function ComunidadePage() {
     ) => Promise<void>
   >(null);
   const comentarioUrlAplicadoRef = useRef(false);
-  const [composerAberto, setComposerAberto] = useState(false);
+  const {
+    categoriaPost,
+    setCategoriaPost,
+    tipoPublicacaoPost,
+    setTipoPublicacaoPost,
+    visibilidadePost,
+    setVisibilidadePost,
+    temSpoilerPost,
+    setTemSpoilerPost,
+    obraRelacionadaBusca,
+    setObraRelacionadaBusca,
+    capituloRelacionadoPost,
+    setCapituloRelacionadoPost,
+    sugestoesObrasAbertas,
+    setSugestoesObrasAbertas,
+    textoPostRef,
+    obraRelacionadaRef,
+    composerAberto,
+    setComposerAberto,
+  } = useComunidadeComposerState();
   const [menuAcoesRapidasComunidadeAberto, setMenuAcoesRapidasComunidadeAberto] =
     useState(false);
   const [buscaComunidadeAberta, setBuscaComunidadeAberta] = useState(false);
@@ -331,22 +338,6 @@ export default function ComunidadePage() {
     reviewsDiarioSincronizadasRef,
     usuarioReviewsDiarioRef,
   });
-
-  useEffect(() => {
-    if (composerAberto) {
-      return;
-    }
-
-    const fecharSugestoesTimer = window.setTimeout(() => {
-      setSugestoesObrasAbertas(false);
-      setObraRelacionadaBusca("");
-      setVisibilidadePost("publico");
-    }, 0);
-
-    return () => {
-      window.clearTimeout(fecharSugestoesTimer);
-    };
-  }, [composerAberto]);
 
   useComunidadeOverlayBodyLock({
     bloqueioPrimario: menuAcoesRapidasComunidadeAberto,
