@@ -26,19 +26,27 @@ const arquivo = readFileSync(
   new URL("../../app/publicar/components/PublicarContentFileUpload.tsx", import.meta.url),
   "utf8",
 );
+const avisosAdultos = readFileSync(
+  new URL("../../app/publicar/components/PublicarAdultWarnings.tsx", import.meta.url),
+  "utf8",
+);
+const sinopse = readFileSync(
+  new URL("../../app/publicar/components/PublicarSynopsisField.tsx", import.meta.url),
+  "utf8",
+);
+const acoesFormulario = readFileSync(
+  new URL("../../app/publicar/components/PublicarFormActions.tsx", import.meta.url),
+  "utf8",
+);
 
-test("Publicar delega a composição visual do cabeçalho e progresso", () => {
+test("Publicar delega a composição visual do cabeçalho", () => {
   assert.match(pagina, /import \{ PublicarPageHeader \} from "\.\/components\/PublicarPageHeader";/);
-  assert.match(pagina, /import \{ PublicarProgress \} from "\.\/components\/PublicarProgress";/);
   assert.match(pagina, /<PublicarPageHeader[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?voltarHome=\{t\("voltarHome"\)\}[\s\S]*?novaObra=\{t\("novaObra"\)\}/);
-  assert.match(pagina, /<PublicarProgress[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?progresso=\{progresso\}[\s\S]*?rotulo=\{t\("progresso"\)\}/);
   assert.doesNotMatch(pagina, /<header style=\{isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle\}/);
 
   assert.match(cabecalho, /href="\/"/);
   assert.match(cabecalho, /aria-label=\{voltarHome\}/);
   assert.match(cabecalho, /isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle/);
-  assert.match(progresso, /isDesktop[\s\S]*?desktopProgressBoxStyle[\s\S]*?progressBoxStyle/);
-  assert.match(progresso, /width: `\$\{progresso\}%`/);
 });
 
 test("Publicar delega a prévia sem deslocar estados ou regras de publicação", () => {
@@ -75,8 +83,31 @@ test("Publicar delega os uploads visuais sem deslocar estado ou leitura de arqui
   assert.match(arquivo, /isDesktop \? desktopFullWidthArquivoObraBoxStyle : chapterImportBoxStyle/);
 });
 
+test("Publicar delega campos controlados sem deslocar seus estados e callbacks", () => {
+  assert.match(pagina, /import \{ PublicarAdultWarnings \} from "\.\/components\/PublicarAdultWarnings";/);
+  assert.match(pagina, /import \{ PublicarSynopsisField \} from "\.\/components\/PublicarSynopsisField";/);
+  assert.match(pagina, /import \{ PublicarFormActions \} from "\.\/components\/PublicarFormActions";/);
+  assert.match(pagina, /<PublicarAdultWarnings[\s\S]*?avisosConteudo18=\{avisosConteudo18\}[\s\S]*?onAlternarAviso=\{alternarAvisoConteudo18\}/);
+  assert.match(pagina, /<PublicarSynopsisField[\s\S]*?onSinopseChange=\{atualizarSinopse\}[\s\S]*?sinopse=\{sinopse\}[\s\S]*?t=\{t\}/);
+  assert.match(pagina, /<PublicarFormActions[\s\S]*?processando=\{processando\}[\s\S]*?progresso=\{progresso\}[\s\S]*?salvando=\{t\("salvando"\)\}/);
+  assert.match(pagina, /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\)[\s\S]*?setAvisosConteudo18[\s\S]*?setErro\(""\)/);
+  assert.match(pagina, /function atualizarSinopse\(valor: string\)[\s\S]*?setSinopse\(valor\)[\s\S]*?setErro\(""\)/);
+  assert.doesNotMatch(pagina, /aria-label="Avisos de conteúdo 18\+"/);
+  assert.doesNotMatch(pagina, /id="publicar-sinopse"/);
+
+  assert.match(avisosAdultos, /AVISOS_CONTEUDO_18\.map/);
+  assert.match(avisosAdultos, /onChange=\{\(\) => onAlternarAviso\(aviso\)\}/);
+  assert.match(avisosAdultos, /traduzirAvisoConteudo18\(aviso, idioma\)/);
+  assert.match(sinopse, /id="publicar-sinopse"/);
+  assert.match(sinopse, /onSinopseChange\(event\.target\.value\)/);
+  assert.match(sinopse, /sinopseValida \? miniCounterOkStyle : miniCounterWarningStyle/);
+  assert.match(acoesFormulario, /href="\/"/);
+  assert.match(acoesFormulario, /processando \? disabledButtonStyle : primaryButtonStyle/);
+  assert.match(acoesFormulario, /<PublicarProgress[\s\S]*?progresso=\{progresso\}[\s\S]*?rotulo=\{progressoRotulo\}/);
+});
+
 test("componentes visuais de Publicar permanecem sem runtime de dados", () => {
-  for (const componente of [cabecalho, progresso, previa, capa, arquivo]) {
+  for (const componente of [cabecalho, progresso, previa, capa, arquivo, avisosAdultos, sinopse, acoesFormulario]) {
     assert.doesNotMatch(componente, /supabase|localStorage|useEffect|useState|window\.|document\./);
   }
 });
