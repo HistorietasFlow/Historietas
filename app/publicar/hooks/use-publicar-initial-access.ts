@@ -91,5 +91,5 @@ export function usePublicarInitialAccess({
     return () => {
       cancelado = true;
     };
-  }, [router]);
+  }, [router, setAutor, setVerificandoAutenticacao]);
 }

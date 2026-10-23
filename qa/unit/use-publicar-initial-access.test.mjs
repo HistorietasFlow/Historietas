@@ -22,7 +22,7 @@ test("usePublicarInitialAccess preserves the publication access lifecycle", () =
   assert.match(hook, /window\.setTimeout\(\(\) => \{[\s\S]*?setAutor\(\(autorAtual\) =>[\s\S]*?setVerificandoAutenticacao\(false\);[\s\S]*?\}, 0\);/);
   assert.equal((hook.match(/if \(cancelado\)/g) || []).length, 3);
   assert.match(hook, /return \(\) => \{[\s\S]*?cancelado = true;/);
-  assert.match(hook, /\}, \[router\]\);/);
+  assert.match(hook, /\}, \[router, setAutor, setVerificandoAutenticacao\]\);/);
 });
 
 test("Publicar delega apenas o lifecycle inicial de acesso ao hook", () => {
