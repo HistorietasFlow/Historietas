@@ -97,13 +97,7 @@ import { CommunityThemeStyles } from "./components/community-theme-styles";
 import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
 import { CommunityTopWaterFade } from "./components/community-top-water-fade";
-import { CommunityDesktopHeader } from "./components/community-desktop-header";
-import { CommunityDesktopTitle } from "./components/community-desktop-title";
-import { CommunityDesktopHeaderActions } from "./components/community-desktop-header-actions";
-import { CommunityDesktopSearchContainer } from "./components/community-desktop-search-container";
-import { CommunityDesktopSearchIcon } from "./components/community-desktop-search-icon";
-import { CommunityDesktopSearchInput } from "./components/community-desktop-search-input";
-import { CommunityDesktopFilterButton } from "./components/community-desktop-filter-button";
+import { CommunityFeedTopComposition } from "./components/community-feed-top-composition";
 import { CommunityMainLayout } from "./components/community-main-layout";
 import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
@@ -114,8 +108,6 @@ import {
 import {
   deveExibirResultadosBuscaComunidade,
 } from "./components/community-search-controls-visibility";
-import { CommunityFeedActionsSheet } from "./components/community-feed-actions-sheet";
-import { CommunityFeedControls } from "./components/community-feed-controls";
 import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
 import { CommunitySearchResultsCount } from "./components/community-search-results-count";
@@ -776,28 +768,15 @@ export default function ComunidadePage() {
 
       <CommunityContentContainer isDesktop={isDesktop}>
         {isDesktop ? (
-          <CommunityDesktopHeader>
-            <CommunityDesktopTitle>Comunidade</CommunityDesktopTitle>
-
-            <CommunityDesktopHeaderActions>
-              <CommunityDesktopSearchContainer>
-                <CommunityDesktopSearchIcon />
-
-                <CommunityDesktopSearchInput
-                  value={termoBusca}
-                  onChange={(event) => setTermoBusca(event.target.value)}
-                />
-              </CommunityDesktopSearchContainer>
-
-              <CommunityDesktopFilterButton
-                onClick={() =>
-                  setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
-                }
-                expanded={menuAcoesRapidasComunidadeAberto}
-              />
-
-            </CommunityDesktopHeaderActions>
-          </CommunityDesktopHeader>
+          <CommunityFeedTopComposition
+            area="desktop-header"
+            termoBusca={termoBusca}
+            menuAcoesRapidasComunidadeAberto={menuAcoesRapidasComunidadeAberto}
+            onAlterarTermoBusca={(event) => setTermoBusca(event.target.value)}
+            onAlternarMenuAcoes={() =>
+              setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
+            }
+          />
         ) : null}
 
         <CommunityMainLayout isDesktop={isDesktop}>
@@ -806,7 +785,8 @@ export default function ComunidadePage() {
               <CommunityFeedErrorNotice>{erro}</CommunityFeedErrorNotice>
             )}
 
-            <CommunityFeedControls
+            <CommunityFeedTopComposition
+              area="feed-controls"
               desktop={isDesktop}
               termoBusca={termoBusca}
               buscaComunidadeAberta={buscaComunidadeAberta}
@@ -842,64 +822,59 @@ export default function ComunidadePage() {
                   setMenuAcoesRapidasComunidadeAberto,
                 })
               }
+              filtrosAtivos={filtrosAtivos}
+              mostrarApenasSalvos={mostrarApenasSalvos}
+              ordenacaoAtiva={ordenacaoAtiva}
+              onFecharAcoes={() => setMenuAcoesRapidasComunidadeAberto(false)}
+              onPublicar={() =>
+                abrirPublicacaoRapidaComunidade({
+                  carregandoUsuario,
+                  garantirAceiteAntesDePublicarComunidade,
+                  setMenuAcoesRapidasComunidadeAberto,
+                  setErro,
+                  setComposerAberto,
+                })
+              }
+              onMostrarTodas={() => {
+                limparFiltrosComunidade({
+                  setAbaFeedAtiva,
+                  setCategoriaAtiva,
+                  setTipoPublicacaoAtiva,
+                  setObraRelacionadaFiltro,
+                  setGrupoPublicacaoObra,
+                  setTermoBusca,
+                  setOrdenacaoAtiva,
+                  setMostrarApenasSalvos,
+                  carregarPostsComunidade: carregarPostsComunidadeDaPagina,
+                });
+                setMenuAcoesRapidasComunidadeAberto(false);
+              }}
+              onMostrarSalvos={() => {
+                setMostrarApenasSalvos(true);
+                setMenuAcoesRapidasComunidadeAberto(false);
+              }}
+              onSelecionarRecentes={() =>
+                selecionarOrdenacaoRecentesComunidade({
+                  setOrdenacaoAtiva,
+                  setMostrarApenasSalvos,
+                  setMenuAcoesRapidasComunidadeAberto,
+                })
+              }
+              onSelecionarEmAlta={() =>
+                selecionarOrdenacaoEmAltaComunidade({
+                  setOrdenacaoAtiva,
+                  setMostrarApenasSalvos,
+                  setMenuAcoesRapidasComunidadeAberto,
+                })
+              }
+              onSelecionarMaisComentadas={() =>
+                selecionarOrdenacaoMaisComentadasComunidade({
+                  setOrdenacaoAtiva,
+                  setMostrarApenasSalvos,
+                  setMenuAcoesRapidasComunidadeAberto,
+                })
+              }
             />
-
-            {menuAcoesRapidasComunidadeAberto && (
-              <CommunityFeedActionsSheet
-                filtrosAtivos={filtrosAtivos}
-                mostrarApenasSalvos={mostrarApenasSalvos}
-                ordenacaoAtiva={ordenacaoAtiva}
-                onFechar={() => setMenuAcoesRapidasComunidadeAberto(false)}
-                onPublicar={() =>
-                  abrirPublicacaoRapidaComunidade({
-                    carregandoUsuario,
-                    garantirAceiteAntesDePublicarComunidade,
-                    setMenuAcoesRapidasComunidadeAberto,
-                    setErro,
-                    setComposerAberto,
-                  })
-                }
-                onMostrarTodas={() => {
-                  limparFiltrosComunidade({
-                    setAbaFeedAtiva,
-                    setCategoriaAtiva,
-                    setTipoPublicacaoAtiva,
-                    setObraRelacionadaFiltro,
-                    setGrupoPublicacaoObra,
-                    setTermoBusca,
-                    setOrdenacaoAtiva,
-                    setMostrarApenasSalvos,
-                    carregarPostsComunidade: carregarPostsComunidadeDaPagina,
-                  });
-                  setMenuAcoesRapidasComunidadeAberto(false);
-                }}
-                onMostrarSalvos={() => {
-                  setMostrarApenasSalvos(true);
-                  setMenuAcoesRapidasComunidadeAberto(false);
-                }}
-                onSelecionarRecentes={() =>
-                  selecionarOrdenacaoRecentesComunidade({
-                    setOrdenacaoAtiva,
-                    setMostrarApenasSalvos,
-                    setMenuAcoesRapidasComunidadeAberto,
-                  })
-                }
-                onSelecionarEmAlta={() =>
-                  selecionarOrdenacaoEmAltaComunidade({
-                    setOrdenacaoAtiva,
-                    setMostrarApenasSalvos,
-                    setMenuAcoesRapidasComunidadeAberto,
-                  })
-                }
-                onSelecionarMaisComentadas={() =>
-                  selecionarOrdenacaoMaisComentadasComunidade({
-                    setOrdenacaoAtiva,
-                    setMostrarApenasSalvos,
-                    setMenuAcoesRapidasComunidadeAberto,
-                  })
-                }
-              />
-            )}
 
             {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
               <CommunityUserSearchResults
