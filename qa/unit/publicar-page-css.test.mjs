@@ -14,6 +14,10 @@ const apresentacaoPagina = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
   "utf8",
 );
+const controladorFormulario = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 const shell = readFileSync(
   new URL("../../app/publicar/components/PublicarPageShell.tsx", import.meta.url),
   "utf8",
@@ -93,7 +97,8 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
   assert.match(apresentacaoPagina, /useHistorietasTheme\(pageStyle\)/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
-  assert.match(pagina, /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/);
+  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   assert.match(hookSubmissao, /from "\.\.\/lib\/publicar-submission-action";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-storage-operations";/);

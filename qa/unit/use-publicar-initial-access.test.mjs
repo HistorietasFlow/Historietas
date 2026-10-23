@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorFormulario = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
@@ -39,7 +43,8 @@ test("Publicar delega apenas o lifecycle inicial de acesso ao hook", () => {
   assert.doesNotMatch(pagina, /async function verificarAutenticacaoPublicacao\(/);
   assert.doesNotMatch(pagina, /verificarAceiteTermosPublicacao/);
   assert.doesNotMatch(pagina, /criarHrefAceiteTermos/);
-  assert.match(pagina, /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/);
+  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   assert.doesNotMatch(pagina, /async function salvarObra/);
   assert.match(hookSubmissao, /from "\.\.\/lib\/publicar-submission-action";/);

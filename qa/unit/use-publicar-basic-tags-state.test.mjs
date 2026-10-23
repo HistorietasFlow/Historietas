@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorFormulario = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 
 test("usePublicarBasicFields preserva campos e limpeza de erro", () => {
   assert.match(camposBasicos, /^"use client";/);
@@ -42,8 +46,11 @@ test("usePublicarTags preserva normalização, limites e seleção", () => {
 });
 
 test("Publicar delega apenas estados básicos e tags aos hooks", () => {
-  assert.match(pagina, /usePublicarBasicFields\(\{ setErro \}\)/);
-  assert.match(pagina, /usePublicarTags\(\{ setErro \}\)/);
+  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(controladorFormulario, /import \{ usePublicarBasicFields \} from "\.\/use-publicar-basic-fields";/);
+  assert.match(controladorFormulario, /import \{ usePublicarTags \} from "\.\/use-publicar-tags";/);
+  assert.match(controladorFormulario, /usePublicarBasicFields\(\{ setErro \}\)/);
+  assert.match(controladorFormulario, /usePublicarTags\(\{ setErro \}\)/);
   assert.doesNotMatch(pagina, /function atualizarTagPersonalizada\(valor: string\)/);
   assert.doesNotMatch(pagina, /function adicionarTagSelecionada\(tag: string\)/);
   assert.doesNotMatch(pagina, /function atualizarTagSelecionada\(tag: string\)/);
