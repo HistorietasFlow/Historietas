@@ -64,6 +64,7 @@ test("Comunidade delega somente o follow da busca ao módulo", () => {
   assert.doesNotMatch(pagina, /await salvarSeguindoUsuarioComunidade\(/);
   assert.match(pagina, /atualizarVisibilidadePostComunidade\(\{/);
   assert.doesNotMatch(pagina, /async function atualizarVisibilidadePost\(/);
-  assert.match(pagina, /function denunciarConteudo\(/);
+  assert.match(pagina, /denunciarConteudoComunidade\(\{/);
+  assert.doesNotMatch(pagina, /function denunciarConteudo\(/);
   assert.match(pagina, /const comentarPost = \(/);
 });

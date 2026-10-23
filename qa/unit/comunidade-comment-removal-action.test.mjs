@@ -58,7 +58,8 @@ test("Comunidade delega somente removerComentario e preserva as demais acoes", (
   );
   assert.doesNotMatch(pagina, /async function removerComentario\(/);
   assert.doesNotMatch(pagina, /await removerComentarioSupabaseComunidade\(/);
-  assert.match(pagina, /function denunciarConteudo\(/);
+  assert.match(pagina, /denunciarConteudoComunidade\(\{/);
+  assert.doesNotMatch(pagina, /function denunciarConteudo\(/);
   assert.match(pagina, /function abrirComentariosPostComunidade\(/);
   assert.match(pagina, /atualizarVisibilidadePostComunidade\(\{/);
   assert.doesNotMatch(pagina, /async function atualizarVisibilidadePost\(/);

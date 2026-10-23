@@ -51,6 +51,7 @@ test("Comunidade delega somente a curtida de comentario e preserva as demais aco
   assert.doesNotMatch(pagina, /await sincronizarCurtidaComentarioSupabaseComunidade\(/);
   assert.match(pagina, /removerComentarioComunidade\(\{/);
   assert.doesNotMatch(pagina, /async function removerComentario\(/);
-  assert.match(pagina, /function denunciarConteudo\(/);
+  assert.match(pagina, /denunciarConteudoComunidade\(\{/);
+  assert.doesNotMatch(pagina, /function denunciarConteudo\(/);
   assert.match(pagina, /function abrirComentariosPostComunidade\(/);
 });
