@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
 import { usePublicarCoverUpload } from "./hooks/use-publicar-cover-upload";
@@ -11,14 +10,9 @@ import { usePublicarPublicationOptions } from "./hooks/use-publicar-publication-
 import { usePublicarTags } from "./hooks/use-publicar-tags";
 import { usePublicarFormValidation } from "./hooks/use-publicar-form-validation";
 import { usePublicarSubmission } from "./hooks/use-publicar-submission";
-import { useHistorietasTheme } from "../../lib/historietasTheme";
-import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import {
-  obterTextoPublicar,
-  traduzirClassificacaoPublicar,
-  traduzirMensagemPublicar,
-  type ChaveTextoPublicar,
-} from "./lib/publicar-translations";
+import { usePublicarPageState } from "./hooks/use-publicar-page-state";
+import { usePublicarPagePresentation } from "./hooks/use-publicar-page-presentation";
+import type { ChaveTextoPublicar } from "./lib/publicar-translations";
 import {
   PublicarLoadingShell,
   PublicarPageShell,
@@ -26,9 +20,6 @@ import {
 import { PublicarPageBackdrop } from "./components/PublicarPageBackdrop";
 import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
 import { PublicarPublicationForm } from "./components/PublicarPublicationForm";
-import {
-  pageStyle,
-} from "./lib/publicar-layout-styles";
 import {
   desktopMainGridSingleStyle,
   mainGridStyle,
@@ -39,8 +30,14 @@ import { obterMetadadosFormularioPublicar } from "./lib/publicar-form-display-me
 export default function PublicarPage() {
   const router = useRouter();
 
-  const [processando, setProcessando] = useState(false);
-  const [erro, setErro] = useState("");
+  const {
+    erro,
+    processando,
+    setErro,
+    setProcessando,
+    setVerificandoAutenticacao,
+    verificandoAutenticacao,
+  } = usePublicarPageState();
   const {
     atualizarAutor,
     atualizarSinopse,
@@ -97,11 +94,14 @@ export default function PublicarPage() {
     selecionarConteudoArquivo,
     transformarArquivoTextoEmCapitulo,
   } = usePublicarContentFileUpload({ setErro });
-  const [verificandoAutenticacao, setVerificandoAutenticacao] = useState(true);
   const isDesktop = usePublicarDesktopMode();
-  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const { language: idioma } = useHistorietasLanguage();
-  const t = (chave: ChaveTextoPublicar) => obterTextoPublicar(idioma, chave);
+  const {
+    idioma,
+    pageThemeStyle,
+    t,
+    traduzirClassificacao,
+    traduzirMensagem,
+  } = usePublicarPagePresentation();
 
   usePublicarInitialAccess({
     router,
@@ -254,7 +254,7 @@ export default function PublicarPage() {
             temCapituloImportado={temCapituloImportado}
             temConteudoPorArquivo={temConteudoPorArquivo}
             titulo={titulo}
-            traduzirMensagem={(mensagem) => traduzirMensagemPublicar(idioma, mensagem)}
+            traduzirMensagem={traduzirMensagem}
             usarTagPersonalizada={usarTagPersonalizada}
           />
 
@@ -266,7 +266,7 @@ export default function PublicarPage() {
             capa={capa}
             classificacaoTexto={
               classificacaoFinal
-                ? traduzirClassificacaoPublicar(idioma, classificacaoFinal)
+                ? traduzirClassificacao(classificacaoFinal)
                 : t("classificacao")
             }
             formatoFinal={formatoFinal}

@@ -1279,3 +1279,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição visual do formulário foi isolada em `PublicarPublicationForm.tsx`, preservando a ordem dos campos, upload, avisos 18+, feedbacks e ações.
 - Estados, callbacks, validação, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram orquestrados pela página, sem alteração intencional de comportamento.
+
+## Registro da Fase 27 — Publicar
+
+- O estado transversal e a apresentação de tema/i18n da página foram isolados em hooks dedicados, preservando os defaults, as traduções e as funções de classificação e mensagem.
+- O lifecycle de acesso, a validação, a submissão, o armazenamento, Supabase, RLS e as regras de publicação permaneceram sem alteração intencional de comportamento.
