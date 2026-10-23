@@ -23,6 +23,20 @@ const helpersOperacoesStorage = readFileSync(
   new URL("../../app/publicar/lib/publicar-storage-operations.ts", import.meta.url),
   "utf8",
 );
+const hookConteudoArquivo = readFileSync(
+  new URL(
+    "../../app/publicar/hooks/use-publicar-content-file-upload.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const hookOpcoesPublicacao = readFileSync(
+  new URL(
+    "../../app/publicar/hooks/use-publicar-publication-options.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -81,17 +95,16 @@ test("nomeArquivoParaTitulo preserva extensoes, separadores e espacos", () => {
 test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?calcularMinutosLeitura,[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?contarPalavras,[\s\S]*?limparTextoPersonalizado,[\s\S]*?nomeArquivoParaTitulo,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/publicar-text-utils";/,
+    /import \{[\s\S]*?calcularMinutosLeitura,[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?contarPalavras,[\s\S]*?limparTextoPersonalizado,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/publicar-text-utils";/,
   );
 
   const consumidoresEsperados = {
-    contarCaracteresValidos: 4,
-    limparTextoPersonalizado: 4,
+    contarCaracteresValidos: 3,
+    limparTextoPersonalizado: 2,
     textoPersonalizadoValido: 6,
     campoValido: 5,
     contarPalavras: 3,
     calcularMinutosLeitura: 2,
-    nomeArquivoParaTitulo: 2,
   };
 
   for (const [helper, ocorrencias] of Object.entries(consumidoresEsperados)) {
@@ -99,8 +112,34 @@ test("Publicar delega os helpers puros de texto e arquivos", () => {
     assert.equal((pagina.match(new RegExp(`\\b${helper}\\b`, "g")) || []).length, ocorrencias);
   }
 
-  assert.match(pagina, /from "\.\/lib\/publicar-file-utils";/);
+  assert.match(
+    hookConteudoArquivo,
+    /import \{[\s\S]*?contarCaracteresValidos,[\s\S]*?nomeArquivoParaTitulo,[\s\S]*?\} from "\.\.\/lib\/publicar-text-utils";/,
+  );
+  assert.doesNotMatch(hookConteudoArquivo, /function nomeArquivoParaTitulo\(/);
+  assert.equal(
+    (hookConteudoArquivo.match(/\bcontarCaracteresValidos\b/g) || []).length,
+    2,
+  );
+  assert.equal(
+    (hookConteudoArquivo.match(/\bnomeArquivoParaTitulo\b/g) || []).length,
+    2,
+  );
+  assert.match(
+    hookOpcoesPublicacao,
+    /import \{ limparTextoPersonalizado \} from "\.\.\/lib\/publicar-text-utils";/,
+  );
+  assert.doesNotMatch(hookOpcoesPublicacao, /function limparTextoPersonalizado\(/);
+  assert.equal(
+    (hookOpcoesPublicacao.match(/\blimparTextoPersonalizado\b/g) || []).length,
+    3,
+  );
+
+  assert.match(pagina, /usePublicarContentFileUpload/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-file-utils";/);
+  assert.match(hookConteudoArquivo, /from "\.\.\/lib\/publicar-file-utils";/);
   assert.doesNotMatch(pagina, /function arquivoTextoAceito\(/);
+  assert.doesNotMatch(hookConteudoArquivo, /function arquivoTextoAceito\(/);
   assert.match(helpersArquivo, /export function arquivoTextoAceito\(/);
   assert.match(helpersArquivo, /arquivoTemExtensao\(arquivo\.name, \["\.txt", "\.md"\]\)/);
   assert.match(pagina, /async function salvarObra\(/);
