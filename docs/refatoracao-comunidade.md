@@ -1289,3 +1289,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição dos estados do formulário, upload, validação, metadados e adapter de submissão foi concentrada em `usePublicarFormController`, mantendo a página como orquestradora visual.
 - O lifecycle de acesso, consultas e mutações Supabase, Storage, RLS, validações, mensagens e contratos de submissão foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 29 — Publicar
+
+- A composição das props de formulário e prévia foi isolada em `publicar-page-component-props.ts`, preservando o mapeamento de estados, callbacks, traduções e fallbacks visuais.
+- A página permaneceu responsável pela orquestração de acesso e renderização; não houve alteração intencional de comportamento, Supabase, Storage ou RLS.
