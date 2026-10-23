@@ -16,6 +16,7 @@ import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { useComunidadeDesktopMode } from "./hooks/use-comunidade-desktop-mode";
 import { useComunidadeOverlayBodyLock } from "./hooks/use-comunidade-overlay-body-lock";
+import { useComunidadeUserSearchSync } from "./hooks/use-comunidade-user-search-sync";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -63,9 +64,6 @@ import { inserirComentarioSupabaseComunidade } from "./components/community-comm
 import { prepararRemocaoComentarioComunidade } from "./components/community-comment-removal-preparation";
 import { consultarComentarioParaRemocaoComunidade } from "./components/community-comment-removal-query";
 import { removerComentarioSupabaseComunidade } from "./components/community-comment-removal-delete";
-import { normalizarTermoBuscaUsuariosComunidade } from "./components/community-user-search-term-normalizer";
-import { deveLimparBuscaUsuariosComunidade } from "./components/community-user-search-clear-check";
-import { prepararResultadosBuscaUsuariosComunidade } from "./components/community-user-search-results-preparation";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
@@ -105,9 +103,6 @@ import { prepararSugestoesObrasRelacionadasComunidade } from "./components/commu
 import { consultarObrasPorTituloComunidade } from "./components/community-related-work-title-query";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
-import { buscarUsuariosComunidadeSupabase } from "./components/community-supabase-user-search";
-import { buscarUsuariosComunidadeNosPosts } from "./components/community-post-user-search";
-import { carregarUsuariosSeguidosComunidade } from "./components/community-supabase-followed-users-loader";
 import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-user-saver";
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
@@ -757,91 +752,15 @@ export default function ComunidadePage() {
     [termoBuscaAdiado]
   );
 
-  useEffect(() => {
-    let cancelado = false;
-    const userId = usuario?.id || "";
-
-    if (!userId) {
-      const limparUsuariosSeguidosTimer = window.setTimeout(() => {
-        if (!cancelado) {
-          setUsuariosSeguidosIds([]);
-        }
-      }, 0);
-
-      return () => {
-        cancelado = true;
-        window.clearTimeout(limparUsuariosSeguidosTimer);
-      };
-    }
-
-    void carregarUsuariosSeguidosComunidade(userId).then((idsSeguidos) => {
-      if (!cancelado) {
-        setUsuariosSeguidosIds(idsSeguidos);
-      }
-    });
-
-    return () => {
-      cancelado = true;
-    };
-  }, [usuario?.id]);
-
-  useEffect(() => {
-    let cancelado = false;
-    const termoLimpo = normalizarTermoBuscaUsuariosComunidade(termoBuscaAdiado);
-
-    if (deveLimparBuscaUsuariosComunidade(buscaComunidadeAberta, termoLimpo)) {
-      const limparBuscaUsuariosTimer = window.setTimeout(() => {
-        if (!cancelado) {
-          setUsuariosBuscaComunidade([]);
-          setCarregandoUsuariosBuscaComunidade(false);
-        }
-      }, 0);
-
-      return () => {
-        cancelado = true;
-        window.clearTimeout(limparBuscaUsuariosTimer);
-      };
-    }
-
-    const buscaTimer = window.setTimeout(() => {
-      if (cancelado) {
-        return;
-      }
-
-      setCarregandoUsuariosBuscaComunidade(true);
-
-      const usuariosLocais = buscarUsuariosComunidadeNosPosts(
-        posts,
-        termoLimpo
-      );
-
-      void buscarUsuariosComunidadeSupabase(termoLimpo)
-        .then((usuariosSupabase) => {
-          if (cancelado) {
-            return;
-          }
-
-          const usuariosOrdenados =
-            prepararResultadosBuscaUsuariosComunidade(
-              usuariosSupabase,
-              usuariosLocais,
-              termoLimpo
-            );
-
-          setUsuariosBuscaComunidade(usuariosOrdenados);
-        })
-        .finally(() => {
-          if (!cancelado) {
-            setCarregandoUsuariosBuscaComunidade(false);
-          }
-        });
-    }, 220);
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(buscaTimer);
-    };
-  }, [buscaComunidadeAberta, posts, termoBuscaAdiado]);
+  useComunidadeUserSearchSync({
+    buscaComunidadeAberta,
+    posts,
+    termoBuscaAdiado,
+    usuarioId: usuario?.id,
+    setUsuariosBuscaComunidade,
+    setCarregandoUsuariosBuscaComunidade,
+    setUsuariosSeguidosIds,
+  });
 
   const postsVisiveis = useMemo(() => {
     return obterPostsVisiveisComunidade({

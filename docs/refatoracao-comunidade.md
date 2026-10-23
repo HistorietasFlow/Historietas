@@ -1294,3 +1294,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O controle responsivo de desktop e o lifecycle de lock de `body`/overscroll dos overlays foram isolados em hooks dedicados.
 - Os gatilhos de menu, comentários e composer, incluindo o cleanup e o foco postergado do composer, foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 2 — Comunidade
+
+- O lifecycle de busca de usuários e o carregamento dos usuários seguidos foram isolados em `use-comunidade-user-search-sync.ts`.
+- A normalização, debounce, cancelamento, combinação de resultados locais/Supabase e os estados de carregamento e limpeza foram preservados sem alteração intencional de comportamento.
