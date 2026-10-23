@@ -48,6 +48,13 @@ const hookValidacao = readFileSync(
   ),
   "utf8",
 );
+const metadadosFormulario = readFileSync(
+  new URL(
+    "../../app/publicar/lib/publicar-form-display-metadata.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -106,19 +113,18 @@ test("nomeArquivoParaTitulo preserva extensoes, separadores e espacos", () => {
 test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?calcularMinutosLeitura,[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?contarPalavras,[\s\S]*?\} from "\.\/lib\/publicar-text-utils";/,
+    /import \{ campoValido \} from "\.\/lib\/publicar-text-utils";/,
   );
 
-  const consumidoresEsperados = {
-    contarCaracteresValidos: 2,
-    campoValido: 2,
-    contarPalavras: 3,
-    calcularMinutosLeitura: 2,
-  };
-
-  for (const [helper, ocorrencias] of Object.entries(consumidoresEsperados)) {
+  assert.doesNotMatch(pagina, /function campoValido\(/);
+  assert.equal((pagina.match(/\bcampoValido\b/g) || []).length, 2);
+  for (const helper of [
+    "calcularMinutosLeitura",
+    "contarCaracteresValidos",
+    "contarPalavras",
+  ]) {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
-    assert.equal((pagina.match(new RegExp(`\\b${helper}\\b`, "g")) || []).length, ocorrencias);
+    assert.match(metadadosFormulario, new RegExp(`\\b${helper}\\b`));
   }
 
   assert.match(

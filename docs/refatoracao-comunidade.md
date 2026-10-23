@@ -1259,3 +1259,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os textos de interface, a tradução de classificação e as mensagens de erro foram isolados em `publicar-translations.ts`, preservando todos os textos, fallbacks, prefixos, sufixos e a recursão de publicação parcial.
 - JSX, estado, efeitos, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.
+
+## Registro da Fase 23 — Publicar
+
+- Os metadados visuais derivados do formulário foram isolados em `publicar-form-display-metadata.ts`, preservando contadores, tempo de leitura, tamanhos de arquivo, rótulos de categoria e fallbacks.
+- Estado, JSX, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.

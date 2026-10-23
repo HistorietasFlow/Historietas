@@ -11,12 +11,7 @@ import { usePublicarContentFileUpload } from "./hooks/use-publicar-content-file-
 import { usePublicarPublicationOptions } from "./hooks/use-publicar-publication-options";
 import { usePublicarTags } from "./hooks/use-publicar-tags";
 import { usePublicarFormValidation } from "./hooks/use-publicar-form-validation";
-import {
-  calcularMinutosLeitura,
-  campoValido,
-  contarCaracteresValidos,
-  contarPalavras,
-} from "./lib/publicar-text-utils";
+import { campoValido } from "./lib/publicar-text-utils";
 import {
   criarUuidSeguro,
 } from "./lib/publicar-id-utils";
@@ -42,7 +37,6 @@ import type {
   ObraSalva,
 } from "./lib/publicar-models";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
-import { formatarTamanhoArquivo } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import {
   obterTextoPublicar,
@@ -84,6 +78,7 @@ import {
   formPanelStyle,
   mainGridStyle,
 } from "./lib/publicar-form-upload-styles";
+import { obterMetadadosFormularioPublicar } from "./lib/publicar-form-display-metadata";
 
 
 export default function PublicarPage() {
@@ -193,25 +188,21 @@ export default function PublicarPage() {
     usarTagPersonalizada,
   });
 
-  const sinopseCaracteresValidos = contarCaracteresValidos(sinopse);
-  const sinopsePalavras = contarPalavras(sinopse);
-  const arquivoObraTamanhoTexto = arquivoObra
-    ? formatarTamanhoArquivo(arquivoObra.tamanho)
-    : "";
-  const arquivoObraTipoTexto = arquivoObra
-    ? arquivoObra.categoria === "imagem"
-      ? t("imagem")
-      : arquivoObra.categoria === "documento"
-      ? "PDF"
-      : arquivoObra.categoria === "texto"
-      ? t("texto")
-      : t("arquivo")
-    : "";
-  const arquivoTextoPendenteTamanhoTexto = arquivoTextoPendente
-    ? formatarTamanhoArquivo(arquivoTextoPendente.size)
-    : "";
-  const arquivoCapituloPalavras = contarPalavras(arquivoCapituloTexto);
-  const arquivoCapituloMinutos = calcularMinutosLeitura(arquivoCapituloTexto);
+  const {
+    arquivoCapituloMinutos,
+    arquivoCapituloPalavras,
+    arquivoObraTamanhoTexto,
+    arquivoObraTipoTexto,
+    arquivoTextoPendenteTamanhoTexto,
+    sinopseCaracteresValidos,
+    sinopsePalavras,
+  } = obterMetadadosFormularioPublicar({
+    arquivoCapituloTexto,
+    arquivoObra,
+    arquivoTextoPendente,
+    sinopse,
+    t,
+  });
   async function salvarObra(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
