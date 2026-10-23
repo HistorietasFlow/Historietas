@@ -8,6 +8,10 @@ const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
 );
+const hookSubmissao = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-submission.ts", import.meta.url),
+  "utf8",
+);
 const shell = readFileSync(new URL("../../app/publicar/components/PublicarPageShell.tsx", import.meta.url), "utf8");
 const cabecalho = readFileSync(new URL("../../app/publicar/components/PublicarPageHeader.tsx", import.meta.url), "utf8");
 const progresso = readFileSync(new URL("../../app/publicar/components/PublicarProgress.tsx", import.meta.url), "utf8");
@@ -43,8 +47,11 @@ test("Publicar delega somente o modo desktop", () => {
   assert.match(progresso, /isDesktop[\s\S]*?desktopProgressBoxStyle[\s\S]*?progressBoxStyle/);
   assert.match(acoesFormulario, /<PublicarProgress[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(previa, /isDesktop \? desktopPreviewPanelStyle : previewPanelStyle/);
-  assert.match(pagina, /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/);
-  assert.match(pagina, /async function salvarObra/);
+  assert.match(pagina, /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
+  assert.doesNotMatch(pagina, /async function salvarObra/);
+  assert.match(hookSubmissao, /from "\.\.\/lib\/publicar-submission-action";/);
+  assert.match(hookSubmissao, /async function salvarObra/);
   assert.doesNotMatch(pagina, /supabase\.auth\.getUser/);
   assert.match(acaoSubmissao, /export async function salvarObraPublicar/);
   assert.match(acaoSubmissao, /supabase\.auth\.getUser/);

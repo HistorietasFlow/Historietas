@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useRef, useState } from "react";
+import { useState } from "react";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
 import { usePublicarCoverUpload } from "./hooks/use-publicar-cover-upload";
@@ -10,6 +10,7 @@ import { usePublicarContentFileUpload } from "./hooks/use-publicar-content-file-
 import { usePublicarPublicationOptions } from "./hooks/use-publicar-publication-options";
 import { usePublicarTags } from "./hooks/use-publicar-tags";
 import { usePublicarFormValidation } from "./hooks/use-publicar-form-validation";
+import { usePublicarSubmission } from "./hooks/use-publicar-submission";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import {
@@ -42,7 +43,6 @@ import {
   mainGridStyle,
 } from "./lib/publicar-form-upload-styles";
 import { obterMetadadosFormularioPublicar } from "./lib/publicar-form-display-metadata";
-import { salvarObraPublicar } from "./lib/publicar-submission-action";
 
 
 export default function PublicarPage() {
@@ -118,8 +118,6 @@ export default function PublicarPage() {
     setVerificandoAutenticacao,
   });
 
-  const jaSalvouRef = useRef(false);
-
   const {
     avisosConteudo18Normalizados,
     classificacao18Selecionada,
@@ -167,34 +165,28 @@ export default function PublicarPage() {
     sinopse,
     t,
   });
-  async function salvarObra(event: FormEvent<HTMLFormElement>) {
-    return salvarObraPublicar(
-      {
-        arquivoCapituloTexto,
-        arquivoCapituloTitulo,
-        arquivoObra,
-        arquivoObraArquivo,
-        autor,
-        avisosConteudo18Normalizados,
-        capaArquivo,
-        capaNome,
-        classificacaoFinal,
-        formatoFinal,
-        generoFinal,
-        jaSalvouRef,
-        router,
-        setAutor,
-        setErro,
-        setProcessando,
-        sinopse,
-        tagsDaObra,
-        temCapituloImportado,
-        titulo,
-        validarFormulario,
-      },
-      event,
-    );
-  }
+  const { salvarObra } = usePublicarSubmission({
+    arquivoCapituloTexto,
+    arquivoCapituloTitulo,
+    arquivoObra,
+    arquivoObraArquivo,
+    autor,
+    avisosConteudo18Normalizados,
+    capaArquivo,
+    capaNome,
+    classificacaoFinal,
+    formatoFinal,
+    generoFinal,
+    router,
+    setAutor,
+    setErro,
+    setProcessando,
+    sinopse,
+    tagsDaObra,
+    temCapituloImportado,
+    titulo,
+    validarFormulario,
+  });
 
   if (verificandoAutenticacao) {
     return <PublicarLoadingShell isDesktop={isDesktop} pageThemeStyle={pageThemeStyle} />;

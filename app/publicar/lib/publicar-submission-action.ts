@@ -31,7 +31,7 @@ import { campoValido } from "./publicar-text-utils";
 import { lerStorageUsuarioPublicar } from "./publicar-user-storage-utils";
 import { calcularProgressoLeitura } from "./publicar-work-utils";
 
-type SalvarObraPublicarParams = {
+export type SalvarObraPublicarParams = {
   arquivoCapituloTexto: string;
   arquivoCapituloTitulo: string;
   arquivoObra: ArquivoObraLocal | null;
