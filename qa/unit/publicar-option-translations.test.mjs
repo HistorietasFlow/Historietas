@@ -11,6 +11,14 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const camposFormatoGenero = readFileSync(
+  new URL("../../app/publicar/components/PublicarFormatGenreFields.tsx", import.meta.url),
+  "utf8",
+);
+const camposTagClassificacao = readFileSync(
+  new URL("../../app/publicar/components/PublicarTagClassificationFields.tsx", import.meta.url),
+  "utf8",
+);
 const translationsJavascript = typescript.transpileModule(translationsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -58,7 +66,13 @@ test("módulo de opções de Publicar mantém a fronteira pura", () => {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(pagina, /from "\.\/lib\/publicar-option-translations";/);
+  assert.match(pagina, /import \{ PublicarFormatGenreFields \} from "\.\/components\/PublicarFormatGenreFields";/);
+  assert.match(pagina, /import \{ PublicarTagClassificationFields \} from "\.\/components\/PublicarTagClassificationFields";/);
+  assert.match(camposFormatoGenero, /from "\.\.\/lib\/publicar-option-translations";/);
+  assert.match(camposTagClassificacao, /from "\.\.\/lib\/publicar-option-translations";/);
+  assert.match(camposFormatoGenero, /traduzirFormatoPublicar\(idioma, opcao\)/);
+  assert.match(camposFormatoGenero, /traduzirGeneroPublicar\(idioma, opcao\)/);
+  assert.match(camposTagClassificacao, /traduzirTagPublicar\(idioma, tag\)/);
   assert.match(pagina, /function traduzirClassificacaoPublicar\(/);
   assert.match(pagina, /obterTextoPublicar\(idioma, "livre"\)/);
   assert.doesNotMatch(translationsSource, /supabase|localStorage|useEffect|useState|window|document/);

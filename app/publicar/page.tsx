@@ -44,9 +44,6 @@ import {
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
   LIMITE_TAGS_OBRA,
-  OPCOES_FORMATO_OBRA,
-  OPCOES_GENERO_OBRA,
-  OPCOES_TAGS_OBRA,
   OUTRA_TAG_VALUE,
   OUTRO_FORMATO_VALUE,
   OUTRO_GENERO_VALUE,
@@ -66,11 +63,6 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
-import {
-  traduzirFormatoPublicar,
-  traduzirGeneroPublicar,
-  traduzirTagPublicar,
-} from "./lib/publicar-option-translations";
 import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
@@ -93,9 +85,11 @@ import { PublicarPageHeader } from "./components/PublicarPageHeader";
 import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
 import { PublicarCoverUpload } from "./components/PublicarCoverUpload";
 import { PublicarContentFileUpload } from "./components/PublicarContentFileUpload";
-import { PublicarAdultWarnings } from "./components/PublicarAdultWarnings";
 import { PublicarSynopsisField } from "./components/PublicarSynopsisField";
 import { PublicarFormActions } from "./components/PublicarFormActions";
+import { PublicarBasicFields } from "./components/PublicarBasicFields";
+import { PublicarFormatGenreFields } from "./components/PublicarFormatGenreFields";
+import { PublicarTagClassificationFields } from "./components/PublicarTagClassificationFields";
 import {
   desktopContainerStyle,
   desktopTopWaterFadeStyle,
@@ -107,17 +101,10 @@ import {
 } from "./lib/publicar-layout-styles";
 import {
   desktopFormPanelStyle,
-  desktopFullWidthDoubleFieldStyle,
   desktopFullWidthErrorBoxStyle,
-  desktopHalfFieldStyle,
   desktopMainGridSingleStyle,
-  doubleFieldStyle,
   errorBoxStyle,
-  fieldGroupStyle,
   formPanelStyle,
-  hintStyle,
-  inputStyle,
-  labelStyle,
   mainGridStyle,
 } from "./lib/publicar-form-upload-styles";
 
@@ -813,6 +800,66 @@ export default function PublicarPage() {
     setErro("");
   }
 
+  function atualizarTitulo(valor: string) {
+    setTitulo(valor);
+    setErro("");
+  }
+
+  function atualizarAutor(valor: string) {
+    setAutor(valor);
+    setErro("");
+  }
+
+  function atualizarFormato(valor: string) {
+    setFormato(valor);
+
+    if (valor !== OUTRO_FORMATO_VALUE) {
+      setFormatoPersonalizado("");
+    }
+
+    setErro("");
+  }
+
+  function atualizarFormatoPersonalizado(valor: string) {
+    setFormatoPersonalizado(
+      limparTextoPersonalizado(
+        valor,
+        LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+      )
+    );
+    setErro("");
+  }
+
+  function atualizarGenero(valor: string) {
+    setGenero(valor);
+
+    if (valor !== OUTRO_GENERO_VALUE) {
+      setGeneroPersonalizado("");
+    }
+
+    setErro("");
+  }
+
+  function atualizarGeneroPersonalizado(valor: string) {
+    setGeneroPersonalizado(
+      limparTextoPersonalizado(
+        valor,
+        LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+      )
+    );
+    setErro("");
+  }
+
+  function atualizarClassificacaoIndicativa(valor: string) {
+    setClassificacaoIndicativa(valor);
+
+    if (!ehClassificacao18(valor)) {
+      setAvisosConteudo18([]);
+    }
+
+    setErro("");
+  }
+
   function limparSelecaoConteudoArquivo() {
     limparArquivoAnexado();
     limparCapituloImportado();
@@ -1001,6 +1048,18 @@ export default function PublicarPage() {
     setTagPersonalizada("");
     setTags(tag);
     setErro("");
+  }
+
+  function atualizarTagSelecionada(tag: string) {
+    if (!tag) {
+      setUsarTagPersonalizada(false);
+      setTagPersonalizada("");
+      setTags("");
+      setErro("");
+      return;
+    }
+
+    adicionarTagSelecionada(tag);
   }
 
   async function salvarObra(event: FormEvent<HTMLFormElement>) {
@@ -1363,222 +1422,46 @@ export default function PublicarPage() {
             />
 
 
-            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label htmlFor="publicar-titulo" style={labelStyle}>{t("tituloObra")}</label>
+            <PublicarBasicFields
+              autor={autor}
+              isDesktop={isDesktop}
+              onAutorChange={atualizarAutor}
+              onTituloChange={atualizarTitulo}
+              t={t}
+              titulo={titulo}
+            />
 
-              <input
-                id="publicar-titulo"
-                value={titulo}
-                onChange={(event) => {
-                  setTitulo(event.target.value);
-                  setErro("");
-                }}
-                style={inputStyle}
-                placeholder="Ex: Shadow Eclipse"
-                type="text"
-              />
+            <PublicarFormatGenreFields
+              formato={formato}
+              formatoEhPersonalizado={formatoEhPersonalizado}
+              formatoPersonalizado={formatoPersonalizado}
+              genero={genero}
+              generoEhPersonalizado={generoEhPersonalizado}
+              generoPersonalizado={generoPersonalizado}
+              idioma={idioma}
+              isDesktop={isDesktop}
+              onFormatoChange={atualizarFormato}
+              onFormatoPersonalizadoChange={atualizarFormatoPersonalizado}
+              onGeneroChange={atualizarGenero}
+              onGeneroPersonalizadoChange={atualizarGeneroPersonalizado}
+              t={t}
+            />
 
-              <span style={hintStyle}>{t("dicaTitulo")}</span>
-            </div>
-
-            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label htmlFor="publicar-autor" style={labelStyle}>{t("nomeAutor")}</label>
-
-              <input
-                id="publicar-autor"
-                value={autor}
-                onChange={(event) => {
-                  setAutor(event.target.value);
-                  setErro("");
-                }}
-                style={inputStyle}
-                placeholder="Ex: Historietas Studio"
-                type="text"
-              />
-
-              <span style={hintStyle}>{t("dicaAutor")}</span>
-            </div>
-
-            <div style={isDesktop ? desktopFullWidthDoubleFieldStyle : doubleFieldStyle}>
-              <div style={fieldGroupStyle}>
-                <label htmlFor="publicar-formato" style={labelStyle}>{t("formato")}</label>
-
-                <select
-                  id="publicar-formato"
-                  value={formato}
-                  onChange={(event) => {
-                    const novoFormato = event.target.value;
-
-                    setFormato(novoFormato);
-
-                    if (novoFormato !== OUTRO_FORMATO_VALUE) {
-                      setFormatoPersonalizado("");
-                    }
-
-                    setErro("");
-                  }}
-                  style={inputStyle}
-                >
-                  <option value="">{t("escolherFormato")}</option>
-                  {OPCOES_FORMATO_OBRA.map((opcao) => (
-                    <option key={opcao} value={opcao}>
-                      {traduzirFormatoPublicar(idioma, opcao)}
-                    </option>
-                  ))}
-                  <option value={OUTRO_FORMATO_VALUE}>{t("outroFormato")}</option>
-                </select>
-
-                {formatoEhPersonalizado && (
-                  <input
-                    aria-label={t("outroFormato")}
-                    value={formatoPersonalizado}
-                    onChange={(event) => {
-                      setFormatoPersonalizado(
-                        limparTextoPersonalizado(
-                          event.target.value,
-                          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-                        )
-                      );
-                      setErro("");
-                    }}
-                    style={inputStyle}
-                    placeholder={t("digiteFormato")}
-                    maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
-                    type="text"
-                  />
-                )}
-              </div>
-
-              <div style={fieldGroupStyle}>
-                <label htmlFor="publicar-genero" style={labelStyle}>{t("generoPrincipal")}</label>
-
-                <select
-                  id="publicar-genero"
-                  value={genero}
-                  onChange={(event) => {
-                    const novoGenero = event.target.value;
-
-                    setGenero(novoGenero);
-
-                    if (novoGenero !== OUTRO_GENERO_VALUE) {
-                      setGeneroPersonalizado("");
-                    }
-
-                    setErro("");
-                  }}
-                  style={inputStyle}
-                >
-                  <option value="">{t("escolherGenero")}</option>
-                  {OPCOES_GENERO_OBRA.map((opcao) => (
-                    <option key={opcao} value={opcao}>
-                      {traduzirGeneroPublicar(idioma, opcao)}
-                    </option>
-                  ))}
-                  <option value={OUTRO_GENERO_VALUE}>{t("outroGenero")}</option>
-                </select>
-
-                {generoEhPersonalizado && (
-                  <input
-                    aria-label={t("outroGenero")}
-                    value={generoPersonalizado}
-                    onChange={(event) => {
-                      setGeneroPersonalizado(
-                        limparTextoPersonalizado(
-                          event.target.value,
-                          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-                        )
-                      );
-                      setErro("");
-                    }}
-                    style={inputStyle}
-                    placeholder={t("digiteGenero")}
-                    maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
-                    type="text"
-                  />
-                )}
-              </div>
-            </div>
-
-            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label htmlFor="publicar-tag" style={labelStyle}>{t("tag")}</label>
-
-              <select
-                id="publicar-tag"
-                value={usarTagPersonalizada ? OUTRA_TAG_VALUE : tagsDaObra[0] || ""}
-                onChange={(event) => {
-                  const novaTag = event.target.value;
-
-                  if (!novaTag) {
-                    setUsarTagPersonalizada(false);
-                    setTagPersonalizada("");
-                    setTags("");
-                    setErro("");
-                    return;
-                  }
-
-                  adicionarTagSelecionada(novaTag);
-                }}
-                style={inputStyle}
-              >
-                <option value="">{t("escolherTag")}</option>
-
-                {OPCOES_TAGS_OBRA.map((tag) => (
-                  <option key={tag} value={tag}>
-                    {traduzirTagPublicar(idioma, tag)}
-                  </option>
-                ))}
-
-                <option value={OUTRA_TAG_VALUE}>{t("outraTag")}</option>
-              </select>
-
-              {usarTagPersonalizada && (
-                <input
-                  aria-label={t("outraTag")}
-                  value={tagPersonalizada}
-                  onChange={(event) => atualizarTagPersonalizada(event.target.value)}
-                  style={inputStyle}
-                  placeholder={t("digiteTag")}
-                  maxLength={LIMITE_CARACTERES_TAG_PERSONALIZADA}
-                  type="text"
-                />
-              )}
-            </div>
-
-            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label htmlFor="publicar-classificacao" style={labelStyle}>{t("classificacaoIndicativa")}</label>
-
-              <select
-                id="publicar-classificacao"
-                value={classificacaoIndicativa}
-                onChange={(event) => {
-                  const novaClassificacao = event.target.value;
-                  setClassificacaoIndicativa(novaClassificacao);
-
-                  if (!ehClassificacao18(novaClassificacao)) {
-                    setAvisosConteudo18([]);
-                  }
-
-                  setErro("");
-                }}
-                style={inputStyle}
-              >
-                <option value="">{t("escolherClassificacao")}</option>
-                <option value="Livre">{t("livre")}</option>
-                <option>10+</option>
-                <option>12+</option>
-                <option>14+</option>
-                <option>16+</option>
-                <option>18+</option>
-              </select>
-
-              {classificacao18Selecionada ? (
-                <PublicarAdultWarnings
-                  avisosConteudo18={avisosConteudo18}
-                  idioma={idioma}
-                  onAlternarAviso={alternarAvisoConteudo18}
-                />
-              ) : null}
-            </div>
+            <PublicarTagClassificationFields
+              avisosConteudo18={avisosConteudo18}
+              classificacao18Selecionada={classificacao18Selecionada}
+              classificacaoIndicativa={classificacaoIndicativa}
+              idioma={idioma}
+              isDesktop={isDesktop}
+              onAlternarAviso={alternarAvisoConteudo18}
+              onClassificacaoChange={atualizarClassificacaoIndicativa}
+              onTagChange={atualizarTagSelecionada}
+              onTagPersonalizadaChange={atualizarTagPersonalizada}
+              t={t}
+              tagPersonalizada={tagPersonalizada}
+              tagsDaObra={tagsDaObra}
+              usarTagPersonalizada={usarTagPersonalizada}
+            />
 
             <PublicarSynopsisField
               caracteresValidos={sinopseCaracteresValidos}
