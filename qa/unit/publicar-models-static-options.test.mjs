@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const traducoes = readFileSync(
+  new URL("../../app/publicar/lib/publicar-translations.ts", import.meta.url),
+  "utf8",
+);
 
 test("modelos locais de Publicar preservam contratos de obra, capítulo e arquivo", () => {
   assert.match(modelos, /export type CapituloLocal = \{/);
@@ -110,7 +114,11 @@ test("Publicar delega modelos e opções estáticas às fronteiras extraídas", 
     assert.equal(pagina.includes(declaracao), false, "declaração removida: " + declaracao);
   }
 
-  assert.match(pagina, /const TEXTOS_PUBLICAR = \{/);
+  assert.match(pagina, /from "\.\/lib\/publicar-translations";/);
+  assert.doesNotMatch(pagina, /const TEXTOS_PUBLICAR = \{/);
+  assert.doesNotMatch(pagina, /const MENSAGENS_ERRO_PUBLICAR = \{/);
+  assert.match(traducoes, /const TEXTOS_PUBLICAR = \{/);
+  assert.match(traducoes, /const MENSAGENS_ERRO_PUBLICAR/);
   assert.match(pagina, /function salvarObra\(/);
   assert.match(pagina, /from "\.\/lib\/publicar-storage-operations";/);
   assert.doesNotMatch(pagina, /supabase\.storage/);

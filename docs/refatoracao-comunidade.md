@@ -1254,3 +1254,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O estado derivado e a validação do formulário foram isolados em `use-publicar-form-validation.ts`, preservando normalização, classificação 18+, avisos, progresso, prévia e a ordem das mensagens de validação.
 - JSX, efeitos, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.
+
+## Registro da Fase 22 — Publicar
+
+- Os textos de interface, a tradução de classificação e as mensagens de erro foram isolados em `publicar-translations.ts`, preservando todos os textos, fallbacks, prefixos, sufixos e a recursão de publicação parcial.
+- JSX, estado, efeitos, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.
