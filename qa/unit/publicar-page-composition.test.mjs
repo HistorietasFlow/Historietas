@@ -70,6 +70,14 @@ const uploadConteudo = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-content-file-upload.ts", import.meta.url),
   "utf8",
 );
+const camposBasicosEstado = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-basic-fields.ts", import.meta.url),
+  "utf8",
+);
+const tagsEstado = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-tags.ts", import.meta.url),
+  "utf8",
+);
 
 test("Publicar delega a composição visual do cabeçalho", () => {
   assert.match(pagina, /from "\.\/components\/PublicarPageShell";/);
@@ -124,11 +132,18 @@ test("Publicar delega os uploads visuais e o lifecycle local do arquivo", () => 
 test("Publicar delega campos controlados sem deslocar seus estados e callbacks", () => {
   assert.match(pagina, /import \{ PublicarSynopsisField \} from "\.\/components\/PublicarSynopsisField";/);
   assert.match(pagina, /import \{ PublicarFormActions \} from "\.\/components\/PublicarFormActions";/);
+  assert.match(pagina, /import \{ usePublicarBasicFields \} from "\.\/hooks\/use-publicar-basic-fields";/);
   assert.match(pagina, /<PublicarSynopsisField[\s\S]*?onSinopseChange=\{atualizarSinopse\}[\s\S]*?sinopse=\{sinopse\}[\s\S]*?t=\{t\}/);
   assert.match(pagina, /<PublicarFormActions[\s\S]*?processando=\{processando\}[\s\S]*?progresso=\{progresso\}[\s\S]*?salvando=\{t\("salvando"\)\}/);
+  assert.match(pagina, /usePublicarBasicFields\(\{ setErro \}\)/);
   assert.match(pagina, /usePublicarPublicationOptions\(\{ setErro \}\)/);
   assert.match(opcoesPublicacao, /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\)[\s\S]*?setAvisosConteudo18[\s\S]*?setErro\(""\)/);
-  assert.match(pagina, /function atualizarSinopse\(valor: string\)[\s\S]*?setSinopse\(valor\)[\s\S]*?setErro\(""\)/);
+  assert.doesNotMatch(pagina, /function atualizarSinopse\(valor: string\)/);
+  assert.doesNotMatch(pagina, /function atualizarTitulo\(valor: string\)/);
+  assert.doesNotMatch(pagina, /function atualizarAutor\(valor: string\)/);
+  assert.match(camposBasicosEstado, /function atualizarSinopse\(valor: string\)[\s\S]*?setSinopse\(valor\)[\s\S]*?setErro\(""\)/);
+  assert.match(camposBasicosEstado, /function atualizarTitulo\(valor: string\)[\s\S]*?setTitulo\(valor\)[\s\S]*?setErro\(""\)/);
+  assert.match(camposBasicosEstado, /function atualizarAutor\(valor: string\)[\s\S]*?setAutor\(valor\)[\s\S]*?setErro\(""\)/);
   assert.doesNotMatch(pagina, /aria-label="Avisos de conteúdo 18\+"/);
   assert.doesNotMatch(pagina, /id="publicar-sinopse"/);
 
@@ -151,6 +166,8 @@ test("Publicar delega os metadados controlados ao hook de opções", () => {
   assert.match(pagina, /<PublicarFormatGenreFields[\s\S]*?onFormatoChange=\{atualizarFormato\}[\s\S]*?onGeneroChange=\{atualizarGenero\}/);
   assert.match(pagina, /<PublicarTagClassificationFields[\s\S]*?onAlternarAviso=\{alternarAvisoConteudo18\}[\s\S]*?onClassificacaoChange=\{atualizarClassificacaoIndicativa\}[\s\S]*?onTagChange=\{atualizarTagSelecionada\}/);
   assert.match(pagina, /import \{ usePublicarPublicationOptions \} from "\.\/hooks\/use-publicar-publication-options";/);
+  assert.match(pagina, /import \{ usePublicarTags \} from "\.\/hooks\/use-publicar-tags";/);
+  assert.match(pagina, /usePublicarTags\(\{ setErro \}\)/);
   assert.doesNotMatch(pagina, /function atualizarFormato\(valor: string\)/);
   assert.doesNotMatch(pagina, /function atualizarGenero\(valor: string\)/);
   assert.doesNotMatch(pagina, /function atualizarClassificacaoIndicativa\(valor: string\)/);
@@ -172,6 +189,9 @@ test("Publicar delega os metadados controlados ao hook de opções", () => {
   assert.match(camposTagClassificacao, /<PublicarAdultWarnings[\s\S]*?onAlternarAviso=\{onAlternarAviso\}/);
   assert.match(opcoesPublicacao, /export function usePublicarPublicationOptions/);
   assert.match(opcoesPublicacao, /if \(!ehClassificacao18\(valor\)\) \{[\s\S]*?setAvisosConteudo18\(\[\]\);/);
+  assert.match(tagsEstado, /export function usePublicarTags/);
+  assert.match(tagsEstado, /function atualizarTagSelecionada\(tag: string\)/);
+  assert.match(tagsEstado, /function atualizarTagPersonalizada\(valor: string\)/);
 });
 
 test("Publicar delegates loading and page shells without moving composition", () => {
