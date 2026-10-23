@@ -1309,3 +1309,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os lifecycles de posts salvos e de votos de enquete foram isolados em `use-comunidade-personal-data-sync.ts`.
 - As leituras locais, sincronizações Supabase, timers, cancelamentos, persistência e a reconciliação dos votos/resultados foram preservados sem alteração intencional de comportamento; as ações de salvar e votar permaneceram na página.
+
+## Registro da Fase 5 — Comunidade
+
+- O carregamento cancelável de sugestões de obras relacionadas e a sincronização sequencial das reviews pendentes com o Diário foram isolados em `use-comunidade-related-work-diary-sync.ts`.
+- A detecção, os refs por usuário, os resets, os cancelamentos, os payloads e as ações de publicação, visibilidade e remoção foram preservados sem alteração intencional de comportamento.

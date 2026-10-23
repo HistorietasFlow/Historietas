@@ -22,6 +22,7 @@ import {
   useComunidadePollVotesSync,
   useComunidadeSavedPostsSync,
 } from "./hooks/use-comunidade-personal-data-sync";
+import { useComunidadeRelatedWorkDiarySync } from "./hooks/use-comunidade-related-work-diary-sync";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -100,7 +101,6 @@ import {
   obterParametroObraComunidade,
 } from "./components/community-url-parameters";
 import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
-import { prepararSugestoesObrasRelacionadasComunidade } from "./components/community-related-work-suggestions-preparation";
 import { consultarObrasPorTituloComunidade } from "./components/community-related-work-title-query";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import type { SupabasePostRow } from "./components/community-supabase-post-row";
@@ -115,7 +115,6 @@ import { removerSugestoesObrasDuplicadas } from "./components/community-related-
 import { obterObraRelacionadaPermitida } from "./components/community-related-work-allowed-finder";
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
-import { sincronizarReviewsPendentesSequencialmenteComunidade } from "./components/community-pending-reviews-sync";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { criarNotificacaoComunidadeSupabase } from "./components/community-supabase-notification-creator";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
@@ -455,75 +454,14 @@ export default function ComunidadePage() {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarObrasRelacionadas() {
-      const sugestoesObrasRelacionadas =
-        await prepararSugestoesObrasRelacionadasComunidade(
-          usuario?.id || ""
-        );
-
-      if (!cancelado) {
-        setObrasRelacionadasSugestoes(sugestoesObrasRelacionadas);
-      }
-    }
-
-    void carregarObrasRelacionadas();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [usuario?.id]);
-
-  useEffect(() => {
-    const userId = usuario?.id.trim() || "";
-
-    if (!userId) {
-      reviewsDiarioSincronizadasRef.current.clear();
-      usuarioReviewsDiarioRef.current = "";
-      return;
-    }
-
-    if (usuarioReviewsDiarioRef.current !== userId) {
-      reviewsDiarioSincronizadasRef.current.clear();
-      usuarioReviewsDiarioRef.current = userId;
-    }
-
-    const reviewsPendentes = posts.filter((post) => {
-      return (
-        post.autorId.trim() === userId &&
-        post.tipoPublicacao === "Review" &&
-        !reviewsDiarioSincronizadasRef.current.has(post.id)
-      );
-    });
-
-    if (reviewsPendentes.length === 0) {
-      return;
-    }
-
-    let cancelado = false;
-
-    void sincronizarReviewsPendentesSequencialmenteComunidade({
-      reviewsPendentes,
-      reviewsSincronizadas: reviewsDiarioSincronizadasRef.current,
-      cancelamentoSolicitado: () => cancelado,
-      sincronizarReview: (post) =>
-        registrarReviewComunidadeNoDiario({
-          userId,
-          texto: post.texto,
-          obraRelacionada: post.obraRelacionada,
-          postId: post.id,
-          criadaEm: post.criadoEm,
-          sugestoesObras: obrasRelacionadasSugestoes,
-          visibilidade: post.visibilidade,
-        }),
-    });
-
-    return () => {
-      cancelado = true;
-    };
-  }, [usuario?.id, posts, obrasRelacionadasSugestoes]);
+  useComunidadeRelatedWorkDiarySync({
+    usuarioId: usuario?.id,
+    posts,
+    obrasRelacionadasSugestoes,
+    setObrasRelacionadasSugestoes,
+    reviewsDiarioSincronizadasRef,
+    usuarioReviewsDiarioRef,
+  });
 
   useEffect(() => {
     if (composerAberto) {
