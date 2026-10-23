@@ -1299,3 +1299,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle de busca de usuários e o carregamento dos usuários seguidos foram isolados em `use-comunidade-user-search-sync.ts`.
 - A normalização, debounce, cancelamento, combinação de resultados locais/Supabase e os estados de carregamento e limpeza foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 3 — Comunidade
+
+- O lifecycle inicial de navegação por URL foi isolado em `use-comunidade-initial-url-navigation.ts`.
+- A restauração de scroll, leitura e aplicação dos parâmetros, abertura inicial de comentários, timers, refs e cleanups foram preservados sem alteração intencional de comportamento.
