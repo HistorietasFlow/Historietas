@@ -1389,3 +1389,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O portal visual do composer foi isolado em `community-post-composer-portal.tsx`.
 - A condição de abertura, o portal para `document.body` e a apresentação recebem props explícitas; estados, regras e callbacks continuam na página sem alteração intencional de comportamento.
+
+## Registro da Fase 21 — Comunidade
+
+- A composição visual dos overlays de interação foi isolada em `community-interaction-overlays-composition.tsx`.
+- Comentários, denúncia e feedback recebem props e callbacks preparados pela página, que mantém estados, ações e decisões de negócio sem alteração intencional de comportamento.

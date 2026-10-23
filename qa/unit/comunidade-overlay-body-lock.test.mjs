@@ -73,5 +73,5 @@ test("Comunidade delega os tres lifecycles de overlay sem alterar seus gatilhos"
     /document\.documentElement\.style\.setProperty\("overscroll-behavior", "none"\)/,
   );
   assert.match(pagina, /CommunityPostComposer/);
-  assert.match(pagina, /ComentariosSheet/);
+  assert.match(pagina, /CommunityInteractionOverlaysComposition/);
 });

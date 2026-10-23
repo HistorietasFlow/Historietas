@@ -47,5 +47,6 @@ test("Comunidade delega somente comentarPost e preserva as outras acoes de comen
   assert.match(pagina, /alternarCurtidaComentarioComunidade\(\{/);
   assert.doesNotMatch(pagina, /async function alternarCurtidaComentario\(/);
   assert.match(pagina, /function abrirComentariosPostComunidade\(/);
-  assert.match(pagina, /onFechar=\{\(\) => fecharComentarios\(\{ setComentariosPostId \}\)\}/);
+  assert.match(pagina, /import \{ CommunityInteractionOverlaysComposition \} from "\.\/components\/community-interaction-overlays-composition"/);
+  assert.match(pagina, /onFechar: \(\) => fecharComentarios\(\{ setComentariosPostId \}\),/);
 });
