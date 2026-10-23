@@ -87,6 +87,7 @@ test("Comunidade delega somente atualizarVisibilidadePost ao modulo", () => {
   );
   assert.doesNotMatch(pagina, /async function atualizarVisibilidadePost\(/);
   assert.doesNotMatch(pagina, /await atualizarVisibilidadePostSupabaseComunidade\(/);
-  assert.match(pagina, /async function alternarFixadoPost\(/);
+  assert.match(pagina, /alternarFixadoPostComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function alternarFixadoPost\(/);
   assert.match(pagina, /async function removerPost\(/);
 });

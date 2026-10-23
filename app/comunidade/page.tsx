@@ -31,6 +31,7 @@ import { alternarCurtidaComentarioComunidade } from "./components/community-comm
 import { removerComentarioComunidade } from "./components/community-comment-removal-action";
 import { alternarSeguirUsuarioBuscaComunidade } from "./components/community-search-follow-action";
 import { atualizarVisibilidadePostComunidade } from "./components/community-post-visibility-action";
+import { alternarFixadoPostComunidade } from "./components/community-post-pinning-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
@@ -49,8 +50,6 @@ import {
 import { consultarPostParaRemocaoComunidade } from "./components/community-post-removal-query";
 import { removerPostSupabaseComunidade } from "./components/community-post-removal-delete";
 import { consultarUsuarioEhAdminComunidade } from "./components/community-admin-status-query";
-import { atualizarFixacaoPostNoEstadoComunidade } from "./components/community-post-metadata-state-updaters";
-import { atualizarFixacaoPostSupabaseComunidade } from "./components/community-post-pinning-update";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
@@ -610,63 +609,17 @@ export default function ComunidadePage() {
       feedbackTimerRef,
     });
 
-  async function alternarFixadoPost(post: PostComunidade) {
-    if (!usuarioEhAdmin) {
-      setErro("Apenas administradores podem fixar publicações.");
-      return;
-    }
-
-    if (postFixandoId === post.id) {
-      return;
-    }
-
-    setPostFixandoId(post.id);
-    setErro("");
-
-    try {
-      const novoEstadoFixado = !post.fixado;
-
-      const resultadoAtualizacaoFixacao =
-        await atualizarFixacaoPostSupabaseComunidade(
-          post.id,
-          novoEstadoFixado
-        );
-
-      if (!resultadoAtualizacaoFixacao.sucesso) {
-        setErro(
-          formatarErroSupabase(
-            "Erro ao atualizar fixado",
-            resultadoAtualizacaoFixacao.erro
-          )
-        );
-        return;
-      }
-
-      const dadosFixado = resultadoAtualizacaoFixacao.data as {
-        fixado?: boolean | null;
-        fixado_em?: string | null;
-        fixado_por?: string | null;
-      } | null;
-
-      setPosts((postsAtuais) =>
-        atualizarFixacaoPostNoEstadoComunidade(
-          postsAtuais,
-          post.id,
-          dadosFixado
-        )
-      );
-
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
-        novoEstadoFixado
-          ? "Publicação fixada no topo."
-          : "Publicação desafixada."
-      );
-    } finally {
-      setPostFixandoId((postAtualId) =>
-        postAtualId === post.id ? null : postAtualId
-      );
-    }
-  }
+  const alternarFixadoPost = (post: PostComunidade) =>
+    alternarFixadoPostComunidade({
+      post,
+      usuarioEhAdmin,
+      postFixandoId,
+      setPostFixandoId,
+      setErro,
+      setPosts,
+      setFeedbackAcao,
+      feedbackTimerRef,
+    });
 
   async function removerPost(postId: string) {
     const chaveAcao = `remover-post:${postId}`;

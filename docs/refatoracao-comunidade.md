@@ -1364,3 +1364,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de atualização de visibilidade de posts foi isolada em `community-post-visibility-action.ts`.
 - Lock, guards de autoria, proteção/sincronização da Review com o Diário, atualização Supabase, estado local, fechamento do menu, feedback e cleanup foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 16 — Comunidade
+
+- A ação de fixar/desafixar posts foi isolada em `community-post-pinning-action.ts`.
+- Guard de administração, prevenção de duplicidade, atualização Supabase, estado local, feedback e cleanup foram preservados sem alteração intencional de comportamento.
