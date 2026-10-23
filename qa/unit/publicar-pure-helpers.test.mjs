@@ -18,6 +18,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const uploadConteudo = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-content-file-upload.ts", import.meta.url),
+  "utf8",
+);
 
 test("helpers de identificador de Publicar preservam UUID seguro e nome de storage", () => {
   for (const helper of [
@@ -90,11 +94,13 @@ test("helpers de obra de Publicar preservam classificação, slug e progresso", 
 test("Publicar delega os helpers puros às fronteiras extraídas", () => {
   for (const modulo of [
     "publicar-id-utils",
-    "publicar-file-utils",
     "publicar-work-utils",
   ]) {
     assert.match(pagina, new RegExp(`from "\\./lib/${modulo}";`));
   }
+
+  assert.match(pagina, /from "\.\/hooks\/use-publicar-content-file-upload";/);
+  assert.match(uploadConteudo, /from "\.\.\/lib\/publicar-file-utils";/);
 
   for (const declaracao of [
     "function gerarUuidFallback(",

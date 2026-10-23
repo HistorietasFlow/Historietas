@@ -62,6 +62,14 @@ const camposTagClassificacao = readFileSync(
   new URL("../../app/publicar/components/PublicarTagClassificationFields.tsx", import.meta.url),
   "utf8",
 );
+const opcoesPublicacao = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-publication-options.ts", import.meta.url),
+  "utf8",
+);
+const uploadConteudo = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-content-file-upload.ts", import.meta.url),
+  "utf8",
+);
 
 test("Publicar delega a composição visual do cabeçalho", () => {
   assert.match(pagina, /from "\.\/components\/PublicarPageShell";/);
@@ -86,13 +94,16 @@ test("Publicar delega a prévia sem deslocar estados ou regras de publicação",
   assert.match(previa, /t\("dicaPrevia"\)/);
 });
 
-test("Publicar delega os uploads visuais sem deslocar estado ou leitura de arquivos", () => {
+test("Publicar delega os uploads visuais e o lifecycle local do arquivo", () => {
   assert.match(pagina, /import \{ PublicarCoverUpload \} from "\.\/components\/PublicarCoverUpload";/);
   assert.match(pagina, /import \{ PublicarContentFileUpload \} from "\.\/components\/PublicarContentFileUpload";/);
+  assert.match(pagina, /import \{ usePublicarContentFileUpload \} from "\.\/hooks\/use-publicar-content-file-upload";/);
   assert.match(pagina, /<PublicarCoverUpload[\s\S]*?capaInputRef=\{capaInputRef\}[\s\S]*?onRemoverCapa=\{removerCapa\}[\s\S]*?onSelecionarCapa=\{selecionarCapa\}/);
   assert.match(pagina, /<PublicarContentFileUpload[\s\S]*?arquivoConteudoInputRef=\{arquivoConteudoInputRef\}[\s\S]*?onAnexarArquivoCompleto=\{anexarArquivoCompleto\}[\s\S]*?onSelecionarConteudoArquivo=\{selecionarConteudoArquivo\}[\s\S]*?onTransformarArquivoTextoEmCapitulo=\{transformarArquivoTextoEmCapitulo\}/);
   assert.doesNotMatch(pagina, /ref=\{capaInputRef\}/);
   assert.doesNotMatch(pagina, /ref=\{arquivoConteudoInputRef\}/);
+  assert.doesNotMatch(pagina, /function selecionarConteudoArquivo\(event: ChangeEvent<HTMLInputElement>\)/);
+  assert.doesNotMatch(pagina, /function transformarArquivoTextoEmCapitulo\(arquivo: File\)/);
 
   assert.match(capa, /accept="\.png,\.jpg,\.jpeg,\.webp,\.gif,image\/png,image\/jpeg,image\/webp,image\/gif"/);
   assert.match(capa, /criarCoverUploadIconBoxStyle\(capa\)/);
@@ -105,6 +116,9 @@ test("Publicar delega os uploads visuais sem deslocar estado ou leitura de arqui
   assert.match(arquivo, /onAnexarArquivoCompleto\(arquivoTextoPendente\)/);
   assert.match(arquivo, /arquivoConteudoInputRef\.current\?\.click\(\)/);
   assert.match(arquivo, /isDesktop \? desktopFullWidthArquivoObraBoxStyle : chapterImportBoxStyle/);
+  assert.match(uploadConteudo, /export function usePublicarContentFileUpload/);
+  assert.match(uploadConteudo, /leitor\.readAsDataURL\(arquivo\);/);
+  assert.match(uploadConteudo, /leitor\.readAsText\(arquivo, "UTF-8"\);/);
 });
 
 test("Publicar delega campos controlados sem deslocar seus estados e callbacks", () => {
@@ -112,7 +126,8 @@ test("Publicar delega campos controlados sem deslocar seus estados e callbacks",
   assert.match(pagina, /import \{ PublicarFormActions \} from "\.\/components\/PublicarFormActions";/);
   assert.match(pagina, /<PublicarSynopsisField[\s\S]*?onSinopseChange=\{atualizarSinopse\}[\s\S]*?sinopse=\{sinopse\}[\s\S]*?t=\{t\}/);
   assert.match(pagina, /<PublicarFormActions[\s\S]*?processando=\{processando\}[\s\S]*?progresso=\{progresso\}[\s\S]*?salvando=\{t\("salvando"\)\}/);
-  assert.match(pagina, /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\)[\s\S]*?setAvisosConteudo18[\s\S]*?setErro\(""\)/);
+  assert.match(pagina, /usePublicarPublicationOptions\(\{ setErro \}\)/);
+  assert.match(opcoesPublicacao, /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\)[\s\S]*?setAvisosConteudo18[\s\S]*?setErro\(""\)/);
   assert.match(pagina, /function atualizarSinopse\(valor: string\)[\s\S]*?setSinopse\(valor\)[\s\S]*?setErro\(""\)/);
   assert.doesNotMatch(pagina, /aria-label="Avisos de conteúdo 18\+"/);
   assert.doesNotMatch(pagina, /id="publicar-sinopse"/);
@@ -128,16 +143,17 @@ test("Publicar delega campos controlados sem deslocar seus estados e callbacks",
   assert.match(acoesFormulario, /<PublicarProgress[\s\S]*?progresso=\{progresso\}[\s\S]*?rotulo=\{progressoRotulo\}/);
 });
 
-test("Publicar delega os metadados controlados e preserva os callbacks na pÃ¡gina", () => {
+test("Publicar delega os metadados controlados ao hook de opções", () => {
   assert.match(pagina, /import \{ PublicarBasicFields \} from "\.\/components\/PublicarBasicFields";/);
   assert.match(pagina, /import \{ PublicarFormatGenreFields \} from "\.\/components\/PublicarFormatGenreFields";/);
   assert.match(pagina, /import \{ PublicarTagClassificationFields \} from "\.\/components\/PublicarTagClassificationFields";/);
   assert.match(pagina, /<PublicarBasicFields[\s\S]*?onAutorChange=\{atualizarAutor\}[\s\S]*?onTituloChange=\{atualizarTitulo\}/);
   assert.match(pagina, /<PublicarFormatGenreFields[\s\S]*?onFormatoChange=\{atualizarFormato\}[\s\S]*?onGeneroChange=\{atualizarGenero\}/);
   assert.match(pagina, /<PublicarTagClassificationFields[\s\S]*?onAlternarAviso=\{alternarAvisoConteudo18\}[\s\S]*?onClassificacaoChange=\{atualizarClassificacaoIndicativa\}[\s\S]*?onTagChange=\{atualizarTagSelecionada\}/);
-  assert.match(pagina, /function atualizarFormato\(valor: string\)[\s\S]*?setFormato\(valor\)[\s\S]*?setErro\(""\)/);
-  assert.match(pagina, /function atualizarGenero\(valor: string\)[\s\S]*?setGenero\(valor\)[\s\S]*?setErro\(""\)/);
-  assert.match(pagina, /function atualizarClassificacaoIndicativa\(valor: string\)[\s\S]*?setClassificacaoIndicativa\(valor\)[\s\S]*?setAvisosConteudo18\(\[\]\)[\s\S]*?setErro\(""\)/);
+  assert.match(pagina, /import \{ usePublicarPublicationOptions \} from "\.\/hooks\/use-publicar-publication-options";/);
+  assert.doesNotMatch(pagina, /function atualizarFormato\(valor: string\)/);
+  assert.doesNotMatch(pagina, /function atualizarGenero\(valor: string\)/);
+  assert.doesNotMatch(pagina, /function atualizarClassificacaoIndicativa\(valor: string\)/);
   assert.doesNotMatch(pagina, /id="publicar-formato"/);
   assert.doesNotMatch(pagina, /id="publicar-genero"/);
   assert.doesNotMatch(pagina, /id="publicar-tag"/);
@@ -154,6 +170,8 @@ test("Publicar delega os metadados controlados e preserva os callbacks na pÃ¡g
   assert.match(camposTagClassificacao, /OPCOES_TAGS_OBRA\.map/);
   assert.match(camposTagClassificacao, /traduzirTagPublicar\(idioma, tag\)/);
   assert.match(camposTagClassificacao, /<PublicarAdultWarnings[\s\S]*?onAlternarAviso=\{onAlternarAviso\}/);
+  assert.match(opcoesPublicacao, /export function usePublicarPublicationOptions/);
+  assert.match(opcoesPublicacao, /if \(!ehClassificacao18\(valor\)\) \{[\s\S]*?setAvisosConteudo18\(\[\]\);/);
 });
 
 test("Publicar delegates loading and page shells without moving composition", () => {
