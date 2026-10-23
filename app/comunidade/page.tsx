@@ -14,6 +14,8 @@ import type { FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import { useComunidadeDesktopMode } from "./hooks/use-comunidade-desktop-mode";
+import { useComunidadeOverlayBodyLock } from "./hooks/use-comunidade-overlay-body-lock";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -269,41 +271,12 @@ export default function ComunidadePage() {
     useState(false);
   const [usuariosSeguidosIds, setUsuariosSeguidosIds] = useState<string[]>([]);
   const [usuarioSeguindoId, setUsuarioSeguindoId] = useState<string | null>(null);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useComunidadeDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(communityPageStyle);
   const carregarPostsComunidadeNoEfeito = useEffectEvent(
     (mostrarCarregamento: boolean, pagina: number, obraFiltro: string) =>
       carregarPostsComunidadeDaPagina(mostrarCarregamento, pagina, obraFiltro),
   );
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     const userId = usuario?.id || "";
@@ -681,36 +654,10 @@ export default function ComunidadePage() {
     };
   }, [composerAberto]);
 
-  useEffect(() => {
-    if (!menuAcoesRapidasComunidadeAberto && !postMenuAbertoId) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.getPropertyValue("overflow");
-    const overscrollAnterior = document.documentElement.style.getPropertyValue(
-      "overscroll-behavior"
-    );
-
-    document.body.style.setProperty("overflow", "hidden");
-    document.documentElement.style.setProperty("overscroll-behavior", "none");
-
-    return () => {
-      if (overflowAnterior) {
-        document.body.style.setProperty("overflow", overflowAnterior);
-      } else {
-        document.body.style.removeProperty("overflow");
-      }
-
-      if (overscrollAnterior) {
-        document.documentElement.style.setProperty(
-          "overscroll-behavior",
-          overscrollAnterior
-        );
-      } else {
-        document.documentElement.style.removeProperty("overscroll-behavior");
-      }
-    };
-  }, [menuAcoesRapidasComunidadeAberto, postMenuAbertoId]);
+  useComunidadeOverlayBodyLock({
+    bloqueioPrimario: menuAcoesRapidasComunidadeAberto,
+    bloqueioSecundario: postMenuAbertoId,
+  });
 
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
@@ -935,73 +882,12 @@ export default function ComunidadePage() {
     );
   }, [obraRelacionadaBusca, obrasRelacionadasSugestoes]);
 
-  useEffect(() => {
-    if (!comentariosPostId) {
-      return;
-    }
+  useComunidadeOverlayBodyLock({ bloqueioPrimario: comentariosPostId });
 
-    const overflowAnterior = document.body.style.getPropertyValue("overflow");
-    const overscrollAnterior = document.documentElement.style.getPropertyValue(
-      "overscroll-behavior"
-    );
-
-    document.body.style.setProperty("overflow", "hidden");
-    document.documentElement.style.setProperty("overscroll-behavior", "none");
-
-    return () => {
-      if (overflowAnterior) {
-        document.body.style.setProperty("overflow", overflowAnterior);
-      } else {
-        document.body.style.removeProperty("overflow");
-      }
-
-      if (overscrollAnterior) {
-        document.documentElement.style.setProperty(
-          "overscroll-behavior",
-          overscrollAnterior
-        );
-      } else {
-        document.documentElement.style.removeProperty("overscroll-behavior");
-      }
-    };
-  }, [comentariosPostId]);
-
-  useEffect(() => {
-    if (!composerAberto) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.getPropertyValue("overflow");
-    const overscrollAnterior = document.documentElement.style.getPropertyValue(
-      "overscroll-behavior"
-    );
-
-    document.body.style.setProperty("overflow", "hidden");
-    document.documentElement.style.setProperty("overscroll-behavior", "none");
-
-    const focoTimer = window.setTimeout(() => {
-      textoPostRef.current?.focus();
-    }, 80);
-
-    return () => {
-      window.clearTimeout(focoTimer);
-
-      if (overflowAnterior) {
-        document.body.style.setProperty("overflow", overflowAnterior);
-      } else {
-        document.body.style.removeProperty("overflow");
-      }
-
-      if (overscrollAnterior) {
-        document.documentElement.style.setProperty(
-          "overscroll-behavior",
-          overscrollAnterior
-        );
-      } else {
-        document.documentElement.style.removeProperty("overscroll-behavior");
-      }
-    };
-  }, [composerAberto]);
+  useComunidadeOverlayBodyLock({
+    bloqueioPrimario: composerAberto,
+    focoComposerRef: textoPostRef,
+  });
 
   const filtrosAtivos = temFiltrosAtivosComunidade({
     categoriaAtiva,

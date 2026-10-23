@@ -1289,3 +1289,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição dos estados do formulário, upload, validação, metadados e adapter de submissão foi concentrada em `usePublicarFormController`, mantendo a página como orquestradora visual.
 - O lifecycle de acesso, consultas e mutações Supabase, Storage, RLS, validações, mensagens e contratos de submissão foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 1 — Comunidade
+
+- O controle responsivo de desktop e o lifecycle de lock de `body`/overscroll dos overlays foram isolados em hooks dedicados.
+- Os gatilhos de menu, comentários e composer, incluindo o cleanup e o foco postergado do composer, foram preservados sem alteração intencional de comportamento.
