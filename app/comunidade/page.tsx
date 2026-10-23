@@ -30,6 +30,7 @@ import { comentarPostComunidade } from "./components/community-comment-publicati
 import { alternarCurtidaComentarioComunidade } from "./components/community-comment-like-action";
 import { removerComentarioComunidade } from "./components/community-comment-removal-action";
 import { alternarSeguirUsuarioBuscaComunidade } from "./components/community-search-follow-action";
+import { atualizarVisibilidadePostComunidade } from "./components/community-post-visibility-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
@@ -48,11 +49,7 @@ import {
 import { consultarPostParaRemocaoComunidade } from "./components/community-post-removal-query";
 import { removerPostSupabaseComunidade } from "./components/community-post-removal-delete";
 import { consultarUsuarioEhAdminComunidade } from "./components/community-admin-status-query";
-import {
-  atualizarFixacaoPostNoEstadoComunidade,
-  atualizarVisibilidadePostNoEstadoComunidade,
-} from "./components/community-post-metadata-state-updaters";
-import { atualizarVisibilidadePostSupabaseComunidade } from "./components/community-post-visibility-update";
+import { atualizarFixacaoPostNoEstadoComunidade } from "./components/community-post-metadata-state-updaters";
 import { atualizarFixacaoPostSupabaseComunidade } from "./components/community-post-pinning-update";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
@@ -84,7 +81,6 @@ import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublica
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
 import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
-import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
 import { ComentariosSheet } from "./components/community-comments-sheet";
@@ -594,108 +590,25 @@ export default function ComunidadePage() {
       carregarPostsComunidadeDaPagina,
     });
 
-  async function atualizarVisibilidadePost(
+  const atualizarVisibilidadePost = (
     post: PostComunidade,
     novaVisibilidade: VisibilidadePostComunidade,
-  ) {
-    const chaveAcao = `visibilidade-post:${post.id}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    setPostVisibilidadeAtualizandoId(post.id);
-    setErro("");
-
-    try {
-      if (!exigirLogin() || !usuario) {
-        return;
-      }
-
-      if (post.autorId.trim() !== usuario.id.trim()) {
-        return;
-      }
-
-      const visibilidadeSegura = normalizarVisibilidadePostComunidade(
-        novaVisibilidade,
-      );
-
-      if (post.visibilidade === visibilidadeSegura) {
-        return;
-      }
-
-      const reviewPrecisaSerProtegidaAntes =
-        post.tipoPublicacao === "Review" && visibilidadeSegura !== "publico";
-
-      if (reviewPrecisaSerProtegidaAntes) {
-        const reviewSincronizada = await registrarReviewComunidadeNoDiario({
-          userId: usuario.id,
-          texto: post.texto,
-          obraRelacionada: post.obraRelacionada,
-          postId: post.id,
-          criadaEm: post.criadoEm,
-          sugestoesObras: obrasRelacionadasSugestoes,
-          visibilidade: visibilidadeSegura,
-        });
-
-        if (!reviewSincronizada) {
-          setErro(
-            "Não foi possível atualizar a privacidade da review no Diário.",
-          );
-          return;
-        }
-      }
-
-      const resultadoAtualizacaoVisibilidade =
-        await atualizarVisibilidadePostSupabaseComunidade(
-          post.id,
-          usuario.id,
-          visibilidadeSegura
-        );
-
-      if (
-        !resultadoAtualizacaoVisibilidade.sucesso ||
-        !resultadoAtualizacaoVisibilidade.data
-      ) {
-        if (post.tipoPublicacao === "Review") {
-          reviewsDiarioSincronizadasRef.current.delete(post.id);
-        }
-
-        setErro(
-          !resultadoAtualizacaoVisibilidade.sucesso
-            ? formatarErroSupabase(
-                "Erro ao atualizar visibilidade",
-                resultadoAtualizacaoVisibilidade.erro
-              )
-            : "Erro ao atualizar visibilidade: a publicação não foi retornada.",
-        );
-        return;
-      }
-
-      if (post.tipoPublicacao === "Review") {
-        if (reviewPrecisaSerProtegidaAntes) {
-          reviewsDiarioSincronizadasRef.current.add(post.id);
-        } else {
-          reviewsDiarioSincronizadasRef.current.delete(post.id);
-        }
-      }
-
-      setPosts((postsAtuais) =>
-        atualizarVisibilidadePostNoEstadoComunidade(
-          postsAtuais,
-          post.id,
-          visibilidadeSegura,
-        )
-      );
-      setPostMenuAbertoId(null);
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Visibilidade da publicação atualizada.");
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-      setPostVisibilidadeAtualizandoId((postAtualId) =>
-        postAtualId === post.id ? null : postAtualId,
-      );
-    }
-  }
+  ) =>
+    atualizarVisibilidadePostComunidade({
+      post,
+      novaVisibilidade,
+      acoesComunidadeRef,
+      setPostVisibilidadeAtualizandoId,
+      setErro,
+      exigirLogin,
+      usuario,
+      obrasRelacionadasSugestoes,
+      reviewsDiarioSincronizadasRef,
+      setPosts,
+      setPostMenuAbertoId,
+      setFeedbackAcao,
+      feedbackTimerRef,
+    });
 
   async function alternarFixadoPost(post: PostComunidade) {
     if (!usuarioEhAdmin) {

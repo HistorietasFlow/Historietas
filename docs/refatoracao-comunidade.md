@@ -1359,3 +1359,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de seguir/deixar de seguir usuários da busca foi isolada em `community-search-follow-action.ts`.
 - Guards, lock, atualização otimista, persistência, rollback, estados seguindo/solicitado, feedbacks e cleanup foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 15 — Comunidade
+
+- A ação de atualização de visibilidade de posts foi isolada em `community-post-visibility-action.ts`.
+- Lock, guards de autoria, proteção/sincronização da Review com o Diário, atualização Supabase, estado local, fechamento do menu, feedback e cleanup foram preservados sem alteração intencional de comportamento.
