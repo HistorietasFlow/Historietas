@@ -1319,3 +1319,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle de autenticação e troca de conta foi isolado em `use-comunidade-auth-account-lifecycle.ts`.
 - O carregamento e a confirmação de identidade, os guards de versão, a assinatura, os timers, os resets de conta, a limpeza do composer e o recarregamento do feed foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 7 — Comunidade
+
+- A orquestração de carregamento e paginação do feed foi isolada em `use-comunidade-feed-lifecycle.ts`.
+- O carregamento inicial, scroll, filtro de obra por URL, timer, cleanup, paginação e os estados de feed foram preservados sem alteração intencional de comportamento.

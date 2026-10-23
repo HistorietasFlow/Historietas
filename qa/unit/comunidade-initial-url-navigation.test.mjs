@@ -69,12 +69,8 @@ test("Comunidade delega somente a navegacao inicial ao hook", () => {
     pagina,
     /useComunidadeInitialUrlNavigation\(\{[\s\S]*?comentarioUrlAplicadoRef,[\s\S]*?comentariosPostId,[\s\S]*?posts,[\s\S]*?setTermoBusca,[\s\S]*?setComentariosPostId,[\s\S]*?\}\);/,
   );
-  assert.match(pagina, /window\.history\.scrollRestoration = "manual";/);
-  assert.match(
-    pagina,
-    /const obraUrl = obterParametroObraComunidade\(parametrosUrl\);[\s\S]*?const carregarFeedTimer = window\.setTimeout\([\s\S]*?void carregarPostsComunidadeNoEfeito\(true, 0, obraUrl\);/,
-  );
-  assert.match(pagina, /window\.clearTimeout\(carregarFeedTimer\);/);
+  assert.doesNotMatch(pagina, /window\.history\.scrollRestoration = "manual";/);
+  assert.doesNotMatch(pagina, /const carregarFeedTimer = window\.setTimeout\(/);
   assert.doesNotMatch(pagina, /const parametrosComunidadeAplicadosRef = useRef\(false\);/);
   assert.doesNotMatch(pagina, /const postIdUrl = obterParametroPostComunidade\(/);
   assert.match(pagina, /useComunidadeAuthAccountLifecycle\(/);

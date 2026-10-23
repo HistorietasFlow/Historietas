@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   useDeferredValue,
   useEffect,
-  useEffectEvent,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -23,6 +23,7 @@ import {
 } from "./hooks/use-comunidade-personal-data-sync";
 import { useComunidadeRelatedWorkDiarySync } from "./hooks/use-comunidade-related-work-diary-sync";
 import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-account-lifecycle";
+import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -95,9 +96,6 @@ import { CommunityFeedLoadingState } from "./components/community-feed-loading-s
 import { communityPageStyle } from "./components/community-page-style";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
-import {
-  obterParametroObraComunidade,
-} from "./components/community-url-parameters";
 import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
 import { consultarObrasPorTituloComunidade } from "./components/community-related-work-title-query";
 import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
@@ -128,8 +126,6 @@ import { alternarSpoilerRevelado } from "./components/community-spoiler-revealed
 import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
 import { alternarPostSalvo } from "./components/community-saved-post-toggler";
 import { compartilharPublicacao } from "./components/community-post-sharer";
-import { carregarPostsComunidade } from "./components/community-posts-loader";
-import { carregarMaisPostsComunidade } from "./components/community-more-posts-loader";
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
@@ -243,6 +239,13 @@ export default function ComunidadePage() {
   const reviewsDiarioSincronizadasRef = useRef<Set<string>>(new Set<string>());
   const usuarioReviewsDiarioRef = useRef("");
   const acoesComunidadeRef = useRef<Set<string>>(new Set<string>());
+  const carregarPostsComunidadeRef = useRef<
+    (
+      mostrarCarregamento?: boolean,
+      pagina?: number,
+      obraFiltro?: string,
+    ) => Promise<void>
+  >(null);
   const comentarioUrlAplicadoRef = useRef(false);
   const [composerAberto, setComposerAberto] = useState(false);
   const [menuAcoesRapidasComunidadeAberto, setMenuAcoesRapidasComunidadeAberto] =
@@ -257,10 +260,6 @@ export default function ComunidadePage() {
   const [usuarioSeguindoId, setUsuarioSeguindoId] = useState<string | null>(null);
   const isDesktop = useComunidadeDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(communityPageStyle);
-  const carregarPostsComunidadeNoEfeito = useEffectEvent(
-    (mostrarCarregamento: boolean, pagina: number, obraFiltro: string) =>
-      carregarPostsComunidadeDaPagina(mostrarCarregamento, pagina, obraFiltro),
-  );
 
   useComunidadeSavedPostsSync({
     usuarioId: usuario?.id,
@@ -316,7 +315,12 @@ export default function ComunidadePage() {
     setSugestoesObrasAbertas,
     setPosts,
     setCarregandoFeed,
-    carregarPostsComunidade: carregarPostsComunidadeDaPagina,
+    carregarPostsComunidade: (mostrarCarregamento, pagina, obraFiltro) =>
+      carregarPostsComunidadeRef.current?.(
+        mostrarCarregamento,
+        pagina,
+        obraFiltro,
+      ),
   });
 
   useComunidadeRelatedWorkDiarySync({
@@ -349,24 +353,27 @@ export default function ComunidadePage() {
     bloqueioSecundario: postMenuAbertoId,
   });
 
-  useEffect(() => {
-    if ("scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
-    }
+  const {
+    carregarPostsComunidadeDaPagina,
+    carregarMaisPostsComunidadeDaPagina,
+  } = useComunidadeFeedLifecycle({
+    obraRelacionadaFiltro,
+    carregandoFeed,
+    carregandoMaisPostsComunidade,
+    temMaisPostsComunidade,
+    paginaFeedComunidade,
+    setCarregandoFeed,
+    setCarregandoMaisPostsComunidade,
+    setPosts,
+    setTemMaisPostsComunidade,
+    setPaginaFeedComunidade,
+    setObrasRelacionadasSugestoes,
+    setErro,
+  });
 
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-
-    const parametrosUrl = new URLSearchParams(window.location.search);
-    const obraUrl = obterParametroObraComunidade(parametrosUrl);
-
-    const carregarFeedTimer = window.setTimeout(() => {
-      void carregarPostsComunidadeNoEfeito(true, 0, obraUrl);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(carregarFeedTimer);
-    };
-  }, []);
+  useLayoutEffect(() => {
+    carregarPostsComunidadeRef.current = carregarPostsComunidadeDaPagina;
+  }, [carregarPostsComunidadeDaPagina]);
 
   useComunidadeInitialUrlNavigation({
     comentarioUrlAplicadoRef,
@@ -453,25 +460,6 @@ export default function ComunidadePage() {
     mostrarApenasSalvos,
     ordenacaoAtiva,
   });
-  function carregarPostsComunidadeDaPagina(
-    mostrarCarregamento = false,
-    pagina = 0,
-    obraFiltro = obraRelacionadaFiltro
-  ) {
-    return carregarPostsComunidade({
-      mostrarCarregamento,
-      pagina,
-      obraFiltro,
-      setCarregandoFeed,
-      setCarregandoMaisPostsComunidade,
-      setPosts,
-      setTemMaisPostsComunidade,
-      setPaginaFeedComunidade,
-      setObrasRelacionadasSugestoes,
-      setErro,
-    });
-  }
-
   function exigirLogin() {
     return exigirLoginComunidade({ usuario, setErro, router });
   }
@@ -1743,15 +1731,7 @@ export default function ComunidadePage() {
                   />
                 );
               }}
-              onCarregarMais={() =>
-                carregarMaisPostsComunidade({
-                  carregandoFeed,
-                  carregandoMaisPostsComunidade,
-                  temMaisPostsComunidade,
-                  paginaFeedComunidade,
-                  carregarPostsComunidadeDaPagina,
-                })
-              }
+              onCarregarMais={carregarMaisPostsComunidadeDaPagina}
             />
 
           </CommunityFeedColumn>
