@@ -108,7 +108,7 @@ test("módulo de opções de Publicar mantém a fronteira pura", () => {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
+  assert.match(pagina, /import \{ PublicarPageContent \} from "\.\/components\/PublicarPageContent";/);
   assert.match(formularioPublicacao, /from "\.\/PublicarFormatGenreFields";/);
   assert.match(formularioPublicacao, /from "\.\/PublicarTagClassificationFields";/);
   assert.match(camposFormatoGenero, /from "\.\.\/lib\/publicar-option-translations";/);

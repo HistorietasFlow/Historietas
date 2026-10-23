@@ -8,16 +8,9 @@ import { usePublicarPagePresentation } from "./hooks/use-publicar-page-presentat
 import { usePublicarFormController } from "./hooks/use-publicar-form-controller";
 import {
   PublicarLoadingShell,
-  PublicarPageShell,
 } from "./components/PublicarPageShell";
-import { PublicarPageBackdrop } from "./components/PublicarPageBackdrop";
-import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
-import { PublicarPublicationForm } from "./components/PublicarPublicationForm";
+import { PublicarPageContent } from "./components/PublicarPageContent";
 import { criarPropsComponentesPaginaPublicar } from "./lib/publicar-page-component-props";
-import {
-  desktopMainGridSingleStyle,
-  mainGridStyle,
-} from "./lib/publicar-form-upload-styles";
 
 export default function PublicarPage() {
   const router = useRouter();
@@ -63,20 +56,13 @@ export default function PublicarPage() {
   }
 
   return (
-    <main style={presentation.pageThemeStyle}>
-      <PublicarPageBackdrop isDesktop={isDesktop} />
-
-      <PublicarPageShell
-        isDesktop={isDesktop}
-        novaObra={presentation.t("novaObra")}
-        voltarHome={presentation.t("voltarHome")}
-      >
-        <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
-          <PublicarPublicationForm {...publicationFormProps} />
-
-          <PublicarWorkPreview {...workPreviewProps} />
-        </section>
-      </PublicarPageShell>
-    </main>
+    <PublicarPageContent
+      isDesktop={isDesktop}
+      novaObra={presentation.t("novaObra")}
+      pageThemeStyle={presentation.pageThemeStyle}
+      publicationFormProps={publicationFormProps}
+      voltarHome={presentation.t("voltarHome")}
+      workPreviewProps={workPreviewProps}
+    />
   );
 }
