@@ -39,7 +39,7 @@ test("usePublicarInitialAccess preserves the publication access lifecycle", () =
 
 test("Publicar delega apenas o lifecycle inicial de acesso ao hook", () => {
   assert.match(pagina, /import \{ usePublicarInitialAccess \} from "\.\/hooks\/use-publicar-initial-access";/);
-  assert.match(pagina, /usePublicarInitialAccess\(\{[\s\S]*?router,[\s\S]*?setAutor: formulario\.setAutor,[\s\S]*?setVerificandoAutenticacao,[\s\S]*?\}\);/);
+  assert.match(pagina, /usePublicarInitialAccess\(\{[\s\S]*?router,[\s\S]*?setAutor,[\s\S]*?setVerificandoAutenticacao,[\s\S]*?\}\);/);
   assert.doesNotMatch(pagina, /async function verificarAutenticacaoPublicacao\(/);
   assert.doesNotMatch(pagina, /verificarAceiteTermosPublicacao/);
   assert.doesNotMatch(pagina, /criarHrefAceiteTermos/);

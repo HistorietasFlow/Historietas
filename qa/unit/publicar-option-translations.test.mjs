@@ -15,10 +15,6 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
-const propsComponentesPagina = readFileSync(
-  new URL("../../app/publicar/lib/publicar-page-component-props.ts", import.meta.url),
-  "utf8",
-);
 const camposFormatoGenero = readFileSync(
   new URL("../../app/publicar/components/PublicarFormatGenreFields.tsx", import.meta.url),
   "utf8",
@@ -108,7 +104,7 @@ test("módulo de opções de Publicar mantém a fronteira pura", () => {
     assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
   }
 
-  assert.match(pagina, /import \{ PublicarPageContent \} from "\.\/components\/PublicarPageContent";/);
+  assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
   assert.match(formularioPublicacao, /from "\.\/PublicarFormatGenreFields";/);
   assert.match(formularioPublicacao, /from "\.\/PublicarTagClassificationFields";/);
   assert.match(camposFormatoGenero, /from "\.\.\/lib\/publicar-option-translations";/);
@@ -116,8 +112,7 @@ test("módulo de opções de Publicar mantém a fronteira pura", () => {
   assert.match(camposFormatoGenero, /traduzirFormatoPublicar\(idioma, opcao\)/);
   assert.match(camposFormatoGenero, /traduzirGeneroPublicar\(idioma, opcao\)/);
   assert.match(camposTagClassificacao, /traduzirTagPublicar\(idioma, tag\)/);
-  assert.match(pagina, /from "\.\/lib\/publicar-page-component-props";/);
-  assert.match(propsComponentesPagina, /from "\.\/publicar-translations";/);
+  assert.match(pagina, /from "\.\/lib\/publicar-translations";/);
   for (const helper of [
     "obterTextoPublicar",
     "traduzirClassificacaoPublicar",

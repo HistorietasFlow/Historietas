@@ -33,10 +33,6 @@ const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
 );
-const propsComponentesPagina = readFileSync(
-  new URL("../../app/publicar/lib/publicar-page-component-props.ts", import.meta.url),
-  "utf8",
-);
 
 test("hooks de estado e apresentação preservam as fronteiras da página", () => {
   assert.match(estadoPagina, /^"use client";/);
@@ -105,14 +101,12 @@ test("Publicar delega os dois estados locais sem reter implementações duplicad
   assert.match(pagina, /import \{ usePublicarPageState \} from "\.\/hooks\/use-publicar-page-state";/);
   assert.match(pagina, /import \{ usePublicarPagePresentation \} from "\.\/hooks\/use-publicar-page-presentation";/);
   assert.match(pagina, /\} = usePublicarPageState\(\);/);
-  assert.match(pagina, /const presentation = usePublicarPagePresentation\(\);/);
+  assert.match(pagina, /\} = usePublicarPagePresentation\(\);/);
   assert.doesNotMatch(pagina, /const \[processando, setProcessando\] = useState/);
   assert.doesNotMatch(pagina, /const \[erro, setErro\] = useState/);
   assert.doesNotMatch(pagina, /const \[verificandoAutenticacao, setVerificandoAutenticacao\] = useState/);
   assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
-  assert.match(pagina, /const formulario = usePublicarFormController\(\{[\s\S]*?router,[\s\S]*?setErro,[\s\S]*?setProcessando,[\s\S]*?t: presentation\.t,/);
-  assert.match(pagina, /criarPropsComponentesPaginaPublicar\(\{[\s\S]*?formulario,[\s\S]*?presentation,/);
-  assert.match(propsComponentesPagina, /export function criarPropsComponentesPaginaPublicar\(/);
+  assert.match(pagina, /\} = usePublicarFormController\(\{[\s\S]*?router,[\s\S]*?setErro,[\s\S]*?setProcessando,[\s\S]*?t,/);
   assert.match(controladorFormulario, /usePublicarPublicationOptions\(\{ setErro \}\)/);
   assert.match(controladorFormulario, /usePublicarContentFileUpload\(\{ setErro \}\)/);
   assert.doesNotMatch(pagina, /function anexarArquivoCompleto\(arquivo: File\)/);
