@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const apresentacaoPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
+  "utf8",
+);
 const shell = readFileSync(
   new URL("../../app/publicar/components/PublicarPageShell.tsx", import.meta.url),
   "utf8",
@@ -78,7 +82,15 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
     /\$\{publicarPageCss\}\$\{historietasThemeCss\}/,
   );
 
-  assert.match(pagina, /from "\.\/lib\/publicar-layout-styles";/);
+  assert.match(
+    pagina,
+    /import \{ usePublicarPagePresentation \} from "\.\/hooks\/use-publicar-page-presentation";/,
+  );
+  assert.match(
+    apresentacaoPagina,
+    /from "\.\.\/lib\/publicar-layout-styles";/,
+  );
+  assert.match(apresentacaoPagina, /useHistorietasTheme\(pageStyle\)/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
   assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
   assert.match(pagina, /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/);
