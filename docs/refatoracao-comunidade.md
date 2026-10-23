@@ -1339,3 +1339,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As ações de engajamento dos posts foram isoladas em `community-post-engagement-actions.ts`.
 - Locks, guards de login, sincronização Supabase, persistência local, notificações, feedbacks e estados de curtir, salvar, compartilhar, votar e spoiler foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 11 — Comunidade
+
+- A ação de envio de comentários foi isolada em `community-comment-publication-action.ts`.
+- Lock, guards, validação, INSERT, notificação de comentário raiz, estado local, feedback, retornos e cleanup foram preservados sem alteração intencional de comportamento.

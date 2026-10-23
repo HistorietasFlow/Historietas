@@ -61,5 +61,6 @@ test("Comunidade delega somente a ação de publicação ao módulo dedicado", (
   assert.doesNotMatch(pagina, /async function publicarPost\(/);
   assert.doesNotMatch(pagina, /await inserirPostSupabaseComunidade\(/);
   assert.match(pagina, /useComunidadePostEngagementActions\(\{/);
-  assert.match(pagina, /async function comentarPost\(/);
+  assert.match(pagina, /comentarPostComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function comentarPost\(/);
 });

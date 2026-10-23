@@ -26,6 +26,7 @@ import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-a
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
+import { comentarPostComunidade } from "./components/community-comment-publication-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
@@ -40,7 +41,6 @@ import { criarAcoesPostComunidade } from "./components/community-post-action-fac
 import { atualizarCurtidaComentarioComunidade } from "./components/community-like-state-updaters";
 import { sincronizarCurtidaComentarioSupabaseComunidade } from "./components/community-comment-like-sync";
 import {
-  adicionarComentarioPostComunidade,
   removerComentarioPostComunidade,
   removerComentariosPostComunidade,
 } from "./components/community-comment-state-updaters";
@@ -57,9 +57,6 @@ import {
 } from "./components/community-post-metadata-state-updaters";
 import { atualizarVisibilidadePostSupabaseComunidade } from "./components/community-post-visibility-update";
 import { atualizarFixacaoPostSupabaseComunidade } from "./components/community-post-pinning-update";
-import { mapearComentarioCriadoComunidade } from "./components/community-created-comment-mapper";
-import { prepararInsercaoComentarioComunidade } from "./components/community-comment-insert-preparation";
-import { inserirComentarioSupabaseComunidade } from "./components/community-comment-insert";
 import { prepararRemocaoComentarioComunidade } from "./components/community-comment-removal-preparation";
 import { consultarComentarioParaRemocaoComunidade } from "./components/community-comment-removal-query";
 import { removerComentarioSupabaseComunidade } from "./components/community-comment-removal-delete";
@@ -79,7 +76,6 @@ import type {
   UsuarioBuscaComunidade,
   UsuarioComunidade,
 } from "./components/community-user";
-import { obterNomeSeguroUsuarioComunidade } from "./components/community-safe-user-name";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import { obterSugestoesObrasRelacionadasVisiveisComunidade } from "./components/community-visible-related-work-suggestions";
 import { aplicarSugestaoPublicacaoComunidade } from "./components/community-publication-suggestions";
@@ -89,7 +85,6 @@ import { CommunityFeedLoadingState } from "./components/community-feed-loading-s
 import { communityPageStyle } from "./components/community-page-style";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
-import type { SupabaseComentarioRow } from "./components/community-supabase-comment-row";
 import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-user-saver";
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
@@ -577,98 +572,24 @@ export default function ComunidadePage() {
     setSpoilersReveladosIds,
   });
 
-  async function comentarPost(
+  const comentarPost = (
     postId: string,
     textoRecebido: string,
     comentarioPaiId = ""
-  ) {
-    const chaveAcao = `comentar-post:${postId}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return false;
-    }
-
-    setErro("");
-
-    try {
-      if (!exigirLogin() || !usuario) {
-        return false;
-      }
-
-      const textoComentario = textoRecebido.trim();
-
-      if (textoComentario.length < 1) {
-        setErro("Escreva um comentário antes de enviar.");
-        return false;
-      }
-
-      const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
-      const resultadoPreparacaoComentario =
-        prepararInsercaoComentarioComunidade({
-          posts,
-          postId,
-          textoComentario,
-          comentarioPaiId,
-          usuarioId: usuario.id,
-          autorNomeSeguro,
-        });
-
-      if (!resultadoPreparacaoComentario.valido) {
-        setErro(resultadoPreparacaoComentario.erro);
-        return false;
-      }
-
-      const { postAtual, comentarioPaiIdLimpo, dadosComentarioBanco } =
-        resultadoPreparacaoComentario;
-
-      const resultadoInsercaoComentario =
-        await inserirComentarioSupabaseComunidade(dadosComentarioBanco);
-
-      if (!resultadoInsercaoComentario.sucesso) {
-        setErro(
-          formatarErroSupabase(
-            "Erro ao comentar",
-            resultadoInsercaoComentario.erro
-          )
-        );
-        return false;
-      }
-
-      const { data } = resultadoInsercaoComentario;
-
-      if (!data) {
-        setErro("Erro ao comentar: o Supabase não retornou o comentário criado.");
-        return false;
-      }
-
-      const novoComentario = mapearComentarioCriadoComunidade({
-        comentarioCriado: data as SupabaseComentarioRow,
-        usuarioId: usuario.id,
-        autorNomeSeguro,
-        usuarioAvatar: usuario.avatar,
-      });
-
-      if (!comentarioPaiIdLimpo && postAtual?.autorId) {
-        await criarNotificacaoComunidadeSupabase({
-          destinatarioId: postAtual.autorId,
-          tipo: "comunidade-comentario-post",
-          titulo: "Novo comentário na Comunidade",
-          mensagem: `${autorNomeSeguro} comentou na sua publicação.`,
-          link: `/comunidade?post=${encodeURIComponent(postId)}`,
-          notificacaoId: `comunidade-comentario-post:${postId}:${novoComentario.id}`,
-        }, idSupabaseValidoComunidade);
-      }
-
-      setPosts((postsAtuais) =>
-        adicionarComentarioPostComunidade(postsAtuais, postId, novoComentario)
-      );
-
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Comentário enviado.");
-      return true;
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-    }
-  }
+  ) =>
+    comentarPostComunidade({
+      postId,
+      textoRecebido,
+      comentarioPaiId,
+      acoesComunidadeRef,
+      setErro,
+      exigirLogin,
+      usuario,
+      posts,
+      setPosts,
+      setFeedbackAcao,
+      feedbackTimerRef,
+    });
 
   function denunciarConteudo(
     alvoTipo: AlvoDenunciaComunidade,
