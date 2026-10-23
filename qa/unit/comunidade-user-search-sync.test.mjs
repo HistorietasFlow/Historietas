@@ -75,6 +75,7 @@ test("Comunidade delega apenas a sincronizacao de busca de usuarios ao hook", ()
   assert.doesNotMatch(pagina, /void buscarUsuariosComunidadeSupabase\(/);
   assert.doesNotMatch(pagina, /void carregarUsuariosSeguidosComunidade\(/);
   assert.doesNotMatch(pagina, /const buscaTimer = window\.setTimeout\(/);
-  assert.match(pagina, /async function alternarSeguirUsuarioBusca\(/);
+  assert.match(pagina, /alternarSeguirUsuarioBuscaComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function alternarSeguirUsuarioBusca\(/);
   assert.match(pagina, /carregarPostsComunidadeDaPagina/);
 });

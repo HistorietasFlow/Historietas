@@ -2119,6 +2119,13 @@ const communityFollowSaverPath = path.join(
 const communityFollowSaver = fs.existsSync(communityFollowSaverPath)
   ? fs.readFileSync(communityFollowSaverPath, "utf8")
   : "";
+const communitySearchFollowActionPath = path.join(
+  ROOT_DIR,
+  "app/comunidade/components/community-search-follow-action.ts"
+);
+const communitySearchFollowAction = fs.existsSync(communitySearchFollowActionPath)
+  ? fs.readFileSync(communitySearchFollowActionPath, "utf8")
+  : "";
 const publicWorkChaptersQueryPath = path.join(
   ROOT_DIR,
   "app/obra/[slug]/lib/obra-supabase-chapters-utils.ts"
@@ -2506,7 +2513,8 @@ const antiSpamContracts = [
       /revoke insert on table public\.solicitacoes_seguidores[\s\S]*?from anon, authenticated/.test(
         antiSpamMigration
       ) &&
-      communityPage.includes("community-follow-user-saver") &&
+      communityPage.includes("community-search-follow-action") &&
+      communitySearchFollowAction.includes("community-follow-user-saver") &&
       communityFollowSaver.includes("solicitarOuSeguirUsuario") &&
       communityFollowSaver.includes("deixarDeSeguirUsuario")
   },

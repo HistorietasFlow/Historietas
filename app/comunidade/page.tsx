@@ -29,6 +29,7 @@ import { publicarPostComunidade } from "./components/community-composer-publicat
 import { comentarPostComunidade } from "./components/community-comment-publication-action";
 import { alternarCurtidaComentarioComunidade } from "./components/community-comment-like-action";
 import { removerComentarioComunidade } from "./components/community-comment-removal-action";
+import { alternarSeguirUsuarioBuscaComunidade } from "./components/community-search-follow-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
@@ -78,7 +79,6 @@ import { CommunityFeedLoadingState } from "./components/community-feed-loading-s
 import { communityPageStyle } from "./components/community-page-style";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
-import { salvarSeguindoUsuarioComunidade } from "./components/community-follow-user-saver";
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
 import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
@@ -432,71 +432,19 @@ export default function ComunidadePage() {
     });
   }
 
-  async function alternarSeguirUsuarioBusca(
-    usuarioAlvo: UsuarioBuscaComunidade
-  ) {
-    if (!exigirLogin() || !usuario) {
-      return;
-    }
-
-    if (usuarioAlvo.id === usuario.id) {
-      return;
-    }
-
-    const chaveAcao = `seguir-usuario:${usuarioAlvo.id}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    const estavaSeguindo = usuariosSeguidosIds.includes(usuarioAlvo.id);
-    const deveSeguir = !estavaSeguindo;
-    const idsAnteriores = usuariosSeguidosIds;
-
-    setUsuarioSeguindoId(usuarioAlvo.id);
-    setUsuariosSeguidosIds((idsAtuais) =>
-      deveSeguir
-        ? Array.from(new Set([...idsAtuais, usuarioAlvo.id]))
-        : idsAtuais.filter((id) => id !== usuarioAlvo.id)
-    );
-
-    try {
-      const resultado = await salvarSeguindoUsuarioComunidade(
-        usuario.id,
-        usuarioAlvo.id,
-        deveSeguir
-      );
-
-      if (!resultado.ok) {
-        setUsuariosSeguidosIds(idsAnteriores);
-        setErro(
-          resultado.erro || "Não foi possível atualizar este usuário agora."
-        );
-        return;
-      }
-
-      const seguindoAgora = resultado.estado === "seguindo";
-
-      setUsuariosSeguidosIds((idsAtuais) =>
-        seguindoAgora
-          ? Array.from(new Set([...idsAtuais, usuarioAlvo.id]))
-          : idsAtuais.filter((id) => id !== usuarioAlvo.id)
-      );
-      setErro("");
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
-        resultado.estado === "solicitado"
-          ? `Solicitação para seguir ${usuarioAlvo.nome} enviada.`
-          : seguindoAgora
-          ? `Você começou a seguir ${usuarioAlvo.nome}.`
-          : `Você deixou de seguir ${usuarioAlvo.nome}.`
-      );
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-      setUsuarioSeguindoId((idAtual) =>
-        idAtual === usuarioAlvo.id ? null : idAtual
-      );
-    }
-  }
+  const alternarSeguirUsuarioBusca = (usuarioAlvo: UsuarioBuscaComunidade) =>
+    alternarSeguirUsuarioBuscaComunidade({
+      usuarioAlvo,
+      exigirLogin,
+      usuario,
+      acoesComunidadeRef,
+      usuariosSeguidosIds,
+      setUsuariosSeguidosIds,
+      setUsuarioSeguindoId,
+      setErro,
+      setFeedbackAcao,
+      feedbackTimerRef,
+    });
 
   const publicarPost = (event: FormEvent<HTMLFormElement>) =>
     publicarPostComunidade({
