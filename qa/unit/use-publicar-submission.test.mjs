@@ -10,6 +10,10 @@ const page = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const pageController = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const formController = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -33,8 +37,8 @@ test("usePublicarSubmission preserva a guarda de envio e delega a ação", () =>
 
 test("Publicar delega somente o adapter de submissão ao hook", () => {
   assert.match(
-    page,
-    /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/,
+    pageController,
+    /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/,
   );
   assert.match(formController, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.match(formController, /const \{ salvarObra \} = usePublicarSubmission\(\{/);

@@ -6,6 +6,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const apresentacaoPagina = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
   "utf8",
@@ -52,8 +56,8 @@ test("Publicar isola a base e o layout responsivo", () => {
   assert.match(layout, /overflowWrap: "anywhere"/);
   assert.match(layout, /height: "min\(620px, 68vh\)"/);
   assert.match(
-    pagina,
-    /import \{ usePublicarPagePresentation \} from "\.\/hooks\/use-publicar-page-presentation";/,
+    controladorPagina,
+    /import \{ usePublicarPagePresentation \} from "\.\/use-publicar-page-presentation";/,
   );
   assert.match(
     apresentacaoPagina,

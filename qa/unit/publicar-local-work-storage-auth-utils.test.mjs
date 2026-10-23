@@ -18,6 +18,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -104,7 +108,8 @@ test("normalização local de Publicar preserva capítulos, arquivos, backups e 
 });
 
 test("Publicar delega fronteiras locais, storage e autenticação extraídas", () => {
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   for (const modulo of [

@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const apresentacaoPagina = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
   "utf8",
@@ -91,9 +95,10 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
     /\$\{publicarPageCss\}\$\{historietasThemeCss\}/,
   );
 
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
   assert.match(
-    pagina,
-    /import \{ usePublicarPagePresentation \} from "\.\/hooks\/use-publicar-page-presentation";/,
+    controladorPagina,
+    /import \{ usePublicarPagePresentation \} from "\.\/use-publicar-page-presentation";/,
   );
   assert.match(
     apresentacaoPagina,
@@ -101,8 +106,8 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
   );
   assert.match(apresentacaoPagina, /useHistorietasTheme\(pageStyle\)/);
   assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties/);
-  assert.match(pagina, /const isDesktop = usePublicarDesktopMode\(\);/);
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(controladorPagina, /const isDesktop = usePublicarDesktopMode\(\);/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   assert.match(hookSubmissao, /from "\.\.\/lib\/publicar-submission-action";/);

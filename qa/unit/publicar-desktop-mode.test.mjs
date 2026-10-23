@@ -4,6 +4,7 @@ import test from "node:test";
 
 const hook = readFileSync(new URL("../../app/publicar/hooks/use-publicar-desktop-mode.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/publicar/page.tsx", import.meta.url), "utf8");
+const controladorPagina = readFileSync(new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url), "utf8");
 const controladorFormulario = readFileSync(new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url), "utf8");
 const propsComponentesPagina = readFileSync(new URL("../../app/publicar/lib/publicar-page-component-props.ts", import.meta.url), "utf8");
 const acaoSubmissao = readFileSync(
@@ -57,7 +58,8 @@ test("Publicar delega somente o modo desktop", () => {
   assert.match(progresso, /isDesktop[\s\S]*?desktopProgressBoxStyle[\s\S]*?progressBoxStyle/);
   assert.match(acoesFormulario, /<PublicarProgress[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(previa, /isDesktop \? desktopPreviewPanelStyle : previewPanelStyle/);
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   assert.doesNotMatch(pagina, /async function salvarObra/);

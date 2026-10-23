@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -111,7 +115,8 @@ test("opções estáticas de Publicar preservam limites, MIME, formatos e classi
 });
 
 test("Publicar delega modelos e opções estáticas às fronteiras extraídas", () => {
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
 
@@ -131,7 +136,7 @@ test("Publicar delega modelos e opções estáticas às fronteiras extraídas", 
     assert.equal(pagina.includes(declaracao), false, "declaração removida: " + declaracao);
   }
 
-  assert.match(pagina, /from "\.\/lib\/publicar-page-component-props";/);
+  assert.match(controladorPagina, /from "\.\.\/lib\/publicar-page-component-props";/);
   assert.match(propsComponentesPagina, /from "\.\/publicar-translations";/);
   assert.doesNotMatch(pagina, /const TEXTOS_PUBLICAR = \{/);
   assert.doesNotMatch(pagina, /const MENSAGENS_ERRO_PUBLICAR = \{/);

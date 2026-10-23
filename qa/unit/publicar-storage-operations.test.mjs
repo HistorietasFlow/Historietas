@@ -4,6 +4,7 @@ import test from "node:test";
 
 const storage = readFileSync(new URL("../../app/publicar/lib/publicar-storage-operations.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/publicar/page.tsx", import.meta.url), "utf8");
+const controladorPagina = readFileSync(new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url), "utf8");
 const controladorFormulario = readFileSync(new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url), "utf8");
 const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
@@ -23,7 +24,8 @@ test("operações de Storage de Publicar preservam upload, limpeza e rollback", 
   assert.match(storage, /new Map\(/);
   assert.match(storage, /from\("capitulos"\)\.delete\(\)\.eq\("obra_id", obraIdLimpo\)/);
   assert.match(storage, /from\("obras"\)\s*\.delete\(\)\s*\.eq\("id", obraIdLimpo\)/);
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   assert.match(hookSubmissao, /from "\.\.\/lib\/publicar-submission-action";/);

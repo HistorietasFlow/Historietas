@@ -21,6 +21,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const estadoPagina = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-page-state.ts", import.meta.url),
   "utf8",
@@ -102,16 +106,18 @@ test("usePublicarFormValidation preserva normalização, progresso, prévia e va
 });
 
 test("Publicar delega os dois estados locais sem reter implementações duplicadas", () => {
-  assert.match(pagina, /import \{ usePublicarPageState \} from "\.\/hooks\/use-publicar-page-state";/);
-  assert.match(pagina, /import \{ usePublicarPagePresentation \} from "\.\/hooks\/use-publicar-page-presentation";/);
-  assert.match(pagina, /\} = usePublicarPageState\(\);/);
-  assert.match(pagina, /const presentation = usePublicarPagePresentation\(\);/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /^"use client";/);
+  assert.match(controladorPagina, /import \{ usePublicarPageState \} from "\.\/use-publicar-page-state";/);
+  assert.match(controladorPagina, /import \{ usePublicarPagePresentation \} from "\.\/use-publicar-page-presentation";/);
+  assert.match(controladorPagina, /\} = usePublicarPageState\(\);/);
+  assert.match(controladorPagina, /const presentation = usePublicarPagePresentation\(\);/);
   assert.doesNotMatch(pagina, /const \[processando, setProcessando\] = useState/);
   assert.doesNotMatch(pagina, /const \[erro, setErro\] = useState/);
   assert.doesNotMatch(pagina, /const \[verificandoAutenticacao, setVerificandoAutenticacao\] = useState/);
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
-  assert.match(pagina, /const formulario = usePublicarFormController\(\{[\s\S]*?router,[\s\S]*?setErro,[\s\S]*?setProcessando,[\s\S]*?t: presentation\.t,/);
-  assert.match(pagina, /criarPropsComponentesPaginaPublicar\(\{[\s\S]*?formulario,[\s\S]*?presentation,/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
+  assert.match(controladorPagina, /const formulario = usePublicarFormController\(\{[\s\S]*?router,[\s\S]*?setErro,[\s\S]*?setProcessando,[\s\S]*?t: presentation\.t,/);
+  assert.match(controladorPagina, /criarPropsComponentesPaginaPublicar\(\{[\s\S]*?formulario,[\s\S]*?presentation,/);
   assert.match(propsComponentesPagina, /export function criarPropsComponentesPaginaPublicar\(/);
   assert.match(controladorFormulario, /usePublicarPublicationOptions\(\{ setErro \}\)/);
   assert.match(controladorFormulario, /usePublicarContentFileUpload\(\{ setErro \}\)/);
@@ -121,4 +127,6 @@ test("Publicar delega os dois estados locais sem reter implementações duplicad
   assert.match(controladorFormulario, /import \{ usePublicarFormValidation \} from "\.\/use-publicar-form-validation";/);
   assert.match(controladorFormulario, /usePublicarFormValidation\(\{[\s\S]*?arquivoCapituloTexto: contentFileUpload\.arquivoCapituloTexto,[\s\S]*?avisosConteudo18: publicationOptions\.avisosConteudo18,[\s\S]*?classificacaoIndicativa: publicationOptions\.classificacaoIndicativa,[\s\S]*?formato: publicationOptions\.formato,[\s\S]*?genero: publicationOptions\.genero,[\s\S]*?tagPersonalizada: tags\.tagPersonalizada,[\s\S]*?usarTagPersonalizada: tags\.usarTagPersonalizada,/);
   assert.doesNotMatch(pagina, /function validarFormulario\(\)/);
+  assert.match(controladorPagina, /return \{[\s\S]*?isDesktop,[\s\S]*?presentation,[\s\S]*?publicationFormProps,[\s\S]*?verificandoAutenticacao,[\s\S]*?workPreviewProps,[\s\S]*?\};/);
+  assert.doesNotMatch(controladorPagina, /supabase|localStorage|window\.|document\.|useEffect|useState/);
 });

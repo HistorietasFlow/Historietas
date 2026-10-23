@@ -6,6 +6,10 @@ const page = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const pageController = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const formController = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -46,8 +50,8 @@ test("ação de submissão de Publicar preserva a transação, rollback e navega
 
 test("página de Publicar delega a submissão sem duplicar os efeitos", () => {
   assert.match(
-    page,
-    /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/,
+    pageController,
+    /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/,
   );
   assert.match(formController, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.match(formController, /const \{ salvarObra \} = usePublicarSubmission\(\{/);

@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -47,7 +51,8 @@ test("usePublicarCoverUpload preserva estado, validação e leitura da capa", ()
 });
 
 test("Publicar delega somente o estado e as ações da capa ao hook", () => {
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarCoverUpload \} from "\.\/use-publicar-cover-upload";/);
   assert.match(controladorFormulario, /const coverUpload = usePublicarCoverUpload\(\{ setErro \}\);/);
   assert.doesNotMatch(pagina, /const \[capa, setCapa\] = useState/);

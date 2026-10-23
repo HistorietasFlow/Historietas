@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -38,12 +42,13 @@ test("usePublicarInitialAccess preserves the publication access lifecycle", () =
 });
 
 test("Publicar delega apenas o lifecycle inicial de acesso ao hook", () => {
-  assert.match(pagina, /import \{ usePublicarInitialAccess \} from "\.\/hooks\/use-publicar-initial-access";/);
-  assert.match(pagina, /usePublicarInitialAccess\(\{[\s\S]*?router,[\s\S]*?setAutor: formulario\.setAutor,[\s\S]*?setVerificandoAutenticacao,[\s\S]*?\}\);/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarInitialAccess \} from "\.\/use-publicar-initial-access";/);
+  assert.match(controladorPagina, /usePublicarInitialAccess\(\{[\s\S]*?router,[\s\S]*?setAutor: formulario\.setAutor,[\s\S]*?setVerificandoAutenticacao,[\s\S]*?\}\);/);
   assert.doesNotMatch(pagina, /async function verificarAutenticacaoPublicacao\(/);
   assert.doesNotMatch(pagina, /verificarAceiteTermosPublicacao/);
   assert.doesNotMatch(pagina, /criarHrefAceiteTermos/);
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   assert.doesNotMatch(pagina, /async function salvarObra/);

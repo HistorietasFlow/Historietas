@@ -6,6 +6,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const cabecalho = readFileSync(
   new URL("../../app/publicar/components/PublicarPageHeader.tsx", import.meta.url),
   "utf8",
@@ -128,7 +132,8 @@ test("Publicar delega a prévia sem deslocar estados ou regras de publicação",
 
 test("Publicar delega os uploads visuais e o lifecycle local do arquivo", () => {
   assert.match(conteudoPagina, /import \{ PublicarPublicationForm \} from "\.\/PublicarPublicationForm";/);
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarContentFileUpload \} from "\.\/use-publicar-content-file-upload";/);
   assert.match(conteudoPagina, /<PublicarPublicationForm \{\.\.\.publicationFormProps\} \/>/);
   assert.match(propsComponentesPagina, /capaInputRef: formulario\.capaInputRef,[\s\S]*?onRemoverCapa: formulario\.removerCapa,[\s\S]*?onSelecionarCapa: formulario\.selecionarCapa,/);

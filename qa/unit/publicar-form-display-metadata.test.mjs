@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -113,8 +117,8 @@ test("metadados visuais preservam fallbacks e rótulos da categoria do arquivo",
 
 test("Publicar delega metadados visuais sem mover runtime da publicação", () => {
   assert.match(
-    pagina,
-    /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/,
+    controladorPagina,
+    /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/,
   );
   assert.match(
     controladorFormulario,

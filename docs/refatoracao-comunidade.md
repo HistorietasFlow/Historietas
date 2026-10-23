@@ -1299,3 +1299,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição visual autenticada foi isolada em `PublicarPageContent.tsx`, preservando backdrop, shell, grade responsiva e a ordem do formulário e da prévia.
 - Hooks, estado, lifecycle de acesso, autenticação, Supabase, Storage, RLS e regras de publicação permaneceram na página, sem alteração intencional de comportamento.
+
+## Registro da Fase 31 — Publicar
+
+- A orquestração de router, estado, modo desktop, apresentação, formulário, props e lifecycle inicial foi concentrada em `use-publicar-page-controller.ts`.
+- A página permaneceu somente como fronteira de renderização; autenticação, Supabase, Storage, RLS, i18n, ordem de execução e regras de publicação foram preservados sem alteração intencional de comportamento.

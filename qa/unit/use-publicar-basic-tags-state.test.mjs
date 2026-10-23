@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -46,7 +50,8 @@ test("usePublicarTags preserva normalização, limites e seleção", () => {
 });
 
 test("Publicar delega apenas estados básicos e tags aos hooks", () => {
-  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(pagina, /import \{ usePublicarPageController \} from "\.\/hooks\/use-publicar-page-controller";/);
+  assert.match(controladorPagina, /import \{ usePublicarFormController \} from "\.\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarBasicFields \} from "\.\/use-publicar-basic-fields";/);
   assert.match(controladorFormulario, /import \{ usePublicarTags \} from "\.\/use-publicar-tags";/);
   assert.match(controladorFormulario, /usePublicarBasicFields\(\{ setErro \}\)/);

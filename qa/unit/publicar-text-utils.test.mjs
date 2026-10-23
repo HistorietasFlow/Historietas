@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorPagina = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-page-controller.ts", import.meta.url),
+  "utf8",
+);
 const controladorFormulario = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
   "utf8",
@@ -181,7 +185,8 @@ test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.equal((hookValidacao.match(/\bcontarCaracteresValidos\b/g) || []).length, 2);
   assert.equal((hookValidacao.match(/\btextoPersonalizadoValido\b/g) || []).length, 4);
 
-  assert.match(pagina, /usePublicarFormController/);
+  assert.match(pagina, /usePublicarPageController/);
+  assert.match(controladorPagina, /usePublicarFormController/);
   assert.match(controladorFormulario, /usePublicarContentFileUpload/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-file-utils";/);
   assert.match(hookConteudoArquivo, /from "\.\.\/lib\/publicar-file-utils";/);
