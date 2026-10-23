@@ -33,7 +33,6 @@ import { atualizarVisibilidadePostComunidade } from "./components/community-post
 import { alternarFixadoPostComunidade } from "./components/community-post-pinning-action";
 import { denunciarConteudoComunidade } from "./components/community-report-preparation-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
-import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import { normalizarVisibilidadePostComunidade } from "./components/community-post-visibility-normalizer";
@@ -81,7 +80,6 @@ import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-s
 import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
-import { ComentariosSheet } from "./components/community-comments-sheet";
 import { fecharComentarios } from "./components/community-comments-closer";
 import { abrirComentarios } from "./components/community-comments-opener";
 import {
@@ -109,7 +107,8 @@ import {
   deveExibirResultadosBuscaComunidade,
 } from "./components/community-search-controls-visibility";
 import { CommunityPostComposerPortal } from "./components/community-post-composer-portal";
-import { CommunityActionFeedbackToast, emitirFeedbackAcao } from "./components/community-action-feedback-toast";
+import { CommunityInteractionOverlaysComposition } from "./components/community-interaction-overlays-composition";
+import { emitirFeedbackAcao } from "./components/community-action-feedback-toast";
 import {
   finalizarAcaoComunidade,
   iniciarAcaoComunidade,
@@ -1056,41 +1055,39 @@ export default function ComunidadePage() {
         }}
       />
 
-      <ComentariosSheet
-        key={postComentariosAberto?.id || "comentarios-fechados"}
-        post={postComentariosAberto}
-        podeComentar={Boolean(usuario)}
-        usuarioId={usuario?.id || ""}
-        usuarioNome={usuario?.nome || "Usuário"}
-        usuarioAvatar={usuario?.avatar || ""}
-        erroInteracao={erro}
-        isDesktop={isDesktop}
-        onFechar={() => fecharComentarios({ setComentariosPostId })}
-        onEnviar={comentarPost}
-        onCurtirComentario={alternarCurtidaComentario}
-        onRemoverComentario={removerComentario}
-        onDenunciarComentario={(comentarioId) =>
-          denunciarConteudo("comentario", comentarioId)
-        }
-      />
-
-      <DenunciaModal
-        aberto={Boolean(denunciaAlvo)}
-        alvoTipo={denunciaAlvo?.alvoTipo || "post"}
-        alvoId={denunciaAlvo?.alvoId || ""}
-        alvoTitulo={denunciaAlvo?.alvoTitulo || ""}
-        onFechar={() => setDenunciaAlvo(null)}
-        onEnviada={() => {
-          setErro("");
-          emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Denúncia enviada para análise.");
+      <CommunityInteractionOverlaysComposition
+        comentariosSheetProps={{
+          post: postComentariosAberto,
+          podeComentar: Boolean(usuario),
+          usuarioId: usuario?.id || "",
+          usuarioNome: usuario?.nome || "Usuário",
+          usuarioAvatar: usuario?.avatar || "",
+          erroInteracao: erro,
+          isDesktop,
+          onFechar: () => fecharComentarios({ setComentariosPostId }),
+          onEnviar: comentarPost,
+          onCurtirComentario: alternarCurtidaComentario,
+          onRemoverComentario: removerComentario,
+          onDenunciarComentario: (comentarioId) =>
+            denunciarConteudo("comentario", comentarioId),
         }}
+        denunciaModalProps={{
+          aberto: Boolean(denunciaAlvo),
+          alvoTipo: denunciaAlvo?.alvoTipo || "post",
+          alvoId: denunciaAlvo?.alvoId || "",
+          alvoTitulo: denunciaAlvo?.alvoTitulo || "",
+          onFechar: () => setDenunciaAlvo(null),
+          onEnviada: () => {
+            setErro("");
+            emitirFeedbackAcao(
+              setFeedbackAcao,
+              feedbackTimerRef,
+              "Denúncia enviada para análise.",
+            );
+          },
+        }}
+        feedbackAcao={feedbackAcao}
       />
-
-      {feedbackAcao && (
-        <CommunityActionFeedbackToast>
-          {feedbackAcao}
-        </CommunityActionFeedbackToast>
-      )}
     </CommunityPageContainer>
   );
 }
