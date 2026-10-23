@@ -1239,3 +1239,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O estado, a validação, a leitura e a limpeza do upload de capa foram isolados em `use-publicar-cover-upload.ts`, preservando limites, mensagens, `FileReader` e a ref do input.
 - Upload de conteúdo, validação do formulário, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.
+
+## Registro da Fase 19 — Publicar
+
+- Os estados e callbacks das opções de publicação e do conteúdo por arquivo foram isolados em hooks dedicados, preservando limites, mensagens, `FileReader`, refs, limpeza e validação de classificação 18+.
+- JSX, validação do formulário, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.

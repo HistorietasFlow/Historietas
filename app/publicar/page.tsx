@@ -2,28 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
 import { usePublicarCoverUpload } from "./hooks/use-publicar-cover-upload";
+import { usePublicarContentFileUpload } from "./hooks/use-publicar-content-file-upload";
+import { usePublicarPublicationOptions } from "./hooks/use-publicar-publication-options";
 import {
   calcularMinutosLeitura,
   campoValido,
   contarCaracteresValidos,
   contarPalavras,
   limparTextoPersonalizado,
-  nomeArquivoParaTitulo,
   textoPersonalizadoValido,
 } from "./lib/publicar-text-utils";
 import {
   criarUuidSeguro,
 } from "./lib/publicar-id-utils";
-import {
-  arquivoObraAceito,
-  arquivoTextoAceito,
-  identificarCategoriaArquivo,
-} from "./lib/publicar-file-utils";
 import {
   calcularProgressoLeitura,
   normalizarClassificacaoIndicativaPublicar,
@@ -45,11 +40,8 @@ import {
   OUTRO_FORMATO_VALUE,
   OUTRO_GENERO_VALUE,
   STORAGE_KEY,
-  TAMANHO_MAXIMO_ARQUIVO_OBRA,
-  TAMANHO_MAXIMO_ARQUIVO_TEXTO,
 } from "./lib/publicar-static-options";
 import type {
-  ArquivoObraLocal,
   ArquivoStoragePublicar,
   CapituloLocal,
   ObraLocal,
@@ -63,7 +55,6 @@ import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   ehClassificacao18,
   normalizarAvisosConteudo18,
-  type AvisoConteudo18,
 } from "../../lib/historietasAdultContent";
 import {
   desfazerPublicacaoParcialPublicar,
@@ -445,26 +436,26 @@ export default function PublicarPage() {
 
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
-  const [genero, setGenero] = useState("");
-  const [generoPersonalizado, setGeneroPersonalizado] = useState("");
-  const [formato, setFormato] = useState("");
-  const [formatoPersonalizado, setFormatoPersonalizado] = useState("");
-  const [classificacaoIndicativa, setClassificacaoIndicativa] = useState("");
-  const [avisosConteudo18, setAvisosConteudo18] = useState<AvisoConteudo18[]>([]);
   const [sinopse, setSinopse] = useState("");
   const [tags, setTags] = useState("");
   const [tagPersonalizada, setTagPersonalizada] = useState("");
   const [usarTagPersonalizada, setUsarTagPersonalizada] = useState(false);
-  const [arquivoObra, setArquivoObra] = useState<ArquivoObraLocal | null>(null);
-  const [arquivoObraArquivo, setArquivoObraArquivo] = useState<File | null>(null);
-  const [arquivoObraErro, setArquivoObraErro] = useState("");
-  const [arquivoCapituloNome, setArquivoCapituloNome] = useState("");
-  const [arquivoCapituloTitulo, setArquivoCapituloTitulo] = useState("");
-  const [arquivoCapituloTexto, setArquivoCapituloTexto] = useState("");
-  const [arquivoCapituloErro, setArquivoCapituloErro] = useState("");
-  const [arquivoTextoPendente, setArquivoTextoPendente] = useState<File | null>(null);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
+  const {
+    alternarAvisoConteudo18,
+    atualizarClassificacaoIndicativa,
+    atualizarFormato,
+    atualizarFormatoPersonalizado,
+    atualizarGenero,
+    atualizarGeneroPersonalizado,
+    avisosConteudo18,
+    classificacaoIndicativa,
+    formato,
+    formatoPersonalizado,
+    genero,
+    generoPersonalizado,
+  } = usePublicarPublicationOptions({ setErro });
   const {
     capa,
     capaArquivo,
@@ -474,6 +465,22 @@ export default function PublicarPage() {
     removerCapa,
     selecionarCapa,
   } = usePublicarCoverUpload({ setErro });
+  const {
+    anexarArquivoCompleto,
+    arquivoCapituloErro,
+    arquivoCapituloNome,
+    arquivoCapituloTexto,
+    arquivoCapituloTitulo,
+    arquivoConteudoInputRef,
+    arquivoObra,
+    arquivoObraArquivo,
+    arquivoObraErro,
+    arquivoTextoPendente,
+    cancelarEscolhaArquivoTexto,
+    limparSelecaoConteudoArquivo,
+    selecionarConteudoArquivo,
+    transformarArquivoTextoEmCapitulo,
+  } = usePublicarContentFileUpload({ setErro });
   const [verificandoAutenticacao, setVerificandoAutenticacao] = useState(true);
   const isDesktop = usePublicarDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -487,7 +494,6 @@ export default function PublicarPage() {
   });
 
   const jaSalvouRef = useRef(false);
-  const arquivoConteudoInputRef = useRef<HTMLInputElement | null>(null);
 
   const tagsDaObra = useMemo(() => {
     return tags
@@ -651,28 +657,6 @@ export default function PublicarPage() {
     return "";
   }
 
-  function limparArquivoAnexado() {
-    setArquivoObra(null);
-    setArquivoObraArquivo(null);
-    setArquivoObraErro("");
-  }
-
-  function limparCapituloImportado() {
-    setArquivoCapituloNome("");
-    setArquivoCapituloTitulo("");
-    setArquivoCapituloTexto("");
-    setArquivoCapituloErro("");
-  }
-
-  function alternarAvisoConteudo18(aviso: AvisoConteudo18) {
-    setAvisosConteudo18((avisosAtuais) =>
-      avisosAtuais.includes(aviso)
-        ? avisosAtuais.filter((item) => item !== aviso)
-        : [...avisosAtuais, aviso],
-    );
-    setErro("");
-  }
-
   function atualizarSinopse(valor: string) {
     setSinopse(valor);
     setErro("");
@@ -686,191 +670,6 @@ export default function PublicarPage() {
   function atualizarAutor(valor: string) {
     setAutor(valor);
     setErro("");
-  }
-
-  function atualizarFormato(valor: string) {
-    setFormato(valor);
-
-    if (valor !== OUTRO_FORMATO_VALUE) {
-      setFormatoPersonalizado("");
-    }
-
-    setErro("");
-  }
-
-  function atualizarFormatoPersonalizado(valor: string) {
-    setFormatoPersonalizado(
-      limparTextoPersonalizado(
-        valor,
-        LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-      )
-    );
-    setErro("");
-  }
-
-  function atualizarGenero(valor: string) {
-    setGenero(valor);
-
-    if (valor !== OUTRO_GENERO_VALUE) {
-      setGeneroPersonalizado("");
-    }
-
-    setErro("");
-  }
-
-  function atualizarGeneroPersonalizado(valor: string) {
-    setGeneroPersonalizado(
-      limparTextoPersonalizado(
-        valor,
-        LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-      )
-    );
-    setErro("");
-  }
-
-  function atualizarClassificacaoIndicativa(valor: string) {
-    setClassificacaoIndicativa(valor);
-
-    if (!ehClassificacao18(valor)) {
-      setAvisosConteudo18([]);
-    }
-
-    setErro("");
-  }
-
-  function limparSelecaoConteudoArquivo() {
-    limparArquivoAnexado();
-    limparCapituloImportado();
-    setArquivoTextoPendente(null);
-
-    if (arquivoConteudoInputRef.current) {
-      arquivoConteudoInputRef.current.value = "";
-    }
-  }
-
-  function anexarArquivoCompleto(arquivo: File) {
-    setArquivoObraErro("");
-    setArquivoCapituloErro("");
-    setErro("");
-
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-
-      if (!resultado) {
-        setArquivoObraErro("Não consegui carregar esse arquivo.");
-        return;
-      }
-
-      limparCapituloImportado();
-      setArquivoObra({
-        nome: arquivo.name,
-        tipo: arquivo.type || "application/octet-stream",
-        tamanho: arquivo.size,
-        conteudo: resultado,
-        categoria: identificarCategoriaArquivo(arquivo),
-        criadoEm: new Date().toISOString(),
-      });
-      setArquivoObraArquivo(arquivo);
-      setArquivoTextoPendente(null);
-
-      if (arquivoConteudoInputRef.current) {
-        arquivoConteudoInputRef.current.value = "";
-      }
-    };
-
-    leitor.onerror = () => {
-      setArquivoObraErro("Não consegui carregar esse arquivo.");
-    };
-
-    leitor.readAsDataURL(arquivo);
-  }
-
-  function transformarArquivoTextoEmCapitulo(arquivo: File) {
-    setArquivoObraErro("");
-    setArquivoCapituloErro("");
-    setErro("");
-
-    if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_TEXTO) {
-      setArquivoCapituloErro(
-        "Para virar capítulo, o arquivo de texto precisa ter no máximo 900 KB. Você ainda pode anexá-lo como arquivo completo."
-      );
-      return;
-    }
-
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-      const textoImportado = resultado.replace(/\r\n/g, "\n").trim();
-
-      if (contarCaracteresValidos(textoImportado) < 20) {
-        setArquivoCapituloErro(
-          "Esse arquivo tem pouco texto para virar um capítulo."
-        );
-        return;
-      }
-
-      limparArquivoAnexado();
-      setArquivoCapituloNome(arquivo.name);
-      setArquivoCapituloTitulo(nomeArquivoParaTitulo(arquivo.name));
-      setArquivoCapituloTexto(textoImportado);
-      setArquivoTextoPendente(null);
-
-      if (arquivoConteudoInputRef.current) {
-        arquivoConteudoInputRef.current.value = "";
-      }
-    };
-
-    leitor.onerror = () => {
-      setArquivoCapituloErro("Não consegui ler esse arquivo.");
-    };
-
-    leitor.readAsText(arquivo, "UTF-8");
-  }
-
-  function cancelarEscolhaArquivoTexto() {
-    setArquivoTextoPendente(null);
-    setArquivoObraErro("");
-    setArquivoCapituloErro("");
-
-    if (arquivoConteudoInputRef.current) {
-      arquivoConteudoInputRef.current.value = "";
-    }
-  }
-
-  function selecionarConteudoArquivo(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0];
-
-    setArquivoObraErro("");
-    setArquivoCapituloErro("");
-    setErro("");
-
-    if (!arquivo) {
-      return;
-    }
-
-    if (!arquivoObraAceito(arquivo)) {
-      setArquivoObraErro(
-        "Escolha PDF, TXT, MD ou imagem em PNG, JPG, WEBP ou GIF."
-      );
-      event.target.value = "";
-      return;
-    }
-
-    if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_OBRA) {
-      setArquivoObraErro("O arquivo precisa ter no máximo 5 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    if (arquivoTextoAceito(arquivo)) {
-      setArquivoTextoPendente(arquivo);
-      return;
-    }
-
-    anexarArquivoCompleto(arquivo);
   }
 
   function tagEstaSelecionada(tag: string) {
