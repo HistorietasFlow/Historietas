@@ -14,20 +14,11 @@ const pagina = readFileSync(
   "utf8",
 );
 
-test("useComunidadeInitialUrlNavigation preserva scroll e carregamento inicial por URL", () => {
+test("useComunidadeInitialUrlNavigation preserva os refs da navegacao inicial", () => {
   assert.match(hook, /^"use client";/);
   assert.match(hook, /export function useComunidadeInitialUrlNavigation\(/);
   assert.match(hook, /const parametrosComunidadeAplicadosRef = useRef\(false\);/);
-  assert.match(hook, /window\.history\.scrollRestoration = "manual";/);
-  assert.match(
-    hook,
-    /window\.scrollTo\(\{ top: 0, left: 0, behavior: "auto" \}\);/,
-  );
-  assert.match(
-    hook,
-    /const obraUrl = obterParametroObraComunidade\(parametrosUrl\);[\s\S]*?const carregarFeedTimer = window\.setTimeout\([\s\S]*?void carregarPostsComunidadeNoEfeito\(true, 0, obraUrl\);[\s\S]*?\}, 0\);/,
-  );
-  assert.match(hook, /window\.clearTimeout\(carregarFeedTimer\);/);
+  assert.doesNotMatch(hook, /carregarPostsComunidadeNoEfeito/);
 });
 
 test("useComunidadeInitialUrlNavigation preserva parametros, ordem de setters e cleanup", () => {
@@ -76,9 +67,14 @@ test("Comunidade delega somente a navegacao inicial ao hook", () => {
   );
   assert.match(
     pagina,
-    /useComunidadeInitialUrlNavigation\(\{[\s\S]*?carregarPostsComunidadeNoEfeito,[\s\S]*?comentarioUrlAplicadoRef,[\s\S]*?comentariosPostId,[\s\S]*?posts,[\s\S]*?setTermoBusca,[\s\S]*?setComentariosPostId,[\s\S]*?\}\);/,
+    /useComunidadeInitialUrlNavigation\(\{[\s\S]*?comentarioUrlAplicadoRef,[\s\S]*?comentariosPostId,[\s\S]*?posts,[\s\S]*?setTermoBusca,[\s\S]*?setComentariosPostId,[\s\S]*?\}\);/,
   );
-  assert.doesNotMatch(pagina, /window\.history\.scrollRestoration = "manual";/);
+  assert.match(pagina, /window\.history\.scrollRestoration = "manual";/);
+  assert.match(
+    pagina,
+    /const obraUrl = obterParametroObraComunidade\(parametrosUrl\);[\s\S]*?const carregarFeedTimer = window\.setTimeout\([\s\S]*?void carregarPostsComunidadeNoEfeito\(true, 0, obraUrl\);/,
+  );
+  assert.match(pagina, /window\.clearTimeout\(carregarFeedTimer\);/);
   assert.doesNotMatch(pagina, /const parametrosComunidadeAplicadosRef = useRef\(false\);/);
   assert.doesNotMatch(pagina, /const postIdUrl = obterParametroPostComunidade\(/);
   assert.match(pagina, /supabase\.auth\.onAuthStateChange/);

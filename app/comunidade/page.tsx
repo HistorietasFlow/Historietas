@@ -650,8 +650,26 @@ export default function ComunidadePage() {
     bloqueioSecundario: postMenuAbertoId,
   });
 
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
+    const parametrosUrl = new URLSearchParams(window.location.search);
+    const obraUrl = obterParametroObraComunidade(parametrosUrl);
+
+    const carregarFeedTimer = window.setTimeout(() => {
+      void carregarPostsComunidadeNoEfeito(true, 0, obraUrl);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(carregarFeedTimer);
+    };
+  }, []);
+
   useComunidadeInitialUrlNavigation({
-    carregarPostsComunidadeNoEfeito,
     comentarioUrlAplicadoRef,
     comentariosPostId,
     posts,

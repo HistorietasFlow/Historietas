@@ -16,11 +16,6 @@ import {
 } from "../components/community-url-parameters";
 
 type UseComunidadeInitialUrlNavigationOptions = {
-  carregarPostsComunidadeNoEfeito: (
-    mostrarCarregamento: boolean,
-    pagina: number,
-    obraFiltro: string,
-  ) => void;
   comentarioUrlAplicadoRef: RefObject<boolean>;
   comentariosPostId: string | null;
   posts: PostComunidade[];
@@ -36,7 +31,6 @@ type UseComunidadeInitialUrlNavigationOptions = {
 };
 
 export function useComunidadeInitialUrlNavigation({
-  carregarPostsComunidadeNoEfeito,
   comentarioUrlAplicadoRef,
   comentariosPostId,
   posts,
@@ -51,25 +45,6 @@ export function useComunidadeInitialUrlNavigation({
   setComentariosPostId,
 }: UseComunidadeInitialUrlNavigationOptions) {
   const parametrosComunidadeAplicadosRef = useRef(false);
-
-  useEffect(() => {
-    if ("scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
-    }
-
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-
-    const parametrosUrl = new URLSearchParams(window.location.search);
-    const obraUrl = obterParametroObraComunidade(parametrosUrl);
-
-    const carregarFeedTimer = window.setTimeout(() => {
-      void carregarPostsComunidadeNoEfeito(true, 0, obraUrl);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(carregarFeedTimer);
-    };
-  }, []);
 
   useEffect(() => {
     if (parametrosComunidadeAplicadosRef.current) {
@@ -121,7 +96,16 @@ export function useComunidadeInitialUrlNavigation({
     return () => {
       window.clearTimeout(aplicarParametrosTimer);
     };
-  }, []);
+  }, [
+    setAbaFeedAtiva,
+    setGrupoPublicacaoObra,
+    setMenuAcoesRapidasComunidadeAberto,
+    setMostrarApenasSalvos,
+    setObraRelacionadaFiltro,
+    setOrdenacaoAtiva,
+    setTermoBusca,
+    setTipoPublicacaoAtiva,
+  ]);
 
   useEffect(() => {
     if (comentarioUrlAplicadoRef.current || comentariosPostId || posts.length === 0) {
@@ -143,5 +127,10 @@ export function useComunidadeInitialUrlNavigation({
         window.clearTimeout(abrirComentariosTimer);
       };
     }
-  }, [comentariosPostId, posts]);
+  }, [
+    comentarioUrlAplicadoRef,
+    comentariosPostId,
+    posts,
+    setComentariosPostId,
+  ]);
 }

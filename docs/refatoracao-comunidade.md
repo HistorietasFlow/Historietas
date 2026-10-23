@@ -1302,5 +1302,5 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 ## Registro da Fase 3 — Comunidade
 
-- O lifecycle inicial de navegação por URL foi isolado em `use-comunidade-initial-url-navigation.ts`.
-- A restauração de scroll, leitura e aplicação dos parâmetros, abertura inicial de comentários, timers, refs e cleanups foram preservados sem alteração intencional de comportamento.
+- O lifecycle inicial de parâmetros por URL e de abertura automática de comentários foi isolado em `use-comunidade-initial-url-navigation.ts`.
+- A leitura e aplicação dos parâmetros, timers, refs e cleanups foram preservados sem alteração intencional de comportamento; o efeito de scroll e disparo inicial do feed permaneceu na página por depender do `useEffectEvent` do carregador.
