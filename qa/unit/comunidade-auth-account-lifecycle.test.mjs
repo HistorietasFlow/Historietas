@@ -74,7 +74,7 @@ test("Comunidade delega apenas o lifecycle de autenticação e troca de conta ao
   );
   assert.match(
     pagina,
-    /useComunidadeAuthAccountLifecycle\(\{[\s\S]*?autenticacaoComunidadeVersaoRef,[\s\S]*?reviewsDiarioSincronizadasRef,[\s\S]*?usuarioReviewsDiarioRef,[\s\S]*?acoesComunidadeRef,[\s\S]*?carregarPostsComunidade: carregarPostsComunidadeDaPagina,[\s\S]*?\}\);/,
+    /useComunidadeAuthAccountLifecycle\(\{[\s\S]*?autenticacaoComunidadeVersaoRef,[\s\S]*?reviewsDiarioSincronizadasRef,[\s\S]*?usuarioReviewsDiarioRef,[\s\S]*?acoesComunidadeRef,[\s\S]*?carregarPostsComunidade: \(mostrarCarregamento, pagina, obraFiltro\) =>[\s\S]*?carregarPostsComunidadeRef\.current\?\.[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /supabase\.auth\.onAuthStateChange/);
   assert.doesNotMatch(pagina, /async function carregarUsuario\(/);
