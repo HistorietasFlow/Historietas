@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorFormulario = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
@@ -177,14 +181,15 @@ test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.equal((hookValidacao.match(/\bcontarCaracteresValidos\b/g) || []).length, 2);
   assert.equal((hookValidacao.match(/\btextoPersonalizadoValido\b/g) || []).length, 4);
 
-  assert.match(pagina, /usePublicarContentFileUpload/);
+  assert.match(pagina, /usePublicarFormController/);
+  assert.match(controladorFormulario, /usePublicarContentFileUpload/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-file-utils";/);
   assert.match(hookConteudoArquivo, /from "\.\.\/lib\/publicar-file-utils";/);
   assert.doesNotMatch(pagina, /function arquivoTextoAceito\(/);
   assert.doesNotMatch(hookConteudoArquivo, /function arquivoTextoAceito\(/);
   assert.match(helpersArquivo, /export function arquivoTextoAceito\(/);
   assert.match(helpersArquivo, /arquivoTemExtensao\(arquivo\.name, \["\.txt", "\.md"\]\)/);
-  assert.match(pagina, /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/);
+  assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   assert.doesNotMatch(pagina, /async function salvarObra\(/);
   assert.match(hookSubmissao, /from "\.\.\/lib\/publicar-submission-action";/);

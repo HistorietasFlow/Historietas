@@ -86,6 +86,10 @@ const apresentacaoPagina = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
   "utf8",
 );
+const controladorFormulario = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 
 test("Publicar delega a composição visual do cabeçalho", () => {
   assert.match(pagina, /from "\.\/components\/PublicarPageShell";/);
@@ -113,7 +117,8 @@ test("Publicar delega a prévia sem deslocar estados ou regras de publicação",
 
 test("Publicar delega os uploads visuais e o lifecycle local do arquivo", () => {
   assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
-  assert.match(pagina, /import \{ usePublicarContentFileUpload \} from "\.\/hooks\/use-publicar-content-file-upload";/);
+  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(controladorFormulario, /import \{ usePublicarContentFileUpload \} from "\.\/use-publicar-content-file-upload";/);
   assert.match(pagina, /<PublicarPublicationForm[\s\S]*?capaInputRef=\{capaInputRef\}[\s\S]*?onRemoverCapa=\{removerCapa\}[\s\S]*?onSelecionarCapa=\{selecionarCapa\}/);
   assert.match(pagina, /<PublicarPublicationForm[\s\S]*?arquivoConteudoInputRef=\{arquivoConteudoInputRef\}[\s\S]*?onAnexarArquivoCompleto=\{anexarArquivoCompleto\}[\s\S]*?onSelecionarConteudoArquivo=\{selecionarConteudoArquivo\}[\s\S]*?onTransformarArquivoTextoEmCapitulo=\{transformarArquivoTextoEmCapitulo\}/);
   assert.match(formularioPublicacao, /import \{ PublicarCoverUpload \} from "\.\/PublicarCoverUpload";/);
@@ -143,14 +148,14 @@ test("Publicar delega os uploads visuais e o lifecycle local do arquivo", () => 
 
 test("Publicar delega campos controlados sem deslocar seus estados e callbacks", () => {
   assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
-  assert.match(pagina, /import \{ usePublicarBasicFields \} from "\.\/hooks\/use-publicar-basic-fields";/);
+  assert.match(controladorFormulario, /import \{ usePublicarBasicFields \} from "\.\/use-publicar-basic-fields";/);
   assert.match(pagina, /<PublicarPublicationForm[\s\S]*?onSinopseChange=\{atualizarSinopse\}[\s\S]*?sinopse=\{sinopse\}[\s\S]*?t=\{t\}/);
   assert.match(pagina, /<PublicarPublicationForm[\s\S]*?processando=\{processando\}[\s\S]*?progresso=\{progresso\}/);
   assert.match(formularioPublicacao, /import \{ PublicarSynopsisField \} from "\.\/PublicarSynopsisField";/);
   assert.match(formularioPublicacao, /import \{ PublicarFormActions \} from "\.\/PublicarFormActions";/);
   assert.match(formularioPublicacao, /<PublicarFormActions[\s\S]*?processando=\{processando\}[\s\S]*?progresso=\{progresso\}[\s\S]*?salvando=\{t\("salvando"\)\}/);
-  assert.match(pagina, /usePublicarBasicFields\(\{ setErro \}\)/);
-  assert.match(pagina, /usePublicarPublicationOptions\(\{ setErro \}\)/);
+  assert.match(controladorFormulario, /usePublicarBasicFields\(\{ setErro \}\)/);
+  assert.match(controladorFormulario, /usePublicarPublicationOptions\(\{ setErro \}\)/);
   assert.match(opcoesPublicacao, /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\)[\s\S]*?setAvisosConteudo18[\s\S]*?setErro\(""\)/);
   assert.doesNotMatch(pagina, /function atualizarSinopse\(valor: string\)/);
   assert.doesNotMatch(pagina, /function atualizarTitulo\(valor: string\)/);
@@ -183,9 +188,9 @@ test("Publicar delega os metadados controlados ao hook de opções", () => {
   assert.match(formularioPublicacao, /<PublicarBasicFields[\s\S]*?onAutorChange=\{onAutorChange\}[\s\S]*?onTituloChange=\{onTituloChange\}/);
   assert.match(formularioPublicacao, /<PublicarFormatGenreFields[\s\S]*?onFormatoChange=\{onFormatoChange\}[\s\S]*?onGeneroChange=\{onGeneroChange\}/);
   assert.match(formularioPublicacao, /<PublicarTagClassificationFields[\s\S]*?onAlternarAviso=\{onAlternarAviso\}[\s\S]*?onClassificacaoChange=\{onClassificacaoChange\}[\s\S]*?onTagChange=\{onTagChange\}/);
-  assert.match(pagina, /import \{ usePublicarPublicationOptions \} from "\.\/hooks\/use-publicar-publication-options";/);
-  assert.match(pagina, /import \{ usePublicarTags \} from "\.\/hooks\/use-publicar-tags";/);
-  assert.match(pagina, /usePublicarTags\(\{ setErro \}\)/);
+  assert.match(controladorFormulario, /import \{ usePublicarPublicationOptions \} from "\.\/use-publicar-publication-options";/);
+  assert.match(controladorFormulario, /import \{ usePublicarTags \} from "\.\/use-publicar-tags";/);
+  assert.match(controladorFormulario, /usePublicarTags\(\{ setErro \}\)/);
   assert.doesNotMatch(pagina, /function atualizarFormato\(valor: string\)/);
   assert.doesNotMatch(pagina, /function atualizarGenero\(valor: string\)/);
   assert.doesNotMatch(pagina, /function atualizarClassificacaoIndicativa\(valor: string\)/);

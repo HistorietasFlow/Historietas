@@ -18,6 +18,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorFormulario = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
@@ -100,7 +104,8 @@ test("helpers de obra de Publicar preservam classificação, slug e progresso", 
 });
 
 test("Publicar delega os helpers puros às fronteiras extraídas", () => {
-  assert.match(pagina, /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/);
+  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(controladorFormulario, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   for (const modulo of [
     "publicar-id-utils",
@@ -110,7 +115,7 @@ test("Publicar delega os helpers puros às fronteiras extraídas", () => {
     assert.doesNotMatch(pagina, new RegExp(`from "\\./lib/${modulo}";`));
   }
 
-  assert.match(pagina, /from "\.\/hooks\/use-publicar-content-file-upload";/);
+  assert.match(controladorFormulario, /from "\.\/use-publicar-content-file-upload";/);
   assert.match(uploadConteudo, /from "\.\.\/lib\/publicar-file-utils";/);
 
   for (const declaracao of [

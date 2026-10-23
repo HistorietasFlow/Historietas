@@ -3,15 +3,9 @@
 import { useRouter } from "next/navigation";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
-import { usePublicarCoverUpload } from "./hooks/use-publicar-cover-upload";
-import { usePublicarBasicFields } from "./hooks/use-publicar-basic-fields";
-import { usePublicarContentFileUpload } from "./hooks/use-publicar-content-file-upload";
-import { usePublicarPublicationOptions } from "./hooks/use-publicar-publication-options";
-import { usePublicarTags } from "./hooks/use-publicar-tags";
-import { usePublicarFormValidation } from "./hooks/use-publicar-form-validation";
-import { usePublicarSubmission } from "./hooks/use-publicar-submission";
 import { usePublicarPageState } from "./hooks/use-publicar-page-state";
 import { usePublicarPagePresentation } from "./hooks/use-publicar-page-presentation";
+import { usePublicarFormController } from "./hooks/use-publicar-form-controller";
 import type { ChaveTextoPublicar } from "./lib/publicar-translations";
 import {
   PublicarLoadingShell,
@@ -24,7 +18,6 @@ import {
   desktopMainGridSingleStyle,
   mainGridStyle,
 } from "./lib/publicar-form-upload-styles";
-import { obterMetadadosFormularioPublicar } from "./lib/publicar-form-display-metadata";
 
 
 export default function PublicarPage() {
@@ -38,62 +31,6 @@ export default function PublicarPage() {
     setVerificandoAutenticacao,
     verificandoAutenticacao,
   } = usePublicarPageState();
-  const {
-    atualizarAutor,
-    atualizarSinopse,
-    atualizarTitulo,
-    autor,
-    setAutor,
-    sinopse,
-    titulo,
-  } = usePublicarBasicFields({ setErro });
-  const {
-    atualizarTagPersonalizada,
-    atualizarTagSelecionada,
-    tagPersonalizada,
-    tags,
-    tagsDaObra,
-    usarTagPersonalizada,
-  } = usePublicarTags({ setErro });
-  const {
-    alternarAvisoConteudo18,
-    atualizarClassificacaoIndicativa,
-    atualizarFormato,
-    atualizarFormatoPersonalizado,
-    atualizarGenero,
-    atualizarGeneroPersonalizado,
-    avisosConteudo18,
-    classificacaoIndicativa,
-    formato,
-    formatoPersonalizado,
-    genero,
-    generoPersonalizado,
-  } = usePublicarPublicationOptions({ setErro });
-  const {
-    capa,
-    capaArquivo,
-    capaErro,
-    capaInputRef,
-    capaNome,
-    removerCapa,
-    selecionarCapa,
-  } = usePublicarCoverUpload({ setErro });
-  const {
-    anexarArquivoCompleto,
-    arquivoCapituloErro,
-    arquivoCapituloNome,
-    arquivoCapituloTexto,
-    arquivoCapituloTitulo,
-    arquivoConteudoInputRef,
-    arquivoObra,
-    arquivoObraArquivo,
-    arquivoObraErro,
-    arquivoTextoPendente,
-    cancelarEscolhaArquivoTexto,
-    limparSelecaoConteudoArquivo,
-    selecionarConteudoArquivo,
-    transformarArquivoTextoEmCapitulo,
-  } = usePublicarContentFileUpload({ setErro });
   const isDesktop = usePublicarDesktopMode();
   const {
     idioma,
@@ -103,80 +40,79 @@ export default function PublicarPage() {
     traduzirMensagem,
   } = usePublicarPagePresentation();
 
+  const {
+    alternarAvisoConteudo18,
+    anexarArquivoCompleto,
+    arquivoCapituloErro,
+    arquivoCapituloMinutos,
+    arquivoCapituloNome,
+    arquivoCapituloPalavras,
+    arquivoCapituloTitulo,
+    arquivoConteudoInputRef,
+    arquivoObra,
+    arquivoObraErro,
+    arquivoObraTamanhoTexto,
+    arquivoObraTipoTexto,
+    arquivoTextoPendente,
+    arquivoTextoPendenteTamanhoTexto,
+    atualizarAutor,
+    atualizarClassificacaoIndicativa,
+    atualizarFormato,
+    atualizarFormatoPersonalizado,
+    atualizarGenero,
+    atualizarGeneroPersonalizado,
+    atualizarSinopse,
+    atualizarTagPersonalizada,
+    atualizarTagSelecionada,
+    atualizarTitulo,
+    autor,
+    avisosConteudo18,
+    capa,
+    capaErro,
+    capaInputRef,
+    capaNome,
+    cancelarEscolhaArquivoTexto,
+    classificacao18Selecionada,
+    classificacaoFinal,
+    classificacaoIndicativa,
+    formato,
+    formatoEhPersonalizado,
+    formatoFinal,
+    formatoPersonalizado,
+    genero,
+    generoEhPersonalizado,
+    generoFinal,
+    generoPersonalizado,
+    limparSelecaoConteudoArquivo,
+    previewTemConteudo,
+    progresso,
+    removerCapa,
+    salvarObra,
+    selecionarCapa,
+    selecionarConteudoArquivo,
+    setAutor,
+    sinopse,
+    sinopseCaracteresValidos,
+    sinopsePalavras,
+    sinopseValida,
+    tagPersonalizada,
+    tagsDaObra,
+    temCapituloImportado,
+    temConteudoPorArquivo,
+    titulo,
+    transformarArquivoTextoEmCapitulo,
+    usarTagPersonalizada,
+  } = usePublicarFormController({
+    router,
+    setErro,
+    setProcessando,
+    t,
+  });
+
   usePublicarInitialAccess({
     router,
     setAutor,
     setVerificandoAutenticacao,
-  });
-
-  const {
-    avisosConteudo18Normalizados,
-    classificacao18Selecionada,
-    classificacaoFinal,
-    formatoEhPersonalizado,
-    formatoFinal,
-    generoEhPersonalizado,
-    generoFinal,
-    progresso,
-    previewTemConteudo,
-    sinopseValida,
-    temCapituloImportado,
-    temConteudoPorArquivo,
-    validarFormulario,
-  } = usePublicarFormValidation({
-    arquivoCapituloTexto,
-    arquivoObra,
-    autor,
-    avisosConteudo18,
-    capa,
-    classificacaoIndicativa,
-    formato,
-    formatoPersonalizado,
-    genero,
-    generoPersonalizado,
-    sinopse,
-    tagPersonalizada,
-    tags,
-    titulo,
-    usarTagPersonalizada,
-  });
-
-  const {
-    arquivoCapituloMinutos,
-    arquivoCapituloPalavras,
-    arquivoObraTamanhoTexto,
-    arquivoObraTipoTexto,
-    arquivoTextoPendenteTamanhoTexto,
-    sinopseCaracteresValidos,
-    sinopsePalavras,
-  } = obterMetadadosFormularioPublicar({
-    arquivoCapituloTexto,
-    arquivoObra,
-    arquivoTextoPendente,
-    sinopse,
-    t,
-  });
-  const { salvarObra } = usePublicarSubmission({
-    arquivoCapituloTexto,
-    arquivoCapituloTitulo,
-    arquivoObra,
-    arquivoObraArquivo,
-    autor,
-    avisosConteudo18Normalizados,
-    capaArquivo,
-    capaNome,
-    classificacaoFinal,
-    formatoFinal,
-    generoFinal,
-    router,
-    setAutor,
-    setErro,
-    setProcessando,
-    sinopse,
-    tagsDaObra,
-    temCapituloImportado,
-    titulo,
-    validarFormulario,
   });
 
   if (verificandoAutenticacao) {

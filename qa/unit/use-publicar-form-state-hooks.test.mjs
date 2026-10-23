@@ -29,6 +29,10 @@ const apresentacaoPagina = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-page-presentation.ts", import.meta.url),
   "utf8",
 );
+const controladorFormulario = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 
 test("hooks de estado e apresentação preservam as fronteiras da página", () => {
   assert.match(estadoPagina, /^"use client";/);
@@ -101,12 +105,14 @@ test("Publicar delega os dois estados locais sem reter implementações duplicad
   assert.doesNotMatch(pagina, /const \[processando, setProcessando\] = useState/);
   assert.doesNotMatch(pagina, /const \[erro, setErro\] = useState/);
   assert.doesNotMatch(pagina, /const \[verificandoAutenticacao, setVerificandoAutenticacao\] = useState/);
-  assert.match(pagina, /usePublicarPublicationOptions\(\{ setErro \}\)/);
-  assert.match(pagina, /usePublicarContentFileUpload\(\{ setErro \}\)/);
+  assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
+  assert.match(pagina, /\} = usePublicarFormController\(\{[\s\S]*?router,[\s\S]*?setErro,[\s\S]*?setProcessando,[\s\S]*?t,/);
+  assert.match(controladorFormulario, /usePublicarPublicationOptions\(\{ setErro \}\)/);
+  assert.match(controladorFormulario, /usePublicarContentFileUpload\(\{ setErro \}\)/);
   assert.doesNotMatch(pagina, /function anexarArquivoCompleto\(arquivo: File\)/);
   assert.doesNotMatch(pagina, /function limparSelecaoConteudoArquivo\(\)/);
   assert.doesNotMatch(pagina, /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\)/);
-  assert.match(pagina, /import \{ usePublicarFormValidation \} from "\.\/hooks\/use-publicar-form-validation";/);
-  assert.match(pagina, /usePublicarFormValidation\(\{[\s\S]*?arquivoCapituloTexto,[\s\S]*?avisosConteudo18,[\s\S]*?classificacaoIndicativa,[\s\S]*?formato,[\s\S]*?genero,[\s\S]*?tagPersonalizada,[\s\S]*?usarTagPersonalizada,/);
+  assert.match(controladorFormulario, /import \{ usePublicarFormValidation \} from "\.\/use-publicar-form-validation";/);
+  assert.match(controladorFormulario, /usePublicarFormValidation\(\{[\s\S]*?arquivoCapituloTexto: contentFileUpload\.arquivoCapituloTexto,[\s\S]*?avisosConteudo18: publicationOptions\.avisosConteudo18,[\s\S]*?classificacaoIndicativa: publicationOptions\.classificacaoIndicativa,[\s\S]*?formato: publicationOptions\.formato,[\s\S]*?genero: publicationOptions\.genero,[\s\S]*?tagPersonalizada: tags\.tagPersonalizada,[\s\S]*?usarTagPersonalizada: tags\.usarTagPersonalizada,/);
   assert.doesNotMatch(pagina, /function validarFormulario\(\)/);
 });

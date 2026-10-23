@@ -6,6 +6,10 @@ const page = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const formController = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 const action = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
@@ -43,9 +47,10 @@ test("ação de submissão de Publicar preserva a transação, rollback e navega
 test("página de Publicar delega a submissão sem duplicar os efeitos", () => {
   assert.match(
     page,
-    /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/,
+    /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/,
   );
-  assert.match(page, /const \{ salvarObra \} = usePublicarSubmission\(\{/);
+  assert.match(formController, /import \{ usePublicarSubmission \} from "\.\/use-publicar-submission";/);
+  assert.match(formController, /const \{ salvarObra \} = usePublicarSubmission\(\{/);
   assert.doesNotMatch(page, /from "\.\/lib\/publicar-submission-action";/);
   assert.doesNotMatch(page, /async function salvarObra\(/);
   assert.match(hook, /from "\.\.\/lib\/publicar-submission-action";/);
@@ -58,7 +63,7 @@ test("página de Publicar delega a submissão sem duplicar os efeitos", () => {
     "setProcessando,",
     "validarFormulario,",
   ]) {
-    assert.ok(page.includes(dependencia), `dependência preservada: ${dependencia}`);
+    assert.ok(formController.includes(dependencia), `dependência preservada: ${dependencia}`);
   }
   assert.match(hook, /const jaSalvouRef = useRef\(false\)/);
   assert.doesNotMatch(page, /supabase\.auth\.getUser\(\)/);

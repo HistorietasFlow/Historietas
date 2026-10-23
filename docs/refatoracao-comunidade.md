@@ -1284,3 +1284,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O estado transversal e a apresentação de tema/i18n da página foram isolados em hooks dedicados, preservando os defaults, as traduções e as funções de classificação e mensagem.
 - O lifecycle de acesso, a validação, a submissão, o armazenamento, Supabase, RLS e as regras de publicação permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 28 — Publicar
+
+- A composição dos estados do formulário, upload, validação, metadados e adapter de submissão foi concentrada em `usePublicarFormController`, mantendo a página como orquestradora visual.
+- O lifecycle de acesso, consultas e mutações Supabase, Storage, RLS, validações, mensagens e contratos de submissão foram preservados sem alteração intencional de comportamento.

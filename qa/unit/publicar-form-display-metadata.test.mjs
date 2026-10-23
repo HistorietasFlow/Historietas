@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const controladorFormulario = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-form-controller.ts", import.meta.url),
+  "utf8",
+);
 const metadataJavascript = typescript.transpileModule(
   metadataSource
     .replace(
@@ -110,11 +114,15 @@ test("metadados visuais preservam fallbacks e rótulos da categoria do arquivo",
 test("Publicar delega metadados visuais sem mover runtime da publicação", () => {
   assert.match(
     pagina,
-    /import \{ obterMetadadosFormularioPublicar \} from "\.\/lib\/publicar-form-display-metadata";/,
+    /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/,
   );
   assert.match(
-    pagina,
-    /obterMetadadosFormularioPublicar\(\{[\s\S]*?arquivoCapituloTexto,[\s\S]*?arquivoObra,[\s\S]*?arquivoTextoPendente,[\s\S]*?sinopse,[\s\S]*?t,[\s\S]*?\}\)/,
+    controladorFormulario,
+    /import \{ obterMetadadosFormularioPublicar \} from "\.\.\/lib\/publicar-form-display-metadata";/,
+  );
+  assert.match(
+    controladorFormulario,
+    /obterMetadadosFormularioPublicar\(\{[\s\S]*?arquivoCapituloTexto: contentFileUpload\.arquivoCapituloTexto,[\s\S]*?arquivoObra: contentFileUpload\.arquivoObra,[\s\S]*?arquivoTextoPendente: contentFileUpload\.arquivoTextoPendente,[\s\S]*?sinopse: basicFields\.sinopse,[\s\S]*?t,/,
   );
   assert.doesNotMatch(pagina, /const arquivoObraTipoTexto = arquivoObra/);
   assert.doesNotMatch(pagina, /const arquivoCapituloMinutos = calcularMinutosLeitura\(arquivoCapituloTexto\)/);
