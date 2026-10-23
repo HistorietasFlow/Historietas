@@ -26,6 +26,10 @@ const componentePrevia = readFileSync(
   new URL("../../app/publicar/components/PublicarWorkPreview.tsx", import.meta.url),
   "utf8",
 );
+const conteudoPagina = readFileSync(
+  new URL("../../app/publicar/components/PublicarPageContent.tsx", import.meta.url),
+  "utf8",
+);
 
 test("Publicar isola a base e o layout responsivo", () => {
   for (const nome of [
@@ -80,7 +84,8 @@ test("Publicar isola estilos de formulario e upload com variantes desktop", () =
   assert.match(formulario, /\.\.\.chapterImportIconBoxStyle/);
   assert.match(formulario, /\.\.\.desktopDoubleFieldStyle/);
   assert.match(formulario, /backgroundImage: `url\(\$\{capaAtual\}\)`/);
-  assert.match(pagina, /from "\.\/lib\/publicar-form-upload-styles";/);
+  assert.match(pagina, /from "\.\/components\/PublicarPageContent";/);
+  assert.match(conteudoPagina, /from "\.\.\/lib\/publicar-form-upload-styles";/);
   assert.doesNotMatch(pagina, /const chapterImportBoxStyle: CSSProperties =/);
   assert.doesNotMatch(pagina, /function criarCoverUploadIconBoxStyle\(/);
 });
@@ -104,7 +109,7 @@ test("Publicar isola a previa e mantem modulos visuais puros", () => {
   assert.match(previa, /\.\.\.previewCoverStyle/);
   assert.match(previa, /backgroundImage: `url\(\$\{capa\}\)`/);
   assert.match(previa, /\.\.\.previewPanelStyle/);
-  assert.match(pagina, /from "\.\/components\/PublicarWorkPreview";/);
+  assert.match(pagina, /from "\.\/components\/PublicarPageContent";/);
   assert.match(componentePrevia, /from "\.\.\/lib\/publicar-preview-styles";/);
   assert.doesNotMatch(pagina, /const previewPanelStyle: CSSProperties =/);
   assert.doesNotMatch(pagina, /function criarPreviewCoverStyle\(/);

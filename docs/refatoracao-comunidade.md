@@ -1294,3 +1294,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição das props de formulário e prévia foi isolada em `publicar-page-component-props.ts`, preservando o mapeamento de estados, callbacks, traduções e fallbacks visuais.
 - A página permaneceu responsável pela orquestração de acesso e renderização; não houve alteração intencional de comportamento, Supabase, Storage ou RLS.
+
+## Registro da Fase 30 — Publicar
+
+- A composição visual autenticada foi isolada em `PublicarPageContent.tsx`, preservando backdrop, shell, grade responsiva e a ordem do formulário e da prévia.
+- Hooks, estado, lifecycle de acesso, autenticação, Supabase, Storage, RLS e regras de publicação permaneceram na página, sem alteração intencional de comportamento.

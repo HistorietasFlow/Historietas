@@ -18,6 +18,10 @@ const backdrop = readFileSync(
   new URL("../../app/publicar/components/PublicarPageBackdrop.tsx", import.meta.url),
   "utf8",
 );
+const conteudoPagina = readFileSync(
+  new URL("../../app/publicar/components/PublicarPageContent.tsx", import.meta.url),
+  "utf8",
+);
 const erroFormulario = readFileSync(
   new URL("../../app/publicar/components/PublicarFormError.tsx", import.meta.url),
   "utf8",
@@ -96,7 +100,8 @@ const propsComponentesPagina = readFileSync(
 );
 
 test("Publicar delega a composição visual do cabeçalho", () => {
-  assert.match(pagina, /from "\.\/components\/PublicarPageShell";/);
+  assert.match(pagina, /from "\.\/components\/PublicarPageContent";/);
+  assert.match(conteudoPagina, /from "\.\/PublicarPageShell";/);
   assert.match(shell, /<PublicarPageHeader[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?voltarHome=\{voltarHome\}[\s\S]*?novaObra=\{novaObra\}/);
   assert.doesNotMatch(pagina, /<header style=\{isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle\}/);
 
@@ -106,8 +111,9 @@ test("Publicar delega a composição visual do cabeçalho", () => {
 });
 
 test("Publicar delega a prévia sem deslocar estados ou regras de publicação", () => {
-  assert.match(pagina, /import \{ PublicarWorkPreview \} from "\.\/components\/PublicarWorkPreview";/);
-  assert.match(pagina, /<PublicarWorkPreview \{\.\.\.workPreviewProps\} \/>/);
+  assert.match(pagina, /<PublicarPageContent[\s\S]*?workPreviewProps=\{workPreviewProps\}/);
+  assert.match(conteudoPagina, /import \{ PublicarWorkPreview \} from "\.\/PublicarWorkPreview";/);
+  assert.match(conteudoPagina, /<PublicarWorkPreview \{\.\.\.workPreviewProps\} \/>/);
   assert.match(propsComponentesPagina, /arquivoCapituloMinutos: formulario\.arquivoCapituloMinutos,[\s\S]*?classificacaoTexto: formulario\.classificacaoFinal[\s\S]*?traduzirClassificacao\(formulario\.classificacaoFinal\)[\s\S]*?previewTemConteudo: formulario\.previewTemConteudo,/);
   assert.match(apresentacaoPagina, /traduzirClassificacaoPublicar\(idioma, classificacao\)/);
   assert.doesNotMatch(pagina, /<aside style=\{isDesktop \? desktopPreviewPanelStyle : previewPanelStyle\}/);
@@ -121,10 +127,10 @@ test("Publicar delega a prévia sem deslocar estados ou regras de publicação",
 });
 
 test("Publicar delega os uploads visuais e o lifecycle local do arquivo", () => {
-  assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
+  assert.match(conteudoPagina, /import \{ PublicarPublicationForm \} from "\.\/PublicarPublicationForm";/);
   assert.match(pagina, /import \{ usePublicarFormController \} from "\.\/hooks\/use-publicar-form-controller";/);
   assert.match(controladorFormulario, /import \{ usePublicarContentFileUpload \} from "\.\/use-publicar-content-file-upload";/);
-  assert.match(pagina, /<PublicarPublicationForm \{\.\.\.publicationFormProps\} \/>/);
+  assert.match(conteudoPagina, /<PublicarPublicationForm \{\.\.\.publicationFormProps\} \/>/);
   assert.match(propsComponentesPagina, /capaInputRef: formulario\.capaInputRef,[\s\S]*?onRemoverCapa: formulario\.removerCapa,[\s\S]*?onSelecionarCapa: formulario\.selecionarCapa,/);
   assert.match(propsComponentesPagina, /arquivoConteudoInputRef: formulario\.arquivoConteudoInputRef,[\s\S]*?onAnexarArquivoCompleto: formulario\.anexarArquivoCompleto,[\s\S]*?onSelecionarConteudoArquivo: formulario\.selecionarConteudoArquivo,[\s\S]*?onTransformarArquivoTextoEmCapitulo:[\s\S]*?formulario\.transformarArquivoTextoEmCapitulo,/);
   assert.match(formularioPublicacao, /import \{ PublicarCoverUpload \} from "\.\/PublicarCoverUpload";/);
@@ -153,7 +159,7 @@ test("Publicar delega os uploads visuais e o lifecycle local do arquivo", () => 
 });
 
 test("Publicar delega campos controlados sem deslocar seus estados e callbacks", () => {
-  assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
+  assert.match(conteudoPagina, /import \{ PublicarPublicationForm \} from "\.\/PublicarPublicationForm";/);
   assert.match(controladorFormulario, /import \{ usePublicarBasicFields \} from "\.\/use-publicar-basic-fields";/);
   assert.match(propsComponentesPagina, /onSinopseChange: formulario\.atualizarSinopse,[\s\S]*?sinopse: formulario\.sinopse,[\s\S]*?t,/);
   assert.match(propsComponentesPagina, /processando,[\s\S]*?progresso: formulario\.progresso,/);
@@ -184,7 +190,7 @@ test("Publicar delega campos controlados sem deslocar seus estados e callbacks",
 });
 
 test("Publicar delega os metadados controlados ao hook de opções", () => {
-  assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
+  assert.match(conteudoPagina, /import \{ PublicarPublicationForm \} from "\.\/PublicarPublicationForm";/);
   assert.match(propsComponentesPagina, /onAutorChange: formulario\.atualizarAutor,[\s\S]*?onTituloChange: formulario\.atualizarTitulo,/);
   assert.match(propsComponentesPagina, /onFormatoChange: formulario\.atualizarFormato,[\s\S]*?onGeneroChange: formulario\.atualizarGenero,/);
   assert.match(propsComponentesPagina, /onAlternarAviso: formulario\.alternarAvisoConteudo18,[\s\S]*?onClassificacaoChange: formulario\.atualizarClassificacaoIndicativa,[\s\S]*?onTagChange: formulario\.atualizarTagSelecionada,/);
@@ -224,9 +230,9 @@ test("Publicar delega os metadados controlados ao hook de opções", () => {
 });
 
 test("Publicar delegates loading and page shells without moving composition", () => {
-  assert.match(pagina, /import \{[\s\S]*?PublicarLoadingShell,[\s\S]*?PublicarPageShell,[\s\S]*?\} from "\.\/components\/PublicarPageShell";/);
+  assert.match(pagina, /import \{[\s\S]*?PublicarLoadingShell,[\s\S]*?\} from "\.\/components\/PublicarPageShell";/);
   assert.match(pagina, /<PublicarLoadingShell[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?pageThemeStyle=\{presentation\.pageThemeStyle\}/);
-  assert.match(pagina, /<PublicarPageShell[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?novaObra=\{presentation\.t\("novaObra"\)\}[\s\S]*?voltarHome=\{presentation\.t\("voltarHome"\)\}/);
+  assert.match(pagina, /<PublicarPageContent[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?novaObra=\{presentation\.t\("novaObra"\)\}[\s\S]*?voltarHome=\{presentation\.t\("voltarHome"\)\}/);
   assert.doesNotMatch(pagina, /<PublicarPageHeader/);
 
   assert.match(shell, /export function PublicarLoadingShell\(/);
@@ -240,10 +246,11 @@ test("Publicar delegates loading and page shells without moving composition", ()
 });
 
 test("Publicar delegates backdrop and form feedback without moving publication state", () => {
-  assert.match(pagina, /import \{ PublicarPageBackdrop \} from "\.\/components\/PublicarPageBackdrop";/);
-  assert.match(pagina, /<PublicarPageBackdrop isDesktop=\{isDesktop\} \/>/);
-  assert.match(pagina, /import \{ PublicarPublicationForm \} from "\.\/components\/PublicarPublicationForm";/);
-  assert.match(pagina, /<PublicarPublicationForm \{\.\.\.publicationFormProps\} \/>/);
+  assert.match(pagina, /import \{ PublicarPageContent \} from "\.\/components\/PublicarPageContent";/);
+  assert.match(conteudoPagina, /import \{ PublicarPageBackdrop \} from "\.\/PublicarPageBackdrop";/);
+  assert.match(conteudoPagina, /<PublicarPageBackdrop isDesktop=\{isDesktop\} \/>/);
+  assert.match(conteudoPagina, /import \{ PublicarPublicationForm \} from "\.\/PublicarPublicationForm";/);
+  assert.match(conteudoPagina, /<PublicarPublicationForm \{\.\.\.publicationFormProps\} \/>/);
   assert.match(propsComponentesPagina, /erro,[\s\S]*?traduzirMensagem,/);
   assert.match(apresentacaoPagina, /traduzirMensagemPublicar\(idioma, mensagem\)/);
   assert.match(formularioPublicacao, /import \{ PublicarFormError \} from "\.\/PublicarFormError";/);
@@ -263,7 +270,7 @@ test("Publicar delegates backdrop and form feedback without moving publication s
 });
 
 test("componentes visuais de Publicar permanecem sem runtime de dados", () => {
-  for (const componente of [cabecalho, shell, backdrop, erroFormulario, progresso, previa, capa, arquivo, avisosAdultos, sinopse, acoesFormulario, camposBasicos, camposFormatoGenero, camposTagClassificacao, formularioPublicacao, propsComponentesPagina]) {
+  for (const componente of [cabecalho, shell, backdrop, conteudoPagina, erroFormulario, progresso, previa, capa, arquivo, avisosAdultos, sinopse, acoesFormulario, camposBasicos, camposFormatoGenero, camposTagClassificacao, formularioPublicacao, propsComponentesPagina]) {
     assert.doesNotMatch(componente, /supabase|localStorage|useEffect|useState|window\.|document\./);
   }
 });
