@@ -49,7 +49,7 @@ test("Comunidade delega somente o lifecycle de feed ao hook", () => {
     pagina,
     /useComunidadeFeedLifecycle\(\{[\s\S]*?obraRelacionadaFiltro,[\s\S]*?carregandoFeed,[\s\S]*?carregandoMaisPostsComunidade,[\s\S]*?temMaisPostsComunidade,[\s\S]*?paginaFeedComunidade,[\s\S]*?setCarregandoFeed,[\s\S]*?setCarregandoMaisPostsComunidade,[\s\S]*?setPosts,[\s\S]*?setTemMaisPostsComunidade,[\s\S]*?setPaginaFeedComunidade,[\s\S]*?setObrasRelacionadasSugestoes,[\s\S]*?setErro,[\s\S]*?\}\);/,
   );
-  assert.match(pagina, /onCarregarMais=\{carregarMaisPostsComunidadeDaPagina\}/);
+  assert.match(pagina, /onCarregarMais: carregarMaisPostsComunidadeDaPagina/);
   assert.doesNotMatch(pagina, /function carregarPostsComunidadeDaPagina\(/);
   assert.doesNotMatch(pagina, /window\.history\.scrollRestoration = "manual";/);
   assert.doesNotMatch(pagina, /carregarMaisPostsComunidade\(\{/);

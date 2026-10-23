@@ -98,6 +98,7 @@ import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
 import { CommunityTopWaterFade } from "./components/community-top-water-fade";
 import { CommunityFeedTopComposition } from "./components/community-feed-top-composition";
+import { CommunityFeedCenterComposition } from "./components/community-feed-center-composition";
 import { CommunityMainLayout } from "./components/community-main-layout";
 import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
@@ -108,11 +109,6 @@ import {
 import {
   deveExibirResultadosBuscaComunidade,
 } from "./components/community-search-controls-visibility";
-import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
-import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
-import { CommunitySearchResultsCount } from "./components/community-search-results-count";
-import { CommunityUserSearchResults } from "./components/community-user-search-results";
-import { CommunityFeedPostsSection } from "./components/community-feed-posts-section";
 import { CommunityPostComposer } from "./components/community-post-composer";
 import { CommunityActionFeedbackToast, emitirFeedbackAcao } from "./components/community-action-feedback-toast";
 import {
@@ -751,6 +747,57 @@ export default function ComunidadePage() {
     });
   }
 
+  const renderizarPostComunidade = (post: PostComunidade) => {
+    const estadoPost = obterEstadoApresentacaoPostComunidade({
+      post,
+      usuario,
+      postsSalvosIds,
+      carregandoUsuario,
+      usuarioEhAdmin,
+      postCurtindoId,
+      postSalvandoId,
+      postCompartilhandoId,
+      postRemovendoId,
+      postFixandoId,
+      postVisibilidadeAtualizandoId,
+      denunciaAlvo,
+      spoilersReveladosIds,
+      obrasRelacionadasSugestoes,
+      postMenuAbertoId,
+    });
+    const acoesPost = criarAcoesPostComunidade({
+      post,
+      onAlternarMenu: alternarMenuOpcoesPostComunidade,
+      onFecharMenu: fecharMenuOpcoesPostComunidade,
+      onSalvar: salvarPostComunidade,
+      onCompartilhar: compartilharPostComunidade,
+      onAtualizarVisibilidade: atualizarVisibilidadePost,
+      onAlternarFixado: alternarFixadoPost,
+      onRemover: removerPost,
+      onDenunciar: denunciarPostComunidade,
+      onVotar: votarEnquetePostComunidade,
+      onAlternarCurtida: alternarCurtida,
+      onAbrirComentarios: abrirComentariosPostComunidade,
+      onAlternarSpoiler: alternarSpoilerPostComunidade,
+    });
+
+    return (
+      <CommunityPostItem
+        key={post.id}
+        post={post}
+        desktop={isDesktop}
+        estadoPost={estadoPost}
+        acoesPost={acoesPost}
+        postMenuAbertoId={postMenuAbertoId}
+        usuarioEhAdmin={usuarioEhAdmin}
+        obrasRelacionadasSugestoes={obrasRelacionadasSugestoes}
+        votosEnquetes={votosEnquetes}
+        resultadosEnquetes={resultadosEnquetes}
+        votandoEnqueteId={votandoEnqueteId}
+      />
+    );
+  };
+
   if (carregandoFeed) {
     return (
       <CommunityFeedLoadingState style={pageThemeStyle}>
@@ -876,96 +923,38 @@ export default function ComunidadePage() {
               }
             />
 
-            {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
-              <CommunityUserSearchResults
-                termoBusca={termoBusca}
-                carregandoUsuariosBuscaComunidade={
-                  carregandoUsuariosBuscaComunidade
-                }
-                usuariosBuscaComunidade={usuariosBuscaComunidade}
-                idioma={language}
-                usuarioAtualId={usuario?.id}
-                usuariosSeguidosIds={usuariosSeguidosIds}
-                usuarioSeguindoId={usuarioSeguindoId}
-                onAlternarSeguir={alternarSeguirUsuarioBusca}
-              />
-            ) : null}
-
-            {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
-              <CommunitySearchResultsHeader>
-                <CommunitySearchResultsTitle>
-                  Publicações
-                </CommunitySearchResultsTitle>
-                <CommunitySearchResultsCount>
-                  {traduzirContagemResultadosComunidade(
-                    postsVisiveis.length,
-                    "publicacoes",
-                    language
-                  )}
-                </CommunitySearchResultsCount>
-              </CommunitySearchResultsHeader>
-            ) : null}
-
-            <CommunityFeedPostsSection
-              desktop={isDesktop}
-              carregandoFeed={carregandoFeed}
-              postsVisiveis={postsVisiveis}
-              abaFeedAtiva={abaFeedAtiva}
-              usuario={usuario}
-              mostrarApenasSalvos={mostrarApenasSalvos}
-              filtrosAtivos={filtrosAtivos}
-              temMaisPostsComunidade={temMaisPostsComunidade}
-              carregandoMaisPostsComunidade={carregandoMaisPostsComunidade}
-              renderizarPost={(post) => {
-                const estadoPost = obterEstadoApresentacaoPostComunidade({
-                  post,
-                  usuario,
-                  postsSalvosIds,
-                  carregandoUsuario,
-                  usuarioEhAdmin,
-                  postCurtindoId,
-                  postSalvandoId,
-                  postCompartilhandoId,
-                  postRemovendoId,
-                  postFixandoId,
-                  postVisibilidadeAtualizandoId,
-                  denunciaAlvo,
-                  spoilersReveladosIds,
-                  obrasRelacionadasSugestoes,
-                  postMenuAbertoId,
-                });
-                const acoesPost = criarAcoesPostComunidade({
-                  post,
-                  onAlternarMenu: alternarMenuOpcoesPostComunidade,
-                  onFecharMenu: fecharMenuOpcoesPostComunidade,
-                  onSalvar: salvarPostComunidade,
-                  onCompartilhar: compartilharPostComunidade,
-                  onAtualizarVisibilidade: atualizarVisibilidadePost,
-                  onAlternarFixado: alternarFixadoPost,
-                  onRemover: removerPost,
-                  onDenunciar: denunciarPostComunidade,
-                  onVotar: votarEnquetePostComunidade,
-                  onAlternarCurtida: alternarCurtida,
-                  onAbrirComentarios: abrirComentariosPostComunidade,
-                  onAlternarSpoiler: alternarSpoilerPostComunidade,
-                });
-                return (
-                  <CommunityPostItem
-                    key={post.id}
-                    post={post}
-                    desktop={isDesktop}
-                    estadoPost={estadoPost}
-                    acoesPost={acoesPost}
-                    postMenuAbertoId={postMenuAbertoId}
-                    usuarioEhAdmin={usuarioEhAdmin}
-                    obrasRelacionadasSugestoes={obrasRelacionadasSugestoes}
-                    votosEnquetes={votosEnquetes}
-                    resultadosEnquetes={resultadosEnquetes}
-                    votandoEnqueteId={votandoEnqueteId}
-                  />
-                );
+            <CommunityFeedCenterComposition
+              exibirResultadosBusca={deveExibirResultadosBuscaComunidade(
+                termoBuscaNormalizado,
+              )}
+              contagemPublicacoes={traduzirContagemResultadosComunidade(
+                postsVisiveis.length,
+                "publicacoes",
+                language,
+              )}
+              userSearchProps={{
+                termoBusca,
+                carregandoUsuariosBuscaComunidade,
+                usuariosBuscaComunidade,
+                idioma: language,
+                usuarioAtualId: usuario?.id,
+                usuariosSeguidosIds,
+                usuarioSeguindoId,
+                onAlternarSeguir: alternarSeguirUsuarioBusca,
               }}
-              onCarregarMais={carregarMaisPostsComunidadeDaPagina}
+              feedProps={{
+                desktop: isDesktop,
+                carregandoFeed,
+                postsVisiveis,
+                abaFeedAtiva,
+                usuario,
+                mostrarApenasSalvos,
+                filtrosAtivos,
+                temMaisPostsComunidade,
+                carregandoMaisPostsComunidade,
+                renderizarPost: renderizarPostComunidade,
+                onCarregarMais: carregarMaisPostsComunidadeDaPagina,
+              }}
             />
 
           </CommunityFeedColumn>
