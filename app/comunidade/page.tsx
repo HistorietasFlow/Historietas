@@ -98,6 +98,7 @@ import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
 import { CommunityTopWaterFade } from "./components/community-top-water-fade";
 import { CommunityFeedTopComposition } from "./components/community-feed-top-composition";
+import { CommunityFeedCentralComposition } from "./components/community-feed-central-composition";
 import { CommunityMainLayout } from "./components/community-main-layout";
 import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
@@ -105,14 +106,6 @@ import {
   abrirBuscaComunidade,
   fecharBuscaComunidade,
 } from "./components/community-search-controls-actions";
-import {
-  deveExibirResultadosBuscaComunidade,
-} from "./components/community-search-controls-visibility";
-import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
-import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
-import { CommunitySearchResultsCount } from "./components/community-search-results-count";
-import { CommunityUserSearchResults } from "./components/community-user-search-results";
-import { CommunityFeedPostsSection } from "./components/community-feed-posts-section";
 import { CommunityPostComposer } from "./components/community-post-composer";
 import { CommunityActionFeedbackToast, emitirFeedbackAcao } from "./components/community-action-feedback-toast";
 import {
@@ -122,9 +115,6 @@ import {
 import { CommunityPostItem } from "./components/community-post-item";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { CommunityLanguageBridge } from "./components/community-language-bridge";
-import {
-  traduzirContagemResultadosComunidade,
-} from "./components/community-results-count-translator";
 import { salvarJsonUsuarioComunidade } from "./components/community-user-json-saver";
 
 export default function ComunidadePage() {
@@ -876,38 +866,19 @@ export default function ComunidadePage() {
               }
             />
 
-            {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
-              <CommunityUserSearchResults
-                termoBusca={termoBusca}
-                carregandoUsuariosBuscaComunidade={
-                  carregandoUsuariosBuscaComunidade
-                }
-                usuariosBuscaComunidade={usuariosBuscaComunidade}
-                idioma={language}
-                usuarioAtualId={usuario?.id}
-                usuariosSeguidosIds={usuariosSeguidosIds}
-                usuarioSeguindoId={usuarioSeguindoId}
-                onAlternarSeguir={alternarSeguirUsuarioBusca}
-              />
-            ) : null}
-
-            {deveExibirResultadosBuscaComunidade(termoBuscaNormalizado) ? (
-              <CommunitySearchResultsHeader>
-                <CommunitySearchResultsTitle>
-                  Publicações
-                </CommunitySearchResultsTitle>
-                <CommunitySearchResultsCount>
-                  {traduzirContagemResultadosComunidade(
-                    postsVisiveis.length,
-                    "publicacoes",
-                    language
-                  )}
-                </CommunitySearchResultsCount>
-              </CommunitySearchResultsHeader>
-            ) : null}
-
-            <CommunityFeedPostsSection
+            <CommunityFeedCentralComposition
               desktop={isDesktop}
+              termoBusca={termoBusca}
+              termoBuscaNormalizado={termoBuscaNormalizado}
+              carregandoUsuariosBuscaComunidade={
+                carregandoUsuariosBuscaComunidade
+              }
+              usuariosBuscaComunidade={usuariosBuscaComunidade}
+              idioma={language}
+              usuarioAtualId={usuario?.id}
+              usuariosSeguidosIds={usuariosSeguidosIds}
+              usuarioSeguindoId={usuarioSeguindoId}
+              onAlternarSeguir={alternarSeguirUsuarioBusca}
               carregandoFeed={carregandoFeed}
               postsVisiveis={postsVisiveis}
               abaFeedAtiva={abaFeedAtiva}

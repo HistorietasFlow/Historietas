@@ -1379,3 +1379,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição visual superior do feed foi isolada em `community-feed-top-composition.tsx`.
 - O cabeçalho desktop, os controles do feed e a sheet de ações recebem estados e callbacks explicitamente da página, que permanece orquestradora sem alteração intencional de comportamento.
+
+## Registro da Fase 19 — Comunidade
+
+- A composição visual central do feed foi isolada em `community-feed-central-composition.tsx`.
+- A página permanece responsável por estados, filtros, paginação, follow, apresentação dos posts e callbacks; o componente recebe esses contratos explicitamente para apresentar busca, resultados e feed sem alteração intencional de comportamento.
