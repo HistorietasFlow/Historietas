@@ -79,7 +79,8 @@ test("Comunidade delega apenas o lifecycle de autenticação e troca de conta ao
   assert.doesNotMatch(pagina, /supabase\.auth\.onAuthStateChange/);
   assert.doesNotMatch(pagina, /async function carregarUsuario\(/);
   assert.match(pagina, /publicarPostComunidade\(\{/);
-  assert.match(pagina, /async function alternarSeguirUsuarioBusca\(/);
+  assert.match(pagina, /alternarSeguirUsuarioBuscaComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function alternarSeguirUsuarioBusca\(/);
   assert.match(pagina, /async function atualizarVisibilidadePost\(/);
   assert.match(pagina, /async function removerPost\(/);
 });

@@ -74,6 +74,7 @@ test("Comunidade delega somente a navegacao inicial ao hook", () => {
   assert.doesNotMatch(pagina, /const parametrosComunidadeAplicadosRef = useRef\(false\);/);
   assert.doesNotMatch(pagina, /const postIdUrl = obterParametroPostComunidade\(/);
   assert.match(pagina, /useComunidadeAuthAccountLifecycle\(/);
-  assert.match(pagina, /async function alternarSeguirUsuarioBusca\(/);
+  assert.match(pagina, /alternarSeguirUsuarioBuscaComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function alternarSeguirUsuarioBusca\(/);
   assert.match(pagina, /function abrirComentariosPostComunidade\(/);
 });

@@ -55,5 +55,6 @@ test("Comunidade delega somente o lifecycle de feed ao hook", () => {
   assert.doesNotMatch(pagina, /carregarMaisPostsComunidade\(\{/);
   assert.match(pagina, /useComunidadeAuthAccountLifecycle\(/);
   assert.match(pagina, /publicarPostComunidade\(\{/);
-  assert.match(pagina, /async function alternarSeguirUsuarioBusca\(/);
+  assert.match(pagina, /alternarSeguirUsuarioBuscaComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function alternarSeguirUsuarioBusca\(/);
 });
