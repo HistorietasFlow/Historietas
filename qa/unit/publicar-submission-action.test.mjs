@@ -10,6 +10,10 @@ const action = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
 );
+const hook = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-submission.ts", import.meta.url),
+  "utf8",
+);
 
 test("ação de submissão de Publicar preserva a transação, rollback e navegação", () => {
   assert.match(action, /export async function salvarObraPublicar\(/);
@@ -39,12 +43,15 @@ test("ação de submissão de Publicar preserva a transação, rollback e navega
 test("página de Publicar delega a submissão sem duplicar os efeitos", () => {
   assert.match(
     page,
-    /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/,
+    /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/,
   );
-  assert.match(page, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
-  assert.match(page, /return salvarObraPublicar\(/);
+  assert.match(page, /const \{ salvarObra \} = usePublicarSubmission\(\{/);
+  assert.doesNotMatch(page, /from "\.\/lib\/publicar-submission-action";/);
+  assert.doesNotMatch(page, /async function salvarObra\(/);
+  assert.match(hook, /from "\.\.\/lib\/publicar-submission-action";/);
+  assert.match(hook, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(hook, /return salvarObraPublicar\(/);
   for (const dependencia of [
-    "jaSalvouRef,",
     "router,",
     "setAutor,",
     "setErro,",
@@ -53,7 +60,7 @@ test("página de Publicar delega a submissão sem duplicar os efeitos", () => {
   ]) {
     assert.ok(page.includes(dependencia), `dependência preservada: ${dependencia}`);
   }
-  assert.match(page, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(hook, /const jaSalvouRef = useRef\(false\)/);
   assert.doesNotMatch(page, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(page, /supabase\.from\("obras"\)/);
   assert.doesNotMatch(page, /enviarArquivoStorage\(/);

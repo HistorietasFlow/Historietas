@@ -1269,3 +1269,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de submissão foi isolada em `publicar-submission-action.ts`, preservando validação, upload, publicação, rollback, Diário, persistência local e navegação.
 - Estados, JSX, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 25 — Publicar
+
+- O adapter de submissão e sua guarda contra envio duplicado foram isolados em `use-publicar-submission.ts`, preservando os parâmetros e a ordem da ação de publicação.
+- Estados, JSX, autenticação, persistência, Supabase, RLS e regras de publicação permaneceram sem alteração intencional de comportamento.

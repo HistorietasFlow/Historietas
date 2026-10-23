@@ -26,6 +26,10 @@ const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
 );
+const hookSubmissao = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-submission.ts", import.meta.url),
+  "utf8",
+);
 
 test("helpers de autenticação de Publicar preservam retorno e nome de metadata", () => {
   for (const helper of ["criarLoginHrefPublicar", "obterNomeMetadataPublicar"]) {
@@ -96,7 +100,8 @@ test("normalização local de Publicar preserva capítulos, arquivos, backups e 
 });
 
 test("Publicar delega fronteiras locais, storage e autenticação extraídas", () => {
-  assert.match(pagina, /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/);
+  assert.match(pagina, /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   for (const modulo of [
     "publicar-auth-utils",
     "publicar-user-storage-utils",
@@ -133,6 +138,7 @@ test("Publicar delega fronteiras locais, storage e autenticação extraídas", (
   assert.match(perfil, /from\("profiles"\)\s*\.select\("nome"\)\s*\.eq\("id", userId\)/);
   assert.match(acaoSubmissao, /from "\.\/publicar-file-backup-storage-utils";/);
   assert.doesNotMatch(pagina, /function carregarBackupArquivosPublicar\(/);
-  assert.match(pagina, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(hookSubmissao, /from "\.\.\/lib\/publicar-submission-action";/);
+  assert.match(hookSubmissao, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
   assert.match(acaoSubmissao, /export async function salvarObraPublicar\(/);
 });

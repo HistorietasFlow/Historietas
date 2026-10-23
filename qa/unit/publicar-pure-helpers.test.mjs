@@ -22,6 +22,10 @@ const acaoSubmissao = readFileSync(
   new URL("../../app/publicar/lib/publicar-submission-action.ts", import.meta.url),
   "utf8",
 );
+const hookSubmissao = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-submission.ts", import.meta.url),
+  "utf8",
+);
 const uploadConteudo = readFileSync(
   new URL("../../app/publicar/hooks/use-publicar-content-file-upload.ts", import.meta.url),
   "utf8",
@@ -96,7 +100,8 @@ test("helpers de obra de Publicar preservam classificação, slug e progresso", 
 });
 
 test("Publicar delega os helpers puros às fronteiras extraídas", () => {
-  assert.match(pagina, /import \{ salvarObraPublicar \} from "\.\/lib\/publicar-submission-action";/);
+  assert.match(pagina, /import \{ usePublicarSubmission \} from "\.\/hooks\/use-publicar-submission";/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-submission-action";/);
   for (const modulo of [
     "publicar-id-utils",
     "publicar-work-utils",
@@ -131,6 +136,7 @@ test("Publicar delega os helpers puros às fronteiras extraídas", () => {
   assert.doesNotMatch(pagina, /async function enviarArquivoStorage\(/);
   assert.match(acaoSubmissao, /from "\.\/publicar-file-backup-storage-utils";/);
   assert.doesNotMatch(pagina, /function salvarObrasLocalmente\(/);
-  assert.match(pagina, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(hookSubmissao, /from "\.\.\/lib\/publicar-submission-action";/);
+  assert.match(hookSubmissao, /async function salvarObra\(event: FormEvent<HTMLFormElement>\)/);
   assert.match(acaoSubmissao, /export async function salvarObraPublicar\(/);
 });
