@@ -10,6 +10,10 @@ const cabecalho = readFileSync(
   new URL("../../app/publicar/components/PublicarPageHeader.tsx", import.meta.url),
   "utf8",
 );
+const shell = readFileSync(
+  new URL("../../app/publicar/components/PublicarPageShell.tsx", import.meta.url),
+  "utf8",
+);
 const progresso = readFileSync(
   new URL("../../app/publicar/components/PublicarProgress.tsx", import.meta.url),
   "utf8",
@@ -52,8 +56,8 @@ const camposTagClassificacao = readFileSync(
 );
 
 test("Publicar delega a composição visual do cabeçalho", () => {
-  assert.match(pagina, /import \{ PublicarPageHeader \} from "\.\/components\/PublicarPageHeader";/);
-  assert.match(pagina, /<PublicarPageHeader[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?voltarHome=\{t\("voltarHome"\)\}[\s\S]*?novaObra=\{t\("novaObra"\)\}/);
+  assert.match(pagina, /from "\.\/components\/PublicarPageShell";/);
+  assert.match(shell, /<PublicarPageHeader[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?voltarHome=\{voltarHome\}[\s\S]*?novaObra=\{novaObra\}/);
   assert.doesNotMatch(pagina, /<header style=\{isDesktop \? desktopTitleHeaderStyle : titleHeaderStyle\}/);
 
   assert.match(cabecalho, /href="\/"/);
@@ -142,6 +146,22 @@ test("Publicar delega os metadados controlados e preserva os callbacks na pÃ¡g
   assert.match(camposTagClassificacao, /OPCOES_TAGS_OBRA\.map/);
   assert.match(camposTagClassificacao, /traduzirTagPublicar\(idioma, tag\)/);
   assert.match(camposTagClassificacao, /<PublicarAdultWarnings[\s\S]*?onAlternarAviso=\{onAlternarAviso\}/);
+});
+
+test("Publicar delegates loading and page shells without moving composition", () => {
+  assert.match(pagina, /import \{[\s\S]*?PublicarLoadingShell,[\s\S]*?PublicarPageShell,[\s\S]*?\} from "\.\/components\/PublicarPageShell";/);
+  assert.match(pagina, /return <PublicarLoadingShell isDesktop=\{isDesktop\} pageThemeStyle=\{pageThemeStyle\} \/>;/);
+  assert.match(pagina, /<PublicarPageShell[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?novaObra=\{t\("novaObra"\)\}[\s\S]*?voltarHome=\{t\("voltarHome"\)\}/);
+  assert.doesNotMatch(pagina, /<PublicarPageHeader/);
+
+  assert.match(shell, /export function PublicarLoadingShell\(/);
+  assert.match(shell, /<style>\{`\$\{historietasThemeCss\}\$\{publicarPageCss\}`\}<\/style>/);
+  assert.match(shell, /isDesktop && <div style=\{desktopTopWaterFadeStyle\} aria-hidden="true" \/>/);
+  assert.match(shell, /!isDesktop && <div style=\{mobileTopWaterFadeStyle\} aria-hidden="true" \/>/);
+  assert.match(shell, /export function PublicarPageShell\(/);
+  assert.match(shell, /<section style=\{isDesktop \? desktopContainerStyle : containerStyle\}>/);
+  assert.match(shell, /<PublicarPageHeader[\s\S]*?voltarHome=\{voltarHome\}[\s\S]*?novaObra=\{novaObra\}/);
+  assert.doesNotMatch(shell, /supabase|localStorage|useEffect|useState|window\.|document\./);
 });
 
 test("componentes visuais de Publicar permanecem sem runtime de dados", () => {

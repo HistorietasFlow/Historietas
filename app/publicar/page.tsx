@@ -74,8 +74,10 @@ import {
 import { registrarDiarioPublicacao } from "./lib/publicar-diary-activity";
 import { criarSlugUnicoSupabase } from "./lib/publicar-slug-supabase-loader";
 import { carregarNomePerfilPublicar } from "./lib/publicar-profile-loader";
-import { criarDecoracaoPaginaStyle } from "./lib/publicar-page-decoration-style";
-import { PublicarPageHeader } from "./components/PublicarPageHeader";
+import {
+  PublicarLoadingShell,
+  PublicarPageShell,
+} from "./components/PublicarPageShell";
 import { PublicarWorkPreview } from "./components/PublicarWorkPreview";
 import { PublicarCoverUpload } from "./components/PublicarCoverUpload";
 import { PublicarContentFileUpload } from "./components/PublicarContentFileUpload";
@@ -85,14 +87,13 @@ import { PublicarBasicFields } from "./components/PublicarBasicFields";
 import { PublicarFormatGenreFields } from "./components/PublicarFormatGenreFields";
 import { PublicarTagClassificationFields } from "./components/PublicarTagClassificationFields";
 import {
-  desktopContainerStyle,
+  pageStyle,
+  safeTextStyle,
   desktopTopWaterFadeStyle,
   mobileTopWaterFadeStyle,
   pageDecorationLayerStyle,
-  pageStyle,
-  safeTextStyle,
-  containerStyle,
 } from "./lib/publicar-layout-styles";
+import { criarDecoracaoPaginaStyle } from "./lib/publicar-page-decoration-style";
 import {
   desktopFormPanelStyle,
   desktopFullWidthErrorBoxStyle,
@@ -1302,14 +1303,7 @@ export default function PublicarPage() {
   }
 
   if (verificandoAutenticacao) {
-    return (
-      <main style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${publicarPageCss}`}</style>
-
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-      </main>
-    );
+    return <PublicarLoadingShell isDesktop={isDesktop} pageThemeStyle={pageThemeStyle} />;
   }
 
   return (
@@ -1327,13 +1321,11 @@ export default function PublicarPage() {
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
-      <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <PublicarPageHeader
-          isDesktop={isDesktop}
-          voltarHome={t("voltarHome")}
-          novaObra={t("novaObra")}
-        />
-
+      <PublicarPageShell
+        isDesktop={isDesktop}
+        novaObra={t("novaObra")}
+        voltarHome={t("voltarHome")}
+      >
         <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
           <form onSubmit={salvarObra} style={isDesktop ? desktopFormPanelStyle : formPanelStyle}>
             {erro && (
@@ -1466,7 +1458,7 @@ export default function PublicarPage() {
             titulo={titulo}
           />
         </section>
-      </section>
+      </PublicarPageShell>
     </main>
   );
 }

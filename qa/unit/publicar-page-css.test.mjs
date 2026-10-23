@@ -10,6 +10,10 @@ const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
   "utf8",
 );
+const shell = readFileSync(
+  new URL("../../app/publicar/components/PublicarPageShell.tsx", import.meta.url),
+  "utf8",
+);
 const storage = readFileSync(
   new URL("../../app/publicar/lib/publicar-storage-operations.ts", import.meta.url),
   "utf8",
@@ -32,12 +36,19 @@ test("Publicar mantem os consumidores e as fronteiras fora do CSS extraido", () 
   );
   assert.doesNotMatch(pagina, /const publicarPageCss = `/);
 
-  const consumidores = pagina.match(
+  const consumidoresPagina = pagina.match(
     /<style>\{`\$\{historietasThemeCss\}\$\{publicarPageCss\}`\}<\/style>/g,
   );
-  assert.equal(consumidores?.length, 2);
+  const consumidoresShell = shell.match(
+    /<style>\{`\$\{historietasThemeCss\}\$\{publicarPageCss\}`\}<\/style>/g,
+  );
+  assert.equal((consumidoresPagina?.length || 0) + (consumidoresShell?.length || 0), 2);
   assert.doesNotMatch(
     pagina,
+    /\$\{publicarPageCss\}\$\{historietasThemeCss\}/,
+  );
+  assert.doesNotMatch(
+    shell,
     /\$\{publicarPageCss\}\$\{historietasThemeCss\}/,
   );
 
