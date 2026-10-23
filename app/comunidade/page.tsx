@@ -28,6 +28,7 @@ import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-stat
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
 import { comentarPostComunidade } from "./components/community-comment-publication-action";
 import { alternarCurtidaComentarioComunidade } from "./components/community-comment-like-action";
+import { removerComentarioComunidade } from "./components/community-comment-removal-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
@@ -39,10 +40,6 @@ import { temFiltrosAtivosComunidade } from "./components/community-active-filter
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { obterEstadoApresentacaoPostComunidade } from "./components/community-post-presentation-state";
 import { criarAcoesPostComunidade } from "./components/community-post-action-factory";
-import {
-  removerComentarioPostComunidade,
-  removerComentariosPostComunidade,
-} from "./components/community-comment-state-updaters";
 import {
   removerPostDoEstadoComunidade,
   removerPostSalvoDoEstadoComunidade,
@@ -56,9 +53,6 @@ import {
 } from "./components/community-post-metadata-state-updaters";
 import { atualizarVisibilidadePostSupabaseComunidade } from "./components/community-post-visibility-update";
 import { atualizarFixacaoPostSupabaseComunidade } from "./components/community-post-pinning-update";
-import { prepararRemocaoComentarioComunidade } from "./components/community-comment-removal-preparation";
-import { consultarComentarioParaRemocaoComunidade } from "./components/community-comment-removal-query";
-import { removerComentarioSupabaseComunidade } from "./components/community-comment-removal-delete";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
@@ -93,7 +87,6 @@ import { removerReviewComunidadeDoDiario } from "./components/community-diary-re
 import { registrarReviewComunidadeNoDiario } from "./components/community-diary-review-registrar";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
-import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { ComentariosSheet } from "./components/community-comments-sheet";
 import { fecharComentarios } from "./components/community-comments-closer";
 import { abrirComentarios } from "./components/community-comments-opener";
@@ -618,128 +611,25 @@ export default function ComunidadePage() {
     });
   }
 
-  async function removerComentario(postId: string, comentarioId: string) {
-    const chaveAcao = `remover-comentario:${comentarioId}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    setErro("");
-
-    try {
-      if (!exigirLogin() || !usuario) {
-        return;
-      }
-
-      const usuarioAutenticado = await obterUsuarioAutenticadoComunidadeAtual();
-      const usuarioAutenticadoId = usuarioAutenticado?.id?.trim() || "";
-      const usuarioEstadoId = usuario.id.trim();
-
-      if (
-        !usuarioAutenticadoId ||
-        usuarioAutenticadoId !== usuarioEstadoId
-      ) {
-        setUsuario(null);
-        setUsuarioEhAdmin(false);
-        setPostMenuAbertoId(null);
-        setErro(
-          "Sua conta mudou. Aguarde a Comunidade atualizar antes de tentar novamente."
-        );
-        return;
-      }
-
-      const resultadoPreparacaoRemocaoComentario =
-        prepararRemocaoComentarioComunidade(
-          posts,
-          postId,
-          comentarioId,
-          usuarioAutenticadoId
-        );
-
-      if (!resultadoPreparacaoRemocaoComentario.valido) {
-        setErro(resultadoPreparacaoRemocaoComentario.erro);
-        return;
-      }
-
-      const { comentariosDoPost } = resultadoPreparacaoRemocaoComentario;
-
-      const resultadoConsultaComentario =
-        await consultarComentarioParaRemocaoComunidade(comentarioId);
-
-      if (!resultadoConsultaComentario.sucesso) {
-        setErro(
-          formatarErroSupabase(
-            "Erro ao conferir comentário",
-            resultadoConsultaComentario.erro
-          )
-        );
-        return;
-      }
-
-      const { comentarioBanco } = resultadoConsultaComentario;
-
-      if (!comentarioBanco) {
-        setPosts((postsAtuais) =>
-          removerComentarioPostComunidade(postsAtuais, postId, comentarioId)
-        );
-        setErro("Este comentário já não existe.");
-        return;
-      }
-
-      if (comentarioBanco.autor_id !== usuarioAutenticadoId) {
-        setErro("Você só pode remover seus próprios comentários.");
-        return;
-      }
-
-      if (
-        !window.confirm(
-          traduzirTextoComunidade("Remover este comentário?", language)
-        )
-      ) {
-        return;
-      }
-
-      const idsParaRemover = obterIdsComentarioComRespostasComunidade(
-        comentariosDoPost,
-        comentarioId
-      );
-
-      const resultadoRemocaoComentario =
-        await removerComentarioSupabaseComunidade(
-          comentarioId,
-          usuarioAutenticadoId
-        );
-
-      if (!resultadoRemocaoComentario.sucesso) {
-        setErro(
-          formatarErroSupabase(
-            "Erro ao remover comentário",
-            resultadoRemocaoComentario.erro
-          )
-        );
-        return;
-      }
-
-      const { comentariosRemovidos } = resultadoRemocaoComentario;
-
-      if (!Array.isArray(comentariosRemovidos) || comentariosRemovidos.length === 0) {
-        setErro(
-          "O comentário não foi removido. A conta atual não possui permissão para essa ação."
-        );
-        await carregarPostsComunidadeDaPagina(false, 0, obraRelacionadaFiltro);
-        return;
-      }
-
-      setPosts((postsAtuais) =>
-        removerComentariosPostComunidade(postsAtuais, postId, idsParaRemover)
-      );
-
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Comentário removido.");
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-    }
-  }
+  const removerComentario = (postId: string, comentarioId: string) =>
+    removerComentarioComunidade({
+      postId,
+      comentarioId,
+      acoesComunidadeRef,
+      setErro,
+      exigirLogin,
+      usuario,
+      setUsuario,
+      setUsuarioEhAdmin,
+      setPostMenuAbertoId,
+      posts,
+      setPosts,
+      language,
+      setFeedbackAcao,
+      feedbackTimerRef,
+      carregarPostsComunidadeDaPagina,
+      obraRelacionadaFiltro,
+    });
 
   const alternarCurtidaComentario = (postId: string, comentarioId: string) =>
     alternarCurtidaComentarioComunidade({

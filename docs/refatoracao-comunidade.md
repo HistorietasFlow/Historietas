@@ -1349,3 +1349,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de curtir/descurtir comentário foi isolada em `community-comment-like-action.ts`.
 - Lock, guards, sincronização Supabase, notificação de curtida, estado local, feedback, recarregamento do feed e cleanup foram preservados sem alteração intencional de comportamento.
+
+## Registro da Fase 13 — Comunidade
+
+- A ação de remoção de comentário foi isolada em `community-comment-removal-action.ts`.
+- Lock, confirmação de identidade, consulta/autoria, confirmação traduzida, remoção de respostas descendentes, Supabase, fallback de permissão, estado local, feedback e cleanup foram preservados sem alteração intencional de comportamento.
