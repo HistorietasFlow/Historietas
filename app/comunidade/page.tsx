@@ -17,6 +17,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import { useComunidadeDesktopMode } from "./hooks/use-comunidade-desktop-mode";
 import { useComunidadeOverlayBodyLock } from "./hooks/use-comunidade-overlay-body-lock";
 import { useComunidadeUserSearchSync } from "./hooks/use-comunidade-user-search-sync";
+import { useComunidadeInitialUrlNavigation } from "./hooks/use-comunidade-initial-url-navigation";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
@@ -90,13 +91,9 @@ import { obterPostComentariosAbertoComunidade } from "./components/community-ope
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
-import { obterTipoPublicacaoPorParametro } from "./components/community-publication-type-parameter";
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
-import { obterGrupoPublicacaoObraPorParametro } from "./components/community-publication-group-parameter";
 import {
-  obterParametroBuscaComunidade,
   obterParametroObraComunidade,
-  obterParametroPostComunidade,
 } from "./components/community-url-parameters";
 import { obterPrimeiraSugestaoObraSupabaseComunidade } from "./components/community-related-work-search-result";
 import { prepararSugestoesObrasRelacionadasComunidade } from "./components/community-related-work-suggestions-preparation";
@@ -253,7 +250,6 @@ export default function ComunidadePage() {
   const reviewsDiarioSincronizadasRef = useRef<Set<string>>(new Set<string>());
   const usuarioReviewsDiarioRef = useRef("");
   const acoesComunidadeRef = useRef<Set<string>>(new Set<string>());
-  const parametrosComunidadeAplicadosRef = useRef(false);
   const comentarioUrlAplicadoRef = useRef(false);
   const [composerAberto, setComposerAberto] = useState(false);
   const [menuAcoesRapidasComunidadeAberto, setMenuAcoesRapidasComunidadeAberto] =
@@ -673,79 +669,20 @@ export default function ComunidadePage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (parametrosComunidadeAplicadosRef.current) {
-      return;
-    }
-
-    parametrosComunidadeAplicadosRef.current = true;
-
-    const parametrosUrl = new URLSearchParams(window.location.search);
-    const buscaUrl = obterParametroBuscaComunidade(parametrosUrl);
-    const obraUrl = obterParametroObraComunidade(parametrosUrl);
-    const tipoUrl = obterTipoPublicacaoPorParametro(
-      parametrosUrl.get("tipo") || ""
-    );
-    const grupoObraUrl = obterGrupoPublicacaoObraPorParametro(
-      parametrosUrl.get("grupo") || ""
-    );
-
-    if (!buscaUrl && !obraUrl && !tipoUrl && !grupoObraUrl) {
-      return;
-    }
-
-    const aplicarParametrosTimer = window.setTimeout(() => {
-      if (buscaUrl) {
-        setTermoBusca(buscaUrl.slice(0, 90));
-      }
-
-      setObraRelacionadaFiltro(obraUrl);
-      setGrupoPublicacaoObra(tipoUrl ? "" : grupoObraUrl);
-
-      if (tipoUrl) {
-        setTipoPublicacaoAtiva(tipoUrl);
-        setAbaFeedAtiva(
-          tipoUrl === "Teoria"
-            ? "Teorias"
-            : tipoUrl === "Review"
-              ? "Reviews"
-              : "Recentes"
-        );
-        setMenuAcoesRapidasComunidadeAberto(true);
-      } else if (grupoObraUrl) {
-        setTipoPublicacaoAtiva("Todos");
-      }
-
-      setMostrarApenasSalvos(false);
-      setOrdenacaoAtiva("Recentes");
-    }, 0);
-
-    return () => {
-      window.clearTimeout(aplicarParametrosTimer);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (comentarioUrlAplicadoRef.current || comentariosPostId || posts.length === 0) {
-      return;
-    }
-
-    const postIdUrl = obterParametroPostComunidade(
-      new URLSearchParams(window.location.search)
-    );
-
-    if (postIdUrl && posts.some((post) => post.id === postIdUrl)) {
-      comentarioUrlAplicadoRef.current = true;
-
-      const abrirComentariosTimer = window.setTimeout(() => {
-        setComentariosPostId(postIdUrl);
-      }, 0);
-
-      return () => {
-        window.clearTimeout(abrirComentariosTimer);
-      };
-    }
-  }, [comentariosPostId, posts]);
+  useComunidadeInitialUrlNavigation({
+    comentarioUrlAplicadoRef,
+    comentariosPostId,
+    posts,
+    setTermoBusca,
+    setObraRelacionadaFiltro,
+    setGrupoPublicacaoObra,
+    setTipoPublicacaoAtiva,
+    setAbaFeedAtiva,
+    setMenuAcoesRapidasComunidadeAberto,
+    setMostrarApenasSalvos,
+    setOrdenacaoAtiva,
+    setComentariosPostId,
+  });
 
   const termoBuscaNormalizado = useMemo(
     () => normalizarTermoBuscaComunidade(termoBuscaAdiado),
