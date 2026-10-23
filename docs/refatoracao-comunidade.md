@@ -1244,3 +1244,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os estados e callbacks das opções de publicação e do conteúdo por arquivo foram isolados em hooks dedicados, preservando limites, mensagens, `FileReader`, refs, limpeza e validação de classificação 18+.
 - JSX, validação do formulário, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.
+
+## Registro da Fase 20 — Publicar
+
+- Os campos básicos controlados e as tags foram isolados em `use-publicar-basic-fields.ts` e `use-publicar-tags.ts`, preservando estados, normalização, limites, deduplicação, callbacks e limpeza de erro.
+- Validação do formulário, JSX, autenticação, persistência, Supabase, RLS e publicação permaneceram na página, sem alteração intencional de comportamento.

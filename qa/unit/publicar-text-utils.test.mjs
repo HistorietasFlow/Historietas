@@ -37,6 +37,10 @@ const hookOpcoesPublicacao = readFileSync(
   ),
   "utf8",
 );
+const hookTags = readFileSync(
+  new URL("../../app/publicar/hooks/use-publicar-tags.ts", import.meta.url),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -95,13 +99,12 @@ test("nomeArquivoParaTitulo preserva extensoes, separadores e espacos", () => {
 test("Publicar delega os helpers puros de texto e arquivos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?calcularMinutosLeitura,[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?contarPalavras,[\s\S]*?limparTextoPersonalizado,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/publicar-text-utils";/,
+    /import \{[\s\S]*?calcularMinutosLeitura,[\s\S]*?campoValido,[\s\S]*?contarCaracteresValidos,[\s\S]*?contarPalavras,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/publicar-text-utils";/,
   );
 
   const consumidoresEsperados = {
     contarCaracteresValidos: 3,
-    limparTextoPersonalizado: 2,
-    textoPersonalizadoValido: 6,
+    textoPersonalizadoValido: 4,
     campoValido: 5,
     contarPalavras: 3,
     calcularMinutosLeitura: 2,
@@ -134,6 +137,14 @@ test("Publicar delega os helpers puros de texto e arquivos", () => {
     (hookOpcoesPublicacao.match(/\blimparTextoPersonalizado\b/g) || []).length,
     3,
   );
+  assert.match(
+    hookTags,
+    /import \{ limparTextoPersonalizado, textoPersonalizadoValido \} from "\.\.\/lib\/publicar-text-utils";/,
+  );
+  assert.doesNotMatch(hookTags, /function limparTextoPersonalizado\(/);
+  assert.doesNotMatch(hookTags, /function textoPersonalizadoValido\(/);
+  assert.equal((hookTags.match(/\blimparTextoPersonalizado\b/g) || []).length, 2);
+  assert.equal((hookTags.match(/\btextoPersonalizadoValido\b/g) || []).length, 3);
 
   assert.match(pagina, /usePublicarContentFileUpload/);
   assert.doesNotMatch(pagina, /from "\.\/lib\/publicar-file-utils";/);

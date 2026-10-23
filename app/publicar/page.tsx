@@ -6,14 +6,15 @@ import { supabase } from "../../lib/supabase/client";
 import { usePublicarDesktopMode } from "./hooks/use-publicar-desktop-mode";
 import { usePublicarInitialAccess } from "./hooks/use-publicar-initial-access";
 import { usePublicarCoverUpload } from "./hooks/use-publicar-cover-upload";
+import { usePublicarBasicFields } from "./hooks/use-publicar-basic-fields";
 import { usePublicarContentFileUpload } from "./hooks/use-publicar-content-file-upload";
 import { usePublicarPublicationOptions } from "./hooks/use-publicar-publication-options";
+import { usePublicarTags } from "./hooks/use-publicar-tags";
 import {
   calcularMinutosLeitura,
   campoValido,
   contarCaracteresValidos,
   contarPalavras,
-  limparTextoPersonalizado,
   textoPersonalizadoValido,
 } from "./lib/publicar-text-utils";
 import {
@@ -35,8 +36,6 @@ import { obterNomeMetadataPublicar } from "./lib/publicar-auth-utils";
 import {
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
-  LIMITE_TAGS_OBRA,
-  OUTRA_TAG_VALUE,
   OUTRO_FORMATO_VALUE,
   OUTRO_GENERO_VALUE,
   STORAGE_KEY,
@@ -434,14 +433,25 @@ function traduzirMensagemPublicar(
 export default function PublicarPage() {
   const router = useRouter();
 
-  const [titulo, setTitulo] = useState("");
-  const [autor, setAutor] = useState("");
-  const [sinopse, setSinopse] = useState("");
-  const [tags, setTags] = useState("");
-  const [tagPersonalizada, setTagPersonalizada] = useState("");
-  const [usarTagPersonalizada, setUsarTagPersonalizada] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
+  const {
+    atualizarAutor,
+    atualizarSinopse,
+    atualizarTitulo,
+    autor,
+    setAutor,
+    sinopse,
+    titulo,
+  } = usePublicarBasicFields({ setErro });
+  const {
+    atualizarTagPersonalizada,
+    atualizarTagSelecionada,
+    tagPersonalizada,
+    tags,
+    tagsDaObra,
+    usarTagPersonalizada,
+  } = usePublicarTags({ setErro });
   const {
     alternarAvisoConteudo18,
     atualizarClassificacaoIndicativa,
@@ -494,14 +504,6 @@ export default function PublicarPage() {
   });
 
   const jaSalvouRef = useRef(false);
-
-  const tagsDaObra = useMemo(() => {
-    return tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .slice(0, LIMITE_TAGS_OBRA);
-  }, [tags]);
 
   const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;
   const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;
@@ -655,88 +657,6 @@ export default function PublicarPage() {
     }
 
     return "";
-  }
-
-  function atualizarSinopse(valor: string) {
-    setSinopse(valor);
-    setErro("");
-  }
-
-  function atualizarTitulo(valor: string) {
-    setTitulo(valor);
-    setErro("");
-  }
-
-  function atualizarAutor(valor: string) {
-    setAutor(valor);
-    setErro("");
-  }
-
-  function tagEstaSelecionada(tag: string) {
-    return tagsDaObra.some((tagAtual) => {
-      return normalizarTexto(tagAtual) === normalizarTexto(tag);
-    });
-  }
-
-  function atualizarTagPersonalizada(valor: string) {
-    const textoLimpo = limparTextoPersonalizado(
-      valor,
-      LIMITE_CARACTERES_TAG_PERSONALIZADA
-    );
-
-    setTagPersonalizada(textoLimpo);
-    setTags(
-      textoPersonalizadoValido(
-        textoLimpo,
-        2,
-        LIMITE_CARACTERES_TAG_PERSONALIZADA
-      )
-        ? textoLimpo.trim().replace(/\s+/g, " ")
-        : ""
-    );
-    setErro("");
-  }
-
-  function adicionarTagSelecionada(tag: string) {
-    if (!tag) {
-      return;
-    }
-
-    if (tag === OUTRA_TAG_VALUE) {
-      setUsarTagPersonalizada(true);
-      setTags(
-        textoPersonalizadoValido(
-          tagPersonalizada,
-          2,
-          LIMITE_CARACTERES_TAG_PERSONALIZADA
-        )
-          ? tagPersonalizada.trim().replace(/\s+/g, " ")
-          : ""
-      );
-      setErro("");
-      return;
-    }
-
-    if (tagEstaSelecionada(tag)) {
-      return;
-    }
-
-    setUsarTagPersonalizada(false);
-    setTagPersonalizada("");
-    setTags(tag);
-    setErro("");
-  }
-
-  function atualizarTagSelecionada(tag: string) {
-    if (!tag) {
-      setUsarTagPersonalizada(false);
-      setTagPersonalizada("");
-      setTags("");
-      setErro("");
-      return;
-    }
-
-    adicionarTagSelecionada(tag);
   }
 
   async function salvarObra(event: FormEvent<HTMLFormElement>) {
