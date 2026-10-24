@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const dadosStorage = new Map();
 
 globalThis.__editarObraBackupChaves = (obra) => [
@@ -234,7 +241,7 @@ test("backup de Editar Obra restaura o primeiro arquivo valido sem substituir ar
 test("Editar Obra delega somente o backup local de arquivos ao modulo extraido", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?restaurarArquivoObraComBackup,[\s\S]*?salvarArquivoObraNoBackup,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/lib\/editar-obra-file-backup-storage";/,
+    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?salvarArquivoObraNoBackup,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/lib\/editar-obra-file-backup-storage";/,
   );
   assert.doesNotMatch(pageSource, /const FILE_BACKUP_STORAGE_KEY =/);
   for (const helper of [
@@ -245,10 +252,11 @@ test("Editar Obra delega somente o backup local de arquivos ao modulo extraido",
   ]) {
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
-  assert.match(pageSource, /const backupArquivosObras = carregarBackupArquivosObras\(usuarioId\);/);
-  assert.match(pageSource, /restaurarArquivoObraComBackup\(obra, backupArquivosObras\)/);
+  assert.doesNotMatch(pageSource, /restaurarArquivoObraComBackup\(obra, backupArquivosObras\)/);
   assert.match(pageSource, /salvarArquivoObraNoBackup\(/);
-  assert.match(pageSource, /sincronizarBackupArquivosObras\(obrasDoUsuarioComDono, usuarioId\);/);
+  assert.match(localWorkStorageSource, /const backupArquivosObras = carregarBackupArquivosObras\(usuarioId\);/);
+  assert.match(localWorkStorageSource, /restaurarArquivoObraComBackup\(obra, backupArquivosObras\)/);
+  assert.match(localWorkStorageSource, /sincronizarBackupArquivosObras\(obrasDoUsuarioComDono, usuarioId\);/);
   assert.match(source, /export const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";/);
   assert.match(source, /obterChavesBackupArquivoEdicaoObra\(obra\)\.forEach/);
   assert.match(source, /normalizarArquivoObra\(arquivo\)/);
