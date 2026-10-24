@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const supabaseWorkNormalizerSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-supabase-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -138,7 +145,11 @@ test("arquivo remoto preserva guards, tamanho e categoria", () => {
 test("Editar Obra delega somente a conversão de arquivos Supabase", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?criarArquivoObraDeSupabase,[\s\S]*?criarArquivoRemotoEdicaoObra,[\s\S]*?\} from "\.\/lib\/editar-obra-supabase-file-converter";/,
+    /import \{ criarArquivoRemotoEdicaoObra \} from "\.\/lib\/editar-obra-supabase-file-converter";/,
+  );
+  assert.match(
+    supabaseWorkNormalizerSource,
+    /import \{ criarArquivoObraDeSupabase \} from "\.\/editar-obra-supabase-file-converter";/,
   );
   for (const helper of [
     "normalizarCategoriaArquivoSupabase",
@@ -147,6 +158,7 @@ test("Editar Obra delega somente a conversão de arquivos Supabase", () => {
   ]) {
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
+  assert.doesNotMatch(pageSource, /import \{ criarArquivoObraDeSupabase \}/);
   assert.match(source, /obra\.arquivo_url\?\.trim\(\) \|\| arquivoLocal\?\.conteudo \|\| ""/);
   assert.match(source, /obra\.arquivo_nome\?\.trim\(\) \|\| arquivoLocal\?\.nome \|\| ""/);
   assert.doesNotMatch(source, /supabase|useState|useEffect|window\.|document\./);
