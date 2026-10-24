@@ -75,6 +75,10 @@ import {
 } from "./lib/editar-obra-navigation-utils";
 import { prepararValoresFormularioEdicaoObra } from "./lib/editar-obra-form-preparation";
 import { calcularValoresDerivadosFormularioEdicaoObra } from "./lib/editar-obra-derived-form-values";
+import {
+  obterTagsFinaisEdicaoObra,
+  prepararTagsEdicaoObra,
+} from "./lib/editar-obra-tags-list-utils";
 
 type CapituloLocal = {
   id: string;
@@ -919,11 +923,7 @@ export default function EditarObraPage() {
   }, [obras, obraId]);
 
   const tagsTratadas = useMemo(() => {
-    return tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .slice(0, LIMITE_TAGS_OBRA);
+    return prepararTagsEdicaoObra(tags, LIMITE_TAGS_OBRA);
   }, [tags]);
 
   const {
@@ -1188,7 +1188,7 @@ export default function EditarObraPage() {
       classificacaoFinal,
     );
     const sinopseFinal = sinopse.trim();
-    const tagsFinais = tagsTratadas.length > 0 ? tagsTratadas : ["sem tags"];
+    const tagsFinais = obterTagsFinaisEdicaoObra(tagsTratadas);
     const agora = new Date().toISOString();
 
     try {
