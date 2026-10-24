@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { criarSlugBase, idObraSupabaseValido } from "../../lib/utils";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { PainelAutorLanguageBridge } from "./components/painel-autor-language-bridge";
@@ -156,10 +156,7 @@ import {
   caminhoStoragePertenceAoUsuarioPainel,
   obterCaminhoStoragePainel,
 } from "./lib/painel-autor-file-storage-path-utils";
-import {
-  formatarGeneroPainelAutor,
-  obterTimestamp,
-} from "./lib/painel-autor-format-utils";
+import { obterTimestamp } from "./lib/painel-autor-format-utils";
 import {
   criarHrefLeituraCapituloPainel,
   criarLoginHrefPainelAutor,
@@ -179,7 +176,6 @@ import {
   salvarListaIdsUsuarioPainel,
 } from "./lib/painel-autor-storage-utils";
 import {
-  colecaoTemObraPainel,
   filtrarListaPorObrasDoUsuario,
   removerObraDaColecaoPainel,
 } from "./lib/painel-autor-collection-utils";
@@ -187,6 +183,7 @@ import {
   obterObrasComMetricasPainel,
   type ObraComMetricasPainel,
 } from "./lib/painel-autor-work-metrics";
+import { obterObrasFiltradasPainel } from "./lib/painel-autor-work-filtering";
 import {
   calcularProgressoLeitura,
   obterCapitulosPublicadosPainel,
@@ -1192,73 +1189,25 @@ export default function PainelAutorPage() {
     [obras]
   );
 
-  const obrasFiltradas = useMemo<ObraComMetricas[]>(() => {
-    const termoBusca = normalizarTexto(busca);
-
-    return obrasComMetricas
-      .filter((obra) => {
-        const passaBusca = termoBusca
-          ? normalizarTexto(
-              [
-                obra.titulo,
-                obra.autor,
-                obra.genero,
-                formatarGeneroPainelAutor(obra.genero),
-                obra.formato,
-                obra.classificacaoIndicativa,
-                obra.sinopse,
-                obra.tags.join(" "),
-                obra.capaNome,
-                obra.arquivoObra?.nome || "",
-                obra.capitulos.map((capitulo) => capitulo.titulo).join(" "),
-              ].join(" ")
-            ).includes(termoBusca)
-          : true;
-
-        const passaFiltro =
-          filtro === "todas"
-            ? true
-            : filtro === "publicadas"
-            ? obraPublicadaComConteudoPainel(obra)
-            : filtro === "rascunhos"
-            ? obraRascunhoOuSemConteudoPainel(obra)
-            : filtro === "sem-capitulos"
-            ? obra.capitulos.length === 0
-            : filtro === "favoritas"
-            ? colecaoTemObraPainel(obrasFavoritas, obra)
-            : filtro === "concluidas"
-            ? colecaoTemObraPainel(obrasConcluidas, obra)
-            : obra.progressoLeitura > 0 && obra.progressoLeitura < 100;
-
-        return passaBusca && passaFiltro;
-      })
-      .sort((obraA, obraB) => {
-        if (ordenacao === "recentes") {
-          return obterTimestamp(obraB.criadaEm) - obterTimestamp(obraA.criadaEm);
-        }
-
-        if (ordenacao === "titulo") {
-          return obraA.titulo.localeCompare(obraB.titulo);
-        }
-
-        if (ordenacao === "capitulos") {
-          return obraB.capitulos.length - obraA.capitulos.length;
-        }
-
-        if (ordenacao === "progresso") {
-          return obraB.progressoLeitura - obraA.progressoLeitura;
-        }
-
-        return obraB.pontuacao - obraA.pontuacao;
-      });
-  }, [
-    obrasComMetricas,
-    busca,
-    filtro,
-    ordenacao,
-    obrasFavoritas,
-    obrasConcluidas,
-  ]);
+  const obrasFiltradas = useMemo<ObraComMetricas[]>(
+    () =>
+      obterObrasFiltradasPainel({
+        obrasComMetricas,
+        busca,
+        filtro,
+        ordenacao,
+        obrasFavoritas,
+        obrasConcluidas,
+      }),
+    [
+      obrasComMetricas,
+      busca,
+      filtro,
+      ordenacao,
+      obrasFavoritas,
+      obrasConcluidas,
+    ]
+  );
 
   const obrasPublicadas = obrasComMetricas.filter((obra) =>
     obraPublicadaComConteudoPainel(obra)

@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workFilteringSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-work-filtering.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -82,20 +89,26 @@ test("filtragem preserva ordem, valores e trim dos identificadores", () => {
 test("Painel do Autor delega somente helpers puros de colecao", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?colecaoTemObraPainel,[\s\S]*?filtrarListaPorObrasDoUsuario,[\s\S]*?removerObraDaColecaoPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-collection-utils";/,
+    /import \{[\s\S]*?filtrarListaPorObrasDoUsuario,[\s\S]*?removerObraDaColecaoPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-collection-utils";/,
   );
   assert.doesNotMatch(pagina, /function obterIdentificadoresObraPainel\(/);
   assert.doesNotMatch(pagina, /function colecaoTemObraPainel\(/);
   assert.doesNotMatch(pagina, /function removerObraDaColecaoPainel\(/);
   assert.doesNotMatch(pagina, /function filtrarListaPorObrasDoUsuario\(/);
   assert.equal((pagina.match(/\bobterIdentificadoresObraPainel\b/g) || []).length, 0);
-  assert.equal((pagina.match(/\bcolecaoTemObraPainel\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bcolecaoTemObraPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 4);
   assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 5);
   assert.match(
     utilsSource,
     /export function filtrarListaPorObrasDoUsuario[\s\S]*?obterIdentificadoresObraPainel\(obra\)\.includes\(idLimpo\)/,
   );
+  assert.match(
+    workFilteringSource,
+    /import \{ colecaoTemObraPainel \} from "\.\/painel-autor-collection-utils";/,
+  );
+  assert.match(workFilteringSource, /colecaoTemObraPainel\(obrasFavoritas, obra\)/);
+  assert.match(workFilteringSource, /colecaoTemObraPainel\(obrasConcluidas, obra\)/);
   assert.match(pagina, /function limparReferenciasLocaisObraExcluidaPainel\(/);
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
