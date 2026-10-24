@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const converterSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-work-converter.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const metricasObrasSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-work-metrics.ts",
@@ -113,7 +120,11 @@ test("preserva fallbacks do capitulo para continuar", () => {
 test("Painel do Autor delega helpers puros de progresso às fronteiras corretas", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?obterCapitulosPublicadosPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-reading-progress-utils";/,
+    /import \{ obterCapitulosPublicadosPainel \} from "\.\/lib\/painel-autor-reading-progress-utils";/,
+  );
+  assert.match(
+    converterSource,
+    /import \{ calcularProgressoLeitura \} from "\.\/painel-autor-reading-progress-utils";/,
   );
   assert.match(
     metricasObrasSource,
@@ -127,8 +138,12 @@ test("Painel do Autor delega helpers puros de progresso às fronteiras corretas"
   assert.doesNotMatch(pagina, /function calcularProgressoLeitura\(/);
   assert.doesNotMatch(pagina, /function encontrarCapituloParaContinuar\(/);
   assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 2);
-  assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 0);
   assert.doesNotMatch(pagina, /\bencontrarCapituloParaContinuar\b/);
+  assert.match(
+    converterSource,
+    /progressoLeitura: calcularProgressoLeitura\(capitulosMesclados\)/,
+  );
   assert.match(
     pagina,
     /import \{ normalizarObraPainel \} from "\.\/lib\/painel-autor-work-normalizer";/,

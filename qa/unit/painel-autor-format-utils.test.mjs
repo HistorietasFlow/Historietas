@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const converterSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-work-converter.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workFilteringSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-work-filtering.ts",
@@ -48,15 +55,18 @@ test("obterTimestamp preserva data válida e fallback inválido", () => {
   assert.equal(obterTimestamp("invalida"), 0);
 });
 
-test("Painel do Autor delega somente os formatadores", () => {
+test("Painel do Autor delega os formatadores às fronteiras corretas", () => {
   assert.match(
-    pagina,
-    /import \{ obterTimestamp \} from "\.\/lib\/painel-autor-format-utils";/,
+    converterSource,
+    /import \{ obterTimestamp \} from "\.\/painel-autor-format-utils";/,
   );
   assert.doesNotMatch(pagina, /function formatarGeneroPainelAutor\(/);
   assert.doesNotMatch(pagina, /function obterTimestamp\(/);
   assert.equal((pagina.match(/\bformatarGeneroPainelAutor\b/g) || []).length, 0);
-  assert.equal((pagina.match(/\bobterTimestamp\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bobterTimestamp\b/g) || []).length, 0);
+  assert.equal((converterSource.match(/\bobterTimestamp\b/g) || []).length, 3);
+  assert.match(converterSource, /obterTimestamp\(lidoEm\)/);
+  assert.match(converterSource, /obterTimestamp\(ultimaLeituraEm\)/);
   assert.match(
     workFilteringSource,
     /import \{[\s\S]*?formatarGeneroPainelAutor,[\s\S]*?obterTimestamp,[\s\S]*?\} from "\.\/painel-autor-format-utils";/,
