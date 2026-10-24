@@ -4,6 +4,7 @@ import test from "node:test";
 import typescript from "typescript";
 
 await import("./painel-autor-supabase-work-converter.test.mjs");
+await import("./painel-autor-deleted-work-storage-cleanup.test.mjs");
 
 const utilsSource = readFileSync(
   new URL(
