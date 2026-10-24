@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const localCleanupSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-deleted-work-local-cleanup.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const hookResumo = readFileSync(
   new URL(
     "../../app/painel-autor/hooks/use-painel-autor-summary-preference.ts",
@@ -103,7 +110,7 @@ test("helpers de coleção preservam parâmetro padrão, JSON e normalização",
 test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?carregarListaIdsPainel,[\s\S]*?lerStorageUsuarioPainel,[\s\S]*?lerListaIdsStoragePainel,[\s\S]*?normalizarListaIds,[\s\S]*?salvarColecaoAposExcluirPainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?salvarListaIdsUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
+    /import \{[\s\S]*?carregarListaIdsPainel,[\s\S]*?lerStorageUsuarioPainel,[\s\S]*?normalizarListaIds,[\s\S]*?salvarColecaoAposExcluirPainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?salvarListaIdsUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
   );
   assert.doesNotMatch(pagina, /function normalizarListaIds\(/);
   assert.doesNotMatch(pagina, /function criarStorageKeyUsuarioPainel\(/);
@@ -113,6 +120,10 @@ test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.doesNotMatch(pagina, /function salvarListaIdsUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function lerListaIdsStoragePainel\(/);
   assert.doesNotMatch(pagina, /function salvarColecaoAposExcluirPainel\(/);
+  assert.match(
+    localCleanupSource,
+    /import \{[\s\S]*?lerListaIdsStoragePainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?\} from "\.\/painel-autor-storage-utils";/,
+  );
   assert.equal((pagina.match(/\bnormalizarListaIds\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bcriarStorageKeyUsuarioPainel\b/g) || []).length, 0);
   assert.match(

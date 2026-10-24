@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const localCleanupSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-deleted-work-local-cleanup.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const backupSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-file-backup-storage.ts",
@@ -254,7 +261,7 @@ test("backup local de arquivos ignora falha de persistência durante a sincroniz
 test("Painel do Autor delega somente a persistência local de backup de arquivos", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?FILE_BACKUP_STORAGE_KEY,[\s\S]*?carregarBackupArquivosObras,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/lib\/painel-autor-file-backup-storage";/,
+    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/lib\/painel-autor-file-backup-storage";/,
   );
   assert.doesNotMatch(pagina, /const FILE_BACKUP_STORAGE_KEY =/);
   assert.doesNotMatch(pagina, /type ArquivosObrasBackup =/);
@@ -262,6 +269,10 @@ test("Painel do Autor delega somente a persistência local de backup de arquivos
   assert.doesNotMatch(pagina, /function sincronizarBackupArquivosObras\(/);
   assert.match(pagina, /carregarBackupArquivosObras\(usuarioIdLogado\)/);
   assert.match(pagina, /sincronizarBackupArquivosObras\(obrasFinais, usuarioIdLogado\)/);
+  assert.match(
+    localCleanupSource,
+    /import \{[\s\S]*?FILE_BACKUP_STORAGE_KEY,[\s\S]*?carregarBackupArquivosObras,[\s\S]*?\} from "\.\/painel-autor-file-backup-storage";/,
+  );
   assert.match(backupSource, /export const FILE_BACKUP_STORAGE_KEY/);
   assert.match(backupSource, /export type ArquivosObrasBackup/);
   assert.match(backupSource, /Parameters<[\s\S]*?typeof obterChavesBackupArquivoPainel/);

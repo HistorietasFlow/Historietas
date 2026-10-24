@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const localCleanupSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-deleted-work-local-cleanup.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -72,15 +79,21 @@ test("obterChavesBackupArquivoPainel usa slug do título, remove vazios e dedupl
 });
 
 test("Painel do Autor delega somente as chaves de backup ao módulo extraído", () => {
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /import \{ obterChavesBackupArquivoPainel \} from "\.\/lib\/painel-autor-file-backup-key-utils";/,
   );
   assert.doesNotMatch(pagina, /function obterChavesBackupArquivoPainel\(/);
-  assert.equal(
-    (pagina.match(/\bobterChavesBackupArquivoPainel\b/g) || []).length,
-    2,
+  assert.match(
+    localCleanupSource,
+    /import \{ obterChavesBackupArquivoPainel \} from "\.\/painel-autor-file-backup-key-utils";/,
   );
+  assert.match(localCleanupSource, /obterChavesBackupArquivoPainel\(obra\)\.forEach/);
+  assert.match(
+    localCleanupSource,
+    /salvarJsonStorageUsuarioPainel\(FILE_BACKUP_STORAGE_KEY, userId, backupAtual\)/,
+  );
+  assert.match(localCleanupSource, /O backup antigo não pode impedir a exclusão da obra\./);
   assert.match(
     utilsSource,
     /import \{ criarSlugBase, normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/,

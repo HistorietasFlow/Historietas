@@ -21,9 +21,7 @@ import {
 } from "./lib/painel-autor-ownership-utils";
 import { carregarComentariosCapitulosUsuarioPainel } from "./lib/painel-autor-chapter-comments-loader";
 import { converterObraSupabaseParaLocalPainel } from "./lib/painel-autor-supabase-work-converter";
-import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
 import {
-  FILE_BACKUP_STORAGE_KEY,
   carregarBackupArquivosObras,
   sincronizarBackupArquivosObras,
 } from "./lib/painel-autor-file-backup-storage";
@@ -104,7 +102,6 @@ import {
 import {
   carregarListaIdsPainel,
   lerStorageUsuarioPainel,
-  lerListaIdsStoragePainel,
   normalizarListaIds,
   salvarColecaoAposExcluirPainel,
   salvarJsonStorageUsuarioPainel,
@@ -129,6 +126,7 @@ import {
   type ArquivoStoragePainel,
 } from "./lib/painel-autor-deleted-work-storage-cleanup";
 import { removerReferenciasSupabaseObraExcluidaPainel } from "./lib/painel-autor-deleted-work-supabase-cleanup";
+import { limparReferenciasLocaisObraExcluidaPainel } from "./lib/painel-autor-deleted-work-local-cleanup";
 import { carregarCapitulosPainelAutorSupabase } from "./lib/painel-autor-supabase-chapters-loader";
 import { carregarObrasPainelAutorSupabase } from "./lib/painel-autor-supabase-works-loader";
 import { prepararEstadoMetricasPainel } from "./lib/painel-autor-metrics-state";
@@ -193,43 +191,6 @@ const STORAGE_KEY = "historietas-obras";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
-function limparReferenciasLocaisObraExcluidaPainel(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo"> &
-    Partial<Pick<ObraLocal, "link">>,
-  userId: string
-) {
-  [FOLLOW_STORAGE_KEY, FAVORITES_STORAGE_KEY, COMPLETED_STORAGE_KEY].forEach(
-    (chave) => {
-      try {
-        const listaUsuario = removerObraDaColecaoPainel(
-          lerListaIdsStoragePainel(chave, userId),
-          obra
-        );
-
-        salvarJsonStorageUsuarioPainel(chave, userId, listaUsuario);
-      } catch {
-        // A limpeza local não pode impedir a exclusão da obra.
-      }
-    }
-  );
-
-  try {
-    const backupAtual = carregarBackupArquivosObras(userId);
-
-    obterChavesBackupArquivoPainel(obra).forEach((chave) => {
-      delete backupAtual[chave];
-    });
-
-    salvarJsonStorageUsuarioPainel(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupAtual
-    );
-  } catch {
-    // O backup antigo não pode impedir a exclusão da obra.
-  }
-}
 
 async function carregarPainelAutorSupabase(
   obrasLocais: ObraLocal[],
@@ -707,7 +668,13 @@ export default function PainelAutorPage() {
         obraExcluida
       );
 
-      limparReferenciasLocaisObraExcluidaPainel(obraExcluida, userId);
+      limparReferenciasLocaisObraExcluidaPainel(obraExcluida, userId, {
+        chavesColecoes: [
+          FOLLOW_STORAGE_KEY,
+          FAVORITES_STORAGE_KEY,
+          COMPLETED_STORAGE_KEY,
+        ],
+      });
       salvarJsonStorageUsuarioPainel(STORAGE_KEY, userId, novasObras);
       salvarColecaoAposExcluirPainel(
         FAVORITES_STORAGE_KEY,
