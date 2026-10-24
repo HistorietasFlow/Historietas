@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+import "./editar-obra-profile-loader.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-ownership-utils.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
