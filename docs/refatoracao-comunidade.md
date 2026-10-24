@@ -1419,3 +1419,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A persistência local do backup de arquivos foi isolada em `editar-obra-file-backup-storage.ts`, preservando a chave, normalização, aliases, sincronização, restauração e fallbacks por usuário.
 - Carregamento das obras, salvamento principal, Storage, Supabase e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 13 — Editar Obra
+
+- A normalização pura de capítulos foi isolada em `editar-obra-chapter-normalizer.ts`, preservando IDs, títulos, textos, flags, datas, publicação e fallbacks.
+- A normalização da obra, carregamento, Storage, Supabase, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
