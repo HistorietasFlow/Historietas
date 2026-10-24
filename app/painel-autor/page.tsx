@@ -149,7 +149,6 @@ import {
 } from "./lib/painel-autor-profile-utils";
 import {
   obraPublicadaComConteudoPainel,
-  obraRascunhoOuSemConteudoPainel,
   obterStatusPainelAutor,
 } from "./lib/painel-autor-work-status-utils";
 import {
@@ -184,6 +183,7 @@ import {
   type ObraComMetricasPainel,
 } from "./lib/painel-autor-work-metrics";
 import { obterObrasFiltradasPainel } from "./lib/painel-autor-work-filtering";
+import { obterResumoMetricasPainel } from "./lib/painel-autor-summary-metrics";
 import {
   calcularProgressoLeitura,
   obterCapitulosPublicadosPainel,
@@ -1209,34 +1209,15 @@ export default function PainelAutorPage() {
     ]
   );
 
-  const obrasPublicadas = obrasComMetricas.filter((obra) =>
-    obraPublicadaComConteudoPainel(obra)
-  );
-  const obrasRascunhos = obrasComMetricas.filter((obra) =>
-    obraRascunhoOuSemConteudoPainel(obra)
-  );
-
-  const totalCapitulos = obrasComMetricas.reduce(
-    (total, obra) => total + obra.capitulos.length,
-    0
-  );
-
-  const totalCurtidas = obrasComMetricas.reduce(
-    (total, obra) => total + obra.totalCurtidas,
-    0
-  );
-
-  const totalComentarios = obrasComMetricas.reduce(
-    (total, obra) => total + obra.totalComentarios,
-    0
-  );
-
-  const totalSalvos = obrasComMetricas.reduce(
-    (total, obra) => total + obra.totalSalvos,
-    0
-  );
-
-  const totalArquivos = obrasComMetricas.filter((obra) => obra.arquivoObra).length;
+  const {
+    obrasPublicadas,
+    obrasRascunhos,
+    totalCapitulos,
+    totalCurtidas,
+    totalComentarios,
+    totalSalvos,
+    totalArquivos,
+  } = obterResumoMetricasPainel(obrasComMetricas);
 
   const usuarioLogado = Boolean(usuarioIdLogado);
   function abrirArquivoObra(obra: ObraLocal) {

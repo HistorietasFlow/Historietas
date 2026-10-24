@@ -21,6 +21,13 @@ const metricasObrasSource = readFileSync(
   ),
   "utf8",
 );
+const resumoMetricasSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-summary-metrics.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -92,6 +99,31 @@ const metricasObrasJavascript = typescript.transpileModule(
 ).outputText;
 const { obterObrasComMetricasPainel } = await import(
   `data:text/javascript;base64,${Buffer.from(metricasObrasJavascript).toString("base64")}`,
+);
+
+globalThis.__painelAutorObraPublicada = (obra) =>
+  obra.publicado &&
+  (obra.capitulos.some((capitulo) => capitulo.publicado !== false) ||
+    Boolean(obra.arquivoObra));
+globalThis.__painelAutorObraRascunho = (obra) =>
+  !globalThis.__painelAutorObraPublicada(obra);
+const resumoMetricasJavascript = typescript.transpileModule(
+  resumoMetricasSource.replace(
+    /import \{[\s\S]*?\} from "\.\/painel-autor-work-status-utils";/,
+    [
+      "const obraPublicadaComConteudoPainel = globalThis.__painelAutorObraPublicada;",
+      "const obraRascunhoOuSemConteudoPainel = globalThis.__painelAutorObraRascunho;",
+    ].join("\n"),
+  ),
+  {
+    compilerOptions: {
+      module: typescript.ModuleKind.ESNext,
+      target: typescript.ScriptTarget.ES2022,
+    },
+  },
+).outputText;
+const { obterResumoMetricasPainel } = await import(
+  `data:text/javascript;base64,${Buffer.from(resumoMetricasJavascript).toString("base64")}`,
 );
 
 const obra = {
@@ -210,6 +242,37 @@ test("métricas de obras preservam fallbacks, pontuação e ordenação", () => 
   assert.equal(obrasComMetricas[1].pontuacao, 24);
 });
 
+test("resumo de métricas preserva status, totais e arquivos", () => {
+  const resumo = obterResumoMetricasPainel([
+    {
+      id: "publicada",
+      publicado: true,
+      capitulos: [{ publicado: true }, { publicado: false }],
+      totalCurtidas: 3,
+      totalComentarios: 2,
+      totalSalvos: 1,
+      arquivoObra: null,
+    },
+    {
+      id: "rascunho",
+      publicado: false,
+      capitulos: [{ publicado: true }],
+      totalCurtidas: 5,
+      totalComentarios: 4,
+      totalSalvos: 3,
+      arquivoObra: { nome: "rascunho.pdf" },
+    },
+  ]);
+
+  assert.deepEqual(resumo.obrasPublicadas.map((obra) => obra.id), ["publicada"]);
+  assert.deepEqual(resumo.obrasRascunhos.map((obra) => obra.id), ["rascunho"]);
+  assert.equal(resumo.totalCapitulos, 3);
+  assert.equal(resumo.totalCurtidas, 8);
+  assert.equal(resumo.totalComentarios, 6);
+  assert.equal(resumo.totalSalvos, 4);
+  assert.equal(resumo.totalArquivos, 1);
+});
+
 test("Painel do Autor delega somente o cálculo puro de métricas de obras", () => {
   assert.match(
     metricasObrasSource,
@@ -232,12 +295,32 @@ test("Painel do Autor delega somente o cálculo puro de métricas de obras", () 
     /const obrasComMetricas = useMemo<ObraComMetricas\[]>\([\s\S]*?\(\) => obterObrasComMetricasPainel\(obras\),[\s\S]*?\[obras\]/,
   );
   assert.match(
+    pagina,
+    /import \{ obterResumoMetricasPainel \} from "\.\/lib\/painel-autor-summary-metrics";/,
+  );
+  assert.match(
+    pagina,
+    /\} = obterResumoMetricasPainel\(obrasComMetricas\);/,
+  );
+  assert.doesNotMatch(pagina, /function obterResumoMetricasPainel\(/);
+  assert.match(resumoMetricasSource, /obraPublicadaComConteudoPainel\(obra\)/);
+  assert.match(resumoMetricasSource, /obraRascunhoOuSemConteudoPainel\(obra\)/);
+  assert.match(resumoMetricasSource, /total \+ obra\.capitulos\.length/);
+  assert.match(resumoMetricasSource, /total \+ obra\.totalCurtidas/);
+  assert.match(resumoMetricasSource, /total \+ obra\.totalComentarios/);
+  assert.match(resumoMetricasSource, /total \+ obra\.totalSalvos/);
+  assert.match(resumoMetricasSource, /obra\.arquivoObra/);
+  assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
     /supabase\.auth\.getUser\(\)/,
   );
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect/);
   assert.doesNotMatch(
     metricasObrasSource,
+    /localStorage|supabase|useState|useEffect|window|document/,
+  );
+  assert.doesNotMatch(
+    resumoMetricasSource,
     /localStorage|supabase|useState|useEffect|window|document/,
   );
 });
