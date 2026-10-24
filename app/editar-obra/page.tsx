@@ -10,10 +10,8 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { criarSlugBase } from "../../lib/utils";
 import {
-  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   AVISOS_CONTEUDO_18,
   ehClassificacao18,
-  normalizarAvisosConteudo18,
   traduzirAvisoConteudo18,
   traduzirTextoConteudo18,
   type AvisoConteudo18,
@@ -75,10 +73,8 @@ import {
 } from "./lib/editar-obra-navigation-utils";
 import { prepararValoresFormularioEdicaoObra } from "./lib/editar-obra-form-preparation";
 import { calcularValoresDerivadosFormularioEdicaoObra } from "./lib/editar-obra-derived-form-values";
-import {
-  obterTagsFinaisEdicaoObra,
-  prepararTagsEdicaoObra,
-} from "./lib/editar-obra-tags-list-utils";
+import { prepararTagsEdicaoObra } from "./lib/editar-obra-tags-list-utils";
+import { prepararValoresSalvamentoEdicaoObra } from "./lib/editar-obra-save-preparation";
 
 type CapituloLocal = {
   id: string;
@@ -1174,21 +1170,29 @@ export default function EditarObraPage() {
     setProcessando(true);
     setErro("");
 
-    const tituloFinal = titulo.trim();
-    const autorFormularioFinal = autor.trim();
-    let autorFinal = autorProfileAtivo || autorFormularioFinal;
-    const generoFinalSalvo = generoFinal;
-    const formatoFinalSalvo = formatoFinal;
-    const classificacaoFinal = classificacaoIndicativa.trim();
-    const capaBloqueadaPorClassificacao =
-      ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
-      ehClassificacao18(classificacaoFinal);
-    const avisosConteudoFinal = normalizarAvisosConteudo18(
+    const valoresSalvamento = prepararValoresSalvamentoEdicaoObra({
+      titulo,
+      autor,
+      autorProfileAtivo,
+      generoFinal,
+      formatoFinal,
+      classificacaoIndicativa,
       avisosConteudo18,
+      sinopse,
+      tagsTratadas,
+    });
+    const {
+      tituloFinal,
+      autorFormularioFinal,
+      generoFinalSalvo,
+      formatoFinalSalvo,
       classificacaoFinal,
-    );
-    const sinopseFinal = sinopse.trim();
-    const tagsFinais = obterTagsFinaisEdicaoObra(tagsTratadas);
+      capaBloqueadaPorClassificacao,
+      avisosConteudoFinal,
+      sinopseFinal,
+      tagsFinais,
+    } = valoresSalvamento;
+    let autorFinal = valoresSalvamento.autorFinal;
     const agora = new Date().toISOString();
 
     try {

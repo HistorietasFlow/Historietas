@@ -11,6 +11,10 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const savePreparationSource = readFileSync(
+  new URL("../../app/editar-obra/lib/editar-obra-save-preparation.ts", import.meta.url),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
@@ -28,10 +32,18 @@ test("preserva fallback de tags finais", () => {
   assert.deepEqual(obterTagsFinaisEdicaoObra([]), ["sem tags"]);
 });
 
-test("Editar Obra delega somente a lista e o fallback de tags", () => {
-  assert.match(pageSource, /from "\.\/lib\/editar-obra-tags-list-utils";/);
+test("Editar Obra delega a lista e o fallback de tags às fronteiras puras", () => {
+  assert.match(
+    pageSource,
+    /import \{ prepararTagsEdicaoObra \} from "\.\/lib\/editar-obra-tags-list-utils";/,
+  );
   assert.match(pageSource, /const tagsTratadas = useMemo\(\(\) => \{\s*return prepararTagsEdicaoObra\(tags, LIMITE_TAGS_OBRA\);/);
-  assert.match(pageSource, /const tagsFinais = obterTagsFinaisEdicaoObra\(tagsTratadas\);/);
+  assert.doesNotMatch(pageSource, /obterTagsFinaisEdicaoObra/);
+  assert.match(
+    savePreparationSource,
+    /import \{ obterTagsFinaisEdicaoObra \} from "\.\/editar-obra-tags-list-utils";/,
+  );
+  assert.match(savePreparationSource, /const tagsFinais = obterTagsFinaisEdicaoObra\(tagsTratadas\);/);
   assert.match(source, /\.split\(","\)/);
   assert.match(source, /\.map\(\(tag\) => tag\.trim\(\)\)/);
   assert.match(source, /\.filter\(Boolean\)/);
