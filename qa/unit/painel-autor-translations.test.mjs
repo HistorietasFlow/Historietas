@@ -21,6 +21,13 @@ const compartilhamento = readFileSync(
   ),
   "utf8",
 );
+const aberturaArquivo = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-open-file-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const translationsJavascript = typescript.transpileModule(translations, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -130,13 +137,21 @@ test("mantém os consumidores de tradução e delega o bridge na página", () =>
   );
   assert.doesNotMatch(pagina, /function PainelAutorLanguageBridge\(\)/);
   assert.equal((pagina.match(/<PainelAutorLanguageBridge \/>/g) || []).length, 2);
-  assert.ok((pagina.match(/traduzirTextoPainelAutor\(/g) || []).length >= 5);
+  assert.ok((pagina.match(/traduzirTextoPainelAutor\(/g) || []).length >= 3);
   assert.match(
     compartilhamento,
     /import \{ traduzirTextoPainelAutor \} from "\.\/painel-autor-translations";/,
   );
   assert.equal(
     (compartilhamento.match(/traduzirTextoPainelAutor\(/g) || []).length,
+    2,
+  );
+  assert.match(
+    aberturaArquivo,
+    /import \{ traduzirTextoPainelAutor \} from "\.\/painel-autor-translations";/,
+  );
+  assert.equal(
+    (aberturaArquivo.match(/traduzirTextoPainelAutor\(/g) || []).length,
     2,
   );
 });
