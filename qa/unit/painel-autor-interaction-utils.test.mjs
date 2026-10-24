@@ -27,6 +27,13 @@ const chapterCommentsLoaderSource = readFileSync(
   ),
   "utf8",
 );
+const metricsStateSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-metrics-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -216,13 +223,24 @@ test("carregarComentariosCapitulosUsuarioPainel mantém retornos vazios e falha 
   assert.equal(avisos[0][1].message, "falha da paginação");
 });
 
-test("Painel do Autor delega somente a chave de interação ao helper extraído", () => {
+test("Painel do Autor delega a chave de interação às fronteiras extraídas", () => {
   assert.match(
+    pagina,
+    /import \{ prepararEstadoMetricasPainel \} from "\.\/lib\/painel-autor-metrics-state";/,
+  );
+  assert.doesNotMatch(pagina, /function criarChaveInteracao\(/);
+  assert.doesNotMatch(
     pagina,
     /import \{ criarChaveInteracao \} from "\.\/lib\/painel-autor-interaction-utils";/,
   );
-  assert.doesNotMatch(pagina, /function criarChaveInteracao\(/);
-  assert.equal((pagina.match(/\bcriarChaveInteracao\b/g) || []).length, 2);
+  assert.match(
+    metricsStateSource,
+    /import \{ criarChaveInteracao \} from "\.\/painel-autor-interaction-utils";/,
+  );
+  assert.match(
+    metricsStateSource,
+    /criarChaveInteracao\(metrica\.obraId, metrica\.id\)/,
+  );
   assert.match(
     pagina,
     /import \{ carregarComentariosCapitulosUsuarioPainel \} from "\.\/lib\/painel-autor-chapter-comments-loader";/,
