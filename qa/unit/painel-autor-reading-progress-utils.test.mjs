@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const metricasObrasSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-work-metrics.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -96,17 +103,21 @@ test("preserva fallbacks do capitulo para continuar", () => {
   );
 });
 
-test("Painel do Autor delega somente helpers puros de progresso", () => {
+test("Painel do Autor delega helpers puros de progresso às fronteiras corretas", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?encontrarCapituloParaContinuar,[\s\S]*?obterCapitulosPublicadosPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-reading-progress-utils";/,
+    /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?obterCapitulosPublicadosPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-reading-progress-utils";/,
+  );
+  assert.match(
+    metricasObrasSource,
+    /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?encontrarCapituloParaContinuar,[\s\S]*?obterCapitulosPublicadosPainel,[\s\S]*?\} from "\.\/painel-autor-reading-progress-utils";/,
   );
   assert.doesNotMatch(pagina, /function obterCapitulosPublicadosPainel\(/);
   assert.doesNotMatch(pagina, /function calcularProgressoLeitura\(/);
   assert.doesNotMatch(pagina, /function encontrarCapituloParaContinuar\(/);
-  assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 4);
-  assert.equal((pagina.match(/\bencontrarCapituloParaContinuar\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 3);
+  assert.doesNotMatch(pagina, /\bencontrarCapituloParaContinuar\b/);
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
     /supabase\.auth\.getUser\(\)/,

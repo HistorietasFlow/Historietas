@@ -184,13 +184,11 @@ import {
   removerObraDaColecaoPainel,
 } from "./lib/painel-autor-collection-utils";
 import {
-  calcularComentarios,
-  calcularCurtidas,
-  calcularSalvos,
-} from "./lib/painel-autor-chapter-metrics-utils";
+  obterObrasComMetricasPainel,
+  type ObraComMetricasPainel,
+} from "./lib/painel-autor-work-metrics";
 import {
   calcularProgressoLeitura,
-  encontrarCapituloParaContinuar,
   obterCapitulosPublicadosPainel,
 } from "./lib/painel-autor-reading-progress-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
@@ -305,15 +303,7 @@ type ProfilePainelAutorRow = {
   sobre_bio?: string | null;
 };
 
-type ObraComMetricas = ObraLocal & {
-  totalCurtidas: number;
-  totalComentarios: number;
-  totalSalvos: number;
-  totalLidos: number;
-  progressoLeitura: number;
-  ultimoCapituloLido: CapituloLocal | null;
-  pontuacao: number;
-};
+type ObraComMetricas = ObraComMetricasPainel<ObraLocal>;
 
 
 const STORAGE_KEY = "historietas-obras";
@@ -1197,46 +1187,10 @@ export default function PainelAutorPage() {
     };
   }, [usuarioIdLogado, verificandoUsuario]);
 
-  const obrasComMetricas = useMemo<ObraComMetricas[]>(() => {
-    return obras
-      .map((obra) => {
-        const totalCurtidas =
-          typeof obra.totalCurtidasPainel === "number"
-            ? obra.totalCurtidasPainel
-            : calcularCurtidas(obra);
-        const totalComentarios =
-          typeof obra.totalComentariosPainel === "number"
-            ? obra.totalComentariosPainel
-            : calcularComentarios(obra);
-        const totalSalvos =
-          typeof obra.totalSalvosPainel === "number"
-            ? obra.totalSalvosPainel
-            : calcularSalvos(obra);
-        const totalLidos =
-          typeof obra.totalLidosPainel === "number"
-            ? obra.totalLidosPainel
-            : 0;
-        const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
-        const ultimoCapituloLido = encontrarCapituloParaContinuar(obra);
-
-        return {
-          ...obra,
-          totalCurtidas,
-          totalComentarios,
-          totalSalvos,
-          totalLidos,
-          progressoLeitura,
-          ultimoCapituloLido,
-          pontuacao:
-            obterCapitulosPublicadosPainel(obra.capitulos).length * 2 +
-            totalCurtidas * 5 +
-            totalComentarios * 8 +
-            totalSalvos * 4 +
-            totalLidos * 3,
-        };
-      })
-      .sort((obraA, obraB) => obraB.pontuacao - obraA.pontuacao);
-  }, [obras]);
+  const obrasComMetricas = useMemo<ObraComMetricas[]>(
+    () => obterObrasComMetricasPainel(obras),
+    [obras]
+  );
 
   const obrasFiltradas = useMemo<ObraComMetricas[]>(() => {
     const termoBusca = normalizarTexto(busca);
