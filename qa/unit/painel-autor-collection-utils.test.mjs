@@ -21,6 +21,13 @@ const workFilteringSource = readFileSync(
   ),
   "utf8",
 );
+const localCleanupSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-deleted-work-local-cleanup.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -97,7 +104,7 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
   assert.doesNotMatch(pagina, /function filtrarListaPorObrasDoUsuario\(/);
   assert.equal((pagina.match(/\bobterIdentificadoresObraPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bcolecaoTemObraPainel\b/g) || []).length, 0);
-  assert.equal((pagina.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 4);
+  assert.equal((pagina.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 5);
   assert.match(
     utilsSource,
@@ -109,7 +116,24 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
   );
   assert.match(workFilteringSource, /colecaoTemObraPainel\(obrasFavoritas, obra\)/);
   assert.match(workFilteringSource, /colecaoTemObraPainel\(obrasConcluidas, obra\)/);
-  assert.match(pagina, /function limparReferenciasLocaisObraExcluidaPainel\(/);
+  assert.match(
+    pagina,
+    /import \{ limparReferenciasLocaisObraExcluidaPainel \} from "\.\/lib\/painel-autor-deleted-work-local-cleanup";/,
+  );
+  assert.doesNotMatch(pagina, /function limparReferenciasLocaisObraExcluidaPainel\(/);
+  assert.match(
+    pagina,
+    /limparReferenciasLocaisObraExcluidaPainel\(obraExcluida, userId, \{[\s\S]*?chavesColecoes: \[[\s\S]*?FOLLOW_STORAGE_KEY,[\s\S]*?FAVORITES_STORAGE_KEY,[\s\S]*?COMPLETED_STORAGE_KEY,[\s\S]*?\]/,
+  );
+  assert.match(
+    localCleanupSource,
+    /import \{ removerObraDaColecaoPainel \} from "\.\/painel-autor-collection-utils";/,
+  );
+  assert.match(
+    localCleanupSource,
+    /chavesColecoes\.forEach\([\s\S]*?removerObraDaColecaoPainel\([\s\S]*?lerListaIdsStoragePainel\(chave, userId\),[\s\S]*?salvarJsonStorageUsuarioPainel\(chave, userId, listaUsuario\)/,
+  );
+  assert.match(localCleanupSource, /A limpeza local não pode impedir a exclusão da obra\./);
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
     /supabase\.auth\.getUser\(\)/,
