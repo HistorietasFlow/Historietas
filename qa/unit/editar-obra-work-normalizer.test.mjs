@@ -29,6 +29,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const loadedWorkMergeSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-loaded-work-merge.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const localWorkStorageSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-local-work-storage.ts",
@@ -221,12 +228,16 @@ test("normaliza classificações sem informação como Livre", () => {
 });
 
 test("Editar Obra delega somente a normalização de obras", () => {
-  assert.match(
+  assert.doesNotMatch(
     pageSource,
     /import \{ normalizarObra \} from "\.\/lib\/editar-obra-work-normalizer";/,
   );
   assert.doesNotMatch(pageSource, /function normalizarObra\(/);
-  assert.match(pageSource, /normalizarObra\(/);
+  assert.match(
+    loadedWorkMergeSource,
+    /import \{ normalizarObra \} from "\.\/editar-obra-work-normalizer";/,
+  );
+  assert.match(loadedWorkMergeSource, /normalizarObra\(/);
   assert.match(
     localWorkStorageSource,
     /normalizarObra\(\s*obra as Parameters<typeof normalizarObra>\[0\],\s*index\s*\)/,

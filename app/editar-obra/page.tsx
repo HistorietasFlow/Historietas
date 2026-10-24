@@ -36,8 +36,8 @@ import {
   sincronizarBackupArquivosObras,
 } from "./lib/editar-obra-file-backup-storage";
 import { criarAlvoBackupArquivoEdicaoObra } from "./lib/editar-obra-backup-target";
-import { normalizarObra } from "./lib/editar-obra-work-normalizer";
 import { normalizarObraSupabase } from "./lib/editar-obra-supabase-work-normalizer";
+import { prepararObrasCarregadasEdicaoObra } from "./lib/editar-obra-loaded-work-merge";
 import {
   carregarObrasLocalStorageEdicaoObra,
   salvarObrasDoUsuarioPreservandoOutrasContas,
@@ -448,21 +448,14 @@ export default function EditarObraPage() {
           obraLocal,
           0
         );
-        const obraSupabaseComAutorProfile = nomeProfileUsuario
-          ? normalizarObra(
-              {
-                ...obraNormalizadaSupabase,
-                autor: nomeProfileUsuario,
-                autorId: obraNormalizadaSupabase.autorId || userId,
-              },
-              0
-            )
-          : obraNormalizadaSupabase;
-
-        const obrasAtualizadas = [
-          obraSupabaseComAutorProfile,
-          ...obrasAutorizadas.filter((obra) => obra.id !== obraIdParam),
-        ];
+        const { obraSupabaseComAutorProfile, obrasAtualizadas } =
+          prepararObrasCarregadasEdicaoObra({
+            obraNormalizadaSupabase,
+            nomeProfileUsuario,
+            userId,
+            obrasAutorizadas,
+            obraIdParam,
+          });
 
         const obrasAtualizadasDoUsuario =
           salvarObrasDoUsuarioPreservandoOutrasContas(obrasAtualizadas, userId);
