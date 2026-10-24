@@ -1519,3 +1519,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O bridge específico de tradução foi movido para `components/EditarObraLanguageBridge.tsx`, preservando textos, padrões dinâmicos, atributos, observação do DOM e restauração no cleanup.
 - A página manteve somente a montagem de `EditarObraLanguageBridge`; formulário, estados, salvamento, autenticação, Supabase, Storage, estilos e JSX restante permaneceram sem alteração intencional de comportamento.
+
+## Registro da Fase 33 — Editar Obra
+
+- A preparação pura da obra remota com o nome de profile e da lista final carregada foi isolada em `editar-obra-loaded-work-merge.ts`, preservando ordem, ownership e a obra remota com seus capítulos como fonte de verdade.
+- Consultas e paginação Supabase, persistência local, backup, setters, controle de cancelamento e aplicação do formulário permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
