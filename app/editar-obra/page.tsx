@@ -8,7 +8,7 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
-import { criarSlugBase, normalizarTexto } from "../../lib/utils";
+import { criarSlugBase } from "../../lib/utils";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   AVISOS_CONTEUDO_18,
@@ -22,7 +22,6 @@ import { LIMITES_BYTES_STORAGE } from "../../lib/storageUploads";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import {
   limparTextoPersonalizado,
-  textoPersonalizadoValido,
 } from "./lib/editar-obra-custom-value-utils";
 import {
   arquivoImagemAceito,
@@ -75,6 +74,7 @@ import {
   obterHrefsObraEditarObra,
 } from "./lib/editar-obra-navigation-utils";
 import { prepararValoresFormularioEdicaoObra } from "./lib/editar-obra-form-preparation";
+import { calcularValoresDerivadosFormularioEdicaoObra } from "./lib/editar-obra-derived-form-values";
 
 type CapituloLocal = {
   id: string;
@@ -926,38 +926,27 @@ export default function EditarObraPage() {
       .slice(0, LIMITE_TAGS_OBRA);
   }, [tags]);
 
-  const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;
-  const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;
-  const formatoFinal = formatoEhPersonalizado
-    ? formatoPersonalizado.trim().replace(/\s+/g, " ")
-    : formato.trim();
-  const generoFinal = generoEhPersonalizado
-    ? generoPersonalizado.trim().replace(/\s+/g, " ")
-    : genero.trim();
-  const tagPersonalizadaFinal = tagPersonalizada.trim().replace(/\s+/g, " ");
-  const formatoPersonalizadoValido =
-    !formatoEhPersonalizado ||
-    textoPersonalizadoValido(
-      formatoPersonalizado,
-      3,
-      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-    );
-  const generoPersonalizadoValido =
-    !generoEhPersonalizado ||
-    textoPersonalizadoValido(
-      generoPersonalizado,
-      3,
-      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-    );
-  const tagPersonalizadaValida =
-    !usarTagPersonalizada ||
-    (textoPersonalizadoValido(
-      tagPersonalizada,
-      2,
-      LIMITE_CARACTERES_TAG_PERSONALIZADA
-    ) &&
-      normalizarTexto(tagPersonalizadaFinal) !== normalizarTexto(formatoFinal) &&
-      normalizarTexto(tagPersonalizadaFinal) !== normalizarTexto(generoFinal));
+  const {
+    formatoEhPersonalizado,
+    generoEhPersonalizado,
+    formatoFinal,
+    generoFinal,
+    formatoPersonalizadoValido,
+    generoPersonalizadoValido,
+    tagPersonalizadaValida,
+  } = calcularValoresDerivadosFormularioEdicaoObra({
+    formato,
+    genero,
+    tagPersonalizada,
+    usarTagPersonalizada,
+    formatoPersonalizado,
+    generoPersonalizado,
+    outroFormatoValue: OUTRO_FORMATO_VALUE,
+    outroGeneroValue: OUTRO_GENERO_VALUE,
+    limiteCaracteresFormatoGeneroPersonalizado:
+      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
+    limiteCaracteresTagPersonalizada: LIMITE_CARACTERES_TAG_PERSONALIZADA,
+  });
 
   const progresso = useMemo(() => calcularProgressoFormularioEdicaoObra({
     titulo,

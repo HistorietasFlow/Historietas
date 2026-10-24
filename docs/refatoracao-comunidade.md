@@ -1479,3 +1479,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A preparação pura dos valores aplicados ao formulário foi isolada em `editar-obra-form-preparation.ts`, preservando perfil do autor, valores editáveis, tags, classificação e avisos de conteúdo.
 - A aplicação ordenada dos setters, carregamento, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 25 — Editar Obra
+
+- Os valores derivados do formulário foram isolados em `editar-obra-derived-form-values.ts`, preservando opções personalizadas, normalização e validação de tags.
+- A orquestração do formulário, progresso, setters, carregamento, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
