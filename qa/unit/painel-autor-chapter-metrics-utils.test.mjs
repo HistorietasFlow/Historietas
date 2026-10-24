@@ -53,6 +53,9 @@ test("Painel do Autor delega somente os helpers puros de metricas", () => {
   assert.equal((pagina.match(/\bcalcularCurtidas\b/g) || []).length, 2);
   assert.equal((pagina.match(/\bcalcularComentarios\b/g) || []).length, 2);
   assert.equal((pagina.match(/\bcalcularSalvos\b/g) || []).length, 2);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect/);
 });

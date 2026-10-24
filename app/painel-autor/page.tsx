@@ -9,6 +9,7 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { PainelAutorLanguageBridge } from "./components/painel-autor-language-bridge";
 import { LoadingSpinner } from "./components/painel-autor-loading-spinner";
+import { usePainelAutorAuthSession } from "./hooks/use-painel-autor-auth-session";
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
@@ -1127,8 +1128,6 @@ export default function PainelAutorPage() {
   const [buscaPainelAberta, setBuscaPainelAberta] = useState(false);
   const [filtro, setFiltro] = useState<FiltroPainel>("todas");
   const [ordenacao, setOrdenacao] = useState<OrdenacaoPainel>("pontuacao");
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
-  const [verificandoUsuario, setVerificandoUsuario] = useState(true);
   const [carregandoDados, setCarregandoDados] = useState(true);
   const [mostrarFiltrosPainel, setMostrarFiltrosPainel] = useState(false);
 
@@ -1137,51 +1136,13 @@ export default function PainelAutorPage() {
 
   const isDesktop = usePainelAutorDesktopMode();
 
+  const { usuarioIdLogado, verificandoUsuario } =
+    usePainelAutorAuthSession();
+
   const { mostrarResumoPainel, alternarResumoPainel } =
     usePainelAutorSummaryPreference(usuarioIdLogado);
 
   usePainelAutorFiltersBodyLock(mostrarFiltrosPainel);
-
-  useEffect(() => {
-    let componenteAtivo = true;
-
-    async function carregarUsuarioAtual() {
-      try {
-        const { data } = await supabase.auth.getUser();
-        const usuario = data.user;
-
-        if (!componenteAtivo) {
-          return;
-        }
-
-        setUsuarioIdLogado(usuario?.id || "");
-        setVerificandoUsuario(false);
-      } catch {
-        if (componenteAtivo) {
-          setUsuarioIdLogado("");
-          setVerificandoUsuario(false);
-        }
-      }
-    }
-
-    void carregarUsuarioAtual();
-
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_evento, sessao) => {
-        if (!componenteAtivo) {
-          return;
-        }
-
-        setUsuarioIdLogado(sessao?.user?.id || "");
-        setVerificandoUsuario(false);
-      }
-    );
-
-    return () => {
-      componenteAtivo = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
 
   useEffect(() => {
     if (!verificandoUsuario && !usuarioIdLogado) {

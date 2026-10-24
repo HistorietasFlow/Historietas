@@ -74,6 +74,9 @@ test("Painel do Autor delega somente tipos e opções de filtro e ordenação", 
     pagina,
     /import \{[\s\S]*?criarHrefLeituraCapituloPainel[\s\S]*?\} from "\.\/lib\/painel-autor-route-utils";/,
   );
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
   assert.doesNotMatch(optionsSource, /supabase|useState|useEffect|localStorage/);
 });

@@ -107,6 +107,9 @@ test("Painel do Autor delega somente helpers puros de progresso", () => {
   assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 4);
   assert.equal((pagina.match(/\bencontrarCapituloParaContinuar\b/g) || []).length, 2);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect/);
 });

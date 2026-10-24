@@ -85,7 +85,10 @@ test("Painel do Autor delega somente os helpers de navegação", () => {
   assert.equal((pagina.match(/\bcriarLoginHrefPainelAutor\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bcriarPerfilAutorHref\b/g) || []).length, 2);
   assert.doesNotMatch(pagina, /function criarHrefLeituraCapituloPainel\(/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
   assert.match(pagina, /const STORAGE_KEY/);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
 });

@@ -97,6 +97,9 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
     /export function filtrarListaPorObrasDoUsuario[\s\S]*?obterIdentificadoresObraPainel\(obra\)\.includes\(idLimpo\)/,
   );
   assert.match(pagina, /function limparReferenciasLocaisObraExcluidaPainel\(/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
 });

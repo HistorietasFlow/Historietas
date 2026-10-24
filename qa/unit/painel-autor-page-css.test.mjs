@@ -81,5 +81,8 @@ test("Painel do Autor mantém os mounts e as fronteiras fora do CSS extraído", 
   );
   assert.match(pagina, /const isDesktop = usePainelAutorDesktopMode\(\);/);
   assert.match(pagina, /async function carregarDadosPainelAutor\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
 });
