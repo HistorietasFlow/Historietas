@@ -26,6 +26,11 @@ import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
 import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
+import {
+  FILE_BACKUP_STORAGE_KEY,
+  carregarBackupArquivosObras,
+  sincronizarBackupArquivosObras,
+} from "./lib/painel-autor-file-backup-storage";
 import { restaurarArquivoObraComBackup } from "./lib/painel-autor-file-backup-restore-utils";
 import {
   criarPainelCoverDesktopStyle,
@@ -219,8 +224,6 @@ type ArquivoObraLocal = {
   criadoEm: string;
 };
 
-type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
-
 type ArquivoStoragePainel = {
   bucket: "capas-obras" | "arquivos-obras";
   caminho: string;
@@ -314,7 +317,6 @@ type ObraComMetricas = ObraLocal & {
 
 
 const STORAGE_KEY = "historietas-obras";
-const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
@@ -362,73 +364,6 @@ async function removerArquivosStorageObraExcluidaPainel(
       );
     }
   });
-}
-
-function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
-  if (!userId.trim()) {
-    return {};
-  }
-
-  try {
-    const backupTexto = lerStorageUsuarioPainel(
-      FILE_BACKUP_STORAGE_KEY,
-      userId
-    );
-    const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
-
-    if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
-      return {};
-    }
-
-    const backupNormalizado: ArquivosObrasBackup = {};
-
-    Object.entries(backupJson as Record<string, unknown>).forEach(([obraId, arquivo]) => {
-      const arquivoNormalizado = normalizarArquivoObra(arquivo);
-
-      if (obraId.trim() && arquivoNormalizado) {
-        backupNormalizado[obraId] = arquivoNormalizado;
-      }
-    });
-
-    salvarJsonStorageUsuarioPainel(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupNormalizado
-    );
-
-    return backupNormalizado;
-  } catch {
-    salvarJsonStorageUsuarioPainel(FILE_BACKUP_STORAGE_KEY, userId, {});
-    return {};
-  }
-}
-
-function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
-  if (!userId.trim()) {
-    return;
-  }
-
-  try {
-    const backupAtual = carregarBackupArquivosObras(userId);
-
-    obras.forEach((obra) => {
-      const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
-
-      if (arquivoNormalizado) {
-        obterChavesBackupArquivoPainel(obra).forEach((chave) => {
-          backupAtual[chave] = arquivoNormalizado;
-        });
-      }
-    });
-
-    salvarJsonStorageUsuarioPainel(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupAtual
-    );
-  } catch {
-    // Se o backup falhar, o painel continua funcionando normalmente.
-  }
 }
 
 function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
