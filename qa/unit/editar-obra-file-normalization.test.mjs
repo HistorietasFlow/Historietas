@@ -18,6 +18,7 @@ import "./editar-obra-cover-style-utils.test.mjs";
 import "./editar-obra-tag-utils.test.mjs";
 import "./editar-obra-navigation-utils.test.mjs";
 import "./editar-obra-form-preparation.test.mjs";
+import "./editar-obra-derived-form-values.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-file-normalization.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");

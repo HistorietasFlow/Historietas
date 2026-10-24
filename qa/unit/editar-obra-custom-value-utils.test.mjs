@@ -85,7 +85,7 @@ test("valores editáveis preservam opções normalizadas, fallbacks e texto pers
 test("Editar Obra delega somente os helpers puros de valores personalizados", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?limparTextoPersonalizado,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/editar-obra-custom-value-utils";/,
+    /import \{[\s\S]*?limparTextoPersonalizado,[\s\S]*?\} from "\.\/lib\/editar-obra-custom-value-utils";/,
   );
   for (const helper of [
     "contarLetrasNumeros",
