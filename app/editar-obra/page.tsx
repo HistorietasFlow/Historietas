@@ -69,6 +69,7 @@ import { calcularValoresDerivadosFormularioEdicaoObra } from "./lib/editar-obra-
 import { prepararTagsEdicaoObra } from "./lib/editar-obra-tags-list-utils";
 import { prepararValoresSalvamentoEdicaoObra } from "./lib/editar-obra-save-preparation";
 import { prepararAssetsAtuaisEdicaoObra } from "./lib/editar-obra-current-assets-preparation";
+import { criarPayloadAtualizacaoObra } from "./lib/editar-obra-update-payload";
 
 type CapituloLocal = {
   id: string;
@@ -1367,24 +1368,22 @@ export default function EditarObraPage() {
         const { data: obraAtualizadaSupabase, error: erroAtualizarObra } =
           await supabase
             .from("obras")
-            .update({
-              titulo: tituloFinal,
-              autor: autorFinal,
-              genero: generoFinalSalvo,
-              formato: formatoFinalSalvo,
-              classificacao_indicativa: classificacaoFinal,
-              avisos_conteudo: avisosConteudoFinal,
-              sinopse: sinopseFinal,
-              tags: tagsFinais,
-              capa_url: capaFinal,
-              capa_nome: capaNomeFinal,
-              arquivo_url: arquivoObraFinal?.conteudo || "",
-              arquivo_nome: arquivoObraFinal?.nome || "",
-              arquivo_tipo: arquivoObraFinal?.tipo || "",
-              arquivo_tamanho: arquivoObraFinal?.tamanho || 0,
-              arquivo_categoria: arquivoObraFinal?.categoria || "outro",
-              atualizado_em: agora,
-            })
+            .update(
+              criarPayloadAtualizacaoObra({
+                tituloFinal,
+                autorFinal,
+                generoFinalSalvo,
+                formatoFinalSalvo,
+                classificacaoFinal,
+                avisosConteudoFinal,
+                sinopseFinal,
+                tagsFinais,
+                capaFinal,
+                capaNomeFinal,
+                arquivoObraFinal,
+                agora,
+              }),
+            )
             .eq("id", obraId)
             .eq("user_id", userId)
             .select("id")
