@@ -72,6 +72,10 @@ import {
   criarMiniCoverStyle,
   criarPreviewCoverStyle,
 } from "./lib/editar-obra-cover-style-utils";
+import {
+  prepararAtualizacaoTagPersonalizada,
+  prepararSelecaoTagEdicaoObra,
+} from "./lib/editar-obra-tag-utils";
 
 type CapituloLocal = {
   id: string;
@@ -1157,51 +1161,31 @@ export default function EditarObraPage() {
   }
 
   function atualizarTagPersonalizada(valor: string) {
-    const textoLimpo = limparTextoPersonalizado(
+    const proximaTag = prepararAtualizacaoTagPersonalizada(
       valor,
       LIMITE_CARACTERES_TAG_PERSONALIZADA
     );
 
-    setTagPersonalizada(textoLimpo);
-    setTags(
-      textoPersonalizadoValido(
-        textoLimpo,
-        2,
-        LIMITE_CARACTERES_TAG_PERSONALIZADA
-      )
-        ? textoLimpo.trim().replace(/\s+/g, " ")
-        : ""
-    );
+    setTagPersonalizada(proximaTag.tagPersonalizada);
+    setTags(proximaTag.tags);
     marcarAlteracao();
   }
 
   function adicionarTagSelecionada(tag: string) {
-    if (!tag) {
-      setUsarTagPersonalizada(false);
-      setTagPersonalizada("");
-      setTags("");
-      marcarAlteracao();
-      return;
+    const proximaTag = prepararSelecaoTagEdicaoObra(
+      tag,
+      tagPersonalizada,
+      OUTRA_TAG_VALUE,
+      LIMITE_CARACTERES_TAG_PERSONALIZADA,
+    );
+
+    setUsarTagPersonalizada(proximaTag.usarTagPersonalizada);
+
+    if (proximaTag.tagPersonalizada !== undefined) {
+      setTagPersonalizada(proximaTag.tagPersonalizada);
     }
 
-    if (tag === OUTRA_TAG_VALUE) {
-      setUsarTagPersonalizada(true);
-      setTags(
-        textoPersonalizadoValido(
-          tagPersonalizada,
-          2,
-          LIMITE_CARACTERES_TAG_PERSONALIZADA
-        )
-          ? tagPersonalizada.trim().replace(/\s+/g, " ")
-          : ""
-      );
-      marcarAlteracao();
-      return;
-    }
-
-    setUsarTagPersonalizada(false);
-    setTagPersonalizada("");
-    setTags(tag);
+    setTags(proximaTag.tags);
     marcarAlteracao();
   }
 

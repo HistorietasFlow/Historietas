@@ -1464,3 +1464,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers de estilo das capas miniatura e de prévia foram isolados em `editar-obra-cover-style-utils.ts`, mantendo os estilos-base locais e explicitamente passados pela página.
 - Formulário, estilos-base, estado, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 22 — Editar Obra
+
+- O cálculo puro dos próximos valores de tags foi isolado em `editar-obra-tag-utils.ts`, preservando limpeza, validação, limite, seleção de tag normal e fluxo de tag personalizada.
+- Setters, ordem de efeitos, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
