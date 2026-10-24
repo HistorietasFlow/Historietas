@@ -22,6 +22,13 @@ const formValidationSource = readFileSync(
   ),
   "utf8",
 );
+const formPreparationSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-form-preparation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const compilerOptions = {
   module: typescript.ModuleKind.ESNext,
   target: typescript.ScriptTarget.ES2022,
@@ -78,7 +85,7 @@ test("valores editáveis preservam opções normalizadas, fallbacks e texto pers
 test("Editar Obra delega somente os helpers puros de valores personalizados", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?limparTextoPersonalizado,[\s\S]*?opcaoExiste,[\s\S]*?prepararValorEditavel,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/editar-obra-custom-value-utils";/,
+    /import \{[\s\S]*?limparTextoPersonalizado,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/editar-obra-custom-value-utils";/,
   );
   for (const helper of [
     "contarLetrasNumeros",
@@ -94,7 +101,12 @@ test("Editar Obra delega somente os helpers puros de valores personalizados", ()
     formValidationSource,
     /import \{ contarLetrasNumeros \} from "\.\/editar-obra-custom-value-utils";/,
   );
+  assert.match(
+    formPreparationSource,
+    /import \{[\s\S]*?limparTextoPersonalizado,[\s\S]*?opcaoExiste,[\s\S]*?prepararValorEditavel,[\s\S]*?\} from "\.\/editar-obra-custom-value-utils";/,
+  );
   assert.match(utilsSource, /texto\.match\(\/\[A-Za-zÀ-ÖØ-öø-ÿ0-9\]\/g\) \|\| \[\]/);
   assert.match(utilsSource, /\.trimStart\(\)/);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
+  assert.doesNotMatch(formPreparationSource, /supabase|localStorage|useState|useEffect/);
 });
