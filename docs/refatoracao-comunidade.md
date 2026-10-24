@@ -1504,3 +1504,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A construção pura do payload de atualização de obras foi isolada em `editar-obra-update-payload.ts`, preservando colunas, fallbacks de arquivo e `atualizado_em`.
 - A chamada Supabase, autorização, uploads, remoções, rollback, persistência, Diário, setters, redirecionamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 30 — Editar Obra
+
+- A reconstrução pura da lista local após a edição foi isolada em `editar-obra-local-update.ts`, preservando ordem, dupla normalização e os valores atualizados da obra alvo.
+- Remoção de Storage, persistência local, backup, Diário, setters, tratamento de erro, Supabase e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
