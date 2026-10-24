@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const remoteStorageSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-remote-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(source, {
     compilerOptions: {
@@ -69,10 +76,14 @@ test("caminho de Storage rejeita URLs sem prefixo válido ou inválidas", () => 
 test("Editar Obra delega apenas caminhos de Storage ao módulo extraído", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?limparNomeArquivoStorage,[\s\S]*?obterCaminhoStorageEdicaoObra,[\s\S]*?\} from "\.\/lib\/editar-obra-storage-path-utils";/,
+    /import \{\s*obterCaminhoStorageEdicaoObra\s*\} from "\.\/lib\/editar-obra-storage-path-utils";/,
   );
   assert.doesNotMatch(pageSource, /function limparNomeArquivoStorage\(/);
   assert.doesNotMatch(pageSource, /function obterCaminhoStorageEdicaoObra\(/);
+  assert.match(
+    remoteStorageSource,
+    /import \{ limparNomeArquivoStorage \} from "\.\/editar-obra-storage-path-utils";/,
+  );
   assert.match(source, /from "\.\.\/\.\.\/\.\.\/lib\/utils";/);
   assert.match(source, /\/storage\/v1\/object\/public\/\$\{bucket\}\//);
   assert.match(source, /\/storage\/v1\/object\/sign\/\$\{bucket\}\//);

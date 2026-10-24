@@ -18,12 +18,7 @@ import {
   traduzirTextoConteudo18,
   type AvisoConteudo18,
 } from "../../lib/historietasAdultContent";
-import {
-  LIMITES_BYTES_STORAGE,
-  mensagemAmigavelErroUploadStorage,
-  obterCacheControlUploadStorage,
-  obterTipoMimeUploadStorage,
-} from "../../lib/storageUploads";
+import { LIMITES_BYTES_STORAGE } from "../../lib/storageUploads";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import {
   contarLetrasNumeros,
@@ -50,10 +45,7 @@ import {
   carregarNomeAutorProfileEdicaoObra,
   obterTextoMetadataUsuarioEdicaoObra,
 } from "./lib/editar-obra-profile-loader";
-import {
-  limparNomeArquivoStorage,
-  obterCaminhoStorageEdicaoObra,
-} from "./lib/editar-obra-storage-path-utils";
+import { obterCaminhoStorageEdicaoObra } from "./lib/editar-obra-storage-path-utils";
 import { criarArquivoRemotoEdicaoObra } from "./lib/editar-obra-supabase-file-converter";
 import { obterChavesBackupArquivoEdicaoObra } from "./lib/editar-obra-file-backup-key-utils";
 import {
@@ -67,6 +59,11 @@ import {
   carregarObrasLocalStorageEdicaoObra,
   salvarObrasDoUsuarioPreservandoOutrasContas,
 } from "./lib/editar-obra-local-work-storage";
+import {
+  enviarArquivoStorage,
+  removerArquivosStorageEdicaoObra,
+  type ArquivoStorageEdicaoObra,
+} from "./lib/editar-obra-remote-storage";
 
 type CapituloLocal = {
   id: string;
@@ -616,12 +613,6 @@ const OPCOES_TAGS_OBRA = [
   "Sobrevivência",
 ] as const;
 
-type ArquivoStorageEdicaoObra = {
-  bucket: "capas-obras" | "arquivos-obras";
-  caminho: string;
-  referencia: string;
-};
-
 function criarLoginHrefEditarObra(obraId?: string) {
   const obraIdLimpo = obraId?.trim() || "";
   const redirectTo = obraIdLimpo
@@ -632,88 +623,6 @@ function criarLoginHrefEditarObra(obraId?: string) {
   });
 
   return `/login?${params.toString()}`;
-}
-
-async function enviarArquivoStorage(
-  bucket: "capas-obras" | "arquivos-obras",
-  userId: string,
-  arquivo: File
-): Promise<ArquivoStorageEdicaoObra> {
-  const contentType = obterTipoMimeUploadStorage(bucket, arquivo);
-
-  if (!contentType) {
-    throw new Error(`Tipo de arquivo não permitido para ${bucket}.`);
-  }
-
-  const idSeguro =
-    typeof window !== "undefined" &&
-    window.crypto &&
-    typeof window.crypto.randomUUID === "function"
-      ? window.crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-  const caminho = `${userId}/${Date.now()}-${idSeguro}-${limparNomeArquivoStorage(
-    arquivo.name
-  )}`;
-
-  const { error } = await supabase.storage.from(bucket).upload(caminho, arquivo, {
-    cacheControl: obterCacheControlUploadStorage(bucket),
-    contentType,
-    upsert: false,
-  });
-
-  if (error) {
-    throw new Error(
-      `Erro ao enviar ${arquivo.name}: ${mensagemAmigavelErroUploadStorage(error.message)}`,
-    );
-  }
-
-  const referencia =
-    bucket === "capas-obras"
-      ? supabase.storage.from(bucket).getPublicUrl(caminho).data.publicUrl
-      : caminho;
-
-  return {
-    bucket,
-    caminho,
-    referencia,
-  };
-}
-
-async function removerArquivosStorageEdicaoObra(
-  arquivos: Array<{
-    bucket: "capas-obras" | "arquivos-obras";
-    caminho: string;
-  }>
-) {
-  const arquivosUnicos = Array.from(
-    new Map(
-      arquivos
-        .filter((arquivo) => Boolean(arquivo.caminho.trim()))
-        .map((arquivo) => [
-          `${arquivo.bucket}:${arquivo.caminho}`,
-          {
-            bucket: arquivo.bucket,
-            caminho: arquivo.caminho.trim(),
-          },
-        ])
-    ).values()
-  );
-
-  await Promise.allSettled(
-    arquivosUnicos.map(async (arquivo) => {
-      const { error } = await supabase.storage
-        .from(arquivo.bucket)
-        .remove([arquivo.caminho]);
-
-      if (error) {
-        console.warn(
-          `Não consegui remover o arquivo antigo de ${arquivo.bucket}:`,
-          error.message
-        );
-      }
-    })
-  );
 }
 
 async function registrarDiarioEdicaoObra({
