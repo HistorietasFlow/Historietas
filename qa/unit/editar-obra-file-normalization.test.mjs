@@ -25,6 +25,7 @@ import "./editar-obra-current-assets-preparation.test.mjs";
 import "./editar-obra-update-payload.test.mjs";
 import "./editar-obra-local-update.test.mjs";
 import "./editar-obra-backup-target.test.mjs";
+import "./editar-obra-language-bridge.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-file-normalization.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
