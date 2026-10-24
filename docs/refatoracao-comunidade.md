@@ -1454,3 +1454,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O registro de edição de obra no Diário foi isolado em `editar-obra-diary-action.ts`, preservando payload completo, fallback simplificado, visibilidade, href e tolerância a falhas.
 - Salvamento principal, autenticação, consultas Supabase, estado e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 20 — Editar Obra
+
+- A validação e o cálculo puro de progresso do formulário foram isolados em `editar-obra-form-validation.ts`, preservando ordem das mensagens, critérios, arredondamento e a diferença entre autor do perfil e campo de autor.
+- Salvamento, estado, valores derivados, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
