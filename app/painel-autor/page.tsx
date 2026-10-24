@@ -12,6 +12,7 @@ import { LoadingSpinner } from "./components/painel-autor-loading-spinner";
 import { usePainelAutorAuthSession } from "./hooks/use-painel-autor-auth-session";
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
+import { usePainelAutorFilterState } from "./hooks/use-painel-autor-filter-state";
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { usePainelAutorSummaryPreference } from "./hooks/use-painel-autor-summary-preference";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
@@ -162,8 +163,6 @@ import {
 import {
   FILTROS_PAINEL,
   ORDENACOES_PAINEL,
-  type FiltroPainel,
-  type OrdenacaoPainel,
 } from "./lib/painel-autor-filter-options";
 import {
   carregarListaIdsPainel,
@@ -1104,12 +1103,21 @@ export default function PainelAutorPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
-  const [busca, setBusca] = useState("");
-  const [buscaPainelAberta, setBuscaPainelAberta] = useState(false);
-  const [filtro, setFiltro] = useState<FiltroPainel>("todas");
-  const [ordenacao, setOrdenacao] = useState<OrdenacaoPainel>("pontuacao");
   const [carregandoDados, setCarregandoDados] = useState(true);
-  const [mostrarFiltrosPainel, setMostrarFiltrosPainel] = useState(false);
+  const {
+    busca,
+    setBusca,
+    buscaPainelAberta,
+    setBuscaPainelAberta,
+    filtro,
+    setFiltro,
+    ordenacao,
+    setOrdenacao,
+    mostrarFiltrosPainel,
+    setMostrarFiltrosPainel,
+    filtrosAtivos,
+    limparFiltros,
+  } = usePainelAutorFilterState();
 
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -1391,14 +1399,6 @@ export default function PainelAutorPage() {
   );
 
   const totalArquivos = obrasComMetricas.filter((obra) => obra.arquivoObra).length;
-
-  const filtrosAtivos =
-    Boolean(busca.trim()) || filtro !== "todas" || ordenacao !== "pontuacao";
-  function limparFiltros() {
-    setBusca("");
-    setFiltro("todas");
-    setOrdenacao("pontuacao");
-  }
 
   const usuarioLogado = Boolean(usuarioIdLogado);
   function abrirArquivoObra(obra: ObraLocal) {

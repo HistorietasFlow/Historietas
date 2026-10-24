@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const filterStateHook = readFileSync(
+  new URL(
+    "../../app/painel-autor/hooks/use-painel-autor-filter-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const optionsJavascript = typescript.transpileModule(optionsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -57,7 +64,7 @@ test("Painel do Autor delega somente tipos e opções de filtro e ordenação", 
   );
   assert.match(
     pagina,
-    /import \{[\s\S]*?FILTROS_PAINEL,[\s\S]*?ORDENACOES_PAINEL,[\s\S]*?type FiltroPainel,[\s\S]*?type OrdenacaoPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-filter-options";/,
+    /import \{[\s\S]*?FILTROS_PAINEL,[\s\S]*?ORDENACOES_PAINEL,[\s\S]*?\} from "\.\/lib\/painel-autor-filter-options";/,
   );
   assert.doesNotMatch(pagina, /type FiltroPainel =/);
   assert.doesNotMatch(pagina, /type OrdenacaoPainel =/);
@@ -65,10 +72,38 @@ test("Painel do Autor delega somente tipos e opções de filtro e ordenação", 
   assert.doesNotMatch(pagina, /const ORDENACOES_PAINEL:/);
   assert.equal((pagina.match(/\bFILTROS_PAINEL\b/g) || []).length, 2);
   assert.equal((pagina.match(/\bORDENACOES_PAINEL\b/g) || []).length, 2);
-  assert.match(pagina, /const \[filtro, setFiltro\] = useState<FiltroPainel>\("todas"\);/);
   assert.match(
     pagina,
+    /import \{ usePainelAutorFilterState \} from "\.\/hooks\/use-painel-autor-filter-state";/,
+  );
+  assert.match(pagina, /\} = usePainelAutorFilterState\(\);/);
+  assert.doesNotMatch(pagina, /const \[filtro, setFiltro\] = useState<FiltroPainel>/);
+  assert.doesNotMatch(
+    pagina,
+    /const \[ordenacao, setOrdenacao\] = useState<OrdenacaoPainel>/,
+  );
+  assert.match(filterStateHook, /^"use client";/);
+  assert.match(filterStateHook, /const \[busca, setBusca\] = useState\(""\);/);
+  assert.match(
+    filterStateHook,
+    /const \[buscaPainelAberta, setBuscaPainelAberta\] = useState\(false\);/,
+  );
+  assert.match(
+    filterStateHook,
+    /import type \{[\s\S]*?FiltroPainel,[\s\S]*?OrdenacaoPainel,[\s\S]*?\} from "\.\.\/lib\/painel-autor-filter-options";/,
+  );
+  assert.match(filterStateHook, /const \[filtro, setFiltro\] = useState<FiltroPainel>\("todas"\);/);
+  assert.match(
+    filterStateHook,
     /const \[ordenacao, setOrdenacao\] = useState<OrdenacaoPainel>\("pontuacao"\);/,
+  );
+  assert.match(
+    filterStateHook,
+    /const filtrosAtivos =\s*Boolean\(busca\.trim\(\)\) \|\| filtro !== "todas" \|\| ordenacao !== "pontuacao";/,
+  );
+  assert.match(
+    filterStateHook,
+    /function limparFiltros\(\) \{\s*setBusca\(""\);\s*setFiltro\("todas"\);\s*setOrdenacao\("pontuacao"\);\s*\}/,
   );
   assert.match(
     pagina,
@@ -79,4 +114,5 @@ test("Painel do Autor delega somente tipos e opções de filtro e ordenação", 
     /supabase\.auth\.getUser\(\)/,
   );
   assert.doesNotMatch(optionsSource, /supabase|useState|useEffect|localStorage/);
+  assert.doesNotMatch(filterStateHook, /supabase|useEffect|localStorage|window|document/);
 });
