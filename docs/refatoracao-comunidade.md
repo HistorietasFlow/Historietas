@@ -1499,3 +1499,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A preparação pura dos assets atuais foi isolada em `editar-obra-current-assets-preparation.ts`, preservando prioridades de capa, arquivo, backup e caminhos de Storage.
 - Autorização, uploads, remoções, Supabase, Storage, setters, persistência, Diário e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 29 — Editar Obra
+
+- A construção pura do payload de atualização de obras foi isolada em `editar-obra-update-payload.ts`, preservando colunas, fallbacks de arquivo e `atualizado_em`.
+- A chamada Supabase, autorização, uploads, remoções, rollback, persistência, Diário, setters, redirecionamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
