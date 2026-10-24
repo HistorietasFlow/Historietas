@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const filterStateHook = readFileSync(
+  new URL(
+    "../../app/painel-autor/hooks/use-painel-autor-filter-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("usePainelAutorFiltersBodyLock preserva o lifecycle do painel de filtros", () => {
   assert.match(hook, /^"use client";/);
@@ -73,13 +80,22 @@ test("Painel do Autor delega somente o body lock e preserva o painel", () => {
   );
   assert.match(
     pagina,
+    /import \{ usePainelAutorFilterState \} from "\.\/hooks\/use-painel-autor-filter-state";/,
+  );
+  assert.match(pagina, /\} = usePainelAutorFilterState\(\);/);
+  assert.doesNotMatch(
+    pagina,
+    /const \[mostrarFiltrosPainel, setMostrarFiltrosPainel\] = useState\(false\);/,
+  );
+  assert.match(
+    filterStateHook,
     /const \[mostrarFiltrosPainel, setMostrarFiltrosPainel\] = useState\(false\);/,
   );
   assert.match(pagina, /\{mostrarFiltrosPainel && \(/);
   assert.match(pagina, /onClick=\{\(\) => setMostrarFiltrosPainel\(false\)\}/);
   assert.match(pagina, /stopPropagation\(\)/);
-  assert.match(pagina, /const \[filtro, setFiltro\] = useState<FiltroPainel>/);
-  assert.match(pagina, /const \[ordenacao, setOrdenacao\] = useState<OrdenacaoPainel>/);
+  assert.match(filterStateHook, /const \[filtro, setFiltro\] = useState<FiltroPainel>/);
+  assert.match(filterStateHook, /const \[ordenacao, setOrdenacao\] = useState<OrdenacaoPainel>/);
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
     /supabase\.auth\.getUser\(\)/,
