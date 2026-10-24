@@ -67,6 +67,7 @@ import {
   criarArquivoObraDeSupabase,
   criarArquivoRemotoEdicaoObra,
 } from "./lib/editar-obra-supabase-file-converter";
+import { obterChavesBackupArquivoEdicaoObra } from "./lib/editar-obra-file-backup-key-utils";
 
 type CapituloLocal = {
   id: string;
@@ -1135,22 +1136,6 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
                 )
           }`,
   };
-}
-
-
-function obterChavesBackupArquivoEdicaoObra(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">,
-) {
-  return Array.from(
-    new Set(
-      [
-        `id:${obra.id}`,
-        `slug:${obra.slug || criarSlugBase(obra.titulo)}`,
-        `titulo:${normalizarTexto(obra.titulo)}`,
-        obra.link ? `link:${obra.link}` : "",
-      ].filter((chave) => Boolean(chave.trim())),
-    ),
-  );
 }
 
 
