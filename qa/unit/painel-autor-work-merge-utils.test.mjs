@@ -14,6 +14,7 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const resultMergeSource = readFileSync(new URL("../../app/painel-autor/lib/painel-autor-supabase-result-merge.ts", import.meta.url), "utf8");
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -67,11 +68,14 @@ test("mesclarObrasPainelAutor devolve nova lista e preserva referências sem Sup
 
 test("Painel do Autor delega somente a mesclagem de obras ao módulo extraído", () => {
   assert.match(
-    pagina,
-    /import \{ mesclarObrasPainelAutor \} from "\.\/lib\/painel-autor-work-merge-utils";/,
+    resultMergeSource,
+    /import \{ mesclarObrasPainelAutor \} from "\.\/painel-autor-work-merge-utils";/,
   );
+  assert.doesNotMatch(pagina, /import \{ mesclarObrasPainelAutor \} from "\.\/lib\/painel-autor-work-merge-utils";/);
   assert.doesNotMatch(pagina, /function mesclarObrasPainelAutor\(/);
-  assert.equal((pagina.match(/\bmesclarObrasPainelAutor\b/g) || []).length, 2);
+  assert.match(pagina, /import \{ mesclarResultadoSupabasePainelAutor \} from "\.\/lib\/painel-autor-supabase-result-merge";/);
+  assert.match(pagina, /return mesclarResultadoSupabasePainelAutor\(/);
+  assert.match(resultMergeSource, /mesclarObrasPainelAutor\(obrasLocaisUsuario, obrasSupabase\)/);
   assert.match(pagina, /async function carregarPainelAutorSupabase\(/);
   assert.match(
     utilsSource,

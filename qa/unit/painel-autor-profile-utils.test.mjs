@@ -21,6 +21,7 @@ const profileLoaderSource = readFileSync(
   ),
   "utf8",
 );
+const resultMergeSource = readFileSync(new URL("../../app/painel-autor/lib/painel-autor-supabase-result-merge.ts", import.meta.url), "utf8");
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -197,7 +198,9 @@ test("Painel do Autor delega somente os helpers de perfil ao módulo extraído",
   assert.doesNotMatch(pagina, /function obterNomeProfilePainelAutor\(/);
   assert.doesNotMatch(pagina, /function aplicarNomeProfileNasObrasPainel\(/);
   assert.equal((pagina.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 4);
+  assert.equal((pagina.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 3);
+  assert.match(resultMergeSource, /import \{ aplicarNomeProfileNasObrasPainel \} from "\.\/painel-autor-profile-utils";/);
+  assert.match(resultMergeSource, /aplicarNomeProfileNasObrasPainel\(/);
   assert.match(
     pagina,
     /import \{ carregarProfilePainelAutor \} from "\.\/lib\/painel-autor-profile-loader";/,
