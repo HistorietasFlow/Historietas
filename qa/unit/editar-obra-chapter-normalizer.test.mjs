@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const workNormalizerSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -88,12 +95,13 @@ test("normaliza fallbacks, coerções e publicação de capítulos", () => {
 
 test("Editar Obra delega somente a normalização de capítulos", () => {
   assert.match(
-    pageSource,
-    /import \{ normalizarCapitulo \} from "\.\/lib\/editar-obra-chapter-normalizer";/,
+    workNormalizerSource,
+    /import \{ normalizarCapitulo \} from "\.\/editar-obra-chapter-normalizer";/,
   );
   assert.doesNotMatch(pageSource, /function normalizarCapitulo\(/);
+  assert.doesNotMatch(pageSource, /import \{ normalizarCapitulo \}/);
   assert.match(
-    pageSource,
+    workNormalizerSource,
     /obra\.capitulos\.map\(\(capitulo, capituloIndex\) =>\s*normalizarCapitulo\(capitulo, capituloIndex\)/,
   );
   assert.match(source, /typeof capitulo\.id === "string" && capitulo\.id\.trim\(\)/);

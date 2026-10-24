@@ -1424,3 +1424,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A normalização pura de capítulos foi isolada em `editar-obra-chapter-normalizer.ts`, preservando IDs, títulos, textos, flags, datas, publicação e fallbacks.
 - A normalização da obra, carregamento, Storage, Supabase, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 14 — Editar Obra
+
+- A normalização pura de obras foi isolada em `editar-obra-work-normalizer.ts`, preservando capítulos, metadados, arquivos, métricas, slug, link e fallbacks.
+- Carregamento, persistência, Storage, Supabase, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
