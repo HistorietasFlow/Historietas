@@ -54,6 +54,7 @@ import {
   calcularProgressoLeitura,
   normalizarContadorEdicaoObra,
 } from "./lib/editar-obra-metrics-utils";
+import { usuarioPodeEditarObraLocal } from "./lib/editar-obra-ownership-utils";
 
 type CapituloLocal = {
   id: string;
@@ -1172,18 +1173,6 @@ function restaurarArquivoObraComBackup(
     arquivoObra: arquivoBackup,
   };
 }
-
-function normalizarIdUsuario(valor: string) {
-  return valor.trim().toLowerCase();
-}
-
-function usuarioPodeEditarObraLocal(obra: ObraLocal, userId: string) {
-  const usuarioAtual = normalizarIdUsuario(userId);
-  const autorIdObra = normalizarIdUsuario(obra.autorId || "");
-
-  return Boolean(usuarioAtual) && (!autorIdObra || autorIdObra === usuarioAtual);
-}
-
 
 function salvarObrasDoUsuarioPreservandoOutrasContas(
   obrasDoUsuario: ObraLocal[],
