@@ -2241,6 +2241,15 @@ const painelAutorSupabaseChaptersLoader = fs.existsSync(
 )
   ? fs.readFileSync(painelAutorSupabaseChaptersLoaderPath, "utf8")
   : "";
+const painelAutorSupabaseWorksLoaderPath = path.join(
+  ROOT_DIR,
+  "app/painel-autor/lib/painel-autor-supabase-works-loader.ts"
+);
+const painelAutorSupabaseWorksLoader = fs.existsSync(
+  painelAutorSupabaseWorksLoaderPath
+)
+  ? fs.readFileSync(painelAutorSupabaseWorksLoaderPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2274,7 +2283,7 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
       : ""
   }${
     relativePath === "app/painel-autor/page.tsx"
-      ? `\n${painelAutorSupabaseChaptersLoader}`
+      ? `\n${painelAutorSupabaseChaptersLoader}\n${painelAutorSupabaseWorksLoader}`
       : ""
   }${
     relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"
