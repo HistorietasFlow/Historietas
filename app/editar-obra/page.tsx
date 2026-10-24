@@ -8,7 +8,6 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
-import { criarSlugBase } from "../../lib/utils";
 import {
   AVISOS_CONTEUDO_18,
   ehClassificacao18,
@@ -36,6 +35,7 @@ import {
   salvarArquivoObraNoBackup,
   sincronizarBackupArquivosObras,
 } from "./lib/editar-obra-file-backup-storage";
+import { criarAlvoBackupArquivoEdicaoObra } from "./lib/editar-obra-backup-target";
 import { normalizarObra } from "./lib/editar-obra-work-normalizer";
 import { normalizarObraSupabase } from "./lib/editar-obra-supabase-work-normalizer";
 import {
@@ -1440,12 +1440,11 @@ export default function EditarObraPage() {
 
       if (arquivoObraRemovidoManualmente) {
         salvarArquivoObraNoBackup(
-          {
-            id: obraId,
-            slug: obraLocalAtual?.slug || criarSlugBase(tituloFinal),
-            titulo: tituloFinal,
-            link: obraLocalAtual?.link || `/obra/${obraLocalAtual?.slug || criarSlugBase(tituloFinal)}`,
-          },
+          criarAlvoBackupArquivoEdicaoObra({
+            obraId,
+            obraLocalAtual,
+            tituloFinal,
+          }),
           null,
           userId
         );
