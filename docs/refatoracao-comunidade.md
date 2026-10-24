@@ -1514,3 +1514,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A construção pura do alvo de remoção do backup de arquivo foi isolada em `editar-obra-backup-target.ts`, preservando prioridades de slug, link e os fallbacks de URL.
 - A condição de remoção manual, a gravação/sincronização do backup, persistência local, Diário, setters, tratamento de erro, Supabase e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 32 — Editar Obra
+
+- O bridge específico de tradução foi movido para `components/EditarObraLanguageBridge.tsx`, preservando textos, padrões dinâmicos, atributos, observação do DOM e restauração no cleanup.
+- A página manteve somente a montagem de `EditarObraLanguageBridge`; formulário, estados, salvamento, autenticação, Supabase, Storage, estilos e JSX restante permaneceram sem alteração intencional de comportamento.
