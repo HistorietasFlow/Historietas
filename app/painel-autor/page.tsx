@@ -83,11 +83,9 @@ import {
   coverLinkStyle,
   draftStatusStyle,
   publishedStatusStyle,
-  sectionStyle,
   statusRowStyle,
   workCardStyle,
   workContentStyle,
-  worksGridStyle,
 } from "./lib/painel-autor-work-card-layout-style-utils";
 import {
   authorStyle,
@@ -125,13 +123,11 @@ import {
 import {
   desktopCardActionsGridStyle,
   desktopContainerStyle,
-  desktopSectionStyle,
   desktopSheetStatsRowStyle,
   desktopStatsBoxStyle,
   desktopStudioControlsStyle,
   desktopWorkCardStyle,
   desktopWorkContentStyle,
-  desktopWorksGridStyle,
 } from "./lib/painel-autor-desktop-compositions-style-utils";
 import {
   emptyMiniBoxStyle,
@@ -144,6 +140,7 @@ import {
   obterNomeProfilePainelAutor,
 } from "./lib/painel-autor-profile-utils";
 import { carregarProfilePainelAutor } from "./lib/painel-autor-profile-loader";
+import { PainelSecao } from "./components/painel-autor-section";
 import {
   obraPublicadaComConteudoPainel,
   obterStatusPainelAutor,
@@ -1167,51 +1164,17 @@ export default function PainelAutorPage() {
             </button>
           </section>
         ) : (
-          <PainelSecao
+          <PainelSecao<ObraComMetricas>
             obras={obrasFiltradas}
             isDesktop={isDesktop}
             onAbrirArquivo={abrirArquivoObra}
             onCompartilhar={compartilharObra}
             onExcluirObra={excluirObra}
+            Card={ObraPainelCard}
           />
         )}
       </section>
     </main>
-  );
-}
-
-function PainelSecao({
-  obras,
-  isDesktop,
-  onAbrirArquivo,
-  onCompartilhar,
-  onExcluirObra,
-}: {
-  obras: ObraComMetricas[];
-  isDesktop: boolean;
-  onAbrirArquivo: (obra: ObraLocal) => void | Promise<void>;
-  onCompartilhar: (obra: ObraLocal) => void | Promise<void>;
-  onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
-}) {
-  if (obras.length === 0) {
-    return null;
-  }
-
-  return (
-    <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-      <div style={isDesktop ? desktopWorksGridStyle : worksGridStyle}>
-        {obras.map((obra) => (
-          <ObraPainelCard
-            key={obra.id}
-            obra={obra}
-            isDesktop={isDesktop}
-            onAbrirArquivo={onAbrirArquivo}
-            onCompartilhar={onCompartilhar}
-            onExcluirObra={onExcluirObra}
-          />
-        ))}
-      </div>
-    </section>
   );
 }
 
