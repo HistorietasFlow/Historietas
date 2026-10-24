@@ -20,7 +20,6 @@ import {
   filtrarObrasDoUsuarioPainel,
   marcarObrasComDonoPainel,
   normalizarIdUsuarioPainel,
-  obraPertenceAoUsuarioPainel,
 } from "./lib/painel-autor-ownership-utils";
 import { carregarComentariosCapitulosUsuarioPainel } from "./lib/painel-autor-chapter-comments-loader";
 import { converterObraSupabaseParaLocalPainel } from "./lib/painel-autor-supabase-work-converter";
@@ -140,7 +139,6 @@ import {
   emptyMiniTextStyle,
   emptyMiniTitleStyle,
 } from "./lib/painel-autor-empty-state-style-utils";
-import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
   aplicarNomeProfileNasObrasPainel,
   obterNomeProfilePainelAutor,
@@ -195,6 +193,7 @@ import { removerReferenciasSupabaseObraExcluidaPainel } from "./lib/painel-autor
 import { carregarCapitulosPainelAutorSupabase } from "./lib/painel-autor-supabase-chapters-loader";
 import { carregarObrasPainelAutorSupabase } from "./lib/painel-autor-supabase-works-loader";
 import { prepararEstadoMetricasPainel } from "./lib/painel-autor-metrics-state";
+import { mesclarResultadoSupabasePainelAutor } from "./lib/painel-autor-supabase-result-merge";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 
 type CapituloLocal = {
@@ -392,24 +391,7 @@ async function carregarPainelAutorSupabase(
       };
     });
 
-    const obrasMescladasUsuario = aplicarNomeProfileNasObrasPainel(
-      mesclarObrasPainelAutor(obrasLocaisUsuario, obrasSupabase).filter((obra) =>
-        obraPertenceAoUsuarioPainel(obra, userId)
-      ),
-      userId,
-      nomeProfileAutor
-    );
-    const idsObrasUsuario = new Set(obrasMescladasUsuario.map((obra) => obra.id));
-
-    return {
-      obras: obrasMescladasUsuario,
-      favoritas: Array.from(
-        new Set([...obrasFavoritasUsuario, ...Array.from(favoritosSupabase)])
-      ).filter((id) => idsObrasUsuario.has(id)),
-      concluidas: Array.from(
-        new Set([...obrasConcluidasUsuario, ...Array.from(concluidasSupabase)])
-      ).filter((id) => idsObrasUsuario.has(id)),
-    };
+    return mesclarResultadoSupabasePainelAutor({ obrasLocaisUsuario, obrasSupabase, userId, nomeProfileAutor, obrasFavoritasUsuario, obrasConcluidasUsuario, favoritosSupabase, concluidasSupabase });
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Painel do Autor:", error);
 
