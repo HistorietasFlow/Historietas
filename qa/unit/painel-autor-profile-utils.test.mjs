@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const profileLoaderSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-profile-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -28,6 +35,69 @@ const utilsJavascript = typescript
 const { obterNomeProfilePainelAutor, aplicarNomeProfileNasObrasPainel } = await import(
   `data:text/javascript;base64,${Buffer.from(utilsJavascript).toString("base64")}`,
 );
+
+const profileLoaderState = {
+  chamadas: [],
+  respostas: [],
+  deveFalhar: false,
+};
+globalThis.__painelAutorProfileSupabase = {
+  from(tabela) {
+    return {
+      select(campos) {
+        return {
+          eq(campo, valor) {
+            return {
+              limit(limite) {
+                return {
+                  async maybeSingle() {
+                    profileLoaderState.chamadas.push({
+                      tabela,
+                      campos,
+                      campo,
+                      valor,
+                      limite,
+                    });
+                    if (profileLoaderState.deveFalhar) {
+                      throw new Error("falha de rede");
+                    }
+                    return profileLoaderState.respostas.shift() || {
+                      data: null,
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        };
+      },
+    };
+  },
+};
+const profileLoaderJavascript = typescript
+  .transpileModule(
+    profileLoaderSource.replace(
+      'import { supabase } from "../../../lib/supabase/client";',
+      "const supabase = globalThis.__painelAutorProfileSupabase;",
+    ),
+    {
+      compilerOptions: {
+        module: typescript.ModuleKind.ESNext,
+        target: typescript.ScriptTarget.ES2022,
+      },
+    },
+  )
+  .outputText;
+const { carregarProfilePainelAutor } = await import(
+  `data:text/javascript;base64,${Buffer.from(profileLoaderJavascript).toString("base64")}`,
+);
+
+function prepararProfileLoader({ respostas = [], deveFalhar = false } = {}) {
+  profileLoaderState.chamadas.length = 0;
+  profileLoaderState.respostas = [...respostas];
+  profileLoaderState.deveFalhar = deveFalhar;
+}
 
 test("obterNomeProfilePainelAutor preserva validação e trim", () => {
   assert.equal(obterNomeProfilePainelAutor({ nome: "  Autora  " }), "Autora");
@@ -63,6 +133,62 @@ test("aplicarNomeProfileNasObrasPainel devolve a lista original quando o nome é
   assert.strictEqual(aplicarNomeProfileNasObrasPainel(obras, "user-1", "  "), obras);
 });
 
+test("carregarProfilePainelAutor consulta primeiro user_id e retorna o profile encontrado", async () => {
+  const profile = { id: "perfil-1", user_id: "usuario-1", nome: "Ana" };
+  prepararProfileLoader({ respostas: [{ data: profile, error: null }] });
+
+  assert.strictEqual(await carregarProfilePainelAutor(" usuario-1 "), profile);
+  assert.deepEqual(profileLoaderState.chamadas, [
+    {
+      tabela: "profiles_publicos",
+      campos: "id, user_id, nome, avatar_url, bio, sobre_bio",
+      campo: "user_id",
+      valor: "usuario-1",
+      limite: 1,
+    },
+  ]);
+});
+
+test("carregarProfilePainelAutor usa o fallback por id e mantém falhas silenciosas", async () => {
+  const profile = { id: "perfil-2", user_id: "usuario-2", nome: "Beto" };
+  prepararProfileLoader({
+    respostas: [
+      { data: null, error: { message: "indisponível" } },
+      { data: profile, error: null },
+    ],
+  });
+
+  assert.strictEqual(await carregarProfilePainelAutor("usuario-2"), profile);
+  assert.deepEqual(
+    profileLoaderState.chamadas.map(({ campo, valor, limite }) => ({
+      campo,
+      valor,
+      limite,
+    })),
+    [
+      { campo: "user_id", valor: "usuario-2", limite: 1 },
+      { campo: "id", valor: "usuario-2", limite: 1 },
+    ],
+  );
+
+  prepararProfileLoader({ deveFalhar: true });
+  assert.equal(await carregarProfilePainelAutor("usuario-3"), null);
+  assert.equal(profileLoaderState.chamadas.length, 1);
+
+  prepararProfileLoader({
+    respostas: [
+      { data: null, error: null },
+      { data: null, error: null },
+    ],
+  });
+  assert.equal(await carregarProfilePainelAutor("usuario-4"), null);
+  assert.equal(profileLoaderState.chamadas.length, 2);
+
+  prepararProfileLoader();
+  assert.equal(await carregarProfilePainelAutor("  "), null);
+  assert.deepEqual(profileLoaderState.chamadas, []);
+});
+
 test("Painel do Autor delega somente os helpers de perfil ao módulo extraído", () => {
   assert.match(
     pagina,
@@ -72,7 +198,30 @@ test("Painel do Autor delega somente os helpers de perfil ao módulo extraído",
   assert.doesNotMatch(pagina, /function aplicarNomeProfileNasObrasPainel\(/);
   assert.equal((pagina.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 3);
   assert.equal((pagina.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 4);
-  assert.match(pagina, /async function carregarProfilePainelAutor\(/);
+  assert.match(
+    pagina,
+    /import \{ carregarProfilePainelAutor \} from "\.\/lib\/painel-autor-profile-loader";/,
+  );
+  assert.doesNotMatch(pagina, /async function carregarProfilePainelAutor\(/);
+  assert.equal((pagina.match(/\bcarregarProfilePainelAutor\b/g) || []).length, 3);
+  assert.match(
+    profileLoaderSource,
+    /export async function carregarProfilePainelAutor\(userId: string\)/,
+  );
+  assert.match(profileLoaderSource, /\.from\("profiles_publicos"\)/);
+  assert.match(
+    profileLoaderSource,
+    /"id, user_id, nome, avatar_url, bio, sobre_bio"/,
+  );
+  assert.match(profileLoaderSource, /\.eq\("user_id", userIdLimpo\)/);
+  assert.match(profileLoaderSource, /\.eq\("id", userIdLimpo\)/);
+  assert.match(profileLoaderSource, /\.limit\(1\)/);
+  assert.match(profileLoaderSource, /\.maybeSingle\(\)/);
+  assert.match(
+    profileLoaderSource,
+    /O perfil público é uma camada social\. O painel continua com os dados da obra\./,
+  );
+  assert.doesNotMatch(profileLoaderSource, /useState|useEffect|localStorage|window|document/);
   assert.match(
     utilsSource,
     /import \{ obraPertenceAoUsuarioPainel \} from "\.\/painel-autor-ownership-utils";/,

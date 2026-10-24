@@ -145,6 +145,7 @@ import {
   aplicarNomeProfileNasObrasPainel,
   obterNomeProfilePainelAutor,
 } from "./lib/painel-autor-profile-utils";
+import { carregarProfilePainelAutor } from "./lib/painel-autor-profile-loader";
 import {
   obraPublicadaComConteudoPainel,
   obterStatusPainelAutor,
@@ -288,15 +289,6 @@ type SupabaseCapituloRow = {
   publicado: boolean | null;
   criado_em: string | null;
   atualizado_em: string | null;
-};
-
-type ProfilePainelAutorRow = {
-  id?: string | null;
-  user_id?: string | null;
-  nome?: string | null;
-  avatar_url?: string | null;
-  bio?: string | null;
-  sobre_bio?: string | null;
 };
 
 type ObraComMetricas = ObraComMetricasPainel<ObraLocal>;
@@ -658,43 +650,6 @@ function converterObraSupabaseParaLocalPainel({
     slug: slugObra,
     link: obraBanco.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
   };
-}
-
-async function carregarProfilePainelAutor(userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return null as ProfilePainelAutorRow | null;
-  }
-
-  try {
-    const camposProfile = "id, user_id, nome, avatar_url, bio, sobre_bio";
-    const { data: profilePorUserId, error: erroUserId } = await supabase
-      .from("profiles_publicos")
-      .select(camposProfile)
-      .eq("user_id", userIdLimpo)
-      .limit(1)
-      .maybeSingle();
-
-    if (!erroUserId && profilePorUserId) {
-      return profilePorUserId as ProfilePainelAutorRow;
-    }
-
-    const { data: profilePorId, error: erroId } = await supabase
-      .from("profiles_publicos")
-      .select(camposProfile)
-      .eq("id", userIdLimpo)
-      .limit(1)
-      .maybeSingle();
-
-    if (!erroId && profilePorId) {
-      return profilePorId as ProfilePainelAutorRow;
-    }
-  } catch {
-    // O perfil público é uma camada social. O painel continua com os dados da obra.
-  }
-
-  return null;
 }
 
 async function carregarPainelAutorSupabase(
