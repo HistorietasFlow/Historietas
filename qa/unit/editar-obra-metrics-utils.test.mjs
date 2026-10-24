@@ -6,6 +6,13 @@ import "./editar-obra-ownership-utils.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-metrics-utils.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
+const supabaseWorkNormalizerSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-supabase-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -37,9 +44,17 @@ test("calcula progresso de leitura vazio, parcial e arredondado", () => {
 });
 
 test("Editar Obra delega somente as métricas puras", () => {
-  assert.match(pageSource, /from "\.\/lib\/editar-obra-metrics-utils";/);
+  assert.match(
+    pageSource,
+    /import \{ normalizarObraSupabase \} from "\.\/lib\/editar-obra-supabase-work-normalizer";/,
+  );
+  assert.match(
+    supabaseWorkNormalizerSource,
+    /from "\.\/editar-obra-metrics-utils";/,
+  );
   for (const helper of ["normalizarContadorEdicaoObra", "calcularProgressoLeitura"]) {
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
+    assert.doesNotMatch(pageSource, new RegExp(`import \\{ ${helper} \\}`));
   }
   assert.ok(source.includes('Number(valor.replace(/\\./g, "").replace(",", "."))'));
   assert.match(source, /Math\.round\(\(capitulosLidos \/ capitulos\.length\) \* 100\)/);
