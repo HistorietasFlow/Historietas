@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const compartilhamentoSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-share-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -91,4 +98,39 @@ test("Painel do Autor delega somente os helpers de navegação", () => {
   );
   assert.match(pagina, /const STORAGE_KEY/);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
+});
+
+test("Painel do Autor delega o compartilhamento e preserva seus fallbacks", () => {
+  assert.match(
+    pagina,
+    /import \{ compartilharObraPainel \} from "\.\/lib\/painel-autor-share-action";/,
+  );
+  assert.match(
+    pagina,
+    /function compartilharObra\(obra: ObraLocal\) \{[\s\S]*?return compartilharObraPainel\(obra, language\);/,
+  );
+  assert.doesNotMatch(pagina, /function copiarTextoComFallback\(/);
+  assert.doesNotMatch(pagina, /async function compartilharObra\(/);
+  assert.match(compartilhamentoSource, /export function copiarTextoComFallback\(texto: string\)/);
+  assert.match(compartilhamentoSource, /document\.createElement\("textarea"\)/);
+  assert.match(compartilhamentoSource, /campoTemporario\.setAttribute\("readonly", "true"\)/);
+  assert.match(compartilhamentoSource, /campoTemporario\.style\.position = "fixed"/);
+  assert.match(compartilhamentoSource, /campoTemporario\.style\.left = "-9999px"/);
+  assert.match(compartilhamentoSource, /document\.execCommand\("copy"\)/);
+  assert.match(compartilhamentoSource, /document\.body\.removeChild\(campoTemporario\)/);
+  assert.match(compartilhamentoSource, /export async function compartilharObraPainel\(/);
+  assert.match(
+    compartilhamentoSource,
+    /obra\.link \|\| `\/obra\/\$\{obra\.slug \|\| criarSlugBase\(obra\.titulo\)\}`/,
+  );
+  assert.match(compartilhamentoSource, /new URL\(href, window\.location\.origin\)\.toString\(\)/);
+  assert.match(compartilhamentoSource, /title: traduzirTextoPainelAutor\(`\$\{obra\.titulo\} no HISTORIETAS`, language\)/);
+  assert.match(compartilhamentoSource, /`Confira a obra \$\{obra\.titulo\} de \$\{obra\.autor\} no HISTORIETAS\.`/);
+  assert.match(compartilhamentoSource, /typeof navigator\.share === "function"/);
+  assert.match(compartilhamentoSource, /await navigator\.share\(dadosCompartilhamento\)/);
+  assert.match(compartilhamentoSource, /error instanceof DOMException && error\.name === "AbortError"/);
+  assert.match(compartilhamentoSource, /window\.isSecureContext/);
+  assert.match(compartilhamentoSource, /navigator\.clipboard\.writeText\(linkAbsoluto\)/);
+  assert.match(compartilhamentoSource, /copiarTextoComFallback\(linkAbsoluto\)/);
+  assert.doesNotMatch(compartilhamentoSource, /supabase|localStorage|useState|useEffect/);
 });
