@@ -6,6 +6,10 @@ const hook = await readFile(
   "app/painel-autor/hooks/use-painel-autor-desktop-mode.ts",
   "utf8",
 );
+const hookSessao = await readFile(
+  "app/painel-autor/hooks/use-painel-autor-auth-session.ts",
+  "utf8",
+);
 const pagina = await readFile("app/painel-autor/page.tsx", "utf8");
 
 test("usePainelAutorDesktopMode preserva o lifecycle responsivo síncrono", () => {
@@ -39,9 +43,54 @@ test("Painel do Autor delega somente o modo desktop", () => {
   assert.doesNotMatch(pagina, /window\.innerWidth >= 1024/);
   assert.doesNotMatch(pagina, /addEventListener\("resize", atualizarLayoutDesktop\)/);
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 25);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(
     pagina,
     /import \{ PainelAutorLanguageBridge \} from "\.\/components\/painel-autor-language-bridge";/,
+  );
+});
+
+test("usePainelAutorAuthSession preserva o lifecycle autenticado", () => {
+  assert.match(hookSessao, /^"use client";/);
+  assert.match(hookSessao, /export function usePainelAutorAuthSession\(\)/);
+  assert.match(hookSessao, /const \[usuarioIdLogado, setUsuarioIdLogado\] = useState\(""\);/);
+  assert.match(hookSessao, /const \[verificandoUsuario, setVerificandoUsuario\] = useState\(true\);/);
+  assert.match(hookSessao, /let componenteAtivo = true;/);
+  assert.match(hookSessao, /async function carregarUsuarioAtual\(\)/);
+  assert.match(hookSessao, /const \{ data \} = await supabase\.auth\.getUser\(\);/);
+  assert.match(hookSessao, /const usuario = data\.user;/);
+  assert.match(hookSessao, /if \(!componenteAtivo\) \{[\s\S]*?return;/);
+  assert.match(hookSessao, /setUsuarioIdLogado\(usuario\?\.id \|\| ""\);[\s\S]*?setVerificandoUsuario\(false\);/);
+  assert.match(hookSessao, /catch \{[\s\S]*?if \(componenteAtivo\) \{[\s\S]*?setUsuarioIdLogado\(""\);[\s\S]*?setVerificandoUsuario\(false\);/);
+  assert.match(hookSessao, /void carregarUsuarioAtual\(\);/);
+  assert.match(hookSessao, /supabase\.auth\.onAuthStateChange\(/);
+  assert.match(hookSessao, /setUsuarioIdLogado\(sessao\?\.user\?\.id \|\| ""\);[\s\S]*?setVerificandoUsuario\(false\);/);
+  assert.match(hookSessao, /componenteAtivo = false;[\s\S]*?listener\.subscription\.unsubscribe\(\);/);
+  assert.match(hookSessao, /\}, \[\]\);/);
+  assert.match(hookSessao, /return \{ usuarioIdLogado, verificandoUsuario \};/);
+  assert.doesNotMatch(hookSessao, /useRouter|router\.replace|localStorage/);
+});
+
+test("Painel do Autor delega a sessao e mantem o redirect na pagina", () => {
+  assert.match(
+    pagina,
+    /import \{ usePainelAutorAuthSession \} from "\.\/hooks\/use-painel-autor-auth-session";/,
+  );
+  assert.match(
+    pagina,
+    /const \{ usuarioIdLogado, verificandoUsuario \} =[\s\S]*?usePainelAutorAuthSession\(\);/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const \[usuarioIdLogado, setUsuarioIdLogado\] = useState\(""\);/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const \[verificandoUsuario, setVerificandoUsuario\] = useState\(true\);/,
+  );
+  assert.doesNotMatch(pagina, /async function carregarUsuarioAtual\(/);
+  assert.doesNotMatch(pagina, /supabase\.auth\.onAuthStateChange\(/);
+  assert.match(
+    pagina,
+    /if \(!verificandoUsuario && !usuarioIdLogado\) \{[\s\S]*?router\.replace\(criarLoginHrefPainelAutor\(\)\);/,
   );
 });

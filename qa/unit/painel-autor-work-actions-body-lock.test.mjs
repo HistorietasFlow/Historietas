@@ -70,5 +70,8 @@ test("Painel do Autor delega somente o body lock do action sheet", () => {
   assert.match(pagina, /stopPropagation\(\)/);
   assert.match(pagina, /const obraHref =/);
   assert.match(pagina, /async function carregarDadosPainelAutor\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
 });

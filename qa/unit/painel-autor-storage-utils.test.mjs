@@ -119,7 +119,10 @@ test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
     utilsSource,
     /criarStorageKeyUsuarioPainel\(chave, userIdLimpo\)/,
   );
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect/);
 });
 
@@ -176,6 +179,9 @@ test("Painel do Autor delega somente a preferencia do resumo ao hook", () => {
   );
   assert.doesNotMatch(pagina, /function alternarResumoPainel\(/);
   assert.doesNotMatch(pagina, /PANEL_SUMMARY_STORAGE_KEY/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
+    /supabase\.auth\.getUser\(\)/,
+  );
   assert.match(pagina, /onClick=\{alternarResumoPainel\}/);
 });
