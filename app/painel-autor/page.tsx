@@ -188,6 +188,10 @@ import { obterCapitulosPublicadosPainel } from "./lib/painel-autor-reading-progr
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { compartilharObraPainel } from "./lib/painel-autor-share-action";
 import { abrirArquivoObraPainel } from "./lib/painel-autor-open-file-action";
+import {
+  removerArquivosStorageObraExcluidaPainel,
+  type ArquivoStoragePainel,
+} from "./lib/painel-autor-deleted-work-storage-cleanup";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import {
   carregarTodasPaginasPorLotesSupabase,
@@ -215,12 +219,6 @@ type ArquivoObraLocal = {
   categoria: "texto" | "documento" | "imagem" | "outro";
   criadoEm: string;
 };
-
-type ArquivoStoragePainel = {
-  bucket: "capas-obras" | "arquivos-obras";
-  caminho: string;
-};
-
 
 type ObraLocal = {
   id: string;
@@ -295,45 +293,6 @@ const STORAGE_KEY = "historietas-obras";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
-async function removerArquivosStorageObraExcluidaPainel(
-  arquivos: ArquivoStoragePainel[]
-) {
-  const arquivosUnicos = Array.from(
-    new Map(
-      arquivos
-        .filter((arquivo) => Boolean(arquivo.caminho.trim()))
-        .map((arquivo) => [
-          `${arquivo.bucket}:${arquivo.caminho.trim()}`,
-          {
-            bucket: arquivo.bucket,
-            caminho: arquivo.caminho.trim(),
-          },
-        ])
-    ).values()
-  );
-
-  const resultados = await Promise.allSettled(
-    arquivosUnicos.map(async (arquivo) => {
-      const { error } = await supabase.storage
-        .from(arquivo.bucket)
-        .remove([arquivo.caminho]);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-    })
-  );
-
-  resultados.forEach((resultado, index) => {
-    if (resultado.status === "rejected") {
-      console.warn(
-        `Não consegui remover o arquivo de ${arquivosUnicos[index]?.bucket}:`,
-        resultado.reason
-      );
-    }
-  });
-}
 
 function limparReferenciasLocaisObraExcluidaPainel(
   obra: Pick<ObraLocal, "id" | "slug" | "titulo"> &
