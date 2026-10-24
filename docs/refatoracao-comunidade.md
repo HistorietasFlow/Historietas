@@ -1509,3 +1509,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A reconstrução pura da lista local após a edição foi isolada em `editar-obra-local-update.ts`, preservando ordem, dupla normalização e os valores atualizados da obra alvo.
 - Remoção de Storage, persistência local, backup, Diário, setters, tratamento de erro, Supabase e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 31 — Editar Obra
+
+- A construção pura do alvo de remoção do backup de arquivo foi isolada em `editar-obra-backup-target.ts`, preservando prioridades de slug, link e os fallbacks de URL.
+- A condição de remoção manual, a gravação/sincronização do backup, persistência local, Diário, setters, tratamento de erro, Supabase e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
