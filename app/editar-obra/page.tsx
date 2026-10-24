@@ -70,6 +70,7 @@ import { prepararTagsEdicaoObra } from "./lib/editar-obra-tags-list-utils";
 import { prepararValoresSalvamentoEdicaoObra } from "./lib/editar-obra-save-preparation";
 import { prepararAssetsAtuaisEdicaoObra } from "./lib/editar-obra-current-assets-preparation";
 import { criarPayloadAtualizacaoObra } from "./lib/editar-obra-update-payload";
+import { atualizarObraNaListaLocalEdicao } from "./lib/editar-obra-local-update";
 
 type CapituloLocal = {
   id: string;
@@ -1418,30 +1419,20 @@ export default function EditarObraPage() {
 
       await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover);
 
-      const novasObras = obras.map((obra, index) => {
-        const obraNormalizada = normalizarObra(obra, index);
-
-        if (obraNormalizada.id !== obraId) {
-          return obraNormalizada;
-        }
-
-        return normalizarObra(
-          {
-            ...obraNormalizada,
-            titulo: tituloFinal,
-            autor: autorFinal,
-            genero: generoFinalSalvo,
-            formato: formatoFinalSalvo,
-            classificacaoIndicativa: classificacaoFinal,
-            avisosConteudo: avisosConteudoFinal,
-            sinopse: sinopseFinal,
-            tags: tagsFinais,
-            capa: capaFinal,
-            capaNome: capaNomeFinal,
-            arquivoObra: arquivoObraFinal,
-          },
-          index
-        );
+      const novasObras = atualizarObraNaListaLocalEdicao({
+        obras,
+        obraId,
+        titulo: tituloFinal,
+        autor: autorFinal,
+        genero: generoFinalSalvo,
+        formato: formatoFinalSalvo,
+        classificacaoIndicativa: classificacaoFinal,
+        avisosConteudo: avisosConteudoFinal,
+        sinopse: sinopseFinal,
+        tags: tagsFinais,
+        capa: capaFinal,
+        capaNome: capaNomeFinal,
+        arquivoObra: arquivoObraFinal,
       });
 
       const novasObrasDoUsuario =
