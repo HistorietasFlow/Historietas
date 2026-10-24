@@ -12,6 +12,7 @@ import { LoadingSpinner } from "./components/painel-autor-loading-spinner";
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
+import { usePainelAutorSummaryPreference } from "./hooks/use-painel-autor-summary-preference";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
 import {
   filtrarObrasDoUsuarioPainel,
@@ -312,7 +313,6 @@ type ObraComMetricas = ObraLocal & {
 
 
 const STORAGE_KEY = "historietas-obras";
-const PANEL_SUMMARY_STORAGE_KEY = "historietas-painel-resumo-visivel";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
@@ -1131,12 +1131,14 @@ export default function PainelAutorPage() {
   const [verificandoUsuario, setVerificandoUsuario] = useState(true);
   const [carregandoDados, setCarregandoDados] = useState(true);
   const [mostrarFiltrosPainel, setMostrarFiltrosPainel] = useState(false);
-  const [mostrarResumoPainel, setMostrarResumoPainel] = useState(true);
 
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
 
   const isDesktop = usePainelAutorDesktopMode();
+
+  const { mostrarResumoPainel, alternarResumoPainel } =
+    usePainelAutorSummaryPreference(usuarioIdLogado);
 
   usePainelAutorFiltersBodyLock(mostrarFiltrosPainel);
 
@@ -1186,36 +1188,6 @@ export default function PainelAutorPage() {
       router.replace(criarLoginHrefPainelAutor());
     }
   }, [router, usuarioIdLogado, verificandoUsuario]);
-
-  useEffect(() => {
-    if (!usuarioIdLogado) {
-      return;
-    }
-
-    let mostrarResumoSalvo = true;
-
-    try {
-      const preferenciaSalva = lerStorageUsuarioPainel(
-        PANEL_SUMMARY_STORAGE_KEY,
-        usuarioIdLogado
-      );
-
-      mostrarResumoSalvo =
-        preferenciaSalva === null
-          ? true
-          : JSON.parse(preferenciaSalva) !== false;
-    } catch {
-      mostrarResumoSalvo = true;
-    }
-
-    const aplicarPreferenciaTimer = window.setTimeout(() => {
-      setMostrarResumoPainel(mostrarResumoSalvo);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(aplicarPreferenciaTimer);
-    };
-  }, [usuarioIdLogado]);
 
   useEffect(() => {
     if (verificandoUsuario || !usuarioIdLogado) {
@@ -1485,20 +1457,6 @@ export default function PainelAutorPage() {
     setBusca("");
     setFiltro("todas");
     setOrdenacao("pontuacao");
-  }
-
-  function alternarResumoPainel() {
-    setMostrarResumoPainel((mostrarAtual) => {
-      const proximoValor = !mostrarAtual;
-
-      salvarJsonStorageUsuarioPainel(
-        PANEL_SUMMARY_STORAGE_KEY,
-        usuarioIdLogado,
-        proximoValor
-      );
-
-      return proximoValor;
-    });
   }
 
   const usuarioLogado = Boolean(usuarioIdLogado);
