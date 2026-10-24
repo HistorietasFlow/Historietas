@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const currentAssetsPreparationSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-current-assets-preparation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(source, {
     compilerOptions: {
@@ -83,7 +90,11 @@ test("chaves de backup de Editar Obra filtram valores vazios e preservam dedupli
 test("Editar Obra delega somente as chaves de backup de arquivos ao modulo extraido", () => {
   assert.match(
     pageSource,
-    /import \{ obterChavesBackupArquivoEdicaoObra \} from "\.\/lib\/editar-obra-file-backup-key-utils";/,
+    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\/lib\/editar-obra-current-assets-preparation";/,
+  );
+  assert.match(
+    currentAssetsPreparationSource,
+    /import \{ obterChavesBackupArquivoEdicaoObra \} from "\.\/editar-obra-file-backup-key-utils";/,
   );
   assert.doesNotMatch(pageSource, /function obterChavesBackupArquivoEdicaoObra\(/);
   assert.match(
@@ -97,5 +108,9 @@ test("Editar Obra delega somente as chaves de backup de arquivos ao modulo extra
   assert.match(source, /\.filter\(\(chave\) => Boolean\(chave\.trim\(\)\)\)/);
   assert.match(source, /new Set\(/);
   assert.match(source, /Array\.from\(/);
+  assert.match(
+    currentAssetsPreparationSource,
+    /obterChavesBackupArquivoEdicaoObra\(obraLocalAtual\)/,
+  );
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect/);
 });

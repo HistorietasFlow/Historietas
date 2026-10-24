@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const currentAssetsPreparationSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-current-assets-preparation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const remoteStorageSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-remote-storage.ts",
@@ -76,7 +83,11 @@ test("caminho de Storage rejeita URLs sem prefixo válido ou inválidas", () => 
 test("Editar Obra delega apenas caminhos de Storage ao módulo extraído", () => {
   assert.match(
     pageSource,
-    /import \{\s*obterCaminhoStorageEdicaoObra\s*\} from "\.\/lib\/editar-obra-storage-path-utils";/,
+    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\/lib\/editar-obra-current-assets-preparation";/,
+  );
+  assert.match(
+    currentAssetsPreparationSource,
+    /import \{ obterCaminhoStorageEdicaoObra \} from "\.\/editar-obra-storage-path-utils";/,
   );
   assert.doesNotMatch(pageSource, /function limparNomeArquivoStorage\(/);
   assert.doesNotMatch(pageSource, /function obterCaminhoStorageEdicaoObra\(/);
@@ -88,5 +99,13 @@ test("Editar Obra delega apenas caminhos de Storage ao módulo extraído", () =>
   assert.match(source, /\/storage\/v1\/object\/public\/\$\{bucket\}\//);
   assert.match(source, /\/storage\/v1\/object\/sign\/\$\{bucket\}\//);
   assert.match(source, /\/storage\/v1\/object\/authenticated\/\$\{bucket\}\//);
+  assert.match(
+    currentAssetsPreparationSource,
+    /obterCaminhoStorageEdicaoObra\([\s\S]*?"capas-obras"/,
+  );
+  assert.match(
+    currentAssetsPreparationSource,
+    /obterCaminhoStorageEdicaoObra\([\s\S]*?"arquivos-obras"/,
+  );
   assert.doesNotMatch(source, /supabase|useState|useEffect/);
 });
