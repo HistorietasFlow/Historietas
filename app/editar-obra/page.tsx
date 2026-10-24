@@ -68,6 +68,10 @@ import {
   calcularProgressoFormularioEdicaoObra,
   validarFormularioEdicaoObra,
 } from "./lib/editar-obra-form-validation";
+import {
+  criarMiniCoverStyle,
+  criarPreviewCoverStyle,
+} from "./lib/editar-obra-cover-style-utils";
 
 type CapituloLocal = {
   id: string;
@@ -628,36 +632,6 @@ function criarLoginHrefEditarObra(obraId?: string) {
 
   return `/login?${params.toString()}`;
 }
-
-function criarMiniCoverStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return coverPlaceholderStyle;
-  }
-
-  return {
-    ...coverPlaceholderStyle,
-    border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-    background: "var(--historietas-editar-obra-cover-surface, #0B0714)",
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarPreviewCoverStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return previewCoverStyle;
-  }
-
-  return {
-    ...previewCoverStyle,
-    background: "var(--historietas-editar-obra-bg-deep, #000000)",
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
 
 export default function EditarObraPage() {
   const router = useRouter();
@@ -1696,7 +1670,7 @@ export default function EditarObraPage() {
 
               <div style={isDesktop ? desktopCoverUploadBoxStyle : coverUploadBoxStyle}>
                 <div style={coverUploadPreviewStyle}>
-                  <div style={criarMiniCoverStyle(capa)}>
+                  <div style={criarMiniCoverStyle(capa, coverPlaceholderStyle)}>
 
                     {!capa && (
                       <>
@@ -2119,7 +2093,7 @@ export default function EditarObraPage() {
             </div>
 
             <article style={isDesktop ? desktopPreviewCardStyle : previewCardStyle}>
-              <div style={criarPreviewCoverStyle(capa)}>
+              <div style={criarPreviewCoverStyle(capa, previewCoverStyle)}>
                 <div style={previewCoverGlowStyle} />
               </div>
 
