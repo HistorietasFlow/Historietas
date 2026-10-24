@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workFilteringSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-work-filtering.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("PainelAutorLanguageBridge preserva o lifecycle de tradução e restauração", () => {
   assert.match(bridge, /^"use client";/);
@@ -55,5 +62,6 @@ test("a página preserva os dois mounts e as responsabilidades fora do bridge", 
   );
   assert.match(pagina, /useHistorietasLanguage/);
   assert.match(pagina, /useEffect/);
-  assert.match(pagina, /normalizarTexto/);
+  assert.doesNotMatch(pagina, /normalizarTexto/);
+  assert.match(workFilteringSource, /normalizarTexto\(busca\)/);
 });

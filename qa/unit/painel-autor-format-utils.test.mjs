@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workFilteringSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-work-filtering.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -44,12 +51,18 @@ test("obterTimestamp preserva data válida e fallback inválido", () => {
 test("Painel do Autor delega somente os formatadores", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?formatarGeneroPainelAutor,[\s\S]*?obterTimestamp,[\s\S]*?\} from "\.\/lib\/painel-autor-format-utils";/,
+    /import \{ obterTimestamp \} from "\.\/lib\/painel-autor-format-utils";/,
   );
   assert.doesNotMatch(pagina, /function formatarGeneroPainelAutor\(/);
   assert.doesNotMatch(pagina, /function obterTimestamp\(/);
-  assert.equal((pagina.match(/\bformatarGeneroPainelAutor\b/g) || []).length, 2);
-  assert.equal((pagina.match(/\bobterTimestamp\b/g) || []).length, 5);
+  assert.equal((pagina.match(/\bformatarGeneroPainelAutor\b/g) || []).length, 0);
+  assert.equal((pagina.match(/\bobterTimestamp\b/g) || []).length, 3);
+  assert.match(
+    workFilteringSource,
+    /import \{[\s\S]*?formatarGeneroPainelAutor,[\s\S]*?obterTimestamp,[\s\S]*?\} from "\.\/painel-autor-format-utils";/,
+  );
+  assert.match(workFilteringSource, /formatarGeneroPainelAutor\(obra\.genero\)/);
+  assert.match(workFilteringSource, /obterTimestamp\(obraB\.criadaEm\)/);
   assert.match(
     pagina,
     /import \{[\s\S]*?criarHrefLeituraCapituloPainel[\s\S]*?\} from "\.\/lib\/painel-autor-route-utils";/,

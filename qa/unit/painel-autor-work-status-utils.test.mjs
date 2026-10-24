@@ -21,6 +21,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workFilteringSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-work-filtering.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const normalizerJavascript = typescript.transpileModule(normalizerSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -107,9 +114,15 @@ test("Painel do Autor delega somente os helpers de status ao módulo extraído",
   assert.doesNotMatch(pagina, /function obraPublicadaComConteudoPainel\(/);
   assert.doesNotMatch(pagina, /function obraRascunhoOuSemConteudoPainel\(/);
   assert.doesNotMatch(pagina, /function obterStatusPainelAutor\(/);
-  assert.equal((pagina.match(/\bobraPublicadaComConteudoPainel\b/g) || []).length, 4);
-  assert.equal((pagina.match(/\bobraRascunhoOuSemConteudoPainel\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bobraPublicadaComConteudoPainel\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bobraRascunhoOuSemConteudoPainel\b/g) || []).length, 2);
   assert.equal((pagina.match(/\bobterStatusPainelAutor\b/g) || []).length, 2);
+  assert.match(
+    workFilteringSource,
+    /import \{[\s\S]*?obraPublicadaComConteudoPainel,[\s\S]*?obraRascunhoOuSemConteudoPainel,[\s\S]*?\} from "\.\/painel-autor-work-status-utils";/,
+  );
+  assert.match(workFilteringSource, /obraPublicadaComConteudoPainel\(obra\)/);
+  assert.match(workFilteringSource, /obraRascunhoOuSemConteudoPainel\(obra\)/);
   assert.match(
     utilsSource,
     /import \{ normalizarArquivoObra \} from "\.\/painel-autor-file-normalizer";/,
