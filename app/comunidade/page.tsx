@@ -90,14 +90,8 @@ import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-pu
 import {
   CHAVE_POSTS_SALVOS_COMUNIDADE,
 } from "./components/community-storage-keys";
-import { CommunityThemeStyles } from "./components/community-theme-styles";
-import { CommunityPageContainer } from "./components/community-page-container";
-import { CommunityContentContainer } from "./components/community-content-container";
-import { CommunityTopWaterFade } from "./components/community-top-water-fade";
 import { CommunityFeedTopComposition } from "./components/community-feed-top-composition";
 import { CommunityFeedCenterComposition } from "./components/community-feed-center-composition";
-import { CommunityMainLayout } from "./components/community-main-layout";
-import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
 import {
   abrirBuscaComunidade,
@@ -116,6 +110,7 @@ import {
 import { CommunityPostItem } from "./components/community-post-item";
 import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { CommunityLanguageBridge } from "./components/community-language-bridge";
+import { CommunityPageShellComposition } from "./components/community-page-shell-composition";
 import {
   traduzirContagemResultadosComunidade,
 } from "./components/community-results-count-translator";
@@ -805,14 +800,10 @@ export default function ComunidadePage() {
   }
 
   return (
-    <CommunityPageContainer style={pageThemeStyle}>
-      <CommunityLanguageBridge />
-      <CommunityThemeStyles />
-
-      <CommunityTopWaterFade isDesktop={isDesktop} />
-
-      <CommunityContentContainer isDesktop={isDesktop}>
-        {isDesktop ? (
+    <CommunityPageShellComposition
+      pageThemeStyle={pageThemeStyle}
+      isDesktop={isDesktop}
+      desktopHeader={isDesktop ? (
           <CommunityFeedTopComposition
             area="desktop-header"
             termoBusca={termoBusca}
@@ -823,14 +814,13 @@ export default function ComunidadePage() {
             }
           />
         ) : null}
-
-        <CommunityMainLayout isDesktop={isDesktop}>
-          <CommunityFeedColumn isDesktop={isDesktop}>
-            {usuario && erro && !composerAberto && (
-              <CommunityFeedErrorNotice>{erro}</CommunityFeedErrorNotice>
-            )}
-
-            <CommunityFeedTopComposition
+      feedErrorNotice={
+        usuario && erro && !composerAberto ? (
+          <CommunityFeedErrorNotice>{erro}</CommunityFeedErrorNotice>
+        ) : null
+      }
+      feedControls={
+        <CommunityFeedTopComposition
               area="feed-controls"
               desktop={isDesktop}
               termoBusca={termoBusca}
@@ -919,9 +909,10 @@ export default function ComunidadePage() {
                   setMenuAcoesRapidasComunidadeAberto,
                 })
               }
-            />
-
-            <CommunityFeedCenterComposition
+        />
+      }
+      feedCenter={
+        <CommunityFeedCenterComposition
               exibirResultadosBusca={deveExibirResultadosBuscaComunidade(
                 termoBuscaNormalizado,
               )}
@@ -953,14 +944,10 @@ export default function ComunidadePage() {
                 renderizarPost: renderizarPostComunidade,
                 onCarregarMais: carregarMaisPostsComunidadeDaPagina,
               }}
-            />
-
-          </CommunityFeedColumn>
-
-        </CommunityMainLayout>
-      </CommunityContentContainer>
-
-      <CommunityPostComposerPortal
+        />
+      }
+      composerPortal={
+        <CommunityPostComposerPortal
         composerAberto={composerAberto}
         usuario={usuario}
         composerProps={{
@@ -1053,9 +1040,10 @@ export default function ComunidadePage() {
           onAlternarSpoiler: () =>
             setTemSpoilerPost((valorAtual) => !valorAtual),
         }}
-      />
-
-      <CommunityInteractionOverlaysComposition
+        />
+      }
+      interactionOverlays={
+        <CommunityInteractionOverlaysComposition
         comentariosSheetProps={{
           post: postComentariosAberto,
           podeComentar: Boolean(usuario),
@@ -1087,7 +1075,8 @@ export default function ComunidadePage() {
           },
         }}
         feedbackAcao={feedbackAcao}
-      />
-    </CommunityPageContainer>
+        />
+      }
+    />
   );
 }
