@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const converterSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-work-converter.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -41,15 +48,19 @@ test("normalizarCategoriaArquivoSupabase preserva a classificação por MIME e f
   assert.equal(normalizarCategoriaArquivoSupabase(null, "application/octet-stream"), "outro");
 });
 
-test("Painel do Autor delega somente a categoria de arquivo ao helper extraído", () => {
+test("Painel do Autor delega a categoria de arquivo pelo conversor extraído", () => {
   assert.match(
     pagina,
-    /import \{ normalizarCategoriaArquivoSupabase \} from "\.\/lib\/painel-autor-file-category-utils";/,
+    /import \{ converterObraSupabaseParaLocalPainel \} from "\.\/lib\/painel-autor-supabase-work-converter";/,
   );
   assert.doesNotMatch(pagina, /function normalizarCategoriaArquivoSupabase\(/);
-  assert.equal((pagina.match(/\bnormalizarCategoriaArquivoSupabase\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\bnormalizarCategoriaArquivoSupabase\b/g) || []).length, 0);
   assert.match(
-    pagina,
+    converterSource,
+    /import \{ normalizarCategoriaArquivoSupabase \} from "\.\/painel-autor-file-category-utils";/,
+  );
+  assert.match(
+    converterSource,
     /categoria: normalizarCategoriaArquivoSupabase\(\s*obraBanco\.arquivo_categoria,\s*obraBanco\.arquivo_tipo\s*\)/,
   );
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);

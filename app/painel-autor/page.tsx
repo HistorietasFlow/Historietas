@@ -24,7 +24,7 @@ import {
 } from "./lib/painel-autor-ownership-utils";
 import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { carregarComentariosCapitulosUsuarioPainel } from "./lib/painel-autor-chapter-comments-loader";
-import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
+import { converterObraSupabaseParaLocalPainel } from "./lib/painel-autor-supabase-work-converter";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
 import {
   FILE_BACKUP_STORAGE_KEY,
@@ -155,7 +155,6 @@ import {
   caminhoStoragePertenceAoUsuarioPainel,
   obterCaminhoStoragePainel,
 } from "./lib/painel-autor-file-storage-path-utils";
-import { obterTimestamp } from "./lib/painel-autor-format-utils";
 import {
   criarHrefLeituraCapituloPainel,
   criarLoginHrefPainelAutor,
@@ -185,10 +184,7 @@ import {
 import { obterObrasFiltradasPainel } from "./lib/painel-autor-work-filtering";
 import { obterResumoMetricasPainel } from "./lib/painel-autor-summary-metrics";
 import { normalizarObraPainel } from "./lib/painel-autor-work-normalizer";
-import {
-  calcularProgressoLeitura,
-  obterCapitulosPublicadosPainel,
-} from "./lib/painel-autor-reading-progress-utils";
+import { obterCapitulosPublicadosPainel } from "./lib/painel-autor-reading-progress-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { compartilharObraPainel } from "./lib/painel-autor-share-action";
 import { abrirArquivoObraPainel } from "./lib/painel-autor-open-file-action";
@@ -411,189 +407,6 @@ async function removerReferenciasSupabaseObraExcluidaPainel(
   } catch {
     // A exclusão principal da obra continua mesmo se a limpeza social falhar.
   }
-}
-
-function converterObraSupabaseParaLocalPainel({
-  obraBanco,
-  capitulosBanco,
-  obraLocal,
-  capitulosSalvos,
-  capitulosCurtidos,
-  progressoPorCapitulo,
-  progressoCarregado,
-  capitulosComMetricas,
-  comentariosCapitulos,
-  index,
-}: {
-  obraBanco: SupabaseObraRow;
-  capitulosBanco: SupabaseCapituloRow[];
-  obraLocal?: ObraLocal;
-  capitulosSalvos: Set<string>;
-  capitulosCurtidos: Set<string>;
-  progressoPorCapitulo: Map<string, string>;
-  progressoCarregado: boolean;
-  capitulosComMetricas: ReadonlySet<string>;
-  comentariosCapitulos: Map<string, string>;
-  index: number;
-}): ObraLocal {
-  const capitulosLocaisPorId = new Map(
-    (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
-  );
-
-  let ultimoCapituloLidoId = progressoCarregado
-    ? ""
-    : obraLocal?.ultimoCapituloLidoId || "";
-  let ultimaLeituraEm = progressoCarregado
-    ? ""
-    : obraLocal?.ultimaLeituraEm || "";
-
-  function aplicarProgressoCapitulo(
-    capitulo: CapituloLocal,
-    obraId: string
-  ): CapituloLocal {
-    const chaveInteracao = criarChaveInteracao(obraId, capitulo.id);
-    const temProgressoRemoto =
-      progressoPorCapitulo.has(chaveInteracao) ||
-      progressoPorCapitulo.has(capitulo.id);
-    const progressoRemotoDisponivel =
-      progressoCarregado && capitulosComMetricas.has(capitulo.id);
-    const lido = progressoRemotoDisponivel
-      ? temProgressoRemoto
-      : capitulo.lido;
-    const lidoEmRemoto =
-      progressoPorCapitulo.get(chaveInteracao) ||
-      progressoPorCapitulo.get(capitulo.id) ||
-      "";
-    const lidoEm = lido ? lidoEmRemoto || capitulo.lidoEm : "";
-
-    if (lido) {
-      const tempoAtual = obterTimestamp(lidoEm);
-      const tempoUltimo = obterTimestamp(ultimaLeituraEm);
-
-      if (!ultimoCapituloLidoId || tempoAtual >= tempoUltimo) {
-        ultimoCapituloLidoId = capitulo.id;
-        ultimaLeituraEm = lidoEm;
-      }
-    }
-
-    return {
-      ...capitulo,
-      lido,
-      lidoEm,
-    };
-  }
-
-  const capitulosRemotos = capitulosBanco.map((capitulo, capituloIndex) => {
-    const capituloLocal = capitulosLocaisPorId.get(capitulo.id);
-    const chaveInteracao = criarChaveInteracao(obraBanco.id, capitulo.id);
-    const comentarioSupabase =
-      comentariosCapitulos.get(chaveInteracao) ||
-      comentariosCapitulos.get(capitulo.id) ||
-      "";
-
-    return aplicarProgressoCapitulo(
-      {
-        id: capitulo.id,
-        titulo:
-          capitulo.titulo?.trim() ||
-          capituloLocal?.titulo ||
-          `Capítulo ${capituloIndex + 1}`,
-        texto:
-          typeof capitulo.texto === "string"
-            ? capitulo.texto
-            : capituloLocal?.texto || "",
-        curtiu:
-          Boolean(capituloLocal?.curtiu) ||
-          capitulosCurtidos.has(chaveInteracao) ||
-          capitulosCurtidos.has(capitulo.id),
-        salvo:
-          Boolean(capituloLocal?.salvo) ||
-          capitulosSalvos.has(chaveInteracao) ||
-          capitulosSalvos.has(capitulo.id),
-        comentario: comentarioSupabase || capituloLocal?.comentario || "",
-        criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
-        lido: Boolean(capituloLocal?.lido),
-        lidoEm: capituloLocal?.lidoEm || "",
-        publicado: capitulo.publicado !== false,
-      },
-      obraBanco.id
-    );
-  });
-
-  const idsRemotos = new Set(capitulosRemotos.map((capitulo) => capitulo.id));
-  const capitulosApenasLocais = (obraLocal?.capitulos || [])
-    .filter((capitulo) => !idsRemotos.has(capitulo.id))
-    .map((capitulo) =>
-      aplicarProgressoCapitulo(
-        capitulo,
-        obraBanco.id || obraLocal?.id || ""
-      )
-    );
-  const capitulosMesclados = [...capitulosRemotos, ...capitulosApenasLocais];
-
-  const tituloObra =
-    obraBanco.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
-  const slugObra =
-    obraBanco.slug?.trim() ||
-    obraLocal?.slug ||
-    criarSlugBase(tituloObra || `obra-${index + 1}`);
-  const arquivoUrl = obraBanco.arquivo_url?.trim() || "";
-
-  return {
-    id: obraBanco.id || obraLocal?.id || `obra-${index + 1}`,
-    autorId: obraBanco.user_id?.trim() || obraLocal?.autorId || "",
-    titulo: tituloObra,
-    autor: obraBanco.autor?.trim() || obraLocal?.autor || "Autor não informado",
-    genero: obraBanco.genero?.trim() || obraLocal?.genero || "Não informado",
-    formato: obraBanco.formato?.trim() || obraLocal?.formato || "Não informado",
-    classificacaoIndicativa:
-      obraBanco.classificacao_indicativa?.trim() ||
-      obraLocal?.classificacaoIndicativa ||
-      "Não informada",
-    sinopse:
-      obraBanco.sinopse?.trim() ||
-      obraLocal?.sinopse ||
-      "Nenhuma sinopse informada.",
-    tags:
-      Array.isArray(obraBanco.tags) && obraBanco.tags.length > 0
-        ? obraBanco.tags.filter((tag) => typeof tag === "string" && Boolean(tag.trim()))
-        : obraLocal?.tags || ["sem tags"],
-    capa: obraBanco.capa_url?.trim() || obraLocal?.capa || "",
-    capaNome: obraBanco.capa_nome?.trim() || obraLocal?.capaNome || "",
-    arquivoObra: arquivoUrl
-      ? {
-          nome:
-            obraBanco.arquivo_nome?.trim() ||
-            obraLocal?.arquivoObra?.nome ||
-            "Arquivo da obra",
-          tipo: obraBanco.arquivo_tipo?.trim() || obraLocal?.arquivoObra?.tipo || "",
-          tamanho:
-            typeof obraBanco.arquivo_tamanho === "number" &&
-            Number.isFinite(obraBanco.arquivo_tamanho)
-              ? obraBanco.arquivo_tamanho
-              : obraLocal?.arquivoObra?.tamanho || 0,
-          conteudo: arquivoUrl,
-          categoria: normalizarCategoriaArquivoSupabase(
-            obraBanco.arquivo_categoria,
-            obraBanco.arquivo_tipo
-          ),
-          criadoEm: obraBanco.criada_em || obraLocal?.arquivoObra?.criadoEm || "",
-        }
-      : obraLocal?.arquivoObra || null,
-    publicado: Boolean(obraBanco.publicado),
-    capitulos: capitulosMesclados,
-    criadaEm: obraBanco.criada_em || obraLocal?.criadaEm || "",
-    ultimoCapituloLidoId,
-    ultimaLeituraEm,
-    progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
-    visualizacoes:
-      typeof obraBanco.visualizacoes === "number" &&
-      Number.isFinite(obraBanco.visualizacoes)
-        ? Math.max(0, Math.round(obraBanco.visualizacoes))
-        : obraLocal?.visualizacoes || 0,
-    slug: slugObra,
-    link: obraBanco.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
-  };
 }
 
 async function carregarPainelAutorSupabase(
