@@ -1489,3 +1489,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O preparo e o fallback puro da lista de tags foram isolados em `editar-obra-tags-list-utils.ts`, preservando ordem, limite e `"sem tags"`.
 - O useMemo, salvamento, estados, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 27 — Editar Obra
+
+- A preparação pura dos valores iniciais de salvamento foi isolada em `editar-obra-save-preparation.ts`, preservando classificação, avisos, capa e fallback de tags.
+- A orquestração temporal, autenticação, Supabase, Storage, setters, Diário, redirecionamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
