@@ -1409,3 +1409,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A conversão pura de arquivos vindos do Supabase foi isolada em `editar-obra-supabase-file-converter.ts`, preservando categorias, precedência entre dados remotos e locais, tamanhos, tipos, datas e fallbacks.
 - Consultas Supabase, Storage, estado, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 11 — Editar Obra
+
+- A geração pura das chaves de backup de arquivos foi isolada em `editar-obra-file-backup-key-utils.ts`, preservando prefixos, ordem, fallback de slug, normalização de título, filtragem e deduplicação.
+- Leitura, escrita, sincronização e restauração do backup permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
