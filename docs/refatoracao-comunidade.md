@@ -1494,3 +1494,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A preparação pura dos valores iniciais de salvamento foi isolada em `editar-obra-save-preparation.ts`, preservando classificação, avisos, capa e fallback de tags.
 - A orquestração temporal, autenticação, Supabase, Storage, setters, Diário, redirecionamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 28 — Editar Obra
+
+- A preparação pura dos assets atuais foi isolada em `editar-obra-current-assets-preparation.ts`, preservando prioridades de capa, arquivo, backup e caminhos de Storage.
+- Autorização, uploads, remoções, Supabase, Storage, setters, persistência, Diário e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.

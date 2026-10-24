@@ -21,9 +21,17 @@ import "./editar-obra-form-preparation.test.mjs";
 import "./editar-obra-derived-form-values.test.mjs";
 import "./editar-obra-tags-list-utils.test.mjs";
 import "./editar-obra-save-preparation.test.mjs";
+import "./editar-obra-current-assets-preparation.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-file-normalization.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
+const currentAssetsPreparationSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-current-assets-preparation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, { compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 } }).outputText;
 const { normalizarArquivoObra, ehDataUrlEdicaoObra, normalizarArquivoObraPersistivel } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`);
 
@@ -43,7 +51,18 @@ test("Data URL e persistência preservam detecção e rejeição", () => {
 });
 
 test("Editar Obra delega somente a normalização de arquivos", () => {
-  assert.match(pageSource, /from "\.\/lib\/editar-obra-file-normalization";/);
+  assert.match(
+    pageSource,
+    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\/lib\/editar-obra-current-assets-preparation";/,
+  );
+  assert.match(
+    currentAssetsPreparationSource,
+    /import \{[\s\S]*?ehDataUrlEdicaoObra,[\s\S]*?normalizarArquivoObraPersistivel,[\s\S]*?\} from "\.\/editar-obra-file-normalization";/,
+  );
   for (const helper of ["normalizarArquivoObra", "ehDataUrlEdicaoObra", "normalizarArquivoObraPersistivel"]) assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
+  assert.match(
+    currentAssetsPreparationSource,
+    /normalizarArquivoObraPersistivel\(arquivoObra\)/,
+  );
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect/);
 });

@@ -26,18 +26,11 @@ import {
   arquivoObraAceito,
   identificarCategoriaArquivo,
 } from "./lib/editar-obra-file-validation";
-import {
-  ehDataUrlEdicaoObra,
-  normalizarArquivoObraPersistivel,
-} from "./lib/editar-obra-file-normalization";
 import { usuarioPodeEditarObraLocal } from "./lib/editar-obra-ownership-utils";
 import {
   carregarNomeAutorProfileEdicaoObra,
   obterTextoMetadataUsuarioEdicaoObra,
 } from "./lib/editar-obra-profile-loader";
-import { obterCaminhoStorageEdicaoObra } from "./lib/editar-obra-storage-path-utils";
-import { criarArquivoRemotoEdicaoObra } from "./lib/editar-obra-supabase-file-converter";
-import { obterChavesBackupArquivoEdicaoObra } from "./lib/editar-obra-file-backup-key-utils";
 import {
   carregarBackupArquivosObras,
   salvarArquivoObraNoBackup,
@@ -75,6 +68,7 @@ import { prepararValoresFormularioEdicaoObra } from "./lib/editar-obra-form-prep
 import { calcularValoresDerivadosFormularioEdicaoObra } from "./lib/editar-obra-derived-form-values";
 import { prepararTagsEdicaoObra } from "./lib/editar-obra-tags-list-utils";
 import { prepararValoresSalvamentoEdicaoObra } from "./lib/editar-obra-save-preparation";
+import { prepararAssetsAtuaisEdicaoObra } from "./lib/editar-obra-current-assets-preparation";
 
 type CapituloLocal = {
   id: string;
@@ -1257,50 +1251,31 @@ export default function EditarObraPage() {
 
       const obraRemotaAtual =
         obraAutorizadaSupabase;
-      const capaLocalPersistivel =
-        capa && !ehDataUrlEdicaoObra(capa) ? capa.trim() : "";
-      const capaRemotaAtual = obraRemotaAtual.capa_url?.trim() || "";
-      const capaNomeRemotoAtual = obraRemotaAtual.capa_nome?.trim() || "";
-      const arquivoRemotoAtual = criarArquivoRemotoEdicaoObra(obraRemotaAtual);
-      const arquivoBackupAtual = obraLocalAtual
-        ? obterChavesBackupArquivoEdicaoObra(obraLocalAtual)
-            .map((chave) =>
-              normalizarArquivoObraPersistivel(backupArquivosObras[chave])
-            )
-            .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo)) ||
-          null
-        : null;
-      const arquivoLocalPersistivel =
-        normalizarArquivoObraPersistivel(arquivoObra) ||
-        normalizarArquivoObraPersistivel(obraLocalAtual?.arquivoObra) ||
-        null;
+      const assetsAtuais = prepararAssetsAtuaisEdicaoObra({
+        capa,
+        capaNome,
+        arquivoObra,
+        obraRemotaAtual,
+        obraLocalAtual,
+        backupArquivosObras,
+        capaRemovidaManualmente,
+        arquivoObraRemovidoManualmente,
+      });
 
-      let capaFinal = capaRemovidaManualmente
-        ? ""
-        : capaRemotaAtual || capaLocalPersistivel;
-      let capaNomeFinal = capaRemovidaManualmente
-        ? ""
-        : capaNomeRemotoAtual || capaNome.trim();
+      let capaFinal = assetsAtuais.capaFinalInicial;
+      let capaNomeFinal = assetsAtuais.capaNomeFinalInicial;
       let arquivoObraFinal: ArquivoObraLocal | null =
-        arquivoObraRemovidoManualmente
-          ? null
-          : arquivoRemotoAtual ||
-            arquivoLocalPersistivel ||
-            arquivoBackupAtual;
+        assetsAtuais.arquivoObraFinalInicial;
 
       const arquivosNovosEnviados: ArquivoStorageEdicaoObra[] = [];
       const arquivosAntigosParaRemover: Array<{
         bucket: "capas-obras" | "arquivos-obras";
         caminho: string;
       }> = [];
-      const caminhoCapaRemotaAtual = obterCaminhoStorageEdicaoObra(
-        "capas-obras",
-        capaRemotaAtual
-      );
-      const caminhoArquivoRemotoAtual = obterCaminhoStorageEdicaoObra(
-        "arquivos-obras",
-        arquivoRemotoAtual?.conteudo || ""
-      );
+      const {
+        caminhoCapaRemotaAtual,
+        caminhoArquivoRemotoAtual,
+      } = assetsAtuais;
 
       if (capaBloqueadaPorClassificacao) {
         capaFinal = "";
