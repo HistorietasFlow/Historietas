@@ -28,6 +28,13 @@ const workFilteringSource = readFileSync(
   ),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
     compilerOptions: {
@@ -74,8 +81,8 @@ test("Painel do Autor delega os formatadores às fronteiras corretas", () => {
   assert.match(workFilteringSource, /formatarGeneroPainelAutor\(obra\.genero\)/);
   assert.match(workFilteringSource, /obterTimestamp\(obraB\.criadaEm\)/);
   assert.match(
-    pagina,
-    /import \{[\s\S]*?criarHrefLeituraCapituloPainel[\s\S]*?\} from "\.\/lib\/painel-autor-route-utils";/,
+    workCardSource,
+    /import \{[\s\S]*?criarHrefLeituraCapituloPainel[\s\S]*?\} from "\.\.\/lib\/painel-autor-route-utils";/,
   );
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -13,7 +12,6 @@ import { usePainelAutorAuthSession } from "./hooks/use-painel-autor-auth-session
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { usePainelAutorFilterState } from "./hooks/use-painel-autor-filter-state";
-import { usePainelAutorWorkActionsBodyLock } from "./hooks/use-painel-autor-work-actions-body-lock";
 import { usePainelAutorSummaryPreference } from "./hooks/use-painel-autor-summary-preference";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
 import {
@@ -30,10 +28,6 @@ import {
   sincronizarBackupArquivosObras,
 } from "./lib/painel-autor-file-backup-storage";
 import { restaurarArquivoObraComBackup } from "./lib/painel-autor-file-backup-restore-utils";
-import {
-  criarPainelCoverDesktopStyle,
-  criarPainelCoverStyle,
-} from "./lib/painel-autor-cover-style-utils";
 import {
   containerStyle,
   desktopTopWaterFadeStyle,
@@ -79,55 +73,9 @@ import {
   filterSheetTitleStyle,
 } from "./lib/painel-autor-filter-sheet-style-utils";
 import {
-  coverGlowStyle,
-  coverLinkStyle,
-  draftStatusStyle,
-  publishedStatusStyle,
-  statusRowStyle,
-  workCardStyle,
-  workContentStyle,
-} from "./lib/painel-autor-work-card-layout-style-utils";
-import {
-  authorStyle,
-  workCardCommentMetaStyle,
-  workCardHeartMetaStyle,
-  workMetaLineStyle,
-  workTitleStyle,
-} from "./lib/painel-autor-work-card-info-style-utils";
-import {
-  sheetStatHeartIconStyle,
-  sheetStatIconStyle,
-  sheetStatInlineStyle,
-  sheetStatValueStyle,
-  sheetStatsRowStyle,
-} from "./lib/painel-autor-work-card-stats-style-utils";
-import {
-  actionsGridStyle,
-  chapterButtonStyle,
-  deleteButtonStyle,
-  editButtonStyle,
-  fileButtonStyle,
-  openButtonStyle,
-  readButtonStyle,
-  shareButtonStyle,
-  workCardDotsButtonStyle,
-} from "./lib/painel-autor-work-actions-style-utils";
-import {
-  workActionSheetHandleStyle,
-  workActionSheetHeaderStyle,
-  workActionSheetOverlayStyle,
-  workActionSheetStyle,
-  workActionSheetTextBlockStyle,
-  workActionSheetTitleStyle,
-} from "./lib/painel-autor-work-action-sheet-style-utils";
-import {
-  desktopCardActionsGridStyle,
   desktopContainerStyle,
-  desktopSheetStatsRowStyle,
   desktopStatsBoxStyle,
   desktopStudioControlsStyle,
-  desktopWorkCardStyle,
-  desktopWorkContentStyle,
 } from "./lib/painel-autor-desktop-compositions-style-utils";
 import {
   emptyMiniBoxStyle,
@@ -141,18 +89,13 @@ import {
 } from "./lib/painel-autor-profile-utils";
 import { carregarProfilePainelAutor } from "./lib/painel-autor-profile-loader";
 import { PainelSecao } from "./components/painel-autor-section";
-import {
-  obraPublicadaComConteudoPainel,
-  obterStatusPainelAutor,
-} from "./lib/painel-autor-work-status-utils";
+import { ObraPainelCard } from "./components/painel-autor-work-card";
 import {
   caminhoStoragePertenceAoUsuarioPainel,
   obterCaminhoStoragePainel,
 } from "./lib/painel-autor-file-storage-path-utils";
 import {
-  criarHrefLeituraCapituloPainel,
   criarLoginHrefPainelAutor,
-  criarPerfilAutorHref,
 } from "./lib/painel-autor-route-utils";
 import {
   FILTROS_PAINEL,
@@ -178,7 +121,6 @@ import {
 import { obterObrasFiltradasPainel } from "./lib/painel-autor-work-filtering";
 import { obterResumoMetricasPainel } from "./lib/painel-autor-summary-metrics";
 import { normalizarObraPainel } from "./lib/painel-autor-work-normalizer";
-import { obterCapitulosPublicadosPainel } from "./lib/painel-autor-reading-progress-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { compartilharObraPainel } from "./lib/painel-autor-share-action";
 import { abrirArquivoObraPainel } from "./lib/painel-autor-open-file-action";
@@ -1175,241 +1117,5 @@ export default function PainelAutorPage() {
         )}
       </section>
     </main>
-  );
-}
-
-function ObraPainelCard({
-  obra,
-  isDesktop,
-  onAbrirArquivo,
-  onCompartilhar,
-  onExcluirObra,
-}: {
-  obra: ObraComMetricas;
-  isDesktop: boolean;
-  onAbrirArquivo: (obra: ObraComMetricas) => void | Promise<void>;
-  onCompartilhar: (obra: ObraComMetricas) => void | Promise<void>;
-  onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
-}) {
-  const [acoesAbertas, setAcoesAbertas] = useState(false);
-  const slugObraPainel = obra.slug?.trim() || criarSlugBase(obra.titulo);
-  const linkObraPainel = obra.link?.trim();
-  const obraHref = linkObraPainel || `/obra/${encodeURIComponent(slugObraPainel)}`;
-  const editarHref = `/editar-obra?obraId=${obra.id}`;
-  const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
-  const capitulosPublicados = obterCapitulosPublicadosPainel(obra.capitulos);
-  const capituloParaContinuar = obra.ultimoCapituloLido;
-  const capituloParaLer =
-    capituloParaContinuar || capitulosPublicados[0] || null;
-  const capituloParaEditar = obra.capitulos[0] || null;
-  const editarCapituloHref = capituloParaEditar
-    ? `/editar-capitulo?obraId=${obra.id}&capituloId=${capituloParaEditar.id}`
-    : `/editar-capitulo?obraId=${obra.id}`;
-  const indiceCapituloParaLer = capituloParaLer
-    ? obra.capitulos.findIndex((capitulo) => capitulo.id === capituloParaLer.id)
-    : -1;
-  const numeroCapituloParaLer = indiceCapituloParaLer >= 0 ? indiceCapituloParaLer + 1 : 1;
-  const leituraCapituloHref = capituloParaLer
-    ? criarHrefLeituraCapituloPainel(obra, capituloParaLer, numeroCapituloParaLer)
-    : "";
-  const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId, obra.autorId);
-  const visualizacoesPainel = Math.max(0, obra.visualizacoes);
-  const statusTexto = obterStatusPainelAutor(obra);
-  const obraComStatusPublicado = obraPublicadaComConteudoPainel(obra);
-  const obraTemCapitulos = obra.capitulos.length > 0;
-  const indicadorPrimarioIcone = obraTemCapitulos ? "📚" : obra.arquivoObra ? "📄" : "📚";
-  const indicadorPrimarioValor = obraTemCapitulos ? obra.capitulos.length : obra.arquivoObra ? 1 : 0;
-
-  usePainelAutorWorkActionsBodyLock(acoesAbertas);
-
-  return (
-    <>
-      <article style={isDesktop ? desktopWorkCardStyle : workCardStyle}>
-        <Link
-          href={obraHref}
-          style={coverLinkStyle}
-          aria-label={`Abrir ${obra.titulo}`}
-        >
-          <div
-            style={
-              isDesktop
-                ? criarPainelCoverDesktopStyle(obra.capa)
-                : criarPainelCoverStyle(obra.capa)
-            }
-          >
-            <div style={coverGlowStyle} />
-
-            <div style={statusRowStyle}>
-              <span style={obraComStatusPublicado ? publishedStatusStyle : draftStatusStyle}>
-                {statusTexto}
-              </span>
-
-            </div>
-
-            <div style={isDesktop ? desktopWorkContentStyle : workContentStyle}>
-              <h3 style={workTitleStyle}>{obra.titulo}</h3>
-
-              <span style={workMetaLineStyle}>
-                <span>👁 {visualizacoesPainel}</span>
-                <span>
-                  <span style={workCardHeartMetaStyle}>❤️</span>{" "}
-                  {obra.totalCurtidas}
-                </span>
-                <span>
-                  <span style={workCardCommentMetaStyle}>💬</span>{" "}
-                  {obra.totalComentarios}
-                </span>
-                <span>
-                  {indicadorPrimarioIcone} {indicadorPrimarioValor}
-                </span>
-              </span>
-            </div>
-          </div>
-        </Link>
-
-        <button
-          type="button"
-          onClick={() => setAcoesAbertas(true)}
-          style={workCardDotsButtonStyle}
-          aria-label={`Abrir opções de ${obra.titulo}`}
-          aria-expanded={acoesAbertas}
-        >
-          ⋮
-        </button>
-      </article>
-
-      {acoesAbertas && (
-        <div
-          style={workActionSheetOverlayStyle}
-          role="presentation"
-          onClick={() => setAcoesAbertas(false)}
-        >
-          <section
-            style={workActionSheetStyle}
-            role="dialog"
-            aria-label={`Ações de ${obra.titulo}`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div style={workActionSheetHandleStyle} aria-hidden="true" />
-
-            <div style={workActionSheetHeaderStyle}>
-              <div style={workActionSheetTextBlockStyle}>
-                <strong style={workActionSheetTitleStyle}>{obra.titulo}</strong>
-
-                <Link
-                  href={perfilAutorHref}
-                  onClick={() => setAcoesAbertas(false)}
-                  style={authorStyle}
-                >
-                  Por {obra.autor}
-                </Link>
-
-
-              </div>
-            </div>
-
-            <div style={isDesktop ? desktopSheetStatsRowStyle : sheetStatsRowStyle}>
-              <span style={sheetStatInlineStyle}>
-                <span style={sheetStatIconStyle}>👁</span>
-                <span style={sheetStatValueStyle}>{visualizacoesPainel}</span>
-              </span>
-
-              <span style={sheetStatInlineStyle}>
-                <span style={sheetStatHeartIconStyle}>❤️</span>
-                <span style={sheetStatValueStyle}>{obra.totalCurtidas}</span>
-              </span>
-
-              <span style={sheetStatInlineStyle}>
-                <span style={sheetStatIconStyle}>💬</span>
-                <span style={sheetStatValueStyle}>{obra.totalComentarios}</span>
-              </span>
-
-              <span style={sheetStatInlineStyle}>
-                <span style={sheetStatIconStyle}>🔖</span>
-                <span style={sheetStatValueStyle}>{obra.totalSalvos}</span>
-              </span>
-
-              <span style={sheetStatInlineStyle}>
-                <span style={sheetStatIconStyle}>{indicadorPrimarioIcone}</span>
-                <span style={sheetStatValueStyle}>{indicadorPrimarioValor}</span>
-              </span>
-            </div>
-
-            <div style={isDesktop ? desktopCardActionsGridStyle : actionsGridStyle}>
-              <Link
-                href={editarCapituloHref}
-                onClick={() => setAcoesAbertas(false)}
-                style={openButtonStyle}
-              >
-                Editar capítulo
-              </Link>
-
-              {capituloParaLer && (
-                <Link
-                  href={leituraCapituloHref}
-                  onClick={() => setAcoesAbertas(false)}
-                  style={readButtonStyle}
-                >
-                  {capituloParaContinuar ? "Continuar leitura" : "Ler capítulo"}
-                </Link>
-              )}
-
-              <Link
-                href={editarHref}
-                onClick={() => setAcoesAbertas(false)}
-                style={editButtonStyle}
-              >
-                Editar obra
-              </Link>
-
-              <Link
-                href={capituloHref}
-                onClick={() => setAcoesAbertas(false)}
-                style={chapterButtonStyle}
-              >
-                Adicionar capítulo
-              </Link>
-
-
-              {obra.arquivoObra && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAcoesAbertas(false);
-                    void onAbrirArquivo(obra);
-                  }}
-                  style={fileButtonStyle}
-                >
-                  Ver arquivo
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  void onCompartilhar(obra);
-                  setAcoesAbertas(false);
-                }}
-                style={shareButtonStyle}
-              >
-                Compartilhar
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setAcoesAbertas(false);
-                  void onExcluirObra(obra.id, obra.titulo);
-                }}
-                style={deleteButtonStyle}
-              >
-                Excluir
-              </button>
-            </div>
-
-          </section>
-        </div>
-      )}
-    </>
   );
 }

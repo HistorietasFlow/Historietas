@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workCardLayoutSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-work-card-layout-style-utils.ts",
@@ -72,23 +79,28 @@ test("criarPainelCoverDesktopStyle preserva a base e sobrescreve dimensões desk
 
 test("Painel do Autor delega exclusivamente os estilos de capa ao módulo extraído", () => {
   assert.match(
-    pagina,
-    /import \{\s*criarPainelCoverDesktopStyle,\s*criarPainelCoverStyle,\s*\} from "\.\/lib\/painel-autor-cover-style-utils";/,
+    workCardSource,
+    /import \{\s*criarPainelCoverDesktopStyle,\s*criarPainelCoverStyle,\s*\} from "\.\.\/lib\/painel-autor-cover-style-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarPainelCoverStyle\(/);
   assert.doesNotMatch(pagina, /function criarPainelCoverDesktopStyle\(/);
   assert.doesNotMatch(pagina, /const coverStyle: CSSProperties = \{/);
-  assert.equal((pagina.match(/\bcriarPainelCoverStyle\b/g) || []).length, 2);
-  assert.equal((pagina.match(/\bcriarPainelCoverDesktopStyle\b/g) || []).length, 2);
   assert.match(
     pagina,
-    /import \{[\s\S]*?coverGlowStyle[\s\S]*?\} from "\.\/lib\/painel-autor-work-card-layout-style-utils";/,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(pagina, /function ObraPainelCard\(/);
+  assert.equal((workCardSource.match(/\bcriarPainelCoverStyle\b/g) || []).length, 2);
+  assert.equal((workCardSource.match(/\bcriarPainelCoverDesktopStyle\b/g) || []).length, 2);
+  assert.match(
+    workCardSource,
+    /import \{[\s\S]*?coverGlowStyle[\s\S]*?\} from "\.\.\/lib\/painel-autor-work-card-layout-style-utils";/,
   );
   assert.doesNotMatch(pagina, /const coverGlowStyle: CSSProperties = \{/);
   assert.match(workCardLayoutSource, /export const coverGlowStyle: CSSProperties = \{/);
-  assert.match(pagina, /style=\{coverGlowStyle\}/);
+  assert.match(workCardSource, /style=\{coverGlowStyle\}/);
   assert.match(
-    pagina,
+    workCardSource,
     /isDesktop\s*\? criarPainelCoverDesktopStyle\(obra\.capa\)\s*: criarPainelCoverStyle\(obra\.capa\)/,
   );
   assert.match(utilsSource, /const coverStyle: CSSProperties = \{/);

@@ -15,6 +15,10 @@ const secao = await readFile(
   "app/painel-autor/components/painel-autor-section.tsx",
   "utf8",
 );
+const workCard = await readFile(
+  "app/painel-autor/components/painel-autor-work-card.tsx",
+  "utf8",
+);
 
 test("usePainelAutorDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -60,6 +64,15 @@ test("Painel do Autor delega somente o modo desktop", () => {
     /style=\{isDesktop \? desktopWorksGridStyle : worksGridStyle\}/,
   );
   assert.match(secao, /<Card[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(
+    pagina,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(pagina, /function ObraPainelCard\(/);
+  assert.match(pagina, /Card=\{ObraPainelCard\}/);
+  assert.match(workCard, /isDesktop,/);
+  assert.match(workCard, /style=\{isDesktop \? desktopWorkCardStyle : workCardStyle\}/);
+  assert.match(workCard, /style=\{isDesktop \? desktopWorkContentStyle : workContentStyle\}/);
   assert.match(
     pagina,
     /import \{ PainelAutorLanguageBridge \} from "\.\/components\/painel-autor-language-bridge";/,

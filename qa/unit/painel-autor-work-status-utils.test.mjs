@@ -21,6 +21,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workFilteringSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-work-filtering.ts",
@@ -115,15 +122,22 @@ test("obraRascunhoOuSemConteudoPainel e obterStatusPainelAutor preservam fallbac
 
 test("Painel do Autor delega somente os helpers de status ao módulo extraído", () => {
   assert.match(
-    pagina,
-    /import \{\s*obraPublicadaComConteudoPainel,\s*obterStatusPainelAutor,\s*\} from "\.\/lib\/painel-autor-work-status-utils";/,
+    workCardSource,
+    /import \{\s*obraPublicadaComConteudoPainel,\s*obterStatusPainelAutor,\s*\} from "\.\.\/lib\/painel-autor-work-status-utils";/,
   );
   assert.doesNotMatch(pagina, /function obraPublicadaComConteudoPainel\(/);
   assert.doesNotMatch(pagina, /function obraRascunhoOuSemConteudoPainel\(/);
   assert.doesNotMatch(pagina, /function obterStatusPainelAutor\(/);
-  assert.equal((pagina.match(/\bobraPublicadaComConteudoPainel\b/g) || []).length, 2);
+  assert.match(
+    pagina,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(pagina, /function ObraPainelCard\(/);
+  assert.equal((pagina.match(/\bobraPublicadaComConteudoPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bobraRascunhoOuSemConteudoPainel\b/g) || []).length, 0);
-  assert.equal((pagina.match(/\bobterStatusPainelAutor\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\bobterStatusPainelAutor\b/g) || []).length, 0);
+  assert.equal((workCardSource.match(/\bobraPublicadaComConteudoPainel\b/g) || []).length, 2);
+  assert.equal((workCardSource.match(/\bobterStatusPainelAutor\b/g) || []).length, 2);
   assert.match(
     workFilteringSource,
     /import \{[\s\S]*?obraPublicadaComConteudoPainel,[\s\S]*?obraRascunhoOuSemConteudoPainel,[\s\S]*?\} from "\.\/painel-autor-work-status-utils";/,

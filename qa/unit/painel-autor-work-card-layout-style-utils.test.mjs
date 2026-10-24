@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const sectionSource = readFileSync(
   new URL(
     "../../app/painel-autor/components/painel-autor-section.tsx",
@@ -60,8 +67,8 @@ test("estilos estruturais dos cards preservam o contrato visual", () => {
 
 test("página delega os estilos e mantém composições desktop e consumidores", () => {
   assert.match(
-    page,
-    /from "\.\/lib\/painel-autor-work-card-layout-style-utils";/,
+    workCardSource,
+    /from "\.\.\/lib\/painel-autor-work-card-layout-style-utils";/,
   );
 
   for (const name of [
@@ -79,8 +86,8 @@ test("página delega os estilos e mantém composições desktop e consumidores",
   }
 
   assert.match(
-    page,
-    /from "\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
+    workCardSource,
+    /from "\.\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
   );
   for (const [name, baseStyle] of [
     ["desktopSectionStyle", "sectionStyle"],
@@ -110,10 +117,15 @@ test("página delega os estilos e mantém composições desktop e consumidores",
     sectionSource,
     /style=\{isDesktop \? desktopWorksGridStyle : worksGridStyle\}/,
   );
-  assert.match(page, /style=\{isDesktop \? desktopWorkCardStyle : workCardStyle\}/);
-  assert.match(page, /style=\{coverLinkStyle\}/);
-  assert.match(page, /style=\{coverGlowStyle\}/);
-  assert.match(page, /style=\{statusRowStyle\}/);
-  assert.match(page, /style=\{obraComStatusPublicado \? publishedStatusStyle : draftStatusStyle\}/);
-  assert.match(page, /style=\{isDesktop \? desktopWorkContentStyle : workContentStyle\}/);
+  assert.match(
+    page,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(page, /function ObraPainelCard\(/);
+  assert.match(workCardSource, /style=\{isDesktop \? desktopWorkCardStyle : workCardStyle\}/);
+  assert.match(workCardSource, /style=\{coverLinkStyle\}/);
+  assert.match(workCardSource, /style=\{coverGlowStyle\}/);
+  assert.match(workCardSource, /style=\{statusRowStyle\}/);
+  assert.match(workCardSource, /style=\{obraComStatusPublicado \? publishedStatusStyle : draftStatusStyle\}/);
+  assert.match(workCardSource, /style=\{isDesktop \? desktopWorkContentStyle : workContentStyle\}/);
 });

@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("estilos do painel de ações preservam o contrato visual", () => {
   for (const name of [
@@ -42,8 +49,8 @@ test("estilos do painel de ações preservam o contrato visual", () => {
 
 test("página delega estilos do painel mantendo todos os consumidores", () => {
   assert.match(
-    page,
-    /from "\.\/lib\/painel-autor-work-action-sheet-style-utils";/,
+    workCardSource,
+    /from "\.\.\/lib\/painel-autor-work-action-sheet-style-utils";/,
   );
 
   for (const name of [
@@ -55,6 +62,6 @@ test("página delega estilos do painel mantendo todos os consumidores", () => {
     "workActionSheetTitleStyle",
   ]) {
     assert.doesNotMatch(page, new RegExp(`const ${name}: CSSProperties`));
-    assert.match(page, new RegExp(`style=\\{${name}\\}`));
+    assert.match(workCardSource, new RegExp(`style=\\{${name}\\}`));
   }
 });
