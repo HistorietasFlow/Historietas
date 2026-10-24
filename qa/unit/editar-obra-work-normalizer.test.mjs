@@ -29,6 +29,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsSource = readFileSync(new URL("../../lib/utils.ts", import.meta.url), "utf8");
 const adultContentSource = readFileSync(
   new URL("../../lib/historietasAdultContent.ts", import.meta.url),
@@ -219,12 +226,11 @@ test("Editar Obra delega somente a normalização de obras", () => {
     /import \{ normalizarObra \} from "\.\/lib\/editar-obra-work-normalizer";/,
   );
   assert.doesNotMatch(pageSource, /function normalizarObra\(/);
-  for (const uso of [
-    "normalizarObra(",
-    "normalizarObra(obra as Partial<ObraLocal>, index)",
-  ]) {
-    assert.match(pageSource, new RegExp(uso.replace(/[()<>]/g, "\\$&")));
-  }
+  assert.match(pageSource, /normalizarObra\(/);
+  assert.match(
+    localWorkStorageSource,
+    /normalizarObra\(\s*obra as Parameters<typeof normalizarObra>\[0\],\s*index\s*\)/,
+  );
   for (const contrato of [
     'import { criarSlugBase } from "../../../lib/utils";',
     'import { normalizarCapitulo } from "./editar-obra-chapter-normalizer";',

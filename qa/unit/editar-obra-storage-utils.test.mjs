@@ -15,6 +15,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const storageJavascript = typescript.transpileModule(storageSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -95,8 +102,8 @@ test("storage de Editar Obra preserva serialização e falhas silenciosas", () =
 
 test("Editar Obra delega somente as utilidades de storage ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?lerStorageUsuarioEditarObra,[\s\S]*?salvarJsonStorageUsuarioEditarObra,[\s\S]*?\} from "\.\/lib\/editar-obra-storage-utils";/,
+    localWorkStorageSource,
+    /import \{[\s\S]*?lerStorageUsuarioEditarObra,[\s\S]*?salvarJsonStorageUsuarioEditarObra,[\s\S]*?\} from "\.\/editar-obra-storage-utils";/,
   );
   assert.doesNotMatch(
     pageSource,

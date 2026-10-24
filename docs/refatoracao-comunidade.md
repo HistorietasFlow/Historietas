@@ -1439,3 +1439,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A preparação persistível da obra foi isolada em `editar-obra-storage-preparation.ts`, preservando o descarte de capas e arquivos Data URL e todos os demais campos da obra.
 - Persistência local, carregamento, Storage, Supabase, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 17 — Editar Obra
+
+- A persistência local das obras foi isolada em `editar-obra-local-work-storage.ts`, preservando normalização, ownership, restauração e sincronização de backup, regravação sanitizada e fallbacks por usuário.
+- Carregamento remoto, Storage, Supabase, estado, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.

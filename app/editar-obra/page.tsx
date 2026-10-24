@@ -26,10 +26,6 @@ import {
 } from "../../lib/storageUploads";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import {
-  lerStorageUsuarioEditarObra,
-  salvarJsonStorageUsuarioEditarObra,
-} from "./lib/editar-obra-storage-utils";
-import {
   contarLetrasNumeros,
   limparTextoPersonalizado,
   opcaoExiste,
@@ -49,7 +45,6 @@ import {
   ehDataUrlEdicaoObra,
   normalizarArquivoObraPersistivel,
 } from "./lib/editar-obra-file-normalization";
-import { prepararObraEdicaoParaStorage } from "./lib/editar-obra-storage-preparation";
 import { usuarioPodeEditarObraLocal } from "./lib/editar-obra-ownership-utils";
 import {
   carregarNomeAutorProfileEdicaoObra,
@@ -63,12 +58,15 @@ import { criarArquivoRemotoEdicaoObra } from "./lib/editar-obra-supabase-file-co
 import { obterChavesBackupArquivoEdicaoObra } from "./lib/editar-obra-file-backup-key-utils";
 import {
   carregarBackupArquivosObras,
-  restaurarArquivoObraComBackup,
   salvarArquivoObraNoBackup,
   sincronizarBackupArquivosObras,
 } from "./lib/editar-obra-file-backup-storage";
 import { normalizarObra } from "./lib/editar-obra-work-normalizer";
 import { normalizarObraSupabase } from "./lib/editar-obra-supabase-work-normalizer";
+import {
+  carregarObrasLocalStorageEdicaoObra,
+  salvarObrasDoUsuarioPreservandoOutrasContas,
+} from "./lib/editar-obra-local-work-storage";
 
 type CapituloLocal = {
   id: string;
@@ -556,7 +554,6 @@ function EditarObraLanguageBridge() {
   return null;
 }
 
-const STORAGE_KEY = "historietas-obras";
 const TAMANHO_MAXIMO_CAPA = LIMITES_BYTES_STORAGE["capas-obras"];
 const TAMANHO_MAXIMO_ARQUIVO_OBRA =
   LIMITES_BYTES_STORAGE["arquivos-obras"];
@@ -717,89 +714,6 @@ async function removerArquivosStorageEdicaoObra(
       }
     })
   );
-}
-
-function salvarObrasDoUsuarioPreservandoOutrasContas(
-  obrasDoUsuario: ObraLocal[],
-  userId: string
-) {
-  if (typeof window === "undefined") {
-    return obrasDoUsuario;
-  }
-
-  const usuarioId = userId.trim();
-
-  if (!usuarioId) {
-    return [] as ObraLocal[];
-  }
-
-  const obrasDoUsuarioComDono = obrasDoUsuario.map((obra, index) =>
-    normalizarObra(
-      {
-        ...obra,
-        autorId: obra.autorId || usuarioId,
-      },
-      index
-    )
-  ).filter((obra) => usuarioPodeEditarObraLocal(obra, usuarioId));
-
-  salvarJsonStorageUsuarioEditarObra(
-    STORAGE_KEY,
-    usuarioId,
-    obrasDoUsuarioComDono.map(prepararObraEdicaoParaStorage)
-  );
-  sincronizarBackupArquivosObras(obrasDoUsuarioComDono, usuarioId);
-
-  return obrasDoUsuarioComDono;
-}
-
-function carregarObrasLocalStorageEdicaoObra(userId: string) {
-  if (typeof window === "undefined") {
-    return [] as ObraLocal[];
-  }
-
-  const usuarioId = userId.trim();
-
-  if (!usuarioId) {
-    return [] as ObraLocal[];
-  }
-
-  const backupArquivosObras = carregarBackupArquivosObras(usuarioId);
-
-  function normalizarLista(valor: unknown) {
-    return Array.isArray(valor)
-      ? valor
-          .map((obra, index) => normalizarObra(obra as Partial<ObraLocal>, index))
-          .map((obra) => restaurarArquivoObraComBackup(obra, backupArquivosObras))
-      : [];
-  }
-
-  let obrasDoUsuario: ObraLocal[] = [];
-
-  try {
-    const obrasUsuarioTexto = lerStorageUsuarioEditarObra(STORAGE_KEY, usuarioId);
-    const obrasUsuarioJson: unknown = obrasUsuarioTexto
-      ? JSON.parse(obrasUsuarioTexto)
-      : [];
-
-    obrasDoUsuario = normalizarLista(obrasUsuarioJson)
-      .map((obra) => ({
-        ...obra,
-        autorId: obra.autorId?.trim() || usuarioId,
-      }))
-      .filter((obra) => usuarioPodeEditarObraLocal(obra, usuarioId));
-  } catch {
-    obrasDoUsuario = [];
-  }
-
-  salvarJsonStorageUsuarioEditarObra(
-    STORAGE_KEY,
-    usuarioId,
-    obrasDoUsuario.map(prepararObraEdicaoParaStorage)
-  );
-  sincronizarBackupArquivosObras(obrasDoUsuario, usuarioId);
-
-  return obrasDoUsuario;
 }
 
 async function registrarDiarioEdicaoObra({

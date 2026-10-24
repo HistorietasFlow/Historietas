@@ -29,6 +29,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const fileNormalizationSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-file-normalization.ts",
@@ -110,12 +117,13 @@ test("normaliza arquivo inválido com o helper persistível sem mutar a entrada"
 });
 
 test("Editar Obra delega somente a preparação persistível", () => {
-  assert.match(
-    pageSource,
-    /import \{ prepararObraEdicaoParaStorage \} from "\.\/lib\/editar-obra-storage-preparation";/,
-  );
+  assert.doesNotMatch(pageSource, /prepararObraEdicaoParaStorage/);
   assert.doesNotMatch(pageSource, /function prepararObraEdicaoParaStorage\(/);
-  assert.match(pageSource, /\.map\(prepararObraEdicaoParaStorage\)/);
+  assert.match(
+    localWorkStorageSource,
+    /import \{ prepararObraEdicaoParaStorage \} from "\.\/editar-obra-storage-preparation";/,
+  );
+  assert.match(localWorkStorageSource, /\.map\(prepararObraEdicaoParaStorage\)/);
   assert.match(
     source,
     /from "\.\/editar-obra-file-normalization";/,
