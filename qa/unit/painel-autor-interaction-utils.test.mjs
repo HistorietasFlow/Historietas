@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
 
+await import("./painel-autor-supabase-work-converter.test.mjs");
+
 const utilsSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-interaction-utils.ts",
@@ -216,7 +218,7 @@ test("Painel do Autor delega somente a chave de interação ao helper extraído"
     /import \{ criarChaveInteracao \} from "\.\/lib\/painel-autor-interaction-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarChaveInteracao\(/);
-  assert.equal((pagina.match(/\bcriarChaveInteracao\b/g) || []).length, 4);
+  assert.equal((pagina.match(/\bcriarChaveInteracao\b/g) || []).length, 2);
   assert.match(
     pagina,
     /import \{ carregarComentariosCapitulosUsuarioPainel \} from "\.\/lib\/painel-autor-chapter-comments-loader";/,
