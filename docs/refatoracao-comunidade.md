@@ -1394,3 +1394,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição visual dos overlays de interação foi isolada em `community-interaction-overlays-composition.tsx`.
 - Comentários, denúncia e feedback recebem props e callbacks preparados pela página, que mantém estados, ações e decisões de negócio sem alteração intencional de comportamento.
+
+## Registro da Fase 22 — Comunidade
+
+- O shell estrutural visual foi isolado em `community-page-shell-composition.tsx`.
+- A página prepara os slots de cabeçalho, erro, controles, feed, composer e overlays; estados, callbacks e regras de negócio permanecem explicitamente na orquestração principal.
