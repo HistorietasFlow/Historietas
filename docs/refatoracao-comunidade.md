@@ -1434,3 +1434,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A normalização pura da obra vinda do Supabase foi isolada em `editar-obra-supabase-work-normalizer.ts`, preservando precedências, reconciliação de capítulos remotos, avisos, arquivos, métricas, slug, link e fallbacks.
 - Consultas Supabase, carregamento da obra, persistência, Storage, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 16 — Editar Obra
+
+- A preparação persistível da obra foi isolada em `editar-obra-storage-preparation.ts`, preservando o descarte de capas e arquivos Data URL e todos os demais campos da obra.
+- Persistência local, carregamento, Storage, Supabase, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.

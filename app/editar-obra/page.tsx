@@ -49,6 +49,7 @@ import {
   ehDataUrlEdicaoObra,
   normalizarArquivoObraPersistivel,
 } from "./lib/editar-obra-file-normalization";
+import { prepararObraEdicaoParaStorage } from "./lib/editar-obra-storage-preparation";
 import { usuarioPodeEditarObraLocal } from "./lib/editar-obra-ownership-utils";
 import {
   carregarNomeAutorProfileEdicaoObra,
@@ -716,14 +717,6 @@ async function removerArquivosStorageEdicaoObra(
       }
     })
   );
-}
-
-function prepararObraEdicaoParaStorage(obra: ObraLocal): ObraLocal {
-  return {
-    ...obra,
-    capa: ehDataUrlEdicaoObra(obra.capa) ? "" : obra.capa,
-    arquivoObra: normalizarArquivoObraPersistivel(obra.arquivoObra),
-  };
 }
 
 function salvarObrasDoUsuarioPreservandoOutrasContas(
