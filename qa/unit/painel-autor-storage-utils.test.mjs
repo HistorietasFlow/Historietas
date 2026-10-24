@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const hookResumo = readFileSync(
+  new URL(
+    "../../app/painel-autor/hooks/use-painel-autor-summary-preference.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -114,4 +121,61 @@ test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   );
   assert.match(pagina, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect/);
+});
+
+test("a preferencia do resumo permanece isolada do runtime de dados", () => {
+  assert.match(hookResumo, /^"use client";/);
+  assert.match(
+    hookResumo,
+    /export function usePainelAutorSummaryPreference\(usuarioIdLogado: string\)/,
+  );
+  assert.match(hookResumo, /useState\(true\)/);
+  assert.match(hookResumo, /if \(!usuarioIdLogado\) \{[\s\S]*?return;/);
+  assert.match(
+    hookResumo,
+    /const PANEL_SUMMARY_STORAGE_KEY = "historietas-painel-resumo-visivel";/,
+  );
+  assert.match(
+    hookResumo,
+    /lerStorageUsuarioPainel\([\s\S]*?PANEL_SUMMARY_STORAGE_KEY,[\s\S]*?usuarioIdLogado/,
+  );
+  assert.match(
+    hookResumo,
+    /preferenciaSalva === null[\s\S]*?\? true[\s\S]*?: JSON\.parse\(preferenciaSalva\) !== false/,
+  );
+  assert.match(hookResumo, /catch \{[\s\S]*?mostrarResumoSalvo = true;/);
+  assert.match(
+    hookResumo,
+    /window\.setTimeout\(\(\) => \{[\s\S]*?setMostrarResumoPainel\(mostrarResumoSalvo\);[\s\S]*?\}, 0\)/,
+  );
+  assert.match(hookResumo, /window\.clearTimeout\(aplicarPreferenciaTimer\)/);
+  assert.match(hookResumo, /\}, \[usuarioIdLogado\]\);/);
+  assert.match(hookResumo, /function alternarResumoPainel\(\)/);
+  assert.match(hookResumo, /setMostrarResumoPainel\(\(mostrarAtual\) => \{/);
+  assert.match(hookResumo, /const proximoValor = !mostrarAtual;/);
+  assert.match(
+    hookResumo,
+    /salvarJsonStorageUsuarioPainel\([\s\S]*?PANEL_SUMMARY_STORAGE_KEY,[\s\S]*?usuarioIdLogado,[\s\S]*?proximoValor/,
+  );
+  assert.match(hookResumo, /return \{ mostrarResumoPainel, alternarResumoPainel \};/);
+  assert.doesNotMatch(hookResumo, /supabase\./);
+});
+
+test("Painel do Autor delega somente a preferencia do resumo ao hook", () => {
+  assert.match(
+    pagina,
+    /import \{ usePainelAutorSummaryPreference \} from "\.\/hooks\/use-painel-autor-summary-preference";/,
+  );
+  assert.match(
+    pagina,
+    /const \{ mostrarResumoPainel, alternarResumoPainel \} =[\s\S]*?usePainelAutorSummaryPreference\(usuarioIdLogado\);/,
+  );
+  assert.doesNotMatch(
+    pagina,
+    /const \[mostrarResumoPainel, setMostrarResumoPainel\] = useState\(true\)/,
+  );
+  assert.doesNotMatch(pagina, /function alternarResumoPainel\(/);
+  assert.doesNotMatch(pagina, /PANEL_SUMMARY_STORAGE_KEY/);
+  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /onClick=\{alternarResumoPainel\}/);
 });
