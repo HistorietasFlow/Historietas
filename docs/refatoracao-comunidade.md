@@ -1459,3 +1459,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A validação e o cálculo puro de progresso do formulário foram isolados em `editar-obra-form-validation.ts`, preservando ordem das mensagens, critérios, arredondamento e a diferença entre autor do perfil e campo de autor.
 - Salvamento, estado, valores derivados, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 21 — Editar Obra
+
+- Os helpers de estilo das capas miniatura e de prévia foram isolados em `editar-obra-cover-style-utils.ts`, mantendo os estilos-base locais e explicitamente passados pela página.
+- Formulário, estilos-base, estado, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.

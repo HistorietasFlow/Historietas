@@ -14,6 +14,7 @@ import "./editar-obra-local-work-storage.test.mjs";
 import "./editar-obra-remote-storage.test.mjs";
 import "./editar-obra-diary-action.test.mjs";
 import "./editar-obra-form-validation.test.mjs";
+import "./editar-obra-cover-style-utils.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-file-normalization.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
