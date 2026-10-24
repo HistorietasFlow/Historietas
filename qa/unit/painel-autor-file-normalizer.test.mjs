@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workNormalizerSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -79,14 +86,18 @@ test("normalizarArquivoObra mantém fallbacks de categoria, campos opcionais e t
 
 test("Painel do Autor delega somente a normalização de arquivo ao helper extraído", () => {
   assert.match(
-    pagina,
-    /import \{ normalizarArquivoObra \} from "\.\/lib\/painel-autor-file-normalizer";/,
+    workNormalizerSource,
+    /import \{ normalizarArquivoObra \} from "\.\/painel-autor-file-normalizer";/,
   );
   assert.match(pagina, /type ArquivoObraLocal = \{/);
   assert.doesNotMatch(pagina, /function normalizarArquivoObra\(/);
-  assert.equal((pagina.match(/\bnormalizarArquivoObra\b/g) || []).length, 2);
+  assert.doesNotMatch(pagina, /\bnormalizarArquivoObra\b/);
   assert.match(
     pagina,
+    /import \{ normalizarObraPainel \} from "\.\/lib\/painel-autor-work-normalizer";/,
+  );
+  assert.match(
+    workNormalizerSource,
     /arquivoObra: normalizarArquivoObra\(obra\.arquivoObra\)/,
   );
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);

@@ -21,6 +21,13 @@ const metricasObrasSource = readFileSync(
   ),
   "utf8",
 );
+const workNormalizerSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -112,12 +119,24 @@ test("Painel do Autor delega helpers puros de progresso às fronteiras corretas"
     metricasObrasSource,
     /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?encontrarCapituloParaContinuar,[\s\S]*?obterCapitulosPublicadosPainel,[\s\S]*?\} from "\.\/painel-autor-reading-progress-utils";/,
   );
+  assert.match(
+    workNormalizerSource,
+    /import \{ calcularProgressoLeitura \} from "\.\/painel-autor-reading-progress-utils";/,
+  );
   assert.doesNotMatch(pagina, /function obterCapitulosPublicadosPainel\(/);
   assert.doesNotMatch(pagina, /function calcularProgressoLeitura\(/);
   assert.doesNotMatch(pagina, /function encontrarCapituloParaContinuar\(/);
   assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 2);
-  assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 2);
   assert.doesNotMatch(pagina, /\bencontrarCapituloParaContinuar\b/);
+  assert.match(
+    pagina,
+    /import \{ normalizarObraPainel \} from "\.\/lib\/painel-autor-work-normalizer";/,
+  );
+  assert.match(
+    workNormalizerSource,
+    /progressoLeitura: calcularProgressoLeitura\(capitulosNormalizados\)/,
+  );
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
     /supabase\.auth\.getUser\(\)/,
