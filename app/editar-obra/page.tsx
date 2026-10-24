@@ -68,6 +68,12 @@ import {
   criarArquivoRemotoEdicaoObra,
 } from "./lib/editar-obra-supabase-file-converter";
 import { obterChavesBackupArquivoEdicaoObra } from "./lib/editar-obra-file-backup-key-utils";
+import {
+  carregarBackupArquivosObras,
+  restaurarArquivoObraComBackup,
+  salvarArquivoObraNoBackup,
+  sincronizarBackupArquivosObras,
+} from "./lib/editar-obra-file-backup-storage";
 
 type CapituloLocal = {
   id: string;
@@ -582,7 +588,6 @@ function EditarObraLanguageBridge() {
 }
 
 const STORAGE_KEY = "historietas-obras";
-const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = LIMITES_BYTES_STORAGE["capas-obras"];
 const TAMANHO_MAXIMO_ARQUIVO_OBRA =
   LIMITES_BYTES_STORAGE["arquivos-obras"];
@@ -644,8 +649,6 @@ const OPCOES_TAGS_OBRA = [
   "Vingança",
   "Sobrevivência",
 ] as const;
-
-type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
 type ArquivoStorageEdicaoObra = {
   bucket: "capas-obras" | "arquivos-obras";
@@ -852,122 +855,6 @@ function prepararObraEdicaoParaStorage(obra: ObraLocal): ObraLocal {
     ...obra,
     capa: ehDataUrlEdicaoObra(obra.capa) ? "" : obra.capa,
     arquivoObra: normalizarArquivoObraPersistivel(obra.arquivoObra),
-  };
-}
-
-function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return {};
-  }
-
-  try {
-    const backupTexto = lerStorageUsuarioEditarObra(
-      FILE_BACKUP_STORAGE_KEY,
-      userId
-    );
-    const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
-
-    if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
-      return {};
-    }
-
-    const backupNormalizado: ArquivosObrasBackup = {};
-
-    Object.entries(backupJson as Record<string, unknown>).forEach(([obraId, arquivo]) => {
-      const arquivoNormalizado = normalizarArquivoObra(arquivo);
-
-      if (obraId.trim() && arquivoNormalizado) {
-        backupNormalizado[obraId] = arquivoNormalizado;
-      }
-    });
-
-    salvarJsonStorageUsuarioEditarObra(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupNormalizado
-    );
-
-    return backupNormalizado;
-  } catch {
-    return {};
-  }
-}
-
-function salvarArquivoObraNoBackup(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">,
-  arquivo: ArquivoObraLocal | null,
-  userId = ""
-) {
-  if (!obra.id.trim() || typeof window === "undefined" || !userId.trim()) {
-    return;
-  }
-
-  try {
-    const backupAtual = carregarBackupArquivosObras(userId);
-
-    obterChavesBackupArquivoEdicaoObra(obra).forEach((chave) => {
-      if (arquivo) {
-        backupAtual[chave] = arquivo;
-      } else {
-        delete backupAtual[chave];
-      }
-    });
-
-    salvarJsonStorageUsuarioEditarObra(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupAtual
-    );
-  } catch {
-    // Mantém o salvamento principal funcionando mesmo se o backup falhar.
-  }
-}
-
-function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
-  if (typeof window === "undefined" || !userId.trim()) {
-    return;
-  }
-
-  try {
-    const backupAtual = carregarBackupArquivosObras(userId);
-
-    obras.forEach((obra) => {
-      if (obra.arquivoObra) {
-        obterChavesBackupArquivoEdicaoObra(obra).forEach((chave) => {
-          backupAtual[chave] = obra.arquivoObra as ArquivoObraLocal;
-        });
-      }
-    });
-
-    salvarJsonStorageUsuarioEditarObra(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupAtual
-    );
-  } catch {
-    // Backup é uma proteção extra. Não deve travar a página.
-  }
-}
-
-function restaurarArquivoObraComBackup(
-  obra: ObraLocal,
-  backup: ArquivosObrasBackup
-): ObraLocal {
-  if (obra.arquivoObra) {
-    return obra;
-  }
-
-  const arquivoBackup = obterChavesBackupArquivoEdicaoObra(obra)
-    .map((chave) => normalizarArquivoObra(backup[chave]))
-    .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo));
-
-  if (!arquivoBackup) {
-    return obra;
-  }
-
-  return {
-    ...obra,
-    arquivoObra: arquivoBackup,
   };
 }
 
