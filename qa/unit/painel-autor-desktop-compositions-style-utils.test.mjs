@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const sectionSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const desktopStyles = [
   "desktopContainerStyle",
@@ -63,10 +70,25 @@ test("página delega composições desktop e mantém os consumidores", () => {
   assert.match(page, /style=\{isDesktop \? desktopContainerStyle : containerStyle\}/);
   assert.match(page, /style=\{isDesktop \? desktopStudioControlsStyle : studioControlsStyle\}/);
   assert.match(page, /style=\{isDesktop \? desktopStatsBoxStyle : statsBoxStyle\}/);
-  assert.match(page, /style=\{isDesktop \? desktopSectionStyle : sectionStyle\}/);
-  assert.match(page, /style=\{isDesktop \? desktopWorksGridStyle : worksGridStyle\}/);
   assert.match(page, /style=\{isDesktop \? desktopWorkCardStyle : workCardStyle\}/);
   assert.match(page, /style=\{isDesktop \? desktopWorkContentStyle : workContentStyle\}/);
   assert.match(page, /style=\{isDesktop \? desktopSheetStatsRowStyle : sheetStatsRowStyle\}/);
   assert.match(page, /style=\{isDesktop \? desktopCardActionsGridStyle : actionsGridStyle\}/);
+
+  assert.match(
+    sectionSource,
+    /from "\.\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
+  );
+  assert.match(
+    sectionSource,
+    /from "\.\.\/lib\/painel-autor-work-card-layout-style-utils";/,
+  );
+  assert.match(
+    sectionSource,
+    /style=\{isDesktop \? desktopSectionStyle : sectionStyle\}/,
+  );
+  assert.match(
+    sectionSource,
+    /style=\{isDesktop \? desktopWorksGridStyle : worksGridStyle\}/,
+  );
 });
