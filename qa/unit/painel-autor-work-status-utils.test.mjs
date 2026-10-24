@@ -28,6 +28,13 @@ const workFilteringSource = readFileSync(
   ),
   "utf8",
 );
+const resumoMetricasSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-summary-metrics.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const normalizerJavascript = typescript.transpileModule(normalizerSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -109,13 +116,13 @@ test("obraRascunhoOuSemConteudoPainel e obterStatusPainelAutor preservam fallbac
 test("Painel do Autor delega somente os helpers de status ao módulo extraído", () => {
   assert.match(
     pagina,
-    /import \{\s*obraPublicadaComConteudoPainel,\s*obraRascunhoOuSemConteudoPainel,\s*obterStatusPainelAutor,\s*\} from "\.\/lib\/painel-autor-work-status-utils";/,
+    /import \{\s*obraPublicadaComConteudoPainel,\s*obterStatusPainelAutor,\s*\} from "\.\/lib\/painel-autor-work-status-utils";/,
   );
   assert.doesNotMatch(pagina, /function obraPublicadaComConteudoPainel\(/);
   assert.doesNotMatch(pagina, /function obraRascunhoOuSemConteudoPainel\(/);
   assert.doesNotMatch(pagina, /function obterStatusPainelAutor\(/);
-  assert.equal((pagina.match(/\bobraPublicadaComConteudoPainel\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\bobraRascunhoOuSemConteudoPainel\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\bobraPublicadaComConteudoPainel\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\bobraRascunhoOuSemConteudoPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bobterStatusPainelAutor\b/g) || []).length, 2);
   assert.match(
     workFilteringSource,
@@ -123,6 +130,12 @@ test("Painel do Autor delega somente os helpers de status ao módulo extraído",
   );
   assert.match(workFilteringSource, /obraPublicadaComConteudoPainel\(obra\)/);
   assert.match(workFilteringSource, /obraRascunhoOuSemConteudoPainel\(obra\)/);
+  assert.match(
+    resumoMetricasSource,
+    /import \{[\s\S]*?obraPublicadaComConteudoPainel,[\s\S]*?obraRascunhoOuSemConteudoPainel,[\s\S]*?\} from "\.\/painel-autor-work-status-utils";/,
+  );
+  assert.match(resumoMetricasSource, /obraPublicadaComConteudoPainel\(obra\)/);
+  assert.match(resumoMetricasSource, /obraRascunhoOuSemConteudoPainel\(obra\)/);
   assert.match(
     utilsSource,
     /import \{ normalizarArquivoObra \} from "\.\/painel-autor-file-normalizer";/,
