@@ -1414,3 +1414,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A geração pura das chaves de backup de arquivos foi isolada em `editar-obra-file-backup-key-utils.ts`, preservando prefixos, ordem, fallback de slug, normalização de título, filtragem e deduplicação.
 - Leitura, escrita, sincronização e restauração do backup permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 12 — Editar Obra
+
+- A persistência local do backup de arquivos foi isolada em `editar-obra-file-backup-storage.ts`, preservando a chave, normalização, aliases, sincronização, restauração e fallbacks por usuário.
+- Carregamento das obras, salvamento principal, Storage, Supabase e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
