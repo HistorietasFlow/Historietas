@@ -36,6 +36,10 @@ import {
   prepararValorEditavel,
   textoPersonalizadoValido,
 } from "./lib/editar-obra-custom-value-utils";
+import {
+  formatarFormatoEdicaoObra,
+  formatarGeneroEdicaoObra,
+} from "./lib/editar-obra-format-utils";
 
 type CapituloLocal = {
   id: string;
@@ -668,41 +672,6 @@ function normalizarContadorEdicaoObra(valor: unknown, fallback = 0) {
   }
 
   return Math.max(0, Math.round(fallback));
-}
-
-function formatarFormatoEdicaoObra(formato: string) {
-  const formatoLimpo = formato.trim();
-  const formatoSemAcento = formatoLimpo
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (
-    formatoSemAcento === "hq/manga" ||
-    formatoSemAcento === "hq manga" ||
-    formatoSemAcento === "hq-manga"
-  ) {
-    return "HQ";
-  }
-
-  return formatoLimpo || "Não informado";
-}
-
-function formatarGeneroEdicaoObra(genero: string) {
-  const generoLimpo = genero.trim();
-  const generoNormalizado = normalizarTexto(generoLimpo);
-
-  if (generoNormalizado === "fantasia sombria") {
-    return "Fantasia";
-  }
-
-  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
-    return "Ficção";
-  }
-
-  return generoLimpo || "Não informado";
 }
 
 function criarLoginHrefEditarObra(obraId?: string) {
