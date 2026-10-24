@@ -12,6 +12,7 @@ import "./editar-obra-supabase-work-normalizer.test.mjs";
 import "./editar-obra-storage-preparation.test.mjs";
 import "./editar-obra-local-work-storage.test.mjs";
 import "./editar-obra-remote-storage.test.mjs";
+import "./editar-obra-diary-action.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-file-normalization.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");

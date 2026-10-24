@@ -1449,3 +1449,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As operações de upload e limpeza do Supabase Storage foram isoladas em `editar-obra-remote-storage.ts`, preservando MIME, cache, caminhos, referências, deduplicação, rollback e falhas individuais.
 - Autenticação, obtenção de caminhos antigos, fluxo de salvamento, consultas Supabase, estado e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 19 — Editar Obra
+
+- O registro de edição de obra no Diário foi isolado em `editar-obra-diary-action.ts`, preservando payload completo, fallback simplificado, visibilidade, href e tolerância a falhas.
+- Salvamento principal, autenticação, consultas Supabase, estado e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
