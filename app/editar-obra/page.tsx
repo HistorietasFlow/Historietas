@@ -1003,8 +1003,7 @@ export default function EditarObraPage() {
     sinopse,
   ]);
 
-  const { obraPublicaHref, minhaObraHref } = obterHrefsObraEditarObra(obraAtual, titulo);
-  void obraPublicaHref;
+  const { minhaObraHref } = obterHrefsObraEditarObra(obraAtual, titulo);
   const autorProfileAtivo = nomeAutorProfile.trim();
   const autorPreview = autorProfileAtivo || autor.trim();
   function marcarAlteracao() {

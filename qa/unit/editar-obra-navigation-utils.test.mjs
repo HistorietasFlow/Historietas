@@ -68,9 +68,9 @@ test("Editar Obra delega somente os cálculos de navegação", () => {
   assert.doesNotMatch(pageSource, /function criarLoginHrefEditarObra\(/);
   assert.match(
     pageSource,
-    /const \{ obraPublicaHref, minhaObraHref \} = obterHrefsObraEditarObra\(obraAtual, titulo\);/,
+    /const \{ minhaObraHref \} = obterHrefsObraEditarObra\(obraAtual, titulo\);/,
   );
-  assert.match(pageSource, /void obraPublicaHref;/);
+  assert.doesNotMatch(pageSource, /void obraPublicaHref;/);
   assert.doesNotMatch(pageSource, /obraAtual\?\.publicado \? obraPublicaHref/);
   assert.match(source, /const obraIdLimpo = obraId\?\.trim\(\) \|\| "";/);
   assert.match(source, /encodeURIComponent\(obraIdLimpo\)/);
