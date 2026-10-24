@@ -190,6 +190,7 @@ import {
   obterCapitulosPublicadosPainel,
 } from "./lib/painel-autor-reading-progress-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
+import { compartilharObraPainel } from "./lib/painel-autor-share-action";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
 import {
@@ -1421,25 +1422,6 @@ export default function PainelAutorPage() {
   }
 
   const usuarioLogado = Boolean(usuarioIdLogado);
-  function copiarTextoComFallback(texto: string) {
-    const campoTemporario = document.createElement("textarea");
-
-    campoTemporario.value = texto;
-    campoTemporario.setAttribute("readonly", "true");
-    campoTemporario.style.position = "fixed";
-    campoTemporario.style.left = "-9999px";
-    document.body.appendChild(campoTemporario);
-    campoTemporario.select();
-
-    try {
-      document.execCommand("copy");
-    } catch {
-      // O compartilhamento e a cópia permanecem silenciosos.
-    } finally {
-      document.body.removeChild(campoTemporario);
-    }
-  }
-
   async function abrirArquivoObra(obra: ObraLocal) {
     const referencia = obra.arquivoObra?.conteudo?.trim() || "";
 
@@ -1477,44 +1459,8 @@ export default function PainelAutorPage() {
     }
   }
 
-  async function compartilharObra(obra: ObraLocal) {
-    const href =
-      obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-    const linkAbsoluto = new URL(href, window.location.origin).toString();
-    const dadosCompartilhamento: ShareData = {
-      title: traduzirTextoPainelAutor(`${obra.titulo} no HISTORIETAS`, language),
-      text: traduzirTextoPainelAutor(
-        `Confira a obra ${obra.titulo} de ${obra.autor} no HISTORIETAS.`,
-        language,
-      ),
-      url: linkAbsoluto,
-    };
-
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share(dadosCompartilhamento);
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-      }
-    }
-
-    try {
-      if (
-        window.isSecureContext &&
-        navigator.clipboard &&
-        typeof navigator.clipboard.writeText === "function"
-      ) {
-        await navigator.clipboard.writeText(linkAbsoluto);
-        return;
-      }
-    } catch {
-      // Continua para o fallback silencioso abaixo.
-    }
-
-    copiarTextoComFallback(linkAbsoluto);
+  function compartilharObra(obra: ObraLocal) {
+    return compartilharObraPainel(obra, language);
   }
 
   async function excluirObra(obraId: string, tituloObra: string) {
