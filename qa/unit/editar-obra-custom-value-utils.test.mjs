@@ -15,6 +15,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const formValidationSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-form-validation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const compilerOptions = {
   module: typescript.ModuleKind.ESNext,
   target: typescript.ScriptTarget.ES2022,
@@ -71,7 +78,7 @@ test("valores editáveis preservam opções normalizadas, fallbacks e texto pers
 test("Editar Obra delega somente os helpers puros de valores personalizados", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?contarLetrasNumeros,[\s\S]*?limparTextoPersonalizado,[\s\S]*?opcaoExiste,[\s\S]*?prepararValorEditavel,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/editar-obra-custom-value-utils";/,
+    /import \{[\s\S]*?limparTextoPersonalizado,[\s\S]*?opcaoExiste,[\s\S]*?prepararValorEditavel,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/lib\/editar-obra-custom-value-utils";/,
   );
   for (const helper of [
     "contarLetrasNumeros",
@@ -83,6 +90,10 @@ test("Editar Obra delega somente os helpers puros de valores personalizados", ()
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
   assert.match(utilsSource, /import \{ normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/);
+  assert.match(
+    formValidationSource,
+    /import \{ contarLetrasNumeros \} from "\.\/editar-obra-custom-value-utils";/,
+  );
   assert.match(utilsSource, /texto\.match\(\/\[A-Za-zÀ-ÖØ-öø-ÿ0-9\]\/g\) \|\| \[\]/);
   assert.match(utilsSource, /\.trimStart\(\)/);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
