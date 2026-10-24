@@ -76,6 +76,10 @@ import {
   prepararAtualizacaoTagPersonalizada,
   prepararSelecaoTagEdicaoObra,
 } from "./lib/editar-obra-tag-utils";
+import {
+  criarLoginHrefEditarObra,
+  obterHrefsObraEditarObra,
+} from "./lib/editar-obra-navigation-utils";
 
 type CapituloLocal = {
   id: string;
@@ -625,18 +629,6 @@ const OPCOES_TAGS_OBRA = [
   "Sobrevivência",
 ] as const;
 
-function criarLoginHrefEditarObra(obraId?: string) {
-  const obraIdLimpo = obraId?.trim() || "";
-  const redirectTo = obraIdLimpo
-    ? `/editar-obra?obraId=${encodeURIComponent(obraIdLimpo)}`
-    : "/editar-obra";
-  const params = new URLSearchParams({
-    redirectTo,
-  });
-
-  return `/login?${params.toString()}`;
-}
-
 export default function EditarObraPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
@@ -1011,14 +1003,11 @@ export default function EditarObraPage() {
     sinopse,
   ]);
 
-  const obraPublicaHref =
-    obraAtual?.link ||
-    (obraAtual?.slug
-      ? `/obra/${obraAtual.slug}`
-      : titulo.trim()
-        ? `/obra/${criarSlugBase(titulo.trim())}`
-        : "/painel-autor");
-  const minhaObraHref = obraAtual?.publicado ? obraPublicaHref : "/painel-autor";
+  const { obraPublicaHref, minhaObraHref: minhaObraHrefDerivada } = obterHrefsObraEditarObra(
+    obraAtual,
+    titulo,
+  );
+  const minhaObraHref = obraAtual?.publicado ? obraPublicaHref : minhaObraHrefDerivada;
   const autorProfileAtivo = nomeAutorProfile.trim();
   const autorPreview = autorProfileAtivo || autor.trim();
   function marcarAlteracao() {

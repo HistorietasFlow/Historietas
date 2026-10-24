@@ -1469,3 +1469,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O cálculo puro dos próximos valores de tags foi isolado em `editar-obra-tag-utils.ts`, preservando limpeza, validação, limite, seleção de tag normal e fluxo de tag personalizada.
 - Setters, ordem de efeitos, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 23 — Editar Obra
+
+- As rotas de login e os hrefs derivados da obra foram isolados em `editar-obra-navigation-utils.ts`, preservando codificação, prioridade e fallbacks de navegação.
+- Carregamento, estado, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
