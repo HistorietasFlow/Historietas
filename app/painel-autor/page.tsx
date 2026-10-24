@@ -22,7 +22,6 @@ import {
   normalizarIdUsuarioPainel,
   obraPertenceAoUsuarioPainel,
 } from "./lib/painel-autor-ownership-utils";
-import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { carregarComentariosCapitulosUsuarioPainel } from "./lib/painel-autor-chapter-comments-loader";
 import { converterObraSupabaseParaLocalPainel } from "./lib/painel-autor-supabase-work-converter";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
@@ -195,6 +194,7 @@ import {
 import { removerReferenciasSupabaseObraExcluidaPainel } from "./lib/painel-autor-deleted-work-supabase-cleanup";
 import { carregarCapitulosPainelAutorSupabase } from "./lib/painel-autor-supabase-chapters-loader";
 import { carregarObrasPainelAutorSupabase } from "./lib/painel-autor-supabase-works-loader";
+import { prepararEstadoMetricasPainel } from "./lib/painel-autor-metrics-state";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 
 type CapituloLocal = {
@@ -356,42 +356,7 @@ async function carregarPainelAutorSupabase(
       }),
       carregarComentariosCapitulosUsuarioPainel(userId, capituloIds),
     ]);
-    const favoritosSupabase = new Set<string>();
-    const concluidasSupabase = new Set<string>();
-    const capitulosSalvos = new Set<string>();
-    const capitulosCurtidos = new Set<string>();
-    const progressoPorCapitulo = new Map<string, string>();
-    const progressoCarregado = metricas.carregado;
-    const capitulosComMetricas = new Set(metricas.capitulos.keys());
-
-    metricas.obras.forEach((metrica) => {
-      if (metrica.usuario.favoritou) {
-        favoritosSupabase.add(metrica.id);
-      }
-
-      if (metrica.usuario.concluiu) {
-        concluidasSupabase.add(metrica.id);
-      }
-    });
-
-    metricas.capitulos.forEach((metrica) => {
-      const chave = criarChaveInteracao(metrica.obraId, metrica.id);
-
-      if (metrica.usuario.salvou) {
-        capitulosSalvos.add(metrica.id);
-        capitulosSalvos.add(chave);
-      }
-
-      if (metrica.usuario.curtiu) {
-        capitulosCurtidos.add(metrica.id);
-        capitulosCurtidos.add(chave);
-      }
-
-      if (metrica.usuario.leu) {
-        progressoPorCapitulo.set(metrica.id, metrica.usuario.lidoEm);
-        progressoPorCapitulo.set(chave, metrica.usuario.lidoEm);
-      }
-    });
+    const { favoritosSupabase, concluidasSupabase, capitulosSalvos, capitulosCurtidos, progressoPorCapitulo, progressoCarregado, capitulosComMetricas } = prepararEstadoMetricasPainel(metricas);
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
       const obraLocal = obrasLocaisUsuario.find((obraAtual) => {
         const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
