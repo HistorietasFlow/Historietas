@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const sectionSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-section.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const desktopCompositionsSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-desktop-compositions-style-utils.ts",
@@ -87,8 +94,22 @@ test("página delega os estilos e mantém composições desktop e consumidores",
     );
     assert.doesNotMatch(page, new RegExp(`const ${name}: CSSProperties = \\{`));
   }
-  assert.match(page, /style=\{isDesktop \? desktopSectionStyle : sectionStyle\}/);
-  assert.match(page, /style=\{isDesktop \? desktopWorksGridStyle : worksGridStyle\}/);
+  assert.match(
+    sectionSource,
+    /from "\.\.\/lib\/painel-autor-work-card-layout-style-utils";/,
+  );
+  assert.match(
+    sectionSource,
+    /from "\.\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
+  );
+  assert.match(
+    sectionSource,
+    /style=\{isDesktop \? desktopSectionStyle : sectionStyle\}/,
+  );
+  assert.match(
+    sectionSource,
+    /style=\{isDesktop \? desktopWorksGridStyle : worksGridStyle\}/,
+  );
   assert.match(page, /style=\{isDesktop \? desktopWorkCardStyle : workCardStyle\}/);
   assert.match(page, /style=\{coverLinkStyle\}/);
   assert.match(page, /style=\{coverGlowStyle\}/);

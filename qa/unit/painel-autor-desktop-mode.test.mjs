@@ -11,6 +11,10 @@ const hookSessao = await readFile(
   "utf8",
 );
 const pagina = await readFile("app/painel-autor/page.tsx", "utf8");
+const secao = await readFile(
+  "app/painel-autor/components/painel-autor-section.tsx",
+  "utf8",
+);
 
 test("usePainelAutorDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -42,7 +46,20 @@ test("Painel do Autor delega somente o modo desktop", () => {
   assert.doesNotMatch(pagina, /setIsDesktop\(/);
   assert.doesNotMatch(pagina, /window\.innerWidth >= 1024/);
   assert.doesNotMatch(pagina, /addEventListener\("resize", atualizarLayoutDesktop\)/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 25);
+  assert.match(
+    pagina,
+    /<PainelSecao<ObraComMetricas>[\s\S]*?isDesktop=\{isDesktop\}/,
+  );
+  assert.match(secao, /isDesktop,/);
+  assert.match(
+    secao,
+    /style=\{isDesktop \? desktopSectionStyle : sectionStyle\}/,
+  );
+  assert.match(
+    secao,
+    /style=\{isDesktop \? desktopWorksGridStyle : worksGridStyle\}/,
+  );
+  assert.match(secao, /<Card[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(
     pagina,
     /import \{ PainelAutorLanguageBridge \} from "\.\/components\/painel-autor-language-bridge";/,

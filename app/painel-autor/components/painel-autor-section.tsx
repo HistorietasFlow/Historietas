@@ -18,10 +18,16 @@ export function PainelSecao<T extends { id: string }>({
 }: {
   obras: T[];
   isDesktop: boolean;
-  onAbrirArquivo: (obra: any) => void | Promise<void>;
-  onCompartilhar: (obra: any) => void | Promise<void>;
+  onAbrirArquivo: (obra: T) => void | Promise<void>;
+  onCompartilhar: (obra: T) => void | Promise<void>;
   onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
-  Card: ComponentType<any>;
+  Card: ComponentType<{
+    obra: T;
+    isDesktop: boolean;
+    onAbrirArquivo: (obra: T) => void | Promise<void>;
+    onCompartilhar: (obra: T) => void | Promise<void>;
+    onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
+  }>;
 }) {
   if (obras.length === 0) {
     return null;

@@ -1187,8 +1187,8 @@ function ObraPainelCard({
 }: {
   obra: ObraComMetricas;
   isDesktop: boolean;
-  onAbrirArquivo: (obra: ObraLocal) => void | Promise<void>;
-  onCompartilhar: (obra: ObraLocal) => void | Promise<void>;
+  onAbrirArquivo: (obra: ObraComMetricas) => void | Promise<void>;
+  onCompartilhar: (obra: ObraComMetricas) => void | Promise<void>;
   onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
   const [acoesAbertas, setAcoesAbertas] = useState(false);
