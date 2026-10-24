@@ -45,6 +45,11 @@ import {
   arquivoObraAceito,
   identificarCategoriaArquivo,
 } from "./lib/editar-obra-file-validation";
+import {
+  ehDataUrlEdicaoObra,
+  normalizarArquivoObra,
+  normalizarArquivoObraPersistivel,
+} from "./lib/editar-obra-file-normalization";
 
 type CapituloLocal = {
   id: string;
@@ -1040,62 +1045,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
 
   return Math.round((capitulosLidos / capitulos.length) * 100);
-}
-
-function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return null;
-  }
-
-  const arquivo = valor as Partial<ArquivoObraLocal>;
-
-  if (
-    typeof arquivo.nome !== "string" ||
-    !arquivo.nome.trim() ||
-    typeof arquivo.conteudo !== "string" ||
-    !arquivo.conteudo.trim()
-  ) {
-    return null;
-  }
-
-  let categoria: ArquivoObraLocal["categoria"] = "outro";
-
-  if (
-    arquivo.categoria === "texto" ||
-    arquivo.categoria === "documento" ||
-    arquivo.categoria === "imagem" ||
-    arquivo.categoria === "outro"
-  ) {
-    categoria = arquivo.categoria;
-  }
-
-  return {
-    nome: arquivo.nome,
-    tipo: typeof arquivo.tipo === "string" ? arquivo.tipo : "",
-    tamanho:
-      typeof arquivo.tamanho === "number" && Number.isFinite(arquivo.tamanho)
-        ? arquivo.tamanho
-        : 0,
-    conteudo: arquivo.conteudo,
-    categoria,
-    criadoEm: typeof arquivo.criadoEm === "string" ? arquivo.criadoEm : "",
-  };
-}
-
-function ehDataUrlEdicaoObra(valor: string) {
-  return valor.trim().startsWith("data:");
-}
-
-function normalizarArquivoObraPersistivel(
-  valor: unknown
-): ArquivoObraLocal | null {
-  const arquivo = normalizarArquivoObra(valor);
-
-  if (!arquivo || ehDataUrlEdicaoObra(arquivo.conteudo)) {
-    return null;
-  }
-
-  return arquivo;
 }
 
 function prepararObraEdicaoParaStorage(obra: ObraLocal): ObraLocal {
