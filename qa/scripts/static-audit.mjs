@@ -1646,7 +1646,7 @@ if (!fs.existsSync(privateFileClientPath)) {
 
 for (const relative of [
   "app/obra/[slug]/components/arquivo-obra-publico.tsx",
-  "app/painel-autor/page.tsx"
+  "app/painel-autor/lib/painel-autor-open-file-action.ts"
 ]) {
   const content = fs.readFileSync(path.join(ROOT_DIR, relative), "utf8");
 
@@ -1658,6 +1658,27 @@ for (const relative of [
       `helper ausente em ${relative}`
     );
   }
+}
+
+const painelAutorPage = fs.readFileSync(
+  path.join(ROOT_DIR, "app/painel-autor/page.tsx"),
+  "utf8"
+);
+
+if (
+  /import \{ abrirArquivoObraPainel \} from "\.\/lib\/painel-autor-open-file-action";[\s\S]*?return abrirArquivoObraPainel\(obra, language\);/.test(
+    painelAutorPage
+  )
+) {
+  pass(
+    "Painel do Autor delega abertura protegida de arquivos",
+    "app/painel-autor/page.tsx"
+  );
+} else {
+  fail(
+    "Painel do Autor delega abertura protegida de arquivos",
+    "delegação ausente em app/painel-autor/page.tsx"
+  );
 }
 
 const publicWorkFile = fs.readFileSync(

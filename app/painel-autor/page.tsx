@@ -191,8 +191,8 @@ import {
 } from "./lib/painel-autor-reading-progress-utils";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { compartilharObraPainel } from "./lib/painel-autor-share-action";
+import { abrirArquivoObraPainel } from "./lib/painel-autor-open-file-action";
 import { carregarMetricasConteudos } from "../../lib/metricas";
-import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
 import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
@@ -326,27 +326,6 @@ type ObraSalva = Partial<ObraLocal> & {
   capitulos?: CapituloSalvo[];
 } & Record<string, unknown>;
 
-async function criarUrlAssinadaArquivoObraPainel(
-  obraId: string,
-  referencia: string,
-) {
-  const referenciaLimpa = referencia.trim();
-
-  if (!referenciaLimpa) {
-    throw new Error("Esta obra não possui arquivo disponível.");
-  }
-
-  const caminho = obterCaminhoStoragePainel(
-    "arquivos-obras",
-    referenciaLimpa
-  );
-
-  if (!caminho) {
-    return referenciaLimpa;
-  }
-
-  return solicitarUrlTemporariaArquivoObra(obraId);
-}
 async function removerArquivosStorageObraExcluidaPainel(
   arquivos: ArquivoStoragePainel[]
 ) {
@@ -1422,41 +1401,8 @@ export default function PainelAutorPage() {
   }
 
   const usuarioLogado = Boolean(usuarioIdLogado);
-  async function abrirArquivoObra(obra: ObraLocal) {
-    const referencia = obra.arquivoObra?.conteudo?.trim() || "";
-
-    if (!referencia) {
-      window.alert(
-        traduzirTextoPainelAutor(
-          "Esta obra não possui arquivo disponível.",
-          language,
-        ),
-      );
-      return;
-    }
-
-    try {
-      const urlArquivo = await criarUrlAssinadaArquivoObraPainel(
-        obra.id,
-        referencia,
-      );
-      const linkArquivo = document.createElement("a");
-
-      linkArquivo.href = urlArquivo;
-      linkArquivo.target = "_blank";
-      linkArquivo.rel = "noopener noreferrer";
-      document.body.appendChild(linkArquivo);
-      linkArquivo.click();
-      linkArquivo.remove();
-    } catch (error) {
-      const mensagem =
-        error instanceof Error
-          ? error.message
-          : "Não consegui abrir o arquivo da obra agora.";
-
-      console.warn("Não consegui abrir o arquivo da obra:", error);
-      window.alert(traduzirTextoPainelAutor(mensagem, language));
-    }
+  function abrirArquivoObra(obra: ObraLocal) {
+    return abrirArquivoObraPainel(obra, language);
   }
 
   function compartilharObra(obra: ObraLocal) {

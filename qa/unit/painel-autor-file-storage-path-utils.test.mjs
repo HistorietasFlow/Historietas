@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const abrirArquivoSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-open-file-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -78,17 +85,59 @@ test("caminhoStoragePertenceAoUsuarioPainel preserva normalização e fallbacks"
   assert.equal(caminhoStoragePertenceAoUsuarioPainel("user-1/capa.webp", "  "), false);
 });
 
-test("Painel do Autor delega somente os caminhos do Storage aos helpers extraídos", () => {
+test("Painel do Autor delega os caminhos do Storage e a abertura do arquivo", () => {
   assert.match(
     pagina,
     /import \{\s*caminhoStoragePertenceAoUsuarioPainel,\s*obterCaminhoStoragePainel,\s*\} from "\.\/lib\/painel-autor-file-storage-path-utils";/,
   );
   assert.doesNotMatch(pagina, /function obterCaminhoStoragePainel\(/);
   assert.doesNotMatch(pagina, /function caminhoStoragePertenceAoUsuarioPainel\(/);
-  assert.equal((pagina.match(/\bobterCaminhoStoragePainel\b/g) || []).length, 4);
+  assert.equal((pagina.match(/\bobterCaminhoStoragePainel\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bcaminhoStoragePertenceAoUsuarioPainel\b/g) || []).length, 3);
-  assert.match(pagina, /const caminho = obterCaminhoStoragePainel\(\s*"arquivos-obras",\s*referenciaLimpa\s*\);/);
   assert.match(pagina, /caminho: caminhoStoragePertenceAoUsuarioPainel\(\s*caminhoCapa,\s*userId\s*\)/);
   assert.match(pagina, /caminho: caminhoStoragePertenceAoUsuarioPainel\(\s*caminhoArquivoObra,\s*userId\s*\)/);
+  assert.match(
+    pagina,
+    /import \{ abrirArquivoObraPainel \} from "\.\/lib\/painel-autor-open-file-action";/,
+  );
+  assert.match(
+    pagina,
+    /function abrirArquivoObra\(obra: ObraLocal\) \{\s*return abrirArquivoObraPainel\(obra, language\);\s*\}/,
+  );
+  assert.doesNotMatch(pagina, /async function criarUrlAssinadaArquivoObraPainel\(/);
+  assert.doesNotMatch(pagina, /async function abrirArquivoObra\(/);
+  assert.match(
+    abrirArquivoSource,
+    /import \{ solicitarUrlTemporariaArquivoObra \} from "\.\.\/\.\.\/\.\.\/lib\/arquivosObras";/,
+  );
+  assert.match(
+    abrirArquivoSource,
+    /import \{ obterCaminhoStoragePainel \} from "\.\/painel-autor-file-storage-path-utils";/,
+  );
+  assert.match(abrirArquivoSource, /export async function criarUrlAssinadaArquivoObraPainel\(/);
+  assert.match(abrirArquivoSource, /export async function abrirArquivoObraPainel\(/);
+  assert.match(
+    abrirArquivoSource,
+    /const referencia = obra\.arquivoObra\?\.conteudo\?\.trim\(\) \|\| "";/,
+  );
+  assert.match(
+    abrirArquivoSource,
+    /"Esta obra não possui arquivo disponível\."/,
+  );
+  assert.match(
+    abrirArquivoSource,
+    /const caminho = obterCaminhoStoragePainel\(\s*"arquivos-obras",\s*referenciaLimpa,\s*\);/,
+  );
+  assert.match(abrirArquivoSource, /if \(!caminho\) \{\s*return referenciaLimpa;\s*\}/);
+  assert.match(abrirArquivoSource, /return solicitarUrlTemporariaArquivoObra\(obraId\);/);
+  assert.match(abrirArquivoSource, /document\.createElement\("a"\)/);
+  assert.match(abrirArquivoSource, /linkArquivo\.target = "_blank"/);
+  assert.match(abrirArquivoSource, /linkArquivo\.rel = "noopener noreferrer"/);
+  assert.match(abrirArquivoSource, /document\.body\.appendChild\(linkArquivo\)/);
+  assert.match(abrirArquivoSource, /linkArquivo\.click\(\)/);
+  assert.match(abrirArquivoSource, /linkArquivo\.remove\(\)/);
+  assert.match(abrirArquivoSource, /"Não consegui abrir o arquivo da obra agora\."/);
+  assert.match(abrirArquivoSource, /console\.warn\("Não consegui abrir o arquivo da obra:", error\)/);
+  assert.doesNotMatch(abrirArquivoSource, /supabase|localStorage|useState|useEffect/);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
 });
