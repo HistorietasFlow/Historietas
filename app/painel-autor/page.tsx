@@ -24,7 +24,6 @@ import {
 } from "./lib/painel-autor-ownership-utils";
 import { criarChaveInteracao } from "./lib/painel-autor-interaction-utils";
 import { normalizarCategoriaArquivoSupabase } from "./lib/painel-autor-file-category-utils";
-import { normalizarArquivoObra } from "./lib/painel-autor-file-normalizer";
 import { obterChavesBackupArquivoPainel } from "./lib/painel-autor-file-backup-key-utils";
 import {
   FILE_BACKUP_STORAGE_KEY,
@@ -141,7 +140,6 @@ import {
   emptyMiniTextStyle,
   emptyMiniTitleStyle,
 } from "./lib/painel-autor-empty-state-style-utils";
-import { normalizarCapitulo } from "./lib/painel-autor-chapter-normalizer";
 import { mesclarObrasPainelAutor } from "./lib/painel-autor-work-merge-utils";
 import {
   aplicarNomeProfileNasObrasPainel,
@@ -184,6 +182,7 @@ import {
 } from "./lib/painel-autor-work-metrics";
 import { obterObrasFiltradasPainel } from "./lib/painel-autor-work-filtering";
 import { obterResumoMetricasPainel } from "./lib/painel-autor-summary-metrics";
+import { normalizarObraPainel } from "./lib/painel-autor-work-normalizer";
 import {
   calcularProgressoLeitura,
   obterCapitulosPublicadosPainel,
@@ -308,12 +307,6 @@ const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 
-type CapituloSalvo = Partial<CapituloLocal> & Record<string, unknown>;
-
-type ObraSalva = Partial<ObraLocal> & {
-  capitulos?: CapituloSalvo[];
-} & Record<string, unknown>;
-
 async function removerArquivosStorageObraExcluidaPainel(
   arquivos: ArquivoStoragePainel[]
 ) {
@@ -351,124 +344,6 @@ async function removerArquivosStorageObraExcluidaPainel(
       );
     }
   });
-}
-
-function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
-  const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
-    ? obra.capitulos.map((capitulo, capituloIndex) =>
-        normalizarCapitulo(capitulo, capituloIndex, obraIndex)
-      )
-    : [];
-
-  const tagsNormalizadas = Array.isArray(obra.tags)
-    ? obra.tags
-        .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
-        .map((tag) => tag.trim())
-    : [];
-
-  return {
-    id:
-      typeof obra.id === "string" && obra.id.trim()
-        ? obra.id
-        : `obra-${obraIndex + 1}`,
-    autorId:
-      typeof obra.autorId === "string" && obra.autorId.trim()
-        ? obra.autorId.trim()
-        : typeof obra.user_id === "string" && obra.user_id.trim()
-        ? obra.user_id.trim()
-        : typeof obra.userId === "string" && obra.userId.trim()
-        ? obra.userId.trim()
-        : "",
-    titulo:
-      typeof obra.titulo === "string" && obra.titulo.trim()
-        ? obra.titulo
-        : "Obra sem título",
-    autor:
-      typeof obra.autor === "string" && obra.autor.trim()
-        ? obra.autor
-        : "Autor não informado",
-    genero:
-      typeof obra.genero === "string" && obra.genero.trim()
-        ? obra.genero
-        : "Não informado",
-    formato:
-      typeof obra.formato === "string" && obra.formato.trim()
-        ? obra.formato
-        : "Não informado",
-    classificacaoIndicativa:
-      typeof obra.classificacaoIndicativa === "string" &&
-      obra.classificacaoIndicativa.trim()
-        ? obra.classificacaoIndicativa
-        : "Não informada",
-    sinopse:
-      typeof obra.sinopse === "string" && obra.sinopse.trim()
-        ? obra.sinopse
-        : "Nenhuma sinopse informada.",
-    tags: tagsNormalizadas.length > 0 ? tagsNormalizadas : ["sem tags"],
-    capa: typeof obra.capa === "string" ? obra.capa : "",
-    capaNome: typeof obra.capaNome === "string" ? obra.capaNome : "",
-    arquivoObra: normalizarArquivoObra(obra.arquivoObra),
-    publicado: Boolean(obra.publicado),
-    capitulos: capitulosNormalizados,
-    criadaEm: typeof obra.criadaEm === "string" ? obra.criadaEm : "",
-    ultimoCapituloLidoId:
-      typeof obra.ultimoCapituloLidoId === "string"
-        ? obra.ultimoCapituloLidoId
-        : "",
-    ultimaLeituraEm:
-      typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
-    progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
-    visualizacoes:
-      typeof obra.visualizacoes === "number" &&
-      Number.isFinite(obra.visualizacoes)
-        ? Math.max(0, Math.round(obra.visualizacoes))
-        : typeof obra.views === "number" && Number.isFinite(obra.views)
-          ? Math.max(0, Math.round(obra.views))
-          : typeof obra.total_visualizacoes === "number" &&
-              Number.isFinite(obra.total_visualizacoes)
-            ? Math.max(0, Math.round(obra.total_visualizacoes))
-            : 0,
-    slug:
-      typeof obra.slug === "string" && obra.slug.trim()
-        ? obra.slug
-        : criarSlugBase(
-            typeof obra.titulo === "string" && obra.titulo.trim()
-              ? obra.titulo
-              : `obra-${obraIndex + 1}`
-          ),
-    link:
-      typeof obra.link === "string" && obra.link.trim()
-        ? obra.link
-        : `/obra/${
-            typeof obra.slug === "string" && obra.slug.trim()
-              ? obra.slug
-              : criarSlugBase(
-                  typeof obra.titulo === "string" && obra.titulo.trim()
-                    ? obra.titulo
-                    : `obra-${obraIndex + 1}`
-                )
-          }`,
-    totalCurtidasPainel:
-      typeof obra.totalCurtidasPainel === "number" &&
-      Number.isFinite(obra.totalCurtidasPainel)
-        ? Math.max(0, Math.round(obra.totalCurtidasPainel))
-        : undefined,
-    totalComentariosPainel:
-      typeof obra.totalComentariosPainel === "number" &&
-      Number.isFinite(obra.totalComentariosPainel)
-        ? Math.max(0, Math.round(obra.totalComentariosPainel))
-        : undefined,
-    totalSalvosPainel:
-      typeof obra.totalSalvosPainel === "number" &&
-      Number.isFinite(obra.totalSalvosPainel)
-        ? Math.max(0, Math.round(obra.totalSalvosPainel))
-        : undefined,
-    totalLidosPainel:
-      typeof obra.totalLidosPainel === "number" &&
-      Number.isFinite(obra.totalLidosPainel)
-        ? Math.max(0, Math.round(obra.totalLidosPainel))
-        : undefined,
-  };
 }
 
 function limparReferenciasLocaisObraExcluidaPainel(
@@ -1088,9 +963,9 @@ export default function PainelAutorPage() {
         const backupArquivosObras = carregarBackupArquivosObras(usuarioIdLogado);
 
         const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-          ? (obrasSalvasJson as ObraSalva[]).map((obra, obraIndex) =>
+          ? obrasSalvasJson.map((obra, obraIndex) =>
               restaurarArquivoObraComBackup(
-                normalizarObra(obra, obraIndex),
+                normalizarObraPainel(obra, obraIndex),
                 backupArquivosObras
               )
             )
@@ -1145,7 +1020,7 @@ export default function PainelAutorPage() {
         }
 
         const obrasFinais = dadosSupabase.obras.map((obra, index) =>
-          normalizarObra(obra as ObraSalva, index)
+          normalizarObraPainel(obra, index)
         );
 
         sincronizarBackupArquivosObras(obrasFinais, usuarioIdLogado);
