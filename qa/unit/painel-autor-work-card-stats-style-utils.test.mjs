@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const desktopCompositionsSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-desktop-compositions-style-utils.ts",
@@ -46,8 +53,8 @@ test("estilos de métricas dos cards preservam o contrato visual", () => {
 
 test("página delega métricas e preserva a composição desktop", () => {
   assert.match(
-    page,
-    /from "\.\/lib\/painel-autor-work-card-stats-style-utils";/,
+    workCardSource,
+    /from "\.\.\/lib\/painel-autor-work-card-stats-style-utils";/,
   );
 
   for (const name of [
@@ -61,8 +68,8 @@ test("página delega métricas e preserva a composição desktop", () => {
   }
 
   assert.match(
-    page,
-    /from "\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
+    workCardSource,
+    /from "\.\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
   );
   assert.match(
     desktopCompositionsSource,
@@ -70,11 +77,16 @@ test("página delega métricas e preserva a composição desktop", () => {
   );
   assert.doesNotMatch(page, /const desktopSheetStatsRowStyle: CSSProperties = \{/);
   assert.match(
-    page,
+    workCardSource,
     /style=\{isDesktop \? desktopSheetStatsRowStyle : sheetStatsRowStyle\}/,
   );
-  assert.equal((page.match(/style=\{sheetStatInlineStyle\}/g) || []).length, 5);
-  assert.equal((page.match(/style=\{sheetStatIconStyle\}/g) || []).length, 4);
-  assert.equal((page.match(/style=\{sheetStatHeartIconStyle\}/g) || []).length, 1);
-  assert.equal((page.match(/style=\{sheetStatValueStyle\}/g) || []).length, 5);
+  assert.match(
+    page,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(page, /function ObraPainelCard\(/);
+  assert.equal((workCardSource.match(/style=\{sheetStatInlineStyle\}/g) || []).length, 5);
+  assert.equal((workCardSource.match(/style=\{sheetStatIconStyle\}/g) || []).length, 4);
+  assert.equal((workCardSource.match(/style=\{sheetStatHeartIconStyle\}/g) || []).length, 1);
+  assert.equal((workCardSource.match(/style=\{sheetStatValueStyle\}/g) || []).length, 5);
 });

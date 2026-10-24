@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const converterSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-supabase-work-converter.ts",
@@ -119,8 +126,8 @@ test("preserva fallbacks do capitulo para continuar", () => {
 
 test("Painel do Autor delega helpers puros de progresso às fronteiras corretas", () => {
   assert.match(
-    pagina,
-    /import \{ obterCapitulosPublicadosPainel \} from "\.\/lib\/painel-autor-reading-progress-utils";/,
+    workCardSource,
+    /import \{ obterCapitulosPublicadosPainel \} from "\.\.\/lib\/painel-autor-reading-progress-utils";/,
   );
   assert.match(
     converterSource,
@@ -137,7 +144,13 @@ test("Painel do Autor delega helpers puros de progresso às fronteiras corretas"
   assert.doesNotMatch(pagina, /function obterCapitulosPublicadosPainel\(/);
   assert.doesNotMatch(pagina, /function calcularProgressoLeitura\(/);
   assert.doesNotMatch(pagina, /function encontrarCapituloParaContinuar\(/);
-  assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 2);
+  assert.match(
+    pagina,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(pagina, /function ObraPainelCard\(/);
+  assert.equal((pagina.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 0);
+  assert.equal((workCardSource.match(/\bobterCapitulosPublicadosPainel\b/g) || []).length, 2);
   assert.equal((pagina.match(/\bcalcularProgressoLeitura\b/g) || []).length, 0);
   assert.doesNotMatch(pagina, /\bencontrarCapituloParaContinuar\b/);
   assert.match(

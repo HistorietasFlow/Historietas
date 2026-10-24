@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const compartilhamentoSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-share-action.ts",
@@ -85,12 +92,22 @@ test("criarHrefLeituraCapituloPainel preserva URL publica e fallback", () => {
 test("Painel do Autor delega somente os helpers de navegação", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?criarHrefLeituraCapituloPainel,[\s\S]*?criarLoginHrefPainelAutor,[\s\S]*?criarPerfilAutorHref,[\s\S]*?\} from "\.\/lib\/painel-autor-route-utils";/,
+    /import \{\s*criarLoginHrefPainelAutor,?\s*\} from "\.\/lib\/painel-autor-route-utils";/,
   );
   assert.doesNotMatch(pagina, /function criarLoginHrefPainelAutor\(/);
   assert.doesNotMatch(pagina, /function criarPerfilAutorHref\(/);
   assert.equal((pagina.match(/\bcriarLoginHrefPainelAutor\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\bcriarPerfilAutorHref\b/g) || []).length, 2);
+  assert.match(
+    pagina,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(pagina, /function ObraPainelCard\(/);
+  assert.match(
+    workCardSource,
+    /import \{[\s\S]*?criarHrefLeituraCapituloPainel,[\s\S]*?criarPerfilAutorHref,[\s\S]*?\} from "\.\.\/lib\/painel-autor-route-utils";/,
+  );
+  assert.equal((pagina.match(/\bcriarPerfilAutorHref\b/g) || []).length, 0);
+  assert.equal((workCardSource.match(/\bcriarPerfilAutorHref\b/g) || []).length, 2);
   assert.doesNotMatch(pagina, /function criarHrefLeituraCapituloPainel\(/);
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),

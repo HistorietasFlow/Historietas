@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("usePainelAutorWorkActionsBodyLock preserva o lifecycle do action sheet", () => {
   assert.match(hook, /^"use client";/);
@@ -52,23 +59,28 @@ test("usePainelAutorWorkActionsBodyLock preserva o lifecycle do action sheet", (
 
 test("Painel do Autor delega somente o body lock do action sheet", () => {
   assert.match(
-    pagina,
-    /import \{ usePainelAutorWorkActionsBodyLock \} from "\.\/hooks\/use-painel-autor-work-actions-body-lock";/,
-  );
-  assert.match(pagina, /usePainelAutorWorkActionsBodyLock\(acoesAbertas\);/);
-  assert.doesNotMatch(
-    pagina,
-    /useEffect\(\(\) => \{[\s\S]*?!acoesAbertas \|\| typeof document === "undefined"/,
+    workCardSource,
+    /import \{ usePainelAutorWorkActionsBodyLock \} from "\.\.\/hooks\/use-painel-autor-work-actions-body-lock";/,
   );
   assert.match(
     pagina,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(pagina, /function ObraPainelCard\(/);
+  assert.match(workCardSource, /usePainelAutorWorkActionsBodyLock\(acoesAbertas\);/);
+  assert.doesNotMatch(
+    workCardSource,
+    /useEffect\(\(\) => \{[\s\S]*?!acoesAbertas \|\| typeof document === "undefined"/,
+  );
+  assert.match(
+    workCardSource,
     /const \[acoesAbertas, setAcoesAbertas\] = useState\(false\);/,
   );
-  assert.match(pagina, /aria-expanded=\{acoesAbertas\}/);
-  assert.match(pagina, /\{acoesAbertas && \(/);
-  assert.match(pagina, /setAcoesAbertas\(false\)/);
-  assert.match(pagina, /stopPropagation\(\)/);
-  assert.match(pagina, /const obraHref =/);
+  assert.match(workCardSource, /aria-expanded=\{acoesAbertas\}/);
+  assert.match(workCardSource, /\{acoesAbertas && \(/);
+  assert.match(workCardSource, /setAcoesAbertas\(false\)/);
+  assert.match(workCardSource, /stopPropagation\(\)/);
+  assert.match(workCardSource, /const obraHref =/);
   assert.match(pagina, /async function carregarDadosPainelAutor\(\)/);
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),

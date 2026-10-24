@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workCardSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/components/painel-autor-work-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const desktopCompositionsSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-desktop-compositions-style-utils.ts",
@@ -52,8 +59,8 @@ test("estilos dos botões de ações preservam o contrato visual", () => {
 
 test("página delega ações mantendo composição desktop e consumidores", () => {
   assert.match(
-    page,
-    /from "\.\/lib\/painel-autor-work-actions-style-utils";/,
+    workCardSource,
+    /from "\.\.\/lib\/painel-autor-work-actions-style-utils";/,
   );
 
   for (const name of [
@@ -71,17 +78,22 @@ test("página delega ações mantendo composição desktop e consumidores", () =
   }
 
   assert.match(
-    page,
-    /from "\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
+    workCardSource,
+    /from "\.\.\/lib\/painel-autor-desktop-compositions-style-utils";/,
   );
   assert.match(
     desktopCompositionsSource,
     /export const desktopCardActionsGridStyle: CSSProperties = \{\s*\.\.\.actionsGridStyle,/,
   );
   assert.doesNotMatch(page, /const desktopCardActionsGridStyle: CSSProperties = \{/);
-  assert.match(page, /style=\{workCardDotsButtonStyle\}/);
   assert.match(
     page,
+    /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
+  );
+  assert.doesNotMatch(page, /function ObraPainelCard\(/);
+  assert.match(workCardSource, /style=\{workCardDotsButtonStyle\}/);
+  assert.match(
+    workCardSource,
     /style=\{isDesktop \? desktopCardActionsGridStyle : actionsGridStyle\}/,
   );
   for (const name of [
@@ -93,6 +105,6 @@ test("página delega ações mantendo composição desktop e consumidores", () =
     "shareButtonStyle",
     "deleteButtonStyle",
   ]) {
-    assert.match(page, new RegExp(`style=\\{${name}\\}`));
+    assert.match(workCardSource, new RegExp(`style=\\{${name}\\}`));
   }
 });
