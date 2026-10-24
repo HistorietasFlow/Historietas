@@ -63,6 +63,10 @@ import {
   limparNomeArquivoStorage,
   obterCaminhoStorageEdicaoObra,
 } from "./lib/editar-obra-storage-path-utils";
+import {
+  criarArquivoObraDeSupabase,
+  criarArquivoRemotoEdicaoObra,
+} from "./lib/editar-obra-supabase-file-converter";
 
 type CapituloLocal = {
   id: string;
@@ -140,20 +144,6 @@ type ObraSupabaseRow = {
   criada_em: string | null;
   atualizado_em: string | null;
 };
-
-type ObraArquivosSupabaseRow = Pick<
-  ObraSupabaseRow,
-  | "id"
-  | "user_id"
-  | "capa_url"
-  | "capa_nome"
-  | "arquivo_url"
-  | "arquivo_nome"
-  | "arquivo_tipo"
-  | "arquivo_tamanho"
-  | "arquivo_categoria"
-  | "criada_em"
->;
 
 type CapituloSupabaseRow = {
   id: string;
@@ -756,48 +746,6 @@ async function removerArquivosStorageEdicaoObra(
   );
 }
 
-function normalizarCategoriaArquivoSupabase(
-  categoria: string | null | undefined
-): ArquivoObraLocal["categoria"] {
-  if (
-    categoria === "texto" ||
-    categoria === "documento" ||
-    categoria === "imagem" ||
-    categoria === "outro"
-  ) {
-    return categoria;
-  }
-
-  return "outro";
-}
-
-function criarArquivoObraDeSupabase(
-  obra: ObraSupabaseRow,
-  arquivoLocal?: ArquivoObraLocal | null
-): ArquivoObraLocal | null {
-  const conteudo = obra.arquivo_url?.trim() || arquivoLocal?.conteudo || "";
-  const nome = obra.arquivo_nome?.trim() || arquivoLocal?.nome || "";
-
-  if (!conteudo || !nome) {
-    return arquivoLocal || null;
-  }
-
-  return {
-    nome,
-    tipo: obra.arquivo_tipo || arquivoLocal?.tipo || "",
-    tamanho:
-      typeof obra.arquivo_tamanho === "number" &&
-      Number.isFinite(obra.arquivo_tamanho)
-        ? obra.arquivo_tamanho
-        : arquivoLocal?.tamanho || 0,
-    conteudo,
-    categoria: normalizarCategoriaArquivoSupabase(
-      obra.arquivo_categoria || arquivoLocal?.categoria || "outro"
-    ),
-    criadoEm: obra.criada_em || arquivoLocal?.criadoEm || "",
-  };
-}
-
 function normalizarObraSupabase(
   obraSupabase: ObraSupabaseRow,
   capitulosSupabase: CapituloSupabaseRow[],
@@ -903,30 +851,6 @@ function prepararObraEdicaoParaStorage(obra: ObraLocal): ObraLocal {
     ...obra,
     capa: ehDataUrlEdicaoObra(obra.capa) ? "" : obra.capa,
     arquivoObra: normalizarArquivoObraPersistivel(obra.arquivoObra),
-  };
-}
-
-function criarArquivoRemotoEdicaoObra(
-  obra: ObraArquivosSupabaseRow
-): ArquivoObraLocal | null {
-  const conteudo = obra.arquivo_url?.trim() || "";
-  const nome = obra.arquivo_nome?.trim() || "";
-
-  if (!conteudo || !nome) {
-    return null;
-  }
-
-  return {
-    nome,
-    tipo: obra.arquivo_tipo || "",
-    tamanho:
-      typeof obra.arquivo_tamanho === "number" &&
-      Number.isFinite(obra.arquivo_tamanho)
-        ? obra.arquivo_tamanho
-        : 0,
-    conteudo,
-    categoria: normalizarCategoriaArquivoSupabase(obra.arquivo_categoria),
-    criadoEm: obra.criada_em || "",
   };
 }
 

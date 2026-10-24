@@ -1404,3 +1404,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de normalização de nome e resolução de caminhos de Storage foram isolados em `editar-obra-storage-path-utils.ts`, preservando buckets, Data URLs, prefixes reconhecidos, decodificação e fallbacks.
 - Upload, remoção de arquivos, Supabase, estado e salvamento permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 10 — Editar Obra
+
+- A conversão pura de arquivos vindos do Supabase foi isolada em `editar-obra-supabase-file-converter.ts`, preservando categorias, precedência entre dados remotos e locais, tamanhos, tipos, datas e fallbacks.
+- Consultas Supabase, Storage, estado, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
