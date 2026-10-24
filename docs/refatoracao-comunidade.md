@@ -1474,3 +1474,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As rotas de login e os hrefs derivados da obra foram isolados em `editar-obra-navigation-utils.ts`, preservando codificação, prioridade e fallbacks de navegação.
 - Carregamento, estado, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 24 — Editar Obra
+
+- A preparação pura dos valores aplicados ao formulário foi isolada em `editar-obra-form-preparation.ts`, preservando perfil do autor, valores editáveis, tags, classificação e avisos de conteúdo.
+- A aplicação ordenada dos setters, carregamento, autenticação, Supabase, Storage e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.

@@ -12,6 +12,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const formPreparationSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-form-preparation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const compilerOptions = {
   module: typescript.ModuleKind.ESNext,
   target: typescript.ScriptTarget.ES2022,
@@ -45,8 +52,8 @@ test("formatador de gênero preserva aliases e valores comuns", () => {
 
 test("Editar Obra delega somente os formatadores puros", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?formatarFormatoEdicaoObra,[\s\S]*?formatarGeneroEdicaoObra,[\s\S]*?\} from "\.\/lib\/editar-obra-format-utils";/,
+    formPreparationSource,
+    /import \{[\s\S]*?formatarFormatoEdicaoObra,[\s\S]*?formatarGeneroEdicaoObra,[\s\S]*?\} from "\.\/editar-obra-format-utils";/,
   );
   assert.doesNotMatch(pageSource, /function formatarFormatoEdicaoObra\(/);
   assert.doesNotMatch(pageSource, /function formatarGeneroEdicaoObra\(/);

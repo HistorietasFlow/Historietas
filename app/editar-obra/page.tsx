@@ -22,14 +22,8 @@ import { LIMITES_BYTES_STORAGE } from "../../lib/storageUploads";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import {
   limparTextoPersonalizado,
-  opcaoExiste,
-  prepararValorEditavel,
   textoPersonalizadoValido,
 } from "./lib/editar-obra-custom-value-utils";
-import {
-  formatarFormatoEdicaoObra,
-  formatarGeneroEdicaoObra,
-} from "./lib/editar-obra-format-utils";
 import {
   arquivoImagemAceito,
   arquivoObraAceito,
@@ -80,6 +74,7 @@ import {
   criarLoginHrefEditarObra,
   obterHrefsObraEditarObra,
 } from "./lib/editar-obra-navigation-utils";
+import { prepararValoresFormularioEdicaoObra } from "./lib/editar-obra-form-preparation";
 
 type CapituloLocal = {
   id: string;
@@ -708,54 +703,37 @@ export default function EditarObraPage() {
       obraAtual: ObraLocal,
       nomeAutorProfileAtual = ""
     ) {
-      const autorProfile = nomeAutorProfileAtual.trim();
-      const formatoEditavel = prepararValorEditavel(
-        formatarFormatoEdicaoObra(obraAtual.formato),
-        OPCOES_FORMATO_OBRA,
-        OUTRO_FORMATO_VALUE,
-        LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-      );
-      const generoEditavel = prepararValorEditavel(
-        formatarGeneroEdicaoObra(obraAtual.genero),
-        OPCOES_GENERO_OBRA,
-        OUTRO_GENERO_VALUE,
-        LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-      );
-      const primeiraTag = obraAtual.tags.find((tag) => tag.trim() && tag !== "sem tags") || "";
-      const tagEhPersonalizada = Boolean(primeiraTag) && !opcaoExiste(OPCOES_TAGS_OBRA, primeiraTag);
+      const valoresFormulario = prepararValoresFormularioEdicaoObra({
+        obraAtual,
+        nomeAutorProfileAtual,
+        opcoesFormato: OPCOES_FORMATO_OBRA,
+        opcoesGenero: OPCOES_GENERO_OBRA,
+        opcoesTags: OPCOES_TAGS_OBRA,
+        outroFormatoValue: OUTRO_FORMATO_VALUE,
+        outroGeneroValue: OUTRO_GENERO_VALUE,
+        limiteCaracteresFormatoGeneroPersonalizado:
+          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
+        limiteCaracteresTagPersonalizada: LIMITE_CARACTERES_TAG_PERSONALIZADA,
+      });
 
       setObraEncontrada(true);
-      setTitulo(obraAtual.titulo);
-      setAutor(autorProfile || obraAtual.autor);
-      setGenero(generoEditavel.selecionado);
-      setGeneroPersonalizado(generoEditavel.personalizado);
-      setFormato(formatoEditavel.selecionado);
-      setFormatoPersonalizado(formatoEditavel.personalizado);
-      setClassificacaoIndicativa(
-        obraAtual.classificacaoIndicativa === "Não informada" ||
-          obraAtual.classificacaoIndicativa === "Não informado"
-          ? "Livre"
-          : obraAtual.classificacaoIndicativa
-      );
-      setAvisosConteudo18(
-        normalizarAvisosConteudo18(
-          obraAtual.avisosConteudo,
-          obraAtual.classificacaoIndicativa,
-        ),
-      );
-      setSinopse(obraAtual.sinopse);
-      setUsarTagPersonalizada(tagEhPersonalizada);
-      setTagPersonalizada(
-        tagEhPersonalizada
-          ? limparTextoPersonalizado(primeiraTag, LIMITE_CARACTERES_TAG_PERSONALIZADA).trim()
-          : ""
-      );
-      setTags(primeiraTag || "");
-      setCapa(obraAtual.capa);
-      setCapaNome(obraAtual.capaNome);
+      setTitulo(valoresFormulario.titulo);
+      setAutor(valoresFormulario.autor);
+      setGenero(valoresFormulario.genero);
+      setGeneroPersonalizado(valoresFormulario.generoPersonalizado);
+      setFormato(valoresFormulario.formato);
+      setFormatoPersonalizado(valoresFormulario.formatoPersonalizado);
+      setClassificacaoIndicativa(valoresFormulario.classificacaoIndicativa);
+      setAvisosConteudo18(valoresFormulario.avisosConteudo18);
+      setSinopse(valoresFormulario.sinopse);
+      setUsarTagPersonalizada(valoresFormulario.usarTagPersonalizada);
+      setTagPersonalizada(valoresFormulario.tagPersonalizada);
+      setTags(valoresFormulario.tags);
+      setCapa(valoresFormulario.capa);
+      setCapaNome(valoresFormulario.capaNome);
       setCapaArquivo(null);
       setCapaRemovidaManualmente(false);
-      setArquivoObra(obraAtual.arquivoObra || null);
+      setArquivoObra(valoresFormulario.arquivoObra);
       setArquivoObraArquivo(null);
       setArquivoObraRemovidoManualmente(false);
     }
