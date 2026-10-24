@@ -1444,3 +1444,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A persistência local das obras foi isolada em `editar-obra-local-work-storage.ts`, preservando normalização, ownership, restauração e sincronização de backup, regravação sanitizada e fallbacks por usuário.
 - Carregamento remoto, Storage, Supabase, estado, salvamento e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 18 — Editar Obra
+
+- As operações de upload e limpeza do Supabase Storage foram isoladas em `editar-obra-remote-storage.ts`, preservando MIME, cache, caminhos, referências, deduplicação, rollback e falhas individuais.
+- Autenticação, obtenção de caminhos antigos, fluxo de salvamento, consultas Supabase, estado e JSX permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
