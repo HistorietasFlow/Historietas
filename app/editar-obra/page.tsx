@@ -40,6 +40,11 @@ import {
   formatarFormatoEdicaoObra,
   formatarGeneroEdicaoObra,
 } from "./lib/editar-obra-format-utils";
+import {
+  arquivoImagemAceito,
+  arquivoObraAceito,
+  identificarCategoriaArquivo,
+} from "./lib/editar-obra-file-validation";
 
 type CapituloLocal = {
   id: string;
@@ -572,25 +577,6 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = LIMITES_BYTES_STORAGE["capas-obras"];
 const TAMANHO_MAXIMO_ARQUIVO_OBRA =
   LIMITES_BYTES_STORAGE["arquivos-obras"];
-const EXTENSOES_IMAGEM_ACEITAS = [
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".webp",
-  ".gif",
-] as const;
-const TIPOS_MIME_IMAGEM_ACEITOS = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-]);
-const TIPOS_MIME_TEXTO_ACEITOS = new Set([
-  "text/plain",
-  "text/markdown",
-  "text/x-markdown",
-]);
-const TIPOS_MIME_PDF_ACEITOS = new Set(["application/pdf"]);
 const LIMITE_TAGS_OBRA = 1;
 const OUTRO_FORMATO_VALUE = "__outro_formato__";
 const OUTRO_GENERO_VALUE = "__outro_genero__";
@@ -1054,73 +1040,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
 
   return Math.round((capitulosLidos / capitulos.length) * 100);
-}
-
-function arquivoTemExtensao(
-  nomeArquivo: string,
-  extensoes: readonly string[],
-) {
-  const nome = nomeArquivo.toLowerCase();
-
-  return extensoes.some((extensao) => nome.endsWith(extensao));
-}
-
-function tipoMimeCompativel(
-  arquivo: File,
-  tiposAceitos: ReadonlySet<string>,
-) {
-  const tipo = arquivo.type.trim().toLowerCase();
-
-  return (
-    !tipo ||
-    tipo === "application/octet-stream" ||
-    tiposAceitos.has(tipo)
-  );
-}
-
-function arquivoImagemAceito(arquivo: File) {
-  return (
-    arquivoTemExtensao(arquivo.name, EXTENSOES_IMAGEM_ACEITAS) &&
-    tipoMimeCompativel(arquivo, TIPOS_MIME_IMAGEM_ACEITOS)
-  );
-}
-
-function arquivoTextoAceito(arquivo: File) {
-  return (
-    arquivoTemExtensao(arquivo.name, [".txt", ".md"]) &&
-    tipoMimeCompativel(arquivo, TIPOS_MIME_TEXTO_ACEITOS)
-  );
-}
-
-function arquivoPdfAceito(arquivo: File) {
-  return (
-    arquivoTemExtensao(arquivo.name, [".pdf"]) &&
-    tipoMimeCompativel(arquivo, TIPOS_MIME_PDF_ACEITOS)
-  );
-}
-
-function identificarCategoriaArquivo(arquivo: File): ArquivoObraLocal["categoria"] {
-  if (arquivoImagemAceito(arquivo)) {
-    return "imagem";
-  }
-
-  if (arquivoTextoAceito(arquivo)) {
-    return "texto";
-  }
-
-  if (arquivoPdfAceito(arquivo)) {
-    return "documento";
-  }
-
-  return "outro";
-}
-
-function arquivoObraAceito(arquivo: File) {
-  return (
-    arquivoPdfAceito(arquivo) ||
-    arquivoTextoAceito(arquivo) ||
-    arquivoImagemAceito(arquivo)
-  );
 }
 
 function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
