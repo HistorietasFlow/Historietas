@@ -1564,3 +1564,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A prévia visual da obra foi isolada em `components/EditarObraPreview.tsx`, preservando JSX, fallbacks, indicadores, progresso e responsividade.
 - `safeTextStyle` foi centralizado em `styles/editar-obra-shared-styles.ts` e passou a ser compartilhado pela página e pela prévia, sem duplicar o objeto.
+
+## Registro da Fase 42 — Editar Obra
+
+- O rodapé visual de ações e progresso foi isolado em `components/EditarObraFormActions.tsx`, preservando submit, estados, links, SVG, barra e responsividade.
+- A página manteve o `<form>`, `onSubmit`, os valores derivados e toda a orquestração; os estilos exclusivos do rodapé passaram ao componente usando o mesmo `safeTextStyle` compartilhado.
