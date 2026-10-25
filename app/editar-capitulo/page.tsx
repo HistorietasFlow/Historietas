@@ -34,6 +34,10 @@ import {
   restaurarArquivoObraComBackup,
   sincronizarBackupArquivosObras,
 } from "./lib/editar-capitulo-file-backup-utils";
+import {
+  normalizarCategoriaArquivoSupabase,
+  normalizarTagsSupabase,
+} from "./lib/editar-capitulo-supabase-normalization";
 
 type CapituloLocal = {
   id: string;
@@ -128,33 +132,6 @@ type CapituloSupabaseRow = {
 
 const STORAGE_KEY = "historietas-obras";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function normalizarTagsSupabase(tags: unknown) {
-  if (!Array.isArray(tags)) {
-    return ["sem tags"];
-  }
-
-  const tagsValidas = tags
-    .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
-    .map((tag) => tag.trim());
-
-  return tagsValidas.length > 0 ? tagsValidas : ["sem tags"];
-}
-
-function normalizarCategoriaArquivoSupabase(
-  categoria: string | null | undefined
-): ArquivoObraLocal["categoria"] {
-  if (
-    categoria === "texto" ||
-    categoria === "documento" ||
-    categoria === "imagem" ||
-    categoria === "outro"
-  ) {
-    return categoria;
-  }
-
-  return "outro";
-}
 
 function obterNomeProfileEditarCapitulo(profile: unknown) {
   if (!profile || typeof profile !== "object" || Array.isArray(profile)) {

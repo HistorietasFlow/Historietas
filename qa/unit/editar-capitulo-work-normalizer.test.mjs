@@ -80,7 +80,7 @@ const workNormalizerJavascript = typescript.transpileModule(
       "const normalizarArquivoObra = globalThis.__editarCapituloNormalizarArquivoObra;",
     )
     .replace(
-      'import {\n  calcularProgressoLeitura,\n  normalizarNumeroEditarCapitulo,\n} from "./editar-capitulo-metrics-utils";',
+      /import \{\r?\n  calcularProgressoLeitura,\r?\n  normalizarNumeroEditarCapitulo,\r?\n\} from "\.\/editar-capitulo-metrics-utils";/,
       "const calcularProgressoLeitura = globalThis.__editarCapituloCalcularProgressoLeitura;\nconst normalizarNumeroEditarCapitulo = globalThis.__editarCapituloNormalizarNumero;",
     ),
   {
