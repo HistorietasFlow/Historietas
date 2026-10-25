@@ -15,6 +15,11 @@ import {
   lerStorageUsuarioEditarCapitulo,
   salvarJsonStorageUsuarioEditarCapitulo,
 } from "./lib/editar-capitulo-storage-utils";
+import {
+  contarLetrasNumeros,
+  contarPalavras,
+  criarTituloPorNomeArquivo,
+} from "./lib/editar-capitulo-text-utils";
 
 type CapituloLocal = {
   id: string;
@@ -113,14 +118,6 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
-function contarLetrasNumeros(texto: string) {
-  return texto.match(/[\p{L}\p{N}]/gu)?.length || 0;
-}
-
-function contarPalavras(texto: string) {
-  return texto.trim().split(/\s+/).filter(Boolean).length;
-}
-
 function normalizarNumeroEditarCapitulo(valor: unknown, fallback = 0) {
   if (typeof valor === "number" && Number.isFinite(valor)) {
     return Math.max(0, Math.round(valor));
@@ -135,14 +132,6 @@ function normalizarNumeroEditarCapitulo(valor: unknown, fallback = 0) {
   }
 
   return Math.max(0, Math.round(fallback));
-}
-
-function criarTituloPorNomeArquivo(nomeArquivo: string) {
-  return nomeArquivo
-    .replace(/\.(txt|md)$/i, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function criarLoginHrefEditarCapitulo(obraId?: string, capituloId?: string) {
