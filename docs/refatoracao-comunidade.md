@@ -1554,3 +1554,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A configuração estática do formulário foi isolada em `editar-obra-form-config.ts`, preservando limites de upload, valores personalizados e a ordem das opções de formato, gênero e tags.
 - A página continuou consumindo as mesmas constantes na validação, preparação, valores derivados e JSX, sem alterar estado, fluxo ou visual.
+
+## Registro da Fase 40 — Editar Obra
+
+- O template CSS estático foi isolado em `styles/editar-obra-page-css.ts`, preservando variáveis, seletores, valores, ordem e whitespace do conteúdo original.
+- A página manteve os mesmos três consumidores de `<style>{`${historietasThemeCss}${editarObraPageCss}`}</style>` e todos os objetos de estilo React locais.
