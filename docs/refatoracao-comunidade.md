@@ -1664,3 +1664,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de leitura e aplicação do nome de profile foram isolados em `lib/editar-capitulo-profile-utils.ts`, preservando ownership, referências e fallbacks.
 - A página manteve o loader sensível, a ordem das queries Supabase e todos os consumidores da aplicação do profile.
+
+## Registro da Fase 13 — Editar Capítulo
+
+- O storage local normalizado de obras por usuário foi isolado em `lib/editar-capitulo-local-work-storage.ts`, preservando ownership, restauração de backup, normalização e persistência ordenada.
+- A página manteve os consumidores de carregamento, salvamento e exclusão, assim como o restante da orquestração do editor.

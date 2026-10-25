@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const capitulosNormalizados = [];
 globalThis.__editarCapituloCriarSlugBase = (texto) =>
@@ -247,7 +254,12 @@ test("Editar Capítulo delega somente a normalização local de obra ao módulo 
   assert.doesNotMatch(pageSource, /function normalizarObra\(/);
   assert.doesNotMatch(pageSource, /normalizarArquivoObra\(obra\.arquivoObra\)/);
   assert.doesNotMatch(pageSource, /normalizarCapitulo\(capitulo, capituloIndex\)/);
-  assert.equal((pageSource.match(/normalizarObra\(/g) || []).length, 5);
+  assert.equal((pageSource.match(/normalizarObra\(/g) || []).length, 3);
+  assert.match(
+    localWorkStorageSource,
+    /import \{ normalizarObra \} from "\.\/editar-capitulo-work-normalizer";/,
+  );
+  assert.equal((localWorkStorageSource.match(/normalizarObra\(/g) || []).length, 2);
   assert.match(
     workNormalizerSource,
     /import \{ criarSlugBase \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/,

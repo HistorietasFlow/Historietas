@@ -21,6 +21,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const transpilar = (source) =>
   typescript.transpileModule(source, {
     compilerOptions: {
@@ -160,7 +167,7 @@ test("backup de Editar Capítulo sincroniza sem apagar entradas e restaura por p
 test("Editar Capítulo delega somente o backup de arquivos ao módulo extraído", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?restaurarArquivoObraComBackup,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/lib\/editar-capitulo-file-backup-utils";/,
+    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?restaurarArquivoObraComBackup,[\s\S]*?\} from "\.\/lib\/editar-capitulo-file-backup-utils";/,
   );
   for (const helper of [
     "criarChavesObra",
@@ -170,7 +177,20 @@ test("Editar Capítulo delega somente o backup de arquivos ao módulo extraído"
   ]) {
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
-  assert.match(pageSource, /const backupArquivos = carregarBackupArquivosObras\(userIdLimpo\);/);
-  assert.match(pageSource, /restaurarArquivoObraComBackup\(obra, backupArquivos\)/);
-  assert.match(pageSource, /sincronizarBackupArquivosObras\(obrasNormalizadas, userIdLimpo\);/);
+  assert.match(
+    localWorkStorageSource,
+    /const backupArquivos = carregarBackupArquivosObras\(userIdLimpo\);/,
+  );
+  assert.match(
+    localWorkStorageSource,
+    /restaurarArquivoObraComBackup\(obra, backupArquivos\)/,
+  );
+  assert.match(
+    localWorkStorageSource,
+    /import \{[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/editar-capitulo-file-backup-utils";/,
+  );
+  assert.match(
+    localWorkStorageSource,
+    /sincronizarBackupArquivosObras\(obrasNormalizadas, userIdLimpo\);/,
+  );
 });
