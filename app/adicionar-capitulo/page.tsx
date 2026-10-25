@@ -13,6 +13,10 @@ import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
 } from "../../lib/aceiteTermos";
+import {
+  lerStorageUsuarioAdicionarCapitulo,
+  salvarJsonStorageUsuarioAdicionarCapitulo,
+} from "./lib/adicionar-capitulo-storage-utils";
 
 type CapituloLocal = {
   id: string;
@@ -132,52 +136,6 @@ type SupabaseObraRow = {
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function criarStorageKeyUsuarioAdicionarCapitulo(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function lerStorageUsuarioAdicionarCapitulo(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioAdicionarCapitulo(chave, userIdLimpo);
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioAdicionarCapitulo(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioAdicionarCapitulo(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; a criação do capítulo continua em memória.
-  }
-}
 
 function gerarUuidFallbackAdicionarCapitulo() {
   const bytes = new Uint8Array(16);
