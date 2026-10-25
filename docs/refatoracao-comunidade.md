@@ -1644,3 +1644,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O normalizador puro de capítulo foi isolado em `lib/editar-capitulo-chapter-normalizer.ts`, preservando campos originais, coerções, fallbacks e a validação de ordem.
 - A página manteve `normalizarObra` e o mesmo `map` de capítulos como orquestrador da normalização de obras.
+
+## Registro da Fase 9 — Editar Capítulo
+
+- O normalizador local completo de obra foi isolado em `lib/editar-capitulo-work-normalizer.ts`, preservando fallbacks, aliases legados de métricas, progresso, slug, link e ordem dos capítulos.
+- A página manteve todos os consumidores da normalização e os normalizadores Supabase fora desta fronteira.
