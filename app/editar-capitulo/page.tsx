@@ -11,6 +11,10 @@ import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import { EditarCapituloLanguageBridge } from "./components/EditarCapituloLanguageBridge";
+import {
+  lerStorageUsuarioEditarCapitulo,
+  salvarJsonStorageUsuarioEditarCapitulo,
+} from "./lib/editar-capitulo-storage-utils";
 
 type CapituloLocal = {
   id: string;
@@ -108,52 +112,6 @@ type CapituloSupabaseRow = {
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function criarStorageKeyUsuarioEditarCapitulo(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function lerStorageUsuarioEditarCapitulo(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioEditarCapitulo(chave, userIdLimpo);
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioEditarCapitulo(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioEditarCapitulo(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; a edição continua com o estado em memória.
-  }
-}
 
 function contarLetrasNumeros(texto: string) {
   return texto.match(/[\p{L}\p{N}]/gu)?.length || 0;
