@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const mappersSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-supabase-mappers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const normalizationJavascript = typescript.transpileModule(normalizationSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -49,17 +56,18 @@ test("normalizarCategoriaArquivoSupabase preserva somente categorias explícitas
 
 test("Editar Capítulo delega somente normalizadores Supabase ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?normalizarCategoriaArquivoSupabase,[\s\S]*?normalizarTagsSupabase,[\s\S]*?\} from "\.\/lib\/editar-capitulo-supabase-normalization";/,
+    mappersSource,
+    /import \{[\s\S]*?normalizarCategoriaArquivoSupabase,[\s\S]*?normalizarTagsSupabase,[\s\S]*?\} from "\.\/editar-capitulo-supabase-normalization";/,
   );
   assert.doesNotMatch(pageSource, /function normalizarTagsSupabase\(/);
   assert.doesNotMatch(pageSource, /function normalizarCategoriaArquivoSupabase\(/);
+  assert.doesNotMatch(pageSource, /editar-capitulo-supabase-normalization/);
   assert.match(
-    pageSource,
+    mappersSource,
     /categoria: normalizarCategoriaArquivoSupabase\(obra\.arquivo_categoria\)/,
   );
   assert.match(
-    pageSource,
+    mappersSource,
     /tags: normalizarTagsSupabase\(obra\.tags \|\| obraLocal\?\.tags\)/,
   );
   assert.match(normalizationSource, /if \(!Array\.isArray\(tags\)\)/);

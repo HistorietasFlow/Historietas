@@ -1654,3 +1654,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os normalizadores puros de tags e categoria de arquivo vindas do Supabase foram isolados em `lib/editar-capitulo-supabase-normalization.ts`, preservando filtros, ordem, duplicados e fallbacks.
 - A página manteve `mapearObraSupabase` e suas mesmas expressões de precedência entre dados remotos e locais.
+
+## Registro da Fase 11 — Editar Capítulo
+
+- Os mapeadores puros de capítulo e obra vindos do Supabase foram isolados em `lib/editar-capitulo-supabase-mappers.ts`, preservando a fonte de verdade remota dos capítulos, métricas e fallbacks locais.
+- A página manteve queries, paginação, carregamento e o fluxo de aplicação da obra mapeada.
