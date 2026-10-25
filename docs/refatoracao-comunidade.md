@@ -1629,3 +1629,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de rota foram isolados em `lib/editar-capitulo-route-utils.ts`, preservando redirects de login, encoding e a decisão entre leitura pública e fallback local.
 - A página manteve os consumidores de autenticação, diário, notificações e href derivado de leitura.
+
+## Registro da Fase 6 — Editar Capítulo
+
+- O normalizador puro de arquivo foi isolado em `lib/editar-capitulo-file-normalization.ts`, preservando validação estrutural, categorias, campos originais e fallbacks.
+- A página manteve os consumidores de backup e normalização local de obras.
