@@ -1699,3 +1699,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A validação pura de capítulo foi isolada em `lib/editar-capitulo-validation.ts`, preservando título automático, mínimos, mensagens e prioridade das validações.
 - A página manteve a orquestração do salvamento e o tratamento de `erroValidacao` no mesmo ponto.
+
+## Registro da Fase 20 — Editar Capítulo
+
+- Os 66 estilos estáticos tipados foram isolados em `lib/editar-capitulo-styles.ts`, preservando valores, ordem e heranças por spread.
+- A página manteve os mesmos consumidores visuais, incluindo `pageStyle` em `useHistorietasTheme`.
