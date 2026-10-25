@@ -1722,3 +1722,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A mutação local determinística da exclusão de capítulo foi isolada em `lib/editar-capitulo-local-delete-mutation.ts`, preservando normalização, contadores, progresso e último capítulo lido.
 - A página manteve confirmação, Supabase, persistência local, setters e redirecionamentos na mesma ordem.
+
+## Registro da Fase 25 — Editar Capítulo
+
+- Os valores derivados da tela foram isolados em `hooks/useEditarCapituloDerivedValues.ts`, preservando seleção, ordem, links, labels e prévias.
+- A página manteve estados, carregamento, salvamento, exclusão e composição visual.

@@ -18,6 +18,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const derivedValuesSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloDerivedValues.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const notificationActionSource = readFileSync(
   new URL(
     "../../app/editar-capitulo/actions/atualizar-notificacao-capitulo.ts",
@@ -107,7 +114,11 @@ test("Editar Capítulo delega somente os helpers de rota ao módulo extraído", 
   );
   assert.match(
     pageSource,
-    /import \{[\s\S]*?criarHrefLeituraCapitulo,[\s\S]*?criarLoginHrefEditarCapitulo,[\s\S]*?\} from "\.\/lib\/editar-capitulo-route-utils";/,
+    /import \{ criarLoginHrefEditarCapitulo \} from "\.\/lib\/editar-capitulo-route-utils";/,
+  );
+  assert.doesNotMatch(
+    pageSource,
+    /import \{[\s\S]*?criarHrefLeituraCapitulo,[\s\S]*?\} from "\.\/lib\/editar-capitulo-route-utils";/,
   );
   assert.doesNotMatch(pageSource, /function criarLoginHrefEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function criarHrefLeituraCapitulo\(/);
@@ -118,6 +129,10 @@ test("Editar Capítulo delega somente os helpers de rota ao módulo extraído", 
     /import \{ criarHrefLeituraCapitulo \} from "\.\.\/lib\/editar-capitulo-route-utils";/,
   );
   assert.match(notificationActionSource, /const hrefCapitulo = criarHrefLeituraCapitulo\(/);
-  assert.match(pageSource, /\? criarHrefLeituraCapitulo\(/);
+  assert.match(
+    derivedValuesSource,
+    /import \{ criarHrefLeituraCapitulo \} from "\.\.\/lib\/editar-capitulo-route-utils";/,
+  );
+  assert.match(derivedValuesSource, /\? criarHrefLeituraCapitulo\(/);
   assert.doesNotMatch(routeSource, /supabase|localStorage|useState|useEffect/);
 });

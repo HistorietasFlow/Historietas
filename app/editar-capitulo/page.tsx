@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { idObraSupabaseValido } from "../../lib/utils";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { ChangeEvent, FormEvent } from "react";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import { EditarCapituloLanguageBridge } from "./components/EditarCapituloLanguageBridge";
 import { useEditarCapituloDesktopMode } from "./hooks/useEditarCapituloDesktopMode";
+import { useEditarCapituloDerivedValues } from "./hooks/useEditarCapituloDerivedValues";
 import { validarCapitulo } from "./lib/editar-capitulo-validation";
 import { editarCapituloPageCss } from "./lib/editar-capitulo-page-css";
 import { prepararImportacaoArquivoTextoEditarCapitulo } from "./lib/editar-capitulo-text-import";
@@ -81,10 +82,7 @@ import {
   desktopPreviewChapterTitleStyle,
   desktopPreviewChapterTextStyle,
 } from "./lib/editar-capitulo-styles";
-import {
-  criarHrefLeituraCapitulo,
-  criarLoginHrefEditarCapitulo,
-} from "./lib/editar-capitulo-route-utils";
+import { criarLoginHrefEditarCapitulo } from "./lib/editar-capitulo-route-utils";
 import { registrarDiarioEdicaoCapitulo } from "./actions/registrar-diario-edicao-capitulo";
 import { atualizarNotificacaoCapituloSupabase } from "./actions/atualizar-notificacao-capitulo";
 import { carregarNomeProfileEditarCapitulo } from "./actions/carregar-nome-profile-editar-capitulo";
@@ -362,61 +360,22 @@ export default function EditarCapituloPage() {
     };
   }, [router]);
 
-  const obraAtual = useMemo(() => {
-    return obras.find((obra) => obra.id === obraId) || null;
-  }, [obras, obraId]);
-
-  const capituloAtual = useMemo(() => {
-    if (!obraAtual) {
-      return null;
-    }
-
-    return (
-      obraAtual.capitulos.find((capitulo) => capitulo.id === capituloId) || null
-    );
-  }, [obraAtual, capituloId]);
-
-  const numeroCapitulo = useMemo(() => {
-    if (!obraAtual || !capituloAtual) {
-      return 0;
-    }
-
-    if (
-      typeof capituloAtual.ordem === "number" &&
-      Number.isInteger(capituloAtual.ordem) &&
-      capituloAtual.ordem > 0
-    ) {
-      return capituloAtual.ordem;
-    }
-
-    return (
-      obraAtual.capitulos.findIndex(
-        (capitulo) => capitulo.id === capituloAtual.id
-      ) + 1
-    );
-  }, [obraAtual, capituloAtual]);
-
-  const capituloLabel = `Capítulo ${String(numeroCapitulo || 1).padStart(2, "0")}`;
-
-  const minhaObraHref = obraAtual
-    ? `/editar-obra?obraId=${obraAtual.id}`
-    : "/painel-autor";
-
-  const lerCapituloHref =
-    obraAtual && capituloAtual
-      ? criarHrefLeituraCapitulo(
-          obraAtual,
-          capituloAtual.id,
-          numeroCapitulo || 1
-        )
-      : "/painel-autor";
-
-
-  const tituloPreview =
-    titulo.trim() || `Capítulo ${numeroCapitulo || ""}`.trim();
-
-  const textoPreview =
-    texto.trim() || "O texto do capítulo vai aparecer aqui enquanto você edita.";
+  const {
+    obraAtual,
+    capituloAtual,
+    numeroCapitulo,
+    capituloLabel,
+    minhaObraHref,
+    lerCapituloHref,
+    tituloPreview,
+    textoPreview,
+  } = useEditarCapituloDerivedValues({
+    obras,
+    obraId,
+    capituloId,
+    titulo,
+    texto,
+  });
 
   function marcarAlteracao() {
     if (salvou) {
