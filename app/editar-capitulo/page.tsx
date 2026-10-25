@@ -34,6 +34,10 @@ import {
   sincronizarBackupArquivosObras,
 } from "./lib/editar-capitulo-file-backup-utils";
 import { mapearObraSupabase } from "./lib/editar-capitulo-supabase-mappers";
+import {
+  aplicarNomeAutorProfileEditarCapitulo,
+  obterNomeProfileEditarCapitulo,
+} from "./lib/editar-capitulo-profile-utils";
 
 type CapituloLocal = {
   id: string;
@@ -104,17 +108,6 @@ type CapituloSupabaseRow = {
 const STORAGE_KEY = "historietas-obras";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
-function obterNomeProfileEditarCapitulo(profile: unknown) {
-  if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
-    return "";
-  }
-
-  const registro = profile as Record<string, unknown>;
-  const nome = registro.nome;
-
-  return typeof nome === "string" ? nome.trim() : "";
-}
-
 async function carregarNomeProfileEditarCapitulo(userId: string) {
   const userIdLimpo = userId.trim();
 
@@ -153,33 +146,6 @@ async function carregarNomeProfileEditarCapitulo(userId: string) {
   }
 
   return "";
-}
-
-function aplicarNomeAutorProfileEditarCapitulo(
-  obras: ObraLocal[],
-  userId: string,
-  nomeProfile: string
-) {
-  const usuarioIdLimpo = userId.trim();
-  const nomeProfileLimpo = nomeProfile.trim();
-
-  if (!usuarioIdLimpo || !nomeProfileLimpo) {
-    return obras;
-  }
-
-  return obras.map((obra) => {
-    const autorId = obra.autorId?.trim() || "";
-
-    if (autorId && autorId !== usuarioIdLimpo) {
-      return obra;
-    }
-
-    return {
-      ...obra,
-      autor: nomeProfileLimpo,
-      autorId: autorId || usuarioIdLimpo,
-    };
-  });
 }
 
 function carregarObrasLocaisNormalizadas(userId = "") {
