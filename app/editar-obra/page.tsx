@@ -24,7 +24,7 @@ import {
   arquivoObraAceito,
   identificarCategoriaArquivo,
 } from "./lib/editar-obra-file-validation";
-import { usuarioPodeEditarObraLocal } from "./lib/editar-obra-ownership-utils";
+import { selecionarObrasLocaisAutorizadasEdicaoObra } from "./lib/editar-obra-local-selection";
 import {
   carregarNomeAutorProfileEdicaoObra,
   obterTextoMetadataUsuarioEdicaoObra,
@@ -354,13 +354,12 @@ export default function EditarObraPage() {
         try {
           obrasNormalizadas = carregarObrasLocalStorageEdicaoObra(userId);
 
-          const obrasAutorizadas = obrasNormalizadas.filter((obra) =>
-            usuarioPodeEditarObraLocal(obra, userId)
-          );
-
-          const obraLocal = obrasAutorizadas.find(
-            (obra) => obra.id === obraIdParam
-          );
+          const { obrasAutorizadas, obraLocal } =
+            selecionarObrasLocaisAutorizadasEdicaoObra({
+              obrasNormalizadas,
+              userId,
+              obraId: obraIdParam,
+            });
 
           if (!cancelado) {
             setObras(obrasAutorizadas);
@@ -391,13 +390,12 @@ export default function EditarObraPage() {
           userId,
         );
 
-        const obrasAutorizadas = obrasNormalizadas.filter((obra) =>
-          usuarioPodeEditarObraLocal(obra, userId)
-        );
-
-        const obraLocal = obrasAutorizadas.find(
-          (obra) => obra.id === obraIdParam
-        );
+        const { obrasAutorizadas, obraLocal } =
+          selecionarObrasLocaisAutorizadasEdicaoObra({
+            obrasNormalizadas,
+            userId,
+            obraId: obraIdParam,
+          });
         const obraNormalizadaSupabase = normalizarObraSupabase(
           obraSupabase,
           capitulosSupabase,

@@ -1534,3 +1534,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A consulta remota da obra principal foi isolada em `editar-obra-work-loader.ts`, preservando seleção, filtros de ownership, warning e fallback nulo.
 - Autenticação, profile, ownership local, capítulos, normalização, reconciliação, persistência, backup, setters e controle de cancelamento permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 36 — Editar Obra
+
+- A seleção pura das obras locais autorizadas e da obra alvo foi isolada em `editar-obra-local-selection.ts`, preservando ownership, ordem e fallbacks.
+- A página continua orquestrando carregamento local/remoto, capítulos, normalização, persistência, backup, setters e cancelamento.
