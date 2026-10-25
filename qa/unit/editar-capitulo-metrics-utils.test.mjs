@@ -42,6 +42,13 @@ const textImportSource = readFileSync(
   ),
   "utf8",
 );
+const localDeleteMutationSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-local-delete-mutation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const transpilar = (source) =>
   typescript.transpileModule(source, {
     compilerOptions: {
@@ -94,9 +101,13 @@ test("Editar Capítulo delega somente as métricas ao módulo extraído", () => 
     metricsSource,
     /import \{[\s\S]*?contarLetrasNumeros,[\s\S]*?contarPalavras,[\s\S]*?\} from "\.\/editar-capitulo-text-utils";/,
   );
-  assert.match(
+  assert.doesNotMatch(
     pageSource,
     /import \{ calcularProgressoLeitura \} from "\.\/lib\/editar-capitulo-metrics-utils";/,
+  );
+  assert.match(
+    localDeleteMutationSource,
+    /import \{ calcularProgressoLeitura \} from "\.\/editar-capitulo-metrics-utils";/,
   );
   assert.match(
     supabaseMappersSource,
@@ -108,6 +119,10 @@ test("Editar Capítulo delega somente as métricas ao módulo extraído", () => 
   assert.match(
     workNormalizerSource,
     /progressoLeitura: calcularProgressoLeitura\(capitulosNormalizados\)/,
+  );
+  assert.match(
+    localDeleteMutationSource,
+    /progressoLeitura: calcularProgressoLeitura\(capitulosRestantes\)/,
   );
   assert.match(textImportSource, /const estatisticasImportadas = calcularEstatisticasCapitulo\(/);
   assert.match(supabaseMappersSource, /progressoLeitura: calcularProgressoLeitura\(capitulos\)/);
