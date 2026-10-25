@@ -18,6 +18,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const notificationActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/actions/atualizar-notificacao-capitulo.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const transpilar = (source) =>
   typescript.transpileModule(source, {
     compilerOptions: {
@@ -106,7 +113,11 @@ test("Editar Capítulo delega somente os helpers de rota ao módulo extraído", 
   assert.doesNotMatch(pageSource, /function criarHrefLeituraCapitulo\(/);
   assert.match(pageSource, /router\.replace\(\s*criarLoginHrefEditarCapitulo\(obraIdParam, capituloIdParam\)/);
   assert.match(pageSource, /router\.replace\(criarLoginHrefEditarCapitulo\(obraId, capituloId\)\)/);
-  assert.match(pageSource, /const hrefCapitulo = criarHrefLeituraCapitulo\(/);
+  assert.match(
+    notificationActionSource,
+    /import \{ criarHrefLeituraCapitulo \} from "\.\.\/lib\/editar-capitulo-route-utils";/,
+  );
+  assert.match(notificationActionSource, /const hrefCapitulo = criarHrefLeituraCapitulo\(/);
   assert.match(pageSource, /\? criarHrefLeituraCapitulo\(/);
   assert.doesNotMatch(routeSource, /supabase|localStorage|useState|useEffect/);
 });

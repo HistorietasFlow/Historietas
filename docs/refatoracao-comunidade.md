@@ -1674,3 +1674,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de registro da edição do capítulo no Diário foi isolada em `actions/registrar-diario-edicao-capitulo.ts`, preservando validação de IDs, payload completo, fallback simplificado e falhas silenciosas.
 - A página manteve a orquestração do salvamento e a atualização de notificação na mesma ordem.
+
+## Registro da Fase 15 — Editar Capítulo
+
+- A ação de atualização das notificações após a edição do capítulo foi isolada em `actions/atualizar-notificacao-capitulo.ts`, preservando validação, RPC, parâmetros e falhas silenciosas.
+- A página manteve a orquestração sequencial do Diário antes da tentativa de notificação.
