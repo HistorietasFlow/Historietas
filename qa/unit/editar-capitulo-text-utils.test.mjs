@@ -21,6 +21,13 @@ const metricsSource = readFileSync(
   ),
   "utf8",
 );
+const validationSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-validation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const textUtilsJavascript = typescript.transpileModule(textUtilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -62,8 +69,12 @@ test("Editar Capítulo delega somente os helpers de texto ao módulo extraído",
   assert.match(metricsSource, /const caracteresValidos = contarLetrasNumeros\(textoLimpo\);/);
   assert.match(pageSource, /const tituloArquivo = criarTituloPorNomeArquivo\(arquivo\.name\);/);
   assert.match(pageSource, /if \(contarLetrasNumeros\(textoImportado\) < 20\)/);
-  assert.match(pageSource, /if \(contarLetrasNumeros\(tituloFinal\) < 3\)/);
-  assert.match(pageSource, /if \(contarLetrasNumeros\(textoLimpo\) < 20\)/);
+  assert.match(
+    validationSource,
+    /import \{ contarLetrasNumeros \} from "\.\/editar-capitulo-text-utils";/,
+  );
+  assert.match(validationSource, /if \(contarLetrasNumeros\(tituloFinal\) < 3\)/);
+  assert.match(validationSource, /if \(contarLetrasNumeros\(textoLimpo\) < 20\)/);
   assert.match(textUtilsSource, /texto\.match\(\/\[\\p\{L\}\\p\{N\}\]\/gu\)\?\.length \|\| 0/);
   assert.match(textUtilsSource, /texto\.trim\(\)\.split\(\/\\s\+\/\)\.filter\(Boolean\)\.length/);
   assert.match(textUtilsSource, /\.replace\(\/\\\.\(txt\|md\)\$\/i, ""\)/);
