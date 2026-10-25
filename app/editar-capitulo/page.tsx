@@ -25,6 +25,7 @@ import {
 } from "./lib/editar-capitulo-route-utils";
 import { registrarDiarioEdicaoCapitulo } from "./actions/registrar-diario-edicao-capitulo";
 import { atualizarNotificacaoCapituloSupabase } from "./actions/atualizar-notificacao-capitulo";
+import { carregarNomeProfileEditarCapitulo } from "./actions/carregar-nome-profile-editar-capitulo";
 import { normalizarObra } from "./lib/editar-capitulo-work-normalizer";
 import {
   carregarBackupArquivosObras,
@@ -35,10 +36,7 @@ import {
   salvarObrasEditarCapituloStorage,
 } from "./lib/editar-capitulo-local-work-storage";
 import { mapearObraSupabase } from "./lib/editar-capitulo-supabase-mappers";
-import {
-  aplicarNomeAutorProfileEditarCapitulo,
-  obterNomeProfileEditarCapitulo,
-} from "./lib/editar-capitulo-profile-utils";
+import { aplicarNomeAutorProfileEditarCapitulo } from "./lib/editar-capitulo-profile-utils";
 
 type CapituloLocal = {
   id: string;
@@ -107,46 +105,6 @@ type CapituloSupabaseRow = {
 
 
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-async function carregarNomeProfileEditarCapitulo(userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return "";
-  }
-
-  try {
-    const { data: profilePorUserId, error: erroPorUserId } = await supabase
-      .from("profiles")
-      .select("nome")
-      .eq("user_id", userIdLimpo)
-      .limit(1)
-      .maybeSingle();
-
-    if (!erroPorUserId) {
-      const nome = obterNomeProfileEditarCapitulo(profilePorUserId);
-
-      if (nome) {
-        return nome;
-      }
-    }
-
-    const { data: profilePorId, error: erroPorId } = await supabase
-      .from("profiles")
-      .select("nome")
-      .eq("id", userIdLimpo)
-      .limit(1)
-      .maybeSingle();
-
-    if (!erroPorId) {
-      return obterNomeProfileEditarCapitulo(profilePorId);
-    }
-  } catch (error) {
-    console.warn("Não consegui carregar profiles.nome no Editor de Capítulo:", error);
-  }
-
-  return "";
-}
 
 function criarMensagemConfirmacaoExclusaoCapitulo(
   tituloCapitulo: string,

@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const profileLoaderSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/actions/carregar-nome-profile-editar-capitulo.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileUtilsJavascript = typescript.transpileModule(profileUtilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -76,20 +83,28 @@ test("aplicacao de profile preserva referencias, ownership e autorId", () => {
   });
 });
 
-test("Editar Capitulo delega apenas helpers puros de profile", () => {
+test("Editar Capitulo delega parser puro e loader de profile aos modulos extraidos", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?aplicarNomeAutorProfileEditarCapitulo,[\s\S]*?obterNomeProfileEditarCapitulo,[\s\S]*?\} from "\.\/lib\/editar-capitulo-profile-utils";/,
+    /import \{ aplicarNomeAutorProfileEditarCapitulo \} from "\.\/lib\/editar-capitulo-profile-utils";/,
   );
   assert.doesNotMatch(pageSource, /function obterNomeProfileEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function aplicarNomeAutorProfileEditarCapitulo\(/);
-  assert.match(pageSource, /async function carregarNomeProfileEditarCapitulo\(/);
+  assert.doesNotMatch(pageSource, /async function carregarNomeProfileEditarCapitulo\(/);
   assert.match(
     pageSource,
+    /import \{ carregarNomeProfileEditarCapitulo \} from "\.\/actions\/carregar-nome-profile-editar-capitulo";/,
+  );
+  assert.equal(
+    (pageSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
+    2,
+  );
+  assert.match(
+    profileLoaderSource,
     /\.eq\("user_id", userIdLimpo\)[\s\S]*?\.maybeSingle\(\)[\s\S]*?\.eq\("id", userIdLimpo\)[\s\S]*?\.maybeSingle\(\)/,
   );
   assert.match(
-    pageSource,
+    profileLoaderSource,
     /obterNomeProfileEditarCapitulo\(profilePorUserId\)[\s\S]*?obterNomeProfileEditarCapitulo\(profilePorId\)/,
   );
   assert.equal(
@@ -97,4 +112,5 @@ test("Editar Capitulo delega apenas helpers puros de profile", () => {
     2,
   );
   assert.doesNotMatch(profileUtilsSource, /supabase|\.from\(|useState|useEffect|localStorage|router/);
+  assert.doesNotMatch(profileLoaderSource, /useState|useEffect|localStorage|router|<\w+/);
 });
