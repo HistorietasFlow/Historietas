@@ -67,7 +67,7 @@ function criarObras() {
   ];
 }
 
-function calcularValores({
+function useValoresDerivadosParaTeste({
   obras = criarObras(),
   obraId = "obra-alvo",
   capituloId = "capitulo-alvo",
@@ -94,7 +94,7 @@ test("valores derivados preservam a primeira obra, capítulo e ordem positiva", 
     },
     ...criarObras(),
   ];
-  const valores = calcularValores({ obras });
+  const valores = useValoresDerivadosParaTeste({ obras });
 
   assert.equal(valores.obraAtual, obras[0]);
   assert.equal(valores.capituloAtual, obras[0].capitulos[0]);
@@ -108,7 +108,11 @@ test("valores derivados preservam a primeira obra, capítulo e ordem positiva", 
 test("valores derivados preservam fallbacks de ordem, links e prévia", () => {
   const obras = criarObras();
   obras[1].capitulos[1].ordem = 0;
-  const comOrdemZero = calcularValores({ obras, titulo: "   ", texto: "   " });
+  const comOrdemZero = useValoresDerivadosParaTeste({
+    obras,
+    titulo: "   ",
+    texto: "   ",
+  });
 
   assert.equal(comOrdemZero.numeroCapitulo, 2);
   assert.equal(comOrdemZero.capituloLabel, "Capítulo 02");
@@ -121,15 +125,25 @@ test("valores derivados preservam fallbacks de ordem, links e prévia", () => {
   for (const ordem of [-1, 1.5, undefined, "2"]) {
     const obrasComOrdemInvalida = criarObras();
     obrasComOrdemInvalida[1].capitulos[1].ordem = ordem;
-    assert.equal(calcularValores({ obras: obrasComOrdemInvalida }).numeroCapitulo, 2);
+    assert.equal(
+      useValoresDerivadosParaTeste({ obras: obrasComOrdemInvalida })
+        .numeroCapitulo,
+      2,
+    );
   }
 
-  const semCapitulo = calcularValores({ capituloId: "capitulo-inexistente" });
+  const semCapitulo = useValoresDerivadosParaTeste({
+    capituloId: "capitulo-inexistente",
+  });
   assert.equal(semCapitulo.capituloAtual, null);
   assert.equal(semCapitulo.numeroCapitulo, 0);
   assert.equal(semCapitulo.lerCapituloHref, "/painel-autor");
 
-  const semObra = calcularValores({ obraId: "obra-inexistente", titulo: "", texto: "" });
+  const semObra = useValoresDerivadosParaTeste({
+    obraId: "obra-inexistente",
+    titulo: "",
+    texto: "",
+  });
   assert.equal(semObra.obraAtual, null);
   assert.equal(semObra.capituloAtual, null);
   assert.equal(semObra.numeroCapitulo, 0);
