@@ -1639,3 +1639,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O backup local do arquivo completo foi isolado em `lib/editar-capitulo-file-backup-utils.ts`, preservando chaves, normalização, persistência por usuário e restauração ordenada.
 - A página manteve os consumidores de carregamento, sincronização e restauração do backup.
+
+## Registro da Fase 8 — Editar Capítulo
+
+- O normalizador puro de capítulo foi isolado em `lib/editar-capitulo-chapter-normalizer.ts`, preservando campos originais, coerções, fallbacks e a validação de ordem.
+- A página manteve `normalizarObra` e o mesmo `map` de capítulos como orquestrador da normalização de obras.
