@@ -1589,3 +1589,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A apresentação do campo de Tag foi isolada em `components/EditarObraTagField.tsx`, preservando opções, valor especial, campo personalizado e estilos compartilhados.
 - A página manteve integralmente os handlers, helpers, setters, sanitização, limites e marcação de alteração da seleção de tags.
+
+## Registro da Fase 47 — Editar Obra
+
+- A apresentação dos campos de identificação Título da obra e Autor foi isolada em `components/EditarObraIdentityFields.tsx`, preservando ids, labels, placeholders, hints e estilos compartilhados.
+- A página manteve os setters de título e autor e a marcação de alteração nos callbacks que controla.
