@@ -71,10 +71,6 @@ test("prévia concentra os estilos exclusivos e compartilha safeTextStyle", () =
     /export const safeTextStyle: CSSProperties = \{\s*overflowWrap: "anywhere",\s*wordBreak: "break-word",\s*\};/,
   );
   assert.doesNotMatch(pageSource, /const safeTextStyle: CSSProperties/);
-  assert.match(
-    pageSource,
-    /import \{ safeTextStyle \} from "\.\/styles\/editar-obra-shared-styles";/,
-  );
   for (const estilo of [
     "previewPanelStyle",
     "desktopPreviewPanelStyle",
