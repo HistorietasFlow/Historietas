@@ -1704,3 +1704,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os 66 estilos estáticos tipados foram isolados em `lib/editar-capitulo-styles.ts`, preservando valores, ordem e heranças por spread.
 - A página manteve os mesmos consumidores visuais, incluindo `pageStyle` em `useHistorietasTheme`.
+
+## Registro da Fase 21 — Editar Capítulo
+
+- O CSS estático de Editar Capítulo foi isolado em `lib/editar-capitulo-page-css.ts`, preservando integralmente a template string e seus três consumidores de tema.
