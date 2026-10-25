@@ -1684,3 +1684,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O loader do nome de profile foi isolado em `actions/carregar-nome-profile-editar-capitulo.ts`, preservando as consultas ordenadas por `user_id` e `id`, o parser compartilhado e falhas silenciosas.
 - A página manteve os dois consumidores nos mesmos fluxos de carregamento e salvamento.
+
+## Registro da Fase 17 — Editar Capítulo
+
+- O lifecycle responsivo de desktop foi isolado em `hooks/useEditarCapituloDesktopMode.ts`, preservando o estado inicial, breakpoint, atualização postergada, APIs moderna e legada e respectivos cleanups.
+- A página manteve todos os consumidores visuais de `isDesktop` e a orquestração dos demais efeitos.
