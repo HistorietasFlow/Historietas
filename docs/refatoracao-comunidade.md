@@ -1712,3 +1712,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 22 — Editar Capítulo
 
 - A leitura e preparação determinística de arquivos `.txt` e `.md` foram isoladas em `lib/editar-capitulo-text-import.ts`, mantendo o handler e a ordem dos setters na página.
+
+## Registro da Fase 23 — Editar Capítulo
+
+- A mutação local determinística do salvamento de capítulo foi isolada em `lib/editar-capitulo-local-save-mutation.ts`, preservando normalização, ordem das obras, atualização pontual do capítulo, autor e progresso.
+- A página manteve backup, persistência local, setters, Diário e notificações na mesma ordem.

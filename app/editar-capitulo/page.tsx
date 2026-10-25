@@ -101,6 +101,7 @@ import {
 import { mapearObraSupabase } from "./lib/editar-capitulo-supabase-mappers";
 import { aplicarNomeAutorProfileEditarCapitulo } from "./lib/editar-capitulo-profile-utils";
 import { criarMensagemConfirmacaoExclusaoCapitulo } from "./lib/editar-capitulo-delete-message";
+import { aplicarEdicaoCapituloNasObrasLocais } from "./lib/editar-capitulo-local-save-mutation";
 
 type CapituloLocal = {
   id: string;
@@ -586,38 +587,17 @@ export default function EditarCapituloPage() {
         }
       }
 
-      let obraAtualizadaParaAcoes: ObraLocal | null = null;
-      const novasObras = obras.map((obra, obraIndex) => {
-        const obraNormalizada = normalizarObra(obra, obraIndex);
-
-        if (obraNormalizada.id !== obraId) {
-          return obraNormalizada;
-        }
-
-        const capitulosAtualizados = obraNormalizada.capitulos.map((capitulo) => {
-          if (capitulo.id !== capituloId) {
-            return capitulo;
-          }
-
-          return {
-            ...capitulo,
-            titulo: tituloFinal,
-            texto: textoFinal,
-            ordem: numeroCapituloFinal,
-          };
+      const { novasObras, obraAtualizadaParaAcoes } =
+        aplicarEdicaoCapituloNasObrasLocais({
+          obras,
+          obraId,
+          capituloId,
+          tituloFinal,
+          textoFinal,
+          numeroCapituloFinal,
+          autorFinalObra,
+          userId,
         });
-
-        const obraAtualizada: ObraLocal = {
-          ...obraNormalizada,
-          autor: autorFinalObra,
-          autorId: obraNormalizada.autorId || userId,
-          capitulos: capitulosAtualizados,
-          progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
-        };
-
-        obraAtualizadaParaAcoes = obraAtualizada;
-        return obraAtualizada;
-      });
 
       const backupArquivos = carregarBackupArquivosObras(userId);
       const novasObrasComBackup = novasObras.map((obra, index) =>
