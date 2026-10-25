@@ -29,6 +29,7 @@ import {
   criarLoginHrefEditarCapitulo,
 } from "./lib/editar-capitulo-route-utils";
 import { normalizarArquivoObra } from "./lib/editar-capitulo-file-normalization";
+import { normalizarCapitulo } from "./lib/editar-capitulo-chapter-normalizer";
 import {
   carregarBackupArquivosObras,
   restaurarArquivoObraComBackup,
@@ -128,38 +129,6 @@ type CapituloSupabaseRow = {
 
 const STORAGE_KEY = "historietas-obras";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function normalizarCapitulo(
-  capitulo: Partial<CapituloLocal>,
-  index: number
-): CapituloLocal {
-  return {
-    id:
-      typeof capitulo.id === "string" && capitulo.id.trim()
-        ? capitulo.id
-        : `capitulo-${index + 1}`,
-    titulo:
-      typeof capitulo.titulo === "string" && capitulo.titulo.trim()
-        ? capitulo.titulo
-        : `Capítulo ${index + 1}`,
-    texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
-    curtiu: Boolean(capitulo.curtiu),
-    salvo: Boolean(capitulo.salvo),
-    comentario:
-      typeof capitulo.comentario === "string" ? capitulo.comentario : "",
-    criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
-    lido: Boolean(capitulo.lido),
-    lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
-    publicado:
-      typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
-    ordem:
-      typeof capitulo.ordem === "number" &&
-      Number.isInteger(capitulo.ordem) &&
-      capitulo.ordem > 0
-        ? capitulo.ordem
-        : index + 1,
-  };
-}
 
 function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
   const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
