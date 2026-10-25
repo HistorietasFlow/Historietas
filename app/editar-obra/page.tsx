@@ -38,6 +38,7 @@ import { criarAlvoBackupArquivoEdicaoObra } from "./lib/editar-obra-backup-targe
 import { normalizarObraSupabase } from "./lib/editar-obra-supabase-work-normalizer";
 import { prepararObrasCarregadasEdicaoObra } from "./lib/editar-obra-loaded-work-merge";
 import { carregarCapitulosSupabaseEdicaoObra } from "./lib/editar-obra-chapters-loader";
+import { carregarObraSupabaseEdicaoObra } from "./lib/editar-obra-work-loader";
 import {
   carregarObrasLocalStorageEdicaoObra,
   salvarObrasDoUsuarioPreservandoOutrasContas,
@@ -376,23 +377,10 @@ export default function EditarObraPage() {
           }
         }
 
-        const { data: obraSupabase, error: erroObraSupabase } = await supabase
-          .from("obras")
-          .select(
-            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
-          )
-          .eq("id", obraIdParam)
-          .eq("user_id", userId)
-          .limit(1)
-          .maybeSingle();
-
-        if (erroObraSupabase) {
-          console.warn(
-            "Não consegui carregar a obra no Supabase:",
-            erroObraSupabase.message
-          );
-          return;
-        }
+        const obraSupabase = await carregarObraSupabaseEdicaoObra(
+          obraIdParam,
+          userId,
+        );
 
         if (!obraSupabase) {
           return;
