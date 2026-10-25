@@ -28,6 +28,13 @@ const workNormalizerSource = readFileSync(
   ),
   "utf8",
 );
+const supabaseMappersSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-supabase-mappers.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const transpilar = (source) =>
   typescript.transpileModule(source, {
     compilerOptions: {
@@ -82,7 +89,11 @@ test("Editar Capítulo delega somente as métricas ao módulo extraído", () => 
   );
   assert.match(
     pageSource,
-    /import \{[\s\S]*?calcularEstatisticasCapitulo,[\s\S]*?calcularProgressoLeitura,[\s\S]*?normalizarNumeroEditarCapitulo,[\s\S]*?\} from "\.\/lib\/editar-capitulo-metrics-utils";/,
+    /import \{[\s\S]*?calcularEstatisticasCapitulo,[\s\S]*?calcularProgressoLeitura,[\s\S]*?\} from "\.\/lib\/editar-capitulo-metrics-utils";/,
+  );
+  assert.match(
+    supabaseMappersSource,
+    /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?normalizarNumeroEditarCapitulo,[\s\S]*?\} from "\.\/editar-capitulo-metrics-utils";/,
   );
   assert.doesNotMatch(pageSource, /function normalizarNumeroEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function calcularEstatisticasCapitulo\(/);
@@ -92,12 +103,13 @@ test("Editar Capítulo delega somente as métricas ao módulo extraído", () => 
     /progressoLeitura: calcularProgressoLeitura\(capitulosNormalizados\)/,
   );
   assert.match(pageSource, /const estatisticasImportadas = calcularEstatisticasCapitulo\(/);
-  assert.match(pageSource, /visualizacoes: normalizarNumeroEditarCapitulo\(/);
-  assert.match(pageSource, /totalCurtidas: normalizarNumeroEditarCapitulo\(/);
-  assert.match(pageSource, /totalComentarios: normalizarNumeroEditarCapitulo\(/);
-  assert.match(pageSource, /totalSalvos: normalizarNumeroEditarCapitulo\(/);
-  assert.match(pageSource, /totalLidos: normalizarNumeroEditarCapitulo\(/);
-  assert.match(pageSource, /totalFavoritos: normalizarNumeroEditarCapitulo\(/);
-  assert.match(pageSource, /totalConcluidas: normalizarNumeroEditarCapitulo\(/);
+  assert.match(supabaseMappersSource, /progressoLeitura: calcularProgressoLeitura\(capitulos\)/);
+  assert.match(supabaseMappersSource, /visualizacoes: normalizarNumeroEditarCapitulo\(/);
+  assert.match(supabaseMappersSource, /totalCurtidas: normalizarNumeroEditarCapitulo\(/);
+  assert.match(supabaseMappersSource, /totalComentarios: normalizarNumeroEditarCapitulo\(/);
+  assert.match(supabaseMappersSource, /totalSalvos: normalizarNumeroEditarCapitulo\(/);
+  assert.match(supabaseMappersSource, /totalLidos: normalizarNumeroEditarCapitulo\(/);
+  assert.match(supabaseMappersSource, /totalFavoritos: normalizarNumeroEditarCapitulo\(/);
+  assert.match(supabaseMappersSource, /totalConcluidas: normalizarNumeroEditarCapitulo\(/);
   assert.doesNotMatch(metricsSource, /supabase|localStorage|useState|useEffect/);
 });
