@@ -1669,3 +1669,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O storage local normalizado de obras por usuário foi isolado em `lib/editar-capitulo-local-work-storage.ts`, preservando ownership, restauração de backup, normalização e persistência ordenada.
 - A página manteve os consumidores de carregamento, salvamento e exclusão, assim como o restante da orquestração do editor.
+
+## Registro da Fase 14 — Editar Capítulo
+
+- A ação de registro da edição do capítulo no Diário foi isolada em `actions/registrar-diario-edicao-capitulo.ts`, preservando validação de IDs, payload completo, fallback simplificado e falhas silenciosas.
+- A página manteve a orquestração do salvamento e a atualização de notificação na mesma ordem.
