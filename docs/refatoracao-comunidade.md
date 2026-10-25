@@ -1679,3 +1679,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de atualização das notificações após a edição do capítulo foi isolada em `actions/atualizar-notificacao-capitulo.ts`, preservando validação, RPC, parâmetros e falhas silenciosas.
 - A página manteve a orquestração sequencial do Diário antes da tentativa de notificação.
+
+## Registro da Fase 16 — Editar Capítulo
+
+- O loader do nome de profile foi isolado em `actions/carregar-nome-profile-editar-capitulo.ts`, preservando as consultas ordenadas por `user_id` e `id`, o parser compartilhado e falhas silenciosas.
+- A página manteve os dois consumidores nos mesmos fluxos de carregamento e salvamento.
