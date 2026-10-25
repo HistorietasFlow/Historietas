@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { criarSlugBase, idObraSupabaseValido } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -29,6 +29,11 @@ import {
   criarLoginHrefEditarCapitulo,
 } from "./lib/editar-capitulo-route-utils";
 import { normalizarArquivoObra } from "./lib/editar-capitulo-file-normalization";
+import {
+  carregarBackupArquivosObras,
+  restaurarArquivoObraComBackup,
+  sincronizarBackupArquivosObras,
+} from "./lib/editar-capitulo-file-backup-utils";
 
 type CapituloLocal = {
   id: string;
@@ -52,8 +57,6 @@ type ArquivoObraLocal = {
   categoria: "texto" | "documento" | "imagem" | "outro";
   criadoEm: string;
 };
-
-type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
 type ObraLocal = {
   id: string;
@@ -124,27 +127,7 @@ type CapituloSupabaseRow = {
 
 
 const STORAGE_KEY = "historietas-obras";
-const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function criarChavesObra(obra: Pick<ObraLocal, "id" | "titulo" | "slug">) {
-  const chaves = [
-    obra.id,
-    obra.slug,
-    criarSlugBase(obra.titulo),
-    normalizarTexto(obra.titulo),
-  ];
-
-  return Array.from(
-    new Set(
-      chaves
-        .filter((chave): chave is string =>
-          typeof chave === "string" && Boolean(chave.trim())
-        )
-        .map((chave) => chave.trim())
-    )
-  );
-}
 
 function normalizarCapitulo(
   capitulo: Partial<CapituloLocal>,
@@ -175,99 +158,6 @@ function normalizarCapitulo(
       capitulo.ordem > 0
         ? capitulo.ordem
         : index + 1,
-  };
-}
-
-function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return {};
-  }
-
-  try {
-    const backupTexto = lerStorageUsuarioEditarCapitulo(
-      FILE_BACKUP_STORAGE_KEY,
-      userIdLimpo
-    );
-    const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
-
-    if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
-      return {};
-    }
-
-    const backupNormalizado: ArquivosObrasBackup = {};
-
-    Object.entries(backupJson as Record<string, unknown>).forEach(([obraId, arquivo]) => {
-      const arquivoNormalizado = normalizarArquivoObra(arquivo);
-
-      if (obraId.trim() && arquivoNormalizado) {
-        backupNormalizado[obraId] = arquivoNormalizado;
-      }
-    });
-
-    salvarJsonStorageUsuarioEditarCapitulo(
-      FILE_BACKUP_STORAGE_KEY,
-      userIdLimpo,
-      backupNormalizado
-    );
-
-    return backupNormalizado;
-  } catch {
-    return {};
-  }
-}
-
-function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return;
-  }
-
-  try {
-    const backupAtual = carregarBackupArquivosObras(userIdLimpo);
-
-    obras.forEach((obra) => {
-      const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
-
-      if (arquivoNormalizado) {
-        criarChavesObra(obra).forEach((chave) => {
-          backupAtual[chave] = arquivoNormalizado;
-        });
-      }
-    });
-
-    salvarJsonStorageUsuarioEditarCapitulo(
-      FILE_BACKUP_STORAGE_KEY,
-      userIdLimpo,
-      backupAtual
-    );
-  } catch {
-    // Se o backup falhar, a edição do capítulo continua funcionando normalmente.
-  }
-}
-
-function restaurarArquivoObraComBackup(
-  obra: ObraLocal,
-  backup: ArquivosObrasBackup
-): ObraLocal {
-  if (obra.arquivoObra) {
-    return obra;
-  }
-
-  const arquivoBackup =
-    criarChavesObra(obra)
-      .map((chave) => normalizarArquivoObra(backup[chave]))
-      .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo)) || null;
-
-  if (!arquivoBackup) {
-    return obra;
-  }
-
-  return {
-    ...obra,
-    arquivoObra: arquivoBackup,
   };
 }
 

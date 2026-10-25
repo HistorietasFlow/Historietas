@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const backupSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-file-backup-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const storageJavascript = typescript.transpileModule(storageSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -113,8 +120,15 @@ test("Editar Capítulo delega somente as utilidades de storage ao módulo extra�
   assert.doesNotMatch(pageSource, /function criarStorageKeyUsuarioEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function lerStorageUsuarioEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function salvarJsonStorageUsuarioEditarCapitulo\(/);
-  assert.match(pageSource, /lerStorageUsuarioEditarCapitulo\(\s*FILE_BACKUP_STORAGE_KEY,/);
   assert.match(pageSource, /salvarJsonStorageUsuarioEditarCapitulo\(\s*STORAGE_KEY,/);
+  assert.match(
+    backupSource,
+    /import \{[\s\S]*?lerStorageUsuarioEditarCapitulo,[\s\S]*?salvarJsonStorageUsuarioEditarCapitulo,[\s\S]*?\} from "\.\/editar-capitulo-storage-utils";/,
+  );
+  assert.match(
+    backupSource,
+    /lerStorageUsuarioEditarCapitulo\(\s*FILE_BACKUP_STORAGE_KEY,/,
+  );
   assert.match(storageSource, /localStorage é fallback; a edição continua com o estado em memória\./);
   assert.doesNotMatch(storageSource, /supabase|useState|useEffect/);
 });
