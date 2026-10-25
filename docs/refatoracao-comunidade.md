@@ -1619,3 +1619,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de texto foram isolados em `lib/editar-capitulo-text-utils.ts`, preservando contagens Unicode, palavras e a normalização do título importado de `.txt`/`.md`.
 - A página manteve os consumidores de estatísticas, importação e validação do capítulo.
+
+## Registro da Fase 4 — Editar Capítulo
+
+- Os helpers puros de métricas e números foram isolados em `lib/editar-capitulo-metrics-utils.ts`, preservando parsing, estatísticas do capítulo e progresso de leitura.
+- A página manteve os consumidores de normalização, importação e atualização de obras.

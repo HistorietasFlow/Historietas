@@ -17,9 +17,13 @@ import {
 } from "./lib/editar-capitulo-storage-utils";
 import {
   contarLetrasNumeros,
-  contarPalavras,
   criarTituloPorNomeArquivo,
 } from "./lib/editar-capitulo-text-utils";
+import {
+  calcularEstatisticasCapitulo,
+  calcularProgressoLeitura,
+  normalizarNumeroEditarCapitulo,
+} from "./lib/editar-capitulo-metrics-utils";
 
 type CapituloLocal = {
   id: string;
@@ -118,22 +122,6 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
-function normalizarNumeroEditarCapitulo(valor: unknown, fallback = 0) {
-  if (typeof valor === "number" && Number.isFinite(valor)) {
-    return Math.max(0, Math.round(valor));
-  }
-
-  if (typeof valor === "string" && valor.trim()) {
-    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
-
-    if (Number.isFinite(numero)) {
-      return Math.max(0, Math.round(numero));
-    }
-  }
-
-  return Math.max(0, Math.round(fallback));
-}
-
 function criarLoginHrefEditarCapitulo(obraId?: string, capituloId?: string) {
   const obraIdLimpo = obraId?.trim() || "";
   const capituloIdLimpo = capituloId?.trim() || "";
@@ -197,43 +185,6 @@ function criarChavesObra(obra: Pick<ObraLocal, "id" | "titulo" | "slug">) {
         .map((chave) => chave.trim())
     )
   );
-}
-
-function calcularEstatisticasCapitulo(
-  titulo: string,
-  texto: string,
-  numeroCapitulo: number
-) {
-  const tituloFinal = titulo.trim() || `Capítulo ${numeroCapitulo}`;
-  const textoLimpo = texto.trim();
-  const palavras = contarPalavras(textoLimpo);
-  const caracteres = texto.length;
-  const caracteresValidos = contarLetrasNumeros(textoLimpo);
-  const minutosLeitura =
-    palavras > 0 ? Math.max(1, Math.ceil(palavras / 220)) : 0;
-  const tituloValido = contarLetrasNumeros(tituloFinal) >= 3;
-  const textoValido = caracteresValidos >= 20;
-
-  return {
-    tituloFinal,
-    palavras,
-    caracteres,
-    caracteresValidos,
-    minutosLeitura,
-    tituloValido,
-    textoValido,
-    prontoParaSalvar: tituloValido && textoValido,
-  };
-}
-
-function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  if (capitulos.length === 0) {
-    return 0;
-  }
-
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
-
-  return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
 function normalizarCapitulo(
