@@ -15,7 +15,19 @@ import {
   traduzirTextoConteudo18,
   type AvisoConteudo18,
 } from "../../lib/historietasAdultContent";
-import { LIMITES_BYTES_STORAGE } from "../../lib/storageUploads";
+import {
+  LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
+  LIMITE_CARACTERES_TAG_PERSONALIZADA,
+  LIMITE_TAGS_OBRA,
+  OPCOES_FORMATO_OBRA,
+  OPCOES_GENERO_OBRA,
+  OPCOES_TAGS_OBRA,
+  OUTRA_TAG_VALUE,
+  OUTRO_FORMATO_VALUE,
+  OUTRO_GENERO_VALUE,
+  TAMANHO_MAXIMO_ARQUIVO_OBRA,
+  TAMANHO_MAXIMO_CAPA,
+} from "./lib/editar-obra-form-config";
 import {
   limparTextoPersonalizado,
 } from "./lib/editar-obra-custom-value-utils";
@@ -125,68 +137,6 @@ type ObraLocal = {
   slug: string;
   link: string;
 };
-
-const TAMANHO_MAXIMO_CAPA = LIMITES_BYTES_STORAGE["capas-obras"];
-const TAMANHO_MAXIMO_ARQUIVO_OBRA =
-  LIMITES_BYTES_STORAGE["arquivos-obras"];
-const LIMITE_TAGS_OBRA = 1;
-const OUTRO_FORMATO_VALUE = "__outro_formato__";
-const OUTRO_GENERO_VALUE = "__outro_genero__";
-const OUTRA_TAG_VALUE = "__outra_tag__";
-const LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO = 14;
-const LIMITE_CARACTERES_TAG_PERSONALIZADA = 10;
-
-const OPCOES_FORMATO_OBRA = [
-  "Webnovel",
-  "Light novel",
-  "Romance",
-  "Conto",
-  "Poesia",
-  "HQ",
-  "Mangá",
-  "Fanfic",
-] as const;
-
-const OPCOES_GENERO_OBRA = [
-  "Fantasia",
-  "Terror",
-  "Ficção",
-  "Romance",
-  "Drama",
-  "Ação",
-  "Mistério",
-  "Suspense",
-  "Aventura",
-  "Comédia",
-] as const;
-
-const OPCOES_TAGS_OBRA = [
-  "Sombria",
-  "Psicológico",
-  "Sci-fi",
-  "Cyberpunk",
-  "Espacial",
-  "Isekai",
-  "Distopia",
-  "Apocalipse",
-  "Escolar",
-  "Máfia",
-  "Investigação",
-  "Religioso",
-  "Mitologia",
-  "Folclore",
-  "Vampiro",
-  "Lobisomem",
-  "Zumbi",
-  "Super-herói",
-  "Magia",
-  "Guerra",
-  "Família",
-  "Amizade",
-  "Traição",
-  "Vingança",
-  "Sobrevivência",
-] as const;
 
 export default function EditarObraPage() {
   const router = useRouter();

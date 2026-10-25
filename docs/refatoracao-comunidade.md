@@ -1549,3 +1549,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle responsivo de `matchMedia` foi isolado em `useEditarObraDesktopMode`, preservando breakpoint, timer inicial, listeners modernos/legados e cleanup.
 - A página manteve todos os consumidores visuais de `isDesktop`, além de estados, refs e a orquestração do carregamento e salvamento.
+
+## Registro da Fase 39 — Editar Obra
+
+- A configuração estática do formulário foi isolada em `editar-obra-form-config.ts`, preservando limites de upload, valores personalizados e a ordem das opções de formato, gênero e tags.
+- A página continuou consumindo as mesmas constantes na validação, preparação, valores derivados e JSX, sem alterar estado, fluxo ou visual.
