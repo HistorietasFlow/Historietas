@@ -254,7 +254,7 @@ test("Editar Capítulo delega somente a normalização local de obra ao módulo 
   assert.doesNotMatch(pageSource, /function normalizarObra\(/);
   assert.doesNotMatch(pageSource, /normalizarArquivoObra\(obra\.arquivoObra\)/);
   assert.doesNotMatch(pageSource, /normalizarCapitulo\(capitulo, capituloIndex\)/);
-  assert.equal((pageSource.match(/normalizarObra\(/g) || []).length, 2);
+  assert.equal((pageSource.match(/normalizarObra\(/g) || []).length, 1);
   assert.match(
     localWorkStorageSource,
     /import \{ normalizarObra \} from "\.\/editar-capitulo-work-normalizer";/,

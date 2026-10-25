@@ -1717,3 +1717,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A mutação local determinística do salvamento de capítulo foi isolada em `lib/editar-capitulo-local-save-mutation.ts`, preservando normalização, ordem das obras, atualização pontual do capítulo, autor e progresso.
 - A página manteve backup, persistência local, setters, Diário e notificações na mesma ordem.
+
+## Registro da Fase 24 — Editar Capítulo
+
+- A mutação local determinística da exclusão de capítulo foi isolada em `lib/editar-capitulo-local-delete-mutation.ts`, preservando normalização, contadores, progresso e último capítulo lido.
+- A página manteve confirmação, Supabase, persistência local, setters e redirecionamentos na mesma ordem.

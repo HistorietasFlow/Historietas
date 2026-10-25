@@ -81,7 +81,6 @@ import {
   desktopPreviewChapterTitleStyle,
   desktopPreviewChapterTextStyle,
 } from "./lib/editar-capitulo-styles";
-import { calcularProgressoLeitura } from "./lib/editar-capitulo-metrics-utils";
 import {
   criarHrefLeituraCapitulo,
   criarLoginHrefEditarCapitulo,
@@ -102,6 +101,7 @@ import { mapearObraSupabase } from "./lib/editar-capitulo-supabase-mappers";
 import { aplicarNomeAutorProfileEditarCapitulo } from "./lib/editar-capitulo-profile-utils";
 import { criarMensagemConfirmacaoExclusaoCapitulo } from "./lib/editar-capitulo-delete-message";
 import { aplicarEdicaoCapituloNasObrasLocais } from "./lib/editar-capitulo-local-save-mutation";
+import { removerCapituloDasObrasLocais } from "./lib/editar-capitulo-local-delete-mutation";
 
 type CapituloLocal = {
   id: string;
@@ -741,50 +741,10 @@ export default function EditarCapituloPage() {
         }
       }
 
-      const novasObras = obras.map((obra, obraIndex) => {
-        const obraNormalizada = normalizarObra(obra, obraIndex);
-
-        if (obraNormalizada.id !== obraId) {
-          return obraNormalizada;
-        }
-
-        const capituloRemovido =
-          obraNormalizada.capitulos.find(
-            (capitulo) => capitulo.id === capituloId
-          ) || null;
-        const capitulosRestantes = obraNormalizada.capitulos.filter(
-          (capitulo) => capitulo.id !== capituloId
-        );
-
-        return {
-          ...obraNormalizada,
-          capitulos: capitulosRestantes,
-          ultimoCapituloLidoId:
-            obraNormalizada.ultimoCapituloLidoId === capituloId
-              ? ""
-              : obraNormalizada.ultimoCapituloLidoId,
-          progressoLeitura: calcularProgressoLeitura(capitulosRestantes),
-          totalCurtidas: Math.max(
-            0,
-            (obraNormalizada.totalCurtidas || 0) -
-              (capituloRemovido?.curtiu ? 1 : 0)
-          ),
-          totalComentarios: Math.max(
-            0,
-            (obraNormalizada.totalComentarios || 0) -
-              (capituloRemovido?.comentario.trim() ? 1 : 0)
-          ),
-          totalSalvos: Math.max(
-            0,
-            (obraNormalizada.totalSalvos || 0) -
-              (capituloRemovido?.salvo ? 1 : 0)
-          ),
-          totalLidos: Math.max(
-            0,
-            (obraNormalizada.totalLidos || 0) -
-              (capituloRemovido?.lido ? 1 : 0)
-          ),
-        };
+      const novasObras = removerCapituloDasObrasLocais({
+        obras,
+        obraId,
+        capituloId,
       });
 
       const novasObrasDoUsuario = salvarObrasEditarCapituloStorage(
