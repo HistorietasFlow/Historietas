@@ -1604,3 +1604,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os estilos estáticos de layout e shell foram isolados em `styles/editar-obra-layout-styles.ts`, preservando nomes, derivações, responsividade e `safeTextStyle` compartilhado.
 - A página manteve integralmente o JSX, os estados de renderização e a orquestração da edição.
+
+## Registro da Fase 1 — Editar Capítulo
+
+- A bridge de tradução foi isolada em `components/EditarCapituloLanguageBridge.tsx`, preservando textos, padrões dinâmicos, `MutationObserver`, restauração condicional e a dependência de idioma.
+- A página manteve todas as ocorrências de `<EditarCapituloLanguageBridge />` e a orquestração dos seus estados de renderização.
