@@ -21,6 +21,13 @@ const backupSource = readFileSync(
   ),
   "utf8",
 );
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const storageJavascript = typescript.transpileModule(storageSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -114,13 +121,17 @@ test("storage de Editar Capítulo preserva serialização e falhas silenciosas",
 
 test("Editar Capítulo delega somente as utilidades de storage ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?lerStorageUsuarioEditarCapitulo,[\s\S]*?salvarJsonStorageUsuarioEditarCapitulo,[\s\S]*?\} from "\.\/lib\/editar-capitulo-storage-utils";/,
+    localWorkStorageSource,
+    /import \{[\s\S]*?lerStorageUsuarioEditarCapitulo,[\s\S]*?salvarJsonStorageUsuarioEditarCapitulo,[\s\S]*?\} from "\.\/editar-capitulo-storage-utils";/,
   );
   assert.doesNotMatch(pageSource, /function criarStorageKeyUsuarioEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function lerStorageUsuarioEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function salvarJsonStorageUsuarioEditarCapitulo\(/);
-  assert.match(pageSource, /salvarJsonStorageUsuarioEditarCapitulo\(\s*STORAGE_KEY,/);
+  assert.doesNotMatch(pageSource, /lerStorageUsuarioEditarCapitulo|salvarJsonStorageUsuarioEditarCapitulo/);
+  assert.match(
+    localWorkStorageSource,
+    /salvarJsonStorageUsuarioEditarCapitulo\(\s*STORAGE_KEY,/,
+  );
   assert.match(
     backupSource,
     /import \{[\s\S]*?lerStorageUsuarioEditarCapitulo,[\s\S]*?salvarJsonStorageUsuarioEditarCapitulo,[\s\S]*?\} from "\.\/editar-capitulo-storage-utils";/,

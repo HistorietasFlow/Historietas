@@ -12,10 +12,6 @@ import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import { EditarCapituloLanguageBridge } from "./components/EditarCapituloLanguageBridge";
 import {
-  lerStorageUsuarioEditarCapitulo,
-  salvarJsonStorageUsuarioEditarCapitulo,
-} from "./lib/editar-capitulo-storage-utils";
-import {
   contarLetrasNumeros,
   criarTituloPorNomeArquivo,
 } from "./lib/editar-capitulo-text-utils";
@@ -31,8 +27,11 @@ import { normalizarObra } from "./lib/editar-capitulo-work-normalizer";
 import {
   carregarBackupArquivosObras,
   restaurarArquivoObraComBackup,
-  sincronizarBackupArquivosObras,
 } from "./lib/editar-capitulo-file-backup-utils";
+import {
+  carregarObrasLocaisNormalizadas,
+  salvarObrasEditarCapituloStorage,
+} from "./lib/editar-capitulo-local-work-storage";
 import { mapearObraSupabase } from "./lib/editar-capitulo-supabase-mappers";
 import {
   aplicarNomeAutorProfileEditarCapitulo,
@@ -105,7 +104,6 @@ type CapituloSupabaseRow = {
 };
 
 
-const STORAGE_KEY = "historietas-obras";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
 async function carregarNomeProfileEditarCapitulo(userId: string) {
@@ -146,97 +144,6 @@ async function carregarNomeProfileEditarCapitulo(userId: string) {
   }
 
   return "";
-}
-
-function carregarObrasLocaisNormalizadas(userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [] as ObraLocal[];
-  }
-
-  const obrasSalvasTexto = lerStorageUsuarioEditarCapitulo(
-    STORAGE_KEY,
-    userIdLimpo
-  );
-  let obrasSalvasJson: unknown = [];
-
-  try {
-    obrasSalvasJson = obrasSalvasTexto ? JSON.parse(obrasSalvasTexto) : [];
-  } catch {
-    obrasSalvasJson = [];
-  }
-
-  const backupArquivos = carregarBackupArquivosObras(userIdLimpo);
-
-  const obrasNormalizadasBase: ObraLocal[] = Array.isArray(obrasSalvasJson)
-    ? obrasSalvasJson.map((obra, index) =>
-        normalizarObra(obra as Partial<ObraLocal>, index)
-      )
-    : [];
-
-  const obrasNormalizadas = obrasNormalizadasBase
-    .map((obra) => restaurarArquivoObraComBackup(obra, backupArquivos))
-    .map((obra) =>
-      userIdLimpo
-        ? {
-            ...obra,
-            autorId: obra.autorId?.trim() || userIdLimpo,
-          }
-        : obra
-    )
-    .filter((obra) =>
-      userIdLimpo ? obraPertenceAoUsuarioEditarCapitulo(obra, userIdLimpo) : true
-    );
-
-  sincronizarBackupArquivosObras(obrasNormalizadas, userIdLimpo);
-  salvarJsonStorageUsuarioEditarCapitulo(
-    STORAGE_KEY,
-    userIdLimpo,
-    obrasNormalizadas
-  );
-
-  return obrasNormalizadas;
-}
-
-
-function obraPertenceAoUsuarioEditarCapitulo(obra: ObraLocal, userId: string) {
-  const usuarioId = userId.trim();
-  const autorId = obra.autorId?.trim() || "";
-
-  return Boolean(usuarioId && autorId === usuarioId);
-}
-
-function salvarObrasEditarCapituloStorage(
-  obrasDoUsuario: ObraLocal[],
-  userId: string
-) {
-  const usuarioId = userId.trim();
-
-  if (!usuarioId) {
-    return [] as ObraLocal[];
-  }
-
-  const obrasDoUsuarioNormalizadas = obrasDoUsuario
-    .map((obra, index) =>
-      normalizarObra(
-        {
-          ...obra,
-          autorId: obra.autorId?.trim() || usuarioId,
-        },
-        index
-      )
-    )
-    .filter((obra) => obraPertenceAoUsuarioEditarCapitulo(obra, usuarioId));
-
-  sincronizarBackupArquivosObras(obrasDoUsuarioNormalizadas, usuarioId);
-  salvarJsonStorageUsuarioEditarCapitulo(
-    STORAGE_KEY,
-    usuarioId,
-    obrasDoUsuarioNormalizadas
-  );
-
-  return obrasDoUsuarioNormalizadas;
 }
 
 function criarMensagemConfirmacaoExclusaoCapitulo(
@@ -473,7 +380,7 @@ export default function EditarCapituloPage() {
           userId,
           nomeProfileAutor
         );
-        let obrasAtualizadas = obrasLocais;
+        let obrasAtualizadas: ObraLocal[] = obrasLocais;
         const obraLocal = obrasLocais.find((obra) => obra.id === obraIdParam);
         const capituloLocal =
           obraLocal?.capitulos.find(
