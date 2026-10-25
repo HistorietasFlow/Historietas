@@ -1579,3 +1579,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O bloco visual de Formato e Gênero foi isolado em `components/EditarObraFormatGenreFields.tsx`, preservando selects, valores especiais, campos personalizados, opções e responsividade.
 - A página manteve os quatro callbacks, sanitização, limpeza dos valores personalizados e marcação de alteração; `inputStyle` passou a ser compartilhado sem duplicação.
+
+## Registro da Fase 45 — Editar Obra
+
+- A apresentação de classificação indicativa e avisos obrigatórios de conteúdo 18+ foi isolada em `components/EditarObraContentRatingField.tsx`, preservando opções, traduções, checkboxes, estilos e responsividade.
+- A página manteve integralmente a limpeza dos avisos ao sair de 18+ e o toggle imutável de cada aviso, incluindo a marcação de alteração.
