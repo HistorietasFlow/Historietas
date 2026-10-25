@@ -1614,3 +1614,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os utilitários de `localStorage` por usuário foram isolados em `lib/editar-capitulo-storage-utils.ts`, preservando chaves, leitura segura, serialização e falhas silenciosas.
 - A página manteve as constantes de storage e os consumidores de backup, obras locais e persistência por conta.
+
+## Registro da Fase 3 — Editar Capítulo
+
+- Os helpers puros de texto foram isolados em `lib/editar-capitulo-text-utils.ts`, preservando contagens Unicode, palavras e a normalização do título importado de `.txt`/`.md`.
+- A página manteve os consumidores de estatísticas, importação e validação do capítulo.
