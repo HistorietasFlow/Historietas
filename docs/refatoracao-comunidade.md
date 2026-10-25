@@ -1559,3 +1559,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O template CSS estático foi isolado em `styles/editar-obra-page-css.ts`, preservando variáveis, seletores, valores, ordem e whitespace do conteúdo original.
 - A página manteve os mesmos três consumidores de `<style>{`${historietasThemeCss}${editarObraPageCss}`}</style>` e todos os objetos de estilo React locais.
+
+## Registro da Fase 41 — Editar Obra
+
+- A prévia visual da obra foi isolada em `components/EditarObraPreview.tsx`, preservando JSX, fallbacks, indicadores, progresso e responsividade.
+- `safeTextStyle` foi centralizado em `styles/editar-obra-shared-styles.ts` e passou a ser compartilhado pela página e pela prévia, sem duplicar o objeto.

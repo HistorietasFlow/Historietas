@@ -13,6 +13,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const previewSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/components/EditarObraPreview.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useEditarObraDesktopMode preserva o lifecycle responsivo postergado", () => {
   assert.match(hookSource, /export function useEditarObraDesktopMode\(\)/);
@@ -58,5 +65,13 @@ test("Editar Obra delega somente o lifecycle desktop e mantém seus consumidores
   assert.doesNotMatch(pageSource, /window\.matchMedia/);
   assert.match(pageSource, /isDesktop \? desktopContainerStyle : containerStyle/);
   assert.match(pageSource, /isDesktop \? desktopFormStyle : formStyle/);
-  assert.match(pageSource, /isDesktop \? desktopPreviewPanelStyle : previewPanelStyle/);
+  assert.match(pageSource, /<EditarObraPreview[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(
+    previewSource,
+    /<aside style=\{isDesktop \? desktopPreviewPanelStyle : previewPanelStyle\}>/,
+  );
+  assert.match(
+    previewSource,
+    /<article style=\{isDesktop \? desktopPreviewCardStyle : previewCardStyle\}>/,
+  );
 });

@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const previewSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/components/EditarObraPreview.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -47,17 +54,22 @@ test("helpers de capa de Editar Obra preservam estilos-base e imagem", () => {
   });
 });
 
-test("Editar Obra delega os estilos de capa mantendo as bases locais", () => {
+test("Editar Obra delega os estilos de capa mantendo as bases em suas fronteiras visuais", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?criarMiniCoverStyle,[\s\S]*?criarPreviewCoverStyle,[\s\S]*?\} from "\.\/lib\/editar-obra-cover-style-utils";/,
+    /import \{[\s\S]*?criarMiniCoverStyle,[\s\S]*?\} from "\.\/lib\/editar-obra-cover-style-utils";/,
   );
   assert.doesNotMatch(pageSource, /function criarMiniCoverStyle\(/);
   assert.doesNotMatch(pageSource, /function criarPreviewCoverStyle\(/);
   assert.match(pageSource, /criarMiniCoverStyle\(capa, coverPlaceholderStyle\)/);
-  assert.match(pageSource, /criarPreviewCoverStyle\(capa, previewCoverStyle\)/);
   assert.match(pageSource, /const coverPlaceholderStyle: CSSProperties/);
-  assert.match(pageSource, /const previewCoverStyle: CSSProperties/);
+  assert.doesNotMatch(pageSource, /const previewCoverStyle: CSSProperties/);
+  assert.match(
+    previewSource,
+    /import \{ criarPreviewCoverStyle \} from "\.\.\/lib\/editar-obra-cover-style-utils";/,
+  );
+  assert.match(previewSource, /criarPreviewCoverStyle\(capa, previewCoverStyle\)/);
+  assert.match(previewSource, /const previewCoverStyle: CSSProperties/);
   assert.match(source, /export function criarMiniCoverStyle\(/);
   assert.match(source, /export function criarPreviewCoverStyle\(/);
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect/);
