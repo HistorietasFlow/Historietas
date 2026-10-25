@@ -1539,3 +1539,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A seleção pura das obras locais autorizadas e da obra alvo foi isolada em `editar-obra-local-selection.ts`, preservando ownership, ordem e fallbacks.
 - A página continua orquestrando carregamento local/remoto, capítulos, normalização, persistência, backup, setters e cancelamento.
+
+## Registro da Fase 37 — Editar Obra
+
+- A leitura pura de `obraId` dos search params foi isolada em `editar-obra-search-params.ts`, preservando `URLSearchParams`, fallback vazio e valores sem trim adicional.
+- A página manteve a leitura de `window.location.search`, o timer, o controle de cancelamento e toda a orquestração do carregamento.
