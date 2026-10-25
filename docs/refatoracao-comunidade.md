@@ -1574,3 +1574,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os blocos visuais de upload da capa e do arquivo completo foram isolados em `components/EditarObraAssetUploads.tsx`, preservando inputs, accepts, refs, callbacks, textos, erros e responsividade.
 - A página manteve os handlers, refs, estados, validações e toda a orquestração; `fieldGroupStyle`, `labelStyle` e `hintStyle` passaram a ser compartilhados com o componente ao lado de `safeTextStyle`.
+
+## Registro da Fase 44 — Editar Obra
+
+- O bloco visual de Formato e Gênero foi isolado em `components/EditarObraFormatGenreFields.tsx`, preservando selects, valores especiais, campos personalizados, opções e responsividade.
+- A página manteve os quatro callbacks, sanitização, limpeza dos valores personalizados e marcação de alteração; `inputStyle` passou a ser compartilhado sem duplicação.

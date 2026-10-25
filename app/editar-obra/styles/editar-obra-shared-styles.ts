@@ -26,3 +26,21 @@ export const hintStyle: CSSProperties = {
   fontWeight: 650,
   ...safeTextStyle,
 };
+
+export const inputStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "46px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "var(--historietas-editar-obra-bg-deep, #000000)",
+  color: "#FFFFFF",
+  padding: "0 14px",
+  outline: "none",
+  fontSize: "13px",
+  fontWeight: 700,
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxShadow: "none",
+};
