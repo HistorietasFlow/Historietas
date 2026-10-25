@@ -11,6 +11,7 @@ import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import { EditarCapituloLanguageBridge } from "./components/EditarCapituloLanguageBridge";
+import { useEditarCapituloDesktopMode } from "./hooks/useEditarCapituloDesktopMode";
 import {
   contarLetrasNumeros,
   criarTituloPorNomeArquivo,
@@ -141,38 +142,9 @@ export default function EditarCapituloPage() {
   const [texto, setTexto] = useState("");
   const [arquivoImportadoNome, setArquivoImportadoNome] = useState("");
   const [arquivoImportadoErro, setArquivoImportadoErro] = useState("");
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useEditarCapituloDesktopMode();
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     let cancelado = false;
