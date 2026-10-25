@@ -35,6 +35,13 @@ const supabaseMappersSource = readFileSync(
   ),
   "utf8",
 );
+const textImportSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-text-import.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const transpilar = (source) =>
   typescript.transpileModule(source, {
     compilerOptions: {
@@ -89,7 +96,7 @@ test("Editar Capítulo delega somente as métricas ao módulo extraído", () => 
   );
   assert.match(
     pageSource,
-    /import \{[\s\S]*?calcularEstatisticasCapitulo,[\s\S]*?calcularProgressoLeitura,[\s\S]*?\} from "\.\/lib\/editar-capitulo-metrics-utils";/,
+    /import \{ calcularProgressoLeitura \} from "\.\/lib\/editar-capitulo-metrics-utils";/,
   );
   assert.match(
     supabaseMappersSource,
@@ -102,7 +109,7 @@ test("Editar Capítulo delega somente as métricas ao módulo extraído", () => 
     workNormalizerSource,
     /progressoLeitura: calcularProgressoLeitura\(capitulosNormalizados\)/,
   );
-  assert.match(pageSource, /const estatisticasImportadas = calcularEstatisticasCapitulo\(/);
+  assert.match(textImportSource, /const estatisticasImportadas = calcularEstatisticasCapitulo\(/);
   assert.match(supabaseMappersSource, /progressoLeitura: calcularProgressoLeitura\(capitulos\)/);
   assert.match(supabaseMappersSource, /visualizacoes: normalizarNumeroEditarCapitulo\(/);
   assert.match(supabaseMappersSource, /totalCurtidas: normalizarNumeroEditarCapitulo\(/);

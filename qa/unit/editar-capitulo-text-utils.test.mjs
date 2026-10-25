@@ -28,6 +28,13 @@ const validationSource = readFileSync(
   ),
   "utf8",
 );
+const textImportSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-text-import.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const textUtilsJavascript = typescript.transpileModule(textUtilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -55,8 +62,8 @@ test("helpers de texto de Editar Capítulo preservam Unicode, palavras e título
 
 test("Editar Capítulo delega somente os helpers de texto ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?contarLetrasNumeros,[\s\S]*?criarTituloPorNomeArquivo,[\s\S]*?\} from "\.\/lib\/editar-capitulo-text-utils";/,
+    textImportSource,
+    /import \{[\s\S]*?contarLetrasNumeros,[\s\S]*?criarTituloPorNomeArquivo,[\s\S]*?\} from "\.\/editar-capitulo-text-utils";/,
   );
   assert.match(
     metricsSource,
@@ -67,8 +74,8 @@ test("Editar Capítulo delega somente os helpers de texto ao módulo extraído",
   assert.doesNotMatch(pageSource, /function criarTituloPorNomeArquivo\(/);
   assert.match(metricsSource, /const palavras = contarPalavras\(textoLimpo\);/);
   assert.match(metricsSource, /const caracteresValidos = contarLetrasNumeros\(textoLimpo\);/);
-  assert.match(pageSource, /const tituloArquivo = criarTituloPorNomeArquivo\(arquivo\.name\);/);
-  assert.match(pageSource, /if \(contarLetrasNumeros\(textoImportado\) < 20\)/);
+  assert.match(textImportSource, /const tituloArquivo = criarTituloPorNomeArquivo\(arquivo\.name\);/);
+  assert.match(textImportSource, /if \(contarLetrasNumeros\(textoImportado\) < 20\)/);
   assert.match(
     validationSource,
     /import \{ contarLetrasNumeros \} from "\.\/editar-capitulo-text-utils";/,
