@@ -21,6 +21,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const workNormalizerSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const transpilar = (source) =>
   typescript.transpileModule(source, {
     compilerOptions: {
@@ -80,7 +87,10 @@ test("Editar Capítulo delega somente as métricas ao módulo extraído", () => 
   assert.doesNotMatch(pageSource, /function normalizarNumeroEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function calcularEstatisticasCapitulo\(/);
   assert.doesNotMatch(pageSource, /function calcularProgressoLeitura\(/);
-  assert.match(pageSource, /progressoLeitura: calcularProgressoLeitura\(capitulosNormalizados\)/);
+  assert.match(
+    workNormalizerSource,
+    /progressoLeitura: calcularProgressoLeitura\(capitulosNormalizados\)/,
+  );
   assert.match(pageSource, /const estatisticasImportadas = calcularEstatisticasCapitulo\(/);
   assert.match(pageSource, /visualizacoes: normalizarNumeroEditarCapitulo\(/);
   assert.match(pageSource, /totalCurtidas: normalizarNumeroEditarCapitulo\(/);

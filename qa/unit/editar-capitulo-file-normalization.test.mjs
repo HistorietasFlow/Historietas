@@ -21,6 +21,13 @@ const backupSource = readFileSync(
   ),
   "utf8",
 );
+const workNormalizerSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -97,12 +104,18 @@ test("normalizador de arquivo de Editar Capítulo preserva valores validados e f
 
 test("Editar Capítulo delega somente a normalização de arquivo ao módulo extraído", () => {
   assert.match(
+    workNormalizerSource,
+    /import \{ normalizarArquivoObra \} from "\.\/editar-capitulo-file-normalization";/,
+  );
+  assert.doesNotMatch(pageSource, /function normalizarArquivoObra\(/);
+  assert.doesNotMatch(
     pageSource,
     /import \{ normalizarArquivoObra \} from "\.\/lib\/editar-capitulo-file-normalization";/,
   );
-  assert.doesNotMatch(pageSource, /function normalizarArquivoObra\(/);
-  assert.match(pageSource, /normalizarArquivoObra\(obra\.arquivoObra\)/);
-  assert.match(pageSource, /arquivoObra: normalizarArquivoObra\(obra\.arquivoObra\)/);
+  assert.match(
+    workNormalizerSource,
+    /arquivoObra: normalizarArquivoObra\(obra\.arquivoObra\)/,
+  );
   assert.match(
     backupSource,
     /const arquivoNormalizado = normalizarArquivoObra\(arquivo\);/,

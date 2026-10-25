@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const workNormalizerSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/lib/editar-capitulo-work-normalizer.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const normalizerJavascript = typescript.transpileModule(normalizerSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -113,12 +120,20 @@ test("normalizarCapitulo preserva coerções e validação estrita de ordem", ()
 test("Editar Capítulo delega somente normalizarCapitulo ao módulo extraído", () => {
   assert.match(
     pageSource,
-    /import \{ normalizarCapitulo \} from "\.\/lib\/editar-capitulo-chapter-normalizer";/,
+    /import \{ normalizarObra \} from "\.\/lib\/editar-capitulo-work-normalizer";/,
   );
   assert.doesNotMatch(pageSource, /function normalizarCapitulo\(/);
-  assert.match(
+  assert.doesNotMatch(
     pageSource,
+    /import \{ normalizarCapitulo \} from "\.\/lib\/editar-capitulo-chapter-normalizer";/,
+  );
+  assert.match(
+    workNormalizerSource,
     /obra\.capitulos\.map\(\(capitulo, capituloIndex\) =>\s*normalizarCapitulo\(capitulo, capituloIndex\)\s*\)/,
+  );
+  assert.match(
+    workNormalizerSource,
+    /import \{ normalizarCapitulo \} from "\.\/editar-capitulo-chapter-normalizer";/,
   );
   assert.match(normalizerSource, /typeof capitulo\.publicado === "boolean"/);
   assert.match(normalizerSource, /Number\.isInteger\(capitulo\.ordem\)/);
