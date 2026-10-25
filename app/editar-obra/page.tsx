@@ -10,6 +10,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import { EditarObraAssetUploads } from "./components/EditarObraAssetUploads";
 import { EditarObraContentRatingField } from "./components/EditarObraContentRatingField";
 import { EditarObraFormatGenreFields } from "./components/EditarObraFormatGenreFields";
+import { EditarObraIdentityFields } from "./components/EditarObraIdentityFields";
 import { EditarObraLanguageBridge } from "./components/EditarObraLanguageBridge";
 import { EditarObraFormActions } from "./components/EditarObraFormActions";
 import { EditarObraPreview } from "./components/EditarObraPreview";
@@ -17,8 +18,6 @@ import { EditarObraTagField } from "./components/EditarObraTagField";
 import { editarObraPageCss } from "./styles/editar-obra-page-css";
 import {
   fieldGroupStyle,
-  hintStyle,
-  inputStyle,
   labelStyle,
   safeTextStyle,
 } from "./styles/editar-obra-shared-styles";
@@ -1031,41 +1030,18 @@ export default function EditarObraPage() {
               onRemoverArquivoObra={removerArquivoObra}
             />
 
-            <div style={fieldGroupStyle}>
-              <label htmlFor="editar-obra-titulo" style={labelStyle}>Título da obra</label>
-
-              <input
-                id="editar-obra-titulo"
-                value={titulo}
-                onChange={(event) => {
-                  setTitulo(event.target.value);
-                  marcarAlteracao();
-                }}
-                placeholder="Digite o título"
-                style={inputStyle}
-                type="text"
-              />
-
-              <span style={hintStyle}>Mínimo: 3 letras ou números.</span>
-            </div>
-
-            <div style={fieldGroupStyle}>
-              <label htmlFor="editar-obra-autor" style={labelStyle}>Autor</label>
-
-              <input
-                id="editar-obra-autor"
-                value={autor}
-                onChange={(event) => {
-                  setAutor(event.target.value);
-                  marcarAlteracao();
-                }}
-                placeholder="Nome do autor"
-                style={inputStyle}
-                type="text"
-              />
-
-              <span style={hintStyle}>Mínimo: 2 letras ou números.</span>
-            </div>
+            <EditarObraIdentityFields
+              titulo={titulo}
+              autor={autor}
+              onTituloChange={(novoTitulo) => {
+                setTitulo(novoTitulo);
+                marcarAlteracao();
+              }}
+              onAutorChange={(novoAutor) => {
+                setAutor(novoAutor);
+                marcarAlteracao();
+              }}
+            />
 
             <EditarObraFormatGenreFields
               isDesktop={isDesktop}
