@@ -1609,3 +1609,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A bridge de tradução foi isolada em `components/EditarCapituloLanguageBridge.tsx`, preservando textos, padrões dinâmicos, `MutationObserver`, restauração condicional e a dependência de idioma.
 - A página manteve todas as ocorrências de `<EditarCapituloLanguageBridge />` e a orquestração dos seus estados de renderização.
+
+## Registro da Fase 2 — Editar Capítulo
+
+- Os utilitários de `localStorage` por usuário foram isolados em `lib/editar-capitulo-storage-utils.ts`, preservando chaves, leitura segura, serialização e falhas silenciosas.
+- A página manteve as constantes de storage e os consumidores de backup, obras locais e persistência por conta.
