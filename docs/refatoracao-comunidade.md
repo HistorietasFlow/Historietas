@@ -1659,3 +1659,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os mapeadores puros de capítulo e obra vindos do Supabase foram isolados em `lib/editar-capitulo-supabase-mappers.ts`, preservando a fonte de verdade remota dos capítulos, métricas e fallbacks locais.
 - A página manteve queries, paginação, carregamento e o fluxo de aplicação da obra mapeada.
+
+## Registro da Fase 12 — Editar Capítulo
+
+- Os helpers puros de leitura e aplicação do nome de profile foram isolados em `lib/editar-capitulo-profile-utils.ts`, preservando ownership, referências e fallbacks.
+- A página manteve o loader sensível, a ordem das queries Supabase e todos os consumidores da aplicação do profile.
