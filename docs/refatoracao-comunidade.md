@@ -1689,3 +1689,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle responsivo de desktop foi isolado em `hooks/useEditarCapituloDesktopMode.ts`, preservando o estado inicial, breakpoint, atualização postergada, APIs moderna e legada e respectivos cleanups.
 - A página manteve todos os consumidores visuais de `isDesktop` e a orquestração dos demais efeitos.
+
+## Registro da Fase 18 — Editar Capítulo
+
+- A mensagem pura de confirmação de exclusão foi isolada em `lib/editar-capitulo-delete-message.ts`, preservando os textos por idioma, o título trimado e seu fallback.
+- A página manteve `window.confirm`, a ordem e o restante do fluxo de exclusão do capítulo.

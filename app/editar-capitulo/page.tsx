@@ -7,7 +7,6 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { idObraSupabaseValido } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 import { EditarCapituloLanguageBridge } from "./components/EditarCapituloLanguageBridge";
@@ -38,6 +37,7 @@ import {
 } from "./lib/editar-capitulo-local-work-storage";
 import { mapearObraSupabase } from "./lib/editar-capitulo-supabase-mappers";
 import { aplicarNomeAutorProfileEditarCapitulo } from "./lib/editar-capitulo-profile-utils";
+import { criarMensagemConfirmacaoExclusaoCapitulo } from "./lib/editar-capitulo-delete-message";
 
 type CapituloLocal = {
   id: string;
@@ -106,23 +106,6 @@ type CapituloSupabaseRow = {
 
 
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function criarMensagemConfirmacaoExclusaoCapitulo(
-  tituloCapitulo: string,
-  idioma: HistorietasLanguage
-) {
-  const tituloSeguro = tituloCapitulo.trim() || "Capítulo";
-
-  if (idioma === "en") {
-    return `Delete "${tituloSeguro}" permanently? This action cannot be undone.`;
-  }
-
-  if (idioma === "es") {
-    return `¿Eliminar "${tituloSeguro}" permanentemente? Esta acción no se puede deshacer.`;
-  }
-
-  return `Excluir "${tituloSeguro}" permanentemente? Esta ação não pode ser desfeita.`;
-}
 
 
 export default function EditarCapituloPage() {
