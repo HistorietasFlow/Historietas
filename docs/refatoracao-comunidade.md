@@ -1569,3 +1569,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O rodapé visual de ações e progresso foi isolado em `components/EditarObraFormActions.tsx`, preservando submit, estados, links, SVG, barra e responsividade.
 - A página manteve o `<form>`, `onSubmit`, os valores derivados e toda a orquestração; os estilos exclusivos do rodapé passaram ao componente usando o mesmo `safeTextStyle` compartilhado.
+
+## Registro da Fase 43 — Editar Obra
+
+- Os blocos visuais de upload da capa e do arquivo completo foram isolados em `components/EditarObraAssetUploads.tsx`, preservando inputs, accepts, refs, callbacks, textos, erros e responsividade.
+- A página manteve os handlers, refs, estados, validações e toda a orquestração; `fieldGroupStyle`, `labelStyle` e `hintStyle` passaram a ser compartilhados com o componente ao lado de `safeTextStyle`.
