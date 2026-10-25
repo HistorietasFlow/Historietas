@@ -39,6 +39,7 @@ import { normalizarObraSupabase } from "./lib/editar-obra-supabase-work-normaliz
 import { prepararObrasCarregadasEdicaoObra } from "./lib/editar-obra-loaded-work-merge";
 import { carregarCapitulosSupabaseEdicaoObra } from "./lib/editar-obra-chapters-loader";
 import { carregarObraSupabaseEdicaoObra } from "./lib/editar-obra-work-loader";
+import { obterObraIdEdicaoObra } from "./lib/editar-obra-search-params";
 import {
   carregarObrasLocalStorageEdicaoObra,
   salvarObrasDoUsuarioPreservandoOutrasContas,
@@ -301,8 +302,7 @@ export default function EditarObraPage() {
     }
 
     async function carregarObra() {
-      const params = new URLSearchParams(window.location.search);
-      const obraIdParam = params.get("obraId") || "";
+      const obraIdParam = obterObraIdEdicaoObra(window.location.search);
 
       window.setTimeout(() => {
         if (!cancelado) {
