@@ -67,7 +67,7 @@ function criarObras() {
   ];
 }
 
-function useValoresDerivadosParaTeste({
+function calcularValores({
   obras = criarObras(),
   obraId = "obra-alvo",
   capituloId = "capitulo-alvo",
@@ -76,13 +76,15 @@ function useValoresDerivadosParaTeste({
 } = {}) {
   chamadasLeitura.length = 0;
 
-  return useEditarCapituloDerivedValues({
-    obras,
-    obraId,
-    capituloId,
-    titulo,
-    texto,
-  });
+  return Reflect.apply(useEditarCapituloDerivedValues, null, [
+    {
+      obras,
+      obraId,
+      capituloId,
+      titulo,
+      texto,
+    },
+  ]);
 }
 
 test("valores derivados preservam a primeira obra, capítulo e ordem positiva", () => {
@@ -94,7 +96,7 @@ test("valores derivados preservam a primeira obra, capítulo e ordem positiva", 
     },
     ...criarObras(),
   ];
-  const valores = useValoresDerivadosParaTeste({ obras });
+  const valores = calcularValores({ obras });
 
   assert.equal(valores.obraAtual, obras[0]);
   assert.equal(valores.capituloAtual, obras[0].capitulos[0]);
@@ -108,7 +110,7 @@ test("valores derivados preservam a primeira obra, capítulo e ordem positiva", 
 test("valores derivados preservam fallbacks de ordem, links e prévia", () => {
   const obras = criarObras();
   obras[1].capitulos[1].ordem = 0;
-  const comOrdemZero = useValoresDerivadosParaTeste({
+  const comOrdemZero = calcularValores({
     obras,
     titulo: "   ",
     texto: "   ",
@@ -126,20 +128,19 @@ test("valores derivados preservam fallbacks de ordem, links e prévia", () => {
     const obrasComOrdemInvalida = criarObras();
     obrasComOrdemInvalida[1].capitulos[1].ordem = ordem;
     assert.equal(
-      useValoresDerivadosParaTeste({ obras: obrasComOrdemInvalida })
-        .numeroCapitulo,
+      calcularValores({ obras: obrasComOrdemInvalida }).numeroCapitulo,
       2,
     );
   }
 
-  const semCapitulo = useValoresDerivadosParaTeste({
+  const semCapitulo = calcularValores({
     capituloId: "capitulo-inexistente",
   });
   assert.equal(semCapitulo.capituloAtual, null);
   assert.equal(semCapitulo.numeroCapitulo, 0);
   assert.equal(semCapitulo.lerCapituloHref, "/painel-autor");
 
-  const semObra = useValoresDerivadosParaTeste({
+  const semObra = calcularValores({
     obraId: "obra-inexistente",
     titulo: "",
     texto: "",
