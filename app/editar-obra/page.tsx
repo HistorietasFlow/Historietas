@@ -14,13 +14,10 @@ import { EditarObraIdentityFields } from "./components/EditarObraIdentityFields"
 import { EditarObraLanguageBridge } from "./components/EditarObraLanguageBridge";
 import { EditarObraFormActions } from "./components/EditarObraFormActions";
 import { EditarObraPreview } from "./components/EditarObraPreview";
+import { EditarObraSynopsisField } from "./components/EditarObraSynopsisField";
 import { EditarObraTagField } from "./components/EditarObraTagField";
 import { editarObraPageCss } from "./styles/editar-obra-page-css";
-import {
-  fieldGroupStyle,
-  labelStyle,
-  safeTextStyle,
-} from "./styles/editar-obra-shared-styles";
+import { safeTextStyle } from "./styles/editar-obra-shared-styles";
 import {
   ehClassificacao18,
   type AvisoConteudo18,
@@ -1120,20 +1117,14 @@ export default function EditarObraPage() {
               }}
             />
 
-            <div style={fieldGroupStyle}>
-              <label htmlFor="editar-obra-sinopse" style={labelStyle}>Sinopse</label>
-
-              <textarea
-                id="editar-obra-sinopse"
-                value={sinopse}
-                onChange={(event) => {
-                  setSinopse(event.target.value);
-                  marcarAlteracao();
-                }}
-                placeholder="Escreva a sinopse da obra"
-                style={isDesktop ? desktopTextareaStyle : textareaStyle}
-              />
-            </div>
+            <EditarObraSynopsisField
+              isDesktop={isDesktop}
+              sinopse={sinopse}
+              onSinopseChange={(novaSinopse) => {
+                setSinopse(novaSinopse);
+                marcarAlteracao();
+              }}
+            />
 
             <EditarObraFormActions
               isDesktop={isDesktop}
@@ -1365,40 +1356,6 @@ const formStyle: CSSProperties = {
 
 
 
-const textareaStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "90px",
-  borderRadius: "20px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-editar-obra-bg-deep, #000000)",
-  color: "#FFFFFF",
-  padding: "14px",
-  outline: "none",
-  fontSize: "13px",
-  fontWeight: 700,
-  lineHeight: 1.58,
-  resize: "vertical",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1454,10 +1411,4 @@ const desktopFormStyle: CSSProperties = {
   borderRadius: 0,
   gap: "16px",
   overflow: "visible",
-};
-
-
-const desktopTextareaStyle: CSSProperties = {
-  ...textareaStyle,
-  minHeight: "132px",
 };

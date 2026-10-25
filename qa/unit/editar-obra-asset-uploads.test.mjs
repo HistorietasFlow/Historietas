@@ -79,7 +79,7 @@ test("uploads concentram estilos exclusivos e compartilham estilos de campo", ()
   );
   assert.match(
     pageSource,
-    /import \{[\s\S]*?fieldGroupStyle,[\s\S]*?labelStyle,[\s\S]*?safeTextStyle,[\s\S]*?\} from "\.\/styles\/editar-obra-shared-styles";/,
+    /import \{ safeTextStyle \} from "\.\/styles\/editar-obra-shared-styles";/,
   );
   for (const estilo of [
     "fieldGroupStyle",

@@ -1594,3 +1594,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A apresentação dos campos de identificação Título da obra e Autor foi isolada em `components/EditarObraIdentityFields.tsx`, preservando ids, labels, placeholders, hints e estilos compartilhados.
 - A página manteve os setters de título e autor e a marcação de alteração nos callbacks que controla.
+
+## Registro da Fase 48 — Editar Obra
+
+- A apresentação do campo de Sinopse foi isolada em `components/EditarObraSynopsisField.tsx`, preservando responsividade, textarea, estilos e `safeTextStyle` compartilhado.
+- A página manteve a atualização de estado e a marcação de alteração no callback que controla.
