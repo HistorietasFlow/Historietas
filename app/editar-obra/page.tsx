@@ -8,6 +8,7 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { EditarObraAssetUploads } from "./components/EditarObraAssetUploads";
+import { EditarObraFormatGenreFields } from "./components/EditarObraFormatGenreFields";
 import { EditarObraLanguageBridge } from "./components/EditarObraLanguageBridge";
 import { EditarObraFormActions } from "./components/EditarObraFormActions";
 import { EditarObraPreview } from "./components/EditarObraPreview";
@@ -15,6 +16,7 @@ import { editarObraPageCss } from "./styles/editar-obra-page-css";
 import {
   fieldGroupStyle,
   hintStyle,
+  inputStyle,
   labelStyle,
   safeTextStyle,
 } from "./styles/editar-obra-shared-styles";
@@ -1066,101 +1068,51 @@ export default function EditarObraPage() {
               <span style={hintStyle}>Mínimo: 2 letras ou números.</span>
             </div>
 
-            <div style={isDesktop ? desktopDoubleFieldStyle : doubleFieldStyle}>
-              <div style={fieldGroupStyle}>
-                <label htmlFor="editar-obra-formato" style={labelStyle}>Formato</label>
+            <EditarObraFormatGenreFields
+              isDesktop={isDesktop}
+              formato={formato}
+              formatoPersonalizado={formatoPersonalizado}
+              formatoEhPersonalizado={formatoEhPersonalizado}
+              genero={genero}
+              generoPersonalizado={generoPersonalizado}
+              generoEhPersonalizado={generoEhPersonalizado}
+              onFormatoChange={(novoFormato) => {
+                setFormato(novoFormato);
 
-                <select
-                  id="editar-obra-formato"
-                  value={formato}
-                  onChange={(event) => {
-                    const novoFormato = event.target.value;
+                if (novoFormato !== OUTRO_FORMATO_VALUE) {
+                  setFormatoPersonalizado("");
+                }
 
-                    setFormato(novoFormato);
+                marcarAlteracao();
+              }}
+              onFormatoPersonalizadoChange={(novoFormatoPersonalizado) => {
+                setFormatoPersonalizado(
+                  limparTextoPersonalizado(
+                    novoFormatoPersonalizado,
+                    LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+                  )
+                );
+                marcarAlteracao();
+              }}
+              onGeneroChange={(novoGenero) => {
+                setGenero(novoGenero);
 
-                    if (novoFormato !== OUTRO_FORMATO_VALUE) {
-                      setFormatoPersonalizado("");
-                    }
+                if (novoGenero !== OUTRO_GENERO_VALUE) {
+                  setGeneroPersonalizado("");
+                }
 
-                    marcarAlteracao();
-                  }}
-                  style={inputStyle}
-                >
-                  <option value="">Escolha um formato</option>
-                  {OPCOES_FORMATO_OBRA.map((opcao) => (
-                    <option key={opcao}>{opcao}</option>
-                  ))}
-                  <option value={OUTRO_FORMATO_VALUE}>Outro formato</option>
-                </select>
-
-                {formatoEhPersonalizado && (
-                  <input
-                    aria-label="Outro formato"
-                    value={formatoPersonalizado}
-                    onChange={(event) => {
-                      setFormatoPersonalizado(
-                        limparTextoPersonalizado(
-                          event.target.value,
-                          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-                        )
-                      );
-                      marcarAlteracao();
-                    }}
-                    style={inputStyle}
-                    placeholder="Digite o formato"
-                    maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
-                    type="text"
-                  />
-                )}
-              </div>
-
-              <div style={fieldGroupStyle}>
-                <label htmlFor="editar-obra-genero" style={labelStyle}>Gênero</label>
-
-                <select
-                  id="editar-obra-genero"
-                  value={genero}
-                  onChange={(event) => {
-                    const novoGenero = event.target.value;
-
-                    setGenero(novoGenero);
-
-                    if (novoGenero !== OUTRO_GENERO_VALUE) {
-                      setGeneroPersonalizado("");
-                    }
-
-                    marcarAlteracao();
-                  }}
-                  style={inputStyle}
-                >
-                  <option value="">Escolha um gênero</option>
-                  {OPCOES_GENERO_OBRA.map((opcao) => (
-                    <option key={opcao}>{opcao}</option>
-                  ))}
-                  <option value={OUTRO_GENERO_VALUE}>Outro gênero</option>
-                </select>
-
-                {generoEhPersonalizado && (
-                  <input
-                    aria-label="Outro gênero"
-                    value={generoPersonalizado}
-                    onChange={(event) => {
-                      setGeneroPersonalizado(
-                        limparTextoPersonalizado(
-                          event.target.value,
-                          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-                        )
-                      );
-                      marcarAlteracao();
-                    }}
-                    style={inputStyle}
-                    placeholder="Digite o gênero"
-                    maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
-                    type="text"
-                  />
-                )}
-              </div>
-            </div>
+                marcarAlteracao();
+              }}
+              onGeneroPersonalizadoChange={(novoGeneroPersonalizado) => {
+                setGeneroPersonalizado(
+                  limparTextoPersonalizado(
+                    novoGeneroPersonalizado,
+                    LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+                  )
+                );
+                marcarAlteracao();
+              }}
+            />
 
             <div style={fieldGroupStyle}>
               <label htmlFor="editar-obra-tag" style={labelStyle}>Tag</label>
@@ -1511,13 +1463,6 @@ const formStyle: CSSProperties = {
 
 
 
-const doubleFieldStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "12px",
-  minWidth: 0,
-};
-
 const adultWarningsBoxStyle: CSSProperties = {
   display: "grid",
   gap: "10px",
@@ -1572,24 +1517,6 @@ const adultWarningCheckboxStyle: CSSProperties = {
   marginTop: "1px",
   accentColor: "#FF6680",
   flex: "0 0 auto",
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "46px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-editar-obra-bg-deep, #000000)",
-  color: "#FFFFFF",
-  padding: "0 14px",
-  outline: "none",
-  fontSize: "13px",
-  fontWeight: 700,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxShadow: "none",
 };
 
 const textareaStyle: CSSProperties = {
@@ -1683,12 +1610,6 @@ const desktopFormStyle: CSSProperties = {
   overflow: "visible",
 };
 
-
-const desktopDoubleFieldStyle: CSSProperties = {
-  ...doubleFieldStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "16px",
-};
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
