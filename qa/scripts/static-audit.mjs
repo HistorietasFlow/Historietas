@@ -2250,6 +2250,13 @@ const painelAutorSupabaseWorksLoader = fs.existsSync(
 )
   ? fs.readFileSync(painelAutorSupabaseWorksLoaderPath, "utf8")
   : "";
+const editarObraChaptersLoaderPath = path.join(
+  ROOT_DIR,
+  "app/editar-obra/lib/editar-obra-chapters-loader.ts"
+);
+const editarObraChaptersLoader = fs.existsSync(editarObraChaptersLoaderPath)
+  ? fs.readFileSync(editarObraChaptersLoaderPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2284,6 +2291,10 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   }${
     relativePath === "app/painel-autor/page.tsx"
       ? `\n${painelAutorSupabaseChaptersLoader}\n${painelAutorSupabaseWorksLoader}`
+      : ""
+  }${
+    relativePath === "app/editar-obra/page.tsx"
+      ? `\n${editarObraChaptersLoader}`
       : ""
   }${
     relativePath === "app/obra/[slug]/ObraDinamicaClient.tsx"

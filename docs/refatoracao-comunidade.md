@@ -1524,3 +1524,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A preparação pura da obra remota com o nome de profile e da lista final carregada foi isolada em `editar-obra-loaded-work-merge.ts`, preservando ordem, ownership e a obra remota com seus capítulos como fonte de verdade.
 - Consultas e paginação Supabase, persistência local, backup, setters, controle de cancelamento e aplicação do formulário permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
+
+## Registro da Fase 34 — Editar Obra
+
+- O carregamento paginado remoto dos capítulos foi isolado em `editar-obra-chapters-loader.ts`, preservando consulta, filtros, ordenação, fallback vazio e warning em falhas.
+- Autenticação, profile, ownership, consulta da obra, normalização, reconciliação, persistência, backup, setters e controle de cancelamento permaneceram em `app/editar-obra/page.tsx`, mantendo os capítulos remotos como fonte de verdade.
