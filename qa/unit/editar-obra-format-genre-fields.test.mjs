@@ -86,7 +86,7 @@ test("campos concentram layout exclusivo e compartilham inputStyle", () => {
   );
   assert.match(
     pageSource,
-    /import \{[\s\S]*?fieldGroupStyle,[\s\S]*?labelStyle,[\s\S]*?safeTextStyle,[\s\S]*?\} from "\.\/styles\/editar-obra-shared-styles";/,
+    /import \{ safeTextStyle \} from "\.\/styles\/editar-obra-shared-styles";/,
   );
   assert.match(sharedStylesSource, /export const inputStyle: CSSProperties/);
   for (const estilo of ["doubleFieldStyle", "desktopDoubleFieldStyle"]) {

@@ -73,7 +73,7 @@ test("prévia concentra os estilos exclusivos e compartilha safeTextStyle", () =
   assert.doesNotMatch(pageSource, /const safeTextStyle: CSSProperties/);
   assert.match(
     pageSource,
-    /import \{[\s\S]*?safeTextStyle,[\s\S]*?\} from "\.\/styles\/editar-obra-shared-styles";/,
+    /import \{ safeTextStyle \} from "\.\/styles\/editar-obra-shared-styles";/,
   );
   for (const estilo of [
     "previewPanelStyle",
