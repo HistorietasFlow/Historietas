@@ -24,6 +24,10 @@ import {
   calcularProgressoLeitura,
   normalizarNumeroEditarCapitulo,
 } from "./lib/editar-capitulo-metrics-utils";
+import {
+  criarHrefLeituraCapitulo,
+  criarLoginHrefEditarCapitulo,
+} from "./lib/editar-capitulo-route-utils";
 
 type CapituloLocal = {
   id: string;
@@ -121,52 +125,6 @@ type CapituloSupabaseRow = {
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function criarLoginHrefEditarCapitulo(obraId?: string, capituloId?: string) {
-  const obraIdLimpo = obraId?.trim() || "";
-  const capituloIdLimpo = capituloId?.trim() || "";
-  const paramsEditor = new URLSearchParams();
-
-  if (obraIdLimpo) {
-    paramsEditor.set("obraId", obraIdLimpo);
-  }
-
-  if (capituloIdLimpo) {
-    paramsEditor.set("capituloId", capituloIdLimpo);
-  }
-
-  const queryEditor = paramsEditor.toString();
-  const redirectTo = queryEditor
-    ? `/editar-capitulo?${queryEditor}`
-    : "/editar-capitulo";
-  const paramsLogin = new URLSearchParams({
-    redirectTo,
-  });
-
-  return `/login?${paramsLogin.toString()}`;
-}
-
-function criarHrefLeituraCapitulo(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
-  capituloId: string,
-  numeroCapitulo: number
-) {
-  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  if (
-    obra.publicado &&
-    idObraSupabaseValido(obra.id) &&
-    slugSeguro &&
-    Number.isInteger(numeroCapitulo) &&
-    numeroCapitulo > 0
-  ) {
-    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
-  }
-
-  return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id
-  )}&capituloId=${encodeURIComponent(capituloId)}`;
-}
 
 function criarChavesObra(obra: Pick<ObraLocal, "id" | "titulo" | "slug">) {
   const chaves = [

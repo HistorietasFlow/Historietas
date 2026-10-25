@@ -1624,3 +1624,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de métricas e números foram isolados em `lib/editar-capitulo-metrics-utils.ts`, preservando parsing, estatísticas do capítulo e progresso de leitura.
 - A página manteve os consumidores de normalização, importação e atualização de obras.
+
+## Registro da Fase 5 — Editar Capítulo
+
+- Os helpers puros de rota foram isolados em `lib/editar-capitulo-route-utils.ts`, preservando redirects de login, encoding e a decisão entre leitura pública e fallback local.
+- A página manteve os consumidores de autenticação, diário, notificações e href derivado de leitura.
