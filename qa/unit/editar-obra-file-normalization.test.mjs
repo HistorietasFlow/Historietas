@@ -39,6 +39,7 @@ import "./editar-obra-form-actions.test.mjs";
 import "./editar-obra-asset-uploads.test.mjs";
 import "./editar-obra-format-genre-fields.test.mjs";
 import "./editar-obra-content-rating-field.test.mjs";
+import "./editar-obra-tag-field.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-file-normalization.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");

@@ -13,6 +13,7 @@ import { EditarObraFormatGenreFields } from "./components/EditarObraFormatGenreF
 import { EditarObraLanguageBridge } from "./components/EditarObraLanguageBridge";
 import { EditarObraFormActions } from "./components/EditarObraFormActions";
 import { EditarObraPreview } from "./components/EditarObraPreview";
+import { EditarObraTagField } from "./components/EditarObraTagField";
 import { editarObraPageCss } from "./styles/editar-obra-page-css";
 import {
   fieldGroupStyle,
@@ -1112,41 +1113,13 @@ export default function EditarObraPage() {
               }}
             />
 
-            <div style={fieldGroupStyle}>
-              <label htmlFor="editar-obra-tag" style={labelStyle}>Tag</label>
-
-              <select
-                id="editar-obra-tag"
-                value={usarTagPersonalizada ? OUTRA_TAG_VALUE : tagsTratadas[0] || ""}
-                onChange={(event) => {
-                  adicionarTagSelecionada(event.target.value);
-                }}
-                style={inputStyle}
-              >
-                <option value="">Escolha uma tag</option>
-
-                {OPCOES_TAGS_OBRA.map((tag) => (
-                  <option key={tag} value={tag}>
-                    {tag}
-                  </option>
-                ))}
-
-                <option value={OUTRA_TAG_VALUE}>Outra tag</option>
-              </select>
-
-              {usarTagPersonalizada && (
-                <input
-                  aria-label="Outra tag"
-                  value={tagPersonalizada}
-                  onChange={(event) => atualizarTagPersonalizada(event.target.value)}
-                  style={inputStyle}
-                  placeholder="Digite a tag"
-                  maxLength={LIMITE_CARACTERES_TAG_PERSONALIZADA}
-                  type="text"
-                />
-              )}
-
-            </div>
+            <EditarObraTagField
+              usarTagPersonalizada={usarTagPersonalizada}
+              tagsTratadas={tagsTratadas}
+              tagPersonalizada={tagPersonalizada}
+              onTagChange={adicionarTagSelecionada}
+              onTagPersonalizadaChange={atualizarTagPersonalizada}
+            />
 
             <EditarObraContentRatingField
               classificacaoIndicativa={classificacaoIndicativa}
