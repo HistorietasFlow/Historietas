@@ -1599,3 +1599,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A apresentação do campo de Sinopse foi isolada em `components/EditarObraSynopsisField.tsx`, preservando responsividade, textarea, estilos e `safeTextStyle` compartilhado.
 - A página manteve a atualização de estado e a marcação de alteração no callback que controla.
+
+## Registro da Fase 49 — Editar Obra
+
+- Os estilos estáticos de layout e shell foram isolados em `styles/editar-obra-layout-styles.ts`, preservando nomes, derivações, responsividade e `safeTextStyle` compartilhado.
+- A página manteve integralmente o JSX, os estados de renderização e a orquestração da edição.
