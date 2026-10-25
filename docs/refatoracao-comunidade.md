@@ -1694,3 +1694,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A mensagem pura de confirmação de exclusão foi isolada em `lib/editar-capitulo-delete-message.ts`, preservando os textos por idioma, o título trimado e seu fallback.
 - A página manteve `window.confirm`, a ordem e o restante do fluxo de exclusão do capítulo.
+
+## Registro da Fase 19 — Editar Capítulo
+
+- A validação pura de capítulo foi isolada em `lib/editar-capitulo-validation.ts`, preservando título automático, mínimos, mensagens e prioridade das validações.
+- A página manteve a orquestração do salvamento e o tratamento de `erroValidacao` no mesmo ponto.
