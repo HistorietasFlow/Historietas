@@ -1649,3 +1649,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O normalizador local completo de obra foi isolado em `lib/editar-capitulo-work-normalizer.ts`, preservando fallbacks, aliases legados de métricas, progresso, slug, link e ordem dos capítulos.
 - A página manteve todos os consumidores da normalização e os normalizadores Supabase fora desta fronteira.
+
+## Registro da Fase 10 — Editar Capítulo
+
+- Os normalizadores puros de tags e categoria de arquivo vindas do Supabase foram isolados em `lib/editar-capitulo-supabase-normalization.ts`, preservando filtros, ordem, duplicados e fallbacks.
+- A página manteve `mapearObraSupabase` e suas mesmas expressões de precedência entre dados remotos e locais.
