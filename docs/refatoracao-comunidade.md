@@ -1529,3 +1529,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O carregamento paginado remoto dos capítulos foi isolado em `editar-obra-chapters-loader.ts`, preservando consulta, filtros, ordenação, fallback vazio e warning em falhas.
 - Autenticação, profile, ownership, consulta da obra, normalização, reconciliação, persistência, backup, setters e controle de cancelamento permaneceram em `app/editar-obra/page.tsx`, mantendo os capítulos remotos como fonte de verdade.
+
+## Registro da Fase 35 — Editar Obra
+
+- A consulta remota da obra principal foi isolada em `editar-obra-work-loader.ts`, preservando seleção, filtros de ownership, warning e fallback nulo.
+- Autenticação, profile, ownership local, capítulos, normalização, reconciliação, persistência, backup, setters e controle de cancelamento permaneceram em `app/editar-obra/page.tsx`, sem alteração intencional de comportamento.
