@@ -1544,3 +1544,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A leitura pura de `obraId` dos search params foi isolada em `editar-obra-search-params.ts`, preservando `URLSearchParams`, fallback vazio e valores sem trim adicional.
 - A página manteve a leitura de `window.location.search`, o timer, o controle de cancelamento e toda a orquestração do carregamento.
+
+## Registro da Fase 38 — Editar Obra
+
+- O lifecycle responsivo de `matchMedia` foi isolado em `useEditarObraDesktopMode`, preservando breakpoint, timer inicial, listeners modernos/legados e cleanup.
+- A página manteve todos os consumidores visuais de `isDesktop`, além de estados, refs e a orquestração do carregamento e salvamento.

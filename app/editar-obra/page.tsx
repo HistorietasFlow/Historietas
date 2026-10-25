@@ -40,6 +40,7 @@ import { prepararObrasCarregadasEdicaoObra } from "./lib/editar-obra-loaded-work
 import { carregarCapitulosSupabaseEdicaoObra } from "./lib/editar-obra-chapters-loader";
 import { carregarObraSupabaseEdicaoObra } from "./lib/editar-obra-work-loader";
 import { obterObraIdEdicaoObra } from "./lib/editar-obra-search-params";
+import { useEditarObraDesktopMode } from "./hooks/useEditarObraDesktopMode";
 import {
   carregarObrasLocalStorageEdicaoObra,
   salvarObrasDoUsuarioPreservandoOutrasContas,
@@ -226,38 +227,8 @@ export default function EditarObraPage() {
 
   const capaInputRef = useRef<HTMLInputElement | null>(null);
   const arquivoObraInputRef = useRef<HTMLInputElement | null>(null);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useEditarObraDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    const atualizarModoDesktopTimer = window.setTimeout(
-      atualizarModoDesktop,
-      0
-    );
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarModoDesktopTimer);
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarModoDesktopTimer);
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     let cancelado = false;
