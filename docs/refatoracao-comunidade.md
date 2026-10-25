@@ -1708,3 +1708,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 21 — Editar Capítulo
 
 - O CSS estático de Editar Capítulo foi isolado em `lib/editar-capitulo-page-css.ts`, preservando integralmente a template string e seus três consumidores de tema.
+
+## Registro da Fase 22 — Editar Capítulo
+
+- A leitura e preparação determinística de arquivos `.txt` e `.md` foram isoladas em `lib/editar-capitulo-text-import.ts`, mantendo o handler e a ordem dos setters na página.
