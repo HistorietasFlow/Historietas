@@ -1796,3 +1796,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O normalizador puro da obra local foi isolado em `lib/adicionar-capitulo-work-normalizer.ts`.
 - A página manteve os fluxos de carregamento e persistência como consumidores do normalizador extraído.
+
+## Registro da Fase 14 — Adicionar Capítulo
+
+- O normalizador puro da obra Supabase foi isolado em `lib/adicionar-capitulo-supabase-work-normalizer.ts`, preservando capítulos remotos, complementos locais e fallbacks de métricas.
+- A página manteve o merge entre obras locais e remotas e toda a orquestração de carregamento.
