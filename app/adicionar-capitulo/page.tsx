@@ -49,6 +49,7 @@ import { normalizarObraSupabase } from "./lib/adicionar-capitulo-supabase-work-n
 import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-utils";
 import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario, obraPertenceAoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
 import { prepararObraAdicionarCapituloParaStorage } from "./lib/adicionar-capitulo-storage-preparation";
+import { criarNotificacaoNovoCapitulo } from "./lib/adicionar-capitulo-notification-utils";
 
 type CapituloLocal = {
   id: string;
@@ -311,33 +312,6 @@ function carregarObrasLocais(userId = "") {
   );
 
   return obrasDoUsuario;
-}
-
-function criarNotificacaoNovoCapitulo(
-  obra: ObraLocal,
-  capitulo: CapituloLocal,
-  numeroCapitulo: number,
-  criadaEm: string
-): NotificacaoLocal {
-  return {
-    id: criarId(),
-    tipo: "novo-capitulo",
-    titulo: obra.publicado
-      ? "Novo capítulo publicado"
-      : "Novo capítulo salvo em rascunho",
-    mensagem: `${capitulo.titulo} foi adicionado em ${obra.titulo}.`,
-    obraId: obra.id,
-    obraTitulo: obra.titulo,
-    autor: obra.autor,
-    capituloId: capitulo.id,
-    capituloTitulo: `Capítulo ${numeroCapitulo}: ${capitulo.titulo}`,
-    href: criarHrefLeituraCapitulo(obra, capitulo, numeroCapitulo),
-    lida: false,
-    criadaEm,
-    obraPublicada: obra.publicado,
-    capa: obra.capa,
-    classificacaoIndicativa: obra.classificacaoIndicativa,
-  };
 }
 
 function salvarObrasAdicionarCapituloStorage(
