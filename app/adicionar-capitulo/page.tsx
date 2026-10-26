@@ -20,7 +20,6 @@ import {
 import { criarId } from "./lib/adicionar-capitulo-id-utils";
 import {
   aplicarAutorProfileAdicionarCapitulo,
-  obterTextoProfileAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-profile-utils";
 import {
   criarHrefLeituraCapitulo,
@@ -50,6 +49,7 @@ import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-uti
 import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario, obraPertenceAoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
 import { prepararObraAdicionarCapituloParaStorage } from "./lib/adicionar-capitulo-storage-preparation";
 import { criarNotificacaoNovoCapitulo } from "./lib/adicionar-capitulo-notification-utils";
+import { carregarNomeProfileAdicionarCapitulo } from "./actions/carregar-nome-profile-adicionar-capitulo";
 
 type CapituloLocal = {
   id: string;
@@ -125,56 +125,6 @@ type NotificacaoLocal = {
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-async function carregarNomeProfileAdicionarCapitulo(userId: string) {
-  const usuarioId = userId.trim();
-
-  if (!usuarioId) {
-    return "";
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, user_id, nome")
-      .eq("user_id", usuarioId)
-      .limit(1)
-      .maybeSingle();
-
-    if (!error && data) {
-      const profile = data as Record<string, unknown>;
-      const nome = obterTextoProfileAdicionarCapitulo(profile.nome);
-
-      if (nome) {
-        return nome;
-      }
-    }
-  } catch {
-    // O perfil é complemento social. A criação do capítulo não deve depender dele.
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, user_id, nome")
-      .eq("id", usuarioId)
-      .limit(1)
-      .maybeSingle();
-
-    if (!error && data) {
-      const profile = data as Record<string, unknown>;
-      const nome = obterTextoProfileAdicionarCapitulo(profile.nome);
-
-      if (nome) {
-        return nome;
-      }
-    }
-  } catch {
-    // Compatibilidade com bases onde profiles.id é o próprio auth.users.id.
-  }
-
-  return "";
-}
 
 async function sincronizarAutorObraProfileAdicionarCapitulo(
   obraId: string,

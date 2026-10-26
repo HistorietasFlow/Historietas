@@ -1817,3 +1817,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 18 — Adicionar Capítulo
 
 - A criação pura da notificação de novo capítulo foi isolada em `lib/adicionar-capitulo-notification-utils.ts`.
+
+## Registro da Fase 19 — Adicionar Capítulo
+
+- O loader de nome do profile foi movido para `actions/carregar-nome-profile-adicionar-capitulo.ts`; a página manteve os dois consumidores e a sincronização do autor.
