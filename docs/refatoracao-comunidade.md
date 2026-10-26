@@ -1829,3 +1829,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 21 — Adicionar Capítulo
 
 - O registro do novo capítulo no Diário foi movido para `actions/registrar-diario-novo-capitulo.ts`, preservando o payload principal, o fallback sem metadata e o disparo fire-and-forget com `void` na página.
+
+## Registro da Fase 22 — Adicionar Capítulo
+
+- O registro de notificações Supabase para novo capítulo foi movido para `actions/registrar-notificacoes-novo-capitulo-supabase.ts`, preservando a RPC, os retornos antecipados e o disparo fire-and-forget com `void` na página.
