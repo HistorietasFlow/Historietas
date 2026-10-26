@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { criarSlugBase, idObraSupabaseValido } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
@@ -41,6 +41,10 @@ import {
 } from "./lib/adicionar-capitulo-chapter-order-utils";
 import { normalizarCapitulo } from "./lib/adicionar-capitulo-chapter-normalizer";
 import { normalizarArquivoObra } from "./lib/adicionar-capitulo-file-normalizer";
+import {
+  obterChavesBackupArquivoAdicionarCapitulo,
+  restaurarArquivoObraComBackup,
+} from "./lib/adicionar-capitulo-file-backup-utils";
 
 type CapituloLocal = {
   id: string;
@@ -278,22 +282,6 @@ function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   }
 }
 
-function obterChavesBackupArquivoAdicionarCapitulo(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">
-) {
-  return Array.from(
-    new Set(
-      [
-        `id:${obra.id}`,
-        obra.id,
-        `slug:${obra.slug || criarSlugBase(obra.titulo)}`,
-        `titulo:${normalizarTexto(obra.titulo)}`,
-        obra.link ? `link:${obra.link}` : "",
-      ].filter((chave) => Boolean(chave.trim()))
-    )
-  );
-}
-
 function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
   const userIdLimpo = userId.trim();
 
@@ -322,28 +310,6 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
   } catch {
     // Se o backup falhar, a criação do capítulo continua funcionando normalmente.
   }
-}
-
-function restaurarArquivoObraComBackup(
-  obra: ObraLocal,
-  backup: ArquivosObrasBackup
-): ObraLocal {
-  if (obra.arquivoObra) {
-    return obra;
-  }
-
-  const arquivoBackup = obterChavesBackupArquivoAdicionarCapitulo(obra)
-    .map((chave) => normalizarArquivoObra(backup[chave]))
-    .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo));
-
-  if (!arquivoBackup) {
-    return obra;
-  }
-
-  return {
-    ...obra,
-    arquivoObra: arquivoBackup,
-  };
 }
 
 function normalizarNumeroAdicionarCapitulo(valor: unknown, fallback = 0) {
