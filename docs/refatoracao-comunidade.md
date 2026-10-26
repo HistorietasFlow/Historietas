@@ -1736,3 +1736,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers de storage por usuário foram isolados em `lib/adicionar-capitulo-storage-utils.ts`, preservando chaves, leitura segura, serialização e falhas silenciosas.
 - A página manteve as chaves de storage e todos os consumidores de backup, carregamento e persistência.
+
+## Registro da Fase 2 — Adicionar Capítulo
+
+- Os helpers puros de geração de IDs foram isolados em `lib/adicionar-capitulo-id-utils.ts`, preservando a prioridade de Web Crypto, o fallback UUID v4 e os bytes de variante RFC.
+- A página manteve os dois consumidores de `criarId` na notificação e na criação do novo capítulo.
