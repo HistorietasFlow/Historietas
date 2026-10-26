@@ -19,6 +19,10 @@ import {
 } from "./lib/adicionar-capitulo-storage-utils";
 import { criarId } from "./lib/adicionar-capitulo-id-utils";
 import {
+  criarHrefLeituraCapitulo,
+  criarLoginHrefAdicionarCapitulo,
+} from "./lib/adicionar-capitulo-route-utils";
+import {
   contarLetrasNumeros,
   criarTituloPorNomeArquivo,
 } from "./lib/adicionar-capitulo-text-utils";
@@ -142,18 +146,6 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
-function criarLoginHrefAdicionarCapitulo(obraId?: string) {
-  const obraIdLimpo = obraId?.trim() || "";
-  const redirectTo = obraIdLimpo
-    ? `/adicionar-capitulo?obraId=${encodeURIComponent(obraIdLimpo)}`
-    : "/adicionar-capitulo";
-  const params = new URLSearchParams({
-    redirectTo,
-  });
-
-  return `/login?${params.toString()}`;
-}
-
 function obterTextoProfileAdicionarCapitulo(valor: unknown) {
   return typeof valor === "string" && valor.trim() ? valor.trim() : "";
 }
@@ -260,28 +252,6 @@ async function sincronizarAutorObraProfileAdicionarCapitulo(
   } catch {
     // Se a atualização do nome falhar, o capítulo e o backup local continuam funcionando.
   }
-}
-
-function criarHrefLeituraCapitulo(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
-  capitulo: Pick<CapituloLocal, "id">,
-  numeroCapitulo: number
-) {
-  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  if (
-    obra.publicado &&
-    idObraSupabaseValido(obra.id) &&
-    slugSeguro &&
-    Number.isInteger(numeroCapitulo) &&
-    numeroCapitulo > 0
-  ) {
-    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
-  }
-
-  return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id
-  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
 function calcularEstatisticasCapitulo(

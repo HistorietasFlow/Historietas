@@ -1746,3 +1746,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de texto foram isolados em `lib/adicionar-capitulo-text-utils.ts`, preservando a contagem Unicode e a normalização do título do arquivo importado.
 - A página manteve os consumidores de estatísticas, importação e validação nos mesmos fluxos.
+
+## Registro da Fase 4 — Adicionar Capítulo
+
+- Os helpers puros de rota foram isolados em `lib/adicionar-capitulo-route-utils.ts`, preservando redirects de login, prioridades de slug e fallbacks de leitura.
+- A página manteve todos os consumidores de carregamento, salvamento, Diário, notificações e link derivado nos mesmos fluxos.
