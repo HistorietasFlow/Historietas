@@ -57,5 +57,5 @@ export function useAdicionarCapituloLanguageBridge({
     return () => {
       observer.disconnect();
     };
-  }, [language, carregando, obraAtual]);
+  }, [raizTraducaoRef, language, carregando, obraAtual]);
 }
