@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const metricsSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/lib/adicionar-capitulo-metrics-utils.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const textUtilsJavascript = typescript.transpileModule(textUtilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -61,10 +68,8 @@ test("Adicionar Capítulo delega somente os helpers de texto ao módulo extraíd
   );
   assert.doesNotMatch(pageSource, /function contarLetrasNumeros\(/);
   assert.doesNotMatch(pageSource, /function criarTituloPorNomeArquivo\(/);
-  assert.match(
-    pageSource,
-    /function calcularEstatisticasCapitulo[\s\S]*?contarLetrasNumeros\(textoLimpo\)/,
-  );
+  assert.match(metricsSource, /import \{ contarLetrasNumeros \} from "\.\/adicionar-capitulo-text-utils";/);
+  assert.match(metricsSource, /contarLetrasNumeros\(textoLimpo\)/);
   assert.match(
     pageSource,
     /async function importarArquivoTexto[\s\S]*?contarLetrasNumeros\(textoImportado\)[\s\S]*?criarTituloPorNomeArquivo\(arquivo\.name\)/,
