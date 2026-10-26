@@ -38,12 +38,14 @@ import {
   obterProximaOrdemCapitulo,
   ordenarCapitulosPorOrdem,
 } from "./lib/adicionar-capitulo-chapter-order-utils";
-import { normalizarArquivoObra } from "./lib/adicionar-capitulo-file-normalizer";
 import { normalizarObra } from "./lib/adicionar-capitulo-work-normalizer";
 import {
-  obterChavesBackupArquivoAdicionarCapitulo,
   restaurarArquivoObraComBackup,
 } from "./lib/adicionar-capitulo-file-backup-utils";
+import {
+  carregarBackupArquivosObras,
+  sincronizarBackupArquivosObras,
+} from "./lib/adicionar-capitulo-file-backup-storage";
 import { normalizarObraSupabase } from "./lib/adicionar-capitulo-supabase-work-normalizer";
 import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-utils";
 import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario, obraPertenceAoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
@@ -76,8 +78,6 @@ type ArquivoObraLocal = {
   categoria: "texto" | "documento" | "imagem" | "outro";
   criadoEm: string;
 };
-
-type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
 type ObraLocal = {
   id: string;
@@ -126,78 +126,7 @@ type NotificacaoLocal = {
 };
 
 const STORAGE_KEY = "historietas-obras";
-const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return {};
-  }
-
-  try {
-    const backupTexto = lerStorageUsuarioAdicionarCapitulo(
-      FILE_BACKUP_STORAGE_KEY,
-      userIdLimpo
-    );
-    const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
-
-    if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
-      return {};
-    }
-
-    const backupNormalizado: ArquivosObrasBackup = {};
-
-    Object.entries(backupJson as Record<string, unknown>).forEach(([obraId, arquivo]) => {
-      const arquivoNormalizado = normalizarArquivoObra(arquivo);
-
-      if (obraId.trim() && arquivoNormalizado) {
-        backupNormalizado[obraId] = arquivoNormalizado;
-      }
-    });
-
-    salvarJsonStorageUsuarioAdicionarCapitulo(
-      FILE_BACKUP_STORAGE_KEY,
-      userIdLimpo,
-      backupNormalizado
-    );
-
-    return backupNormalizado;
-  } catch {
-    return {};
-  }
-}
-
-function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return;
-  }
-
-  try {
-    const backupAtual = carregarBackupArquivosObras(userIdLimpo);
-
-    obras.forEach((obra) => {
-      const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
-
-      if (arquivoNormalizado) {
-        obterChavesBackupArquivoAdicionarCapitulo(obra).forEach((chave) => {
-          backupAtual[chave] = arquivoNormalizado;
-        });
-      }
-    });
-
-    salvarJsonStorageUsuarioAdicionarCapitulo(
-      FILE_BACKUP_STORAGE_KEY,
-      userIdLimpo,
-      backupAtual
-    );
-  } catch {
-    // Se o backup falhar, a criação do capítulo continua funcionando normalmente.
-  }
-}
 
 function carregarObrasLocais(userId = "") {
   const userIdLimpo = userId.trim();

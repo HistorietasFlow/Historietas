@@ -1837,3 +1837,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 23 — Adicionar Capítulo
 
 - A bridge imperativa de tradução foi movida para `lib/adicionar-capitulo-language-bridge.ts`, preservando os helpers, os estados com `WeakMap` e o lifecycle de `MutationObserver` na página.
+
+## Registro da Fase 24 — Adicionar Capítulo
+
+- O carregamento e a sincronização do backup local de arquivos das obras foram movidos para `lib/adicionar-capitulo-file-backup-storage.ts`, preservando normalização, chaves de backup, persistência por usuário e falhas silenciosas.
