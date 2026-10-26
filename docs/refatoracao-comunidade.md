@@ -1761,3 +1761,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As métricas puras de capítulo foram isoladas em `lib/adicionar-capitulo-metrics-utils.ts`, preservando estatísticas, validações e progresso.
 - A página manteve todos os consumidores de importação, normalização, merge e criação nos mesmos fluxos.
+
+## Registro da Fase 7 — Adicionar Capítulo
+
+- Os helpers puros de ordenação de capítulos foram isolados em `lib/adicionar-capitulo-chapter-order-utils.ts`, preservando fallbacks, desempate por data e a cópia antes da ordenação.
+- A página manteve os consumidores de próxima ordem, criação, ordenação e rota de leitura nos mesmos fluxos.
