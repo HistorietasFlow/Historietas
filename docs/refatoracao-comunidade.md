@@ -1771,3 +1771,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O normalizador puro de capítulo foi isolado em `lib/adicionar-capitulo-chapter-normalizer.ts`, preservando valores originais validados, coerções, fallbacks e a ordem positiva.
 - A página manteve o `map` de capítulos dentro de `normalizarObra` no mesmo fluxo.
+
+## Registro da Fase 9 — Adicionar Capítulo
+
+- O normalizador puro de arquivo da obra foi isolado em `lib/adicionar-capitulo-file-normalizer.ts`, preservando validações estruturais, categorias e valores originais.
+- A página manteve os consumidores de backup, sincronização, restauração e normalização da obra nos mesmos fluxos.
