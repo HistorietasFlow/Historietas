@@ -1786,3 +1786,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de normalização e seleção de métricas numéricas foram isolados em `lib/adicionar-capitulo-number-utils.ts`.
 - A página manteve os normalizadores de obra local e Supabase, incluindo aliases, fallbacks e precedência das métricas.
+
+## Registro da Fase 12 — Adicionar Capítulo
+
+- Os normalizadores puros menores de categoria de arquivo e capítulo Supabase foram isolados em `lib/adicionar-capitulo-supabase-normalization.ts`.
+- A página manteve a normalização da obra Supabase, a ordenação e o complemento local de capítulos no fluxo atual.

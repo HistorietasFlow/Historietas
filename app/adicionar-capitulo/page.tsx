@@ -49,6 +49,10 @@ import {
   normalizarNumeroAdicionarCapitulo,
   obterCampoNumericoObraAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-number-utils";
+import {
+  normalizarCapituloSupabase,
+  normalizarCategoriaSupabase,
+} from "./lib/adicionar-capitulo-supabase-normalization";
 
 type CapituloLocal = {
   id: string;
@@ -449,46 +453,6 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
                     : `obra-${index + 1}`
                 )
           }`,
-  };
-}
-
-function normalizarCategoriaSupabase(
-  categoria: string | null
-): ArquivoObraLocal["categoria"] {
-  if (
-    categoria === "texto" ||
-    categoria === "documento" ||
-    categoria === "imagem" ||
-    categoria === "outro"
-  ) {
-    return categoria;
-  }
-
-  return "outro";
-}
-
-function normalizarCapituloSupabase(
-  capitulo: SupabaseCapituloRow,
-  index: number,
-  capituloLocal?: CapituloLocal
-): CapituloLocal {
-  return {
-    id: capitulo.id,
-    titulo: capitulo.titulo?.trim() || `Capítulo ${index + 1}`,
-    texto: capitulo.texto || "",
-    curtiu: Boolean(capituloLocal?.curtiu),
-    salvo: Boolean(capituloLocal?.salvo),
-    comentario: capituloLocal?.comentario || "",
-    criadoEm: capitulo.criado_em || "",
-    lido: Boolean(capituloLocal?.lido),
-    lidoEm: capituloLocal?.lidoEm || "",
-    publicado: Boolean(capitulo.publicado),
-    ordem:
-      typeof capitulo.ordem === "number" &&
-      Number.isInteger(capitulo.ordem) &&
-      capitulo.ordem >= 1
-        ? capitulo.ordem
-        : index + 1,
   };
 }
 
