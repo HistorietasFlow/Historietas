@@ -4,6 +4,7 @@ import test from "node:test";
 import typescript from "typescript";
 
 const source = readFileSync(new URL("../../app/adicionar-capitulo/lib/adicionar-capitulo-language-bridge.ts", import.meta.url), "utf8");
+const hookSource = readFileSync(new URL("../../app/adicionar-capitulo/hooks/useAdicionarCapituloLanguageBridge.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url), "utf8");
 
 async function carregar() {
@@ -52,7 +53,12 @@ test("Adicionar Capítulo delega helpers ao módulo sem mover lifecycle", () => 
   assert.doesNotMatch(page, /function traduzirConteudoAdicionarCapitulo\(/);
   assert.doesNotMatch(page, /function traduzirTextoAdicionarCapitulo\(/);
   assert.doesNotMatch(page, /function traduzirElementoAdicionarCapitulo\(/);
-  assert.match(page, /useEffect\(\(\) => \{/);
-  assert.match(page, /new MutationObserver/);
-  assert.match(page, /traduzirElementoAdicionarCapitulo\(/);
+  assert.match(hookSource, /new MutationObserver/);
+  assert.match(hookSource, /traduzirElementoAdicionarCapitulo\(/);
+  assert.match(
+    page,
+    /import \{ useAdicionarCapituloLanguageBridge \} from "\.\/hooks\/useAdicionarCapituloLanguageBridge";/,
+  );
+  assert.doesNotMatch(page, /new MutationObserver/);
+  assert.doesNotMatch(page, /traduzirElementoAdicionarCapitulo\(/);
 });

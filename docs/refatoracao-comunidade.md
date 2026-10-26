@@ -1869,3 +1869,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 31 — Adicionar Capítulo
 
 - A mutação local determinística da criação de capítulo foi movida para `lib/adicionar-capitulo-local-create-mutation.ts`, preservando ordenação, autoria e progresso da obra alvo.
+
+## Registro da Fase 32 — Adicionar Capítulo
+
+- O lifecycle da bridge de tradução foi movido para `hooks/useAdicionarCapituloLanguageBridge.ts`, preservando gatilhos, observer, filtros de atributos e os três refs da página.
