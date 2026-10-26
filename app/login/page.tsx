@@ -16,6 +16,8 @@ import {
 } from "../../lib/aceiteTermos";
 import { obterRedirectToAtual } from "./lib/login-redirect-utils";
 import { sincronizarStorageUsuarioLogin } from "./lib/login-storage-sync";
+import { useLoginDesktopMode } from "./hooks/useLoginDesktopMode";
+import { useLoginPasswordChangedNotice } from "./hooks/useLoginPasswordChangedNotice";
 import {
   obterCodigoErroAuth,
   obterMensagemErroAuth,
@@ -382,7 +384,6 @@ export default function LoginPage() {
 
   const criandoConta = modo === "criar";
   const recuperandoSenha = modo === "recuperar";
-  const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   const salvarProfile = useCallback(async (
@@ -596,47 +597,13 @@ export default function LoginPage() {
     };
   }, [router, salvarProfile, t]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.get("senhaRedefinida") !== "1") {
-      return;
-    }
-
-    const atualizarAvisoTimer = window.setTimeout(() => {
-      setModo("entrar");
-      setErro("");
-      setAviso(t("passwordChangedNotice"));
-    }, 0);
-
-    return () => {
-      window.clearTimeout(atualizarAvisoTimer);
-    };
-  }, [t]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    atualizarModoDesktop();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
+  useLoginPasswordChangedNotice({
+    t,
+    setModo,
+    setErro,
+    setAviso,
+  });
+  const isDesktop = useLoginDesktopMode();
 
   async function enviarFormulario(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
