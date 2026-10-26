@@ -50,6 +50,7 @@ import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario, obraPertenceAoUsu
 import { prepararObraAdicionarCapituloParaStorage } from "./lib/adicionar-capitulo-storage-preparation";
 import { criarNotificacaoNovoCapitulo } from "./lib/adicionar-capitulo-notification-utils";
 import { carregarNomeProfileAdicionarCapitulo } from "./actions/carregar-nome-profile-adicionar-capitulo";
+import { sincronizarAutorObraProfileAdicionarCapitulo } from "./actions/sincronizar-autor-obra-profile-adicionar-capitulo";
 
 type CapituloLocal = {
   id: string;
@@ -125,33 +126,6 @@ type NotificacaoLocal = {
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-async function sincronizarAutorObraProfileAdicionarCapitulo(
-  obraId: string,
-  userId: string,
-  nomeProfile: string
-) {
-  const obraIdLimpo = obraId.trim();
-  const usuarioId = userId.trim();
-  const nomeAutor = nomeProfile.trim();
-
-  if (!obraIdLimpo || !usuarioId || !nomeAutor) {
-    return;
-  }
-
-  try {
-    await supabase
-      .from("obras")
-      .update({
-        autor: nomeAutor,
-        atualizado_em: new Date().toISOString(),
-      })
-      .eq("id", obraIdLimpo)
-      .eq("user_id", usuarioId);
-  } catch {
-    // Se a atualização do nome falhar, o capítulo e o backup local continuam funcionando.
-  }
-}
 
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   const userIdLimpo = userId.trim();
