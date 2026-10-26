@@ -1900,3 +1900,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 7 — Login
 
 - A preparação e a validação determinística do formulário foram movidas para helpers puros, preservando normalização, prioridade das regras e a orquestração de feedback da página.
+
+## Registro da Fase 8 — Login
+
+- A preparação determinística dos dados e o payload de profile foram movidos para helpers puros, preservando prioridades, fallbacks e o fluxo de sincronização da página.
