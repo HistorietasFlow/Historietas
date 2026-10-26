@@ -46,6 +46,7 @@ import {
   restaurarArquivoObraComBackup,
 } from "./lib/adicionar-capitulo-file-backup-utils";
 import { normalizarObraSupabase } from "./lib/adicionar-capitulo-supabase-work-normalizer";
+import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-utils";
 
 type CapituloLocal = {
   id: string;
@@ -267,71 +268,6 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
   } catch {
     // Se o backup falhar, a criação do capítulo continua funcionando normalmente.
   }
-}
-
-function mesclarObrasComSupabase(
-  obrasLocais: ObraLocal[],
-  obrasSupabase: ObraLocal[]
-) {
-  const obrasLocaisPorId = new Map(obrasLocais.map((obra) => [obra.id, obra]));
-  const obrasSupabaseIds = new Set(obrasSupabase.map((obra) => obra.id));
-
-  const obrasMescladas = obrasSupabase.map((obraSupabase) => {
-    const obraLocal = obrasLocaisPorId.get(obraSupabase.id);
-
-    if (!obraLocal) {
-      return obraSupabase;
-    }
-
-    return {
-      ...obraSupabase,
-      capitulos: obraSupabase.capitulos.map((capituloSupabase) => {
-        const capituloLocal = obraLocal.capitulos.find(
-          (capitulo) => capitulo.id === capituloSupabase.id
-        );
-
-        return capituloLocal
-          ? {
-              ...capituloSupabase,
-              curtiu: capituloLocal.curtiu,
-              salvo: capituloLocal.salvo,
-              comentario: capituloLocal.comentario,
-              lido: capituloLocal.lido,
-              lidoEm: capituloLocal.lidoEm,
-            }
-          : capituloSupabase;
-      }),
-      ultimoCapituloLidoId: obraLocal.ultimoCapituloLidoId,
-      ultimaLeituraEm: obraLocal.ultimaLeituraEm,
-      progressoLeitura: calcularProgressoLeitura(obraSupabase.capitulos),
-      visualizacoes: Math.max(
-        obraSupabase.visualizacoes || 0,
-        obraLocal.visualizacoes || 0
-      ),
-      totalCurtidas: Math.max(
-        obraSupabase.totalCurtidas || 0,
-        obraLocal.totalCurtidas || 0
-      ),
-      totalComentarios: Math.max(
-        obraSupabase.totalComentarios || 0,
-        obraLocal.totalComentarios || 0
-      ),
-      totalSalvos: Math.max(
-        obraSupabase.totalSalvos || 0,
-        obraLocal.totalSalvos || 0
-      ),
-      totalLidos: Math.max(
-        obraSupabase.totalLidos || 0,
-        obraLocal.totalLidos || 0
-      ),
-    };
-  });
-
-  const obrasSomenteLocais = obrasLocais.filter(
-    (obraLocal) => !obrasSupabaseIds.has(obraLocal.id)
-  );
-
-  return [...obrasMescladas, ...obrasSomenteLocais];
 }
 
 function carregarObrasLocais(userId = "") {
