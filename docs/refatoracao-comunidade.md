@@ -1833,3 +1833,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 22 — Adicionar Capítulo
 
 - O registro de notificações Supabase para novo capítulo foi movido para `actions/registrar-notificacoes-novo-capitulo-supabase.ts`, preservando a RPC, os retornos antecipados e o disparo fire-and-forget com `void` na página.
+
+## Registro da Fase 23 — Adicionar Capítulo
+
+- A bridge imperativa de tradução foi movida para `lib/adicionar-capitulo-language-bridge.ts`, preservando os helpers, os estados com `WeakMap` e o lifecycle de `MutationObserver` na página.
