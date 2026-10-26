@@ -1756,3 +1756,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de profile foram isolados em `lib/adicionar-capitulo-profile-utils.ts`, preservando trim, referências e ownership local.
 - A página manteve o loader e a sincronização Supabase do autor nos mesmos fluxos.
+
+## Registro da Fase 6 — Adicionar Capítulo
+
+- As métricas puras de capítulo foram isoladas em `lib/adicionar-capitulo-metrics-utils.ts`, preservando estatísticas, validações e progresso.
+- A página manteve todos os consumidores de importação, normalização, merge e criação nos mesmos fluxos.

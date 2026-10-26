@@ -27,6 +27,10 @@ import {
   criarLoginHrefAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-route-utils";
 import {
+  calcularEstatisticasCapitulo,
+  calcularProgressoLeitura,
+} from "./lib/adicionar-capitulo-metrics-utils";
+import {
   contarLetrasNumeros,
   criarTituloPorNomeArquivo,
 } from "./lib/adicionar-capitulo-text-utils";
@@ -225,42 +229,6 @@ async function sincronizarAutorObraProfileAdicionarCapitulo(
   } catch {
     // Se a atualização do nome falhar, o capítulo e o backup local continuam funcionando.
   }
-}
-
-function calcularEstatisticasCapitulo(
-  titulo: string,
-  texto: string,
-  numeroCapitulo: number
-) {
-  const tituloFinal = titulo.trim() || `Capítulo ${numeroCapitulo}`;
-  const textoLimpo = texto.trim();
-  const palavras = textoLimpo ? textoLimpo.split(/\s+/).filter(Boolean).length : 0;
-  const caracteres = texto.length;
-  const caracteresValidos = contarLetrasNumeros(textoLimpo);
-  const minutosLeitura = palavras > 0 ? Math.max(1, Math.ceil(palavras / 220)) : 0;
-  const tituloValido = contarLetrasNumeros(tituloFinal) >= 3;
-  const textoValido = caracteresValidos >= 20;
-
-  return {
-    tituloFinal,
-    palavras,
-    caracteres,
-    caracteresValidos,
-    minutosLeitura,
-    tituloValido,
-    textoValido,
-    prontoParaCriar: tituloValido && textoValido,
-  };
-}
-
-function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  if (capitulos.length === 0) {
-    return 0;
-  }
-
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
-
-  return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
 function obterOrdemCapitulo(
