@@ -1857,3 +1857,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 28 — Adicionar Capítulo
 
 - Os estilos React da página foram movidos para `lib/adicionar-capitulo-styles.ts`, preservando os 62 contratos `CSSProperties`, variantes responsivas, spreads e consumidores existentes.
+
+## Registro da Fase 29 — Adicionar Capítulo
+
+- O lifecycle imediato do modo desktop e os valores derivados de obra, capítulo e prévia foram movidos para hooks dedicados, preservando breakpoints, listeners, links e fallbacks existentes.
