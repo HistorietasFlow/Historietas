@@ -1861,3 +1861,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 29 — Adicionar Capítulo
 
 - O lifecycle imediato do modo desktop e os valores derivados de obra, capítulo e prévia foram movidos para hooks dedicados, preservando breakpoints, listeners, links e fallbacks existentes.
+
+## Registro da Fase 30 — Adicionar Capítulo
+
+- A preparação da importação de arquivos `.txt` e `.md` foi movida para `lib/adicionar-capitulo-text-import.ts`, preservando validações, normalização, estatísticas, resumo e falhas de leitura; a página manteve a orquestração dos setters.
