@@ -1801,3 +1801,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O normalizador puro da obra Supabase foi isolado em `lib/adicionar-capitulo-supabase-work-normalizer.ts`, preservando capítulos remotos, complementos locais e fallbacks de métricas.
 - A página manteve o merge entre obras locais e remotas e toda a orquestração de carregamento.
+
+## Registro da Fase 15 — Adicionar Capítulo
+
+- O merge puro entre obras locais e Supabase foi isolado em `lib/adicionar-capitulo-work-merge-utils.ts`, preservando referências, ordem, métricas e estado local de leitura.
