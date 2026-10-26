@@ -1776,3 +1776,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O normalizador puro de arquivo da obra foi isolado em `lib/adicionar-capitulo-file-normalizer.ts`, preservando validações estruturais, categorias e valores originais.
 - A página manteve os consumidores de backup, sincronização, restauração e normalização da obra nos mesmos fluxos.
+
+## Registro da Fase 10 — Adicionar Capítulo
+
+- Os helpers puros de chaves e restauração de backup foram isolados em `lib/adicionar-capitulo-file-backup-utils.ts`, preservando ordem, deduplicação e referências de obras sem arquivo recuperável.
+- A página manteve a leitura e escrita de storage nos fluxos atuais de backup.
