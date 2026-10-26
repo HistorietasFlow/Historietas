@@ -13,10 +13,6 @@ import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
 } from "../../lib/aceiteTermos";
-import {
-  lerStorageUsuarioAdicionarCapitulo,
-  salvarJsonStorageUsuarioAdicionarCapitulo,
-} from "./lib/adicionar-capitulo-storage-utils";
 import { criarId } from "./lib/adicionar-capitulo-id-utils";
 import {
   aplicarAutorProfileAdicionarCapitulo,
@@ -44,12 +40,14 @@ import {
 } from "./lib/adicionar-capitulo-file-backup-utils";
 import {
   carregarBackupArquivosObras,
-  sincronizarBackupArquivosObras,
 } from "./lib/adicionar-capitulo-file-backup-storage";
 import { normalizarObraSupabase } from "./lib/adicionar-capitulo-supabase-work-normalizer";
 import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-utils";
-import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario, obraPertenceAoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
-import { prepararObraAdicionarCapituloParaStorage } from "./lib/adicionar-capitulo-storage-preparation";
+import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
+import {
+  carregarObrasLocais,
+  salvarObrasAdicionarCapituloStorage,
+} from "./lib/adicionar-capitulo-local-work-storage";
 import { criarNotificacaoNovoCapitulo } from "./lib/adicionar-capitulo-notification-utils";
 import { carregarNomeProfileAdicionarCapitulo } from "./actions/carregar-nome-profile-adicionar-capitulo";
 import { sincronizarAutorObraProfileAdicionarCapitulo } from "./actions/sincronizar-autor-obra-profile-adicionar-capitulo";
@@ -125,76 +123,7 @@ type NotificacaoLocal = {
   classificacaoIndicativa: string;
 };
 
-const STORAGE_KEY = "historietas-obras";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function carregarObrasLocais(userId = "") {
-  const userIdLimpo = userId.trim();
-  const obrasSalvasTexto = lerStorageUsuarioAdicionarCapitulo(
-    STORAGE_KEY,
-    userIdLimpo
-  );
-  const obrasSalvasJson = obrasSalvasTexto ? JSON.parse(obrasSalvasTexto) : [];
-  const backupArquivosObras = carregarBackupArquivosObras(userIdLimpo);
-
-  const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-    ? obrasSalvasJson.map((obra, index) =>
-        restaurarArquivoObraComBackup(
-          normalizarObra(obra as Partial<ObraLocal>, index),
-          backupArquivosObras
-        )
-      )
-    : [];
-
-  const obrasComAutorCorrigido = userIdLimpo
-    ? obrasNormalizadas.map((obra) => ({
-        ...obra,
-        autorId: obra.autorId?.trim() || userIdLimpo,
-      }))
-    : obrasNormalizadas;
-
-  const obrasDoUsuario = userIdLimpo
-    ? obrasComAutorCorrigido.filter((obra) =>
-        obraPertenceAoUsuario(obra, userIdLimpo)
-      )
-    : obrasComAutorCorrigido;
-
-  sincronizarBackupArquivosObras(obrasDoUsuario, userIdLimpo);
-  salvarJsonStorageUsuarioAdicionarCapitulo(
-    STORAGE_KEY,
-    userIdLimpo,
-    obrasDoUsuario.map(prepararObraAdicionarCapituloParaStorage)
-  );
-
-  return obrasDoUsuario;
-}
-
-function salvarObrasAdicionarCapituloStorage(
-  obrasParaSalvar: ObraLocal[],
-  userId = ""
-) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return;
-  }
-
-  const obrasSemArquivosPesados = obrasParaSalvar.map(
-    prepararObraAdicionarCapituloParaStorage
-  );
-
-  const obrasParaStorage = obrasSemArquivosPesados.filter((obra) =>
-    obraPertenceAoUsuario(obra, userIdLimpo)
-  );
-
-  salvarJsonStorageUsuarioAdicionarCapitulo(
-    STORAGE_KEY,
-    userIdLimpo,
-    obrasParaStorage
-  );
-
-  sincronizarBackupArquivosObras(obrasParaSalvar, userIdLimpo);
-}
 
 function registrarNotificacaoNovoCapituloLocal(
   notificacao: NotificacaoLocal

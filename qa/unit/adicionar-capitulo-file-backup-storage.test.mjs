@@ -4,6 +4,13 @@ import test from "node:test";
 
 const source = readFileSync(new URL("../../app/adicionar-capitulo/lib/adicionar-capitulo-file-backup-storage.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url), "utf8");
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/lib/adicionar-capitulo-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("backup de arquivos preserva carregamento normalizado e falhas silenciosas", () => {
   assert.match(source, /const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup"/);
@@ -31,10 +38,18 @@ test("backup de arquivos preserva sincronização por chaves e referências norm
 test("Adicionar Capítulo delega somente backup e mantém consumidores", () => {
   assert.doesNotMatch(page, /function carregarBackupArquivosObras\(/);
   assert.doesNotMatch(page, /function sincronizarBackupArquivosObras\(/);
-  assert.match(page, /carregarBackupArquivosObras\(/);
-  assert.match(page, /sincronizarBackupArquivosObras\(/);
-  assert.match(page, /function carregarObrasLocais\(/);
-  assert.match(page, /function salvarObrasAdicionarCapituloStorage\(/);
+  assert.match(
+    page,
+    /from "\.\/lib\/adicionar-capitulo-local-work-storage";/,
+  );
+  assert.doesNotMatch(page, /function carregarObrasLocais\(/);
+  assert.doesNotMatch(page, /function salvarObrasAdicionarCapituloStorage\(/);
+  assert.match(
+    localWorkStorageSource,
+    /from "\.\/adicionar-capitulo-file-backup-storage";/,
+  );
+  assert.match(localWorkStorageSource, /carregarBackupArquivosObras\(/);
+  assert.match(localWorkStorageSource, /sincronizarBackupArquivosObras\(/);
   assert.doesNotMatch(
     source,
     /from\s+["']react["']|useState|useEffect|useMemo|useRef|localStorage|supabase|router/i,

@@ -1841,3 +1841,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 24 — Adicionar Capítulo
 
 - O carregamento e a sincronização do backup local de arquivos das obras foram movidos para `lib/adicionar-capitulo-file-backup-storage.ts`, preservando normalização, chaves de backup, persistência por usuário e falhas silenciosas.
+
+## Registro da Fase 25 — Adicionar Capítulo
+
+- O carregamento e a persistência local das obras foram movidos para `lib/adicionar-capitulo-local-work-storage.ts`, preservando normalização, restauração de backup, ownership, persistência por usuário e a ordem entre backup e storage.

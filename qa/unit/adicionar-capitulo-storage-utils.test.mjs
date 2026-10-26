@@ -21,6 +21,13 @@ const backupStorageSource = readFileSync(
   ),
   "utf8",
 );
+const localWorkStorageSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/lib/adicionar-capitulo-local-work-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const storageJavascript = typescript.transpileModule(storageSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -130,15 +137,21 @@ test("storage de Adicionar Capítulo preserva serialização e falhas silenciosa
 
 test("Adicionar Capítulo delega somente utilidades de storage ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?lerStorageUsuarioAdicionarCapitulo,[\s\S]*?salvarJsonStorageUsuarioAdicionarCapitulo,[\s\S]*?\} from "\.\/lib\/adicionar-capitulo-storage-utils";/,
+    localWorkStorageSource,
+    /import \{[\s\S]*?lerStorageUsuarioAdicionarCapitulo,[\s\S]*?salvarJsonStorageUsuarioAdicionarCapitulo,[\s\S]*?\} from "\.\/adicionar-capitulo-storage-utils";/,
   );
   assert.doesNotMatch(pageSource, /function criarStorageKeyUsuarioAdicionarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function lerStorageUsuarioAdicionarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function salvarJsonStorageUsuarioAdicionarCapitulo\(/);
-  assert.match(pageSource, /lerStorageUsuarioAdicionarCapitulo\(\s*STORAGE_KEY,/);
-  assert.match(pageSource, /salvarJsonStorageUsuarioAdicionarCapitulo\(\s*STORAGE_KEY,/);
-  assert.match(pageSource, /const STORAGE_KEY = "historietas-obras";/);
+  assert.match(
+    localWorkStorageSource,
+    /lerStorageUsuarioAdicionarCapitulo\(\s*STORAGE_KEY,/,
+  );
+  assert.match(
+    localWorkStorageSource,
+    /salvarJsonStorageUsuarioAdicionarCapitulo\(\s*STORAGE_KEY,/,
+  );
+  assert.match(localWorkStorageSource, /const STORAGE_KEY = "historietas-obras";/);
   assert.match(
     backupStorageSource,
     /const FILE_BACKUP_STORAGE_KEY\s*=\s*"historietas-arquivos-obras-backup";/,
@@ -152,12 +165,17 @@ test("Adicionar Capítulo delega somente utilidades de storage ao módulo extra�
     /salvarJsonStorageUsuarioAdicionarCapitulo\(\s*FILE_BACKUP_STORAGE_KEY,/,
   );
   assert.match(
-    pageSource,
-    /from "\.\/lib\/adicionar-capitulo-file-backup-storage";/,
+    localWorkStorageSource,
+    /from "\.\/adicionar-capitulo-file-backup-storage";/,
   );
   assert.doesNotMatch(pageSource, /const FILE_BACKUP_STORAGE_KEY\s*=/);
   assert.doesNotMatch(pageSource, /function carregarBackupArquivosObras\(/);
   assert.doesNotMatch(pageSource, /function sincronizarBackupArquivosObras\(/);
+  assert.match(
+    pageSource,
+    /from "\.\/lib\/adicionar-capitulo-local-work-storage";/,
+  );
+  assert.doesNotMatch(pageSource, /const STORAGE_KEY\s*=/);
   assert.match(
     storageSource,
     /localStorage é fallback; a criação do capítulo continua em memória\./,
