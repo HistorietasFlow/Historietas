@@ -1781,3 +1781,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de chaves e restauração de backup foram isolados em `lib/adicionar-capitulo-file-backup-utils.ts`, preservando ordem, deduplicação e referências de obras sem arquivo recuperável.
 - A página manteve a leitura e escrita de storage nos fluxos atuais de backup.
+
+## Registro da Fase 11 — Adicionar Capítulo
+
+- Os helpers puros de normalização e seleção de métricas numéricas foram isolados em `lib/adicionar-capitulo-number-utils.ts`.
+- A página manteve os normalizadores de obra local e Supabase, incluindo aliases, fallbacks e precedência das métricas.
