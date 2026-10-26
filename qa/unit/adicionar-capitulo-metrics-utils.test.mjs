@@ -15,6 +15,13 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const textImportSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/lib/adicionar-capitulo-text-import.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const transpilar = (source) => typescript.transpileModule(source, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
@@ -47,11 +54,14 @@ test("métricas de Adicionar Capítulo preservam progresso", () => {
 
 test("Adicionar Capítulo delega somente métricas ao módulo extraído", () => {
   assert.match(metricsSource, /import \{ contarLetrasNumeros \} from "\.\/adicionar-capitulo-text-utils";/);
-  assert.match(pageSource, /import \{[\s\S]*?calcularEstatisticasCapitulo,[\s\S]*?calcularProgressoLeitura,[\s\S]*?\} from "\.\/lib\/adicionar-capitulo-metrics-utils";/);
+  assert.match(pageSource, /import \{[\s\S]*?calcularProgressoLeitura,[\s\S]*?\} from "\.\/lib\/adicionar-capitulo-metrics-utils";/);
   assert.doesNotMatch(pageSource, /function calcularEstatisticasCapitulo\(/);
   assert.doesNotMatch(pageSource, /function calcularProgressoLeitura\(/);
-  assert.equal((pageSource.match(/calcularEstatisticasCapitulo\(/g) || []).length, 1);
-  assert.equal((pageSource.match(/calcularProgressoLeitura\(/g) || []).length, 4);
-  assert.match(pageSource, /import \{[\s\S]*?contarLetrasNumeros,[\s\S]*?criarTituloPorNomeArquivo,[\s\S]*?\} from "\.\/lib\/adicionar-capitulo-text-utils";/);
+  assert.doesNotMatch(pageSource, /calcularEstatisticasCapitulo\(/);
+  assert.equal((pageSource.match(/calcularProgressoLeitura\(/g) || []).length, 1);
+  assert.match(
+    textImportSource,
+    /import \{ calcularEstatisticasCapitulo \} from "\.\/adicionar-capitulo-metrics-utils";/,
+  );
   assert.doesNotMatch(metricsSource, /supabase|localStorage|useState|useEffect|router|<[A-Z]/);
 });

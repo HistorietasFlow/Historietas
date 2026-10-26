@@ -21,14 +21,10 @@ import {
   criarLoginHrefAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-route-utils";
 import {
-  calcularEstatisticasCapitulo,
   calcularProgressoLeitura,
 } from "./lib/adicionar-capitulo-metrics-utils";
-import {
-  contarLetrasNumeros,
-  criarTituloPorNomeArquivo,
-} from "./lib/adicionar-capitulo-text-utils";
 import { validarCapitulo } from "./lib/adicionar-capitulo-validation";
+import { prepararImportacaoArquivoTextoAdicionarCapitulo } from "./lib/adicionar-capitulo-text-import";
 import { useAdicionarCapituloDesktopMode } from "./hooks/useAdicionarCapituloDesktopMode";
 import { useAdicionarCapituloDerivedValues } from "./hooks/useAdicionarCapituloDerivedValues";
 import {
@@ -190,8 +186,6 @@ type NotificacaoLocal = {
   capa: string;
   classificacaoIndicativa: string;
 };
-
-const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
 function registrarNotificacaoNovoCapituloLocal(
   notificacao: NotificacaoLocal
@@ -474,56 +468,24 @@ export default function AdicionarCapituloPage() {
     setArquivoImportadoNome("");
     setArquivoImportadoErro("");
 
-    const nomeMinusculo = arquivo.name.toLowerCase();
-    const extensaoValida =
-      nomeMinusculo.endsWith(".txt") || nomeMinusculo.endsWith(".md");
+    const resultado = await prepararImportacaoArquivoTextoAdicionarCapitulo(
+      arquivo,
+      titulo,
+      numeroNovoCapitulo
+    );
 
-    if (!extensaoValida) {
-      setArquivoImportadoErro(
-        "Envie um arquivo .txt ou .md para importar o texto do capítulo."
-      );
+    if (!resultado.ok) {
+      setArquivoImportadoErro(resultado.erro);
       return;
     }
 
-    if (arquivo.size > MAX_TEXT_FILE_SIZE_BYTES) {
-      setArquivoImportadoErro(
-        "Esse arquivo é grande demais. Use um arquivo de até 700 KB."
-      );
-      return;
+    setTexto(resultado.textoImportado);
+
+    if (!titulo.trim() && resultado.tituloArquivo) {
+      setTitulo(resultado.tituloArquivo);
     }
 
-    try {
-      const conteudoArquivo = await arquivo.text();
-      const textoImportado = conteudoArquivo.replace(/\r\n/g, "\n").trim();
-
-      if (contarLetrasNumeros(textoImportado) < 20) {
-        setArquivoImportadoErro(
-          "O arquivo foi lido, mas não tem texto suficiente para formar um capítulo."
-        );
-        return;
-      }
-
-      const tituloArquivo = criarTituloPorNomeArquivo(arquivo.name);
-      const estatisticasImportadas = calcularEstatisticasCapitulo(
-        tituloArquivo || titulo,
-        textoImportado,
-        numeroNovoCapitulo
-      );
-
-      setTexto(textoImportado);
-
-      if (!titulo.trim() && tituloArquivo) {
-        setTitulo(tituloArquivo);
-      }
-
-      setArquivoImportadoNome(
-        `${arquivo.name} • ${estatisticasImportadas.palavras} palavras • ${estatisticasImportadas.minutosLeitura} min`
-      );
-    } catch {
-      setArquivoImportadoErro(
-        "Não consegui ler esse arquivo. Tente salvar como .txt ou .md e importar novamente."
-      );
-    }
+    setArquivoImportadoNome(resultado.resumoArquivo);
   }
 
   async function criarCapitulo(event: FormEvent<HTMLFormElement>) {

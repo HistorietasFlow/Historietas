@@ -21,6 +21,13 @@ const metricsSource = readFileSync(
   ),
   "utf8",
 );
+const textImportSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/lib/adicionar-capitulo-text-import.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const validationSource = readFileSync(
   new URL(
     "../../app/adicionar-capitulo/lib/adicionar-capitulo-validation.ts",
@@ -69,18 +76,16 @@ test("criarTituloPorNomeArquivo preserva extensões aceitas, separadores e espa�
 });
 
 test("Adicionar Capítulo delega somente os helpers de texto ao módulo extraído", () => {
-  assert.match(
-    pageSource,
-    /import \{[\s\S]*?contarLetrasNumeros,[\s\S]*?criarTituloPorNomeArquivo,[\s\S]*?\} from "\.\/lib\/adicionar-capitulo-text-utils";/,
-  );
   assert.doesNotMatch(pageSource, /function contarLetrasNumeros\(/);
   assert.doesNotMatch(pageSource, /function criarTituloPorNomeArquivo\(/);
   assert.match(metricsSource, /import \{ contarLetrasNumeros \} from "\.\/adicionar-capitulo-text-utils";/);
   assert.match(metricsSource, /contarLetrasNumeros\(textoLimpo\)/);
   assert.match(
-    pageSource,
-    /async function importarArquivoTexto[\s\S]*?contarLetrasNumeros\(textoImportado\)[\s\S]*?criarTituloPorNomeArquivo\(arquivo\.name\)/,
+    textImportSource,
+    /import \{[\s\S]*?contarLetrasNumeros,[\s\S]*?criarTituloPorNomeArquivo,[\s\S]*?\} from "\.\/adicionar-capitulo-text-utils";/,
   );
+  assert.match(textImportSource, /contarLetrasNumeros\(textoImportado\)/);
+  assert.match(textImportSource, /criarTituloPorNomeArquivo\(arquivo\.name\)/);
   assert.match(
     pageSource,
     /import \{ validarCapitulo \} from "\.\/lib\/adicionar-capitulo-validation";/,
