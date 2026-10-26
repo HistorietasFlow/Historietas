@@ -1896,3 +1896,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 6 — Login
 
 - As traduções e a formatação de erros de autenticação foram movidas para módulos dedicados, preservando textos, prioridades de classificação e os consumidores existentes na página.
+
+## Registro da Fase 7 — Login
+
+- A preparação e a validação determinística do formulário foram movidas para helpers puros, preservando normalização, prioridade das regras e a orquestração de feedback da página.
