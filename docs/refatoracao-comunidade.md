@@ -1821,3 +1821,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 19 — Adicionar Capítulo
 
 - O loader de nome do profile foi movido para `actions/carregar-nome-profile-adicionar-capitulo.ts`; a página manteve os dois consumidores e a sincronização do autor.
+
+## Registro da Fase 20 — Adicionar Capítulo
+
+- A sincronização complementar do autor com o profile foi movida para `actions/sincronizar-autor-obra-profile-adicionar-capitulo.ts`, preservando o disparo fire-and-forget com `void` na página.
