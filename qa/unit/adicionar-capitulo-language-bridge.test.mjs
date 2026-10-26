@@ -29,10 +29,12 @@ async function traduzir(textos, idioma, atributos = []) {
 }
 
 test("bridge preserva traduções, padrões dinâmicos e whitespace", async () => {
-  const nos = await traduzir([["  Capítulo 3  "], ["Ex: Capítulo 3"], ["Notificações: 7 não lidas"], ["arquivo • 12 palavras • 3 min"], ["Não consegui salvar capítulo no Supabase: detalhe"], ["desconhecido"]], "en");
-  assert.deepEqual(nos.map((no) => no.nodeValue), ["  Chapter 3  ", "E.g.: Chapter 3", "Notifications: 7 unread", "arquivo • 12 words • 3 min", "I couldn't save the chapter in Supabase: detalhe", "desconhecido"]);
+  const nos = await traduzir([["  Capítulo 3  "], ["Ex: Capítulo 3"], ["Notificações: 7 não lidas"], ["arquivo • 12 palavras • 3 min"], ["Não consegui confirmar a autoria da obra: detalhe"], ["Não consegui calcular a ordem do novo capítulo: detalhe"], ["Não consegui salvar capítulo no Supabase: detalhe"], ["desconhecido"]], "en");
+  assert.deepEqual(nos.map((no) => no.nodeValue), ["  Chapter 3  ", "E.g.: Chapter 3", "Notifications: 7 unread", "arquivo • 12 words • 3 min", "I couldn't confirm the authorship of the work: detalhe", "I couldn't calculate the new chapter order: detalhe", "I couldn't save the chapter in Supabase: detalhe", "desconhecido"]);
   const pt = await traduzir([["Criar capítulo"]], "pt-BR");
   assert.equal(pt[0].nodeValue, "Criar capítulo");
+  const es = await traduzir([["Capítulo 3"], ["Ex: Capítulo 3"]], "es");
+  assert.deepEqual(es.map((no) => no.nodeValue), ["Capítulo 3", "Ej.: Capítulo 3"]);
 });
 
 test("bridge ignora elementos proibidos e traduz somente quatro atributos", async () => {
