@@ -1805,3 +1805,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 15 — Adicionar Capítulo
 
 - O merge puro entre obras locais e Supabase foi isolado em `lib/adicionar-capitulo-work-merge-utils.ts`, preservando referências, ordem, métricas e estado local de leitura.
+
+## Registro da Fase 16 — Adicionar Capítulo
+
+- Os helpers puros de ownership e atualização da lista local foram isolados em `lib/adicionar-capitulo-ownership-utils.ts`.

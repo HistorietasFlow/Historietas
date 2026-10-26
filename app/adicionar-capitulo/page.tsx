@@ -47,6 +47,7 @@ import {
 } from "./lib/adicionar-capitulo-file-backup-utils";
 import { normalizarObraSupabase } from "./lib/adicionar-capitulo-supabase-work-normalizer";
 import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-utils";
+import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario, obraPertenceAoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
 
 type CapituloLocal = {
   id: string;
@@ -309,38 +310,6 @@ function carregarObrasLocais(userId = "") {
   );
 
   return obrasDoUsuario;
-}
-
-function normalizarUsuarioId(userId: string) {
-  return userId.trim().toLowerCase();
-}
-
-function obraPertenceAoUsuario(obra: ObraLocal, userId: string) {
-  const usuarioIdNormalizado = normalizarUsuarioId(userId);
-  const autorIdNormalizado = normalizarUsuarioId(obra.autorId || "");
-
-  return Boolean(usuarioIdNormalizado && autorIdNormalizado === usuarioIdNormalizado);
-}
-
-function filtrarObrasDoUsuario(obrasParaFiltrar: ObraLocal[], userId: string) {
-  return obrasParaFiltrar.filter((obra) => obraPertenceAoUsuario(obra, userId));
-}
-
-function atualizarObrasLocaisDoUsuario(
-  obrasLocaisAtuais: ObraLocal[],
-  obrasDoUsuario: ObraLocal[],
-  userId: string
-) {
-  const idsObrasDoUsuario = new Set(obrasDoUsuario.map((obra) => obra.id));
-  const outrasObrasLocais = obrasLocaisAtuais.filter((obra) => {
-    if (idsObrasDoUsuario.has(obra.id)) {
-      return false;
-    }
-
-    return !obraPertenceAoUsuario(obra, userId);
-  });
-
-  return [...obrasDoUsuario, ...outrasObrasLocais];
 }
 
 function criarNotificacaoNovoCapitulo(
