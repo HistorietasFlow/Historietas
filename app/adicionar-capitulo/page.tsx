@@ -48,6 +48,7 @@ import {
 import { normalizarObraSupabase } from "./lib/adicionar-capitulo-supabase-work-normalizer";
 import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-utils";
 import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario, obraPertenceAoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
+import { prepararObraAdicionarCapituloParaStorage } from "./lib/adicionar-capitulo-storage-preparation";
 
 type CapituloLocal = {
   id: string;
@@ -336,25 +337,6 @@ function criarNotificacaoNovoCapitulo(
     obraPublicada: obra.publicado,
     capa: obra.capa,
     classificacaoIndicativa: obra.classificacaoIndicativa,
-  };
-}
-
-function ehDataUrlAdicionarCapitulo(valor: string) {
-  return valor.startsWith("data:");
-}
-
-function prepararObraAdicionarCapituloParaStorage(obra: ObraLocal): ObraLocal {
-  return {
-    ...obra,
-    capa: ehDataUrlAdicionarCapitulo(obra.capa) ? "" : obra.capa,
-    arquivoObra: obra.arquivoObra
-      ? {
-          ...obra.arquivoObra,
-          conteudo: ehDataUrlAdicionarCapitulo(obra.arquivoObra.conteudo)
-            ? ""
-            : obra.arquivoObra.conteudo,
-        }
-      : null,
   };
 }
 

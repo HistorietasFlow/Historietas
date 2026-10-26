@@ -1809,3 +1809,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 16 — Adicionar Capítulo
 
 - Os helpers puros de ownership e atualização da lista local foram isolados em `lib/adicionar-capitulo-ownership-utils.ts`.
+
+## Registro da Fase 17 — Adicionar Capítulo
+
+- A preparação pura de obras para storage foi isolada em `lib/adicionar-capitulo-storage-preparation.ts`.
