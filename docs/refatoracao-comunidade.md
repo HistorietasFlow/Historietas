@@ -1865,3 +1865,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 30 — Adicionar Capítulo
 
 - A preparação da importação de arquivos `.txt` e `.md` foi movida para `lib/adicionar-capitulo-text-import.ts`, preservando validações, normalização, estatísticas, resumo e falhas de leitura; a página manteve a orquestração dos setters.
+
+## Registro da Fase 31 — Adicionar Capítulo
+
+- A mutação local determinística da criação de capítulo foi movida para `lib/adicionar-capitulo-local-create-mutation.ts`, preservando ordenação, autoria e progresso da obra alvo.
