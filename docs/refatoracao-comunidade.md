@@ -1873,3 +1873,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 32 — Adicionar Capítulo
 
 - O lifecycle da bridge de tradução foi movido para `hooks/useAdicionarCapituloLanguageBridge.ts`, preservando gatilhos, observer, filtros de atributos e os três refs da página.
+
+## Registro da Fase 1 — Login
+
+- Os redirects seguros e os helpers básicos de storage foram movidos para módulos dedicados, preservando validações de URL, fallbacks, isolamento de falhas e os consumidores de autenticação existentes.

@@ -14,6 +14,12 @@ import {
   criarMetadataAceiteTermos,
   registrarAceiteTermosPublicacao,
 } from "../../lib/aceiteTermos";
+import { obterRedirectToAtual } from "./lib/login-redirect-utils";
+import {
+  lerJsonStorageLogin,
+  normalizarListaStringsLogin,
+  salvarJsonStorageLogin,
+} from "./lib/login-storage-utils";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
 
@@ -444,47 +450,6 @@ function registrarFalhaSincronizacaoPerfil(
   }
 }
 
-function obterRedirectToSeguro(valor: string | null, fallback: string) {
-  const destino = typeof valor === "string" ? valor.trim() : "";
-
-  if (
-    !destino ||
-    !destino.startsWith("/") ||
-    destino.startsWith("//") ||
-    destino.includes("\\") ||
-    /[\u0000-\u001F\u007F]/.test(destino)
-  ) {
-    return fallback;
-  }
-
-  try {
-    const urlDestino = new URL(destino, "https://historietas.local");
-    const pathname = urlDestino.pathname.replace(/\/+$/, "") || "/";
-
-    if (
-      urlDestino.origin !== "https://historietas.local" ||
-      pathname === "/login" ||
-      pathname.startsWith("/login/")
-    ) {
-      return fallback;
-    }
-
-    return `${urlDestino.pathname}${urlDestino.search}${urlDestino.hash}`;
-  } catch {
-    return fallback;
-  }
-}
-
-function obterRedirectToAtual(fallback: string) {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
-
-  const params = new URLSearchParams(window.location.search);
-
-  return obterRedirectToSeguro(params.get("redirectTo"), fallback);
-}
-
 function criarStorageUsuarioLoginKey(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
@@ -493,44 +458,6 @@ function criarStorageUsuarioLoginKey(chave: string, userId: string) {
 
 function criarStorageObrasUsuarioLoginKey(userId: string) {
   return criarStorageUsuarioLoginKey(STORAGE_KEY, userId);
-}
-
-function normalizarListaStringsLogin(valor: unknown) {
-  return Array.isArray(valor)
-    ? valor
-        .filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
-        .map((item) => item.trim())
-    : [];
-}
-
-function lerJsonStorageLogin(chave: string): unknown {
-  const chaveLimpa = chave.trim();
-
-  if (typeof window === "undefined" || !chaveLimpa) {
-    return null;
-  }
-
-  try {
-    const texto = localStorage.getItem(chaveLimpa);
-
-    return texto ? JSON.parse(texto) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageLogin(chave: string, valor: unknown) {
-  const chaveLimpa = chave.trim();
-
-  if (typeof window === "undefined" || !chaveLimpa) {
-    return;
-  }
-
-  try {
-    localStorage.setItem(chaveLimpa, JSON.stringify(valor));
-  } catch {
-    // localStorage é apoio. O login não deve falhar por causa dele.
-  }
 }
 
 function normalizarObrasStorageLogin(valor: unknown) {
