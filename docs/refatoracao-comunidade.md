@@ -1751,3 +1751,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de rota foram isolados em `lib/adicionar-capitulo-route-utils.ts`, preservando redirects de login, prioridades de slug e fallbacks de leitura.
 - A página manteve todos os consumidores de carregamento, salvamento, Diário, notificações e link derivado nos mesmos fluxos.
+
+## Registro da Fase 5 — Adicionar Capítulo
+
+- Os helpers puros de profile foram isolados em `lib/adicionar-capitulo-profile-utils.ts`, preservando trim, referências e ownership local.
+- A página manteve o loader e a sincronização Supabase do autor nos mesmos fluxos.

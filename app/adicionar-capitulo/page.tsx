@@ -19,6 +19,10 @@ import {
 } from "./lib/adicionar-capitulo-storage-utils";
 import { criarId } from "./lib/adicionar-capitulo-id-utils";
 import {
+  aplicarAutorProfileAdicionarCapitulo,
+  obterTextoProfileAdicionarCapitulo,
+} from "./lib/adicionar-capitulo-profile-utils";
+import {
   criarHrefLeituraCapitulo,
   criarLoginHrefAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-route-utils";
@@ -146,10 +150,6 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
-function obterTextoProfileAdicionarCapitulo(valor: unknown) {
-  return typeof valor === "string" && valor.trim() ? valor.trim() : "";
-}
-
 async function carregarNomeProfileAdicionarCapitulo(userId: string) {
   const usuarioId = userId.trim();
 
@@ -198,33 +198,6 @@ async function carregarNomeProfileAdicionarCapitulo(userId: string) {
   }
 
   return "";
-}
-
-function aplicarAutorProfileAdicionarCapitulo(
-  obrasParaAtualizar: ObraLocal[],
-  userId: string,
-  nomeProfile: string
-) {
-  const nomeAutor = nomeProfile.trim();
-  const usuarioId = userId.trim();
-
-  if (!nomeAutor || !usuarioId) {
-    return obrasParaAtualizar;
-  }
-
-  return obrasParaAtualizar.map((obra) => {
-    const autorId = obra.autorId?.trim() || usuarioId;
-
-    if (autorId !== usuarioId) {
-      return obra;
-    }
-
-    return {
-      ...obra,
-      autor: nomeAutor,
-      autorId,
-    };
-  });
 }
 
 async function sincronizarAutorObraProfileAdicionarCapitulo(
