@@ -127,7 +127,7 @@ test("Adicionar Capítulo delega exclusivamente o lifecycle da bridge de traduç
     /observer\.observe\(raiz, \{\s*subtree: true,\s*childList: true,\s*characterData: true,\s*attributes: true,/,
   );
   assert.match(hookSource, /observer\.disconnect\(\);/);
-  assert.match(hookSource, /\}, \[language, carregando, obraAtual\]\);/);
+  assert.match(hookSource, /\}, \[raizTraducaoRef, language, carregando, obraAtual\]\);/);
   assert.doesNotMatch(hookSource, /supabase|localStorage|router/i);
   assert.doesNotMatch(
     hookSource,
