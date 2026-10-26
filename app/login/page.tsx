@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
-import type { TablesInsert } from "../../lib/supabase/database.types";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -24,6 +23,11 @@ import {
 import { formatarErroAuth } from "./lib/login-auth-error-formatter";
 import { prepararFormularioLogin } from "./lib/login-form-preparation";
 import { validarFormularioLogin } from "./lib/login-form-validation";
+import { prepararDadosProfileLogin } from "./lib/login-profile-preparation";
+import {
+  criarPayloadProfileLogin,
+  type PerfilExistenteLogin,
+} from "./lib/login-profile-payload";
 import {
   PROFILE_SYNC_FAILURE_STORAGE_KEY,
   registrarFalhaSincronizacaoPerfil,
@@ -69,7 +73,15 @@ export default function LoginPage() {
     emailInformado: string,
     userMetadata?: Record<string, unknown> | null,
   ): Promise<ResultadoSincronizacaoPerfil> => {
-    const userIdLimpo = userId.trim();
+    const {
+      userIdLimpo,
+      nomeFinal,
+    } = prepararDadosProfileLogin(
+      userId,
+      nomeInformado,
+      emailInformado,
+      userMetadata,
+    );
 
     if (!userIdLimpo) {
       const error = new Error(
@@ -79,31 +91,6 @@ export default function LoginPage() {
       registrarFalhaSincronizacaoPerfil(error, userIdLimpo);
       return { ok: false, error };
     }
-
-    const metadata =
-      userMetadata && typeof userMetadata === "object" ? userMetadata : {};
-    const nomeMetadata =
-      [metadata.nome, metadata.name, metadata.full_name]
-        .find(
-          (valor): valor is string =>
-            typeof valor === "string" && Boolean(valor.trim()),
-        )
-        ?.trim() || "";
-    const emailLimpo = emailInformado.trim();
-    const nomeFinal =
-      nomeInformado.trim() ||
-      nomeMetadata ||
-      emailLimpo.split("@")[0] ||
-      "Usuário";
-
-    type PerfilExistenteLogin = {
-      id?: string | null;
-      user_id?: string | null;
-      nome?: string | null;
-      bio?: string | null;
-      sobre_bio?: string | null;
-      avatar_url?: string | null;
-    };
 
     async function sincronizarUmaVez() {
       let perfilAtual: PerfilExistenteLogin | null = null;
@@ -142,17 +129,12 @@ export default function LoginPage() {
 
       const agora = new Date().toISOString();
 
-      const perfilPayload: TablesInsert<"profiles"> = {
-        user_id: userIdLimpo,
-        nome: perfilAtual?.nome?.trim() || nomeFinal,
-        bio: perfilAtual?.bio?.trim() || "Perfil de leitor no Historietas.",
-        sobre_bio:
-          perfilAtual?.sobre_bio?.trim() ||
-          perfilAtual?.bio?.trim() ||
-          "Perfil de leitor no Historietas.",
-        avatar_url: perfilAtual?.avatar_url || "",
-        atualizado_em: agora,
-      };
+      const perfilPayload = criarPayloadProfileLogin(
+        perfilAtual,
+        userIdLimpo,
+        nomeFinal,
+        agora,
+      );
 
       if (perfilAtual?.id) {
         const { data: perfilAtualizado, error: erroAtualizacao } =
