@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const backupStorageSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/lib/adicionar-capitulo-file-backup-storage.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const storageJavascript = typescript.transpileModule(storageSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -129,15 +136,28 @@ test("Adicionar Capítulo delega somente utilidades de storage ao módulo extra�
   assert.doesNotMatch(pageSource, /function criarStorageKeyUsuarioAdicionarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function lerStorageUsuarioAdicionarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function salvarJsonStorageUsuarioAdicionarCapitulo\(/);
-  assert.match(pageSource, /lerStorageUsuarioAdicionarCapitulo\(\s*FILE_BACKUP_STORAGE_KEY,/);
   assert.match(pageSource, /lerStorageUsuarioAdicionarCapitulo\(\s*STORAGE_KEY,/);
-  assert.match(pageSource, /salvarJsonStorageUsuarioAdicionarCapitulo\(\s*FILE_BACKUP_STORAGE_KEY,/);
   assert.match(pageSource, /salvarJsonStorageUsuarioAdicionarCapitulo\(\s*STORAGE_KEY,/);
   assert.match(pageSource, /const STORAGE_KEY = "historietas-obras";/);
   assert.match(
-    pageSource,
-    /const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";/,
+    backupStorageSource,
+    /const FILE_BACKUP_STORAGE_KEY\s*=\s*"historietas-arquivos-obras-backup";/,
   );
+  assert.match(
+    backupStorageSource,
+    /lerStorageUsuarioAdicionarCapitulo\(\s*FILE_BACKUP_STORAGE_KEY,/,
+  );
+  assert.match(
+    backupStorageSource,
+    /salvarJsonStorageUsuarioAdicionarCapitulo\(\s*FILE_BACKUP_STORAGE_KEY,/,
+  );
+  assert.match(
+    pageSource,
+    /from "\.\/lib\/adicionar-capitulo-file-backup-storage";/,
+  );
+  assert.doesNotMatch(pageSource, /const FILE_BACKUP_STORAGE_KEY\s*=/);
+  assert.doesNotMatch(pageSource, /function carregarBackupArquivosObras\(/);
+  assert.doesNotMatch(pageSource, /function sincronizarBackupArquivosObras\(/);
   assert.match(
     storageSource,
     /localStorage é fallback; a criação do capítulo continua em memória\./,
