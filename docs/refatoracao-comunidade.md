@@ -1893,3 +1893,6 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 5 — Login
 
 - Os lifecycles de modo desktop e de aviso após redefinição de senha foram movidos para hooks dedicados, preservando atualização imediata, listeners legados e modernos, timer e cleanup.
+## Registro da Fase 6 — Login
+
+- As traduções e a formatação de erros de autenticação foram movidas para módulos dedicados, preservando textos, prioridades de classificação e os consumidores existentes na página.

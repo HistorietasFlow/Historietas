@@ -33,7 +33,7 @@ test("helpers de erro de autenticação aceitam somente objetos com strings trim
   assert.equal(obterCodigoErroAuth("erro"), "");
 });
 
-test("Login mantém formatarErroAuth na página e delega apenas os leitores", () => {
+test("Login delega leitores e formatter de erro aos módulos extraídos", () => {
   assert.match(source, /export type ErroAuthSupabase/);
   assert.match(source, /typeof erroAuth\.message === "string" \? erroAuth\.message\.trim\(\) : ""/);
   assert.match(source, /typeof erroAuth\.code === "string" \? erroAuth\.code\.trim\(\) : ""/);
@@ -41,14 +41,9 @@ test("Login mantém formatarErroAuth na página e delega apenas os leitores", ()
     source,
     /from\s+["']react["']|useState|useEffect|localStorage|router|import\s+\{\s*supabase\s*\}|supabase\.(?:auth|from|rpc)/i,
   );
-  assert.match(
-    pageSource,
-    /from "\.\/lib\/login-auth-error-utils";/,
-  );
+  assert.match(pageSource, /from "\.\/lib\/login-auth-error-formatter";/);
   assert.doesNotMatch(pageSource, /type ErroAuthSupabase =/);
   assert.doesNotMatch(pageSource, /function obterMensagemErroAuth\(/);
   assert.doesNotMatch(pageSource, /function obterCodigoErroAuth\(/);
-  assert.match(pageSource, /function formatarErroAuth\(/);
-  assert.match(pageSource, /const mensagem = obterMensagemErroAuth\(error\);/);
-  assert.match(pageSource, /const codigo = obterCodigoErroAuth\(error\);/);
+  assert.doesNotMatch(pageSource, /function formatarErroAuth\(/);
 });
