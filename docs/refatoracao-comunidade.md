@@ -1727,3 +1727,12 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os valores derivados da tela foram isolados em `hooks/useEditarCapituloDerivedValues.ts`, preservando seleção, ordem, links, labels e prévias.
 - A página manteve estados, carregamento, salvamento, exclusão e composição visual.
+
+## Encerramento — Editar Capítulo
+
+- A refatoração estrutural de `app/editar-capitulo/page.tsx` foi encerrada após a Fase 25, pois o restante concentra orquestração, estado, efeitos e JSX.
+
+## Registro da Fase 1 — Adicionar Capítulo
+
+- Os helpers de storage por usuário foram isolados em `lib/adicionar-capitulo-storage-utils.ts`, preservando chaves, leitura segura, serialização e falhas silenciosas.
+- A página manteve as chaves de storage e todos os consumidores de backup, carregamento e persistência.
