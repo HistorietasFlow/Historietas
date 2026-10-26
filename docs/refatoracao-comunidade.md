@@ -1766,3 +1766,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de ordenação de capítulos foram isolados em `lib/adicionar-capitulo-chapter-order-utils.ts`, preservando fallbacks, desempate por data e a cópia antes da ordenação.
 - A página manteve os consumidores de próxima ordem, criação, ordenação e rota de leitura nos mesmos fluxos.
+
+## Registro da Fase 8 — Adicionar Capítulo
+
+- O normalizador puro de capítulo foi isolado em `lib/adicionar-capitulo-chapter-normalizer.ts`, preservando valores originais validados, coerções, fallbacks e a ordem positiva.
+- A página manteve o `map` de capítulos dentro de `normalizarObra` no mesmo fluxo.

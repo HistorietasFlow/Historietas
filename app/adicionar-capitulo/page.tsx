@@ -39,6 +39,7 @@ import {
   obterProximaOrdemCapitulo,
   ordenarCapitulosPorOrdem,
 } from "./lib/adicionar-capitulo-chapter-order-utils";
+import { normalizarCapitulo } from "./lib/adicionar-capitulo-chapter-normalizer";
 
 type CapituloLocal = {
   id: string;
@@ -234,38 +235,6 @@ async function sincronizarAutorObraProfileAdicionarCapitulo(
   } catch {
     // Se a atualização do nome falhar, o capítulo e o backup local continuam funcionando.
   }
-}
-
-function normalizarCapitulo(
-  capitulo: Partial<CapituloLocal>,
-  index: number
-): CapituloLocal {
-  return {
-    id:
-      typeof capitulo.id === "string" && capitulo.id.trim()
-        ? capitulo.id
-        : `capitulo-${index + 1}`,
-    titulo:
-      typeof capitulo.titulo === "string" && capitulo.titulo.trim()
-        ? capitulo.titulo
-        : `Capítulo ${index + 1}`,
-    texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
-    curtiu: Boolean(capitulo.curtiu),
-    salvo: Boolean(capitulo.salvo),
-    comentario:
-      typeof capitulo.comentario === "string" ? capitulo.comentario : "",
-    criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
-    lido: Boolean(capitulo.lido),
-    lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
-    publicado:
-      typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
-    ordem:
-      typeof capitulo.ordem === "number" &&
-      Number.isInteger(capitulo.ordem) &&
-      capitulo.ordem >= 1
-        ? capitulo.ordem
-        : index + 1,
-  };
 }
 
 function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
