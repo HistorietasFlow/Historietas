@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import typescript from "typescript";
+const source=readFileSync(new URL("../../app/adicionar-capitulo/lib/adicionar-capitulo-notification-utils.ts",import.meta.url),"utf8");
+const page=readFileSync(new URL("../../app/adicionar-capitulo/page.tsx",import.meta.url),"utf8");
+const id=`data:text/javascript;base64,${Buffer.from('export const criarId=()=>"id";').toString("base64")}`;
+const route=`data:text/javascript;base64,${Buffer.from('export const criarHrefLeituraCapitulo=(o,c,n)=>`/l/${o.id}/${c.id}/${n}`;').toString("base64")}`;
+const js=typescript.transpileModule(source.replace('"./adicionar-capitulo-id-utils"',JSON.stringify(id)).replace('"./adicionar-capitulo-route-utils"',JSON.stringify(route)),{compilerOptions:{module:typescript.ModuleKind.ESNext,target:typescript.ScriptTarget.ES2022}}).outputText;
+const {criarNotificacaoNovoCapitulo}=await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+test("notificação preserva contrato",()=>{const obra={id:"o",titulo:"Obra",autor:"Autor",publicado:true,capa:"c",classificacaoIndicativa:"Livre",slug:"obra",link:"/obra"};const n=criarNotificacaoNovoCapitulo(obra,{id:"c",titulo:"Cap"},3,"data");assert.deepEqual(n,{id:"id",tipo:"novo-capitulo",titulo:"Novo capítulo publicado",mensagem:"Cap foi adicionado em Obra.",obraId:"o",obraTitulo:"Obra",autor:"Autor",capituloId:"c",capituloTitulo:"Capítulo 3: Cap",href:"/l/o/c/3",lida:false,criadaEm:"data",obraPublicada:true,capa:"c",classificacaoIndicativa:"Livre"});assert.equal(criarNotificacaoNovoCapitulo({...obra,publicado:false},{id:"c",titulo:"Cap"},1,"d").titulo,"Novo capítulo salvo em rascunho");});
+test("página delega notificação",()=>{assert.doesNotMatch(page,/function criarNotificacaoNovoCapitulo\(/);assert.match(page,/criarNotificacaoNovoCapitulo\(/);assert.match(page,/function registrarNotificacoesNovoCapituloSupabase\(/);assert.match(page,/function registrarNotificacaoNovoCapituloLocal\(/);assert.doesNotMatch(source,/useState|useEffect|localStorage|\.from\(|router/);});

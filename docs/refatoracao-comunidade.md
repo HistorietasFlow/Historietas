@@ -1813,3 +1813,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 17 — Adicionar Capítulo
 
 - A preparação pura de obras para storage foi isolada em `lib/adicionar-capitulo-storage-preparation.ts`.
+
+## Registro da Fase 18 — Adicionar Capítulo
+
+- A criação pura da notificação de novo capítulo foi isolada em `lib/adicionar-capitulo-notification-utils.ts`.

@@ -14,6 +14,10 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const notificationSource = readFileSync(
+  new URL("../../app/adicionar-capitulo/lib/adicionar-capitulo-notification-utils.ts", import.meta.url),
+  "utf8",
+);
 const idUtilsJavascript = typescript.transpileModule(idUtilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -127,7 +131,9 @@ test("Adicionar Capítulo delega somente a geração de IDs ao módulo extraído
   );
   assert.doesNotMatch(pageSource, /function gerarUuidFallbackAdicionarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function criarId\(/);
-  assert.equal((pageSource.match(/\bid:\s*criarId\(\)/g) || []).length, 2);
+  assert.equal((pageSource.match(/\bid:\s*criarId\(\)/g) || []).length, 1);
+  assert.equal((notificationSource.match(/\bid:\s*criarId\(\)/g) || []).length, 1);
+  assert.match(notificationSource, /import \{ criarId \} from "\.\/adicionar-capitulo-id-utils";/);
   assert.match(idUtilsSource, /new Uint8Array\(16\)/);
   assert.match(idUtilsSource, /globalThis/);
   assert.match(idUtilsSource, /cryptoGlobal\.randomUUID/);
