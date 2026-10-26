@@ -1889,3 +1889,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 4 — Login
 
 - A sincronização local de storage por usuário foi movida para `lib/login-storage-sync.ts`, preservando ownership de obras, migração das obras antigas e normalização das listas associadas à conta.
+
+## Registro da Fase 5 — Login
+
+- Os lifecycles de modo desktop e de aviso após redefinição de senha foram movidos para hooks dedicados, preservando atualização imediata, listeners legados e modernos, timer e cleanup.
