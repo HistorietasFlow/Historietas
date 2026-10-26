@@ -1885,3 +1885,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 3 — Login
 
 - Os leitores de erros de autenticação e o diagnóstico de falhas de sincronização de profile foram movidos para módulos dedicados, preservando classificação, registro em sessão e falhas silenciosas.
+
+## Registro da Fase 4 — Login
+
+- A sincronização local de storage por usuário foi movida para `lib/login-storage-sync.ts`, preservando ownership de obras, migração das obras antigas e normalização das listas associadas à conta.
