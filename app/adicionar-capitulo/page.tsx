@@ -20,7 +20,6 @@ import {
 import { criarId } from "./lib/adicionar-capitulo-id-utils";
 import {
   aplicarAutorProfileAdicionarCapitulo,
-  obterTextoProfileAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-profile-utils";
 import {
   criarHrefLeituraCapitulo,
@@ -50,6 +49,7 @@ import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-uti
 import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario, obraPertenceAoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
 import { prepararObraAdicionarCapituloParaStorage } from "./lib/adicionar-capitulo-storage-preparation";
 import { criarNotificacaoNovoCapitulo } from "./lib/adicionar-capitulo-notification-utils";
+import { carregarNomeProfileAdicionarCapitulo } from "./actions/carregar-nome-profile-adicionar-capitulo";
 
 type CapituloLocal = {
   id: string;
@@ -126,7 +126,8 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
-async function carregarNomeProfileAdicionarCapitulo(userId: string) {
+/* loader movido para actions/carregar-nome-profile-adicionar-capitulo */
+/*
   const usuarioId = userId.trim();
 
   if (!usuarioId) {
@@ -174,7 +175,7 @@ async function carregarNomeProfileAdicionarCapitulo(userId: string) {
   }
 
   return "";
-}
+}*/
 
 async function sincronizarAutorObraProfileAdicionarCapitulo(
   obraId: string,
