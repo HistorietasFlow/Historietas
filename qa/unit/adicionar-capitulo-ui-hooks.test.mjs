@@ -59,7 +59,7 @@ function executarHookDesktop(mediaQuery) {
   };
 
   try {
-    useAdicionarCapituloDesktopMode();
+    Reflect.apply(useAdicionarCapituloDesktopMode, null, []);
   } finally {
     globalThis.window = windowAnterior;
   }
@@ -186,13 +186,15 @@ function calcularValores({
 } = {}) {
   chamadasHref.length = 0;
 
-  return useAdicionarCapituloDerivedValues({
-    obras,
-    obraId,
-    titulo,
-    texto,
-    capituloCriado,
-  });
+  return Reflect.apply(useAdicionarCapituloDerivedValues, null, [
+    {
+      obras,
+      obraId,
+      titulo,
+      texto,
+      capituloCriado,
+    },
+  ]);
 }
 
 test("useAdicionarCapituloDerivedValues preserva a obra, a prévia e os fallbacks", () => {
