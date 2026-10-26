@@ -1881,3 +1881,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 2 — Login
 
 - As chaves de storage e os helpers puros de normalização e ownership de obras foram movidos para módulos dedicados, preservando autoria, trim, precedência e os consumidores da sincronização local.
+
+## Registro da Fase 3 — Login
+
+- Os leitores de erros de autenticação e o diagnóstico de falhas de sincronização de profile foram movidos para módulos dedicados, preservando classificação, registro em sessão e falhas silenciosas.
