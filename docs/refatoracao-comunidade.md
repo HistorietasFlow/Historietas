@@ -1853,3 +1853,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 27 — Adicionar Capítulo
 
 - O CSS global da página foi movido para `lib/adicionar-capitulo-page-css.ts`, preservando variáveis, seletores, regras duplicadas da navegação e os três consumidores existentes.
+
+## Registro da Fase 28 — Adicionar Capítulo
+
+- Os estilos React da página foram movidos para `lib/adicionar-capitulo-styles.ts`, preservando os 62 contratos `CSSProperties`, variantes responsivas, spreads e consumidores existentes.
