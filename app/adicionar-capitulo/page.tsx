@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -18,7 +18,6 @@ import {
   aplicarAutorProfileAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-profile-utils";
 import {
-  criarHrefLeituraCapitulo,
   criarLoginHrefAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-route-utils";
 import {
@@ -30,6 +29,8 @@ import {
   criarTituloPorNomeArquivo,
 } from "./lib/adicionar-capitulo-text-utils";
 import { validarCapitulo } from "./lib/adicionar-capitulo-validation";
+import { useAdicionarCapituloDesktopMode } from "./hooks/useAdicionarCapituloDesktopMode";
+import { useAdicionarCapituloDerivedValues } from "./hooks/useAdicionarCapituloDerivedValues";
 import {
   adicionarCapituloPageCss,
 } from "./lib/adicionar-capitulo-page-css";
@@ -217,35 +218,11 @@ export default function AdicionarCapituloPage() {
     useState<NotificacaoLocal | null>(null);
   const [arquivoImportadoNome, setArquivoImportadoNome] = useState("");
   const [arquivoImportadoErro, setArquivoImportadoErro] = useState("");
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useAdicionarCapituloDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { language } = useHistorietasLanguage();
   const criandoCapituloRef = useRef(false);
   const raizTraducaoRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    atualizarModoDesktop();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -378,9 +355,20 @@ export default function AdicionarCapituloPage() {
     };
   }, [router]);
 
-  const obraAtual = useMemo(() => {
-    return obras.find((obra) => obra.id === obraId) || null;
-  }, [obras, obraId]);
+  const {
+    obraAtual,
+    numeroNovoCapitulo,
+    tituloPreview,
+    textoPreview,
+    minhaObraHref,
+    capituloCriadoHref,
+  } = useAdicionarCapituloDerivedValues({
+    obras,
+    obraId,
+    titulo,
+    texto,
+    capituloCriado,
+  });
 
   useEffect(() => {
     const raiz = raizTraducaoRef.current;
@@ -425,17 +413,6 @@ export default function AdicionarCapituloPage() {
       observer.disconnect();
     };
   }, [language, carregando, obraAtual]);
-
-  const numeroNovoCapitulo = obraAtual
-    ? obterProximaOrdemCapitulo(obraAtual.capitulos)
-    : 1;
-
-  const tituloPreview = titulo.trim() || `Capítulo ${numeroNovoCapitulo}`;
-
-  const textoPreview = texto.trim();
-
-
-
 
   function salvarObras(novasObras: ObraLocal[]) {
     const backupArquivosObras = carregarBackupArquivosObras(usuarioIdLogado);
@@ -838,21 +815,6 @@ export default function AdicionarCapituloPage() {
       </main>
     );
   }
-
-  const minhaObraHref = "/painel-autor";
-  const capituloCriadoHref = capituloCriado
-    ? criarHrefLeituraCapitulo(
-        obraAtual,
-        capituloCriado,
-        obterOrdemCapitulo(
-          capituloCriado,
-          obraAtual.capitulos.findIndex(
-            (capitulo) => capitulo.id === capituloCriado.id
-          ) + 1
-        )
-      )
-    : "";
-
 
   return (
     <main ref={raizTraducaoRef} style={pageThemeStyle}>
