@@ -18,6 +18,10 @@ import {
   salvarJsonStorageUsuarioAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-storage-utils";
 import { criarId } from "./lib/adicionar-capitulo-id-utils";
+import {
+  contarLetrasNumeros,
+  criarTituloPorNomeArquivo,
+} from "./lib/adicionar-capitulo-text-utils";
 
 type CapituloLocal = {
   id: string;
@@ -137,18 +141,6 @@ type SupabaseObraRow = {
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
-
-function contarLetrasNumeros(texto: string) {
-  return texto.match(/[\p{L}\p{N}]/gu)?.length || 0;
-}
-
-function criarTituloPorNomeArquivo(nomeArquivo: string) {
-  return nomeArquivo
-    .replace(/\.(txt|md)$/i, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 function criarLoginHrefAdicionarCapitulo(obraId?: string) {
   const obraIdLimpo = obraId?.trim() || "";

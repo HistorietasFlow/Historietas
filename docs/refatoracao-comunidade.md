@@ -1741,3 +1741,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os helpers puros de geração de IDs foram isolados em `lib/adicionar-capitulo-id-utils.ts`, preservando a prioridade de Web Crypto, o fallback UUID v4 e os bytes de variante RFC.
 - A página manteve os dois consumidores de `criarId` na notificação e na criação do novo capítulo.
+
+## Registro da Fase 3 — Adicionar Capítulo
+
+- Os helpers puros de texto foram isolados em `lib/adicionar-capitulo-text-utils.ts`, preservando a contagem Unicode e a normalização do título do arquivo importado.
+- A página manteve os consumidores de estatísticas, importação e validação nos mesmos fluxos.
