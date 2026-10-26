@@ -22,6 +22,8 @@ import {
   traduzirLogin,
 } from "./lib/login-translations";
 import { formatarErroAuth } from "./lib/login-auth-error-formatter";
+import { prepararFormularioLogin } from "./lib/login-form-preparation";
+import { validarFormularioLogin } from "./lib/login-form-validation";
 import {
   PROFILE_SYNC_FAILURE_STORAGE_KEY,
   registrarFalhaSincronizacaoPerfil,
@@ -290,36 +292,19 @@ export default function LoginPage() {
     setErro("");
     setAviso("");
 
-    const emailFinal = email.trim().toLowerCase();
-    const nomeFinal = nome.trim();
+    const { emailFinal, nomeFinal } = prepararFormularioLogin(email, nome);
+    const chaveErro = validarFormularioLogin({
+      emailFinal,
+      nomeFinal,
+      senha,
+      criandoConta,
+      recuperandoSenha,
+      aceitouTermos,
+      cientePrivacidade,
+    });
 
-    if (!emailFinal) {
-      setErro(t("emailRequired"));
-      return;
-    }
-
-    if (
-      criandoConta &&
-      (senha.length < 8 ||
-        !/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(senha) ||
-        !/\d/.test(senha))
-    ) {
-      setErro(t("signupPasswordRequirements"));
-      return;
-    }
-
-    if (!recuperandoSenha && !criandoConta && senha.length < 6) {
-      setErro(t("passwordMin"));
-      return;
-    }
-
-    if (criandoConta && nomeFinal.length < 2) {
-      setErro(t("displayNameMin"));
-      return;
-    }
-
-    if (criandoConta && (!aceitouTermos || !cientePrivacidade)) {
-      setErro(t("consentRequired"));
+    if (chaveErro) {
+      setErro(t(chaveErro));
       return;
     }
 
