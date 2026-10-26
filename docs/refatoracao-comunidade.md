@@ -1825,3 +1825,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 20 — Adicionar Capítulo
 
 - A sincronização complementar do autor com o profile foi movida para `actions/sincronizar-autor-obra-profile-adicionar-capitulo.ts`, preservando o disparo fire-and-forget com `void` na página.
+
+## Registro da Fase 21 — Adicionar Capítulo
+
+- O registro do novo capítulo no Diário foi movido para `actions/registrar-diario-novo-capitulo.ts`, preservando o payload principal, o fallback sem metadata e o disparo fire-and-forget com `void` na página.
