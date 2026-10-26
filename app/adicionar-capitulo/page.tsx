@@ -8,7 +8,6 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { idObraSupabaseValido } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import { traduzirElementoAdicionarCapitulo } from "./lib/adicionar-capitulo-language-bridge";
 import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
@@ -24,6 +23,7 @@ import { validarCapitulo } from "./lib/adicionar-capitulo-validation";
 import { prepararImportacaoArquivoTextoAdicionarCapitulo } from "./lib/adicionar-capitulo-text-import";
 import { useAdicionarCapituloDesktopMode } from "./hooks/useAdicionarCapituloDesktopMode";
 import { useAdicionarCapituloDerivedValues } from "./hooks/useAdicionarCapituloDerivedValues";
+import { useAdicionarCapituloLanguageBridge } from "./hooks/useAdicionarCapituloLanguageBridge";
 import {
   adicionarCapituloPageCss,
 } from "./lib/adicionar-capitulo-page-css";
@@ -361,49 +361,12 @@ export default function AdicionarCapituloPage() {
     capituloCriado,
   });
 
-  useEffect(() => {
-    const raiz = raizTraducaoRef.current;
-
-    if (!raiz) {
-      return;
-    }
-
-    let atualizacaoAgendada = false;
-
-    const aplicarTraducao = () => {
-      atualizacaoAgendada = false;
-
-      if (raizTraducaoRef.current) {
-        traduzirElementoAdicionarCapitulo(
-          raizTraducaoRef.current,
-          language
-        );
-      }
-    };
-
-    traduzirElementoAdicionarCapitulo(raiz, language);
-
-    const observer = new MutationObserver(() => {
-      if (atualizacaoAgendada) {
-        return;
-      }
-
-      atualizacaoAgendada = true;
-      queueMicrotask(aplicarTraducao);
-    });
-
-    observer.observe(raiz, {
-      subtree: true,
-      childList: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ["aria-label", "title", "placeholder", "alt"],
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [language, carregando, obraAtual]);
+  useAdicionarCapituloLanguageBridge({
+    raizTraducaoRef,
+    language,
+    carregando,
+    obraAtual,
+  });
 
   function salvarObras(novasObras: ObraLocal[]) {
     const backupArquivosObras = carregarBackupArquivosObras(usuarioIdLogado);
