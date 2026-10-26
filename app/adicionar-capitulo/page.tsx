@@ -51,6 +51,7 @@ import { prepararObraAdicionarCapituloParaStorage } from "./lib/adicionar-capitu
 import { criarNotificacaoNovoCapitulo } from "./lib/adicionar-capitulo-notification-utils";
 import { carregarNomeProfileAdicionarCapitulo } from "./actions/carregar-nome-profile-adicionar-capitulo";
 import { sincronizarAutorObraProfileAdicionarCapitulo } from "./actions/sincronizar-autor-obra-profile-adicionar-capitulo";
+import { registrarDiarioNovoCapitulo } from "./actions/registrar-diario-novo-capitulo";
 
 type CapituloLocal = {
   id: string;
@@ -263,58 +264,6 @@ function salvarObrasAdicionarCapituloStorage(
   );
 
   sincronizarBackupArquivosObras(obrasParaSalvar, userIdLimpo);
-}
-
-async function registrarDiarioNovoCapitulo({
-  userId,
-  obra,
-  capitulo,
-  numeroCapitulo,
-  criadoEm,
-}: {
-  userId: string;
-  obra: ObraLocal;
-  capitulo: CapituloLocal;
-  numeroCapitulo: number;
-  criadoEm: string;
-}) {
-  try {
-    const payload = {
-      user_id: userId,
-      tipo: "publicou_capitulo",
-      obra_id: obra.id,
-      capitulo_id: capitulo.id,
-      texto: "",
-      visibilidade: "publico",
-      metadata: {
-        obra_titulo: obra.titulo,
-        titulo_obra: obra.titulo,
-        capitulo_titulo: capitulo.titulo,
-        numero_capitulo: numeroCapitulo,
-        href: criarHrefLeituraCapitulo(obra, capitulo, numeroCapitulo),
-      },
-      criado_em: criadoEm,
-      atualizado_em: criadoEm,
-    };
-
-    const { error } = await supabase.from("diario_atividades").insert(payload);
-
-    if (!error) {
-      return;
-    }
-
-    await supabase.from("diario_atividades").insert({
-      user_id: userId,
-      tipo: "publicou_capitulo",
-      obra_id: obra.id,
-      capitulo_id: capitulo.id,
-      texto: "",
-      visibilidade: "publico",
-      criado_em: criadoEm,
-    });
-  } catch (error) {
-    console.warn("Não consegui registrar o capítulo no Diário:", error);
-  }
 }
 
 async function registrarNotificacoesNovoCapituloSupabase({
