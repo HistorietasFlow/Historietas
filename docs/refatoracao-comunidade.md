@@ -1849,3 +1849,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 26 — Adicionar Capítulo
 
 - A validação pura do capítulo foi movida para `lib/adicionar-capitulo-validation.ts`, preservando título automático, contagem Unicode e as mensagens de validação.
+
+## Registro da Fase 27 — Adicionar Capítulo
+
+- O CSS global da página foi movido para `lib/adicionar-capitulo-page-css.ts`, preservando variáveis, seletores, regras duplicadas da navegação e os três consumidores existentes.
