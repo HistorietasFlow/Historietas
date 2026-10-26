@@ -16,10 +16,19 @@ import {
 } from "../../lib/aceiteTermos";
 import { obterRedirectToAtual } from "./lib/login-redirect-utils";
 import {
+  criarStorageObrasUsuarioLoginKey,
+  criarStorageUsuarioLoginKey,
+} from "./lib/login-storage-key-utils";
+import {
   lerJsonStorageLogin,
   normalizarListaStringsLogin,
   salvarJsonStorageLogin,
 } from "./lib/login-storage-utils";
+import {
+  normalizarObrasStorageLogin,
+  obterAutorIdObraLogin,
+  obraPertenceAoUsuarioLogin,
+} from "./lib/login-work-storage-utils";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
 
@@ -285,7 +294,6 @@ function traduzirLogin(
   return LOGIN_TRANSLATIONS[language][key];
 }
 
-const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
@@ -448,46 +456,6 @@ function registrarFalhaSincronizacaoPerfil(
   } catch {
     // O registro local é apenas diagnóstico e não pode bloquear o login.
   }
-}
-
-function criarStorageUsuarioLoginKey(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function criarStorageObrasUsuarioLoginKey(userId: string) {
-  return criarStorageUsuarioLoginKey(STORAGE_KEY, userId);
-}
-
-function normalizarObrasStorageLogin(valor: unknown) {
-  return Array.isArray(valor)
-    ? valor.filter((obra): obra is Record<string, unknown> => {
-        return Boolean(obra && typeof obra === "object" && !Array.isArray(obra));
-      })
-    : ([] as Record<string, unknown>[]);
-}
-
-function obterTextoRegistroLogin(registro: Record<string, unknown>, campo: string) {
-  const valor = registro[campo];
-
-  return typeof valor === "string" ? valor.trim() : "";
-}
-
-function obterAutorIdObraLogin(obra: Record<string, unknown>) {
-  return (
-    obterTextoRegistroLogin(obra, "autorId") ||
-    obterTextoRegistroLogin(obra, "user_id") ||
-    obterTextoRegistroLogin(obra, "userId") ||
-    obterTextoRegistroLogin(obra, "autor_id")
-  );
-}
-
-function obraPertenceAoUsuarioLogin(obra: Record<string, unknown>, userId: string) {
-  const userIdLimpo = userId.trim();
-  const autorId = obterAutorIdObraLogin(obra);
-
-  return Boolean(userIdLimpo && autorId && autorId === userIdLimpo);
 }
 
 function sincronizarStorageUsuarioLogin(userId: string) {
