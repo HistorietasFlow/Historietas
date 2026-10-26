@@ -1845,3 +1845,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 25 — Adicionar Capítulo
 
 - O carregamento e a persistência local das obras foram movidos para `lib/adicionar-capitulo-local-work-storage.ts`, preservando normalização, restauração de backup, ownership, persistência por usuário e a ordem entre backup e storage.
+
+## Registro da Fase 26 — Adicionar Capítulo
+
+- A validação pura do capítulo foi movida para `lib/adicionar-capitulo-validation.ts`, preservando título automático, contagem Unicode e as mensagens de validação.

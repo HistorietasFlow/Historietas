@@ -21,6 +21,13 @@ const metricsSource = readFileSync(
   ),
   "utf8",
 );
+const validationSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/lib/adicionar-capitulo-validation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const textUtilsJavascript = typescript.transpileModule(textUtilsSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -76,8 +83,19 @@ test("Adicionar Capítulo delega somente os helpers de texto ao módulo extraíd
   );
   assert.match(
     pageSource,
-    /function validarCapitulo[\s\S]*?contarLetrasNumeros\(tituloFinal\)[\s\S]*?contarLetrasNumeros\(textoLimpo\)/,
+    /import \{ validarCapitulo \} from "\.\/lib\/adicionar-capitulo-validation";/,
   );
+  assert.doesNotMatch(pageSource, /function validarCapitulo\(/);
+  assert.match(
+    pageSource,
+    /const erroValidacao = validarCapitulo\(\s*titulo,\s*texto,\s*numeroNovoCapitulo\s*\);/,
+  );
+  assert.match(
+    validationSource,
+    /from "\.\/adicionar-capitulo-text-utils"/,
+  );
+  assert.match(validationSource, /contarLetrasNumeros\(tituloFinal\)/);
+  assert.match(validationSource, /contarLetrasNumeros\(textoLimpo\)/);
   assert.ok(textUtilsSource.includes("/[\\p{L}\\p{N}]/gu"));
   assert.match(textUtilsSource, /\?\.length \|\| 0/);
   assert.match(textUtilsSource, /\.replace\(\/\\\.\(txt\|md\)\$\/i, ""\)/);

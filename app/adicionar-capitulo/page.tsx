@@ -29,6 +29,7 @@ import {
   contarLetrasNumeros,
   criarTituloPorNomeArquivo,
 } from "./lib/adicionar-capitulo-text-utils";
+import { validarCapitulo } from "./lib/adicionar-capitulo-validation";
 import {
   obterOrdemCapitulo,
   obterProximaOrdemCapitulo,
@@ -482,21 +483,6 @@ export default function AdicionarCapituloPage() {
     }
   }
 
-  function validarCapitulo() {
-    const tituloFinal = titulo.trim() || `Capítulo ${numeroNovoCapitulo}`;
-    const textoLimpo = texto.trim();
-
-    if (contarLetrasNumeros(tituloFinal) < 3) {
-      return "O título do capítulo precisa ter pelo menos 3 letras ou números. Se quiser usar o título automático, deixe o campo vazio.";
-    }
-
-    if (contarLetrasNumeros(textoLimpo) < 20) {
-      return "O texto do capítulo precisa ter pelo menos 20 letras ou números.";
-    }
-
-    return "";
-  }
-
   async function criarCapitulo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -504,7 +490,11 @@ export default function AdicionarCapituloPage() {
       return;
     }
 
-    const erroValidacao = validarCapitulo();
+    const erroValidacao = validarCapitulo(
+      titulo,
+      texto,
+      numeroNovoCapitulo
+    );
 
     if (erroValidacao) {
       setErro(erroValidacao);
