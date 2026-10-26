@@ -20,9 +20,6 @@ import {
 import {
   criarLoginHrefAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-route-utils";
-import {
-  calcularProgressoLeitura,
-} from "./lib/adicionar-capitulo-metrics-utils";
 import { validarCapitulo } from "./lib/adicionar-capitulo-validation";
 import { prepararImportacaoArquivoTextoAdicionarCapitulo } from "./lib/adicionar-capitulo-text-import";
 import { useAdicionarCapituloDesktopMode } from "./hooks/useAdicionarCapituloDesktopMode";
@@ -96,8 +93,8 @@ import {
 import {
   obterOrdemCapitulo,
   obterProximaOrdemCapitulo,
-  ordenarCapitulosPorOrdem,
 } from "./lib/adicionar-capitulo-chapter-order-utils";
+import { aplicarNovoCapituloNasObrasLocais } from "./lib/adicionar-capitulo-local-create-mutation";
 import { normalizarObra } from "./lib/adicionar-capitulo-work-normalizer";
 import {
   restaurarArquivoObraComBackup,
@@ -679,23 +676,13 @@ export default function AdicionarCapituloPage() {
         novoCapitulo.criadoEm || criadoEm
       );
 
-      const novasObras = obras.map((obra) => {
-        if (obra.id !== obraAtual.id) {
-          return obra;
-        }
-
-        const capitulosAtualizados = ordenarCapitulosPorOrdem([
-          ...obra.capitulos,
-          novoCapitulo,
-        ]);
-
-        return {
-          ...obra,
-          autor: nomeProfileAutor || obra.autor,
-          autorId: obra.autorId || usuarioIdLogado || user.id,
-          capitulos: capitulosAtualizados,
-          progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
-        };
+      const novasObras = aplicarNovoCapituloNasObrasLocais({
+        obras,
+        obraId: obraAtual.id,
+        novoCapitulo,
+        nomeProfileAutor,
+        usuarioIdLogado,
+        userId: user.id,
       });
 
       salvarObras(novasObras);
