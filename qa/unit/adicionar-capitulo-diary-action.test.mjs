@@ -16,10 +16,10 @@ const pageSource = readFileSync(
 );
 let indiceModulo = 0;
 
-async function carregarModulo(resultados = []) {
+async function carregarModulo(resultados = [], criarSupabase) {
   const chamadas = [];
   globalThis.__adicionarCapituloDiaryDependencies = {
-    supabase: {
+    supabase: criarSupabase?.(chamadas) || {
       from(tabela) {
         chamadas.push(["from", tabela]);
         return {
@@ -123,6 +123,29 @@ test("Diário de Adicionar Capítulo usa fallback sem metadata ou atualização"
   }]);
   assert.equal("metadata" in insercoes[1][2], false);
   assert.equal("atualizado_em" in insercoes[1][2], false);
+});
+
+test("Diário de Adicionar Capítulo absorve exceção real e mantém o aviso", async () => {
+  const erro = new Error("falha simulada");
+  const modulo = await carregarModulo([], () => ({
+    from() {
+      throw erro;
+    },
+  }));
+  const warnAnterior = console.warn;
+  const avisos = [];
+  console.warn = (...args) => avisos.push(args);
+
+  try {
+    await assert.doesNotReject(() => modulo.registrarDiarioNovoCapitulo(parametros));
+  } finally {
+    console.warn = warnAnterior;
+  }
+
+  assert.deepEqual(avisos, [[
+    "Não consegui registrar o capítulo no Diário:",
+    erro,
+  ]]);
 });
 
 test("Adicionar Capítulo delega o registro do Diário ao action", () => {
