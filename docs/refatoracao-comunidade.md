@@ -1791,3 +1791,8 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - Os normalizadores puros menores de categoria de arquivo e capítulo Supabase foram isolados em `lib/adicionar-capitulo-supabase-normalization.ts`.
 - A página manteve a normalização da obra Supabase, a ordenação e o complemento local de capítulos no fluxo atual.
+
+## Registro da Fase 13 — Adicionar Capítulo
+
+- O normalizador puro da obra local foi isolado em `lib/adicionar-capitulo-work-normalizer.ts`.
+- A página manteve os fluxos de carregamento e persistência como consumidores do normalizador extraído.
