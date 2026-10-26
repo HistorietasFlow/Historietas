@@ -126,57 +126,6 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 
-/* loader movido para actions/carregar-nome-profile-adicionar-capitulo */
-/*
-  const usuarioId = userId.trim();
-
-  if (!usuarioId) {
-    return "";
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, user_id, nome")
-      .eq("user_id", usuarioId)
-      .limit(1)
-      .maybeSingle();
-
-    if (!error && data) {
-      const profile = data as Record<string, unknown>;
-      const nome = obterTextoProfileAdicionarCapitulo(profile.nome);
-
-      if (nome) {
-        return nome;
-      }
-    }
-  } catch {
-    // O perfil é complemento social. A criação do capítulo não deve depender dele.
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, user_id, nome")
-      .eq("id", usuarioId)
-      .limit(1)
-      .maybeSingle();
-
-    if (!error && data) {
-      const profile = data as Record<string, unknown>;
-      const nome = obterTextoProfileAdicionarCapitulo(profile.nome);
-
-      if (nome) {
-        return nome;
-      }
-    }
-  } catch {
-    // Compatibilidade com bases onde profiles.id é o próprio auth.users.id.
-  }
-
-  return "";
-}*/
-
 async function sincronizarAutorObraProfileAdicionarCapitulo(
   obraId: string,
   userId: string,
