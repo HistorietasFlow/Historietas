@@ -1877,3 +1877,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 1 — Login
 
 - Os redirects seguros e os helpers básicos de storage foram movidos para módulos dedicados, preservando validações de URL, fallbacks, isolamento de falhas e os consumidores de autenticação existentes.
+
+## Registro da Fase 2 — Login
+
+- As chaves de storage e os helpers puros de normalização e ownership de obras foram movidos para módulos dedicados, preservando autoria, trim, precedência e os consumidores da sincronização local.
