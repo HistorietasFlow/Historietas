@@ -31,6 +31,7 @@ import { calcularTotaisSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-
 import { criarLoginHrefAdminExclusoesConta } from "./lib/admin-exclusoes-conta-route-utils";
 import { buscarSolicitacoesExclusaoAdmin } from "./loaders/buscar-solicitacoes-exclusao-admin";
 import { buscarOperacoesRecuperaveisAdmin } from "./loaders/buscar-operacoes-recuperaveis-admin";
+import { atualizarSolicitacaoExclusaoAdmin } from "./actions/atualizar-solicitacao-exclusao-admin";
 
 type RespostaRecuperacao = {
   ok?: boolean;
@@ -40,13 +41,6 @@ type RespostaRecuperacao = {
   acompanhamentoPendente?: boolean;
   operacaoId?: string;
   statusOperacao?: string;
-};
-
-type RespostaAtualizacao = {
-  ok?: boolean;
-  codigo?: string;
-  mensagem?: string;
-  solicitacao?: unknown;
 };
 
 export default function AdminExclusoesContaPage() {
@@ -229,23 +223,11 @@ export default function AdminExclusoesContaPage() {
     setSucesso("");
 
     try {
-      const response = await fetch("/api/admin/solicitacoes-exclusao", {
-        method: "PATCH",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          id: solicitacao.id,
-          status: novoStatus,
-          observacaoInterna,
-        }),
+      const { response, data } = await atualizarSolicitacaoExclusaoAdmin({
+        id: solicitacao.id,
+        status: novoStatus,
+        observacaoInterna,
       });
-
-      const data = (await response.json().catch(() => null)) as
-        | RespostaAtualizacao
-        | null;
 
       if (response.status === 401) {
         router.replace(criarLoginHrefAdminExclusoesConta());
