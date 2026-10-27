@@ -2012,3 +2012,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 18 — Admin Comunidade
 
 - A sincronização das observações de moderação foi movida para `lib/admin-comunidade-observation-utils.ts`, preservando valores editados, chaves antigas e a ordem dos setters na página.
+
+## Registro da Fase 19 — Admin Comunidade
+
+- A verificação de usuário autenticado e da permissão administrativa foi movida para `loaders/verificar-acesso-moderacao.ts`, preservando consultas, erros e a orquestração de acesso na página.
