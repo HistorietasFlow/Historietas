@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
-import { formatarData, normalizarTexto } from "../../../lib/utils";
+import { formatarData } from "../../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -138,9 +138,14 @@ import {
   textoConfirmacaoRemocaoAdminComunidade,
 } from "./lib/admin-comunidade-text-utils";
 import { conteudoDenunciadoIndisponivel } from "./lib/admin-comunidade-content-utils";
+import {
+  type StatusFiltroDenuncia,
+  filtrarDenunciasModeracao,
+  filtrarDenunciasPerfisModeracao,
+  obterDenunciasAtivas,
+} from "./lib/admin-comunidade-filter-utils";
+import { calcularTotaisModeracao } from "./lib/admin-comunidade-stats-utils";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
-
-type StatusFiltroDenuncia = StatusDenuncia | "todas" | "arquivadas";
 
 type DenunciaComunidade = {
   id: string;
@@ -896,110 +901,25 @@ const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
     };
   }, [router]);
 
-  const denunciasAtivas = useMemo(() => {
-    return denuncias.filter((denuncia) => !denuncia.arquivada);
-  }, [denuncias]);
+  const denunciasAtivas = useMemo(
+    () => obterDenunciasAtivas(denuncias),
+    [denuncias]
+  );
 
-  const denunciasFiltradas = useMemo(() => {
-    const buscaNormalizada = normalizarTexto(busca);
+  const denunciasFiltradas = useMemo(
+    () => filtrarDenunciasModeracao(denuncias, statusFiltro, busca),
+    [busca, denuncias, statusFiltro]
+  );
 
-    return denuncias.filter((denuncia) => {
-      const arquivada = denuncia.arquivada;
-
-      if (statusFiltro === "arquivadas") {
-        if (!arquivada) {
-          return false;
-        }
-      } else {
-        if (arquivada) {
-          return false;
-        }
-
-        const statusCombina =
-          statusFiltro === "todas" || denuncia.status === statusFiltro;
-
-        if (!statusCombina) {
-          return false;
-        }
-      }
-
-      if (!buscaNormalizada) {
-        return true;
-      }
-
-      const conteudoBusca = normalizarTexto(
-        [
-          denuncia.motivo,
-          denuncia.detalhe,
-          denuncia.status,
-          denuncia.denuncianteNome,
-          denuncia.alvoTipo,
-          denuncia.alvoResumo,
-          denuncia.alvoAutor,
-          denuncia.alvoAutorId,
-          denuncia.alvoPostId,
-          denuncia.alvoCategoria || "",
-          denuncia.alvoTipoPublicacao || "",
-          denuncia.alvoTemSpoiler ? "spoiler contem spoiler" : "",
-          denuncia.alvoObra || "",
-          denuncia.alvoCapituloTitulo || "",
-          denuncia.alvoCapituloId || "",
-          denuncia.alvoObraId || "",
-          denuncia.alvoObraSlug || "",
-          denuncia.alvoPerfilUserId || "",
-          denuncia.alvoAnotacaoId || "",
-          arquivada ? "arquivada ocultada painel" : "",
-        ].join(" ")
-      );
-
-      return conteudoBusca.includes(buscaNormalizada);
-    });
-  }, [busca, denuncias, statusFiltro]);
-
-
-  const denunciasPerfisFiltradas = useMemo(() => {
-    const buscaNormalizada = normalizarTexto(busca);
-    const statusPerfilCorrespondente: StatusDenunciaPerfil | null =
-      statusFiltro === "pendente"
-        ? "pendente"
-        : statusFiltro === "em_analise"
-          ? "analisada"
-          : statusFiltro === "resolvida"
-            ? "resolvida"
-            : statusFiltro === "rejeitada"
-              ? "ignorada"
-              : null;
-
-    if (statusFiltro === "arquivadas") {
-      return [];
-    }
-
-    return denunciasPerfis.filter((denuncia) => {
-      if (statusPerfilCorrespondente && denuncia.status !== statusPerfilCorrespondente) {
-        return false;
-      }
-
-      if (!buscaNormalizada) {
-        return true;
-      }
-
-      const conteudoBusca = normalizarTexto(
-        [
-          "perfil usuario denuncia",
-          denuncia.motivo,
-          formatarMotivoDenunciaPerfil(denuncia.motivo),
-          denuncia.descricao,
-          denuncia.status,
-          denuncia.denuncianteNome,
-          denuncia.denunciadoNome,
-          denuncia.denunciadoId,
-          denuncia.perfilUrl,
-        ].join(" ")
-      );
-
-      return conteudoBusca.includes(buscaNormalizada);
-    });
-  }, [busca, denunciasPerfis, statusFiltro]);
+  const denunciasPerfisFiltradas = useMemo(
+    () =>
+      filtrarDenunciasPerfisModeracao(
+        denunciasPerfis,
+        statusFiltro,
+        busca
+      ),
+    [busca, denunciasPerfis, statusFiltro]
+  );
 
   useEffect(() => {
     const fecharMenuTimer = window.setTimeout(() => {
@@ -1011,26 +931,13 @@ const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
     };
   }, [busca, statusFiltro]);
 
-  const totalPendentes = denunciasAtivas.filter(
-    (denuncia) => denuncia.status === "pendente"
-  ).length;
-
-  const totalEmAnalise = denunciasAtivas.filter(
-    (denuncia) => denuncia.status === "em_analise"
-  ).length;
-
-  const totalResolvidas = denunciasAtivas.filter(
-    (denuncia) => denuncia.status === "resolvida"
-  ).length;
-
-  const totalRejeitadas = denunciasAtivas.filter(
-    (denuncia) => denuncia.status === "rejeitada"
-  ).length;
-
-
-  const totalPerfisPendentes = denunciasPerfis.filter(
-    (denuncia) => denuncia.status === "pendente"
-  ).length;
+  const {
+    totalPendentes,
+    totalEmAnalise,
+    totalResolvidas,
+    totalRejeitadas,
+    totalPerfisPendentes,
+  } = calcularTotaisModeracao(denunciasAtivas, denunciasPerfis);
 
   async function atualizarStatusDenunciaPerfil(
     denunciaId: string,

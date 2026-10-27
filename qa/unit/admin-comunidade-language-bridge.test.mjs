@@ -11,6 +11,10 @@ const textUtils = await readFile(
   "app/admin/comunidade/lib/admin-comunidade-text-utils.ts",
   "utf8",
 );
+const filterUtils = await readFile(
+  "app/admin/comunidade/lib/admin-comunidade-filter-utils.ts",
+  "utf8",
+);
 
 test("AdminComunidadeLanguageBridge preserva o lifecycle de tradução e restauração", () => {
   assert.match(bridge, /^"use client";/);
@@ -56,5 +60,9 @@ test("a página preserva mounts e responsabilidades fora do bridge", () => {
     /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/\.\.\/lib\/i18n";/,
   );
   assert.match(pagina, /useEffect/);
-  assert.match(pagina, /normalizarTexto/);
+  assert.doesNotMatch(pagina, /normalizarTexto/);
+  assert.match(
+    filterUtils,
+    /import \{ normalizarTexto \} from "\.\.\/\.\.\/\.\.\/\.\.\/lib\/utils";/,
+  );
 });
