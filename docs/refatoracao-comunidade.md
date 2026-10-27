@@ -1980,3 +1980,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 10 — Admin Comunidade
 
 - O agrupamento de IDs dos alvos denunciados foi movido para `lib/admin-comunidade-target-id-utils.ts`, preservando filtros, deduplicação e ordem.
+
+## Registro da Fase 11 — Admin Comunidade
+
+- O carregamento dos alvos primários de moderação foi movido para `loaders/carregar-alvos-primarios-moderacao.ts`, preservando consultas independentes e fallbacks.
