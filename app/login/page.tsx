@@ -8,10 +8,7 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import {
-  criarMetadataAceiteTermos,
-  registrarAceiteTermosPublicacao,
-} from "../../lib/aceiteTermos";
+import { registrarAceiteTermosPublicacao } from "../../lib/aceiteTermos";
 import { obterRedirectToAtual } from "./lib/login-redirect-utils";
 import { sincronizarStorageUsuarioLogin } from "./lib/login-storage-sync";
 import { useLoginDesktopMode } from "./hooks/useLoginDesktopMode";
@@ -65,6 +62,7 @@ import {
 import { aguardarLogin } from "./lib/login-timing-utils";
 import { sincronizarProfileLogin } from "./actions/sincronizar-profile-login";
 import { solicitarRecuperacaoSenhaLogin } from "./actions/solicitar-recuperacao-senha-login";
+import { criarContaLogin } from "./actions/criar-conta-login";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
 
@@ -158,20 +156,10 @@ export default function LoginPage() {
       }
 
       if (criandoConta) {
-        const aceiteEm = new Date().toISOString();
-        const metadataAceite = criarMetadataAceiteTermos(aceiteEm);
-        const { data, error } = await supabase.auth.signUp({
-          email: emailFinal,
-          password: senha,
-          options: {
-            data: {
-              nome: nomeFinal,
-              name: nomeFinal,
-              full_name: nomeFinal,
-              tipo: "leitor",
-              ...metadataAceite,
-            },
-          },
+        const { data, error } = await criarContaLogin({
+          emailFinal,
+          senha,
+          nomeFinal,
         });
 
         if (error) {

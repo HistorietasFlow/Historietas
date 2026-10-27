@@ -1928,3 +1928,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 14 — Login
 
 - A solicitação de recuperação de senha foi movida para `actions/solicitar-recuperacao-senha-login.ts`, preservando redirect, chamada de autenticação e feedback orquestrado na página.
+
+## Registro da Fase 15 — Login
+
+- A solicitação de criação de conta foi movida para `actions/criar-conta-login.ts`, preservando metadata de aceite, payload de autenticação e o restante do fluxo na página.
