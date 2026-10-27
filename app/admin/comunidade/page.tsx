@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../../lib/supabase/client";
 import { formatarData } from "../../../lib/utils";
 import {
   historietasThemeCss,
@@ -149,6 +148,7 @@ import { removerConteudoDenunciadoModeracao } from "./actions/remover-conteudo-d
 import { persistirArquivamentoDenunciaModeracao } from "./actions/arquivar-denuncia-moderacao";
 import { persistirRestauracaoDenunciaModeracao } from "./actions/restaurar-denuncia-moderacao";
 import { persistirRemocaoDenunciaResolvidaModeracao } from "./actions/remover-denuncia-resolvida-moderacao";
+import { persistirRemocaoDenunciaPerfilResolvidaModeracao } from "./actions/remover-denuncia-perfil-resolvida-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -737,23 +737,9 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      const { data, error } = await supabase
-        .from("denuncias_perfis")
-        .delete()
-        .eq("id", denunciaId)
-        .eq("status", "resolvida")
-        .select("id")
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.id) {
-        throw new Error(
-          "A denúncia de perfil resolvida não foi encontrada ou não pôde ser removida."
-        );
-      }
+      await persistirRemocaoDenunciaPerfilResolvidaModeracao({
+        denunciaId,
+      });
 
       setDenunciasPerfis((denunciasAtuais) =>
         denunciasAtuais.filter((denunciaAtual) => denunciaAtual.id !== denunciaId)

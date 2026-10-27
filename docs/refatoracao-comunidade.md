@@ -2040,3 +2040,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 25 — Admin Comunidade
 
 - A persistência da remoção de denúncias resolvidas foi movida para `actions/remover-denuncia-resolvida-moderacao.ts`, preservando query, validação e atualizações locais da página.
+
+## Registro da Fase 26 — Admin Comunidade
+
+- A persistência da remoção de denúncias de perfil resolvidas foi movida para `actions/remover-denuncia-perfil-resolvida-moderacao.ts`, preservando query, validação e feedback da página.
