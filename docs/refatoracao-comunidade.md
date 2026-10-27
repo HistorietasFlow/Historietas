@@ -1968,3 +1968,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 7 — Admin Comunidade
 
 - O carregamento de reincidências de moderação foi movido para `loaders/carregar-reincidencias-moderacao.ts`, preservando a RPC, a transformação e a orquestração de estado na página.
+
+## Registro da Fase 8 — Admin Comunidade
+
+- O carregamento de denúncias de perfil foi movido para `loaders/carregar-denuncias-perfis-moderacao.ts`, preservando consultas, normalização e contexto de perfis.
