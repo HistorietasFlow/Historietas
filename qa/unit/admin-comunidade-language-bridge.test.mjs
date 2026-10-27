@@ -7,6 +7,10 @@ const bridge = await readFile(
   "app/admin/comunidade/components/admin-comunidade-language-bridge.tsx",
   "utf8",
 );
+const textUtils = await readFile(
+  "app/admin/comunidade/lib/admin-comunidade-text-utils.ts",
+  "utf8",
+);
 
 test("AdminComunidadeLanguageBridge preserva o lifecycle de tradução e restauração", () => {
   assert.match(bridge, /^"use client";/);
@@ -46,7 +50,11 @@ test("a página preserva mounts e responsabilidades fora do bridge", () => {
     /from "\.\/lib\/admin-comunidade-text-utils";/,
   );
   assert.match(pagina, /useHistorietasLanguage/);
-  assert.match(pagina, /import type \{ HistorietasLanguage \} from/);
+  assert.doesNotMatch(pagina, /import type \{ HistorietasLanguage \} from/);
+  assert.match(
+    textUtils,
+    /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/\.\.\/lib\/i18n";/,
+  );
   assert.match(pagina, /useEffect/);
   assert.match(pagina, /normalizarTexto/);
 });
