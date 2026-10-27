@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -15,6 +15,7 @@ import {
 import { obterRedirectToAtual } from "./lib/login-redirect-utils";
 import { sincronizarStorageUsuarioLogin } from "./lib/login-storage-sync";
 import { useLoginDesktopMode } from "./hooks/useLoginDesktopMode";
+import { useLoginExistingSessionRedirect } from "./hooks/useLoginExistingSessionRedirect";
 import { useLoginPasswordChangedNotice } from "./hooks/useLoginPasswordChangedNotice";
 import {
   type LoginTranslationKey,
@@ -103,42 +104,7 @@ export default function LoginPage() {
       ),
     [],
   );
-  useEffect(() => {
-    let componenteAtivo = true;
-
-    async function redirecionarUsuarioJaLogado() {
-      try {
-        const { data } = await supabase.auth.getUser();
-
-        if (componenteAtivo && data.user) {
-          const resultadoPerfil = await salvarProfile(
-            data.user.id,
-            "",
-            data.user.email || "",
-            data.user.user_metadata,
-          );
-
-          if (!resultadoPerfil.ok && componenteAtivo) {
-            setErro(t("profileSyncWarning"));
-            await aguardarLogin(1600);
-          }
-
-          sincronizarStorageUsuarioLogin(data.user.id);
-
-          router.replace(obterRedirectToAtual("/perfil-autor"));
-          router.refresh();
-        }
-      } catch {
-        // A página de login deve continuar acessível se a verificação falhar.
-      }
-    }
-
-    void redirecionarUsuarioJaLogado();
-
-    return () => {
-      componenteAtivo = false;
-    };
-  }, [router, salvarProfile, t]);
+  useLoginExistingSessionRedirect({ router, salvarProfile, t, setErro });
 
   useLoginPasswordChangedNotice({
     t,
