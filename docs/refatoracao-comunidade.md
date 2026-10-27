@@ -2004,3 +2004,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 16 — Admin Comunidade
 
 - Os mapas de contexto foram movidos para `lib/admin-comunidade-context-map-utils.ts`, preservando referências, chaves e a semântica nativa de `Map`.
+
+## Registro da Fase 17 — Admin Comunidade
+
+- A montagem final do contexto das denúncias foi movida para `lib/admin-comunidade-report-context-utils.ts`, preservando fluxos, fallbacks e prioridades.

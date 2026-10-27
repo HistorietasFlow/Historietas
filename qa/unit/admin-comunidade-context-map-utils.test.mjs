@@ -154,8 +154,7 @@ test("Admin Comunidade delega apenas a criação dos mapas de contexto", () => {
     assert.doesNotMatch(page, new RegExp(`const ${nome} = new Map`));
   }
   assert.match(page, /criarMapasContextoModeracao\(\{/);
-  assert.match(page, /const nomeDenunciante/);
-  assert.match(page, /const denunciasComContexto/);
+  assert.match(page, /montarDenunciasComContextoModeracao\(\{/);
   assert.match(page, /setDenuncias\(/);
   assert.match(page, /setObservacoes\(/);
   assert.match(
