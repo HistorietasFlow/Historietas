@@ -2104,3 +2104,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 1 — Admin Problemas Técnicos
 
 - Tipos e normalizadores puros foram extraídos sem alteração de comportamento.
+
+## Fase 2 — Admin Problemas Técnicos
+
+- Textos, rótulos e cores puras foram movidos para módulo dedicado sem alteração de comportamento.
