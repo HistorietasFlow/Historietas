@@ -2072,3 +2072,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 4 — Admin Exclusões de Conta
 
 - A construção segura da rota de login foi extraída para `lib/admin-exclusoes-conta-route-utils.ts`, sem alteração de comportamento.
+
+## Fase 5 — Admin Exclusões de Conta
+
+- A requisição GET de solicitações foi isolada em loader, mantendo na página autenticação, HTTP, normalização e estados.
