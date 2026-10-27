@@ -1904,3 +1904,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 8 — Login
 
 - A preparação determinística dos dados e o payload de profile foram movidos para helpers puros, preservando prioridades, fallbacks e o fluxo de sincronização da página.
+
+## Registro da Fase 9 — Login
+
+- O CSS global do Login foi movido para `lib/login-page-css.ts`, preservando integralmente os seletores, os dois blocos `html` e a concatenação do tema na página.
