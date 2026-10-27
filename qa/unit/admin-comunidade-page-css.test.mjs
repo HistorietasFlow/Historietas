@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const stylesModule = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/lib/admin-comunidade-styles.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("adminComunidadePageCss preserva o CSS global crítico", () => {
   assert.match(cssModule, /export const adminComunidadePageCss = `/);
@@ -44,7 +51,12 @@ test("Admin Comunidade mantém os quatro consumidores e as fronteiras sensíveis
     pagina,
     /\$\{adminComunidadePageCss\}\$\{historietasThemeCss\}/,
   );
-  assert.match(pagina, /const safeTextStyle: CSSProperties =/);
+  assert.doesNotMatch(pagina, /const safeTextStyle: CSSProperties =/);
+  assert.match(stylesModule, /const safeTextStyle: CSSProperties =/);
+  assert.match(
+    pagina,
+    /from "\.\/lib\/admin-comunidade-styles";/,
+  );
   assert.match(
     pagina,
     /import \{ AdminComunidadeLanguageBridge \} from "\.\/components\/admin-comunidade-language-bridge";/,
