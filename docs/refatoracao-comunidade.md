@@ -2096,3 +2096,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 10 — Admin Exclusões de Conta
 
 - A seção visual de recuperação operacional foi movida para componente dedicado sem alteração funcional ou visual.
+
+## Fase 11 — Admin Exclusões de Conta
+
+- O card visual das solicitações foi movido para componente dedicado sem alteração funcional ou visual.
