@@ -154,6 +154,7 @@ import {
   montarDenunciasComContextoModeracao,
   type DenunciaComContexto,
 } from "./lib/admin-comunidade-report-context-utils";
+import { sincronizarObservacoesModeracao } from "./lib/admin-comunidade-observation-utils";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 
 export default function AdminComunidadePage() {
@@ -278,18 +279,12 @@ export default function AdminComunidadePage() {
     });
 
     setDenuncias(denunciasComContexto);
-    setObservacoes((observacoesAtuais) => {
-      const proximasObservacoes = { ...observacoesAtuais };
-
-      denunciasComContexto.forEach((denuncia) => {
-        if (!(denuncia.id in proximasObservacoes)) {
-          proximasObservacoes[denuncia.id] =
-            denuncia.observacaoAdmin;
-        }
-      });
-
-      return proximasObservacoes;
-    });
+    setObservacoes((observacoesAtuais) =>
+      sincronizarObservacoesModeracao(
+        observacoesAtuais,
+        denunciasComContexto,
+      )
+    );
   }
 
   async function carregarReincidenciasModeracao() {
