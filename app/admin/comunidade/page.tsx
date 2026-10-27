@@ -15,6 +15,11 @@ import { useHistorietasLanguage } from "../../../components/HistorietasLanguageP
 import type { HistorietasLanguage } from "../../../lib/i18n";
 import { useAdminComunidadeDesktopMode } from "./hooks/use-admin-comunidade-desktop-mode";
 import { adminComunidadePageCss } from "./lib/admin-comunidade-page-css";
+import {
+  criarHrefDiarioDenunciado,
+  criarHrefPerfilDenunciado,
+  criarLoginHrefAdminModeracao,
+} from "./lib/admin-comunidade-route-utils";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 
 type TipoAlvoDenuncia =
@@ -203,22 +208,6 @@ const MOTIVOS_DENUNCIA_PERFIL_LABEL: Record<string, string> = {
   outro: "Outro",
 };
 
-function criarLoginHrefAdminModeracao() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/admin";
-  const destinoSeguro =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/admin";
-  const params = new URLSearchParams({
-    redirectTo: destinoSeguro,
-  });
-
-  return `/login?${params.toString()}`;
-}
-
 function normalizarStatus(valor: unknown): StatusDenuncia {
   return STATUS_DENUNCIAS.includes(valor as StatusDenuncia)
     ? (valor as StatusDenuncia)
@@ -233,16 +222,6 @@ function normalizarStatusPerfil(valor: unknown): StatusDenunciaPerfil {
 
 function formatarMotivoDenunciaPerfil(motivo: string) {
   return MOTIVOS_DENUNCIA_PERFIL_LABEL[motivo] || motivo || "Denúncia de perfil";
-}
-
-function criarHrefPerfilDenunciado(denuncia: Pick<DenunciaPerfil, "denunciadoId" | "perfilUrl">) {
-  const url = denuncia.perfilUrl.trim();
-
-  if (url && url.startsWith("/") && !url.startsWith("//")) {
-    return url;
-  }
-
-  return `/perfil-autor?userId=${encodeURIComponent(denuncia.denunciadoId)}`;
 }
 
 const MOTIVOS_DENUNCIA_CONTEUDO_LABEL: Record<string, string> = {
@@ -331,30 +310,6 @@ function rotuloSucessoRemocaoAlvo(tipo: TipoAlvoDenuncia) {
   return rotulos[tipo];
 }
 
-
-function criarHrefDiarioDenunciado(
-  denuncia: Pick<
-    DenunciaComContexto,
-    "alvoPerfilUserId" | "alvoObraId"
-  >
-) {
-  const params = new URLSearchParams({
-    modo: "perfil",
-    origem: "diario",
-  });
-  const perfilUserId = denuncia.alvoPerfilUserId?.trim() || "";
-  const obraId = denuncia.alvoObraId?.trim() || "";
-
-  if (perfilUserId) {
-    params.set("userId", perfilUserId);
-  }
-
-  if (obraId) {
-    params.set("obraId", obraId);
-  }
-
-  return `/listas?${params.toString()}`;
-}
 
 
 function conteudoDenunciadoIndisponivel(denuncia: DenunciaComContexto) {
