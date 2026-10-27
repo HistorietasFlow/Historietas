@@ -9,7 +9,7 @@ import {
   useHistorietasTheme,
 } from "../../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
-import { formatarData, normalizarTexto } from "../../../lib/utils";
+import { formatarData } from "../../../lib/utils";
 import {
   STATUS_SOLICITACOES,
   normalizarSolicitacao,
@@ -26,6 +26,8 @@ import {
   traduzir,
   type TextoTraduzido,
 } from "./lib/admin-exclusoes-conta-text-utils";
+import { filtrarSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-filter-utils";
+import { calcularTotaisSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-stats-utils";
 
 type RespostaOperacoes = {
   ok?: boolean;
@@ -233,49 +235,19 @@ export default function AdminExclusoesContaPage() {
     };
   }, [carregarOperacoesRecuperaveis, carregarSolicitacoes, t]);
 
-  const solicitacoesFiltradas = useMemo(() => {
-    const termo = normalizarTexto(busca);
-
-    return solicitacoes.filter((solicitacao) => {
-      if (
-        statusFiltro !== "todos" &&
-        solicitacao.status !== statusFiltro
-      ) {
-        return false;
-      }
-
-      if (!termo) {
-        return true;
-      }
-
-      const conteudo = normalizarTexto(
-        [
-          solicitacao.email,
-          solicitacao.motivo,
-          solicitacao.origem,
-          solicitacao.status,
-          solicitacao.userAgent,
-          solicitacao.observacaoInterna,
-          origemTraduzida(solicitacao.origem, language),
-          t(STATUS_LABEL[solicitacao.status]),
-        ].join(" "),
-      );
-
-      return conteudo.includes(termo);
-    });
-  }, [busca, language, solicitacoes, statusFiltro, t]);
+  const solicitacoesFiltradas = useMemo(
+    () =>
+      filtrarSolicitacoesExclusao({
+        solicitacoes,
+        busca,
+        statusFiltro,
+        language,
+      }),
+    [busca, language, solicitacoes, statusFiltro],
+  );
 
   const totais = useMemo(
-    () => ({
-      total: solicitacoes.length,
-      pendentes: solicitacoes.filter((item) => item.status === "pendente").length,
-      verificando: solicitacoes.filter((item) => item.status === "verificando")
-        .length,
-      concluidas: solicitacoes.filter((item) => item.status === "concluida").length,
-      encerradas: solicitacoes.filter(
-        (item) => item.status === "recusada" || item.status === "cancelada",
-      ).length,
-    }),
+    () => calcularTotaisSolicitacoesExclusao(solicitacoes),
     [solicitacoes],
   );
 

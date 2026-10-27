@@ -2064,3 +2064,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 2 — Admin Exclusões de Conta
 
 - Textos, rótulos e helpers puros de apresentação foram extraídos para `lib/admin-exclusoes-conta-text-utils.ts`, sem alteração de comportamento.
+
+## Fase 3 — Admin Exclusões de Conta
+
+- Filtros e totais foram movidos para helpers puros sem alteração de comportamento.
