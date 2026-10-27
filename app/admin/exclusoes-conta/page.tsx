@@ -32,16 +32,7 @@ import { criarLoginHrefAdminExclusoesConta } from "./lib/admin-exclusoes-conta-r
 import { buscarSolicitacoesExclusaoAdmin } from "./loaders/buscar-solicitacoes-exclusao-admin";
 import { buscarOperacoesRecuperaveisAdmin } from "./loaders/buscar-operacoes-recuperaveis-admin";
 import { atualizarSolicitacaoExclusaoAdmin } from "./actions/atualizar-solicitacao-exclusao-admin";
-
-type RespostaRecuperacao = {
-  ok?: boolean;
-  codigo?: string;
-  mensagem?: string;
-  exclusaoConcluida?: boolean;
-  acompanhamentoPendente?: boolean;
-  operacaoId?: string;
-  statusOperacao?: string;
-};
+import { recuperarOperacaoExclusaoAdmin } from "./actions/recuperar-operacao-exclusao-admin";
 
 export default function AdminExclusoesContaPage() {
   const router = useRouter();
@@ -303,19 +294,9 @@ export default function AdminExclusoesContaPage() {
     setSucesso("");
 
     try {
-      const response = await fetch("/api/admin/operacoes-exclusao", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ id: operacao.id }),
+      const { response, data } = await recuperarOperacaoExclusaoAdmin({
+        id: operacao.id,
       });
-
-      const data = (await response.json().catch(() => null)) as
-        | RespostaRecuperacao
-        | null;
 
       if (response.status === 401) {
         router.replace(criarLoginHrefAdminExclusoesConta());

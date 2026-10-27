@@ -2084,3 +2084,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 7 — Admin Exclusões de Conta
 
 - A requisição PATCH de atualização da solicitação foi isolada, mantendo validação, HTTP, normalização e estado na página.
+
+## Fase 8 — Admin Exclusões de Conta
+
+- A requisição POST de recuperação foi isolada, mantendo decisões HTTP, recarga e feedback na página.
