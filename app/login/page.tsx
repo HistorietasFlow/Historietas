@@ -63,13 +63,10 @@ import {
 } from "./lib/login-styles";
 import { prepararDadosProfileLogin } from "./lib/login-profile-preparation";
 import {
-  criarPayloadProfileLogin,
-  type PerfilExistenteLogin,
-} from "./lib/login-profile-payload";
-import {
   PROFILE_SYNC_FAILURE_STORAGE_KEY,
   registrarFalhaSincronizacaoPerfil,
 } from "./lib/login-profile-sync-diagnostics";
+import { sincronizarProfileLoginUmaVez } from "./actions/sincronizar-profile-login-uma-vez";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
 
@@ -130,106 +127,13 @@ export default function LoginPage() {
       return { ok: false, error };
     }
 
-    async function sincronizarUmaVez() {
-      let perfilAtual: PerfilExistenteLogin | null = null;
-
-      const { data: perfilPorUserId, error: erroPorUserId } = await supabase
-        .from("profiles_publicos")
-        .select("id,user_id,nome,bio,sobre_bio,avatar_url")
-        .eq("user_id", userIdLimpo)
-        .limit(1)
-        .maybeSingle();
-
-      if (!erroPorUserId && perfilPorUserId) {
-        perfilAtual = perfilPorUserId as PerfilExistenteLogin;
-      }
-
-      let erroPorId: unknown = null;
-
-      if (!perfilAtual) {
-        const respostaPorId = await supabase
-          .from("profiles_publicos")
-          .select("id,user_id,nome,bio,sobre_bio,avatar_url")
-          .eq("id", userIdLimpo)
-          .limit(1)
-          .maybeSingle();
-
-        erroPorId = respostaPorId.error;
-
-        if (!respostaPorId.error && respostaPorId.data) {
-          perfilAtual = respostaPorId.data as PerfilExistenteLogin;
-        }
-      }
-
-      if (!perfilAtual && (erroPorUserId || erroPorId)) {
-        throw erroPorUserId || erroPorId;
-      }
-
-      const agora = new Date().toISOString();
-
-      const perfilPayload = criarPayloadProfileLogin(
-        perfilAtual,
-        userIdLimpo,
-        nomeFinal,
-        agora,
-      );
-
-      if (perfilAtual?.id) {
-        const { data: perfilAtualizado, error: erroAtualizacao } =
-          await supabase
-            .from("profiles")
-            .update(perfilPayload)
-            .eq("id", perfilAtual.id)
-            .select("id")
-            .maybeSingle();
-
-        if (erroAtualizacao) {
-          throw erroAtualizacao;
-        }
-
-        if (!perfilAtualizado) {
-          throw new Error(
-            "O perfil existente não pôde ser atualizado ou não ficou visível após a atualização.",
-          );
-        }
-
-        return;
-      }
-
-      const { data: perfilCriado, error: erroCriacao } = await supabase
-        .from("profiles")
-        .upsert(
-          {
-            id: userIdLimpo,
-            tipo: "leitor",
-            ...perfilPayload,
-          },
-          {
-            onConflict: "id",
-            ignoreDuplicates: false,
-          },
-        )
-        .select("id")
-        .maybeSingle();
-
-      if (erroCriacao) {
-        throw erroCriacao;
-      }
-
-      if (!perfilCriado) {
-        throw new Error(
-          "O perfil não pôde ser criado ou não ficou visível após a criação.",
-        );
-      }
-    }
-
     let ultimoErro: unknown = new Error(
       "A sincronização do perfil não foi concluída.",
     );
 
     for (let tentativa = 1; tentativa <= 2; tentativa += 1) {
       try {
-        await sincronizarUmaVez();
+        await sincronizarProfileLoginUmaVez({ userIdLimpo, nomeFinal });
 
         if (typeof window !== "undefined") {
           try {

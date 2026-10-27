@@ -1912,3 +1912,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 10 — Login
 
 - Os contratos de estilos React do Login foram movidos para `lib/login-styles.ts`, preservando valores, spreads, responsividade e os consumidores visuais da página.
+
+## Registro da Fase 11 — Login
+
+- A tentativa única de sincronização de profile foi movida para `actions/sincronizar-profile-login-uma-vez.ts`, preservando consultas, payload, update/upsert e o retry controlado pela página.
