@@ -1984,3 +1984,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 11 — Admin Comunidade
 
 - O carregamento dos alvos primários de moderação foi movido para `loaders/carregar-alvos-primarios-moderacao.ts`, preservando consultas independentes e fallbacks.
+
+## Registro da Fase 12 — Admin Comunidade
+
+- O contexto de anotações do Diário foi movido para `loaders/carregar-anotacoes-diario-contexto-moderacao.ts`, preservando IDs, consulta e fallbacks.

@@ -142,6 +142,7 @@ import {
 } from "./loaders/carregar-denuncias-base-moderacao";
 import { agruparIdsAlvosDenunciados } from "./lib/admin-comunidade-target-id-utils";
 import { buscarAlvosPrimariosModeracao } from "./loaders/carregar-alvos-primarios-moderacao";
+import { buscarAnotacoesDiarioContextoModeracao } from "./loaders/carregar-anotacoes-diario-contexto-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -225,33 +226,11 @@ export default function AdminComunidadePage() {
       comentarioDiarioIds,
     });
 
-    const diarioAnotacaoIdsContexto = Array.from(
-      new Set([
-        ...diarioAnotacaoIds,
-        ...comentariosDiario
-          .map((comentario) => comentario.anotacao_id)
-          .filter(Boolean),
-      ])
-    );
-
-    const {
-      data: diarioAnotacoesResposta,
-      error: diarioAnotacoesErro,
-    } =
-      diarioAnotacaoIdsContexto.length > 0
-        ? await supabase
-            .from("diario_anotacoes")
-            .select(
-              "id, obra_id, user_id, tipo, texto, visibilidade, contem_spoiler, criado_em, atualizado_em"
-            )
-            .in("id", diarioAnotacaoIdsContexto)
-            .limit(500)
-        : { data: [], error: null };
-
-    const diarioAnotacoes = diarioAnotacoesErro
-      ? []
-      : (diarioAnotacoesResposta ||
-          []);
+    const diarioAnotacoes =
+      await buscarAnotacoesDiarioContextoModeracao({
+        diarioAnotacaoIds,
+        comentariosDiario,
+      });
 
     const capituloIdsContexto = Array.from(
       new Set([

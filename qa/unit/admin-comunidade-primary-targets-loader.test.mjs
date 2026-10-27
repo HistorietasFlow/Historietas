@@ -39,7 +39,6 @@ test("loader preserva as cinco consultas e seus fallbacks independentes", () => 
 
 test("Admin Comunidade delega apenas alvos primários e preserva contexto", () => {
   assert.match(page, /buscarAlvosPrimariosModeracao\(\{/);
-  assert.match(page, /diarioAnotacaoIdsContexto/);
   assert.match(page, /capituloIdsContexto/);
   assert.match(page, /setDenuncias\(/);
   assert.doesNotMatch(source, /useState|useEffect|useMemo|router|localStorage|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/);
