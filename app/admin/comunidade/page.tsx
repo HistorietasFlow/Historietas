@@ -39,6 +39,11 @@ import {
   rotuloSucessoRemocaoAlvo,
   rotuloTipoAlvoDenuncia,
 } from "./lib/admin-comunidade-report-label-utils";
+import {
+  criarMensagemErro,
+  erroOpcionalIgnoravel,
+} from "./lib/admin-comunidade-error-utils";
+import { criarMapaNomesPerfisModeracao } from "./lib/admin-comunidade-profile-utils";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 
 type StatusFiltroDenuncia = StatusDenuncia | "todas" | "arquivadas";
@@ -57,12 +62,6 @@ type DenunciaComunidade = {
   analisadoPor: string | null;
   analisadoEm: string | null;
   criadoEm: string;
-};
-
-type PerfilModeracao = {
-  id?: string | null;
-  user_id?: string | null;
-  nome: string | null;
 };
 
 type DenunciaComContexto = DenunciaComunidade & {
@@ -187,74 +186,6 @@ function conteudoDenunciadoIndisponivel(denuncia: DenunciaComContexto) {
     resumo.includes("comentario do diario nao encontrado ou removido") ||
     resumo.includes("nao encontrada ou removida") ||
     resumo.includes("nao encontrado ou removido")
-  );
-}
-
-function criarMensagemErro(acao: string, erro: unknown) {
-  if (!erro || typeof erro !== "object") {
-    return `${acao}: erro desconhecido.`;
-  }
-
-  const supabaseErro = erro as {
-    message?: string;
-    code?: string;
-    details?: string;
-    hint?: string;
-  };
-
-  const detalhes = [
-    supabaseErro.message,
-    supabaseErro.code ? `código ${supabaseErro.code}` : "",
-    supabaseErro.details,
-    supabaseErro.hint,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  return detalhes ? `${acao}: ${detalhes}` : `${acao}: erro desconhecido.`;
-}
-
-function obterNomePerfilModeracao(perfil: PerfilModeracao) {
-  return typeof perfil.nome === "string" && perfil.nome.trim()
-    ? perfil.nome.trim()
-    : "Usuário sem nome";
-}
-
-function criarMapaNomesPerfisModeracao(perfis: PerfilModeracao[]) {
-  const mapa = new Map<string, string>();
-
-  perfis.forEach((perfil) => {
-    const nome = obterNomePerfilModeracao(perfil);
-    const userId = perfil.user_id?.trim() || "";
-    const id = perfil.id?.trim() || "";
-
-    if (userId) {
-      mapa.set(userId, nome);
-    }
-
-    if (id) {
-      mapa.set(id, nome);
-    }
-  });
-
-  return mapa;
-}
-
-function erroOpcionalIgnoravel(erro: unknown) {
-  if (!erro || typeof erro !== "object") {
-    return false;
-  }
-
-  const supabaseErro = erro as { code?: string; message?: string };
-  const codigo = supabaseErro.code || "";
-  const mensagem = (supabaseErro.message || "").toLowerCase();
-
-  return (
-    codigo === "42P01" ||
-    codigo === "42703" ||
-    mensagem.includes("does not exist") ||
-    mensagem.includes("schema cache") ||
-    mensagem.includes("could not find")
   );
 }
 
