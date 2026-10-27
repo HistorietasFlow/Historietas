@@ -2008,3 +2008,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 17 — Admin Comunidade
 
 - A montagem final do contexto das denúncias foi movida para `lib/admin-comunidade-report-context-utils.ts`, preservando fluxos, fallbacks e prioridades.
+
+## Registro da Fase 18 — Admin Comunidade
+
+- A sincronização das observações de moderação foi movida para `lib/admin-comunidade-observation-utils.ts`, preservando valores editados, chaves antigas e a ordem dos setters na página.
