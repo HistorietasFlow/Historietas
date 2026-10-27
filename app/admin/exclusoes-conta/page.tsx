@@ -30,13 +30,7 @@ import { filtrarSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-filter-
 import { calcularTotaisSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-stats-utils";
 import { criarLoginHrefAdminExclusoesConta } from "./lib/admin-exclusoes-conta-route-utils";
 import { buscarSolicitacoesExclusaoAdmin } from "./loaders/buscar-solicitacoes-exclusao-admin";
-
-type RespostaOperacoes = {
-  ok?: boolean;
-  codigo?: string;
-  mensagem?: string;
-  operacoes?: unknown[];
-};
+import { buscarOperacoesRecuperaveisAdmin } from "./loaders/buscar-operacoes-recuperaveis-admin";
 
 type RespostaRecuperacao = {
   ok?: boolean;
@@ -132,16 +126,7 @@ export default function AdminExclusoesContaPage() {
 
 
   const carregarOperacoesRecuperaveis = useCallback(async () => {
-    const response = await fetch("/api/admin/operacoes-exclusao", {
-      method: "GET",
-      credentials: "same-origin",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    const data = (await response.json().catch(() => null)) as RespostaOperacoes | null;
+    const { response, data } = await buscarOperacoesRecuperaveisAdmin();
 
     if (response.status === 401) {
       router.replace(criarLoginHrefAdminExclusoesConta());
