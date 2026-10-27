@@ -143,6 +143,7 @@ import {
 import { agruparIdsAlvosDenunciados } from "./lib/admin-comunidade-target-id-utils";
 import { buscarAlvosPrimariosModeracao } from "./loaders/carregar-alvos-primarios-moderacao";
 import { buscarAnotacoesDiarioContextoModeracao } from "./loaders/carregar-anotacoes-diario-contexto-moderacao";
+import { buscarCapitulosContextoModeracao } from "./loaders/carregar-capitulos-contexto-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -232,29 +233,11 @@ export default function AdminComunidadePage() {
         comentariosDiario,
       });
 
-    const capituloIdsContexto = Array.from(
-      new Set([
-        ...capituloIdsDenunciados,
-        ...comentariosCapitulos
-          .map((comentario) => comentario.capitulo_id)
-          .filter(Boolean),
-      ])
-    );
-
-    const { data: capitulosResposta, error: capitulosErro } =
-      capituloIdsContexto.length > 0
-        ? await supabase
-            .from("capitulos")
-            .select(
-              "id, obra_id, user_id, titulo, texto, ordem, publicado, criado_em"
-            )
-            .in("id", capituloIdsContexto)
-            .limit(500)
-        : { data: [], error: null };
-
-    const capitulos = capitulosErro
-      ? []
-      : (capitulosResposta || []);
+    const capitulos =
+      await buscarCapitulosContextoModeracao({
+        capituloIdsDenunciados,
+        comentariosCapitulos,
+      });
 
     const obraIdsContexto = Array.from(
       new Set([
