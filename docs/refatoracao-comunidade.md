@@ -1944,3 +1944,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 1 — Admin Comunidade
 
 - As rotas de moderação foram movidas para `lib/admin-comunidade-route-utils.ts`, preservando redirects de login, perfis denunciados e Diário.
+
+## Registro da Fase 2 — Admin Comunidade
+
+- Os status e rótulos puros de moderação foram movidos para módulos dedicados, preservando tipos, fallbacks e consumidores da página.

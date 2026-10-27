@@ -20,23 +20,26 @@ import {
   criarHrefPerfilDenunciado,
   criarLoginHrefAdminModeracao,
 } from "./lib/admin-comunidade-route-utils";
+import {
+  type StatusDenuncia,
+  type StatusDenunciaPerfil,
+  normalizarStatus,
+  normalizarStatusPerfil,
+  STATUS_DENUNCIAS,
+  STATUS_DENUNCIAS_PERFIS,
+  STATUS_LABEL,
+  STATUS_PERFIL_LABEL,
+} from "./lib/admin-comunidade-status-utils";
+import {
+  type TipoAlvoDenuncia,
+  formatarMotivoDenunciaConteudo,
+  formatarMotivoDenunciaPerfil,
+  normalizarTipoAlvo,
+  rotuloRemocaoAlvoDenuncia,
+  rotuloSucessoRemocaoAlvo,
+  rotuloTipoAlvoDenuncia,
+} from "./lib/admin-comunidade-report-label-utils";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
-
-type TipoAlvoDenuncia =
-  | "post"
-  | "comentario"
-  | "comentario_capitulo"
-  | "obra"
-  | "capitulo"
-  | "comentario_obra"
-  | "diario_anotacao"
-  | "comentario_diario";
-
-type StatusDenuncia =
-  | "pendente"
-  | "em_analise"
-  | "resolvida"
-  | "rejeitada";
 
 type StatusFiltroDenuncia = StatusDenuncia | "todas" | "arquivadas";
 
@@ -79,8 +82,6 @@ type DenunciaComContexto = DenunciaComunidade & {
   alvoPerfilUserId?: string;
   alvoAnotacaoId?: string;
 };
-
-type StatusDenunciaPerfil = "pendente" | "analisada" | "ignorada" | "resolvida";
 
 type DenunciaPerfil = {
   id: string;
@@ -170,147 +171,6 @@ function textoConfirmacaoRemocaoAdminComunidade(
 
   return textos[alvoTipo][language];
 }
-
-const STATUS_DENUNCIAS: StatusDenuncia[] = [
-  "pendente",
-  "em_analise",
-  "resolvida",
-  "rejeitada",
-];
-
-const STATUS_LABEL: Record<StatusDenuncia, string> = {
-  pendente: "Pendente",
-  em_analise: "Em análise",
-  resolvida: "Resolvida",
-  rejeitada: "Rejeitada",
-};
-
-const STATUS_DENUNCIAS_PERFIS: StatusDenunciaPerfil[] = [
-  "pendente",
-  "analisada",
-  "ignorada",
-  "resolvida",
-];
-
-const STATUS_PERFIL_LABEL: Record<StatusDenunciaPerfil, string> = {
-  pendente: "Pendente",
-  analisada: "Analisada",
-  ignorada: "Ignorada",
-  resolvida: "Resolvida",
-};
-
-const MOTIVOS_DENUNCIA_PERFIL_LABEL: Record<string, string> = {
-  spam: "Spam",
-  ofensivo: "Conteúdo ofensivo",
-  perfil_falso: "Perfil falso",
-  assedio: "Assédio",
-  improprio: "Conteúdo impróprio",
-  outro: "Outro",
-};
-
-function normalizarStatus(valor: unknown): StatusDenuncia {
-  return STATUS_DENUNCIAS.includes(valor as StatusDenuncia)
-    ? (valor as StatusDenuncia)
-    : "pendente";
-}
-
-function normalizarStatusPerfil(valor: unknown): StatusDenunciaPerfil {
-  return STATUS_DENUNCIAS_PERFIS.includes(valor as StatusDenunciaPerfil)
-    ? (valor as StatusDenunciaPerfil)
-    : "pendente";
-}
-
-function formatarMotivoDenunciaPerfil(motivo: string) {
-  return MOTIVOS_DENUNCIA_PERFIL_LABEL[motivo] || motivo || "Denúncia de perfil";
-}
-
-const MOTIVOS_DENUNCIA_CONTEUDO_LABEL: Record<string, string> = {
-  conteudo_inadequado: "Conteúdo inadequado",
-  spam: "Spam",
-  assedio: "Assédio",
-  odio_discriminacao: "Ódio ou discriminação",
-  ameaca_violencia: "Ameaça ou violência",
-  conteudo_sexual: "Conteúdo sexual impróprio",
-  risco_menor: "Risco envolvendo menor",
-  plagio_direitos_autorais: "Plágio ou direitos autorais",
-  informacoes_pessoais: "Informações pessoais expostas",
-  fraude: "Fraude ou golpe",
-  outro: "Outro",
-};
-
-function formatarMotivoDenunciaConteudo(motivo: string) {
-  const motivoLimpo = motivo.trim();
-
-  return (
-    MOTIVOS_DENUNCIA_CONTEUDO_LABEL[motivoLimpo] ||
-    motivoLimpo ||
-    "Conteúdo inadequado"
-  );
-}
-
-function normalizarTipoAlvo(valor: unknown): TipoAlvoDenuncia {
-  const tiposValidos = new Set<TipoAlvoDenuncia>([
-    "post",
-    "comentario",
-    "comentario_capitulo",
-    "obra",
-    "capitulo",
-    "comentario_obra",
-    "diario_anotacao",
-    "comentario_diario",
-  ]);
-
-  return tiposValidos.has(valor as TipoAlvoDenuncia)
-    ? (valor as TipoAlvoDenuncia)
-    : "post";
-}
-
-function rotuloTipoAlvoDenuncia(tipo: TipoAlvoDenuncia) {
-  const rotulos: Record<TipoAlvoDenuncia, string> = {
-    post: "Publicação",
-    comentario: "Comentário",
-    comentario_capitulo: "Comentário de capítulo",
-    obra: "Obra",
-    capitulo: "Capítulo",
-    comentario_obra: "Comentário da obra",
-    diario_anotacao: "Anotação do Diário",
-    comentario_diario: "Comentário do Diário",
-  };
-
-  return rotulos[tipo];
-}
-
-function rotuloRemocaoAlvoDenuncia(tipo: TipoAlvoDenuncia) {
-  const rotulos: Record<TipoAlvoDenuncia, string> = {
-    post: "Remover publicação",
-    comentario: "Remover comentário",
-    comentario_capitulo: "Remover comentário do capítulo",
-    obra: "Remover obra",
-    capitulo: "Remover capítulo",
-    comentario_obra: "Remover comentário da obra",
-    diario_anotacao: "Remover anotação do Diário",
-    comentario_diario: "Remover comentário do Diário",
-  };
-
-  return rotulos[tipo];
-}
-
-function rotuloSucessoRemocaoAlvo(tipo: TipoAlvoDenuncia) {
-  const rotulos: Record<TipoAlvoDenuncia, string> = {
-    post: "Publicação removida",
-    comentario: "Comentário removido",
-    comentario_capitulo: "Comentário do capítulo removido",
-    obra: "Obra removida",
-    capitulo: "Capítulo removido",
-    comentario_obra: "Comentário da obra removido",
-    diario_anotacao: "Anotação do Diário removida",
-    comentario_diario: "Comentário do Diário removido",
-  };
-
-  return rotulos[tipo];
-}
-
-
 
 function conteudoDenunciadoIndisponivel(denuncia: DenunciaComContexto) {
   const resumo = normalizarTexto(denuncia.alvoResumo);
