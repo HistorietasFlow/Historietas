@@ -111,12 +111,10 @@ import {
   type StatusDenuncia,
   type StatusDenunciaPerfil,
   STATUS_DENUNCIAS,
-  STATUS_DENUNCIAS_PERFIS,
   STATUS_LABEL,
   STATUS_PERFIL_LABEL,
 } from "./lib/admin-comunidade-status-utils";
 import {
-  formatarMotivoDenunciaPerfil,
   rotuloRemocaoAlvoDenuncia,
   rotuloSucessoRemocaoAlvo,
   rotuloTipoAlvoDenuncia,
@@ -163,6 +161,7 @@ import {
 import { sincronizarObservacoesModeracao } from "./lib/admin-comunidade-observation-utils";
 import { verificarAcessoModeracao } from "./loaders/verificar-acesso-moderacao";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
+import { AdminComunidadeProfileReportCard } from "./components/admin-comunidade-profile-report-card";
 
 export default function AdminComunidadePage() {
   const { language } = useHistorietasLanguage();
@@ -1113,208 +1112,29 @@ export default function AdminComunidadePage() {
             </section>
 
             {denunciasPerfisFiltradas.map((denuncia) => {
-              const acaoAtiva = acaoEmAndamento.startsWith(`perfil-${denuncia.id}`);
-              const menuIdPerfil = `perfil-${denuncia.id}`;
-              const menuAberto = menuDenunciaAbertoId === menuIdPerfil;
               const totalReincidencias =
                 reincidenciasPorUsuario[denuncia.denunciadoId] || 0;
 
               return (
-                <article key={denuncia.id} style={reportCardStyle}>
-                  <div className="admin-comunidade-report-header" style={reportHeaderStyle}>
-                    <div style={reportTitleWrapStyle}>
-                      <div style={reportMetaLineStyle}>
-                        <span
-                          style={{
-                            ...targetBadgeStyle,
-                            ...commentTargetBadgeStyle,
-                          }}
-                        >
-                          Perfil
-                        </span>
-
-                        <span style={reportDotStyle}>•</span>
-
-                        <span style={reportDateStyle}>
-                          Denunciado em {formatarData(denuncia.criadoEm)}
-                        </span>
-
-                        <span style={reportDotStyle}>•</span>
-
-                        <span style={statusInlineStyle}>
-                          {STATUS_PERFIL_LABEL[denuncia.status]}
-                        </span>
-                      </div>
-
-                      <strong style={reportTitleStyle}>
-                        {formatarMotivoDenunciaPerfil(denuncia.motivo)}
-                      </strong>
-                    </div>
-
-                    <div style={reportHeaderRightStyle}>
-                      <div style={reportMenuWrapStyle}>
-                        <button
-                          type="button"
-                          aria-label={
-                            menuAberto
-                              ? "Fechar ações da denúncia de perfil"
-                              : "Abrir ações da denúncia de perfil"
-                          }
-                          aria-expanded={menuAberto}
-                          onClick={() =>
-                            setMenuDenunciaAbertoId((denunciaAbertaId) =>
-                              denunciaAbertaId === menuIdPerfil ? "" : menuIdPerfil
-                            )
-                          }
-                          disabled={acaoAtiva}
-                          style={{
-                            ...reportMenuButtonStyle,
-                            opacity: acaoAtiva ? 0.58 : 1,
-                            cursor: acaoAtiva ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          ⋮
-                        </button>
-
-                        {menuAberto && (
-                          <section
-                            style={reportMenuOverlayStyle}
-                            aria-label="Ações da denúncia de perfil"
-                          >
-                            <button
-                              type="button"
-                              aria-label="Fechar ações da denúncia de perfil"
-                              onClick={() => setMenuDenunciaAbertoId("")}
-                              style={reportMenuBackdropStyle}
-                            />
-
-                            <article role="menu" style={reportMenuStyle}>
-                              <div style={reportMenuHandleStyle} />
-
-                              <strong style={reportMenuTitleStyle}>
-                                Ações da denúncia
-                              </strong>
-
-                              <Link
-                                href={denuncia.perfilHref}
-                                onClick={() => setMenuDenunciaAbertoId("")}
-                                style={reportMenuItemLinkStyle}
-                              >
-                                Abrir perfil denunciado
-                              </Link>
-
-                              {denuncia.status === "resolvida" && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    void removerDenunciaPerfilResolvida(denuncia.id)
-                                  }
-                                  disabled={acaoAtiva}
-                                  style={reportMenuDangerItemStyle}
-                                >
-                                  {acaoEmAndamento ===
-                                  `perfil-${denuncia.id}-remover-denuncia`
-                                    ? "Removendo..."
-                                    : "Remover do painel"}
-                                </button>
-                              )}
-
-                              {denuncia.status === "pendente" && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setMenuDenunciaAbertoId("");
-                                    void atualizarStatusDenunciaPerfil(
-                                      denuncia.id,
-                                      "analisada"
-                                    );
-                                  }}
-                                  disabled={acaoAtiva}
-                                  style={reportMenuItemStyle}
-                                >
-                                  {acaoEmAndamento ===
-                                  `perfil-${denuncia.id}-analisada`
-                                    ? "Assumindo..."
-                                    : "Assumir análise"}
-                                </button>
-                              )}
-
-                              <div style={reportMenuDividerStyle} />
-
-                              {STATUS_DENUNCIAS_PERFIS.map((status) => (
-                                <button
-                                  key={status}
-                                  type="button"
-                                  onClick={() => {
-                                    setMenuDenunciaAbertoId("");
-                                    void atualizarStatusDenunciaPerfil(
-                                      denuncia.id,
-                                      status
-                                    );
-                                  }}
-                                  disabled={acaoAtiva || denuncia.status === status}
-                                  style={
-                                    denuncia.status === status
-                                      ? reportMenuItemActiveStyle
-                                      : reportMenuItemStyle
-                                  }
-                                >
-                                  {acaoEmAndamento ===
-                                  `perfil-${denuncia.id}-${status}`
-                                    ? "Salvando..."
-                                    : `Marcar como ${STATUS_PERFIL_LABEL[
-                                        status
-                                      ].toLowerCase()}`}
-                                </button>
-                              ))}
-                            </article>
-                          </section>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="admin-comunidade-report-body" style={reportBodyStyle}>
-                    <section style={contentBoxStyle}>
-                      <div style={sectionHeaderLineStyle}>
-                        <span style={boxLabelStyle}>Perfil denunciado</span>
-                      </div>
-
-                      <p style={reportedTextCompactStyle}>{denuncia.denunciadoNome}</p>
-
-                      <div style={metaGridStyle}>
-                        <span style={metaItemStyle}>
-                          Denunciante: <strong>{denuncia.denuncianteNome}</strong>
-                        </span>
-
-                        {totalReincidencias > 1 && (
-                          <span style={recurrenceMetaItemStyle}>
-                            Reincidências: <strong>{totalReincidencias}</strong>
-                          </span>
-                        )}
-                      </div>
-                    </section>
-
-                    <section style={contentBoxStyle}>
-                      <div style={sectionHeaderLineStyle}>
-                        <span style={boxLabelStyle}>Denúncia</span>
-                        <span style={sectionHintStyle}>Registro interno</span>
-                      </div>
-
-                      {denuncia.descricao ? (
-                        <p style={detailTextStyle}>{denuncia.descricao}</p>
-                      ) : (
-                        <p style={mutedTextStyle}>Sem descrição adicional.</p>
-                      )}
-                    </section>
-                  </div>
-
-                  {denuncia.atualizadoEm && denuncia.atualizadoEm !== denuncia.criadoEm && (
-                    <span style={analysisMetaStyle}>
-                      Última atualização em {formatarData(denuncia.atualizadoEm)}
-                    </span>
-                  )}
-                </article>
+                <AdminComunidadeProfileReportCard
+                  key={denuncia.id}
+                  denuncia={denuncia}
+                  acaoEmAndamento={acaoEmAndamento}
+                  menuDenunciaAbertoId={menuDenunciaAbertoId}
+                  totalReincidencias={totalReincidencias}
+                  onAlternarMenu={(menuIdPerfil) =>
+                    setMenuDenunciaAbertoId((denunciaAbertaId) =>
+                      denunciaAbertaId === menuIdPerfil ? "" : menuIdPerfil
+                    )
+                  }
+                  onFecharMenu={() => setMenuDenunciaAbertoId("")}
+                  onAtualizarStatus={(denunciaId, status) =>
+                    void atualizarStatusDenunciaPerfil(denunciaId, status)
+                  }
+                  onRemoverDenunciaResolvida={(denunciaId) =>
+                    void removerDenunciaPerfilResolvida(denunciaId)
+                  }
+                />
               );
             })}
           </section>
