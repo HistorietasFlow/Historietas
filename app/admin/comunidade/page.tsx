@@ -138,6 +138,7 @@ import {
   textoConfirmacaoRemocaoAdminComunidade,
 } from "./lib/admin-comunidade-text-utils";
 import { conteudoDenunciadoIndisponivel } from "./lib/admin-comunidade-content-utils";
+import { buscarReincidenciasModeracao } from "./loaders/carregar-reincidencias-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -198,11 +199,6 @@ type DenunciaPerfilComContexto = DenunciaPerfil & {
   denuncianteNome: string;
   denunciadoNome: string;
   perfilHref: string;
-};
-
-type ReincidenciaModeracaoRow = {
-  user_id: string | null;
-  total_denuncias: number | string | null;
 };
 
 export default function AdminComunidadePage() {
@@ -726,25 +722,7 @@ const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
   }
 
   async function carregarReincidenciasModeracao() {
-    const { data, error } = await supabase.rpc(
-      "listar_reincidencias_moderacao"
-    );
-
-    if (error) {
-      throw error;
-    }
-
-    const proximoMapa: Record<string, number> = {};
-
-    ((data || []) as unknown as ReincidenciaModeracaoRow[]).forEach((item) => {
-      const userId = typeof item.user_id === "string" ? item.user_id.trim() : "";
-      const total = Number(item.total_denuncias || 0);
-
-      if (userId && Number.isFinite(total) && total > 0) {
-        proximoMapa[userId] = total;
-      }
-    });
-
+    const proximoMapa = await buscarReincidenciasModeracao();
     setReincidenciasPorUsuario(proximoMapa);
   }
 
