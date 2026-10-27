@@ -686,6 +686,7 @@ export default function AdminExclusoesContaPage() {
 
               return (
                 <AdminExclusoesContaRequestCard
+                  key={solicitacao.id}
                   solicitacao={solicitacao}
                   aberta={aberta}
                   salvando={salvando}
