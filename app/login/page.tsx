@@ -64,6 +64,7 @@ import {
 } from "./lib/login-styles";
 import { aguardarLogin } from "./lib/login-timing-utils";
 import { sincronizarProfileLogin } from "./actions/sincronizar-profile-login";
+import { solicitarRecuperacaoSenhaLogin } from "./actions/solicitar-recuperacao-senha-login";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
 
@@ -144,16 +145,10 @@ export default function LoginPage() {
 
     try {
       if (recuperandoSenha) {
-        const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-          "/redefinir-senha",
-        )}`;
+        const resultadoRecuperacao =
+          await solicitarRecuperacaoSenhaLogin(emailFinal);
 
-        const { error } = await supabase.auth.resetPasswordForEmail(
-          emailFinal,
-          { redirectTo },
-        );
-
-        if (error) {
+        if (!resultadoRecuperacao.ok) {
           setErro(t("genericFailure"));
           return;
         }

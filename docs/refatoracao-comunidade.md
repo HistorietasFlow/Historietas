@@ -1924,3 +1924,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 13 — Login
 
 - O lifecycle de sessão já autenticada foi movido para `hooks/useLoginExistingSessionRedirect.ts`, preservando sincronização, feedback, delays, redirecionamento e cleanup.
+
+## Registro da Fase 14 — Login
+
+- A solicitação de recuperação de senha foi movida para `actions/solicitar-recuperacao-senha-login.ts`, preservando redirect, chamada de autenticação e feedback orquestrado na página.
