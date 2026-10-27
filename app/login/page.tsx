@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
-import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -63,6 +62,7 @@ import { aguardarLogin } from "./lib/login-timing-utils";
 import { sincronizarProfileLogin } from "./actions/sincronizar-profile-login";
 import { solicitarRecuperacaoSenhaLogin } from "./actions/solicitar-recuperacao-senha-login";
 import { criarContaLogin } from "./actions/criar-conta-login";
+import { entrarComSenhaLogin } from "./actions/entrar-com-senha-login";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
 
@@ -210,9 +210,9 @@ export default function LoginPage() {
         return;
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailFinal,
-        password: senha,
+      const { data, error } = await entrarComSenhaLogin({
+        emailFinal,
+        senha,
       });
 
       if (error) {
