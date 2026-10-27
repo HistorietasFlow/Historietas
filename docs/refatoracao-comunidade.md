@@ -2116,3 +2116,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 4 — Admin Problemas Técnicos
 
 - A verificação administrativa via RPC foi isolada sem alteração na ordem, fallback ou tratamento de autenticação.
+
+## Fase 5 — Admin Problemas Técnicos
+
+- A query de leitura da fila foi isolada sem alteração de campos, ordenação, limite, normalização ou estado.
