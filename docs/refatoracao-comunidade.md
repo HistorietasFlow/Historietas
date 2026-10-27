@@ -2100,3 +2100,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 11 — Admin Exclusões de Conta
 
 - O card visual das solicitações foi movido para componente dedicado sem alteração funcional ou visual.
+
+## Fase 1 — Admin Problemas Técnicos
+
+- Tipos e normalizadores puros foram extraídos sem alteração de comportamento.
