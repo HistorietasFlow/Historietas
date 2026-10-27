@@ -24,6 +24,7 @@ import {
 import { criarLoginHrefAdminProblemasTecnicos } from "./lib/admin-problemas-tecnicos-route-utils";
 import { criarMensagemErro } from "./lib/admin-problemas-tecnicos-error-utils";
 import { verificarAdministradorProblemasTecnicos } from "./loaders/verificar-administrador-problemas-tecnicos";
+import { buscarProblemasTecnicosAdmin } from "./loaders/buscar-problemas-tecnicos-admin";
 import {
   PRIORIDADES_PROBLEMAS,
   STATUS_PROBLEMAS,
@@ -115,13 +116,7 @@ export default function AdminProblemasTecnicosPage() {
   const carregarProblemas = useCallback(async () => {
     setErro("");
 
-    const { data, error } = await supabase
-      .from("problemas_tecnicos")
-      .select(
-        "id,user_id,email_contato,categoria,titulo,descricao,pagina_url,navegador,dispositivo,status,prioridade,observacao_admin,analisado_por,analisado_em,criado_em,atualizado_em",
-      )
-      .order("criado_em", { ascending: false })
-      .limit(300);
+    const { data, error } = await buscarProblemasTecnicosAdmin();
 
     if (error) {
       throw error;
