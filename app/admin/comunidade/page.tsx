@@ -145,6 +145,7 @@ import { buscarAlvosPrimariosModeracao } from "./loaders/carregar-alvos-primario
 import { buscarAnotacoesDiarioContextoModeracao } from "./loaders/carregar-anotacoes-diario-contexto-moderacao";
 import { buscarCapitulosContextoModeracao } from "./loaders/carregar-capitulos-contexto-moderacao";
 import { buscarObrasContextoModeracao } from "./loaders/carregar-obras-contexto-moderacao";
+import { buscarPerfisContextoModeracao } from "./loaders/carregar-perfis-contexto-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -248,45 +249,15 @@ export default function AdminComunidadePage() {
         diarioAnotacoes,
       });
 
-    const perfilIds = Array.from(
-      new Set(
-        [
-          ...denunciasMapeadas.map((denuncia) => denuncia.denuncianteId),
-          ...comentariosCapitulos.map((comentario) => comentario.user_id),
-          ...comentariosObras.map((comentario) => comentario.user_id),
-          ...comentariosDiario.map((comentario) => comentario.user_id),
-          ...diarioAnotacoes.map((anotacao) => anotacao.user_id),
-          ...capitulos.map((capitulo) => capitulo.user_id),
-          ...obras.map((obra) => obra.user_id),
-        ].filter(Boolean)
-      )
-    );
-
-    const [perfisPorUserIdResposta, perfisPorIdResposta] = await Promise.all([
-      perfilIds.length > 0
-        ? supabase
-            .from("profiles")
-            .select("id, user_id, nome")
-            .in("user_id", perfilIds)
-            .limit(1000)
-        : Promise.resolve({ data: [], error: null }),
-      perfilIds.length > 0
-        ? supabase
-            .from("profiles")
-            .select("id, user_id, nome")
-            .in("id", perfilIds)
-            .limit(1000)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
-
-    const perfis = [
-  ...(perfisPorUserIdResposta.error
-    ? []
-    : (perfisPorUserIdResposta.data || [])),
-  ...(perfisPorIdResposta.error
-    ? []
-    : (perfisPorIdResposta.data || [])),
-];
+    const perfis = await buscarPerfisContextoModeracao({
+      denunciasMapeadas,
+      comentariosCapitulos,
+      comentariosObras,
+      comentariosDiario,
+      diarioAnotacoes,
+      capitulos,
+      obras,
+    });
 
 const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
     const postsPorId = new Map(posts.map((post) => [post.id, post]));
