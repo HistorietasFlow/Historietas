@@ -36,8 +36,15 @@ test("a página preserva mounts e responsabilidades fora do bridge", () => {
   assert.doesNotMatch(pagina, /ADMIN_COMUNIDADE_UI_TRANSLATIONS/);
   assert.doesNotMatch(pagina, /function traduzirStatusAdminComunidade\(/);
   assert.doesNotMatch(pagina, /function traduzirTextoAdminComunidade\(/);
-  assert.match(pagina, /function localeAdminComunidade\(/);
-  assert.match(pagina, /function textoConfirmacaoRemocaoAdminComunidade\(/);
+  assert.doesNotMatch(pagina, /function localeAdminComunidade\(/);
+  assert.doesNotMatch(
+    pagina,
+    /function textoConfirmacaoRemocaoAdminComunidade\(/,
+  );
+  assert.match(
+    pagina,
+    /from "\.\/lib\/admin-comunidade-text-utils";/,
+  );
   assert.match(pagina, /useHistorietasLanguage/);
   assert.match(pagina, /import type \{ HistorietasLanguage \} from/);
   assert.match(pagina, /useEffect/);
