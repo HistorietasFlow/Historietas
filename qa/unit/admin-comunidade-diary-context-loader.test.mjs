@@ -146,8 +146,7 @@ test("loader preserva dados válidos e absorve erro ou resposta nula", async () 
 test("Admin Comunidade delega apenas o contexto do Diário ao loader", () => {
   assert.doesNotMatch(page, /diarioAnotacaoIdsContexto/);
   assert.match(page, /buscarAnotacoesDiarioContextoModeracao\(\{/);
-  assert.match(page, /capituloIdsContexto/);
-  assert.match(page, /\.from\("capitulos"\)/);
+  assert.match(page, /buscarCapitulosContextoModeracao\(\{/);
   assert.match(page, /setDenuncias\(/);
   assert.doesNotMatch(
     source,

@@ -1988,3 +1988,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 12 — Admin Comunidade
 
 - O contexto de anotações do Diário foi movido para `loaders/carregar-anotacoes-diario-contexto-moderacao.ts`, preservando IDs, consulta e fallbacks.
+
+## Registro da Fase 13 — Admin Comunidade
+
+- O contexto de capítulos foi movido para `loaders/carregar-capitulos-contexto-moderacao.ts`, preservando IDs, consulta e fallbacks.
