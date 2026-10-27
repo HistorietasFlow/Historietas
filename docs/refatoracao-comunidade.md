@@ -2056,3 +2056,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 29 — Admin Comunidade
 
 - O painel de filtros da moderação foi movido para `components/admin-comunidade-filters-sheet.tsx`, preservando status, limpeza, acessibilidade e apresentação da página.
+
+## Fase 1 — Admin Exclusões de Conta
+
+- Tipos e normalização dos contratos foram extraídos para `lib/admin-exclusoes-conta-normalization-utils.ts`, sem alteração de comportamento.
