@@ -145,6 +145,7 @@ import { buscarObrasContextoModeracao } from "./loaders/carregar-obras-contexto-
 import { buscarPerfisContextoModeracao } from "./loaders/carregar-perfis-contexto-moderacao";
 import { persistirStatusDenunciaPerfilModeracao } from "./actions/atualizar-status-denuncia-perfil-moderacao";
 import { persistirStatusDenunciaModeracao } from "./actions/atualizar-status-denuncia-moderacao";
+import { removerConteudoDenunciadoModeracao } from "./actions/remover-conteudo-denunciado-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -540,21 +541,11 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      // A RPC executa a exclusão do conteúdo e a resolução de todas as
-      // denúncias correspondentes dentro da mesma transação do PostgreSQL.
-      // Se qualquer etapa falhar, nenhuma alteração é confirmada no banco.
-      const { error: erroRemocaoTransacional } = await supabase.rpc(
-        "remover_conteudo_denunciado_transacional",
-        {
-          p_alvo_tipo: denuncia.alvoTipo,
-          p_alvo_id: denuncia.alvoId,
-          p_observacao_admin: observacaoFinal.slice(0, 800),
-        }
-      );
-
-      if (erroRemocaoTransacional) {
-        throw erroRemocaoTransacional;
-      }
+      await removerConteudoDenunciadoModeracao({
+        alvoTipo: denuncia.alvoTipo,
+        alvoId: denuncia.alvoId,
+        observacaoFinal,
+      });
     } catch (error) {
       setErro(criarMensagemErro("Erro ao remover conteúdo denunciado", error));
       return;
