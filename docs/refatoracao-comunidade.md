@@ -1992,3 +1992,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 13 — Admin Comunidade
 
 - O contexto de capítulos foi movido para `loaders/carregar-capitulos-contexto-moderacao.ts`, preservando IDs, consulta e fallbacks.
+
+## Registro da Fase 14 — Admin Comunidade
+
+- O contexto de obras foi movido para `loaders/carregar-obras-contexto-moderacao.ts`, preservando IDs, consulta e fallbacks.
