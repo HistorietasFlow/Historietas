@@ -13,69 +13,24 @@ import {
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../../lib/i18n";
 import { formatarData, normalizarTexto } from "../../../lib/utils";
-
-type StatusProblemaTecnico =
-  | "aberto"
-  | "em_analise"
-  | "aguardando_usuario"
-  | "resolvido"
-  | "fechado";
-
-type PrioridadeProblemaTecnico = "baixa" | "normal" | "alta" | "urgente";
-
-type CategoriaProblemaTecnico =
-  | "conta_acesso"
-  | "publicacao"
-  | "leitura"
-  | "comunidade"
-  | "diario"
-  | "notificacoes"
-  | "privacidade"
-  | "desempenho"
-  | "outro";
-
-type FiltroStatusProblema = StatusProblemaTecnico | "todos";
-
-type ProblemaTecnico = {
-  id: string;
-  userId: string;
-  emailContato: string;
-  categoria: CategoriaProblemaTecnico;
-  titulo: string;
-  descricao: string;
-  paginaUrl: string;
-  navegador: string;
-  dispositivo: string;
-  status: StatusProblemaTecnico;
-  prioridade: PrioridadeProblemaTecnico;
-  observacaoAdmin: string;
-  analisadoPor: string;
-  analisadoEm: string;
-  criadoEm: string;
-  atualizadoEm: string;
-};
-
+import {
+  PRIORIDADES_PROBLEMAS,
+  STATUS_PROBLEMAS,
+  normalizarCategoria,
+  normalizarPrioridade,
+  normalizarStatus,
+  type CategoriaProblemaTecnico,
+  type FiltroStatusProblema,
+  type PrioridadeProblemaTecnico,
+  type ProblemaTecnico,
+  type StatusProblemaTecnico,
+} from "./lib/admin-problemas-tecnicos-normalization-utils";
 
 type TextoTraduzido = {
   pt: string;
   en: string;
   es: string;
 };
-
-const STATUS_PROBLEMAS: StatusProblemaTecnico[] = [
-  "aberto",
-  "em_analise",
-  "aguardando_usuario",
-  "resolvido",
-  "fechado",
-];
-
-const PRIORIDADES_PROBLEMAS: PrioridadeProblemaTecnico[] = [
-  "baixa",
-  "normal",
-  "alta",
-  "urgente",
-];
 
 const STATUS_LABEL: Record<StatusProblemaTecnico, TextoTraduzido> = {
   aberto: {
@@ -196,36 +151,6 @@ function criarLoginHref() {
       : "/admin/problemas-tecnicos";
 
   return `/login?${new URLSearchParams({ redirectTo: destino }).toString()}`;
-}
-
-function normalizarStatus(valor: unknown): StatusProblemaTecnico {
-  return STATUS_PROBLEMAS.includes(valor as StatusProblemaTecnico)
-    ? (valor as StatusProblemaTecnico)
-    : "aberto";
-}
-
-function normalizarPrioridade(valor: unknown): PrioridadeProblemaTecnico {
-  return PRIORIDADES_PROBLEMAS.includes(valor as PrioridadeProblemaTecnico)
-    ? (valor as PrioridadeProblemaTecnico)
-    : "normal";
-}
-
-function normalizarCategoria(valor: unknown): CategoriaProblemaTecnico {
-  const categorias = new Set<CategoriaProblemaTecnico>([
-    "conta_acesso",
-    "publicacao",
-    "leitura",
-    "comunidade",
-    "diario",
-    "notificacoes",
-    "privacidade",
-    "desempenho",
-    "outro",
-  ]);
-
-  return categorias.has(valor as CategoriaProblemaTecnico)
-    ? (valor as CategoriaProblemaTecnico)
-    : "outro";
 }
 
 function criarMensagemErro(acao: string, erro: unknown) {
