@@ -2112,3 +2112,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 3 — Admin Problemas Técnicos
 
 - Rota segura de login e formatação de erros foram extraídas sem alteração de comportamento.
+
+## Fase 4 — Admin Problemas Técnicos
+
+- A verificação administrativa via RPC foi isolada sem alteração na ordem, fallback ou tratamento de autenticação.
