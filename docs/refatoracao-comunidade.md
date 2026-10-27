@@ -1948,3 +1948,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 2 — Admin Comunidade
 
 - Os status e rótulos puros de moderação foram movidos para módulos dedicados, preservando tipos, fallbacks e consumidores da página.
+
+## Registro da Fase 3 — Admin Comunidade
+
+- Os helpers puros de erros e nomes de perfis de moderação foram movidos para módulos dedicados, preservando detalhes, fallbacks e mapeamentos por identificador.
