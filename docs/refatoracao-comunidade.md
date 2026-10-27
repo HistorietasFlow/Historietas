@@ -2060,3 +2060,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 1 — Admin Exclusões de Conta
 
 - Tipos e normalização dos contratos foram extraídos para `lib/admin-exclusoes-conta-normalization-utils.ts`, sem alteração de comportamento.
+
+## Fase 2 — Admin Exclusões de Conta
+
+- Textos, rótulos e helpers puros de apresentação foram extraídos para `lib/admin-exclusoes-conta-text-utils.ts`, sem alteração de comportamento.
