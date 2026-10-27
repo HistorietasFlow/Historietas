@@ -1976,3 +1976,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 9 — Admin Comunidade
 
 - A consulta e normalização base de denúncias foram movidas para `loaders/carregar-denuncias-base-moderacao.ts`, preservando a montagem de contexto na página.
+
+## Registro da Fase 10 — Admin Comunidade
+
+- O agrupamento de IDs dos alvos denunciados foi movido para `lib/admin-comunidade-target-id-utils.ts`, preservando filtros, deduplicação e ordem.

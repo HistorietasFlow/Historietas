@@ -117,7 +117,6 @@ import {
   STATUS_PERFIL_LABEL,
 } from "./lib/admin-comunidade-status-utils";
 import {
-  type TipoAlvoDenuncia,
   formatarMotivoDenunciaPerfil,
   rotuloRemocaoAlvoDenuncia,
   rotuloSucessoRemocaoAlvo,
@@ -141,6 +140,7 @@ import {
   buscarDenunciasBaseModeracao,
   type DenunciaComunidade,
 } from "./loaders/carregar-denuncias-base-moderacao";
+import { agruparIdsAlvosDenunciados } from "./lib/admin-comunidade-target-id-utils";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -199,24 +199,16 @@ export default function AdminComunidadePage() {
 
     const denunciasMapeadas = await buscarDenunciasBaseModeracao();
 
-    const idsPorTipo = <T extends TipoAlvoDenuncia>(tipo: T) =>
-      Array.from(
-        new Set(
-          denunciasMapeadas
-            .filter((denuncia) => denuncia.alvoTipo === tipo)
-            .map((denuncia) => denuncia.alvoId)
-            .filter(Boolean)
-        )
-      );
-
-    const postIds = idsPorTipo("post");
-    const comentarioIds = idsPorTipo("comentario");
-    const comentarioCapituloIds = idsPorTipo("comentario_capitulo");
-    const obraIdsDenunciadas = idsPorTipo("obra");
-    const capituloIdsDenunciados = idsPorTipo("capitulo");
-    const comentarioObraIds = idsPorTipo("comentario_obra");
-    const diarioAnotacaoIds = idsPorTipo("diario_anotacao");
-    const comentarioDiarioIds = idsPorTipo("comentario_diario");
+    const {
+      postIds,
+      comentarioIds,
+      comentarioCapituloIds,
+      obraIdsDenunciadas,
+      capituloIdsDenunciados,
+      comentarioObraIds,
+      diarioAnotacaoIds,
+      comentarioDiarioIds,
+    } = agruparIdsAlvosDenunciados(denunciasMapeadas);
 
     const [
       postsResposta,
