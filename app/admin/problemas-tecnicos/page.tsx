@@ -25,6 +25,7 @@ import { criarLoginHrefAdminProblemasTecnicos } from "./lib/admin-problemas-tecn
 import { criarMensagemErro } from "./lib/admin-problemas-tecnicos-error-utils";
 import { verificarAdministradorProblemasTecnicos } from "./loaders/verificar-administrador-problemas-tecnicos";
 import { buscarProblemasTecnicosAdmin } from "./loaders/buscar-problemas-tecnicos-admin";
+import { buscarPerfisProblemasTecnicosAdmin } from "./loaders/buscar-perfis-problemas-tecnicos-admin";
 import {
   PRIORIDADES_PROBLEMAS,
   STATUS_PROBLEMAS,
@@ -71,18 +72,8 @@ export default function AdminProblemasTecnicosPage() {
       return;
     }
 
-    const [porUserId, porId] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id,user_id,nome,username")
-        .in("user_id", ids)
-        .limit(1000),
-      supabase
-        .from("profiles")
-        .select("id,user_id,nome,username")
-        .in("id", ids)
-        .limit(1000),
-    ]);
+    const { porUserId, porId } =
+      await buscarPerfisProblemasTecnicosAdmin(ids);
 
     const perfis = [
       ...(porUserId.error
