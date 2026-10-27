@@ -1916,3 +1916,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 11 — Login
 
 - A tentativa única de sincronização de profile foi movida para `actions/sincronizar-profile-login-uma-vez.ts`, preservando consultas, payload, update/upsert e o retry controlado pela página.
+
+## Registro da Fase 12 — Login
+
+- A orquestração de sincronização de profile e o helper de timing foram movidos para módulos dedicados, preservando tentativas, delays, diagnóstico e o callback estável da página.
