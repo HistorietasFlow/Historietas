@@ -2108,3 +2108,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 2 — Admin Problemas Técnicos
 
 - Textos, rótulos e cores puras foram movidos para módulo dedicado sem alteração de comportamento.
+
+## Fase 3 — Admin Problemas Técnicos
+
+- Rota segura de login e formatação de erros foram extraídas sem alteração de comportamento.
