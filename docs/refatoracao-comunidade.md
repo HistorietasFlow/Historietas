@@ -1964,3 +1964,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 6 — Admin Comunidade
 
 - Os filtros derivados e totais de moderação foram movidos para módulos puros, preservando filtros por status, busca normalizada, mapeamento de denúncias de perfil e contadores.
+
+## Registro da Fase 7 — Admin Comunidade
+
+- O carregamento de reincidências de moderação foi movido para `loaders/carregar-reincidencias-moderacao.ts`, preservando a RPC, a transformação e a orquestração de estado na página.
