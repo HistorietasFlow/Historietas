@@ -148,6 +148,7 @@ import { persistirStatusDenunciaModeracao } from "./actions/atualizar-status-den
 import { removerConteudoDenunciadoModeracao } from "./actions/remover-conteudo-denunciado-moderacao";
 import { persistirArquivamentoDenunciaModeracao } from "./actions/arquivar-denuncia-moderacao";
 import { persistirRestauracaoDenunciaModeracao } from "./actions/restaurar-denuncia-moderacao";
+import { persistirRemocaoDenunciaResolvidaModeracao } from "./actions/remover-denuncia-resolvida-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -690,23 +691,9 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      const { data, error } = await supabase
-        .from("comunidade_denuncias")
-        .delete()
-        .eq("id", denunciaId)
-        .eq("status", "resolvida")
-        .select("id")
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.id) {
-        throw new Error(
-          "A denúncia resolvida não foi encontrada ou não pôde ser removida."
-        );
-      }
+      await persistirRemocaoDenunciaResolvidaModeracao({
+        denunciaId,
+      });
 
       setDenuncias((denunciasAtuais) =>
         denunciasAtuais.filter((denunciaAtual) => denunciaAtual.id !== denunciaId)

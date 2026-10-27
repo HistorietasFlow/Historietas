@@ -2036,3 +2036,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 24 — Admin Comunidade
 
 - A persistência da restauração de denúncias foi movida para `actions/restaurar-denuncia-moderacao.ts`, preservando query, validação e feedback da página.
+
+## Registro da Fase 25 — Admin Comunidade
+
+- A persistência da remoção de denúncias resolvidas foi movida para `actions/remover-denuncia-resolvida-moderacao.ts`, preservando query, validação e atualizações locais da página.
