@@ -220,7 +220,10 @@ test("Admin Exclusões de Conta delega filtro e totais aos helpers puros", () =>
   assert.match(memoSection, /calcularTotaisSolicitacoesExclusao\(solicitacoes\)/);
   assert.doesNotMatch(memoSection, /normalizarTexto\(/);
   assert.doesNotMatch(memoSection, /solicitacoes\.filter\(/);
-  assert.match(pageSource, /function criarLoginHref\(/);
+  assert.match(
+    pageSource,
+    /from "\.\/lib\/admin-exclusoes-conta-route-utils";/,
+  );
 
   for (const source of [filterSource, statsSource]) {
     assert.doesNotMatch(
