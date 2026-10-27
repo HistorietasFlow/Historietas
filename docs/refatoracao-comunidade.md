@@ -1908,3 +1908,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 9 — Login
 
 - O CSS global do Login foi movido para `lib/login-page-css.ts`, preservando integralmente os seletores, os dois blocos `html` e a concatenação do tema na página.
+
+## Registro da Fase 10 — Login
+
+- Os contratos de estilos React do Login foram movidos para `lib/login-styles.ts`, preservando valores, spreads, responsividade e os consumidores visuais da página.
