@@ -2016,3 +2016,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 19 — Admin Comunidade
 
 - A verificação de usuário autenticado e da permissão administrativa foi movida para `loaders/verificar-acesso-moderacao.ts`, preservando consultas, erros e a orquestração de acesso na página.
+
+## Registro da Fase 20 — Admin Comunidade
+
+- A persistência do status das denúncias de perfil foi movida para `actions/atualizar-status-denuncia-perfil-moderacao.ts`, preservando query, validação e feedback da página.
