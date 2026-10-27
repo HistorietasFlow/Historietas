@@ -1936,3 +1936,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 16 — Login
 
 - A autenticação por senha foi movida para `actions/entrar-com-senha-login.ts`, preservando payload, resposta e orquestração de profile, storage e redirect na página.
+
+## Registro da Fase 17 — Login
+
+- A finalização pós-autenticação foi movida para `actions/finalizar-autenticacao-login.ts`, preservando storage, redirect e refresh na ordem atual.
