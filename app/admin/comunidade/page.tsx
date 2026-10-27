@@ -10,6 +10,7 @@ import {
 import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { useAdminComunidadeDesktopMode } from "./hooks/use-admin-comunidade-desktop-mode";
+import { AdminComunidadeFiltersSheet } from "./components/admin-comunidade-filters-sheet";
 import { adminComunidadePageCss } from "./lib/admin-comunidade-page-css";
 import {
   pageStyle,
@@ -46,17 +47,6 @@ import {
   summaryTitleStyle,
   clearButtonStyle,
   listStyle,
-  adminFiltersSheetOverlayStyle,
-  adminFiltersSheetBackdropStyle,
-  adminFiltersSheetStyle,
-  adminFiltersSheetHandleStyle,
-  adminFiltersSheetTitleStyle,
-  adminFiltersSheetSectionLabelStyle,
-  adminFiltersSheetOptionStyle,
-  adminFiltersSheetOptionActiveStyle,
-  adminFiltersSheetRadioStyle,
-  adminFiltersSheetRadioActiveStyle,
-  adminFiltersSheetClearButtonStyle,
 } from "./lib/admin-comunidade-styles";
 import { criarLoginHrefAdminModeracao } from "./lib/admin-comunidade-route-utils";
 import {
@@ -976,73 +966,13 @@ export default function AdminComunidadePage() {
         </section>
 
         {mostrarFiltrosModeracao && (
-          <section
-            style={adminFiltersSheetOverlayStyle}
-            aria-label="Filtrar denúncias"
-          >
-            <button
-              type="button"
-              aria-label="Fechar filtros"
-              onClick={() => setMostrarFiltrosModeracao(false)}
-              style={adminFiltersSheetBackdropStyle}
-            />
-
-            <article style={adminFiltersSheetStyle}>
-              <div style={adminFiltersSheetHandleStyle} />
-
-              <strong style={adminFiltersSheetTitleStyle}>
-                Moderação
-              </strong>
-
-              <span style={adminFiltersSheetSectionLabelStyle}>Status</span>
-
-              {(["todas", ...STATUS_DENUNCIAS, "arquivadas"] as const).map(
-                (status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => {
-                      setStatusFiltro(status);
-                      setMostrarFiltrosModeracao(false);
-                    }}
-                    style={
-                      statusFiltro === status
-                        ? adminFiltersSheetOptionActiveStyle
-                        : adminFiltersSheetOptionStyle
-                    }
-                  >
-                    <span>
-                      {status === "todas"
-                        ? "Todas"
-                        : status === "arquivadas"
-                          ? "Arquivadas"
-                          : STATUS_LABEL[status]}
-                    </span>
-
-                    <span
-                      style={
-                        statusFiltro === status
-                          ? adminFiltersSheetRadioActiveStyle
-                          : adminFiltersSheetRadioStyle
-                      }
-                    >
-                      {statusFiltro === status ? "✓" : ""}
-                    </span>
-                  </button>
-                )
-              )}
-
-              {(busca || statusFiltro !== "todas") && (
-                <button
-                  type="button"
-                  onClick={limparFiltros}
-                  style={adminFiltersSheetClearButtonStyle}
-                >
-                  Limpar filtros
-                </button>
-              )}
-            </article>
-          </section>
+          <AdminComunidadeFiltersSheet
+            statusFiltro={statusFiltro}
+            busca={busca}
+            onFechar={() => setMostrarFiltrosModeracao(false)}
+            onSelecionarStatus={(status) => setStatusFiltro(status)}
+            onLimparFiltros={limparFiltros}
+          />
         )}
 
         {(erro || sucesso) && (
