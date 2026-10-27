@@ -2052,3 +2052,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 28 — Admin Comunidade
 
 - O cartão de denúncia de conteúdo foi movido para `components/admin-comunidade-content-report-card.tsx`, preservando menu, ações, observação interna, estados e apresentação da página.
+
+## Registro da Fase 29 — Admin Comunidade
+
+- O painel de filtros da moderação foi movido para `components/admin-comunidade-filters-sheet.tsx`, preservando status, limpeza, acessibilidade e apresentação da página.

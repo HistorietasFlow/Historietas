@@ -16,6 +16,33 @@ const pageSource = readFileSync(
   ),
   "utf8",
 );
+const profileReportCardSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/components/admin-comunidade-profile-report-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const contentReportCardSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/components/admin-comunidade-content-report-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const filtersSheetSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/components/admin-comunidade-filters-sheet.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const styleConsumerSources = [
+  pageSource,
+  profileReportCardSource,
+  contentReportCardSource,
+  filtersSheetSource,
+];
 
 const pageStyleNames = [
   "pageStyle",
@@ -67,17 +94,6 @@ const pageStyleNames = [
   "reportHeaderRightStyle",
   "reportMenuWrapStyle",
   "reportMenuButtonStyle",
-  "adminFiltersSheetOverlayStyle",
-  "adminFiltersSheetBackdropStyle",
-  "adminFiltersSheetStyle",
-  "adminFiltersSheetHandleStyle",
-  "adminFiltersSheetTitleStyle",
-  "adminFiltersSheetSectionLabelStyle",
-  "adminFiltersSheetOptionStyle",
-  "adminFiltersSheetOptionActiveStyle",
-  "adminFiltersSheetRadioStyle",
-  "adminFiltersSheetRadioActiveStyle",
-  "adminFiltersSheetClearButtonStyle",
   "reportMenuOverlayStyle",
   "reportMenuBackdropStyle",
   "reportMenuStyle",
@@ -142,9 +158,11 @@ test("Admin Comunidade delega todos os estilos React estáticos ao módulo extra
         `export const \\b${styleName}\\b: CSSProperties`,
       ),
     );
-    assert.match(
-      pageSource,
-      new RegExp(`\\b${styleName}\\b`),
+    assert.ok(
+      styleConsumerSources.some((source) =>
+        new RegExp(`\\b${styleName}\\b`).test(source)
+      ),
+      `${styleName} deve permanecer consumido pela página ou pelos componentes extraídos`,
     );
   }
 
