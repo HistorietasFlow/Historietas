@@ -1956,3 +1956,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 4 — Admin Comunidade
 
 - Os textos de confirmação de moderação e a detecção de conteúdo indisponível foram movidos para módulos puros, preservando locales, mensagens e padrões de normalização.
+
+## Registro da Fase 5 — Admin Comunidade
+
+- Os estilos React estáticos da página foram movidos para `lib/admin-comunidade-styles.ts`, preservando objetos, spreads, responsividade e consumidores visuais.
