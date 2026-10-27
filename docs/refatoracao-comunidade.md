@@ -2028,3 +2028,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 22 — Admin Comunidade
 
 - A remoção transacional de conteúdo denunciado foi movida para `actions/remover-conteudo-denunciado-moderacao.ts`, preservando RPC, validação e atualizações locais da página.
+
+## Registro da Fase 23 — Admin Comunidade
+
+- A persistência do arquivamento de denúncias foi movida para `actions/arquivar-denuncia-moderacao.ts`, preservando query, validação e feedback da página.

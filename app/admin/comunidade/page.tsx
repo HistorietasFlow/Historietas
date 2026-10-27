@@ -146,6 +146,7 @@ import { buscarPerfisContextoModeracao } from "./loaders/carregar-perfis-context
 import { persistirStatusDenunciaPerfilModeracao } from "./actions/atualizar-status-denuncia-perfil-moderacao";
 import { persistirStatusDenunciaModeracao } from "./actions/atualizar-status-denuncia-moderacao";
 import { removerConteudoDenunciadoModeracao } from "./actions/remover-conteudo-denunciado-moderacao";
+import { persistirArquivamentoDenunciaModeracao } from "./actions/arquivar-denuncia-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -599,22 +600,9 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      const { data, error } = await supabase
-        .from("comunidade_denuncias")
-        .update({ arquivada: true })
-        .eq("id", denunciaId)
-        .select("id")
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.id) {
-        throw new Error(
-          "A denúncia não foi encontrada ou não pôde ser arquivada."
-        );
-      }
+      await persistirArquivamentoDenunciaModeracao({
+        denunciaId,
+      });
 
       setDenuncias((denunciasAtuais) =>
         denunciasAtuais.map((denuncia) =>
