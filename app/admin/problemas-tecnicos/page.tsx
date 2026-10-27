@@ -23,6 +23,7 @@ import {
 } from "./lib/admin-problemas-tecnicos-text-utils";
 import { criarLoginHrefAdminProblemasTecnicos } from "./lib/admin-problemas-tecnicos-route-utils";
 import { criarMensagemErro } from "./lib/admin-problemas-tecnicos-error-utils";
+import { verificarAdministradorProblemasTecnicos } from "./loaders/verificar-administrador-problemas-tecnicos";
 import {
   PRIORIDADES_PROBLEMAS,
   STATUS_PROBLEMAS,
@@ -58,24 +59,6 @@ export default function AdminProblemasTecnicosPage() {
     (texto: TextoTraduzido) => traduzir(texto, language),
     [language],
   );
-
-  async function verificarAdministrador() {
-    const { data: respostaPrincipal, error: erroPrincipal } =
-      await supabase.rpc("usuario_e_admin");
-
-    if (!erroPrincipal) {
-      return respostaPrincipal === true;
-    }
-
-    const { data: respostaSuporte, error: erroSuporte } =
-      await supabase.rpc("suporte_usuario_e_admin");
-
-    if (erroSuporte) {
-      throw erroPrincipal;
-    }
-
-    return respostaSuporte === true;
-  }
 
   const carregarNomes = useCallback(async (userIds: string[]) => {
     const ids = Array.from(
@@ -202,7 +185,8 @@ export default function AdminProblemasTecnicosPage() {
           return;
         }
 
-        const adminConfirmado = await verificarAdministrador();
+        const adminConfirmado =
+          await verificarAdministradorProblemasTecnicos();
 
         if (cancelado) return;
 
