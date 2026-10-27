@@ -144,6 +144,7 @@ import { buscarCapitulosContextoModeracao } from "./loaders/carregar-capitulos-c
 import { buscarObrasContextoModeracao } from "./loaders/carregar-obras-contexto-moderacao";
 import { buscarPerfisContextoModeracao } from "./loaders/carregar-perfis-contexto-moderacao";
 import { persistirStatusDenunciaPerfilModeracao } from "./actions/atualizar-status-denuncia-perfil-moderacao";
+import { persistirStatusDenunciaModeracao } from "./actions/atualizar-status-denuncia-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -468,27 +469,13 @@ export default function AdminComunidadePage() {
     const analisadoEm = new Date().toISOString();
 
     try {
-      const { data, error } = await supabase
-        .from("comunidade_denuncias")
-        .update({
-          status: novoStatus,
-          observacao_admin: observacaoAtual.slice(0, 800),
-          analisado_por: usuarioId,
-          analisado_em: analisadoEm,
-        })
-        .eq("id", denunciaId)
-        .select("id")
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.id) {
-        throw new Error(
-          "A denúncia não foi encontrada ou não pôde ser atualizada."
-        );
-      }
+      await persistirStatusDenunciaModeracao({
+        denunciaId,
+        novoStatus,
+        observacaoAtual,
+        usuarioId,
+        analisadoEm,
+      });
 
       setDenuncias((denunciasAtuais) =>
         denunciasAtuais.map((denuncia) =>

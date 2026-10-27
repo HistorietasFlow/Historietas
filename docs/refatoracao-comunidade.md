@@ -2020,3 +2020,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 20 — Admin Comunidade
 
 - A persistência do status das denúncias de perfil foi movida para `actions/atualizar-status-denuncia-perfil-moderacao.ts`, preservando query, validação e feedback da página.
+
+## Registro da Fase 21 — Admin Comunidade
+
+- A persistência do status das denúncias foi movida para `actions/atualizar-status-denuncia-moderacao.ts`, preservando query, validação e feedback da página.
