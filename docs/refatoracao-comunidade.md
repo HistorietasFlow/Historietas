@@ -2092,3 +2092,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 9 — Admin Exclusões de Conta
 
 - CSS e estilos React estáticos foram movidos para módulo dedicado sem alteração visual ou funcional.
+
+## Fase 10 — Admin Exclusões de Conta
+
+- A seção visual de recuperação operacional foi movida para componente dedicado sem alteração funcional ou visual.
