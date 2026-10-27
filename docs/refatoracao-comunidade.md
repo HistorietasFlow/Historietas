@@ -1940,3 +1940,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 17 — Login
 
 - A finalização pós-autenticação foi movida para `actions/finalizar-autenticacao-login.ts`, preservando storage, redirect e refresh na ordem atual.
+
+## Registro da Fase 1 — Admin Comunidade
+
+- As rotas de moderação foram movidas para `lib/admin-comunidade-route-utils.ts`, preservando redirects de login, perfis denunciados e Diário.
