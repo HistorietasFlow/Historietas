@@ -21,6 +21,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const contentReportCardSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/components/admin-comunidade-content-report-card.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function importarModuloTypescript(source) {
   const javascript = typescript.transpileModule(source, {
@@ -195,8 +202,8 @@ test("Admin Comunidade delega status e rótulos aos módulos puros", () => {
   assert.match(pageSource, /normalizarTipoAlvo\(denuncia\.alvo_tipo\)/);
   assert.match(pageSource, /formatarMotivoDenunciaConteudo\(/);
   assert.match(pageSource, /formatarMotivoDenunciaPerfil\(/);
-  assert.match(pageSource, /rotuloTipoAlvoDenuncia\(/);
-  assert.match(pageSource, /rotuloRemocaoAlvoDenuncia\(/);
+  assert.match(contentReportCardSource, /rotuloTipoAlvoDenuncia\(/);
+  assert.match(contentReportCardSource, /rotuloRemocaoAlvoDenuncia\(/);
   assert.match(pageSource, /rotuloSucessoRemocaoAlvo\(/);
 
   for (const source of [statusSource, reportLabelSource]) {

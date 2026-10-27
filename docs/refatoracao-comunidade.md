@@ -2048,3 +2048,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 27 — Admin Comunidade
 
 - O cartão de denúncia de perfil foi movido para `components/admin-comunidade-profile-report-card.tsx`, preservando menu, ações, estados e apresentação da página.
+
+## Registro da Fase 28 — Admin Comunidade
+
+- O cartão de denúncia de conteúdo foi movido para `components/admin-comunidade-content-report-card.tsx`, preservando menu, ações, observação interna, estados e apresentação da página.

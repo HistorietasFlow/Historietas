@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { formatarData } from "../../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -47,21 +46,6 @@ import {
   summaryTitleStyle,
   clearButtonStyle,
   listStyle,
-  reportCardStyle,
-  reportHeaderStyle,
-  reportTitleWrapStyle,
-  reportMetaLineStyle,
-  reportDotStyle,
-  targetBadgeStyle,
-  postTargetBadgeStyle,
-  commentTargetBadgeStyle,
-  reportTitleStyle,
-  reportDateStyle,
-  statusInlineStyle,
-  archivedInlineStyle,
-  reportHeaderRightStyle,
-  reportMenuWrapStyle,
-  reportMenuButtonStyle,
   adminFiltersSheetOverlayStyle,
   adminFiltersSheetBackdropStyle,
   adminFiltersSheetStyle,
@@ -73,40 +57,8 @@ import {
   adminFiltersSheetRadioStyle,
   adminFiltersSheetRadioActiveStyle,
   adminFiltersSheetClearButtonStyle,
-  reportMenuOverlayStyle,
-  reportMenuBackdropStyle,
-  reportMenuStyle,
-  reportMenuHandleStyle,
-  reportMenuTitleStyle,
-  reportMenuItemStyle,
-  reportMenuItemLinkStyle,
-  reportMenuItemActiveStyle,
-  reportMenuDangerItemStyle,
-  reportMenuDividerStyle,
-  reportBodyStyle,
-  contentBoxStyle,
-  sectionHeaderLineStyle,
-  sectionHintStyle,
-  boxLabelStyle,
-  adminObservationLabelStyle,
-  reportedTextStyle,
-  reportedTextCompactStyle,
-  metaGridStyle,
-  metaItemStyle,
-  recurrenceMetaItemStyle,
-  spoilerMetaItemStyle,
-  reasonGridStyle,
-  reasonItemStyle,
-  detailTextStyle,
-  mutedTextStyle,
-  adminNoteStyle,
-  textareaStyle,
-  analysisMetaStyle,
 } from "./lib/admin-comunidade-styles";
-import {
-  criarHrefDiarioDenunciado,
-  criarLoginHrefAdminModeracao,
-} from "./lib/admin-comunidade-route-utils";
+import { criarLoginHrefAdminModeracao } from "./lib/admin-comunidade-route-utils";
 import {
   type StatusDenuncia,
   type StatusDenunciaPerfil,
@@ -115,9 +67,7 @@ import {
   STATUS_PERFIL_LABEL,
 } from "./lib/admin-comunidade-status-utils";
 import {
-  rotuloRemocaoAlvoDenuncia,
   rotuloSucessoRemocaoAlvo,
-  rotuloTipoAlvoDenuncia,
 } from "./lib/admin-comunidade-report-label-utils";
 import {
   criarMensagemErro,
@@ -162,6 +112,7 @@ import { sincronizarObservacoesModeracao } from "./lib/admin-comunidade-observat
 import { verificarAcessoModeracao } from "./loaders/verificar-acesso-moderacao";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 import { AdminComunidadeProfileReportCard } from "./components/admin-comunidade-profile-report-card";
+import { AdminComunidadeContentReportCard } from "./components/admin-comunidade-content-report-card";
 
 export default function AdminComunidadePage() {
   const { language } = useHistorietasLanguage();
@@ -1164,396 +1115,47 @@ export default function AdminComunidadePage() {
                 : 0;
 
               return (
-                <article key={denuncia.id} style={reportCardStyle}>
-                  <div className="admin-comunidade-report-header" style={reportHeaderStyle}>
-                    <div style={reportTitleWrapStyle}>
-                      <div style={reportMetaLineStyle}>
-                        <span
-                          style={{
-                            ...targetBadgeStyle,
-                            ...(denuncia.alvoTipo === "post"
-                              ? postTargetBadgeStyle
-                              : commentTargetBadgeStyle),
-                          }}
-                        >
-                          {rotuloTipoAlvoDenuncia(denuncia.alvoTipo)}
-                        </span>
-
-                        <span style={reportDotStyle}>•</span>
-
-                        <span style={reportDateStyle}>
-                          Denunciado em {formatarData(denuncia.criadoEm)}
-                        </span>
-
-                        <span style={reportDotStyle}>•</span>
-
-                        <span style={statusInlineStyle}>
-                          {STATUS_LABEL[denuncia.status]}
-                        </span>
-
-                        {denunciaArquivada && (
-                          <>
-                            <span style={reportDotStyle}>•</span>
-                            <span style={archivedInlineStyle}>Arquivada</span>
-                          </>
-                        )}
-                      </div>
-
-                      <strong style={reportTitleStyle}>{denuncia.motivo}</strong>
-                    </div>
-
-                    <div style={reportHeaderRightStyle}>
-                      <div style={reportMenuWrapStyle}>
-                        <button
-                          type="button"
-                          aria-label={
-                            menuAberto
-                              ? "Fechar ações da denúncia"
-                              : "Abrir ações da denúncia"
-                          }
-                          aria-expanded={menuAberto}
-                          onClick={() =>
-                            setMenuDenunciaAbertoId((denunciaAbertaId) =>
-                              denunciaAbertaId === denuncia.id ? "" : denuncia.id
-                            )
-                          }
-                          disabled={acaoAtiva}
-                          style={{
-                            ...reportMenuButtonStyle,
-                            opacity: acaoAtiva ? 0.58 : 1,
-                            cursor: acaoAtiva ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          ⋮
-                        </button>
-
-                        {menuAberto && (
-                          <section
-                            style={reportMenuOverlayStyle}
-                            aria-label="Ações da denúncia"
-                          >
-                            <button
-                              type="button"
-                              aria-label="Fechar ações da denúncia"
-                              onClick={() => setMenuDenunciaAbertoId("")}
-                              style={reportMenuBackdropStyle}
-                            />
-
-                            <article role="menu" style={reportMenuStyle}>
-                              <div style={reportMenuHandleStyle} />
-
-                              <strong style={reportMenuTitleStyle}>
-                                Ações da denúncia
-                              </strong>
-                            {denuncia.alvoPostId && (
-                              <Link
-                                href={`/comunidade?post=${encodeURIComponent(
-                                  denuncia.alvoPostId
-                                )}`}
-                                onClick={() => setMenuDenunciaAbertoId("")}
-                                style={reportMenuItemLinkStyle}
-                              >
-                                Abrir publicação na Comunidade
-                              </Link>
-                            )}
-
-                            {(denuncia.alvoTipo === "comentario_capitulo" ||
-                              denuncia.alvoTipo === "capitulo") &&
-                              denuncia.alvoObraId &&
-                              denuncia.alvoCapituloId && (
-                                <Link
-                                  href={`/ler-capitulo?obraId=${encodeURIComponent(
-                                    denuncia.alvoObraId
-                                  )}&capituloId=${encodeURIComponent(
-                                    denuncia.alvoCapituloId
-                                  )}`}
-                                  onClick={() => setMenuDenunciaAbertoId("")}
-                                  style={reportMenuItemLinkStyle}
-                                >
-                                  Abrir capítulo denunciado
-                                </Link>
-                              )}
-
-                            {(denuncia.alvoTipo === "obra" ||
-                              denuncia.alvoTipo === "comentario_obra") &&
-                              denuncia.alvoObraSlug && (
-                                <Link
-                                  href={`/obra/${encodeURIComponent(
-                                    denuncia.alvoObraSlug
-                                  )}`}
-                                  onClick={() =>
-                                    setMenuDenunciaAbertoId("")
-                                  }
-                                  style={reportMenuItemLinkStyle}
-                                >
-                                  Abrir obra denunciada
-                                </Link>
-                              )}
-
-                            {(denuncia.alvoTipo === "diario_anotacao" ||
-                              denuncia.alvoTipo === "comentario_diario") &&
-                              denuncia.alvoPerfilUserId && (
-                                <Link
-                                  href={criarHrefDiarioDenunciado(denuncia)}
-                                  onClick={() =>
-                                    setMenuDenunciaAbertoId("")
-                                  }
-                                  style={reportMenuItemLinkStyle}
-                                >
-                                  Abrir conteúdo no Diário
-                                </Link>
-                              )}
-
-                            {denunciaArquivada ? (
-                              <button
-                                type="button"
-                                onClick={() => void restaurarDenunciaArquivada(denuncia.id)}
-                                disabled={acaoAtiva}
-                                style={reportMenuItemStyle}
-                              >
-                                Restaurar para o painel
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => void arquivarDenuncia(denuncia.id)}
-                                disabled={acaoAtiva}
-                                style={reportMenuItemStyle}
-                              >
-                                Arquivar denúncia
-                              </button>
-                            )}
-
-                            {denuncia.status === "resolvida" && (
-                              <button
-                                type="button"
-                                onClick={() => void removerDenunciaResolvida(denuncia.id)}
-                                disabled={acaoAtiva}
-                                style={reportMenuDangerItemStyle}
-                              >
-                                {acaoEmAndamento === `${denuncia.id}-remover-denuncia`
-                                  ? "Removendo..."
-                                  : "Remover do painel"}
-                              </button>
-                            )}
-
-                            {denuncia.status === "pendente" && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setMenuDenunciaAbertoId("");
-                                  void atualizarStatusDenuncia(
-                                    denuncia.id,
-                                    "em_analise"
-                                  );
-                                }}
-                                disabled={acaoAtiva}
-                                style={reportMenuItemStyle}
-                              >
-                                {acaoEmAndamento === `${denuncia.id}-em_analise`
-                                  ? "Assumindo..."
-                                  : "Assumir análise"}
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMenuDenunciaAbertoId("");
-                                void removerConteudoDenunciado(denuncia);
-                              }}
-                              disabled={
-                                acaoAtiva ||
-                                conteudoIndisponivel ||
-                                denunciaArquivada ||
-                                (denuncia.status !== "pendente" &&
-                                  denuncia.status !== "em_analise")
-                              }
-                              style={reportMenuDangerItemStyle}
-                            >
-                              {acaoEmAndamento ===
-                              `${denuncia.id}-remover-conteudo`
-                                ? "Removendo..."
-                                : rotuloRemocaoAlvoDenuncia(
-                                    denuncia.alvoTipo
-                                  )}
-                            </button>
-
-                            <div style={reportMenuDividerStyle} />
-
-                            {STATUS_DENUNCIAS.map((status) => (
-                              <button
-                                key={status}
-                                type="button"
-                                onClick={() => {
-                                  setMenuDenunciaAbertoId("");
-                                  void atualizarStatusDenuncia(
-                                    denuncia.id,
-                                    status
-                                  );
-                                }}
-                                disabled={acaoAtiva || denuncia.status === status}
-                                style={
-                                  denuncia.status === status
-                                    ? reportMenuItemActiveStyle
-                                    : reportMenuItemStyle
-                                }
-                              >
-                                {acaoEmAndamento === `${denuncia.id}-${status}`
-                                  ? "Salvando..."
-                                  : `Marcar como ${STATUS_LABEL[
-                                      status
-                                    ].toLowerCase()}`}
-                              </button>
-                            ))}
-
-                            </article>
-                          </section>
-                        )}</div>
-                    </div>
-                  </div>
-
-                  <div className="admin-comunidade-report-body" style={reportBodyStyle}>
-                    <section style={contentBoxStyle}>
-                      <div style={sectionHeaderLineStyle}>
-                        <span style={boxLabelStyle}>Conteúdo denunciado</span>
-                        <span style={sectionHintStyle}>
-                          {conteudoIndisponivel
-                            ? "Indisponível"
-                            : rotuloTipoAlvoDenuncia(denuncia.alvoTipo)}
-                        </span>
-                      </div>
-
-                      <p
-                        style={
-                          denunciaResolvidaComConteudoIndisponivel
-                            ? reportedTextCompactStyle
-                            : reportedTextStyle
-                        }
-                      >
-                        {conteudoIndisponivel
-                          ? "Conteúdo removido ou indisponível."
-                          : denuncia.alvoResumo}
-                      </p>
-
-                      {!conteudoIndisponivel && (
-                        <div style={metaGridStyle}>
-                        <span style={metaItemStyle}>
-                          Autor: <strong>{denuncia.alvoAutor}</strong>
-                        </span>
-
-                        {totalReincidencias > 1 && (
-                          <span style={recurrenceMetaItemStyle}>
-                            Reincidências: <strong>{totalReincidencias}</strong>
-                          </span>
-                        )}
-
-                        <span style={metaItemStyle}>
-                          Data: <strong>{formatarData(denuncia.alvoData)}</strong>
-                        </span>
-
-                        {denuncia.alvoCategoria && (
-                          <span style={metaItemStyle}>
-                            Categoria: <strong>{denuncia.alvoCategoria}</strong>
-                          </span>
-                        )}
-
-                        {(denuncia.alvoTipo === "post" ||
-                          denuncia.alvoTipo === "diario_anotacao") &&
-                          denuncia.alvoTipoPublicacao && (
-                            <span style={metaItemStyle}>
-                              Tipo: <strong>{denuncia.alvoTipoPublicacao}</strong>
-                            </span>
-                          )}
-
-                        {(denuncia.alvoTipo === "post" ||
-                          denuncia.alvoTipo === "diario_anotacao" ||
-                          denuncia.alvoTipo === "comentario_diario") && (
-                          <span
-                            style={
-                              denuncia.alvoTemSpoiler
-                                ? spoilerMetaItemStyle
-                                : metaItemStyle
-                            }
-                          >
-                            Spoiler:{" "}
-                            <strong>
-                              {denuncia.alvoTemSpoiler ? "Sim" : "Não"}
-                            </strong>
-                          </span>
-                        )}
-
-                          {denuncia.alvoObra && (
-                            <span style={metaItemStyle}>
-                              Obra: <strong>{denuncia.alvoObra}</strong>
-                            </span>
-                          )}
-
-                          {(denuncia.alvoTipo === "comentario_capitulo" ||
-                            denuncia.alvoTipo === "capitulo") &&
-                            denuncia.alvoCapituloId && (
-                              <span style={metaItemStyle}>
-                                Capítulo:{" "}
-                                <strong>
-                                  {denuncia.alvoCapituloTitulo ||
-                                    denuncia.alvoCapituloId}
-                                </strong>
-                              </span>
-                            )}
-                        </div>
-                      )}
-                    </section>
-
-                    <section style={contentBoxStyle}>
-                      <div style={sectionHeaderLineStyle}>
-                        <span style={boxLabelStyle}>Denúncia</span>
-                        <span style={sectionHintStyle}>Registro interno</span>
-                      </div>
-
-                      <div style={reasonGridStyle}>
-                        <span style={reasonItemStyle}>
-                          Denunciante: <strong>{denuncia.denuncianteNome}</strong>
-                        </span>
-                      </div>
-
-                      {denuncia.detalhe ? (
-                        <p style={detailTextStyle}>{denuncia.detalhe}</p>
-                      ) : (
-                        <p style={mutedTextStyle}>Sem detalhe adicional.</p>
-                      )}
-                    </section>
-
-                    <label style={adminNoteStyle}>
-                      <div style={sectionHeaderLineStyle}>
-                        <span style={adminObservationLabelStyle}>
-                          Observação interna
-                        </span>
-                        <span style={sectionHintStyle}>Até 800 caracteres</span>
-                      </div>
-
-                      <textarea
-                        value={observacao}
-                        onChange={(event) =>
-                          setObservacoes((observacoesAtuais) => ({
-                            ...observacoesAtuais,
-                            [denuncia.id]: event.target.value,
-                          }))
-                        }
-                        disabled={acaoAtiva}
-                        placeholder="Ex.: conteúdo analisado, ação tomada, manter observação interna..."
-                        maxLength={800}
-                        rows={2}
-                        style={textareaStyle}
-                      />
-                    </label>
-                  </div>
-
-                  {denuncia.analisadoEm && (
-                    <span style={analysisMetaStyle}>
-                      Última análise em {formatarData(denuncia.analisadoEm)}
-                    </span>
-                  )}
-                </article>
+                <AdminComunidadeContentReportCard
+                  key={denuncia.id}
+                  denuncia={denuncia}
+                  acaoEmAndamento={acaoEmAndamento}
+                  acaoAtiva={acaoAtiva}
+                  observacao={observacao}
+                  menuAberto={menuAberto}
+                  denunciaArquivada={denunciaArquivada}
+                  conteudoIndisponivel={conteudoIndisponivel}
+                  denunciaResolvidaComConteudoIndisponivel={
+                    denunciaResolvidaComConteudoIndisponivel
+                  }
+                  totalReincidencias={totalReincidencias}
+                  onAlternarMenu={() =>
+                    setMenuDenunciaAbertoId((denunciaAbertaId) =>
+                      denunciaAbertaId === denuncia.id ? "" : denuncia.id
+                    )
+                  }
+                  onFecharMenu={() => setMenuDenunciaAbertoId("")}
+                  onArquivarDenuncia={(denunciaId) =>
+                    void arquivarDenuncia(denunciaId)
+                  }
+                  onRestaurarDenunciaArquivada={(denunciaId) =>
+                    void restaurarDenunciaArquivada(denunciaId)
+                  }
+                  onRemoverDenunciaResolvida={(denunciaId) =>
+                    void removerDenunciaResolvida(denunciaId)
+                  }
+                  onAtualizarStatus={(denunciaId, novoStatus) =>
+                    void atualizarStatusDenuncia(denunciaId, novoStatus)
+                  }
+                  onRemoverConteudoDenunciado={(denunciaAtual) =>
+                    void removerConteudoDenunciado(denunciaAtual)
+                  }
+                  onAlterarObservacao={(novoValor) =>
+                    setObservacoes((observacoesAtuais) => ({
+                      ...observacoesAtuais,
+                      [denuncia.id]: novoValor,
+                    }))
+                  }
+                />
               );
             })
           ) : (
