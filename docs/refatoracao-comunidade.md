@@ -2088,3 +2088,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 8 — Admin Exclusões de Conta
 
 - A requisição POST de recuperação foi isolada, mantendo decisões HTTP, recarga e feedback na página.
+
+## Fase 9 — Admin Exclusões de Conta
+
+- CSS e estilos React estáticos foram movidos para módulo dedicado sem alteração visual ou funcional.
