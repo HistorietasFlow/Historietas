@@ -2044,3 +2044,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 26 — Admin Comunidade
 
 - A persistência da remoção de denúncias de perfil resolvidas foi movida para `actions/remover-denuncia-perfil-resolvida-moderacao.ts`, preservando query, validação e feedback da página.
+
+## Registro da Fase 27 — Admin Comunidade
+
+- O cartão de denúncia de perfil foi movido para `components/admin-comunidade-profile-report-card.tsx`, preservando menu, ações, estados e apresentação da página.
