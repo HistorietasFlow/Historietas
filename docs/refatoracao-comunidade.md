@@ -1972,3 +1972,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 8 — Admin Comunidade
 
 - O carregamento de denúncias de perfil foi movido para `loaders/carregar-denuncias-perfis-moderacao.ts`, preservando consultas, normalização e contexto de perfis.
+
+## Registro da Fase 9 — Admin Comunidade
+
+- A consulta e normalização base de denúncias foram movidas para `loaders/carregar-denuncias-base-moderacao.ts`, preservando a montagem de contexto na página.
