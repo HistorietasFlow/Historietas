@@ -2076,3 +2076,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 5 — Admin Exclusões de Conta
 
 - A requisição GET de solicitações foi isolada em loader, mantendo na página autenticação, HTTP, normalização e estados.
+
+## Fase 6 — Admin Exclusões de Conta
+
+- A requisição GET das operações recuperáveis foi isolada em loader, mantendo decisões HTTP, normalização e estado na página.
