@@ -144,6 +144,7 @@ import { agruparIdsAlvosDenunciados } from "./lib/admin-comunidade-target-id-uti
 import { buscarAlvosPrimariosModeracao } from "./loaders/carregar-alvos-primarios-moderacao";
 import { buscarAnotacoesDiarioContextoModeracao } from "./loaders/carregar-anotacoes-diario-contexto-moderacao";
 import { buscarCapitulosContextoModeracao } from "./loaders/carregar-capitulos-contexto-moderacao";
+import { buscarObrasContextoModeracao } from "./loaders/carregar-obras-contexto-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -239,33 +240,13 @@ export default function AdminComunidadePage() {
         comentariosCapitulos,
       });
 
-    const obraIdsContexto = Array.from(
-      new Set([
-        ...obraIdsDenunciadas,
-        ...capitulos.map((capitulo) => capitulo.obra_id).filter(Boolean),
-        ...comentariosObras
-          .map((comentario) => comentario.obra_id)
-          .filter(Boolean),
-        ...diarioAnotacoes
-          .map((anotacao) => anotacao.obra_id)
-          .filter(Boolean),
-      ])
-    );
-
-    const { data: obrasResposta, error: obrasErro } =
-      obraIdsContexto.length > 0
-        ? await supabase
-            .from("obras")
-            .select(
-              "id, user_id, titulo, autor, slug, link, publicado, criada_em"
-            )
-            .in("id", obraIdsContexto)
-            .limit(500)
-        : { data: [], error: null };
-
-    const obras = obrasErro
-      ? []
-      : (obrasResposta || []);
+    const obras =
+      await buscarObrasContextoModeracao({
+        obraIdsDenunciadas,
+        capitulos,
+        comentariosObras,
+        diarioAnotacoes,
+      });
 
     const perfilIds = Array.from(
       new Set(
