@@ -155,6 +155,7 @@ import {
   type DenunciaComContexto,
 } from "./lib/admin-comunidade-report-context-utils";
 import { sincronizarObservacoesModeracao } from "./lib/admin-comunidade-observation-utils";
+import { verificarAcessoModeracao } from "./loaders/verificar-acesso-moderacao";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 
 export default function AdminComunidadePage() {
@@ -307,14 +308,8 @@ export default function AdminComunidadePage() {
       setSucesso("");
 
       try {
-        const { data: usuarioResposta, error: usuarioErro } =
-          await supabase.auth.getUser();
-
-        if (usuarioErro) {
-          throw usuarioErro;
-        }
-
-        const user = usuarioResposta.user || null;
+        const { user, adminConfirmado } =
+          await verificarAcessoModeracao();
 
         if (!user) {
           if (!cancelado) {
@@ -328,15 +323,6 @@ export default function AdminComunidadePage() {
 
           return;
         }
-
-        const { data: adminResposta, error: adminErro } =
-          await supabase.rpc("usuario_e_admin");
-
-        if (adminErro) {
-          throw adminErro;
-        }
-
-        const adminConfirmado = adminResposta === true;
 
         if (!cancelado) {
           setUsuarioId(user.id);

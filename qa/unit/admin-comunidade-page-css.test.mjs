@@ -64,7 +64,8 @@ test("Admin Comunidade mantém os quatro consumidores e as fronteiras sensíveis
   assert.doesNotMatch(pagina, /function AdminComunidadeLanguageBridge\(\)/);
   assert.match(pagina, /useAdminComunidadeDesktopMode\(\)/);
   assert.match(pagina, /async function iniciarModeracao\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /verificarAcessoModeracao\(\)/);
+  assert.doesNotMatch(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /async function atualizarStatusDenuncia\(/);
   assert.match(pagina, /const \[statusFiltro, setStatusFiltro\] = useState/);
 });

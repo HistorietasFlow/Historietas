@@ -61,7 +61,8 @@ test("Admin Comunidade delega apenas o modo desktop e mantém fronteiras sensív
   );
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 16);
   assert.match(pagina, /async function iniciarModeracao\(\)/);
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /verificarAcessoModeracao\(\)/);
+  assert.doesNotMatch(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(pagina, /supabase\s*\.from\("comunidade_denuncias"\)/);
   assert.match(pagina, /setMenuDenunciaAbertoId\(""\)/);
 });
