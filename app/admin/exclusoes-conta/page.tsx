@@ -28,6 +28,7 @@ import {
 } from "./lib/admin-exclusoes-conta-text-utils";
 import { filtrarSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-filter-utils";
 import { calcularTotaisSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-stats-utils";
+import { criarLoginHrefAdminExclusoesConta } from "./lib/admin-exclusoes-conta-route-utils";
 
 type RespostaOperacoes = {
   ok?: boolean;
@@ -59,19 +60,6 @@ type RespostaAtualizacao = {
   mensagem?: string;
   solicitacao?: unknown;
 };
-
-function criarLoginHref() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/admin/exclusoes-conta";
-  const destino =
-    redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/admin/exclusoes-conta";
-
-  return `/login?${new URLSearchParams({ redirectTo: destino }).toString()}`;
-}
 
 export default function AdminExclusoesContaPage() {
   const router = useRouter();
@@ -113,7 +101,7 @@ export default function AdminExclusoesContaPage() {
     const data = (await response.json().catch(() => null)) as RespostaLista | null;
 
     if (response.status === 401) {
-      router.replace(criarLoginHref());
+      router.replace(criarLoginHrefAdminExclusoesConta());
       return;
     }
 
@@ -171,7 +159,7 @@ export default function AdminExclusoesContaPage() {
     const data = (await response.json().catch(() => null)) as RespostaOperacoes | null;
 
     if (response.status === 401) {
-      router.replace(criarLoginHref());
+      router.replace(criarLoginHrefAdminExclusoesConta());
       return;
     }
 
@@ -290,7 +278,7 @@ export default function AdminExclusoesContaPage() {
         | null;
 
       if (response.status === 401) {
-        router.replace(criarLoginHref());
+        router.replace(criarLoginHrefAdminExclusoesConta());
         return;
       }
 
@@ -378,7 +366,7 @@ export default function AdminExclusoesContaPage() {
         | null;
 
       if (response.status === 401) {
-        router.replace(criarLoginHref());
+        router.replace(criarLoginHrefAdminExclusoesConta());
         return;
       }
 

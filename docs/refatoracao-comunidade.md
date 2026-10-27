@@ -2068,3 +2068,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 3 — Admin Exclusões de Conta
 
 - Filtros e totais foram movidos para helpers puros sem alteração de comportamento.
+
+## Fase 4 — Admin Exclusões de Conta
+
+- A construção segura da rota de login foi extraída para `lib/admin-exclusoes-conta-route-utils.ts`, sem alteração de comportamento.
