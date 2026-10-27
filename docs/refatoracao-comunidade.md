@@ -1932,3 +1932,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 15 — Login
 
 - A solicitação de criação de conta foi movida para `actions/criar-conta-login.ts`, preservando metadata de aceite, payload de autenticação e o restante do fluxo na página.
+
+## Registro da Fase 16 — Login
+
+- A autenticação por senha foi movida para `actions/entrar-com-senha-login.ts`, preservando payload, resposta e orquestração de profile, storage e redirect na página.
