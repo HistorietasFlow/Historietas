@@ -1952,3 +1952,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 3 — Admin Comunidade
 
 - Os helpers puros de erros e nomes de perfis de moderação foram movidos para módulos dedicados, preservando detalhes, fallbacks e mapeamentos por identificador.
+
+## Registro da Fase 4 — Admin Comunidade
+
+- Os textos de confirmação de moderação e a detecção de conteúdo indisponível foram movidos para módulos puros, preservando locales, mensagens e padrões de normalização.
