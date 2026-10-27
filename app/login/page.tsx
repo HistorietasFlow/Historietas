@@ -8,8 +8,6 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { registrarAceiteTermosPublicacao } from "../../lib/aceiteTermos";
-import { obterRedirectToAtual } from "./lib/login-redirect-utils";
-import { sincronizarStorageUsuarioLogin } from "./lib/login-storage-sync";
 import { useLoginDesktopMode } from "./hooks/useLoginDesktopMode";
 import { useLoginExistingSessionRedirect } from "./hooks/useLoginExistingSessionRedirect";
 import { useLoginPasswordChangedNotice } from "./hooks/useLoginPasswordChangedNotice";
@@ -63,6 +61,7 @@ import { sincronizarProfileLogin } from "./actions/sincronizar-profile-login";
 import { solicitarRecuperacaoSenhaLogin } from "./actions/solicitar-recuperacao-senha-login";
 import { criarContaLogin } from "./actions/criar-conta-login";
 import { entrarComSenhaLogin } from "./actions/entrar-com-senha-login";
+import { finalizarAutenticacaoLogin } from "./actions/finalizar-autenticacao-login";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
 
@@ -196,9 +195,7 @@ export default function LoginPage() {
             }
           }
 
-          sincronizarStorageUsuarioLogin(data.user.id);
-          router.replace(obterRedirectToAtual("/perfil-autor"));
-          router.refresh();
+          finalizarAutenticacaoLogin({ userId: data.user.id, router });
           return;
         }
 
@@ -237,9 +234,7 @@ export default function LoginPage() {
         await aguardarLogin(1600);
       }
 
-      sincronizarStorageUsuarioLogin(data.user.id);
-      router.replace(obterRedirectToAtual("/perfil-autor"));
-      router.refresh();
+      finalizarAutenticacaoLogin({ userId: data.user.id, router });
     } catch (error) {
       setErro(formatarErroAuth(error, language));
     } finally {
