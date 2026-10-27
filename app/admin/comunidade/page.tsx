@@ -125,7 +125,7 @@ import {
 import {
   criarMensagemErro,
 } from "./lib/admin-comunidade-error-utils";
-import { criarMapaNomesPerfisModeracao } from "./lib/admin-comunidade-profile-utils";
+import { criarMapasContextoModeracao } from "./lib/admin-comunidade-context-map-utils";
 import {
   localeAdminComunidade,
   textoConfirmacaoRemocaoAdminComunidade,
@@ -259,27 +259,27 @@ export default function AdminComunidadePage() {
       obras,
     });
 
-const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
-    const postsPorId = new Map(posts.map((post) => [post.id, post]));
-    const comentariosPorId = new Map(
-      comentarios.map((comentario) => [comentario.id, comentario])
-    );
-    const comentariosCapitulosPorId = new Map(
-      comentariosCapitulos.map((comentario) => [comentario.id, comentario])
-    );
-    const comentariosObrasPorId = new Map(
-      comentariosObras.map((comentario) => [comentario.id, comentario])
-    );
-    const comentariosDiarioPorId = new Map(
-      comentariosDiario.map((comentario) => [comentario.id, comentario])
-    );
-    const diarioAnotacoesPorId = new Map(
-      diarioAnotacoes.map((anotacao) => [anotacao.id, anotacao])
-    );
-    const capitulosPorId = new Map(
-      capitulos.map((capitulo) => [capitulo.id, capitulo])
-    );
-    const obrasPorId = new Map(obras.map((obra) => [obra.id, obra]));
+    const {
+      perfisPorId,
+      postsPorId,
+      comentariosPorId,
+      comentariosCapitulosPorId,
+      comentariosObrasPorId,
+      comentariosDiarioPorId,
+      diarioAnotacoesPorId,
+      capitulosPorId,
+      obrasPorId,
+    } = criarMapasContextoModeracao({
+      perfis,
+      posts,
+      comentarios,
+      comentariosCapitulos,
+      comentariosObras,
+      comentariosDiario,
+      diarioAnotacoes,
+      capitulos,
+      obras,
+    });
 
     const nomeDenunciante = (denuncia: DenunciaComunidade) =>
       perfisPorId.get(denuncia.denuncianteId) || "Usuário";
