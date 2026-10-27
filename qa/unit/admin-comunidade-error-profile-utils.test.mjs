@@ -121,11 +121,8 @@ test("Admin Comunidade delega erros e perfis aos módulos puros", () => {
 
   assert.doesNotMatch(pageSource, /type PerfilModeracao\s*=/);
   assert.match(pageSource, /from "\.\/lib\/admin-comunidade-error-utils"/);
-  assert.match(pageSource, /from "\.\/lib\/admin-comunidade-profile-utils"/);
-  assert.equal(
-    (pageSource.match(/criarMapaNomesPerfisModeracao\(/g) || []).length,
-    2,
-  );
+  assert.match(pageSource, /from "\.\/lib\/admin-comunidade-context-map-utils"/);
+  assert.doesNotMatch(pageSource, /criarMapaNomesPerfisModeracao\(/);
   assert.match(pageSource, /erroOpcionalIgnoravel\(denunciasErro\)/);
   assert.match(pageSource, /criarMensagemErro\("Erro ao carregar moderação", error\)/);
 

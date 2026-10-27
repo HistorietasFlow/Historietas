@@ -182,8 +182,7 @@ test("erro de cada consulta preserva os resultados válidos da outra", async () 
 test("Admin Comunidade delega apenas o contexto de perfis ao loader", () => {
   assert.doesNotMatch(page, /const perfilIds/);
   assert.match(page, /buscarPerfisContextoModeracao\(\{/);
-  assert.match(page, /criarMapaNomesPerfisModeracao\(perfis\)/);
-  assert.match(page, /const postsPorId = new Map/);
+  assert.match(page, /criarMapasContextoModeracao\(\{/);
   assert.match(page, /const nomeDenunciante/);
   assert.match(page, /setDenuncias\(/);
   assert.doesNotMatch(

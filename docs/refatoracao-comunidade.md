@@ -2000,3 +2000,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 15 — Admin Comunidade
 
 - O contexto de perfis foi movido para `loaders/carregar-perfis-contexto-moderacao.ts`, preservando IDs, consultas independentes e composição final.
+
+## Registro da Fase 16 — Admin Comunidade
+
+- Os mapas de contexto foram movidos para `lib/admin-comunidade-context-map-utils.ts`, preservando referências, chaves e a semântica nativa de `Map`.
