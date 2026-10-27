@@ -2032,3 +2032,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 23 — Admin Comunidade
 
 - A persistência do arquivamento de denúncias foi movida para `actions/arquivar-denuncia-moderacao.ts`, preservando query, validação e feedback da página.
+
+## Registro da Fase 24 — Admin Comunidade
+
+- A persistência da restauração de denúncias foi movida para `actions/restaurar-denuncia-moderacao.ts`, preservando query, validação e feedback da página.
