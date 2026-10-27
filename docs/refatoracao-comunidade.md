@@ -1960,3 +1960,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Registro da Fase 5 — Admin Comunidade
 
 - Os estilos React estáticos da página foram movidos para `lib/admin-comunidade-styles.ts`, preservando objetos, spreads, responsividade e consumidores visuais.
+
+## Registro da Fase 6 — Admin Comunidade
+
+- Os filtros derivados e totais de moderação foram movidos para módulos puros, preservando filtros por status, busca normalizada, mapeamento de denúncias de perfil e contadores.

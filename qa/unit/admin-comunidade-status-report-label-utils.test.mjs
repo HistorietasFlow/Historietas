@@ -186,7 +186,11 @@ test("Admin Comunidade delega status e rótulos aos módulos puros", () => {
 
   assert.match(pageSource, /from "\.\/lib\/admin-comunidade-status-utils"/);
   assert.match(pageSource, /from "\.\/lib\/admin-comunidade-report-label-utils"/);
-  assert.match(pageSource, /type StatusFiltroDenuncia = StatusDenuncia/);
+  assert.doesNotMatch(pageSource, /type StatusFiltroDenuncia =/);
+  assert.match(
+    pageSource,
+    /from "\.\/lib\/admin-comunidade-filter-utils"/,
+  );
   assert.match(pageSource, /normalizarStatus\(denuncia\.status\)/);
   assert.match(pageSource, /normalizarTipoAlvo\(denuncia\.alvo_tipo\)/);
   assert.match(pageSource, /formatarMotivoDenunciaConteudo\(/);
