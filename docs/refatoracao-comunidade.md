@@ -2212,3 +2212,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 12 — Em Breve
 
 - Somente a deduplicação pura das obras do Em Breve foi movida para o módulo de listas existente, preservando chave, ordem e primeira ocorrência.
+
+## Fase 13 — Em Breve
+
+- Somente o helper puro de seleção do ícone temático por gênero foi movido para módulo de apresentação dedicado, sem alterar cards, estilos ou lógica da página.
