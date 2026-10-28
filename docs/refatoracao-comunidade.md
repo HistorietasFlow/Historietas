@@ -2248,3 +2248,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 21 — Em Breve
 
 - O estado e o efeito isolado de carregamento inicial das obras reais foram movidos para hook dedicado, preservando loader, atualização assíncrona via timer, proteção de componente ativo e cleanup.
+
+## Fase 22 — Em Breve
+
+- A normalização memoizada dos lançamentos salvos foi movida para hook dedicado, preservando fallback sem usuário/obras, helper de normalização e dependências do memo.

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
+import { useEmBreveLancamentosSalvosNormalizados } from "./hooks/use-em-breve-lancamentos-salvos-normalizados";
 import { useEmBreveObrasReais } from "./hooks/use-em-breve-obras-reais";
 import { useEmBrevePersistenciaLancamentosSalvos } from "./hooks/use-em-breve-persistencia-lancamentos-salvos";
 import {
@@ -185,16 +186,12 @@ export default function EmBrevePage() {
 
   const obrasEmBreve = removerObrasDuplicadasEmBreve(obrasReaisEmBreve);
 
-  const obrasSalvasNormalizadas = useMemo(() => {
-    if (!usuarioIdLogado || obrasReaisEmBreve.length === 0) {
-      return obrasSalvas;
-    }
-
-    return normalizarLancamentosSalvosComObrasEmBreve(
-      obrasSalvas,
-      obrasReaisEmBreve
+  const obrasSalvasNormalizadas =
+    useEmBreveLancamentosSalvosNormalizados(
+      usuarioIdLogado,
+      obrasReaisEmBreve,
+      obrasSalvas
     );
-  }, [obrasReaisEmBreve, obrasSalvas, usuarioIdLogado]);
 
   useEmBrevePersistenciaLancamentosSalvos(
     usuarioIdLogado,
