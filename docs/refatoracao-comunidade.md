@@ -2256,3 +2256,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 23 — Em Breve
 
 - O header visual da página foi movido para componente dedicado, preservando título, navegação, responsividade, contador de notificações e acessibilidade.
+
+## Fase 24 — Em Breve
+
+- As camadas visuais responsivas de water fade foram movidas para componente dedicado, preservando condições desktop/mobile, estilos e acessibilidade decorativa.
