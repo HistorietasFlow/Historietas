@@ -7,6 +7,7 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
+import { useEmBrevePersistenciaLancamentosSalvos } from "./hooks/use-em-breve-persistencia-lancamentos-salvos";
 import {
   mobileTopWaterFadeStyle,
   desktopTopWaterFadeStyle,
@@ -215,21 +216,11 @@ export default function EmBrevePage() {
     );
   }, [obrasReaisEmBreve, obrasSalvas, usuarioIdLogado]);
 
-  useEffect(() => {
-    if (!usuarioIdLogado || obrasReaisEmBreve.length === 0) {
-      return;
-    }
-
-    salvarJsonUsuarioEmBreve(
-      SAVED_RELEASES_STORAGE_KEY,
-      usuarioIdLogado,
-      obrasSalvasNormalizadas
-    );
-  }, [
-    obrasReaisEmBreve.length,
-    obrasSalvasNormalizadas,
+  useEmBrevePersistenciaLancamentosSalvos(
     usuarioIdLogado,
-  ]);
+    obrasReaisEmBreve,
+    obrasSalvasNormalizadas
+  );
 
   const outrasObrasEmBreve = selecionarObrasExibidasEmBreve(
     obrasEmBreve,

@@ -2240,3 +2240,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 19 — Em Breve
 
 - A seleção pura da obra consultada e a montagem da lista limitada de obras exibidas foram movidas para util dedicado, preservando prioridade por ID, fallback por título normalizado, ordem e limite.
+
+## Fase 20 — Em Breve
+
+- O efeito isolado de persistência local dos lançamentos salvos normalizados foi movido para hook dedicado, preservando condição de execução, chave de storage e dependências.
