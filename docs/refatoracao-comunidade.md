@@ -2244,3 +2244,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 20 — Em Breve
 
 - O efeito isolado de persistência local dos lançamentos salvos normalizados foi movido para hook dedicado, preservando condição de execução, chave de storage e dependências.
+
+## Fase 21 — Em Breve
+
+- O estado e o efeito isolado de carregamento inicial das obras reais foram movidos para hook dedicado, preservando loader, atualização assíncrona via timer, proteção de componente ativo e cleanup.
