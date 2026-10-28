@@ -27,6 +27,7 @@ import { AdminProblemasTecnicosTicketSummary } from "./components/admin-problema
 import { AdminProblemasTecnicosTicketInfoGrid } from "./components/admin-problemas-tecnicos-ticket-info-grid";
 import { AdminProblemasTecnicosTicketDescription } from "./components/admin-problemas-tecnicos-ticket-description";
 import { AdminProblemasTecnicosTicketEnvironment } from "./components/admin-problemas-tecnicos-ticket-environment";
+import { AdminProblemasTecnicosTicketStatusControl } from "./components/admin-problemas-tecnicos-ticket-status-control";
 import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
@@ -650,40 +651,22 @@ export default function AdminProblemasTecnicosPage() {
                       />
 
                       <div style={controlsGridStyle}>
-                        <label style={fieldStyle}>
-                          <span style={fieldLabelStyle}>
-                            {t({
-                              pt: "Status",
-                              en: "Status",
-                              es: "Estado",
-                            })}
-                          </span>
-                          <select
-                            value={problema.status}
-                            disabled={salvando}
-                            onChange={(event) =>
-                              void atualizarChamado(
-                                problema,
-                                {
-                                  status: event.target
-                                    .value as StatusProblemaTecnico,
-                                },
-                                t({
-                                  pt: "Status do chamado atualizado.",
-                                  en: "Ticket status updated.",
-                                  es: "Estado de la solicitud actualizado.",
-                                }),
-                              )
-                            }
-                            style={fieldControlStyle}
-                          >
-                            {STATUS_PROBLEMAS.map((status) => (
-                              <option key={status} value={status}>
-                                {t(STATUS_LABEL[status])}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                        <AdminProblemasTecnicosTicketStatusControl
+                          status={problema.status}
+                          salvando={salvando}
+                          t={t}
+                          onAlterarStatus={(status) =>
+                            void atualizarChamado(
+                              problema,
+                              { status },
+                              t({
+                                pt: "Status do chamado atualizado.",
+                                en: "Ticket status updated.",
+                                es: "Estado de la solicitud actualizado.",
+                              }),
+                            )
+                          }
+                        />
 
                         <label style={fieldStyle}>
                           <span style={fieldLabelStyle}>
