@@ -26,6 +26,7 @@ import { atualizarProblemaTecnicoAdmin } from "./actions/atualizar-problema-tecn
 import { AdminProblemasTecnicosTicketSummary } from "./components/admin-problemas-tecnicos-ticket-summary";
 import { AdminProblemasTecnicosTicketInfoGrid } from "./components/admin-problemas-tecnicos-ticket-info-grid";
 import { AdminProblemasTecnicosTicketDescription } from "./components/admin-problemas-tecnicos-ticket-description";
+import { AdminProblemasTecnicosTicketEnvironment } from "./components/admin-problemas-tecnicos-ticket-environment";
 import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
@@ -35,13 +36,8 @@ import {
   containerStyle,
   controlsGridStyle,
   counterStyle,
-  detailLabelStyle,
   detailsStyle,
   emptyStyle,
-  environmentRowStyle,
-  environmentStyle,
-  environmentValueLinkStyle,
-  environmentValueStyle,
   errorBannerStyle,
   errorStyle,
   fieldControlStyle,
@@ -648,63 +644,10 @@ export default function AdminProblemasTecnicosPage() {
                         t={t}
                       />
 
-                      {(problema.paginaUrl ||
-                        problema.navegador ||
-                        problema.dispositivo) && (
-                        <section style={environmentStyle}>
-                          {problema.paginaUrl && (
-                            <div style={environmentRowStyle}>
-                              <span style={detailLabelStyle}>
-                                {t({
-                                  pt: "Página",
-                                  en: "Page",
-                                  es: "Página",
-                                })}
-                              </span>
-                              {problema.paginaUrl.startsWith("/") ? (
-                                <Link
-                                  href={problema.paginaUrl}
-                                  style={environmentValueLinkStyle}
-                                >
-                                  {problema.paginaUrl}
-                                </Link>
-                              ) : (
-                                <span style={environmentValueStyle}>
-                                  {problema.paginaUrl}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          {problema.dispositivo && (
-                            <div style={environmentRowStyle}>
-                              <span style={detailLabelStyle}>
-                                {t({
-                                  pt: "Dispositivo",
-                                  en: "Device",
-                                  es: "Dispositivo",
-                                })}
-                              </span>
-                              <span style={environmentValueStyle}>
-                                {problema.dispositivo}
-                              </span>
-                            </div>
-                          )}
-                          {problema.navegador && (
-                            <div style={environmentRowStyle}>
-                              <span style={detailLabelStyle}>
-                                {t({
-                                  pt: "Navegador",
-                                  en: "Browser",
-                                  es: "Navegador",
-                                })}
-                              </span>
-                              <span style={environmentValueStyle}>
-                                {problema.navegador}
-                              </span>
-                            </div>
-                          )}
-                        </section>
-                      )}
+                      <AdminProblemasTecnicosTicketEnvironment
+                        problema={problema}
+                        t={t}
+                      />
 
                       <div style={controlsGridStyle}>
                         <label style={fieldStyle}>
