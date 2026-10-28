@@ -10,7 +10,6 @@ import {
   useHistorietasTheme,
 } from "../../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
-import { formatarData } from "../../../lib/utils";
 import {
   STATUS_LABEL,
   traduzir,
@@ -28,6 +27,7 @@ import { AdminProblemasTecnicosTicketDescription } from "./components/admin-prob
 import { AdminProblemasTecnicosTicketEnvironment } from "./components/admin-problemas-tecnicos-ticket-environment";
 import { AdminProblemasTecnicosTicketStatusControl } from "./components/admin-problemas-tecnicos-ticket-status-control";
 import { AdminProblemasTecnicosTicketPriorityControl } from "./components/admin-problemas-tecnicos-ticket-priority-control";
+import { AdminProblemasTecnicosTicketLastReview } from "./components/admin-problemas-tecnicos-ticket-last-review";
 import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
@@ -47,7 +47,6 @@ import {
   headerActionsStyle,
   headerCopyStyle,
   headerStyle,
-  lastReviewStyle,
   listStyle,
   pageStyle,
   resultsHeaderStyle,
@@ -747,16 +746,10 @@ export default function AdminProblemasTecnicosPage() {
                         </button>
                       </div>
 
-                      {problema.analisadoEm && (
-                        <span style={lastReviewStyle}>
-                          {t({
-                            pt: "Última análise:",
-                            en: "Last review:",
-                            es: "Última revisión:",
-                          })}{" "}
-                          {formatarData(problema.analisadoEm)}
-                        </span>
-                      )}
+                      <AdminProblemasTecnicosTicketLastReview
+                        analisadoEm={problema.analisadoEm}
+                        t={t}
+                      />
                     </div>
                   )}
                 </article>
