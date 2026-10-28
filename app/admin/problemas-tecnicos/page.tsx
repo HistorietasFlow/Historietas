@@ -12,7 +12,6 @@ import {
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { formatarData } from "../../../lib/utils";
 import {
-  PRIORIDADE_LABEL,
   STATUS_LABEL,
   traduzir,
   type TextoTraduzido,
@@ -28,6 +27,7 @@ import { AdminProblemasTecnicosTicketInfoGrid } from "./components/admin-problem
 import { AdminProblemasTecnicosTicketDescription } from "./components/admin-problemas-tecnicos-ticket-description";
 import { AdminProblemasTecnicosTicketEnvironment } from "./components/admin-problemas-tecnicos-ticket-environment";
 import { AdminProblemasTecnicosTicketStatusControl } from "./components/admin-problemas-tecnicos-ticket-status-control";
+import { AdminProblemasTecnicosTicketPriorityControl } from "./components/admin-problemas-tecnicos-ticket-priority-control";
 import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
@@ -67,13 +67,11 @@ import {
   eyebrowStyle,
 } from "./lib/admin-problemas-tecnicos-styles";
 import {
-  PRIORIDADES_PROBLEMAS,
   STATUS_PROBLEMAS,
   normalizarCategoria,
   normalizarPrioridade,
   normalizarStatus,
   type FiltroStatusProblema,
-  type PrioridadeProblemaTecnico,
   type ProblemaTecnico,
 } from "./lib/admin-problemas-tecnicos-normalization-utils";
 
@@ -667,40 +665,22 @@ export default function AdminProblemasTecnicosPage() {
                           }
                         />
 
-                        <label style={fieldStyle}>
-                          <span style={fieldLabelStyle}>
-                            {t({
-                              pt: "Prioridade",
-                              en: "Priority",
-                              es: "Prioridad",
-                            })}
-                          </span>
-                          <select
-                            value={problema.prioridade}
-                            disabled={salvando}
-                            onChange={(event) =>
-                              void atualizarChamado(
-                                problema,
-                                {
-                                  prioridade: event.target
-                                    .value as PrioridadeProblemaTecnico,
-                                },
-                                t({
-                                  pt: "Prioridade do chamado atualizada.",
-                                  en: "Ticket priority updated.",
-                                  es: "Prioridad de la solicitud actualizada.",
-                                }),
-                              )
-                            }
-                            style={fieldControlStyle}
-                          >
-                            {PRIORIDADES_PROBLEMAS.map((prioridade) => (
-                              <option key={prioridade} value={prioridade}>
-                                {t(PRIORIDADE_LABEL[prioridade])}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                        <AdminProblemasTecnicosTicketPriorityControl
+                          prioridade={problema.prioridade}
+                          salvando={salvando}
+                          t={t}
+                          onAlterarPrioridade={(prioridade) =>
+                            void atualizarChamado(
+                              problema,
+                              { prioridade },
+                              t({
+                                pt: "Prioridade do chamado atualizada.",
+                                en: "Ticket priority updated.",
+                                es: "Prioridad de la solicitud actualizada.",
+                              }),
+                            )
+                          }
+                        />
                       </div>
 
                       <label style={fieldStyle}>
