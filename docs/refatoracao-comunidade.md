@@ -2164,3 +2164,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 16 — Admin Problemas Técnicos
 
 - Somente a exibição da última análise foi movida para componente dedicado.
+
+## Fase 1 — Em Breve
+
+- Somente o catálogo de traduções e o helper de tradução foram movidos para módulo dedicado, mantendo o bridge e toda a orquestração na página.
