@@ -7,13 +7,12 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { EmBreveHeader } from "./components/em-breve-header";
+import { EmBreveWaterFade } from "./components/em-breve-water-fade";
 import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
 import { useEmBreveLancamentosSalvosNormalizados } from "./hooks/use-em-breve-lancamentos-salvos-normalizados";
 import { useEmBreveObrasReais } from "./hooks/use-em-breve-obras-reais";
 import { useEmBrevePersistenciaLancamentosSalvos } from "./hooks/use-em-breve-persistencia-lancamentos-salvos";
 import {
-  mobileTopWaterFadeStyle,
-  desktopTopWaterFadeStyle,
   pageStyle,
   containerStyle,
   accessMessageStyle,
@@ -263,8 +262,7 @@ export default function EmBrevePage() {
       <style>{`${historietasThemeCss}${emBrevePageCss}`}</style>
       <EmBreveLanguageBridge />
 
-      {desktopLayout && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!desktopLayout && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+      <EmBreveWaterFade desktopLayout={desktopLayout} />
 
       <section style={desktopLayout ? desktopContainerStyle : containerStyle}>
         <EmBreveHeader
