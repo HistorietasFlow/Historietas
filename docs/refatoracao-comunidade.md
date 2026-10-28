@@ -2128,3 +2128,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 7 — Admin Problemas Técnicos
 
 - A mutation Supabase de atualização do chamado foi isolada sem alteração de payload, filtros, retorno, autorização ou estado.
+
+## Fase 8 — Admin Problemas Técnicos
+
+- CSS e estilos React estáticos foram movidos para módulo dedicado sem alteração visual ou funcional.
