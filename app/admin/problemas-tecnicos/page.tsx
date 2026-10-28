@@ -41,7 +41,6 @@ import {
   emptyStyle,
   errorBannerStyle,
   errorStyle,
-  fieldControlStyle,
   fieldLabelStyle,
   fieldStyle,
   filtersStyle,
