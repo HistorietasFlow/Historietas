@@ -10,11 +10,16 @@ const pagePath = new URL(
   "../../app/perfil-autor/top-5/page.tsx",
   import.meta.url,
 );
+const languageBridgePath = new URL(
+  "../../app/perfil-autor/top-5/components/top5-language-bridge.tsx",
+  import.meta.url,
+);
 
 test("Top 5 delega somente o catálogo e o helper de tradução", async () => {
-  const [translations, page] = await Promise.all([
+  const [translations, page, languageBridge] = await Promise.all([
     readFile(translationsPath, "utf8"),
     readFile(pagePath, "utf8"),
+    readFile(languageBridgePath, "utf8"),
   ]);
 
   assert.match(
@@ -36,20 +41,16 @@ test("Top 5 delega somente o catálogo e o helper de tradução", async () => {
   assert.match(translations, /"Usuário": \{ en: "User", es: "Usuario" \}/);
   assert.match(translations, /return texto;/);
 
-  assert.match(
-    page,
-    /import \{ traduzirTextoTop5 \} from "\.\/lib\/top5-translations";/,
-  );
   assert.doesNotMatch(page, /type TraducaoTop5/);
   assert.doesNotMatch(page, /const TOP5_UI_TRANSLATIONS/);
   assert.doesNotMatch(page, /function traduzirTextoTop5/);
-  assert.doesNotMatch(
-    page,
-    /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/lib\/i18n";/,
+  assert.doesNotMatch(page, /function Top5LanguageBridge\(\)/);
+  assert.doesNotMatch(page, /import \{ traduzirTextoTop5 \} from "\.\/lib\/top5-translations";/);
+  assert.match(
+    languageBridge,
+    /import \{ traduzirTextoTop5 \} from "\.\.\/lib\/top5-translations";/,
   );
-  assert.match(page, /function Top5LanguageBridge\(\)/);
-  assert.match(page, /useHistorietasLanguage/);
-  assert.match(page, /traduzirTextoTop5\(estado\.original, language\)/);
+  assert.match(languageBridge, /traduzirTextoTop5\(estado\.original, language\)/);
   assert.doesNotMatch(translations, /from "react"/);
   assert.doesNotMatch(translations, /supabase/);
   assert.doesNotMatch(translations, /localStorage/);

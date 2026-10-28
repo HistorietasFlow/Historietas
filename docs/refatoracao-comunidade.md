@@ -2284,3 +2284,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 1 — Top 5 do Perfil Autor
 
 - O catálogo e o helper de tradução do Top 5 foram movidos para módulo dedicado, preservando traduções exatas, padrões dinâmicos, espaços e fallback em português.
+
+## Fase 2 — Top 5 do Perfil Autor
+
+- O bridge de tradução do DOM com MutationObserver foi movido para componente dedicado, preservando tradução de textos e atributos, observação do DOM e cleanup.
