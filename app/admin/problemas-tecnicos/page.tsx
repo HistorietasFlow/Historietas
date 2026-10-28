@@ -75,7 +75,6 @@ import {
   type FiltroStatusProblema,
   type PrioridadeProblemaTecnico,
   type ProblemaTecnico,
-  type StatusProblemaTecnico,
 } from "./lib/admin-problemas-tecnicos-normalization-utils";
 
 export default function AdminProblemasTecnicosPage() {
