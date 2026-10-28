@@ -2268,3 +2268,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 26 — Em Breve
 
 - A seção visual das obras em breve foi movida para componente dedicado, preservando cards, estados de aviso, links, responsividade, botão de ativação e acessibilidade, mantendo a mutation na página.
+
+## Fase 27 — Em Breve
+
+- O rodapé visual “Sobre o aviso” foi movido para componente dedicado, preservando condição de exibição, texto e estilo.

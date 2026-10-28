@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { EmBreveEmptyState } from "./components/em-breve-empty-state";
+import { EmBreveAboutNotice } from "./components/em-breve-about-notice";
 import { EmBreveHeader } from "./components/em-breve-header";
 import { EmBreveWaterFade } from "./components/em-breve-water-fade";
 import { EmBreveWorksSection } from "./components/em-breve-works-section";
@@ -256,19 +257,9 @@ export default function EmBrevePage() {
           />
         )}
 
-        {outrasObrasEmBreve.length > 0 && (
-          <p
-            style={{
-              margin: "12px 0 0",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              fontWeight: 800,
-              textAlign: "center",
-            }}
-          >
-            Sobre o aviso
-          </p>
-        )}
+        <EmBreveAboutNotice
+          visivel={outrasObrasEmBreve.length > 0}
+        />
       </section>
     </main>
   );
