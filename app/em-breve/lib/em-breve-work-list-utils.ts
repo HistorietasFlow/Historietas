@@ -82,3 +82,20 @@ export function normalizarLancamentosSalvosComObrasEmBreve(
     )
   );
 }
+
+export function removerObrasDuplicadasEmBreve(
+  obrasParaMostrar: ObraEmBreveCard[]
+) {
+  const obrasVistas = new Set<string>();
+
+  return obrasParaMostrar.filter((obra) => {
+    const chave = normalizarTexto(obra.titulo) || obra.id;
+
+    if (!chave || obrasVistas.has(chave)) {
+      return false;
+    }
+
+    obrasVistas.add(chave);
+    return true;
+  });
+}

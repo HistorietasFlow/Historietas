@@ -35,6 +35,7 @@ import {
   normalizarLancamentosSalvosComObrasEmBreve,
   normalizarListaIdsEmBreve,
   obterIdentificadoresObraEmBreve,
+  removerObrasDuplicadasEmBreve,
   removerObraDaListaEmBreve,
 } from "./lib/em-breve-work-list-utils";
 import { carregarLancamentosSalvosSupabaseEmBreve } from "./loaders/carregar-lancamentos-salvos-supabase-em-breve";
@@ -265,21 +266,6 @@ function EmBreveLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function removerObrasDuplicadasEmBreve(obrasParaMostrar: ObraEmBreveCard[]) {
-  const obrasVistas = new Set<string>();
-
-  return obrasParaMostrar.filter((obra) => {
-    const chave = normalizarTexto(obra.titulo) || obra.id;
-
-    if (!chave || obrasVistas.has(chave)) {
-      return false;
-    }
-
-    obrasVistas.add(chave);
-    return true;
-  });
 }
 
 async function encontrarLinkObraComConteudoEmBreve(
