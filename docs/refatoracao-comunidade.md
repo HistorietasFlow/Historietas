@@ -2224,3 +2224,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 15 — Em Breve
 
 - Somente o template literal de CSS global da página foi movido para módulo dedicado, preservando integralmente seletores, variáveis, duplicações, `!important` e ordem de aplicação.
+
+## Fase 16 — Em Breve
+
+- Os objetos de estilo inline e o helper de estilo da capa foram movidos para módulo dedicado, preservando integralmente valores, heranças e comportamento visual.
