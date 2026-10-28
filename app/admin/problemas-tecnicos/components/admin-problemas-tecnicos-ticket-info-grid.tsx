@@ -1,4 +1,4 @@
-import { formatarData } from "../../../lib/utils";
+import { formatarData } from "../../../../lib/utils";
 import type { TextoTraduzido } from "../lib/admin-problemas-tecnicos-text-utils";
 import type { ProblemaTecnico } from "../lib/admin-problemas-tecnicos-normalization-utils";
 import {
