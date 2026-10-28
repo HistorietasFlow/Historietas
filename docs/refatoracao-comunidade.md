@@ -2120,3 +2120,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 5 — Admin Problemas Técnicos
 
 - A query de leitura da fila foi isolada sem alteração de campos, ordenação, limite, normalização ou estado.
+
+## Fase 6 — Admin Problemas Técnicos
+
+- As consultas de perfis usadas para resolver nomes foram isoladas sem alteração de campos, limites, paralelismo ou fallbacks.
