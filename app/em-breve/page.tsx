@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -9,6 +8,7 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { EmBreveEmptyState } from "./components/em-breve-empty-state";
 import { EmBreveHeader } from "./components/em-breve-header";
 import { EmBreveWaterFade } from "./components/em-breve-water-fade";
+import { EmBreveWorksSection } from "./components/em-breve-works-section";
 import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
 import { useEmBreveLancamentosSalvosNormalizados } from "./hooks/use-em-breve-lancamentos-salvos-normalizados";
 import { useEmBreveObrasReais } from "./hooks/use-em-breve-obras-reais";
@@ -16,43 +16,12 @@ import { useEmBrevePersistenciaLancamentosSalvos } from "./hooks/use-em-breve-pe
 import {
   pageStyle,
   containerStyle,
-  accessMessageStyle,
-  relatedSectionStyle,
-  relatedGridStyle,
-  relatedCardStyle,
-  relatedCoverLinkStyle,
-  relatedContentStyle,
-  relatedTitleLinkStyle,
-  relatedTopLineStyle,
-  relatedTitleStyle,
-  relatedAuthorStyle,
-  relatedReleasePanelStyle,
-  relatedReleaseLabelStyle,
-  relatedReleaseTextStyle,
-  relatedBottomRowStyle,
-  relatedMetaBadgesStyle,
-  relatedThemeBadgeStyle,
-  relatedThemeIconStyle,
-  relatedThemeTextStyle,
-  relatedFormatBadgeStyle,
-  relatedSaveButtonStyle,
-  relatedSavedButtonStyle,
   desktopContainerStyle,
-  desktopRelatedSectionStyle,
-  desktopRelatedGridStyle,
-  desktopRelatedCardStyle,
-  desktopRelatedContentStyle,
-  desktopRelatedTopLineStyle,
-  desktopRelatedReleasePanelStyle,
-  desktopRelatedBottomRowStyle,
-  criarCoverCardEmBreveStyle,
 } from "./lib/em-breve-styles";
 import { emBrevePageCss } from "./lib/em-breve-page-css";
 import { EmBreveLanguageBridge } from "./components/em-breve-language-bridge";
 import { sincronizarAvisoLancamentoSupabaseEmBreve } from "./actions/sincronizar-aviso-lancamento-supabase-em-breve";
 import { encontrarLinkObraComConteudoEmBreve } from "./loaders/encontrar-link-obra-com-conteudo-em-breve";
-import { criarLinkCardEmBreve } from "./lib/em-breve-work-link-utils";
-import { obterIconeTematicaEmBreve } from "./lib/em-breve-presentation-utils";
 import {
   criarLoginHrefEmBreve,
   pegarParametro,
@@ -272,134 +241,14 @@ export default function EmBrevePage() {
         />
 
         {outrasObrasEmBreve.length > 0 ? (
-          <section
-            style={
-              desktopLayout ? desktopRelatedSectionStyle : relatedSectionStyle
-            }
-          >
-            {avisoAcesso && <p style={accessMessageStyle}>{avisoAcesso}</p>}
-
-            <div style={desktopLayout ? desktopRelatedGridStyle : relatedGridStyle}>
-              {outrasObrasEmBreve.map((obra) => {
-                const obraSalva = listaTemObraEmBreve(obra, obrasSalvasNormalizadas);
-
-                return (
-                  <article
-                    key={`${obra.origem}-${obra.id}`}
-                    style={desktopLayout ? desktopRelatedCardStyle : relatedCardStyle}
-                  >
-                    <Link
-                      href={criarLinkCardEmBreve(obra)}
-                      style={relatedCoverLinkStyle}
-                      aria-label={`Abrir aviso de ${obra.titulo}`}
-                    >
-                      <div
-                        style={criarCoverCardEmBreveStyle(obra, desktopLayout)}
-                      />
-                    </Link>
-
-                    <div
-                      style={
-                        desktopLayout ? desktopRelatedContentStyle : relatedContentStyle
-                      }
-                    >
-                      <div
-                        style={
-                          desktopLayout
-                            ? desktopRelatedTopLineStyle
-                            : relatedTopLineStyle
-                        }
-                      >
-                        <Link
-                          href={criarLinkCardEmBreve(obra)}
-                          style={relatedTitleLinkStyle}
-                        >
-                          <strong
-                            data-historietas-i18n-ignore="true"
-                            style={relatedTitleStyle}
-                          >
-                            {obra.titulo}
-                          </strong>
-                        </Link>
-                      </div>
-
-                      <span style={relatedAuthorStyle}>
-                        Por{" "}
-                        <span data-historietas-i18n-ignore="true">{obra.autor}</span>
-                      </span>
-
-                      <div
-                        style={
-                          desktopLayout
-                            ? desktopRelatedReleasePanelStyle
-                            : relatedReleasePanelStyle
-                        }
-                      >
-                        <span style={relatedReleaseLabelStyle}>
-                          {obraSalva ? "AVISO ATIVADO" : "LANÇAMENTO REAL SEM CONTEÚDO"}
-                        </span>
-
-                        <span style={relatedReleaseTextStyle}>
-                          {obraSalva
-                            ? "Você será avisado quando a leitura for liberada."
-                            : "Esta obra existe, mas ainda não tem capítulo ou arquivo publicado."}
-                        </span>
-                      </div>
-
-                      <div
-                        style={
-                          desktopLayout
-                            ? desktopRelatedBottomRowStyle
-                            : relatedBottomRowStyle
-                        }
-                      >
-                        <div style={relatedMetaBadgesStyle}>
-                          <div style={relatedThemeBadgeStyle}>
-                            <span style={relatedThemeIconStyle}>
-                              {obterIconeTematicaEmBreve(obra.genero)}
-                            </span>
-                            <span style={relatedThemeTextStyle}>
-                              {obra.genero}
-                            </span>
-                          </div>
-
-                          <div style={relatedFormatBadgeStyle}>
-                            <span style={relatedThemeTextStyle}>
-                              {obra.formato}
-                            </span>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => salvarLancamento(obra)}
-                          disabled={Boolean(obraProcessandoId)}
-                          style={{
-                            ...(obraSalva
-                              ? relatedSavedButtonStyle
-                              : relatedSaveButtonStyle),
-                            opacity:
-                              obraProcessandoId && obraProcessandoId !== obra.id
-                                ? 0.55
-                                : 1,
-                            cursor: obraProcessandoId ? "wait" : "pointer",
-                          }}
-                          aria-pressed={obraSalva}
-                          aria-busy={obraProcessandoId === obra.id}
-                        >
-                          {obraProcessandoId === obra.id
-                            ? "Salvando..."
-                            : obraSalva
-                              ? "✓ Aviso ativo"
-                              : "Avisar"}
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
+          <EmBreveWorksSection
+            obras={outrasObrasEmBreve}
+            obrasSalvasNormalizadas={obrasSalvasNormalizadas}
+            desktopLayout={desktopLayout}
+            avisoAcesso={avisoAcesso}
+            obraProcessandoId={obraProcessandoId}
+            salvarLancamento={salvarLancamento}
+          />
         ) : (
           <EmBreveEmptyState
             avisoAcesso={avisoAcesso}

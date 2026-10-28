@@ -2264,3 +2264,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 25 — Em Breve
 
 - O estado visual vazio da página foi movido para componente dedicado, preservando aviso de acesso, mensagens condicionais e estilo.
+
+## Fase 26 — Em Breve
+
+- A seção visual das obras em breve foi movida para componente dedicado, preservando cards, estados de aviso, links, responsividade, botão de ativação e acessibilidade, mantendo a mutation na página.
