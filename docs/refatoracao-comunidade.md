@@ -2152,3 +2152,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 13 — Admin Problemas Técnicos
 
 - Somente a seção visual de ambiente foi movida para componente dedicado, mantendo controles e mutations na página.
+
+## Fase 14 — Admin Problemas Técnicos
+
+- Somente o controle visual de status foi movido para componente dedicado, mantendo mutation e orquestração na página.
