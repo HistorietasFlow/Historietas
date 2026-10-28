@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
+import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
 import {
   mobileTopWaterFadeStyle,
   desktopTopWaterFadeStyle,
@@ -90,38 +91,9 @@ export default function EmBrevePage() {
   const [avisoAcesso, setAvisoAcesso] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [obraProcessandoId, setObraProcessandoId] = useState("");
-  const [desktopLayout, setDesktopLayout] = useState(false);
+  const desktopLayout = useEmBreveDesktopLayout();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
-
-  useEffect(() => {
-    const consultaDesktop = window.matchMedia("(min-width: 900px)");
-
-    function atualizarLayoutDesktop() {
-      setDesktopLayout(consultaDesktop.matches);
-    }
-
-    const atualizarLayoutDesktopTimer = window.setTimeout(
-      atualizarLayoutDesktop,
-      0
-    );
-
-    if (typeof consultaDesktop.addEventListener === "function") {
-      consultaDesktop.addEventListener("change", atualizarLayoutDesktop);
-
-      return () => {
-        window.clearTimeout(atualizarLayoutDesktopTimer);
-        consultaDesktop.removeEventListener("change", atualizarLayoutDesktop);
-      };
-    }
-
-    consultaDesktop.addListener(atualizarLayoutDesktop);
-
-    return () => {
-      window.clearTimeout(atualizarLayoutDesktopTimer);
-      consultaDesktop.removeListener(atualizarLayoutDesktop);
-    };
-  }, []);
 
   useEffect(() => {
     let componenteAtivo = true;

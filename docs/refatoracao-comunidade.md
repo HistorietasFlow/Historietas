@@ -2232,3 +2232,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 17 — Em Breve
 
 - O bridge isolado de tradução DOM/MutationObserver foi movido para componente dedicado, preservando integralmente tradução de textos/atributos, observação do DOM e cleanup.
+
+## Fase 18 — Em Breve
+
+- A detecção responsiva do layout desktop foi movida para hook dedicado, preservando breakpoint, atualização inicial, listeners modernos/legados e cleanup.
