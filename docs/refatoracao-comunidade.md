@@ -2160,3 +2160,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 15 — Admin Problemas Técnicos
 
 - Somente o controle visual de prioridade foi movido para componente dedicado, mantendo mutation e orquestração na página.
+
+## Fase 16 — Admin Problemas Técnicos
+
+- Somente a exibição da última análise foi movida para componente dedicado.
