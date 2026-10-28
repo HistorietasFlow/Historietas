@@ -10,7 +10,7 @@ import {
   useHistorietasTheme,
 } from "../../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
-import { formatarData, normalizarTexto } from "../../../lib/utils";
+import { formatarData } from "../../../lib/utils";
 import {
   CATEGORIA_LABEL,
   PRIORIDADE_LABEL,
@@ -26,6 +26,8 @@ import { verificarAdministradorProblemasTecnicos } from "./loaders/verificar-adm
 import { buscarProblemasTecnicosAdmin } from "./loaders/buscar-problemas-tecnicos-admin";
 import { buscarPerfisProblemasTecnicosAdmin } from "./loaders/buscar-perfis-problemas-tecnicos-admin";
 import { atualizarProblemaTecnicoAdmin } from "./actions/atualizar-problema-tecnico-admin";
+import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
+import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
   adminProblemasCss,
   badgeStyle,
@@ -252,47 +254,20 @@ export default function AdminProblemasTecnicosPage() {
     };
   }, [carregarProblemas, router]);
 
-  const problemasFiltrados = useMemo(() => {
-    const termo = normalizarTexto(busca);
-
-    return problemas.filter((problema) => {
-      if (statusFiltro !== "todos" && problema.status !== statusFiltro) {
-        return false;
-      }
-
-      if (!termo) {
-        return true;
-      }
-
-      const conteudo = normalizarTexto(
-        [
-          problema.titulo,
-          problema.descricao,
-          problema.emailContato,
-          problema.paginaUrl,
-          problema.navegador,
-          problema.dispositivo,
-          nomesUsuarios[problema.userId] || "",
-          t(CATEGORIA_LABEL[problema.categoria]),
-          t(STATUS_LABEL[problema.status]),
-          t(PRIORIDADE_LABEL[problema.prioridade]),
-        ].join(" "),
-      );
-
-      return conteudo.includes(termo);
-    });
-  }, [busca, nomesUsuarios, problemas, statusFiltro, t]);
+  const problemasFiltrados = useMemo(
+    () =>
+      filtrarProblemasTecnicos({
+        problemas,
+        busca,
+        statusFiltro,
+        nomesUsuarios,
+        language,
+      }),
+    [busca, language, nomesUsuarios, problemas, statusFiltro],
+  );
 
   const totais = useMemo(
-    () => ({
-      total: problemas.length,
-      abertos: problemas.filter((item) => item.status === "aberto").length,
-      analise: problemas.filter((item) => item.status === "em_analise").length,
-      aguardando: problemas.filter(
-        (item) => item.status === "aguardando_usuario",
-      ).length,
-      urgentes: problemas.filter((item) => item.prioridade === "urgente").length,
-    }),
+    () => calcularTotaisProblemasTecnicos(problemas),
     [problemas],
   );
 

@@ -2132,3 +2132,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 8 — Admin Problemas Técnicos
 
 - CSS e estilos React estáticos foram movidos para módulo dedicado sem alteração visual ou funcional.
+
+## Fase 9 — Admin Problemas Técnicos
+
+- A filtragem da fila e o cálculo de totais foram movidos para helpers puros sem alteração de critérios ou comportamento.
