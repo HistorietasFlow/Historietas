@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
@@ -11,6 +11,7 @@ import { EmBreveHeader } from "./components/em-breve-header";
 import { EmBreveWaterFade } from "./components/em-breve-water-fade";
 import { EmBreveWorksSection } from "./components/em-breve-works-section";
 import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
+import { useEmBreveLancamentosSalvosIniciais } from "./hooks/use-em-breve-lancamentos-salvos-iniciais";
 import { useEmBreveLancamentosSalvosNormalizados } from "./hooks/use-em-breve-lancamentos-salvos-normalizados";
 import { useEmBreveObrasReais } from "./hooks/use-em-breve-obras-reais";
 import { useEmBrevePersistenciaLancamentosSalvos } from "./hooks/use-em-breve-persistencia-lancamentos-salvos";
@@ -22,14 +23,9 @@ import {
 import { emBrevePageCss } from "./lib/em-breve-page-css";
 import { EmBreveLanguageBridge } from "./components/em-breve-language-bridge";
 import { sincronizarAvisoLancamentoSupabaseEmBreve } from "./actions/sincronizar-aviso-lancamento-supabase-em-breve";
-import { encontrarLinkObraComConteudoEmBreve } from "./loaders/encontrar-link-obra-com-conteudo-em-breve";
-import {
-  criarLoginHrefEmBreve,
-  pegarParametro,
-} from "./lib/em-breve-route-utils";
+import { criarLoginHrefEmBreve } from "./lib/em-breve-route-utils";
 import {
   SAVED_RELEASES_STORAGE_KEY,
-  carregarJsonUsuarioEmBreve,
   salvarJsonUsuarioEmBreve,
 } from "./lib/em-breve-storage-utils";
 import { type ObraEmBreveCard } from "./lib/em-breve-work-normalizers";
@@ -37,115 +33,30 @@ import {
   adicionarObraNaListaEmBreve,
   listaTemObraEmBreve,
   normalizarLancamentosSalvosComObrasEmBreve,
-  normalizarListaIdsEmBreve,
   obterIdentificadoresObraEmBreve,
   removerObrasDuplicadasEmBreve,
   removerObraDaListaEmBreve,
 } from "./lib/em-breve-work-list-utils";
-import { carregarLancamentosSalvosSupabaseEmBreve } from "./loaders/carregar-lancamentos-salvos-supabase-em-breve";
 import { selecionarObrasExibidasEmBreve } from "./lib/em-breve-work-selection-utils";
 
 
 
 export default function EmBrevePage() {
   const router = useRouter();
-  const [nomeObra, setNomeObra] = useState("");
-  const [obraIdConsultada, setObraIdConsultada] = useState("");
-  const [obrasSalvas, setObrasSalvas] = useState<string[]>([]);
+  const {
+    nomeObra,
+    obraIdConsultada,
+    obrasSalvas,
+    setObrasSalvas,
+    usuarioIdLogado,
+    setUsuarioIdLogado,
+  } = useEmBreveLancamentosSalvosIniciais(router);
   const obrasReaisEmBreve = useEmBreveObrasReais();
   const [avisoAcesso, setAvisoAcesso] = useState("");
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [obraProcessandoId, setObraProcessandoId] = useState("");
   const desktopLayout = useEmBreveDesktopLayout();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
-
-  useEffect(() => {
-    let componenteAtivo = true;
-
-    async function carregarLancamentosSalvos() {
-      const parametros = new URLSearchParams(window.location.search);
-      const obraIdParam = pegarParametro(parametros.get("obraId"));
-      const nomeObraParam = pegarParametro(parametros.get("obra"));
-
-      window.setTimeout(() => {
-        if (componenteAtivo) {
-          setObraIdConsultada(obraIdParam);
-          setNomeObra(nomeObraParam);
-        }
-      }, 0);
-
-      if (obraIdParam || nomeObraParam) {
-        const linkObraComConteudo = await encontrarLinkObraComConteudoEmBreve(
-          obraIdParam,
-          nomeObraParam
-        );
-
-        if (componenteAtivo && linkObraComConteudo) {
-          router.replace(linkObraComConteudo);
-          return;
-        }
-      }
-
-      try {
-        const { data } = await supabase.auth.getUser();
-
-        if (!data.user) {
-          window.setTimeout(() => {
-            if (componenteAtivo) {
-              setUsuarioIdLogado("");
-              setObrasSalvas([]);
-            }
-          }, 0);
-
-          return;
-        }
-
-        window.setTimeout(() => {
-          if (componenteAtivo) {
-            setUsuarioIdLogado(data.user.id);
-          }
-        }, 0);
-
-        const salvasJson: unknown =
-          carregarJsonUsuarioEmBreve(SAVED_RELEASES_STORAGE_KEY, data.user.id) ||
-          [];
-        const salvasLocaisNormalizadas = normalizarListaIdsEmBreve(salvasJson);
-        const salvasSupabase = await carregarLancamentosSalvosSupabaseEmBreve(
-          data.user.id
-        );
-        const salvasNormalizadas = normalizarListaIdsEmBreve([
-          ...salvasLocaisNormalizadas,
-          ...salvasSupabase,
-        ]);
-
-        salvarJsonUsuarioEmBreve(
-          SAVED_RELEASES_STORAGE_KEY,
-          data.user.id,
-          salvasNormalizadas
-        );
-
-        window.setTimeout(() => {
-          if (componenteAtivo) {
-            setObrasSalvas(salvasNormalizadas);
-          }
-        }, 0);
-      } catch {
-        window.setTimeout(() => {
-          if (componenteAtivo) {
-            setUsuarioIdLogado("");
-            setObrasSalvas([]);
-          }
-        }, 0);
-      }
-    }
-
-    void carregarLancamentosSalvos();
-
-    return () => {
-      componenteAtivo = false;
-    };
-  }, [router]);
 
   const obrasEmBreve = removerObrasDuplicadasEmBreve(obrasReaisEmBreve);
 

@@ -2272,3 +2272,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 27 — Em Breve
 
 - O rodapé visual “Sobre o aviso” foi movido para componente dedicado, preservando condição de exibição, texto e estilo.
+
+## Fase 28 — Em Breve
+
+- O estado e o ciclo inicial de parâmetros, redirecionamento, autenticação e carregamento dos lançamentos salvos foram movidos para hook dedicado, preservando timers, storage, Supabase, proteção de componente ativo e cleanup.
