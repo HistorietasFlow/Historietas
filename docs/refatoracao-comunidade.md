@@ -2180,3 +2180,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 4 — Em Breve
 
 - Somente os tipos da obra e a normalização básica dos registros Supabase foram movidos para módulo dedicado, sem alterar consultas ou regras de negócio.
+
+## Fase 5 — Em Breve
+
+- Somente os helpers puros de normalização de IDs, geração de identificadores e consulta de presença de uma obra na lista foram movidos para módulo dedicado.
