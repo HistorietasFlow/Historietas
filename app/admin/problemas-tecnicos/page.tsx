@@ -25,6 +25,7 @@ import { buscarPerfisProblemasTecnicosAdmin } from "./loaders/buscar-perfis-prob
 import { atualizarProblemaTecnicoAdmin } from "./actions/atualizar-problema-tecnico-admin";
 import { AdminProblemasTecnicosTicketSummary } from "./components/admin-problemas-tecnicos-ticket-summary";
 import { AdminProblemasTecnicosTicketInfoGrid } from "./components/admin-problemas-tecnicos-ticket-info-grid";
+import { AdminProblemasTecnicosTicketDescription } from "./components/admin-problemas-tecnicos-ticket-description";
 import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
@@ -32,7 +33,6 @@ import {
   cardActionsStyle,
   cardStyle,
   containerStyle,
-  contentBoxStyle,
   controlsGridStyle,
   counterStyle,
   detailLabelStyle,
@@ -48,7 +48,6 @@ import {
   fieldLabelStyle,
   fieldStyle,
   filtersStyle,
-  fullDescriptionStyle,
   headerActionsStyle,
   headerCopyStyle,
   headerStyle,
@@ -644,16 +643,10 @@ export default function AdminProblemasTecnicosPage() {
                         t={t}
                       />
 
-                      <section style={contentBoxStyle}>
-                        <span style={detailLabelStyle}>
-                          {t({
-                            pt: "Descrição informada",
-                            en: "Reported description",
-                            es: "Descripción informada",
-                          })}
-                        </span>
-                        <p style={fullDescriptionStyle}>{problema.descricao}</p>
-                      </section>
+                      <AdminProblemasTecnicosTicketDescription
+                        problema={problema}
+                        t={t}
+                      />
 
                       {(problema.paginaUrl ||
                         problema.navegador ||

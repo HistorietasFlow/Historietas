@@ -2144,3 +2144,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 11 — Admin Problemas Técnicos
 
 - Somente o grid de informações básicas do chamado foi movido para componente dedicado, mantendo descrição, ambiente, controles e mutations na página.
+
+## Fase 12 — Admin Problemas Técnicos
+
+- Somente a seção de descrição informada foi movida para componente dedicado, mantendo ambiente, controles e mutations na página.
