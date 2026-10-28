@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
+import { EmBreveEmptyState } from "./components/em-breve-empty-state";
 import { EmBreveHeader } from "./components/em-breve-header";
 import { EmBreveWaterFade } from "./components/em-breve-water-fade";
 import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
@@ -400,23 +401,10 @@ export default function EmBrevePage() {
             </div>
           </section>
         ) : (
-          <>
-            {avisoAcesso && <p style={accessMessageStyle}>{avisoAcesso}</p>}
-
-            <p
-              style={{
-                margin: "10px 0 0",
-                color: "#FFFFFF",
-                fontSize: "12px",
-                fontWeight: 800,
-                textAlign: "center",
-              }}
-            >
-              {nomeObra
-                ? "Essa obra ainda não está disponível"
-                : "Ainda não há lançamentos em breve"}
-            </p>
-          </>
+          <EmBreveEmptyState
+            avisoAcesso={avisoAcesso}
+            nomeObra={nomeObra}
+          />
         )}
 
         {outrasObrasEmBreve.length > 0 && (
