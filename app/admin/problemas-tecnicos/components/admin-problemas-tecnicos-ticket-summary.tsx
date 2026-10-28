@@ -1,4 +1,4 @@
-import { formatarData } from "../../../lib/utils";
+import { formatarData } from "../../../../lib/utils";
 import {
   CATEGORIA_LABEL,
   PRIORIDADE_LABEL,
