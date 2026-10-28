@@ -2136,3 +2136,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 9 — Admin Problemas Técnicos
 
 - A filtragem da fila e o cálculo de totais foram movidos para helpers puros sem alteração de critérios ou comportamento.
+
+## Fase 10 — Admin Problemas Técnicos
+
+- Somente o resumo visual do card foi movido para componente dedicado, mantendo os detalhes e toda a orquestração na página.
