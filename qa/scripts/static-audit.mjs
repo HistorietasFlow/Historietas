@@ -2211,6 +2211,13 @@ const emAltaSupabaseWorksLoader = fs.existsSync(
 )
   ? fs.readFileSync(emAltaSupabaseWorksLoaderPath, "utf8")
   : "";
+const emBreveRealWorksLoaderPath = path.join(
+  ROOT_DIR,
+  "app/em-breve/loaders/carregar-obras-reais-em-breve.ts"
+);
+const emBreveRealWorksLoader = fs.existsSync(emBreveRealWorksLoaderPath)
+  ? fs.readFileSync(emBreveRealWorksLoaderPath, "utf8")
+  : "";
 const explorarRemoteLoaderPath = path.join(
   ROOT_DIR,
   "app/explorar/lib/explorar-remote-loader.ts"
@@ -2283,6 +2290,10 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   }${
     relativePath === "app/em-alta/page.tsx"
       ? `\n${emAltaCollectionSupabaseLoader}\n${emAltaSupabaseWorksLoader}`
+      : ""
+  }${
+    relativePath === "app/em-breve/page.tsx"
+      ? `\n${emBreveRealWorksLoader}`
       : ""
   }${
     relativePath === "app/explorar/page.tsx"

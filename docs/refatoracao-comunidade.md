@@ -2200,3 +2200,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 9 — Em Breve
 
 - Somente a mutation de ativar e desativar avisos salvos em `seguindo_obras` foi movida para action dedicada, mantendo estado, mensagens e orquestração na página.
+
+## Fase 10 — Em Breve
+
+- Somente o carregamento paginado das obras reais sem conteúdo foi movido para loader dedicado, mantendo efeitos, redirecionamentos e demais consultas na página.
