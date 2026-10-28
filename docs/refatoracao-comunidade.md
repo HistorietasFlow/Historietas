@@ -2208,3 +2208,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 11 — Em Breve
 
 - Somente os helpers puros de construção de links dos cards e das obras publicadas foram movidos para módulo dedicado, mantendo redirecionamento, consultas e orquestração na página.
+
+## Fase 12 — Em Breve
+
+- Somente a deduplicação pura das obras do Em Breve foi movida para o módulo de listas existente, preservando chave, ordem e primeira ocorrência.

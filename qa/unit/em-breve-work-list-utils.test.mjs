@@ -24,6 +24,11 @@ test("helpers de lista de obras de Em Breve preservam contratos puros", () => {
     "new Map<string, string>()",
     "obraIdPorIdentificador.set",
     "obraIdPorIdentificador.get(identificador) || identificador",
+    "removerObrasDuplicadasEmBreve",
+    "new Set<string>()",
+    "normalizarTexto(obra.titulo) || obra.id",
+    "obrasVistas.has(chave)",
+    "obrasVistas.add(chave)",
   ].forEach((contrato) => assert.ok(modulo.includes(contrato), contrato));
   assert.doesNotMatch(
     modulo,
@@ -39,7 +44,6 @@ test("pagina delega identificacao e mantem helpers de lista adjacentes", () => {
   assert.doesNotMatch(pagina, /function removerObraDaListaEmBreve/);
   assert.doesNotMatch(pagina, /function adicionarObraNaListaEmBreve/);
   assert.doesNotMatch(pagina, /function normalizarLancamentosSalvosComObrasEmBreve/);
-  assert.match(pagina, /async function carregarLancamentosSalvosSupabaseEmBreve/);
-  assert.match(pagina, /function erroEhRegistroDuplicadoEmBreve/);
-  assert.match(pagina, /async function sincronizarAvisoLancamentoSupabaseEmBreve/);
+  assert.doesNotMatch(pagina, /function removerObrasDuplicadasEmBreve/);
+  assert.match(pagina, /removerObrasDuplicadasEmBreve\(obrasReaisEmBreve\)/);
 });
