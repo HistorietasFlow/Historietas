@@ -2228,3 +2228,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 16 — Em Breve
 
 - Os objetos de estilo inline e o helper de estilo da capa foram movidos para módulo dedicado, preservando integralmente valores, heranças e comportamento visual.
+
+## Fase 17 — Em Breve
+
+- O bridge isolado de tradução DOM/MutationObserver foi movido para componente dedicado, preservando integralmente tradução de textos/atributos, observação do DOM e cleanup.
