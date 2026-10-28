@@ -2280,3 +2280,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 29 — Em Breve
 
 - Os estados e a ação de ativar/desativar aviso de lançamento foram movidos para hook dedicado, preservando autenticação, mutation Supabase, normalização local, storage, mensagens e estado de processamento.
+
+## Fase 1 — Top 5 do Perfil Autor
+
+- O catálogo e o helper de tradução do Top 5 foram movidos para módulo dedicado, preservando traduções exatas, padrões dinâmicos, espaços e fallback em português.
