@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
+import { EmBreveHeader } from "./components/em-breve-header";
 import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
 import { useEmBreveLancamentosSalvosNormalizados } from "./hooks/use-em-breve-lancamentos-salvos-normalizados";
 import { useEmBreveObrasReais } from "./hooks/use-em-breve-obras-reais";
@@ -15,14 +16,6 @@ import {
   desktopTopWaterFadeStyle,
   pageStyle,
   containerStyle,
-  titleHeaderStyle,
-  titleLinkStyle,
-  titleTextStyle,
-  desktopTitleHeaderStyle,
-  desktopNotificationButtonStyle,
-  desktopNotificationBadgeStyle,
-  desktopTitleLinkStyle,
-  desktopTitleTextStyle,
   accessMessageStyle,
   relatedSectionStyle,
   relatedGridStyle,
@@ -274,42 +267,10 @@ export default function EmBrevePage() {
       {!desktopLayout && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={desktopLayout ? desktopContainerStyle : containerStyle}>
-        <header style={desktopLayout ? desktopTitleHeaderStyle : titleHeaderStyle}>
-          <Link
-            href="/"
-            style={desktopLayout ? desktopTitleLinkStyle : titleLinkStyle}
-            aria-label="Voltar para a Home"
-          >
-            <span
-              className="historietas-theme-title"
-              style={desktopLayout ? desktopTitleTextStyle : titleTextStyle}
-            >
-              EM BREVE
-            </span>
-          </Link>
-
-          {desktopLayout ? (
-            <Link
-              href="/notificacoes"
-              style={desktopNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
-              }
-            >
-              N
-
-              {notificacoesNaoLidas > 0 ? (
-                <span style={desktopNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
-        </header>
+        <EmBreveHeader
+          desktopLayout={desktopLayout}
+          notificacoesNaoLidas={notificacoesNaoLidas}
+        />
 
         {outrasObrasEmBreve.length > 0 ? (
           <section
