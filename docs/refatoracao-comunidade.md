@@ -2168,3 +2168,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 1 — Em Breve
 
 - Somente o catálogo de traduções e o helper de tradução foram movidos para módulo dedicado, mantendo o bridge e toda a orquestração na página.
+
+## Fase 2 — Em Breve
+
+- Somente os helpers de leitura de parâmetros e construção segura da rota de login foram movidos para módulo dedicado.
