@@ -2192,3 +2192,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 7 — Em Breve
 
 - Somente o carregamento paginado dos avisos salvos em `seguindo_obras` foi movido para loader dedicado, mantendo mutations e orquestração na página.
+
+## Fase 8 — Em Breve
+
+- Somente o helper puro de identificação de erro de registro duplicado foi movido para módulo dedicado, mantendo toda sincronização Supabase na página.
