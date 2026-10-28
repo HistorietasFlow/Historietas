@@ -2252,3 +2252,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 22 — Em Breve
 
 - A normalização memoizada dos lançamentos salvos foi movida para hook dedicado, preservando fallback sem usuário/obras, helper de normalização e dependências do memo.
+
+## Fase 23 — Em Breve
+
+- O header visual da página foi movido para componente dedicado, preservando título, navegação, responsividade, contador de notificações e acessibilidade.
