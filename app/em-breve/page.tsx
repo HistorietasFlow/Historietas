@@ -12,6 +12,10 @@ import { traduzirTextoEmBreve } from "./lib/em-breve-translations";
 import { sincronizarAvisoLancamentoSupabaseEmBreve } from "./actions/sincronizar-aviso-lancamento-supabase-em-breve";
 import { carregarObrasReaisEmBreve } from "./loaders/carregar-obras-reais-em-breve";
 import {
+  criarLinkCardEmBreve,
+  criarLinkObraPublicadaEmBreve,
+} from "./lib/em-breve-work-link-utils";
+import {
   criarLoginHrefEmBreve,
   pegarParametro,
 } from "./lib/em-breve-route-utils";
@@ -34,7 +38,7 @@ import {
   removerObraDaListaEmBreve,
 } from "./lib/em-breve-work-list-utils";
 import { carregarLancamentosSalvosSupabaseEmBreve } from "./loaders/carregar-lancamentos-salvos-supabase-em-breve";
-import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 
 function EmBreveLanguageBridge() {
@@ -276,23 +280,6 @@ function removerObrasDuplicadasEmBreve(obrasParaMostrar: ObraEmBreveCard[]) {
     obrasVistas.add(chave);
     return true;
   });
-}
-
-function criarLinkCardEmBreve(obra: ObraEmBreveCard) {
-  const params = new URLSearchParams({
-    obraId: obra.id,
-    obra: obra.titulo,
-  });
-
-  return `/em-breve?${params.toString()}`;
-}
-
-function criarLinkObraPublicadaEmBreve(obra: Pick<SupabaseObraEmBreveRow, "titulo" | "slug" | "link">) {
-  const titulo = obra.titulo?.trim() || "obra";
-  const slug = obra.slug?.trim() || criarSlugBase(titulo);
-  const link = obra.link?.trim() || "";
-
-  return link && !link.startsWith("/em-breve") ? link : `/obra/${slug}`;
 }
 
 async function encontrarLinkObraComConteudoEmBreve(
