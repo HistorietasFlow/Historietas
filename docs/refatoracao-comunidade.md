@@ -2204,3 +2204,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 10 — Em Breve
 
 - Somente o carregamento paginado das obras reais sem conteúdo foi movido para loader dedicado, mantendo efeitos, redirecionamentos e demais consultas na página.
+
+## Fase 11 — Em Breve
+
+- Somente os helpers puros de construção de links dos cards e das obras publicadas foram movidos para módulo dedicado, mantendo redirecionamento, consultas e orquestração na página.
