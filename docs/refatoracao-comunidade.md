@@ -2276,3 +2276,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 28 — Em Breve
 
 - O estado e o ciclo inicial de parâmetros, redirecionamento, autenticação e carregamento dos lançamentos salvos foram movidos para hook dedicado, preservando timers, storage, Supabase, proteção de componente ativo e cleanup.
+
+## Fase 29 — Em Breve
+
+- Os estados e a ação de ativar/desativar aviso de lançamento foram movidos para hook dedicado, preservando autenticação, mutation Supabase, normalização local, storage, mensagens e estado de processamento.
