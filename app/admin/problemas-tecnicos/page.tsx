@@ -36,7 +36,6 @@ import {
   containerStyle,
   controlsGridStyle,
   counterStyle,
-  detailLabelStyle,
   detailsStyle,
   emptyStyle,
   errorBannerStyle,
