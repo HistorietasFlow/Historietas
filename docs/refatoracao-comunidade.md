@@ -2220,3 +2220,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 14 — Em Breve
 
 - Somente a consulta responsável por localizar obra publicada com arquivo ou capítulo para redirecionamento foi movida para loader dedicado, mantendo o efeito e a navegação na página.
+
+## Fase 15 — Em Breve
+
+- Somente o template literal de CSS global da página foi movido para módulo dedicado, preservando integralmente seletores, variáveis, duplicações, `!important` e ordem de aplicação.
