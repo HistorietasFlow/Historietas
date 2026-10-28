@@ -2216,3 +2216,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 13 — Em Breve
 
 - Somente o helper puro de seleção do ícone temático por gênero foi movido para módulo de apresentação dedicado, sem alterar cards, estilos ou lógica da página.
+
+## Fase 14 — Em Breve
+
+- Somente a consulta responsável por localizar obra publicada com arquivo ou capítulo para redirecionamento foi movida para loader dedicado, mantendo o efeito e a navegação na página.

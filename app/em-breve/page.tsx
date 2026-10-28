@@ -11,10 +11,8 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import { traduzirTextoEmBreve } from "./lib/em-breve-translations";
 import { sincronizarAvisoLancamentoSupabaseEmBreve } from "./actions/sincronizar-aviso-lancamento-supabase-em-breve";
 import { carregarObrasReaisEmBreve } from "./loaders/carregar-obras-reais-em-breve";
-import {
-  criarLinkCardEmBreve,
-  criarLinkObraPublicadaEmBreve,
-} from "./lib/em-breve-work-link-utils";
+import { encontrarLinkObraComConteudoEmBreve } from "./loaders/encontrar-link-obra-com-conteudo-em-breve";
+import { criarLinkCardEmBreve } from "./lib/em-breve-work-link-utils";
 import { obterIconeTematicaEmBreve } from "./lib/em-breve-presentation-utils";
 import {
   criarLoginHrefEmBreve,
@@ -25,11 +23,7 @@ import {
   carregarJsonUsuarioEmBreve,
   salvarJsonUsuarioEmBreve,
 } from "./lib/em-breve-storage-utils";
-import {
-  obraSupabaseTemArquivoEmBreve,
-  type ObraEmBreveCard,
-  type SupabaseObraEmBreveRow,
-} from "./lib/em-breve-work-normalizers";
+import { type ObraEmBreveCard } from "./lib/em-breve-work-normalizers";
 import {
   adicionarObraNaListaEmBreve,
   listaTemObraEmBreve,
@@ -40,8 +34,7 @@ import {
   removerObraDaListaEmBreve,
 } from "./lib/em-breve-work-list-utils";
 import { carregarLancamentosSalvosSupabaseEmBreve } from "./loaders/carregar-lancamentos-salvos-supabase-em-breve";
-import { idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
-import { ehClassificacao18 } from "../../lib/historietasAdultContent";
+import { normalizarTexto } from "../../lib/utils";
 
 function EmBreveLanguageBridge() {
   const { language } = useHistorietasLanguage();
@@ -267,86 +260,6 @@ function EmBreveLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-async function encontrarLinkObraComConteudoEmBreve(
-  obraIdBusca: string,
-  tituloBusca: string
-) {
-  const obraIdLimpo = obraIdBusca.trim();
-  const tituloLimpo = tituloBusca.trim();
-
-  if (!obraIdLimpo && !tituloLimpo) {
-    return "";
-  }
-
-  try {
-    let obraEncontrada: Pick<SupabaseObraEmBreveRow, "id" | "titulo" | "slug" | "link" | "arquivo_url" | "publicado" | "classificacao_indicativa"> | null = null;
-
-    if (idObraSupabaseValido(obraIdLimpo)) {
-      const { data, error } = await supabase
-        .from("obras")
-        .select("id,titulo,slug,link,arquivo_url,publicado,classificacao_indicativa")
-        .eq("id", obraIdLimpo)
-        .eq("publicado", true)
-        .limit(1)
-        .maybeSingle();
-
-      if (!error && data) {
-        obraEncontrada = data;
-      }
-    }
-
-    if (!obraEncontrada && tituloLimpo) {
-      const { data: obrasBanco, error: erroObras } = await supabase
-        .from("obras")
-        .select("id,titulo,slug,link,arquivo_url,publicado,classificacao_indicativa")
-        .ilike("titulo", tituloLimpo)
-        .eq("publicado", true)
-        .limit(5);
-
-      if (erroObras || !Array.isArray(obrasBanco)) {
-        return "";
-      }
-
-      const obrasEncontradas =
-        obrasBanco;
-      obraEncontrada =
-        obrasEncontradas.find(
-          (obra) =>
-            normalizarTexto(obra.titulo || "") === normalizarTexto(tituloLimpo)
-        ) || obrasEncontradas[0] || null;
-    }
-
-    if (ehClassificacao18(obraEncontrada?.classificacao_indicativa)) {
-      return "";
-    }
-
-    if (!obraEncontrada?.id) {
-      return "";
-    }
-
-    if (obraSupabaseTemArquivoEmBreve(obraEncontrada)) {
-      return criarLinkObraPublicadaEmBreve(obraEncontrada);
-    }
-
-    const { data: capitulosBanco, error: erroCapitulos } = await supabase
-      .from("capitulos")
-      .select("obra_id")
-      .eq("obra_id", obraEncontrada.id)
-      .eq("publicado", true)
-      .limit(1);
-
-    if (erroCapitulos || !Array.isArray(capitulosBanco)) {
-      return "";
-    }
-
-    return capitulosBanco.length > 0
-      ? criarLinkObraPublicadaEmBreve(obraEncontrada)
-      : "";
-  } catch {
-    return "";
-  }
 }
 
 function criarCoverCardEmBreveStyle(
