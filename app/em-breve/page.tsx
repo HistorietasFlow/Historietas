@@ -7,6 +7,7 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useEmBreveDesktopLayout } from "./hooks/use-em-breve-desktop-layout";
+import { useEmBreveObrasReais } from "./hooks/use-em-breve-obras-reais";
 import { useEmBrevePersistenciaLancamentosSalvos } from "./hooks/use-em-breve-persistencia-lancamentos-salvos";
 import {
   mobileTopWaterFadeStyle,
@@ -55,7 +56,6 @@ import {
 import { emBrevePageCss } from "./lib/em-breve-page-css";
 import { EmBreveLanguageBridge } from "./components/em-breve-language-bridge";
 import { sincronizarAvisoLancamentoSupabaseEmBreve } from "./actions/sincronizar-aviso-lancamento-supabase-em-breve";
-import { carregarObrasReaisEmBreve } from "./loaders/carregar-obras-reais-em-breve";
 import { encontrarLinkObraComConteudoEmBreve } from "./loaders/encontrar-link-obra-com-conteudo-em-breve";
 import { criarLinkCardEmBreve } from "./lib/em-breve-work-link-utils";
 import { obterIconeTematicaEmBreve } from "./lib/em-breve-presentation-utils";
@@ -88,33 +88,13 @@ export default function EmBrevePage() {
   const [nomeObra, setNomeObra] = useState("");
   const [obraIdConsultada, setObraIdConsultada] = useState("");
   const [obrasSalvas, setObrasSalvas] = useState<string[]>([]);
-  const [obrasReaisEmBreve, setObrasReaisEmBreve] = useState<ObraEmBreveCard[]>([]);
+  const obrasReaisEmBreve = useEmBreveObrasReais();
   const [avisoAcesso, setAvisoAcesso] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [obraProcessandoId, setObraProcessandoId] = useState("");
   const desktopLayout = useEmBreveDesktopLayout();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
-
-  useEffect(() => {
-    let componenteAtivo = true;
-
-    async function carregarObrasReais() {
-      const obrasSemConteudo = await carregarObrasReaisEmBreve();
-
-      window.setTimeout(() => {
-        if (componenteAtivo) {
-          setObrasReaisEmBreve(obrasSemConteudo);
-        }
-      }, 0);
-    }
-
-    void carregarObrasReais();
-
-    return () => {
-      componenteAtivo = false;
-    };
-  }, []);
 
   useEffect(() => {
     let componenteAtivo = true;
