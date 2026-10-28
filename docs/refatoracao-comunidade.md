@@ -2196,3 +2196,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 8 — Em Breve
 
 - Somente o helper puro de identificação de erro de registro duplicado foi movido para módulo dedicado, mantendo toda sincronização Supabase na página.
+
+## Fase 9 — Em Breve
+
+- Somente a mutation de ativar e desativar avisos salvos em `seguindo_obras` foi movida para action dedicada, mantendo estado, mensagens e orquestração na página.
