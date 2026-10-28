@@ -2172,3 +2172,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 2 — Em Breve
 
 - Somente os helpers de leitura de parâmetros e construção segura da rota de login foram movidos para módulo dedicado.
+
+## Fase 3 — Em Breve
+
+- Somente a chave e os helpers de fallback em localStorage foram movidos para módulo dedicado, sem alterar sincronização com Supabase ou fluxo da página.
