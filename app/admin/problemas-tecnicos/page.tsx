@@ -26,6 +26,7 @@ import { verificarAdministradorProblemasTecnicos } from "./loaders/verificar-adm
 import { buscarProblemasTecnicosAdmin } from "./loaders/buscar-problemas-tecnicos-admin";
 import { buscarPerfisProblemasTecnicosAdmin } from "./loaders/buscar-perfis-problemas-tecnicos-admin";
 import { atualizarProblemaTecnicoAdmin } from "./actions/atualizar-problema-tecnico-admin";
+import { AdminProblemasTecnicosTicketSummary } from "./components/admin-problemas-tecnicos-ticket-summary";
 import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
@@ -634,53 +635,17 @@ export default function AdminProblemasTecnicosPage() {
 
               return (
                 <article key={problema.id} style={cardStyle}>
-                  <button
-                    type="button"
-                    className="admin-tech-card-summary"
-                    onClick={() =>
+                  <AdminProblemasTecnicosTicketSummary
+                    problema={problema}
+                    aberto={aberto}
+                    nomeUsuario={nomeUsuario}
+                    t={t}
+                    onAlternarAbertura={() =>
                       setChamadoAbertoId((atual) =>
                         atual === problema.id ? "" : problema.id,
                       )
                     }
-                    aria-expanded={aberto}
-                  >
-                    <div style={cardHeadingStyle}>
-                      <div style={badgesStyle}>
-                        <span
-                          style={{
-                            ...badgeStyle,
-                            borderColor: `${corStatus(problema.status)}70`,
-                            color: corStatus(problema.status),
-                          }}
-                        >
-                          {t(STATUS_LABEL[problema.status])}
-                        </span>
-                        <span
-                          style={{
-                            ...badgeStyle,
-                            borderColor: `${corPrioridade(problema.prioridade)}70`,
-                            color: corPrioridade(problema.prioridade),
-                          }}
-                        >
-                          {t(PRIORIDADE_LABEL[problema.prioridade])}
-                        </span>
-                        <span style={categoryBadgeStyle}>
-                          {t(CATEGORIA_LABEL[problema.categoria])}
-                        </span>
-                      </div>
-
-                      <h2 style={cardTitleStyle}>{problema.titulo}</h2>
-                      <p style={cardDescriptionPreviewStyle}>
-                        {problema.descricao}
-                      </p>
-                    </div>
-
-                    <div style={cardMetaStyle}>
-                      <span>{nomeUsuario}</span>
-                      <span>{formatarData(problema.criadoEm)}</span>
-                      <span aria-hidden="true">{aberto ? "▲" : "▼"}</span>
-                    </div>
-                  </button>
+                  />
 
                   {aberto && (
                     <div style={detailsStyle}>
