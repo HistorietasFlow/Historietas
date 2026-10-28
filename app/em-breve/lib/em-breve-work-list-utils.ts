@@ -36,3 +36,49 @@ export function listaTemObraEmBreve(
     listaNormalizada.has(id)
   );
 }
+
+export function removerObraDaListaEmBreve(
+  obra: Pick<ObraEmBreveCard, "id" | "slug" | "titulo">,
+  lista: string[]
+) {
+  const idsObra = new Set(obterIdentificadoresObraEmBreve(obra));
+
+  return normalizarListaIdsEmBreve(lista).filter((id) => !idsObra.has(id));
+}
+
+export function adicionarObraNaListaEmBreve(
+  obra: Pick<ObraEmBreveCard, "id" | "slug" | "titulo">,
+  lista: string[]
+) {
+  const obraId = obra.id.trim();
+
+  return normalizarListaIdsEmBreve([
+    ...removerObraDaListaEmBreve(obra, lista),
+    ...(obraId ? [obraId] : obterIdentificadoresObraEmBreve(obra)),
+  ]);
+}
+
+export function normalizarLancamentosSalvosComObrasEmBreve(
+  lista: string[],
+  obras: ObraEmBreveCard[]
+) {
+  const obraIdPorIdentificador = new Map<string, string>();
+
+  obras.forEach((obra) => {
+    const obraId = obra.id.trim();
+
+    if (!obraId) {
+      return;
+    }
+
+    obterIdentificadoresObraEmBreve(obra).forEach((identificador) => {
+      obraIdPorIdentificador.set(identificador, obraId);
+    });
+  });
+
+  return normalizarListaIdsEmBreve(
+    normalizarListaIdsEmBreve(lista).map(
+      (identificador) => obraIdPorIdentificador.get(identificador) || identificador
+    )
+  );
+}
