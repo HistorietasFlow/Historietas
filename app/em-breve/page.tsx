@@ -78,7 +78,7 @@ import {
   removerObraDaListaEmBreve,
 } from "./lib/em-breve-work-list-utils";
 import { carregarLancamentosSalvosSupabaseEmBreve } from "./loaders/carregar-lancamentos-salvos-supabase-em-breve";
-import { normalizarTexto } from "../../lib/utils";
+import { selecionarObrasExibidasEmBreve } from "./lib/em-breve-work-selection-utils";
 
 
 
@@ -231,25 +231,11 @@ export default function EmBrevePage() {
     usuarioIdLogado,
   ]);
 
-  const obraConsultada = obraIdConsultada || nomeObra
-    ? obrasEmBreve.find((obra) => {
-        if (obraIdConsultada && obra.id === obraIdConsultada) {
-          return true;
-        }
-
-        return (
-          Boolean(nomeObra) &&
-          normalizarTexto(obra.titulo) === normalizarTexto(nomeObra)
-        );
-      }) || null
-    : null;
-
-  const outrasObrasEmBreve = obraConsultada
-    ? [
-        obraConsultada,
-        ...obrasEmBreve.filter((obra) => obra.id !== obraConsultada.id),
-      ].slice(0, 8)
-    : obrasEmBreve.slice(0, 8);
+  const outrasObrasEmBreve = selecionarObrasExibidasEmBreve(
+    obrasEmBreve,
+    obraIdConsultada,
+    nomeObra
+  );
 
   async function salvarLancamento(obra: ObraEmBreveCard) {
     const identificadoresObra = obterIdentificadoresObraEmBreve(obra);
