@@ -12,11 +12,8 @@ import {
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { formatarData } from "../../../lib/utils";
 import {
-  CATEGORIA_LABEL,
   PRIORIDADE_LABEL,
   STATUS_LABEL,
-  corPrioridade,
-  corStatus,
   traduzir,
   type TextoTraduzido,
 } from "./lib/admin-problemas-tecnicos-text-utils";
@@ -31,15 +28,8 @@ import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
   adminProblemasCss,
-  badgeStyle,
-  badgesStyle,
   cardActionsStyle,
-  cardDescriptionPreviewStyle,
-  cardHeadingStyle,
-  cardMetaStyle,
   cardStyle,
-  cardTitleStyle,
-  categoryBadgeStyle,
   containerStyle,
   contentBoxStyle,
   controlsGridStyle,
