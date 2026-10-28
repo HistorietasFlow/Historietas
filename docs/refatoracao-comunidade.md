@@ -2260,3 +2260,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 24 — Em Breve
 
 - As camadas visuais responsivas de water fade foram movidas para componente dedicado, preservando condições desktop/mobile, estilos e acessibilidade decorativa.
+
+## Fase 25 — Em Breve
+
+- O estado visual vazio da página foi movido para componente dedicado, preservando aviso de acesso, mensagens condicionais e estilo.
