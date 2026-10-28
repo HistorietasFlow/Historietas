@@ -2140,3 +2140,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 10 — Admin Problemas Técnicos
 
 - Somente o resumo visual do card foi movido para componente dedicado, mantendo os detalhes e toda a orquestração na página.
+
+## Fase 11 — Admin Problemas Técnicos
+
+- Somente o grid de informações básicas do chamado foi movido para componente dedicado, mantendo descrição, ambiente, controles e mutations na página.

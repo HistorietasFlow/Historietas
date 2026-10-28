@@ -24,6 +24,7 @@ import { buscarProblemasTecnicosAdmin } from "./loaders/buscar-problemas-tecnico
 import { buscarPerfisProblemasTecnicosAdmin } from "./loaders/buscar-perfis-problemas-tecnicos-admin";
 import { atualizarProblemaTecnicoAdmin } from "./actions/atualizar-problema-tecnico-admin";
 import { AdminProblemasTecnicosTicketSummary } from "./components/admin-problemas-tecnicos-ticket-summary";
+import { AdminProblemasTecnicosTicketInfoGrid } from "./components/admin-problemas-tecnicos-ticket-info-grid";
 import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
@@ -34,8 +35,6 @@ import {
   contentBoxStyle,
   controlsGridStyle,
   counterStyle,
-  detailGridStyle,
-  detailItemStyle,
   detailLabelStyle,
   detailsStyle,
   emptyStyle,
@@ -639,48 +638,11 @@ export default function AdminProblemasTecnicosPage() {
 
                   {aberto && (
                     <div style={detailsStyle}>
-                      <div style={detailGridStyle}>
-                        <div style={detailItemStyle}>
-                          <span style={detailLabelStyle}>
-                            {t({
-                              pt: "Usuário",
-                              en: "User",
-                              es: "Usuario",
-                            })}
-                          </span>
-                          <strong>{nomeUsuario}</strong>
-                        </div>
-                        <div style={detailItemStyle}>
-                          <span style={detailLabelStyle}>
-                            {t({
-                              pt: "E-mail",
-                              en: "Email",
-                              es: "Correo",
-                            })}
-                          </span>
-                          <strong>{problema.emailContato || "—"}</strong>
-                        </div>
-                        <div style={detailItemStyle}>
-                          <span style={detailLabelStyle}>
-                            {t({
-                              pt: "Criado em",
-                              en: "Created",
-                              es: "Creado",
-                            })}
-                          </span>
-                          <strong>{formatarData(problema.criadoEm)}</strong>
-                        </div>
-                        <div style={detailItemStyle}>
-                          <span style={detailLabelStyle}>
-                            {t({
-                              pt: "Atualizado em",
-                              en: "Updated",
-                              es: "Actualizado",
-                            })}
-                          </span>
-                          <strong>{formatarData(problema.atualizadoEm)}</strong>
-                        </div>
-                      </div>
+                      <AdminProblemasTecnicosTicketInfoGrid
+                        problema={problema}
+                        nomeUsuario={nomeUsuario}
+                        t={t}
+                      />
 
                       <section style={contentBoxStyle}>
                         <span style={detailLabelStyle}>
