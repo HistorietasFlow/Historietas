@@ -18,6 +18,12 @@ import {
   carregarJsonUsuarioEmBreve,
   salvarJsonUsuarioEmBreve,
 } from "./lib/em-breve-storage-utils";
+import {
+  normalizarObraSupabaseEmBreve,
+  obraSupabaseTemArquivoEmBreve,
+  type ObraEmBreveCard,
+  type SupabaseObraEmBreveRow,
+} from "./lib/em-breve-work-normalizers";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
@@ -249,63 +255,6 @@ function EmBreveLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-type SupabaseObraEmBreveRow = {
-  id: string;
-  user_id: string | null;
-  titulo: string | null;
-  autor: string | null;
-  genero: string | null;
-  formato: string | null;
-  classificacao_indicativa: string | null;
-  capa_url: string | null;
-  arquivo_url: string | null;
-  publicado: boolean | null;
-  slug: string | null;
-  link: string | null;
-  criada_em: string | null;
-};
-
-
-type ObraEmBreveCard = {
-  id: string;
-  titulo: string;
-  autor: string;
-  genero: string;
-  formato: string;
-  views: string;
-  likes: string;
-  comentarios: string;
-  slug: string;
-  link: string;
-  capa: string;
-  origem: "supabase";
-};
-
-function obraSupabaseTemArquivoEmBreve(obra: Pick<SupabaseObraEmBreveRow, "arquivo_url">) {
-  return Boolean(obra.arquivo_url?.trim());
-}
-
-function normalizarObraSupabaseEmBreve(
-  obra: SupabaseObraEmBreveRow
-): ObraEmBreveCard {
-  const titulo = obra.titulo?.trim() || "Obra sem título";
-  const slug = obra.slug?.trim() || criarSlugBase(titulo);
-  return {
-    id: obra.id || slug || titulo,
-    titulo,
-    autor: obra.autor?.trim() || "Autor não informado",
-    genero: obra.genero?.trim() || "Não informado",
-    formato: obra.formato?.trim() || "Original",
-    views: "0",
-    likes: "0",
-    comentarios: "0",
-    slug,
-    link: obra.link?.trim() || `/obra/${slug}`,
-    capa: obra.capa_url?.trim() || "",
-    origem: "supabase",
-  };
 }
 
 function normalizarListaIdsEmBreve(valor: unknown) {
