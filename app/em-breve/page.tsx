@@ -13,6 +13,11 @@ import {
   criarLoginHrefEmBreve,
   pegarParametro,
 } from "./lib/em-breve-route-utils";
+import {
+  SAVED_RELEASES_STORAGE_KEY,
+  carregarJsonUsuarioEmBreve,
+  salvarJsonUsuarioEmBreve,
+} from "./lib/em-breve-storage-utils";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
@@ -246,9 +251,6 @@ function EmBreveLanguageBridge() {
   return null;
 }
 
-const SAVED_RELEASES_STORAGE_KEY = "historietas-lancamentos-salvos";
-
-
 type SupabaseObraEmBreveRow = {
   id: string;
   user_id: string | null;
@@ -280,58 +282,6 @@ type ObraEmBreveCard = {
   capa: string;
   origem: "supabase";
 };
-
-function criarStorageKeyUsuarioEmBreve(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function carregarJsonUsuarioEmBreve(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioEmBreve(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return null;
-    }
-
-    const texto = localStorage.getItem(chaveStorage);
-
-    return texto ? JSON.parse(texto) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonUsuarioEmBreve(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioEmBreve(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-  } catch {
-    // localStorage é fallback; a tela continua com estado em memória.
-  }
-}
 
 function obraSupabaseTemArquivoEmBreve(obra: Pick<SupabaseObraEmBreveRow, "arquivo_url">) {
   return Boolean(obra.arquivo_url?.trim());
