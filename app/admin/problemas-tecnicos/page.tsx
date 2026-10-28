@@ -35,8 +35,6 @@ import {
   contentBoxStyle,
   controlsGridStyle,
   counterStyle,
-  detailGridStyle,
-  detailItemStyle,
   detailLabelStyle,
   detailsStyle,
   emptyStyle,
