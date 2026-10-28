@@ -2236,3 +2236,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 18 — Em Breve
 
 - A detecção responsiva do layout desktop foi movida para hook dedicado, preservando breakpoint, atualização inicial, listeners modernos/legados e cleanup.
+
+## Fase 19 — Em Breve
+
+- A seleção pura da obra consultada e a montagem da lista limitada de obras exibidas foram movidas para util dedicado, preservando prioridade por ID, fallback por título normalizado, ordem e limite.
