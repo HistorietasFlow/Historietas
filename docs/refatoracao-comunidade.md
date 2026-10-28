@@ -2184,3 +2184,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 5 — Em Breve
 
 - Somente os helpers puros de normalização de IDs, geração de identificadores e consulta de presença de uma obra na lista foram movidos para módulo dedicado.
+
+## Fase 6 — Em Breve
+
+- As operações puras de adicionar, remover e normalizar obras salvas foram consolidadas no módulo de listas, mantendo toda sincronização remota na página.

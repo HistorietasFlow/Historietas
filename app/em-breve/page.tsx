@@ -25,9 +25,12 @@ import {
   type SupabaseObraEmBreveRow,
 } from "./lib/em-breve-work-normalizers";
 import {
+  adicionarObraNaListaEmBreve,
   listaTemObraEmBreve,
+  normalizarLancamentosSalvosComObrasEmBreve,
   normalizarListaIdsEmBreve,
   obterIdentificadoresObraEmBreve,
+  removerObraDaListaEmBreve,
 } from "./lib/em-breve-work-list-utils";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
@@ -260,52 +263,6 @@ function EmBreveLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-function removerObraDaListaEmBreve(
-  obra: Pick<ObraEmBreveCard, "id" | "slug" | "titulo">,
-  lista: string[]
-) {
-  const idsObra = new Set(obterIdentificadoresObraEmBreve(obra));
-
-  return normalizarListaIdsEmBreve(lista).filter((id) => !idsObra.has(id));
-}
-
-function adicionarObraNaListaEmBreve(
-  obra: Pick<ObraEmBreveCard, "id" | "slug" | "titulo">,
-  lista: string[]
-) {
-  const obraId = obra.id.trim();
-
-  return normalizarListaIdsEmBreve([
-    ...removerObraDaListaEmBreve(obra, lista),
-    ...(obraId ? [obraId] : obterIdentificadoresObraEmBreve(obra)),
-  ]);
-}
-
-function normalizarLancamentosSalvosComObrasEmBreve(
-  lista: string[],
-  obras: ObraEmBreveCard[]
-) {
-  const obraIdPorIdentificador = new Map<string, string>();
-
-  obras.forEach((obra) => {
-    const obraId = obra.id.trim();
-
-    if (!obraId) {
-      return;
-    }
-
-    obterIdentificadoresObraEmBreve(obra).forEach((identificador) => {
-      obraIdPorIdentificador.set(identificador, obraId);
-    });
-  });
-
-  return normalizarListaIdsEmBreve(
-    normalizarListaIdsEmBreve(lista).map(
-      (identificador) => obraIdPorIdentificador.get(identificador) || identificador
-    )
-  );
 }
 
 async function carregarLancamentosSalvosSupabaseEmBreve(userId: string) {
