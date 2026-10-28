@@ -9,6 +9,10 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { traduzirTextoEmBreve } from "./lib/em-breve-translations";
+import {
+  criarLoginHrefEmBreve,
+  pegarParametro,
+} from "./lib/em-breve-route-utils";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
@@ -327,30 +331,6 @@ function salvarJsonUsuarioEmBreve(
   } catch {
     // localStorage é fallback; a tela continua com estado em memória.
   }
-}
-
-function pegarParametro(parametro?: string | string[] | null) {
-  if (Array.isArray(parametro)) {
-    return parametro[0]?.trim() || "";
-  }
-
-  return parametro?.trim() || "";
-}
-
-function criarLoginHrefEmBreve() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/em-breve";
-  const destinoSeguro =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/em-breve";
-  const params = new URLSearchParams({
-    redirectTo: destinoSeguro,
-  });
-
-  return `/login?${params.toString()}`;
 }
 
 function obraSupabaseTemArquivoEmBreve(obra: Pick<SupabaseObraEmBreveRow, "arquivo_url">) {
