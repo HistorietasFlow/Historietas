@@ -32,6 +32,7 @@ import {
   obterIdentificadoresObraEmBreve,
   removerObraDaListaEmBreve,
 } from "./lib/em-breve-work-list-utils";
+import { carregarLancamentosSalvosSupabaseEmBreve } from "./loaders/carregar-lancamentos-salvos-supabase-em-breve";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
@@ -263,42 +264,6 @@ function EmBreveLanguageBridge() {
   }, [language]);
 
   return null;
-}
-
-async function carregarLancamentosSalvosSupabaseEmBreve(userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [] as string[];
-  }
-
-  try {
-    const data = await carregarTodasPaginasSupabase<{ obra_id: string }>({
-      nomeColecao: "avisos reais do Em breve",
-      buscarPagina: async (inicio, fim) =>
-        supabase
-          .from("seguindo_obras")
-          .select("obra_id")
-          .eq("user_id", userIdLimpo)
-          .order("obra_id", { ascending: true })
-          .range(inicio, fim),
-    });
-
-    return normalizarListaIdsEmBreve(
-      data.map((registro) => {
-        if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-          return "";
-        }
-
-        const obraId = (registro as Record<string, unknown>).obra_id;
-
-        return typeof obraId === "string" ? obraId : "";
-      })
-    );
-  } catch (error) {
-    console.warn("Não consegui acessar seguindo_obras no Em breve:", error);
-    return [] as string[];
-  }
 }
 
 function erroEhRegistroDuplicadoEmBreve(error: unknown) {

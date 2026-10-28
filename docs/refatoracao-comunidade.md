@@ -2188,3 +2188,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 6 — Em Breve
 
 - As operações puras de adicionar, remover e normalizar obras salvas foram consolidadas no módulo de listas, mantendo toda sincronização remota na página.
+
+## Fase 7 — Em Breve
+
+- Somente o carregamento paginado dos avisos salvos em `seguindo_obras` foi movido para loader dedicado, mantendo mutations e orquestração na página.
