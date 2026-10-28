@@ -26,6 +26,7 @@ import { criarMensagemErro } from "./lib/admin-problemas-tecnicos-error-utils";
 import { verificarAdministradorProblemasTecnicos } from "./loaders/verificar-administrador-problemas-tecnicos";
 import { buscarProblemasTecnicosAdmin } from "./loaders/buscar-problemas-tecnicos-admin";
 import { buscarPerfisProblemasTecnicosAdmin } from "./loaders/buscar-perfis-problemas-tecnicos-admin";
+import { atualizarProblemaTecnicoAdmin } from "./actions/atualizar-problema-tecnico-admin";
 import {
   PRIORIDADES_PROBLEMAS,
   STATUS_PROBLEMAS,
@@ -278,14 +279,10 @@ export default function AdminProblemasTecnicosPage() {
         payload.observacao_admin = alteracoes.observacaoAdmin.trim();
       }
 
-      const { data, error } = await supabase
-        .from("problemas_tecnicos")
-        .update(payload)
-        .eq("id", problema.id)
-        .select(
-          "id,user_id,email_contato,categoria,titulo,descricao,pagina_url,navegador,dispositivo,status,prioridade,observacao_admin,analisado_por,analisado_em,criado_em,atualizado_em",
-        )
-        .maybeSingle();
+      const { data, error } = await atualizarProblemaTecnicoAdmin({
+        id: problema.id,
+        payload,
+      });
 
       if (error) {
         throw error;

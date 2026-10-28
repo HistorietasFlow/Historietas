@@ -2124,3 +2124,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 6 — Admin Problemas Técnicos
 
 - As consultas de perfis usadas para resolver nomes foram isoladas sem alteração de campos, limites, paralelismo ou fallbacks.
+
+## Fase 7 — Admin Problemas Técnicos
+
+- A mutation Supabase de atualização do chamado foi isolada sem alteração de payload, filtros, retorno, autorização ou estado.
