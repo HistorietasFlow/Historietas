@@ -29,8 +29,7 @@ import { carregarDadosIniciaisTop5 } from "./lib/top5-initial-data-loader";
 import { prepararConteudoInicialTop5 } from "./lib/top5-initial-content";
 import { persistirSelecaoTop5 } from "./lib/top5-selection-save";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
-import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
-import { obterNomeInicialUsuarioTop5 } from "./lib/top5-user-name";
+import { resolverNomeUsuarioTop5 } from "./lib/top5-user-name-resolver";
 import type {
   ObraTop5,
   UsuarioTop5,
@@ -64,18 +63,12 @@ export default function Top5PerfilAutorPage() {
         }
 
         const userId = authData.user?.id || "";
-        let nomeUsuario = obterNomeInicialUsuarioTop5(
+        const nomeUsuario = await resolverNomeUsuarioTop5(
+          userId,
           authData.user?.user_metadata?.nome,
           authData.user?.user_metadata?.name,
           authData.user?.email,
         );
-
-        if (userId) {
-          nomeUsuario = await carregarNomePerfilTop5(
-            userId,
-            nomeUsuario,
-          );
-        }
 
         if (cancelado) {
           return;
