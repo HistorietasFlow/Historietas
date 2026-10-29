@@ -2300,3 +2300,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 5 — Top 5 do Perfil Autor
 
 - A geração dos identificadores e da chave canônica das obras foi movida para módulo puro dedicado, preservando prioridade, deduplicação, slug e normalização textual.
+
+## Fase 6 — Top 5 do Perfil Autor
+
+- Os helpers genéricos de chave, leitura e escrita de localStorage por usuário foram movidos para módulo dedicado, preservando SSR guards, formato da chave, serialização e fallbacks.

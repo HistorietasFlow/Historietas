@@ -21,6 +21,10 @@ import {
   criarChaveObraTop5,
   obterIdentificadoresObraTop5,
 } from "./lib/top5-work-identifiers";
+import {
+  lerStorageUsuarioTop5,
+  salvarJsonStorageUsuarioTop5,
+} from "./lib/top5-storage-utils";
 import type {
   ObraTop5,
   ObraTop5Salva,
@@ -32,53 +36,6 @@ import type {
 const STORAGE_KEY = "historietas-obras";
 const TOP_FIVE_STORAGE_KEY = "historietas-top-5-obras";
 const TOP_FIVE_MAXIMO = 5;
-
-function criarStorageKeyUsuarioTop5(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function lerStorageUsuarioTop5(chave: string, userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioTop5(chave, userIdLimpo);
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioTop5(
-  chave: string,
-  userId: string,
-  valor: unknown,
-) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return false;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioTop5(chave, userIdLimpo);
-
-    if (!chaveStorage) {
-      return false;
-    }
-
-    localStorage.setItem(chaveStorage, JSON.stringify(valor));
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 function carregarObrasLocaisTop5(userId = "") {
   const userIdLimpo = userId.trim();
