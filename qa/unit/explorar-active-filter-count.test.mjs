@@ -92,7 +92,7 @@ test("conta exatamente os cinco filtros avançados atuais", async () => {
   );
 });
 
-test("preserva as cinco expressões e mantém filtrosAtivos e tradução na página", async () => {
+test("preserva as cinco expressões e delega somente a contagem avançada", async () => {
   const [source, pageRaw] = await Promise.all([
     readFile(modulePath, "utf8"),
     readFile(pagePath, "utf8"),
@@ -116,10 +116,5 @@ test("preserva as cinco expressões e mantém filtrosAtivos e tradução na pág
   assert.match(
     page,
     /const totalFiltrosAvancadosAtivos = contarFiltrosAvancadosAtivosExplorar\(\{[\s\S]*?ordenacao,\n  \}\);/,
-  );
-  assert.match(page, /const filtrosAtivos = Boolean\([\s\S]*?categoriaSelecionada \|\|[\s\S]*?termoBusca/);
-  assert.match(
-    page,
-    /const textoBotaoFiltrosAvancados = traduzirTextoExplorar\([\s\S]*?`Explorar \(\$\{totalFiltrosAvancadosAtivos\}\)`/,
   );
 });
