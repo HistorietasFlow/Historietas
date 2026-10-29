@@ -14,10 +14,7 @@ const pagePath = path.join(root, "app/explorar/page.tsx");
 async function carregarCalcularTotalResultadosExplorar() {
   const source = await readFile(modulePath, "utf8");
   const executable = source
-    .replace(
-      'import type { ModoConteudoExplorar } from "../components/explorar-section-components";\n\n',
-      "",
-    )
+    .replace(/import type \{ ModoConteudoExplorar \} from "\.\.\/components\/explorar-section-components";\r?\n\r?\n/, "")
     .replace("export function calcularTotalResultadosExplorar", "function calcularTotalResultadosExplorar")
     .replace(/: ModoConteudoExplorar|: number/g, "");
 

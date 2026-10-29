@@ -33,9 +33,12 @@ import {
   obterTituloCriativoAutoresExplorar,
   obterTituloCriativoObrasExplorar,
 } from "./lib/explorar-category-titles";
+import { filtroConteudo18EstaAtivoExplorar } from "./lib/explorar-adult-filter-state";
 import { contarFiltrosAvancadosAtivosExplorar } from "./lib/explorar-active-filter-count";
+import { possuiFiltrosAtivosExplorar } from "./lib/explorar-active-filters";
 import { obterAutorIdsExplorar } from "./lib/explorar-author-ids";
 import { categorias } from "./lib/explorar-categories";
+import { criarTextoBotaoFiltrosAvancadosExplorar } from "./lib/explorar-filter-button-label";
 import { criarLoginHrefExplorar } from "./lib/explorar-login-route-utils";
 import { criarHrefListaExplorar } from "./lib/explorar-list-route-utils";
 import { atualizarUrlExplorar } from "./lib/explorar-page-route-utils";
@@ -352,7 +355,10 @@ export default function ExplorarPage() {
     language,
   ]);
 
-  const filtroConteudo18Ativo = filtroClassificacao === "18+";
+  const filtroConteudo18Ativo =
+    filtroConteudo18EstaAtivoExplorar(
+      filtroClassificacao,
+    );
 
   const autoresFiltrados = useMemo(() => {
     return filtrarAutoresExplorar({
@@ -417,15 +423,17 @@ export default function ExplorarPage() {
   const possuiObrasPublicadas =
     possuiObrasPublicadasExplorar(obrasLocais);
 
-  const filtrosAtivos = Boolean(
-    categoriaSelecionada ||
-      termoBusca ||
-      filtroFormato !== "todos" ||
-      filtroClassificacao !== "todos" ||
-      filtroCapitulos !== "todos" ||
-      (usuarioLogado && filtroColecao !== "todos") ||
-      ordenacao !== "relevancia"
-  );
+  const filtrosAtivos =
+    possuiFiltrosAtivosExplorar({
+      categoriaSelecionada,
+      termoBusca,
+      filtroFormato,
+      filtroClassificacao,
+      filtroCapitulos,
+      usuarioLogado,
+      filtroColecao,
+      ordenacao,
+    });
 
   const totalFiltrosAvancadosAtivos = contarFiltrosAvancadosAtivosExplorar({
     usuarioLogado,
@@ -436,12 +444,11 @@ export default function ExplorarPage() {
     ordenacao,
   });
 
-  const textoBotaoFiltrosAvancados = traduzirTextoExplorar(
-    totalFiltrosAvancadosAtivos > 0
-      ? `Explorar (${totalFiltrosAvancadosAtivos})`
-      : "Explorar",
-    language
-  );
+  const textoBotaoFiltrosAvancados =
+    criarTextoBotaoFiltrosAvancadosExplorar(
+      totalFiltrosAvancadosAtivos,
+      language,
+    );
 
   const temaPagina = criarTemaPaginaVisualExplorar();
 

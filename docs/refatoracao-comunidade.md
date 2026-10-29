@@ -2464,3 +2464,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 5
 
 - As derivações puras de total de resultados, existência de obras publicadas e contagem de filtros avançados ativos foram movidas para helpers dedicados, mantendo estados, filtros, tradução e renderização na página.
+
+## Explorar — Fase 6
+
+- As derivações puras de estado geral de filtros ativos, estado do filtro 18+ e texto traduzido do botão de filtros avançados foram movidas para helpers dedicados, mantendo estados, handlers, tradução-base, effects e renderização na página.
