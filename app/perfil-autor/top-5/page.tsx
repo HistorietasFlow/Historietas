@@ -39,13 +39,10 @@ import {
 } from "./lib/top5-selected-section-styles";
 import {
   loadingStyle,
-  loginButtonStyle,
   messageStyle,
-  noticeStyle,
-  noticeTextStyle,
-  noticeTitleStyle,
 } from "./lib/top5-search-feedback-styles";
 import { Top5SearchSection } from "./components/top5-search-section";
+import { Top5LoginNotice } from "./components/top5-login-notice";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
@@ -320,15 +317,7 @@ export default function Top5PerfilAutorPage() {
       )}
 
       {!usuario && !carregando && (
-        <section style={noticeStyle}>
-          <strong style={noticeTitleStyle}>Entre para salvar seu TOP 5</strong>
-          <span style={noticeTextStyle}>
-            Você pode ver as obras, mas precisa estar logado para salvar suas escolhas.
-          </span>
-          <Link href="/login?redirectTo=/perfil-autor/top-5" style={loginButtonStyle}>
-            Entrar
-          </Link>
-        </section>
+        <Top5LoginNotice />
       )}
 
       <section style={gridSectionStyle} aria-label="Lista de obras disponíveis">

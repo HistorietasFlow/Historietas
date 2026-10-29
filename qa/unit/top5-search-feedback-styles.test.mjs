@@ -40,10 +40,6 @@ test("Top 5 delega somente os estilos de busca e feedback", async () => {
   for (const styleName of [
     "messageStyle",
     "loadingStyle",
-    "noticeStyle",
-    "noticeTitleStyle",
-    "noticeTextStyle",
-    "loginButtonStyle",
   ]) {
     assert.match(page, new RegExp(styleName));
   }
@@ -72,7 +68,7 @@ test("Top 5 delega somente os estilos de busca e feedback", async () => {
   assert.doesNotMatch(page, /CSSProperties/);
   assert.match(
     page,
-    /import \{[\s\S]*loadingStyle,[\s\S]*loginButtonStyle,[\s\S]*messageStyle,[\s\S]*noticeStyle,[\s\S]*noticeTextStyle,[\s\S]*noticeTitleStyle,[\s\S]*from "\.\/lib\/top5-search-feedback-styles";/,
+    /import \{[\s\S]*loadingStyle,[\s\S]*messageStyle,[\s\S]*from "\.\/lib\/top5-search-feedback-styles";/,
   );
 
   for (const forbidden of [
