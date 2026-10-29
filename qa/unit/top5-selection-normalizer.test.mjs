@@ -43,7 +43,11 @@ test("Top 5 delega somente a normalização pura da seleção", async () => {
     /import \{ mesclarObrasTop5 \} from "\.\/lib\/top5-work-merge";/,
   );
   assert.match(page, /mesclarObrasTop5\(/);
-  assert.match(page, /obterIdentificadoresObraTop5/);
+  assert.match(
+    page,
+    /import \{\s*criarMapaObrasTop5,\s*selecionarObrasTop5,\s*\} from "\.\/lib\/top5-work-selectors";/,
+  );
+  assert.doesNotMatch(page, /obterIdentificadoresObraTop5/);
 
   for (const forbidden of [
     "react",

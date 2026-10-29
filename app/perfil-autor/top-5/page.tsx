@@ -13,10 +13,11 @@ import { Top5LanguageBridge } from "./components/top5-language-bridge";
 import { top5PerfilAutorPageCss } from "./lib/top5-page-css";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { pegarTexto } from "./lib/top5-work-normalizers";
+import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
-  criarChaveObraTop5,
-  obterIdentificadoresObraTop5,
-} from "./lib/top5-work-identifiers";
+  criarMapaObrasTop5,
+  selecionarObrasTop5,
+} from "./lib/top5-work-selectors";
 import { carregarObrasLocaisTop5 } from "./lib/top5-local-works-loader";
 import { carregarObrasSupabaseTop5 } from "./lib/top5-supabase-works-loader";
 import {
@@ -126,20 +127,17 @@ export default function Top5PerfilAutorPage() {
     };
   }, []);
 
-  const obrasPorChave = useMemo(() => {
-    const mapa = new Map<string, ObraTop5>();
-
-    obras.forEach((obra) => {
-      obterIdentificadoresObraTop5(obra).forEach((chave) => {
-        mapa.set(chave, obra);
-      });
-    });
-
-    return mapa;
-  }, [obras]);
+  const obrasPorChave = useMemo(
+    () => criarMapaObrasTop5(obras),
+    [obras],
+  );
 
   const obrasSelecionadas = useMemo(
-    () => idsSelecionados.map((id) => obrasPorChave.get(id)).filter((obra): obra is ObraTop5 => Boolean(obra)),
+    () =>
+      selecionarObrasTop5(
+        idsSelecionados,
+        obrasPorChave,
+      ),
     [idsSelecionados, obrasPorChave],
   );
 
