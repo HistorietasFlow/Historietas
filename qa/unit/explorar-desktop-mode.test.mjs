@@ -98,7 +98,7 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
     readFileSync(new URL("../../app/explorar/hooks/use-explorar-initial-load.ts", import.meta.url), "utf8"),
     /async function carregarExplorar\(\)/,
   );
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /useExplorarAuthState\(\{/);
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.match(
     readFileSync(new URL("../../app/explorar/hooks/use-explorar-catalog-query.ts", import.meta.url), "utf8"),

@@ -123,8 +123,8 @@ test("memo, condição, efeito e paginação preservam literalmente a base", () 
   assert.match(pagina, /onCarregarMais=\{\(\) =>\n                    void carregarMaisObrasCatalogo\(\)\n                  \}/);
   assert.match(botaoCarregarMais, /onClick=\{onCarregarMais\}/);
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
-  assert.match(pagina, /supabase\.auth\.onAuthStateChange/);
-  assert.match(pagina, /async function carregarDadosAutores\(/);
+  assert.match(pagina, /useExplorarAuthState\(\{/);
+  assert.match(pagina, /useExplorarAuthorData\(\{/);
   assert.doesNotMatch(codigo, /onAuthStateChange|carregarDadosAutores|useExplorarInitialLoad/);
 });
 

@@ -10,6 +10,7 @@ const root = path.resolve(
 );
 const modulePath = path.join(root, "app/explorar/lib/explorar-author-ids.ts");
 const pagePath = path.join(root, "app/explorar/page.tsx");
+const hookPath = path.join(root, "app/explorar/hooks/use-explorar-author-data.ts");
 
 async function carregarObterAutorIdsExplorar() {
   const source = await readFile(modulePath, "utf8");
@@ -41,23 +42,26 @@ test("deriva IDs publicados com conteúdo, sem vazios ou duplicados, preservando
 });
 
 test("o helper e o effect preservam os contratos de derivação e lifecycle", async () => {
-  const [source, pageRaw] = await Promise.all([
+  const [source, pageRaw, hookRaw] = await Promise.all([
     readFile(modulePath, "utf8"),
     readFile(pagePath, "utf8"),
+    readFile(hookPath, "utf8"),
   ]);
   const page = pageRaw.replace(/\r\n/g, "\n");
+  const hook = hookRaw.replace(/\r\n/g, "\n");
 
   assert.match(source, /obra\.publicado && obraTemConteudoPublicadoExplorar\(obra\)/);
   assert.match(source, /obra\.autorId\?\.trim\(\) \|\| ""/);
   assert.match(source, /\.filter\(Boolean\)/);
   assert.match(source, /new Set\(/);
   assert.match(source, /return Array\.from\(/);
-  assert.match(page, /import \{ obterAutorIdsExplorar \} from "\.\/lib\/explorar-author-ids";/);
-  assert.match(page, /const autorIds = obterAutorIdsExplorar\(obrasLocais\);/);
-  assert.match(page, /let cancelado = false;/);
-  assert.match(page, /async function carregarDadosAutores\(\)/);
-  assert.match(page, /if \(autorIds\.length === 0\)/);
-  assert.match(page, /await Promise\.resolve\(\);/);
-  assert.match(page, /Promise\.all\(/);
-  assert.match(page, /cancelado = true;/);
+  assert.match(page, /useExplorarAuthorData\(\{/);
+  assert.match(hook, /import \{ obterAutorIdsExplorar \} from "\.\.\/lib\/explorar-author-ids";/);
+  assert.match(hook, /const autorIds = obterAutorIdsExplorar\(obrasLocais\);/);
+  assert.match(hook, /let cancelado = false;/);
+  assert.match(hook, /async function carregarDadosAutores\(\)/);
+  assert.match(hook, /if \(autorIds\.length === 0\)/);
+  assert.match(hook, /await Promise\.resolve\(\);/);
+  assert.match(hook, /Promise\.all\(/);
+  assert.match(hook, /cancelado = true;/);
 });

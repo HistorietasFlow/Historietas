@@ -2492,3 +2492,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 12
 
 - As seções criativas de autores, as seções de autores por gênero e a grade de autores filtrados foram movidas para componentes dedicados, mantendo condições de exibição, títulos derivados e estado vazio em `page.tsx`.
+
+## Explorar — Fase 13
+
+- A sincronização de autenticação e o carregamento cancelável de dados de autores foram movidos para hooks dedicados, mantendo estados, setters, filtros e regras de negócio na página.

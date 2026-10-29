@@ -1,9 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import { supabase } from "../../lib/supabase/client";
 import { normalizarTexto } from "../../lib/utils";
 import {
   historietasThemeCss,
@@ -45,7 +44,6 @@ import { criarPerfilAutorHrefExplorar } from "./lib/explorar-author-route-utils"
 import { filtroConteudo18EstaAtivoExplorar } from "./lib/explorar-adult-filter-state";
 import { contarFiltrosAvancadosAtivosExplorar } from "./lib/explorar-active-filter-count";
 import { possuiFiltrosAtivosExplorar } from "./lib/explorar-active-filters";
-import { obterAutorIdsExplorar } from "./lib/explorar-author-ids";
 import { categorias } from "./lib/explorar-categories";
 import { criarTextoBotaoFiltrosAvancadosExplorar } from "./lib/explorar-filter-button-label";
 import { criarLoginHrefExplorar } from "./lib/explorar-login-route-utils";
@@ -60,6 +58,8 @@ import {
   criarTemaPaginaVisualExplorar,
 } from "./lib/explorar-theme";
 import { useExplorarAdvancedFiltersBodyLock } from "./hooks/use-explorar-advanced-filters-body-lock";
+import { useExplorarAuthState } from "./hooks/use-explorar-auth-state";
+import { useExplorarAuthorData } from "./hooks/use-explorar-author-data";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
 import { useExplorarCatalogQuery } from "./hooks/use-explorar-catalog-query";
@@ -83,8 +83,6 @@ import {
 } from "./lib/explorar-local-storage";
 import {
   criarBioAutorExplorar,
-  carregarPerfisAutoresExplorar,
-  carregarAvaliacoesAutoresExplorar,
 } from "./lib/explorar-author-profile-utils";
 import type {
   AvaliacoesAutoresExplorar,
@@ -145,47 +143,11 @@ export default function ExplorarPage() {
   const obrasCacheLocalRef = useRef<ObraLocal[]>([]);
   const usuarioIdExplorarRef = useRef("");
 
-  useEffect(() => {
-    let componenteAtivo = true;
-
-    async function verificarUsuarioLogado() {
-      try {
-        const { data } = await supabase.auth.getUser();
-
-        if (componenteAtivo) {
-          const userId = data.user?.id || "";
-
-          setUsuarioLogado(Boolean(userId));
-        }
-      } catch {
-        if (componenteAtivo) {
-          setUsuarioLogado(false);
-        }
-      }
-    }
-
-    void verificarUsuarioLogado();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const userId = session?.user?.id || "";
-
-      setUsuarioLogado(Boolean(userId));
-
-      if (session?.user) {
-        setMensagemLogin("");
-        return;
-      }
-
-      setFiltroColecao("todos");
-    });
-
-    return () => {
-      componenteAtivo = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+  useExplorarAuthState({
+    setUsuarioLogado,
+    setMensagemLogin,
+    setFiltroColecao,
+  });
 
   useExplorarAdvancedFiltersBodyLock(mostrarFiltrosAvancados);
 
@@ -205,40 +167,11 @@ export default function ExplorarPage() {
     COMPLETED_STORAGE_KEY,
   });
 
-  useEffect(() => {
-    const autorIds = obterAutorIdsExplorar(obrasLocais);
-
-    let cancelado = false;
-
-    async function carregarDadosAutores() {
-      if (autorIds.length === 0) {
-        await Promise.resolve();
-
-        if (!cancelado) {
-          setPerfisAutores({});
-          setAvaliacoesAutores({});
-        }
-
-        return;
-      }
-
-      const [perfis, avaliacoes] = await Promise.all([
-        carregarPerfisAutoresExplorar(autorIds),
-        carregarAvaliacoesAutoresExplorar(autorIds),
-      ]);
-
-      if (!cancelado) {
-        setPerfisAutores(perfis);
-        setAvaliacoesAutores(avaliacoes);
-      }
-    }
-
-    void carregarDadosAutores();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [obrasLocais]);
+  useExplorarAuthorData({
+    obrasLocais,
+    setPerfisAutores,
+    setAvaliacoesAutores,
+  });
 
   const termoBusca = normalizarTexto(busca);
   const { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo } =
