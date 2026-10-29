@@ -2496,3 +2496,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 13
 
 - A sincronização de autenticação e o carregamento cancelável de dados de autores foram movidos para hooks dedicados, mantendo estados, setters, filtros e regras de negócio na página.
+
+## Fase 1 — Ajuda
+
+- O conteúdo estático da Central de Ajuda, os tipos e opções estáticas do suporte técnico e o componente SVG de ícones foram movidos para módulos dedicados, mantendo formulário, autenticação, Supabase, RPCs, efeitos, estados e regras de negócio em `page.tsx`.
