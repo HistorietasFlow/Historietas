@@ -2448,3 +2448,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 1
 
 - Os mapas e resolvers de títulos criativos por gênero foram movidos para módulo puro dedicado, preservando textos, normalização e fallbacks.
+
+## Explorar — Fase 2
+
+- A construção das URLs de `/listas` foi movida para helper puro dedicado, preservando normalização, parâmetros, seções, ordenações e fallbacks.
