@@ -25,6 +25,9 @@ import { ExplorarCategoriesBar } from "./components/explorar-categories-bar";
 import { ExplorarDesktopHeader } from "./components/explorar-desktop-header";
 import { ExplorarMobileHeader } from "./components/explorar-mobile-header";
 import { ExplorarAdvancedFiltersShell } from "./components/explorar-advanced-filters-shell";
+import { ExplorarAdultContentFilter } from "./components/explorar-adult-content-filter";
+import { ExplorarOrderingOptions } from "./components/explorar-ordering-options";
+import { ExplorarClearFiltersAction } from "./components/explorar-clear-filters-action";
 import {
   EstadoVazioExplorar,
   ExplorarCarouselRow,
@@ -73,19 +76,6 @@ import {
   criarExplorarPageStyle,
   containerStyle,
   explorarModalSectionLabelStyle,
-  criarExplorarModalOptionStyle,
-  criarExplorarModalRadioStyle,
-  explorarModalClearDividerStyle,
-  explorarModalClearButtonStyle,
-  explorarAdultConfirmationStyle,
-  explorarAdultConfirmationTitleStyle,
-  explorarAdultConfirmationTextStyle,
-  explorarAdultConfirmationCheckStyle,
-  explorarAdultConfirmationCheckboxStyle,
-  explorarAdultConfirmationActionsStyle,
-  explorarAdultConfirmationBackStyle,
-  explorarAdultConfirmationContinueStyle,
-  explorarAdultConfirmationDisabledStyle,
   desktopContainerStyle,
 } from "./lib/explorar-layout-styles";
 import {
@@ -608,191 +598,45 @@ export default function ExplorarPage() {
                 <ExplorarCollectionFilterOptions filtroColecao={filtroColecao} language={language} onSelecionar={selecionarFiltroColecao} />
 
                 {modoConteudo === "obras" && (
-                  <>
-                    <p style={explorarModalSectionLabelStyle}>
-                      {traduzirTextoExplorar("Conteúdo 18+", language)}
-                    </p>
-
-                    {!mostrarConfirmacaoConteudo18 ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => selecionarFiltroClassificacaoExplorar("todos")}
-                          style={criarExplorarModalOptionStyle(
-                            filtroClassificacao !== "18+",
-                          )}
-                        >
-                          <span>
-                            {traduzirTextoExplorar(
-                              "Ocultar conteúdo 18+",
-                              language,
-                            )}
-                          </span>
-                          <span
-                            style={criarExplorarModalRadioStyle(
-                              filtroClassificacao !== "18+",
-                            )}
-                          >
-                            {filtroClassificacao !== "18+" ? "✓" : ""}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => selecionarFiltroClassificacaoExplorar("18+")}
-                          style={criarExplorarModalOptionStyle(
-                            filtroClassificacao === "18+",
-                          )}
-                        >
-                          <span>
-                            {traduzirTextoExplorar(
-                              "Mostrar conteúdo 18+",
-                              language,
-                            )}
-                          </span>
-                          <span
-                            style={criarExplorarModalRadioStyle(
-                              filtroClassificacao === "18+",
-                            )}
-                          >
-                            {filtroClassificacao === "18+" ? "✓" : ""}
-                          </span>
-                        </button>
-                      </>
-                    ) : (
-                      <div style={explorarAdultConfirmationStyle}>
-                        {ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO ? (
-                          <>
-                            <strong style={explorarAdultConfirmationTitleStyle}>
-                              {traduzirTextoExplorar(
-                                "Conteúdo 18+ temporariamente indisponível",
-                                language,
-                              )}
-                            </strong>
-                            <p style={explorarAdultConfirmationTextStyle}>
-                              {traduzirTextoExplorar(
-                                "O acesso a obras 18+ está temporariamente indisponível enquanto o Historietas implementa uma verificação de idade adequada.",
-                                language,
-                              )}
-                            </p>
-
-                            <div style={explorarAdultConfirmationActionsStyle}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setMostrarConfirmacaoConteudo18(false);
-                                  setConfirmouIdadeConteudo18(false);
-                                }}
-                                style={{
-                                  ...explorarAdultConfirmationBackStyle,
-                                  gridColumn: "1 / -1",
-                                }}
-                              >
-                                {traduzirTextoExplorar("Voltar", language)}
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <strong style={explorarAdultConfirmationTitleStyle}>
-                              {traduzirTextoExplorar("Confirmação de idade", language)}
-                            </strong>
-                            <p style={explorarAdultConfirmationTextStyle}>
-                              {traduzirTextoExplorar(
-                                "O conteúdo 18+ fica oculto por padrão. Para exibi-lo, confirme que você tem 18 anos ou mais.",
-                                language,
-                              )}
-                            </p>
-
-                            <label style={explorarAdultConfirmationCheckStyle}>
-                              <input
-                                type="checkbox"
-                                checked={confirmouIdadeConteudo18}
-                                onChange={(event) =>
-                                  setConfirmouIdadeConteudo18(event.target.checked)
-                                }
-                                style={explorarAdultConfirmationCheckboxStyle}
-                              />
-                              <span>
-                                {traduzirTextoExplorar(
-                                  "Confirmo que tenho 18 anos ou mais.",
-                                  language,
-                                )}
-                              </span>
-                            </label>
-
-                            <div style={explorarAdultConfirmationActionsStyle}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setMostrarConfirmacaoConteudo18(false);
-                                  setConfirmouIdadeConteudo18(false);
-                                }}
-                                style={explorarAdultConfirmationBackStyle}
-                              >
-                                {traduzirTextoExplorar("Voltar", language)}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={confirmarFiltroConteudo18Explorar}
-                                disabled={!confirmouIdadeConteudo18}
-                                style={{
-                                  ...explorarAdultConfirmationContinueStyle,
-                                  ...(!confirmouIdadeConteudo18
-                                    ? explorarAdultConfirmationDisabledStyle
-                                    : {}),
-                                }}
-                              >
-                                {traduzirTextoExplorar(
-                                  "Ativar conteúdo 18+",
-                                  language,
-                                )}
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </>
+                  <ExplorarAdultContentFilter
+                    filtroClassificacao={filtroClassificacao}
+                    mostrarConfirmacao={mostrarConfirmacaoConteudo18}
+                    confirmouIdade={confirmouIdadeConteudo18}
+                    acessoTemporariamenteBloqueado={
+                      ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO
+                    }
+                    language={language}
+                    onSelecionarClassificacao={
+                      selecionarFiltroClassificacaoExplorar
+                    }
+                    onConfirmouIdadeChange={setConfirmouIdadeConteudo18}
+                    onVoltar={() => {
+                      setMostrarConfirmacaoConteudo18(false);
+                      setConfirmouIdadeConteudo18(false);
+                    }}
+                    onConfirmar={confirmarFiltroConteudo18Explorar}
+                  />
                 )}
 
                 {!mostrarConfirmacaoConteudo18 && (
-                  <p style={explorarModalSectionLabelStyle}>
-                    {traduzirTextoExplorar("Ordenar", language)}
-                  </p>
+                  <>
+                    <p style={explorarModalSectionLabelStyle}>
+                      {traduzirTextoExplorar("Ordenar", language)}
+                    </p>
+
+                    <ExplorarOrderingOptions
+                      ordenacao={ordenacao}
+                      language={language}
+                      onSelecionar={setOrdenacao}
+                    />
+                  </>
                 )}
 
-                {!mostrarConfirmacaoConteudo18 &&
-                  [
-                    ["relevancia", "Relevância"],
-                    ["mais-curtidas", "Mais curtidas"],
-                    ["mais-recentes", "Mais recentes"],
-                  ].map(([valor, rotulo]) => (
-                    <button
-                      key={valor}
-                      type="button"
-                      onClick={() => setOrdenacao(valor as OrdenacaoExplorar)}
-                      style={criarExplorarModalOptionStyle(ordenacao === valor)}
-                    >
-                      <span>{traduzirTextoExplorar(rotulo, language)}</span>
-                      <span style={criarExplorarModalRadioStyle(ordenacao === valor)}>
-                        {ordenacao === valor ? "✓" : ""}
-                      </span>
-                    </button>
-                  ))}
-
                 {!mostrarConfirmacaoConteudo18 && filtrosAtivos && (
-                  <>
-                    <span style={explorarModalClearDividerStyle} aria-hidden="true" />
-
-                    <button
-                      type="button"
-                      onClick={limparFiltros}
-                      style={explorarModalClearButtonStyle}
-                    >
-                      {traduzirTextoExplorar("Limpar filtros", language)}
-                    </button>
-                  </>
+                  <ExplorarClearFiltersAction
+                    language={language}
+                    onLimpar={limparFiltros}
+                  />
                 )}
           </ExplorarAdvancedFiltersShell>
         )}

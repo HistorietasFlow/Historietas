@@ -2480,3 +2480,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 9
 
 - Os headers desktop e mobile e o shell visual do modal de filtros avançados foram movidos para componentes dedicados, mantendo estados, callbacks, filtros, conteúdo 18+, autenticação e regras de negócio em `page.tsx`.
+
+## Explorar — Fase 10
+
+- O painel visual do conteúdo 18+, as opções de ordenação e a ação de limpar filtros foram movidos para componentes dedicados, mantendo handlers, estados, regras de acesso 18+, ordenação e reset de filtros em `page.tsx`.
