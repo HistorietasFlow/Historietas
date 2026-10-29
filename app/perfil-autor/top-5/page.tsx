@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -22,26 +21,21 @@ import {
   worksGridStyle,
 } from "./lib/top5-main-styles";
 import {
-  cancelButtonStyle,
   emptySelectedSlotStyle,
-  footerActionsStyle,
-  saveButtonDisabledStyle,
-  saveButtonStyle,
   selectedActionsStyle,
-  selectedHeaderStyle,
   selectedListStyle,
   selectedMoveButtonStyle,
   selectedNumberStyle,
   selectedRemoveButtonStyle,
   selectedSectionStyle,
   selectedSlotStyle,
-  selectedTitleStyle,
 } from "./lib/top5-selected-section-styles";
 import { Top5SearchSection } from "./components/top5-search-section";
 import { Top5LoginNotice } from "./components/top5-login-notice";
 import { Top5StatusMessage } from "./components/top5-status-message";
 import { Top5LoadingMessage } from "./components/top5-loading-message";
 import { Top5EmptyWorksMessage } from "./components/top5-empty-works-message";
+import { Top5SelectedHeader } from "./components/top5-selected-header";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
@@ -235,27 +229,11 @@ export default function Top5PerfilAutorPage() {
       <Top5LanguageBridge />
       <style>{`${historietasThemeCss}${top5PerfilAutorPageCss}`}</style>
       <section style={selectedSectionStyle} aria-label="Obras escolhidas para o TOP 5">
-        <div style={selectedHeaderStyle}>
-          <span style={selectedTitleStyle}>Seu TOP 5</span>
-
-          <div style={footerActionsStyle}>
-            <Link href="/perfil-autor" style={cancelButtonStyle}>
-              Cancelar
-            </Link>
-            <button
-              type="button"
-              onClick={salvarEscolhasTop5}
-              disabled={salvando || !usuario?.id}
-              style={
-                salvando || !usuario?.id
-                  ? saveButtonDisabledStyle
-                  : saveButtonStyle
-              }
-            >
-              {salvando ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </div>
+        <Top5SelectedHeader
+          salvando={salvando}
+          salvarDesabilitado={salvando || !usuario?.id}
+          onSalvar={salvarEscolhasTop5}
+        />
 
         <div style={selectedListStyle}>
           {Array.from({ length: TOP_FIVE_MAXIMO }).map((_, index) => {

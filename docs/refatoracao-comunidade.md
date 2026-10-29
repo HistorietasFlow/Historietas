@@ -2412,3 +2412,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 33 — Top 5 do Perfil Autor
 
 - O estado visual de lista vazia foi movido para componente apresentacional dedicado, preservando a condição do grid na página, texto e estilos.
+
+## Fase 34 — Top 5 do Perfil Autor
+
+- O cabeçalho da seleção e as ações Cancelar/Salvar foram movidos para componente controlado dedicado, preservando estado e regra de desabilitação na página.

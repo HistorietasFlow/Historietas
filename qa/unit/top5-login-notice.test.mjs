@@ -47,8 +47,6 @@ test("Top 5 delega somente o aviso apresentacional de login", async () => {
   );
   assert.doesNotMatch(page, /Entre para salvar seu TOP 5/);
   assert.doesNotMatch(page, /\/login\?redirectTo=\/perfil-autor\/top-5/);
-  assert.match(page, /import Link from "next\/link";/);
-  assert.match(page, /<Link href="\/perfil-autor" style=\{cancelButtonStyle\}>/);
 
   for (const noticeStyleName of [
     "loginButtonStyle",

@@ -45,7 +45,6 @@ test("Top 5 delega somente os estilos da seção de obras selecionadas", async (
       page,
       new RegExp(`const ${styleName}: CSSProperties =`),
     );
-    assert.match(page, new RegExp(styleName));
   }
 
   for (const value of [
@@ -73,8 +72,19 @@ test("Top 5 delega somente os estilos da seção de obras selecionadas", async (
   assert.doesNotMatch(page, /CSSProperties/);
   assert.match(
     page,
-    /import \{[\s\S]*cancelButtonStyle,[\s\S]*emptySelectedSlotStyle,[\s\S]*footerActionsStyle,[\s\S]*saveButtonDisabledStyle,[\s\S]*saveButtonStyle,[\s\S]*selectedActionsStyle,[\s\S]*selectedHeaderStyle,[\s\S]*selectedListStyle,[\s\S]*selectedMoveButtonStyle,[\s\S]*selectedNumberStyle,[\s\S]*selectedRemoveButtonStyle,[\s\S]*selectedSectionStyle,[\s\S]*selectedSlotStyle,[\s\S]*selectedTitleStyle,[\s\S]*from "\.\/lib\/top5-selected-section-styles";/,
+    /import \{[\s\S]*emptySelectedSlotStyle,[\s\S]*selectedActionsStyle,[\s\S]*selectedListStyle,[\s\S]*selectedMoveButtonStyle,[\s\S]*selectedNumberStyle,[\s\S]*selectedRemoveButtonStyle,[\s\S]*selectedSectionStyle,[\s\S]*selectedSlotStyle,[\s\S]*from "\.\/lib\/top5-selected-section-styles";/,
   );
+
+  for (const headerStyleName of [
+    "cancelButtonStyle",
+    "footerActionsStyle",
+    "saveButtonDisabledStyle",
+    "saveButtonStyle",
+    "selectedHeaderStyle",
+    "selectedTitleStyle",
+  ]) {
+    assert.doesNotMatch(page, new RegExp(headerStyleName));
+  }
 
   for (const forbidden of [
     "useEffect",
