@@ -65,11 +65,11 @@ test("Top 5 delega somente os normalizadores de obra para módulo dedicado", asy
 
   assert.match(
     page,
-    /import \{[\s\S]*normalizarObraLocalTop5,[\s\S]*normalizarObraSupabaseTop5,[\s\S]*pegarTexto,[\s\S]*from "\.\/lib\/top5-work-normalizers";/,
+    /import \{[\s\S]*normalizarObraSupabaseTop5,[\s\S]*pegarTexto,[\s\S]*from "\.\/lib\/top5-work-normalizers";/,
   );
   assert.match(page, /import \{ normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/);
   assert.doesNotMatch(page, /criarSlugBase/);
-  assert.match(page, /normalizarObraLocalTop5\(/);
+  assert.doesNotMatch(page, /normalizarObraLocalTop5/);
   assert.match(page, /normalizarObraSupabaseTop5\(/);
 
   for (const forbidden of [

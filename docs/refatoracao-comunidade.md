@@ -2308,3 +2308,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 7 — Top 5 do Perfil Autor
 
 - A persistência da seleção TOP 5 foi movida para módulo dedicado, preservando chave de storage, limite de cinco obras, deduplicação, trim, SSR guards e serialização.
+
+## Fase 8 — Top 5 do Perfil Autor
+
+- O carregamento das obras locais por usuário foi movido para loader dedicado, preservando chave de storage, SSR guard, parsing, validação, normalização e fallbacks.
