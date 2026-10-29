@@ -18,6 +18,10 @@ import {
 } from "./lib/top5-work-identifiers";
 import { carregarObrasLocaisTop5 } from "./lib/top5-local-works-loader";
 import { carregarObrasSupabaseTop5 } from "./lib/top5-supabase-works-loader";
+import {
+  criarCapaSelecionadaTop5Style,
+  criarCapaTop5Style,
+} from "./lib/top5-cover-styles";
 import { mesclarObrasTop5 } from "./lib/top5-work-merge";
 import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
 import {
@@ -29,32 +33,6 @@ import type {
   ObraTop5,
   UsuarioTop5,
 } from "./lib/top5-types";
-
-function criarCapaTop5Style(capa: string): CSSProperties {
-  if (!capa) {
-    return top5CoverEmptyStyle;
-  }
-
-  return {
-    ...top5CoverStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarCapaSelecionadaTop5Style(capa: string): CSSProperties {
-  if (!capa) {
-    return selectedCoverEmptyStyle;
-  }
-
-  return {
-    ...selectedCoverStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
 
 export default function Top5PerfilAutorPage() {
   const router = useRouter();
@@ -601,18 +579,6 @@ const selectedMoveButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-const selectedCoverStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  background: "#09090B",
-};
-
-const selectedCoverEmptyStyle: CSSProperties = {
-  ...selectedCoverStyle,
-  background:
-    "linear-gradient(135deg, var(--historietas-top5-purple-empty, rgba(124,58,237,0.18)), var(--historietas-top5-orange-soft, rgba(249,115,22,0.10))), #09090B",
-};
-
 const emptySelectedSlotStyle: CSSProperties = {
   width: "100%",
   height: "100%",
@@ -757,23 +723,6 @@ const top5CardStyle: CSSProperties = {
 
 const top5CardSelectedStyle: CSSProperties = {
   ...top5CardStyle,
-};
-
-const top5CoverStyle: CSSProperties = {
-  position: "relative",
-  width: "100%",
-  aspectRatio: "3 / 4",
-  borderRadius: "12px",
-  overflow: "hidden",
-  background: "#09090B",
-  border: "none",
-  boxShadow: "none",
-};
-
-const top5CoverEmptyStyle: CSSProperties = {
-  ...top5CoverStyle,
-  background:
-    "linear-gradient(135deg, var(--historietas-top5-purple-cover, rgba(124,58,237,0.22)), var(--historietas-top5-orange-cover, rgba(249,115,22,0.13))), #09090B",
 };
 
 const selectedBadgeStyle: CSSProperties = {

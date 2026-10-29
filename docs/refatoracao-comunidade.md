@@ -2324,3 +2324,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 11 — Top 5 do Perfil Autor
 
 - A normalização dos IDs selecionados foi movida para módulo puro dedicado, preservando resolução por identificadores, chave canônica, deduplicação, ordem e limite máximo.
+
+## Fase 12 — Top 5 do Perfil Autor
+
+- Os helpers e estilos específicos das capas disponíveis e selecionadas foram movidos para módulo dedicado, preservando fallbacks, gradientes e composição visual.
