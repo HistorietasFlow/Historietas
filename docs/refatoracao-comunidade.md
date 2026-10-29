@@ -2420,3 +2420,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 35 — Top 5 do Perfil Autor
 
 - A lista visual dos cinco slots selecionados foi movida para componente controlado dedicado, preservando handlers, estado e seleção derivada na página.
+
+## Fase 36 — Top 5 do Perfil Autor
+
+- O grid visual das obras disponíveis foi movido para componente controlado dedicado, preservando filtro, seleção e handler de alternância na página.
