@@ -2332,3 +2332,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 13 — Top 5 do Perfil Autor
 
 - O CSS global da página Top 5 foi movido para módulo dedicado, preservando variáveis de tema, seletores, media query, valores e `!important`.
+
+## Fase 14 — Top 5 do Perfil Autor
+
+- A ordenação e o filtro textual das obras disponíveis foram movidos para função pura dedicada, preservando prioridade das selecionadas, locale `pt-BR`, normalização e campos pesquisáveis.

@@ -51,7 +51,7 @@ test("Top 5 delega somente os identificadores e a chave canônica de obras", asy
   assert.doesNotMatch(page, /function criarChaveObraTop5/);
   assert.match(page, /obterIdentificadoresObraTop5\(/);
   assert.match(page, /criarChaveObraTop5\(/);
-  assert.match(
+  assert.doesNotMatch(
     page,
     /import \{ normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/,
   );
