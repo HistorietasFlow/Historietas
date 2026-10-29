@@ -25,7 +25,6 @@ import {
 } from "./components/explorar-section-components";
 import type {
   ModoConteudoExplorar,
-  TemaCategoriaExplorar,
 } from "./components/explorar-section-components";
 import AutorExplorarCard from "./components/explorar-autor-card";
 import ObraPublicadaCard from "./components/explorar-obra-publicada-card";
@@ -34,7 +33,13 @@ import {
   obterTituloCriativoAutoresExplorar,
   obterTituloCriativoObrasExplorar,
 } from "./lib/explorar-category-titles";
+import { categorias } from "./lib/explorar-categories";
+import { criarLoginHrefExplorar } from "./lib/explorar-login-route-utils";
 import { criarHrefListaExplorar } from "./lib/explorar-list-route-utils";
+import {
+  criarTemaPaginaVisualExplorar,
+  obterTemaCategoria,
+} from "./lib/explorar-theme";
 import { useExplorarAdvancedFiltersBodyLock } from "./hooks/use-explorar-advanced-filters-body-lock";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
@@ -138,63 +143,6 @@ import type {
 
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
-const categorias = [
-  "Ação",
-  "Aventura",
-  "Comédia",
-  "Drama",
-  "Fantasia",
-  "Ficção",
-  "Mistério",
-  "Romance",
-  "Suspense",
-  "Terror",
-  "Sobrenatural",
-  "Histórico",
-  "Biografia",
-];
-
-function criarLoginHrefExplorar() {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/explorar";
-  const destinoSeguro =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/explorar";
-  const params = new URLSearchParams({
-    redirectTo: destinoSeguro,
-  });
-
-  return `/login?${params.toString()}`;
-}
-
-function obterTemaCategoria(): TemaCategoriaExplorar {
-  return {
-    accent: "#FFFFFF",
-    secondary: "#A1A1AA",
-    bgStart: "#000000",
-    bgMid: "#000000",
-    bgEnd: "#000000",
-    glowPrimary: "transparent",
-    glowSecondary: "transparent",
-    titleTo: "#FFFFFF",
-    activeSurface: "rgba(255,255,255,0.10)",
-    secondarySurface: "rgba(255,255,255,0.06)",
-    secondaryButtonText: "#FFFFFF",
-    activeBackground: "#050505",
-    pageBackground: "#000000",
-    heroBackground: "#000000",
-  };
-}
-
-function criarTemaPaginaVisualExplorar(): TemaCategoriaExplorar {
-  return obterTemaCategoria();
-}
-
-
 
 export default function ExplorarPage() {
   const router = useRouter();
