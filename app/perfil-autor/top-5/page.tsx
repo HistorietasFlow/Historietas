@@ -21,10 +21,12 @@ import {
   criarChaveObraTop5,
   obterIdentificadoresObraTop5,
 } from "./lib/top5-work-identifiers";
+import { lerStorageUsuarioTop5 } from "./lib/top5-storage-utils";
 import {
-  lerStorageUsuarioTop5,
-  salvarJsonStorageUsuarioTop5,
-} from "./lib/top5-storage-utils";
+  TOP_FIVE_MAXIMO,
+  carregarTop5Salvo,
+  salvarTop5,
+} from "./lib/top5-selection-storage";
 import type {
   ObraTop5,
   ObraTop5Salva,
@@ -34,8 +36,6 @@ import type {
 
 
 const STORAGE_KEY = "historietas-obras";
-const TOP_FIVE_STORAGE_KEY = "historietas-top-5-obras";
-const TOP_FIVE_MAXIMO = 5;
 
 function carregarObrasLocaisTop5(userId = "") {
   const userIdLimpo = userId.trim();
@@ -128,50 +128,6 @@ function mesclarObrasTop5(obras: ObraTop5[]) {
   });
 
   return obrasMescladas;
-}
-
-function carregarTop5Salvo(userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return [] as string[];
-  }
-
-  try {
-    const texto = lerStorageUsuarioTop5(TOP_FIVE_STORAGE_KEY, userIdLimpo);
-    const ids = texto ? JSON.parse(texto) : [];
-
-    if (!Array.isArray(ids)) {
-      return [] as string[];
-    }
-
-    return Array.from(
-      new Set(
-        ids
-          .filter(
-            (id): id is string =>
-              typeof id === "string" && Boolean(id.trim()),
-          )
-          .map((id) => id.trim()),
-      ),
-    ).slice(0, TOP_FIVE_MAXIMO);
-  } catch {
-    return [] as string[];
-  }
-}
-
-function salvarTop5(userId: string, ids: string[]) {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return false;
-  }
-
-  return salvarJsonStorageUsuarioTop5(
-    TOP_FIVE_STORAGE_KEY,
-    userIdLimpo,
-    ids.slice(0, TOP_FIVE_MAXIMO),
-  );
 }
 
 function normalizarIdsSelecionadosTop5(
