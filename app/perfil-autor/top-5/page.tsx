@@ -51,7 +51,6 @@ import {
   searchShellStyle,
 } from "./lib/top5-search-feedback-styles";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
-import { pegarTexto } from "./lib/top5-work-normalizers";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
   criarMapaObrasTop5,
@@ -67,6 +66,7 @@ import { mesclarObrasTop5 } from "./lib/top5-work-merge";
 import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
+import { obterNomeInicialUsuarioTop5 } from "./lib/top5-user-name";
 import {
   TOP_FIVE_MAXIMO,
   carregarTop5Salvo,
@@ -105,11 +105,11 @@ export default function Top5PerfilAutorPage() {
         }
 
         const userId = authData.user?.id || "";
-        let nomeUsuario =
-          pegarTexto(authData.user?.user_metadata?.nome) ||
-          pegarTexto(authData.user?.user_metadata?.name) ||
-          pegarTexto(authData.user?.email) ||
-          "Usuário";
+        let nomeUsuario = obterNomeInicialUsuarioTop5(
+          authData.user?.user_metadata?.nome,
+          authData.user?.user_metadata?.name,
+          authData.user?.email,
+        );
 
         if (userId) {
           nomeUsuario = await carregarNomePerfilTop5(
