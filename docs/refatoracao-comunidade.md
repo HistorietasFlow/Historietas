@@ -2316,3 +2316,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 9 — Top 5 do Perfil Autor
 
 - O carregamento remoto das obras publicadas via Supabase foi movido para loader dedicado, preservando seleção de campos, filtro de publicação, ordenação, limite, normalização e fallback.
+
+## Fase 10 — Top 5 do Perfil Autor
+
+- A mesclagem e deduplicação das obras foi movida para módulo puro dedicado, preservando filtro de publicação/18+, prioridade dos dados, fallbacks e identificação canônica.

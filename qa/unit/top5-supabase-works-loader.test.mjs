@@ -42,7 +42,8 @@ test("Top 5 delega somente o carregamento Supabase de obras", async () => {
   assert.doesNotMatch(page, /async function carregarObrasSupabaseTop5/);
   assert.match(page, /carregarObrasSupabaseTop5\(\)/);
   assert.match(page, /carregarObrasLocaisTop5/);
-  assert.match(page, /function mesclarObrasTop5/);
+  assert.doesNotMatch(page, /function mesclarObrasTop5/);
+  assert.match(page, /mesclarObrasTop5\(/);
   assert.doesNotMatch(page, /normalizarObraSupabaseTop5/);
   assert.doesNotMatch(page, /SupabaseObraTop5Row/);
   assert.match(page, /import \{ supabase \} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/client";/);
