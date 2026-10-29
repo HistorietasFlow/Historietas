@@ -2472,3 +2472,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 7
 
 - Os componentes apresentacionais de estado inicial de carregamento, fade superior e botão de carregar mais foram extraídos, mantendo condições, estados, callbacks, paginação e tradução-base na página.
+
+## Explorar — Fase 8
+
+- A barra de categorias, o aviso de login e as opções de coleção do modal foram movidos para componentes dedicados, mantendo condições, estados, autenticação, redirects e handlers na página.
