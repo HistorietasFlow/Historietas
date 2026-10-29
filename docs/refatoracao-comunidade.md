@@ -2460,3 +2460,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 4
 
 - As chaves de storage, a derivação pura de IDs de autores e a atualização da rota `/explorar` foram movidas para módulos dedicados, mantendo lifecycle, setters, Supabase e call sites de negócio na página.
+
+## Explorar — Fase 5
+
+- As derivações puras de total de resultados, existência de obras publicadas e contagem de filtros avançados ativos foram movidas para helpers dedicados, mantendo estados, filtros, tradução e renderização na página.
