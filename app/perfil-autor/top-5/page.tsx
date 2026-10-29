@@ -41,6 +41,7 @@ import { Top5SearchSection } from "./components/top5-search-section";
 import { Top5LoginNotice } from "./components/top5-login-notice";
 import { Top5StatusMessage } from "./components/top5-status-message";
 import { Top5LoadingMessage } from "./components/top5-loading-message";
+import { Top5EmptyWorksMessage } from "./components/top5-empty-works-message";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
@@ -352,17 +353,7 @@ export default function Top5PerfilAutorPage() {
               })}
             </div>
           ) : (
-            <p
-              style={{
-                margin: "10px 0 0",
-                color: "#FFFFFF",
-                fontSize: "12px",
-                fontWeight: 800,
-                textAlign: "center",
-              }}
-            >
-              Nenhuma obra encontrada
-            </p>
+            <Top5EmptyWorksMessage />
           )
         )}
       </section>
