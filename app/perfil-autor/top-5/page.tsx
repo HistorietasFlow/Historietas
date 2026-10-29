@@ -56,13 +56,12 @@ import {
   criarMapaObrasTop5,
   selecionarObrasTop5,
 } from "./lib/top5-work-selectors";
-import { carregarObrasLocaisTop5 } from "./lib/top5-local-works-loader";
 import { carregarObrasSupabaseTop5 } from "./lib/top5-supabase-works-loader";
 import {
   criarCapaSelecionadaTop5Style,
   criarCapaTop5Style,
 } from "./lib/top5-cover-styles";
-import { mesclarObrasTop5 } from "./lib/top5-work-merge";
+import { carregarObrasIniciaisTop5 } from "./lib/top5-initial-works";
 import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
@@ -122,10 +121,10 @@ export default function Top5PerfilAutorPage() {
           return;
         }
 
-        const obrasMescladas = mesclarObrasTop5([
-          ...carregarObrasLocaisTop5(userId),
-          ...obrasSupabase,
-        ]);
+        const obrasMescladas = carregarObrasIniciaisTop5(
+          userId,
+          obrasSupabase,
+        );
         const idsSalvos = userId ? carregarTop5Salvo(userId) : [];
         const idsNormalizados = normalizarIdsSelecionadosTop5(
           idsSalvos,

@@ -2368,3 +2368,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 22 — Top 5 do Perfil Autor
 
 - A composição do nome inicial do usuário foi movida para helper puro dedicado, preservando prioridade entre `nome`, `name`, email e fallback `"Usuário"`.
+
+## Fase 23 — Top 5 do Perfil Autor
+
+- A composição das obras locais e Supabase foi movida para loader dedicado, preservando ordem das fontes e regras existentes de mesclagem.
