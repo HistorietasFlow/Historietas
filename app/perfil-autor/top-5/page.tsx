@@ -65,6 +65,7 @@ import {
 } from "./lib/top5-cover-styles";
 import { mesclarObrasTop5 } from "./lib/top5-work-merge";
 import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
+import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import {
   TOP_FIVE_MAXIMO,
   carregarTop5Salvo,
@@ -194,16 +195,13 @@ export default function Top5PerfilAutorPage() {
 
     setMensagem("");
     setIdsSelecionados((idsAtuais) => {
-      if (idsAtuais.includes(chave)) {
-        return idsAtuais.filter((id) => id !== chave);
-      }
+      const resultado = alternarIdSelecionadoTop5(idsAtuais, chave);
 
-      if (idsAtuais.length >= TOP_FIVE_MAXIMO) {
+      if (resultado.limiteAtingido) {
         setMensagem("Você já escolheu 5 obras. Remova uma para trocar.");
-        return idsAtuais;
       }
 
-      return [...idsAtuais, chave];
+      return resultado.ids;
     });
   }
 

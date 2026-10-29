@@ -2356,3 +2356,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 19 — Top 5 do Perfil Autor
 
 - As transformações puras de remoção e reordenação da lista selecionada foram movidas para módulo dedicado, preservando ordem, imutabilidade e retorno da referência original em movimentos inválidos.
+
+## Fase 20 — Top 5 do Perfil Autor
+
+- A alternância pura de uma obra selecionada foi movida para módulo dedicado, preservando ordem, limite de cinco obras, referência no limite e feedback de limite na página.
