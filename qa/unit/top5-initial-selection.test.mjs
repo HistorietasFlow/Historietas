@@ -101,7 +101,7 @@ test("Top 5 delega a preparação inicial da seleção sem persistir", async () 
   const handlerSalvar = page.slice(inicioSalvar);
   assert.match(handlerSalvar, /persistirSelecaoTop5\(/);
 
-  const setUsuario = page.indexOf("setUsuario(userId ? { id: userId, nome: nomeUsuario } : null);");
+  const setUsuario = page.indexOf("setUsuario(");
   const setObras = page.indexOf("setObras(obrasMescladas);");
   const setIds = page.indexOf("setIdsSelecionados(idsNormalizados);");
   assert.ok(setUsuario < setObras);

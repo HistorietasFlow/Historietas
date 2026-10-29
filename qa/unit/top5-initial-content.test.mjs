@@ -84,7 +84,7 @@ test("Top 5 prepara obras e seleção iniciais na ordem atual", async () => {
   assert.doesNotMatch(page, /import \{ prepararSelecaoInicialTop5 \}/);
   assert.match(
     page,
-    /if \(cancelado\) \{\s*return;\s*\}\s*const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\);\s*setUsuario\(userId \? \{ id: userId, nome: nomeUsuario \} : null\);\s*setObras\(obrasMescladas\);\s*setIdsSelecionados\(idsNormalizados\);\s*sincronizarSelecaoInicialTop5\(\s*userId,\s*idsSalvos,\s*idsNormalizados,\s*\);/,
+    /if \(cancelado\) \{\s*return;\s*\}\s*const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\);\s*setUsuario\(\s*criarUsuarioTop5\(\s*userId,\s*nomeUsuario,\s*\),\s*\);\s*setObras\(obrasMescladas\);\s*setIdsSelecionados\(idsNormalizados\);\s*sincronizarSelecaoInicialTop5\(\s*userId,\s*idsSalvos,\s*idsNormalizados,\s*\);/,
   );
 
   for (const forbidden of [

@@ -63,7 +63,10 @@ test("Top 5 delega somente o carregamento do nome de perfil", async () => {
   assert.ok(primeiroCancelamento < carregamentoPerfil);
   assert.ok(carregamentoPerfil < segundoCancelamento);
 
-  assert.match(page, /setUsuario\(userId \? \{ id: userId, nome: nomeUsuario \} : null\);/);
+  assert.match(
+    page,
+    /setUsuario\(\s*criarUsuarioTop5\(\s*userId,\s*nomeUsuario,\s*\),\s*\);/,
+  );
   assert.match(page, /setObras\(obrasMescladas\);/);
   assert.match(page, /setIdsSelecionados\(idsNormalizados\);/);
   assert.match(page, /removerIdSelecionadoTop5\(/);
