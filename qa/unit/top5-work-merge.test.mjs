@@ -47,13 +47,14 @@ test("Top 5 delega somente a mesclagem pura das obras", async () => {
 
   assert.match(
     page,
-    /import \{ mesclarObrasTop5 \} from "\.\/lib\/top5-work-merge";/,
+    /import \{ carregarObrasIniciaisTop5 \} from "\.\/lib\/top5-initial-works";/,
   );
   assert.doesNotMatch(page, /function mesclarObrasTop5/);
-  assert.match(page, /mesclarObrasTop5\(/);
+  assert.doesNotMatch(page, /mesclarObrasTop5\(/);
+  assert.match(page, /carregarObrasIniciaisTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
   assert.match(page, /normalizarIdsSelecionadosTop5\(/);
-  assert.match(page, /carregarObrasLocaisTop5/);
+  assert.doesNotMatch(page, /carregarObrasLocaisTop5/);
   assert.match(page, /carregarObrasSupabaseTop5/);
   assert.doesNotMatch(page, /ehClassificacao18/);
 
