@@ -2440,3 +2440,11 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 40 — Top 5 do Perfil Autor
 
 - A composição de `UsuarioTop5 | null` foi movida para helper puro dedicado, preservando a condição baseada em `userId` e mantendo setters e lifecycle na página.
+
+## Encerramento — Top 5 do Perfil Autor
+
+- A frente de refatoração de `app/perfil-autor/top-5/page.tsx` foi encerrada após a Fase 40.
+
+## Explorar — Fase 1
+
+- Os mapas e resolvers de títulos criativos por gênero foram movidos para módulo puro dedicado, preservando textos, normalização e fallbacks.
