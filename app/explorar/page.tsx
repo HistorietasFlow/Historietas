@@ -17,7 +17,8 @@ import {
 import {
   type CursorCatalogo,
 } from "../../lib/catalogo";
-import { LoadingSpinner } from "./components/explorar-loading-spinner";
+import { ExplorarLoadingState } from "./components/explorar-loading-state";
+import { ExplorarLoadMoreButton } from "./components/explorar-load-more-button";
 import {
   EstadoVazioExplorar,
   ExplorarCarouselRow,
@@ -28,6 +29,7 @@ import type {
 } from "./components/explorar-section-components";
 import AutorExplorarCard from "./components/explorar-autor-card";
 import ObraPublicadaCard from "./components/explorar-obra-publicada-card";
+import { ExplorarTopWaterFade } from "./components/explorar-top-water-fade";
 import { criarPerfilAutorHrefExplorar } from "./lib/explorar-author-route-utils";
 import {
   obterTituloCriativoAutoresExplorar,
@@ -64,7 +66,6 @@ import {
   criarDesktopSearchBoxStyle,
   pageStyle,
   criarExplorarPageStyle,
-  criarExplorarTopWaterFadeStyle,
   containerStyle,
   titleHeaderStyle,
   desktopTitleHeaderStyle,
@@ -74,7 +75,6 @@ import {
   desktopExplorarHeaderSearchInputStyle,
   mobileSearchToggleStyle,
   explorarHeaderFilterButtonStyle,
-  explorarCarregarMaisButtonStyle,
   desktopExplorarHeaderFilterButtonStyle,
   explorarHeaderFilterIconStyle,
   categoriesStyle,
@@ -551,13 +551,14 @@ export default function ExplorarPage() {
 
   if (!dadosExplorarCarregados) {
     return (
-      <main
-        style={criarExplorarPageStyle(pageThemeStyle)}
-        aria-busy="true"
-      >
-        <style>{`${themePageCss}${historietasThemeCss}`}</style>
-        <LoadingSpinner label={traduzirTextoExplorar("Carregando Explorar", language)} />
-      </main>
+      <ExplorarLoadingState
+        mainStyle={criarExplorarPageStyle(pageThemeStyle)}
+        themeCss={`${themePageCss}${historietasThemeCss}`}
+        label={traduzirTextoExplorar(
+          "Carregando Explorar",
+          language,
+        )}
+      />
     );
   }
 
@@ -566,13 +567,7 @@ export default function ExplorarPage() {
       <style>{`${themePageCss}${historietasThemeCss}`}</style>
       <style>{explorarBuscaToggleCss}</style>
 
-      {isDesktop && (
-        <div style={criarExplorarTopWaterFadeStyle(true)} aria-hidden="true" />
-      )}
-
-      {!isDesktop && (
-        <div style={criarExplorarTopWaterFadeStyle(false)} aria-hidden="true" />
-      )}
+      <ExplorarTopWaterFade isDesktop={isDesktop} />
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         {isDesktop ? (
@@ -1162,17 +1157,13 @@ export default function ExplorarPage() {
               </div>
 
               {consultaCatalogoPersonalizada && catalogoTemMais && (
-                <button
-                  type="button"
-                  onClick={() => void carregarMaisObrasCatalogo()}
-                  disabled={carregandoMaisCatalogo}
-                  style={explorarCarregarMaisButtonStyle}
-                >
-                  {traduzirTextoExplorar(
-                    carregandoMaisCatalogo ? "Carregando" : "Carregar mais",
-                    language,
-                  )}
-                </button>
+                <ExplorarLoadMoreButton
+                  carregando={carregandoMaisCatalogo}
+                  language={language}
+                  onCarregarMais={() =>
+                    void carregarMaisObrasCatalogo()
+                  }
+                />
               )}
             </section>
           )}

@@ -21,6 +21,10 @@ const estilos = readFileSync(
   new URL("../../app/explorar/lib/explorar-layout-styles.ts", import.meta.url),
   "utf8",
 );
+const loadingState = readFileSync(
+  new URL("../../app/explorar/components/explorar-loading-state.tsx", import.meta.url),
+  "utf8",
+);
 
 test("explorarBuscaToggleCss preserva literalmente as regras exclusivas de busca", () => {
   assert.equal(
@@ -98,8 +102,9 @@ test("Explorar mantém o único consumidor e as fronteiras da busca", () => {
   );
   assert.match(
     pagina,
-    /import \{ LoadingSpinner \} from "\.\/components\/explorar-loading-spinner";/,
+    /import \{ ExplorarLoadingState \} from "\.\/components\/explorar-loading-state";/,
   );
+  assert.doesNotMatch(loadingState, /explorarBuscaToggleCss/);
   assert.match(
     pagina,
     /import \{ useExplorarDesktopMode \} from "\.\/hooks\/use-explorar-desktop-mode";/,

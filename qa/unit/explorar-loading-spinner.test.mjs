@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const loadingState = readFileSync(
+  new URL("../../app/explorar/components/explorar-loading-state.tsx", import.meta.url),
+  "utf8",
+);
 const cssGlobal = readFileSync(
   new URL("../../app/explorar/lib/explorar-page-css.ts", import.meta.url),
   "utf8",
@@ -43,16 +47,18 @@ test("LoadingSpinner de Explorar preserva estrutura, props e estilos", () => {
 test("Explorar delega somente o spinner e preserva suas fronteiras", () => {
   assert.match(
     pagina,
-    /import \{ LoadingSpinner \} from "\.\/components\/explorar-loading-spinner";/,
+    /import \{ ExplorarLoadingState \} from "\.\/components\/explorar-loading-state";/,
   );
   assert.doesNotMatch(pagina, /function LoadingSpinner\(/);
   assert.doesNotMatch(pagina, /const loadingPageStyle: CSSProperties/);
   assert.doesNotMatch(pagina, /const loadingSpinnerStyle: CSSProperties/);
-  assert.equal((pagina.match(/<LoadingSpinner/g) || []).length, 1);
+  assert.doesNotMatch(pagina, /import \{ LoadingSpinner \}/);
   assert.match(
     pagina,
-    /<LoadingSpinner label=\{traduzirTextoExplorar\("Carregando Explorar", language\)\} \/>/,
+    /<ExplorarLoadingState[\s\S]*?mainStyle=\{criarExplorarPageStyle\(pageThemeStyle\)\}[\s\S]*?themeCss=\{`\$\{themePageCss\}\$\{historietasThemeCss\}`\}[\s\S]*?"Carregando Explorar"/,
   );
+  assert.match(loadingState, /import \{ LoadingSpinner \} from "\.\/explorar-loading-spinner";/);
+  assert.match(loadingState, /<LoadingSpinner label=\{label\} \/>/);
   assert.match(pagina, /if \(!dadosExplorarCarregados\) \{/);
   assert.match(
     pagina,
