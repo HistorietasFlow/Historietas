@@ -75,8 +75,10 @@ test("Top 5 delega somente o cabeçalho visual da seleção", async () => {
   assert.match(page, /function salvarEscolhasTop5\(\)/);
   assert.match(page, /const \[salvando, setSalvando\] = useState\(false\);/);
   assert.match(page, /const \[usuario, setUsuario\] = useState<UsuarioTop5 \| null>\(null\);/);
-  assert.match(page, /<div style=\{selectedListStyle\}>/);
-  assert.match(page, /Array\.from\(\{ length: TOP_FIVE_MAXIMO \}\)\.map/);
+  assert.match(
+    page,
+    /<Top5SelectedHeader[\s\S]*?\/>\s*<Top5SelectedList\s/,
+  );
   assert.doesNotMatch(page, /import Link from "next\/link";/);
 
   for (const forbidden of [

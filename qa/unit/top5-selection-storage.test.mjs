@@ -10,11 +10,16 @@ const pagePath = new URL(
   "../../app/perfil-autor/top-5/page.tsx",
   import.meta.url,
 );
+const selectedListPath = new URL(
+  "../../app/perfil-autor/top-5/components/top5-selected-list.tsx",
+  import.meta.url,
+);
 
 test("Top 5 delega somente a persistência da seleção", async () => {
-  const [selectionStorage, page] = await Promise.all([
+  const [selectionStorage, page, selectedList] = await Promise.all([
     readFile(selectionStoragePath, "utf8"),
     readFile(pagePath, "utf8"),
+    readFile(selectedListPath, "utf8"),
   ]);
 
   assert.match(selectionStorage, /import \{[\s\S]*lerStorageUsuarioTop5,[\s\S]*salvarJsonStorageUsuarioTop5,[\s\S]*from "\.\/top5-storage-utils";/);
@@ -32,9 +37,10 @@ test("Top 5 delega somente a persistência da seleção", async () => {
   assert.match(selectionStorage, /id\.trim\(\)/);
   assert.match(selectionStorage, /\.slice\(0, TOP_FIVE_MAXIMO\)/);
 
+  assert.doesNotMatch(page, /TOP_FIVE_MAXIMO/);
   assert.match(
-    page,
-    /import \{ TOP_FIVE_MAXIMO \} from "\.\/lib\/top5-selection-storage";/,
+    selectedList,
+    /import \{ TOP_FIVE_MAXIMO \} from "\.\.\/lib\/top5-selection-storage";/,
   );
   assert.match(
     page,
@@ -51,7 +57,6 @@ test("Top 5 delega somente a persistência da seleção", async () => {
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
   assert.doesNotMatch(page, /normalizarIdsSelecionadosTop5\(/);
   assert.doesNotMatch(page, /salvarTop5\(/);
-  assert.match(page, /TOP_FIVE_MAXIMO/);
 
   for (const forbidden of [
     "react",

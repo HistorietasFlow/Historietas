@@ -72,18 +72,25 @@ test("Top 5 delega somente os estilos da seção de obras selecionadas", async (
   assert.doesNotMatch(page, /CSSProperties/);
   assert.match(
     page,
-    /import \{[\s\S]*emptySelectedSlotStyle,[\s\S]*selectedActionsStyle,[\s\S]*selectedListStyle,[\s\S]*selectedMoveButtonStyle,[\s\S]*selectedNumberStyle,[\s\S]*selectedRemoveButtonStyle,[\s\S]*selectedSectionStyle,[\s\S]*selectedSlotStyle,[\s\S]*from "\.\/lib\/top5-selected-section-styles";/,
+    /import \{[\s\S]*selectedSectionStyle,[\s\S]*from "\.\/lib\/top5-selected-section-styles";/,
   );
 
-  for (const headerStyleName of [
+  for (const delegatedStyleName of [
     "cancelButtonStyle",
+    "emptySelectedSlotStyle",
     "footerActionsStyle",
     "saveButtonDisabledStyle",
     "saveButtonStyle",
+    "selectedActionsStyle",
     "selectedHeaderStyle",
+    "selectedListStyle",
+    "selectedMoveButtonStyle",
+    "selectedNumberStyle",
+    "selectedRemoveButtonStyle",
+    "selectedSlotStyle",
     "selectedTitleStyle",
   ]) {
-    assert.doesNotMatch(page, new RegExp(headerStyleName));
+    assert.doesNotMatch(page, new RegExp(delegatedStyleName));
   }
 
   for (const forbidden of [
