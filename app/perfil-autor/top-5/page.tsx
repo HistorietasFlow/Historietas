@@ -9,7 +9,7 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../../lib/historietasTheme";
-import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
+import { normalizarTexto } from "../../../lib/utils";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { Top5LanguageBridge } from "./components/top5-language-bridge";
 import {
@@ -17,6 +17,10 @@ import {
   normalizarObraSupabaseTop5,
   pegarTexto,
 } from "./lib/top5-work-normalizers";
+import {
+  criarChaveObraTop5,
+  obterIdentificadoresObraTop5,
+} from "./lib/top5-work-identifiers";
 import type {
   ObraTop5,
   ObraTop5Salva,
@@ -28,27 +32,6 @@ import type {
 const STORAGE_KEY = "historietas-obras";
 const TOP_FIVE_STORAGE_KEY = "historietas-top-5-obras";
 const TOP_FIVE_MAXIMO = 5;
-
-function obterIdentificadoresObraTop5(
-  obra: Pick<ObraTop5, "id" | "slug" | "titulo">,
-) {
-  return Array.from(
-    new Set(
-      [
-        obra.id,
-        obra.slug,
-        criarSlugBase(obra.titulo),
-        normalizarTexto(obra.titulo),
-      ]
-        .map((identificador) => identificador.trim())
-        .filter(Boolean),
-    ),
-  );
-}
-
-function criarChaveObraTop5(obra: Pick<ObraTop5, "id" | "slug" | "titulo">) {
-  return obterIdentificadoresObraTop5(obra)[0] || "";
-}
 
 function criarStorageKeyUsuarioTop5(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
