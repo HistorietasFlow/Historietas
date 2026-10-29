@@ -2340,3 +2340,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 15 — Top 5 do Perfil Autor
 
 - A criação do mapa de obras por identificador e a resolução das obras selecionadas foram movidas para seletores puros dedicados, preservando ordem, resolução e descarte de IDs inválidos.
+
+## Fase 16 — Top 5 do Perfil Autor
+
+- Os estilos estáticos da seção de obras selecionadas e de suas ações foram movidos para módulo dedicado, preservando integralmente dimensões, tipografia, espaçamentos, backgrounds, estados e composição visual.
