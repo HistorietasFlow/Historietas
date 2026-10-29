@@ -66,6 +66,7 @@ import {
 import { mesclarObrasTop5 } from "./lib/top5-work-merge";
 import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
+import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
 import {
   TOP_FIVE_MAXIMO,
   carregarTop5Salvo,
@@ -111,16 +112,10 @@ export default function Top5PerfilAutorPage() {
           "Usuário";
 
         if (userId) {
-          const { data: perfilAtual, error: erroPerfilAtual } = await supabase
-            .from("profiles")
-            .select("nome")
-            .eq("user_id", userId)
-            .limit(1)
-            .maybeSingle();
-
-          if (!erroPerfilAtual) {
-            nomeUsuario = pegarTexto(perfilAtual?.nome) || nomeUsuario;
-          }
+          nomeUsuario = await carregarNomePerfilTop5(
+            userId,
+            nomeUsuario,
+          );
         }
 
         if (cancelado) {

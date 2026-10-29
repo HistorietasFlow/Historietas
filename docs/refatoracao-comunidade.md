@@ -2360,3 +2360,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 20 — Top 5 do Perfil Autor
 
 - A alternância pura de uma obra selecionada foi movida para módulo dedicado, preservando ordem, limite de cinco obras, referência no limite e feedback de limite na página.
+
+## Fase 21 — Top 5 do Perfil Autor
+
+- A consulta do nome atual do usuário em `profiles` foi movida para loader dedicado, preservando query, fallback do nome, propagação de exceções e pontos de cancelamento do effect.
