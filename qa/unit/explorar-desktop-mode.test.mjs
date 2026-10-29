@@ -21,10 +21,9 @@ const storage = readFileSync(
   new URL("../../app/explorar/lib/explorar-local-storage.ts", import.meta.url),
   "utf8",
 );
-const autorCard = readFileSync(new URL("../../app/explorar/components/explorar-autor-card.tsx", import.meta.url), "utf8");
 const obraCard = readFileSync(new URL("../../app/explorar/components/explorar-obra-publicada-card.tsx", import.meta.url), "utf8");
-const auxiliares = readFileSync(new URL("../../app/explorar/components/explorar-section-components.tsx", import.meta.url), "utf8");
 const categoriesBar = readFileSync(new URL("../../app/explorar/components/explorar-categories-bar.tsx", import.meta.url), "utf8");
+const modalShell = readFileSync(new URL("../../app/explorar/components/explorar-advanced-filters-shell.tsx", import.meta.url), "utf8");
 
 test("useExplorarDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -71,7 +70,9 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal(([pagina, autorCard, obraCard, auxiliares].join("\n").match(/\bisDesktop\b/g) || []).length, 75);
+  assert.match(pagina, /<ExplorarAdvancedFiltersShell\s+isDesktop=\{isDesktop\}/);
+  assert.match(modalShell, /isDesktop: boolean/);
+  assert.match(modalShell, /isDesktop\s*\?\s*desktopExplorarModalSheetStyle/);
   assert.equal((categoriesBar.match(/\bisDesktop\b/g) || []).length, 3);
   assert.match(pagina, /<ExplorarCategoriesBar isDesktop=\{isDesktop\}/);
   assert.match(categoriesBar, /isDesktop: boolean/);

@@ -2476,3 +2476,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 8
 
 - A barra de categorias, o aviso de login e as opções de coleção do modal foram movidos para componentes dedicados, mantendo condições, estados, autenticação, redirects e handlers na página.
+
+## Explorar — Fase 9
+
+- Os headers desktop e mobile e o shell visual do modal de filtros avançados foram movidos para componentes dedicados, mantendo estados, callbacks, filtros, conteúdo 18+, autenticação e regras de negócio em `page.tsx`.

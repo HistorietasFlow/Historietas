@@ -22,6 +22,9 @@ import { ExplorarLoadMoreButton } from "./components/explorar-load-more-button";
 import { ExplorarLoginNotice } from "./components/explorar-login-notice";
 import { ExplorarCollectionFilterOptions } from "./components/explorar-collection-filter-options";
 import { ExplorarCategoriesBar } from "./components/explorar-categories-bar";
+import { ExplorarDesktopHeader } from "./components/explorar-desktop-header";
+import { ExplorarMobileHeader } from "./components/explorar-mobile-header";
+import { ExplorarAdvancedFiltersShell } from "./components/explorar-advanced-filters-shell";
 import {
   EstadoVazioExplorar,
   ExplorarCarouselRow,
@@ -69,25 +72,6 @@ import {
   pageStyle,
   criarExplorarPageStyle,
   containerStyle,
-  titleHeaderStyle,
-  desktopTitleHeaderStyle,
-  desktopExplorarHeaderTitleStyle,
-  desktopExplorarHeaderActionsStyle,
-  desktopExplorarHeaderSearchIconStyle,
-  desktopExplorarHeaderSearchInputStyle,
-  mobileSearchToggleStyle,
-  explorarHeaderFilterButtonStyle,
-  desktopExplorarHeaderFilterButtonStyle,
-  explorarHeaderFilterIconStyle,
-  explorarHeaderSearchShellStyle,
-  desktopExplorarHeaderSearchShellStyle,
-  explorarHeaderSearchInputStyle,
-  explorarModalOverlayStyle,
-  explorarModalSheetStyle,
-  desktopExplorarModalSheetStyle,
-  explorarModalHandleStyle,
-  explorarModalTitleStyle,
-  explorarModalContentStyle,
   explorarModalSectionLabelStyle,
   criarExplorarModalOptionStyle,
   criarExplorarModalRadioStyle,
@@ -568,187 +552,28 @@ export default function ExplorarPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         {isDesktop ? (
-          <header style={desktopTitleHeaderStyle}>
-            <h1 style={desktopExplorarHeaderTitleStyle}>
-              {traduzirTextoExplorar("Explorar", language)}
-            </h1>
-
-            <div style={desktopExplorarHeaderActionsStyle}>
-              <label style={desktopExplorarHeaderSearchShellStyle}>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                  style={desktopExplorarHeaderSearchIconStyle}
-                >
-                  <circle
-                    cx="10.85"
-                    cy="10.85"
-                    r="6.65"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M16.05 16.05L20.25 20.25"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-
-                <input
-                  value={busca}
-                  onChange={(event) => setBusca(event.target.value)}
-                  aria-label={traduzirTextoExplorar(
-                    modoConteudo === "autores"
-                      ? "Buscar autores..."
-                      : "Buscar histórias...",
-                    language
-                  )}
-                  placeholder={traduzirTextoExplorar(
-                    modoConteudo === "autores"
-                      ? "Buscar autores..."
-                      : "Buscar histórias...",
-                    language
-                  )}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  maxLength={90}
-                  style={desktopExplorarHeaderSearchInputStyle}
-                  type="text"
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={() => setMostrarFiltrosAvancados(true)}
-                style={desktopExplorarHeaderFilterButtonStyle}
-                aria-label={traduzirTextoExplorar(
-                  "Abrir funções do Explorar",
-                  language
-                )}
-              >
-                <span>{traduzirTextoExplorar("Filtros", language)}</span>
-                <span aria-hidden="true">+</span>
-              </button>
-            </div>
-          </header>
+          <ExplorarDesktopHeader
+            busca={busca}
+            modoConteudo={modoConteudo}
+            language={language}
+            onBuscaChange={setBusca}
+            onAbrirFiltros={() => setMostrarFiltrosAvancados(true)}
+          />
         ) : (
-          <header style={titleHeaderStyle}>
-            <button
-              type="button"
-              onClick={() => setMostrarFiltrosAvancados(true)}
-              style={explorarHeaderFilterButtonStyle}
-              aria-label={traduzirTextoExplorar(
-                "Abrir funções do Explorar",
-                language
-              )}
-            >
-              <span>{textoBotaoFiltrosAvancados}</span>
-              <span style={explorarHeaderFilterIconStyle} aria-hidden="true">
-                +
-              </span>
-            </button>
-
-            {buscaMobileAberta ? (
-              <>
-                <label style={explorarHeaderSearchShellStyle}>
-                  <input
-                    value={busca}
-                    onChange={(event) => setBusca(event.target.value)}
-                    aria-label={traduzirTextoExplorar(
-                      modoConteudo === "autores"
-                        ? "Buscar autores..."
-                        : "Buscar histórias...",
-                      language
-                    )}
-                    placeholder={traduzirTextoExplorar(
-                      modoConteudo === "autores"
-                        ? "Buscar autores..."
-                        : "Buscar histórias...",
-                      language
-                    )}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    maxLength={90}
-                    style={explorarHeaderSearchInputStyle}
-                    type="text"
-                    autoFocus
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBusca("");
-                    setBuscaMobileAberta(false);
-                  }}
-                  aria-label={traduzirTextoExplorar("Fechar busca", language)}
-                  aria-expanded="true"
-                  style={mobileSearchToggleStyle}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      cx="10.85"
-                      cy="10.85"
-                      r="6.65"
-                      stroke="currentColor"
-                      strokeWidth="2.15"
-                    />
-                    <path
-                      d="M16.05 16.05L20.25 20.25"
-                      stroke="currentColor"
-                      strokeWidth="2.15"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setBuscaMobileAberta(true)}
-                aria-label={traduzirTextoExplorar("Abrir busca", language)}
-                aria-expanded="false"
-                style={mobileSearchToggleStyle}
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <circle
-                    cx="10.85"
-                    cy="10.85"
-                    r="6.65"
-                    stroke="currentColor"
-                    strokeWidth="2.15"
-                  />
-                  <path
-                    d="M16.05 16.05L20.25 20.25"
-                    stroke="currentColor"
-                    strokeWidth="2.15"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            )}
-          </header>
+          <ExplorarMobileHeader
+            busca={busca}
+            buscaMobileAberta={buscaMobileAberta}
+            modoConteudo={modoConteudo}
+            textoBotaoFiltrosAvancados={textoBotaoFiltrosAvancados}
+            language={language}
+            onBuscaChange={setBusca}
+            onAbrirBusca={() => setBuscaMobileAberta(true)}
+            onFecharBusca={() => {
+              setBusca("");
+              setBuscaMobileAberta(false);
+            }}
+            onAbrirFiltros={() => setMostrarFiltrosAvancados(true)}
+          />
         )}
 
         <section
@@ -767,27 +592,16 @@ export default function ExplorarPage() {
         </section>
 
         {mostrarFiltrosAvancados && (
-          <div
-            style={explorarModalOverlayStyle}
-            onClick={() => {
+          <ExplorarAdvancedFiltersShell
+            isDesktop={isDesktop}
+            language={language}
+            onFechar={() => {
               setMostrarFiltrosAvancados(false);
               setMostrarConfirmacaoConteudo18(false);
               setConfirmouIdadeConteudo18(false);
             }}
           >
-            <section
-              style={isDesktop ? desktopExplorarModalSheetStyle : explorarModalSheetStyle}
-              onClick={(event) => event.stopPropagation()}
-              aria-label={traduzirTextoExplorar("EXPLORAR", language)}
-            >
-              <span style={explorarModalHandleStyle} aria-hidden="true" />
-
-              <h2 style={explorarModalTitleStyle}>
-                {traduzirTextoExplorar("EXPLORAR", language)}
-              </h2>
-
-              <div style={explorarModalContentStyle}>
-                <p style={explorarModalSectionLabelStyle}>
+            <p style={explorarModalSectionLabelStyle}>
                   {traduzirTextoExplorar("Mostrar", language)}
                 </p>
 
@@ -980,9 +794,7 @@ export default function ExplorarPage() {
                     </button>
                   </>
                 )}
-              </div>
-            </section>
-          </div>
+          </ExplorarAdvancedFiltersShell>
         )}
 
         {modoConteudo === "obras" &&
