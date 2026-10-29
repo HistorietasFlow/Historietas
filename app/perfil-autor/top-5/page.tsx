@@ -11,6 +11,10 @@ import {
 import { Top5LanguageBridge } from "./components/top5-language-bridge";
 import { top5PerfilAutorPageCss } from "./lib/top5-page-css";
 import {
+  moverIdSelecionadoTop5,
+  removerIdSelecionadoTop5,
+} from "./lib/top5-selection-list";
+import {
   gridSectionStyle,
   pageStyle,
   selectedBadgeStyle,
@@ -205,24 +209,22 @@ export default function Top5PerfilAutorPage() {
 
   function removerSelecionadaTop5(chave: string) {
     setMensagem("");
-    setIdsSelecionados((idsAtuais) => idsAtuais.filter((id) => id !== chave));
+    setIdsSelecionados((idsAtuais) =>
+      removerIdSelecionadoTop5(
+        idsAtuais,
+        chave,
+      ),
+    );
   }
 
   function moverSelecionadaTop5(chave: string, direcao: -1 | 1) {
-    setIdsSelecionados((idsAtuais) => {
-      const indiceAtual = idsAtuais.indexOf(chave);
-      const novoIndice = indiceAtual + direcao;
-
-      if (indiceAtual < 0 || novoIndice < 0 || novoIndice >= idsAtuais.length) {
-        return idsAtuais;
-      }
-
-      const novaLista = [...idsAtuais];
-      const [item] = novaLista.splice(indiceAtual, 1);
-      novaLista.splice(novoIndice, 0, item);
-
-      return novaLista;
-    });
+    setIdsSelecionados((idsAtuais) =>
+      moverIdSelecionadoTop5(
+        idsAtuais,
+        chave,
+        direcao,
+      ),
+    );
   }
 
   function salvarEscolhasTop5() {
