@@ -42,7 +42,10 @@ test("Top 5 delega somente o estado visual de lista vazia", async () => {
   assert.match(page, /\{!carregando && \(/);
   assert.match(page, /obrasFiltradas\.length > 0 \? \(/);
   assert.match(page, /<Top5LoadingMessage \/>/);
-  assert.match(page, /obrasFiltradas\.map\(\(obra\) => \{/);
+  assert.match(
+    page,
+    /<Top5WorksGrid\s+obras=\{obrasFiltradas\}\s+idsSelecionados=\{idsSelecionados\}\s+onAlternar=\{alternarObraTop5\}\s+\/>/,
+  );
 
   for (const forbidden of [
     "useState",

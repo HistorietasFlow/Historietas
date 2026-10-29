@@ -10,11 +10,21 @@ const pagePath = new URL(
   "../../app/perfil-autor/top-5/page.tsx",
   import.meta.url,
 );
+const worksGridPath = new URL(
+  "../../app/perfil-autor/top-5/components/top5-works-grid.tsx",
+  import.meta.url,
+);
+const selectedListPath = new URL(
+  "../../app/perfil-autor/top-5/components/top5-selected-list.tsx",
+  import.meta.url,
+);
 
 test("Top 5 delega somente os estilos e helpers visuais de capa", async () => {
-  const [styles, page] = await Promise.all([
+  const [styles, page, worksGrid, selectedList] = await Promise.all([
     readFile(stylesPath, "utf8"),
     readFile(pagePath, "utf8"),
+    readFile(worksGridPath, "utf8"),
+    readFile(selectedListPath, "utf8"),
   ]);
 
   assert.match(styles, /import type \{ CSSProperties \} from "react";/);
@@ -52,20 +62,24 @@ test("Top 5 delega somente os estilos e helpers visuais de capa", async () => {
   }
 
   assert.match(
-    page,
-    /import \{\s*criarCapaSelecionadaTop5Style,\s*criarCapaTop5Style,\s*\} from "\.\/lib\/top5-cover-styles";/s,
+    worksGrid,
+    /import \{ criarCapaTop5Style \} from "\.\.\/lib\/top5-cover-styles";/,
   );
   assert.doesNotMatch(page, /function criarCapaTop5Style/);
   assert.doesNotMatch(page, /function criarCapaSelecionadaTop5Style/);
-  assert.match(page, /criarCapaSelecionadaTop5Style\(obra\.capa\)/);
-  assert.match(page, /criarCapaTop5Style\(obra\.capa\)/);
-  assert.match(page, /import type \{ CSSProperties \} from "react";/);
+  assert.match(worksGrid, /criarCapaTop5Style\(obra\.capa\)/);
+  assert.match(
+    selectedList,
+    /import \{ criarCapaSelecionadaTop5Style \} from "\.\.\/lib\/top5-cover-styles";/,
+  );
+  assert.match(selectedList, /criarCapaSelecionadaTop5Style\(obra\.capa\)/);
   assert.match(
     page,
-    /import \{[\s\S]*selectedSlotStyle,[\s\S]*from "\.\/lib\/top5-selected-section-styles";/,
+    /import \{\s*selectedSectionStyle,\s*\} from "\.\/lib\/top5-selected-section-styles";/s,
   );
   assert.doesNotMatch(page, /const selectedSlotStyle: CSSProperties/);
-  assert.match(page, /const top5CardStyle: CSSProperties/);
+  assert.doesNotMatch(page, /criarCapaTop5Style/);
+  assert.doesNotMatch(page, /import type \{ CSSProperties \} from "react";/);
 
   for (const forbidden of [
     "useEffect",

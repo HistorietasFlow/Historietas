@@ -15,10 +15,6 @@ import {
 import {
   gridSectionStyle,
   pageStyle,
-  selectedBadgeStyle,
-  top5CardSelectedStyle,
-  top5CardStyle,
-  worksGridStyle,
 } from "./lib/top5-main-styles";
 import {
   selectedSectionStyle,
@@ -30,15 +26,13 @@ import { Top5LoadingMessage } from "./components/top5-loading-message";
 import { Top5EmptyWorksMessage } from "./components/top5-empty-works-message";
 import { Top5SelectedHeader } from "./components/top5-selected-header";
 import { Top5SelectedList } from "./components/top5-selected-list";
+import { Top5WorksGrid } from "./components/top5-works-grid";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
   criarMapaObrasTop5,
   selecionarObrasTop5,
 } from "./lib/top5-work-selectors";
-import {
-  criarCapaTop5Style,
-} from "./lib/top5-cover-styles";
 import { sincronizarSelecaoInicialTop5 } from "./lib/top5-initial-selection-sync";
 import { carregarDadosIniciaisTop5 } from "./lib/top5-initial-data-loader";
 import { prepararConteudoInicialTop5 } from "./lib/top5-initial-content";
@@ -251,34 +245,11 @@ export default function Top5PerfilAutorPage() {
 
         {!carregando && (
           obrasFiltradas.length > 0 ? (
-            <div
-              data-historietas-top5-works-grid="true"
-              style={worksGridStyle}
-            >
-              {obrasFiltradas.map((obra) => {
-                const chave = criarChaveObraTop5(obra);
-                const posicaoSelecionada = idsSelecionados.indexOf(chave) + 1;
-                const selecionada = posicaoSelecionada > 0;
-
-                return (
-                  <button
-                    key={`obra-top-5-${chave}`}
-                    type="button"
-                    onClick={() => alternarObraTop5(obra)}
-                    style={selecionada ? top5CardSelectedStyle : top5CardStyle}
-                    aria-label={
-                      selecionada
-                        ? `Remover ${obra.titulo} do TOP 5`
-                        : `Adicionar ${obra.titulo} ao TOP 5`
-                    }
-                  >
-                    <div style={criarCapaTop5Style(obra.capa)}>
-                      {selecionada && <span style={selectedBadgeStyle}>{posicaoSelecionada}</span>}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <Top5WorksGrid
+              obras={obrasFiltradas}
+              idsSelecionados={idsSelecionados}
+              onAlternar={alternarObraTop5}
+            />
           ) : (
             <Top5EmptyWorksMessage />
           )
