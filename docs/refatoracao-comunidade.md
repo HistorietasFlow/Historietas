@@ -2312,3 +2312,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 8 — Top 5 do Perfil Autor
 
 - O carregamento das obras locais por usuário foi movido para loader dedicado, preservando chave de storage, SSR guard, parsing, validação, normalização e fallbacks.
+
+## Fase 9 — Top 5 do Perfil Autor
+
+- O carregamento remoto das obras publicadas via Supabase foi movido para loader dedicado, preservando seleção de campos, filtro de publicação, ordenação, limite, normalização e fallback.
