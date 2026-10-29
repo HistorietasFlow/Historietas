@@ -33,11 +33,14 @@ import {
   obterTituloCriativoAutoresExplorar,
   obterTituloCriativoObrasExplorar,
 } from "./lib/explorar-category-titles";
+import { contarFiltrosAvancadosAtivosExplorar } from "./lib/explorar-active-filter-count";
 import { obterAutorIdsExplorar } from "./lib/explorar-author-ids";
 import { categorias } from "./lib/explorar-categories";
 import { criarLoginHrefExplorar } from "./lib/explorar-login-route-utils";
 import { criarHrefListaExplorar } from "./lib/explorar-list-route-utils";
 import { atualizarUrlExplorar } from "./lib/explorar-page-route-utils";
+import { possuiObrasPublicadasExplorar } from "./lib/explorar-published-state";
+import { calcularTotalResultadosExplorar } from "./lib/explorar-result-count";
 import {
   COMPLETED_STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
@@ -114,9 +117,6 @@ import {
   traduzirTextoExplorar,
   traduzirGeneroExplorar,
 } from "./lib/explorar-translations";
-import {
-  obraTemConteudoPublicadoExplorar,
-} from "./lib/explorar-work-normalizers";
 import type { ObraLocal } from "./lib/explorar-work-normalizers";
 import {
   colecaoTemObraExplorar,
@@ -409,12 +409,13 @@ export default function ExplorarPage() {
   }, [autoresExplorar, categoriaSelecionada, termoBusca]);
 
   const totalResultados =
-    modoConteudo === "autores"
-      ? autoresFiltrados.length
-      : obrasLocaisFiltradas.length;
-  const possuiObrasPublicadas = obrasLocais.some((obra) => {
-    return obra.publicado && obraTemConteudoPublicadoExplorar(obra);
-  });
+    calcularTotalResultadosExplorar(
+      modoConteudo,
+      autoresFiltrados.length,
+      obrasLocaisFiltradas.length,
+    );
+  const possuiObrasPublicadas =
+    possuiObrasPublicadasExplorar(obrasLocais);
 
   const filtrosAtivos = Boolean(
     categoriaSelecionada ||
@@ -426,13 +427,14 @@ export default function ExplorarPage() {
       ordenacao !== "relevancia"
   );
 
-  const totalFiltrosAvancadosAtivos = [
-    usuarioLogado && filtroColecao !== "todos",
-    filtroFormato !== "todos",
-    filtroClassificacao !== "todos",
-    filtroCapitulos !== "todos",
-    ordenacao !== "relevancia",
-  ].filter(Boolean).length;
+  const totalFiltrosAvancadosAtivos = contarFiltrosAvancadosAtivosExplorar({
+    usuarioLogado,
+    filtroColecao,
+    filtroFormato,
+    filtroClassificacao,
+    filtroCapitulos,
+    ordenacao,
+  });
 
   const textoBotaoFiltrosAvancados = traduzirTextoExplorar(
     totalFiltrosAvancadosAtivos > 0
