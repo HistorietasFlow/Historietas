@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (caminho) =>
   readFileSync(new URL(caminho, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const pagina = ler("../../app/explorar/page.tsx");
+const botaoCarregarMais = ler("../../app/explorar/components/explorar-load-more-button.tsx");
 const codigo = ler("../../app/explorar/hooks/use-explorar-catalog-query.ts");
 const codigoExecutavel = codigo.replace(/^import[\s\S]*?from "[^"]+";\n/gm, "");
 const injecao = `
@@ -118,7 +119,9 @@ test("memo, condição, efeito e paginação preservam literalmente a base", () 
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
-  assert.match(pagina, /onClick=\{\(\) => void carregarMaisObrasCatalogo\(\)\}/);
+  assert.match(pagina, /<ExplorarLoadMoreButton/);
+  assert.match(pagina, /onCarregarMais=\{\(\) =>\n                    void carregarMaisObrasCatalogo\(\)\n                  \}/);
+  assert.match(botaoCarregarMais, /onClick=\{onCarregarMais\}/);
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.match(pagina, /supabase\.auth\.onAuthStateChange/);
   assert.match(pagina, /async function carregarDadosAutores\(/);

@@ -14,6 +14,10 @@ const estilos = readFileSync(
   new URL("../../app/explorar/lib/explorar-layout-styles.ts", import.meta.url),
   "utf8",
 );
+const loadingState = readFileSync(
+  new URL("../../app/explorar/components/explorar-loading-state.tsx", import.meta.url),
+  "utf8",
+);
 
 test("themePageCss preserva o CSS global de Explorar", () => {
   assert.match(modulo, /export const themePageCss = `/);
@@ -44,8 +48,10 @@ test("Explorar consome themePageCss sem alterar as fronteiras da página", () =>
         /<style>\{`\$\{themePageCss\}\$\{historietasThemeCss\}`\}<\/style>/g,
       ) || []
     ).length,
-    2,
+    1,
   );
+  assert.match(pagina, /themeCss=\{`\$\{themePageCss\}\$\{historietasThemeCss\}`\}/);
+  assert.match(loadingState, /<style>\{themeCss\}<\/style>/);
   assert.doesNotMatch(
     pagina,
     /\$\{historietasThemeCss\}\$\{themePageCss\}/,
