@@ -19,6 +19,7 @@ import {
 import { carregarObrasLocaisTop5 } from "./lib/top5-local-works-loader";
 import { carregarObrasSupabaseTop5 } from "./lib/top5-supabase-works-loader";
 import { mesclarObrasTop5 } from "./lib/top5-work-merge";
+import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
 import {
   TOP_FIVE_MAXIMO,
   carregarTop5Salvo,
@@ -28,41 +29,6 @@ import type {
   ObraTop5,
   UsuarioTop5,
 } from "./lib/top5-types";
-
-function normalizarIdsSelecionadosTop5(
-  ids: string[],
-  obrasDisponiveis: ObraTop5[],
-) {
-  const obrasPorIdentificador = new Map<string, ObraTop5>();
-
-  obrasDisponiveis.forEach((obra) => {
-    obterIdentificadoresObraTop5(obra).forEach((identificador) => {
-      obrasPorIdentificador.set(identificador, obra);
-    });
-  });
-
-  const idsNormalizados: string[] = [];
-  const chavesUsadas = new Set<string>();
-
-  ids.forEach((id) => {
-    const obra = obrasPorIdentificador.get(id.trim());
-
-    if (!obra) {
-      return;
-    }
-
-    const chaveCanonica = criarChaveObraTop5(obra);
-
-    if (!chaveCanonica || chavesUsadas.has(chaveCanonica)) {
-      return;
-    }
-
-    chavesUsadas.add(chaveCanonica);
-    idsNormalizados.push(chaveCanonica);
-  });
-
-  return idsNormalizados.slice(0, TOP_FIVE_MAXIMO);
-}
 
 function criarCapaTop5Style(capa: string): CSSProperties {
   if (!capa) {
