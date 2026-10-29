@@ -2452,3 +2452,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 2
 
 - A construção das URLs de `/listas` foi movida para helper puro dedicado, preservando normalização, parâmetros, seções, ordenações e fallbacks.
+
+## Explorar — Fase 3
+
+- O helper da rota de login, os helpers de tema e o catálogo estático de categorias foram movidos para módulos dedicados, preservando URLs, valores visuais, ordem das categorias e todos os call sites.
