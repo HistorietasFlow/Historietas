@@ -2288,3 +2288,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 2 — Top 5 do Perfil Autor
 
 - O bridge de tradução do DOM com MutationObserver foi movido para componente dedicado, preservando tradução de textos e atributos, observação do DOM e cleanup.
+
+## Fase 3 — Top 5 do Perfil Autor
+
+- Os tipos e modelos de capítulo, arquivo, obra, registro salvo, registro Supabase e usuário foram movidos para módulo dedicado, sem alteração dos contratos de dados.

@@ -12,60 +12,14 @@ import {
 import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { Top5LanguageBridge } from "./components/top5-language-bridge";
-
-type CapituloLocal = {
-  id: string;
-  titulo: string;
-  texto: string;
-  curtiu: boolean;
-  salvo: boolean;
-  comentario: string;
-  criadoEm: string;
-  lido: boolean;
-  lidoEm: string;
-};
-
-type ArquivoObraLocal = {
-  nome: string;
-  tipo: string;
-  tamanho: number;
-  conteudo: string;
-  categoria: "texto" | "documento" | "imagem" | "outro";
-  criadoEm: string;
-};
-
-type ObraTop5 = {
-  id: string;
-  titulo: string;
-  autorId: string;
-  autor: string;
-  genero: string;
-  formato: string;
-  classificacaoIndicativa: string;
-  sinopse: string;
-  tags: string[];
-  capa: string;
-  capaNome: string;
-  arquivoObra?: ArquivoObraLocal | null;
-  publicado: boolean;
-  capitulos: CapituloLocal[];
-  criadaEm: string;
-  ultimoCapituloLidoId: string;
-  ultimaLeituraEm: string;
-  progressoLeitura: number;
-  visualizacoes: number;
-  slug: string;
-  link: string;
-};
-
-type ObraTop5Salva = Partial<ObraTop5> & Record<string, unknown>;
-
-type SupabaseObraTop5Row = Record<string, unknown>;
-
-type UsuarioTop5 = {
-  id: string;
-  nome: string;
-};
+import type {
+  ArquivoObraLocal,
+  CapituloLocal,
+  ObraTop5,
+  ObraTop5Salva,
+  SupabaseObraTop5Row,
+  UsuarioTop5,
+} from "./lib/top5-types";
 
 
 const STORAGE_KEY = "historietas-obras";
