@@ -2376,3 +2376,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 24 — Top 5 do Perfil Autor
 
 - O carregamento e a normalização da seleção inicial foram movidos para helper dedicado, mantendo a persistência corretiva e os setters na página.
+
+## Fase 25 — Top 5 do Perfil Autor
+
+- A sincronização corretiva da seleção inicial foi movida para helper dedicado, preservando condição por `userId`, comparação via `JSON.stringify` e gravação silenciosa com `salvarTop5`.

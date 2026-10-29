@@ -97,12 +97,6 @@ test("Top 5 delega a preparação inicial da seleção sem persistir", async () 
     page,
     /const \{\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararSelecaoInicialTop5\(\s*userId,\s*obrasMescladas,\s*\);/,
   );
-  assert.match(
-    page,
-    /JSON\.stringify\(idsSalvos\) !== JSON\.stringify\(idsNormalizados\)/,
-  );
-  assert.match(page, /salvarTop5\(userId, idsNormalizados\)/);
-
   const inicioSalvar = page.indexOf("function salvarEscolhasTop5");
   const handlerSalvar = page.slice(inicioSalvar);
   assert.match(handlerSalvar, /normalizarIdsSelecionadosTop5\(/);
