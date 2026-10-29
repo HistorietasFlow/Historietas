@@ -62,13 +62,13 @@ import {
   criarCapaTop5Style,
 } from "./lib/top5-cover-styles";
 import { carregarObrasIniciaisTop5 } from "./lib/top5-initial-works";
+import { prepararSelecaoInicialTop5 } from "./lib/top5-initial-selection";
 import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
 import { obterNomeInicialUsuarioTop5 } from "./lib/top5-user-name";
 import {
   TOP_FIVE_MAXIMO,
-  carregarTop5Salvo,
   salvarTop5,
 } from "./lib/top5-selection-storage";
 import type {
@@ -125,9 +125,11 @@ export default function Top5PerfilAutorPage() {
           userId,
           obrasSupabase,
         );
-        const idsSalvos = userId ? carregarTop5Salvo(userId) : [];
-        const idsNormalizados = normalizarIdsSelecionadosTop5(
+        const {
           idsSalvos,
+          idsNormalizados,
+        } = prepararSelecaoInicialTop5(
+          userId,
           obrasMescladas,
         );
 
