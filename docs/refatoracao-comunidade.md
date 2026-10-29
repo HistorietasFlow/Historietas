@@ -2432,3 +2432,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 38 — Top 5 do Perfil Autor
 
 - A seção de obras disponíveis passou a ser composta por componente controlado dedicado, preservando filtro, estado de carregamento, seleção e handler na página.
+
+## Fase 39 — Top 5 do Perfil Autor
+
+- A resolução do nome inicial e do nome de perfil foi agrupada em helper assíncrono dedicado, preservando prioridade de fallback, consulta condicional por `userId`, propagação de erros e checks de cancelamento na página.

@@ -65,37 +65,15 @@ test("Top 5 delega a composição pura do nome inicial do usuário", async () =>
 
   assert.match(
     page,
-    /import \{ obterNomeInicialUsuarioTop5 \} from "\.\/lib\/top5-user-name";/,
+    /import \{ resolverNomeUsuarioTop5 \} from "\.\/lib\/top5-user-name-resolver";/,
   );
+  assert.doesNotMatch(page, /import \{ obterNomeInicialUsuarioTop5 \}/);
   assert.doesNotMatch(
     page,
     /import \{ pegarTexto \} from "\.\/lib\/top5-work-normalizers";/,
   );
   assert.doesNotMatch(page, /pegarTexto\(authData\.user/);
-  assert.match(
-    page,
-    /let nomeUsuario = obterNomeInicialUsuarioTop5\(\s*authData\.user\?\.user_metadata\?\.nome,\s*authData\.user\?\.user_metadata\?\.name,\s*authData\.user\?\.email,\s*\);/,
-  );
-
-  const userId = page.indexOf('const userId = authData.user?.id || "";');
-  const nomeInicial = page.indexOf("let nomeUsuario = obterNomeInicialUsuarioTop5(");
-  const carregamentoPerfil = page.indexOf(
-    "nomeUsuario = await carregarNomePerfilTop5",
-  );
-  const primeiroCancelamento = page.indexOf("if (cancelado)");
-  const segundoCancelamento = page.indexOf(
-    "if (cancelado)",
-    primeiroCancelamento + 1,
-  );
-
-  assert.ok(userId < nomeInicial);
-  assert.ok(nomeInicial < carregamentoPerfil);
-  assert.ok(primeiroCancelamento < carregamentoPerfil);
-  assert.ok(carregamentoPerfil < segundoCancelamento);
-  assert.match(
-    page,
-    /nomeUsuario = await carregarNomePerfilTop5\(\s*userId,\s*nomeUsuario,\s*\);/,
-  );
+  assert.doesNotMatch(page, /obterNomeInicialUsuarioTop5\(authData\.user/);
   assert.match(page, /removerIdSelecionadoTop5\(/);
   assert.match(page, /moverIdSelecionadoTop5\(/);
   assert.match(page, /alternarIdSelecionadoTop5\(/);
