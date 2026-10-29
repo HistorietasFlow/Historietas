@@ -2408,3 +2408,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 32 — Top 5 do Perfil Autor
 
 - O indicador visual de carregamento foi movido para componente apresentacional dedicado, preservando a condição de exibição na página, texto, acessibilidade e estilo.
+
+## Fase 33 — Top 5 do Perfil Autor
+
+- O estado visual de lista vazia foi movido para componente apresentacional dedicado, preservando a condição do grid na página, texto e estilos.
