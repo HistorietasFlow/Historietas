@@ -2484,3 +2484,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 10
 
 - O painel visual do conteúdo 18+, as opções de ordenação e a ação de limpar filtros foram movidos para componentes dedicados, mantendo handlers, estados, regras de acesso 18+, ordenação e reset de filtros em `page.tsx`.
+
+## Explorar — Fase 11
+
+- As seções criativas de obras, as seções de obras por gênero e a grade de resultados de obras filtradas foram movidas para componentes dedicados, mantendo condições de exibição, título derivado e paginação em `page.tsx`.
