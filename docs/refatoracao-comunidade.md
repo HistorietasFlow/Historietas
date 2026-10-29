@@ -2292,3 +2292,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 3 — Top 5 do Perfil Autor
 
 - Os tipos e modelos de capítulo, arquivo, obra, registro salvo, registro Supabase e usuário foram movidos para módulo dedicado, sem alteração dos contratos de dados.
+
+## Fase 4 — Top 5 do Perfil Autor
+
+- Os normalizadores puros de valores, arquivos, capítulos, obras locais e registros Supabase foram movidos para módulo dedicado, preservando aliases, fallbacks e contratos atuais.
