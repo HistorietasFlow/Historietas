@@ -2500,3 +2500,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 1 — Ajuda
 
 - O conteúdo estático da Central de Ajuda, os tipos e opções estáticas do suporte técnico e o componente SVG de ícones foram movidos para módulos dedicados, mantendo formulário, autenticação, Supabase, RPCs, efeitos, estados e regras de negócio em `page.tsx`.
+
+## Ajuda — Fase 2
+
+- Os helpers de tradução, status e data, a normalização pura dos registros do suporte técnico e as derivações da FAQ foram movidos para módulos dedicados. RPCs, autenticação, effects, formulário, estados e JSX permaneceram em `page.tsx`.

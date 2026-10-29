@@ -5,10 +5,16 @@ import test from "node:test";
 
 const pagina = await readFile("app/ajuda/page.tsx", "utf8");
 const suporte = await readFile("app/ajuda/lib/ajuda-technical-support.ts", "utf8");
+const normalizadores = await readFile(
+  "app/ajuda/lib/ajuda-technical-support-normalizers.ts",
+  "utf8",
+);
 
 test("tipos e opções estáticas do suporte técnico preservam contratos e ordem", () => {
   assert.equal(
-    createHash("sha256").update(suporte).digest("hex"),
+    createHash("sha256")
+      .update(suporte.replace(/\r\n/g, "\n"))
+      .digest("hex"),
     "35cb1888b991ac56747d651e8ecbc774978bfd23354169ba1a12c08670bc83fe",
   );
   for (const contrato of [
@@ -29,14 +35,15 @@ test("tipos e opções estáticas do suporte técnico preservam contratos e orde
   );
 });
 
-test("página mantém normalizadores e fallbacks do suporte técnico", () => {
+test("normalizadores dedicados mantêm contratos e a página os importa", () => {
   assert.match(pagina, /from "\.\/lib\/ajuda-technical-support"/);
-  assert.match(pagina, /new Set<CategoriaProblemaTecnico>\(/);
-  assert.match(pagina, /CATEGORIAS_PROBLEMA_TECNICO\.map\(\(item\) => item\.valor\)/);
-  assert.match(pagina, /: "outro";/);
-  assert.match(pagina, /valor === "aberto"/);
-  assert.match(pagina, /valor === "fechado"/);
-  assert.match(pagina, /: "aberto";/);
+  assert.match(pagina, /from "\.\/lib\/ajuda-technical-support-normalizers"/);
+  assert.match(normalizadores, /new Set<CategoriaProblemaTecnico>\(/);
+  assert.match(normalizadores, /CATEGORIAS_PROBLEMA_TECNICO\.map\(/);
+  assert.match(normalizadores, /: "outro";/);
+  assert.match(normalizadores, /valor === "aberto"/);
+  assert.match(normalizadores, /valor === "fechado"/);
+  assert.match(normalizadores, /: "aberto";/);
   assert.doesNotMatch(pagina, /type ProblemaTecnicoRpcRow =/);
   assert.doesNotMatch(pagina, /const CATEGORIAS_PROBLEMA_TECNICO/);
 });

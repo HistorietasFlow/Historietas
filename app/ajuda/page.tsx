@@ -6,8 +6,6 @@ import type { CSSProperties, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import type { HistorietasLanguage } from "../../lib/i18n";
-import { normalizarTexto } from "../../lib/utils";
 import { SvgIcon } from "./components/ajuda-svg-icon";
 import {
   ATALHOS_AJUDA,
@@ -21,53 +19,20 @@ import {
   type CategoriaProblemaTecnico,
   type ProblemaTecnicoResumo,
   type ProblemaTecnicoRpcRow,
-  type StatusProblemaTecnico,
 } from "./lib/ajuda-technical-support";
-
-function traduzirTexto(
-  texto: TextoTraduzido,
-  idioma: HistorietasLanguage,
-) {
-  if (idioma === "en") {
-    return texto.en;
-  }
-
-  if (idioma === "es") {
-    return texto.es;
-  }
-
-  return texto.pt;
-}
-
-function textoSeguro(valor: unknown, fallback = "") {
-  return typeof valor === "string" && valor.trim()
-    ? valor.trim()
-    : fallback;
-}
-
-function normalizarCategoriaProblemaTecnico(
-  valor: unknown,
-): CategoriaProblemaTecnico {
-  const categorias = new Set<CategoriaProblemaTecnico>(
-    CATEGORIAS_PROBLEMA_TECNICO.map((item) => item.valor),
-  );
-
-  return categorias.has(valor as CategoriaProblemaTecnico)
-    ? (valor as CategoriaProblemaTecnico)
-    : "outro";
-}
-
-function normalizarStatusProblemaTecnico(
-  valor: unknown,
-): StatusProblemaTecnico {
-  return valor === "aberto" ||
-    valor === "em_analise" ||
-    valor === "aguardando_usuario" ||
-    valor === "resolvido" ||
-    valor === "fechado"
-    ? valor
-    : "aberto";
-}
+import {
+  formatarDataChamado,
+  rotuloStatusProblema,
+  traduzirTexto,
+} from "./lib/ajuda-display-utils";
+import {
+  filtrarPerguntasAjuda,
+  obterCategoriaAjudaSelecionada,
+} from "./lib/ajuda-faq-derived";
+import {
+  normalizarCategoriaProblemaTecnico,
+  normalizarProblemasTecnicos,
+} from "./lib/ajuda-technical-support-normalizers";
 
 export default function AjudaPage() {
   const [busca, setBusca] = useState("");
@@ -94,35 +59,6 @@ export default function AjudaPage() {
     return traduzirTexto(texto, language);
   }
 
-  function rotuloStatusProblema(status: StatusProblemaTecnico) {
-    const rotulos: Record<StatusProblemaTecnico, TextoTraduzido> = {
-      aberto: { pt: "Aberto", en: "Open", es: "Abierto" },
-      em_analise: { pt: "Em análise", en: "Under review", es: "En revisión" },
-      aguardando_usuario: {
-        pt: "Aguardando você",
-        en: "Waiting for you",
-        es: "Esperando tu respuesta",
-      },
-      resolvido: { pt: "Resolvido", en: "Resolved", es: "Resuelto" },
-      fechado: { pt: "Fechado", en: "Closed", es: "Cerrado" },
-    };
-
-    return t(rotulos[status]);
-  }
-
-  function formatarDataChamado(data: string) {
-    const timestamp = new Date(data).getTime();
-
-    if (!Number.isFinite(timestamp)) {
-      return "";
-    }
-
-    return new Intl.DateTimeFormat(
-      language === "en" ? "en-US" : language === "es" ? "es-ES" : "pt-BR",
-      { dateStyle: "medium", timeStyle: "short" },
-    ).format(new Date(timestamp));
-  }
-
   async function carregarChamadosTecnicos() {
     setCarregandoChamados(true);
 
@@ -138,20 +74,10 @@ export default function AjudaPage() {
 
       const registros: ProblemaTecnicoRpcRow[] = Array.isArray(data) ? data : [];
 
-      const chamados = registros
-        .map((item) => ({
-          id: textoSeguro(item.problema_id),
-          categoria: normalizarCategoriaProblemaTecnico(item.categoria),
-          titulo: textoSeguro(item.titulo, "Problema técnico"),
-          descricao: textoSeguro(item.descricao),
-          paginaUrl: textoSeguro(item.pagina_url),
-          status: normalizarStatusProblemaTecnico(item.status),
-          prioridade: textoSeguro(item.prioridade, "normal"),
-          observacaoAdmin: textoSeguro(item.observacao_admin),
-          criadoEm: textoSeguro(item.criado_em),
-          atualizadoEm: textoSeguro(item.atualizado_em),
-        }))
-        .filter((item) => Boolean(item.id));
+      const chamados =
+        normalizarProblemasTecnicos(
+          registros,
+        );
 
       setChamadosTecnicos(chamados);
     } catch {
@@ -296,35 +222,25 @@ export default function AjudaPage() {
     }
   }
 
-  const perguntasFiltradas = useMemo(() => {
-    const buscaNormalizada = normalizarTexto(busca);
-
-    return PERGUNTAS_AJUDA.filter((item) => {
-      const correspondeCategoria =
-        categoriaAtiva === "todos" || item.categoria === categoriaAtiva;
-
-      if (!correspondeCategoria) {
-        return false;
-      }
-
-      if (!buscaNormalizada) {
-        return true;
-      }
-
-      const conteudo = normalizarTexto(
-        `${traduzirTexto(item.pergunta, language)} ${traduzirTexto(
-          item.resposta,
-          language,
-        )} ${traduzirTexto(item.palavrasChave, language)}`,
-      );
-
-      return conteudo.includes(buscaNormalizada);
-    });
-  }, [busca, categoriaAtiva, language]);
+  const perguntasFiltradas =
+    useMemo(() => {
+      return filtrarPerguntasAjuda({
+        perguntas: PERGUNTAS_AJUDA,
+        busca,
+        categoriaAtiva,
+        language,
+      });
+    }, [
+      busca,
+      categoriaAtiva,
+      language,
+    ]);
 
   const categoriaSelecionada =
-    CATEGORIAS_AJUDA.find((categoria) => categoria.id === categoriaAtiva) ||
-    CATEGORIAS_AJUDA[0];
+    obterCategoriaAjudaSelecionada(
+      CATEGORIAS_AJUDA,
+      categoriaAtiva,
+    );
 
   return (
     <main
@@ -792,7 +708,7 @@ export default function AjudaPage() {
                             {chamado.titulo}
                           </strong>
                           <span style={supportTicketStatusStyle}>
-                            {rotuloStatusProblema(chamado.status)}
+                            {rotuloStatusProblema(chamado.status, language)}
                           </span>
                         </div>
                         <p style={supportTicketDescriptionStyle}>
@@ -811,7 +727,7 @@ export default function AjudaPage() {
                           </div>
                         ) : null}
                         <span style={supportTicketDateStyle}>
-                          {formatarDataChamado(chamado.criadoEm)}
+                          {formatarDataChamado(chamado.criadoEm, language)}
                         </span>
                       </article>
                     ))}
