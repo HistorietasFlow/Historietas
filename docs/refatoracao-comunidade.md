@@ -2436,3 +2436,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 39 — Top 5 do Perfil Autor
 
 - A resolução do nome inicial e do nome de perfil foi agrupada em helper assíncrono dedicado, preservando prioridade de fallback, consulta condicional por `userId`, propagação de erros e checks de cancelamento na página.
+
+## Fase 40 — Top 5 do Perfil Autor
+
+- A composição de `UsuarioTop5 | null` foi movida para helper puro dedicado, preservando a condição baseada em `userId` e mantendo setters e lifecycle na página.

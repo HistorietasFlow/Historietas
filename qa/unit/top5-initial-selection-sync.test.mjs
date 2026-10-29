@@ -88,7 +88,7 @@ test("Top 5 sincroniza somente a correção necessária da seleção inicial", a
     /const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\);/,
   );
 
-  const setUsuario = page.indexOf("setUsuario(userId ? { id: userId, nome: nomeUsuario } : null);");
+  const setUsuario = page.indexOf("setUsuario(");
   const setObras = page.indexOf("setObras(obrasMescladas);");
   const setIds = page.indexOf("setIdsSelecionados(idsNormalizados);");
   const sincronizar = page.indexOf("sincronizarSelecaoInicialTop5(");

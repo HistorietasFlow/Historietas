@@ -27,6 +27,7 @@ import {
 import { sincronizarSelecaoInicialTop5 } from "./lib/top5-initial-selection-sync";
 import { carregarDadosIniciaisTop5 } from "./lib/top5-initial-data-loader";
 import { prepararConteudoInicialTop5 } from "./lib/top5-initial-content";
+import { criarUsuarioTop5 } from "./lib/top5-user";
 import { persistirSelecaoTop5 } from "./lib/top5-selection-save";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import { resolverNomeUsuarioTop5 } from "./lib/top5-user-name-resolver";
@@ -83,7 +84,12 @@ export default function Top5PerfilAutorPage() {
           obrasSupabase,
         );
 
-        setUsuario(userId ? { id: userId, nome: nomeUsuario } : null);
+        setUsuario(
+          criarUsuarioTop5(
+            userId,
+            nomeUsuario,
+          ),
+        );
         setObras(obrasMescladas);
         setIdsSelecionados(idsNormalizados);
 
