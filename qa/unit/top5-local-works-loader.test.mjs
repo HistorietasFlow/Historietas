@@ -41,7 +41,7 @@ test("Top 5 delega somente o carregamento local de obras", async () => {
   assert.doesNotMatch(page, /function carregarObrasLocaisTop5/);
   assert.doesNotMatch(page, /carregarObrasLocaisTop5\(userId\)/);
   assert.doesNotMatch(page, /async function carregarObrasSupabaseTop5/);
-  assert.match(page, /carregarObrasSupabaseTop5\(\)/);
+  assert.match(page, /carregarDadosIniciaisTop5\(\)/);
   assert.doesNotMatch(page, /function mesclarObrasTop5/);
   assert.doesNotMatch(page, /mesclarObrasTop5\(/);
   assert.match(page, /carregarObrasIniciaisTop5\(\s*userId,\s*obrasSupabase,\s*\)/);

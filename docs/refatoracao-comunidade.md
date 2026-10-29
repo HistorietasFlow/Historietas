@@ -2380,3 +2380,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 25 — Top 5 do Perfil Autor
 
 - A sincronização corretiva da seleção inicial foi movida para helper dedicado, preservando condição por `userId`, comparação via `JSON.stringify` e gravação silenciosa com `salvarTop5`.
+
+## Fase 26 — Top 5 do Perfil Autor
+
+- O carregamento paralelo da sessão autenticada e das obras Supabase foi movido para loader dedicado, preservando `Promise.all`, ordem das chamadas, paralelismo e propagação de erros.

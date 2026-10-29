@@ -55,7 +55,7 @@ test("Top 5 delega somente a mesclagem pura das obras", async () => {
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
   assert.match(page, /normalizarIdsSelecionadosTop5\(/);
   assert.doesNotMatch(page, /carregarObrasLocaisTop5/);
-  assert.match(page, /carregarObrasSupabaseTop5/);
+  assert.match(page, /carregarDadosIniciaisTop5/);
   assert.doesNotMatch(page, /ehClassificacao18/);
 
   for (const forbidden of [

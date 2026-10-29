@@ -85,7 +85,10 @@ test("Top 5 delega a composição inicial de obras sem alterar a ordem das fonte
     page,
     /const obrasMescladas = carregarObrasIniciaisTop5\(\s*userId,\s*obrasSupabase,\s*\);/,
   );
-  assert.match(page, /carregarObrasSupabaseTop5\(\)/);
+  assert.match(
+    page,
+    /import \{ carregarDadosIniciaisTop5 \} from "\.\/lib\/top5-initial-data-loader";/,
+  );
   assert.match(
     page,
     /const obrasMescladas = carregarObrasIniciaisTop5\([\s\S]*?\);\s*const \{\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararSelecaoInicialTop5\(/,
