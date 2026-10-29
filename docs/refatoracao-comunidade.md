@@ -2352,3 +2352,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 18 — Top 5 do Perfil Autor
 
 - Os estilos restantes da página, grid, cards e badge de posição foram movidos para módulo dedicado, preservando tema, layout, grid, tipografia, estados e composição visual.
+
+## Fase 19 — Top 5 do Perfil Autor
+
+- As transformações puras de remoção e reordenação da lista selecionada foram movidas para módulo dedicado, preservando ordem, imutabilidade e retorno da referência original em movimentos inválidos.
