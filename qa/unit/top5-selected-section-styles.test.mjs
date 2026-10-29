@@ -10,11 +10,16 @@ const pagePath = new URL(
   "../../app/perfil-autor/top-5/page.tsx",
   import.meta.url,
 );
+const selectedSectionPath = new URL(
+  "../../app/perfil-autor/top-5/components/top5-selected-section.tsx",
+  import.meta.url,
+);
 
 test("Top 5 delega somente os estilos da seção de obras selecionadas", async () => {
-  const [styles, page] = await Promise.all([
+  const [styles, page, selectedSection] = await Promise.all([
     readFile(stylesPath, "utf8"),
     readFile(pagePath, "utf8"),
+    readFile(selectedSectionPath, "utf8"),
   ]);
 
   assert.match(styles, /import type \{ CSSProperties \} from "react";/);
@@ -71,9 +76,10 @@ test("Top 5 delega somente os estilos da seção de obras selecionadas", async (
   );
   assert.doesNotMatch(page, /CSSProperties/);
   assert.match(
-    page,
-    /import \{[\s\S]*selectedSectionStyle,[\s\S]*from "\.\/lib\/top5-selected-section-styles";/,
+    selectedSection,
+    /import \{ selectedSectionStyle \} from "\.\.\/lib\/top5-selected-section-styles";/,
   );
+  assert.doesNotMatch(page, /selectedSectionStyle/);
 
   for (const delegatedStyleName of [
     "cancelButtonStyle",
