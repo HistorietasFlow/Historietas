@@ -34,11 +34,12 @@ test("Top 5 delega somente a persistência da seleção", async () => {
 
   assert.match(
     page,
-    /import \{[\s\S]*TOP_FIVE_MAXIMO,[\s\S]*carregarTop5Salvo,[\s\S]*salvarTop5,[\s\S]*from "\.\/lib\/top5-selection-storage";/,
+    /import \{[\s\S]*TOP_FIVE_MAXIMO,[\s\S]*salvarTop5,[\s\S]*from "\.\/lib\/top5-selection-storage";/,
   );
   assert.doesNotMatch(page, /TOP_FIVE_STORAGE_KEY/);
   assert.doesNotMatch(page, /function carregarTop5Salvo/);
   assert.doesNotMatch(page, /function salvarTop5/);
+  assert.doesNotMatch(page, /carregarTop5Salvo\(/);
   assert.doesNotMatch(page, /const STORAGE_KEY = "historietas-obras";/);
   assert.doesNotMatch(page, /function carregarObrasLocaisTop5/);
   assert.doesNotMatch(page, /carregarObrasLocaisTop5\(userId\)/);

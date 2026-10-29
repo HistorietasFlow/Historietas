@@ -88,7 +88,7 @@ test("Top 5 delega a composição inicial de obras sem alterar a ordem das fonte
   assert.match(page, /carregarObrasSupabaseTop5\(\)/);
   assert.match(
     page,
-    /const obrasMescladas = carregarObrasIniciaisTop5\([\s\S]*?\);\s*const idsSalvos = userId \? carregarTop5Salvo\(userId\) : \[\];/,
+    /const obrasMescladas = carregarObrasIniciaisTop5\([\s\S]*?\);\s*const \{\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararSelecaoInicialTop5\(/,
   );
 
   const primeiroCancelamento = page.indexOf("if (cancelado)");

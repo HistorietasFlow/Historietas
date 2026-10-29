@@ -2372,3 +2372,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 23 — Top 5 do Perfil Autor
 
 - A composição das obras locais e Supabase foi movida para loader dedicado, preservando ordem das fontes e regras existentes de mesclagem.
+
+## Fase 24 — Top 5 do Perfil Autor
+
+- O carregamento e a normalização da seleção inicial foram movidos para helper dedicado, mantendo a persistência corretiva e os setters na página.
