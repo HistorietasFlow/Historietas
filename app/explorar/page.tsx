@@ -31,20 +31,17 @@ import { ExplorarClearFiltersAction } from "./components/explorar-clear-filters-
 import { ExplorarCreativeWorkSections } from "./components/explorar-creative-work-sections";
 import { ExplorarGenreWorkSections } from "./components/explorar-genre-work-sections";
 import { ExplorarFilteredWorksSection } from "./components/explorar-filtered-works-section";
+import { ExplorarCreativeAuthorSections } from "./components/explorar-creative-author-sections";
+import { ExplorarGenreAuthorSections } from "./components/explorar-genre-author-sections";
+import { ExplorarFilteredAuthorsSection } from "./components/explorar-filtered-authors-section";
 import {
   EstadoVazioExplorar,
-  ExplorarCarouselRow,
-  SectionHeader,
 } from "./components/explorar-section-components";
 import type {
   ModoConteudoExplorar,
 } from "./components/explorar-section-components";
-import AutorExplorarCard from "./components/explorar-autor-card";
 import { ExplorarTopWaterFade } from "./components/explorar-top-water-fade";
 import { criarPerfilAutorHrefExplorar } from "./lib/explorar-author-route-utils";
-import {
-  obterTituloCriativoAutoresExplorar,
-} from "./lib/explorar-category-titles";
 import { filtroConteudo18EstaAtivoExplorar } from "./lib/explorar-adult-filter-state";
 import { contarFiltrosAvancadosAtivosExplorar } from "./lib/explorar-active-filter-count";
 import { possuiFiltrosAtivosExplorar } from "./lib/explorar-active-filters";
@@ -52,7 +49,6 @@ import { obterAutorIdsExplorar } from "./lib/explorar-author-ids";
 import { categorias } from "./lib/explorar-categories";
 import { criarTextoBotaoFiltrosAvancadosExplorar } from "./lib/explorar-filter-button-label";
 import { criarLoginHrefExplorar } from "./lib/explorar-login-route-utils";
-import { criarHrefListaExplorar } from "./lib/explorar-list-route-utils";
 import { atualizarUrlExplorar } from "./lib/explorar-page-route-utils";
 import { possuiObrasPublicadasExplorar } from "./lib/explorar-published-state";
 import { calcularTotalResultadosExplorar } from "./lib/explorar-result-count";
@@ -62,7 +58,6 @@ import {
 } from "./lib/explorar-storage-keys";
 import {
   criarTemaPaginaVisualExplorar,
-  obterTemaCategoria,
 } from "./lib/explorar-theme";
 import { useExplorarAdvancedFiltersBodyLock } from "./hooks/use-explorar-advanced-filters-body-lock";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
@@ -79,12 +74,6 @@ import {
   explorarModalSectionLabelStyle,
   desktopContainerStyle,
 } from "./lib/explorar-layout-styles";
-import {
-  sectionStyle,
-  autoresExplorarGridStyle,
-  desktopAutoresExplorarGridStyle,
-  desktopSectionStyle,
-} from "./lib/explorar-content-styles";
 import {
   traduzirTextoExplorar,
 } from "./lib/explorar-translations";
@@ -688,96 +677,36 @@ export default function ExplorarPage() {
 
         {modoConteudo === "autores" &&
           !categoriaSelecionada &&
-          !termoBusca &&
-          secoesCriativasAutores.map((secao) => (
-            <section
-              key={`autores-criativos-${normalizarTexto(secao.titulo)}`}
-              style={isDesktop ? desktopSectionStyle : sectionStyle}
-            >
-              <SectionHeader
-                title={secao.titulo}
-                tema={temaPagina}
-                isDesktop={isDesktop}
-                href={criarHrefListaExplorar({
-                  titulo: secao.titulo,
-                  modo: "autores",
-                })}
-              />
-
-              <ExplorarCarouselRow isDesktop={isDesktop} variant="autor">
-                {secao.autores.map((autor) => (
-                  <AutorExplorarCard
-                    key={`${secao.titulo}-${autor.chave}`}
-                    autor={autor}
-                    isDesktop={isDesktop}
-                  />
-                ))}
-              </ExplorarCarouselRow>
-            </section>
-          ))}
+          !termoBusca && (
+            <ExplorarCreativeAuthorSections
+              secoes={secoesCriativasAutores}
+              isDesktop={isDesktop}
+              tema={temaPagina}
+            />
+          )}
 
         {modoConteudo === "autores" &&
           !categoriaSelecionada &&
-          !termoBusca &&
-          secoesAutoresPorGenero.map((secao) => (
-            <section
-              key={`autores-${normalizarTexto(secao.genero)}`}
-              style={isDesktop ? desktopSectionStyle : sectionStyle}
-            >
-              <SectionHeader
-                title={obterTituloCriativoAutoresExplorar(secao.genero)}
-                tema={obterTemaCategoria()}
-                isDesktop={isDesktop}
-                href={criarHrefListaExplorar({
-                  titulo: obterTituloCriativoAutoresExplorar(secao.genero),
-                  modo: "autores",
-                  genero: secao.genero,
-                })}
-              />
-
-              <ExplorarCarouselRow isDesktop={isDesktop} variant="autor">
-                {secao.autores.map((autor) => (
-                  <AutorExplorarCard
-                    key={`${secao.genero}-${autor.chave}`}
-                    autor={autor}
-                    isDesktop={isDesktop}
-                  />
-                ))}
-              </ExplorarCarouselRow>
-            </section>
-          ))}
+          !termoBusca && (
+            <ExplorarGenreAuthorSections
+              secoes={secoesAutoresPorGenero}
+              isDesktop={isDesktop}
+            />
+          )}
 
         {modoConteudo === "autores" &&
           (Boolean(categoriaSelecionada) || Boolean(termoBusca)) &&
           autoresFiltrados.length > 0 && (
-            <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-              <SectionHeader
-                title={
-                  categoriaSelecionada
-                    ? `Autores de ${categoriaSelecionada}`
-                    : "Autores encontrados"
-                }
-                tema={temaPagina}
-                isDesktop={isDesktop}
-              />
-
-              <div
-                style={
-                  isDesktop
-                    ? desktopAutoresExplorarGridStyle
-                    : autoresExplorarGridStyle
-                }
-              >
-                {autoresFiltrados.map((autor) => (
-                  <AutorExplorarCard
-                    key={autor.chave}
-                    autor={autor}
-                    isDesktop={isDesktop}
-                    emGrade
-                  />
-                ))}
-              </div>
-            </section>
+            <ExplorarFilteredAuthorsSection
+              autores={autoresFiltrados}
+              titulo={
+                categoriaSelecionada
+                  ? `Autores de ${categoriaSelecionada}`
+                  : "Autores encontrados"
+              }
+              tema={temaPagina}
+              isDesktop={isDesktop}
+            />
           )}
 
         {totalResultados === 0 && (
