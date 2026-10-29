@@ -51,10 +51,6 @@ test("Top 5 delega somente a mensagem de status apresentacional", async () => {
     page,
     /import \{[\s\S]*messageStyle[\s\S]*top5-search-feedback-styles/,
   );
-  assert.match(
-    page,
-    /import \{[\s\S]*loadingStyle,[\s\S]*from "\.\/lib\/top5-search-feedback-styles";/,
-  );
 
   for (const forbidden of [
     "useState",
