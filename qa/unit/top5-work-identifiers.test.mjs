@@ -45,11 +45,11 @@ test("Top 5 delega somente os identificadores e a chave canônica de obras", asy
 
   assert.match(
     page,
-    /import \{[\s\S]*criarChaveObraTop5,[\s\S]*obterIdentificadoresObraTop5,[\s\S]*from "\.\/lib\/top5-work-identifiers";/,
+    /import \{ criarChaveObraTop5 \} from "\.\/lib\/top5-work-identifiers";/,
   );
   assert.doesNotMatch(page, /function obterIdentificadoresObraTop5/);
   assert.doesNotMatch(page, /function criarChaveObraTop5/);
-  assert.match(page, /obterIdentificadoresObraTop5\(/);
+  assert.doesNotMatch(page, /obterIdentificadoresObraTop5/);
   assert.match(page, /criarChaveObraTop5\(/);
   assert.doesNotMatch(
     page,

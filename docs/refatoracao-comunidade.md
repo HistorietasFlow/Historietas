@@ -2336,3 +2336,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 14 — Top 5 do Perfil Autor
 
 - A ordenação e o filtro textual das obras disponíveis foram movidos para função pura dedicada, preservando prioridade das selecionadas, locale `pt-BR`, normalização e campos pesquisáveis.
+
+## Fase 15 — Top 5 do Perfil Autor
+
+- A criação do mapa de obras por identificador e a resolução das obras selecionadas foram movidas para seletores puros dedicados, preservando ordem, resolução e descarte de IDs inválidos.
