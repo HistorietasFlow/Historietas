@@ -2296,3 +2296,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 4 — Top 5 do Perfil Autor
 
 - Os normalizadores puros de valores, arquivos, capítulos, obras locais e registros Supabase foram movidos para módulo dedicado, preservando aliases, fallbacks e contratos atuais.
+
+## Fase 5 — Top 5 do Perfil Autor
+
+- A geração dos identificadores e da chave canônica das obras foi movida para módulo puro dedicado, preservando prioridade, deduplicação, slug e normalização textual.
