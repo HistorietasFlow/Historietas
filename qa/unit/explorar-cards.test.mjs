@@ -11,6 +11,9 @@ const ler = (caminho) =>
 const pagina = ler("../../app/explorar/page.tsx");
 const autorCodigo = ler("../../app/explorar/components/explorar-autor-card.tsx");
 const obraCodigo = ler("../../app/explorar/components/explorar-obra-publicada-card.tsx");
+const secoesCriativasCodigo = ler("../../app/explorar/components/explorar-creative-work-sections.tsx");
+const secoesGeneroCodigo = ler("../../app/explorar/components/explorar-genre-work-sections.tsx");
+const secoesFiltradasCodigo = ler("../../app/explorar/components/explorar-filtered-works-section.tsx");
 const auxiliaresCodigo = ler("../../app/explorar/components/explorar-section-components.tsx");
 const estiloCodigo = ler("../../app/explorar/lib/explorar-content-styles.ts");
 const rotaCodigo = ler("../../app/explorar/lib/explorar-author-route-utils.ts");
@@ -117,9 +120,16 @@ test("corpos dos cards, rota e capa preservam literalmente a base", () => {
     "15c2f9a43c7e41ace7002ecbdd05aeca7d0aa93eb848d4b9428e691c9482314e");
   for (const codigo of [autorCodigo, obraCodigo]) assert.match(codigo, /^"use client";/);
   assert.match(pagina, /import AutorExplorarCard from "\.\/components\/explorar-autor-card"/);
-  assert.match(pagina, /import ObraPublicadaCard from "\.\/components\/explorar-obra-publicada-card"/);
+  assert.doesNotMatch(pagina, /import ObraPublicadaCard from "\.\/components\/explorar-obra-publicada-card"/);
   assert.equal((pagina.match(/<AutorExplorarCard\b/g) || []).length, 3);
-  assert.equal((pagina.match(/<ObraPublicadaCard\b/g) || []).length, 3);
+  for (const codigo of [
+    secoesCriativasCodigo,
+    secoesGeneroCodigo,
+    secoesFiltradasCodigo,
+  ]) {
+    assert.match(codigo, /import ObraPublicadaCard from "\.\/explorar-obra-publicada-card"/);
+    assert.match(codigo, /<ObraPublicadaCard\b/);
+  }
   assert.doesNotMatch(
     pagina,
     /function (?:AutorExplorarCard|ObraPublicadaCard|EstadoVazioExplorar|SectionHeader|ExplorarCarouselRow)\(/,

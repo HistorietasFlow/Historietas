@@ -28,6 +28,9 @@ import { ExplorarAdvancedFiltersShell } from "./components/explorar-advanced-fil
 import { ExplorarAdultContentFilter } from "./components/explorar-adult-content-filter";
 import { ExplorarOrderingOptions } from "./components/explorar-ordering-options";
 import { ExplorarClearFiltersAction } from "./components/explorar-clear-filters-action";
+import { ExplorarCreativeWorkSections } from "./components/explorar-creative-work-sections";
+import { ExplorarGenreWorkSections } from "./components/explorar-genre-work-sections";
+import { ExplorarFilteredWorksSection } from "./components/explorar-filtered-works-section";
 import {
   EstadoVazioExplorar,
   ExplorarCarouselRow,
@@ -37,12 +40,10 @@ import type {
   ModoConteudoExplorar,
 } from "./components/explorar-section-components";
 import AutorExplorarCard from "./components/explorar-autor-card";
-import ObraPublicadaCard from "./components/explorar-obra-publicada-card";
 import { ExplorarTopWaterFade } from "./components/explorar-top-water-fade";
 import { criarPerfilAutorHrefExplorar } from "./lib/explorar-author-route-utils";
 import {
   obterTituloCriativoAutoresExplorar,
-  obterTituloCriativoObrasExplorar,
 } from "./lib/explorar-category-titles";
 import { filtroConteudo18EstaAtivoExplorar } from "./lib/explorar-adult-filter-state";
 import { contarFiltrosAvancadosAtivosExplorar } from "./lib/explorar-active-filter-count";
@@ -80,13 +81,9 @@ import {
 } from "./lib/explorar-layout-styles";
 import {
   sectionStyle,
-  explorarObraCarouselItemStyle,
-  desktopExplorarObraCarouselItemStyle,
   autoresExplorarGridStyle,
   desktopAutoresExplorarGridStyle,
-  gridStyle,
   desktopSectionStyle,
-  desktopPublishedGridStyle,
 } from "./lib/explorar-content-styles";
 import {
   traduzirTextoExplorar,
@@ -643,109 +640,40 @@ export default function ExplorarPage() {
 
         {modoConteudo === "obras" &&
           !categoriaSelecionada &&
-          !termoBusca &&
-          secoesCriativasObras.map((secao) => (
-            <section
-              key={`obras-criativas-${normalizarTexto(secao.titulo)}`}
-              style={isDesktop ? desktopSectionStyle : sectionStyle}
-            >
-              <SectionHeader
-                title={secao.titulo}
-                tema={temaPagina}
-                isDesktop={isDesktop}
-                href={criarHrefListaExplorar({
-                  titulo: secao.titulo,
-                  modo: "obras",
-                })}
-              />
-
-              <ExplorarCarouselRow isDesktop={isDesktop} variant="obra">
-                {secao.obras.map((obra) => (
-                  <div
-                    key={`${secao.titulo}-${obra.id}`}
-                    style={
-                      isDesktop
-                        ? desktopExplorarObraCarouselItemStyle
-                        : explorarObraCarouselItemStyle
-                    }
-                  >
-                    <ObraPublicadaCard
-                      obra={obra}
-                      isDesktop={isDesktop}
-                    />
-                  </div>
-                ))}
-              </ExplorarCarouselRow>
-            </section>
-          ))}
+          !termoBusca && (
+            <ExplorarCreativeWorkSections
+              secoes={secoesCriativasObras}
+              isDesktop={isDesktop}
+              tema={temaPagina}
+            />
+          )}
 
         {modoConteudo === "obras" &&
           !categoriaSelecionada &&
-          !termoBusca &&
-          secoesObrasPorGenero.map((secao) => (
-            <section
-              key={`obras-${normalizarTexto(secao.genero)}`}
-              style={isDesktop ? desktopSectionStyle : sectionStyle}
-            >
-              <SectionHeader
-                title={obterTituloCriativoObrasExplorar(secao.genero)}
-                tema={obterTemaCategoria()}
-                isDesktop={isDesktop}
-                href={criarHrefListaExplorar({
-                  titulo: obterTituloCriativoObrasExplorar(secao.genero),
-                  modo: "obras",
-                  genero: secao.genero,
-                })}
-              />
-
-              <ExplorarCarouselRow isDesktop={isDesktop} variant="obra">
-                {secao.obras.map((obra) => (
-                  <div
-                    key={`${secao.genero}-${obra.id}`}
-                    style={
-                      isDesktop
-                        ? desktopExplorarObraCarouselItemStyle
-                        : explorarObraCarouselItemStyle
-                    }
-                  >
-                    <ObraPublicadaCard
-                      obra={obra}
-                      isDesktop={isDesktop}
-                    />
-                  </div>
-                ))}
-              </ExplorarCarouselRow>
-            </section>
-          ))}
+          !termoBusca && (
+            <ExplorarGenreWorkSections
+              secoes={secoesObrasPorGenero}
+              isDesktop={isDesktop}
+            />
+          )}
 
         {modoConteudo === "obras" &&
           (Boolean(categoriaSelecionada) ||
             Boolean(termoBusca) ||
             filtroConteudo18Ativo) &&
           obrasLocaisFiltradas.length > 0 && (
-            <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-              <SectionHeader
-                title={
-                  categoriaSelecionada
-                    ? `Publicações em ${categoriaSelecionada}`
-                    : termoBusca
-                      ? "Resultados da busca"
-                      : "Conteúdo 18+"
-                }
-                tema={temaPagina}
-                isDesktop={isDesktop}
-              />
-
-              <div style={isDesktop ? desktopPublishedGridStyle : gridStyle}>
-                {obrasLocaisFiltradas.map((obra) => (
-                  <ObraPublicadaCard
-                    key={obra.id}
-                    obra={obra}
-                    isDesktop={isDesktop}
-                  />
-                ))}
-              </div>
-
+            <ExplorarFilteredWorksSection
+              obras={obrasLocaisFiltradas}
+              titulo={
+                categoriaSelecionada
+                  ? `Publicações em ${categoriaSelecionada}`
+                  : termoBusca
+                    ? "Resultados da busca"
+                    : "Conteúdo 18+"
+              }
+              tema={temaPagina}
+              isDesktop={isDesktop}
+            >
               {consultaCatalogoPersonalizada && catalogoTemMais && (
                 <ExplorarLoadMoreButton
                   carregando={carregandoMaisCatalogo}
@@ -755,7 +683,7 @@ export default function ExplorarPage() {
                   }
                 />
               )}
-            </section>
+            </ExplorarFilteredWorksSection>
           )}
 
         {modoConteudo === "autores" &&

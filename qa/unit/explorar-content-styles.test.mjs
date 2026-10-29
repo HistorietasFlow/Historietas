@@ -19,6 +19,9 @@ const pagina = readFileSync(
 const autorCard = readFileSync(new URL("../../app/explorar/components/explorar-autor-card.tsx", import.meta.url), "utf8");
 const obraCard = readFileSync(new URL("../../app/explorar/components/explorar-obra-publicada-card.tsx", import.meta.url), "utf8");
 const auxiliares = readFileSync(new URL("../../app/explorar/components/explorar-section-components.tsx", import.meta.url), "utf8");
+const secoesCriativasObras = readFileSync(new URL("../../app/explorar/components/explorar-creative-work-sections.tsx", import.meta.url), "utf8");
+const secoesObrasGenero = readFileSync(new URL("../../app/explorar/components/explorar-genre-work-sections.tsx", import.meta.url), "utf8");
+const secoesObrasFiltradas = readFileSync(new URL("../../app/explorar/components/explorar-filtered-works-section.tsx", import.meta.url), "utf8");
 const compilar = (codigo) =>
   typescript.transpileModule(codigo, {
     compilerOptions: {
@@ -163,19 +166,31 @@ test("o módulo de estilos é estático e a página continua consumindo os estil
   const importacaoAutor = autorCard.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   const importacaoObra = obraCard.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   const importacaoAuxiliares = auxiliares.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  const importacaoCriativas = secoesCriativasObras.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  const importacaoGenero = secoesObrasGenero.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  const importacaoFiltradas = secoesObrasFiltradas.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   assert.ok(importacaoAutor);
   assert.ok(importacaoObra);
   assert.ok(importacaoAuxiliares);
+  assert.ok(importacaoCriativas);
+  assert.ok(importacaoGenero);
+  assert.ok(importacaoFiltradas);
   nomes.push(...importacaoAutor[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   nomes.push(...importacaoObra[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   nomes.push(...importacaoAuxiliares[1].split(",").map((nome) => nome.trim()).filter(Boolean));
-  assert.equal(nomes.length, 72);
+  nomes.push(...importacaoCriativas[1].split(",").map((nome) => nome.trim()).filter(Boolean));
+  nomes.push(...importacaoGenero[1].split(",").map((nome) => nome.trim()).filter(Boolean));
+  nomes.push(...importacaoFiltradas[1].split(",").map((nome) => nome.trim()).filter(Boolean));
+  assert.equal(nomes.length, 80);
   for (const nome of nomes) {
     assert.match(modulo, new RegExp(`export (?:const|function) ${nome}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`(?:const|function) ${nome}\\b`));
   }
   assert.match(modulo, /from "\.\/explorar-layout-styles"/);
   assert.match(pagina, /isDesktop \? desktopSectionStyle : sectionStyle/);
+  assert.match(secoesCriativasObras, /desktopExplorarObraCarouselItemStyle/);
+  assert.match(secoesObrasGenero, /explorarObraCarouselItemStyle/);
+  assert.match(secoesObrasFiltradas, /desktopPublishedGridStyle/);
   assert.match(obraCard, /criarDesktopPublishedCoverStyle\(obra\.capa/);
   assert.doesNotMatch(modulo, /\b(?:supabase|localStorage|window|document|useEffect|useState)\b/i);
   assert.doesNotMatch(modulo, /<(?:div|section|article)\b/);
