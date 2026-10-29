@@ -33,9 +33,15 @@ import {
   obterTituloCriativoAutoresExplorar,
   obterTituloCriativoObrasExplorar,
 } from "./lib/explorar-category-titles";
+import { obterAutorIdsExplorar } from "./lib/explorar-author-ids";
 import { categorias } from "./lib/explorar-categories";
 import { criarLoginHrefExplorar } from "./lib/explorar-login-route-utils";
 import { criarHrefListaExplorar } from "./lib/explorar-list-route-utils";
+import { atualizarUrlExplorar } from "./lib/explorar-page-route-utils";
+import {
+  COMPLETED_STORAGE_KEY,
+  FAVORITES_STORAGE_KEY,
+} from "./lib/explorar-storage-keys";
 import {
   criarTemaPaginaVisualExplorar,
   obterTemaCategoria,
@@ -141,9 +147,6 @@ import type {
   FiltroColecaoExplorar,
 } from "./lib/explorar-derived-utils";
 
-const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
-const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
 export default function ExplorarPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
@@ -243,17 +246,7 @@ export default function ExplorarPage() {
   });
 
   useEffect(() => {
-    const autorIds = Array.from(
-      new Set(
-        obrasLocais
-          .filter(
-            (obra) =>
-              obra.publicado && obraTemConteudoPublicadoExplorar(obra)
-          )
-          .map((obra) => obra.autorId?.trim() || "")
-          .filter(Boolean)
-      )
-    );
+    const autorIds = obterAutorIdsExplorar(obrasLocais);
 
     let cancelado = false;
 
@@ -450,24 +443,6 @@ export default function ExplorarPage() {
 
   const temaPagina = criarTemaPaginaVisualExplorar();
 
-  function atualizarUrl(
-    categoria: string,
-    modo: ModoConteudoExplorar = modoConteudo
-  ) {
-    const params = new URLSearchParams();
-
-    if (modo === "autores") {
-      params.set("tipo", "autores");
-    }
-
-    if (categoria.trim()) {
-      params.set("categoria", categoria.trim());
-    }
-
-    const query = params.toString();
-    window.history.pushState(null, "", query ? `/explorar?${query}` : "/explorar");
-  }
-
   function selecionarModoConteudo(modo: ModoConteudoExplorar) {
     setModoConteudo(modo);
     setCategoriaSelecionada("");
@@ -480,7 +455,7 @@ export default function ExplorarPage() {
     }
 
     setMostrarFiltrosAvancados(false);
-    atualizarUrl("", modo);
+    atualizarUrlExplorar("", modo);
   }
 
   function selecionarFiltroClassificacaoExplorar(filtro: string) {
@@ -528,7 +503,7 @@ export default function ExplorarPage() {
 
   function selecionarCategoria(categoria: string) {
     setCategoriaSelecionada(categoria);
-    atualizarUrl(categoria, modoConteudo);
+    atualizarUrlExplorar(categoria, modoConteudo);
   }
 
   function selecionarFiltroColecao(filtro: FiltroColecaoExplorar) {

@@ -2456,3 +2456,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 3
 
 - O helper da rota de login, os helpers de tema e o catálogo estático de categorias foram movidos para módulos dedicados, preservando URLs, valores visuais, ordem das categorias e todos os call sites.
+
+## Explorar — Fase 4
+
+- As chaves de storage, a derivação pura de IDs de autores e a atualização da rota `/explorar` foram movidas para módulos dedicados, mantendo lifecycle, setters, Supabase e call sites de negócio na página.
