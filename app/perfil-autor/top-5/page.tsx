@@ -10,7 +10,6 @@ import {
   useHistorietasTheme,
 } from "../../../lib/historietasTheme";
 import { normalizarTexto } from "../../../lib/utils";
-import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { Top5LanguageBridge } from "./components/top5-language-bridge";
 import { pegarTexto } from "./lib/top5-work-normalizers";
 import {
@@ -19,6 +18,7 @@ import {
 } from "./lib/top5-work-identifiers";
 import { carregarObrasLocaisTop5 } from "./lib/top5-local-works-loader";
 import { carregarObrasSupabaseTop5 } from "./lib/top5-supabase-works-loader";
+import { mesclarObrasTop5 } from "./lib/top5-work-merge";
 import {
   TOP_FIVE_MAXIMO,
   carregarTop5Salvo,
@@ -28,54 +28,6 @@ import type {
   ObraTop5,
   UsuarioTop5,
 } from "./lib/top5-types";
-
-
-function mesclarObrasTop5(obras: ObraTop5[]) {
-  const obrasMescladas: ObraTop5[] = [];
-  const indicePorIdentificador = new Map<string, number>();
-
-  obras.forEach((obra) => {
-    if (!obra.publicado || ehClassificacao18(obra.classificacaoIndicativa)) {
-      return;
-    }
-
-    const identificadores = obterIdentificadoresObraTop5(obra);
-    const indiceExistente = identificadores
-      .map((identificador) => indicePorIdentificador.get(identificador))
-      .find((indice): indice is number => typeof indice === "number");
-
-    if (typeof indiceExistente === "number") {
-      const obraExistente = obrasMescladas[indiceExistente];
-      const obraAtualizada: ObraTop5 = {
-        ...obraExistente,
-        ...obra,
-        capa: obra.capa || obraExistente.capa,
-        capaNome: obra.capaNome || obraExistente.capaNome,
-        capitulos:
-          obra.capitulos.length > 0 ? obra.capitulos : obraExistente.capitulos,
-        arquivoObra: obra.arquivoObra || obraExistente.arquivoObra,
-        link: obra.link || obraExistente.link,
-      };
-
-      obrasMescladas[indiceExistente] = obraAtualizada;
-
-      obterIdentificadoresObraTop5(obraAtualizada).forEach((identificador) => {
-        indicePorIdentificador.set(identificador, indiceExistente);
-      });
-
-      return;
-    }
-
-    const novoIndice = obrasMescladas.length;
-    obrasMescladas.push(obra);
-
-    identificadores.forEach((identificador) => {
-      indicePorIdentificador.set(identificador, novoIndice);
-    });
-  });
-
-  return obrasMescladas;
-}
 
 function normalizarIdsSelecionadosTop5(
   ids: string[],
