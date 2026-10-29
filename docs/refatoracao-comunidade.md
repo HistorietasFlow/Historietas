@@ -2320,3 +2320,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 10 — Top 5 do Perfil Autor
 
 - A mesclagem e deduplicação das obras foi movida para módulo puro dedicado, preservando filtro de publicação/18+, prioridade dos dados, fallbacks e identificação canônica.
+
+## Fase 11 — Top 5 do Perfil Autor
+
+- A normalização dos IDs selecionados foi movida para módulo puro dedicado, preservando resolução por identificadores, chave canônica, deduplicação, ordem e limite máximo.
