@@ -71,7 +71,7 @@ test("Top 5 delega a composição inicial de obras sem alterar a ordem das fonte
 
   assert.match(
     page,
-    /import \{ carregarObrasIniciaisTop5 \} from "\.\/lib\/top5-initial-works";/,
+    /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
   );
   assert.doesNotMatch(
     page,
@@ -83,7 +83,7 @@ test("Top 5 delega a composição inicial de obras sem alterar a ordem das fonte
   );
   assert.match(
     page,
-    /const obrasMescladas = carregarObrasIniciaisTop5\(\s*userId,\s*obrasSupabase,\s*\);/,
+    /prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\)/,
   );
   assert.match(
     page,
@@ -91,11 +91,11 @@ test("Top 5 delega a composição inicial de obras sem alterar a ordem das fonte
   );
   assert.match(
     page,
-    /const obrasMescladas = carregarObrasIniciaisTop5\([\s\S]*?\);\s*const \{\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararSelecaoInicialTop5\(/,
+    /const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(/,
   );
 
   const primeiroCancelamento = page.indexOf("if (cancelado)");
-  const composicao = page.indexOf("const obrasMescladas = carregarObrasIniciaisTop5(");
+  const composicao = page.indexOf("} = prepararConteudoInicialTop5(");
   const segundoCancelamento = page.indexOf(
     "if (cancelado)",
     primeiroCancelamento + 1,
