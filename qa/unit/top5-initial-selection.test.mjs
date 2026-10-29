@@ -90,12 +90,12 @@ test("Top 5 delega a preparação inicial da seleção sem persistir", async () 
 
   assert.match(
     page,
-    /import \{ prepararSelecaoInicialTop5 \} from "\.\/lib\/top5-initial-selection";/,
+    /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
   );
   assert.doesNotMatch(page, /carregarTop5Salvo\(/);
   assert.match(
     page,
-    /const \{\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararSelecaoInicialTop5\(\s*userId,\s*obrasMescladas,\s*\);/,
+    /const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\);/,
   );
   const inicioSalvar = page.indexOf("function salvarEscolhasTop5");
   const handlerSalvar = page.slice(inicioSalvar);

@@ -47,11 +47,11 @@ test("Top 5 delega somente a mesclagem pura das obras", async () => {
 
   assert.match(
     page,
-    /import \{ carregarObrasIniciaisTop5 \} from "\.\/lib\/top5-initial-works";/,
+    /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
   );
   assert.doesNotMatch(page, /function mesclarObrasTop5/);
   assert.doesNotMatch(page, /mesclarObrasTop5\(/);
-  assert.match(page, /carregarObrasIniciaisTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
+  assert.match(page, /prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
   assert.match(page, /normalizarIdsSelecionadosTop5\(/);
   assert.doesNotMatch(page, /carregarObrasLocaisTop5/);

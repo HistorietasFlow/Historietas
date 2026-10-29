@@ -35,7 +35,7 @@ test("Top 5 delega somente o carregamento local de obras", async () => {
 
   assert.match(
     page,
-    /import \{ carregarObrasIniciaisTop5 \} from "\.\/lib\/top5-initial-works";/,
+    /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
   );
   assert.doesNotMatch(page, /const STORAGE_KEY =/);
   assert.doesNotMatch(page, /function carregarObrasLocaisTop5/);
@@ -44,7 +44,7 @@ test("Top 5 delega somente o carregamento local de obras", async () => {
   assert.match(page, /carregarDadosIniciaisTop5\(\)/);
   assert.doesNotMatch(page, /function mesclarObrasTop5/);
   assert.doesNotMatch(page, /mesclarObrasTop5\(/);
-  assert.match(page, /carregarObrasIniciaisTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
+  assert.match(page, /prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
 
   for (const forbidden of [
     "react",

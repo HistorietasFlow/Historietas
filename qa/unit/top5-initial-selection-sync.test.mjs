@@ -85,7 +85,7 @@ test("Top 5 sincroniza somente a correção necessária da seleção inicial", a
   );
   assert.match(
     page,
-    /const \{\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararSelecaoInicialTop5\(\s*userId,\s*obrasMescladas,\s*\);/,
+    /const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\);/,
   );
 
   const setUsuario = page.indexOf("setUsuario(userId ? { id: userId, nome: nomeUsuario } : null);");
