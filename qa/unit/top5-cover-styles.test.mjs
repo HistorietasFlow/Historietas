@@ -60,7 +60,11 @@ test("Top 5 delega somente os estilos e helpers visuais de capa", async () => {
   assert.match(page, /criarCapaSelecionadaTop5Style\(obra\.capa\)/);
   assert.match(page, /criarCapaTop5Style\(obra\.capa\)/);
   assert.match(page, /import type \{ CSSProperties \} from "react";/);
-  assert.match(page, /const selectedSlotStyle: CSSProperties/);
+  assert.match(
+    page,
+    /import \{[\s\S]*selectedSlotStyle,[\s\S]*from "\.\/lib\/top5-selected-section-styles";/,
+  );
+  assert.doesNotMatch(page, /const selectedSlotStyle: CSSProperties/);
   assert.match(page, /const top5CardStyle: CSSProperties/);
 
   for (const forbidden of [
