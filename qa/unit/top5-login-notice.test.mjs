@@ -50,7 +50,6 @@ test("Top 5 delega somente o aviso apresentacional de login", async () => {
   assert.match(page, /import Link from "next\/link";/);
   assert.match(page, /<Link href="\/perfil-autor" style=\{cancelButtonStyle\}>/);
   assert.match(page, /loadingStyle/);
-  assert.match(page, /messageStyle/);
 
   for (const noticeStyleName of [
     "loginButtonStyle",

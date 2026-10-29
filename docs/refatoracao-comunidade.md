@@ -2400,3 +2400,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 30 — Top 5 do Perfil Autor
 
 - O aviso para usuário não autenticado foi movido para componente apresentacional dedicado, preservando a condição de exibição na página, textos, URL de login e composição visual.
+
+## Fase 31 — Top 5 do Perfil Autor
+
+- A mensagem de status foi movida para componente apresentacional dedicado, preservando condição de exibição na página, conteúdo, acessibilidade e estilo.

@@ -39,10 +39,10 @@ import {
 } from "./lib/top5-selected-section-styles";
 import {
   loadingStyle,
-  messageStyle,
 } from "./lib/top5-search-feedback-styles";
 import { Top5SearchSection } from "./components/top5-search-section";
 import { Top5LoginNotice } from "./components/top5-login-notice";
+import { Top5StatusMessage } from "./components/top5-status-message";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
@@ -311,9 +311,7 @@ export default function Top5PerfilAutorPage() {
       <Top5SearchSection busca={busca} onBuscaChange={setBusca} />
 
       {mensagem && (
-        <p role="status" aria-live="polite" style={messageStyle}>
-          {mensagem}
-        </p>
+        <Top5StatusMessage mensagem={mensagem} />
       )}
 
       {!usuario && !carregando && (
