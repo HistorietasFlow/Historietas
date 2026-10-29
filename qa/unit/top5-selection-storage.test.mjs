@@ -34,7 +34,11 @@ test("Top 5 delega somente a persistência da seleção", async () => {
 
   assert.match(
     page,
-    /import \{[\s\S]*TOP_FIVE_MAXIMO,[\s\S]*salvarTop5,[\s\S]*from "\.\/lib\/top5-selection-storage";/,
+    /import \{ TOP_FIVE_MAXIMO \} from "\.\/lib\/top5-selection-storage";/,
+  );
+  assert.match(
+    page,
+    /import \{ persistirSelecaoTop5 \} from "\.\/lib\/top5-selection-save";/,
   );
   assert.doesNotMatch(page, /TOP_FIVE_STORAGE_KEY/);
   assert.doesNotMatch(page, /function carregarTop5Salvo/);
@@ -45,7 +49,8 @@ test("Top 5 delega somente a persistência da seleção", async () => {
   assert.doesNotMatch(page, /carregarObrasLocaisTop5\(userId\)/);
   assert.match(page, /prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
-  assert.match(page, /normalizarIdsSelecionadosTop5\(/);
+  assert.doesNotMatch(page, /normalizarIdsSelecionadosTop5\(/);
+  assert.doesNotMatch(page, /salvarTop5\(/);
   assert.match(page, /TOP_FIVE_MAXIMO/);
 
   for (const forbidden of [

@@ -62,14 +62,11 @@ import {
 import { sincronizarSelecaoInicialTop5 } from "./lib/top5-initial-selection-sync";
 import { carregarDadosIniciaisTop5 } from "./lib/top5-initial-data-loader";
 import { prepararConteudoInicialTop5 } from "./lib/top5-initial-content";
-import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
+import { persistirSelecaoTop5 } from "./lib/top5-selection-save";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
 import { obterNomeInicialUsuarioTop5 } from "./lib/top5-user-name";
-import {
-  TOP_FIVE_MAXIMO,
-  salvarTop5,
-} from "./lib/top5-selection-storage";
+import { TOP_FIVE_MAXIMO } from "./lib/top5-selection-storage";
 import type {
   ObraTop5,
   UsuarioTop5,
@@ -226,16 +223,11 @@ export default function Top5PerfilAutorPage() {
     setMensagem("");
 
     try {
-      const idsValidos = normalizarIdsSelecionadosTop5(
+      const idsValidos = persistirSelecaoTop5(
+        usuario.id,
         idsSelecionados,
         obras,
       );
-
-      const salvou = salvarTop5(usuario.id, idsValidos);
-
-      if (!salvou) {
-        throw new Error("Não foi possível gravar o TOP 5 no navegador.");
-      }
 
       setIdsSelecionados(idsValidos);
       router.push("/perfil-autor");

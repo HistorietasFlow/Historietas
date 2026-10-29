@@ -53,7 +53,7 @@ test("Top 5 delega somente a mesclagem pura das obras", async () => {
   assert.doesNotMatch(page, /mesclarObrasTop5\(/);
   assert.match(page, /prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
-  assert.match(page, /normalizarIdsSelecionadosTop5\(/);
+  assert.match(page, /persistirSelecaoTop5\(/);
   assert.doesNotMatch(page, /carregarObrasLocaisTop5/);
   assert.match(page, /carregarDadosIniciaisTop5/);
   assert.doesNotMatch(page, /ehClassificacao18/);

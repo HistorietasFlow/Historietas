@@ -2388,3 +2388,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 27 — Top 5 do Perfil Autor
 
 - A preparação das obras mescladas e da seleção inicial foi movida para helper dedicado, preservando a ordem obras → seleção antes dos setters e da sincronização corretiva na página.
+
+## Fase 28 — Top 5 do Perfil Autor
+
+- A persistência manual da seleção foi movida para helper dedicado, preservando normalização, gravação, erro de persistência e a orquestração de estados, mensagens e navegação na página.
