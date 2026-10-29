@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const shell = readFileSync(
+  new URL(
+    "../../app/explorar/components/explorar-advanced-filters-shell.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useExplorarAdvancedFiltersBodyLock preserva o lifecycle do body lock", () => {
   assert.match(hook, /^"use client";/);
@@ -69,7 +76,12 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
   );
   assert.match(pagina, /\{mostrarFiltrosAvancados && \(/);
   assert.match(pagina, /setMostrarFiltrosAvancados\(false\)/);
-  assert.match(pagina, /stopPropagation\(\)/);
+  assert.match(
+    pagina,
+    /import \{ ExplorarAdvancedFiltersShell \} from "\.\/components\/explorar-advanced-filters-shell";/,
+  );
+  assert.match(pagina, /<ExplorarAdvancedFiltersShell/);
+  assert.match(shell, /stopPropagation\(\)/);
   assert.match(
     pagina,
     /const \[mostrarConfirmacaoConteudo18, setMostrarConfirmacaoConteudo18\]/,
