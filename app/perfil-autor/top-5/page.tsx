@@ -9,9 +9,9 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../../lib/historietasTheme";
-import { normalizarTexto } from "../../../lib/utils";
 import { Top5LanguageBridge } from "./components/top5-language-bridge";
 import { top5PerfilAutorPageCss } from "./lib/top5-page-css";
+import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { pegarTexto } from "./lib/top5-work-normalizers";
 import {
   criarChaveObraTop5,
@@ -143,33 +143,10 @@ export default function Top5PerfilAutorPage() {
     [idsSelecionados, obrasPorChave],
   );
 
-  const obrasFiltradas = useMemo(() => {
-    const buscaNormalizada = normalizarTexto(busca);
-
-    const idsSelecionadosSet = new Set(idsSelecionados);
-    const obrasOrdenadas = [...obras].sort((obraA, obraB) => {
-      const selecionadaA = idsSelecionadosSet.has(criarChaveObraTop5(obraA));
-      const selecionadaB = idsSelecionadosSet.has(criarChaveObraTop5(obraB));
-
-      if (selecionadaA !== selecionadaB) {
-        return Number(selecionadaB) - Number(selecionadaA);
-      }
-
-      return obraA.titulo.localeCompare(obraB.titulo, "pt-BR");
-    });
-
-    if (!buscaNormalizada) {
-      return obrasOrdenadas;
-    }
-
-    return obrasOrdenadas.filter((obra) => {
-      const textoBusca = normalizarTexto(
-        [obra.titulo, obra.autor, obra.genero, obra.formato, ...obra.tags].join(" "),
-      );
-
-      return textoBusca.includes(buscaNormalizada);
-    });
-  }, [busca, idsSelecionados, obras]);
+  const obrasFiltradas = useMemo(
+    () => filtrarObrasTop5(obras, idsSelecionados, busca),
+    [busca, idsSelecionados, obras],
+  );
 
   function alternarObraTop5(obra: ObraTop5) {
     const chave = criarChaveObraTop5(obra);
