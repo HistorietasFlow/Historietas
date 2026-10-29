@@ -21,14 +21,7 @@ import {
   worksGridStyle,
 } from "./lib/top5-main-styles";
 import {
-  emptySelectedSlotStyle,
-  selectedActionsStyle,
-  selectedListStyle,
-  selectedMoveButtonStyle,
-  selectedNumberStyle,
-  selectedRemoveButtonStyle,
   selectedSectionStyle,
-  selectedSlotStyle,
 } from "./lib/top5-selected-section-styles";
 import { Top5SearchSection } from "./components/top5-search-section";
 import { Top5LoginNotice } from "./components/top5-login-notice";
@@ -36,6 +29,7 @@ import { Top5StatusMessage } from "./components/top5-status-message";
 import { Top5LoadingMessage } from "./components/top5-loading-message";
 import { Top5EmptyWorksMessage } from "./components/top5-empty-works-message";
 import { Top5SelectedHeader } from "./components/top5-selected-header";
+import { Top5SelectedList } from "./components/top5-selected-list";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
@@ -43,7 +37,6 @@ import {
   selecionarObrasTop5,
 } from "./lib/top5-work-selectors";
 import {
-  criarCapaSelecionadaTop5Style,
   criarCapaTop5Style,
 } from "./lib/top5-cover-styles";
 import { sincronizarSelecaoInicialTop5 } from "./lib/top5-initial-selection-sync";
@@ -53,7 +46,6 @@ import { persistirSelecaoTop5 } from "./lib/top5-selection-save";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
 import { obterNomeInicialUsuarioTop5 } from "./lib/top5-user-name";
-import { TOP_FIVE_MAXIMO } from "./lib/top5-selection-storage";
 import type {
   ObraTop5,
   UsuarioTop5,
@@ -235,54 +227,11 @@ export default function Top5PerfilAutorPage() {
           onSalvar={salvarEscolhasTop5}
         />
 
-        <div style={selectedListStyle}>
-          {Array.from({ length: TOP_FIVE_MAXIMO }).map((_, index) => {
-            const obra = obrasSelecionadas[index];
-            const chave = obra ? criarChaveObraTop5(obra) : "";
-
-            return (
-              <div key={`slot-top-5-${index + 1}`} style={selectedSlotStyle}>
-                <span style={selectedNumberStyle}>{index + 1}</span>
-
-                {obra ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => removerSelecionadaTop5(chave)}
-                      style={selectedRemoveButtonStyle}
-                      aria-label={`Remover ${obra.titulo} do TOP 5`}
-                    >
-                      ×
-                    </button>
-                    <div style={criarCapaSelecionadaTop5Style(obra.capa)} />
-                    <div style={selectedActionsStyle}>
-                      <button
-                        type="button"
-                        onClick={() => moverSelecionadaTop5(chave, -1)}
-                        style={selectedMoveButtonStyle}
-                        aria-label={`Subir ${obra.titulo}`}
-                        disabled={index === 0}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moverSelecionadaTop5(chave, 1)}
-                        style={selectedMoveButtonStyle}
-                        aria-label={`Descer ${obra.titulo}`}
-                        disabled={index === obrasSelecionadas.length - 1}
-                      >
-                        ↓
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div style={emptySelectedSlotStyle}>+</div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <Top5SelectedList
+          obrasSelecionadas={obrasSelecionadas}
+          onRemover={removerSelecionadaTop5}
+          onMover={moverSelecionadaTop5}
+        />
       </section>
 
       <Top5SearchSection busca={busca} onBuscaChange={setBusca} />

@@ -10,11 +10,16 @@ const pagePath = new URL(
   "../../app/perfil-autor/top-5/page.tsx",
   import.meta.url,
 );
+const selectedListPath = new URL(
+  "../../app/perfil-autor/top-5/components/top5-selected-list.tsx",
+  import.meta.url,
+);
 
 test("Top 5 delega somente a normalização pura da seleção", async () => {
-  const [normalizer, page] = await Promise.all([
+  const [normalizer, page, selectedList] = await Promise.all([
     readFile(normalizerPath, "utf8"),
     readFile(pagePath, "utf8"),
+    readFile(selectedListPath, "utf8"),
   ]);
 
   assert.match(normalizer, /criarChaveObraTop5,/);
@@ -37,7 +42,11 @@ test("Top 5 delega somente a normalização pura da seleção", async () => {
   );
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
   assert.doesNotMatch(page, /normalizarIdsSelecionadosTop5\(/);
-  assert.match(page, /TOP_FIVE_MAXIMO/);
+  assert.doesNotMatch(page, /TOP_FIVE_MAXIMO/);
+  assert.match(
+    selectedList,
+    /import \{ TOP_FIVE_MAXIMO \} from "\.\.\/lib\/top5-selection-storage";/,
+  );
   assert.match(
     page,
     /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
