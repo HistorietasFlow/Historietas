@@ -32,20 +32,17 @@ test("Top 5 delega somente helpers de storage por usuário", async () => {
 
   assert.match(
     page,
-    /import \{[\s\S]*lerStorageUsuarioTop5,[\s\S]*salvarJsonStorageUsuarioTop5,[\s\S]*from "\.\/lib\/top5-storage-utils";/,
+    /import \{ lerStorageUsuarioTop5 \} from "\.\/lib\/top5-storage-utils";/,
   );
+  assert.doesNotMatch(page, /salvarJsonStorageUsuarioTop5/);
   assert.doesNotMatch(page, /function criarStorageKeyUsuarioTop5/);
   assert.doesNotMatch(page, /function lerStorageUsuarioTop5/);
   assert.doesNotMatch(page, /function salvarJsonStorageUsuarioTop5/);
   assert.match(page, /function carregarObrasLocaisTop5/);
-  assert.match(page, /function carregarTop5Salvo/);
-  assert.match(page, /function salvarTop5/);
+  assert.doesNotMatch(page, /function carregarTop5Salvo/);
+  assert.doesNotMatch(page, /function salvarTop5/);
   assert.match(page, /lerStorageUsuarioTop5\(STORAGE_KEY, userIdLimpo\)/);
-  assert.match(
-    page,
-    /lerStorageUsuarioTop5\(TOP_FIVE_STORAGE_KEY, userIdLimpo\)/,
-  );
-  assert.match(page, /salvarJsonStorageUsuarioTop5\([\s\S]*TOP_FIVE_STORAGE_KEY/);
+  assert.doesNotMatch(page, /TOP_FIVE_STORAGE_KEY/);
 
   for (const forbidden of [
     "react",

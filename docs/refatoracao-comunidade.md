@@ -2304,3 +2304,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 6 — Top 5 do Perfil Autor
 
 - Os helpers genéricos de chave, leitura e escrita de localStorage por usuário foram movidos para módulo dedicado, preservando SSR guards, formato da chave, serialização e fallbacks.
+
+## Fase 7 — Top 5 do Perfil Autor
+
+- A persistência da seleção TOP 5 foi movida para módulo dedicado, preservando chave de storage, limite de cinco obras, deduplicação, trim, SSR guards e serialização.
