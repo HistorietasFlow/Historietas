@@ -2328,3 +2328,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 12 — Top 5 do Perfil Autor
 
 - Os helpers e estilos específicos das capas disponíveis e selecionadas foram movidos para módulo dedicado, preservando fallbacks, gradientes e composição visual.
+
+## Fase 13 — Top 5 do Perfil Autor
+
+- O CSS global da página Top 5 foi movido para módulo dedicado, preservando variáveis de tema, seletores, media query, valores e `!important`.
