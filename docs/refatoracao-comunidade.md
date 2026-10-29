@@ -2392,3 +2392,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 28 — Top 5 do Perfil Autor
 
 - A persistência manual da seleção foi movida para helper dedicado, preservando normalização, gravação, erro de persistência e a orquestração de estados, mensagens e navegação na página.
+
+## Fase 29 — Top 5 do Perfil Autor
+
+- A barra de busca foi movida para componente controlado dedicado, preservando estado na página, atributos de acessibilidade, comportamento e composição visual.
