@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (caminho) =>
   readFileSync(new URL(caminho, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const pagina = ler("../../app/explorar/page.tsx");
+const hookAutores = ler("../../app/explorar/hooks/use-explorar-author-data.ts");
 const loaderRemoto = ler("../../app/explorar/lib/explorar-remote-loader.ts");
 const codigo = ler("../../app/explorar/lib/explorar-author-profile-utils.ts");
 const compilar = (fonte) =>
@@ -256,8 +257,9 @@ test("a página delega perfis e preserva catálogo, métricas de obras e efeitos
   assert.match(loaderRemoto, /aplicarNomesProfilesEmObrasExplorar\(/);
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.match(ler("../../app/explorar/hooks/use-explorar-catalog-query.ts"), /carregarObrasPublicadasSupabase\(/);
-  assert.match(pagina, /carregarPerfisAutoresExplorar\(autorIds\)/);
-  assert.match(pagina, /carregarAvaliacoesAutoresExplorar\(autorIds\)/);
+  assert.match(pagina, /useExplorarAuthorData\(\{/);
+  assert.match(hookAutores, /carregarPerfisAutoresExplorar\(autorIds\)/);
+  assert.match(hookAutores, /carregarAvaliacoesAutoresExplorar\(autorIds\)/);
   assert.match(loaderRemoto, /carregarMetricasConteudos\(\{ obraIds, capituloIds \}\)/);
   assert.doesNotMatch(codigo, /\b(?:localStorage|useEffect|useState)\b/);
 });

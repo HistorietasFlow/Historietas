@@ -72,7 +72,7 @@ test("Explorar consome themePageCss sem alterar as fronteiras da página", () =>
     readFileSync(new URL("../../app/explorar/hooks/use-explorar-initial-load.ts", import.meta.url), "utf8"),
     /async function carregarExplorar\(\)/,
   );
-  assert.match(pagina, /supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /useExplorarAuthState\(\{/);
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.match(
     readFileSync(new URL("../../app/explorar/hooks/use-explorar-catalog-query.ts", import.meta.url), "utf8"),
