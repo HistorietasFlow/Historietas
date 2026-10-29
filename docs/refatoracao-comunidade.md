@@ -2396,3 +2396,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 29 — Top 5 do Perfil Autor
 
 - A barra de busca foi movida para componente controlado dedicado, preservando estado na página, atributos de acessibilidade, comportamento e composição visual.
+
+## Fase 30 — Top 5 do Perfil Autor
+
+- O aviso para usuário não autenticado foi movido para componente apresentacional dedicado, preservando a condição de exibição na página, textos, URL de login e composição visual.
