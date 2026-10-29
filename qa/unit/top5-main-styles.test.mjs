@@ -14,12 +14,17 @@ const worksGridPath = new URL(
   "../../app/perfil-autor/top-5/components/top5-works-grid.tsx",
   import.meta.url,
 );
+const worksSectionPath = new URL(
+  "../../app/perfil-autor/top-5/components/top5-works-section.tsx",
+  import.meta.url,
+);
 
 test("Top 5 delega somente os estilos principais restantes", async () => {
-  const [styles, page, worksGrid] = await Promise.all([
+  const [styles, page, worksGrid, worksSection] = await Promise.all([
     readFile(stylesPath, "utf8"),
     readFile(pagePath, "utf8"),
     readFile(worksGridPath, "utf8"),
+    readFile(worksSectionPath, "utf8"),
   ]);
 
   assert.match(styles, /import type \{ CSSProperties \} from "react";/);
@@ -34,9 +39,11 @@ test("Top 5 delega somente os estilos principais restantes", async () => {
   ]) {
     assert.match(styles, new RegExp(`export const ${styleName}: CSSProperties =`));
     assert.doesNotMatch(page, new RegExp(`const ${styleName}: CSSProperties =`));
-    const consumer = ["pageStyle", "gridSectionStyle"].includes(styleName)
+    const consumer = styleName === "pageStyle"
       ? page
-      : worksGrid;
+      : styleName === "gridSectionStyle"
+        ? worksSection
+        : worksGrid;
     assert.match(consumer, new RegExp(styleName));
   }
 
@@ -63,7 +70,11 @@ test("Top 5 delega somente os estilos principais restantes", async () => {
   );
   assert.match(
     page,
-    /import \{[\s\S]*gridSectionStyle,[\s\S]*pageStyle,[\s\S]*from "\.\/lib\/top5-main-styles";/,
+    /import \{ pageStyle \} from "\.\/lib\/top5-main-styles";/,
+  );
+  assert.match(
+    worksSection,
+    /import \{ gridSectionStyle \} from "\.\.\/lib\/top5-main-styles";/,
   );
   assert.match(
     worksGrid,
