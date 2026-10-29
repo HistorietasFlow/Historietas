@@ -50,7 +50,7 @@ test("Top 5 delega somente o carregamento do nome de perfil", async () => {
   assert.match(page, /await Promise\.all\(\[/);
   assert.match(
     page,
-    /let nomeUsuario =\s*pegarTexto\(authData\.user\?\.user_metadata\?\.nome\) \|\|\s*pegarTexto\(authData\.user\?\.user_metadata\?\.name\) \|\|\s*pegarTexto\(authData\.user\?\.email\) \|\|\s*"Usuário";/,
+    /let nomeUsuario = obterNomeInicialUsuarioTop5\(\s*authData\.user\?\.user_metadata\?\.nome,\s*authData\.user\?\.user_metadata\?\.name,\s*authData\.user\?\.email,\s*\);/,
   );
 
   const primeiroCancelamento = page.indexOf("if (cancelado)");

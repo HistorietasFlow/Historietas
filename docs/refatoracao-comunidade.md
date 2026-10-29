@@ -2364,3 +2364,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 21 — Top 5 do Perfil Autor
 
 - A consulta do nome atual do usuário em `profiles` foi movida para loader dedicado, preservando query, fallback do nome, propagação de exceções e pontos de cancelamento do effect.
+
+## Fase 22 — Top 5 do Perfil Autor
+
+- A composição do nome inicial do usuário foi movida para helper puro dedicado, preservando prioridade entre `nome`, `name`, email e fallback `"Usuário"`.
