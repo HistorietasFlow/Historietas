@@ -37,10 +37,10 @@ test("Top 5 delega somente o carregamento Supabase de obras", async () => {
 
   assert.match(
     page,
-    /import \{ carregarObrasSupabaseTop5 \} from "\.\/lib\/top5-supabase-works-loader";/,
+    /import \{ carregarDadosIniciaisTop5 \} from "\.\/lib\/top5-initial-data-loader";/,
   );
   assert.doesNotMatch(page, /async function carregarObrasSupabaseTop5/);
-  assert.match(page, /carregarObrasSupabaseTop5\(\)/);
+  assert.doesNotMatch(page, /carregarObrasSupabaseTop5\(\)/);
   assert.match(
     page,
     /import \{ carregarObrasIniciaisTop5 \} from "\.\/lib\/top5-initial-works";/,
@@ -51,8 +51,8 @@ test("Top 5 delega somente o carregamento Supabase de obras", async () => {
   assert.match(page, /carregarObrasIniciaisTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
   assert.doesNotMatch(page, /normalizarObraSupabaseTop5/);
   assert.doesNotMatch(page, /SupabaseObraTop5Row/);
-  assert.match(page, /import \{ supabase \} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/client";/);
-  assert.match(page, /supabase\.auth\.getUser\(\)/);
+  assert.doesNotMatch(page, /import \{ supabase \} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/client";/);
+  assert.doesNotMatch(page, /supabase\.auth\.getUser\(\)/);
 
   for (const forbidden of [
     "react",

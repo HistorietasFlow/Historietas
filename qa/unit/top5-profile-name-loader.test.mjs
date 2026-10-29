@@ -46,8 +46,11 @@ test("Top 5 delega somente o carregamento do nome de perfil", async () => {
     page,
     /nomeUsuario = await carregarNomePerfilTop5\(\s*userId,\s*nomeUsuario,\s*\);/,
   );
-  assert.match(page, /supabase\.auth\.getUser\(\)/);
-  assert.match(page, /await Promise\.all\(\[/);
+  assert.match(
+    page,
+    /import \{ carregarDadosIniciaisTop5 \} from "\.\/lib\/top5-initial-data-loader";/,
+  );
+  assert.match(page, /await carregarDadosIniciaisTop5\(\)/);
   assert.match(
     page,
     /let nomeUsuario = obterNomeInicialUsuarioTop5\(\s*authData\.user\?\.user_metadata\?\.nome,\s*authData\.user\?\.user_metadata\?\.name,\s*authData\.user\?\.email,\s*\);/,

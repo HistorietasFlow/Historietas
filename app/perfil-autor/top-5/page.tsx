@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../../lib/supabase/client";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -56,7 +55,6 @@ import {
   criarMapaObrasTop5,
   selecionarObrasTop5,
 } from "./lib/top5-work-selectors";
-import { carregarObrasSupabaseTop5 } from "./lib/top5-supabase-works-loader";
 import {
   criarCapaSelecionadaTop5Style,
   criarCapaTop5Style,
@@ -64,6 +62,7 @@ import {
 import { carregarObrasIniciaisTop5 } from "./lib/top5-initial-works";
 import { prepararSelecaoInicialTop5 } from "./lib/top5-initial-selection";
 import { sincronizarSelecaoInicialTop5 } from "./lib/top5-initial-selection-sync";
+import { carregarDadosIniciaisTop5 } from "./lib/top5-initial-data-loader";
 import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
@@ -95,10 +94,10 @@ export default function Top5PerfilAutorPage() {
       setCarregando(true);
 
       try {
-        const [{ data: authData }, obrasSupabase] = await Promise.all([
-          supabase.auth.getUser(),
-          carregarObrasSupabaseTop5(),
-        ]);
+        const {
+          authData,
+          obrasSupabase,
+        } = await carregarDadosIniciaisTop5();
 
         if (cancelado) {
           return;
