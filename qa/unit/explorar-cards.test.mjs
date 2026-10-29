@@ -11,6 +11,9 @@ const ler = (caminho) =>
 const pagina = ler("../../app/explorar/page.tsx");
 const autorCodigo = ler("../../app/explorar/components/explorar-autor-card.tsx");
 const obraCodigo = ler("../../app/explorar/components/explorar-obra-publicada-card.tsx");
+const secoesCriativasAutoresCodigo = ler("../../app/explorar/components/explorar-creative-author-sections.tsx");
+const secoesAutoresGeneroCodigo = ler("../../app/explorar/components/explorar-genre-author-sections.tsx");
+const secoesAutoresFiltradosCodigo = ler("../../app/explorar/components/explorar-filtered-authors-section.tsx");
 const secoesCriativasCodigo = ler("../../app/explorar/components/explorar-creative-work-sections.tsx");
 const secoesGeneroCodigo = ler("../../app/explorar/components/explorar-genre-work-sections.tsx");
 const secoesFiltradasCodigo = ler("../../app/explorar/components/explorar-filtered-works-section.tsx");
@@ -119,9 +122,16 @@ test("corpos dos cards, rota e capa preservam literalmente a base", () => {
   assert.equal(hash(funcao(estiloCodigo, "function criarPublishedCoverStyle(", "\n\nexport function criarDesktopPublishedCoverStyle(")),
     "15c2f9a43c7e41ace7002ecbdd05aeca7d0aa93eb848d4b9428e691c9482314e");
   for (const codigo of [autorCodigo, obraCodigo]) assert.match(codigo, /^"use client";/);
-  assert.match(pagina, /import AutorExplorarCard from "\.\/components\/explorar-autor-card"/);
+  assert.doesNotMatch(pagina, /import AutorExplorarCard from "\.\/components\/explorar-autor-card"/);
   assert.doesNotMatch(pagina, /import ObraPublicadaCard from "\.\/components\/explorar-obra-publicada-card"/);
-  assert.equal((pagina.match(/<AutorExplorarCard\b/g) || []).length, 3);
+  for (const codigo of [
+    secoesCriativasAutoresCodigo,
+    secoesAutoresGeneroCodigo,
+    secoesAutoresFiltradosCodigo,
+  ]) {
+    assert.match(codigo, /import AutorExplorarCard from "\.\/explorar-autor-card"/);
+    assert.match(codigo, /<AutorExplorarCard\b/);
+  }
   for (const codigo of [
     secoesCriativasCodigo,
     secoesGeneroCodigo,

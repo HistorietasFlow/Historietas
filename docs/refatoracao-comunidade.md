@@ -2488,3 +2488,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Explorar — Fase 11
 
 - As seções criativas de obras, as seções de obras por gênero e a grade de resultados de obras filtradas foram movidas para componentes dedicados, mantendo condições de exibição, título derivado e paginação em `page.tsx`.
+
+## Explorar — Fase 12
+
+- As seções criativas de autores, as seções de autores por gênero e a grade de autores filtrados foram movidas para componentes dedicados, mantendo condições de exibição, títulos derivados e estado vazio em `page.tsx`.

@@ -19,6 +19,9 @@ const pagina = readFileSync(
 const autorCard = readFileSync(new URL("../../app/explorar/components/explorar-autor-card.tsx", import.meta.url), "utf8");
 const obraCard = readFileSync(new URL("../../app/explorar/components/explorar-obra-publicada-card.tsx", import.meta.url), "utf8");
 const auxiliares = readFileSync(new URL("../../app/explorar/components/explorar-section-components.tsx", import.meta.url), "utf8");
+const secoesCriativasAutores = readFileSync(new URL("../../app/explorar/components/explorar-creative-author-sections.tsx", import.meta.url), "utf8");
+const secoesAutoresGenero = readFileSync(new URL("../../app/explorar/components/explorar-genre-author-sections.tsx", import.meta.url), "utf8");
+const secoesAutoresFiltrados = readFileSync(new URL("../../app/explorar/components/explorar-filtered-authors-section.tsx", import.meta.url), "utf8");
 const secoesCriativasObras = readFileSync(new URL("../../app/explorar/components/explorar-creative-work-sections.tsx", import.meta.url), "utf8");
 const secoesObrasGenero = readFileSync(new URL("../../app/explorar/components/explorar-genre-work-sections.tsx", import.meta.url), "utf8");
 const secoesObrasFiltradas = readFileSync(new URL("../../app/explorar/components/explorar-filtered-works-section.tsx", import.meta.url), "utf8");
@@ -160,34 +163,44 @@ test("cards de obras preservam temas, capas, progresso e ações", () => {
 });
 
 test("o módulo de estilos é estático e a página continua consumindo os estilos", () => {
-  const importacao = pagina.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\/lib\/explorar-content-styles";/);
-  assert.ok(importacao);
-  const nomes = importacao[1].split(",").map((nome) => nome.trim()).filter(Boolean);
+  const nomes = [];
   const importacaoAutor = autorCard.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   const importacaoObra = obraCard.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   const importacaoAuxiliares = auxiliares.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  const importacaoCriativasAutores = secoesCriativasAutores.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  const importacaoGeneroAutores = secoesAutoresGenero.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
+  const importacaoFiltradasAutores = secoesAutoresFiltrados.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   const importacaoCriativas = secoesCriativasObras.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   const importacaoGenero = secoesObrasGenero.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   const importacaoFiltradas = secoesObrasFiltradas.match(/import \{\s*((?:\w+,\s*)+)\} from "\.\.\/lib\/explorar-content-styles";/);
   assert.ok(importacaoAutor);
   assert.ok(importacaoObra);
   assert.ok(importacaoAuxiliares);
+  assert.ok(importacaoCriativasAutores);
+  assert.ok(importacaoGeneroAutores);
+  assert.ok(importacaoFiltradasAutores);
   assert.ok(importacaoCriativas);
   assert.ok(importacaoGenero);
   assert.ok(importacaoFiltradas);
   nomes.push(...importacaoAutor[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   nomes.push(...importacaoObra[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   nomes.push(...importacaoAuxiliares[1].split(",").map((nome) => nome.trim()).filter(Boolean));
+  nomes.push(...importacaoCriativasAutores[1].split(",").map((nome) => nome.trim()).filter(Boolean));
+  nomes.push(...importacaoGeneroAutores[1].split(",").map((nome) => nome.trim()).filter(Boolean));
+  nomes.push(...importacaoFiltradasAutores[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   nomes.push(...importacaoCriativas[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   nomes.push(...importacaoGenero[1].split(",").map((nome) => nome.trim()).filter(Boolean));
   nomes.push(...importacaoFiltradas[1].split(",").map((nome) => nome.trim()).filter(Boolean));
-  assert.equal(nomes.length, 80);
+  assert.equal(nomes.length, 84);
   for (const nome of nomes) {
     assert.match(modulo, new RegExp(`export (?:const|function) ${nome}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`(?:const|function) ${nome}\\b`));
   }
   assert.match(modulo, /from "\.\/explorar-layout-styles"/);
-  assert.match(pagina, /isDesktop \? desktopSectionStyle : sectionStyle/);
+  assert.doesNotMatch(pagina, /from "\.\/lib\/explorar-content-styles"/);
+  assert.match(secoesCriativasAutores, /desktopSectionStyle/);
+  assert.match(secoesAutoresGenero, /sectionStyle/);
+  assert.match(secoesAutoresFiltrados, /desktopAutoresExplorarGridStyle/);
   assert.match(secoesCriativasObras, /desktopExplorarObraCarouselItemStyle/);
   assert.match(secoesObrasGenero, /explorarObraCarouselItemStyle/);
   assert.match(secoesObrasFiltradas, /desktopPublishedGridStyle/);
