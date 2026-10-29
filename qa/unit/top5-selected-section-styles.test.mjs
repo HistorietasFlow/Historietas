@@ -81,16 +81,6 @@ test("Top 5 delega somente os estilos da seção de obras selecionadas", async (
 
   for (const localStyle of [
     "pageStyle",
-    "searchSectionStyle",
-    "searchShellStyle",
-    "searchIconStyle",
-    "searchInputStyle",
-    "messageStyle",
-    "loadingStyle",
-    "noticeStyle",
-    "noticeTitleStyle",
-    "noticeTextStyle",
-    "loginButtonStyle",
     "gridSectionStyle",
     "worksGridStyle",
     "top5CardStyle",

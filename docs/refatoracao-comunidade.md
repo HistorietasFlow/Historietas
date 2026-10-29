@@ -2344,3 +2344,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 16 — Top 5 do Perfil Autor
 
 - Os estilos estáticos da seção de obras selecionadas e de suas ações foram movidos para módulo dedicado, preservando integralmente dimensões, tipografia, espaçamentos, backgrounds, estados e composição visual.
+
+## Fase 17 — Top 5 do Perfil Autor
+
+- Os estilos estáticos da busca, mensagens de estado e aviso de autenticação foram movidos para módulo dedicado, preservando dimensões, tipografia, cores, variáveis de tema e composição visual.
