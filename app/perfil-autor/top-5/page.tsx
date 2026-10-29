@@ -44,11 +44,8 @@ import {
   noticeStyle,
   noticeTextStyle,
   noticeTitleStyle,
-  searchIconStyle,
-  searchInputStyle,
-  searchSectionStyle,
-  searchShellStyle,
 } from "./lib/top5-search-feedback-styles";
+import { Top5SearchSection } from "./components/top5-search-section";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
@@ -314,25 +311,7 @@ export default function Top5PerfilAutorPage() {
         </div>
       </section>
 
-      <section style={searchSectionStyle} aria-label="Buscar obras">
-        <label style={searchShellStyle} htmlFor="buscar-obra-top-5">
-          <span style={searchIconStyle}>⌕</span>
-
-          <input
-            id="buscar-obra-top-5"
-            value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            aria-label="Pesquisar obra, autor, gênero ou tag"
-            placeholder="Pesquisar obra, autor, gênero ou tag"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            maxLength={90}
-            style={searchInputStyle}
-            type="text"
-          />
-        </label>
-      </section>
+      <Top5SearchSection busca={busca} onBuscaChange={setBusca} />
 
       {mensagem && (
         <p role="status" aria-live="polite" style={messageStyle}>
