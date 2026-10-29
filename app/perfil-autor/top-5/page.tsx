@@ -16,16 +16,12 @@ import {
   gridSectionStyle,
   pageStyle,
 } from "./lib/top5-main-styles";
-import {
-  selectedSectionStyle,
-} from "./lib/top5-selected-section-styles";
 import { Top5SearchSection } from "./components/top5-search-section";
 import { Top5LoginNotice } from "./components/top5-login-notice";
 import { Top5StatusMessage } from "./components/top5-status-message";
 import { Top5LoadingMessage } from "./components/top5-loading-message";
 import { Top5EmptyWorksMessage } from "./components/top5-empty-works-message";
-import { Top5SelectedHeader } from "./components/top5-selected-header";
-import { Top5SelectedList } from "./components/top5-selected-list";
+import { Top5SelectedSection } from "./components/top5-selected-section";
 import { Top5WorksGrid } from "./components/top5-works-grid";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
@@ -214,19 +210,14 @@ export default function Top5PerfilAutorPage() {
     <main data-historietas-top5-root="true" style={pageThemeStyle}>
       <Top5LanguageBridge />
       <style>{`${historietasThemeCss}${top5PerfilAutorPageCss}`}</style>
-      <section style={selectedSectionStyle} aria-label="Obras escolhidas para o TOP 5">
-        <Top5SelectedHeader
-          salvando={salvando}
-          salvarDesabilitado={salvando || !usuario?.id}
-          onSalvar={salvarEscolhasTop5}
-        />
-
-        <Top5SelectedList
-          obrasSelecionadas={obrasSelecionadas}
-          onRemover={removerSelecionadaTop5}
-          onMover={moverSelecionadaTop5}
-        />
-      </section>
+      <Top5SelectedSection
+        salvando={salvando}
+        salvarDesabilitado={salvando || !usuario?.id}
+        obrasSelecionadas={obrasSelecionadas}
+        onSalvar={salvarEscolhasTop5}
+        onRemover={removerSelecionadaTop5}
+        onMover={moverSelecionadaTop5}
+      />
 
       <Top5SearchSection busca={busca} onBuscaChange={setBusca} />
 

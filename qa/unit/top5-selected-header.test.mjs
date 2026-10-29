@@ -66,19 +66,16 @@ test("Top 5 delega somente o cabeçalho visual da seleção", async () => {
 
   assert.match(
     page,
-    /import \{ Top5SelectedHeader \} from "\.\/components\/top5-selected-header";/,
+    /import \{ Top5SelectedSection \} from "\.\/components\/top5-selected-section";/,
   );
   assert.match(
     page,
-    /<Top5SelectedHeader\s+salvando=\{salvando\}\s+salvarDesabilitado=\{salvando \|\| !usuario\?\.id\}\s+onSalvar=\{salvarEscolhasTop5\}\s+\/>/,
+    /<Top5SelectedSection\s+salvando=\{salvando\}\s+salvarDesabilitado=\{salvando \|\| !usuario\?\.id\}\s+obrasSelecionadas=\{obrasSelecionadas\}\s+onSalvar=\{salvarEscolhasTop5\}/,
   );
   assert.match(page, /function salvarEscolhasTop5\(\)/);
   assert.match(page, /const \[salvando, setSalvando\] = useState\(false\);/);
   assert.match(page, /const \[usuario, setUsuario\] = useState<UsuarioTop5 \| null>\(null\);/);
-  assert.match(
-    page,
-    /<Top5SelectedHeader[\s\S]*?\/>\s*<Top5SelectedList\s/,
-  );
+  assert.doesNotMatch(page, /Top5SelectedHeader/);
   assert.doesNotMatch(page, /import Link from "next\/link";/);
 
   for (const forbidden of [

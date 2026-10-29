@@ -73,16 +73,17 @@ test("Top 5 delega somente a lista controlada de obras selecionadas", async () =
 
   assert.match(
     page,
-    /import \{ Top5SelectedList \} from "\.\/components\/top5-selected-list";/,
+    /import \{ Top5SelectedSection \} from "\.\/components\/top5-selected-section";/,
   );
   assert.match(
     page,
-    /<Top5SelectedHeader[\s\S]*?\/>\s*<Top5SelectedList\s+obrasSelecionadas=\{obrasSelecionadas\}\s+onRemover=\{removerSelecionadaTop5\}\s+onMover=\{moverSelecionadaTop5\}\s+\/>/,
+    /<Top5SelectedSection[\s\S]*?obrasSelecionadas=\{obrasSelecionadas\}[\s\S]*?onRemover=\{removerSelecionadaTop5\}[\s\S]*?onMover=\{moverSelecionadaTop5\}/,
   );
   assert.match(page, /function removerSelecionadaTop5\(chave: string\)/);
   assert.match(page, /function moverSelecionadaTop5\(chave: string, direcao: -1 \| 1\)/);
   assert.match(page, /const obrasSelecionadas = useMemo\(/);
-  assert.match(page, /style=\{selectedSectionStyle\}/);
+  assert.doesNotMatch(page, /Top5SelectedList/);
+  assert.doesNotMatch(page, /selectedSectionStyle/);
   assert.match(page, /import \{ criarChaveObraTop5 \} from "\.\/lib\/top5-work-identifiers";/);
   assert.doesNotMatch(page, /slot-top-5-/);
 
