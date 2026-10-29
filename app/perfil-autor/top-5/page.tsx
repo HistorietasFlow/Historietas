@@ -63,6 +63,7 @@ import {
 } from "./lib/top5-cover-styles";
 import { carregarObrasIniciaisTop5 } from "./lib/top5-initial-works";
 import { prepararSelecaoInicialTop5 } from "./lib/top5-initial-selection";
+import { sincronizarSelecaoInicialTop5 } from "./lib/top5-initial-selection-sync";
 import { normalizarIdsSelecionadosTop5 } from "./lib/top5-selection-normalizer";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
 import { carregarNomePerfilTop5 } from "./lib/top5-profile-name-loader";
@@ -137,12 +138,11 @@ export default function Top5PerfilAutorPage() {
         setObras(obrasMescladas);
         setIdsSelecionados(idsNormalizados);
 
-        if (
-          userId &&
-          JSON.stringify(idsSalvos) !== JSON.stringify(idsNormalizados)
-        ) {
-          salvarTop5(userId, idsNormalizados);
-        }
+        sincronizarSelecaoInicialTop5(
+          userId,
+          idsSalvos,
+          idsNormalizados,
+        );
       } catch {
         if (!cancelado) {
           setUsuario(null);
