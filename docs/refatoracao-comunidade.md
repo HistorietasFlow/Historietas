@@ -2348,3 +2348,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 17 — Top 5 do Perfil Autor
 
 - Os estilos estáticos da busca, mensagens de estado e aviso de autenticação foram movidos para módulo dedicado, preservando dimensões, tipografia, cores, variáveis de tema e composição visual.
+
+## Fase 18 — Top 5 do Perfil Autor
+
+- Os estilos restantes da página, grid, cards e badge de posição foram movidos para módulo dedicado, preservando tema, layout, grid, tipografia, estados e composição visual.
