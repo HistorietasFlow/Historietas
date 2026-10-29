@@ -32,20 +32,14 @@ test("Top 5 delega somente o estado visual de lista vazia", async () => {
 
   assert.match(
     page,
-    /import \{ Top5EmptyWorksMessage \} from "\.\/components\/top5-empty-works-message";/,
+    /import \{ Top5WorksSection \} from "\.\/components\/top5-works-section";/,
   );
   assert.match(
     page,
-    /\) : \(\s*<Top5EmptyWorksMessage \/>\s*\)\s*\)\}/,
+    /<Top5WorksSection\s+carregando=\{carregando\}\s+obras=\{obrasFiltradas\}\s+idsSelecionados=\{idsSelecionados\}\s+onAlternar=\{alternarObraTop5\}\s+\/>/,
   );
   assert.doesNotMatch(page, /Nenhuma obra encontrada/);
-  assert.match(page, /\{!carregando && \(/);
-  assert.match(page, /obrasFiltradas\.length > 0 \? \(/);
-  assert.match(page, /<Top5LoadingMessage \/>/);
-  assert.match(
-    page,
-    /<Top5WorksGrid\s+obras=\{obrasFiltradas\}\s+idsSelecionados=\{idsSelecionados\}\s+onAlternar=\{alternarObraTop5\}\s+\/>/,
-  );
+  assert.doesNotMatch(page, /Top5EmptyWorksMessage/);
 
   for (const forbidden of [
     "useState",

@@ -12,17 +12,12 @@ import {
   moverIdSelecionadoTop5,
   removerIdSelecionadoTop5,
 } from "./lib/top5-selection-list";
-import {
-  gridSectionStyle,
-  pageStyle,
-} from "./lib/top5-main-styles";
+import { pageStyle } from "./lib/top5-main-styles";
 import { Top5SearchSection } from "./components/top5-search-section";
 import { Top5LoginNotice } from "./components/top5-login-notice";
 import { Top5StatusMessage } from "./components/top5-status-message";
-import { Top5LoadingMessage } from "./components/top5-loading-message";
-import { Top5EmptyWorksMessage } from "./components/top5-empty-works-message";
 import { Top5SelectedSection } from "./components/top5-selected-section";
-import { Top5WorksGrid } from "./components/top5-works-grid";
+import { Top5WorksSection } from "./components/top5-works-section";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
@@ -229,23 +224,12 @@ export default function Top5PerfilAutorPage() {
         <Top5LoginNotice />
       )}
 
-      <section style={gridSectionStyle} aria-label="Lista de obras disponíveis">
-        {carregando && (
-          <Top5LoadingMessage />
-        )}
-
-        {!carregando && (
-          obrasFiltradas.length > 0 ? (
-            <Top5WorksGrid
-              obras={obrasFiltradas}
-              idsSelecionados={idsSelecionados}
-              onAlternar={alternarObraTop5}
-            />
-          ) : (
-            <Top5EmptyWorksMessage />
-          )
-        )}
-      </section>
+      <Top5WorksSection
+        carregando={carregando}
+        obras={obrasFiltradas}
+        idsSelecionados={idsSelecionados}
+        onAlternar={alternarObraTop5}
+      />
 
     </main>
   );

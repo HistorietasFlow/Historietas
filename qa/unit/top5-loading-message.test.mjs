@@ -34,18 +34,18 @@ test("Top 5 delega somente o indicador apresentacional de carregamento", async (
 
   assert.match(
     page,
-    /import \{ Top5LoadingMessage \} from "\.\/components\/top5-loading-message";/,
+    /import \{ Top5WorksSection \} from "\.\/components\/top5-works-section";/,
   );
   assert.match(
     page,
-    /\{carregando && \(\s*<Top5LoadingMessage \/>\s*\)\}/,
+    /<Top5WorksSection\s+carregando=\{carregando\}\s+obras=\{obrasFiltradas\}\s+idsSelecionados=\{idsSelecionados\}\s+onAlternar=\{alternarObraTop5\}\s+\/>/,
   );
   assert.doesNotMatch(page, /Carregando obras\.\.\./);
   assert.doesNotMatch(page, /<p role="status" aria-live="polite" style=\{loadingStyle\}>/);
   assert.match(page, /const \[carregando, setCarregando\] = useState\(true\);/);
   assert.match(page, /setCarregando\(true\);/);
   assert.match(page, /setCarregando\(false\);/);
-  assert.match(page, /\{!carregando && \(/);
+  assert.doesNotMatch(page, /Top5LoadingMessage/);
   assert.doesNotMatch(page, /top5-search-feedback-styles/);
 
   for (const forbidden of [

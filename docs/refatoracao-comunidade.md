@@ -2428,3 +2428,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 37 — Top 5 do Perfil Autor
 
 - A seção de obras selecionadas passou a ser composta por componente controlado dedicado, preservando estado, seleção derivada e handlers na página.
+
+## Fase 38 — Top 5 do Perfil Autor
+
+- A seção de obras disponíveis passou a ser composta por componente controlado dedicado, preservando filtro, estado de carregamento, seleção e handler na página.

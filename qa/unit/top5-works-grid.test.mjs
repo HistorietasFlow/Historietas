@@ -61,19 +61,18 @@ test("Top 5 delega somente o grid controlado de obras disponÃ­veis", async () 
 
   assert.match(
     page,
-    /import \{ Top5WorksGrid \} from "\.\/components\/top5-works-grid";/,
+    /import \{ Top5WorksSection \} from "\.\/components\/top5-works-section";/,
   );
   assert.match(
     page,
-    /<Top5WorksGrid\s+obras=\{obrasFiltradas\}\s+idsSelecionados=\{idsSelecionados\}\s+onAlternar=\{alternarObraTop5\}\s+\/>/,
+    /<Top5WorksSection\s+carregando=\{carregando\}\s+obras=\{obrasFiltradas\}\s+idsSelecionados=\{idsSelecionados\}\s+onAlternar=\{alternarObraTop5\}\s+\/>/,
   );
   assert.match(page, /function alternarObraTop5\(obra: ObraTop5\)/);
   assert.match(page, /const obrasFiltradas = useMemo\(/);
-  assert.match(page, /\{!carregando && \(/);
-  assert.match(page, /obrasFiltradas\.length > 0/);
-  assert.match(page, /<Top5LoadingMessage \/>/);
-  assert.match(page, /<Top5EmptyWorksMessage \/>/);
-  assert.match(page, /style=\{gridSectionStyle\}/);
+  assert.doesNotMatch(page, /Top5WorksGrid/);
+  assert.doesNotMatch(page, /Top5LoadingMessage/);
+  assert.doesNotMatch(page, /Top5EmptyWorksMessage/);
+  assert.doesNotMatch(page, /gridSectionStyle/);
   assert.doesNotMatch(page, /data-historietas-top5-works-grid/);
   assert.doesNotMatch(page, /obrasFiltradas\.map\(\(obra\) =>/);
 
