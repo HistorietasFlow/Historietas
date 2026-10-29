@@ -37,12 +37,10 @@ import {
   selectedSlotStyle,
   selectedTitleStyle,
 } from "./lib/top5-selected-section-styles";
-import {
-  loadingStyle,
-} from "./lib/top5-search-feedback-styles";
 import { Top5SearchSection } from "./components/top5-search-section";
 import { Top5LoginNotice } from "./components/top5-login-notice";
 import { Top5StatusMessage } from "./components/top5-status-message";
+import { Top5LoadingMessage } from "./components/top5-loading-message";
 import { filtrarObrasTop5 } from "./lib/top5-work-filter";
 import { criarChaveObraTop5 } from "./lib/top5-work-identifiers";
 import {
@@ -320,9 +318,7 @@ export default function Top5PerfilAutorPage() {
 
       <section style={gridSectionStyle} aria-label="Lista de obras disponíveis">
         {carregando && (
-          <p role="status" aria-live="polite" style={loadingStyle}>
-            Carregando obras...
-          </p>
+          <Top5LoadingMessage />
         )}
 
         {!carregando && (

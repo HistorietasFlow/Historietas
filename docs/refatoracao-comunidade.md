@@ -2404,3 +2404,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Fase 31 — Top 5 do Perfil Autor
 
 - A mensagem de status foi movida para componente apresentacional dedicado, preservando condição de exibição na página, conteúdo, acessibilidade e estilo.
+
+## Fase 32 — Top 5 do Perfil Autor
+
+- O indicador visual de carregamento foi movido para componente apresentacional dedicado, preservando a condição de exibição na página, texto, acessibilidade e estilo.

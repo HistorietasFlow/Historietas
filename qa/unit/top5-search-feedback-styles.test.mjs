@@ -37,10 +37,6 @@ test("Top 5 delega somente os estilos de busca e feedback", async () => {
     assert.doesNotMatch(page, new RegExp(`const ${styleName}: CSSProperties =`));
   }
 
-  for (const styleName of ["loadingStyle"]) {
-    assert.match(page, new RegExp(styleName));
-  }
-
   for (const value of [
     'maxWidth: "980px"',
     'minHeight: "48px"',
@@ -63,10 +59,7 @@ test("Top 5 delega somente os estilos de busca e feedback", async () => {
   }
 
   assert.doesNotMatch(page, /CSSProperties/);
-  assert.match(
-    page,
-    /import \{[\s\S]*loadingStyle,[\s\S]*from "\.\/lib\/top5-search-feedback-styles";/,
-  );
+  assert.doesNotMatch(page, /top5-search-feedback-styles/);
 
   for (const forbidden of [
     "useEffect",
