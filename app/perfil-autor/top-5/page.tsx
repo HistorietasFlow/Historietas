@@ -12,15 +12,13 @@ import {
 import { normalizarTexto } from "../../../lib/utils";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { Top5LanguageBridge } from "./components/top5-language-bridge";
-import {
-  normalizarObraSupabaseTop5,
-  pegarTexto,
-} from "./lib/top5-work-normalizers";
+import { pegarTexto } from "./lib/top5-work-normalizers";
 import {
   criarChaveObraTop5,
   obterIdentificadoresObraTop5,
 } from "./lib/top5-work-identifiers";
 import { carregarObrasLocaisTop5 } from "./lib/top5-local-works-loader";
+import { carregarObrasSupabaseTop5 } from "./lib/top5-supabase-works-loader";
 import {
   TOP_FIVE_MAXIMO,
   carregarTop5Salvo,
@@ -28,33 +26,9 @@ import {
 } from "./lib/top5-selection-storage";
 import type {
   ObraTop5,
-  SupabaseObraTop5Row,
   UsuarioTop5,
 } from "./lib/top5-types";
 
-
-async function carregarObrasSupabaseTop5() {
-  try {
-    const { data, error } = await supabase
-      .from("obras")
-      .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,publicado,visualizacoes,slug,criada_em,atualizado_em",
-      )
-      .eq("publicado", true)
-      .order("criada_em", { ascending: false })
-      .limit(160);
-
-    if (error || !Array.isArray(data)) {
-      return [] as ObraTop5[];
-    }
-
-    return data.map((obra, index) =>
-      normalizarObraSupabaseTop5(obra as SupabaseObraTop5Row, index),
-    );
-  } catch {
-    return [] as ObraTop5[];
-  }
-}
 
 function mesclarObrasTop5(obras: ObraTop5[]) {
   const obrasMescladas: ObraTop5[] = [];
