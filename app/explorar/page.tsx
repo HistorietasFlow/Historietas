@@ -19,6 +19,9 @@ import {
 } from "../../lib/catalogo";
 import { ExplorarLoadingState } from "./components/explorar-loading-state";
 import { ExplorarLoadMoreButton } from "./components/explorar-load-more-button";
+import { ExplorarLoginNotice } from "./components/explorar-login-notice";
+import { ExplorarCollectionFilterOptions } from "./components/explorar-collection-filter-options";
+import { ExplorarCategoriesBar } from "./components/explorar-categories-bar";
 import {
   EstadoVazioExplorar,
   ExplorarCarouselRow,
@@ -61,7 +64,6 @@ import { useExplorarCatalogQuery } from "./hooks/use-explorar-catalog-query";
 import { themePageCss } from "./lib/explorar-page-css";
 import { explorarBuscaToggleCss } from "./lib/explorar-search-toggle-css";
 import {
-  criarActiveCategoryStyle,
   criarSearchBoxStyle,
   criarDesktopSearchBoxStyle,
   pageStyle,
@@ -77,9 +79,6 @@ import {
   explorarHeaderFilterButtonStyle,
   desktopExplorarHeaderFilterButtonStyle,
   explorarHeaderFilterIconStyle,
-  categoriesStyle,
-  categoryStyle,
-  loginNoticeStyle,
   explorarHeaderSearchShellStyle,
   desktopExplorarHeaderSearchShellStyle,
   explorarHeaderSearchInputStyle,
@@ -104,7 +103,6 @@ import {
   explorarAdultConfirmationContinueStyle,
   explorarAdultConfirmationDisabledStyle,
   desktopContainerStyle,
-  desktopCategoriesStyle,
 } from "./lib/explorar-layout-styles";
 import {
   sectionStyle,
@@ -118,7 +116,6 @@ import {
 } from "./lib/explorar-content-styles";
 import {
   traduzirTextoExplorar,
-  traduzirGeneroExplorar,
 } from "./lib/explorar-translations";
 import type { ObraLocal } from "./lib/explorar-work-normalizers";
 import {
@@ -761,55 +758,10 @@ export default function ExplorarPage() {
               : criarSearchBoxStyle()
           }
         >
-          <section
-            className="explorar-carousel"
-            style={isDesktop ? desktopCategoriesStyle : categoriesStyle}
-            aria-label={traduzirTextoExplorar("Categorias", language)}
-          >
-            <button
-              type="button"
-              onClick={() => selecionarModoConteudo("obras")}
-              style={
-                modoConteudo === "obras" && !categoriaSelecionada
-                  ? criarActiveCategoryStyle()
-                  : categoryStyle
-              }
-            >
-              {traduzirTextoExplorar("Tudo", language)}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => selecionarModoConteudo("autores")}
-              style={
-                modoConteudo === "autores" && !categoriaSelecionada
-                  ? criarActiveCategoryStyle()
-                  : categoryStyle
-              }
-            >
-              {traduzirTextoExplorar("Autores", language)}
-            </button>
-
-            {categorias.map((categoria) => (
-              <button
-                key={categoria}
-                type="button"
-                onClick={() => selecionarCategoria(categoria)}
-                style={
-                  categoriaSelecionada === categoria
-                    ? criarActiveCategoryStyle()
-                    : categoryStyle
-                }
-              >
-                {traduzirGeneroExplorar(categoria, language)}
-              </button>
-            ))}
-          </section>
+          <ExplorarCategoriesBar isDesktop={isDesktop} modoConteudo={modoConteudo} categoriaSelecionada={categoriaSelecionada} language={language} onSelecionarModo={selecionarModoConteudo} onSelecionarCategoria={selecionarCategoria} />
 
           {mensagemLogin && (
-            <span style={loginNoticeStyle}>
-            {traduzirTextoExplorar(mensagemLogin, language)}
-          </span>
+            <ExplorarLoginNotice mensagem={traduzirTextoExplorar(mensagemLogin, language)} />
           )}
 
         </section>
@@ -839,25 +791,7 @@ export default function ExplorarPage() {
                   {traduzirTextoExplorar("Mostrar", language)}
                 </p>
 
-                {[
-                  ["todos", "Todas"],
-                  ["lendo", "Lendo agora"],
-                  ["favoritas", "Na lista"],
-                  ["concluidas", "Concluídas"],
-                  ["sem-leitura", "Sem leitura"],
-                ].map(([valor, rotulo]) => (
-                  <button
-                    key={valor}
-                    type="button"
-                    onClick={() => selecionarFiltroColecao(valor as FiltroColecaoExplorar)}
-                    style={criarExplorarModalOptionStyle(filtroColecao === valor)}
-                  >
-                    <span>{traduzirTextoExplorar(rotulo, language)}</span>
-                    <span style={criarExplorarModalRadioStyle(filtroColecao === valor)}>
-                      {filtroColecao === valor ? "✓" : ""}
-                    </span>
-                  </button>
-                ))}
+                <ExplorarCollectionFilterOptions filtroColecao={filtroColecao} language={language} onSelecionar={selecionarFiltroColecao} />
 
                 {modoConteudo === "obras" && (
                   <>
