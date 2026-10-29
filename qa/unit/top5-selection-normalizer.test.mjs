@@ -33,10 +33,10 @@ test("Top 5 delega somente a normalização pura da seleção", async () => {
 
   assert.match(
     page,
-    /import \{ normalizarIdsSelecionadosTop5 \} from "\.\/lib\/top5-selection-normalizer";/,
+    /import \{ persistirSelecaoTop5 \} from "\.\/lib\/top5-selection-save";/,
   );
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
-  assert.match(page, /normalizarIdsSelecionadosTop5\(/);
+  assert.doesNotMatch(page, /normalizarIdsSelecionadosTop5\(/);
   assert.match(page, /TOP_FIVE_MAXIMO/);
   assert.match(
     page,

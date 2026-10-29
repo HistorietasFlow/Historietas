@@ -99,7 +99,7 @@ test("Top 5 delega a preparação inicial da seleção sem persistir", async () 
   );
   const inicioSalvar = page.indexOf("function salvarEscolhasTop5");
   const handlerSalvar = page.slice(inicioSalvar);
-  assert.match(handlerSalvar, /normalizarIdsSelecionadosTop5\(/);
+  assert.match(handlerSalvar, /persistirSelecaoTop5\(/);
 
   const setUsuario = page.indexOf("setUsuario(userId ? { id: userId, nome: nomeUsuario } : null);");
   const setObras = page.indexOf("setObras(obrasMescladas);");

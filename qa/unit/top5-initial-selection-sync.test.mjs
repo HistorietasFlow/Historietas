@@ -98,7 +98,7 @@ test("Top 5 sincroniza somente a correção necessária da seleção inicial", a
 
   const inicioSalvar = page.indexOf("function salvarEscolhasTop5");
   const handlerSalvar = page.slice(inicioSalvar);
-  assert.match(handlerSalvar, /const salvou = salvarTop5\(usuario\.id, idsValidos\);/);
+  assert.match(handlerSalvar, /const idsValidos = persistirSelecaoTop5\(/);
 
   for (const forbidden of [
     "react",
