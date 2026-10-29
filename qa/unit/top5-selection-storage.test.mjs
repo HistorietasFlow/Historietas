@@ -39,8 +39,9 @@ test("Top 5 delega somente a persistência da seleção", async () => {
   assert.doesNotMatch(page, /TOP_FIVE_STORAGE_KEY/);
   assert.doesNotMatch(page, /function carregarTop5Salvo/);
   assert.doesNotMatch(page, /function salvarTop5/);
-  assert.match(page, /const STORAGE_KEY = "historietas-obras";/);
-  assert.match(page, /function carregarObrasLocaisTop5/);
+  assert.doesNotMatch(page, /const STORAGE_KEY = "historietas-obras";/);
+  assert.doesNotMatch(page, /function carregarObrasLocaisTop5/);
+  assert.match(page, /carregarObrasLocaisTop5\(userId\)/);
   assert.match(page, /function normalizarIdsSelecionadosTop5/);
   assert.match(page, /TOP_FIVE_MAXIMO/);
 
