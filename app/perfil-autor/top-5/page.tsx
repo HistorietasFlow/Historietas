@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import {
   historietasThemeCss,
@@ -11,6 +10,14 @@ import {
 } from "../../../lib/historietasTheme";
 import { Top5LanguageBridge } from "./components/top5-language-bridge";
 import { top5PerfilAutorPageCss } from "./lib/top5-page-css";
+import {
+  gridSectionStyle,
+  pageStyle,
+  selectedBadgeStyle,
+  top5CardSelectedStyle,
+  top5CardStyle,
+  worksGridStyle,
+} from "./lib/top5-main-styles";
 import {
   cancelButtonStyle,
   emptySelectedSlotStyle,
@@ -418,64 +425,3 @@ export default function Top5PerfilAutorPage() {
     </main>
   );
 }
-
-const pageStyle: CSSProperties = {
-  minHeight: "100vh",
-  padding: "12px 10px 48px",
-  background:
-    "radial-gradient(circle at top left, var(--historietas-top5-purple-page, rgba(124,58,237,0.12)), transparent 34%), #000000",
-  color: "#FFFFFF",
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-};
-
-const gridSectionStyle: CSSProperties = {
-  maxWidth: "980px",
-  margin: "0 auto",
-};
-
-const worksGridStyle: CSSProperties = {
-  width: "100%",
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  alignItems: "start",
-  rowGap: "10px",
-  columnGap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const top5CardStyle: CSSProperties = {
-  minWidth: 0,
-  display: "flex",
-  flexDirection: "column",
-  gap: "6px",
-  padding: "0",
-  border: "0",
-  background: "transparent",
-  color: "#FFFFFF",
-  cursor: "pointer",
-  textAlign: "left",
-};
-
-const top5CardSelectedStyle: CSSProperties = {
-  ...top5CardStyle,
-};
-
-const selectedBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "7px",
-  left: "7px",
-  width: "28px",
-  height: "28px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "999px",
-  background: "rgba(0,0,0,0.76)",
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-  boxShadow: "0 8px 18px rgba(0,0,0,0.32)",
-};

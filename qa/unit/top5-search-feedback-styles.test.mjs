@@ -59,22 +59,11 @@ test("Top 5 delega somente os estilos de busca e feedback", async () => {
     assert.ok(styles.includes(value), `preserva ${value}`);
   }
 
-  assert.match(page, /import type \{ CSSProperties \} from "react";/);
+  assert.doesNotMatch(page, /CSSProperties/);
   assert.match(
     page,
     /import \{[\s\S]*loadingStyle,[\s\S]*loginButtonStyle,[\s\S]*messageStyle,[\s\S]*noticeStyle,[\s\S]*noticeTextStyle,[\s\S]*noticeTitleStyle,[\s\S]*searchIconStyle,[\s\S]*searchInputStyle,[\s\S]*searchSectionStyle,[\s\S]*searchShellStyle,[\s\S]*from "\.\/lib\/top5-search-feedback-styles";/,
   );
-
-  for (const localStyle of [
-    "pageStyle",
-    "gridSectionStyle",
-    "worksGridStyle",
-    "top5CardStyle",
-    "top5CardSelectedStyle",
-    "selectedBadgeStyle",
-  ]) {
-    assert.match(page, new RegExp(`const ${localStyle}: CSSProperties =`));
-  }
 
   for (const forbidden of [
     "useEffect",

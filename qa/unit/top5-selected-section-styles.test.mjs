@@ -70,25 +70,11 @@ test("Top 5 delega somente os estilos da seção de obras selecionadas", async (
     styles,
     /export const saveButtonDisabledStyle: CSSProperties = \{\s*\.\.\.saveButtonStyle,\s*opacity: 0\.48,\s*cursor: "not-allowed",\s*\};/,
   );
-  assert.match(
-    page,
-    /import type \{ CSSProperties \} from "react";/,
-  );
+  assert.doesNotMatch(page, /CSSProperties/);
   assert.match(
     page,
     /import \{[\s\S]*cancelButtonStyle,[\s\S]*emptySelectedSlotStyle,[\s\S]*footerActionsStyle,[\s\S]*saveButtonDisabledStyle,[\s\S]*saveButtonStyle,[\s\S]*selectedActionsStyle,[\s\S]*selectedHeaderStyle,[\s\S]*selectedListStyle,[\s\S]*selectedMoveButtonStyle,[\s\S]*selectedNumberStyle,[\s\S]*selectedRemoveButtonStyle,[\s\S]*selectedSectionStyle,[\s\S]*selectedSlotStyle,[\s\S]*selectedTitleStyle,[\s\S]*from "\.\/lib\/top5-selected-section-styles";/,
   );
-
-  for (const localStyle of [
-    "pageStyle",
-    "gridSectionStyle",
-    "worksGridStyle",
-    "top5CardStyle",
-    "top5CardSelectedStyle",
-    "selectedBadgeStyle",
-  ]) {
-    assert.match(page, new RegExp(`const ${localStyle}: CSSProperties =`));
-  }
 
   for (const forbidden of [
     "useEffect",
