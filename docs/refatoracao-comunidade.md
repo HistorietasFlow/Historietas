@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil do Autor — Fase 4
+
+- Os estados derivados de seguimento e dos action sheets foram movidos para helpers puros dedicados, preservando ordem, fallbacks, tradução, estilos e callbacks na página.
+
 ## Perfil do Autor — Fase 3
 
 - Os estados derivados da Comunidade e da Biblioteca foram movidos para helpers puros dedicados, preservando coleções, totais, abas, menus, estatísticas, formatação e a orquestração de estados na página.

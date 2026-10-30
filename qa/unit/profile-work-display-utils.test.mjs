@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const actionSheetsViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-action-sheets-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const highlightRendererSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-highlight-renderer.tsx",
@@ -1370,10 +1377,10 @@ test("página reutiliza a visibilidade do alvo de leitura derivada pelo helper",
 test("página delega a composição do sheet da obra ao helper único", () => {
   assert.match(
     pagina,
-    /obterDadosSheetObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    /import \{ obterEstadoVisualActionSheetsPerfilAutor \} from "\.\/lib\/profile-action-sheets-view-state";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosSheetObraPerfilAutor\(\{/g) || []).length,
+    (actionSheetsViewStateSource.match(/obterDadosSheetObraPerfilAutor\(\{/g) || []).length,
     1,
   );
   for (const helper of [
@@ -1395,10 +1402,10 @@ test("action sheets preservam composição, ordem e callbacks na fronteira da p�
   assert.doesNotMatch(pagina, /<ProfileLibraryActionSheet/);
   assert.doesNotMatch(pagina, /\{obraMenuAberta &&\s*\(\(\) =>/);
   assert.doesNotMatch(pagina, /\{bibliotecaMenuAberto &&\s*\(\(\) =>/);
-  assert.match(pagina, /obterDadosSheetObraPerfilAutor\(\{/);
-  assert.match(pagina, /obterDadosSheetBibliotecaPerfilAutor\(\{/);
-  assert.match(pagina, /obterRotulosAcoesColecoesObraPerfilAutor\(\{/);
-  assert.match(pagina, /obterRotulosAcoesColecoesBibliotecaPerfil\(\{/);
+  assert.match(actionSheetsViewStateSource, /obterDadosSheetObraPerfilAutor\(\{/);
+  assert.match(actionSheetsViewStateSource, /obterDadosSheetBibliotecaPerfilAutor\(\{/);
+  assert.match(actionSheetsViewStateSource, /obterRotulosAcoesColecoesObraPerfilAutor\(\{/);
+  assert.match(actionSheetsViewStateSource, /obterRotulosAcoesColecoesBibliotecaPerfil\(\{/);
   assert.match(
     pagina,
     /<ProfileActionSheets[\s\S]*?bibliotecaMenuAberto=\{bibliotecaMenuAberto\}[\s\S]*?dadosSheetBibliotecaPerfil=\{dadosSheetBibliotecaPerfil\}[\s\S]*?dadosSheetObraPerfil=\{dadosSheetObraPerfil\}[\s\S]*?obraMenuAberta=\{obraMenuAberta\}/,
@@ -1499,11 +1506,11 @@ test("dados do sheet da Biblioteca centralizam href e estado das coleções", ()
 
 test("página delega os dados do sheet da Biblioteca ao helper único", () => {
   assert.match(
-    pagina,
-    /obterDadosSheetBibliotecaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    actionSheetsViewStateSource,
+    /obterDadosSheetBibliotecaPerfilAutor,[\s\S]*?from "\.\/profile-work-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosSheetBibliotecaPerfilAutor\(\{/g) || []).length,
+    (actionSheetsViewStateSource.match(/obterDadosSheetBibliotecaPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.doesNotMatch(pagina, /obterHrefLeituraItemBibliotecaPerfilAutor/);

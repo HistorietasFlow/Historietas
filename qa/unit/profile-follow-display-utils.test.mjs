@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const followViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-follow-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const heroActionsSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-hero-actions.tsx",
@@ -104,13 +111,13 @@ test("apresentação do botão de seguimento preserva estado e bloqueio visual",
 });
 
 
-test("página delega a apresentação do botão de seguimento ao helper", () => {
+test("página delega o estado visual do botão de seguimento ao helper", () => {
   assert.match(
     pagina,
-    /obterApresentacaoBotaoSeguimentoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-follow-display-utils";/,
+    /import \{ obterEstadoVisualSeguimentoPerfilAutor \} from "\.\/lib\/profile-follow-view-state";/,
   );
   assert.equal(
-    (pagina.match(/obterApresentacaoBotaoSeguimentoPerfilAutor\(\{/g) || []).length,
+    (followViewStateSource.match(/obterApresentacaoBotaoSeguimentoPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.match(
@@ -202,13 +209,13 @@ test("dados da ação de seguimento preservam rótulos, aria-label e title", () 
 });
 
 
-test("página delega os textos da ação de seguimento ao helper", () => {
+test("helper delega os textos da ação de seguimento sem mover a apresentação", () => {
   assert.match(
-    pagina,
-    /obterDadosAcaoSeguimentoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-follow-display-utils";/,
+    followViewStateSource,
+    /obterDadosAcaoSeguimentoPerfilAutor,[\s\S]*?from "\.\/profile-follow-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosAcaoSeguimentoPerfilAutor\(\{/g) || []).length,
+    (followViewStateSource.match(/obterDadosAcaoSeguimentoPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.match(

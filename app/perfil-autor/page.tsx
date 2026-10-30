@@ -105,11 +105,7 @@ import {
   obterVisibilidadeConteudosAbasPerfilAutor,
 } from "./lib/profile-tab-visibility-utils";
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
-import {
-  obterApresentacaoBotaoSeguimentoPerfilAutor,
-  obterDadosAcaoSeguimentoPerfilAutor,
-  obterEstadoSeguimentoPerfilAutor,
-} from "./lib/profile-follow-display-utils";
+import { obterEstadoVisualSeguimentoPerfilAutor } from "./lib/profile-follow-view-state";
 import {
   obterAriaLabelCopiarUsernamePerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
@@ -135,9 +131,6 @@ import {
   obterDadosCurtidaTopFivePerfilAutor,
   obterMensagemObrasVaziasPerfilAutor,
   obterMensagemTopFiveVazioPerfilAutor,
-  obterDadosSheetBibliotecaPerfilAutor,
-  obterDadosSheetObraPerfilAutor,
-  obterRotulosAcoesColecoesObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
@@ -148,10 +141,8 @@ import {
 import { obterResumoEstatisticasPerfilAutor } from "./lib/profile-summary-stats";
 import {
   bibliotecaSemItensAtivosPerfilAutor,
-  obterMetaMenuBibliotecaPerfil,
-  obterRotuloAcaoRemoverBibliotecaPerfil,
-  obterRotulosAcoesColecoesBibliotecaPerfil,
 } from "./lib/profile-library-display-utils";
+import { obterEstadoVisualActionSheetsPerfilAutor } from "./lib/profile-action-sheets-view-state";
 import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -547,14 +538,18 @@ function PerfilAutorPageContent() {
     autorChavePerfil,
     autorNormalizadoParaSeguir,
     seguindoAutor,
-    seguindoPerfilAtual,
-    solicitacaoSeguimentoPendente,
     seguidoresTotal,
     seguindoTotalPerfil,
     seguidoresPerfilHref,
     seguindoPerfilHref,
     obrasSeguidasPerfilHref,
-  } = obterEstadoSeguimentoPerfilAutor({
+    ariaLabelSeguimento,
+    titleSeguimento,
+    rotuloSeguimento,
+    botaoSeguimentoAtivo,
+    opacidadeBotaoSeguimento,
+    cursorBotaoSeguimento,
+  } = obterEstadoVisualSeguimentoPerfilAutor({
     perfilParaMostrar,
     autoresSeguidos,
     estadoRelacionamentoPerfil,
@@ -562,25 +557,7 @@ function PerfilAutorPageContent() {
     seguidoresUsuarioPerfilTotal,
     seguindoUsuarioPerfilTotal,
     podeEditarPerfil,
-  });
-
-  const {
-    ariaLabelSeguimento,
-    titleSeguimento,
-    rotuloSeguimento,
-  } = obterDadosAcaoSeguimentoPerfilAutor({
-    seguindoPerfilAtual,
-    solicitacaoSeguimentoPendente,
-    salvando: seguirUsuarioSalvando,
-  });
-  const {
-    botaoSeguimentoAtivo,
-    opacidadeBotaoSeguimento,
-    cursorBotaoSeguimento,
-  } = obterApresentacaoBotaoSeguimentoPerfilAutor({
-    seguindoPerfilAtual,
-    solicitacaoSeguimentoPendente,
-    salvando: seguirUsuarioSalvando,
+    seguirUsuarioSalvando,
   });
   const estiloBaseBotaoSeguimento = botaoSeguimentoAtivo
     ? profileActiveButtonStyle
@@ -1021,45 +998,23 @@ function PerfilAutorPageContent() {
     setAutoresSeguidos,
   });
 
-  const dadosSheetObraPerfil = obraMenuAberta
-    ? obterDadosSheetObraPerfilAutor({
-        obra: obraMenuAberta,
-        totaisInteracoesObras,
-        obrasFavoritas,
-        obrasConcluidas,
-        obrasSeguidasBiblioteca,
-        traduzirTexto: (item) => traduzirTextoPerfilAutor(item, language),
-      })
-    : null;
-  const rotulosSheetObraPerfil = dadosSheetObraPerfil
-    ? obterRotulosAcoesColecoesObraPerfilAutor({
-        obraFavorita: dadosSheetObraPerfil.obraFavorita,
-        obraConcluida: dadosSheetObraPerfil.obraConcluida,
-      })
-    : null;
-  const dadosSheetBibliotecaPerfil = bibliotecaMenuAberto
-    ? obterDadosSheetBibliotecaPerfilAutor({
-        item: bibliotecaMenuAberto,
-        obrasFavoritas,
-        obrasConcluidas,
-        obrasSeguidasBiblioteca,
-      })
-    : null;
-  const metaSheetBibliotecaPerfil = bibliotecaMenuAberto
-    ? obterMetaMenuBibliotecaPerfil(bibliotecaMenuAberto)
-    : "";
-  const rotulosSheetBibliotecaPerfil = dadosSheetBibliotecaPerfil
-    ? obterRotulosAcoesColecoesBibliotecaPerfil({
-        obraNoQueroLer: dadosSheetBibliotecaPerfil.obraNoQueroLer,
-        obraFavorita: dadosSheetBibliotecaPerfil.obraFavorita,
-        obraConcluida: dadosSheetBibliotecaPerfil.obraConcluida,
-      })
-    : null;
-  const rotuloRemoverSheetBibliotecaPerfil = bibliotecaMenuAberto
-    ? obterRotuloAcaoRemoverBibliotecaPerfil(abaBibliotecaPerfil)
-    : "";
-
-
+  const {
+    dadosSheetObraPerfil,
+    rotulosSheetObraPerfil,
+    dadosSheetBibliotecaPerfil,
+    metaSheetBibliotecaPerfil,
+    rotulosSheetBibliotecaPerfil,
+    rotuloRemoverSheetBibliotecaPerfil,
+  } = obterEstadoVisualActionSheetsPerfilAutor({
+    obraMenuAberta,
+    totaisInteracoesObras,
+    obrasFavoritas,
+    obrasConcluidas,
+    obrasSeguidasBiblioteca,
+    language,
+    bibliotecaMenuAberto,
+    abaBibliotecaPerfil,
+  });
 
   if (carregando || redirecionandoParaLogin) {
     return (
