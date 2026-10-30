@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-work-read-loader.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
+const commentPersistence = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 const fonteMockada = fonte
   .replace('import { supabase } from "../../../lib/supabase/client";', "const supabase = { from: (...args) => globalThis.__leitorWorkRead.supabase.from(...args) };")
   .replace('import { carregarMetricasConteudos } from "../../../lib/metricas";', "const carregarMetricasConteudos = (...args) => globalThis.__leitorWorkRead.metricas(...args);")
@@ -96,7 +97,9 @@ test("os dois helpers e seus contratos permanecem literalmente iguais", () => {
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-interaction-persistence";/);
   assert.match(persistencia, /export async function salvarProgressoLeituraSupabase\(/);
   assert.doesNotMatch(pagina, /async function salvarProgressoLeituraSupabase\(/);
-  assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-comment-persistence";/);
+  assert.doesNotMatch(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(commentPersistence, /export async function salvarComentarioCapituloSupabase\(/);
 });
 
 test("obra ausente ou não publicada não é carregada para visitante", async () => {
