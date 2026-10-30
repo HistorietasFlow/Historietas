@@ -7,6 +7,13 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const resultsViewState = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-results-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const filtroOrdenacao = readFileSync(
   new URL("../../app/listas/lib/listas-filter-sort-utils.ts", import.meta.url),
   "utf8",
@@ -132,6 +139,12 @@ function criarAutor(nome, extras = {}) {
 }
 
 test("Listas delega filtragem, apresentação e permissões puras sem Supabase", () => {
+  assert.match(
+    pagina,
+    /import \{ useListasResultsViewState \} from "\.\/hooks\/use-listas-results-view-state";/,
+  );
+  assert.match(pagina, /useListasResultsViewState\(\{/);
+
   for (const helper of [
     "filtrarOrdenarItensPerfilListas",
     "filtrarOrdenarObrasPublicasListas",
@@ -142,13 +155,15 @@ test("Listas delega filtragem, apresentação e permissões puras sem Supabase",
     "agruparItensPerfilPorMesListas",
     "obterPermissoesAnotacaoListas",
   ]) {
-    assert.match(pagina, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
-    assert.doesNotMatch(pagina, new RegExp(`function ${helper}\\(`));
+    const origem = helper === "obterPermissoesAnotacaoListas" ? pagina : resultsViewState;
+    assert.match(origem, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
+    assert.doesNotMatch(origem, new RegExp(`function ${helper}\\(`));
   }
 
   for (const source of [filtroOrdenacao, apresentacao, permissoes]) {
     assert.doesNotMatch(source, /\bsupabase\b|\.rpc\(|\.insert\(|\.update\(|\.delete\(/);
   }
+  assert.doesNotMatch(resultsViewState, /\bsupabase\b|\.rpc\(|\.insert\(|\.update\(|\.delete\(/);
 });
 
 test("filtra e ordena itens do perfil por busca normalizada e todos os critérios", () => {

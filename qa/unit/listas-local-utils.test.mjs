@@ -5,6 +5,10 @@ import typescript from "typescript";
 
 const page = readFileSync(new URL("../../app/listas/page.tsx", import.meta.url), "utf8");
 const values = readFileSync(new URL("../../app/listas/lib/listas-value-utils.ts", import.meta.url), "utf8");
+const routeState = readFileSync(
+  new URL("../../app/listas/lib/listas-page-route-state.ts", import.meta.url),
+  "utf8",
+);
 const storage = readFileSync(new URL("../../app/listas/lib/listas-storage-utils.ts", import.meta.url), "utf8");
 const works = readFileSync(new URL("../../app/listas/lib/listas-local-work-utils.ts", import.meta.url), "utf8");
 const diary = readFileSync(new URL("../../app/listas/lib/listas-diary-normalizer-utils.ts", import.meta.url), "utf8");
@@ -50,8 +54,11 @@ const obrasLocais = await importarModulo(
 );
 
 test("Listas delega os utilitários locais sem mover fluxos Supabase", () => {
-  for (const name of ["pegarTexto", "idUsuarioValido"]) {
-    assert.match(page, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
+  for (const [source, name] of [
+    [routeState, "pegarTexto"],
+    [page, "idUsuarioValido"],
+  ]) {
+    assert.match(source, new RegExp(`import[\\s\\S]*?\\b${name}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${name}\\(`));
   }
   assert.match(diaryProfileActions, /import[\s\S]*?\bcriarLoginHrefListas\b/);
