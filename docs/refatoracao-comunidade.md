@@ -2644,3 +2644,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Redefinir Senha — Fase 3
 
 - A ação de salvar a nova senha foi movida para hook dedicado, preservando validações, autenticação, revalidação recovery, atualização, logout, redirect, mensagens e estados controlados em `page.tsx`.
+
+## Excluir Conta — Fase 1
+
+- O CSS estático e a ação de envio da solicitação de exclusão foram movidos para módulos dedicados, preservando endpoint, payload, honeypot, validações, mensagens, resets e formulário na página.
