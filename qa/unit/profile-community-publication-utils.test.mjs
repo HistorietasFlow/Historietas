@@ -21,6 +21,13 @@ const communityPostRendererSource = readFileSync(
   ),
   "utf8",
 );
+const communityViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-community-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const communityLoaderSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-community-loader.ts",
@@ -79,11 +86,11 @@ test("estado vazio da Comunidade depende apenas da ausência de publicações re
 
 test("página delega o estado vazio das publicações recentes ao helper", () => {
   assert.match(
-    pagina,
-    /comunidadeSemPublicacoesRecentesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+    communityViewStateSource,
+    /comunidadeSemPublicacoesRecentesPerfilAutor,[\s\S]*?from "\.\/profile-community-publication-utils";/,
   );
   assert.equal(
-    (pagina.match(/comunidadeSemPublicacoesRecentesPerfilAutor\(/g) || []).length,
+    (communityViewStateSource.match(/comunidadeSemPublicacoesRecentesPerfilAutor\(/g) || []).length,
     1,
   );
   assert.match(
@@ -99,15 +106,15 @@ test("página delega o estado vazio das publicações recentes ao helper", () =>
 
 test("página deriva as publicações recentes da Comunidade uma única vez", () => {
   assert.match(
-    pagina,
+    communityViewStateSource,
     /const publicacoesRecentesComunidade =\s*comunidadePerfil\.publicacoesRecentes;/,
   );
   assert.equal(
-    (pagina.match(/comunidadePerfil\.publicacoesRecentes/g) || []).length,
+    (communityViewStateSource.match(/comunidadePerfil\.publicacoesRecentes/g) || []).length,
     1,
   );
   assert.match(
-    pagina,
+    communityViewStateSource,
     /comunidadeSemPublicacoesRecentesPerfilAutor\(\s*publicacoesRecentesComunidade,?\s*\)/,
   );
   assert.match(
@@ -119,11 +126,11 @@ test("página deriva as publicações recentes da Comunidade uma única vez", ()
 
 test("página deriva o erro da Comunidade uma única vez", () => {
   assert.match(
-    pagina,
+    communityViewStateSource,
     /const erroComunidadePerfil = comunidadePerfil\.erro;/,
   );
   assert.equal(
-    (pagina.match(/comunidadePerfil\.erro/g) || []).length,
+    (communityViewStateSource.match(/comunidadePerfil\.erro/g) || []).length,
     1,
   );
   assert.match(pagina, /error=\{erroComunidadePerfil\}/);
@@ -153,12 +160,12 @@ test("valores das estatísticas da Comunidade reutilizam a mesma formatação", 
 
 test("página delega a formatação dos valores das estatísticas da Comunidade", () => {
   assert.match(
-    pagina,
-    /obterValoresEstatisticasComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+    communityViewStateSource,
+    /obterValoresEstatisticasComunidadePerfilAutor,[\s\S]*?from "\.\/profile-community-publication-utils";/,
   );
   assert.equal(
     (
-      pagina.match(
+      communityViewStateSource.match(
         /obterValoresEstatisticasComunidadePerfilAutor\(\{/g,
       ) || []
     ).length,
@@ -197,12 +204,12 @@ test("aria-labels das estatísticas da Comunidade preservam os três destinos", 
 
 test("página reutiliza os aria-labels das estatísticas da Comunidade", () => {
   assert.match(
-    pagina,
-    /obterAriaLabelsEstatisticasComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+    communityViewStateSource,
+    /obterAriaLabelsEstatisticasComunidadePerfilAutor,[\s\S]*?from "\.\/profile-community-publication-utils";/,
   );
   assert.equal(
     (
-      pagina.match(
+      communityViewStateSource.match(
         /obterAriaLabelsEstatisticasComunidadePerfilAutor\(/g,
       ) || []
     ).length,
@@ -254,11 +261,11 @@ test("título da Comunidade preserva português, inglês e espanhol", () => {
 
 test("página delega o título localizado da Comunidade ao helper", () => {
   assert.match(
-    pagina,
-    /obterTituloComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+    communityViewStateSource,
+    /obterTituloComunidadePerfilAutor,[\s\S]*?from "\.\/profile-community-publication-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterTituloComunidadePerfilAutor\(\{/g) || []).length,
+    (communityViewStateSource.match(/obterTituloComunidadePerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.match(pagina, /<ProfileCommunityTab[\s\S]*?title=\{tituloComunidadePerfil\}/);
@@ -280,12 +287,12 @@ test("padding inferior da publicação preserva espaço de autor e visitante", (
 
 test("página delega o padding inferior das publicações ao helper", () => {
   assert.match(
-    pagina,
-    /obterPaddingInferiorPublicacaoComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+    communityViewStateSource,
+    /obterPaddingInferiorPublicacaoComunidadePerfilAutor,[\s\S]*?from "\.\/profile-community-publication-utils";/,
   );
   assert.equal(
     (
-      pagina.match(
+      communityViewStateSource.match(
         /obterPaddingInferiorPublicacaoComunidadePerfilAutor\(/g,
       ) || []
     ).length,
@@ -331,11 +338,11 @@ test("aviso de comunidade vazia preserva textos de autor e visitante", () => {
 
 test("página delega o aviso de comunidade vazia ao helper", () => {
   assert.match(
-    pagina,
-    /obterAvisoComunidadeVaziaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+    communityViewStateSource,
+    /obterAvisoComunidadeVaziaPerfilAutor,[\s\S]*?from "\.\/profile-community-publication-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterAvisoComunidadeVaziaPerfilAutor\(\{/g) || []).length,
+    (communityViewStateSource.match(/obterAvisoComunidadeVaziaPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.match(pagina, /emptyTitle=\{avisoComunidadeVazia\.title\}/);

@@ -3,8 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
 
-const pagina = readFileSync(
-  new URL("../../app/perfil-autor/page.tsx", import.meta.url),
+const libraryViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-library-view-state.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 
@@ -114,23 +117,23 @@ test("listas vazias retornam totais zero", () => {
 
 test("página deriva os totais de itens da Biblioteca antes do helper", () => {
   assert.match(
-    pagina,
+    libraryViewStateSource,
     /const itensBibliotecaQueroLerTotal = itensBibliotecaQueroLer\.length;/,
   );
   assert.match(
-    pagina,
+    libraryViewStateSource,
     /const itensBibliotecaConcluidasTotal = itensBibliotecaConcluidas\.length;/,
   );
   assert.match(
-    pagina,
+    libraryViewStateSource,
     /obterTotaisBibliotecaPerfilAutor\(\{[\s\S]*?itensBibliotecaQueroLerTotal,[\s\S]*?itensBibliotecaConcluidasTotal,/,
   );
   assert.doesNotMatch(
-    pagina,
+    libraryViewStateSource,
     /itensBibliotecaQueroLerTotal: itensBibliotecaQueroLer\.length/,
   );
   assert.doesNotMatch(
-    pagina,
+    libraryViewStateSource,
     /itensBibliotecaConcluidasTotal: itensBibliotecaConcluidas\.length/,
   );
 });
