@@ -10,6 +10,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const accessViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-access-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const tabContent = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-tab-content.tsx",
@@ -154,13 +161,13 @@ test("página reutiliza a presença de abas já derivada pelo helper", () => {
 });
 
 
-test("página deriva a existência de bloqueio uma única vez", () => {
+test("estado de acesso deriva a existência de bloqueio e a página a consome", () => {
   assert.match(
-    pagina,
+    accessViewStateSource,
     /const existeBloqueioPerfil = estadoBloqueioPerfil\.existeBloqueio;/,
   );
   assert.match(
-    pagina,
+    accessViewStateSource,
     /existeBloqueio: existeBloqueioPerfil,/,
   );
   assert.match(
@@ -170,7 +177,7 @@ test("página deriva a existência de bloqueio uma única vez", () => {
   assert.match(heroSource, /<ProfileHeroActions[\s\S]*?existeBloqueio=\{existeBloqueio\}/);
   assert.match(heroActionsSource, /\{!existeBloqueio && \(/);
   assert.equal(
-    (pagina.match(/estadoBloqueioPerfil\.existeBloqueio/g) || []).length,
+    (accessViewStateSource.match(/estadoBloqueioPerfil\.existeBloqueio/g) || []).length,
     1,
   );
 });
@@ -214,15 +221,16 @@ test("conteúdo ativo exige aba selecionada e visível", () => {
   );
 });
 
-test("página delega a visibilidade do conteúdo das cinco abas", () => {
+test("estado de acesso delega a visibilidade do conteúdo das cinco abas", () => {
   assert.match(
-    pagina,
-    /obterVisibilidadeConteudosAbasPerfilAutor,[\s\S]*?from "\.\/lib\/profile-tab-visibility-utils";/,
+    accessViewStateSource,
+    /obterVisibilidadeConteudosAbasPerfilAutor,[\s\S]*?from "\.\/profile-tab-visibility-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterVisibilidadeConteudosAbasPerfilAutor\(\{/g) || []).length,
+    (accessViewStateSource.match(/obterVisibilidadeConteudosAbasPerfilAutor\(\{/g) || []).length,
     1,
   );
+  assert.match(pagina, /obterEstadoVisualAcessoPerfilAutor\(/);
 
   assert.match(
     pagina,

@@ -46,6 +46,13 @@ const shellViewStateSource = readFileSync(
   ),
   "utf8",
 );
+const accessViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-access-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(
   source.replace(
     'import { normalizarNomeAutor } from "./profile-formatters";',
@@ -281,21 +288,23 @@ test("helper resolve perfil remoto e estado exibido sem useMemo", () => {
 });
 
 
-test("página deriva o estado de visitante uma única vez", () => {
+test("estado de acesso deriva o estado de visitante uma única vez", () => {
   assert.match(
-    pagina,
+    accessViewStateSource,
     /const perfilVisitante = !podeEditarPerfil;/,
   );
   assert.equal(
-    (pagina.match(/\bperfilVisitante\b/g) || []).length,
-    3,
+    (accessViewStateSource.match(/\bperfilVisitante\b/g) || []).length,
+    2,
   );
+  assert.equal((pagina.match(/\bperfilVisitante\b/g) || []).length, 3);
   assert.equal(
-    (pagina.match(/!podeEditarPerfil/g) || []).length,
+    (accessViewStateSource.match(/!podeEditarPerfil/g) || []).length,
     1,
   );
   assert.doesNotMatch(
-    pagina,
+    accessViewStateSource,
     /\{!podeEditarPerfil(?: \?| &&)/,
   );
+  assert.match(pagina, /obterEstadoVisualAcessoPerfilAutor\(/);
 });

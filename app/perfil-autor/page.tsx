@@ -74,10 +74,7 @@ import {
   diarioPerfilVazio,
   totaisInteracoesObrasPerfilVazio,
 } from "./constants";
-import {
-  PerfilAutorLanguageBridge,
-  traduzirTextoPerfilAutor,
-} from "./translations";
+import { PerfilAutorLanguageBridge } from "./translations";
 import {
   compactarNumeroPerfilAutor,
   normalizarAbaPerfilAutor,
@@ -96,33 +93,29 @@ import {
   diarioSemItensPerfilAutor,
 } from "./lib/profile-diary-item-utils";
 import {
-  obterVisibilidadeAbasPerfilAutor,
-  obterVisibilidadeConteudosAbasPerfilAutor,
-} from "./lib/profile-tab-visibility-utils";
+  obterEstadoVisualAcessoPerfilAutor,
+} from "./lib/profile-access-view-state";
 import { obterEstadoAlvoPerfilAutor } from "./lib/profile-target-view-state";
 import { obterEstadoVisualSeguimentoPerfilAutor } from "./lib/profile-follow-view-state";
 import {
-  obterBioSobreExibicaoPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
   obterDadosNotificacoesPerfilAutor,
   obterDadosDenunciaPerfilAutor,
-  obterDadosExibicaoPerfilAutor,
   obterVisibilidadeDenunciasPerfilAutor,
   limitarTextoPerfilAutor,
   obterCaracteresRestantesPerfilAutor,
   obterInicialAvatarPerfilAutor,
-  obterRotuloAcaoBloqueioPerfilAutor,
   obterTituloSobrePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
 import { obterEstadoVisualAvaliacaoPerfilAutor } from "./lib/profile-rating-view-state";
 import {
   obrasSemResultadosPerfilAutor,
-  obterTotalObrasConcluidasPerfilAutor,
 } from "./lib/profile-work-display-utils";
 import { obterEstadoVisualDestaquesPerfilAutor } from "./lib/profile-highlights-view-state";
 import { obterEstadoVisualConteudoPerfilAutor } from "./lib/profile-content-view-state";
 import { obterEstadoVisualShellPerfilAutor } from "./lib/profile-shell-view-state";
+import { obterEstadoVisualExibicaoAutorPerfil } from "./lib/profile-author-display-view-state";
 import {
   bibliotecaSemItensAtivosPerfilAutor,
 } from "./lib/profile-library-display-utils";
@@ -421,21 +414,14 @@ function PerfilAutorPageContent() {
     setTopFiveCurtidoPorMim,
   });
 
-  const podeEditarPerfil = perfilPertenceAoUsuario;
-  const perfilVisitante = !podeEditarPerfil;
-  const editorPerfilVisivel = podeEditarPerfil && editorPerfilAberto;
-  const editorSobreVisivel = podeEditarPerfil && editorSobreAberto;
-  const bloqueadoPorMim = estadoBloqueioPerfil.bloqueadoPorMim;
-  const existeBloqueioPerfil = estadoBloqueioPerfil.existeBloqueio;
-  const menuBloqueioStyle = bloqueadoPorMim
-    ? menuItemStyle
-    : menuDangerItemStyle;
-  const rotuloAcaoBloqueioPerfil = obterRotuloAcaoBloqueioPerfilAutor({
-    bloqueadoPorMim,
-    salvando: bloqueioPerfilSalvando,
-  });
-
   const {
+    podeEditarPerfil,
+    perfilVisitante,
+    editorPerfilVisivel,
+    editorSobreVisivel,
+    bloqueadoPorMim,
+    existeBloqueioPerfil,
+    rotuloAcaoBloqueioPerfil,
     perfilBloqueadoEntreUsuarios,
     obrasPerfilVisivel,
     sobrePerfilVisivel,
@@ -447,26 +433,24 @@ function PerfilAutorPageContent() {
     temAbasPerfilVisiveis,
     conteudoPrivadoBloqueado,
     primeiraAbaPerfilVisivel,
-  } = obterVisibilidadeAbasPerfilAutor({
-    perfilPertenceAoUsuario,
-    existeBloqueio: existeBloqueioPerfil,
-    privacidadeCarregando: privacidadePerfilCarregando,
-    permissoes: permissoesAbasPerfil,
-  });
-  const {
     bibliotecaPerfilAtiva,
     diarioPerfilAtivo,
     comunidadePerfilAtiva,
     sobrePerfilAtivo,
     obrasPerfilAtivo,
-  } = obterVisibilidadeConteudosAbasPerfilAutor({
+  } = obterEstadoVisualAcessoPerfilAutor({
+    perfilPertenceAoUsuario,
+    editorPerfilAberto,
+    editorSobreAberto,
+    estadoBloqueioPerfil,
+    bloqueioPerfilSalvando,
+    privacidadePerfilCarregando,
+    permissoesAbasPerfil,
     abaPerfil,
-    obrasPerfilVisivel,
-    sobrePerfilVisivel,
-    diarioPerfilVisivel,
-    comunidadePerfilVisivel,
-    bibliotecaPerfilVisivel,
   });
+  const menuBloqueioStyle = bloqueadoPorMim
+    ? menuItemStyle
+    : menuDangerItemStyle;
 
   usePerfilAutorPrivacySync({
     perfilAutorId,
@@ -538,33 +522,31 @@ function PerfilAutorPageContent() {
     ? profileActiveButtonStyle
     : profilePrimaryButtonStyle;
 
-  const obrasConcluidasPerfilPorObrasDoAutor =
-    obterTotalObrasConcluidasPerfilAutor({
-      perfilParaMostrar,
-      totaisInteracoesObras,
-      obrasConcluidas,
-    });
   const {
+    obrasConcluidasPerfilPorObrasDoAutor,
     perfilSalvoAutor,
     perfilUsuarioRemotoAtivo,
     bioPadraoAutor,
     bioAutorPersonalizada,
     bioAutor,
     bioSobrePersonalizada,
-    bioSobreAutor,
     entradaHistorietasPerfil,
     caracteresRestantesBioSobre,
-    bioSobreAutorEhPadrao,
     autorHandlePerfil,
     avatarAutor,
-  } = obterDadosExibicaoPerfilAutor({
+    mostrarDestaquesAutor,
+    bioSobreAutorExibido,
+    bioSobreAutorUserContent,
+  } = obterEstadoVisualExibicaoAutorPerfil({
     perfilParaMostrar,
+    totaisInteracoesObras,
+    obrasConcluidas,
     perfilUsuarioRemoto,
     perfisAutoresSalvos,
     autorChavePerfil,
     autorNormalizadoParaSeguir,
+    language,
   });
-  const mostrarDestaquesAutor = perfilSalvoAutor.mostrarDestaques;
 
   const {
     publicacoesRecentesComunidade,
@@ -594,15 +576,6 @@ function PerfilAutorPageContent() {
     podeEditarPerfil,
     perfilParaMostrar,
     alvoDenunciaConteudoPerfil,
-  });
-
-  const {
-    bioSobreAutorExibido,
-    bioSobreAutorUserContent,
-  } = obterBioSobreExibicaoPerfilAutor({
-    bioSobreAutor,
-    bioSobreAutorEhPadrao,
-    traduzirTexto: (texto) => traduzirTextoPerfilAutor(texto, language),
   });
 
   const {

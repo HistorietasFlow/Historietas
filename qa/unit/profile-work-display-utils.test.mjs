@@ -32,6 +32,13 @@ const highlightsViewStateSource = readFileSync(
   ),
   "utf8",
 );
+const authorDisplayViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-author-display-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const actionSheetsViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-action-sheets-view-state.ts",
@@ -729,15 +736,16 @@ test("página mantém as derivações e delega a composição dos destaques", ()
 });
 
 
-test("página deriva mostrar destaques do autor uma única vez", () => {
+test("estado de exibição do autor deriva mostrar destaques uma única vez", () => {
   assert.match(
-    pagina,
+    authorDisplayViewStateSource,
     /const mostrarDestaquesAutor = perfilSalvoAutor\.mostrarDestaques;/,
   );
   assert.equal(
-    (pagina.match(/perfilSalvoAutor\.mostrarDestaques/g) || []).length,
+    (authorDisplayViewStateSource.match(/perfilSalvoAutor\.mostrarDestaques/g) || []).length,
     1,
   );
+  assert.match(pagina, /obterEstadoVisualExibicaoAutorPerfil\(/);
   assert.match(
     pagina,
     /mostrarDestaquesAutor,/,
