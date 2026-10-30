@@ -353,7 +353,12 @@ test("Perfil de Autor reutiliza hrefs centralizados do Diário", () => {
   );
   assert.equal(
     (pagina.match(/criarHrefListaDiarioPerfilAutor\(/g) || []).length,
-    2,
+    1,
+  );
+  assert.equal(
+    (diaryItemRendererSource.match(/criarHrefListaDiarioPerfilAutor\(/g) || [])
+      .length,
+    1,
   );
   assert.doesNotMatch(
     pagina,
