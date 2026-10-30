@@ -46,6 +46,9 @@ import { usePerfilAutorInteractionTotalsSync } from "./hooks/use-perfil-autor-in
 import { usePerfilAutorNotificationCountSync } from "./hooks/use-perfil-autor-notification-count-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
 import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor-profile-editor-save-actions";
+import { usePerfilAutorHighlightRenderer } from "./hooks/use-perfil-autor-highlight-renderer";
+import { usePerfilAutorDiaryItemRenderer } from "./hooks/use-perfil-autor-diary-item-renderer";
+import { usePerfilAutorWorkItemRenderer } from "./hooks/use-perfil-autor-work-item-renderer";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -138,14 +141,12 @@ import {
 } from "./lib/profile-rating-display-utils";
 import {
   obterDadosCardBibliotecaPerfilAutor,
-  obterDadosCardObraPerfilAutor,
   obterDadosCurtidaTopFivePerfilAutor,
   obterMensagemObrasVaziasPerfilAutor,
   obterMensagemTopFiveVazioPerfilAutor,
   obterDadosSheetBibliotecaPerfilAutor,
   obterDadosSheetObraPerfilAutor,
   obterRotulosAcoesColecoesObraPerfilAutor,
-  obterHrefObraPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
   obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
@@ -169,12 +170,10 @@ import {
 import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
-import { DiarySummaryCard } from "./components/diary-summary-card";
 import { LibraryItemCard } from "./components/library-item-card";
 import { ProfileRatingsPanel } from "./components/profile-ratings-panel";
 import { ProfileNavigationPanel } from "./components/profile-navigation-panel";
 import { ProfileHero } from "./components/profile-hero";
-import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
 import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
 import { ProfileHighlightsPanel } from "./components/profile-highlights-panel";
@@ -185,15 +184,12 @@ import { ProfileCommunityPostItem } from "./components/profile-community-post-it
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksPanel } from "./components/profile-works-panel";
-import { ProfileWorkGridItem } from "./components/profile-work-grid-item";
 import { ProfileActionSheets } from "./components/profile-action-sheets";
 import { ProfileEditor } from "./components/profile-editor";
 import { ProfileHeader } from "./components/profile-header";
 import { ProfileReportModals } from "./components/profile-report-modals";
 import {
   obterEstilosResponsivosPerfilAutor,
-  criarCapaDestaquePerfilAutor,
-  criarCapaGridPerfilAutor,
   perfilAutorThemeCss,
   pageStyle,
   menuItemStyle,
@@ -885,18 +881,8 @@ function PerfilAutorPageContent() {
     botaoCurtidaTopFive
   );
 
-  function renderizarObraDestaquePerfilAutor(obra: ObraLocal) {
-    const obraHref = obterHrefObraPerfilAutor(obra);
-
-    return (
-      <ProfileHighlightItem
-        key={`destaque-${obra.id}`}
-        href={obraHref}
-        titulo={obra.titulo}
-        capaStyle={criarCapaDestaquePerfilAutor(obra.capa)}
-      />
-    );
-  }
+  const { renderizarObraDestaquePerfilAutor } =
+    usePerfilAutorHighlightRenderer();
 
   usePerfilAutorDiarySync({
     perfilParaMostrar,
@@ -919,28 +905,8 @@ function PerfilAutorPageContent() {
   const atividadesDiarioPerfil = diarioPerfil.atividades;
   const diarioPerfilCarregando = diarioPerfil.carregando;
 
-  const renderizarItemDiarioPerfil = (
-    item: (typeof itensDiarioTudo)[number],
-  ) => {
-    const obra = item.obra;
-
-    if (!obra) {
-      return null;
-    }
-
-    const hrefLista = criarHrefListaDiarioPerfilAutor(
-      perfilAutorId,
-      obra.id,
-    );
-
-    return (
-      <DiarySummaryCard
-        key={obra.id || item.chave}
-        href={hrefLista}
-        obra={obra}
-      />
-    );
-  };
+  const { renderizarItemDiarioPerfil } =
+    usePerfilAutorDiaryItemRenderer(perfilAutorId);
 
   usePerfilAutorRatingSync({
     perfilParaMostrar,
@@ -972,39 +938,12 @@ function PerfilAutorPageContent() {
     obraMenuAbertoId,
   );
 
-  function renderizarObraPerfilAutor(obra: ObraLocal) {
-    const {
-      obraHref,
-      totalCurtidas,
-      totalComentarios,
-      visualizacoesFormatadas: visualizacoesObra,
-      menuObraAberto,
-      ariaLabelOpcoes,
-    } = obterDadosCardObraPerfilAutor(
-      obra,
-      totaisInteracoesObras,
-      obraMenuAbertoId,
-    );
-
-    return (
-      <ProfileWorkGridItem
-        key={obra.id}
-        href={obraHref}
-        capaStyle={criarCapaGridPerfilAutor(obra.capa, isDesktop)}
-        titulo={obra.titulo}
-        visualizacoes={visualizacoesObra}
-        totalCurtidas={totalCurtidas}
-        totalComentarios={totalComentarios}
-        ariaLabelOpcoes={ariaLabelOpcoes}
-        menuAberto={menuObraAberto}
-        onToggleMenu={() =>
-          setObraMenuAbertoId((idAtual) =>
-            alternarIdentificadorMenuPerfilAutor(idAtual, obra.id),
-          )
-        }
-      />
-    );
-  }
+  const { renderizarObraPerfilAutor } = usePerfilAutorWorkItemRenderer({
+    isDesktop,
+    obraMenuAbertoId,
+    setObraMenuAbertoId,
+    totaisInteracoesObras,
+  });
 
 
   const {

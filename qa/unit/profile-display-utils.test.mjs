@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const workItemRendererSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-work-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const heroIdentitySource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-hero-identity.tsx",
@@ -592,7 +599,12 @@ test("página delega a alternância dos menus de obra e Biblioteca ao helper", (
   );
   assert.equal(
     (pagina.match(/alternarIdentificadorMenuPerfilAutor\(/g) || []).length,
-    2,
+    1,
+  );
+  assert.equal(
+    (workItemRendererSource.match(/alternarIdentificadorMenuPerfilAutor\(/g) || [])
+      .length,
+    1,
   );
   assert.doesNotMatch(
     pagina,
