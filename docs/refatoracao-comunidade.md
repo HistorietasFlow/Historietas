@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 1
+
+- Os contratos de tipos locais e as constantes/configurações estáticas da página foram movidos para módulos dedicados, preservando valores, estruturas, ordem e os consumidores de `page.tsx` sem alterar lógica, carregamento ou apresentação.
+
 ## Painel do Autor — Fase 3
 
 - A ação sensível de exclusão de obra foi movida para hook dedicado, preservando autorização, consultas e exclusões Supabase, limpeza de Storage e referências locais, mensagens, ordem dos efeitos e setters.

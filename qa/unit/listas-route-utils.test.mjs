@@ -11,6 +11,10 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const typesSource = readFileSync(
+  new URL("../../app/listas/types.ts", import.meta.url),
+  "utf8",
+);
 const pageDataHook = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
   "utf8",
@@ -127,7 +131,8 @@ test("Listas delega normalizacao de rota e armazenamento local", () => {
     "CategoriaPerfil",
     "OrdenacaoLista",
   ]) {
-    assert.match(pagina, new RegExp(`type ${tipo} =`));
+    assert.match(typesSource, new RegExp(`export type ${tipo} =`));
+    assert.match(pagina, new RegExp(`type ${tipo}`));
   }
 
   assert.match(

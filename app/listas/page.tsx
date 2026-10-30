@@ -153,199 +153,39 @@ import {
   normalizarOrigemPerfil,
 } from "./lib/listas-route-utils";
 import {
+  CATEGORIAS_PERFIL,
+  COMPLETED_STORAGE_KEY,
+  DIARIO_ANOTACAO_MAX_LENGTH,
+  DIARIO_COMENTARIO_MAX_LENGTH,
+  EDITOR_ANOTACAO_LISTAS_VAZIO,
+  FAVORITES_STORAGE_KEY,
+  LIBRARY_FOLLOW_STORAGE_KEY,
+  LISTAS_PERFIL_VAZIAS,
+  NOTAS_AVALIACAO_LISTAS,
+  PERMISSOES_PROPRIO_PERFIL,
+} from "./lib/listas-page-constants";
+import {
+  type AlvoDenunciaDiarioListas,
+  type AutorLista,
+  type CategoriaPerfil,
+  type EditorAnotacaoListasEstado,
+  type ItemObraLista,
+  type ListasPerfilEstado,
+  type ModoLista,
+  type ObraLista,
+  type OrdenacaoLista,
+  type OrigemPerfil,
+  type PerfilLista,
+} from "./types";
+import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import {
   preferenciasPrivacidadePadrao,
   type EstadoRelacionamentoPerfil,
-  type PermissoesAbasPerfil,
   type PreferenciasPrivacidadeHistorietas,
 } from "../../lib/historietasPrivacy";
-import { type TipoAlvoDenuncia } from "../../components/DenunciaModal";
-
-type ModoLista = "perfil" | "obras" | "autores";
-type OrigemPerfil = "diario" | "biblioteca";
-type CategoriaPerfil =
-  | "tudo"
-  | "lendo"
-  | "quero-ler"
-  | "favoritas"
-  | "concluidas"
-  | "avaliacoes"
-  | "historico";
-type OrdenacaoLista = "recentes" | "titulo" | "avaliacao" | "popularidade";
-type VisibilidadeAnotacaoListas = "publico" | "parcial" | "privado";
-type QuemPodeComentarAnotacaoListas =
-  | "herdar"
-  | "todos"
-  | "seguidores"
-  | "ninguem";
-type VisibilidadeComentariosAnotacaoListas =
-  | "herdar"
-  | "publico"
-  | "seguidores"
-  | "somente_eu";
-type TipoDiarioListas =
-  | "lendo"
-  | "quero_ler"
-  | "favorita"
-  | "concluida"
-  | "avaliacao"
-  | "review"
-  | "atividade";
-
-type CapituloLista = {
-  id: string;
-  obraId: string;
-  titulo: string;
-  ordem: number;
-  criadoEm: string;
-};
-
-type ObraLista = {
-  id: string;
-  autorId: string;
-  titulo: string;
-  autor: string;
-  genero: string;
-  formato: string;
-  classificacaoIndicativa: string;
-  capa: string;
-  slug: string;
-  link: string;
-  publicadaEm: string;
-  visualizacoes: number;
-  totalCurtidas: number;
-  totalComentarios: number;
-  capitulos: CapituloLista[];
-  notaMedia: number;
-  totalAvaliacoes: number;
-};
-
-type PerfilLista = {
-  userId: string;
-  nome: string;
-  username: string;
-  avatar: string;
-  bio: string;
-};
-
-type ItemObraLista = {
-  chave: string;
-  obra: ObraLista;
-  categorias: CategoriaPerfil[];
-  data: string;
-  ultimaLeituraEm?: string;
-  nota: number;
-  progresso: number;
-  capituloAtual: string;
-  capituloAtualId: string;
-  capitulosLidosIds: string[];
-  anotacao?: string;
-  anotacaoId?: string;
-  anotacaoTipo?: TipoDiarioListas;
-  anotacaoVisibilidade?: VisibilidadeAnotacaoListas;
-  anotacaoQuemPodeComentar?: QuemPodeComentarAnotacaoListas;
-  anotacaoVisibilidadeComentarios?: VisibilidadeComentariosAnotacaoListas;
-  anotacaoPermitirCurtidas?: boolean;
-  anotacaoSpoiler?: boolean;
-};
-
-type AutorLista = {
-  id: string;
-  nome: string;
-  username: string;
-  avatar: string;
-  bio: string;
-  totalObras: number;
-  totalCurtidas: number;
-  totalComentarios: number;
-  notaMedia: number;
-  totalAvaliacoes: number;
-  generos: string[];
-  criadaEm: string;
-};
-
-type ListasPerfilEstado = Record<CategoriaPerfil, ItemObraLista[]>;
-
-type EditorAnotacaoListasEstado = {
-  aberto: boolean;
-  obraId: string;
-  anotacaoId: string;
-  tipo: TipoDiarioListas;
-  texto: string;
-  visibilidade: VisibilidadeAnotacaoListas;
-  quemPodeComentar: QuemPodeComentarAnotacaoListas;
-  visibilidadeComentarios: VisibilidadeComentariosAnotacaoListas;
-  permitirCurtidas: boolean;
-  contemSpoiler: boolean;
-  salvando: boolean;
-  erro: string;
-};
-
-type AlvoDenunciaDiarioListas = {
-  tipo: Extract<
-    TipoAlvoDenuncia,
-    "diario_anotacao" | "comentario_diario"
-  >;
-  id: string;
-  titulo: string;
-};
-
-const LISTAS_PERFIL_VAZIAS: ListasPerfilEstado = {
-  tudo: [],
-  lendo: [],
-  "quero-ler": [],
-  favoritas: [],
-  concluidas: [],
-  avaliacoes: [],
-  historico: [],
-};
-
-const PERMISSOES_PROPRIO_PERFIL: PermissoesAbasPerfil = {
-  obras: true,
-  sobre: true,
-  diario: true,
-  comunidade: true,
-  biblioteca: true,
-  atividades: true,
-};
-
-const CATEGORIAS_PERFIL: Array<{
-  valor: CategoriaPerfil;
-  rotulo: string;
-}> = [
-  { valor: "tudo", rotulo: "Tudo" },
-  { valor: "lendo", rotulo: "Lendo" },
-  { valor: "quero-ler", rotulo: "Quero ler" },
-  { valor: "favoritas", rotulo: "Favoritas" },
-  { valor: "concluidas", rotulo: "Concluídas" },
-  { valor: "avaliacoes", rotulo: "Avaliações" },
-  { valor: "historico", rotulo: "Histórico" },
-];
-
-const LIBRARY_FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
-const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
-const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const DIARIO_ANOTACAO_MAX_LENGTH = 700;
-const DIARIO_COMENTARIO_MAX_LENGTH = 700;
-const NOTAS_AVALIACAO_LISTAS = [1, 2, 3, 4, 5] as const;
-
-const EDITOR_ANOTACAO_LISTAS_VAZIO: EditorAnotacaoListasEstado = {
-  aberto: false,
-  obraId: "",
-  anotacaoId: "",
-  tipo: "atividade",
-  texto: "",
-  visibilidade: "privado",
-  quemPodeComentar: "herdar",
-  visibilidadeComentarios: "herdar",
-  permitirCurtidas: true,
-  contemSpoiler: false,
-  salvando: false,
-  erro: "",
-};
 
 function ListasUniversaisContent() {
   const router = useRouter();
