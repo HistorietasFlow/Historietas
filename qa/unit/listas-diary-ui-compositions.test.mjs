@@ -19,11 +19,21 @@ const workRenderer = await readFile(
   "app/listas/components/listas-profile-work-renderer.tsx",
   "utf8",
 );
+const profileItemRenderer = await readFile(
+  "app/listas/hooks/use-listas-profile-item-renderer.tsx",
+  "utf8",
+);
+const diaryCommentsRenderer = await readFile(
+  "app/listas/hooks/use-listas-diary-comments-renderer.tsx",
+  "utf8",
+);
 
 test("Listas delega os controles e as apresentações do Diário sem persistência", () => {
   assert.match(page, /useListasDiaryCommentsControls\(/);
-  assert.match(page, /<ListasDiaryCommentsPanel\b/);
-  assert.match(page, /<ListasProfileWorkRenderer\b/);
+  assert.match(page, /useListasDiaryCommentsRenderer\(\{/);
+  assert.match(page, /useListasProfileItemRenderer\(\{/);
+  assert.match(diaryCommentsRenderer, /<ListasDiaryCommentsPanel\b/);
+  assert.match(profileItemRenderer, /<ListasProfileWorkRenderer\b/);
   assert.match(workRenderer, /<ListasProfileWorkItem \{\.\.\.props\} \/>/);
   assert.match(controls, /event\.touches\[0\]\?\.clientY/);
   assert.match(controls, /limiteSuperior = comentariosDiarioExpandido \? -46 : -58/);
@@ -36,9 +46,16 @@ test("Listas delega os controles e as apresentações do Diário sem persistênc
   assert.match(panel, /quickReactions=\{\["💜", "🔥", "😂", "😮", "😭", "👏"\]\}/);
   assert.match(panel, /Math\.min\(5, respostas\.length\)/);
   assert.match(panel, /key=\{comentario\.id\}/);
-  assert.match(page, /historietas-list-row-highlight/);
-  assert.match(page, /<ListasProfileWorkRenderer\s+key=\{item\.chave\}/);
-  for (const source of [controls, panel, workItem, workRenderer]) {
+  assert.match(profileItemRenderer, /historietas-list-row-highlight/);
+  assert.match(profileItemRenderer, /<ListasProfileWorkRenderer\s+key=\{item\.chave\}/);
+  for (const source of [
+    controls,
+    panel,
+    workItem,
+    workRenderer,
+    profileItemRenderer,
+    diaryCommentsRenderer,
+  ]) {
     assert.doesNotMatch(source, /supabase|\.from\(|\.rpc\(|\.insert\(|\.update\(|\.delete\(/);
   }
 });

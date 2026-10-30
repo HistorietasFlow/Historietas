@@ -23,10 +23,15 @@ const controles = await readFile(
   "app/listas/hooks/use-listas-diary-comments-controls.ts",
   "utf8",
 );
+const diaryCommentsRenderer = await readFile(
+  "app/listas/hooks/use-listas-diary-comments-renderer.tsx",
+  "utf8",
+);
 
 test("Listas delega a apresentação do sheet de comentários do Diário", () => {
-  assert.match(pagina, /import \{ ListasDiaryCommentsPanel \} from "\.\/components\/listas-diary-comments-panel"/);
-  assert.match(pagina, /<ListasDiaryCommentsPanel\b/);
+  assert.match(pagina, /import \{ useListasDiaryCommentsRenderer \} from "\.\/hooks\/use-listas-diary-comments-renderer"/);
+  assert.match(pagina, /\} =\s*useListasDiaryCommentsRenderer\(\{/);
+  assert.match(diaryCommentsRenderer, /<ListasDiaryCommentsPanel\b/);
   assert.match(painel, /<ListasDiaryCommentsSheet\b/);
 
   assert.doesNotMatch(pagina, /createPortal\(/);
