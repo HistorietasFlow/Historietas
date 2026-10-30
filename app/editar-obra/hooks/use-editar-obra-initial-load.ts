@@ -265,5 +265,32 @@ export function useEditarObraInitialLoad({
     return () => {
       cancelado = true;
     };
-  }, [router]);
+  }, [
+    router,
+    setObraId,
+    setUsuarioIdLogado,
+    setObras,
+    setCarregando,
+    setObraEncontrada,
+    setTitulo,
+    setAutor,
+    setNomeAutorProfile,
+    setGenero,
+    setGeneroPersonalizado,
+    setFormato,
+    setFormatoPersonalizado,
+    setClassificacaoIndicativa,
+    setAvisosConteudo18,
+    setSinopse,
+    setTags,
+    setTagPersonalizada,
+    setUsarTagPersonalizada,
+    setCapa,
+    setCapaNome,
+    setCapaArquivo,
+    setCapaRemovidaManualmente,
+    setArquivoObra,
+    setArquivoObraArquivo,
+    setArquivoObraRemovidoManualmente,
+  ]);
 }
