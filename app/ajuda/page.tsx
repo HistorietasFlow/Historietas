@@ -17,22 +17,26 @@ import {
   AjudaHeaderHero,
 } from "./components/ajuda-header-hero";
 import {
+  AjudaGuidanceNotice,
+} from "./components/ajuda-guidance-notice";
+import {
+  AjudaShortcutsSection,
+} from "./components/ajuda-shortcuts-section";
+import {
+  AjudaSupportTickets,
+} from "./components/ajuda-support-tickets";
+import {
   ajudaPageCss,
 } from "./lib/ajuda-page-css";
 import {
   containerStyle,
-  noticeIconStyle,
-  noticeStyle,
-  noticeTextStyle,
   pageStyle,
   sectionHeadingStyle,
   sectionKickerStyle,
   sectionStyle,
   sectionTitleStyle,
-  shortcutsGridStyle,
 } from "./lib/ajuda-layout-styles";
 import {
-  supportAdminNoteStyle,
   supportCardStyle,
   supportCounterStyle,
   supportEnvironmentNoteStyle,
@@ -50,18 +54,8 @@ import {
   supportSeparationTextStyle,
   supportSuccessStyle,
   supportTextareaStyle,
-  supportTicketDateStyle,
-  supportTicketDescriptionStyle,
-  supportTicketHeaderStyle,
-  supportTicketStatusStyle,
-  supportTicketStyle,
-  supportTicketTitleStyle,
-  supportTicketsHeadingStyle,
-  supportTicketsListStyle,
-  supportTicketsSectionStyle,
 } from "./lib/ajuda-support-styles";
 import {
-  ATALHOS_AJUDA,
   CATEGORIAS_AJUDA,
   PERGUNTAS_AJUDA,
   type CategoriaAjudaId,
@@ -74,8 +68,6 @@ import {
   type ProblemaTecnicoRpcRow,
 } from "./lib/ajuda-technical-support";
 import {
-  formatarDataChamado,
-  rotuloStatusProblema,
   traduzirTexto,
 } from "./lib/ajuda-display-utils";
 import {
@@ -529,124 +521,22 @@ export default function AjudaPage() {
 
             {usuarioAutenticado &&
             (carregandoChamados || chamadosTecnicos.length > 0) ? (
-              <div style={supportTicketsSectionStyle}>
-                <div style={supportTicketsHeadingStyle}>
-                  <strong>
-                    {t({
-                      pt: "Meus chamados recentes",
-                      en: "My recent tickets",
-                      es: "Mis casos recientes",
-                    })}
-                  </strong>
-                  {carregandoChamados ? (
-                    <span>
-                      {t({ pt: "Carregando...", en: "Loading...", es: "Cargando..." })}
-                    </span>
-                  ) : null}
-                </div>
-
-                {!carregandoChamados ? (
-                  <div style={supportTicketsListStyle}>
-                    {chamadosTecnicos.map((chamado) => (
-                      <article key={chamado.id} style={supportTicketStyle}>
-                        <div style={supportTicketHeaderStyle}>
-                          <strong style={supportTicketTitleStyle}>
-                            {chamado.titulo}
-                          </strong>
-                          <span style={supportTicketStatusStyle}>
-                            {rotuloStatusProblema(chamado.status, language)}
-                          </span>
-                        </div>
-                        <p style={supportTicketDescriptionStyle}>
-                          {chamado.descricao}
-                        </p>
-                        {chamado.observacaoAdmin ? (
-                          <div style={supportAdminNoteStyle}>
-                            <strong>
-                              {t({
-                                pt: "Resposta da equipe",
-                                en: "Team response",
-                                es: "Respuesta del equipo",
-                              })}
-                            </strong>
-                            <span>{chamado.observacaoAdmin}</span>
-                          </div>
-                        ) : null}
-                        <span style={supportTicketDateStyle}>
-                          {formatarDataChamado(chamado.criadoEm, language)}
-                        </span>
-                      </article>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+              <AjudaSupportTickets
+                carregando={carregandoChamados}
+                chamados={chamadosTecnicos}
+                language={language}
+              />
             ) : null}
           </div>
         </section>
 
-        <section style={sectionStyle} aria-labelledby="atalhos-ajuda-titulo">
-          <div style={sectionHeadingStyle}>
-            <div>
-              <span style={sectionKickerStyle}>
-                {t({
-                  pt: "ACESSO RÁPIDO",
-                  en: "QUICK ACCESS",
-                  es: "ACCESO RÁPIDO",
-                })}
-              </span>
-              <h2 id="atalhos-ajuda-titulo" style={sectionTitleStyle}>
-                {t({
-                  pt: "Atalhos úteis",
-                  en: "Useful shortcuts",
-                  es: "Accesos útiles",
-                })}
-              </h2>
-            </div>
-          </div>
+        <AjudaShortcutsSection
+          language={language}
+        />
 
-          <div style={shortcutsGridStyle}>
-            {ATALHOS_AJUDA.map((atalho) => (
-              <Link
-                key={atalho.href}
-                href={atalho.href}
-                className="ajuda-shortcut-link"
-              >
-                <span className="ajuda-shortcut-icon">
-                  <SvgIcon name={atalho.icon} size={23} strokeWidth={2.05} />
-                </span>
-                <span className="ajuda-shortcut-copy">
-                  <strong>{t(atalho.titulo)}</strong>
-                  <span>{t(atalho.descricao)}</span>
-                </span>
-                <span className="ajuda-shortcut-arrow">
-                  <SvgIcon name="arrowRight" size={20} strokeWidth={2.25} />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <aside style={noticeStyle}>
-          <span style={noticeIconStyle}>
-            <SvgIcon name="shield" size={24} strokeWidth={2.1} />
-          </span>
-          <div style={noticeTextStyle}>
-            <strong>
-              {t({
-                pt: "Orientações da versão atual",
-                en: "Current version guidance",
-                es: "Orientaciones de la versión actual",
-              })}
-            </strong>
-            <p>
-              {t({
-                pt: "Esta central descreve os recursos que já estão disponíveis no Historietas. Novas respostas serão adicionadas conforme a plataforma receber atualizações.",
-                en: "This center describes features already available in Historietas. New answers will be added as the platform receives updates.",
-                es: "Este centro describe las funciones que ya están disponibles en Historietas. Se agregarán nuevas respuestas a medida que la plataforma reciba actualizaciones.",
-              })}
-            </p>
-          </div>
-        </aside>
+        <AjudaGuidanceNotice
+          language={language}
+        />
       </div>
     </main>
   );
