@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 3
+
+- Os lifecycles mecânicos de bloqueio do body enquanto os comentários estão abertos, reset de estado de comentário e progresso de rolagem foram movidos para hooks dedicados. Acesso 18+, Supabase, autenticação, factories, ações, métricas, denúncia e JSX permaneceram em `page.tsx`.
+
 ## Ler Capítulo — Fase 2
 
 - A persistência de criação de comentários, a constante da tabela de curtidas de comentários e as derivações puras de obra, capítulo e navegação foram movidas para módulos dedicados. Effects, hooks, estados, autenticação, interações, acesso 18+, denúncia e JSX permaneceram em `page.tsx`.

@@ -22,6 +22,9 @@ import {
   ehClassificacao18,
 } from "../../lib/historietasAdultContent";
 import { useLerCapituloDesktopMode } from "./hooks/use-ler-capitulo-desktop-mode";
+import { useLerCapituloCommentsBodyLock } from "./hooks/use-ler-capitulo-comments-body-lock";
+import { useLerCapituloCommentReset } from "./hooks/use-ler-capitulo-comment-reset";
+import { useLerCapituloScrollProgress } from "./hooks/use-ler-capitulo-scroll-progress";
 import { focusBottomNavigationCss } from "./lib/ler-capitulo-focus-bottom-navigation-css";
 import { leitorPageCss } from "./lib/ler-capitulo-page-css";
 import {
@@ -140,36 +143,9 @@ export default function LerCapituloPage() {
   const lidoCapituloSalvandoRef = useRef(false);
   const acoesComentariosCapituloRef = useRef<Set<string>>(new Set<string>());
 
-  useEffect(() => {
-    if (!mostrarComentario) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.getPropertyValue("overflow");
-    const overscrollAnterior = document.documentElement.style.getPropertyValue(
-      "overscroll-behavior"
-    );
-
-    document.body.style.setProperty("overflow", "hidden");
-    document.documentElement.style.setProperty("overscroll-behavior", "none");
-
-    return () => {
-      if (overflowAnterior) {
-        document.body.style.setProperty("overflow", overflowAnterior);
-      } else {
-        document.body.style.removeProperty("overflow");
-      }
-
-      if (overscrollAnterior) {
-        document.documentElement.style.setProperty(
-          "overscroll-behavior",
-          overscrollAnterior
-        );
-      } else {
-        document.documentElement.style.removeProperty("overscroll-behavior");
-      }
-    };
-  }, [mostrarComentario]);
+  useLerCapituloCommentsBodyLock(
+    mostrarComentario,
+  );
 
   useLerCapituloSessionPreferences({
     usuarioIdLogado,
@@ -288,46 +264,23 @@ export default function LerCapituloPage() {
     incrementarVisualizacaoCapituloSupabase,
   });
 
-  useEffect(() => {
-    const atualizarComentarioTimer = window.setTimeout(() => {
-      setComentarioDigitado(capituloAtual?.comentario || "");
-      setComentarioStatus("");
-      setMensagemAcao("");
-      setMostrarComentario(false);
-    }, 0);
+  useLerCapituloCommentReset({
+    capituloId:
+      capituloAtual?.id,
+    comentarioAtual:
+      capituloAtual?.comentario,
+    usuarioIdLogado,
+    setComentarioDigitado,
+    setComentarioStatus,
+    setMensagemAcao,
+    setMostrarComentario,
+  });
 
-    return () => {
-      window.clearTimeout(atualizarComentarioTimer);
-    };
-  }, [capituloAtual?.id, capituloAtual?.comentario, usuarioIdLogado]);
-
-  useEffect(() => {
-    function atualizarProgressoRolagem() {
-      const alturaTotal = document.documentElement.scrollHeight - window.innerHeight;
-
-      if (alturaTotal <= 0) {
-        setProgressoRolagem(0);
-        return;
-      }
-
-      const progressoAtual = Math.round((window.scrollY / alturaTotal) * 100);
-      setProgressoRolagem(Math.min(100, Math.max(0, progressoAtual)));
-    }
-
-    const atualizarProgressoTimer = window.setTimeout(
-      atualizarProgressoRolagem,
-      0
-    );
-
-    window.addEventListener("scroll", atualizarProgressoRolagem);
-    window.addEventListener("resize", atualizarProgressoRolagem);
-
-    return () => {
-      window.clearTimeout(atualizarProgressoTimer);
-      window.removeEventListener("scroll", atualizarProgressoRolagem);
-      window.removeEventListener("resize", atualizarProgressoRolagem);
-    };
-  }, [capituloAtual?.id]);
+  useLerCapituloScrollProgress({
+    capituloId:
+      capituloAtual?.id,
+    setProgressoRolagem,
+  });
 
   useLerCapituloEntryActivity({
     usuarioIdLogado,
