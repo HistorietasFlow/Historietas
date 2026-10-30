@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Painel do Autor — Fase 2
+
+- As chaves de armazenamento, o redirecionamento de login e o lifecycle inicial de dados foram isolados em módulos dedicados. Estados, filtros, resumo, abertura, compartilhamento, exclusão e JSX permaneceram em `page.tsx`.
+
 ## Painel do Autor — Fase 1
 
 - Os tipos e modelos locais e o loader agregado do Supabase foram extraídos para módulos dedicados. O effect de carregamento, estados, exclusão, filtros, autenticação, storage e JSX permaneceram em `page.tsx`.

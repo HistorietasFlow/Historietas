@@ -100,8 +100,8 @@ test("Painel do Autor delega somente a normalização de arquivo ao helper extra
   assert.doesNotMatch(pagina, /function normalizarArquivoObra\(/);
   assert.doesNotMatch(pagina, /\bnormalizarArquivoObra\b/);
   assert.match(
-    pagina,
-    /import \{ normalizarObraPainel \} from "\.\/lib\/painel-autor-work-normalizer";/,
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url), "utf8"),
+    /import \{ normalizarObraPainel \} from "\.\.\/lib\/painel-autor-work-normalizer";/,
   );
   assert.match(
     workNormalizerSource,

@@ -72,16 +72,23 @@ test("loader retorna vazio sem usuário autenticado", async () => {
   );
 });
 
-test("página delega ao loader sem mover o effect", () => {
-  assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarPainelAutorSupabase,[\s\S]*?\} from "\.\/lib\/painel-autor-supabase-data-loader";/,
+test("hook inicial delega ao loader e a página preserva a exclusão", () => {
+  const hook = readFileSync(
+    new URL(
+      "../../app/painel-autor/hooks/use-painel-autor-initial-data.ts",
+      import.meta.url,
+    ),
+    "utf8",
   );
-  assert.doesNotMatch(pagina, /async function carregarPainelAutorSupabase\(/);
   assert.match(
-    pagina,
+    hook,
+    /import \{[\s\S]*?carregarPainelAutorSupabase,[\s\S]*?\} from "\.\.\/lib\/painel-autor-supabase-data-loader";/,
+  );
+  assert.doesNotMatch(hook, /async function carregarPainelAutorSupabase\(/);
+  assert.match(
+    hook,
     /const dadosSupabase = await carregarPainelAutorSupabase\([\s\S]*?obrasUsuarioLogado,[\s\S]*?obrasFavoritasUsuario,[\s\S]*?obrasConcluidasUsuario[\s\S]*?\);/,
   );
-  assert.match(pagina, /async function carregarDadosPainelAutor\(\)/);
+  assert.match(hook, /async function carregarDadosPainelAutor\(\)/);
   assert.match(pagina, /async function excluirObra\(/);
 });

@@ -3,10 +3,6 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
 
-const pagina = readFileSync(
-  new URL("../../app/painel-autor/page.tsx", import.meta.url),
-  "utf8",
-);
 const loaderSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
@@ -243,7 +239,10 @@ test("Painel do Autor delega a conversão Supabase ao módulo puro extraído", (
     loaderSource,
     /const obraNormalizada = converterObraSupabaseParaLocalPainel\(\{/,
   );
-  assert.match(pagina, /carregarPainelAutorSupabase\(/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url), "utf8"),
+    /carregarPainelAutorSupabase\(/,
+  );
   assert.match(converterSource, /function aplicarProgressoCapitulo\(/);
   assert.match(converterSource, /progressoCarregado && capitulosComMetricas\.has\(capitulo\.id\)/);
   assert.match(converterSource, /progressoPorCapitulo\.has\(chaveInteracao\)[\s\S]*?progressoPorCapitulo\.has\(capitulo\.id\)/);

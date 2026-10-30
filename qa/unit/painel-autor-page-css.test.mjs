@@ -80,9 +80,9 @@ test("Painel do Autor mantém os mounts e as fronteiras fora do CSS extraído", 
     /import \{ PainelAutorLanguageBridge \} from "\.\/components\/painel-autor-language-bridge";/,
   );
   assert.match(pagina, /const isDesktop = usePainelAutorDesktopMode\(\);/);
-  assert.match(pagina, /async function carregarDadosPainelAutor\(\)/);
+  assert.match(pagina, /usePainelAutorInitialData\(\{/);
   assert.match(
-    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
-    /supabase\.auth\.getUser\(\)/,
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url), "utf8"),
+    /async function carregarDadosPainelAutor\(\)/,
   );
 });

@@ -158,8 +158,8 @@ test("Painel do Autor delega helpers puros de progresso às fronteiras corretas"
     /progressoLeitura: calcularProgressoLeitura\(capitulosMesclados\)/,
   );
   assert.match(
-    pagina,
-    /import \{ normalizarObraPainel \} from "\.\/lib\/painel-autor-work-normalizer";/,
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url), "utf8"),
+    /import \{ normalizarObraPainel \} from "\.\.\/lib\/painel-autor-work-normalizer";/,
   );
   assert.match(
     workNormalizerSource,

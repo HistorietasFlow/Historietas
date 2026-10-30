@@ -1,13 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, idObraSupabaseValido } from "../../lib/utils";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import {
-  carregarPainelAutorSupabase,
-} from "./lib/painel-autor-supabase-data-loader";
 import type {
   CapituloLocal,
   ObraComMetricas,
@@ -20,18 +17,11 @@ import { usePainelAutorAuthSession } from "./hooks/use-painel-autor-auth-session
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
 import { usePainelAutorFiltersBodyLock } from "./hooks/use-painel-autor-filters-body-lock";
 import { usePainelAutorFilterState } from "./hooks/use-painel-autor-filter-state";
+import { usePainelAutorInitialData } from "./hooks/use-painel-autor-initial-data";
+import { usePainelAutorLoginRedirect } from "./hooks/use-painel-autor-login-redirect";
 import { usePainelAutorSummaryPreference } from "./hooks/use-painel-autor-summary-preference";
 import { painelAutorPageCss } from "./lib/painel-autor-page-css";
-import {
-  filtrarObrasDoUsuarioPainel,
-  marcarObrasComDonoPainel,
-  normalizarIdUsuarioPainel,
-} from "./lib/painel-autor-ownership-utils";
-import {
-  carregarBackupArquivosObras,
-  sincronizarBackupArquivosObras,
-} from "./lib/painel-autor-file-backup-storage";
-import { restaurarArquivoObraComBackup } from "./lib/painel-autor-file-backup-restore-utils";
+import { normalizarIdUsuarioPainel } from "./lib/painel-autor-ownership-utils";
 import {
   containerStyle,
   desktopTopWaterFadeStyle,
@@ -87,11 +77,6 @@ import {
   emptyMiniTextStyle,
   emptyMiniTitleStyle,
 } from "./lib/painel-autor-empty-state-style-utils";
-import {
-  aplicarNomeProfileNasObrasPainel,
-  obterNomeProfilePainelAutor,
-} from "./lib/painel-autor-profile-utils";
-import { carregarProfilePainelAutor } from "./lib/painel-autor-profile-loader";
 import { PainelSecao } from "./components/painel-autor-section";
 import { ObraPainelCard } from "./components/painel-autor-work-card";
 import {
@@ -102,24 +87,25 @@ import {
   criarLoginHrefPainelAutor,
 } from "./lib/painel-autor-route-utils";
 import {
+  COMPLETED_STORAGE_KEY,
+  FAVORITES_STORAGE_KEY,
+  FOLLOW_STORAGE_KEY,
+  STORAGE_KEY,
+} from "./lib/painel-autor-storage-keys";
+import {
   FILTROS_PAINEL,
   ORDENACOES_PAINEL,
 } from "./lib/painel-autor-filter-options";
 import {
-  carregarListaIdsPainel,
-  lerStorageUsuarioPainel,
   salvarColecaoAposExcluirPainel,
   salvarJsonStorageUsuarioPainel,
-  salvarListaIdsUsuarioPainel,
 } from "./lib/painel-autor-storage-utils";
 import {
-  filtrarListaPorObrasDoUsuario,
   removerObraDaColecaoPainel,
 } from "./lib/painel-autor-collection-utils";
 import { obterObrasComMetricasPainel } from "./lib/painel-autor-work-metrics";
 import { obterObrasFiltradasPainel } from "./lib/painel-autor-work-filtering";
 import { obterResumoMetricasPainel } from "./lib/painel-autor-summary-metrics";
-import { normalizarObraPainel } from "./lib/painel-autor-work-normalizer";
 import { traduzirTextoPainelAutor } from "./lib/painel-autor-translations";
 import { compartilharObraPainel } from "./lib/painel-autor-share-action";
 import { abrirArquivoObraPainel } from "./lib/painel-autor-open-file-action";
@@ -129,11 +115,6 @@ import {
 } from "./lib/painel-autor-deleted-work-storage-cleanup";
 import { removerReferenciasSupabaseObraExcluidaPainel } from "./lib/painel-autor-deleted-work-supabase-cleanup";
 import { limparReferenciasLocaisObraExcluidaPainel } from "./lib/painel-autor-deleted-work-local-cleanup";
-const STORAGE_KEY = "historietas-obras";
-const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
-const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
-const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-
 export default function PainelAutorPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
@@ -170,135 +151,20 @@ export default function PainelAutorPage() {
 
   usePainelAutorFiltersBodyLock(mostrarFiltrosPainel);
 
-  useEffect(() => {
-    if (!verificandoUsuario && !usuarioIdLogado) {
-      router.replace(criarLoginHrefPainelAutor());
-    }
-  }, [router, usuarioIdLogado, verificandoUsuario]);
+  usePainelAutorLoginRedirect({
+    router,
+    usuarioIdLogado,
+    verificandoUsuario,
+  });
 
-  useEffect(() => {
-    if (verificandoUsuario || !usuarioIdLogado) {
-      return;
-    }
-
-    let componenteAtivo = true;
-
-    async function carregarDadosPainelAutor() {
-      await Promise.resolve();
-
-      if (!componenteAtivo) {
-        return;
-      }
-
-      setCarregandoDados(true);
-
-      try {
-        const obrasSalvasTexto = lerStorageUsuarioPainel(
-          STORAGE_KEY,
-          usuarioIdLogado
-        );
-        const obrasSalvasJson: unknown = obrasSalvasTexto
-          ? JSON.parse(obrasSalvasTexto)
-          : [];
-
-        const backupArquivosObras = carregarBackupArquivosObras(usuarioIdLogado);
-
-        const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-          ? obrasSalvasJson.map((obra, obraIndex) =>
-              restaurarArquivoObraComBackup(
-                normalizarObraPainel(obra, obraIndex),
-                backupArquivosObras
-              )
-            )
-          : [];
-        const profileAutorPainel = await carregarProfilePainelAutor(usuarioIdLogado);
-        const nomeProfileAutorPainel = obterNomeProfilePainelAutor(profileAutorPainel);
-        const obrasNormalizadasComDono = marcarObrasComDonoPainel(
-          obrasNormalizadas,
-          usuarioIdLogado
-        );
-        const obrasUsuarioLogado = aplicarNomeProfileNasObrasPainel(
-          filtrarObrasDoUsuarioPainel(obrasNormalizadasComDono, usuarioIdLogado),
-          usuarioIdLogado,
-          nomeProfileAutorPainel
-        );
-
-        const obrasFavoritasNormalizadas = carregarListaIdsPainel(
-          FAVORITES_STORAGE_KEY,
-          usuarioIdLogado
-        );
-
-        const obrasConcluidasNormalizadas = carregarListaIdsPainel(
-          COMPLETED_STORAGE_KEY,
-          usuarioIdLogado
-        );
-
-        const obrasFavoritasUsuario = filtrarListaPorObrasDoUsuario(
-          obrasFavoritasNormalizadas,
-          obrasUsuarioLogado
-        );
-        const obrasConcluidasUsuario = filtrarListaPorObrasDoUsuario(
-          obrasConcluidasNormalizadas,
-          obrasUsuarioLogado
-        );
-
-        if (!componenteAtivo) {
-          return;
-        }
-
-        setObras(obrasUsuarioLogado);
-        setObrasFavoritas(obrasFavoritasUsuario);
-        setObrasConcluidas(obrasConcluidasUsuario);
-
-        const dadosSupabase = await carregarPainelAutorSupabase(
-          obrasUsuarioLogado,
-          obrasFavoritasUsuario,
-          obrasConcluidasUsuario
-        );
-
-        if (!componenteAtivo) {
-          return;
-        }
-
-        const obrasFinais = dadosSupabase.obras.map((obra, index) =>
-          normalizarObraPainel(obra, index)
-        );
-
-        sincronizarBackupArquivosObras(obrasFinais, usuarioIdLogado);
-        salvarJsonStorageUsuarioPainel(STORAGE_KEY, usuarioIdLogado, obrasFinais);
-        salvarListaIdsUsuarioPainel(
-          FAVORITES_STORAGE_KEY,
-          usuarioIdLogado,
-          dadosSupabase.favoritas
-        );
-        salvarListaIdsUsuarioPainel(
-          COMPLETED_STORAGE_KEY,
-          usuarioIdLogado,
-          dadosSupabase.concluidas
-        );
-
-        setObras(obrasFinais);
-        setObrasFavoritas(dadosSupabase.favoritas);
-        setObrasConcluidas(dadosSupabase.concluidas);
-      } catch (error) {
-        if (!componenteAtivo) {
-          return;
-        }
-
-        console.warn("Não consegui atualizar o Painel do Autor:", error);
-      } finally {
-        if (componenteAtivo) {
-          setCarregandoDados(false);
-        }
-      }
-    }
-
-    void carregarDadosPainelAutor();
-
-    return () => {
-      componenteAtivo = false;
-    };
-  }, [usuarioIdLogado, verificandoUsuario]);
+  usePainelAutorInitialData({
+    usuarioIdLogado,
+    verificandoUsuario,
+    setObras,
+    setObrasFavoritas,
+    setObrasConcluidas,
+    setCarregandoDados,
+  });
 
   const obrasComMetricas = useMemo<ObraComMetricas[]>(
     () => obterObrasComMetricasPainel(obras),

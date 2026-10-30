@@ -83,7 +83,10 @@ test("Painel do Autor delega somente a mesclagem de obras ao módulo extraído",
   assert.match(loaderSource, /import \{ mesclarResultadoSupabasePainelAutor \} from "\.\/painel-autor-supabase-result-merge";/);
   assert.match(loaderSource, /return mesclarResultadoSupabasePainelAutor\(/);
   assert.match(resultMergeSource, /mesclarObrasPainelAutor\(obrasLocaisUsuario, obrasSupabase\)/);
-  assert.match(pagina, /import \{[\s\S]*?carregarPainelAutorSupabase,[\s\S]*?\} from "\.\/lib\/painel-autor-supabase-data-loader";/);
+  assert.match(
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url), "utf8"),
+    /import \{[\s\S]*?carregarPainelAutorSupabase,[\s\S]*?\} from "\.\.\/lib\/painel-autor-supabase-data-loader";/,
+  );
   assert.match(
     utilsSource,
     /import \{ criarSlugBase \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/,

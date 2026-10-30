@@ -219,8 +219,8 @@ test("Painel do Autor delega somente normalizarCapitulo ao módulo extraído", (
   assert.doesNotMatch(pagina, /function normalizarCapitulo\(/);
   assert.doesNotMatch(pagina, /\bnormalizarCapitulo\b/);
   assert.match(
-    pagina,
-    /import \{ normalizarObraPainel \} from "\.\/lib\/painel-autor-work-normalizer";/,
+    readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url), "utf8"),
+    /import \{ normalizarObraPainel \} from "\.\.\/lib\/painel-autor-work-normalizer";/,
   );
   assert.match(
     workNormalizerSource,
@@ -232,8 +232,6 @@ test("Painel do Autor delega somente normalizarCapitulo ao módulo extraído", (
   );
   assert.match(normalizerSource, /`Capítulo \$\{capituloIndex \+ 1\}`/);
   assert.doesNotMatch(pagina, /function normalizarObra\(/);
-  assert.match(pagina, /normalizarObraPainel\(obra, obraIndex\)/);
-  assert.match(pagina, /normalizarObraPainel\(obra, index\)/);
   assert.match(
     workNormalizerSource,
     /tagsNormalizadas\.length > 0 \? tagsNormalizadas : \["sem tags"\]/,

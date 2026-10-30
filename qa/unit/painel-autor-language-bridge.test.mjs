@@ -61,7 +61,7 @@ test("a página preserva os dois mounts e as responsabilidades fora do bridge", 
     /import \{ traduzirTextoPainelAutor \} from "\.\/lib\/painel-autor-translations";/,
   );
   assert.match(pagina, /useHistorietasLanguage/);
-  assert.match(pagina, /useEffect/);
+  assert.match(pagina, /usePainelAutorInitialData/);
   assert.doesNotMatch(pagina, /normalizarTexto/);
   assert.match(workFilteringSource, /normalizarTexto\(busca\)/);
 });

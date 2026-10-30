@@ -96,7 +96,7 @@ test("Painel do Autor delega somente os helpers de navegação", () => {
   );
   assert.doesNotMatch(pagina, /function criarLoginHrefPainelAutor\(/);
   assert.doesNotMatch(pagina, /function criarPerfilAutorHref\(/);
-  assert.equal((pagina.match(/\bcriarLoginHrefPainelAutor\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bcriarLoginHrefPainelAutor\b/g) || []).length, 2);
   assert.match(
     pagina,
     /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
@@ -113,7 +113,7 @@ test("Painel do Autor delega somente os helpers de navegação", () => {
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
     /supabase\.auth\.getUser\(\)/,
   );
-  assert.match(pagina, /const STORAGE_KEY/);
+  assert.match(pagina, /import \{[\s\S]*?STORAGE_KEY,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-keys";/);
   assert.doesNotMatch(utilsSource, /supabase|localStorage|useState|useEffect/);
 });
 
