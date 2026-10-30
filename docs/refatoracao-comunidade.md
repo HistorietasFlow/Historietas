@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil do Autor — Fase 8
+
+- Os estados derivados de acesso, bloqueio, abas e exibição do autor foram movidos para helpers puros dedicados, preservando permissões, privacidade, fallbacks de perfil, bio traduzida, destaques e mantendo hooks, estilos e JSX na página.
+
 ## Perfil do Autor — Fase 7
 
 - A resolução pura do perfil-alvo foi movida para helper dedicado, preservando agrupamento de autores, fallback de perfil remoto, seleção, propriedade, redirect de login e dados-base usados pela página.

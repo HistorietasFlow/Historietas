@@ -18,6 +18,20 @@ const targetViewStateSource = readFileSync(
   ),
   "utf8",
 );
+const accessViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-access-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const authorDisplayViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-author-display-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const shellViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-shell-view-state.ts",
@@ -1018,13 +1032,13 @@ test("rótulo da ação de bloqueio preserva estado e salvamento", () => {
 });
 
 
-test("página deriva a apresentação da ação de bloqueio uma vez", () => {
+test("helper deriva a apresentação da ação de bloqueio e a página mantém o estilo", () => {
   assert.match(
-    pagina,
+    accessViewStateSource,
     /const bloqueadoPorMim = estadoBloqueioPerfil\.bloqueadoPorMim;/,
   );
   assert.equal(
-    (pagina.match(/estadoBloqueioPerfil\.bloqueadoPorMim/g) || []).length,
+    (accessViewStateSource.match(/estadoBloqueioPerfil\.bloqueadoPorMim/g) || []).length,
     1,
   );
   assert.match(
@@ -1032,7 +1046,7 @@ test("página deriva a apresentação da ação de bloqueio uma vez", () => {
     /const menuBloqueioStyle = bloqueadoPorMim[\s\S]*?\? menuItemStyle[\s\S]*?: menuDangerItemStyle;/,
   );
   assert.match(
-    pagina,
+    accessViewStateSource,
     /const rotuloAcaoBloqueioPerfil = obterRotuloAcaoBloqueioPerfilAutor\(\{[\s\S]*?bloqueadoPorMim,[\s\S]*?salvando: bloqueioPerfilSalvando/,
   );
   assert.match(
@@ -1045,17 +1059,17 @@ test("página deriva a apresentação da ação de bloqueio uma vez", () => {
 });
 
 
-test("página delega o rótulo da ação de bloqueio ao helper", () => {
+test("helper delega o rótulo da ação de bloqueio sem recriar seus textos", () => {
   assert.match(
-    pagina,
-    /obterRotuloAcaoBloqueioPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    accessViewStateSource,
+    /import \{ obterRotuloAcaoBloqueioPerfilAutor \} from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterRotuloAcaoBloqueioPerfilAutor\(\{/g) || []).length,
+    (accessViewStateSource.match(/obterRotuloAcaoBloqueioPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.doesNotMatch(
-    pagina,
+    accessViewStateSource,
     /bloqueioPerfilSalvando[\s\S]{0,220}\? "Desbloqueando\.\.\."[\s\S]{0,220}"Bloquear usuário"/,
   );
 });
@@ -1203,15 +1217,16 @@ test("bio Sobre traduz apenas o texto padrão e marca conteúdo personalizado", 
   });
 });
 
-test("página delega a exibição da bio Sobre ao helper", () => {
+test("estado de exibição do autor delega a bio Sobre ao helper", () => {
   assert.match(
-    pagina,
-    /obterBioSobreExibicaoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    authorDisplayViewStateSource,
+    /obterBioSobreExibicaoPerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterBioSobreExibicaoPerfilAutor\(\{/g) || []).length,
+    (authorDisplayViewStateSource.match(/obterBioSobreExibicaoPerfilAutor\(\{/g) || []).length,
     1,
   );
+  assert.match(pagina, /obterEstadoVisualExibicaoAutorPerfil\(/);
   assert.match(
     pagina,
     /<ProfileAboutSection[\s\S]*?heroUserContent=\{bioSobreAutorUserContent\}/,
@@ -1223,13 +1238,13 @@ test("página delega a exibição da bio Sobre ao helper", () => {
 });
 
 
-test("página deriva a visibilidade dos editores uma única vez", () => {
+test("estado de acesso deriva a visibilidade dos editores e a página mantém os usos", () => {
   assert.match(
-    pagina,
+    accessViewStateSource,
     /const editorPerfilVisivel = podeEditarPerfil && editorPerfilAberto;/,
   );
   assert.match(
-    pagina,
+    accessViewStateSource,
     /const editorSobreVisivel = podeEditarPerfil && editorSobreAberto;/,
   );
   assert.match(pagina, /\{editorPerfilVisivel && \(/);

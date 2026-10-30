@@ -6,6 +6,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const accessViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-access-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const hero = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-about-hero.tsx",
@@ -28,15 +35,16 @@ const bioEditor = readFileSync(
   "utf8",
 );
 
-test("página delega os blocos de bio do Sobre sem mover suas derivações", () => {
+test("página delega os blocos de bio do Sobre e mantém as derivações no estado visual", () => {
   assert.match(
     pagina,
     /import \{ ProfileAboutSection \} from "\.\/components\/profile-about-section";/,
   );
   assert.match(
-    pagina,
+    accessViewStateSource,
     /const editorSobreVisivel = podeEditarPerfil && editorSobreAberto;/,
   );
+  assert.match(pagina, /obterEstadoVisualAcessoPerfilAutor\(/);
   assert.match(
     pagina,
     /<ProfileAboutSection[\s\S]*?heroTitle=\{obterTituloSobrePerfilAutor\(perfilNome\)\}[\s\S]*?heroText=\{bioSobreAutorExibido\}[\s\S]*?heroUserContent=\{bioSobreAutorUserContent\}[\s\S]*?heroCanEdit=\{podeEditarPerfil\}[\s\S]*?onToggleHeroEditor=\{\(\) =>[\s\S]*?setEditorSobreAberto\(\(aberto\) => !aberto\)/,
