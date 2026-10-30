@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const contentViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-content-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const diaryItemRendererSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-diary-item-renderer.tsx",
@@ -124,11 +131,11 @@ test("Perfil de Autor delega o estado vazio do Diário ao helper", () => {
 
 test("Perfil de Autor deriva o carregamento do Diário uma única vez", () => {
   assert.match(
-    pagina,
+    contentViewStateSource,
     /const diarioPerfilCarregando = diarioPerfil\.carregando;/,
   );
   assert.equal(
-    (pagina.match(/diarioPerfil\.carregando/g) || []).length,
+    (contentViewStateSource.match(/diarioPerfil\.carregando/g) || []).length,
     1,
   );
   assert.match(
