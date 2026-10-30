@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const shellViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-shell-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workItemRendererSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-work-item-renderer.tsx",
@@ -756,15 +763,15 @@ test("username exibido no cabeçalho remove apenas o @ inicial", () => {
 
 test("página delega a exibição do username ao helper", () => {
   assert.match(
-    pagina,
-    /obterUsernameExibidoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    shellViewStateSource,
+    /obterUsernameExibidoPerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterUsernameExibidoPerfilAutor\(/g) || []).length,
+    (shellViewStateSource.match(/obterUsernameExibidoPerfilAutor\(/g) || []).length,
     1,
   );
   assert.match(
-    pagina,
+    shellViewStateSource,
     /const usernameExibidoCabecalho =\s*obterUsernameExibidoPerfilAutor\(autorHandlePerfil\);/,
   );
   assert.match(pagina, /username=\{usernameExibidoCabecalho\}/);
@@ -865,19 +872,19 @@ test("aria-label de copiar username preserva o handle exibido", () => {
 
 test("página delega o aria-label de copiar username ao helper", () => {
   assert.match(
-    pagina,
-    /obterAriaLabelCopiarUsernamePerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    shellViewStateSource,
+    /obterAriaLabelCopiarUsernamePerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
     (
-      pagina.match(
+      shellViewStateSource.match(
         /obterAriaLabelCopiarUsernamePerfilAutor\(/g,
       ) || []
     ).length,
     1,
   );
   assert.match(
-    pagina,
+    shellViewStateSource,
     /const ariaLabelCopiarUsernameCabecalho =\s*obterAriaLabelCopiarUsernamePerfilAutor\(autorHandlePerfil\);/,
   );
   assert.match(pagina, /ariaLabelCopyUsername=\{ariaLabelCopiarUsernameCabecalho\}/);
@@ -1061,15 +1068,15 @@ test("rótulo do botão de username acompanha a visibilidade do cabeçalho", () 
 
 test("página delega o rótulo de visibilidade do username ao helper", () => {
   assert.match(
-    pagina,
-    /obterRotuloVisibilidadeUsernamePerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    shellViewStateSource,
+    /obterRotuloVisibilidadeUsernamePerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterRotuloVisibilidadeUsernamePerfilAutor\(/g) || []).length,
+    (shellViewStateSource.match(/obterRotuloVisibilidadeUsernamePerfilAutor\(/g) || []).length,
     1,
   );
   assert.match(
-    pagina,
+    shellViewStateSource,
     /const ariaLabelAlternarUsernameCabecalho =\s*obterRotuloVisibilidadeUsernamePerfilAutor\(usernameCabecalhoVisivel\);/,
   );
   assert.match(pagina, /ariaLabelToggleUsername=\{ariaLabelAlternarUsernameCabecalho\}/);

@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil do Autor — Fase 6
+
+- Os estados visuais derivados do conteúdo e do shell do Perfil do Autor foram movidos para helpers puros dedicados, preservando Diário, métricas, seleção, estilos responsivos, rótulos acessíveis e links da Comunidade.
+
 ## Perfil do Autor — Fase 5
 
 - Os estados visuais derivados das avaliações e dos destaques/Top 5 foram movidos para helpers puros dedicados, preservando ordem, visibilidade, mensagens, curtidas e ações na página.

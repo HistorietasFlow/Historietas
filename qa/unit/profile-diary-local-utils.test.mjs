@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const contentViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-content-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const communityPostRendererSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-community-post-renderer.tsx",
@@ -166,11 +173,11 @@ test("título do Diário preserva contexto de autor e visitante", () => {
 
 test("página delega o título do Diário ao helper", () => {
   assert.match(
-    pagina,
-    /obterTituloDiarioPerfilAutor,[\s\S]*?from "\.\/lib\/profile-diary-local-utils";/,
+    contentViewStateSource,
+    /obterTituloDiarioPerfilAutor \} from "\.\/profile-diary-local-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterTituloDiarioPerfilAutor\(\{/g) || []).length,
+    (contentViewStateSource.match(/obterTituloDiarioPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.match(pagina, /title=\{tituloDiarioPerfil\}/);
@@ -309,7 +316,11 @@ test("Perfil de Autor mantém helpers locais e delega coleta de IDs ao carregado
   assert.match(utilsSource, /import \{ ordenarItensDiarioPerfil \} from "\.\/profile-diary-merge-utils";/);
   assert.match(
     pagina,
-    /import \{[\s\S]*?obterMensagemDiarioVazioPerfilAutor,[\s\S]*?obterTituloDiarioPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-diary-local-utils";/,
+    /import \{[\s\S]*?obterMensagemDiarioVazioPerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-diary-local-utils";/,
+  );
+  assert.match(
+    contentViewStateSource,
+    /import \{ obterTituloDiarioPerfilAutor \} from "\.\/profile-diary-local-utils";/,
   );
   assert.match(
     communityPostRendererSource,

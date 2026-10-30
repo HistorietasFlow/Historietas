@@ -25,6 +25,20 @@ const highlightsViewStateSource = readFileSync(
   ),
   "utf8",
 );
+const contentViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-content-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const shellViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-shell-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(
   source.replace(
     'import { normalizarNomeAutor } from "./profile-formatters";',
@@ -165,7 +179,7 @@ test("página deriva as obras do perfil uma vez e reutiliza nos cálculos", () =
     /const totalObrasPerfil = obrasPerfil\.length;/,
   );
   assert.match(
-    pagina,
+    contentViewStateSource,
     /obterMensagemObrasVaziasPerfilAutor\(\{[\s\S]*?totalObras: totalObrasPerfil,/,
   );
   assert.match(
@@ -193,11 +207,11 @@ test("página deriva o nome do perfil uma vez e reutiliza nas exibições", () =
     /obterTituloComunidadePerfilAutor\(\{[\s\S]*?nomePerfil: perfilNome,/,
   );
   assert.match(
-    pagina,
+    contentViewStateSource,
     /obterTituloDiarioPerfilAutor\(\{[\s\S]*?nomePerfil: perfilNome,/,
   );
   assert.match(
-    pagina,
+    shellViewStateSource,
     /criarLinksComunidadePerfilAutor\(perfilNome\)/,
   );
 });

@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const contentViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-content-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const highlightsViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-highlights-view-state.ts",
@@ -342,7 +349,7 @@ test("página deriva o total de obras uma única vez da coleção do perfil", ()
     (pagina.match(/\btotalObrasPerfil\b/g) || []).length,
     3,
   );
-  assert.match(pagina, /totalObras: totalObrasPerfil/);
+  assert.match(contentViewStateSource, /totalObras: totalObrasPerfil/);
   assert.match(
     pagina,
     /import \{ ProfileAboutSection \} from "\.\/components\/profile-about-section";/,
@@ -382,11 +389,11 @@ test("mensagem de obras vazias preserva autor, visitante e filtro sem resultado"
 
 test("página delega a mensagem de obras vazias ao helper", () => {
   assert.match(
-    pagina,
-    /obterMensagemObrasVaziasPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    contentViewStateSource,
+    /obterMensagemObrasVaziasPerfilAutor,[\s\S]*?from "\.\/profile-work-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterMensagemObrasVaziasPerfilAutor\(\{/g) || []).length,
+    (contentViewStateSource.match(/obterMensagemObrasVaziasPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.match(
@@ -645,11 +652,11 @@ test("seção de destaques depende da aba Obras e do conteúdo/configuração di
 
 test("página resolve obra com menu aberto sem useMemo", () => {
   assert.match(
-    pagina,
+    contentViewStateSource,
     /const obraMenuAberta = obterObraMenuAbertaPerfilAutor\(/,
   );
   assert.doesNotMatch(
-    pagina,
+    contentViewStateSource,
     /const obraMenuAberta = useMemo/,
   );
 });
@@ -657,11 +664,11 @@ test("página resolve obra com menu aberto sem useMemo", () => {
 
 test("página resolve obras visíveis sem useMemo", () => {
   assert.match(
-    pagina,
+    contentViewStateSource,
     /const obrasDoPerfilFiltradas = obterObrasVisiveisPerfilAutor\(\{/,
   );
   assert.doesNotMatch(
-    pagina,
+    contentViewStateSource,
     /const obrasDoPerfilFiltradas = useMemo/,
   );
 });

@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const contentViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-content-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const diarySyncSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-diary-sync.ts",
@@ -303,7 +310,7 @@ test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carre
     /ordenarItensDiarioPerfil\(Array\.from\(lendoPorObra\.values\(\)\)\)/,
   );
   assert.match(
-    pagina,
+    contentViewStateSource,
     /montarItensDiarioTudoPerfil\(diarioPerfil\)/,
   );
   assert.doesNotMatch(pagina, /supabase\s*\.from\("seguindo_obras"\)/);
@@ -317,11 +324,11 @@ test("Perfil de Autor mantém mesclagem na página e delega ordenação ao carre
 
 test("página consolida itens do diário sem useMemo", () => {
   assert.match(
-    pagina,
+    contentViewStateSource,
     /const itensDiarioTudo = montarItensDiarioTudoPerfil\(diarioPerfil\);/,
   );
   assert.doesNotMatch(
-    pagina,
+    contentViewStateSource,
     /const itensDiarioTudo = useMemo/,
   );
 });
