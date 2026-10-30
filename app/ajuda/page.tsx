@@ -8,33 +8,23 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { SvgIcon } from "./components/ajuda-svg-icon";
 import {
+  AjudaCategoriesSection,
+} from "./components/ajuda-categories-section";
+import {
+  AjudaFaqSection,
+} from "./components/ajuda-faq-section";
+import {
+  AjudaHeaderHero,
+} from "./components/ajuda-header-hero";
+import {
   ajudaPageCss,
 } from "./lib/ajuda-page-css";
 import {
-  backButtonStyle,
-  categoriesGridStyle,
   containerStyle,
-  emptyDescriptionStyle,
-  emptyIconStyle,
-  emptyStateStyle,
-  emptyTitleStyle,
-  eyebrowStyle,
-  faqListStyle,
-  headerStyle,
-  headerTextStyle,
-  heroDescriptionStyle,
-  heroIconStyle,
-  heroStyle,
-  heroTextStyle,
-  heroTitleStyle,
   noticeIconStyle,
   noticeStyle,
   noticeTextStyle,
   pageStyle,
-  pageTitleStyle,
-  resultsCountStyle,
-  searchBoxStyle,
-  searchInputStyle,
   sectionHeadingStyle,
   sectionKickerStyle,
   sectionStyle,
@@ -313,235 +303,28 @@ export default function AjudaPage() {
       <style>{`${historietasThemeCss}${ajudaPageCss}`}</style>
 
       <div style={containerStyle}>
-        <header style={headerStyle}>
-          <Link
-            href="/configuracoes"
-            style={backButtonStyle}
-            aria-label={t({
-              pt: "Voltar para Configurações",
-              en: "Back to Settings",
-              es: "Volver a Configuración",
-            })}
-          >
-            <SvgIcon name="arrowLeft" size={25} strokeWidth={2.35} />
-          </Link>
+        <AjudaHeaderHero
+          busca={busca}
+          language={language}
+          onBuscaChange={setBusca}
+          onLimparBusca={() => setBusca("")}
+        />
 
-          <div style={headerTextStyle}>
-            <span style={eyebrowStyle}>
-              {t({
-                pt: "SUPORTE",
-                en: "SUPPORT",
-                es: "SOPORTE",
-              })}
-            </span>
-            <h1 style={pageTitleStyle}>
-              {t({
-                pt: "Central de ajuda",
-                en: "Help center",
-                es: "Centro de ayuda",
-              })}
-            </h1>
-          </div>
-        </header>
+        <AjudaCategoriesSection
+          categoriaAtiva={categoriaAtiva}
+          language={language}
+          onSelecionarCategoria={setCategoriaAtiva}
+        />
 
-        <section style={heroStyle}>
-          <span style={heroIconStyle}>
-            <SvgIcon name="help" size={31} strokeWidth={2.15} />
-          </span>
-
-          <div style={heroTextStyle}>
-            <h2 style={heroTitleStyle}>
-              {t({
-                pt: "Como podemos ajudar?",
-                en: "How can we help?",
-                es: "¿Cómo podemos ayudarte?",
-              })}
-            </h2>
-            <p style={heroDescriptionStyle}>
-              {t({
-                pt: "Encontre respostas sobre sua conta, publicação, leitura, comunidade e privacidade.",
-                en: "Find answers about your account, publishing, reading, community, and privacy.",
-                es: "Encuentra respuestas sobre tu cuenta, publicación, lectura, comunidad y privacidad.",
-              })}
-            </p>
-          </div>
-
-          <label style={searchBoxStyle} htmlFor="buscar-ajuda">
-            <SvgIcon name="search" size={23} strokeWidth={2.3} />
-            <input
-              id="buscar-ajuda"
-              className="ajuda-search-input"
-              value={busca}
-              onChange={(event) => setBusca(event.target.value)}
-              placeholder={t({
-                pt: "Digite sua dúvida...",
-                en: "Type your question...",
-                es: "Escribe tu duda...",
-              })}
-              maxLength={100}
-              autoComplete="off"
-              style={searchInputStyle}
-            />
-            {busca ? (
-              <button
-                type="button"
-                className="ajuda-clear-button"
-                onClick={() => setBusca("")}
-                aria-label={t({
-                  pt: "Limpar busca",
-                  en: "Clear search",
-                  es: "Borrar búsqueda",
-                })}
-              >
-                ×
-              </button>
-            ) : null}
-          </label>
-        </section>
-
-        <section style={sectionStyle} aria-labelledby="categorias-ajuda-titulo">
-          <div style={sectionHeadingStyle}>
-            <div>
-              <span style={sectionKickerStyle}>
-                {t({
-                  pt: "ASSUNTOS",
-                  en: "TOPICS",
-                  es: "TEMAS",
-                })}
-              </span>
-              <h2 id="categorias-ajuda-titulo" style={sectionTitleStyle}>
-                {t({
-                  pt: "Escolha uma categoria",
-                  en: "Choose a category",
-                  es: "Elige una categoría",
-                })}
-              </h2>
-            </div>
-          </div>
-
-          <div style={categoriesGridStyle}>
-            {CATEGORIAS_AJUDA.map((categoria) => {
-              const ativa = categoria.id === categoriaAtiva;
-
-              return (
-                <button
-                  key={categoria.id}
-                  type="button"
-                  className="ajuda-category-button"
-                  data-active={ativa ? "true" : "false"}
-                  aria-pressed={ativa}
-                  onClick={() => setCategoriaAtiva(categoria.id)}
-                >
-                  <span className="ajuda-category-icon">
-                    <SvgIcon name={categoria.icon} size={23} strokeWidth={2.05} />
-                  </span>
-                  <span className="ajuda-category-copy">
-                    <strong>{t(categoria.titulo)}</strong>
-                    <span>{t(categoria.descricao)}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section style={sectionStyle} aria-labelledby="perguntas-ajuda-titulo">
-          <div style={sectionHeadingStyle}>
-            <div>
-              <span style={sectionKickerStyle}>
-                {t({
-                  pt: "PERGUNTAS FREQUENTES",
-                  en: "FREQUENTLY ASKED QUESTIONS",
-                  es: "PREGUNTAS FRECUENTES",
-                })}
-              </span>
-              <h2 id="perguntas-ajuda-titulo" style={sectionTitleStyle}>
-                {t(categoriaSelecionada.titulo)}
-              </h2>
-            </div>
-
-            <span style={resultsCountStyle}>
-              {perguntasFiltradas.length}{" "}
-              {perguntasFiltradas.length === 1
-                ? t({ pt: "resposta", en: "answer", es: "respuesta" })
-                : t({ pt: "respostas", en: "answers", es: "respuestas" })}
-            </span>
-          </div>
-
-          {perguntasFiltradas.length > 0 ? (
-            <div style={faqListStyle}>
-              {perguntasFiltradas.map((item) => {
-                const categoria = CATEGORIAS_AJUDA.find(
-                  (entrada) => entrada.id === item.categoria,
-                );
-
-                return (
-                  <details key={item.id} className="ajuda-faq-details">
-                    <summary className="ajuda-faq-summary">
-                      <span className="ajuda-faq-icon">
-                        <SvgIcon
-                          name={categoria?.icon || "help"}
-                          size={21}
-                          strokeWidth={2.1}
-                        />
-                      </span>
-
-                      <span className="ajuda-faq-question">
-                        {t(item.pergunta)}
-                      </span>
-
-                      <span className="ajuda-faq-chevron">
-                        <SvgIcon
-                          name="chevronDown"
-                          size={21}
-                          strokeWidth={2.35}
-                        />
-                      </span>
-                    </summary>
-
-                    <div className="ajuda-faq-answer">
-                      <p>{t(item.resposta)}</p>
-                    </div>
-                  </details>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={emptyStateStyle}>
-              <span style={emptyIconStyle}>
-                <SvgIcon name="search" size={28} strokeWidth={2.15} />
-              </span>
-              <strong style={emptyTitleStyle}>
-                {t({
-                  pt: "Nenhuma resposta encontrada",
-                  en: "No answer found",
-                  es: "No se encontró ninguna respuesta",
-                })}
-              </strong>
-              <p style={emptyDescriptionStyle}>
-                {t({
-                  pt: "Tente pesquisar com outras palavras ou escolha Todas para ver os assuntos disponíveis.",
-                  en: "Try different words or choose All to view the available topics.",
-                  es: "Prueba con otras palabras o elige Todas para ver los temas disponibles.",
-                })}
-              </p>
-              <button
-                type="button"
-                className="ajuda-reset-button"
-                onClick={() => {
-                  setBusca("");
-                  setCategoriaAtiva("todos");
-                }}
-              >
-                {t({
-                  pt: "Mostrar todas as respostas",
-                  en: "Show all answers",
-                  es: "Mostrar todas las respuestas",
-                })}
-              </button>
-            </div>
-          )}
-        </section>
+        <AjudaFaqSection
+          perguntas={perguntasFiltradas}
+          categoriaSelecionada={categoriaSelecionada}
+          language={language}
+          onReset={() => {
+            setBusca("");
+            setCategoriaAtiva("todos");
+          }}
+        />
 
         <section
           id="problema-tecnico"
