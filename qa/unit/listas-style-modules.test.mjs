@@ -21,10 +21,17 @@ const diary = readFileSync(
   ),
   "utf8",
 ).replace(/\r\n/g, "\n");
+const workActionSheetRenderer = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-work-action-sheet-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+).replace(/\r\n/g, "\n");
 
 test("Listas delega todos os estilos estaticos aos tres modulos", () => {
   assert.match(page, /from "\.\/lib\/listas-layout-styles";/);
-  assert.match(page, /from "\.\/lib\/listas-work-styles";/);
+  assert.match(workActionSheetRenderer, /from "\.\.\/lib\/listas-work-styles";/);
   assert.match(page, /from "\.\/lib\/listas-diary-comments-styles";/);
   assert.doesNotMatch(page, /^const \w+Style: CSSProperties =/m);
   assert.doesNotMatch(page, /^function criarAvatar(?:Perfil|Comentario)DiarioListasStyle/m);

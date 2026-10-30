@@ -23,18 +23,25 @@ const diaryAnnotationActions = await readFile(
   "app/listas/hooks/use-listas-diary-annotation-actions.ts",
   "utf8",
 );
+const actionSheetRenderer = await readFile(
+  "app/listas/hooks/use-listas-work-action-sheet-renderer.tsx",
+  "utf8",
+);
 
 test("Listas delega os overlays de obra para composições apresentacionais", () => {
   assert.match(
     pagina,
-    /import \{ ListasWorkActionSheet \} from "\.\/components\/listas-work-action-sheet";/,
+    /import \{ useListasWorkActionSheetRenderer \} from "\.\/hooks\/use-listas-work-action-sheet-renderer";/,
   );
   assert.match(
     pagina,
     /import \{ ListasDiaryReportModal \} from "\.\/components\/listas-diary-report-modal";/,
   );
-  assert.match(pagina, /<ListasWorkActionSheet/);
+  assert.match(pagina, /\} =\s*useListasWorkActionSheetRenderer\(\{/);
+  assert.match(pagina, /\{renderizarWorkActionSheet\(\)\}/);
+  assert.doesNotMatch(pagina, /<ListasWorkActionSheet/);
   assert.match(pagina, /<ListasDiaryReportModal/);
+  assert.match(actionSheetRenderer, /<ListasWorkActionSheet/);
   assert.doesNotMatch(pagina, /<DenunciaModal/);
   assert.doesNotMatch(pagina, /aria-label=\{`Opções de \$\{obra\.titulo\}`\}/);
 });
@@ -46,8 +53,6 @@ test("Listas mantém estados, cálculos e mutações do action sheet na página"
     "obraMenuNoQueroLer",
     "salvandoQueroLer",
     "editorAnotacao",
-    "DIARIO_ANOTACAO_MAX_LENGTH",
-    "obterHrefContinuarLeituraListas",
     "abrirDenunciaDiario",
   ]) {
     assert.match(pagina, new RegExp(`\\b${contrato}\\b`));
@@ -81,6 +86,57 @@ test("Listas mantém estados, cálculos e mutações do action sheet na página"
 });
 
 test("action sheet preserva diálogo, ordem e estados das ações da obra", () => {
+  for (const contrato of [
+    "DIARIO_ANOTACAO_MAX_LENGTH",
+    "EDITOR_ANOTACAO_LISTAS_VAZIO",
+    "obterHrefContinuarLeituraListas",
+    "textoSecundarioItem",
+  ]) {
+    assert.match(actionSheetRenderer, new RegExp(`\\b${contrato}\\b`));
+  }
+
+  assert.match(actionSheetRenderer, /function renderizarWorkActionSheet\(/);
+  assert.match(actionSheetRenderer, /obraMenuAberta && \(/);
+  assert.match(
+    actionSheetRenderer,
+    /itemPerfilMenuAberto\s*\? textoSecundarioItem\(itemPerfilMenuAberto, categoriaMenuAberta\)\s*: ""/,
+  );
+  assert.match(
+    actionSheetRenderer,
+    /itemPerfilMenuAberto\s*\? obterHrefContinuarLeituraListas\(itemPerfilMenuAberto\)\s*: obraMenuAberta\.link/,
+  );
+  assert.match(
+    actionSheetRenderer,
+    /podeContinuar=\{Boolean\(\s*itemPerfilMenuAberto && itemPerfilMenuAberto\.progresso > 0,\s*\)\}/,
+  );
+  assert.match(
+    actionSheetRenderer,
+    /onCancelAnnotation=\{\(\) => setEditorAnotacao\(EDITOR_ANOTACAO_LISTAS_VAZIO\)\}/,
+  );
+  assert.match(actionSheetRenderer, /onRemoveAnnotation=\{\(\) => void removerAnotacaoListas\(\)\}/);
+  assert.match(actionSheetRenderer, /onSaveAnnotation=\{\(\) => void salvarAnotacaoListas\(\)\}/);
+  assert.match(actionSheetRenderer, /onShare=\{\(\) => void compartilharObraDoMenu\(\)\}/);
+  assert.match(actionSheetRenderer, /onToggleWantToRead=\{\(\) => void alternarObraNoQueroLer\(\)\}/);
+  assert.match(actionSheetRenderer, /listDiaryActionSheetEditorStyle/);
+  assert.match(actionSheetRenderer, /actionSheetOverlayStyle/);
+  assert.match(actionSheetRenderer, /actionSheetSelectionDotActiveStyle/);
+
+  const anotacaoId = actionSheetRenderer.indexOf(
+    'const anotacaoId = itemPerfilMenuAberto?.anotacaoId?.trim() || "";',
+  );
+  const fecharObra = actionSheetRenderer.indexOf("setObraMenuAberta(null);");
+  const fecharItem = actionSheetRenderer.indexOf("setItemPerfilMenuAberto(null);");
+  const fecharQueroLer = actionSheetRenderer.indexOf("setObraMenuNoQueroLer(false);");
+  const abrirDenuncia = actionSheetRenderer.indexOf("abrirDenunciaDiario(");
+
+  assert.ok(anotacaoId >= 0);
+  assert.ok(anotacaoId < fecharObra);
+  assert.ok(fecharObra < fecharItem);
+  assert.ok(fecharItem < fecharQueroLer);
+  assert.ok(fecharQueroLer < abrirDenuncia);
+  assert.match(actionSheetRenderer, /"diario_anotacao"/);
+  assert.match(actionSheetRenderer, /perfil\?\.userId \|\| ""/);
+
   assert.match(actionSheet, /export function ListasWorkActionSheet/);
   assert.match(actionSheet, /role="dialog"/);
   assert.match(actionSheet, /aria-modal="true"/);

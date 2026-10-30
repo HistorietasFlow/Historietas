@@ -20,11 +20,11 @@ import { useListasPageRenderers } from "./hooks/use-listas-page-renderers";
 import { useListasResultsViewState } from "./hooks/use-listas-results-view-state";
 import { useListasProfileItemRenderer } from "./hooks/use-listas-profile-item-renderer";
 import { useListasDiaryCommentsRenderer } from "./hooks/use-listas-diary-comments-renderer";
+import { useListasWorkActionSheetRenderer } from "./hooks/use-listas-work-action-sheet-renderer";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
 import { ListasDiaryReportModal } from "./components/listas-diary-report-modal";
-import { ListasWorkActionSheet } from "./components/listas-work-action-sheet";
 import { formatarNotaListas } from "./lib/listas-format-utils";
 import { listasPageCss } from "./lib/listas-page-css";
 import {
@@ -64,34 +64,6 @@ import {
   footerStyle,
 } from "./lib/listas-layout-styles";
 import {
-  actionSheetOverlayStyle,
-  actionSheetStyle,
-  actionSheetHandleStyle,
-  actionSheetHeaderStyle,
-  actionSheetTitleStyle,
-  actionSheetMetaStyle,
-  actionSheetDetailStyle,
-  actionSheetActionsStyle,
-  actionSheetButtonStyle,
-  actionSheetButtonDisabledStyle,
-  actionSheetButtonIconStyle,
-  actionSheetSelectionDotStyle,
-  actionSheetSelectionDotActiveStyle,
-  listDiaryActionSheetReportStyle,
-  listDiaryActionSheetEditorStyle,
-  listDiaryAnnotationTextareaWrapStyle,
-  listDiaryAnnotationTextareaStyle,
-  listDiaryAnnotationEditorMetaStyle,
-  listDiaryAnnotationMetaActionsStyle,
-  listDiaryAnnotationSpoilerLabelStyle,
-  listDiaryAnnotationSpoilerCheckboxStyle,
-  listDiaryAnnotationCounterStyle,
-  listDiaryAnnotationErrorStyle,
-  listDiaryAnnotationSaveStyle,
-  listDiaryAnnotationCancelStyle,
-  listDiaryAnnotationRemoveStyle,
-} from "./lib/listas-work-styles";
-import {
   criarAvatarPerfilDiarioListasStyle,
   listDiaryProfileHeaderStyle,
   listDiaryProfileHeaderTopStyle,
@@ -117,13 +89,7 @@ import {
   criarInteracaoAnotacaoListasVazia,
 } from "./lib/listas-diary-comment-utils";
 import { type InteracoesAnotacoesListasEstado } from "./lib/listas-diary-interactions-loader";
-import {
-  obterHrefContinuarLeituraListas,
-} from "./lib/listas-profile-items-utils";
 import { carregarAvaliacaoDiarioListas } from "./lib/listas-profile-records-loader";
-import {
-  textoSecundarioItem,
-} from "./lib/listas-profile-text-utils";
 import { obterPermissoesAnotacaoListas } from "./lib/listas-diary-annotation-permissions-utils";
 import {
   AVALIACAO_DIARIO_LISTAS_VAZIA,
@@ -525,6 +491,29 @@ function ListasUniversaisContent() {
       usuarioAtualPerfil,
     });
 
+  const { renderizarWorkActionSheet } =
+    useListasWorkActionSheetRenderer({
+      abrirDenunciaDiario,
+      abrirEditorAnotacaoListas,
+      alternarObraNoQueroLer,
+      categoriaMenuAberta,
+      compartilharObraDoMenu,
+      editorAnotacao,
+      fecharMenuObra,
+      itemPerfilMenuAberto,
+      obraMenuAberta,
+      obraMenuNoQueroLer,
+      perfil,
+      perfilEhProprio,
+      removerAnotacaoListas,
+      salvandoQueroLer,
+      salvarAnotacaoListas,
+      setEditorAnotacao,
+      setItemPerfilMenuAberto,
+      setObraMenuAberta,
+      setObraMenuNoQueroLer,
+    });
+
   const { renderizarAutor, renderizarObraPublica } = useListasPageRenderers({
     abrirMenuObra,
     criarAvatarStyle,
@@ -636,85 +625,7 @@ function ListasUniversaisContent() {
         }}
       />
 
-      {obraMenuAberta && (
-        <ListasWorkActionSheet
-          detalhe={
-            itemPerfilMenuAberto
-              ? textoSecundarioItem(itemPerfilMenuAberto, categoriaMenuAberta)
-              : ""
-          }
-          editor={editorAnotacao}
-          editorStyles={{
-            cancel: listDiaryAnnotationCancelStyle,
-            counter: listDiaryAnnotationCounterStyle,
-            editor: listDiaryActionSheetEditorStyle,
-            editorMeta: listDiaryAnnotationEditorMetaStyle,
-            error: listDiaryAnnotationErrorStyle,
-            metaActions: listDiaryAnnotationMetaActionsStyle,
-            remove: listDiaryAnnotationRemoveStyle,
-            save: listDiaryAnnotationSaveStyle,
-            spoilerCheckbox: listDiaryAnnotationSpoilerCheckboxStyle,
-            spoilerLabel: listDiaryAnnotationSpoilerLabelStyle,
-            textarea: listDiaryAnnotationTextareaStyle,
-            textareaWrap: listDiaryAnnotationTextareaWrapStyle,
-          }}
-          hrefPrincipal={
-            itemPerfilMenuAberto
-              ? obterHrefContinuarLeituraListas(itemPerfilMenuAberto)
-              : obraMenuAberta.link
-          }
-          item={itemPerfilMenuAberto}
-          maxAnnotationLength={DIARIO_ANOTACAO_MAX_LENGTH}
-          onCancelAnnotation={() => setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO)}
-          onClose={fecharMenuObra}
-          onEditAnnotation={abrirEditorAnotacaoListas}
-          onRemoveAnnotation={() => void removerAnotacaoListas()}
-          onReportAnnotation={() => {
-            const anotacaoId = itemPerfilMenuAberto?.anotacaoId?.trim() || "";
-
-            if (!anotacaoId) {
-              return;
-            }
-
-            setObraMenuAberta(null);
-            setItemPerfilMenuAberto(null);
-            setObraMenuNoQueroLer(false);
-            abrirDenunciaDiario(
-              "diario_anotacao",
-              anotacaoId,
-              `Anotação de ${perfil?.nome || "usuário"} em ${obraMenuAberta.titulo}`,
-              perfil?.userId || "",
-            );
-          }}
-          onSaveAnnotation={() => void salvarAnotacaoListas()}
-          onShare={() => void compartilharObraDoMenu()}
-          onToggleWantToRead={() => void alternarObraNoQueroLer()}
-          obra={obraMenuAberta}
-          perfilEhProprio={perfilEhProprio}
-          podeContinuar={Boolean(
-            itemPerfilMenuAberto && itemPerfilMenuAberto.progresso > 0,
-          )}
-          queroLer={obraMenuNoQueroLer}
-          salvandoQueroLer={salvandoQueroLer}
-          setEditor={setEditorAnotacao}
-          styles={{
-            actions: actionSheetActionsStyle,
-            button: actionSheetButtonStyle,
-            buttonDisabled: actionSheetButtonDisabledStyle,
-            buttonIcon: actionSheetButtonIconStyle,
-            detail: actionSheetDetailStyle,
-            handle: actionSheetHandleStyle,
-            header: actionSheetHeaderStyle,
-            meta: actionSheetMetaStyle,
-            overlay: actionSheetOverlayStyle,
-            panel: actionSheetStyle,
-            report: listDiaryActionSheetReportStyle,
-            selection: actionSheetSelectionDotStyle,
-            selectionActive: actionSheetSelectionDotActiveStyle,
-            title: actionSheetTitleStyle,
-          }}
-        />
-      )}
+      {renderizarWorkActionSheet()}
 
       {renderizarComentariosDiarioSheet()}
     </main>

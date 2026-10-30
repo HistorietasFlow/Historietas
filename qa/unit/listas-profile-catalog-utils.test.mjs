@@ -8,6 +8,13 @@ const pageDataHook = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
   "utf8",
 );
+const actionSheetRenderer = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-work-action-sheet-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileItems = readFileSync(
   new URL("../../app/listas/lib/listas-profile-items-utils.ts", import.meta.url),
   "utf8",
@@ -114,10 +121,10 @@ function criarItem(categoria, obra, extras = {}) {
 
 test("Listas delega itens, catálogo e textos puros sem mover Supabase", () => {
   for (const [source, helper] of [
-    [page, "obterHrefContinuarLeituraListas"],
+    [actionSheetRenderer, "obterHrefContinuarLeituraListas"],
     [pageDataHook, "ordenarObrasDaSecao"],
     [pageDataHook, "ordenarRecomendacoes"],
-    [page, "textoSecundarioItem"],
+    [actionSheetRenderer, "textoSecundarioItem"],
   ]) {
     assert.match(source, new RegExp(`import[\\s\\S]*?\\b${helper}\\b`));
     assert.doesNotMatch(page, new RegExp(`function ${helper}\\(`));
