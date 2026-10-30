@@ -9,6 +9,7 @@ const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-comments-read-loader.
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const lifecycle = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-interaction-data.ts");
 const storage = ler("../../app/ler-capitulo/lib/ler-capitulo-local-storage.ts");
+const commentPersistence = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 
 const fonteMockada = fonte
   .replace('import { supabase } from "../../../lib/supabase/client";', `const supabase = {
@@ -102,7 +103,9 @@ test("a movimentação preserva literalmente o corpo dos helpers e das consultas
   assert.match(lifecycle, /await carregarComentariosCapituloSupabase\(\s*capituloAtual\.id,\s*usuarioIdLogado,\s*\{\s*aplicarCurtidasComentariosCapitulosLocais,\s*TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,/);
   assert.match(lifecycle, /import \{ aplicarCurtidasComentariosCapitulosLocais \} from "\.\.\/lib\/ler-capitulo-local-storage";/);
   assert.match(storage, /export function aplicarCurtidasComentariosCapitulosLocais\(/);
-  assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-comment-persistence";/);
+  assert.doesNotMatch(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(commentPersistence, /export async function salvarComentarioCapituloSupabase\(/);
   assert.doesNotMatch(fonte, /\.(?:insert|update|delete|upsert)\s*\(/);
 });
 
