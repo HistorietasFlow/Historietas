@@ -123,21 +123,15 @@ import {
   obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
+import { obterEstadoVisualAvaliacaoPerfilAutor } from "./lib/profile-rating-view-state";
 import {
-  obterEstadoAvaliacaoPerfilAutor,
-  obterVisibilidadeAcoesAvaliacaoPerfilAutor,
-} from "./lib/profile-rating-display-utils";
-import {
-  obterDadosCurtidaTopFivePerfilAutor,
   obterMensagemObrasVaziasPerfilAutor,
-  obterMensagemTopFiveVazioPerfilAutor,
   obterObraMenuAbertaPerfilAutor,
-  obterObrasDestaquePerfilAutor,
   obterObrasVisiveisPerfilAutor,
   obrasSemResultadosPerfilAutor,
   obterTotalObrasConcluidasPerfilAutor,
-  obterVisibilidadeDestaquesPerfilAutor,
 } from "./lib/profile-work-display-utils";
+import { obterEstadoVisualDestaquesPerfilAutor } from "./lib/profile-highlights-view-state";
 import { obterResumoEstatisticasPerfilAutor } from "./lib/profile-summary-stats";
 import {
   bibliotecaSemItensAtivosPerfilAutor,
@@ -706,22 +700,14 @@ function PerfilAutorPageContent() {
     avaliacaoResumoPerfilVisivel,
     avaliacaoResumoPerfil,
     avaliacaoResumoEhDiario,
-  } = obterEstadoAvaliacaoPerfilAutor({
+    avaliacaoAutorAcaoVisivel,
+    avaliacaoDiarioAcaoVisivel,
+  } = obterEstadoVisualAvaliacaoPerfilAutor({
     perfilParaMostrar,
     podeEditarPerfil,
     avaliacaoAutor,
     avaliacaoDiario,
-  });
-  const {
-    avaliacaoAutorAcaoVisivel,
-    avaliacaoDiarioAcaoVisivel,
-  } = obterVisibilidadeAcoesAvaliacaoPerfilAutor({
     autenticacaoCarregada,
-    autorPodeReceberAvaliacao,
-    perfilUsaAvaliacaoDiario,
-    podeEditarPerfil,
-    avaliacaoDiarioVisivel: avaliacaoDiario.visivel,
-    avaliacaoDiarioPodeAvaliar: avaliacaoDiario.podeAvaliar,
   });
 
   const obrasDoPerfilFiltradas = obterObrasVisiveisPerfilAutor({
@@ -737,32 +723,24 @@ function PerfilAutorPageContent() {
     nomePerfil: perfilNome,
   });
 
-  const obrasEmDestaque = obterObrasDestaquePerfilAutor({
+  const {
+    obrasEmDestaque,
+    temObrasEmDestaque,
+    exibirSecaoDestaques,
+    dadosCurtidaTopFive,
+    mensagemTopFiveVazio,
+  } = obterEstadoVisualDestaquesPerfilAutor({
     topFiveObraIds,
     obras,
     obrasPerfil,
     perfilPertenceAoUsuario,
-  });
-  const totalObrasEmDestaque = obrasEmDestaque.length;
-
-  const {
-    temObrasEmDestaque,
-    exibirSecaoDestaques,
-  } = obterVisibilidadeDestaquesPerfilAutor({
-      obrasPerfilVisivel,
-      podeEditarPerfil,
-      mostrarDestaquesAutor,
-      mostrarDestaquesVisitante,
-      totalObrasEmDestaque,
-    });
-
-  const dadosCurtidaTopFive = obterDadosCurtidaTopFivePerfilAutor({
-    curtido: topFiveCurtidoPorMim,
-    totalCurtidas: topFiveCurtidasTotal,
-  });
-  const mensagemTopFiveVazio = obterMensagemTopFiveVazioPerfilAutor({
+    obrasPerfilVisivel,
     podeEditarPerfil,
-    nomePerfil: perfilNome,
+    mostrarDestaquesAutor,
+    mostrarDestaquesVisitante,
+    topFiveCurtidoPorMim,
+    topFiveCurtidasTotal,
+    perfilNome,
   });
 
   const { alternarCurtidaTopFivePerfil } =

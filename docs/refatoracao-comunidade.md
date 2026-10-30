@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil do Autor — Fase 5
+
+- Os estados visuais derivados das avaliações e dos destaques/Top 5 foram movidos para helpers puros dedicados, preservando ordem, visibilidade, mensagens, curtidas e ações na página.
+
 ## Perfil do Autor — Fase 4
 
 - Os estados derivados de seguimento e dos action sheets foram movidos para helpers puros dedicados, preservando ordem, fallbacks, tradução, estilos e callbacks na página.

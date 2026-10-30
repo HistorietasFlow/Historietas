@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const highlightsViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-highlights-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const actionSheetsViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-action-sheets-view-state.ts",
@@ -532,26 +539,26 @@ test("seleção da obra com menu aberto usa ID exato e retorna null sem seleçã
 });
 
 
-test("página deriva o total e delega a existência de obras em destaque", () => {
+test("helper deriva o total e delega a existência de obras em destaque", () => {
   assert.match(
-    pagina,
+    highlightsViewStateSource,
     /const totalObrasEmDestaque = obrasEmDestaque\.length;/,
   );
   assert.equal(
-    (pagina.match(/obrasEmDestaque\.length/g) || []).length,
+    (highlightsViewStateSource.match(/obrasEmDestaque\.length/g) || []).length,
     1,
   );
   assert.match(
-    pagina,
+    highlightsViewStateSource,
     /\{[\s\S]*?temObrasEmDestaque,[\s\S]*?exibirSecaoDestaques,[\s\S]*?\} = obterVisibilidadeDestaquesPerfilAutor\(\{/,
   );
   assert.doesNotMatch(
-    pagina,
+    highlightsViewStateSource,
     /const temObrasEmDestaque = totalObrasEmDestaque > 0;/,
   );
   assert.equal(
-    (pagina.match(/\btemObrasEmDestaque\b/g) || []).length,
-    3,
+    (highlightsViewStateSource.match(/\btemObrasEmDestaque\b/g) || []).length,
+    2,
   );
 });
 
@@ -660,13 +667,13 @@ test("página resolve obras visíveis sem useMemo", () => {
 });
 
 
-test("página resolve obras em destaque sem useMemo", () => {
+test("helper resolve obras em destaque sem useMemo", () => {
   assert.match(
-    pagina,
+    highlightsViewStateSource,
     /const obrasEmDestaque = obterObrasDestaquePerfilAutor\(\{/,
   );
   assert.doesNotMatch(
-    pagina,
+    highlightsViewStateSource,
     /const obrasEmDestaque = useMemo/,
   );
 });
@@ -774,11 +781,11 @@ test("mensagem de TOP 5 vazio preserva textos de autor e visitante", () => {
 
 test("página delega a mensagem de TOP 5 vazio ao helper", () => {
   assert.match(
-    pagina,
-    /obterMensagemTopFiveVazioPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    highlightsViewStateSource,
+    /obterMensagemTopFiveVazioPerfilAutor,[\s\S]*?from "\.\/profile-work-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterMensagemTopFiveVazioPerfilAutor\(\{/g) || []).length,
+    (highlightsViewStateSource.match(/obterMensagemTopFiveVazioPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.match(pagina, /message=\{mensagemTopFiveVazio\}/);
@@ -817,11 +824,11 @@ test("dados de curtida do TOP 5 preservam ação, total e pluralização", () =>
 
 test("página reutiliza os dados de curtida do TOP 5 no botão único", () => {
   assert.match(
-    pagina,
-    /obterDadosCurtidaTopFivePerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    highlightsViewStateSource,
+    /obterDadosCurtidaTopFivePerfilAutor,[\s\S]*?from "\.\/profile-work-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosCurtidaTopFivePerfilAutor\(\{/g) || []).length,
+    (highlightsViewStateSource.match(/obterDadosCurtidaTopFivePerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.equal(
