@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 5
+
+- As ações de autenticação/login e os callbacks de denúncia de capítulo e comentário foram movidos para factories dedicadas. Estados, factories de interação/leitura/comentário, Supabase, métricas, navegação e JSX permaneceram em `page.tsx`.
+
 ## Ler Capítulo — Fase 4
 
 - O controle de acesso 18+ foi isolado em hook; as transformações locais de obras e capítulos e as derivações de URL/status de leitura foram movidas para módulos puros. Estados principais, Supabase, autenticação, factories, métricas, comentários, denúncia, navegação e JSX permaneceram em `page.tsx`.

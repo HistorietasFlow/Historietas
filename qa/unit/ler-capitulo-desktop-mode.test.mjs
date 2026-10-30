@@ -40,6 +40,13 @@ const acesso18 = readFileSync(
   ),
   "utf8",
 );
+const autenticacao = readFileSync(
+  new URL(
+    "../../app/ler-capitulo/lib/ler-capitulo-auth-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useLerCapituloDesktopMode preserva o lifecycle responsivo do leitor", () => {
   assert.match(hook, /^"use client";/);
@@ -96,7 +103,8 @@ test("Leitor delega apenas o modo desktop e preserva consumidores responsivos", 
     pagina,
     /<section style=\{isDesktop \? desktopContainerStyle : containerStyle\}>/,
   );
-  assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-auth-actions";/);
+  assert.match(autenticacao, /await supabase\.auth\.getUser\(\)/);
   assert.match(
     pagina,
     /import \{ useLerCapituloContent18Access \} from "\.\/hooks\/use-ler-capitulo-content-18-access";/,

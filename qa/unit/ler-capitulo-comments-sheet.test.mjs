@@ -9,6 +9,7 @@ const pagina = ler("../../app/ler-capitulo/page.tsx");
 const loader = ler("../../app/ler-capitulo/lib/ler-capitulo-comments-read-loader.ts");
 const lifecycle = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-interaction-data.ts");
 const acoes = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-actions.ts");
+const denuncias = ler("../../app/ler-capitulo/lib/ler-capitulo-report-actions.ts");
 const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx");
 const bloco = sheet.slice(sheet.indexOf("type ComentariosCapituloSheetProps = {"), sheet.indexOf("export default ComentariosCapituloSheet;")).trimEnd();
 const funcoes = sheet.slice(sheet.indexOf("function criarHrefPerfilUsuarioLeitor("), sheet.indexOf("type ComentariosCapituloSheetProps = {"));
@@ -55,7 +56,10 @@ test("página mantém a integração e as ações de dados e persistência", () 
   assert.match(lifecycle, /await carregarComentariosCapituloSupabase\(/);
   assert.doesNotMatch(pagina, /async function carregarComentariosCapituloSupabase\(/);
   assert.match(acoes, /function obterIdsComentarioCapituloComRespostas\(/);
-  assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-report-actions";/);
+  assert.match(pagina, /criarAcoesDenunciaLeitor\(\{/);
+  assert.match(denuncias, /async function denunciarComentarioCapitulo\(/);
+  assert.doesNotMatch(pagina, /async function denunciarComentarioCapitulo\(/);
 });
 
 test("helpers mantêm a rota e o fallback visual do avatar", () => {
