@@ -2512,3 +2512,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Ajuda — Fase 4
 
 - O header com hero e busca, a seção de categorias e a seção de FAQ foram movidos para componentes apresentacionais dedicados. Estados, `useMemo`, derivações, Supabase, RPCs, autenticação e o formulário técnico permaneceram em `page.tsx`.
+
+## Ajuda — Fase 5
+
+- A apresentação dos chamados recentes, os atalhos úteis e o aviso final de orientações foram movidos para componentes dedicados. Autenticação, estados, RPCs, carregamento dos chamados e formulário técnico permaneceram em `page.tsx`.
