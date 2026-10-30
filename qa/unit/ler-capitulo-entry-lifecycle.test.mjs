@@ -68,9 +68,11 @@ async function cenario(opcoes, teste) {
 
 test("dependências e ordem dos efeitos entre comentários e scroll permanecem na página", async () => {
   assert.match(pagina, /import \{ useLerCapituloViewRegistration, useLerCapituloEntryActivity \} from "\.\/hooks\/use-ler-capitulo-entry-lifecycle"/);
+  assert.match(pagina, /import \{ useLerCapituloCommentReset \} from "\.\/hooks\/use-ler-capitulo-comment-reset"/);
+  assert.match(pagina, /import \{ useLerCapituloScrollProgress \} from "\.\/hooks\/use-ler-capitulo-scroll-progress"/);
   const visualizacao = pagina.indexOf("  useLerCapituloViewRegistration({");
-  const comentario = pagina.indexOf("    const atualizarComentarioTimer", visualizacao);
-  const scroll = pagina.indexOf("    function atualizarProgressoRolagem", comentario);
+  const comentario = pagina.indexOf("  useLerCapituloCommentReset({", visualizacao);
+  const scroll = pagina.indexOf("  useLerCapituloScrollProgress({", comentario);
   const atividade = pagina.indexOf("  useLerCapituloEntryActivity({", scroll);
   assert.ok(visualizacao >= 0 && comentario > visualizacao && scroll > comentario && atividade > scroll);
   assert.doesNotMatch(pagina, /async function registrarVisualizacaoCapituloAtual\(/);
