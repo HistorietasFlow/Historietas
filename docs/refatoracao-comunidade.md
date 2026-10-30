@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 2
+
+- A persistência de criação de comentários, a constante da tabela de curtidas de comentários e as derivações puras de obra, capítulo e navegação foram movidas para módulos dedicados. Effects, hooks, estados, autenticação, interações, acesso 18+, denúncia e JSX permaneceram em `page.tsx`.
+
 ## Ler Capítulo — Fase 1
 
 - O helper de login, a construção da URL de leitura e os helpers de contagem e escala de texto foram movidos para módulos dedicados. Supabase, comentários, hooks, effects, autenticação, métricas, denúncia e interações permaneceram em `page.tsx`.
