@@ -98,15 +98,9 @@ import {
 import { obterEstadoAlvoPerfilAutor } from "./lib/profile-target-view-state";
 import { obterEstadoVisualSeguimentoPerfilAutor } from "./lib/profile-follow-view-state";
 import {
-  obterDadosDenunciaConteudoPerfilAutor,
   obterDadosNotificacoesPerfilAutor,
-  obterDadosDenunciaPerfilAutor,
-  obterVisibilidadeDenunciasPerfilAutor,
   limitarTextoPerfilAutor,
-  obterCaracteresRestantesPerfilAutor,
-  obterInicialAvatarPerfilAutor,
   obterTituloSobrePerfilAutor,
-  obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
 import { obterEstadoVisualAvaliacaoPerfilAutor } from "./lib/profile-rating-view-state";
 import {
@@ -120,6 +114,8 @@ import {
   bibliotecaSemItensAtivosPerfilAutor,
 } from "./lib/profile-library-display-utils";
 import { obterEstadoVisualActionSheetsPerfilAutor } from "./lib/profile-action-sheets-view-state";
+import { obterEstadoVisualEditorPerfilAutor } from "./lib/profile-editor-view-state";
+import { obterEstadoVisualDenunciasPerfilAutor } from "./lib/profile-report-view-state";
 import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -195,14 +191,6 @@ function PerfilAutorPageContent() {
     useState<File | null>(null);
   const [salvandoEditorPerfil, setSalvandoEditorPerfil] = useState(false);
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
-  const temAvatarPerfilEditor = Boolean(avatarPerfilEditor);
-  const {
-    rotuloAcaoAvatar,
-    rotuloSalvarEditor,
-  } = obterRotulosAcoesEditorPerfilAutor({
-    temAvatar: temAvatarPerfilEditor,
-    salvando: salvandoEditorPerfil,
-  });
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>(() =>
     normalizarAbaPerfilAutor(searchParams.get("aba")),
   );
@@ -388,14 +376,19 @@ function PerfilAutorPageContent() {
     usuarioIdLogado,
     autenticacaoCarregada,
   });
-  const inicialAvatarPerfilEditor = obterInicialAvatarPerfilAutor(
+  const {
+    temAvatarPerfilEditor,
+    rotuloAcaoAvatar,
+    rotuloSalvarEditor,
+    inicialAvatarPerfilEditor,
+    caracteresRestantesBioPerfil,
+  } = obterEstadoVisualEditorPerfilAutor({
+    avatarPerfilEditor,
+    salvandoEditorPerfil,
     nomePerfilEditor,
     perfilNome,
-  );
-  const caracteresRestantesBioPerfil = obterCaracteresRestantesPerfilAutor(
     bioPerfilEditor,
-    BIO_MAX_LENGTH,
-  );
+  });
 
   usePerfilAutorLoginRedirect({
     redirecionandoParaLogin,
@@ -563,19 +556,16 @@ function PerfilAutorPageContent() {
     perfilNome,
     language,
   });
-  const dadosDenunciaPerfil = obterDadosDenunciaPerfilAutor(
-    perfilParaMostrar,
-  );
-  const dadosDenunciaConteudoPerfil =
-    obterDadosDenunciaConteudoPerfilAutor(alvoDenunciaConteudoPerfil);
   const {
+    dadosDenunciaPerfil,
+    dadosDenunciaConteudoPerfil,
     denunciaPerfilVisivel,
     denunciaConteudoVisivel,
-  } = obterVisibilidadeDenunciasPerfilAutor({
-    denunciaPerfilAberta,
-    podeEditarPerfil,
+  } = obterEstadoVisualDenunciasPerfilAutor({
     perfilParaMostrar,
     alvoDenunciaConteudoPerfil,
+    denunciaPerfilAberta,
+    podeEditarPerfil,
   });
 
   const {

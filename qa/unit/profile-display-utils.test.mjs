@@ -32,6 +32,20 @@ const authorDisplayViewStateSource = readFileSync(
   ),
   "utf8",
 );
+const editorViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-editor-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const reportViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-report-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const shellViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-shell-view-state.ts",
@@ -434,15 +448,16 @@ test("visibilidade das denúncias preserva perfil, conteúdo e bloqueio de ediç
 });
 
 
-test("página delega a visibilidade dos modais de denúncia ao helper", () => {
+test("estado visual das denúncias delega a visibilidade dos modais", () => {
   assert.match(
-    pagina,
-    /obterVisibilidadeDenunciasPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    reportViewStateSource,
+    /obterVisibilidadeDenunciasPerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterVisibilidadeDenunciasPerfilAutor\(\{/g) || []).length,
+    (reportViewStateSource.match(/obterVisibilidadeDenunciasPerfilAutor\(\{/g) || []).length,
     1,
   );
+  assert.match(pagina, /obterEstadoVisualDenunciasPerfilAutor\(/);
   assert.match(
     pagina,
     /import \{ ProfileReportModals \} from "\.\/components\/profile-report-modals";/,
@@ -487,15 +502,16 @@ test("dados da denúncia de conteúdo preservam alvo e fallbacks", () => {
 });
 
 
-test("página delega os dados da denúncia de conteúdo ao helper", () => {
+test("estado visual das denúncias delega os dados da denúncia de conteúdo", () => {
   assert.match(
-    pagina,
-    /obterDadosDenunciaConteudoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    reportViewStateSource,
+    /obterDadosDenunciaConteudoPerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosDenunciaConteudoPerfilAutor\(/g) || []).length,
+    (reportViewStateSource.match(/obterDadosDenunciaConteudoPerfilAutor\(/g) || []).length,
     1,
   );
+  assert.match(pagina, /obterEstadoVisualDenunciasPerfilAutor\(/);
   assert.match(
     pagina,
     /contentTargetType=\{dadosDenunciaConteudoPerfil\.alvoTipo\}/,
@@ -540,15 +556,16 @@ test("dados da denúncia do perfil preservam ID, título, URL e fallbacks", () =
 });
 
 
-test("página delega os dados do alvo da denúncia do perfil ao helper", () => {
+test("estado visual das denúncias delega os dados do alvo da denúncia do perfil", () => {
   assert.match(
-    pagina,
-    /obterDadosDenunciaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    reportViewStateSource,
+    /obterDadosDenunciaPerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosDenunciaPerfilAutor\(/g) || []).length,
+    (reportViewStateSource.match(/obterDadosDenunciaPerfilAutor\(/g) || []).length,
     1,
   );
+  assert.match(pagina, /obterEstadoVisualDenunciasPerfilAutor\(/);
   assert.match(pagina, /profileTargetId=\{dadosDenunciaPerfil\.alvoId\}/);
   assert.match(
     pagina,
@@ -691,23 +708,24 @@ test("contador de caracteres preserva limite menos tamanho atual", () => {
 });
 
 
-test("página delega o contador da biografia ao helper", () => {
+test("estado visual do editor delega o contador da biografia ao helper", () => {
   assert.match(
-    pagina,
-    /obterCaracteresRestantesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    editorViewStateSource,
+    /obterCaracteresRestantesPerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterCaracteresRestantesPerfilAutor\(/g) || []).length,
+    (editorViewStateSource.match(/obterCaracteresRestantesPerfilAutor\(/g) || []).length,
     1,
   );
   assert.match(
-    pagina,
+    editorViewStateSource,
     /obterCaracteresRestantesPerfilAutor\(\s*bioPerfilEditor,\s*BIO_MAX_LENGTH,\s*\)/,
   );
   assert.doesNotMatch(
-    pagina,
+    editorViewStateSource,
     /BIO_MAX_LENGTH - bioPerfilEditor\.length/,
   );
+  assert.match(pagina, /obterEstadoVisualEditorPerfilAutor\(/);
 });
 
 
@@ -804,21 +822,21 @@ test("página delega a exibição do username ao helper", () => {
 });
 
 
-test("página deriva a presença do avatar do editor uma única vez", () => {
+test("estado visual do editor deriva a presença do avatar uma única vez", () => {
   assert.match(
-    pagina,
+    editorViewStateSource,
     /const temAvatarPerfilEditor = Boolean\(avatarPerfilEditor\);/,
   );
   assert.equal(
-    (pagina.match(/\btemAvatarPerfilEditor\b/g) || []).length,
+    (editorViewStateSource.match(/\btemAvatarPerfilEditor\b/g) || []).length,
     3,
   );
-  assert.match(pagina, /temAvatar: temAvatarPerfilEditor/);
+  assert.match(editorViewStateSource, /temAvatar: temAvatarPerfilEditor/);
   assert.match(pagina, /hasAvatar=\{temAvatarPerfilEditor\}/);
   assert.match(profileEditorAvatarSource, /\{hasAvatar \? \(/);
   assert.match(profileEditorAvatarSource, /\{hasAvatar && \(/);
   assert.equal(
-    (pagina.match(/Boolean\(avatarPerfilEditor\)/g) || []).length,
+    (editorViewStateSource.match(/Boolean\(avatarPerfilEditor\)/g) || []).length,
     1,
   );
 });
@@ -831,19 +849,20 @@ test("inicial do avatar preserva nome editado e fallback do perfil", () => {
 });
 
 
-test("página delega a inicial do avatar ao helper", () => {
+test("estado visual do editor delega a inicial do avatar ao helper", () => {
   assert.match(
-    pagina,
-    /obterInicialAvatarPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    editorViewStateSource,
+    /obterInicialAvatarPerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterInicialAvatarPerfilAutor\(/g) || []).length,
+    (editorViewStateSource.match(/obterInicialAvatarPerfilAutor\(/g) || []).length,
     1,
   );
   assert.match(
-    pagina,
+    editorViewStateSource,
     /const inicialAvatarPerfilEditor = obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilNome,\s*\);/,
   );
+  assert.match(pagina, /obterEstadoVisualEditorPerfilAutor\(/);
   assert.match(pagina, /fallbackInitial=\{inicialAvatarPerfilEditor\}/);
   assert.match(profileEditorAvatarSource, /\{fallbackInitial\}/);
   assert.doesNotMatch(
@@ -1172,15 +1191,16 @@ test("rótulos das ações do editor preservam avatar e estado de salvamento", (
 });
 
 
-test("página delega os rótulos das ações do editor ao helper", () => {
+test("estado visual do editor delega os rótulos das ações", () => {
   assert.match(
-    pagina,
-    /obterRotulosAcoesEditorPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    editorViewStateSource,
+    /obterRotulosAcoesEditorPerfilAutor,[\s\S]*?from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterRotulosAcoesEditorPerfilAutor\(\{/g) || []).length,
+    (editorViewStateSource.match(/obterRotulosAcoesEditorPerfilAutor\(\{/g) || []).length,
     1,
   );
+  assert.match(pagina, /obterEstadoVisualEditorPerfilAutor\(/);
   assert.doesNotMatch(
     pagina,
     /avatarPerfilEditor \? "Trocar imagem" : "Colocar imagem"/,
@@ -1274,7 +1294,7 @@ test("Perfil de Autor reutiliza o nome derivado do perfil", () => {
     /<strong data-historietas-user-content="true" style=\{menuTitleStyle\}>\s*\{profileName\}\s*<\/strong>/,
   );
   assert.match(
-    pagina,
+    editorViewStateSource,
     /obterInicialAvatarPerfilAutor\(\s*nomePerfilEditor,\s*perfilNome,\s*\)/,
   );
   assert.match(
