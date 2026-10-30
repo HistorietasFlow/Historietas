@@ -13,6 +13,13 @@ const fieldSource = readFileSync(
   ),
   "utf8",
 );
+const tagActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-tag-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Editar Obra delega somente a apresenta\u00e7\u00e3o do campo de Tag", () => {
   assert.match(
@@ -26,13 +33,13 @@ test("Editar Obra delega somente a apresenta\u00e7\u00e3o do campo de Tag", () =
   assert.doesNotMatch(pageSource, /id="editar-obra-tag"/);
 });
 
-test("p\u00e1gina preserva integralmente os handlers e helpers de Tag", () => {
+test("hook preserva integralmente os handlers e helpers de Tag", () => {
   assert.match(
-    pageSource,
+    tagActionsSource,
     /function atualizarTagPersonalizada\(valor: string\) \{[\s\S]*?prepararAtualizacaoTagPersonalizada\([\s\S]*?LIMITE_CARACTERES_TAG_PERSONALIZADA[\s\S]*?\);[\s\S]*?setTagPersonalizada\(proximaTag\.tagPersonalizada\);[\s\S]*?setTags\(proximaTag\.tags\);[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}/,
   );
   assert.match(
-    pageSource,
+    tagActionsSource,
     /function adicionarTagSelecionada\(tag: string\) \{[\s\S]*?prepararSelecaoTagEdicaoObra\([\s\S]*?OUTRA_TAG_VALUE,[\s\S]*?LIMITE_CARACTERES_TAG_PERSONALIZADA,[\s\S]*?\);[\s\S]*?setUsarTagPersonalizada\(proximaTag\.usarTagPersonalizada\);[\s\S]*?setTags\(proximaTag\.tags\);[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}/,
   );
 });

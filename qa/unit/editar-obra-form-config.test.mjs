@@ -21,7 +21,21 @@ const initialLoadSource = readFileSync(
   ),
   "utf8",
 );
-const consumerSource = `${pageSource}\n${initialLoadSource}`;
+const assetActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-asset-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const tagActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-tag-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const consumerSource = `${pageSource}\n${initialLoadSource}\n${assetActionsSource}\n${tagActionsSource}`;
 const javascript = typescript
   .transpileModule(
     source.replace(

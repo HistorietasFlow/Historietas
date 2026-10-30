@@ -11,6 +11,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const tagActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-tag-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(
     source.replace(
@@ -72,14 +79,18 @@ test("seleção de tag preserva ramos vazio, outra e tag normal", () => {
 
 test("Editar Obra delega somente o cálculo de tags e mantém os setters", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?prepararAtualizacaoTagPersonalizada,[\s\S]*?prepararSelecaoTagEdicaoObra,[\s\S]*?\} from "\.\/lib\/editar-obra-tag-utils";/,
+    tagActionsSource,
+    /import \{[\s\S]*?prepararAtualizacaoTagPersonalizada,[\s\S]*?prepararSelecaoTagEdicaoObra,[\s\S]*?\} from "\.\.\/lib\/editar-obra-tag-utils";/,
   );
-  assert.match(pageSource, /function atualizarTagPersonalizada\(valor: string\)/);
-  assert.match(pageSource, /function adicionarTagSelecionada\(tag: string\)/);
-  assert.match(pageSource, /setTagPersonalizada\(proximaTag\.tagPersonalizada\);[\s\S]*?setTags\(proximaTag\.tags\);[\s\S]*?marcarAlteracao\(\);/);
-  assert.match(pageSource, /setUsarTagPersonalizada\(proximaTag\.usarTagPersonalizada\);[\s\S]*?setTags\(proximaTag\.tags\);[\s\S]*?marcarAlteracao\(\);/);
-  assert.match(pageSource, /OUTRA_TAG_VALUE,[\s\S]*?LIMITE_CARACTERES_TAG_PERSONALIZADA,/);
+  assert.match(pageSource, /import \{ useEditarObraTagActions \} from "\.\/hooks\/use-editar-obra-tag-actions";/);
+  assert.match(pageSource, /\} = useEditarObraTagActions\(/);
+  assert.doesNotMatch(pageSource, /function atualizarTagPersonalizada\(valor: string\)/);
+  assert.doesNotMatch(pageSource, /function adicionarTagSelecionada\(tag: string\)/);
+  assert.match(tagActionsSource, /function atualizarTagPersonalizada\(valor: string\)/);
+  assert.match(tagActionsSource, /function adicionarTagSelecionada\(tag: string\)/);
+  assert.match(tagActionsSource, /setTagPersonalizada\(proximaTag\.tagPersonalizada\);[\s\S]*?setTags\(proximaTag\.tags\);[\s\S]*?marcarAlteracao\(\);/);
+  assert.match(tagActionsSource, /setUsarTagPersonalizada\(proximaTag\.usarTagPersonalizada\);[\s\S]*?setTags\(proximaTag\.tags\);[\s\S]*?marcarAlteracao\(\);/);
+  assert.match(tagActionsSource, /OUTRA_TAG_VALUE,[\s\S]*?LIMITE_CARACTERES_TAG_PERSONALIZADA,/);
   assert.match(source, /import \{[\s\S]*?limparTextoPersonalizado,[\s\S]*?textoPersonalizadoValido,[\s\S]*?\} from "\.\/editar-obra-custom-value-utils";/);
   assert.match(source, /textoPersonalizadoValido\(tagPersonalizada, 2, limiteCaracteres\)/);
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect/);
