@@ -2516,3 +2516,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Ajuda — Fase 5
 
 - A apresentação dos chamados recentes, os atalhos úteis e o aviso final de orientações foram movidos para componentes dedicados. Autenticação, estados, RPCs, carregamento dos chamados e formulário técnico permaneceram em `page.tsx`.
+
+## Ajuda — Fase 6
+
+- O shell visual do suporte técnico, as mensagens de status/login e o formulário controlado foram movidos para componentes dedicados. Estados, handlers, autenticação, RPCs, effect, validações e regras de envio permaneceram em `page.tsx`.
