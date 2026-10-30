@@ -1096,7 +1096,7 @@ const metricsConsumerFiles = [
   "app/listas/lib/listas-published-works-loader.ts",
   "app/seguindo/lib/seguindo-work-query-utils.ts",
   "app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
-  "app/painel-autor/page.tsx",
+  "app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
   "app/obra/[slug]/ObraDinamicaClient.tsx",
   "app/ler-capitulo/lib/ler-capitulo-metrics.ts"
 ];
