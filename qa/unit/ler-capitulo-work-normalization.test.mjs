@@ -8,6 +8,7 @@ const modulo = ler("../../app/ler-capitulo/lib/ler-capitulo-work-normalization.t
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const storage = ler("../../app/ler-capitulo/lib/ler-capitulo-local-storage.ts");
 const loader = ler("../../app/ler-capitulo/lib/ler-capitulo-work-read-loader.ts");
+const mutacoes = ler("../../app/ler-capitulo/lib/ler-capitulo-local-work-mutations.ts");
 const js = (source) => ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
@@ -87,9 +88,19 @@ test("página delega transformações mantendo carregamento e persistência fora
   for (const nome of ["normalizarObra", "calcularProgressoLeitura", "mesclarObraSupabaseComLocal"]) {
     assert.match(modulo, new RegExp(`export function ${nome}\\(`));
     assert.doesNotMatch(pagina, new RegExp(`function ${nome}\\(`));
-    assert.match(nome === "mesclarObraSupabaseComLocal" ? loader : pagina, new RegExp(`\\b${nome}\\(`));
+    assert.match(
+      nome === "mesclarObraSupabaseComLocal" ? loader : mutacoes,
+      new RegExp(`\\b${nome}\\(`),
+    );
   }
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-work-normalization"/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-local-work-mutations"/);
+  assert.match(pagina, /normalizarObrasLeitor\(/);
+  assert.match(pagina, /atualizarCapituloNasObrasLeitor\(/);
+  assert.match(
+    pagina,
+    /criarAcaoProgressoLeituraCapitulo\(\{[\s\S]*?normalizarObra,[\s\S]*?calcularProgressoLeitura,/,
+  );
   assert.match(loader, /export async function carregarObraSupabase\(/);
   assert.match(pagina, /useLerCapituloInitialLoad\(/);
   const inicializacao = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts");

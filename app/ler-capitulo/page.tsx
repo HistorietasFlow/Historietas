@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import {
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -16,15 +15,14 @@ import { supabase } from "../../lib/supabase/client";
 import DenunciaModal from "../../components/DenunciaModal";
 import AdultContentGate from "../../components/AdultContentGate";
 import { historietasThemeCss } from "../../lib/historietasTheme";
-import { criarSlugBase, formatarData } from "../../lib/utils";
 import {
-  acessoConteudo18Confirmado,
   ehClassificacao18,
 } from "../../lib/historietasAdultContent";
 import { useLerCapituloDesktopMode } from "./hooks/use-ler-capitulo-desktop-mode";
 import { useLerCapituloCommentsBodyLock } from "./hooks/use-ler-capitulo-comments-body-lock";
 import { useLerCapituloCommentReset } from "./hooks/use-ler-capitulo-comment-reset";
 import { useLerCapituloScrollProgress } from "./hooks/use-ler-capitulo-scroll-progress";
+import { useLerCapituloContent18Access } from "./hooks/use-ler-capitulo-content-18-access";
 import { focusBottomNavigationCss } from "./lib/ler-capitulo-focus-bottom-navigation-css";
 import { leitorPageCss } from "./lib/ler-capitulo-page-css";
 import {
@@ -77,6 +75,14 @@ import { marcarNotificacaoCapituloComoLidaSupabase, criarRegistrarNotificacaoInt
 import { criarAcoesComentariosCapitulo } from "./lib/ler-capitulo-comment-actions";
 import { criarAcoesInteracoesCapitulo } from "./lib/ler-capitulo-interaction-actions";
 import { criarAcaoProgressoLeituraCapitulo } from "./lib/ler-capitulo-reading-progress-action";
+import {
+  atualizarCapituloNasObrasLeitor,
+  normalizarObrasLeitor,
+} from "./lib/ler-capitulo-local-work-mutations";
+import {
+  criarStatusLeituraTexto,
+  criarVoltarHrefLeitor,
+} from "./lib/ler-capitulo-reader-display";
 import {
   focusPageStyle,
   fixedReadingProgressOuterStyle,
@@ -132,10 +138,6 @@ export default function LerCapituloPage() {
   const [progressoRolagem, setProgressoRolagem] = useState(0);
   const isDesktop = useLerCapituloDesktopMode();
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
-  const [controleAcesso18, setControleAcesso18] = useState<{
-    obraId: string;
-    status: "verificando" | "permitido" | "bloqueado";
-  }>({ obraId: "", status: "verificando" });
   const visualizacaoCapituloRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
   const curtidaCapituloSalvandoRef = useRef(false);
@@ -176,42 +178,13 @@ export default function LerCapituloPage() {
     [obraAtual, capituloId],
   );
 
-  const statusAcesso18 =
-    obraAtual && controleAcesso18.obraId === obraAtual.id
-      ? controleAcesso18.status
-      : "verificando";
-
-  useEffect(() => {
-    const atualizarAcessoTimer = window.setTimeout(() => {
-      if (!obraAtual) {
-        setControleAcesso18({ obraId: "", status: "verificando" });
-        return;
-      }
-
-      const proximoStatus = !ehClassificacao18(
-        obraAtual.classificacaoIndicativa,
-      )
-        ? "permitido"
-        : acessoConteudo18Confirmado()
-          ? "permitido"
-          : "bloqueado";
-
-      setControleAcesso18((controleAtual) => {
-        if (
-          controleAtual.obraId === obraAtual.id &&
-          controleAtual.status === proximoStatus
-        ) {
-          return controleAtual;
-        }
-
-        return { obraId: obraAtual.id, status: proximoStatus };
-      });
-    }, 0);
-
-    return () => {
-      window.clearTimeout(atualizarAcessoTimer);
-    };
-  }, [obraAtual]);
+  const {
+    statusAcesso18,
+    permitirAcesso18Atual,
+  } =
+    useLerCapituloContent18Access(
+      obraAtual,
+    );
 
 
   useLerCapituloInteractionData({
@@ -372,9 +345,10 @@ export default function LerCapituloPage() {
 
 
   function salvarObras(novasObras: ObraLocal[]) {
-    const obrasNormalizadas = novasObras.map((obra, index) =>
-      normalizarObra(obra, index)
-    );
+    const obrasNormalizadas =
+      normalizarObrasLeitor(
+        novasObras,
+      );
 
     salvarObrasPreservandoContas(obrasNormalizadas, usuarioIdLogado);
     setObras(obrasNormalizadas);
@@ -385,30 +359,15 @@ export default function LerCapituloPage() {
       return;
     }
 
-    const novasObras = obras.map((obra, obraIndex) => {
-      const obraNormalizada = normalizarObra(obra, obraIndex);
-
-      if (obraNormalizada.id !== obraAtual.id) {
-        return obraNormalizada;
-      }
-
-      const capitulosAtualizados = obraNormalizada.capitulos.map((capitulo) => {
-        if (capitulo.id !== capituloAtual.id) {
-          return capitulo;
-        }
-
-        return {
-          ...capitulo,
-          ...dados,
-        };
+    const novasObras =
+      atualizarCapituloNasObrasLeitor({
+        obras,
+        obraAtualId:
+          obraAtual.id,
+        capituloAtualId:
+          capituloAtual.id,
+        dados,
       });
-
-      return {
-        ...obraNormalizada,
-        capitulos: capitulosAtualizados,
-        progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
-      };
-    });
 
     salvarObras(novasObras);
   }
@@ -612,8 +571,8 @@ export default function LerCapituloPage() {
         titulo={obraAtual.titulo}
         avisos={obraAtual.avisosConteudo}
         language={language}
-        onConfirmar={() =>
-          setControleAcesso18({ obraId: obraAtual.id, status: "permitido" })
+        onConfirmar={
+          permitirAcesso18Atual
         }
         onVoltar={() => {
           if (window.history.length > 1) {
@@ -626,12 +585,14 @@ export default function LerCapituloPage() {
     );
   }
 
-  const voltarHref = `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`;
-  const statusLeituraTexto = capituloAtual.lido
-    ? capituloAtual.lidoEm
-      ? `Lido em ${formatarData(capituloAtual.lidoEm)}`
-      : "Lido"
-    : "Leitura em andamento";
+  const voltarHref =
+    criarVoltarHrefLeitor(
+      obraAtual,
+    );
+  const statusLeituraTexto =
+    criarStatusLeituraTexto(
+      capituloAtual,
+    );
 
   return (
     <main data-historietas-ler-capitulo-root="true" style={focusPageStyle}>

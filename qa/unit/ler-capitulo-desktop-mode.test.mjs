@@ -33,6 +33,13 @@ const inicializacao = readFileSync(
   new URL("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts", import.meta.url),
   "utf8",
 );
+const acesso18 = readFileSync(
+  new URL(
+    "../../app/ler-capitulo/hooks/use-ler-capitulo-content-18-access.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useLerCapituloDesktopMode preserva o lifecycle responsivo do leitor", () => {
   assert.match(hook, /^"use client";/);
@@ -90,7 +97,11 @@ test("Leitor delega apenas o modo desktop e preserva consumidores responsivos", 
     /<section style=\{isDesktop \? desktopContainerStyle : containerStyle\}>/,
   );
   assert.match(pagina, /await supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /acessoConteudo18Confirmado\(\)/);
+  assert.match(
+    pagina,
+    /import \{ useLerCapituloContent18Access \} from "\.\/hooks\/use-ler-capitulo-content-18-access";/,
+  );
+  assert.match(acesso18, /acessoConteudo18Confirmado\(\)/);
   assert.match(pagina, /useLerCapituloInitialLoad\(\{/);
   assert.match(inicializacao, /async function carregarDados\(\)/);
   assert.match(pagina, /criarAcoesComentariosCapitulo\(\{/);
