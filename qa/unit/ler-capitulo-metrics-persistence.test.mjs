@@ -9,6 +9,7 @@ const pagina = ler("../../app/ler-capitulo/page.tsx");
 const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-interaction-persistence.ts");
 const metricas = ler("../../app/ler-capitulo/lib/ler-capitulo-metrics.ts");
 const social = ler("../../app/ler-capitulo/lib/ler-capitulo-social-persistence.ts");
+const commentPersistence = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 const transpilar = (codigo) => typescript.transpileModule(codigo, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
@@ -41,7 +42,9 @@ test("os seis helpers preservam literalmente os corpos e a nova fronteira", () =
   }
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-interaction-persistence";/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-metrics";/);
-  assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-comment-persistence";/);
+  assert.doesNotMatch(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(commentPersistence, /export async function salvarComentarioCapituloSupabase\(/);
   assert.doesNotMatch(persistencia + metricas, /function salvarComentarioCapituloSupabase\(/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-social-persistence"/);
   for (const movido of ["marcarNotificacaoCapituloComoLidaSupabase", "registrarAtividadeDiarioLeitor"]) {
