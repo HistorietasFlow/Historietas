@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import { SvgIcon } from "./components/ajuda-svg-icon";
 import {
   AjudaCategoriesSection,
 } from "./components/ajuda-categories-section";
@@ -26,35 +24,21 @@ import {
   AjudaSupportTickets,
 } from "./components/ajuda-support-tickets";
 import {
+  AjudaSupportMessages,
+} from "./components/ajuda-support-messages";
+import {
+  AjudaSupportSectionShell,
+} from "./components/ajuda-support-section-shell";
+import {
+  AjudaTechnicalSupportForm,
+} from "./components/ajuda-technical-support-form";
+import {
   ajudaPageCss,
 } from "./lib/ajuda-page-css";
 import {
   containerStyle,
   pageStyle,
-  sectionHeadingStyle,
-  sectionKickerStyle,
-  sectionStyle,
-  sectionTitleStyle,
 } from "./lib/ajuda-layout-styles";
-import {
-  supportCardStyle,
-  supportCounterStyle,
-  supportEnvironmentNoteStyle,
-  supportErrorStyle,
-  supportFieldStyle,
-  supportFormActionsStyle,
-  supportFormGridStyle,
-  supportFormStyle,
-  supportInputStyle,
-  supportLabelStyle,
-  supportLoginLinkStyle,
-  supportLoginNoticeStyle,
-  supportSeparationIconStyle,
-  supportSeparationNoticeStyle,
-  supportSeparationTextStyle,
-  supportSuccessStyle,
-  supportTextareaStyle,
-} from "./lib/ajuda-support-styles";
 import {
   CATEGORIAS_AJUDA,
   PERGUNTAS_AJUDA,
@@ -62,7 +46,6 @@ import {
   type TextoTraduzido,
 } from "./lib/ajuda-content";
 import {
-  CATEGORIAS_PROBLEMA_TECNICO,
   type CategoriaProblemaTecnico,
   type ProblemaTecnicoResumo,
   type ProblemaTecnicoRpcRow,
@@ -318,217 +301,46 @@ export default function AjudaPage() {
           }}
         />
 
-        <section
-          id="problema-tecnico"
-          style={sectionStyle}
-          aria-labelledby="problema-tecnico-titulo"
+        <AjudaSupportSectionShell
+          language={language}
         >
-          <div style={sectionHeadingStyle}>
-            <div>
-              <span style={sectionKickerStyle}>
-                {t({
-                  pt: "SUPORTE TÉCNICO",
-                  en: "TECHNICAL SUPPORT",
-                  es: "SOPORTE TÉCNICO",
-                })}
-              </span>
-              <h2 id="problema-tecnico-titulo" style={sectionTitleStyle}>
-                {t({
-                  pt: "Relatar um problema técnico",
-                  en: "Report a technical issue",
-                  es: "Informar un problema técnico",
-                })}
-              </h2>
-            </div>
-          </div>
+          <AjudaSupportMessages
+            mensagem={mensagemProblema}
+            erro={erroProblema}
+            usuarioAutenticado={usuarioAutenticado}
+            language={language}
+          />
 
-          <div style={supportCardStyle}>
-            <div style={supportSeparationNoticeStyle}>
-              <span style={supportSeparationIconStyle}>
-                <SvgIcon name="settings" size={23} strokeWidth={2.1} />
-              </span>
-              <div style={supportSeparationTextStyle}>
-                <strong>
-                  {t({
-                    pt: "Falha técnica não é denúncia",
-                    en: "A technical issue is not a report",
-                    es: "Una falla técnica no es una denuncia",
-                  })}
-                </strong>
-                <p>
-                  {t({
-                    pt: "Use este formulário para erros, travamentos, páginas que não carregam ou recursos que não funcionam. Para conteúdo, perfis ou comentários que violem as regras, use o botão Denunciar no próprio conteúdo.",
-                    en: "Use this form for errors, crashes, pages that do not load, or features that do not work. For content, profiles, or comments that violate the rules, use the Report button on that content.",
-                    es: "Usa este formulario para errores, bloqueos, páginas que no cargan o funciones que no funcionan. Para contenido, perfiles o comentarios que infrinjan las reglas, usa el botón Denunciar en ese contenido.",
-                  })}
-                </p>
-              </div>
-            </div>
+          <AjudaTechnicalSupportForm
+            categoria={categoriaProblema}
+            pagina={paginaProblema}
+            titulo={tituloProblema}
+            descricao={descricaoProblema}
+            enviando={enviandoProblema}
+            usuarioAutenticado={usuarioAutenticado}
+            language={language}
+            onCategoriaChange={(valor) =>
+              setCategoriaProblema(
+                normalizarCategoriaProblemaTecnico(
+                  valor,
+                ),
+              )
+            }
+            onPaginaChange={setPaginaProblema}
+            onTituloChange={setTituloProblema}
+            onDescricaoChange={setDescricaoProblema}
+            onSubmit={enviarProblemaTecnico}
+          />
 
-            {mensagemProblema ? (
-              <div role="status" style={supportSuccessStyle}>
-                {mensagemProblema}
-              </div>
-            ) : null}
-
-            {erroProblema ? (
-              <div role="alert" style={supportErrorStyle}>
-                {erroProblema}
-              </div>
-            ) : null}
-
-            {usuarioAutenticado === false ? (
-              <div style={supportLoginNoticeStyle}>
-                <span>
-                  {t({
-                    pt: "Você precisa entrar na conta para enviar e acompanhar chamados.",
-                    en: "You need to sign in to submit and track tickets.",
-                    es: "Debes iniciar sesión para enviar y seguir casos.",
-                  })}
-                </span>
-                <Link
-                  href="/login?redirectTo=%2Fajuda%23problema-tecnico"
-                  style={supportLoginLinkStyle}
-                >
-                  {t({ pt: "Entrar", en: "Sign in", es: "Iniciar sesión" })}
-                </Link>
-              </div>
-            ) : null}
-
-            <form onSubmit={enviarProblemaTecnico} style={supportFormStyle}>
-              <div style={supportFormGridStyle}>
-                <label style={supportFieldStyle}>
-                  <span style={supportLabelStyle}>
-                    {t({ pt: "Categoria", en: "Category", es: "Categoría" })}
-                  </span>
-                  <select
-                    className="ajuda-support-control"
-                    value={categoriaProblema}
-                    onChange={(event) =>
-                      setCategoriaProblema(
-                        normalizarCategoriaProblemaTecnico(event.target.value),
-                      )
-                    }
-                    disabled={enviandoProblema}
-                    style={supportInputStyle}
-                  >
-                    {CATEGORIAS_PROBLEMA_TECNICO.map((categoria) => (
-                      <option key={categoria.valor} value={categoria.valor}>
-                        {t(categoria.rotulo)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label style={supportFieldStyle}>
-                  <span style={supportLabelStyle}>
-                    {t({
-                      pt: "Página onde aconteceu",
-                      en: "Page where it happened",
-                      es: "Página donde ocurrió",
-                    })}
-                  </span>
-                  <input
-                    className="ajuda-support-control"
-                    type="url"
-                    value={paginaProblema}
-                    onChange={(event) => setPaginaProblema(event.target.value)}
-                    maxLength={700}
-                    disabled={enviandoProblema}
-                    placeholder="https://historietas.com.br/..."
-                    style={supportInputStyle}
-                  />
-                </label>
-              </div>
-
-              <label style={supportFieldStyle}>
-                <span style={supportLabelStyle}>
-                  {t({
-                    pt: "Título do problema",
-                    en: "Issue title",
-                    es: "Título del problema",
-                  })}
-                </span>
-                <input
-                  className="ajuda-support-control"
-                  type="text"
-                  value={tituloProblema}
-                  onChange={(event) => setTituloProblema(event.target.value)}
-                  maxLength={120}
-                  disabled={enviandoProblema}
-                  placeholder={t({
-                    pt: "Ex.: o capítulo não abre",
-                    en: "E.g.: the chapter will not open",
-                    es: "Ej.: el capítulo no se abre",
-                  })}
-                  style={supportInputStyle}
-                />
-                <span style={supportCounterStyle}>
-                  {tituloProblema.length}/120
-                </span>
-              </label>
-
-              <label style={supportFieldStyle}>
-                <span style={supportLabelStyle}>
-                  {t({
-                    pt: "O que aconteceu?",
-                    en: "What happened?",
-                    es: "¿Qué ocurrió?",
-                  })}
-                </span>
-                <textarea
-                  className="ajuda-support-control"
-                  value={descricaoProblema}
-                  onChange={(event) => setDescricaoProblema(event.target.value)}
-                  maxLength={3000}
-                  rows={6}
-                  disabled={enviandoProblema}
-                  placeholder={t({
-                    pt: "Explique o que tentou fazer, o que apareceu na tela e se o problema continua acontecendo.",
-                    en: "Explain what you tried to do, what appeared on screen, and whether the problem is still happening.",
-                    es: "Explica qué intentaste hacer, qué apareció en pantalla y si el problema continúa.",
-                  })}
-                  style={supportTextareaStyle}
-                />
-                <span style={supportCounterStyle}>
-                  {descricaoProblema.length}/3000
-                </span>
-              </label>
-
-              <div style={supportFormActionsStyle}>
-                <span style={supportEnvironmentNoteStyle}>
-                  {t({
-                    pt: "O navegador e o tamanho da tela serão enviados automaticamente para ajudar no diagnóstico.",
-                    en: "Your browser and screen size will be sent automatically to help diagnose the issue.",
-                    es: "El navegador y el tamaño de pantalla se enviarán automáticamente para ayudar en el diagnóstico.",
-                  })}
-                </span>
-                <button
-                  type="submit"
-                  className="ajuda-submit-ticket-button"
-                  disabled={enviandoProblema || usuarioAutenticado === false}
-                >
-                  {enviandoProblema
-                    ? t({ pt: "Enviando...", en: "Submitting...", es: "Enviando..." })
-                    : t({
-                        pt: "Enviar problema técnico",
-                        en: "Submit technical issue",
-                        es: "Enviar problema técnico",
-                      })}
-                </button>
-              </div>
-            </form>
-
-            {usuarioAutenticado &&
+          {usuarioAutenticado &&
             (carregandoChamados || chamadosTecnicos.length > 0) ? (
-              <AjudaSupportTickets
-                carregando={carregandoChamados}
-                chamados={chamadosTecnicos}
-                language={language}
-              />
-            ) : null}
-          </div>
-        </section>
+            <AjudaSupportTickets
+              carregando={carregandoChamados}
+              chamados={chamadosTecnicos}
+              language={language}
+            />
+          ) : null}
+        </AjudaSupportSectionShell>
 
         <AjudaShortcutsSection
           language={language}
