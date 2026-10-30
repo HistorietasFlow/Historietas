@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const contentViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-content-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const libraryViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-library-view-state.ts",
@@ -68,11 +75,11 @@ test("componente preserva limite, loading, vazio e links da timeline", () => {
 
 test("Perfil de Autor deriva as atividades do Diário uma única vez", () => {
   assert.match(
-    pagina,
+    contentViewStateSource,
     /const atividadesDiarioPerfil = diarioPerfil\.atividades;/,
   );
   assert.equal(
-    (pagina.match(/diarioPerfil\.atividades/g) || []).length,
+    (contentViewStateSource.match(/diarioPerfil\.atividades/g) || []).length,
     1,
   );
   assert.match(

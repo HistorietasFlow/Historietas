@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const contentViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-content-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileSummaryStatsDependencies = {
   formatarGeneroPerfilAutor(genero) {
@@ -203,11 +210,11 @@ test("página reutiliza especialidades já derivadas no resumo", () => {
 
 test("página usa resumo de estatísticas sem useMemo", () => {
   assert.match(
-    pagina,
+    contentViewStateSource,
     /\} = obterResumoEstatisticasPerfilAutor\(perfilParaMostrar\);/,
   );
   assert.doesNotMatch(
-    pagina,
+    contentViewStateSource,
     /obterResumoEstatisticasPerfilAutor\(perfilParaMostrar\)[\s\S]{0,120}\[perfilParaMostrar\]/,
   );
 });

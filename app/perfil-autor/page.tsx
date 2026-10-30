@@ -91,14 +91,11 @@ import {
 import { criarPerfilUsuarioRemotoComoAutor } from "./lib/data-normalizers";
 import {
   obterMensagemDiarioVazioPerfilAutor,
-  obterTituloDiarioPerfilAutor,
 } from "./lib/profile-diary-local-utils";
 import {
   criarHrefListaDiarioPerfilAutor,
   diarioSemItensPerfilAutor,
 } from "./lib/profile-diary-item-utils";
-import { montarItensDiarioTudoPerfil } from "./lib/profile-diary-merge-utils";
-import { criarLinksComunidadePerfilAutor } from "./lib/profile-community-links";
 import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
 import {
   obterVisibilidadeAbasPerfilAutor,
@@ -107,7 +104,6 @@ import {
 import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
 import { obterEstadoVisualSeguimentoPerfilAutor } from "./lib/profile-follow-view-state";
 import {
-  obterAriaLabelCopiarUsernamePerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
   obterDadosNotificacoesPerfilAutor,
@@ -119,20 +115,16 @@ import {
   obterInicialAvatarPerfilAutor,
   obterRotuloAcaoBloqueioPerfilAutor,
   obterTituloSobrePerfilAutor,
-  obterUsernameExibidoPerfilAutor,
-  obterRotuloVisibilidadeUsernamePerfilAutor,
   obterRotulosAcoesEditorPerfilAutor,
 } from "./lib/profile-display-utils";
 import { obterEstadoVisualAvaliacaoPerfilAutor } from "./lib/profile-rating-view-state";
 import {
-  obterMensagemObrasVaziasPerfilAutor,
-  obterObraMenuAbertaPerfilAutor,
-  obterObrasVisiveisPerfilAutor,
   obrasSemResultadosPerfilAutor,
   obterTotalObrasConcluidasPerfilAutor,
 } from "./lib/profile-work-display-utils";
 import { obterEstadoVisualDestaquesPerfilAutor } from "./lib/profile-highlights-view-state";
-import { obterResumoEstatisticasPerfilAutor } from "./lib/profile-summary-stats";
+import { obterEstadoVisualConteudoPerfilAutor } from "./lib/profile-content-view-state";
+import { obterEstadoVisualShellPerfilAutor } from "./lib/profile-shell-view-state";
 import {
   bibliotecaSemItensAtivosPerfilAutor,
 } from "./lib/profile-library-display-utils";
@@ -157,7 +149,6 @@ import { ProfileEditor } from "./components/profile-editor";
 import { ProfileHeader } from "./components/profile-header";
 import { ProfileReportModals } from "./components/profile-report-modals";
 import {
-  obterEstilosResponsivosPerfilAutor,
   perfilAutorThemeCss,
   pageStyle,
   menuItemStyle,
@@ -710,19 +701,6 @@ function PerfilAutorPageContent() {
     autenticacaoCarregada,
   });
 
-  const obrasDoPerfilFiltradas = obterObrasVisiveisPerfilAutor({
-    perfilParaMostrar,
-    perfilPertenceAoUsuario,
-  });
-  const mensagemObrasVazias = obterMensagemObrasVaziasPerfilAutor({
-    totalObras: totalObrasPerfil,
-    podeEditarPerfil,
-  });
-  const tituloDiarioPerfil = obterTituloDiarioPerfilAutor({
-    podeEditarPerfil,
-    nomePerfil: perfilNome,
-  });
-
   const {
     obrasEmDestaque,
     temObrasEmDestaque,
@@ -791,10 +769,6 @@ function PerfilAutorPageContent() {
     setDiarioPerfil,
   });
 
-  const itensDiarioTudo = montarItensDiarioTudoPerfil(diarioPerfil);
-  const atividadesDiarioPerfil = diarioPerfil.atividades;
-  const diarioPerfilCarregando = diarioPerfil.carregando;
-
   const { renderizarItemDiarioPerfil } =
     usePerfilAutorDiaryItemRenderer(perfilAutorId);
 
@@ -816,17 +790,27 @@ function PerfilAutorPageContent() {
   });
 
   const {
+    obrasDoPerfilFiltradas,
+    mensagemObrasVazias,
+    tituloDiarioPerfil,
+    itensDiarioTudo,
+    atividadesDiarioPerfil,
+    diarioPerfilCarregando,
     generosEspecialidadesPerfil,
     totalVisualizacoesPerfil,
     totalRascunhosPerfil,
     totalObrasSemCapitulosPerfil,
     temObrasSemCapitulosPerfil,
-  } = obterResumoEstatisticasPerfilAutor(perfilParaMostrar);
-
-  const obraMenuAberta = obterObraMenuAbertaPerfilAutor(
-    obrasDoPerfilFiltradas,
+    obraMenuAberta,
+  } = obterEstadoVisualConteudoPerfilAutor({
+    perfilParaMostrar,
+    perfilPertenceAoUsuario,
+    totalObrasPerfil,
+    podeEditarPerfil,
+    perfilNome,
+    diarioPerfil,
     obraMenuAbertoId,
-  );
+  });
 
   const { renderizarObraPerfilAutor } = usePerfilAutorWorkItemRenderer({
     isDesktop,
@@ -867,26 +851,23 @@ function PerfilAutorPageContent() {
     avatarActionsAtualStyle,
     avatarSmallButtonAtualStyle,
     avatarRemoveButtonAtualStyle,
-    profileActionsAtualStyle,
-    profileVisitorActionsAtualStyle,
     profileHeaderAtualStyle,
     topWaterFadeAtualStyle,
     menuSheetAtualStyle,
-  } = obterEstilosResponsivosPerfilAutor(isDesktop);
-  const profileActionsExibicaoStyle = podeEditarPerfil
-    ? profileActionsAtualStyle
-    : profileVisitorActionsAtualStyle;
-  const ariaLabelAlternarUsernameCabecalho =
-    obterRotuloVisibilidadeUsernamePerfilAutor(usernameCabecalhoVisivel);
-  const ariaLabelCopiarUsernameCabecalho =
-    obterAriaLabelCopiarUsernamePerfilAutor(autorHandlePerfil);
-  const usernameExibidoCabecalho =
-    obterUsernameExibidoPerfilAutor(autorHandlePerfil);
-  const {
-    geral: comunidadeAutorHref,
-    teorias: comunidadeAutorTeoriasHref,
-    reviews: comunidadeAutorReviewsHref,
-  } = criarLinksComunidadePerfilAutor(perfilNome);
+    profileActionsExibicaoStyle,
+    ariaLabelAlternarUsernameCabecalho,
+    ariaLabelCopiarUsernameCabecalho,
+    usernameExibidoCabecalho,
+    comunidadeAutorHref,
+    comunidadeAutorTeoriasHref,
+    comunidadeAutorReviewsHref,
+  } = obterEstadoVisualShellPerfilAutor({
+    isDesktop,
+    podeEditarPerfil,
+    usernameCabecalhoVisivel,
+    autorHandlePerfil,
+    perfilNome,
+  });
 
   const { salvarEdicaoPerfilAutor } =
     usePerfilAutorProfileEditorSaveActions({

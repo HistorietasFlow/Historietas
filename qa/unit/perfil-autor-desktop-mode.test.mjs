@@ -17,6 +17,13 @@ const stylesSource = readFileSync(
   new URL("../../app/perfil-autor/styles.ts", import.meta.url),
   "utf8",
 );
+const shellViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-shell-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileLoadSyncSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-profile-load-sync.ts",
@@ -132,10 +139,10 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
 test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
   assert.match(
     pagina,
-    /obterEstilosResponsivosPerfilAutor,[\s\S]*?from "\.\/styles";/,
+    /import \{ obterEstadoVisualShellPerfilAutor \} from "\.\/lib\/profile-shell-view-state";/,
   );
   assert.match(
-    pagina,
+    shellViewStateSource,
     /\} = obterEstilosResponsivosPerfilAutor\(isDesktop\);/,
   );
   assert.match(
@@ -161,7 +168,7 @@ test("estilos responsivos do Perfil de Autor ficam centralizados", () => {
   );
 
   assert.match(
-    pagina,
+    shellViewStateSource,
     /const profileActionsExibicaoStyle = podeEditarPerfil[\s\S]{0,120}\? profileActionsAtualStyle[\s\S]{0,120}: profileVisitorActionsAtualStyle;/,
   );
   assert.match(
