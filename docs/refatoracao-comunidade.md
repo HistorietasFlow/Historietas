@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil do Autor — Fase 7
+
+- A resolução pura do perfil-alvo foi movida para helper dedicado, preservando agrupamento de autores, fallback de perfil remoto, seleção, propriedade, redirect de login e dados-base usados pela página.
+
 ## Perfil do Autor — Fase 6
 
 - Os estados visuais derivados do conteúdo e do shell do Perfil do Autor foram movidos para helpers puros dedicados, preservando Diário, métricas, seleção, estilos responsivos, rótulos acessíveis e links da Comunidade.

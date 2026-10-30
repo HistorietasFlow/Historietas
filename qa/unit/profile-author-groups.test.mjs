@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const targetViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-target-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__profileAuthorGroupsDependencies = {
   criarChaveAutorPerfil(autorId, nome) {
@@ -171,13 +178,14 @@ test("lista vazia retorna nenhum perfil", () => {
 });
 
 
-test("página monta perfis de autores sem useMemo", () => {
+test("helper monta perfis de autores sem useMemo", () => {
   assert.match(
-    pagina,
+    targetViewStateSource,
     /const perfisAutores = montarPerfisAutoresPorObras\(/,
   );
   assert.doesNotMatch(
-    pagina,
+    targetViewStateSource,
     /const perfisAutores = useMemo/,
   );
+  assert.match(pagina, /obterEstadoAlvoPerfilAutor\(/);
 });

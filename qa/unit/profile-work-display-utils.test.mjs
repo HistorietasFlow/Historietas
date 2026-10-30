@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const targetViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-target-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const contentViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-content-view-state.ts",
@@ -342,7 +349,7 @@ test("página delega o estado vazio de Obras ao helper", () => {
 
 test("página deriva o total de obras uma única vez da coleção do perfil", () => {
   assert.match(
-    pagina,
+    targetViewStateSource,
     /const totalObrasPerfil = obrasPerfil\.length;/,
   );
   assert.equal(

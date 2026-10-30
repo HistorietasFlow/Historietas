@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const targetViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-target-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const communityViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-community-view-state.ts",
@@ -161,21 +168,21 @@ test("preserva autor não encontrado e propriedade pelo ID da URL", () => {
 });
 
 
-test("página deriva as obras do perfil uma vez e reutiliza nos cálculos", () => {
+test("helper deriva as obras do perfil uma vez e a página reutiliza nos cálculos", () => {
   assert.match(
-    pagina,
+    targetViewStateSource,
     /const obrasPerfil = perfilParaMostrar\?\.obras \|\| \[\];/,
   );
   assert.equal(
-    (pagina.match(/perfilParaMostrar\?\.obras \|\| \[\]/g) || []).length,
+    (targetViewStateSource.match(/perfilParaMostrar\?\.obras \|\| \[\]/g) || []).length,
     1,
   );
   assert.doesNotMatch(
-    pagina,
+    targetViewStateSource,
     /perfilParaMostrar\?\.obras\.length \|\| 0/,
   );
   assert.match(
-    pagina,
+    targetViewStateSource,
     /const totalObrasPerfil = obrasPerfil\.length;/,
   );
   assert.match(
@@ -189,13 +196,13 @@ test("página deriva as obras do perfil uma vez e reutiliza nos cálculos", () =
 });
 
 
-test("página deriva o nome do perfil uma vez e reutiliza nas exibições", () => {
+test("helper deriva o nome do perfil uma vez e a página o reutiliza nas exibições", () => {
   assert.match(
-    pagina,
+    targetViewStateSource,
     /const perfilNome = perfilParaMostrar\?\.nome \|\| "";/,
   );
   assert.equal(
-    (pagina.match(/perfilParaMostrar\?\.nome \|\| ""/g) || []).length,
+    (targetViewStateSource.match(/perfilParaMostrar\?\.nome \|\| ""/g) || []).length,
     1,
   );
   assert.ok(
@@ -229,13 +236,13 @@ test("página usa shorthand ao repassar o ID derivado do perfil", () => {
 });
 
 
-test("página deriva o ID do perfil uma vez e reutiliza nas dependências", () => {
+test("helper deriva o ID do perfil uma vez e a página o reutiliza nas dependências", () => {
   assert.match(
-    pagina,
+    targetViewStateSource,
     /const perfilAutorId = perfilParaMostrar\?\.autorId \|\| "";/,
   );
   assert.equal(
-    (pagina.match(/perfilParaMostrar\?\.autorId \|\| ""/g) || []).length,
+    (targetViewStateSource.match(/perfilParaMostrar\?\.autorId \|\| ""/g) || []).length,
     1,
   );
   assert.ok(
@@ -257,19 +264,20 @@ test("página deriva o ID do perfil uma vez e reutiliza nas dependências", () =
 });
 
 
-test("página resolve perfil remoto e estado exibido sem useMemo", () => {
+test("helper resolve perfil remoto e estado exibido sem useMemo", () => {
   assert.match(
-    pagina,
+    targetViewStateSource,
     /const perfilUsuarioRemotoComoAutor = perfilUsuarioRemoto\?\.userId[\s\S]*?criarPerfilUsuarioRemotoComoAutor\(perfilUsuarioRemoto\)/,
   );
   assert.match(
-    pagina,
+    targetViewStateSource,
     /\} = resolverEstadoPerfilAutor\(\{/,
   );
   assert.doesNotMatch(
-    pagina,
+    targetViewStateSource,
     /resolverEstadoPerfilAutor\([\s\S]{0,400}useMemo|useMemo\([\s\S]{0,400}resolverEstadoPerfilAutor/,
   );
+  assert.match(pagina, /obterEstadoAlvoPerfilAutor\(/);
 });
 
 
