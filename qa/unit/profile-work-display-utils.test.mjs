@@ -25,6 +25,13 @@ const workItemRendererSource = readFileSync(
   ),
   "utf8",
 );
+const libraryItemRendererSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-library-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const heroActionsSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-hero-actions.tsx",
@@ -1257,11 +1264,12 @@ test("dados do card da Biblioteca centralizam href, métricas e estado do menu",
 
 test("página delega os dados derivados do card da Biblioteca", () => {
   assert.match(
-    pagina,
-    /obterDadosCardBibliotecaPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    libraryItemRendererSource,
+    /import \{ obterDadosCardBibliotecaPerfilAutor \} from "\.\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosCardBibliotecaPerfilAutor\(/g) || []).length,
+    (libraryItemRendererSource.match(/obterDadosCardBibliotecaPerfilAutor\(/g) || [])
+      .length,
     1,
   );
   assert.doesNotMatch(

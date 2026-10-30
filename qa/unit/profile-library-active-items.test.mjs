@@ -4,6 +4,13 @@ import test from "node:test";
 
 const helper = readFileSync(new URL("../../app/perfil-autor/lib/profile-library-active-items.ts", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/perfil-autor/page.tsx", import.meta.url), "utf8");
+const libraryItemRendererSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-library-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const contentState = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-library-content-state.tsx",
@@ -72,8 +79,16 @@ test("página mantém as derivações e o callback da Biblioteca antes de delega
     /import \{ ProfileLibraryPanel \} from "\.\/components\/profile-library-panel";/,
   );
   assert.match(
+    libraryItemRendererSource,
+    /const renderizarItemBiblioteca = \(item: ItemBibliotecaPerfil\) => \{[\s\S]*?obterDadosCardBibliotecaPerfilAutor\([\s\S]*?item,[\s\S]*?totaisInteracoesObras,[\s\S]*?bibliotecaMenuAbertoChave,[\s\S]*?\);/,
+  );
+  assert.match(
     pagina,
-    /const renderizarItemBiblioteca = \([\s\S]*?item: \(typeof itensBibliotecaAtivos\)\[number\],[\s\S]*?obterDadosCardBibliotecaPerfilAutor\([\s\S]*?item,[\s\S]*?totaisInteracoesObras,[\s\S]*?bibliotecaMenuAbertoChave,[\s\S]*?\);/,
+    /import \{ usePerfilAutorLibraryItemRenderer \} from "\.\/hooks\/use-perfil-autor-library-item-renderer";/,
+  );
+  assert.match(
+    pagina,
+    /const \{ renderizarItemBiblioteca \} = usePerfilAutorLibraryItemRenderer\(\{[\s\S]*?isDesktop,[\s\S]*?totaisInteracoesObras,[\s\S]*?bibliotecaMenuAbertoChave,[\s\S]*?setBibliotecaMenuAbertoChave,[\s\S]*?\}\);/,
   );
   assert.match(
     pagina,

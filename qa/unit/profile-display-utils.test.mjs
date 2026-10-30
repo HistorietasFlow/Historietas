@@ -18,6 +18,13 @@ const workItemRendererSource = readFileSync(
   ),
   "utf8",
 );
+const libraryItemRendererSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-library-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const heroIdentitySource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-hero-identity.tsx",
@@ -593,16 +600,17 @@ test("alternância de menu fecha o alvo atual e abre outro alvo", () => {
 
 
 test("página delega a alternância dos menus de obra e Biblioteca ao helper", () => {
-  assert.match(
-    pagina,
-    /alternarIdentificadorMenuPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
-  );
   assert.equal(
     (pagina.match(/alternarIdentificadorMenuPerfilAutor\(/g) || []).length,
-    1,
+    0,
   );
   assert.equal(
     (workItemRendererSource.match(/alternarIdentificadorMenuPerfilAutor\(/g) || [])
+      .length,
+    1,
+  );
+  assert.equal(
+    (libraryItemRendererSource.match(/alternarIdentificadorMenuPerfilAutor\(/g) || [])
       .length,
     1,
   );

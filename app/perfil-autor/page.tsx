@@ -49,6 +49,8 @@ import { usePerfilAutorProfileEditorSaveActions } from "./hooks/use-perfil-autor
 import { usePerfilAutorHighlightRenderer } from "./hooks/use-perfil-autor-highlight-renderer";
 import { usePerfilAutorDiaryItemRenderer } from "./hooks/use-perfil-autor-diary-item-renderer";
 import { usePerfilAutorWorkItemRenderer } from "./hooks/use-perfil-autor-work-item-renderer";
+import { usePerfilAutorCommunityPostRenderer } from "./hooks/use-perfil-autor-community-post-renderer";
+import { usePerfilAutorLibraryItemRenderer } from "./hooks/use-perfil-autor-library-item-renderer";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -60,7 +62,6 @@ import type {
   ObraLocal,
   PerfisAutoresSalvos,
   PerfilUsuarioRemoto,
-  PublicacaoComunidadePerfil,
   TotaisInteracoesObrasPerfilAutor,
 } from "./types";
 import {
@@ -90,13 +91,11 @@ import {
   obterAriaLabelsEstatisticasComunidadePerfilAutor,
   obterAvisoComunidadeVaziaPerfilAutor,
   comunidadeSemPublicacoesRecentesPerfilAutor,
-  obterDadosPublicacaoRecenteComunidadePerfilAutor,
   obterPaddingInferiorPublicacaoComunidadePerfilAutor,
   obterTituloComunidadePerfilAutor,
   obterValoresEstatisticasComunidadePerfilAutor,
 } from "./lib/profile-community-publication-utils";
 import {
-  dataDiarioPerfilFormatada,
   obterMensagemDiarioVazioPerfilAutor,
   obterTituloDiarioPerfilAutor,
 } from "./lib/profile-diary-local-utils";
@@ -118,7 +117,6 @@ import {
   obterEstadoSeguimentoPerfilAutor,
 } from "./lib/profile-follow-display-utils";
 import {
-  alternarIdentificadorMenuPerfilAutor,
   obterAriaLabelCopiarUsernamePerfilAutor,
   obterBioSobreExibicaoPerfilAutor,
   obterDadosDenunciaConteudoPerfilAutor,
@@ -140,7 +138,6 @@ import {
   obterVisibilidadeAcoesAvaliacaoPerfilAutor,
 } from "./lib/profile-rating-display-utils";
 import {
-  obterDadosCardBibliotecaPerfilAutor,
   obterDadosCurtidaTopFivePerfilAutor,
   obterMensagemObrasVaziasPerfilAutor,
   obterMensagemTopFiveVazioPerfilAutor,
@@ -170,7 +167,6 @@ import {
 import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
-import { LibraryItemCard } from "./components/library-item-card";
 import { ProfileRatingsPanel } from "./components/profile-ratings-panel";
 import { ProfileNavigationPanel } from "./components/profile-navigation-panel";
 import { ProfileHero } from "./components/profile-hero";
@@ -180,7 +176,6 @@ import { ProfileHighlightsPanel } from "./components/profile-highlights-panel";
 import { ProfileLibraryPanel } from "./components/profile-library-panel";
 import { ProfileCommunityTab } from "./components/profile-community-tab";
 import { ProfileTabContent } from "./components/profile-tab-content";
-import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksPanel } from "./components/profile-works-panel";
@@ -659,48 +654,6 @@ function PerfilAutorPageContent() {
     });
   const paddingInferiorPublicacaoComunidade =
     obterPaddingInferiorPublicacaoComunidadePerfilAutor(podeEditarPerfil);
-  const renderizarPublicacaoRecenteComunidade = (
-    publicacao: PublicacaoComunidadePerfil,
-  ) => {
-    const dadosPublicacao =
-      obterDadosPublicacaoRecenteComunidadePerfilAutor(
-        publicacao,
-      );
-
-    return (
-      <ProfileCommunityPostItem
-        key={publicacao.id}
-        publicacao={publicacao}
-        href={dadosPublicacao.href}
-        ariaLabel={dadosPublicacao.ariaLabel}
-        resumo={dadosPublicacao.resumo}
-        totalOpcoesEnquete={
-          dadosPublicacao.totalOpcoesEnquete
-        }
-        exibirInfoEnquete={
-          dadosPublicacao.exibirInfoEnquete
-        }
-        exibirObraRelacionada={
-          dadosPublicacao.exibirObraRelacionada
-        }
-        paddingBottom={
-          paddingInferiorPublicacaoComunidade
-        }
-        dateLabel={dataDiarioPerfilFormatada(
-          publicacao.criadoEm,
-        )}
-        showReportButton={perfilVisitante}
-        onReport={() =>
-          abrirDenunciaConteudoPerfil(
-            "post",
-            publicacao.id,
-            dadosPublicacao.resumo,
-          )
-        }
-      />
-    );
-  };
-
   const dadosDenunciaPerfil = obterDadosDenunciaPerfilAutor(
     perfilParaMostrar,
   );
@@ -746,6 +699,13 @@ function PerfilAutorPageContent() {
       setDenunciaPerfilAberta,
       setObraMenuAbertoId,
       setAlvoDenunciaConteudoPerfil,
+    });
+
+  const { renderizarPublicacaoRecenteComunidade } =
+    usePerfilAutorCommunityPostRenderer({
+      paddingInferiorPublicacaoComunidade,
+      perfilVisitante,
+      abrirDenunciaConteudoPerfil,
     });
   const { abrirEditorPerfil, fecharEditorPerfil } =
     usePerfilAutorProfileEditorActions({
@@ -997,42 +957,12 @@ function PerfilAutorPageContent() {
   );
   const mensagemBibliotecaVazia =
     obterMensagemBibliotecaVaziaPerfil(rotuloBibliotecaAtiva);
-  const renderizarItemBiblioteca = (
-    item: (typeof itensBibliotecaAtivos)[number],
-  ) => {
-    const {
-      capituloHref,
-      totalCurtidas: totalCurtidasBiblioteca,
-      totalComentarios: totalComentariosBiblioteca,
-      visualizacoesFormatadas: visualizacoesBiblioteca,
-      menuAberto,
-    } = obterDadosCardBibliotecaPerfilAutor(
-      item,
-      totaisInteracoesObras,
-      bibliotecaMenuAbertoChave,
-    );
-
-    return (
-      <LibraryItemCard
-        key={item.chave}
-        item={item}
-        href={capituloHref}
-        isDesktop={isDesktop}
-        menuAberto={menuAberto}
-        totalComentarios={totalComentariosBiblioteca}
-        totalCurtidas={totalCurtidasBiblioteca}
-        visualizacoes={visualizacoesBiblioteca}
-        onToggleMenu={() =>
-          setBibliotecaMenuAbertoChave((chaveAtual) =>
-            alternarIdentificadorMenuPerfilAutor(
-              chaveAtual,
-              item.chave,
-            ),
-          )
-        }
-      />
-    );
-  };
+  const { renderizarItemBiblioteca } = usePerfilAutorLibraryItemRenderer({
+    isDesktop,
+    totaisInteracoesObras,
+    bibliotecaMenuAbertoChave,
+    setBibliotecaMenuAbertoChave,
+  });
 
   const {
     containerAtualStyle,

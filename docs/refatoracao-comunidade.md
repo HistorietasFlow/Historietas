@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil do Autor — Fase 2
+
+- Os renderizadores de publicações recentes da Comunidade e de itens da Biblioteca foram movidos para hooks dedicados de composição visual, preservando dados derivados, denúncia, métricas, menus, callbacks e a orquestração na página.
+
 ## Perfil do Autor — Fase 1
 
 - Os renderizadores de obras em destaque, itens do Diário e itens do grid de obras foram movidos para hooks dedicados de composição visual, preservando dados, URLs, chaves, estilos, métricas, menus e a orquestração na página.

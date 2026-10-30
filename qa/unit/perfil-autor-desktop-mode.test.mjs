@@ -97,7 +97,7 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.doesNotMatch(pagina, /window\.innerWidth >= 1024/);
   assert.doesNotMatch(pagina, /addEventListener\("resize"/);
   assert.doesNotMatch(pagina, /removeEventListener\("resize"/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 25);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 24);
   assert.match(
     pagina,
     /import \{ ProfileHero \} from "\.\/components\/profile-hero";/,
