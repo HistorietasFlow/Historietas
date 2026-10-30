@@ -2632,3 +2632,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Editar Obra — Fase 5
 
 - O fluxo completo de salvamento da edição foi movido para hook dedicado, preservando validação, autenticação, confirmação de propriedade, uploads, rollback, atualização local, backup, Diário e setters finais.
+
+## Redefinir Senha — Fase 1
+
+- O catálogo de traduções e os estilos estáticos da página foram movidos para módulos dedicados, preservando textos, idiomas, CSS, responsividade e toda a autenticação, validação e redefinição de senha em `page.tsx`.
