@@ -11,6 +11,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const derivedStateSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-derived-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const savePreparationSource = readFileSync(
   new URL("../../app/editar-obra/lib/editar-obra-save-preparation.ts", import.meta.url),
   "utf8",
@@ -35,9 +42,13 @@ test("preserva fallback de tags finais", () => {
 test("Editar Obra delega a lista e o fallback de tags às fronteiras puras", () => {
   assert.match(
     pageSource,
-    /import \{ prepararTagsEdicaoObra \} from "\.\/lib\/editar-obra-tags-list-utils";/,
+    /import \{ useEditarObraFormDerivedState \} from "\.\/hooks\/use-editar-obra-form-derived-state";/,
   );
-  assert.match(pageSource, /const tagsTratadas = useMemo\(\(\) => \{\s*return prepararTagsEdicaoObra\(tags, LIMITE_TAGS_OBRA\);/);
+  assert.match(
+    derivedStateSource,
+    /import \{ prepararTagsEdicaoObra \} from "\.\.\/lib\/editar-obra-tags-list-utils";/,
+  );
+  assert.match(derivedStateSource, /const tagsTratadas = useMemo\(\(\) => \{\s*return prepararTagsEdicaoObra\(tags, LIMITE_TAGS_OBRA\);/);
   assert.doesNotMatch(pageSource, /obterTagsFinaisEdicaoObra/);
   assert.match(
     savePreparationSource,

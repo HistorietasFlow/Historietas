@@ -11,6 +11,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const derivedStateSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-derived-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(
     source
@@ -90,10 +97,10 @@ test("preserva valores comuns e bloqueia tag repetida ou inválida", () => {
 test("Editar Obra delega somente os valores derivados do formulário", () => {
   assert.match(
     pageSource,
-    /import \{ calcularValoresDerivadosFormularioEdicaoObra \} from "\.\/lib\/editar-obra-derived-form-values";/,
+    /import \{ useEditarObraFormDerivedState \} from "\.\/hooks\/use-editar-obra-form-derived-state";/,
   );
   assert.match(
-    pageSource,
+    derivedStateSource,
     /\} = calcularValoresDerivadosFormularioEdicaoObra\(\{[\s\S]*?outroFormatoValue: OUTRO_FORMATO_VALUE,[\s\S]*?outroGeneroValue: OUTRO_GENERO_VALUE,/,
   );
   assert.match(source, /formato === outroFormatoValue/);
