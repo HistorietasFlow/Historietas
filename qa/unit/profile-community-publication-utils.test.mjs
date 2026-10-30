@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const communityPostRendererSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-community-post-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const communityLoaderSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-community-loader.ts",
@@ -285,7 +292,7 @@ test("página delega o padding inferior das publicações ao helper", () => {
     1,
   );
   assert.match(
-    pagina,
+    communityPostRendererSource,
     /paddingBottom=\{[\s\S]*?paddingInferiorPublicacaoComunidade[\s\S]*?\}/,
   );
   assert.doesNotMatch(
@@ -366,39 +373,39 @@ test("dados da publicação recente centralizam link, acessibilidade, resumo e e
 
 test("página deriva os dados da publicação recente uma única vez por item", () => {
   assert.match(
-    pagina,
-    /obterDadosPublicacaoRecenteComunidadePerfilAutor,[\s\S]*?from "\.\/lib\/profile-community-publication-utils";/,
+    communityPostRendererSource,
+    /import \{ obterDadosPublicacaoRecenteComunidadePerfilAutor \} from "\.\.\/lib\/profile-community-publication-utils";/,
   );
   assert.equal(
     (
-      pagina.match(
+      communityPostRendererSource.match(
         /obterDadosPublicacaoRecenteComunidadePerfilAutor\(/g,
       ) || []
     ).length,
     1,
   );
   assert.match(
-    pagina,
+    communityPostRendererSource,
     /<ProfileCommunityPostItem[\s\S]*?href=\{dadosPublicacao\.href\}/,
   );
   assert.match(
-    pagina,
+    communityPostRendererSource,
     /<ProfileCommunityPostItem[\s\S]*?ariaLabel=\{dadosPublicacao\.ariaLabel\}/,
   );
   assert.match(
-    pagina,
+    communityPostRendererSource,
     /<ProfileCommunityPostItem[\s\S]*?resumo=\{dadosPublicacao\.resumo\}/,
   );
   assert.match(
-    pagina,
+    communityPostRendererSource,
     /exibirInfoEnquete=\{[\s\S]*?dadosPublicacao\.exibirInfoEnquete[\s\S]*?\}/,
   );
   assert.match(
-    pagina,
+    communityPostRendererSource,
     /exibirObraRelacionada=\{[\s\S]*?dadosPublicacao\.exibirObraRelacionada[\s\S]*?\}/,
   );
-  assert.doesNotMatch(pagina, /dadosPublicacao\.totalOpcoesEnquete >= 2/);
-  assert.doesNotMatch(pagina, /\{publicacao\.obraRelacionada && \(/);
+  assert.doesNotMatch(communityPostRendererSource, /dadosPublicacao\.totalOpcoesEnquete >= 2/);
+  assert.doesNotMatch(communityPostRendererSource, /\{publicacao\.obraRelacionada && \(/);
   assert.doesNotMatch(pagina, /criarHrefPublicacaoComunidadePerfil/);
   assert.doesNotMatch(pagina, /criarResumoPublicacaoComunidadePerfil/);
   assert.doesNotMatch(pagina, /analisarEnquetePublicacaoComunidadePerfil/);
@@ -533,8 +540,8 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
     /import \{ pegarTexto \} from "\.\/data-normalizers";/,
   );
   assert.match(
-    pagina,
-    /import \{[\s\S]*?obterDadosPublicacaoRecenteComunidadePerfilAutor,[\s\S]*?\} from "\.\/lib\/profile-community-publication-utils";/,
+    communityPostRendererSource,
+    /import \{ obterDadosPublicacaoRecenteComunidadePerfilAutor \} from "\.\.\/lib\/profile-community-publication-utils";/,
   );
   assert.doesNotMatch(
     pagina,
@@ -567,7 +574,7 @@ test("Perfil de Autor delega somente os helpers puros de publicações da comuni
   );
   assert.equal(
     (
-      pagina.match(
+      communityPostRendererSource.match(
         /obterDadosPublicacaoRecenteComunidadePerfilAutor\(/g,
       ) || []
     ).length,
