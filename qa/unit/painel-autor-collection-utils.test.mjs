@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const dataLoaderSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workFilteringSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-work-filtering.ts",
@@ -105,7 +112,8 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
   assert.equal((pagina.match(/\bobterIdentificadoresObraPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bcolecaoTemObraPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 5);
+  assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
+  assert.equal((dataLoaderSource.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
   assert.match(
     utilsSource,
     /export function filtrarListaPorObrasDoUsuario[\s\S]*?obterIdentificadoresObraPainel\(obra\)\.includes\(idLimpo\)/,

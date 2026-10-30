@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const tiposSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-types.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workNormalizerSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-work-normalizer.ts",
@@ -89,7 +96,7 @@ test("Painel do Autor delega somente a normalização de arquivo ao helper extra
     workNormalizerSource,
     /import \{ normalizarArquivoObra \} from "\.\/painel-autor-file-normalizer";/,
   );
-  assert.match(pagina, /type ArquivoObraLocal = \{/);
+  assert.match(tiposSource, /export type ArquivoObraLocal = \{/);
   assert.doesNotMatch(pagina, /function normalizarArquivoObra\(/);
   assert.doesNotMatch(pagina, /\bnormalizarArquivoObra\b/);
   assert.match(

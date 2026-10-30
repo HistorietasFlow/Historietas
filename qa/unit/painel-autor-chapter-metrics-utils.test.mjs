@@ -284,8 +284,9 @@ test("Painel do Autor delega somente o cálculo puro de métricas de obras", () 
   );
   assert.match(
     pagina,
-    /import \{[\s\S]*?obterObrasComMetricasPainel,[\s\S]*?type ObraComMetricasPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-work-metrics";/,
+    /import \{ obterObrasComMetricasPainel \} from "\.\/lib\/painel-autor-work-metrics";/,
   );
+  assert.match(pagina, /import type \{[\s\S]*?ObraComMetricas,[\s\S]*?\} from "\.\/lib\/painel-autor-types";/);
   assert.doesNotMatch(pagina, /function calcularCurtidas\(/);
   assert.doesNotMatch(pagina, /function calcularComentarios\(/);
   assert.doesNotMatch(pagina, /function calcularSalvos\(/);

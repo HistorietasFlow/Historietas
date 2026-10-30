@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Painel do Autor — Fase 1
+
+- Os tipos e modelos locais e o loader agregado do Supabase foram extraídos para módulos dedicados. O effect de carregamento, estados, exclusão, filtros, autenticação, storage e JSX permaneceram em `page.tsx`.
+
 ## Ler Capítulo — Fase 6
 
 - Os controles locais do sheet de comentários, os wrappers locais de obra/capítulo e a ação de troca de capítulo foram movidos para factories dedicadas. Métricas, factories centrais, autenticação, denúncia, estados e JSX permaneceram em `page.tsx`.
