@@ -2508,3 +2508,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Ajuda — Fase 3
 
 - O CSS global, os estilos gerais da Central de Ajuda e os estilos do suporte técnico foram movidos para módulos dedicados, mantendo JSX, estados, handlers, RPCs, autenticação, formulário e effects inalterados.
+
+## Ajuda — Fase 4
+
+- O header com hero e busca, a seção de categorias e a seção de FAQ foram movidos para componentes apresentacionais dedicados. Estados, `useMemo`, derivações, Supabase, RPCs, autenticação e o formulário técnico permaneceram em `page.tsx`.
