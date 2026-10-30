@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const derivedStateSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-derived-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(
     source
@@ -142,12 +149,16 @@ test("progresso de Editar Obra preserva critérios, arredondamento e autoria do 
 test("Editar Obra delega somente validação e progresso do formulário", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?calcularProgressoFormularioEdicaoObra,[\s\S]*?validarFormularioEdicaoObra,[\s\S]*?\} from "\.\/lib\/editar-obra-form-validation";/,
+    /import \{ validarFormularioEdicaoObra \} from "\.\/lib\/editar-obra-form-validation";/,
   );
   assert.doesNotMatch(pageSource, /function validarFormulario\(/);
   assert.match(
-    pageSource,
+    derivedStateSource,
     /const progresso = useMemo\(\(\) => calcularProgressoFormularioEdicaoObra\(\{[\s\S]*?\}\), \[/,
+  );
+  assert.match(
+    pageSource,
+    /import \{ useEditarObraFormDerivedState \} from "\.\/hooks\/use-editar-obra-form-derived-state";/,
   );
   assert.match(
     pageSource,

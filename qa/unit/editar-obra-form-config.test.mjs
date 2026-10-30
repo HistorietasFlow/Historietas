@@ -35,7 +35,14 @@ const tagActionsSource = readFileSync(
   ),
   "utf8",
 );
-const consumerSource = `${pageSource}\n${initialLoadSource}\n${assetActionsSource}\n${tagActionsSource}`;
+const derivedStateSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-derived-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const consumerSource = `${pageSource}\n${initialLoadSource}\n${assetActionsSource}\n${tagActionsSource}\n${derivedStateSource}`;
 const javascript = typescript
   .transpileModule(
     source.replace(
@@ -141,8 +148,8 @@ test("Editar Obra delega apenas a configuração estática do formulário", () =
   }
 
   assert.match(
-    pageSource,
-    /from "\.\/lib\/editar-obra-form-config";/,
+    derivedStateSource,
+    /from "\.\.\/lib\/editar-obra-form-config";/,
   );
   assert.doesNotMatch(pageSource, /LIMITES_BYTES_STORAGE/);
   assert.match(source, /\] as const;/);

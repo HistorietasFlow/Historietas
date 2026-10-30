@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const derivedStateSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-derived-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(
     source.replace(
@@ -63,12 +70,16 @@ test("hrefs da obra preservam prioridade, publicação e fallbacks", () => {
 test("Editar Obra delega somente os cálculos de navegação", () => {
   assert.match(
     pageSource,
-    /import \{[\s\S]*?criarLoginHrefEditarObra,[\s\S]*?obterHrefsObraEditarObra,[\s\S]*?\} from "\.\/lib\/editar-obra-navigation-utils";/,
+    /import \{[\s\S]*?criarLoginHrefEditarObra,[\s\S]*?\} from "\.\/lib\/editar-obra-navigation-utils";/,
   );
   assert.doesNotMatch(pageSource, /function criarLoginHrefEditarObra\(/);
   assert.match(
-    pageSource,
+    derivedStateSource,
     /const \{ minhaObraHref \} = obterHrefsObraEditarObra\(obraAtual, titulo\);/,
+  );
+  assert.match(
+    derivedStateSource,
+    /import \{ obterHrefsObraEditarObra \} from "\.\.\/lib\/editar-obra-navigation-utils";/,
   );
   assert.doesNotMatch(pageSource, /void obraPublicaHref;/);
   assert.doesNotMatch(pageSource, /obraAtual\?\.publicado \? obraPublicaHref/);

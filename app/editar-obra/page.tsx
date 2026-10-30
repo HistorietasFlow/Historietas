@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -39,13 +39,6 @@ import {
 } from "./styles/editar-obra-layout-styles";
 import type { AvisoConteudo18 } from "../../lib/historietasAdultContent";
 import {
-  LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
-  LIMITE_CARACTERES_TAG_PERSONALIZADA,
-  LIMITE_TAGS_OBRA,
-  OUTRO_FORMATO_VALUE,
-  OUTRO_GENERO_VALUE,
-} from "./lib/editar-obra-form-config";
-import {
   identificarCategoriaArquivo,
 } from "./lib/editar-obra-file-validation";
 import {
@@ -66,16 +59,10 @@ import {
   type ArquivoStorageEdicaoObra,
 } from "./lib/editar-obra-remote-storage";
 import { registrarDiarioEdicaoObra } from "./lib/editar-obra-diary-action";
-import {
-  calcularProgressoFormularioEdicaoObra,
-  validarFormularioEdicaoObra,
-} from "./lib/editar-obra-form-validation";
+import { validarFormularioEdicaoObra } from "./lib/editar-obra-form-validation";
 import {
   criarLoginHrefEditarObra,
-  obterHrefsObraEditarObra,
 } from "./lib/editar-obra-navigation-utils";
-import { calcularValoresDerivadosFormularioEdicaoObra } from "./lib/editar-obra-derived-form-values";
-import { prepararTagsEdicaoObra } from "./lib/editar-obra-tags-list-utils";
 import { prepararValoresSalvamentoEdicaoObra } from "./lib/editar-obra-save-preparation";
 import { prepararAssetsAtuaisEdicaoObra } from "./lib/editar-obra-current-assets-preparation";
 import { criarPayloadAtualizacaoObra } from "./lib/editar-obra-update-payload";
@@ -84,6 +71,7 @@ import { useEditarObraInitialLoad } from "./hooks/use-editar-obra-initial-load";
 import { useEditarObraAssetActions } from "./hooks/use-editar-obra-asset-actions";
 import { useEditarObraTagActions } from "./hooks/use-editar-obra-tag-actions";
 import { useEditarObraFormChangeActions } from "./hooks/use-editar-obra-form-change-actions";
+import { useEditarObraFormDerivedState } from "./hooks/use-editar-obra-form-derived-state";
 import type { ArquivoObraLocal, ObraLocal } from "./types";
 
 export default function EditarObraPage() {
@@ -157,15 +145,9 @@ export default function EditarObraPage() {
     setArquivoObraRemovidoManualmente,
   });
 
-  const obraAtual = useMemo(() => {
-    return obras.find((obra) => obra.id === obraId) || null;
-  }, [obras, obraId]);
-
-  const tagsTratadas = useMemo(() => {
-    return prepararTagsEdicaoObra(tags, LIMITE_TAGS_OBRA);
-  }, [tags]);
-
   const {
+    obraAtual,
+    tagsTratadas,
     formatoEhPersonalizado,
     generoEhPersonalizado,
     formatoFinal,
@@ -173,45 +155,27 @@ export default function EditarObraPage() {
     formatoPersonalizadoValido,
     generoPersonalizadoValido,
     tagPersonalizadaValida,
-  } = calcularValoresDerivadosFormularioEdicaoObra({
+    progresso,
+    minhaObraHref,
+    autorProfileAtivo,
+    autorPreview,
+  } = useEditarObraFormDerivedState({
+    obras,
+    obraId,
+    tags,
     formato,
     genero,
     tagPersonalizada,
     usarTagPersonalizada,
     formatoPersonalizado,
     generoPersonalizado,
-    outroFormatoValue: OUTRO_FORMATO_VALUE,
-    outroGeneroValue: OUTRO_GENERO_VALUE,
-    limiteCaracteresFormatoGeneroPersonalizado:
-      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
-    limiteCaracteresTagPersonalizada: LIMITE_CARACTERES_TAG_PERSONALIZADA,
+    titulo,
+    autor,
+    classificacaoIndicativa,
+    avisosConteudo18,
+    sinopse,
+    nomeAutorProfile,
   });
-
-  const progresso = useMemo(() => calcularProgressoFormularioEdicaoObra({
-    titulo,
-    autor,
-    generoFinal,
-    generoPersonalizadoValido,
-    formatoFinal,
-    formatoPersonalizadoValido,
-    classificacaoIndicativa,
-    avisosConteudo18,
-    sinopse,
-  }), [
-    titulo,
-    autor,
-    generoFinal,
-    generoPersonalizadoValido,
-    formatoFinal,
-    formatoPersonalizadoValido,
-    classificacaoIndicativa,
-    avisosConteudo18,
-    sinopse,
-  ]);
-
-  const { minhaObraHref } = obterHrefsObraEditarObra(obraAtual, titulo);
-  const autorProfileAtivo = nomeAutorProfile.trim();
-  const autorPreview = autorProfileAtivo || autor.trim();
   const {
     marcarAlteracao,
     alterarTitulo,
