@@ -72,7 +72,7 @@ test("loader retorna vazio sem usuário autenticado", async () => {
   );
 });
 
-test("hook inicial delega ao loader e a página preserva a exclusão", () => {
+test("hook inicial delega ao loader e a página delega a exclusão", () => {
   const hook = readFileSync(
     new URL(
       "../../app/painel-autor/hooks/use-painel-autor-initial-data.ts",
@@ -90,5 +90,6 @@ test("hook inicial delega ao loader e a página preserva a exclusão", () => {
     /const dadosSupabase = await carregarPainelAutorSupabase\([\s\S]*?obrasUsuarioLogado,[\s\S]*?obrasFavoritasUsuario,[\s\S]*?obrasConcluidasUsuario[\s\S]*?\);/,
   );
   assert.match(hook, /async function carregarDadosPainelAutor\(\)/);
-  assert.match(pagina, /async function excluirObra\(/);
+  assert.match(pagina, /usePainelAutorDeleteWork\(/);
+  assert.doesNotMatch(pagina, /async function excluirObra\(/);
 });

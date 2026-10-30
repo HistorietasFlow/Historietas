@@ -21,6 +21,10 @@ const initialDataHookSource = readFileSync(
   ),
   "utf8",
 );
+const deleteWorkHookSource = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
+  "utf8",
+);
 const keysJavaScript = typescript.transpileModule(keysSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -43,10 +47,10 @@ test("chaves de armazenamento do Painel do Autor preservam valores e exports", (
   assert.equal(COMPLETED_STORAGE_KEY, "historietas-obras-concluidas");
 });
 
-test("página centraliza as quatro chaves e o lifecycle importa somente as três necessárias", () => {
+test("hooks de lifecycle e exclusão usam somente as chaves necessárias", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?COMPLETED_STORAGE_KEY,[\s\S]*?FAVORITES_STORAGE_KEY,[\s\S]*?FOLLOW_STORAGE_KEY,[\s\S]*?STORAGE_KEY,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-keys";/,
+    deleteWorkHookSource,
+    /import \{[\s\S]*?COMPLETED_STORAGE_KEY,[\s\S]*?FAVORITES_STORAGE_KEY,[\s\S]*?FOLLOW_STORAGE_KEY,[\s\S]*?STORAGE_KEY,[\s\S]*?\} from "\.\.\/lib\/painel-autor-storage-keys";/,
   );
   assert.doesNotMatch(pageSource, /const STORAGE_KEY\s*=/);
   assert.doesNotMatch(pageSource, /const FOLLOW_STORAGE_KEY\s*=/);

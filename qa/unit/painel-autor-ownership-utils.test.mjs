@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
+  "utf8",
+);
 const resultMergeSource = readFileSync(new URL("../../app/painel-autor/lib/painel-autor-supabase-result-merge.ts", import.meta.url), "utf8");
 const utilsJavascript = typescript.transpileModule(utilsSource, {
   compilerOptions: {
@@ -70,12 +74,12 @@ test("Painel do Autor delega somente identificação e propriedade ao helper ext
     initialDataHook,
     /import \{[\s\S]*?filtrarObrasDoUsuarioPainel,[\s\S]*?marcarObrasComDonoPainel,[\s\S]*?\} from "\.\.\/lib\/painel-autor-ownership-utils";/,
   );
-  assert.match(pagina, /import \{ normalizarIdUsuarioPainel \} from "\.\/lib\/painel-autor-ownership-utils";/);
+  assert.match(deleteWorkHook, /import \{ normalizarIdUsuarioPainel \} from "\.\.\/lib\/painel-autor-ownership-utils";/);
   assert.doesNotMatch(pagina, /function normalizarIdUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function obraPertenceAoUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function filtrarObrasDoUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function marcarObrasComDonoPainel\(/);
-  assert.equal((pagina.match(/\bnormalizarIdUsuarioPainel\b/g) || []).length, 3);
+  assert.equal((deleteWorkHook.match(/\bnormalizarIdUsuarioPainel\b/g) || []).length, 3);
   assert.doesNotMatch(pagina, /import \{ obraPertenceAoUsuarioPainel \} from "\.\/lib\/painel-autor-ownership-utils";/);
   assert.match(resultMergeSource, /import \{ obraPertenceAoUsuarioPainel \} from "\.\/painel-autor-ownership-utils";/);
   assert.match(resultMergeSource, /obraPertenceAoUsuarioPainel\(obra, userId\)/);
