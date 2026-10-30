@@ -7,6 +7,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const loaderSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const converterSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-supabase-work-converter.ts",
@@ -228,14 +235,15 @@ test("converterObraSupabaseParaLocalPainel preserva fallbacks locais quando não
 
 test("Painel do Autor delega a conversão Supabase ao módulo puro extraído", () => {
   assert.match(
-    pagina,
-    /import \{ converterObraSupabaseParaLocalPainel \} from "\.\/lib\/painel-autor-supabase-work-converter";/,
+    loaderSource,
+    /import \{ converterObraSupabaseParaLocalPainel \} from "\.\/painel-autor-supabase-work-converter";/,
   );
-  assert.doesNotMatch(pagina, /function converterObraSupabaseParaLocalPainel\(/);
+  assert.doesNotMatch(loaderSource, /function converterObraSupabaseParaLocalPainel\(/);
   assert.match(
-    pagina,
+    loaderSource,
     /const obraNormalizada = converterObraSupabaseParaLocalPainel\(\{/,
   );
+  assert.match(pagina, /carregarPainelAutorSupabase\(/);
   assert.match(converterSource, /function aplicarProgressoCapitulo\(/);
   assert.match(converterSource, /progressoCarregado && capitulosComMetricas\.has\(capitulo\.id\)/);
   assert.match(converterSource, /progressoPorCapitulo\.has\(chaveInteracao\)[\s\S]*?progressoPorCapitulo\.has\(capitulo\.id\)/);

@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const loaderSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const converterSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-supabase-work-converter.ts",
@@ -50,8 +57,8 @@ test("normalizarCategoriaArquivoSupabase preserva a classificação por MIME e f
 
 test("Painel do Autor delega a categoria de arquivo pelo conversor extraído", () => {
   assert.match(
-    pagina,
-    /import \{ converterObraSupabaseParaLocalPainel \} from "\.\/lib\/painel-autor-supabase-work-converter";/,
+    loaderSource,
+    /import \{ converterObraSupabaseParaLocalPainel \} from "\.\/painel-autor-supabase-work-converter";/,
   );
   assert.doesNotMatch(pagina, /function normalizarCategoriaArquivoSupabase\(/);
   assert.equal((pagina.match(/\bnormalizarCategoriaArquivoSupabase\b/g) || []).length, 0);

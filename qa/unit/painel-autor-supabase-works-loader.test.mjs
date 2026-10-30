@@ -14,6 +14,13 @@ const loaderSource = readFileSync(
   ),
   "utf8",
 );
+const dataLoaderSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const estado = {
   chamadasPaginador: [],
@@ -130,13 +137,13 @@ test("carregarObrasPainelAutorSupabase propaga a falha para o fallback do painel
 
 test("Painel do Autor delega somente o carregamento de obras Supabase", () => {
   assert.match(
-    pagina,
-    /import \{ carregarObrasPainelAutorSupabase \} from "\.\/lib\/painel-autor-supabase-works-loader";/,
+    dataLoaderSource,
+    /import \{ carregarObrasPainelAutorSupabase \} from "\.\/painel-autor-supabase-works-loader";/,
   );
   assert.doesNotMatch(pagina, /carregarTodasPaginasSupabase/);
   assert.doesNotMatch(pagina, /type SupabaseObraRow =/);
   assert.match(
-    pagina,
+    dataLoaderSource,
     /const obrasSupabaseBanco = await carregarObrasPainelAutorSupabase\(userId\);/,
   );
   assert.match(

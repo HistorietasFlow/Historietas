@@ -20,6 +20,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const dataLoaderSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const chapterCommentsLoaderSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-chapter-comments-loader.ts",
@@ -225,8 +232,8 @@ test("carregarComentariosCapitulosUsuarioPainel mantém retornos vazios e falha 
 
 test("Painel do Autor delega a chave de interação às fronteiras extraídas", () => {
   assert.match(
-    pagina,
-    /import \{ prepararEstadoMetricasPainel \} from "\.\/lib\/painel-autor-metrics-state";/,
+    dataLoaderSource,
+    /import \{ prepararEstadoMetricasPainel \} from "\.\/painel-autor-metrics-state";/,
   );
   assert.doesNotMatch(pagina, /function criarChaveInteracao\(/);
   assert.doesNotMatch(
@@ -242,12 +249,12 @@ test("Painel do Autor delega a chave de interação às fronteiras extraídas", 
     /criarChaveInteracao\(metrica\.obraId, metrica\.id\)/,
   );
   assert.match(
-    pagina,
-    /import \{ carregarComentariosCapitulosUsuarioPainel \} from "\.\/lib\/painel-autor-chapter-comments-loader";/,
+    dataLoaderSource,
+    /import \{ carregarComentariosCapitulosUsuarioPainel \} from "\.\/painel-autor-chapter-comments-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarComentariosCapitulosUsuarioPainel\(/);
   assert.equal(
-    (pagina.match(/\bcarregarComentariosCapitulosUsuarioPainel\b/g) || []).length,
+    (dataLoaderSource.match(/\bcarregarComentariosCapitulosUsuarioPainel\b/g) || []).length,
     2,
   );
   assert.match(

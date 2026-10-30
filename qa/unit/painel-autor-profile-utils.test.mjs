@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const dataLoaderSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileLoaderSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-profile-loader.ts",
@@ -197,8 +204,10 @@ test("Painel do Autor delega somente os helpers de perfil ao módulo extraído",
   );
   assert.doesNotMatch(pagina, /function obterNomeProfilePainelAutor\(/);
   assert.doesNotMatch(pagina, /function aplicarNomeProfileNasObrasPainel\(/);
-  assert.equal((pagina.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 2);
+  assert.equal((pagina.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 2);
+  assert.equal((dataLoaderSource.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 2);
+  assert.equal((dataLoaderSource.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 2);
   assert.match(resultMergeSource, /import \{ aplicarNomeProfileNasObrasPainel \} from "\.\/painel-autor-profile-utils";/);
   assert.match(resultMergeSource, /aplicarNomeProfileNasObrasPainel\(/);
   assert.match(
@@ -206,7 +215,8 @@ test("Painel do Autor delega somente os helpers de perfil ao módulo extraído",
     /import \{ carregarProfilePainelAutor \} from "\.\/lib\/painel-autor-profile-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarProfilePainelAutor\(/);
-  assert.equal((pagina.match(/\bcarregarProfilePainelAutor\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bcarregarProfilePainelAutor\b/g) || []).length, 2);
+  assert.equal((dataLoaderSource.match(/\bcarregarProfilePainelAutor\b/g) || []).length, 2);
   assert.match(
     profileLoaderSource,
     /export async function carregarProfilePainelAutor\(userId: string\)/,

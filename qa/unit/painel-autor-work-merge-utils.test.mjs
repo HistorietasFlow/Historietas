@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const loaderSource = readFileSync(
+  new URL(
+    "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const resultMergeSource = readFileSync(new URL("../../app/painel-autor/lib/painel-autor-supabase-result-merge.ts", import.meta.url), "utf8");
 const utilsJavascript = typescript
   .transpileModule(utilsSource, {
@@ -73,10 +80,10 @@ test("Painel do Autor delega somente a mesclagem de obras ao módulo extraído",
   );
   assert.doesNotMatch(pagina, /import \{ mesclarObrasPainelAutor \} from "\.\/lib\/painel-autor-work-merge-utils";/);
   assert.doesNotMatch(pagina, /function mesclarObrasPainelAutor\(/);
-  assert.match(pagina, /import \{ mesclarResultadoSupabasePainelAutor \} from "\.\/lib\/painel-autor-supabase-result-merge";/);
-  assert.match(pagina, /return mesclarResultadoSupabasePainelAutor\(/);
+  assert.match(loaderSource, /import \{ mesclarResultadoSupabasePainelAutor \} from "\.\/painel-autor-supabase-result-merge";/);
+  assert.match(loaderSource, /return mesclarResultadoSupabasePainelAutor\(/);
   assert.match(resultMergeSource, /mesclarObrasPainelAutor\(obrasLocaisUsuario, obrasSupabase\)/);
-  assert.match(pagina, /async function carregarPainelAutorSupabase\(/);
+  assert.match(pagina, /import \{[\s\S]*?carregarPainelAutorSupabase,[\s\S]*?\} from "\.\/lib\/painel-autor-supabase-data-loader";/);
   assert.match(
     utilsSource,
     /import \{ criarSlugBase \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/,
