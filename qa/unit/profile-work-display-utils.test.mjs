@@ -11,6 +11,20 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const highlightRendererSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-highlight-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const workItemRendererSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-work-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const heroActionsSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-hero-actions.tsx",
@@ -649,8 +663,16 @@ test("página mantém as derivações e delega a composição dos destaques", ()
     /import \{ ProfileHighlightsPanel \} from "\.\/components\/profile-highlights-panel";/,
   );
   assert.match(
-    pagina,
+    highlightRendererSource,
     /function renderizarObraDestaquePerfilAutor\(obra: ObraLocal\) \{[\s\S]*?const obraHref = obterHrefObraPerfilAutor\(obra\);[\s\S]*?<ProfileHighlightItem[\s\S]*?key=\{`destaque-\$\{obra\.id\}`\}[\s\S]*?href=\{obraHref\}[\s\S]*?capaStyle=\{criarCapaDestaquePerfilAutor\(obra\.capa\)\}/,
+  );
+  assert.match(
+    pagina,
+    /import \{ usePerfilAutorHighlightRenderer \} from "\.\/hooks\/use-perfil-autor-highlight-renderer";/,
+  );
+  assert.match(
+    pagina,
+    /const \{ renderizarObraDestaquePerfilAutor \} =[\s\S]*?usePerfilAutorHighlightRenderer\(\);/,
   );
   assert.match(
     pagina,
@@ -831,11 +853,11 @@ test("href da obra prioriza link, depois slug e por fim título", () => {
 
 test("hrefs de obra ficam diretos no destaque e reutilizados pelos helpers", () => {
   assert.match(
-    pagina,
-    /obterHrefObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    highlightRendererSource,
+    /import \{ obterHrefObraPerfilAutor \} from "\.\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterHrefObraPerfilAutor\(/g) || []).length,
+    (highlightRendererSource.match(/obterHrefObraPerfilAutor\(/g) || []).length,
     1,
   );
   assert.match(
@@ -1128,7 +1150,7 @@ test("href de leitura da Biblioteca fica encapsulado no card e no sheet", () => 
 
 
 test("rótulos de acessibilidade das ações de obra ficam nos dados derivados", () => {
-  assert.match(pagina, /ariaLabelOpcoes=\{ariaLabelOpcoes\}/);
+  assert.match(workItemRendererSource, /ariaLabelOpcoes=\{ariaLabelOpcoes\}/);
   assert.match(workGridItemSource, /ariaLabel=\{ariaLabelOpcoes\}/);
   assert.match(
     actionSheetsSource,
@@ -1186,11 +1208,11 @@ test("dados do card de obra centralizam href, métricas e estado do menu", () =>
 
 test("página delega os dados derivados do card de obra", () => {
   assert.match(
-    pagina,
-    /obterDadosCardObraPerfilAutor,[\s\S]*?from "\.\/lib\/profile-work-display-utils";/,
+    workItemRendererSource,
+    /import \{ obterDadosCardObraPerfilAutor \} from "\.\.\/lib\/profile-work-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosCardObraPerfilAutor\(/g) || []).length,
+    (workItemRendererSource.match(/obterDadosCardObraPerfilAutor\(/g) || []).length,
     1,
   );
   assert.doesNotMatch(
@@ -1515,19 +1537,23 @@ test("ProfileWorksContentState preserva o estado vazio e a grade de Obras", () =
 test("página mantém os dados e o callback do card antes de delegar a composição", () => {
   assert.match(
     pagina,
-    /import \{ ProfileWorkGridItem \} from "\.\/components\/profile-work-grid-item";/,
+    /import \{ usePerfilAutorWorkItemRenderer \} from "\.\/hooks\/use-perfil-autor-work-item-renderer";/,
   );
   assert.match(
-    pagina,
+    workItemRendererSource,
     /function renderizarObraPerfilAutor\(obra: ObraLocal\) \{[\s\S]*?obterDadosCardObraPerfilAutor\([\s\S]*?obra,[\s\S]*?totaisInteracoesObras,[\s\S]*?obraMenuAbertoId,[\s\S]*?\);/,
   );
   assert.match(
-    pagina,
+    workItemRendererSource,
     /criarCapaGridPerfilAutor\(obra\.capa, isDesktop\)/,
   );
   assert.match(
-    pagina,
+    workItemRendererSource,
     /setObraMenuAbertoId\(\(idAtual\) =>[\s\S]*?alternarIdentificadorMenuPerfilAutor\(idAtual, obra\.id\)/,
+  );
+  assert.match(
+    pagina,
+    /const \{ renderizarObraPerfilAutor \} = usePerfilAutorWorkItemRenderer\(\{[\s\S]*?isDesktop,[\s\S]*?obraMenuAbertoId,[\s\S]*?setObraMenuAbertoId,[\s\S]*?totaisInteracoesObras,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /\{obrasDoPerfilFiltradas\.map\(/);
 });

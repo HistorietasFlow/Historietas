@@ -14,6 +14,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const diaryItemRendererSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/hooks/use-perfil-autor-diary-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const aboutRecentActivitySource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-about-recent-activity.tsx",
@@ -361,12 +368,20 @@ test("Perfil de Autor delega o map do Diario ao painel e prepara cada item", () 
   );
   assert.match(diaryPanelSource, /items\.map\(renderItem\)/);
   assert.match(
-    pagina,
-    /const renderizarItemDiarioPerfil = \([\s\S]*?const obra = item\.obra;[\s\S]*?if \(!obra\) \{[\s\S]*?return null;[\s\S]*?<DiarySummaryCard[\s\S]*?href=\{hrefLista\}[\s\S]*?obra=\{obra\}/,
+    diaryItemRendererSource,
+    /const renderizarItemDiarioPerfil = \(item: DiarioPerfilResumoItem\) => \{[\s\S]*?const obra = item\.obra;[\s\S]*?if \(!obra\) \{[\s\S]*?return null;[\s\S]*?<DiarySummaryCard[\s\S]*?key=\{obra\.id \|\| item\.chave\}[\s\S]*?href=\{hrefLista\}[\s\S]*?obra=\{obra\}/,
+  );
+  assert.match(
+    diaryItemRendererSource,
+    /criarHrefListaDiarioPerfilAutor\([\s\S]*?perfilAutorId,[\s\S]*?obra\.id,/,
   );
   assert.match(
     pagina,
-    /criarHrefListaDiarioPerfilAutor\([\s\S]*?perfilAutorId,[\s\S]*?obra\.id,/,
+    /import \{ usePerfilAutorDiaryItemRenderer \} from "\.\/hooks\/use-perfil-autor-diary-item-renderer";/,
+  );
+  assert.match(
+    pagina,
+    /const \{ renderizarItemDiarioPerfil \} =[\s\S]*?usePerfilAutorDiaryItemRenderer\(perfilAutorId\);/,
   );
   assert.match(
     pagina,
