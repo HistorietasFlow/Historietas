@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function criarModulo({ carregarTodasPaginasSupabase, supabase }) {
   globalThis.__editarObraCarregarTodasPaginasSupabase =
@@ -134,15 +141,15 @@ test("retorna lista vazia e mantém o warning quando a paginação falha", async
 
 test("Editar Obra delega somente o carregamento remoto de capítulos", () => {
   assert.match(
-    pageSource,
-    /import \{ carregarCapitulosSupabaseEdicaoObra \} from "\.\/lib\/editar-obra-chapters-loader";/,
+    initialLoadSource,
+    /import \{ carregarCapitulosSupabaseEdicaoObra \} from "\.\.\/lib\/editar-obra-chapters-loader";/,
   );
   assert.match(
-    pageSource,
+    initialLoadSource,
     /const capitulosSupabase = await carregarCapitulosSupabaseEdicaoObra\(\s*obraIdParam,\s*userId,\s*\);/,
   );
   assert.match(
-    pageSource,
+    initialLoadSource,
     /normalizarObraSupabase\(\s*obraSupabase,\s*capitulosSupabase,/,
   );
   assert.doesNotMatch(pageSource, /carregarTodasPaginasSupabase/);

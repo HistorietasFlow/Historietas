@@ -14,6 +14,14 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const consumerSource = `${pageSource}\n${initialLoadSource}`;
 const javascript = typescript
   .transpileModule(
     source.replace(
@@ -115,7 +123,7 @@ test("Editar Obra delega apenas a configuração estática do formulário", () =
   ]) {
     assert.match(source, new RegExp(`export const ${constante}`));
     assert.doesNotMatch(pageSource, new RegExp(`const ${constante}\\s*=`));
-    assert.match(pageSource, new RegExp(`\\b${constante}\\b`));
+    assert.match(consumerSource, new RegExp(`\\b${constante}\\b`));
   }
 
   assert.match(

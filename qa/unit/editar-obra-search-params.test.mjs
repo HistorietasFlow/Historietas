@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -33,15 +40,15 @@ test("lê obraId pelos search params preservando URLSearchParams e fallbacks", (
 
 test("Editar Obra delega somente a leitura de obraId dos search params", () => {
   assert.match(
-    pageSource,
-    /import \{ obterObraIdEdicaoObra \} from "\.\/lib\/editar-obra-search-params";/,
+    initialLoadSource,
+    /import \{ obterObraIdEdicaoObra \} from "\.\.\/lib\/editar-obra-search-params";/,
   );
   assert.match(
-    pageSource,
+    initialLoadSource,
     /const obraIdParam = obterObraIdEdicaoObra\(window\.location\.search\);/,
   );
   assert.doesNotMatch(
-    pageSource,
+    initialLoadSource,
     /new URLSearchParams\(window\.location\.search\)/,
   );
   assert.match(source, /new URLSearchParams\(searchParams\)/);

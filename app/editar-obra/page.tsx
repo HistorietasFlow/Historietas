@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -45,9 +45,6 @@ import {
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
   LIMITE_TAGS_OBRA,
-  OPCOES_FORMATO_OBRA,
-  OPCOES_GENERO_OBRA,
-  OPCOES_TAGS_OBRA,
   OUTRA_TAG_VALUE,
   OUTRO_FORMATO_VALUE,
   OUTRO_GENERO_VALUE,
@@ -62,7 +59,6 @@ import {
   arquivoObraAceito,
   identificarCategoriaArquivo,
 } from "./lib/editar-obra-file-validation";
-import { selecionarObrasLocaisAutorizadasEdicaoObra } from "./lib/editar-obra-local-selection";
 import {
   carregarNomeAutorProfileEdicaoObra,
   obterTextoMetadataUsuarioEdicaoObra,
@@ -73,16 +69,8 @@ import {
   sincronizarBackupArquivosObras,
 } from "./lib/editar-obra-file-backup-storage";
 import { criarAlvoBackupArquivoEdicaoObra } from "./lib/editar-obra-backup-target";
-import { normalizarObraSupabase } from "./lib/editar-obra-supabase-work-normalizer";
-import { prepararObrasCarregadasEdicaoObra } from "./lib/editar-obra-loaded-work-merge";
-import { carregarCapitulosSupabaseEdicaoObra } from "./lib/editar-obra-chapters-loader";
-import { carregarObraSupabaseEdicaoObra } from "./lib/editar-obra-work-loader";
-import { obterObraIdEdicaoObra } from "./lib/editar-obra-search-params";
 import { useEditarObraDesktopMode } from "./hooks/useEditarObraDesktopMode";
-import {
-  carregarObrasLocalStorageEdicaoObra,
-  salvarObrasDoUsuarioPreservandoOutrasContas,
-} from "./lib/editar-obra-local-work-storage";
+import { salvarObrasDoUsuarioPreservandoOutrasContas } from "./lib/editar-obra-local-work-storage";
 import {
   enviarArquivoStorage,
   removerArquivosStorageEdicaoObra,
@@ -101,64 +89,14 @@ import {
   criarLoginHrefEditarObra,
   obterHrefsObraEditarObra,
 } from "./lib/editar-obra-navigation-utils";
-import { prepararValoresFormularioEdicaoObra } from "./lib/editar-obra-form-preparation";
 import { calcularValoresDerivadosFormularioEdicaoObra } from "./lib/editar-obra-derived-form-values";
 import { prepararTagsEdicaoObra } from "./lib/editar-obra-tags-list-utils";
 import { prepararValoresSalvamentoEdicaoObra } from "./lib/editar-obra-save-preparation";
 import { prepararAssetsAtuaisEdicaoObra } from "./lib/editar-obra-current-assets-preparation";
 import { criarPayloadAtualizacaoObra } from "./lib/editar-obra-update-payload";
 import { atualizarObraNaListaLocalEdicao } from "./lib/editar-obra-local-update";
-
-type CapituloLocal = {
-  id: string;
-  titulo: string;
-  texto: string;
-  curtiu: boolean;
-  salvo: boolean;
-  comentario: string;
-  criadoEm: string;
-  lido: boolean;
-  lidoEm: string;
-  publicado?: boolean;
-};
-
-type ArquivoObraLocal = {
-  nome: string;
-  tipo: string;
-  tamanho: number;
-  conteudo: string;
-  categoria: "texto" | "documento" | "imagem" | "outro";
-  criadoEm: string;
-};
-
-type ObraLocal = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId?: string;
-  genero: string;
-  formato: string;
-  classificacaoIndicativa: string;
-  avisosConteudo: AvisoConteudo18[];
-  sinopse: string;
-  tags: string[];
-  capa: string;
-  capaNome: string;
-  arquivoObra?: ArquivoObraLocal | null;
-  publicado: boolean;
-  capitulos: CapituloLocal[];
-  criadaEm: string;
-  ultimoCapituloLidoId: string;
-  ultimaLeituraEm: string;
-  progressoLeitura: number;
-  visualizacoes?: number;
-  totalCurtidas?: number;
-  totalComentarios?: number;
-  totalSalvos?: number;
-  totalLidos?: number;
-  slug: string;
-  link: string;
-};
+import { useEditarObraInitialLoad } from "./hooks/use-editar-obra-initial-load";
+import type { ArquivoObraLocal, ObraLocal } from "./types";
 
 export default function EditarObraPage() {
   const router = useRouter();
@@ -202,182 +140,34 @@ export default function EditarObraPage() {
   const isDesktop = useEditarObraDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  useEffect(() => {
-    let cancelado = false;
-
-    function aplicarObraNoFormulario(
-      obraAtual: ObraLocal,
-      nomeAutorProfileAtual = ""
-    ) {
-      const valoresFormulario = prepararValoresFormularioEdicaoObra({
-        obraAtual,
-        nomeAutorProfileAtual,
-        opcoesFormato: OPCOES_FORMATO_OBRA,
-        opcoesGenero: OPCOES_GENERO_OBRA,
-        opcoesTags: OPCOES_TAGS_OBRA,
-        outroFormatoValue: OUTRO_FORMATO_VALUE,
-        outroGeneroValue: OUTRO_GENERO_VALUE,
-        limiteCaracteresFormatoGeneroPersonalizado:
-          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
-        limiteCaracteresTagPersonalizada: LIMITE_CARACTERES_TAG_PERSONALIZADA,
-      });
-
-      setObraEncontrada(true);
-      setTitulo(valoresFormulario.titulo);
-      setAutor(valoresFormulario.autor);
-      setGenero(valoresFormulario.genero);
-      setGeneroPersonalizado(valoresFormulario.generoPersonalizado);
-      setFormato(valoresFormulario.formato);
-      setFormatoPersonalizado(valoresFormulario.formatoPersonalizado);
-      setClassificacaoIndicativa(valoresFormulario.classificacaoIndicativa);
-      setAvisosConteudo18(valoresFormulario.avisosConteudo18);
-      setSinopse(valoresFormulario.sinopse);
-      setUsarTagPersonalizada(valoresFormulario.usarTagPersonalizada);
-      setTagPersonalizada(valoresFormulario.tagPersonalizada);
-      setTags(valoresFormulario.tags);
-      setCapa(valoresFormulario.capa);
-      setCapaNome(valoresFormulario.capaNome);
-      setCapaArquivo(null);
-      setCapaRemovidaManualmente(false);
-      setArquivoObra(valoresFormulario.arquivoObra);
-      setArquivoObraArquivo(null);
-      setArquivoObraRemovidoManualmente(false);
-    }
-
-    async function carregarObra() {
-      const obraIdParam = obterObraIdEdicaoObra(window.location.search);
-
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setObraId(obraIdParam);
-        }
-      }, 0);
-
-      let obrasNormalizadas: ObraLocal[] = [];
-
-      try {
-        const { data: dadosUsuario, error: erroUsuario } =
-          await supabase.auth.getUser();
-
-        const userId = dadosUsuario.user?.id || "";
-
-        if (erroUsuario || !userId) {
-          if (!cancelado) {
-            setUsuarioIdLogado("");
-            router.replace(criarLoginHrefEditarObra(obraIdParam));
-          }
-
-          return;
-        }
-
-        if (!cancelado) {
-          setUsuarioIdLogado(userId);
-        }
-
-        const metadataUsuario = dadosUsuario.user?.user_metadata as
-          | Record<string, unknown>
-          | undefined;
-        const nomeMetadataUsuario =
-          obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "nome") ||
-          obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "name") ||
-          obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "full_name");
-        const nomeProfileUsuario = await carregarNomeAutorProfileEdicaoObra(
-          userId,
-          nomeMetadataUsuario
-        );
-
-        if (!cancelado) {
-          setNomeAutorProfile(nomeProfileUsuario);
-        }
-
-        if (!obraIdParam) {
-          return;
-        }
-
-        try {
-          obrasNormalizadas = carregarObrasLocalStorageEdicaoObra(userId);
-
-          const { obrasAutorizadas, obraLocal } =
-            selecionarObrasLocaisAutorizadasEdicaoObra({
-              obrasNormalizadas,
-              userId,
-              obraId: obraIdParam,
-            });
-
-          if (!cancelado) {
-            setObras(obrasAutorizadas);
-
-            if (obraLocal) {
-              aplicarObraNoFormulario(obraLocal, nomeProfileUsuario);
-            }
-          }
-        } catch {
-          obrasNormalizadas = [];
-
-          if (!cancelado) {
-            setObras([]);
-          }
-        }
-
-        const obraSupabase = await carregarObraSupabaseEdicaoObra(
-          obraIdParam,
-          userId,
-        );
-
-        if (!obraSupabase) {
-          return;
-        }
-
-        const capitulosSupabase = await carregarCapitulosSupabaseEdicaoObra(
-          obraIdParam,
-          userId,
-        );
-
-        const { obrasAutorizadas, obraLocal } =
-          selecionarObrasLocaisAutorizadasEdicaoObra({
-            obrasNormalizadas,
-            userId,
-            obraId: obraIdParam,
-          });
-        const obraNormalizadaSupabase = normalizarObraSupabase(
-          obraSupabase,
-          capitulosSupabase,
-          obraLocal,
-          0
-        );
-        const { obraSupabaseComAutorProfile, obrasAtualizadas } =
-          prepararObrasCarregadasEdicaoObra({
-            obraNormalizadaSupabase,
-            nomeProfileUsuario,
-            userId,
-            obrasAutorizadas,
-            obraIdParam,
-          });
-
-        const obrasAtualizadasDoUsuario =
-          salvarObrasDoUsuarioPreservandoOutrasContas(obrasAtualizadas, userId);
-
-        sincronizarBackupArquivosObras(obrasAtualizadasDoUsuario, userId);
-
-        if (!cancelado) {
-          setObras(obrasAtualizadasDoUsuario);
-          aplicarObraNoFormulario(obraSupabaseComAutorProfile, nomeProfileUsuario);
-        }
-      } catch (erroSupabase) {
-        console.warn("Falha ao carregar dados do Supabase:", erroSupabase);
-      } finally {
-        if (!cancelado) {
-          setCarregando(false);
-        }
-      }
-    }
-
-    void carregarObra();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [router]);
+  useEditarObraInitialLoad({
+    router,
+    setObraId,
+    setUsuarioIdLogado,
+    setObras,
+    setCarregando,
+    setObraEncontrada,
+    setTitulo,
+    setAutor,
+    setNomeAutorProfile,
+    setGenero,
+    setGeneroPersonalizado,
+    setFormato,
+    setFormatoPersonalizado,
+    setClassificacaoIndicativa,
+    setAvisosConteudo18,
+    setSinopse,
+    setTags,
+    setTagPersonalizada,
+    setUsarTagPersonalizada,
+    setCapa,
+    setCapaNome,
+    setCapaArquivo,
+    setCapaRemovidaManualmente,
+    setArquivoObra,
+    setArquivoObraArquivo,
+    setArquivoObraRemovidoManualmente,
+  });
 
   const obraAtual = useMemo(() => {
     return obras.find((obra) => obra.id === obraId) || null;

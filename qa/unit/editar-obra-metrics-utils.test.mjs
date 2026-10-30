@@ -6,6 +6,13 @@ import "./editar-obra-ownership-utils.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-metrics-utils.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const supabaseWorkNormalizerSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-supabase-work-normalizer.ts",
@@ -45,8 +52,8 @@ test("calcula progresso de leitura vazio, parcial e arredondado", () => {
 
 test("Editar Obra delega somente as métricas puras", () => {
   assert.match(
-    pageSource,
-    /import \{ normalizarObraSupabase \} from "\.\/lib\/editar-obra-supabase-work-normalizer";/,
+    initialLoadSource,
+    /import \{ normalizarObraSupabase \} from "\.\.\/lib\/editar-obra-supabase-work-normalizer";/,
   );
   assert.match(
     supabaseWorkNormalizerSource,

@@ -6,6 +6,13 @@ import "./editar-obra-profile-loader.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-ownership-utils.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const localSelectionSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-local-selection.ts",
@@ -39,8 +46,8 @@ test("preserva a permissão de edição local por autoria", () => {
 
 test("Editar Obra delega somente os helpers puros de propriedade", () => {
   assert.match(
-    pageSource,
-    /import \{ selecionarObrasLocaisAutorizadasEdicaoObra \} from "\.\/lib\/editar-obra-local-selection";/,
+    initialLoadSource,
+    /import \{ selecionarObrasLocaisAutorizadasEdicaoObra \} from "\.\.\/lib\/editar-obra-local-selection";/,
   );
   assert.doesNotMatch(
     pageSource,

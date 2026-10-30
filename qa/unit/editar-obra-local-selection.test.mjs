@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function criarModulo() {
   const javascript = typescript
@@ -82,24 +89,24 @@ test("mantém obra local indefinida quando a obra alvo não estiver autorizada",
 
 test("Editar Obra delega as duas seleções locais ao helper puro", () => {
   assert.match(
-    pageSource,
-    /import \{ selecionarObrasLocaisAutorizadasEdicaoObra \} from "\.\/lib\/editar-obra-local-selection";/,
+    initialLoadSource,
+    /import \{ selecionarObrasLocaisAutorizadasEdicaoObra \} from "\.\.\/lib\/editar-obra-local-selection";/,
   );
   assert.doesNotMatch(
     pageSource,
     /import \{ usuarioPodeEditarObraLocal \} from "\.\/lib\/editar-obra-ownership-utils";/,
   );
   assert.equal(
-    (pageSource.match(/selecionarObrasLocaisAutorizadasEdicaoObra\(/g) || [])
+    (initialLoadSource.match(/selecionarObrasLocaisAutorizadasEdicaoObra\(/g) || [])
       .length,
     2,
   );
   assert.match(
-    pageSource,
+    initialLoadSource,
     /carregarObrasLocalStorageEdicaoObra\(userId\)[\s\S]*?selecionarObrasLocaisAutorizadasEdicaoObra\([\s\S]*?setObras\(obrasAutorizadas\)/,
   );
   assert.match(
-    pageSource,
+    initialLoadSource,
     /carregarCapitulosSupabaseEdicaoObra\([\s\S]*?selecionarObrasLocaisAutorizadasEdicaoObra\([\s\S]*?normalizarObraSupabase\(/,
   );
   assert.match(

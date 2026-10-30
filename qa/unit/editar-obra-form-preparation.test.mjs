@@ -11,6 +11,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(
     source
@@ -119,15 +126,15 @@ test("prepara valores padrão sem profile nem tag personalizada", () => {
 
 test("Editar Obra delega somente a preparação pura antes dos setters", () => {
   assert.match(
-    pageSource,
-    /import \{ prepararValoresFormularioEdicaoObra \} from "\.\/lib\/editar-obra-form-preparation";/,
+    initialLoadSource,
+    /import \{ prepararValoresFormularioEdicaoObra \} from "\.\.\/lib\/editar-obra-form-preparation";/,
   );
-  assert.match(pageSource, /function aplicarObraNoFormulario\(/);
+  assert.match(initialLoadSource, /function aplicarObraNoFormulario\(/);
   assert.match(
-    pageSource,
+    initialLoadSource,
     /const valoresFormulario = prepararValoresFormularioEdicaoObra\(\{[\s\S]*?obraAtual,[\s\S]*?nomeAutorProfileAtual,[\s\S]*?opcoesFormato: OPCOES_FORMATO_OBRA,[\s\S]*?opcoesGenero: OPCOES_GENERO_OBRA,[\s\S]*?opcoesTags: OPCOES_TAGS_OBRA,/,
   );
-  assert.match(pageSource, /setTitulo\(valoresFormulario\.titulo\);[\s\S]*?setArquivoObra\(valoresFormulario\.arquivoObra\);/);
+  assert.match(initialLoadSource, /setTitulo\(valoresFormulario\.titulo\);[\s\S]*?setArquivoObra\(valoresFormulario\.arquivoObra\);/);
   assert.match(source, /prepararValorEditavel\(/);
   assert.match(source, /formatarFormatoEdicaoObra\(obraAtual\.formato\)/);
   assert.match(source, /formatarGeneroEdicaoObra\(obraAtual\.genero\)/);
