@@ -117,14 +117,14 @@ test("hook preserva o lifecycle de validação do link de recovery", () => {
   assert.match(recoveryValidationSource, /\[setEstadoLink\]\);/);
 });
 
-test("página mantém estado e salvamento de senha, delegando só a validação inicial", () => {
+test("página mantém estado e delega só o lifecycle inicial de recovery", () => {
   assert.match(
     pageSource,
     /import \{ useRedefinirSenhaRecoveryValidation \} from "\.\/hooks\/use-redefinir-senha-recovery-validation";/,
   );
   assert.match(
     pageSource,
-    /import \{\s*obterMensagemErro,\s*sessaoEhRecuperacao,\s*type EstadoLink,\s*\} from "\.\/lib\/redefinir-senha-recovery-utils";/,
+    /import type \{ EstadoLink \} from "\.\/lib\/redefinir-senha-recovery-utils";/,
   );
   assert.doesNotMatch(pageSource, /^type EstadoLink =/m);
   assert.doesNotMatch(pageSource, /^function obterMensagemErro\(/m);
@@ -138,10 +138,5 @@ test("página mantém estado e salvamento de senha, delegando só a validação 
     pageSource,
     /useRedefinirSenhaRecoveryValidation\(setEstadoLink\);/,
   );
-  assert.match(pageSource, /async function salvarNovaSenha\(/);
-  assert.match(pageSource, /\[A-Za-zÀ-ÖØ-öø-ÿ\]/);
-  assert.match(pageSource, /!\/\\d\/\.test\(novaSenha\)/);
-  assert.match(pageSource, /await sessaoEhRecuperacao\(\)/);
-  assert.match(pageSource, /supabase\.auth\.updateUser/);
-  assert.match(pageSource, /supabase\.auth\.signOut\(\)/);
+  assert.doesNotMatch(pageSource, /async function salvarNovaSenha\(/);
 });

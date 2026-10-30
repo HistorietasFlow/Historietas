@@ -2640,3 +2640,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Redefinir Senha — Fase 2
 
 - Os helpers de recuperação e o lifecycle inicial de validação do link foram movidos para módulos dedicados, preservando autenticação, query params, sessão recovery, cleanup, estados e o salvamento da nova senha em `page.tsx`.
+
+## Redefinir Senha — Fase 3
+
+- A ação de salvar a nova senha foi movida para hook dedicado, preservando validações, autenticação, revalidação recovery, atualização, logout, redirect, mensagens e estados controlados em `page.tsx`.
