@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const derivedStateSource = readFileSync(
   new URL(
     "../../app/editar-obra/hooks/use-editar-obra-form-derived-state.ts",
@@ -148,8 +155,8 @@ test("progresso de Editar Obra preserva critérios, arredondamento e autoria do 
 
 test("Editar Obra delega somente validação e progresso do formulário", () => {
   assert.match(
-    pageSource,
-    /import \{ validarFormularioEdicaoObra \} from "\.\/lib\/editar-obra-form-validation";/,
+    saveActionSource,
+    /import \{ validarFormularioEdicaoObra \} from "\.\.\/lib\/editar-obra-form-validation";/,
   );
   assert.doesNotMatch(pageSource, /function validarFormulario\(/);
   assert.match(
@@ -161,7 +168,7 @@ test("Editar Obra delega somente validação e progresso do formulário", () => 
     /import \{ useEditarObraFormDerivedState \} from "\.\/hooks\/use-editar-obra-form-derived-state";/,
   );
   assert.match(
-    pageSource,
+    saveActionSource,
     /const erroValidacao = validarFormularioEdicaoObra\(\{[\s\S]*?autorProfileAtivo,[\s\S]*?tagPersonalizadaValida,[\s\S]*?\}\);/,
   );
   assert.match(source, /import \{ ehClassificacao18 \} from "\.\.\/\.\.\/\.\.\/lib\/historietasAdultContent";/);

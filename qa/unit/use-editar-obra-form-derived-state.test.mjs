@@ -13,6 +13,13 @@ const source = readFileSync(
   ),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook preserva os useMemo de obra, tags e progresso", () => {
   assert.match(source, /export function useEditarObraFormDerivedState\(/);
@@ -43,7 +50,7 @@ test("hook preserva valores derivados, navegação e preview do autor", () => {
   assert.match(source, /const autorPreview = autorProfileAtivo \|\| autor\.trim\(\);/);
 });
 
-test("página delega o estado derivado e mantém salvarEdicao", () => {
+test("página delega o estado derivado e a ação de salvamento", () => {
   assert.match(
     pageSource,
     /import \{ useEditarObraFormDerivedState \} from "\.\/hooks\/use-editar-obra-form-derived-state";/,
@@ -52,7 +59,8 @@ test("página delega o estado derivado e mantém salvarEdicao", () => {
     pageSource,
     /\} = useEditarObraFormDerivedState\(\{[\s\S]*?obras,[\s\S]*?obraId,[\s\S]*?tags,[\s\S]*?formato,[\s\S]*?genero,[\s\S]*?tagPersonalizada,[\s\S]*?usarTagPersonalizada,[\s\S]*?formatoPersonalizado,[\s\S]*?generoPersonalizado,[\s\S]*?titulo,[\s\S]*?autor,[\s\S]*?classificacaoIndicativa,[\s\S]*?avisosConteudo18,[\s\S]*?sinopse,[\s\S]*?nomeAutorProfile,/,
   );
-  assert.match(pageSource, /async function salvarEdicao\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(pageSource, /const \{ salvarEdicao \} = useEditarObraSaveAction\(/);
+  assert.match(saveActionSource, /async function salvarEdicao\(event: FormEvent<HTMLFormElement>\)/);
   assert.doesNotMatch(pageSource, /const obraAtual = useMemo/);
   assert.doesNotMatch(source, /supabase|localStorage|sessionStorage|\.from\(/);
 });

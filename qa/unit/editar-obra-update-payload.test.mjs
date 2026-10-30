@@ -7,8 +7,11 @@ const source = readFileSync(
   new URL("../../app/editar-obra/lib/editar-obra-update-payload.ts", import.meta.url),
   "utf8",
 );
-const pageSource = readFileSync(
-  new URL("../../app/editar-obra/page.tsx", import.meta.url),
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 const javascript = typescript.transpileModule(source, {
@@ -83,20 +86,20 @@ test("preserva os fallbacks do arquivo ausente", () => {
 
 test("Editar Obra delega somente a construção pura do payload de atualização", () => {
   assert.match(
-    pageSource,
-    /import \{ criarPayloadAtualizacaoObra \} from "\.\/lib\/editar-obra-update-payload";/,
+    saveActionSource,
+    /import \{ criarPayloadAtualizacaoObra \} from "\.\.\/lib\/editar-obra-update-payload";/,
   );
-  assert.match(pageSource, /\.from\("obras"\)/);
+  assert.match(saveActionSource, /\.from\("obras"\)/);
   assert.match(
-    pageSource,
+    saveActionSource,
     /\.update\(\s*criarPayloadAtualizacaoObra\(\{[\s\S]*?tituloFinal,[\s\S]*?arquivoObraFinal,[\s\S]*?agora,[\s\S]*?\}\),\s*\)/,
   );
-  assert.match(pageSource, /\.eq\("id", obraId\)/);
-  assert.match(pageSource, /\.eq\("user_id", userId\)/);
-  assert.match(pageSource, /\.select\("id"\)/);
-  assert.match(pageSource, /\.maybeSingle\(\)/);
-  assert.match(pageSource, /erroAtualizarObra/);
-  assert.match(pageSource, /obraAtualizadaSupabase\?\.id/);
+  assert.match(saveActionSource, /\.eq\("id", obraId\)/);
+  assert.match(saveActionSource, /\.eq\("user_id", userId\)/);
+  assert.match(saveActionSource, /\.select\("id"\)/);
+  assert.match(saveActionSource, /\.maybeSingle\(\)/);
+  assert.match(saveActionSource, /erroAtualizarObra/);
+  assert.match(saveActionSource, /obraAtualizadaSupabase\?\.id/);
   assert.match(source, /arquivoObraFinal\?\.conteudo \|\| ""/);
   assert.match(source, /arquivoObraFinal\?\.categoria \|\| "outro"/);
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect|await|new Date/);

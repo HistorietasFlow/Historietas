@@ -20,6 +20,13 @@ const tagActionsSource = readFileSync(
   ),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("ações de assets preservam validação, FileReader e ordem dos setters", () => {
   assert.match(assetActionsSource, /export function useEditarObraAssetActions\(/);
@@ -51,7 +58,9 @@ test("ações de tags preservam helpers, setters e atualização", () => {
 test("página delega as ações e preserva o salvamento", () => {
   assert.match(pageSource, /useEditarObraAssetActions\(/);
   assert.match(pageSource, /useEditarObraTagActions\(/);
-  assert.match(pageSource, /async function salvarEdicao\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(pageSource, /import \{ useEditarObraSaveAction \} from "\.\/hooks\/use-editar-obra-save-action";/);
+  assert.match(pageSource, /const \{ salvarEdicao \} = useEditarObraSaveAction\(/);
+  assert.match(saveActionSource, /async function salvarEdicao\(event: FormEvent<HTMLFormElement>\)/);
   assert.doesNotMatch(pageSource, /function selecionarCapa\(event: ChangeEvent<HTMLInputElement>\)/);
   assert.doesNotMatch(pageSource, /function atualizarTagPersonalizada\(valor: string\)/);
 });

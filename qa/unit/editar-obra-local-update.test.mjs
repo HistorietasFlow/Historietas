@@ -7,8 +7,11 @@ const source = readFileSync(
   new URL("../../app/editar-obra/lib/editar-obra-local-update.ts", import.meta.url),
   "utf8",
 );
-const pageSource = readFileSync(
-  new URL("../../app/editar-obra/page.tsx", import.meta.url),
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 const chamadasNormalizacao = [];
@@ -87,14 +90,14 @@ test("reconstrói a lista, preserva a ordem e normaliza duas vezes somente a obr
 
 test("Editar Obra delega somente a atualização pura da lista local", () => {
   assert.match(
-    pageSource,
-    /import \{ atualizarObraNaListaLocalEdicao \} from "\.\/lib\/editar-obra-local-update";/,
+    saveActionSource,
+    /import \{ atualizarObraNaListaLocalEdicao \} from "\.\.\/lib\/editar-obra-local-update";/,
   );
   assert.match(
-    pageSource,
+    saveActionSource,
     /await removerArquivosStorageEdicaoObra\(arquivosAntigosParaRemover\);[\s\S]*?const novasObras = atualizarObraNaListaLocalEdicao\(\{[\s\S]*?obras,[\s\S]*?arquivoObra: arquivoObraFinal,[\s\S]*?\}\);/,
   );
-  assert.match(pageSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId\)/);
+  assert.match(saveActionSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId\)/);
   assert.match(source, /return obras\.map\(\(obra, index\) => \{/);
   assert.match(source, /const obraNormalizada = normalizarObra\(obra, index\);/);
   assert.match(source, /if \(obraNormalizada\.id !== obraId\)/);

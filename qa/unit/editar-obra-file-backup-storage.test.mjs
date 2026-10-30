@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const localWorkStorageSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-local-work-storage.ts",
@@ -240,8 +247,8 @@ test("backup de Editar Obra restaura o primeiro arquivo valido sem substituir ar
 
 test("Editar Obra delega somente o backup local de arquivos ao modulo extraido", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?salvarArquivoObraNoBackup,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/lib\/editar-obra-file-backup-storage";/,
+    saveActionSource,
+    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?salvarArquivoObraNoBackup,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\.\/lib\/editar-obra-file-backup-storage";/,
   );
   assert.doesNotMatch(pageSource, /const FILE_BACKUP_STORAGE_KEY =/);
   for (const helper of [
@@ -253,7 +260,7 @@ test("Editar Obra delega somente o backup local de arquivos ao modulo extraido",
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
   assert.doesNotMatch(pageSource, /restaurarArquivoObraComBackup\(obra, backupArquivosObras\)/);
-  assert.match(pageSource, /salvarArquivoObraNoBackup\(/);
+  assert.match(saveActionSource, /salvarArquivoObraNoBackup\(/);
   assert.match(localWorkStorageSource, /const backupArquivosObras = carregarBackupArquivosObras\(usuarioId\);/);
   assert.match(localWorkStorageSource, /restaurarArquivoObraComBackup\(obra, backupArquivosObras\)/);
   assert.match(localWorkStorageSource, /sincronizarBackupArquivosObras\(obrasDoUsuarioComDono, usuarioId\);/);

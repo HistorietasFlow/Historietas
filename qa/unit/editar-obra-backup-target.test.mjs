@@ -10,8 +10,11 @@ const source = readFileSync(
   ),
   "utf8",
 );
-const pageSource = readFileSync(
-  new URL("../../app/editar-obra/page.tsx", import.meta.url),
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 const javascript = typescript
@@ -64,11 +67,11 @@ test("alvo de backup de Editar Obra preserva prioridades de slug e link", () => 
 
 test("Editar Obra delega somente a construção do alvo de backup", () => {
   assert.match(
-    pageSource,
-    /import \{ criarAlvoBackupArquivoEdicaoObra \} from "\.\/lib\/editar-obra-backup-target";/,
+    saveActionSource,
+    /import \{ criarAlvoBackupArquivoEdicaoObra \} from "\.\.\/lib\/editar-obra-backup-target";/,
   );
   assert.match(
-    pageSource,
+    saveActionSource,
     /if \(arquivoObraRemovidoManualmente\) \{[\s\S]*?salvarArquivoObraNoBackup\([\s\S]*?criarAlvoBackupArquivoEdicaoObra\(\{[\s\S]*?obraId,[\s\S]*?obraLocalAtual,[\s\S]*?tituloFinal,[\s\S]*?\}\),[\s\S]*?null,[\s\S]*?userId[\s\S]*?\);[\s\S]*?\} else \{[\s\S]*?sincronizarBackupArquivosObras\(novasObrasDoUsuario, userId\);/,
   );
   assert.match(
