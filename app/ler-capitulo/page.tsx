@@ -323,6 +323,8 @@ export default function LerCapituloPage() {
     iniciarAcaoComentariosCapitulo,
     finalizarAcaoComentariosCapitulo,
   } =
+    // A fábrica apenas cria callbacks; a ref é lida quando as ações são executadas.
+    // eslint-disable-next-line react-hooks/refs
     criarControlesComentariosCapitulo({
       acoesComentariosCapituloRef,
       setComentarioStatus,
@@ -379,8 +381,6 @@ export default function LerCapituloPage() {
     enviarComentarioCapitulo,
     removerComentarioCapitulo,
     alternarCurtidaComentarioCapitulo,
-    // A fábrica apenas cria callbacks; as refs são lidas quando as ações são executadas.
-    // eslint-disable-next-line react-hooks/refs
   } = criarAcoesComentariosCapitulo({
     supabase,
     obraId,
