@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-actions.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
+const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 const js = typescript.transpileModule(fonte, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
@@ -80,7 +81,10 @@ test("os corpos originais permanecem literais e a página continua proprietária
     assert.match(fonte, new RegExp(`async function ${nome}\\(`));
   }
   assert.match(pagina, /const \[comentariosCapitulo, setComentariosCapitulo\] = useState/);
-  assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(pagina, /import \{[\s\S]*?salvarComentarioCapituloSupabase,[\s\S]*?TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,[\s\S]*?\} from "\.\/lib\/ler-capitulo-comment-persistence";/);
+  assert.doesNotMatch(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(persistencia, /export async function salvarComentarioCapituloSupabase\(/);
+  assert.match(pagina, /salvarComentarioCapituloSupabase,/);
   assert.doesNotMatch(fonte, /\b(?:useState|useEffect|useRef)\b/);
 });
 

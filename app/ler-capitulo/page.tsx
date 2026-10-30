@@ -42,6 +42,18 @@ import {
   criarTextoLeituraDesktopStyle,
 } from "./lib/ler-capitulo-reading-text-utils";
 import {
+  salvarComentarioCapituloSupabase,
+  TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,
+} from "./lib/ler-capitulo-comment-persistence";
+import {
+  obterCapituloAnteriorLeitor,
+  obterCapituloAtualLeitor,
+  obterIndiceCapituloLeitor,
+  obterNumeroCapituloLeitor,
+  obterObraAtualLeitor,
+  obterProximoCapituloLeitor,
+} from "./lib/ler-capitulo-reader-derived";
+import {
   carregarPerfilComentarioLeitor,
   obterTextoRegistroLeitor,
   type PerfilComentarioLeitor,
@@ -76,85 +88,8 @@ type AlvoDenunciaLeitor = {
   alvoTitulo: string;
 };
 
-const TABELA_COMENTARIOS_CAPITULOS_CURTIDAS = "comentarios_capitulos_curtidas";
-
 const registrarNotificacaoInteracaoCapituloSupabase =
   criarRegistrarNotificacaoInteracaoCapituloSupabase(criarHrefLeituraCapituloLeitor);
-
-async function salvarComentarioCapituloSupabase(
-  capituloId: string,
-  comentario: string,
-  comentarioPaiId = ""
-): Promise<Record<string, unknown> | null> {
-  try {
-    const { data: dadosUsuario } = await supabase.auth.getUser();
-    const userId = dadosUsuario.user?.id || "";
-    const capituloIdLimpo = capituloId.trim();
-    const comentarioLimpo = comentario.trim();
-    const comentarioPaiIdLimpo = comentarioPaiId.trim();
-    const agora = new Date().toISOString();
-
-    if (!userId || !capituloIdLimpo || !comentarioLimpo) {
-      return null;
-    }
-
-    const payloadBase = {
-      user_id: userId,
-      capitulo_id: capituloIdLimpo,
-      comentario: comentarioLimpo.slice(0, 420),
-    };
-    const payloadComResposta = {
-      ...payloadBase,
-      comentario_pai_id: comentarioPaiIdLimpo || null,
-    };
-
-    const { data: comentarioComAtualizacao, error: erroComAtualizacao } =
-      await supabase
-        .from("comentarios_capitulos")
-        .insert({
-          ...payloadComResposta,
-          atualizado_em: agora,
-        })
-        .select(
-          "id,user_id,comentario,comentario_pai_id,atualizado_em,criado_em"
-        )
-        .single();
-
-    if (!erroComAtualizacao && comentarioComAtualizacao) {
-      return comentarioComAtualizacao as Record<string, unknown>;
-    }
-
-    const { data: comentarioSemAtualizacao, error: erroSemAtualizacao } =
-      await supabase
-        .from("comentarios_capitulos")
-        .insert(payloadComResposta)
-        .select("id,user_id,comentario,comentario_pai_id,criado_em")
-        .single();
-
-    if (!erroSemAtualizacao && comentarioSemAtualizacao) {
-      return comentarioSemAtualizacao as Record<string, unknown>;
-    }
-
-    if (comentarioPaiIdLimpo) {
-      throw erroSemAtualizacao || erroComAtualizacao;
-    }
-
-    const { data: comentarioLegado, error: erroLegado } = await supabase
-      .from("comentarios_capitulos")
-      .insert(payloadBase)
-      .select("id,user_id,comentario,criado_em")
-      .single();
-
-    if (!erroLegado && comentarioLegado) {
-      return comentarioLegado as Record<string, unknown>;
-    }
-
-    throw erroLegado || erroSemAtualizacao || erroComAtualizacao;
-  } catch (error) {
-    console.warn("Não consegui salvar comentário do capítulo no Supabase:", error);
-    return null;
-  }
-}
 
 
 
@@ -255,16 +190,15 @@ export default function LerCapituloPage() {
     setCarregando,
   });
 
-  const obraAtual = useMemo(() => {
-    return obras.find((obra) => obra.id === obraId) || null;
-  }, [obras, obraId]);
+  const obraAtual = useMemo(
+    () => obterObraAtualLeitor(obras, obraId),
+    [obras, obraId],
+  );
 
-  const capituloAtual = useMemo(() => {
-    return (
-      obraAtual?.capitulos.find((capitulo) => capitulo.id === capituloId) ||
-      null
-    );
-  }, [obraAtual, capituloId]);
+  const capituloAtual = useMemo(
+    () => obterCapituloAtualLeitor(obraAtual, capituloId),
+    [obraAtual, capituloId],
+  );
 
   const statusAcesso18 =
     obraAtual && controleAcesso18.obraId === obraAtual.id
@@ -321,33 +255,22 @@ export default function LerCapituloPage() {
     TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,
   });
 
-  const indiceCapitulo = useMemo(() => {
-    if (!obraAtual || !capituloAtual) {
-      return -1;
-    }
+  const indiceCapitulo = useMemo(
+    () => obterIndiceCapituloLeitor(obraAtual, capituloAtual),
+    [obraAtual, capituloAtual],
+  );
 
-    return obraAtual.capitulos.findIndex(
-      (capitulo) => capitulo.id === capituloAtual.id
-    );
-  }, [obraAtual, capituloAtual]);
+  const numeroCapitulo = obterNumeroCapituloLeitor(indiceCapitulo);
 
-  const numeroCapitulo = indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
+  const capituloAnterior = useMemo(
+    () => obterCapituloAnteriorLeitor(obraAtual, indiceCapitulo),
+    [obraAtual, indiceCapitulo],
+  );
 
-  const capituloAnterior = useMemo(() => {
-    if (!obraAtual || indiceCapitulo <= 0) {
-      return null;
-    }
-
-    return obraAtual.capitulos[indiceCapitulo - 1];
-  }, [obraAtual, indiceCapitulo]);
-
-  const proximoCapitulo = useMemo(() => {
-    if (!obraAtual || indiceCapitulo < 0) {
-      return null;
-    }
-
-    return obraAtual.capitulos[indiceCapitulo + 1] || null;
-  }, [obraAtual, indiceCapitulo]);
+  const proximoCapitulo = useMemo(
+    () => obterProximoCapituloLeitor(obraAtual, indiceCapitulo),
+    [obraAtual, indiceCapitulo],
+  );
 
   const totalPalavras = capituloAtual ? contarPalavras(capituloAtual.texto) : 0;
   const postComentariosCapitulo: ComentariosCapituloPost | null = capituloAtual

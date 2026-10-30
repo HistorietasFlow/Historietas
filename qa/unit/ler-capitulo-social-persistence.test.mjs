@@ -8,6 +8,7 @@ const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").repla
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-social-persistence.ts");
 const rotaCapitulo = ler("../../app/ler-capitulo/lib/ler-capitulo-chapter-route.ts");
+const persistenciaComentario = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 const mockada = fonte
   .replace('import { supabase } from "../../../lib/supabase/client";', 'const supabase = { from: (...args) => globalThis.__socialLeitor.supabase.from(...args), rpc: (...args) => globalThis.__socialLeitor.supabase.rpc(...args) };')
   .replace('import { idObraSupabaseValido } from "../../../lib/utils";', 'const idObraSupabaseValido = (...args) => globalThis.__socialLeitor.idValido(...args);');
@@ -47,7 +48,9 @@ test("os três corpos e tipos sociais preservam os contratos e a navegação per
   assert.doesNotMatch(pagina, /function criarHrefLeituraCapituloLeitor\(/);
   assert.match(rotaCapitulo, /export function criarHrefLeituraCapituloLeitor\(/);
   assert.match(pagina, /criarRegistrarNotificacaoInteracaoCapituloSupabase\(criarHrefLeituraCapituloLeitor\)/);
-  assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(pagina, /import \{[\s\S]*?salvarComentarioCapituloSupabase,[\s\S]*?\} from "\.\/lib\/ler-capitulo-comment-persistence";/);
+  assert.doesNotMatch(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(persistenciaComentario, /export async function salvarComentarioCapituloSupabase\(/);
   assert.doesNotMatch(fonte, /function (?:criarHrefLeituraCapituloLeitor|salvarComentarioCapituloSupabase)\(/);
 });
 
