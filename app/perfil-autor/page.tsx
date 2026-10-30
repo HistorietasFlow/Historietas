@@ -98,7 +98,6 @@ import {
 import { obterEstadoAlvoPerfilAutor } from "./lib/profile-target-view-state";
 import { obterEstadoVisualSeguimentoPerfilAutor } from "./lib/profile-follow-view-state";
 import {
-  obterDadosNotificacoesPerfilAutor,
   limitarTextoPerfilAutor,
   obterTituloSobrePerfilAutor,
 } from "./lib/profile-display-utils";
@@ -116,6 +115,8 @@ import {
 import { obterEstadoVisualActionSheetsPerfilAutor } from "./lib/profile-action-sheets-view-state";
 import { obterEstadoVisualEditorPerfilAutor } from "./lib/profile-editor-view-state";
 import { obterEstadoVisualDenunciasPerfilAutor } from "./lib/profile-report-view-state";
+import { obterEstadoVisualNotificacoesPerfilAutor } from "./lib/profile-notification-view-state";
+import { obterEstadoVisualPaginaPerfilAutor } from "./lib/profile-page-view-state";
 import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
@@ -287,14 +288,15 @@ function PerfilAutorPageContent() {
   } = useNotificacoes();
   const [notificacoesNaoLidasPerfil, setNotificacoesNaoLidasPerfil] =
     useState<number | null>(null);
-  const notificacoesNaoLidas =
-    notificacoesNaoLidasPerfil ?? notificacoesNaoLidasContexto;
   const {
     notificacoesNaoLidasFormatadas,
     ariaLabelNotificacoes,
     ariaLabelBadgeNotificacoes,
     temNotificacoesNaoLidas,
-  } = obterDadosNotificacoesPerfilAutor(notificacoesNaoLidas);
+  } = obterEstadoVisualNotificacoesPerfilAutor({
+    notificacoesNaoLidasPerfil,
+    notificacoesNaoLidasContexto,
+  });
 
   usePerfilAutorAuthIdentitySync({
     avatarInputRef,
@@ -928,7 +930,14 @@ function PerfilAutorPageContent() {
     abaBibliotecaPerfil,
   });
 
-  if (carregando || redirecionandoParaLogin) {
+  const estadoVisualPaginaPerfilAutor = obterEstadoVisualPaginaPerfilAutor({
+    carregando,
+    redirecionandoParaLogin,
+    autorNaoEncontrado,
+    perfilParaMostrar,
+  });
+
+  if (estadoVisualPaginaPerfilAutor === "carregando") {
     return (
       <ProfilePageState
         isDesktop={isDesktop}
@@ -938,7 +947,7 @@ function PerfilAutorPageContent() {
     );
   }
 
-  if (autorNaoEncontrado) {
+  if (estadoVisualPaginaPerfilAutor === "autor-nao-encontrado") {
     return (
       <ProfilePageState
         isDesktop={isDesktop}
@@ -948,7 +957,7 @@ function PerfilAutorPageContent() {
     );
   }
 
-  if (!perfilParaMostrar) {
+  if (estadoVisualPaginaPerfilAutor === "perfil-ausente") {
     return (
       <ProfilePageState
         isDesktop={isDesktop}
@@ -957,6 +966,8 @@ function PerfilAutorPageContent() {
       />
     );
   }
+
+  const perfilParaMostrarPronto = perfilParaMostrar!;
 
   return (
     <main style={pageThemeStyle}>
@@ -1226,20 +1237,20 @@ function PerfilAutorPageContent() {
             heroEditorRemainingCharacters={caracteresRestantesBioSobre}
             generosEspecialidadesPerfil={generosEspecialidadesPerfil}
             totalPublicadas={compactarNumeroPerfilAutor(
-              perfilParaMostrar.totalPublicadas,
+              perfilParaMostrarPronto.totalPublicadas,
             )}
             totalCapitulos={compactarNumeroPerfilAutor(
-              perfilParaMostrar.totalCapitulos,
+              perfilParaMostrarPronto.totalCapitulos,
             )}
             totalCurtidas={compactarNumeroPerfilAutor(
-              perfilParaMostrar.totalCurtidas,
+              perfilParaMostrarPronto.totalCurtidas,
             )}
             totalVisualizacoes={compactarNumeroPerfilAutor(
               totalVisualizacoesPerfil,
             )}
             totalObras={totalObrasPerfil}
             totalRascunhos={totalRascunhosPerfil}
-            totalComentarios={perfilParaMostrar.totalComentarios}
+            totalComentarios={perfilParaMostrarPronto.totalComentarios}
             totalConcluidas={obrasConcluidasPerfilTotal}
             mostrarObrasSemCapitulos={temObrasSemCapitulosPerfil}
             totalObrasSemCapitulos={totalObrasSemCapitulosPerfil}

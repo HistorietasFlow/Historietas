@@ -53,6 +53,13 @@ const shellViewStateSource = readFileSync(
   ),
   "utf8",
 );
+const notificationViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-notification-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workItemRendererSource = readFileSync(
   new URL(
     "../../app/perfil-autor/hooks/use-perfil-autor-work-item-renderer.tsx",
@@ -606,18 +613,26 @@ test("dados de notificações consolidam contagem e rótulos acessíveis", () =>
 });
 
 
-test("página deriva os dados de notificações em uma única chamada", () => {
+test("página delega os dados de notificações ao estado visual dedicado", () => {
   assert.match(
-    pagina,
-    /obterDadosNotificacoesPerfilAutor,[\s\S]*?from "\.\/lib\/profile-display-utils";/,
+    notificationViewStateSource,
+    /import \{ obterDadosNotificacoesPerfilAutor \} from "\.\/profile-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterDadosNotificacoesPerfilAutor\(/g) || []).length,
+    (notificationViewStateSource.match(/obterDadosNotificacoesPerfilAutor\(/g) || []).length,
     1,
+  );
+  assert.match(
+    notificationViewStateSource,
+    /notificacoesNaoLidasPerfil \?\? notificacoesNaoLidasContexto/,
+  );
+  assert.match(
+    pagina,
+    /obterEstadoVisualNotificacoesPerfilAutor\(\{/,
   );
   assert.doesNotMatch(
     pagina,
-    /formatarContagemNotificacoesPerfilAutor|obterAriaLabelNotificacoesPerfilAutor|obterAriaLabelBadgeNotificacoesPerfilAutor/,
+    /obterDadosNotificacoesPerfilAutor\(/,
   );
   assert.match(
     pagina,
