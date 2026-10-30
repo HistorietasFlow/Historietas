@@ -41,6 +41,13 @@ const profileWorkItemSource = readFileSync(
   new URL("../../app/listas/components/listas-profile-work-item.tsx", import.meta.url),
   "utf8",
 );
+const profileItemRendererSource = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-profile-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const diaryCommentsPanelSource = readFileSync(
   new URL("../../app/listas/components/listas-diary-comments-panel.tsx", import.meta.url),
   "utf8",
@@ -124,7 +131,7 @@ test("formatarNotaListas preserva validacao e arredondamento decimal", () => {
 test("Listas delega somente os formatadores extraidos", () => {
   assert.match(
     pagina,
-    /import \{ formatarLeituraMesAno, formatarNotaListas \} from "\.\/lib\/listas-format-utils";/,
+    /import \{ formatarNotaListas \} from "\.\/lib\/listas-format-utils";/,
   );
 
   for (const helper of [
@@ -173,6 +180,15 @@ test("Listas delega somente os formatadores extraidos", () => {
 
     if (helper === "formatarNotaListas") {
       assert.match(pagina, /formatarNota=\{formatarNotaListas\}/);
+      continue;
+    }
+
+    if (helper === "formatarLeituraMesAno") {
+      assert.match(
+        profileItemRendererSource,
+        /import \{ formatarLeituraMesAno \} from "\.\.\/lib\/listas-format-utils";/,
+      );
+      assert.match(profileItemRendererSource, /\bformatarLeituraMesAno\(/);
       continue;
     }
 

@@ -49,13 +49,20 @@ const profileWorkRenderer = readFileSync(
   ),
   "utf8",
 );
+const profileItemRenderer = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-profile-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Listas delega as quatro apresentações das linhas sem mover o domínio", () => {
   assert.match(
     pagina,
-    /import \{ ListasProfileWorkRenderer \} from "\.\/components\/listas-profile-work-renderer";/,
+    /import \{ useListasProfileItemRenderer \} from "\.\/hooks\/use-listas-profile-item-renderer";/,
   );
-  assert.match(pagina, /<ListasProfileWorkRenderer\b/);
+  assert.match(profileItemRenderer, /<ListasProfileWorkRenderer\b/);
   assert.match(
     profileWorkRenderer,
     /import \{ ListasProfileWorkItem \} from "\.\/listas-profile-work-item";/,
@@ -79,21 +86,21 @@ test("Listas delega as quatro apresentações das linhas sem mover o domínio", 
     "alternarCurtidaAnotacaoListas",
     "abrirComentariosDiario",
   ]) {
-    assert.match(pagina, new RegExp(`\\b${contrato}\\b`));
+    assert.match(profileItemRenderer, new RegExp(`\\b${contrato}\\b`));
   }
 
   assert.match(
     pageRenderers,
     /const href = idUsuarioValido\(autor\.id\)[\s\S]*?ListasAuthorRow/,
   );
-  assert.match(pagina, /key=\{item\.chave\}/);
+  assert.match(profileItemRenderer, /key=\{item\.chave\}/);
   assert.match(pageRenderers, /key=\{obra\.id\}/);
   assert.match(pageRenderers, /key=\{autor\.id \|\| autor\.nome\}/);
 });
 
 test("linha do perfil preserva mídia, destaque, nota, toggle e opções", () => {
   assert.match(linhaPerfil, /export function ListasProfileWorkRow/);
-  assert.match(pagina, /historietas-list-row-highlight/);
+  assert.match(profileItemRenderer, /historietas-list-row-highlight/);
   assert.match(itemPerfil, /export function ListasProfileWorkItem/);
   assert.match(itemPerfil, /ListasDiaryAnnotationCard/);
   assert.match(linhaPerfil, /data-historietas-user-content="true"/);

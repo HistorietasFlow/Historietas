@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/listas/page.tsx", import.meta.url),
   "utf8",
 );
+const profileItemRenderer = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-profile-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pageDataHook = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-data-loader.ts", import.meta.url),
   "utf8",
@@ -104,16 +111,19 @@ test("ListasRatingDetail normaliza, limita o preenchimento e renderiza cinco est
 
 test("Listas delega o detalhe somente ao ramo de avaliações", () => {
   assert.match(
-    pagina,
-    /import ListasRatingDetail from "\.\/components\/listas-rating-detail";/,
+    profileItemRenderer,
+    /import ListasRatingDetail from "\.\.\/components\/listas-rating-detail";/,
   );
   assert.doesNotMatch(pagina, /function renderizarEstrelasAvaliacao\(/);
-  assert.equal((pagina.match(/<ListasRatingDetail\b/g) || []).length, 1);
+  assert.equal(
+    (profileItemRenderer.match(/<ListasRatingDetail\b/g) || []).length,
+    1,
+  );
   assert.match(
-    pagina,
+    profileItemRenderer,
     /categoriaAtual === "avaliacoes"\s*\? <ListasRatingDetail nota=\{item\.nota\} data=\{item\.data\} \/>\s*: categoriaAtual === "tudo"\s*\? formatarLeituraMesAno\(item\.ultimaLeituraEm \|\| ""\)\s*: textoSecundarioItem\(item, categoriaAtual\)/,
   );
-  assert.match(pagina, /function renderizarItemObra\(/);
+  assert.match(profileItemRenderer, /function renderizarItemPerfil\(/);
   assert.match(
     readFileSync(
       new URL("../../app/listas/components/listas-profile-work-item.tsx", import.meta.url),

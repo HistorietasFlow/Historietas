@@ -18,15 +18,14 @@ import { useListasDiaryProfileActions } from "./hooks/use-listas-diary-profile-a
 import { useListasCategoryNavigation } from "./hooks/use-listas-category-navigation";
 import { useListasPageRenderers } from "./hooks/use-listas-page-renderers";
 import { useListasResultsViewState } from "./hooks/use-listas-results-view-state";
-import ListasRatingDetail from "./components/listas-rating-detail";
+import { useListasProfileItemRenderer } from "./hooks/use-listas-profile-item-renderer";
+import { useListasDiaryCommentsRenderer } from "./hooks/use-listas-diary-comments-renderer";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
 import { ListasDiaryReportModal } from "./components/listas-diary-report-modal";
 import { ListasWorkActionSheet } from "./components/listas-work-action-sheet";
-import { ListasProfileWorkRenderer } from "./components/listas-profile-work-renderer";
-import { ListasDiaryCommentsPanel } from "./components/listas-diary-comments-panel";
-import { formatarLeituraMesAno, formatarNotaListas } from "./lib/listas-format-utils";
+import { formatarNotaListas } from "./lib/listas-format-utils";
 import { listasPageCss } from "./lib/listas-page-css";
 import {
   pageStyle,
@@ -476,150 +475,55 @@ function ListasUniversaisContent() {
       usuarioAtualId,
     });
 
-  function renderizarItemObra(
-    item: ItemObraLista,
-    categoriaAtual: CategoriaPerfil,
-  ) {
-    const obra = item.obra;
-    const detalheVisivel =
-      categoriaAtual === "avaliacoes"
-        ? <ListasRatingDetail nota={item.nota} data={item.data} />
-        : categoriaAtual === "tudo"
-          ? formatarLeituraMesAno(item.ultimaLeituraEm || "")
-          : textoSecundarioItem(item, categoriaAtual);
-    const anotacaoId = item.anotacaoId?.trim() || "";
-    const chaveAnotacao = anotacaoId || obra.id;
-    const anotacaoAberta = Boolean(anotacoesAbertas[chaveAnotacao]);
-    const spoilerRevelado = Boolean(
-      anotacoesSpoilerReveladas[chaveAnotacao],
-    );
+  const { renderizarItemPerfil } = useListasProfileItemRenderer({
+    abrirComentariosDiario,
+    abrirMenuObra,
+    alternarCurtidaAnotacaoListas,
+    anotacoesAbertas,
+    anotacoesSpoilerReveladas,
+    interacoesAnotacoes,
+    obraDestacadaId,
+    perfil,
+    perfilEhProprio,
+    preferenciasPerfil,
+    relacionamentoPerfil,
+    setAnotacoesAbertas,
+    setAnotacoesSpoilerReveladas,
+  });
 
-    function alternarExibicaoAnotacao() {
-      const proximoEstado = !anotacaoAberta;
-
-      setAnotacoesAbertas((atuais) => ({
-        ...atuais,
-        [chaveAnotacao]: proximoEstado,
-      }));
-
-      if (!proximoEstado) {
-        setAnotacoesSpoilerReveladas((atuais) => ({
-          ...atuais,
-          [chaveAnotacao]: false,
-        }));
-      }
-    }
-    const interacao = anotacaoId
-      ? interacoesAnotacoes[anotacaoId] ||
-        criarInteracaoAnotacaoListasVazia()
-      : criarInteracaoAnotacaoListasVazia();
-    const permissoesAnotacao = obterPermissoesAnotacaoListas({
-      item,
+  const { renderizarComentariosDiarioSheet } =
+    useListasDiaryCommentsRenderer({
+      abrirDenunciaDiario,
+      alterarOrdenacaoComentariosAnotacaoListas,
+      alternarCurtidaComentarioAnotacaoListas,
+      alternarExpansaoComentariosDiario,
+      atualizarComentarioAnotacaoListas,
+      cancelarRespostaComentarioAnotacaoListas,
+      comentarioCurtindoId,
+      comentarioRemovendoId,
+      comentariosDiarioExpandido,
+      comentariosDiarioItem,
+      comentariosSheetRef,
+      enviarComentarioAnotacaoListas,
+      fecharComentariosDiario,
+      finalizarArrasteComentariosDiario,
+      iniciarArrasteComentariosDiario,
+      iniciarRespostaComentarioAnotacaoListas,
+      inserirNoComentarioDiario,
+      interacoesAnotacoes,
+      isDesktop,
+      menuOrdenacaoComentariosDiarioAberto,
+      moverArrasteComentariosDiario,
       perfilEhProprio,
+      preferenciasPerfil,
       relacionamentoPerfil,
-      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
+      removerComentarioAnotacaoListas,
+      respostasVisiveisComentariosDiario,
+      setMenuOrdenacaoComentariosDiarioAberto,
+      setRespostasVisiveisComentariosDiario,
+      usuarioAtualId,
+      usuarioAtualPerfil,
     });
-    return (
-      <ListasProfileWorkRenderer
-        key={item.chave}
-        annotation={item.anotacao || ""}
-        annotationId={anotacaoId}
-        annotationOpen={anotacaoAberta}
-        annotationSpoiler={Boolean(item.anotacaoSpoiler)}
-        authorName={perfil?.nome || "usuário"}
-        autor={obra.autor}
-        canLikeAnnotation={permissoesAnotacao.podeCurtirAnotacao}
-        canSeeComments={permissoesAnotacao.podeVerComentarios}
-        className={`historietas-list-row${
-          obraDestacadaId === obra.id
-            ? " historietas-list-row-highlight"
-            : ""
-        }`}
-        commentCount={interacao.comentarios.length}
-        coverStyle={criarCapaStyle(obra.capa)}
-        detalhe={detalheVisivel}
-        genero={obra.genero}
-        hasAnnotation={Boolean(item.anotacao)}
-        href={obra.link}
-        isAnnotationLiked={interacao.curtiu}
-        isSavingAnnotationLike={interacao.salvandoCurtida}
-        nota={item.nota}
-        onLikeAnnotation={() => void alternarCurtidaAnotacaoListas(item)}
-        onOpenComments={() => abrirComentariosDiario(item)}
-        onOpenOptions={() => void abrirMenuObra(obra, item, categoriaAtual)}
-        onSetSpoilerRevealed={(revelado) =>
-          setAnotacoesSpoilerReveladas((atuais) => ({
-            ...atuais,
-            [chaveAnotacao]: revelado,
-          }))
-        }
-        onToggleAnnotation={alternarExibicaoAnotacao}
-        showRating={item.nota > 0 && categoriaAtual !== "avaliacoes"}
-        spoilerRevealed={spoilerRevelado}
-        titulo={obra.titulo}
-        totalCurtidasAnnotation={interacao.totalCurtidas}
-        workId={obra.id}
-      />
-    );
-  }
-
-
-  function renderizarComentariosDiarioSheet() {
-    const item = comentariosDiarioItem;
-
-    if (!item) {
-      return null;
-    }
-
-    const permissoes = obterPermissoesAnotacaoListas({
-      item,
-      perfilEhProprio,
-      relacionamentoPerfil,
-      quemPodeComentarDiario: preferenciasPerfil.quemPodeComentarDiario,
-    });
-
-    return (
-      <ListasDiaryCommentsPanel
-        comentarioCurtindoId={comentarioCurtindoId}
-        comentarioRemovendoId={comentarioRemovendoId}
-        comentariosDiarioExpandido={comentariosDiarioExpandido}
-        comentariosDiarioItem={item}
-        diarioComentarioMaxLength={DIARIO_COMENTARIO_MAX_LENGTH}
-        interacoesAnotacoes={interacoesAnotacoes}
-        isDesktop={isDesktop}
-        menuOrdenacaoComentariosDiarioAberto={menuOrdenacaoComentariosDiarioAberto}
-        onAlterarOrdenacao={alterarOrdenacaoComentariosAnotacaoListas}
-        onAlternarCurtida={(anotacaoId, comentario) => void alternarCurtidaComentarioAnotacaoListas(anotacaoId, comentario)}
-        onCancelReply={cancelarRespostaComentarioAnotacaoListas}
-        onChangeComentario={atualizarComentarioAnotacaoListas}
-        onClose={fecharComentariosDiario}
-        onHandleKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            alternarExpansaoComentariosDiario();
-          }
-        }}
-        onHandleTouchCancel={finalizarArrasteComentariosDiario}
-        onHandleTouchEnd={finalizarArrasteComentariosDiario}
-        onHandleTouchMove={moverArrasteComentariosDiario}
-        onHandleTouchStart={iniciarArrasteComentariosDiario}
-        onInsertReaction={inserirNoComentarioDiario}
-        onOpenReport={abrirDenunciaDiario}
-        onRemoveComment={(itemSelecionado, comentario) => void removerComentarioAnotacaoListas(itemSelecionado, comentario)}
-        onReply={iniciarRespostaComentarioAnotacaoListas}
-        onSend={(itemSelecionado) => void enviarComentarioAnotacaoListas(itemSelecionado)}
-        onToggleExpand={alternarExpansaoComentariosDiario}
-        onToggleOrdenacao={() => setMenuOrdenacaoComentariosDiarioAberto((aberto) => !aberto)}
-        permissoes={permissoes}
-        respostasVisiveis={respostasVisiveisComentariosDiario}
-        setMenuOrdenacaoComentariosDiarioAberto={setMenuOrdenacaoComentariosDiarioAberto}
-        setRespostasVisiveis={setRespostasVisiveisComentariosDiario}
-        sheetRef={comentariosSheetRef}
-        usuarioAtualId={usuarioAtualId}
-        usuarioAtualPerfil={usuarioAtualPerfil}
-      />
-    );
-  }
 
   const { renderizarAutor, renderizarObraPublica } = useListasPageRenderers({
     abrirMenuObra,
@@ -708,7 +612,7 @@ function ListasUniversaisContent() {
           setQuantidadeVisivel((quantidade) => quantidade + 40)
         }
         renderizarAutor={renderizarAutor}
-        renderizarItemPerfil={(item) => renderizarItemObra(item, categoria)}
+        renderizarItemPerfil={(item) => renderizarItemPerfil(item, categoria)}
         renderizarObraPublica={renderizarObraPublica}
         rowsStyle={rowsStyle}
         stateIconStyle={stateIconStyle}

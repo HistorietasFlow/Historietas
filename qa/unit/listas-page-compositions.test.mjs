@@ -29,6 +29,13 @@ const pageRenderers = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-renderers.tsx", import.meta.url),
   "utf8",
 );
+const profileItemRenderer = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-profile-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const resultsViewState = readFileSync(
   new URL(
     "../../app/listas/hooks/use-listas-results-view-state.ts",
@@ -105,7 +112,12 @@ test("página mantém derivações e delega navegação e renderizadores públic
   assert.match(pagina, /useListasCategoryNavigation<CategoriaPerfil>\(\{/);
   assert.doesNotMatch(pagina, /function trocarCategoria\(/);
   assert.match(categoryNavigation, /function trocarCategoria\(/);
-  assert.match(pagina, /function renderizarItemObra\(/);
+  assert.match(
+    pagina,
+    /import \{ useListasProfileItemRenderer \} from "\.\/hooks\/use-listas-profile-item-renderer";/,
+  );
+  assert.match(pagina, /\} = useListasProfileItemRenderer\(\{/);
+  assert.match(profileItemRenderer, /function renderizarItemPerfil\(/);
   assert.match(pagina, /useListasPageRenderers\(\{/);
   assert.doesNotMatch(pagina, /function renderizarObraPublica\(/);
   assert.doesNotMatch(pagina, /function renderizarAutor\(/);
@@ -113,7 +125,7 @@ test("página mantém derivações e delega navegação e renderizadores públic
   assert.match(pageRenderers, /function renderizarAutor\(/);
   assert.match(
     pagina,
-    /renderizarItemPerfil=\{\(item\) => renderizarItemObra\(item, categoria\)\}/,
+    /renderizarItemPerfil=\{\(item\) => renderizarItemPerfil\(item, categoria\)\}/,
   );
   assert.match(
     pagina,

@@ -70,7 +70,7 @@ test("Listas delega apenas o modo desktop e preserva consumidores responsivos", 
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 8);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 7);
   assert.match(
     readFileSync(
       new URL("../../app/listas/hooks/use-listas-diary-comments-controls.ts", import.meta.url),
@@ -98,5 +98,12 @@ test("Listas delega apenas o modo desktop e preserva consumidores responsivos", 
   assert.match(diaryAnnotationActions, /async function salvarAnotacaoListas\(/);
   assert.match(pagina, /useListasDiaryInteractionActions\(\{/);
   assert.doesNotMatch(pagina, /async function enviarComentarioAnotacaoListas\(/);
-  assert.match(pagina, /<ListasDiaryCommentsPanel[\s\S]*?isDesktop=\{isDesktop\}/);
+  assert.match(pagina, /useListasDiaryCommentsRenderer\(\{/);
+  assert.match(
+    readFileSync(
+      new URL("../../app/listas/hooks/use-listas-diary-comments-renderer.tsx", import.meta.url),
+      "utf8",
+    ),
+    /<ListasDiaryCommentsPanel[\s\S]*?isDesktop=\{isDesktop\}/,
+  );
 });

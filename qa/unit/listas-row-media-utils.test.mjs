@@ -44,6 +44,13 @@ const pageRenderers = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-renderers.tsx", import.meta.url),
   "utf8",
 );
+const profileItemRenderer = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-profile-item-renderer.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const executavel = utils
   .replace(/\r\n/g, "\n")
   .replace('import type { CSSProperties } from "react";\n\n', "");
@@ -113,7 +120,8 @@ test("Listas delega somente os helpers de mídia das linhas", () => {
   }
   assert.equal(
     (pagina.match(/criarCapaStyle\(/g) || []).length +
-      (pageRenderers.match(/criarCapaStyle\(/g) || []).length,
+      (pageRenderers.match(/criarCapaStyle\(/g) || []).length +
+      (profileItemRenderer.match(/criarCapaStyle\(/g) || []).length,
     2,
   );
   assert.equal(

@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 3
+
+- Os renderizadores de itens do perfil e do sheet de comentários do Diário foram movidos para hooks dedicados de composição visual, preservando estados, permissões, callbacks, acessibilidade e toda a orquestração na página.
+
 ## Listas — Fase 2
 
 - A derivação pura dos parâmetros da rota e o estado derivado de resultados foram movidos para módulos dedicados, preservando normalizações, prioridades, `useMemo`, filtros, ordenação, paginação e agrupamento na página de listas.
