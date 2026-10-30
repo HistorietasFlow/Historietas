@@ -52,6 +52,9 @@ test("hook preserva sequência, cancelamento, auth e reconciliação inicial", (
   assert.match(hookSource, /carregarCapitulosSupabaseEdicaoObra\([\s\S]*?normalizarObraSupabase\([\s\S]*?prepararObrasCarregadasEdicaoObra\(/);
   assert.match(hookSource, /sincronizarBackupArquivosObras\(obrasAtualizadasDoUsuario, userId\)/);
   assert.match(hookSource, /return \(\) => \{\s*cancelado = true;\s*\};/);
-  assert.match(hookSource, /\}, \[router\]\);/);
+  assert.match(
+    hookSource,
+    /\}, \[\s*router,[\s\S]*?setObraId,[\s\S]*?setArquivoObraRemovidoManualmente,\s*\]\);/,
+  );
   assert.doesNotMatch(hookSource, /useState|useMemo|useCallback|useRef/);
 });
