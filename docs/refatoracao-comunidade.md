@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 4
+
+- A composição visual do action sheet de obra foi movida para hook dedicado, preservando estados, actions, estilos, callbacks e a ordem da denúncia de anotação na página.
+
 ## Listas — Fase 3
 
 - Os renderizadores de itens do perfil e do sheet de comentários do Diário foram movidos para hooks dedicados de composição visual, preservando estados, permissões, callbacks, acessibilidade e toda a orquestração na página.
