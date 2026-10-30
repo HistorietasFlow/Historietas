@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil do Autor — Fase 3
+
+- Os estados derivados da Comunidade e da Biblioteca foram movidos para helpers puros dedicados, preservando coleções, totais, abas, menus, estatísticas, formatação e a orquestração de estados na página.
+
 ## Perfil do Autor — Fase 2
 
 - Os renderizadores de publicações recentes da Comunidade e de itens da Biblioteca foram movidos para hooks dedicados de composição visual, preservando dados derivados, denúncia, métricas, menus, callbacks e a orquestração na página.

@@ -83,18 +83,12 @@ import {
   normalizarAbaPerfilAutor,
   normalizarUsernamePerfilAutor,
 } from "./lib/profile-formatters";
+import { obterEstadoVisualComunidadePerfilAutor } from "./lib/profile-community-view-state";
+import { obterEstadoVisualBibliotecaPerfilAutor } from "./lib/profile-library-view-state";
 import {
   type IdentidadeAutenticadaPerfilAutor,
 } from "./lib/profile-auth-identity";
 import { criarPerfilUsuarioRemotoComoAutor } from "./lib/data-normalizers";
-import {
-  obterAriaLabelsEstatisticasComunidadePerfilAutor,
-  obterAvisoComunidadeVaziaPerfilAutor,
-  comunidadeSemPublicacoesRecentesPerfilAutor,
-  obterPaddingInferiorPublicacaoComunidadePerfilAutor,
-  obterTituloComunidadePerfilAutor,
-  obterValoresEstatisticasComunidadePerfilAutor,
-} from "./lib/profile-community-publication-utils";
 import {
   obterMensagemDiarioVazioPerfilAutor,
   obterTituloDiarioPerfilAutor,
@@ -151,18 +145,12 @@ import {
   obterTotalObrasConcluidasPerfilAutor,
   obterVisibilidadeDestaquesPerfilAutor,
 } from "./lib/profile-work-display-utils";
-import { selecionarItensBibliotecaPerfil } from "./lib/profile-library-active-items";
-import { montarItensBibliotecaPerfilAutor } from "./lib/profile-library-items-builder";
-import { obterTotaisBibliotecaPerfilAutor } from "./lib/profile-library-totals";
 import { obterResumoEstatisticasPerfilAutor } from "./lib/profile-summary-stats";
 import {
   bibliotecaSemItensAtivosPerfilAutor,
-  encontrarItemBibliotecaMenuAberto,
   obterMetaMenuBibliotecaPerfil,
   obterRotuloAcaoRemoverBibliotecaPerfil,
-  obterMensagemBibliotecaVaziaPerfil,
   obterRotulosAcoesColecoesBibliotecaPerfil,
-  obterRotuloBibliotecaPerfil,
 } from "./lib/profile-library-display-utils";
 import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
@@ -626,34 +614,21 @@ function PerfilAutorPageContent() {
   });
   const mostrarDestaquesAutor = perfilSalvoAutor.mostrarDestaques;
 
-  const publicacoesRecentesComunidade =
-    comunidadePerfil.publicacoesRecentes;
-  const comunidadeSemPublicacoesRecentes =
-    comunidadeSemPublicacoesRecentesPerfilAutor(
-      publicacoesRecentesComunidade,
-    );
-  const erroComunidadePerfil = comunidadePerfil.erro;
-  const avisoComunidadeVazia = obterAvisoComunidadeVaziaPerfilAutor({
+  const {
+    publicacoesRecentesComunidade,
+    comunidadeSemPublicacoesRecentes,
+    erroComunidadePerfil,
+    avisoComunidadeVazia,
+    tituloComunidadePerfil,
+    ariaLabelsEstatisticasComunidade,
+    valoresEstatisticasComunidade,
+    paddingInferiorPublicacaoComunidade,
+  } = obterEstadoVisualComunidadePerfilAutor({
+    comunidadePerfil,
     podeEditarPerfil,
-    nomePerfil: perfilNome,
-  });
-  const tituloComunidadePerfil = obterTituloComunidadePerfilAutor({
+    perfilNome,
     language,
-    nomePerfil: perfilNome,
   });
-  const ariaLabelsEstatisticasComunidade =
-    obterAriaLabelsEstatisticasComunidadePerfilAutor(
-      perfilNome,
-    );
-  const valoresEstatisticasComunidade =
-    obterValoresEstatisticasComunidadePerfilAutor({
-      totalPublicacoes: comunidadePerfil.totalPublicacoes,
-      totalTeorias: comunidadePerfil.totalTeorias,
-      totalReviews: comunidadePerfil.totalReviews,
-      formatarNumero: compactarNumeroPerfilAutor,
-    });
-  const paddingInferiorPublicacaoComunidade =
-    obterPaddingInferiorPublicacaoComunidadePerfilAutor(podeEditarPerfil);
   const dadosDenunciaPerfil = obterDadosDenunciaPerfilAutor(
     perfilParaMostrar,
   );
@@ -907,56 +882,22 @@ function PerfilAutorPageContent() {
 
 
   const {
-    queroLer: itensBibliotecaQueroLer,
-    lendoAgora: itensBibliotecaLendoAgora,
-    favoritas: itensBibliotecaFavoritas,
-    concluidas: itensBibliotecaConcluidas,
-    historico: itensBibliotecaHistorico,
-    salvos: itensBibliotecaSalvos,
-  } = montarItensBibliotecaPerfilAutor({
-    bibliotecaPerfilVisivel,
-    queroLer: diarioPerfil.queroLer,
-    lendoAgora: diarioPerfil.lendoAgora,
-    favoritas: diarioPerfil.favoritas,
-    concluidas: diarioPerfil.concluidas,
-    atividades: atividadesDiarioPerfil,
-    obras,
-  });
-
-  const itensBibliotecaQueroLerTotal = itensBibliotecaQueroLer.length;
-  const itensBibliotecaConcluidasTotal = itensBibliotecaConcluidas.length;
-  const {
     obrasSeguidasPerfilTotal,
     obrasConcluidasPerfilTotal,
-  } = obterTotaisBibliotecaPerfilAutor({
+    itensBibliotecaAtivos,
+    bibliotecaMenuAberto,
+    mensagemBibliotecaVazia,
+  } = obterEstadoVisualBibliotecaPerfilAutor({
+    bibliotecaPerfilVisivel,
+    diarioPerfil,
+    atividadesDiarioPerfil,
     obras,
     obrasSeguidasBiblioteca,
     obrasConcluidas,
-    itensBibliotecaQueroLerTotal,
-    itensBibliotecaConcluidasTotal,
     obrasConcluidasPerfilPorObrasDoAutor,
-  });
-
-  const itensBibliotecaAtivos = selecionarItensBibliotecaPerfil({
-    aba: abaBibliotecaPerfil,
-    queroLer: itensBibliotecaQueroLer,
-    lendoAgora: itensBibliotecaLendoAgora,
-    favoritas: itensBibliotecaFavoritas,
-    concluidas: itensBibliotecaConcluidas,
-    salvos: itensBibliotecaSalvos,
-    historico: itensBibliotecaHistorico,
-  });
-
-  const bibliotecaMenuAberto = encontrarItemBibliotecaMenuAberto(
-    itensBibliotecaAtivos,
-    bibliotecaMenuAbertoChave,
-  );
-
-  const rotuloBibliotecaAtiva = obterRotuloBibliotecaPerfil(
     abaBibliotecaPerfil,
-  );
-  const mensagemBibliotecaVazia =
-    obterMensagemBibliotecaVaziaPerfil(rotuloBibliotecaAtiva);
+    bibliotecaMenuAbertoChave,
+  });
   const { renderizarItemBiblioteca } = usePerfilAutorLibraryItemRenderer({
     isDesktop,
     totaisInteracoesObras,

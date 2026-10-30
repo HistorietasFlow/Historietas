@@ -11,6 +11,13 @@ const libraryItemRendererSource = readFileSync(
   ),
   "utf8",
 );
+const libraryViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-library-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const contentState = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-library-content-state.tsx",
@@ -27,18 +34,25 @@ const panel = readFileSync(
 );
 
 test("a página delega seleção de itens da Biblioteca", () => {
-  assert.match(pagina, /import \{ selecionarItensBibliotecaPerfil \}/);
   assert.match(
-    pagina,
+    libraryViewStateSource,
+    /import \{ selecionarItensBibliotecaPerfil \} from "\.\/profile-library-active-items";/,
+  );
+  assert.match(
+    libraryViewStateSource,
     /const itensBibliotecaAtivos = selecionarItensBibliotecaPerfil\(\{/,
   );
   assert.doesNotMatch(
-    pagina,
+    libraryViewStateSource,
     /const itensBibliotecaAtivos = useMemo/,
   );
   for (const campo of ["aba", "queroLer", "lendoAgora", "favoritas", "concluidas", "salvos", "historico"]) {
-    assert.match(pagina, new RegExp(campo + ":"));
+    assert.match(libraryViewStateSource, new RegExp(campo + ":"));
   }
+  assert.match(
+    pagina,
+    /import \{ obterEstadoVisualBibliotecaPerfilAutor \} from "\.\/lib\/profile-library-view-state";/,
+  );
 });
 
 test("todas as seis abas preservam o array original", () => {

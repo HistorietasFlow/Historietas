@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const communityViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-community-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(
   source.replace(
     'import { normalizarNomeAutor } from "./profile-formatters";',
@@ -175,7 +182,7 @@ test("página deriva o nome do perfil uma vez e reutiliza nas exibições", () =
     "perfilNome deve ser reutilizado após a derivação",
   );
   assert.match(
-    pagina,
+    communityViewStateSource,
     /obterTituloComunidadePerfilAutor\(\{[\s\S]*?nomePerfil: perfilNome,/,
   );
   assert.match(

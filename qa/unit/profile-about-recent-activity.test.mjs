@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const libraryViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-library-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const sectionSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-about-section.tsx",
@@ -69,7 +76,7 @@ test("Perfil de Autor deriva as atividades do Diário uma única vez", () => {
     1,
   );
   assert.match(
-    pagina,
+    libraryViewStateSource,
     /atividades: atividadesDiarioPerfil,/,
   );
   assert.match(
