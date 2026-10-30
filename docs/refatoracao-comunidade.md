@@ -2504,3 +2504,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Ajuda — Fase 2
 
 - Os helpers de tradução, status e data, a normalização pura dos registros do suporte técnico e as derivações da FAQ foram movidos para módulos dedicados. RPCs, autenticação, effects, formulário, estados e JSX permaneceram em `page.tsx`.
+
+## Ajuda — Fase 3
+
+- O CSS global, os estilos gerais da Central de Ajuda e os estilos do suporte técnico foram movidos para módulos dedicados, mantendo JSX, estados, handlers, RPCs, autenticação, formulário e effects inalterados.
