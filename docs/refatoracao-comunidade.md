@@ -2636,3 +2636,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Redefinir Senha — Fase 1
 
 - O catálogo de traduções e os estilos estáticos da página foram movidos para módulos dedicados, preservando textos, idiomas, CSS, responsividade e toda a autenticação, validação e redefinição de senha em `page.tsx`.
+
+## Redefinir Senha — Fase 2
+
+- Os helpers de recuperação e o lifecycle inicial de validação do link foram movidos para módulos dedicados, preservando autenticação, query params, sessão recovery, cleanup, estados e o salvamento da nova senha em `page.tsx`.
