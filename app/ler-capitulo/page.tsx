@@ -75,6 +75,11 @@ import { marcarNotificacaoCapituloComoLidaSupabase, criarRegistrarNotificacaoInt
 import { criarAcoesComentariosCapitulo } from "./lib/ler-capitulo-comment-actions";
 import { criarAcoesInteracoesCapitulo } from "./lib/ler-capitulo-interaction-actions";
 import { criarAcaoProgressoLeituraCapitulo } from "./lib/ler-capitulo-reading-progress-action";
+import { criarAcoesAutenticacaoLeitor } from "./lib/ler-capitulo-auth-actions";
+import {
+  criarAcoesDenunciaLeitor,
+  type AlvoDenunciaLeitor,
+} from "./lib/ler-capitulo-report-actions";
 import {
   atualizarCapituloNasObrasLeitor,
   normalizarObrasLeitor,
@@ -90,12 +95,6 @@ import {
   containerStyle,
   desktopContainerStyle,
 } from "./lib/ler-capitulo-layout-styles";
-
-type AlvoDenunciaLeitor = {
-  alvoTipo: "capitulo" | "comentario_capitulo";
-  alvoId: string;
-  alvoTitulo: string;
-};
 
 const registrarNotificacaoInteracaoCapituloSupabase =
   criarRegistrarNotificacaoInteracaoCapituloSupabase(criarHrefLeituraCapituloLeitor);
@@ -266,36 +265,18 @@ export default function LerCapituloPage() {
     registrarAtividadeDiarioLeitor,
   });
 
-  async function obterUsuarioLogadoIdAtual() {
-    if (usuarioIdLogado) {
-      return usuarioIdLogado;
-    }
-
-    try {
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id || "";
-
-      setUsuarioIdLogado(userId);
-
-      return userId;
-    } catch {
-      setUsuarioIdLogado("");
-      return "";
-    }
-  }
-
-  async function exigirLogin(mensagem: string) {
-    const userId = await obterUsuarioLogadoIdAtual();
-
-    if (userId) {
-      setMensagemAcao("");
-      return true;
-    }
-
-    setMensagemAcao(mensagem);
-    router.push(criarLoginHrefLeitor(obraId, capituloId));
-    return false;
-  }
+  const {
+    obterUsuarioLogadoIdAtual,
+    exigirLogin,
+  } =
+    criarAcoesAutenticacaoLeitor({
+      usuarioIdLogado,
+      obraId,
+      capituloId,
+      router,
+      setUsuarioIdLogado,
+      setMensagemAcao,
+    });
 
   async function recarregarMetricasCapituloAtual() {
     if (!capituloAtual) {
@@ -453,50 +434,22 @@ export default function LerCapituloPage() {
     setMostrarComentario,
   });
 
-
-  async function abrirDenunciaCapituloAtual() {
-    const userIdAtual = await obterUsuarioLogadoIdAtual();
-
-    if (!userIdAtual) {
-      setMensagemAcao("Entre na sua conta para denunciar este capítulo.");
-      router.push(criarLoginHrefLeitor(obraId, capituloId));
-      return;
-    }
-
-    if (!capituloAtual) {
-      return;
-    }
-
-    setMostrarAjustes(false);
-    setDenunciaAlvo({
-      alvoTipo: "capitulo",
-      alvoId: capituloAtual.id,
-      alvoTitulo: capituloAtual.titulo,
+  const {
+    abrirDenunciaCapituloAtual,
+    denunciarComentarioCapitulo,
+  } =
+    criarAcoesDenunciaLeitor({
+      obraId,
+      capituloId,
+      capituloAtual,
+      comentariosCapitulo,
+      router,
+      obterUsuarioLogadoIdAtual,
+      setMensagemAcao,
+      setMostrarAjustes,
+      setComentarioStatus,
+      setDenunciaAlvo,
     });
-  }
-
-  async function denunciarComentarioCapitulo(comentarioId: string) {
-    const userIdAtual = await obterUsuarioLogadoIdAtual();
-
-    if (!userIdAtual) {
-      setMensagemAcao("Entre na sua conta para denunciar comentários.");
-      router.push(criarLoginHrefLeitor(obraId, capituloId));
-      return;
-    }
-
-    const comentario = comentariosCapitulo.find(
-      (item) => item.id === comentarioId
-    );
-
-    setComentarioStatus("");
-    setDenunciaAlvo({
-      alvoTipo: "comentario_capitulo",
-      alvoId: comentarioId,
-      alvoTitulo: comentario
-        ? `Comentário de ${comentario.nome}`
-        : "Comentário de capítulo",
-    });
-  }
 
 
   function trocarCapitulo(novoCapituloId: string) {
