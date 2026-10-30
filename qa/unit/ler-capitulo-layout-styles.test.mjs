@@ -8,6 +8,7 @@ const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").repla
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const conteudo = ler("../../app/ler-capitulo/components/ler-capitulo-reader-content.tsx");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-layout-styles.ts");
+const textoLeitura = ler("../../app/ler-capitulo/lib/ler-capitulo-reading-text-utils.ts");
 const texto = ler("../../app/ler-capitulo/lib/ler-capitulo-text-style.ts");
 const compilar = (source) => typescript.transpileModule(source, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
@@ -58,13 +59,21 @@ test("página e conteúdo consomem os estilos sem duplicá-los", () => {
   assert.ok(importacao);
   assert.ok(importacaoConteudo);
   for (const nome of nomes) {
-    assert.match(importacao[1] + importacaoConteudo[1], new RegExp(`\\b${nome}\\b`));
+    const consumidor = ["chapterTextStyle", "desktopChapterTextStyle"].includes(nome)
+      ? textoLeitura
+      : importacao[1] + importacaoConteudo[1];
+    assert.match(consumidor, new RegExp(`\\b${nome}\\b`));
     assert.doesNotMatch(pagina, new RegExp(`const ${nome}: CSSProperties`));
     assert.doesNotMatch(conteudo, new RegExp(`const ${nome}: CSSProperties`));
   }
   assert.match(importacaoConteudo[1], /\bcriarEstiloTituloCapitulo\b/);
   assert.doesNotMatch(pagina, /function criarEstiloTituloCapitulo\(/);
-  assert.match(pagina, /function criarTextoLeituraStyle\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?criarTextoLeituraStyle,[\s\S]*?criarTextoLeituraDesktopStyle,[\s\S]*?\} from "\.\/lib\/ler-capitulo-reading-text-utils";/,
+  );
+  assert.doesNotMatch(pagina, /function criarTextoLeituraStyle\(/);
+  assert.match(textoLeitura, /export function criarTextoLeituraStyle\(/);
   assert.match(pagina, /<ComentariosCapituloSheet/);
   assert.match(pagina, /export default function LerCapituloPage\(/);
   assert.match(conteudo, /style=\{criarEstiloTituloCapitulo\(/);

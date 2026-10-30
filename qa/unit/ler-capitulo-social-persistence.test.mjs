@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-social-persistence.ts");
+const rotaCapitulo = ler("../../app/ler-capitulo/lib/ler-capitulo-chapter-route.ts");
 const mockada = fonte
   .replace('import { supabase } from "../../../lib/supabase/client";', 'const supabase = { from: (...args) => globalThis.__socialLeitor.supabase.from(...args), rpc: (...args) => globalThis.__socialLeitor.supabase.rpc(...args) };')
   .replace('import { idObraSupabaseValido } from "../../../lib/utils";', 'const idObraSupabaseValido = (...args) => globalThis.__socialLeitor.idValido(...args);');
@@ -39,7 +40,12 @@ test("os três corpos e tipos sociais preservam os contratos e a navegação per
   assert.match(fonte, /type TipoNotificacaoInteracaoCapitulo =[\s\S]*?"curtida-capitulo"[\s\S]*?"comentario-capitulo"[\s\S]*?"curtida-comentario-capitulo"/);
   assert.match(fonte, /type TipoAtividadeDiarioLeitor =[\s\S]*?"comecou_ler"[\s\S]*?"leu_capitulo"[\s\S]*?"concluiu_obra"[\s\S]*?"favoritou_obra"[\s\S]*?"salvou_obra"/);
   assert.match(fonte, /type VisibilidadeDiarioLeitor = "publico" \| "parcial" \| "privado"/);
-  assert.match(pagina, /function criarHrefLeituraCapituloLeitor\(/);
+  assert.match(
+    pagina,
+    /import \{[\s\S]*?criarHrefLeituraCapituloLeitor,[\s\S]*?\} from "\.\/lib\/ler-capitulo-chapter-route";/,
+  );
+  assert.doesNotMatch(pagina, /function criarHrefLeituraCapituloLeitor\(/);
+  assert.match(rotaCapitulo, /export function criarHrefLeituraCapituloLeitor\(/);
   assert.match(pagina, /criarRegistrarNotificacaoInteracaoCapituloSupabase\(criarHrefLeituraCapituloLeitor\)/);
   assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
   assert.doesNotMatch(fonte, /function (?:criarHrefLeituraCapituloLeitor|salvarComentarioCapituloSupabase)\(/);

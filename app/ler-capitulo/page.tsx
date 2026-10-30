@@ -12,12 +12,11 @@ import { LerCapituloLanguageBridge } from "./components/ler-capitulo-language-br
 import { LoadingSpinner } from "./components/ler-capitulo-loading-spinner";
 import ComentariosCapituloSheet, { type ComentarioCapituloPublico, type ComentariosCapituloPost } from "./components/ler-capitulo-comments-sheet";
 import LerCapituloReaderContent, { type TamanhoFonte } from "./components/ler-capitulo-reader-content";
-import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import DenunciaModal from "../../components/DenunciaModal";
 import AdultContentGate from "../../components/AdultContentGate";
 import { historietasThemeCss } from "../../lib/historietasTheme";
-import { criarSlugBase, formatarData, idObraSupabaseValido } from "../../lib/utils";
+import { criarSlugBase, formatarData } from "../../lib/utils";
 import {
   acessoConteudo18Confirmado,
   ehClassificacao18,
@@ -31,6 +30,17 @@ import {
   salvarObrasPreservandoContas,
 } from "./lib/ler-capitulo-local-storage";
 import { FONT_SCALE_VALUES } from "./lib/ler-capitulo-reading-preferences";
+import {
+  criarLoginHrefLeitor,
+} from "./lib/ler-capitulo-login-route";
+import {
+  criarHrefLeituraCapituloLeitor,
+} from "./lib/ler-capitulo-chapter-route";
+import {
+  contarPalavras,
+  criarTextoLeituraStyle,
+  criarTextoLeituraDesktopStyle,
+} from "./lib/ler-capitulo-reading-text-utils";
 import {
   carregarPerfilComentarioLeitor,
   obterTextoRegistroLeitor,
@@ -57,9 +67,7 @@ import {
   fixedReadingProgressOuterStyle,
   fixedReadingProgressInnerStyle,
   containerStyle,
-  chapterTextStyle,
   desktopContainerStyle,
-  desktopChapterTextStyle,
 } from "./lib/ler-capitulo-layout-styles";
 
 type AlvoDenunciaLeitor = {
@@ -68,92 +76,7 @@ type AlvoDenunciaLeitor = {
   alvoTitulo: string;
 };
 
-const FONT_SCALE_LEGACY_VALUES: Record<TamanhoFonte, 1 | 3 | 5 | 7 | 10> = {
-  1: 1,
-  2: 3,
-  3: 5,
-  4: 7,
-  5: 10,
-};
-
 const TABELA_COMENTARIOS_CAPITULOS_CURTIDAS = "comentarios_capitulos_curtidas";
-
-function criarLoginHrefLeitor(obraId?: string, capituloId?: string) {
-  const obraIdLimpo = obraId?.trim() || "";
-  const capituloIdLimpo = capituloId?.trim() || "";
-  const paramsLeitor = new URLSearchParams();
-
-  if (obraIdLimpo) {
-    paramsLeitor.set("obraId", obraIdLimpo);
-  }
-
-  if (capituloIdLimpo) {
-    paramsLeitor.set("capituloId", capituloIdLimpo);
-  }
-
-  const queryLeitor = paramsLeitor.toString();
-  const redirectTo = queryLeitor ? `/ler-capitulo?${queryLeitor}` : "/ler-capitulo";
-  const paramsLogin = new URLSearchParams({
-    redirectTo,
-  });
-
-  return `/login?${paramsLogin.toString()}`;
-}
-
-function contarPalavras(texto: string) {
-  return texto.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function criarTextoLeituraStyle(tamanhoFonte: TamanhoFonte): CSSProperties {
-  const tamanhoLegado = FONT_SCALE_LEGACY_VALUES[tamanhoFonte];
-  const fontSize = 12 + tamanhoLegado;
-  const lineHeight =
-    tamanhoLegado <= 3 ? 1.78 : tamanhoLegado <= 7 ? 1.9 : 1.98;
-
-  return {
-    ...chapterTextStyle,
-    fontSize: `${fontSize}px`,
-    lineHeight,
-  };
-}
-
-function criarTextoLeituraDesktopStyle(tamanhoFonte: TamanhoFonte): CSSProperties {
-  const tamanhoLegado = FONT_SCALE_LEGACY_VALUES[tamanhoFonte];
-  const fontSize = 14 + tamanhoLegado;
-  const lineHeight =
-    tamanhoLegado <= 3 ? 1.82 : tamanhoLegado <= 7 ? 1.94 : 2.02;
-
-  return {
-    ...desktopChapterTextStyle,
-    fontSize: `${fontSize}px`,
-    lineHeight,
-  };
-}
-
-function criarHrefLeituraCapituloLeitor(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado" | "capitulos">,
-  capituloId: string
-) {
-  const indiceCapitulo = obra.capitulos.findIndex(
-    (capitulo) => capitulo.id === capituloId
-  );
-  const numeroCapitulo = indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
-  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  if (
-    obra.publicado &&
-    idObraSupabaseValido(obra.id) &&
-    slugSeguro &&
-    Number.isInteger(numeroCapitulo) &&
-    numeroCapitulo > 0
-  ) {
-    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
-  }
-
-  return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id
-  )}&capituloId=${encodeURIComponent(capituloId)}`;
-}
 
 const registrarNotificacaoInteracaoCapituloSupabase =
   criarRegistrarNotificacaoInteracaoCapituloSupabase(criarHrefLeituraCapituloLeitor);
