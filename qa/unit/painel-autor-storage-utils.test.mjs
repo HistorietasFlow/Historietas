@@ -117,7 +117,7 @@ test("helpers de coleção preservam parâmetro padrão, JSON e normalização",
 test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.match(
     pagina,
-    /import \{[\s\S]*?carregarListaIdsPainel,[\s\S]*?lerStorageUsuarioPainel,[\s\S]*?salvarColecaoAposExcluirPainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?salvarListaIdsUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
+    /import \{[\s\S]*?salvarColecaoAposExcluirPainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
   );
   assert.doesNotMatch(pagina, /function normalizarListaIds\(/);
   assert.doesNotMatch(pagina, /function criarStorageKeyUsuarioPainel\(/);
@@ -127,6 +127,8 @@ test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.doesNotMatch(pagina, /function salvarListaIdsUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function lerListaIdsStoragePainel\(/);
   assert.doesNotMatch(pagina, /function salvarColecaoAposExcluirPainel\(/);
+  assert.doesNotMatch(pagina, /carregarListaIdsPainel/);
+  assert.doesNotMatch(pagina, /lerStorageUsuarioPainel/);
   assert.match(
     localCleanupSource,
     /import \{[\s\S]*?lerListaIdsStoragePainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?\} from "\.\/painel-autor-storage-utils";/,

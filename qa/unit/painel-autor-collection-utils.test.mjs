@@ -101,10 +101,12 @@ test("filtragem preserva ordem, valores e trim dos identificadores", () => {
 });
 
 test("Painel do Autor delega somente helpers puros de colecao", () => {
-  assert.match(
-    pagina,
-    /import \{[\s\S]*?filtrarListaPorObrasDoUsuario,[\s\S]*?removerObraDaColecaoPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-collection-utils";/,
+  const initialDataHook = readFileSync(
+    new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url),
+    "utf8",
   );
+  assert.match(pagina, /import \{[\s\S]*?removerObraDaColecaoPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-collection-utils";/);
+  assert.match(initialDataHook, /import \{ filtrarListaPorObrasDoUsuario \} from "\.\.\/lib\/painel-autor-collection-utils";/);
   assert.doesNotMatch(pagina, /function obterIdentificadoresObraPainel\(/);
   assert.doesNotMatch(pagina, /function colecaoTemObraPainel\(/);
   assert.doesNotMatch(pagina, /function removerObraDaColecaoPainel\(/);
@@ -112,7 +114,8 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
   assert.equal((pagina.match(/\bobterIdentificadoresObraPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bcolecaoTemObraPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
+  assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 0);
+  assert.equal((initialDataHook.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
   assert.equal((dataLoaderSource.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
   assert.match(
     utilsSource,

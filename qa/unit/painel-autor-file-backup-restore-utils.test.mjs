@@ -94,13 +94,17 @@ test("restaurarArquivoObraComBackup preserva referência sem backup válido", ()
 });
 
 test("Painel do Autor delega somente a restauração de backup ao módulo extraído", () => {
+  const initialDataHook = readFileSync(
+    new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url),
+    "utf8",
+  );
   assert.match(
-    pagina,
-    /import \{ restaurarArquivoObraComBackup \} from "\.\/lib\/painel-autor-file-backup-restore-utils";/,
+    initialDataHook,
+    /import \{ restaurarArquivoObraComBackup \} from "\.\.\/lib\/painel-autor-file-backup-restore-utils";/,
   );
   assert.doesNotMatch(pagina, /function restaurarArquivoObraComBackup\(/);
-  assert.equal((pagina.match(/\brestaurarArquivoObraComBackup\b/g) || []).length, 2);
-  assert.match(pagina, /const backupArquivosObras = carregarBackupArquivosObras\(usuarioIdLogado\);/);
+  assert.equal((initialDataHook.match(/\brestaurarArquivoObraComBackup\b/g) || []).length, 2);
+  assert.match(initialDataHook, /const backupArquivosObras = carregarBackupArquivosObras\(usuarioIdLogado\);/);
   assert.match(
     utilsSource,
     /import \{ obterChavesBackupArquivoPainel \} from "\.\/painel-autor-file-backup-key-utils";/,
@@ -259,16 +263,20 @@ test("backup local de arquivos ignora falha de persistência durante a sincroniz
 });
 
 test("Painel do Autor delega somente a persistência local de backup de arquivos", () => {
+  const initialDataHook = readFileSync(
+    new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url),
+    "utf8",
+  );
   assert.match(
-    pagina,
-    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/lib\/painel-autor-file-backup-storage";/,
+    initialDataHook,
+    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\.\/lib\/painel-autor-file-backup-storage";/,
   );
   assert.doesNotMatch(pagina, /const FILE_BACKUP_STORAGE_KEY =/);
   assert.doesNotMatch(pagina, /type ArquivosObrasBackup =/);
   assert.doesNotMatch(pagina, /function carregarBackupArquivosObras\(/);
   assert.doesNotMatch(pagina, /function sincronizarBackupArquivosObras\(/);
-  assert.match(pagina, /carregarBackupArquivosObras\(usuarioIdLogado\)/);
-  assert.match(pagina, /sincronizarBackupArquivosObras\(obrasFinais, usuarioIdLogado\)/);
+  assert.match(initialDataHook, /carregarBackupArquivosObras\(usuarioIdLogado\)/);
+  assert.match(initialDataHook, /sincronizarBackupArquivosObras\(obrasFinais, usuarioIdLogado\)/);
   assert.match(
     localCleanupSource,
     /import \{[\s\S]*?FILE_BACKUP_STORAGE_KEY,[\s\S]*?carregarBackupArquivosObras,[\s\S]*?\} from "\.\/painel-autor-file-backup-storage";/,

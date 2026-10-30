@@ -100,6 +100,6 @@ test("Painel do Autor delega somente o body lock e preserva o painel", () => {
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-auth-session.ts", import.meta.url), "utf8"),
     /supabase\.auth\.getUser\(\)/,
   );
-  assert.match(pagina, /async function carregarDadosPainelAutor\(\)/);
-  assert.match(pagina, /import \{ useEffect, useMemo, useState \} from "react";/);
+  assert.match(pagina, /usePainelAutorInitialData\(\{/);
+  assert.match(pagina, /import \{ useMemo, useState \} from "react";/);
 });

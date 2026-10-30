@@ -198,24 +198,28 @@ test("carregarProfilePainelAutor usa o fallback por id e mantém falhas silencio
 });
 
 test("Painel do Autor delega somente os helpers de perfil ao módulo extraído", () => {
+  const initialDataHook = readFileSync(
+    new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url),
+    "utf8",
+  );
   assert.match(
-    pagina,
-    /import \{\s*aplicarNomeProfileNasObrasPainel,\s*obterNomeProfilePainelAutor,\s*\} from "\.\/lib\/painel-autor-profile-utils";/,
+    initialDataHook,
+    /import \{\s*aplicarNomeProfileNasObrasPainel,\s*obterNomeProfilePainelAutor,\s*\} from "\.\.\/lib\/painel-autor-profile-utils";/,
   );
   assert.doesNotMatch(pagina, /function obterNomeProfilePainelAutor\(/);
   assert.doesNotMatch(pagina, /function aplicarNomeProfileNasObrasPainel\(/);
-  assert.equal((pagina.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 2);
-  assert.equal((pagina.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 2);
+  assert.equal((initialDataHook.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 2);
+  assert.equal((initialDataHook.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 2);
   assert.equal((dataLoaderSource.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 2);
   assert.equal((dataLoaderSource.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 2);
   assert.match(resultMergeSource, /import \{ aplicarNomeProfileNasObrasPainel \} from "\.\/painel-autor-profile-utils";/);
   assert.match(resultMergeSource, /aplicarNomeProfileNasObrasPainel\(/);
   assert.match(
-    pagina,
-    /import \{ carregarProfilePainelAutor \} from "\.\/lib\/painel-autor-profile-loader";/,
+    initialDataHook,
+    /import \{ carregarProfilePainelAutor \} from "\.\.\/lib\/painel-autor-profile-loader";/,
   );
   assert.doesNotMatch(pagina, /async function carregarProfilePainelAutor\(/);
-  assert.equal((pagina.match(/\bcarregarProfilePainelAutor\b/g) || []).length, 2);
+  assert.equal((initialDataHook.match(/\bcarregarProfilePainelAutor\b/g) || []).length, 2);
   assert.equal((dataLoaderSource.match(/\bcarregarProfilePainelAutor\b/g) || []).length, 2);
   assert.match(
     profileLoaderSource,

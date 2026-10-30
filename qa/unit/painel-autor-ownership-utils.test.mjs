@@ -62,10 +62,15 @@ test("helpers de obras do usuário preservam guardas, propriedade e identidade",
 });
 
 test("Painel do Autor delega somente identificação e propriedade ao helper extraído", () => {
-  assert.match(
-    pagina,
-    /import \{[\s\S]*?filtrarObrasDoUsuarioPainel,[\s\S]*?marcarObrasComDonoPainel,[\s\S]*?normalizarIdUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-ownership-utils";/,
+  const initialDataHook = readFileSync(
+    new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url),
+    "utf8",
   );
+  assert.match(
+    initialDataHook,
+    /import \{[\s\S]*?filtrarObrasDoUsuarioPainel,[\s\S]*?marcarObrasComDonoPainel,[\s\S]*?\} from "\.\.\/lib\/painel-autor-ownership-utils";/,
+  );
+  assert.match(pagina, /import \{ normalizarIdUsuarioPainel \} from "\.\/lib\/painel-autor-ownership-utils";/);
   assert.doesNotMatch(pagina, /function normalizarIdUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function obraPertenceAoUsuarioPainel\(/);
   assert.doesNotMatch(pagina, /function filtrarObrasDoUsuarioPainel\(/);

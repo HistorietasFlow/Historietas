@@ -10,6 +10,10 @@ const hookSessao = await readFile(
   "app/painel-autor/hooks/use-painel-autor-auth-session.ts",
   "utf8",
 );
+const hookRedirect = await readFile(
+  "app/painel-autor/hooks/use-painel-autor-login-redirect.ts",
+  "utf8",
+);
 const pagina = await readFile("app/painel-autor/page.tsx", "utf8");
 const secao = await readFile(
   "app/painel-autor/components/painel-autor-section.tsx",
@@ -100,7 +104,7 @@ test("usePainelAutorAuthSession preserva o lifecycle autenticado", () => {
   assert.doesNotMatch(hookSessao, /useRouter|router\.replace|localStorage/);
 });
 
-test("Painel do Autor delega a sessao e mantem o redirect na pagina", () => {
+test("Painel do Autor delega a sessao e o redirect", () => {
   assert.match(
     pagina,
     /import \{ usePainelAutorAuthSession \} from "\.\/hooks\/use-painel-autor-auth-session";/,
@@ -121,6 +125,14 @@ test("Painel do Autor delega a sessao e mantem o redirect na pagina", () => {
   assert.doesNotMatch(pagina, /supabase\.auth\.onAuthStateChange\(/);
   assert.match(
     pagina,
-    /if \(!verificandoUsuario && !usuarioIdLogado\) \{[\s\S]*?router\.replace\(criarLoginHrefPainelAutor\(\)\);/,
+    /import \{ usePainelAutorLoginRedirect \} from "\.\/hooks\/use-painel-autor-login-redirect";/,
+  );
+  assert.match(
+    pagina,
+    /usePainelAutorLoginRedirect\(\{[\s\S]*?router,[\s\S]*?usuarioIdLogado,[\s\S]*?verificandoUsuario,[\s\S]*?\}\);/,
+  );
+  assert.match(
+    hookRedirect,
+    /if \([\s\S]*?!verificandoUsuario[\s\S]*?!usuarioIdLogado[\s\S]*?router\.replace\([\s\S]*?criarLoginHrefPainelAutor\(\)/,
   );
 });
