@@ -29,6 +29,13 @@ const pageRenderers = readFileSync(
   new URL("../../app/listas/hooks/use-listas-page-renderers.tsx", import.meta.url),
   "utf8",
 );
+const resultsViewState = readFileSync(
+  new URL(
+    "../../app/listas/hooks/use-listas-results-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("ListasPageHeader preserva os dois cabeçalhos e a avaliação do Diário", () => {
   assert.match(cabecalho, /export function ListasPageHeader/);
@@ -85,11 +92,16 @@ test("página mantém derivações e delega navegação e renderizadores públic
     assert.match(pagina, new RegExp(`<${componente}\\b`));
   }
 
-  assert.match(pagina, /const tituloPagina =/);
-  assert.match(pagina, /const gruposPerfil = useMemo/);
-  assert.match(pagina, /const itensPerfilVisiveis =/);
-  assert.match(pagina, /const obrasVisiveis =/);
-  assert.match(pagina, /const autoresVisiveis =/);
+  assert.match(
+    pagina,
+    /import \{ useListasResultsViewState \} from "\.\/hooks\/use-listas-results-view-state";/,
+  );
+  assert.match(pagina, /\} = useListasResultsViewState\(\{/);
+  assert.match(resultsViewState, /const tituloPagina =/);
+  assert.match(resultsViewState, /const gruposPerfil = useMemo/);
+  assert.match(resultsViewState, /const itensPerfilVisiveis =/);
+  assert.match(resultsViewState, /const obrasVisiveis =/);
+  assert.match(resultsViewState, /const autoresVisiveis =/);
   assert.match(pagina, /useListasCategoryNavigation<CategoriaPerfil>\(\{/);
   assert.doesNotMatch(pagina, /function trocarCategoria\(/);
   assert.match(categoryNavigation, /function trocarCategoria\(/);

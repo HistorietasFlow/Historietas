@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 2
+
+- A derivação pura dos parâmetros da rota e o estado derivado de resultados foram movidos para módulos dedicados, preservando normalizações, prioridades, `useMemo`, filtros, ordenação, paginação e agrupamento na página de listas.
+
 ## Listas — Fase 1
 
 - Os contratos de tipos locais e as constantes/configurações estáticas da página foram movidos para módulos dedicados, preservando valores, estruturas, ordem e os consumidores de `page.tsx` sem alterar lógica, carregamento ou apresentação.

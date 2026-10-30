@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useState } from "react";
 import { useListasActionMessage } from "./hooks/use-listas-action-message";
 import { useListasDiaryCommentsSheetLifecycle } from "./hooks/use-listas-diary-comments-sheet-lifecycle";
 import { useListasDiaryCommentsControls } from "./hooks/use-listas-diary-comments-controls";
@@ -17,6 +17,7 @@ import { useListasDiaryInteractionActions } from "./hooks/use-listas-diary-inter
 import { useListasDiaryProfileActions } from "./hooks/use-listas-diary-profile-actions";
 import { useListasCategoryNavigation } from "./hooks/use-listas-category-navigation";
 import { useListasPageRenderers } from "./hooks/use-listas-page-renderers";
+import { useListasResultsViewState } from "./hooks/use-listas-results-view-state";
 import ListasRatingDetail from "./components/listas-rating-detail";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
@@ -124,17 +125,6 @@ import { carregarAvaliacaoDiarioListas } from "./lib/listas-profile-records-load
 import {
   textoSecundarioItem,
 } from "./lib/listas-profile-text-utils";
-import {
-  filtrarOrdenarAutoresListas,
-  filtrarOrdenarItensPerfilListas,
-  filtrarOrdenarObrasPublicasListas,
-} from "./lib/listas-filter-sort-utils";
-import {
-  agruparItensPerfilPorMesListas,
-  calcularTotalResultadosListas,
-  deveAgruparPorMesListas,
-  obterTituloPaginaListas,
-} from "./lib/listas-presentation-utils";
 import { obterPermissoesAnotacaoListas } from "./lib/listas-diary-annotation-permissions-utils";
 import {
   AVALIACAO_DIARIO_LISTAS_VAZIA,
@@ -142,16 +132,8 @@ import {
   obterProximaNotaAvaliacaoListas,
   type AvaliacaoDiarioListasEstado,
 } from "./lib/listas-diary-rating-utils";
-import {
-  idUsuarioValido,
-  pegarTexto,
-} from "./lib/listas-value-utils";
-import {
-  normalizarCategoriaPerfil,
-  normalizarModoLista,
-  normalizarOrdenacao,
-  normalizarOrigemPerfil,
-} from "./lib/listas-route-utils";
+import { idUsuarioValido } from "./lib/listas-value-utils";
+import { obterEstadoRotaListas } from "./lib/listas-page-route-state";
 import {
   CATEGORIAS_PERFIL,
   COMPLETED_STORAGE_KEY,
@@ -171,10 +153,7 @@ import {
   type EditorAnotacaoListasEstado,
   type ItemObraLista,
   type ListasPerfilEstado,
-  type ModoLista,
   type ObraLista,
-  type OrdenacaoLista,
-  type OrigemPerfil,
   type PerfilLista,
 } from "./types";
 import {
@@ -191,24 +170,18 @@ function ListasUniversaisContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const queryAtual = searchParams.toString();
-
-  const modo: ModoLista = normalizarModoLista(searchParams.get("modo"));
-  const origemPerfil: OrigemPerfil = normalizarOrigemPerfil(
-    searchParams.get("origem"),
-  );
-  const categoriaUrl = normalizarCategoriaPerfil(searchParams.get("categoria"));
-  const userIdUrl =
-    searchParams.get("usuario") ||
-    searchParams.get("userId") ||
-    searchParams.get("autorId") ||
-    "";
-  const secao = pegarTexto(searchParams.get("secao"), "catalogo");
-  const genero = pegarTexto(searchParams.get("genero"));
-  const tituloPersonalizado = pegarTexto(searchParams.get("titulo"));
-  const obraAlvoId = pegarTexto(
-    searchParams.get("obra") || searchParams.get("obraId"),
-  );
+  const {
+    queryAtual,
+    modo,
+    origemPerfil,
+    categoriaUrl,
+    userIdUrl,
+    secao,
+    genero,
+    tituloPersonalizado,
+    obraAlvoId,
+    ordenacao,
+  } = obterEstadoRotaListas(searchParams);
 
   const [usuarioAtualId, setUsuarioAtualId] = useState("");
   const [usuarioAtualPerfil, setUsuarioAtualPerfil] =
@@ -220,9 +193,6 @@ function ListasUniversaisContent() {
   const [autores, setAutores] = useState<AutorLista[]>([]);
   const [categoria, setCategoria] = useState<CategoriaPerfil>(categoriaUrl);
   const busca = "";
-  const ordenacao: OrdenacaoLista = normalizarOrdenacao(
-    searchParams.get("ordem"),
-  );
   const [quantidadeVisivel, setQuantidadeVisivel] = useState(40);
   const [carregando, setCarregando] = useState(true);
   const [bloqueado, setBloqueado] = useState(false);
@@ -361,58 +331,29 @@ function ListasUniversaisContent() {
     usuarioAtualId,
   });
 
-  /* eslint-disable react-hooks/preserve-manual-memoization -- Os três useMemo abaixo são contratos existentes; o hook de interações altera apenas estado do Diário. */
-  const itensPerfilFiltrados = useMemo(
-    () =>
-      filtrarOrdenarItensPerfilListas(
-        listasPerfil[categoria],
-        busca,
-        ordenacao,
-      ),
-    [busca, categoria, listasPerfil, ordenacao],
-  );
-
-  const obrasFiltradas = useMemo(
-    () =>
-      filtrarOrdenarObrasPublicasListas(
-        obrasPublicas,
-        busca,
-        ordenacao,
-        secao,
-      ),
-    [busca, obrasPublicas, ordenacao, secao],
-  );
-
-  const autoresFiltrados = useMemo(
-    () => filtrarOrdenarAutoresListas(autores, busca, ordenacao),
-    [autores, busca, ordenacao],
-  );
-
-  /* eslint-enable react-hooks/preserve-manual-memoization */
-
-  const totalResultados = calcularTotalResultadosListas({
-    modo,
-    itensPerfil: itensPerfilFiltrados,
-    autores: autoresFiltrados,
-    obras: obrasFiltradas,
-  });
-  const tituloPagina = obterTituloPaginaListas({
-    tituloPersonalizado,
-    modo,
-    origemPerfil,
-    perfilNome: perfil?.nome || "",
-    secao,
+  const {
+    totalResultados,
+    tituloPagina,
+    agruparPorMes,
+    itensPerfilVisiveis,
+    obrasVisiveis,
+    autoresVisiveis,
+    gruposPerfil,
+  } = useListasResultsViewState({
+    autores,
+    busca,
+    categoria,
     genero,
+    listasPerfil,
+    modo,
+    obrasPublicas,
+    ordenacao,
+    origemPerfil,
+    perfil,
+    quantidadeVisivel,
+    secao,
+    tituloPersonalizado,
   });
-  const agruparPorMes = deveAgruparPorMesListas(modo, categoria);
-  const itensPerfilVisiveis = itensPerfilFiltrados.slice(0, quantidadeVisivel);
-  const obrasVisiveis = obrasFiltradas.slice(0, quantidadeVisivel);
-  const autoresVisiveis = autoresFiltrados.slice(0, quantidadeVisivel);
-
-  const gruposPerfil = useMemo(
-    () => agruparItensPerfilPorMesListas(itensPerfilVisiveis),
-    [itensPerfilVisiveis],
-  );
 
   const controlesCategoriasPerfilAtualStyle = isDesktop
     ? origemPerfil === "diario"
