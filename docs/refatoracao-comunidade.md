@@ -2648,3 +2648,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Excluir Conta — Fase 1
 
 - O CSS estático e a ação de envio da solicitação de exclusão foram movidos para módulos dedicados, preservando endpoint, payload, honeypot, validações, mensagens, resets e formulário na página.
+
+## Aceitar Termos — Fase 1
+
+- O catálogo de traduções e os estilos estáticos da página foram movidos para módulos dedicados, preservando idiomas, textos, CSS, responsividade e todo o fluxo de autenticação e aceite em `page.tsx`.
