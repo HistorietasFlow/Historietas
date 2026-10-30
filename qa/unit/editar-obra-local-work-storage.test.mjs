@@ -12,6 +12,13 @@ const source = readFileSync(
 );
 const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const chamadas = [];
 let obrasArmazenadas = null;
@@ -218,8 +225,12 @@ test("persistência local trata JSON inválido e valores que não são lista", (
 
 test("Editar Obra delega somente a persistência local das obras", () => {
   assert.match(
+    initialLoadSource,
+    /import \{[\s\S]*?carregarObrasLocalStorageEdicaoObra,[\s\S]*?salvarObrasDoUsuarioPreservandoOutrasContas,[\s\S]*?\} from "\.\.\/lib\/editar-obra-local-work-storage";/,
+  );
+  assert.match(
     pageSource,
-    /import \{[\s\S]*?carregarObrasLocalStorageEdicaoObra,[\s\S]*?salvarObrasDoUsuarioPreservandoOutrasContas,[\s\S]*?\} from "\.\/lib\/editar-obra-local-work-storage";/,
+    /import \{ salvarObrasDoUsuarioPreservandoOutrasContas \} from "\.\/lib\/editar-obra-local-work-storage";/,
   );
   for (const helper of [
     "salvarObrasDoUsuarioPreservandoOutrasContas",

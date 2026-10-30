@@ -2612,3 +2612,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Ajuda — Fase 6
 
 - O shell visual do suporte técnico, as mensagens de status/login e o formulário controlado foram movidos para componentes dedicados. Estados, handlers, autenticação, RPCs, effect, validações e regras de envio permaneceram em `page.tsx`.
+
+## Editar Obra — Fase 1
+
+- Os tipos locais da obra e o carregamento inicial cancelável foram movidos para módulos dedicados, preservando autenticação, fallback local, reconciliação Supabase, backup, ordem de aplicação do formulário e estados na página.

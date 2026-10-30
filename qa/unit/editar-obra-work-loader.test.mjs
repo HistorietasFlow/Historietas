@@ -10,8 +10,11 @@ const source = readFileSync(
   ),
   "utf8",
 );
-const pageSource = readFileSync(
-  new URL("../../app/editar-obra/page.tsx", import.meta.url),
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 
@@ -153,16 +156,16 @@ test("retorna nulo quando não há obra remota", async () => {
 
 test("Editar Obra delega somente a consulta remota da obra principal", () => {
   assert.match(
-    pageSource,
-    /import \{ carregarObraSupabaseEdicaoObra \} from "\.\/lib\/editar-obra-work-loader";/,
+    initialLoadSource,
+    /import \{ carregarObraSupabaseEdicaoObra \} from "\.\.\/lib\/editar-obra-work-loader";/,
   );
   assert.match(
-    pageSource,
+    initialLoadSource,
     /const obraSupabase = await carregarObraSupabaseEdicaoObra\(\s*obraIdParam,\s*userId,\s*\);/,
   );
-  assert.match(pageSource, /if \(!obraSupabase\) \{\s*return;\s*\}/);
+  assert.match(initialLoadSource, /if \(!obraSupabase\) \{\s*return;\s*\}/);
   assert.match(
-    pageSource,
+    initialLoadSource,
     /const capitulosSupabase = await carregarCapitulosSupabaseEdicaoObra\(\s*obraIdParam,\s*userId,\s*\);/,
   );
   assert.match(source, /\.from\("obras"\)/);

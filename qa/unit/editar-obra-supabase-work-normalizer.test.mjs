@@ -25,8 +25,11 @@ const source = readFileSync(
   ),
   "utf8",
 );
-const pageSource = readFileSync(
-  new URL("../../app/editar-obra/page.tsx", import.meta.url),
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 const utilsSource = readFileSync(new URL("../../lib/utils.ts", import.meta.url), "utf8");
@@ -315,11 +318,11 @@ test("mantém publicação false, arquivo local e fallbacks gerados sem obra loc
 
 test("Editar Obra delega somente a normalização da obra Supabase", () => {
   assert.match(
-    pageSource,
-    /import \{ normalizarObraSupabase \} from "\.\/lib\/editar-obra-supabase-work-normalizer";/,
+    initialLoadSource,
+    /import \{ normalizarObraSupabase \} from "\.\.\/lib\/editar-obra-supabase-work-normalizer";/,
   );
-  assert.doesNotMatch(pageSource, /function normalizarObraSupabase\(/);
-  assert.match(pageSource, /normalizarObraSupabase\(\r?\n\s*obraSupabase,/);
+  assert.doesNotMatch(initialLoadSource, /function normalizarObraSupabase\(/);
+  assert.match(initialLoadSource, /normalizarObraSupabase\(\r?\n\s*obraSupabase,/);
   for (const contrato of [
     'import { criarSlugBase } from "../../../lib/utils";',
     'import { criarArquivoObraDeSupabase } from "./editar-obra-supabase-file-converter";',

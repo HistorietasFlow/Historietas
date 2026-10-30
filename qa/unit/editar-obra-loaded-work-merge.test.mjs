@@ -10,8 +10,11 @@ const source = readFileSync(
   ),
   "utf8",
 );
-const pageSource = readFileSync(
-  new URL("../../app/editar-obra/page.tsx", import.meta.url),
+const initialLoadSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 const chamadasNormalizacao = [];
@@ -108,15 +111,15 @@ test("mantém diretamente a obra normalizada quando o profile não tem nome", ()
 
 test("Editar Obra delega somente a reconciliação pura das obras carregadas", () => {
   assert.match(
-    pageSource,
-    /import \{ prepararObrasCarregadasEdicaoObra \} from "\.\/lib\/editar-obra-loaded-work-merge";/,
+    initialLoadSource,
+    /import \{ prepararObrasCarregadasEdicaoObra \} from "\.\.\/lib\/editar-obra-loaded-work-merge";/,
   );
   assert.match(
-    pageSource,
+    initialLoadSource,
     /const obraNormalizadaSupabase = normalizarObraSupabase\([\s\S]*?const \{ obraSupabaseComAutorProfile, obrasAtualizadas \} =\s*prepararObrasCarregadasEdicaoObra\(\{[\s\S]*?obraNormalizadaSupabase,[\s\S]*?obrasAutorizadas,[\s\S]*?\}\);/,
   );
   assert.match(
-    pageSource,
+    initialLoadSource,
     /salvarObrasDoUsuarioPreservandoOutrasContas\(obrasAtualizadas, userId\)/,
   );
   assert.match(
