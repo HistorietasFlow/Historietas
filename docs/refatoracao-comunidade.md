@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 6
+
+- Os controles locais do sheet de comentários, os wrappers locais de obra/capítulo e a ação de troca de capítulo foram movidos para factories dedicadas. Métricas, factories centrais, autenticação, denúncia, estados e JSX permaneceram em `page.tsx`.
+
 ## Ler Capítulo — Fase 5
 
 - As ações de autenticação/login e os callbacks de denúncia de capítulo e comentário foram movidos para factories dedicadas. Estados, factories de interação/leitura/comentário, Supabase, métricas, navegação e JSX permaneceram em `page.tsx`.
