@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 1
+
+- O helper de login, a construção da URL de leitura e os helpers de contagem e escala de texto foram movidos para módulos dedicados. Supabase, comentários, hooks, effects, autenticação, métricas, denúncia e interações permaneceram em `page.tsx`.
+
 ## Registro da Fase 1 — Configurações
 
 - As regras puras de busca, aliases e idioma foram isoladas em configuracoes-search-utils; a limpeza de identidade, UUID, metadata administrativa e iniciais foi isolada em configuracoes-account-utils.
