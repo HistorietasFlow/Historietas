@@ -88,7 +88,6 @@ import { obterEstadoVisualBibliotecaPerfilAutor } from "./lib/profile-library-vi
 import {
   type IdentidadeAutenticadaPerfilAutor,
 } from "./lib/profile-auth-identity";
-import { criarPerfilUsuarioRemotoComoAutor } from "./lib/data-normalizers";
 import {
   obterMensagemDiarioVazioPerfilAutor,
 } from "./lib/profile-diary-local-utils";
@@ -96,12 +95,11 @@ import {
   criarHrefListaDiarioPerfilAutor,
   diarioSemItensPerfilAutor,
 } from "./lib/profile-diary-item-utils";
-import { montarPerfisAutoresPorObras } from "./lib/profile-author-groups";
 import {
   obterVisibilidadeAbasPerfilAutor,
   obterVisibilidadeConteudosAbasPerfilAutor,
 } from "./lib/profile-tab-visibility-utils";
-import { resolverEstadoPerfilAutor } from "./lib/profile-resolution-utils";
+import { obterEstadoAlvoPerfilAutor } from "./lib/profile-target-view-state";
 import { obterEstadoVisualSeguimentoPerfilAutor } from "./lib/profile-follow-view-state";
 import {
   obterBioSobreExibicaoPerfilAutor,
@@ -378,33 +376,25 @@ function PerfilAutorPageContent() {
     setCarregando,
   });
 
-  const perfisAutores = montarPerfisAutoresPorObras(
-    obras,
-    totaisInteracoesObras,
-  );
-
-  const perfilUsuarioRemotoComoAutor = perfilUsuarioRemoto?.userId
-    ? criarPerfilUsuarioRemotoComoAutor(perfilUsuarioRemoto)
-    : null;
-
   const {
     autorNaoEncontrado,
     perfilDoUsuarioLogado,
     perfilParaMostrar,
     perfilPertenceAoUsuario,
     redirecionandoParaLogin,
-  } = resolverEstadoPerfilAutor({
-    perfisAutores,
+    perfilAutorId,
+    perfilNome,
+    obrasPerfil,
+    totalObrasPerfil,
+  } = obterEstadoAlvoPerfilAutor({
+    obras,
+    totaisInteracoesObras,
+    perfilUsuarioRemoto,
     autorSelecionado,
     autorIdSelecionado,
     usuarioIdLogado,
-    perfilUsuarioRemotoComoAutor,
     autenticacaoCarregada,
   });
-  const perfilAutorId = perfilParaMostrar?.autorId || "";
-  const perfilNome = perfilParaMostrar?.nome || "";
-  const obrasPerfil = perfilParaMostrar?.obras || [];
-  const totalObrasPerfil = obrasPerfil.length;
   const inicialAvatarPerfilEditor = obterInicialAvatarPerfilAutor(
     nomePerfilEditor,
     perfilNome,
