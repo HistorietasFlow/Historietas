@@ -18,6 +18,13 @@ const communityViewStateSource = readFileSync(
   ),
   "utf8",
 );
+const highlightsViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-highlights-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript.transpileModule(
   source.replace(
     'import { normalizarNomeAutor } from "./profile-formatters";',
@@ -162,7 +169,7 @@ test("página deriva as obras do perfil uma vez e reutiliza nos cálculos", () =
     /obterMensagemObrasVaziasPerfilAutor\(\{[\s\S]*?totalObras: totalObrasPerfil,/,
   );
   assert.match(
-    pagina,
+    highlightsViewStateSource,
     /obterObrasDestaquePerfilAutor\(\{[\s\S]*?obrasPerfil,/,
   );
 });

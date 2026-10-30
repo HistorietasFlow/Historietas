@@ -17,6 +17,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const ratingViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-rating-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const ratingActionSource = readFileSync(
   new URL(
     "../../app/perfil-autor/components/profile-rating-actions.tsx",
@@ -197,13 +204,13 @@ test("visibilidade das ações de avaliação preserva autor e Diário", () => {
   );
 });
 
-test("página delega a visibilidade das ações de avaliação ao helper", () => {
+test("helper de estado visual delega a visibilidade das ações de avaliação", () => {
   assert.match(
-    pagina,
-    /obterVisibilidadeAcoesAvaliacaoPerfilAutor,[\s\S]*?from "\.\/lib\/profile-rating-display-utils";/,
+    ratingViewStateSource,
+    /obterVisibilidadeAcoesAvaliacaoPerfilAutor,[\s\S]*?from "\.\/profile-rating-display-utils";/,
   );
   assert.equal(
-    (pagina.match(/obterVisibilidadeAcoesAvaliacaoPerfilAutor\(\{/g) || []).length,
+    (ratingViewStateSource.match(/obterVisibilidadeAcoesAvaliacaoPerfilAutor\(\{/g) || []).length,
     1,
   );
   assert.match(
