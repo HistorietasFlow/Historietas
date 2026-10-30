@@ -7,10 +7,6 @@ const source = readFileSync(
   new URL("../../app/editar-obra/lib/editar-obra-form-preparation.ts", import.meta.url),
   "utf8",
 );
-const pageSource = readFileSync(
-  new URL("../../app/editar-obra/page.tsx", import.meta.url),
-  "utf8",
-);
 const initialLoadSource = readFileSync(
   new URL(
     "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
