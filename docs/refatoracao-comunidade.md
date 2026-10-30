@@ -2628,3 +2628,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Editar Obra — Fase 4
 
 - O estado derivado do formulário foi movido para hook dedicado, preservando os `useMemo`, validações, navegação, preview e salvamento na página.
+
+## Editar Obra — Fase 5
+
+- O fluxo completo de salvamento da edição foi movido para hook dedicado, preservando validação, autenticação, confirmação de propriedade, uploads, rollback, atualização local, backup, Diário e setters finais.

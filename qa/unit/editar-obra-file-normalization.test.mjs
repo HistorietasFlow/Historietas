@@ -45,9 +45,17 @@ import "./editar-obra-synopsis-field.test.mjs";
 import "./editar-obra-layout-styles.test.mjs";
 import "./editar-obra-form-action-hooks.test.mjs";
 import "./use-editar-obra-form-change-actions.test.mjs";
+import "./use-editar-obra-save-action.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-file-normalization.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const currentAssetsPreparationSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-current-assets-preparation.ts",
@@ -75,8 +83,8 @@ test("Data URL e persistência preservam detecção e rejeição", () => {
 
 test("Editar Obra delega somente a normalização de arquivos", () => {
   assert.match(
-    pageSource,
-    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\/lib\/editar-obra-current-assets-preparation";/,
+    saveActionSource,
+    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\.\/lib\/editar-obra-current-assets-preparation";/,
   );
   assert.match(
     currentAssetsPreparationSource,

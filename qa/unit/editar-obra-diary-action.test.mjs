@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo(resultados = []) {
@@ -174,10 +181,10 @@ test("Diário de Editar Obra absorve exceções e registra o aviso atual", async
 
 test("Editar Obra delega somente a ação de Diário", () => {
   assert.match(
-    pageSource,
-    /import \{ registrarDiarioEdicaoObra \} from "\.\/lib\/editar-obra-diary-action";/,
+    saveActionSource,
+    /import \{ registrarDiarioEdicaoObra \} from "\.\.\/lib\/editar-obra-diary-action";/,
   );
-  assert.doesNotMatch(pageSource, /async function registrarDiarioEdicaoObra\(/);
+  assert.doesNotMatch(saveActionSource, /async function registrarDiarioEdicaoObra\(/);
   assert.match(source, /export async function registrarDiarioEdicaoObra\(/);
   assert.match(source, /\.from\("diario_atividades"\)\.insert\(payload\)/);
   assert.match(source, /await supabase\.from\("diario_atividades"\)\.insert\(\{/);

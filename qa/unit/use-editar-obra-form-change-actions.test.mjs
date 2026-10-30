@@ -13,6 +13,13 @@ const source = readFileSync(
   ),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook centraliza marcarAlteracao e preserva os handlers simples", () => {
   assert.match(source, /export function useEditarObraFormChangeActions\(/);
@@ -32,7 +39,7 @@ test("hook preserva regras de formato, gênero e classificação", () => {
   assert.doesNotMatch(source, /useCallback|useState|useEffect|supabase|localStorage/);
 });
 
-test("página delega handlers, mantém salvarEdicao e repassa marcarAlteracao", () => {
+test("página delega handlers, a ação de salvamento e repassa marcarAlteracao", () => {
   assert.match(pageSource, /import \{ useEditarObraFormChangeActions \} from "\.\/hooks\/use-editar-obra-form-change-actions";/);
   assert.match(pageSource, /\} = useEditarObraFormChangeActions\(/);
   assert.match(pageSource, /onTituloChange=\{alterarTitulo\}/);
@@ -41,6 +48,7 @@ test("página delega handlers, mantém salvarEdicao e repassa marcarAlteracao", 
   assert.match(pageSource, /onSinopseChange=\{alterarSinopse\}/);
   assert.match(pageSource, /useEditarObraAssetActions\(\{[\s\S]*?marcarAlteracao,/);
   assert.match(pageSource, /useEditarObraTagActions\(\{[\s\S]*?marcarAlteracao,/);
-  assert.match(pageSource, /async function salvarEdicao\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(pageSource, /const \{ salvarEdicao \} = useEditarObraSaveAction\(/);
+  assert.match(saveActionSource, /async function salvarEdicao\(event: FormEvent<HTMLFormElement>\)/);
   assert.doesNotMatch(pageSource, /function marcarAlteracao\(\)/);
 });

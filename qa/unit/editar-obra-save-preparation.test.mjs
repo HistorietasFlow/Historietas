@@ -11,6 +11,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(
     source
@@ -84,15 +91,15 @@ test("preserva fallback de autor, classificação comum e tags sem valor", () =>
 
 test("Editar Obra delega somente a preparação inicial de salvamento", () => {
   assert.match(
-    pageSource,
-    /import \{ prepararValoresSalvamentoEdicaoObra \} from "\.\/lib\/editar-obra-save-preparation";/,
+    saveActionSource,
+    /import \{ prepararValoresSalvamentoEdicaoObra \} from "\.\.\/lib\/editar-obra-save-preparation";/,
   );
-  assert.match(pageSource, /function salvarEdicao\(/);
+  assert.match(saveActionSource, /function salvarEdicao\(/);
   assert.match(
-    pageSource,
+    saveActionSource,
     /const valoresSalvamento = prepararValoresSalvamentoEdicaoObra\(\{[\s\S]*?titulo,[\s\S]*?tagsTratadas,[\s\S]*?\}\);/,
   );
-  assert.match(pageSource, /const agora = new Date\(\)\.toISOString\(\);/);
+  assert.match(saveActionSource, /const agora = new Date\(\)\.toISOString\(\);/);
   assert.match(source, /ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO\s*&&\s*ehClassificacao18\(classificacaoFinal\)/);
   assert.match(source, /normalizarAvisosConteudo18\([\s\S]*?avisosConteudo18,[\s\S]*?classificacaoFinal/);
   assert.match(source, /obterTagsFinaisEdicaoObra\(tagsTratadas\)/);

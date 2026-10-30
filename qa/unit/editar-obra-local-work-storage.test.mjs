@@ -12,6 +12,13 @@ const source = readFileSync(
 );
 const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const initialLoadSource = readFileSync(
   new URL(
     "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
@@ -229,14 +236,14 @@ test("Editar Obra delega somente a persistência local das obras", () => {
     /import \{[\s\S]*?carregarObrasLocalStorageEdicaoObra,[\s\S]*?salvarObrasDoUsuarioPreservandoOutrasContas,[\s\S]*?\} from "\.\.\/lib\/editar-obra-local-work-storage";/,
   );
   assert.match(
-    pageSource,
-    /import \{ salvarObrasDoUsuarioPreservandoOutrasContas \} from "\.\/lib\/editar-obra-local-work-storage";/,
+    saveActionSource,
+    /import \{ salvarObrasDoUsuarioPreservandoOutrasContas \} from "\.\.\/lib\/editar-obra-local-work-storage";/,
   );
   for (const helper of [
     "salvarObrasDoUsuarioPreservandoOutrasContas",
     "carregarObrasLocalStorageEdicaoObra",
   ]) {
-    assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
+    assert.doesNotMatch(saveActionSource, new RegExp(`function ${helper}\\(`));
   }
   assert.doesNotMatch(pageSource, /const STORAGE_KEY = "historietas-obras";/);
   assert.match(source, /const STORAGE_KEY = "historietas-obras";/);
