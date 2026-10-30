@@ -11,6 +11,13 @@ const pagina = readFileSync(
   new URL("../../app/perfil-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const targetViewStateSource = readFileSync(
+  new URL(
+    "../../app/perfil-autor/lib/profile-target-view-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const shellViewStateSource = readFileSync(
   new URL(
     "../../app/perfil-autor/lib/profile-shell-view-state.ts",
@@ -1239,7 +1246,7 @@ test("página deriva a visibilidade dos editores uma única vez", () => {
 
 test("Perfil de Autor reutiliza o nome derivado do perfil", () => {
   assert.match(
-    pagina,
+    targetViewStateSource,
     /const perfilNome = perfilParaMostrar\?\.nome \|\| "";/,
   );
   assert.equal(
