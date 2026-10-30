@@ -9,6 +9,7 @@ const pagina = ler("../../app/ler-capitulo/page.tsx");
 const storage = ler("../../app/ler-capitulo/lib/ler-capitulo-local-storage.ts");
 const preferencias = ler("../../app/ler-capitulo/lib/ler-capitulo-reading-preferences.ts");
 const loaderObra = ler("../../app/ler-capitulo/lib/ler-capitulo-work-read-loader.ts");
+const commentPersistence = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 const js = (source) => typescript.transpileModule(source, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
@@ -68,7 +69,9 @@ test("os três blocos movidos permanecem literalmente iguais", () => {
   const inicializacao = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts");
   assert.match(pagina, /useLerCapituloInitialLoad\(/);
   assert.match(inicializacao, /carregarObraSupabase\(/);
-  assert.match(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-comment-persistence";/);
+  assert.doesNotMatch(pagina, /async function salvarComentarioCapituloSupabase\(/);
+  assert.match(commentPersistence, /export async function salvarComentarioCapituloSupabase\(/);
   assert.doesNotMatch(storage + preferencias, /\b(?:supabase|useEffect|useState)\b|\.(?:insert|update|delete|upsert)\s*\(/);
 });
 
