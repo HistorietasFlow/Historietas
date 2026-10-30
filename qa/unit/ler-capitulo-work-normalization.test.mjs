@@ -9,6 +9,7 @@ const pagina = ler("../../app/ler-capitulo/page.tsx");
 const storage = ler("../../app/ler-capitulo/lib/ler-capitulo-local-storage.ts");
 const loader = ler("../../app/ler-capitulo/lib/ler-capitulo-work-read-loader.ts");
 const mutacoes = ler("../../app/ler-capitulo/lib/ler-capitulo-local-work-mutations.ts");
+const acoesObraLocal = ler("../../app/ler-capitulo/lib/ler-capitulo-local-work-actions.ts");
 const js = (source) => ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
@@ -94,9 +95,10 @@ test("página delega transformações mantendo carregamento e persistência fora
     );
   }
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-work-normalization"/);
-  assert.match(pagina, /from "\.\/lib\/ler-capitulo-local-work-mutations"/);
-  assert.match(pagina, /normalizarObrasLeitor\(/);
-  assert.match(pagina, /atualizarCapituloNasObrasLeitor\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-local-work-actions"/);
+  assert.match(pagina, /criarAcoesObraLocalLeitor\(\{/);
+  assert.match(acoesObraLocal, /normalizarObrasLeitor\(/);
+  assert.match(acoesObraLocal, /atualizarCapituloNasObrasLeitor\(/);
   assert.match(
     pagina,
     /criarAcaoProgressoLeituraCapitulo\(\{[\s\S]*?normalizarObra,[\s\S]*?calcularProgressoLeitura,/,

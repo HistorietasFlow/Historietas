@@ -28,7 +28,6 @@ import { leitorPageCss } from "./lib/ler-capitulo-page-css";
 import {
   obterAutorIdSeguro,
   salvarCurtidaComentarioCapituloLocal,
-  salvarObrasPreservandoContas,
 } from "./lib/ler-capitulo-local-storage";
 import { FONT_SCALE_VALUES } from "./lib/ler-capitulo-reading-preferences";
 import {
@@ -62,7 +61,6 @@ import {
 import {
   calcularProgressoLeitura,
   normalizarObra,
-  type CapituloLocal,
   type ObraLocal,
 } from "./lib/ler-capitulo-work-normalization";
 import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load";
@@ -81,9 +79,14 @@ import {
   type AlvoDenunciaLeitor,
 } from "./lib/ler-capitulo-report-actions";
 import {
-  atualizarCapituloNasObrasLeitor,
-  normalizarObrasLeitor,
-} from "./lib/ler-capitulo-local-work-mutations";
+  criarControlesComentariosCapitulo,
+} from "./lib/ler-capitulo-comment-controls";
+import {
+  criarAcoesObraLocalLeitor,
+} from "./lib/ler-capitulo-local-work-actions";
+import {
+  criarAcaoTrocaCapituloLeitor,
+} from "./lib/ler-capitulo-navigation-actions";
 import {
   criarStatusLeituraTexto,
   criarVoltarHrefLeitor,
@@ -176,6 +179,18 @@ export default function LerCapituloPage() {
     () => obterCapituloAtualLeitor(obraAtual, capituloId),
     [obraAtual, capituloId],
   );
+
+  const {
+    salvarObras,
+    atualizarCapitulo,
+  } =
+    criarAcoesObraLocalLeitor({
+      obras,
+      obraAtual,
+      capituloAtual,
+      usuarioIdLogado,
+      setObras,
+    });
 
   const {
     statusAcesso18,
@@ -302,56 +317,17 @@ export default function LerCapituloPage() {
     }
   }
 
-  async function alternarComentarioVisivel() {
-    setComentarioStatus("");
-    setMostrarComentario((valorAtual) => !valorAtual);
-  }
-
-  function fecharComentariosCapitulo() {
-    setMostrarComentario(false);
-  }
-
-  function iniciarAcaoComentariosCapitulo(chave: string) {
-    if (acoesComentariosCapituloRef.current.has(chave)) {
-      return false;
-    }
-
-    acoesComentariosCapituloRef.current.add(chave);
-    return true;
-  }
-
-  function finalizarAcaoComentariosCapitulo(chave: string) {
-    acoesComentariosCapituloRef.current.delete(chave);
-  }
-
-
-  function salvarObras(novasObras: ObraLocal[]) {
-    const obrasNormalizadas =
-      normalizarObrasLeitor(
-        novasObras,
-      );
-
-    salvarObrasPreservandoContas(obrasNormalizadas, usuarioIdLogado);
-    setObras(obrasNormalizadas);
-  }
-
-  function atualizarCapitulo(dados: Partial<CapituloLocal>) {
-    if (!obraAtual || !capituloAtual) {
-      return;
-    }
-
-    const novasObras =
-      atualizarCapituloNasObrasLeitor({
-        obras,
-        obraAtualId:
-          obraAtual.id,
-        capituloAtualId:
-          capituloAtual.id,
-        dados,
-      });
-
-    salvarObras(novasObras);
-  }
+  const {
+    alternarComentarioVisivel,
+    fecharComentariosCapitulo,
+    iniciarAcaoComentariosCapitulo,
+    finalizarAcaoComentariosCapitulo,
+  } =
+    criarControlesComentariosCapitulo({
+      acoesComentariosCapituloRef,
+      setComentarioStatus,
+      setMostrarComentario,
+    });
 
   // A fábrica apenas cria callbacks; as refs são lidas quando as ações são executadas.
   // eslint-disable-next-line react-hooks/refs
@@ -450,26 +426,13 @@ export default function LerCapituloPage() {
       setComentarioStatus,
       setDenunciaAlvo,
     });
-
-
-  function trocarCapitulo(novoCapituloId: string) {
-    if (!obraAtual) {
-      return;
-    }
-
-    setCapituloId(novoCapituloId);
-
-    window.history.pushState(
-      null,
-      "",
-      criarHrefLeituraCapituloLeitor(obraAtual, novoCapituloId)
-    );
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
+  const {
+    trocarCapitulo,
+  } =
+    criarAcaoTrocaCapituloLeitor({
+      obraAtual,
+      setCapituloId,
     });
-  }
 
   if (carregando) {
     return (

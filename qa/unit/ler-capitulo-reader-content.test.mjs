@@ -35,7 +35,9 @@ test("página mantém estados e repassa valores e callbacks sem wrappers", () =>
   }
   assert.match(pagina, /const \{ alternarCurtida, alternarSalvo \} = criarAcoesInteracoesCapitulo\(\{/);
   assert.match(pagina, /const \{ alternarLido \} = criarAcaoProgressoLeituraCapitulo\(\{/);
-  assert.match(pagina, /function trocarCapitulo\(/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-navigation-actions";/);
+  assert.match(pagina, /criarAcaoTrocaCapituloLeitor\(\{[\s\S]*?obraAtual,[\s\S]*?setCapituloId,/);
+  assert.doesNotMatch(pagina, /function trocarCapitulo\(/);
   assert.match(pagina, /<ComentariosCapituloSheet/);
   assert.match(pagina, /<AdultContentGate/);
 });

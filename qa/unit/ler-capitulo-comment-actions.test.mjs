@@ -7,6 +7,7 @@ import typescript from "typescript";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-actions.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
+const controles = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-controls.ts");
 const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 const js = typescript.transpileModule(fonte, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
@@ -75,6 +76,10 @@ test("os corpos originais permanecem literais e a página continua proprietária
   assert.equal(createHash("sha256").update(helper).digest("hex"), "250c99149662b3e72bee319f003bfbea58c579fca59807c15429695b8555851b");
   assert.equal(createHash("sha256").update(acoes).digest("hex"), "7eaf38a256e15ed6219e03253de46eca56808122f07c673ecb0c981d46da2fbe");
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-comment-actions";/);
+  assert.match(pagina, /from "\.\/lib\/ler-capitulo-comment-controls";/);
+  assert.match(pagina, /criarControlesComentariosCapitulo\(\{[\s\S]*?acoesComentariosCapituloRef,[\s\S]*?setMostrarComentario,/);
+  assert.match(controles, /function iniciarAcaoComentariosCapitulo\(/);
+  assert.match(controles, /function finalizarAcaoComentariosCapitulo\(/);
   assert.match(pagina, /criarAcoesComentariosCapitulo\(\{[\s\S]*?supabase,[\s\S]*?comentariosCapitulo,[\s\S]*?setComentariosCapitulo,[\s\S]*?setMetricasCapitulo,/);
   for (const nome of ["enviarComentarioCapitulo", "removerComentarioCapitulo", "alternarCurtidaComentarioCapitulo"]) {
     assert.doesNotMatch(pagina, new RegExp(`async function ${nome}\\(`));
