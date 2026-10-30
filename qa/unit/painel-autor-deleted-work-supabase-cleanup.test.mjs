@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
 
-const pagina = readFileSync(
-  new URL("../../app/painel-autor/page.tsx", import.meta.url),
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
   "utf8",
 );
 const cleanupSource = readFileSync(
@@ -125,17 +125,17 @@ test("removerReferenciasSupabaseObraExcluidaPainel mantém a limpeza best-effort
   assert.deepEqual(consultas, []);
 });
 
-test("Painel do Autor delega a limpeza social Supabase sem alterar excluirObra", () => {
+test("hook de exclusão delega a limpeza social Supabase", () => {
   assert.match(
-    pagina,
-    /import \{ removerReferenciasSupabaseObraExcluidaPainel \} from "\.\/lib\/painel-autor-deleted-work-supabase-cleanup";/,
+    deleteWorkHook,
+    /import \{ removerReferenciasSupabaseObraExcluidaPainel \} from "\.\.\/lib\/painel-autor-deleted-work-supabase-cleanup";/,
   );
   assert.doesNotMatch(
-    pagina,
+    deleteWorkHook,
     /async function removerReferenciasSupabaseObraExcluidaPainel\(/,
   );
   assert.match(
-    pagina,
+    deleteWorkHook,
     /await removerReferenciasSupabaseObraExcluidaPainel\([\s\S]*?obraExcluida\.capitulos\.map\(\(capitulo\) => capitulo\.id\)[\s\S]*?\);/,
   );
   assert.match(cleanupSource, /export async function removerReferenciasSupabaseObraExcluidaPainel\(/);

@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
+  "utf8",
+);
 const compartilhamento = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-share-action.ts",
@@ -125,8 +129,8 @@ test("preserva expressões regulares e textos dinâmicos", () => {
 
 test("mantém os consumidores de tradução e delega o bridge na página", () => {
   assert.match(
-    pagina,
-    /import \{ traduzirTextoPainelAutor \} from "\.\/lib\/painel-autor-translations";/,
+    deleteWorkHook,
+    /import \{ traduzirTextoPainelAutor \} from "\.\.\/lib\/painel-autor-translations";/,
   );
   assert.doesNotMatch(pagina, /type PainelAutorTranslationEntry = \{/);
   assert.doesNotMatch(pagina, /const PAINEL_AUTOR_UI_TRANSLATIONS/);
@@ -137,7 +141,7 @@ test("mantém os consumidores de tradução e delega o bridge na página", () =>
   );
   assert.doesNotMatch(pagina, /function PainelAutorLanguageBridge\(\)/);
   assert.equal((pagina.match(/<PainelAutorLanguageBridge \/>/g) || []).length, 2);
-  assert.ok((pagina.match(/traduzirTextoPainelAutor\(/g) || []).length >= 3);
+  assert.ok((deleteWorkHook.match(/traduzirTextoPainelAutor\(/g) || []).length >= 3);
   assert.match(
     compartilhamento,
     /import \{ traduzirTextoPainelAutor \} from "\.\/painel-autor-translations";/,

@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
 
-const pagina = readFileSync(
-  new URL("../../app/painel-autor/page.tsx", import.meta.url),
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
   "utf8",
 );
 const cleanupSource = readFileSync(
@@ -82,17 +82,17 @@ test("removerArquivosStorageObraExcluidaPainel deduplica caminhos, remove todos 
   assert.equal(avisos[0][1].message, "falha em falho.pdf");
 });
 
-test("Painel do Autor delega a limpeza de Storage sem alterar excluirObra", () => {
+test("hook de exclusão delega a limpeza de Storage", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?removerArquivosStorageObraExcluidaPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-deleted-work-storage-cleanup";/,
+    deleteWorkHook,
+    /import \{[\s\S]*?removerArquivosStorageObraExcluidaPainel,[\s\S]*?\} from "\.\.\/lib\/painel-autor-deleted-work-storage-cleanup";/,
   );
   assert.doesNotMatch(
-    pagina,
+    deleteWorkHook,
     /async function removerArquivosStorageObraExcluidaPainel\(/,
   );
   assert.match(
-    pagina,
+    deleteWorkHook,
     /await removerArquivosStorageObraExcluidaPainel\([\s\S]*?arquivosStorageParaRemover[\s\S]*?\);/,
   );
   assert.match(cleanupSource, /export async function removerArquivosStorageObraExcluidaPainel\(/);

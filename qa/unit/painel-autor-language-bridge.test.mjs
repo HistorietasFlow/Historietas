@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
+  "utf8",
+);
 const workFilteringSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-work-filtering.ts",
@@ -57,8 +61,8 @@ test("a página preserva os dois mounts e as responsabilidades fora do bridge", 
   assert.doesNotMatch(pagina, /function PainelAutorLanguageBridge\(\)/);
   assert.doesNotMatch(pagina, /new MutationObserver/);
   assert.match(
-    pagina,
-    /import \{ traduzirTextoPainelAutor \} from "\.\/lib\/painel-autor-translations";/,
+    deleteWorkHook,
+    /import \{ traduzirTextoPainelAutor \} from "\.\.\/lib\/painel-autor-translations";/,
   );
   assert.match(pagina, /useHistorietasLanguage/);
   assert.match(pagina, /usePainelAutorInitialData/);

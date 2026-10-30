@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
+  "utf8",
+);
 const dataLoaderSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
@@ -116,8 +120,8 @@ test("helpers de coleção preservam parâmetro padrão, JSON e normalização",
 
 test("Painel do Autor delega somente os helpers puros de armazenamento", () => {
   assert.match(
-    pagina,
-    /import \{[\s\S]*?salvarColecaoAposExcluirPainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-storage-utils";/,
+    deleteWorkHook,
+    /import \{[\s\S]*?salvarColecaoAposExcluirPainel,[\s\S]*?salvarJsonStorageUsuarioPainel,[\s\S]*?\} from "\.\.\/lib\/painel-autor-storage-utils";/,
   );
   assert.doesNotMatch(pagina, /function normalizarListaIds\(/);
   assert.doesNotMatch(pagina, /function criarStorageKeyUsuarioPainel\(/);

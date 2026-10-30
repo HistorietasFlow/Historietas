@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Painel do Autor — Fase 3
+
+- A ação sensível de exclusão de obra foi movida para hook dedicado, preservando autorização, consultas e exclusões Supabase, limpeza de Storage e referências locais, mensagens, ordem dos efeitos e setters.
+
 ## Painel do Autor — Fase 2
 
 - As chaves de armazenamento, o redirecionamento de login e o lifecycle inicial de dados foram isolados em módulos dedicados. Estados, filtros, resumo, abertura, compartilhamento, exclusão e JSX permaneceram em `page.tsx`.

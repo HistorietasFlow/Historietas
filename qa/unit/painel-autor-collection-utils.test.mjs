@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
+  "utf8",
+);
 const dataLoaderSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
@@ -105,7 +109,7 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
     new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url),
     "utf8",
   );
-  assert.match(pagina, /import \{[\s\S]*?removerObraDaColecaoPainel,[\s\S]*?\} from "\.\/lib\/painel-autor-collection-utils";/);
+  assert.match(deleteWorkHook, /import \{ removerObraDaColecaoPainel \} from "\.\.\/lib\/painel-autor-collection-utils";/);
   assert.match(initialDataHook, /import \{ filtrarListaPorObrasDoUsuario \} from "\.\.\/lib\/painel-autor-collection-utils";/);
   assert.doesNotMatch(pagina, /function obterIdentificadoresObraPainel\(/);
   assert.doesNotMatch(pagina, /function colecaoTemObraPainel\(/);
@@ -113,7 +117,7 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
   assert.doesNotMatch(pagina, /function filtrarListaPorObrasDoUsuario\(/);
   assert.equal((pagina.match(/\bobterIdentificadoresObraPainel\b/g) || []).length, 0);
   assert.equal((pagina.match(/\bcolecaoTemObraPainel\b/g) || []).length, 0);
-  assert.equal((pagina.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 3);
+  assert.equal((deleteWorkHook.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 0);
   assert.equal((initialDataHook.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
   assert.equal((dataLoaderSource.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
@@ -128,12 +132,12 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
   assert.match(workFilteringSource, /colecaoTemObraPainel\(obrasFavoritas, obra\)/);
   assert.match(workFilteringSource, /colecaoTemObraPainel\(obrasConcluidas, obra\)/);
   assert.match(
-    pagina,
-    /import \{ limparReferenciasLocaisObraExcluidaPainel \} from "\.\/lib\/painel-autor-deleted-work-local-cleanup";/,
+    deleteWorkHook,
+    /import \{ limparReferenciasLocaisObraExcluidaPainel \} from "\.\.\/lib\/painel-autor-deleted-work-local-cleanup";/,
   );
   assert.doesNotMatch(pagina, /function limparReferenciasLocaisObraExcluidaPainel\(/);
   assert.match(
-    pagina,
+    deleteWorkHook,
     /limparReferenciasLocaisObraExcluidaPainel\(obraExcluida, userId, \{[\s\S]*?chavesColecoes: \[[\s\S]*?FOLLOW_STORAGE_KEY,[\s\S]*?FAVORITES_STORAGE_KEY,[\s\S]*?COMPLETED_STORAGE_KEY,[\s\S]*?\]/,
   );
   assert.match(

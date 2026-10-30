@@ -14,6 +14,10 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
+  "utf8",
+);
 const abrirArquivoSource = readFileSync(
   new URL(
     "../../app/painel-autor/lib/painel-autor-open-file-action.ts",
@@ -87,15 +91,15 @@ test("caminhoStoragePertenceAoUsuarioPainel preserva normalização e fallbacks"
 
 test("Painel do Autor delega os caminhos do Storage e a abertura do arquivo", () => {
   assert.match(
-    pagina,
-    /import \{\s*caminhoStoragePertenceAoUsuarioPainel,\s*obterCaminhoStoragePainel,\s*\} from "\.\/lib\/painel-autor-file-storage-path-utils";/,
+    deleteWorkHook,
+    /import \{\s*caminhoStoragePertenceAoUsuarioPainel,\s*obterCaminhoStoragePainel,\s*\} from "\.\.\/lib\/painel-autor-file-storage-path-utils";/,
   );
   assert.doesNotMatch(pagina, /function obterCaminhoStoragePainel\(/);
   assert.doesNotMatch(pagina, /function caminhoStoragePertenceAoUsuarioPainel\(/);
-  assert.equal((pagina.match(/\bobterCaminhoStoragePainel\b/g) || []).length, 3);
-  assert.equal((pagina.match(/\bcaminhoStoragePertenceAoUsuarioPainel\b/g) || []).length, 3);
-  assert.match(pagina, /caminho: caminhoStoragePertenceAoUsuarioPainel\(\s*caminhoCapa,\s*userId\s*\)/);
-  assert.match(pagina, /caminho: caminhoStoragePertenceAoUsuarioPainel\(\s*caminhoArquivoObra,\s*userId\s*\)/);
+  assert.equal((deleteWorkHook.match(/\bobterCaminhoStoragePainel\b/g) || []).length, 3);
+  assert.equal((deleteWorkHook.match(/\bcaminhoStoragePertenceAoUsuarioPainel\b/g) || []).length, 3);
+  assert.match(deleteWorkHook, /caminho: caminhoStoragePertenceAoUsuarioPainel\(\s*caminhoCapa,\s*userId\s*\)/);
+  assert.match(deleteWorkHook, /caminho: caminhoStoragePertenceAoUsuarioPainel\(\s*caminhoArquivoObra,\s*userId\s*\)/);
   assert.match(
     pagina,
     /import \{ abrirArquivoObraPainel \} from "\.\/lib\/painel-autor-open-file-action";/,

@@ -13,6 +13,10 @@ const pagina = readFileSync(
   new URL("../../app/painel-autor/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteWorkHook = readFileSync(
+  new URL("../../app/painel-autor/hooks/use-painel-autor-delete-work.ts", import.meta.url),
+  "utf8",
+);
 
 test("tipos do Painel do Autor preservam os contratos locais", () => {
   assert.match(tipos, /export type CapituloLocal = \{/);
@@ -43,7 +47,11 @@ test("tipos do Painel do Autor preservam os contratos locais", () => {
 test("página consome tipos extraídos sem redefini-los", () => {
   assert.match(
     pagina,
-    /import type \{[\s\S]*?CapituloLocal,[\s\S]*?ObraComMetricas,[\s\S]*?ObraLocal,[\s\S]*?\} from "\.\/lib\/painel-autor-types";/,
+    /import type \{[\s\S]*?ObraComMetricas,[\s\S]*?ObraLocal,[\s\S]*?\} from "\.\/lib\/painel-autor-types";/,
+  );
+  assert.match(
+    deleteWorkHook,
+    /import type \{[\s\S]*?CapituloLocal,[\s\S]*?ObraLocal,[\s\S]*?\} from "\.\.\/lib\/painel-autor-types";/,
   );
 
   for (const declaracao of [
