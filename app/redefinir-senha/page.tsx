@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -11,6 +11,12 @@ import {
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import { supabase } from "../../lib/supabase/client";
+import { useRedefinirSenhaRecoveryValidation } from "./hooks/use-redefinir-senha-recovery-validation";
+import {
+  obterMensagemErro,
+  sessaoEhRecuperacao,
+  type EstadoLink,
+} from "./lib/redefinir-senha-recovery-utils";
 import {
   TRANSLATIONS,
   type TranslationKey,
@@ -39,52 +45,6 @@ import {
   titleStyle,
 } from "./styles/redefinir-senha-styles";
 
-type EstadoLink = "verificando" | "valido" | "invalido";
-
-function obterMensagemErro(error: unknown, fallback: string) {
-  if (!error || typeof error !== "object") {
-    return fallback;
-  }
-
-  const mensagem =
-    "message" in error && typeof error.message === "string"
-      ? error.message.trim()
-      : "";
-
-  return mensagem || fallback;
-}
-
-async function sessaoEhRecuperacao() {
-  try {
-    const { data, error } = await supabase.auth.getClaims();
-
-    if (error || !data?.claims || typeof data.claims !== "object") {
-      return false;
-    }
-
-    const amr = (data.claims as { amr?: unknown }).amr;
-
-    if (!Array.isArray(amr)) {
-      return false;
-    }
-
-    return amr.some((item) => {
-      if (!item || typeof item !== "object") {
-        return false;
-      }
-
-      const metodo = (item as { method?: unknown }).method;
-
-      return (
-        typeof metodo === "string" &&
-        metodo.trim().toLowerCase() === "recovery"
-      );
-    });
-  } catch {
-    return false;
-  }
-}
-
 export default function RedefinirSenhaPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
@@ -104,55 +64,7 @@ export default function RedefinirSenhaPage() {
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  useEffect(() => {
-    let ativo = true;
-
-    async function validarRecuperacao() {
-      const params = new URLSearchParams(window.location.search);
-
-      const retornoConfirmado =
-        params.get("recuperacao") === "1";
-
-      const erroNoLink =
-        params.get("erro") === "link-invalido";
-
-      if (!retornoConfirmado || erroNoLink) {
-        if (ativo) {
-          setEstadoLink("invalido");
-        }
-
-        return;
-      }
-
-      try {
-        const { data, error } =
-          await supabase.auth.getUser();
-
-        const recuperacaoValida =
-          !error && data.user
-            ? await sessaoEhRecuperacao()
-            : false;
-
-        if (!ativo) {
-          return;
-        }
-
-        setEstadoLink(
-          recuperacaoValida ? "valido" : "invalido",
-        );
-      } catch {
-        if (ativo) {
-          setEstadoLink("invalido");
-        }
-      }
-    }
-
-    void validarRecuperacao();
-
-    return () => {
-      ativo = false;
-    };
-  }, []);
+  useRedefinirSenhaRecoveryValidation(setEstadoLink);
 
   async function salvarNovaSenha(
     event: FormEvent<HTMLFormElement>,
