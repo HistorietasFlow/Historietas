@@ -13,6 +13,13 @@ const fieldSource = readFileSync(
   ),
   "utf8",
 );
+const formChangeActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-change-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Editar Obra delega somente a apresenta\u00e7\u00e3o de classifica\u00e7\u00e3o e avisos 18+", () => {
   assert.match(
@@ -27,14 +34,14 @@ test("Editar Obra delega somente a apresenta\u00e7\u00e3o de classifica\u00e7\u0
   assert.doesNotMatch(pageSource, /aria-label="Avisos de conte\u00fado 18\+"/);
 });
 
-test("p\u00e1gina preserva limpeza de avisos e toggle exato", () => {
+test("hook preserva limpeza de avisos e toggle exato", () => {
   assert.match(
-    pageSource,
-    /onClassificacaoChange=\{\(novaClassificacao\) => \{[\s\S]*?setClassificacaoIndicativa\(novaClassificacao\);[\s\S]*?if \(!ehClassificacao18\(novaClassificacao\)\) \{[\s\S]*?setAvisosConteudo18\(\[\]\);[\s\S]*?\}[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}/,
+    formChangeActionsSource,
+    /function alterarClassificacaoIndicativa\(novaClassificacao: string\) \{[\s\S]*?setClassificacaoIndicativa\(novaClassificacao\);[\s\S]*?if \(!ehClassificacao18\(novaClassificacao\)\) \{[\s\S]*?setAvisosConteudo18\(\[\]\);[\s\S]*?\}[\s\S]*?marcarAlteracao\(\);/,
   );
   assert.match(
-    pageSource,
-    /onToggleAvisoConteudo18=\{\(aviso\) => \{[\s\S]*?setAvisosConteudo18\(\(avisosAtuais\) =>[\s\S]*?avisosAtuais\.includes\(aviso\)[\s\S]*?\? avisosAtuais\.filter\(\(item\) => item !== aviso\)[\s\S]*?: \[\.\.\.avisosAtuais, aviso\],[\s\S]*?\);[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}/,
+    formChangeActionsSource,
+    /function alternarAvisoConteudo18\(aviso: AvisoConteudo18\) \{[\s\S]*?setAvisosConteudo18\(\(avisosAtuais\) =>[\s\S]*?avisosAtuais\.includes\(aviso\)[\s\S]*?\? avisosAtuais\.filter\(\(item\) => item !== aviso\)[\s\S]*?: \[\.\.\.avisosAtuais, aviso\],[\s\S]*?\);[\s\S]*?marcarAlteracao\(\);/,
   );
 });
 

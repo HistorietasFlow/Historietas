@@ -13,6 +13,13 @@ const fieldsSource = readFileSync(
   ),
   "utf8",
 );
+const formChangeActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-change-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Editar Obra delega somente a apresentação dos campos de identificação", () => {
   assert.match(
@@ -21,8 +28,10 @@ test("Editar Obra delega somente a apresentação dos campos de identificação"
   );
   assert.match(
     pageSource,
-    /<EditarObraIdentityFields[\s\S]*?titulo=\{titulo\}[\s\S]*?autor=\{autor\}[\s\S]*?onTituloChange=\{\(novoTitulo\) => \{[\s\S]*?setTitulo\(novoTitulo\);[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}[\s\S]*?onAutorChange=\{\(novoAutor\) => \{[\s\S]*?setAutor\(novoAutor\);[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}[\s\S]*?\/\>/,
+    /<EditarObraIdentityFields[\s\S]*?titulo=\{titulo\}[\s\S]*?autor=\{autor\}[\s\S]*?onTituloChange=\{alterarTitulo\}[\s\S]*?onAutorChange=\{alterarAutor\}[\s\S]*?\/\>/,
   );
+  assert.match(formChangeActionsSource, /function alterarTitulo\(novoTitulo: string\) \{[\s\S]*?setTitulo\(novoTitulo\);[\s\S]*?marcarAlteracao\(\);/);
+  assert.match(formChangeActionsSource, /function alterarAutor\(novoAutor: string\) \{[\s\S]*?setAutor\(novoAutor\);[\s\S]*?marcarAlteracao\(\);/);
   assert.doesNotMatch(pageSource, /id="editar-obra-titulo"/);
   assert.doesNotMatch(pageSource, /id="editar-obra-autor"/);
 });

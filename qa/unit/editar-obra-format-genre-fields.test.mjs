@@ -20,6 +20,13 @@ const sharedStylesSource = readFileSync(
   ),
   "utf8",
 );
+const formChangeActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-change-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Editar Obra delega apenas a apresenta\u00e7\u00e3o de Formato e G\u00eanero", () => {
   assert.match(
@@ -34,22 +41,22 @@ test("Editar Obra delega apenas a apresenta\u00e7\u00e3o de Formato e G\u00eaner
   assert.doesNotMatch(pageSource, /id="editar-obra-genero"/);
 });
 
-test("p\u00e1gina preserva regras e sanitiza\u00e7\u00e3o dos quatro callbacks", () => {
+test("hook preserva regras e sanitiza\u00e7\u00e3o dos quatro callbacks", () => {
   assert.match(
-    pageSource,
-    /onFormatoChange=\{\(novoFormato\) => \{[\s\S]*?setFormato\(novoFormato\);[\s\S]*?if \(novoFormato !== OUTRO_FORMATO_VALUE\) \{[\s\S]*?setFormatoPersonalizado\(""\);[\s\S]*?\}[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}/,
+    formChangeActionsSource,
+    /function alterarFormato\(novoFormato: string\) \{[\s\S]*?setFormato\(novoFormato\);[\s\S]*?if \(novoFormato !== OUTRO_FORMATO_VALUE\) \{[\s\S]*?setFormatoPersonalizado\(""\);[\s\S]*?\}[\s\S]*?marcarAlteracao\(\);/,
   );
   assert.match(
-    pageSource,
-    /onFormatoPersonalizadoChange=\{\(novoFormatoPersonalizado\) => \{[\s\S]*?setFormatoPersonalizado\([\s\S]*?limparTextoPersonalizado\([\s\S]*?novoFormatoPersonalizado,[\s\S]*?LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO[\s\S]*?\)[\s\S]*?\);[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}/,
+    formChangeActionsSource,
+    /function alterarFormatoPersonalizado\(novoFormatoPersonalizado: string\) \{[\s\S]*?setFormatoPersonalizado\([\s\S]*?limparTextoPersonalizado\([\s\S]*?novoFormatoPersonalizado,[\s\S]*?LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO[\s\S]*?\)[\s\S]*?\);[\s\S]*?marcarAlteracao\(\);/,
   );
   assert.match(
-    pageSource,
-    /onGeneroChange=\{\(novoGenero\) => \{[\s\S]*?setGenero\(novoGenero\);[\s\S]*?if \(novoGenero !== OUTRO_GENERO_VALUE\) \{[\s\S]*?setGeneroPersonalizado\(""\);[\s\S]*?\}[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}/,
+    formChangeActionsSource,
+    /function alterarGenero\(novoGenero: string\) \{[\s\S]*?setGenero\(novoGenero\);[\s\S]*?if \(novoGenero !== OUTRO_GENERO_VALUE\) \{[\s\S]*?setGeneroPersonalizado\(""\);[\s\S]*?\}[\s\S]*?marcarAlteracao\(\);/,
   );
   assert.match(
-    pageSource,
-    /onGeneroPersonalizadoChange=\{\(novoGeneroPersonalizado\) => \{[\s\S]*?setGeneroPersonalizado\([\s\S]*?limparTextoPersonalizado\([\s\S]*?novoGeneroPersonalizado,[\s\S]*?LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO[\s\S]*?\)[\s\S]*?\);[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}/,
+    formChangeActionsSource,
+    /function alterarGeneroPersonalizado\(novoGeneroPersonalizado: string\) \{[\s\S]*?setGeneroPersonalizado\([\s\S]*?limparTextoPersonalizado\([\s\S]*?novoGeneroPersonalizado,[\s\S]*?LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO[\s\S]*?\)[\s\S]*?\);[\s\S]*?marcarAlteracao\(\);/,
   );
 });
 

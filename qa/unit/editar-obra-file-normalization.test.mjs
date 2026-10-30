@@ -44,6 +44,7 @@ import "./editar-obra-identity-fields.test.mjs";
 import "./editar-obra-synopsis-field.test.mjs";
 import "./editar-obra-layout-styles.test.mjs";
 import "./editar-obra-form-action-hooks.test.mjs";
+import "./use-editar-obra-form-change-actions.test.mjs";
 
 const source = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-file-normalization.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
