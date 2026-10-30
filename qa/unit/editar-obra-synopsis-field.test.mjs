@@ -13,6 +13,13 @@ const fieldSource = readFileSync(
   ),
   "utf8",
 );
+const formChangeActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-change-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Editar Obra delega somente a apresentação do campo de Sinopse", () => {
   assert.match(
@@ -21,8 +28,9 @@ test("Editar Obra delega somente a apresentação do campo de Sinopse", () => {
   );
   assert.match(
     pageSource,
-    /<EditarObraSynopsisField[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?sinopse=\{sinopse\}[\s\S]*?onSinopseChange=\{\(novaSinopse\) => \{[\s\S]*?setSinopse\(novaSinopse\);[\s\S]*?marcarAlteracao\(\);[\s\S]*?\}\}[\s\S]*?\/\>/,
+    /<EditarObraSynopsisField[\s\S]*?isDesktop=\{isDesktop\}[\s\S]*?sinopse=\{sinopse\}[\s\S]*?onSinopseChange=\{alterarSinopse\}[\s\S]*?\/\>/,
   );
+  assert.match(formChangeActionsSource, /function alterarSinopse\(novaSinopse: string\) \{[\s\S]*?setSinopse\(novaSinopse\);[\s\S]*?marcarAlteracao\(\);/);
   assert.doesNotMatch(pageSource, /id="editar-obra-sinopse"/);
   assert.doesNotMatch(pageSource, /const textareaStyle: CSSProperties/);
   assert.doesNotMatch(pageSource, /const desktopTextareaStyle: CSSProperties/);

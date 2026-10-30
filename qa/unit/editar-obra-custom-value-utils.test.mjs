@@ -15,6 +15,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
+const formChangeActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-form-change-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const formValidationSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-form-validation.ts",
@@ -84,8 +91,8 @@ test("valores editáveis preservam opções normalizadas, fallbacks e texto pers
 
 test("Editar Obra delega somente os helpers puros de valores personalizados", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?limparTextoPersonalizado,[\s\S]*?\} from "\.\/lib\/editar-obra-custom-value-utils";/,
+    formChangeActionsSource,
+    /import \{ limparTextoPersonalizado \} from "\.\.\/lib\/editar-obra-custom-value-utils";/,
   );
   for (const helper of [
     "contarLetrasNumeros",

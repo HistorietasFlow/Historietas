@@ -2620,3 +2620,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Editar Obra — Fase 2
 
 - As ações de capa, arquivo e tags foram movidas para hooks dedicados, preservando validações, FileReader, flags de remoção, setters, mensagens e o salvamento na página.
+
+## Editar Obra — Fase 3
+
+- As ações de alteração dos campos do formulário e a centralização de `marcarAlteracao` foram movidas para hook dedicado, preservando validações, limites, regra 18+, setters e salvamento na página.

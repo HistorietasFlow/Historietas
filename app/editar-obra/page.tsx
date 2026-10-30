@@ -37,10 +37,7 @@ import {
   pageStyle,
   titleHeaderStyle,
 } from "./styles/editar-obra-layout-styles";
-import {
-  ehClassificacao18,
-  type AvisoConteudo18,
-} from "../../lib/historietasAdultContent";
+import type { AvisoConteudo18 } from "../../lib/historietasAdultContent";
 import {
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
@@ -48,9 +45,6 @@ import {
   OUTRO_FORMATO_VALUE,
   OUTRO_GENERO_VALUE,
 } from "./lib/editar-obra-form-config";
-import {
-  limparTextoPersonalizado,
-} from "./lib/editar-obra-custom-value-utils";
 import {
   identificarCategoriaArquivo,
 } from "./lib/editar-obra-file-validation";
@@ -89,6 +83,7 @@ import { atualizarObraNaListaLocalEdicao } from "./lib/editar-obra-local-update"
 import { useEditarObraInitialLoad } from "./hooks/use-editar-obra-initial-load";
 import { useEditarObraAssetActions } from "./hooks/use-editar-obra-asset-actions";
 import { useEditarObraTagActions } from "./hooks/use-editar-obra-tag-actions";
+import { useEditarObraFormChangeActions } from "./hooks/use-editar-obra-form-change-actions";
 import type { ArquivoObraLocal, ObraLocal } from "./types";
 
 export default function EditarObraPage() {
@@ -217,15 +212,32 @@ export default function EditarObraPage() {
   const { minhaObraHref } = obterHrefsObraEditarObra(obraAtual, titulo);
   const autorProfileAtivo = nomeAutorProfile.trim();
   const autorPreview = autorProfileAtivo || autor.trim();
-  function marcarAlteracao() {
-    if (salvou) {
-      setSalvou(false);
-    }
-
-    if (erro) {
-      setErro("");
-    }
-  }
+  const {
+    marcarAlteracao,
+    alterarTitulo,
+    alterarAutor,
+    alterarFormato,
+    alterarFormatoPersonalizado,
+    alterarGenero,
+    alterarGeneroPersonalizado,
+    alterarClassificacaoIndicativa,
+    alternarAvisoConteudo18,
+    alterarSinopse,
+  } = useEditarObraFormChangeActions({
+    salvou,
+    erro,
+    setSalvou,
+    setErro,
+    setTitulo,
+    setAutor,
+    setFormato,
+    setFormatoPersonalizado,
+    setGenero,
+    setGeneroPersonalizado,
+    setClassificacaoIndicativa,
+    setAvisosConteudo18,
+    setSinopse,
+  });
 
   const {
     selecionarCapa,
@@ -705,14 +717,8 @@ export default function EditarObraPage() {
             <EditarObraIdentityFields
               titulo={titulo}
               autor={autor}
-              onTituloChange={(novoTitulo) => {
-                setTitulo(novoTitulo);
-                marcarAlteracao();
-              }}
-              onAutorChange={(novoAutor) => {
-                setAutor(novoAutor);
-                marcarAlteracao();
-              }}
+              onTituloChange={alterarTitulo}
+              onAutorChange={alterarAutor}
             />
 
             <EditarObraFormatGenreFields
@@ -723,42 +729,10 @@ export default function EditarObraPage() {
               genero={genero}
               generoPersonalizado={generoPersonalizado}
               generoEhPersonalizado={generoEhPersonalizado}
-              onFormatoChange={(novoFormato) => {
-                setFormato(novoFormato);
-
-                if (novoFormato !== OUTRO_FORMATO_VALUE) {
-                  setFormatoPersonalizado("");
-                }
-
-                marcarAlteracao();
-              }}
-              onFormatoPersonalizadoChange={(novoFormatoPersonalizado) => {
-                setFormatoPersonalizado(
-                  limparTextoPersonalizado(
-                    novoFormatoPersonalizado,
-                    LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-                  )
-                );
-                marcarAlteracao();
-              }}
-              onGeneroChange={(novoGenero) => {
-                setGenero(novoGenero);
-
-                if (novoGenero !== OUTRO_GENERO_VALUE) {
-                  setGeneroPersonalizado("");
-                }
-
-                marcarAlteracao();
-              }}
-              onGeneroPersonalizadoChange={(novoGeneroPersonalizado) => {
-                setGeneroPersonalizado(
-                  limparTextoPersonalizado(
-                    novoGeneroPersonalizado,
-                    LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
-                  )
-                );
-                marcarAlteracao();
-              }}
+              onFormatoChange={alterarFormato}
+              onFormatoPersonalizadoChange={alterarFormatoPersonalizado}
+              onGeneroChange={alterarGenero}
+              onGeneroPersonalizadoChange={alterarGeneroPersonalizado}
             />
 
             <EditarObraTagField
@@ -773,32 +747,14 @@ export default function EditarObraPage() {
               classificacaoIndicativa={classificacaoIndicativa}
               avisosConteudo18={avisosConteudo18}
               language={language}
-              onClassificacaoChange={(novaClassificacao) => {
-                setClassificacaoIndicativa(novaClassificacao);
-
-                if (!ehClassificacao18(novaClassificacao)) {
-                  setAvisosConteudo18([]);
-                }
-
-                marcarAlteracao();
-              }}
-              onToggleAvisoConteudo18={(aviso) => {
-                setAvisosConteudo18((avisosAtuais) =>
-                  avisosAtuais.includes(aviso)
-                    ? avisosAtuais.filter((item) => item !== aviso)
-                    : [...avisosAtuais, aviso],
-                );
-                marcarAlteracao();
-              }}
+              onClassificacaoChange={alterarClassificacaoIndicativa}
+              onToggleAvisoConteudo18={alternarAvisoConteudo18}
             />
 
             <EditarObraSynopsisField
               isDesktop={isDesktop}
               sinopse={sinopse}
-              onSinopseChange={(novaSinopse) => {
-                setSinopse(novaSinopse);
-                marcarAlteracao();
-              }}
+              onSinopseChange={alterarSinopse}
             />
 
             <EditarObraFormActions
