@@ -2,15 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import {
-  obterRedirectToAceiteTermos,
-  registrarAceiteTermosPublicacao,
-  verificarAceiteTermosPublicacao,
-} from "../../lib/aceiteTermos";
-import { supabase } from "../../lib/supabase/client";
+import { useAceitarTermosAction } from "./hooks/use-aceitar-termos-action";
+import { useAceitarTermosInitialLoad } from "./hooks/use-aceitar-termos-initial-load";
 import {
   TEXTOS,
   type ChaveTexto,
@@ -48,73 +44,24 @@ export default function AceitarTermosPage() {
   const [erro, setErro] = useState("");
   const [redirectTo, setRedirectTo] = useState("/");
 
-  useEffect(() => {
-    let ativo = true;
+  useAceitarTermosInitialLoad({
+    router,
+    setRedirectTo,
+    setJaAceito,
+    setErro,
+    setCarregando,
+  });
 
-    async function carregar() {
-      const params = new URLSearchParams(window.location.search);
-      const destino = obterRedirectToAceiteTermos(params.get("redirectTo"), "/");
-
-      if (ativo) {
-        setRedirectTo(destino);
-      }
-
-      const { data, error } = await supabase.auth.getUser();
-
-      if (!ativo) {
-        return;
-      }
-
-      if (error || !data.user) {
-        const paramsLogin = new URLSearchParams({
-          redirectTo: `/aceitar-termos?${new URLSearchParams({ redirectTo: destino }).toString()}`,
-        });
-        router.replace(`/login?${paramsLogin.toString()}`);
-        return;
-      }
-
-      const status = await verificarAceiteTermosPublicacao();
-
-      if (!ativo) {
-        return;
-      }
-
-      setJaAceito(status.aceito);
-      setErro(status.erro && !status.aceito ? status.erro : "");
-      setCarregando(false);
-    }
-
-    void carregar();
-
-    return () => {
-      ativo = false;
-    };
-  }, [router]);
-
-  async function aceitar() {
-    if (salvando) {
-      return;
-    }
-
-    if (!confirmouTermos || !confirmouPrivacidade) {
-      setErro(t("erroMarcar"));
-      return;
-    }
-
-    setSalvando(true);
-    setErro("");
-
-    const resultado = await registrarAceiteTermosPublicacao();
-
-    if (!resultado.aceito) {
-      setErro(resultado.erro || t("erroLogin"));
-      setSalvando(false);
-      return;
-    }
-
-    router.replace(redirectTo);
-    router.refresh();
-  }
+  const { aceitar } = useAceitarTermosAction({
+    router,
+    salvando,
+    confirmouTermos,
+    confirmouPrivacidade,
+    redirectTo,
+    t,
+    setErro,
+    setSalvando,
+  });
 
   return (
     <main style={pageThemeStyle}>

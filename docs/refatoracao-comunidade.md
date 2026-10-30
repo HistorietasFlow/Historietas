@@ -2652,3 +2652,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Aceitar Termos — Fase 1
 
 - O catálogo de traduções e os estilos estáticos da página foram movidos para módulos dedicados, preservando idiomas, textos, CSS, responsividade e todo o fluxo de autenticação e aceite em `page.tsx`.
+
+## Aceitar Termos — Fase 2
+
+- O lifecycle inicial e a ação de registrar o aceite foram movidos para hooks dedicados, preservando autenticação, redirects, query params, guards, mensagens, setters e JSX na página.

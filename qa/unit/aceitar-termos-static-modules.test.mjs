@@ -105,7 +105,7 @@ test("estilos estáticos de Aceitar Termos preservam os contratos visuais", () =
   assert.match(stylesSource, /!important/);
 });
 
-test("página delega estáticos e preserva o fluxo de aceite", () => {
+test("página delega estáticos e preserva os pontos de integração", () => {
   assert.match(
     pageSource,
     /from "\.\/styles\/aceitar-termos-styles";/,
@@ -117,12 +117,9 @@ test("página delega estáticos e preserva o fluxo de aceite", () => {
     pageSource,
     /\{`\$\{historietasThemeCss\}\$\{aceitarTermosPageCss\}`\}/,
   );
-  assert.match(pageSource, /useEffect\(\(\) =>/);
-  assert.match(pageSource, /async function aceitar\(\)/);
-  assert.match(pageSource, /supabase\.auth\.getUser/);
-  assert.match(pageSource, /obterRedirectToAceiteTermos/);
-  assert.match(pageSource, /registrarAceiteTermosPublicacao/);
-  assert.match(pageSource, /verificarAceiteTermosPublicacao/);
+  assert.match(pageSource, /useAceitarTermosInitialLoad\(/);
+  assert.match(pageSource, /useAceitarTermosAction\(/);
+  assert.match(pageSource, /onClick=\{\(\) => void aceitar\(\)\}/);
 });
 
 test("módulos estáticos não recebem runtime ou regras de aceite", () => {
