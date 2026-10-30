@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import type { FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -45,18 +45,13 @@ import {
   LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO,
   LIMITE_CARACTERES_TAG_PERSONALIZADA,
   LIMITE_TAGS_OBRA,
-  OUTRA_TAG_VALUE,
   OUTRO_FORMATO_VALUE,
   OUTRO_GENERO_VALUE,
-  TAMANHO_MAXIMO_ARQUIVO_OBRA,
-  TAMANHO_MAXIMO_CAPA,
 } from "./lib/editar-obra-form-config";
 import {
   limparTextoPersonalizado,
 } from "./lib/editar-obra-custom-value-utils";
 import {
-  arquivoImagemAceito,
-  arquivoObraAceito,
   identificarCategoriaArquivo,
 } from "./lib/editar-obra-file-validation";
 import {
@@ -82,10 +77,6 @@ import {
   validarFormularioEdicaoObra,
 } from "./lib/editar-obra-form-validation";
 import {
-  prepararAtualizacaoTagPersonalizada,
-  prepararSelecaoTagEdicaoObra,
-} from "./lib/editar-obra-tag-utils";
-import {
   criarLoginHrefEditarObra,
   obterHrefsObraEditarObra,
 } from "./lib/editar-obra-navigation-utils";
@@ -96,6 +87,8 @@ import { prepararAssetsAtuaisEdicaoObra } from "./lib/editar-obra-current-assets
 import { criarPayloadAtualizacaoObra } from "./lib/editar-obra-update-payload";
 import { atualizarObraNaListaLocalEdicao } from "./lib/editar-obra-local-update";
 import { useEditarObraInitialLoad } from "./hooks/use-editar-obra-initial-load";
+import { useEditarObraAssetActions } from "./hooks/use-editar-obra-asset-actions";
+import { useEditarObraTagActions } from "./hooks/use-editar-obra-tag-actions";
 import type { ArquivoObraLocal, ObraLocal } from "./types";
 
 export default function EditarObraPage() {
@@ -234,163 +227,36 @@ export default function EditarObraPage() {
     }
   }
 
-  function selecionarCapa(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0];
+  const {
+    selecionarCapa,
+    removerCapa,
+    selecionarArquivoObra,
+    removerArquivoObra,
+  } = useEditarObraAssetActions({
+    marcarAlteracao,
+    capaInputRef,
+    arquivoObraInputRef,
+    setCapaErro,
+    setCapa,
+    setCapaNome,
+    setCapaArquivo,
+    setCapaRemovidaManualmente,
+    setArquivoObraErro,
+    setArquivoObra,
+    setArquivoObraArquivo,
+    setArquivoObraRemovidoManualmente,
+  });
 
-    setCapaErro("");
-    marcarAlteracao();
-
-    if (!arquivo) {
-      return;
-    }
-
-    setCapaArquivo(null);
-
-    if (!arquivoImagemAceito(arquivo)) {
-      setCapaErro("Escolha um arquivo de imagem válido.");
-      event.target.value = "";
-      return;
-    }
-
-    if (arquivo.size > TAMANHO_MAXIMO_CAPA) {
-      setCapaErro("A capa precisa ter no máximo 2 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-
-      if (!resultado) {
-        setCapaErro("Não consegui carregar essa imagem.");
-        return;
-      }
-
-      setCapa(resultado);
-      setCapaNome(arquivo.name);
-      setCapaArquivo(arquivo);
-      setCapaRemovidaManualmente(false);
-    };
-
-    leitor.onerror = () => {
-      setCapaErro("Não consegui carregar essa imagem.");
-    };
-
-    leitor.readAsDataURL(arquivo);
-  }
-
-  function removerCapa() {
-    setCapa("");
-    setCapaNome("");
-    setCapaArquivo(null);
-    setCapaRemovidaManualmente(true);
-    setCapaErro("");
-    marcarAlteracao();
-
-    if (capaInputRef.current) {
-      capaInputRef.current.value = "";
-    }
-  }
-
-  function selecionarArquivoObra(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0];
-
-    setArquivoObraErro("");
-    marcarAlteracao();
-
-    if (!arquivo) {
-      return;
-    }
-
-    setArquivoObraArquivo(null);
-
-    if (!arquivoObraAceito(arquivo)) {
-      setArquivoObraErro(
-        "Escolha PDF, TXT, MD ou imagem em PNG, JPG, WEBP ou GIF."
-      );
-      event.target.value = "";
-      return;
-    }
-
-    if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_OBRA) {
-      setArquivoObraErro(
-        "O arquivo completo precisa ter no máximo 5 MB."
-      );
-      event.target.value = "";
-      return;
-    }
-
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-
-      if (!resultado) {
-        setArquivoObraErro("Não consegui carregar esse arquivo.");
-        return;
-      }
-
-      setArquivoObraRemovidoManualmente(false);
-      setArquivoObra({
-        nome: arquivo.name,
-        tipo: arquivo.type || "application/octet-stream",
-        tamanho: arquivo.size,
-        conteudo: resultado,
-        categoria: identificarCategoriaArquivo(arquivo),
-        criadoEm: new Date().toISOString(),
-      });
-      setArquivoObraArquivo(arquivo);
-    };
-
-    leitor.onerror = () => {
-      setArquivoObraErro("Não consegui carregar esse arquivo.");
-    };
-
-    leitor.readAsDataURL(arquivo);
-  }
-
-  function removerArquivoObra() {
-    setArquivoObra(null);
-    setArquivoObraArquivo(null);
-    setArquivoObraRemovidoManualmente(true);
-    setArquivoObraErro("");
-    marcarAlteracao();
-
-    if (arquivoObraInputRef.current) {
-      arquivoObraInputRef.current.value = "";
-    }
-  }
-
-  function atualizarTagPersonalizada(valor: string) {
-    const proximaTag = prepararAtualizacaoTagPersonalizada(
-      valor,
-      LIMITE_CARACTERES_TAG_PERSONALIZADA
-    );
-
-    setTagPersonalizada(proximaTag.tagPersonalizada);
-    setTags(proximaTag.tags);
-    marcarAlteracao();
-  }
-
-  function adicionarTagSelecionada(tag: string) {
-    const proximaTag = prepararSelecaoTagEdicaoObra(
-      tag,
-      tagPersonalizada,
-      OUTRA_TAG_VALUE,
-      LIMITE_CARACTERES_TAG_PERSONALIZADA,
-    );
-
-    setUsarTagPersonalizada(proximaTag.usarTagPersonalizada);
-
-    if (proximaTag.tagPersonalizada !== undefined) {
-      setTagPersonalizada(proximaTag.tagPersonalizada);
-    }
-
-    setTags(proximaTag.tags);
-    marcarAlteracao();
-  }
+  const {
+    atualizarTagPersonalizada,
+    adicionarTagSelecionada,
+  } = useEditarObraTagActions({
+    tagPersonalizada,
+    marcarAlteracao,
+    setTagPersonalizada,
+    setTags,
+    setUsarTagPersonalizada,
+  });
 
   async function salvarEdicao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

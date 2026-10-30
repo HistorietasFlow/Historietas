@@ -2616,3 +2616,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Editar Obra — Fase 1
 
 - Os tipos locais da obra e o carregamento inicial cancelável foram movidos para módulos dedicados, preservando autenticação, fallback local, reconciliação Supabase, backup, ordem de aplicação do formulário e estados na página.
+
+## Editar Obra — Fase 2
+
+- As ações de capa, arquivo e tags foram movidas para hooks dedicados, preservando validações, FileReader, flags de remoção, setters, mensagens e o salvamento na página.

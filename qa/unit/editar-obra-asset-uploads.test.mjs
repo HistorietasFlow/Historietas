@@ -13,6 +13,13 @@ const uploadsSource = readFileSync(
   ),
   "utf8",
 );
+const assetActionsSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/hooks/use-editar-obra-asset-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const sharedStylesSource = readFileSync(
   new URL(
     "../../app/editar-obra/styles/editar-obra-shared-styles.ts",
@@ -32,10 +39,26 @@ test("Editar Obra delega somente os blocos visuais de upload", () => {
   );
   assert.doesNotMatch(pageSource, /accept="\.png,\.jpg,\.jpeg,\.webp,\.gif,image\/png/);
   assert.doesNotMatch(pageSource, /accept="\.pdf,\.txt,\.md,\.png,\.jpg,\.jpeg,\.webp,\.gif,application\/pdf/);
-  assert.match(pageSource, /function selecionarCapa\(event: ChangeEvent<HTMLInputElement>\)/);
-  assert.match(pageSource, /function removerCapa\(\)/);
-  assert.match(pageSource, /function selecionarArquivoObra\(event: ChangeEvent<HTMLInputElement>\)/);
-  assert.match(pageSource, /function removerArquivoObra\(\)/);
+  assert.match(
+    pageSource,
+    /import \{ useEditarObraAssetActions \} from "\.\/hooks\/use-editar-obra-asset-actions";/,
+  );
+  assert.match(
+    pageSource,
+    /const \{[\s\S]*?selecionarCapa,[\s\S]*?removerCapa,[\s\S]*?selecionarArquivoObra,[\s\S]*?removerArquivoObra,[\s\S]*?\} = useEditarObraAssetActions\(/,
+  );
+  assert.doesNotMatch(pageSource, /function selecionarCapa\(event: ChangeEvent<HTMLInputElement>\)/);
+  assert.doesNotMatch(pageSource, /function removerCapa\(\)/);
+  assert.doesNotMatch(pageSource, /function selecionarArquivoObra\(event: ChangeEvent<HTMLInputElement>\)/);
+  assert.doesNotMatch(pageSource, /function removerArquivoObra\(\)/);
+  for (const handler of [
+    "selecionarCapa",
+    "removerCapa",
+    "selecionarArquivoObra",
+    "removerArquivoObra",
+  ]) {
+    assert.match(assetActionsSource, new RegExp(`function ${handler}\\(`));
+  }
   assert.match(pageSource, /const capaInputRef = useRef<HTMLInputElement \| null>\(null\)/);
   assert.match(pageSource, /const arquivoObraInputRef = useRef<HTMLInputElement \| null>\(null\)/);
 });
