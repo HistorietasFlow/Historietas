@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil do Autor — Fase 9
+
+- Os estados visuais puros do editor de perfil e das denúncias foram movidos para helpers dedicados, preservando limites, rótulos, fallbacks, permissões e mantendo estados, hooks, callbacks e JSX na página.
+
 ## Perfil do Autor — Fase 8
 
 - Os estados derivados de acesso, bloqueio, abas e exibição do autor foram movidos para helpers puros dedicados, preservando permissões, privacidade, fallbacks de perfil, bio traduzida, destaques e mantendo hooks, estilos e JSX na página.
