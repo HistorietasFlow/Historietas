@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const createActionSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/hooks/useAdicionarCapituloCreateAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const notificationSource = readFileSync(
   new URL("../../app/adicionar-capitulo/lib/adicionar-capitulo-notification-utils.ts", import.meta.url),
   "utf8",
@@ -126,12 +133,13 @@ test("fallback de UUID usa Math.random quando getRandomValues não existe", () =
 
 test("Adicionar Capítulo delega somente a geração de IDs ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{ criarId \} from "\.\/lib\/adicionar-capitulo-id-utils";/,
+    createActionSource,
+    /import \{ criarId \} from "\.\.\/lib\/adicionar-capitulo-id-utils";/,
   );
   assert.doesNotMatch(pageSource, /function gerarUuidFallbackAdicionarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function criarId\(/);
-  assert.equal((pageSource.match(/\bid:\s*criarId\(\)/g) || []).length, 1);
+  assert.equal((pageSource.match(/\bid:\s*criarId\(\)/g) || []).length, 0);
+  assert.equal((createActionSource.match(/\bid:\s*criarId\(\)/g) || []).length, 1);
   assert.equal((notificationSource.match(/\bid:\s*criarId\(\)/g) || []).length, 1);
   assert.match(notificationSource, /import \{ criarId \} from "\.\/adicionar-capitulo-id-utils";/);
   assert.match(idUtilsSource, /new Uint8Array\(16\)/);

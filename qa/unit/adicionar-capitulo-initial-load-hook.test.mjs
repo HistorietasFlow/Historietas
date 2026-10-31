@@ -72,7 +72,10 @@ test("Adicionar Capítulo delega apenas o lifecycle inicial ao hook", () => {
     pageSource,
     /\.select\(\s*"id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em,capitulos\(/,
   );
-  assert.match(pageSource, /async function criarCapitulo\(/);
+  assert.doesNotMatch(pageSource, /async function criarCapitulo\(/);
   assert.match(pageSource, /function salvarObras\(/);
-  assert.match(pageSource, /\.from\("capitulos"\)/);
+  assert.match(
+    pageSource,
+    /import \{ useAdicionarCapituloCreateAction \} from "\.\/hooks\/useAdicionarCapituloCreateAction";/,
+  );
 });

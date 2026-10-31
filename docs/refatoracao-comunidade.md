@@ -2692,3 +2692,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Adicionar Capítulo — Fase 1
 
 - O lifecycle inicial foi movido para `useAdicionarCapituloInitialLoad`, preservando leitura de rota, autenticação, aceite de termos, carregamento local, consulta e merge Supabase, persistência, redirects, cancelamento e os estados consumidos pela página.
+
+## Adicionar Capítulo — Fase 2
+
+- A action de criação de capítulo foi movida para `useAdicionarCapituloCreateAction`, preservando validação, autorização, consultas e insert Supabase, ordem, atualização local, Diário, notificações, feedback e desbloqueio do fluxo.

@@ -21,6 +21,13 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const createActionSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/hooks/useAdicionarCapituloCreateAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const textUtilsJavascript = typescript.transpileModule(textUtilsSource, {
   compilerOptions: {
@@ -86,10 +93,11 @@ test("Adicionar Capítulo delega somente a validação pura ao módulo extraído
   );
   assert.doesNotMatch(pageSource, /function validarCapitulo\(/);
   assert.match(
-    pageSource,
-    /const erroValidacao = validarCapitulo\(\s*titulo,\s*texto,\s*numeroNovoCapitulo\s*\);/,
+    createActionSource,
+    /const erroValidacao = validarCapitulo\(\s*titulo,\s*texto,\s*numeroNovoCapitulo[\s,]*\);/,
   );
-  assert.match(pageSource, /async function criarCapitulo\(/);
+  assert.doesNotMatch(pageSource, /async function criarCapitulo\(/);
+  assert.match(createActionSource, /async function criarCapitulo\(/);
   assert.doesNotMatch(
     validationSource,
     /from\s+["']react["']|useState|useEffect|useMemo|useRef|supabase|localStorage|router/i,
