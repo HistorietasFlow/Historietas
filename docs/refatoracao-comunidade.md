@@ -2660,3 +2660,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Termos — Fase 1
 
 - Os tipos, dados de políticas, ícones SVG e estilos estáticos da página de Termos foram movidos para módulos dedicados, preservando conteúdo, traduções, acessibilidade, tema e visual.
+
+## Termos — Fase 2
+
+- O cabeçalho e hero, a seção de documentos e as seções de apoio foram movidos para componentes dedicados, preservando conteúdo, traduções, links, SVGs, estilos, acessibilidade e a ordem visual da página.
