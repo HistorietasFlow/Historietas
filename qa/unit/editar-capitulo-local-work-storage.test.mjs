@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadHookSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloInitialLoad.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const eventos = [];
 const armazenamento = new Map();
@@ -169,8 +176,8 @@ test("storage local de Editar Capítulo normaliza e persiste somente obras da co
 
 test("Editar Capítulo delega apenas o storage local de obras ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?carregarObrasLocaisNormalizadas,[\s\S]*?salvarObrasEditarCapituloStorage,[\s\S]*?\} from "\.\/lib\/editar-capitulo-local-work-storage";/,
+    initialLoadHookSource,
+    /import \{[\s\S]*?carregarObrasLocaisNormalizadas,[\s\S]*?salvarObrasEditarCapituloStorage,[\s\S]*?\} from "\.\.\/lib\/editar-capitulo-local-work-storage";/,
   );
   for (const helper of [
     "obraPertenceAoUsuarioEditarCapitulo",
@@ -180,7 +187,7 @@ test("Editar Capítulo delega apenas o storage local de obras ao módulo extraí
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
   assert.doesNotMatch(pageSource, /const STORAGE_KEY = "historietas-obras";/);
-  assert.match(pageSource, /carregarObrasLocaisNormalizadas\(userId\)/);
+  assert.match(initialLoadHookSource, /carregarObrasLocaisNormalizadas\(userId\)/);
   assert.match(pageSource, /salvarObrasEditarCapituloStorage\([\s\S]*?userId/);
   assert.match(storageSource, /const STORAGE_KEY = "historietas-obras";/);
   assert.match(storageSource, /obraPertenceAoUsuarioEditarCapitulo\(obra, userIdLimpo\)/);

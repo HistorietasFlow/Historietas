@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadHookSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloInitialLoad.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 globalThis.__editarCapituloCriarSlugBase = (texto) =>
   texto
@@ -283,13 +290,13 @@ test("mapearObraSupabase preserva fonte remota dos capítulos, precedências e m
 
 test("Editar Capítulo delega somente os mapeadores Supabase ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{ mapearObraSupabase \} from "\.\/lib\/editar-capitulo-supabase-mappers";/,
+    initialLoadHookSource,
+    /import \{ mapearObraSupabase \} from "\.\.\/lib\/editar-capitulo-supabase-mappers";/,
   );
   assert.doesNotMatch(pageSource, /function mapearCapituloSupabase\(/);
   assert.doesNotMatch(pageSource, /function mapearObraSupabase\(/);
   assert.match(
-    pageSource,
+    initialLoadHookSource,
     /const obraNormalizadaSupabase = mapearObraSupabase\(\s*obraSupabase,\s*capitulosSupabase,\s*obraLocal,\s*nomeProfileAutor\s*\);/,
   );
   assert.match(

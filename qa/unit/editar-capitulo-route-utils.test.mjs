@@ -18,6 +18,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadHookSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloInitialLoad.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const derivedValuesSource = readFileSync(
   new URL(
     "../../app/editar-capitulo/hooks/useEditarCapituloDerivedValues.ts",
@@ -122,7 +129,7 @@ test("Editar Capítulo delega somente os helpers de rota ao módulo extraído", 
   );
   assert.doesNotMatch(pageSource, /function criarLoginHrefEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function criarHrefLeituraCapitulo\(/);
-  assert.match(pageSource, /router\.replace\(\s*criarLoginHrefEditarCapitulo\(obraIdParam, capituloIdParam\)/);
+  assert.match(initialLoadHookSource, /router\.replace\(\s*criarLoginHrefEditarCapitulo\(obraIdParam, capituloIdParam\)/);
   assert.match(pageSource, /router\.replace\(criarLoginHrefEditarCapitulo\(obraId, capituloId\)\)/);
   assert.match(
     notificationActionSource,

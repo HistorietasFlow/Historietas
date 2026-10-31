@@ -2264,6 +2264,13 @@ const editarObraChaptersLoaderPath = path.join(
 const editarObraChaptersLoader = fs.existsSync(editarObraChaptersLoaderPath)
   ? fs.readFileSync(editarObraChaptersLoaderPath, "utf8")
   : "";
+const editarCapituloInitialLoadHookPath = path.join(
+  ROOT_DIR,
+  "app/editar-capitulo/hooks/useEditarCapituloInitialLoad.ts"
+);
+const editarCapituloInitialLoadHook = fs.existsSync(editarCapituloInitialLoadHookPath)
+  ? fs.readFileSync(editarCapituloInitialLoadHookPath, "utf8")
+  : "";
 const contentPaginationFiles = [
   "app/page.tsx",
   "app/explorar/page.tsx",
@@ -2302,6 +2309,10 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
   }${
     relativePath === "app/painel-autor/page.tsx"
       ? `\n${painelAutorSupabaseChaptersLoader}\n${painelAutorSupabaseWorksLoader}`
+      : ""
+  }${
+    relativePath === "app/editar-capitulo/page.tsx"
+      ? `\n${editarCapituloInitialLoadHook}`
       : ""
   }${
     relativePath === "app/editar-obra/page.tsx"

@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadHookSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloInitialLoad.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function criarSupabase(consultas, chamadas) {
   return {
@@ -194,12 +201,13 @@ test("Editar Capitulo delega o loader de profile sem reintroduzir a consulta", (
     /console\.warn\("Não consegui carregar profiles\.nome no Editor de Capítulo:", error\);/,
   );
   assert.match(
-    pageSource,
-    /import \{ carregarNomeProfileEditarCapitulo \} from "\.\/actions\/carregar-nome-profile-editar-capitulo";/,
+    initialLoadHookSource,
+    /import \{ carregarNomeProfileEditarCapitulo \} from "\.\.\/actions\/carregar-nome-profile-editar-capitulo";/,
   );
   assert.doesNotMatch(pageSource, /async function carregarNomeProfileEditarCapitulo\(/);
   assert.equal(
-    (pageSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
+    (initialLoadHookSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length +
+      (pageSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
     2,
   );
 });
