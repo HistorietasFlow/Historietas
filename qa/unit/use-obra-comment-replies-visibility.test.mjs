@@ -13,6 +13,13 @@ const cliente = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const hookMutacoesComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comment-mutations.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook possui o estado e as cinco operacoes semanticas de visibilidade", () => {
   assert.match(hook, /export function useObraCommentRepliesVisibility\(\)/);
@@ -47,9 +54,10 @@ test("cliente preserva os pontos de reset, resposta enviada e composicao", () =>
   assert.match(cliente, /\} = useObraCommentRepliesVisibility\(\);/);
   assert.match(cliente, /resetarRespostasVisiveis\(\);/);
   assert.match(
-    cliente,
+    hookMutacoesComentarios,
     /if \(comentarioTemporario\.comentarioPaiId\) \{\s*garantirRespostaVisivel\(comentarioTemporario\.comentarioPaiId\);\s*\}\s*\n\s*setComentariosObra/,
   );
+  assert.match(cliente, /garantirRespostaVisivel,/);
   assert.match(cliente, /onMostrarRespostas=\{mostrarRespostas\}/);
   assert.match(cliente, /onMostrarMaisRespostas=\{mostrarMaisRespostas\}/);
   assert.match(cliente, /onOcultarRespostas=\{ocultarRespostas\}/);

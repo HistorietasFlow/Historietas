@@ -10,6 +10,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const mutacoesComentariosObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comment-mutations.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const persistenciaInteracoesObra = readFileSync(
   new URL(
     "../../app/obra/[slug]/lib/obra-supabase-interaction-persistence.ts",
@@ -29,14 +36,18 @@ function criarPromessaControlada() {
   return { promessa, resolver, rejeitar };
 }
 
-function obterBloco(inicioTexto, fimTexto) {
-  const inicio = paginaObra.indexOf(inicioTexto);
-  const fim = paginaObra.indexOf(fimTexto, inicio);
+function obterBlocoEm(conteudo, inicioTexto, fimTexto) {
+  const inicio = conteudo.indexOf(inicioTexto);
+  const fim = conteudo.indexOf(fimTexto, inicio);
 
   assert.ok(inicio >= 0);
   assert.ok(fim > inicio);
 
-  return paginaObra.slice(inicio, fim);
+  return conteudo.slice(inicio, fim);
+}
+
+function obterBloco(inicioTexto, fimTexto) {
+  return obterBlocoEm(paginaObra, inicioTexto, fimTexto);
 }
 
 function obterBlocoPersistencia(inicioTexto, fimTexto) {
@@ -118,18 +129,18 @@ test("helper de acao valida versao e user id apos getUser", () => {
 
 test("oito acoes sociais usam identidade versionada", () => {
   const handlers = [
-    ["async function alternarSeguirObra()", "async function alternarCurtidaObra()"],
-    ["async function alternarCurtidaObra()", "async function enviarComentarioObra("],
-    ["async function enviarComentarioObra(", "function inserirNoComentarioObra("],
-    ["async function removerComentarioObra(", "async function alternarCurtidaComentarioObra("],
-    ["async function alternarCurtidaComentarioObra(", "async function alternarFavoritoObra()"],
-    ["async function alternarFavoritoObra()", "async function alternarConcluirObra()"],
-    ["async function alternarConcluirObra()", "async function avaliarObra("],
-    ["async function avaliarObra(", "async function compartilharObraAtual()"],
+    [paginaObra, "async function alternarSeguirObra()", "async function alternarCurtidaObra()"],
+    [paginaObra, "async function alternarCurtidaObra()", "async function alternarFavoritoObra()"],
+    [mutacoesComentariosObra, "async function enviarComentarioObra(", "async function removerComentarioObra("],
+    [mutacoesComentariosObra, "async function removerComentarioObra(", "async function alternarCurtidaComentarioObra("],
+    [mutacoesComentariosObra, "async function alternarCurtidaComentarioObra(", "return {"],
+    [paginaObra, "async function alternarFavoritoObra()", "async function alternarConcluirObra()"],
+    [paginaObra, "async function alternarConcluirObra()", "async function avaliarObra("],
+    [paginaObra, "async function avaliarObra(", "async function compartilharObraAtual()"],
   ];
 
-  for (const [inicio, fim] of handlers) {
-    const bloco = obterBloco(inicio, fim);
+  for (const [conteudo, inicio, fim] of handlers) {
+    const bloco = obterBlocoEm(conteudo, inicio, fim);
 
     assert.match(bloco, /obterIdentidadeLogadaParaAcao/);
     assert.match(bloco, /criarGuardIdentidadeAcao/);
@@ -313,7 +324,8 @@ test("falha obsoleta de remocao de comentario nao mostra erro nem libera lock de
 });
 
 test("remocao de comentario revalida identidade apos o delete e antes dos efeitos", () => {
-  const bloco = obterBloco(
+  const bloco = obterBlocoEm(
+    mutacoesComentariosObra,
     "async function removerComentarioObra(",
     "async function alternarCurtidaComentarioObra(",
   );
@@ -565,9 +577,10 @@ test("updater local tardio da curtida nao grava cache da conta A depois da troca
 });
 
 test("curtida de comentario revalida identidade nos limites remoto, local, rollback e finally", () => {
-  const bloco = obterBloco(
+  const bloco = obterBlocoEm(
+    mutacoesComentariosObra,
     "async function alternarCurtidaComentarioObra(",
-    "async function alternarFavoritoObra()",
+    "return {",
   );
   const indiceIdentidade = bloco.indexOf("await obterIdentidadeLogadaParaAcao");
   const indiceOtimista = bloco.indexOf("setComentariosObra((comentariosAtuais) =>");
@@ -652,9 +665,10 @@ test("curtida de comentario revalida identidade nos limites remoto, local, rollb
 });
 
 test("comentario revalida identidade depois dos awaits e antes de rollback", () => {
-  const bloco = obterBloco(
+  const bloco = obterBlocoEm(
+    mutacoesComentariosObra,
     "async function enviarComentarioObra(",
-    "function inserirNoComentarioObra(",
+    "async function removerComentarioObra(",
   );
 
   const indicePerfil = bloco.indexOf("await carregarPerfilPublicoObra");
@@ -735,7 +749,7 @@ test("ativacao social nao apaga registro antes de inserir", () => {
 test("curtida local usa o user id capturado pela acao", () => {
   const bloco = obterBloco(
     "async function alternarCurtidaObra()",
-    "async function enviarComentarioObra(",
+    "async function alternarFavoritoObra()",
   );
 
   assert.match(
