@@ -184,7 +184,7 @@ test("Editar Capítulo delega a preparação de importação e mantém a orquest
   assert.doesNotMatch(pageSource, /await arquivo\.text\(\)/);
 
   const inicioHandler = pageSource.indexOf("async function importarArquivoTexto");
-  const fimHandler = pageSource.indexOf("async function excluirCapitulo", inicioHandler);
+  const fimHandler = pageSource.indexOf("if (carregando || verificandoAcesso)", inicioHandler);
   const handler = pageSource.slice(inicioHandler, fimHandler);
   assert.ok(handler.indexOf("if (!arquivo)") < handler.indexOf("marcarAlteracao();"));
   assert.ok(handler.indexOf("marcarAlteracao();") < handler.indexOf("prepararImportacaoArquivoTextoEditarCapitulo"));

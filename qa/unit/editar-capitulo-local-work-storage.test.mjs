@@ -21,6 +21,13 @@ const initialLoadHookSource = readFileSync(
   ),
   "utf8",
 );
+const deleteActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloDeleteAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const eventos = [];
 const armazenamento = new Map();
@@ -188,7 +195,10 @@ test("Editar Capítulo delega apenas o storage local de obras ao módulo extraí
   }
   assert.doesNotMatch(pageSource, /const STORAGE_KEY = "historietas-obras";/);
   assert.match(initialLoadHookSource, /carregarObrasLocaisNormalizadas\(userId\)/);
-  assert.match(pageSource, /salvarObrasEditarCapituloStorage\([\s\S]*?userId/);
+  assert.match(
+    deleteActionSource,
+    /salvarObrasEditarCapituloStorage\([\s\S]*?novasObras,[\s\S]*?userId/,
+  );
   assert.match(storageSource, /const STORAGE_KEY = "historietas-obras";/);
   assert.match(storageSource, /obraPertenceAoUsuarioEditarCapitulo\(obra, userIdLimpo\)/);
   assert.match(storageSource, /sincronizarBackupArquivosObras\(obrasNormalizadas, userIdLimpo\);/);

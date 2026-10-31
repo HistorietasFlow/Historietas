@@ -1832,6 +1832,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A ação de salvar a edição foi movida para `hooks/useEditarCapituloSaveAction.ts`, preservando validação, autenticação, autorização, sincronização Supabase, mutação local, backup, Diário, notificações, feedback e a ordem de atualização dos estados.
 
+## Registro da Fase 3 — Editar Capítulo
+
+- A ação de excluir capítulo foi movida para `hooks/useEditarCapituloDeleteAction.ts`, preservando confirmação, autenticação, autorização, exclusão Supabase, mutação e persistência local, navegação, feedback e a ordem de atualização dos estados.
+
 ## Registro da Fase 1 — Adicionar Capítulo
 
 - Os helpers de storage por usuário foram isolados em `lib/adicionar-capitulo-storage-utils.ts`, preservando chaves, leitura segura, serialização e falhas silenciosas.
