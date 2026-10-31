@@ -2744,3 +2744,6 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Admin Exclusões de Conta — Fase 2
 
 - As ações administrativas de atualizar solicitações e recuperar operações foram movidas para `use-admin-exclusoes-conta-actions.ts`, preservando validações, payloads, status HTTP, normalização, recarga, feedback e setters na página.
+## Login — Fase 1
+
+- A ação de envio do formulário foi movida para `useLoginSubmitAction`, preservando preparação, validação, recuperação, cadastro, sincronização de perfil, aceite, login, finalização e estados controlados pela página.
