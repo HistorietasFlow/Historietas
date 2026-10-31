@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hook = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-initial-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const contextoLoader = readFileSync(
   new URL(
     "../../app/admin/comunidade/loaders/carregar-denuncias-contexto-moderacao.ts",
@@ -38,11 +45,12 @@ test("loader base preserva query, erro e normalização das denúncias", () => {
 });
 
 test("Admin Comunidade mantém contexto e setters na página", () => {
-  assert.match(page, /setErro\(""/);
-  assert.match(page, /await carregarDenunciasComContextoModeracao\(\)/);
+  assert.match(hook, /setErro\(""/);
+  assert.match(hook, /await carregarDenunciasComContextoModeracao\(\)/);
   assert.match(contextoLoader, /const denunciasMapeadas =\s*await buscarDenunciasBaseModeracao\(\)/);
   assert.match(contextoLoader, /agruparIdsAlvosDenunciados\(denunciasMapeadas\)/);
   assert.match(contextoLoader, /buscarAlvosPrimariosModeracao\(/);
-  assert.match(page, /setDenuncias\(denunciasComContexto\)/);
-  assert.match(page, /setObservacoes\(/);
+  assert.match(hook, /setDenuncias\(denunciasComContexto\)/);
+  assert.match(hook, /setObservacoes\(/);
+  assert.match(page, /useAdminComunidadeInitialData\(/);
 });

@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-initial-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarLoader(supabase) {
   const javascript = typescript.transpileModule(
@@ -116,31 +123,33 @@ test("preserva ausência de usuário e propaga erros da autenticação e da RPC"
 
 test("Admin Comunidade mantém a orquestração, setters e redirect do acesso", () => {
   assert.match(
-    pageSource,
-    /import \{ verificarAcessoModeracao \} from "\.\/loaders\/verificar-acesso-moderacao";/,
+    hookSource,
+    /import \{ verificarAcessoModeracao \} from "\.\.\/loaders\/verificar-acesso-moderacao";/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /const \{ user, adminConfirmado \} =\s*await verificarAcessoModeracao\(\);/,
   );
-  assert.doesNotMatch(pageSource, /supabase\.auth\.getUser\(\)/);
-  assert.doesNotMatch(pageSource, /supabase\.rpc\("usuario_e_admin"\)/);
-  assert.match(pageSource, /setUsuarioId\(""\);/);
-  assert.match(pageSource, /setEhAdmin\(false\);/);
-  assert.match(pageSource, /setDenuncias\(\[\]\);/);
-  assert.match(pageSource, /setDenunciasPerfis\(\[\]\);/);
-  assert.match(pageSource, /setReincidenciasPorUsuario\(\{\}\);/);
-  assert.match(pageSource, /router\.replace\(criarLoginHrefAdminModeracao\(\)\);/);
-  assert.match(pageSource, /setUsuarioId\(user\.id\);/);
-  assert.match(pageSource, /setEhAdmin\(adminConfirmado\);/);
+  assert.doesNotMatch(hookSource, /supabase\.auth\.getUser\(\)/);
+  assert.doesNotMatch(hookSource, /supabase\.rpc\("usuario_e_admin"\)/);
+  assert.match(hookSource, /setUsuarioId\(""\);/);
+  assert.match(hookSource, /setEhAdmin\(false\);/);
+  assert.match(hookSource, /setDenuncias\(\[\]\);/);
+  assert.match(hookSource, /setDenunciasPerfis\(\[\]\);/);
+  assert.match(hookSource, /setReincidenciasPorUsuario\(\{\}\);/);
+  assert.match(hookSource, /router\.replace\(criarLoginHrefAdminModeracao\(\)\);/);
+  assert.match(hookSource, /setUsuarioId\(user\.id\);/);
+  assert.match(hookSource, /setEhAdmin\(adminConfirmado\);/);
   assert.match(
-    pageSource,
+    hookSource,
     /Promise\.all\(\[[\s\S]*?carregarDenuncias\(\),[\s\S]*?carregarDenunciasPerfis\(\),[\s\S]*?carregarReincidenciasModeracao\(\),/,
   );
-  assert.match(pageSource, /let cancelado = false;/);
-  assert.match(pageSource, /catch \(error\)/);
-  assert.match(pageSource, /finally/);
-  assert.match(pageSource, /\}, \[router\]\);/);
+  assert.match(hookSource, /let cancelado = false;/);
+  assert.match(hookSource, /catch \(error\)/);
+  assert.match(hookSource, /finally/);
+  assert.match(hookSource, /\}, \[router\]\);/);
+  assert.match(pageSource, /useAdminComunidadeInitialData\(/);
+  assert.doesNotMatch(pageSource, /async function iniciarModeracao/);
   assert.doesNotMatch(
     loaderSource,
     /useState|useEffect|useMemo|router|localStorage|set[A-Z]|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/,

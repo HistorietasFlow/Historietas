@@ -48,23 +48,11 @@ import {
   clearButtonStyle,
   listStyle,
 } from "./lib/admin-comunidade-styles";
-import { criarLoginHrefAdminModeracao } from "./lib/admin-comunidade-route-utils";
 import {
   STATUS_DENUNCIAS,
   STATUS_LABEL,
 } from "./lib/admin-comunidade-status-utils";
-import {
-  criarMensagemErro,
-} from "./lib/admin-comunidade-error-utils";
 import { conteudoDenunciadoIndisponivel } from "./lib/admin-comunidade-content-utils";
-import { buscarReincidenciasModeracao } from "./loaders/carregar-reincidencias-moderacao";
-import {
-  buscarDenunciasPerfisModeracao,
-  type DenunciaPerfilComContexto,
-} from "./loaders/carregar-denuncias-perfis-moderacao";
-import {
-  carregarDenunciasComContextoModeracao,
-} from "./loaders/carregar-denuncias-contexto-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -72,25 +60,17 @@ import {
   obterDenunciasAtivas,
 } from "./lib/admin-comunidade-filter-utils";
 import { calcularTotaisModeracao } from "./lib/admin-comunidade-stats-utils";
-import { type DenunciaComContexto } from "./lib/admin-comunidade-report-context-utils";
-import { sincronizarObservacoesModeracao } from "./lib/admin-comunidade-observation-utils";
-import { verificarAcessoModeracao } from "./loaders/verificar-acesso-moderacao";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 import { AdminComunidadeProfileReportCard } from "./components/admin-comunidade-profile-report-card";
 import { AdminComunidadeContentReportCard } from "./components/admin-comunidade-content-report-card";
 import { useAdminComunidadeProfileReportActions } from "./hooks/use-admin-comunidade-profile-report-actions";
 import { useAdminComunidadeContentReportActions } from "./hooks/use-admin-comunidade-content-report-actions";
+import { useAdminComunidadeInitialData } from "./hooks/use-admin-comunidade-initial-data";
 
 export default function AdminComunidadePage() {
   const { language } = useHistorietasLanguage();
-  const [carregando, setCarregando] = useState(true);
-  const [usuarioId, setUsuarioId] = useState("");
-  const [ehAdmin, setEhAdmin] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
-  const [denuncias, setDenuncias] = useState<DenunciaComContexto[]>([]);
-  const [denunciasPerfis, setDenunciasPerfis] = useState<DenunciaPerfilComContexto[]>([]);
-  const [reincidenciasPorUsuario, setReincidenciasPorUsuario] = useState<Record<string, number>>({});
   const [statusFiltro, setStatusFiltro] = useState<StatusFiltroDenuncia>(
     "todas"
   );
@@ -98,7 +78,6 @@ export default function AdminComunidadePage() {
   const [buscaModeracaoAberta, setBuscaModeracaoAberta] = useState(false);
   const [mostrarFiltrosModeracao, setMostrarFiltrosModeracao] = useState(false);
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
-  const [observacoes, setObservacoes] = useState<Record<string, string>>({});
   const [menuDenunciaAbertoId, setMenuDenunciaAbertoId] = useState("");
   const isDesktop = useAdminComunidadeDesktopMode();
   const router = useRouter();
@@ -107,86 +86,22 @@ export default function AdminComunidadePage() {
 
 
 
-  async function carregarDenuncias() {
-    setErro("");
-
-    const denunciasComContexto =
-      await carregarDenunciasComContextoModeracao();
-
-    setDenuncias(denunciasComContexto);
-    setObservacoes((observacoesAtuais) =>
-      sincronizarObservacoesModeracao(
-        observacoesAtuais,
-        denunciasComContexto,
-      )
-    );
-  }
-
-  async function carregarReincidenciasModeracao() {
-    const proximoMapa = await buscarReincidenciasModeracao();
-    setReincidenciasPorUsuario(proximoMapa);
-  }
-
-  async function carregarDenunciasPerfis() {
-    const denunciasComContexto = await buscarDenunciasPerfisModeracao();
-    setDenunciasPerfis(denunciasComContexto);
-  }
-
-
-  useEffect(() => {
-    let cancelado = false;
-
-    async function iniciarModeracao() {
-      setCarregando(true);
-      setErro("");
-      setSucesso("");
-
-      try {
-        const { user, adminConfirmado } =
-          await verificarAcessoModeracao();
-
-        if (!user) {
-          if (!cancelado) {
-            setUsuarioId("");
-            setEhAdmin(false);
-            setDenuncias([]);
-            setDenunciasPerfis([]);
-            setReincidenciasPorUsuario({});
-            router.replace(criarLoginHrefAdminModeracao());
-          }
-
-          return;
-        }
-
-        if (!cancelado) {
-          setUsuarioId(user.id);
-          setEhAdmin(adminConfirmado);
-        }
-
-        if (adminConfirmado) {
-          await Promise.all([
-            carregarDenuncias(),
-            carregarDenunciasPerfis(),
-            carregarReincidenciasModeracao(),
-          ]);
-        }
-      } catch (error) {
-        if (!cancelado) {
-          setErro(criarMensagemErro("Erro ao carregar moderação", error));
-        }
-      } finally {
-        if (!cancelado) {
-          setCarregando(false);
-        }
-      }
-    }
-
-    iniciarModeracao();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [router]);
+  const {
+    carregando,
+    usuarioId,
+    ehAdmin,
+    denuncias,
+    setDenuncias,
+    denunciasPerfis,
+    setDenunciasPerfis,
+    reincidenciasPorUsuario,
+    observacoes,
+    setObservacoes,
+  } = useAdminComunidadeInitialData({
+    router,
+    setErro,
+    setSucesso,
+  });
 
   const denunciasAtivas = useMemo(
     () => obterDenunciasAtivas(denuncias),
