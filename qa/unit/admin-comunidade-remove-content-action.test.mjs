@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-content-report-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarAction(supabase) {
   const javascript = typescript.transpileModule(
@@ -93,30 +100,30 @@ test("propaga o erro retornado pela RPC", async () => {
 
 test("Admin Comunidade mantém a orquestração e delega a RPC", () => {
   assert.match(
-    pageSource,
-    /import \{ removerConteudoDenunciadoModeracao \} from "\.\/actions\/remover-conteudo-denunciado-moderacao";/,
+    hookSource,
+    /import \{ removerConteudoDenunciadoModeracao \} from "\.\.\/actions\/remover-conteudo-denunciado-moderacao";/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /if \(!usuarioId \|\| !ehAdmin\) \{\s*setErro\("Apenas moderadores podem remover conteúdo denunciado\."\);/,
   );
-  assert.match(pageSource, /denuncia\.arquivada/);
-  assert.match(pageSource, /denuncia\.status !== "pendente"/);
-  assert.match(pageSource, /window\.confirm\(/);
+  assert.match(hookSource, /denuncia\.arquivada/);
+  assert.match(hookSource, /denuncia\.status !== "pendente"/);
+  assert.match(hookSource, /window\.confirm\(/);
   assert.match(
-    pageSource,
+    hookSource,
     /const observacaoFinal =\s*observacaoAtual \|\|\s*`Conteúdo removido pela moderação em \$\{new Date\(\)\.toLocaleDateString\(/,
   );
-  assert.match(pageSource, /const analisadoEm = new Date\(\)\.toISOString\(\);/);
+  assert.match(hookSource, /const analisadoEm = new Date\(\)\.toISOString\(\);/);
   assert.match(
-    pageSource,
+    hookSource,
     /await removerConteudoDenunciadoModeracao\(\{\s*alvoTipo: denuncia\.alvoTipo,\s*alvoId: denuncia\.alvoId,\s*observacaoFinal,\s*\}\);/,
   );
-  assert.match(pageSource, /setDenuncias\(/);
-  assert.match(pageSource, /setObservacoes\(/);
-  assert.match(pageSource, /rotuloSucessoRemocaoAlvo\(/);
+  assert.match(hookSource, /setDenuncias\(/);
+  assert.match(hookSource, /setObservacoes\(/);
+  assert.match(hookSource, /rotuloSucessoRemocaoAlvo\(/);
 
-  const funcaoRemocao = pageSource.match(
+  const funcaoRemocao = hookSource.match(
     /async function removerConteudoDenunciado[\s\S]*?(?=\n\s*async function arquivarDenuncia)/,
   )?.[0] ?? "";
   assert.doesNotMatch(
@@ -125,6 +132,8 @@ test("Admin Comunidade mantém a orquestração e delega a RPC", () => {
   );
   assert.match(funcaoRemocao, /catch \(error\)/);
   assert.match(funcaoRemocao, /finally/);
+  assert.match(pageSource, /useAdminComunidadeContentReportActions\(/);
+  assert.doesNotMatch(pageSource, /async function removerConteudoDenunciado\(/);
   assert.doesNotMatch(
     actionSource,
     /useState|useEffect|useMemo|router|localStorage|set[A-Z]|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/,

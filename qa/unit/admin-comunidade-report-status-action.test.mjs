@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-content-report-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarAction(supabase) {
   const javascript = typescript.transpileModule(
@@ -138,35 +145,37 @@ test("exige o registro atualizado retornado", async () => {
 
 test("Admin Comunidade mantém o fluxo de interface e delega a persistência", () => {
   assert.match(
-    pageSource,
-    /import \{ persistirStatusDenunciaModeracao \} from "\.\/actions\/atualizar-status-denuncia-moderacao";/,
+    hookSource,
+    /import \{ persistirStatusDenunciaModeracao \} from "\.\.\/actions\/atualizar-status-denuncia-moderacao";/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /const observacaoAtual = observacoes\[denunciaId\]\?\.trim\(\) \|\| "";/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /const analisadoEm = new Date\(\)\.toISOString\(\);/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /if \(!usuarioId \|\| !ehAdmin\) \{\s*setErro\("Apenas moderadores podem atualizar denúncias\."\);/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /await persistirStatusDenunciaModeracao\(\{\s*denunciaId,\s*novoStatus,\s*observacaoAtual,\s*usuarioId,\s*analisadoEm,\s*\}\);/,
   );
-  assert.match(pageSource, /setDenuncias\(/);
-  assert.match(pageSource, /observacaoAdmin: observacaoAtual\.slice\(0, 800\)/);
-  assert.match(pageSource, /STATUS_LABEL\[novoStatus\]/);
+  assert.match(hookSource, /setDenuncias\(/);
+  assert.match(hookSource, /observacaoAdmin: observacaoAtual\.slice\(0, 800\)/);
+  assert.match(hookSource, /STATUS_LABEL\[novoStatus\]/);
 
-  const funcaoStatus = pageSource.match(
+  const funcaoStatus = hookSource.match(
     /async function atualizarStatusDenuncia\([\s\S]*?(?=\n\s*async function removerConteudoDenunciado)/,
   )?.[0] ?? "";
   assert.doesNotMatch(funcaoStatus, /\.from\("comunidade_denuncias"\)/);
   assert.match(funcaoStatus, /catch \(error\)/);
   assert.match(funcaoStatus, /finally/);
+  assert.match(pageSource, /useAdminComunidadeContentReportActions\(/);
+  assert.doesNotMatch(pageSource, /async function atualizarStatusDenuncia\(/);
   assert.doesNotMatch(
     actionSource,
     /useState|useEffect|useMemo|router|localStorage|set[A-Z]|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/,

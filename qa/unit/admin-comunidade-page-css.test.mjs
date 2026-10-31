@@ -20,6 +20,13 @@ const stylesModule = readFileSync(
   ),
   "utf8",
 );
+const contentActionsHook = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-content-report-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("adminComunidadePageCss preserva o CSS global crítico", () => {
   assert.match(cssModule, /export const adminComunidadePageCss = `/);
@@ -66,6 +73,7 @@ test("Admin Comunidade mantém os quatro consumidores e as fronteiras sensíveis
   assert.match(pagina, /async function iniciarModeracao\(\)/);
   assert.match(pagina, /verificarAcessoModeracao\(\)/);
   assert.doesNotMatch(pagina, /supabase\.auth\.getUser\(\)/);
-  assert.match(pagina, /async function atualizarStatusDenuncia\(/);
+  assert.doesNotMatch(pagina, /async function atualizarStatusDenuncia\(/);
+  assert.match(contentActionsHook, /async function atualizarStatusDenuncia\(/);
   assert.match(pagina, /const \[statusFiltro, setStatusFiltro\] = useState/);
 });

@@ -2173,6 +2173,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As ações de atualização e remoção de denúncias de perfil foram agrupadas em `hooks/use-admin-comunidade-profile-report-actions.ts`, preservando autorização, locks, persistência, mensagens e a propriedade dos estados na página.
 
+## Registro da Fase 32 — Admin Comunidade
+
+- As ações de denúncias de conteúdo foram movidas para `hooks/use-admin-comunidade-content-report-actions.ts`, preservando autorização, locks, confirmação, persistência, ordem de atualizações, mensagens e a propriedade dos estados na página.
+
 ## Fase 1 — Admin Exclusões de Conta
 
 - Tipos e normalização dos contratos foram extraídos para `lib/admin-exclusoes-conta-normalization-utils.ts`, sem alteração de comportamento.

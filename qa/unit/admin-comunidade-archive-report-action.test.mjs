@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-content-report-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarAction(supabase) {
   const javascript = typescript.transpileModule(
@@ -117,11 +124,11 @@ test("exige o registro arquivado retornado", async () => {
 
 test("Admin Comunidade mantém o fluxo de interface e delega o arquivamento", () => {
   assert.match(
-    pageSource,
-    /import \{ persistirArquivamentoDenunciaModeracao \} from "\.\/actions\/arquivar-denuncia-moderacao";/,
+    hookSource,
+    /import \{ persistirArquivamentoDenunciaModeracao \} from "\.\.\/actions\/arquivar-denuncia-moderacao";/,
   );
 
-  const funcaoArquivamento = pageSource.match(
+  const funcaoArquivamento = hookSource.match(
     /async function arquivarDenuncia\([\s\S]*?(?=\n\s*async function restaurarDenunciaArquivada)/,
   )?.[0] ?? "";
 
@@ -144,6 +151,8 @@ test("Admin Comunidade mantém o fluxo de interface e delega o arquivamento", ()
   );
   assert.match(funcaoArquivamento, /catch \(error\)/);
   assert.match(funcaoArquivamento, /finally/);
+  assert.match(pageSource, /useAdminComunidadeContentReportActions\(/);
+  assert.doesNotMatch(pageSource, /async function arquivarDenuncia\(/);
   assert.doesNotMatch(
     funcaoArquivamento,
     /\.from\("comunidade_denuncias"\)/,

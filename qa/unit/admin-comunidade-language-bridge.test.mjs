@@ -15,6 +15,10 @@ const filterUtils = await readFile(
   "app/admin/comunidade/lib/admin-comunidade-filter-utils.ts",
   "utf8",
 );
+const contentActionsHook = await readFile(
+  "app/admin/comunidade/hooks/use-admin-comunidade-content-report-actions.ts",
+  "utf8",
+);
 
 test("AdminComunidadeLanguageBridge preserva o lifecycle de tradução e restauração", () => {
   assert.match(bridge, /^"use client";/);
@@ -49,9 +53,13 @@ test("a página preserva mounts e responsabilidades fora do bridge", () => {
     pagina,
     /function textoConfirmacaoRemocaoAdminComunidade\(/,
   );
-  assert.match(
+  assert.doesNotMatch(
     pagina,
     /from "\.\/lib\/admin-comunidade-text-utils";/,
+  );
+  assert.match(
+    contentActionsHook,
+    /from "\.\.\/lib\/admin-comunidade-text-utils";/,
   );
   assert.match(pagina, /useHistorietasLanguage/);
   assert.doesNotMatch(pagina, /import type \{ HistorietasLanguage \} from/);

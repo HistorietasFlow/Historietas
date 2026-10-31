@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-content-report-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarAction(supabase) {
   const javascript = typescript.transpileModule(
@@ -118,12 +125,12 @@ test("exige o registro removido retornado", async () => {
 
 test("Admin Comunidade mantém o fluxo de interface e delega a remoção", () => {
   assert.match(
-    pageSource,
-    /import \{ persistirRemocaoDenunciaResolvidaModeracao \} from "\.\/actions\/remover-denuncia-resolvida-moderacao";/,
+    hookSource,
+    /import \{ persistirRemocaoDenunciaResolvidaModeracao \} from "\.\.\/actions\/remover-denuncia-resolvida-moderacao";/,
   );
 
-  const funcaoRemocao = pageSource.match(
-    /async function removerDenunciaResolvida\([\s\S]*?(?=\n\s*async function removerDenunciaPerfilResolvida)/,
+  const funcaoRemocao = hookSource.match(
+    /async function removerDenunciaResolvida\([\s\S]*?(?=\n\s*return \{)/,
   )?.[0] ?? "";
 
   assert.match(
@@ -155,6 +162,8 @@ test("Admin Comunidade mantém o fluxo de interface e delega a remoção", () =>
   );
   assert.match(funcaoRemocao, /catch \(error\)/);
   assert.match(funcaoRemocao, /finally/);
+  assert.match(pageSource, /useAdminComunidadeContentReportActions\(/);
+  assert.doesNotMatch(pageSource, /async function removerDenunciaResolvida\(/);
   assert.doesNotMatch(
     funcaoRemocao,
     /\.from\("comunidade_denuncias"\)/,
