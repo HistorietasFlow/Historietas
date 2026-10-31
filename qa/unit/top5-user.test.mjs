@@ -50,23 +50,24 @@ test("criarUsuarioTop5 preserva a composição condicional atual", async () => {
   );
 });
 
-test("a Fase 40 mantém composição e lifecycle na página", async () => {
+test("a composição de usuário permanece integrada ao lifecycle dedicado", async () => {
   const [helper, pageOriginal] = await Promise.all([
     readFile(helperPath, "utf8"),
     readFile(pagePath, "utf8"),
   ]);
+  const helperSource = helper.replace(/\r\n/g, "\n");
   const page = pageOriginal.replace(/\r\n/g, "\n");
 
   assert.match(
-    helper,
+    helperSource,
     /import type \{ UsuarioTop5 \} from "\.\/top5-types";/,
   );
   assert.match(
-    helper,
+    helperSource,
     /export function criarUsuarioTop5\(\n  userId: string,\n  nomeUsuario: string,\n\): UsuarioTop5 \| null/,
   );
   assert.match(
-    helper,
+    helperSource,
     /return userId\s*\? \{\s*id: userId,\s*nome: nomeUsuario,\s*\}\s*: null;/,
   );
 
@@ -83,37 +84,13 @@ test("a Fase 40 mantém composição e lifecycle na página", async () => {
     "persist",
     "<",
   ]) {
-    assert.doesNotMatch(helper, new RegExp(forbidden, "i"));
+    assert.doesNotMatch(helperSource, new RegExp(forbidden, "i"));
   }
 
   assert.match(
     page,
-    /import \{ criarUsuarioTop5 \} from "\.\/lib\/top5-user";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.match(page, /useState<UsuarioTop5 \| null>\(null\)/);
-  assert.match(page, /const userId = authData\.user\?\.id \|\| "";/);
-  assert.match(page, /const nomeUsuario = await resolverNomeUsuarioTop5\(/);
-  assert.match(
-    page,
-    /setUsuario\(\s*criarUsuarioTop5\(\s*userId,\s*nomeUsuario,\s*\),\s*\);/,
-  );
-
-  const setUsuario = page.indexOf("setUsuario(\n          criarUsuarioTop5(");
-  const setObras = page.indexOf("setObras(obrasMescladas);");
-  const setIds = page.indexOf("setIdsSelecionados(idsNormalizados);");
-  const sincronizar = page.indexOf("sincronizarSelecaoInicialTop5(");
-  assert.ok(setUsuario >= 0);
-  assert.ok(setUsuario < setObras);
-  assert.ok(setObras < setIds);
-  assert.ok(setIds < sincronizar);
-
-  assert.equal(
-    (page.match(/if \(cancelado\) \{\n          return;\n        \}/g) || [])
-      .length,
-    2,
-  );
-  assert.match(
-    page,
-    /catch \{\s*if \(!cancelado\) \{\s*setUsuario\(null\);\s*setObras\(\[\]\);\s*setIdsSelecionados\(\[\]\);/,
-  );
+  assert.match(page, /useTop5InitialLoad\(\{\s*setUsuario,\s*setCarregando,\s*setObras,\s*setIdsSelecionados,\s*\}\);/);
 });

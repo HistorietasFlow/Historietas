@@ -78,14 +78,11 @@ test("Top 5 prepara obras e seleção iniciais na ordem atual", async () => {
 
   assert.match(
     page,
-    /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.doesNotMatch(page, /import \{ carregarObrasIniciaisTop5 \}/);
   assert.doesNotMatch(page, /import \{ prepararSelecaoInicialTop5 \}/);
-  assert.match(
-    page,
-    /if \(cancelado\) \{\s*return;\s*\}\s*const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\);\s*setUsuario\(\s*criarUsuarioTop5\(\s*userId,\s*nomeUsuario,\s*\),\s*\);\s*setObras\(obrasMescladas\);\s*setIdsSelecionados\(idsNormalizados\);\s*sincronizarSelecaoInicialTop5\(\s*userId,\s*idsSalvos,\s*idsNormalizados,\s*\);/,
-  );
+  assert.doesNotMatch(page, /prepararConteudoInicialTop5\(/);
 
   for (const forbidden of [
     "react",

@@ -105,15 +105,12 @@ test("Top 5 carrega em paralelo a sessão e as obras Supabase", async () => {
 
   assert.match(
     page,
-    /import \{ carregarDadosIniciaisTop5 \} from "\.\/lib\/top5-initial-data-loader";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.doesNotMatch(page, /Promise\.all\(\[\s*supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(page, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(page, /carregarObrasSupabaseTop5\(\)/);
-  assert.match(
-    page,
-    /const \{\s*authData,\s*obrasSupabase,\s*\} = await carregarDadosIniciaisTop5\(\);\s*if \(cancelado\) \{\s*return;\s*\}\s*const userId = authData\.user\?\.id \|\| "";/,
-  );
+  assert.doesNotMatch(page, /carregarDadosIniciaisTop5\(\)/);
 
   for (const forbidden of [
     "react",

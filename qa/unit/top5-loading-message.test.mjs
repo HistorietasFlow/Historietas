@@ -43,8 +43,7 @@ test("Top 5 delega somente o indicador apresentacional de carregamento", async (
   assert.doesNotMatch(page, /Carregando obras\.\.\./);
   assert.doesNotMatch(page, /<p role="status" aria-live="polite" style=\{loadingStyle\}>/);
   assert.match(page, /const \[carregando, setCarregando\] = useState\(true\);/);
-  assert.match(page, /setCarregando\(true\);/);
-  assert.match(page, /setCarregando\(false\);/);
+  assert.match(page, /useTop5InitialLoad\(\{\s*setUsuario,\s*setCarregando,/);
   assert.doesNotMatch(page, /Top5LoadingMessage/);
   assert.doesNotMatch(page, /top5-search-feedback-styles/);
 

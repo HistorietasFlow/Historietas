@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -24,13 +24,9 @@ import {
   criarMapaObrasTop5,
   selecionarObrasTop5,
 } from "./lib/top5-work-selectors";
-import { sincronizarSelecaoInicialTop5 } from "./lib/top5-initial-selection-sync";
-import { carregarDadosIniciaisTop5 } from "./lib/top5-initial-data-loader";
-import { prepararConteudoInicialTop5 } from "./lib/top5-initial-content";
-import { criarUsuarioTop5 } from "./lib/top5-user";
 import { persistirSelecaoTop5 } from "./lib/top5-selection-save";
 import { alternarIdSelecionadoTop5 } from "./lib/top5-selection-toggle";
-import { resolverNomeUsuarioTop5 } from "./lib/top5-user-name-resolver";
+import { useTop5InitialLoad } from "./hooks/use-top5-initial-load";
 import type {
   ObraTop5,
   UsuarioTop5,
@@ -46,77 +42,12 @@ export default function Top5PerfilAutorPage() {
   const [obras, setObras] = useState<ObraTop5[]>([]);
   const [idsSelecionados, setIdsSelecionados] = useState<string[]>([]);
   const [mensagem, setMensagem] = useState("");
-
-  useEffect(() => {
-    let cancelado = false;
-
-    async function iniciarPagina() {
-      setCarregando(true);
-
-      try {
-        const {
-          authData,
-          obrasSupabase,
-        } = await carregarDadosIniciaisTop5();
-
-        if (cancelado) {
-          return;
-        }
-
-        const userId = authData.user?.id || "";
-        const nomeUsuario = await resolverNomeUsuarioTop5(
-          userId,
-          authData.user?.user_metadata?.nome,
-          authData.user?.user_metadata?.name,
-          authData.user?.email,
-        );
-
-        if (cancelado) {
-          return;
-        }
-
-        const {
-          obrasMescladas,
-          idsSalvos,
-          idsNormalizados,
-        } = prepararConteudoInicialTop5(
-          userId,
-          obrasSupabase,
-        );
-
-        setUsuario(
-          criarUsuarioTop5(
-            userId,
-            nomeUsuario,
-          ),
-        );
-        setObras(obrasMescladas);
-        setIdsSelecionados(idsNormalizados);
-
-        sincronizarSelecaoInicialTop5(
-          userId,
-          idsSalvos,
-          idsNormalizados,
-        );
-      } catch {
-        if (!cancelado) {
-          setUsuario(null);
-          setObras([]);
-          setIdsSelecionados([]);
-        }
-      } finally {
-        if (!cancelado) {
-          setCarregando(false);
-        }
-      }
-    }
-
-    void iniciarPagina();
-
-    return () => {
-      cancelado = true;
-    };
-  }, []);
+  useTop5InitialLoad({
+    setUsuario,
+    setCarregando,
+    setObras,
+    setIdsSelecionados,
+  });
 
   const obrasPorChave = useMemo(
     () => criarMapaObrasTop5(obras),

@@ -73,28 +73,13 @@ test("Top 5 sincroniza somente a correção necessária da seleção inicial", a
 
   assert.match(
     page,
-    /import \{ sincronizarSelecaoInicialTop5 \} from "\.\/lib\/top5-initial-selection-sync";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.doesNotMatch(
     page,
     /JSON\.stringify\(idsSalvos\) !== JSON\.stringify\(idsNormalizados\)/,
   );
-  assert.match(
-    page,
-    /sincronizarSelecaoInicialTop5\(\s*userId,\s*idsSalvos,\s*idsNormalizados,\s*\);/,
-  );
-  assert.match(
-    page,
-    /const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\);/,
-  );
-
-  const setUsuario = page.indexOf("setUsuario(");
-  const setObras = page.indexOf("setObras(obrasMescladas);");
-  const setIds = page.indexOf("setIdsSelecionados(idsNormalizados);");
-  const sincronizar = page.indexOf("sincronizarSelecaoInicialTop5(");
-  assert.ok(setUsuario < setObras);
-  assert.ok(setObras < setIds);
-  assert.ok(setIds < sincronizar);
+  assert.doesNotMatch(page, /sincronizarSelecaoInicialTop5\(/);
 
   const inicioSalvar = page.indexOf("function salvarEscolhasTop5");
   const handlerSalvar = page.slice(inicioSalvar);
