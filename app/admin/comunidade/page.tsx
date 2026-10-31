@@ -62,7 +62,6 @@ import {
 import {
   criarMensagemErro,
 } from "./lib/admin-comunidade-error-utils";
-import { criarMapasContextoModeracao } from "./lib/admin-comunidade-context-map-utils";
 import {
   localeAdminComunidade,
   textoConfirmacaoRemocaoAdminComunidade,
@@ -73,13 +72,9 @@ import {
   buscarDenunciasPerfisModeracao,
   type DenunciaPerfilComContexto,
 } from "./loaders/carregar-denuncias-perfis-moderacao";
-import { buscarDenunciasBaseModeracao } from "./loaders/carregar-denuncias-base-moderacao";
-import { agruparIdsAlvosDenunciados } from "./lib/admin-comunidade-target-id-utils";
-import { buscarAlvosPrimariosModeracao } from "./loaders/carregar-alvos-primarios-moderacao";
-import { buscarAnotacoesDiarioContextoModeracao } from "./loaders/carregar-anotacoes-diario-contexto-moderacao";
-import { buscarCapitulosContextoModeracao } from "./loaders/carregar-capitulos-contexto-moderacao";
-import { buscarObrasContextoModeracao } from "./loaders/carregar-obras-contexto-moderacao";
-import { buscarPerfisContextoModeracao } from "./loaders/carregar-perfis-contexto-moderacao";
+import {
+  carregarDenunciasComContextoModeracao,
+} from "./loaders/carregar-denuncias-contexto-moderacao";
 import { persistirStatusDenunciaPerfilModeracao } from "./actions/atualizar-status-denuncia-perfil-moderacao";
 import { persistirStatusDenunciaModeracao } from "./actions/atualizar-status-denuncia-moderacao";
 import { removerConteudoDenunciadoModeracao } from "./actions/remover-conteudo-denunciado-moderacao";
@@ -94,10 +89,7 @@ import {
   obterDenunciasAtivas,
 } from "./lib/admin-comunidade-filter-utils";
 import { calcularTotaisModeracao } from "./lib/admin-comunidade-stats-utils";
-import {
-  montarDenunciasComContextoModeracao,
-  type DenunciaComContexto,
-} from "./lib/admin-comunidade-report-context-utils";
+import { type DenunciaComContexto } from "./lib/admin-comunidade-report-context-utils";
 import { sincronizarObservacoesModeracao } from "./lib/admin-comunidade-observation-utils";
 import { verificarAcessoModeracao } from "./loaders/verificar-acesso-moderacao";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
@@ -133,97 +125,8 @@ export default function AdminComunidadePage() {
   async function carregarDenuncias() {
     setErro("");
 
-    const denunciasMapeadas = await buscarDenunciasBaseModeracao();
-
-    const {
-      postIds,
-      comentarioIds,
-      comentarioCapituloIds,
-      obraIdsDenunciadas,
-      capituloIdsDenunciados,
-      comentarioObraIds,
-      diarioAnotacaoIds,
-      comentarioDiarioIds,
-    } = agruparIdsAlvosDenunciados(denunciasMapeadas);
-
-    const {
-      posts,
-      comentarios,
-      comentariosCapitulos,
-      comentariosObras,
-      comentariosDiario,
-    } = await buscarAlvosPrimariosModeracao({
-      postIds,
-      comentarioIds,
-      comentarioCapituloIds,
-      comentarioObraIds,
-      comentarioDiarioIds,
-    });
-
-    const diarioAnotacoes =
-      await buscarAnotacoesDiarioContextoModeracao({
-        diarioAnotacaoIds,
-        comentariosDiario,
-      });
-
-    const capitulos =
-      await buscarCapitulosContextoModeracao({
-        capituloIdsDenunciados,
-        comentariosCapitulos,
-      });
-
-    const obras =
-      await buscarObrasContextoModeracao({
-        obraIdsDenunciadas,
-        capitulos,
-        comentariosObras,
-        diarioAnotacoes,
-      });
-
-    const perfis = await buscarPerfisContextoModeracao({
-      denunciasMapeadas,
-      comentariosCapitulos,
-      comentariosObras,
-      comentariosDiario,
-      diarioAnotacoes,
-      capitulos,
-      obras,
-    });
-
-    const {
-      perfisPorId,
-      postsPorId,
-      comentariosPorId,
-      comentariosCapitulosPorId,
-      comentariosObrasPorId,
-      comentariosDiarioPorId,
-      diarioAnotacoesPorId,
-      capitulosPorId,
-      obrasPorId,
-    } = criarMapasContextoModeracao({
-      perfis,
-      posts,
-      comentarios,
-      comentariosCapitulos,
-      comentariosObras,
-      comentariosDiario,
-      diarioAnotacoes,
-      capitulos,
-      obras,
-    });
-
-    const denunciasComContexto = montarDenunciasComContextoModeracao({
-      denunciasMapeadas,
-      perfisPorId,
-      postsPorId,
-      comentariosPorId,
-      comentariosCapitulosPorId,
-      comentariosObrasPorId,
-      comentariosDiarioPorId,
-      diarioAnotacoesPorId,
-      capitulosPorId,
-      obrasPorId,
-    });
+    const denunciasComContexto =
+      await carregarDenunciasComContextoModeracao();
 
     setDenuncias(denunciasComContexto);
     setObservacoes((observacoesAtuais) =>

@@ -14,6 +14,13 @@ const page = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const contextoLoader = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/loaders/carregar-denuncias-contexto-moderacao.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const javascript = typescript.transpileModule(
   source.replace(
@@ -61,8 +68,9 @@ test("agrupamento preserva os oito tipos, ordem, IDs e imutabilidade", () => {
 
 test("Admin Comunidade delega somente o agrupamento de IDs de alvos", () => {
   assert.doesNotMatch(page, /const idsPorTipo/);
-  assert.match(page, /from ".\/lib\/admin-comunidade-target-id-utils"/);
-  assert.match(page, /agruparIdsAlvosDenunciados\(denunciasMapeadas\)/);
+  assert.doesNotMatch(page, /agruparIdsAlvosDenunciados\(/);
+  assert.match(contextoLoader, /from "\.\.\/lib\/admin-comunidade-target-id-utils"/);
+  assert.match(contextoLoader, /agruparIdsAlvosDenunciados\(denunciasMapeadas\)/);
   for (const nome of [
     "postIds",
     "comentarioIds",
@@ -72,6 +80,6 @@ test("Admin Comunidade delega somente o agrupamento de IDs de alvos", () => {
     "comentarioObraIds",
     "diarioAnotacaoIds",
     "comentarioDiarioIds",
-  ]) assert.match(page, new RegExp(`\\b${nome}\\b`));
+  ]) assert.match(contextoLoader, new RegExp(`\\b${nome}\\b`));
   assert.doesNotMatch(source, /useState|useEffect|useMemo|supabase|router|localStorage|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/);
 });
