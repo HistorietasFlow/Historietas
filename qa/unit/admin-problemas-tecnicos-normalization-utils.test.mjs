@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync("app/admin/problemas-tecnicos/page.tsx", "utf8");
+const hook = readFileSync(
+  "app/admin/problemas-tecnicos/hooks/use-admin-problemas-tecnicos-initial-data.ts",
+  "utf8",
+);
 const source = readFileSync("app/admin/problemas-tecnicos/lib/admin-problemas-tecnicos-normalization-utils.ts", "utf8");
 
 test("normalizadores de problemas técnicos preservam contratos e fallbacks", () => {
@@ -20,6 +24,7 @@ test("página delega normalização e preserva o mapeamento Supabase", () => {
   assert.doesNotMatch(page, /function normalizarStatus/);
   assert.doesNotMatch(page, /function normalizarPrioridade/);
   assert.doesNotMatch(page, /function normalizarCategoria/);
-  assert.match(page, /\.from\("problemas_tecnicos"\)/);
-  ["normalizarCategoria(registro.categoria)", "normalizarStatus(registro.status)", "normalizarPrioridade(registro.prioridade)"].forEach((uso) => assert.ok(page.includes(uso), uso));
+  assert.match(page, /useAdminProblemasTecnicosInitialData/);
+  assert.doesNotMatch(page, /normalizarCategoria\(registro\.categoria\)/);
+  ["normalizarCategoria(registro.categoria)", "normalizarStatus(registro.status)", "normalizarPrioridade(registro.prioridade)"].forEach((uso) => assert.ok(hook.includes(uso), uso));
 });

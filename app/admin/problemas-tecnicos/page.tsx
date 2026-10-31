@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { supabase } from "../../../lib/supabase/client";
+import { useCallback, useMemo, useState } from "react";
 import type { TablesUpdate } from "../../../lib/supabase/database.types";
 import {
   historietasThemeCss,
@@ -15,12 +14,9 @@ import {
   traduzir,
   type TextoTraduzido,
 } from "./lib/admin-problemas-tecnicos-text-utils";
-import { criarLoginHrefAdminProblemasTecnicos } from "./lib/admin-problemas-tecnicos-route-utils";
 import { criarMensagemErro } from "./lib/admin-problemas-tecnicos-error-utils";
-import { verificarAdministradorProblemasTecnicos } from "./loaders/verificar-administrador-problemas-tecnicos";
-import { buscarProblemasTecnicosAdmin } from "./loaders/buscar-problemas-tecnicos-admin";
-import { buscarPerfisProblemasTecnicosAdmin } from "./loaders/buscar-perfis-problemas-tecnicos-admin";
 import { atualizarProblemaTecnicoAdmin } from "./actions/atualizar-problema-tecnico-admin";
+import { useAdminProblemasTecnicosInitialData } from "./hooks/use-admin-problemas-tecnicos-initial-data";
 import { AdminProblemasTecnicosTicketSummary } from "./components/admin-problemas-tecnicos-ticket-summary";
 import { AdminProblemasTecnicosTicketInfoGrid } from "./components/admin-problemas-tecnicos-ticket-info-grid";
 import { AdminProblemasTecnicosTicketDescription } from "./components/admin-problemas-tecnicos-ticket-description";
@@ -66,7 +62,6 @@ import {
 } from "./lib/admin-problemas-tecnicos-styles";
 import {
   STATUS_PROBLEMAS,
-  normalizarCategoria,
   normalizarPrioridade,
   normalizarStatus,
   type FiltroStatusProblema,
@@ -78,16 +73,10 @@ export default function AdminProblemasTecnicosPage() {
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  const [carregando, setCarregando] = useState(true);
-  const [usuarioId, setUsuarioId] = useState("");
-  const [ehAdmin, setEhAdmin] = useState(false);
-  const [problemas, setProblemas] = useState<ProblemaTecnico[]>([]);
-  const [nomesUsuarios, setNomesUsuarios] = useState<Record<string, string>>({});
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] =
     useState<FiltroStatusProblema>("todos");
   const [chamadoAbertoId, setChamadoAbertoId] = useState("");
-  const [observacoes, setObservacoes] = useState<Record<string, string>>({});
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -97,143 +86,22 @@ export default function AdminProblemasTecnicosPage() {
     [language],
   );
 
-  const carregarNomes = useCallback(async (userIds: string[]) => {
-    const ids = Array.from(
-      new Set(userIds.map((id) => id.trim()).filter(Boolean)),
-    );
-
-    if (ids.length === 0) {
-      setNomesUsuarios({});
-      return;
-    }
-
-    const { porUserId, porId } =
-      await buscarPerfisProblemasTecnicosAdmin(ids);
-
-    const perfis = [
-      ...(porUserId.error
-        ? []
-        : (porUserId.data || [])),
-      ...(porId.error
-        ? []
-        : (porId.data || [])),
-    ];
-    const mapa: Record<string, string> = {};
-
-    perfis.forEach((perfil) => {
-      const nome =
-        perfil.nome?.trim() ||
-        (perfil.username?.trim()
-          ? `@${perfil.username.trim().replace(/^@+/, "")}`
-          : "") ||
-        t({
-          pt: "Usuário",
-          en: "User",
-          es: "Usuario",
-        });
-
-      if (perfil.user_id?.trim()) mapa[perfil.user_id.trim()] = nome;
-      if (perfil.id?.trim()) mapa[perfil.id.trim()] = nome;
-    });
-
-    setNomesUsuarios(mapa);
-  }, [t]);
-
-  const carregarProblemas = useCallback(async () => {
-    setErro("");
-
-    const { data, error } = await buscarProblemasTecnicosAdmin();
-
-    if (error) {
-      throw error;
-    }
-
-    const registros = (data || []).map(
-      (registro): ProblemaTecnico => ({
-        id: String(registro.id || ""),
-        userId: String(registro.user_id || ""),
-        emailContato: String(registro.email_contato || ""),
-        categoria: normalizarCategoria(registro.categoria),
-        titulo: String(registro.titulo || ""),
-        descricao: String(registro.descricao || ""),
-        paginaUrl: String(registro.pagina_url || ""),
-        navegador: String(registro.navegador || ""),
-        dispositivo: String(registro.dispositivo || ""),
-        status: normalizarStatus(registro.status),
-        prioridade: normalizarPrioridade(registro.prioridade),
-        observacaoAdmin: String(registro.observacao_admin || ""),
-        analisadoPor: String(registro.analisado_por || ""),
-        analisadoEm: String(registro.analisado_em || ""),
-        criadoEm: String(registro.criado_em || ""),
-        atualizadoEm: String(registro.atualizado_em || ""),
-      }),
-    );
-
-    setProblemas(registros);
-    setObservacoes(
-      registros.reduce<Record<string, string>>((estado, problema) => {
-        estado[problema.id] = problema.observacaoAdmin;
-        return estado;
-      }, {}),
-    );
-    await carregarNomes(registros.map((problema) => problema.userId));
-  }, [carregarNomes]);
-
-  useEffect(() => {
-    let cancelado = false;
-
-    async function iniciar() {
-      setCarregando(true);
-      setErro("");
-      setSucesso("");
-
-      try {
-        const { data: usuarioResposta, error: usuarioErro } =
-          await supabase.auth.getUser();
-
-        if (usuarioErro) {
-          throw usuarioErro;
-        }
-
-        const usuario = usuarioResposta.user || null;
-
-        if (!usuario) {
-          if (!cancelado) {
-            setUsuarioId("");
-            setEhAdmin(false);
-            router.replace(criarLoginHrefAdminProblemasTecnicos());
-          }
-          return;
-        }
-
-        const adminConfirmado =
-          await verificarAdministradorProblemasTecnicos();
-
-        if (cancelado) return;
-
-        setUsuarioId(usuario.id);
-        setEhAdmin(adminConfirmado);
-
-        if (adminConfirmado) {
-          await carregarProblemas();
-        }
-      } catch (error) {
-        if (!cancelado) {
-          setErro(criarMensagemErro("Erro ao carregar problemas técnicos", error));
-        }
-      } finally {
-        if (!cancelado) {
-          setCarregando(false);
-        }
-      }
-    }
-
-    void iniciar();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [carregarProblemas, router]);
+  const {
+    carregando,
+    usuarioId,
+    ehAdmin,
+    problemas,
+    setProblemas,
+    nomesUsuarios,
+    observacoes,
+    setObservacoes,
+    carregarProblemas,
+  } = useAdminProblemasTecnicosInitialData({
+    router,
+    t,
+    setErro,
+    setSucesso,
+  });
 
   const problemasFiltrados = useMemo(
     () =>

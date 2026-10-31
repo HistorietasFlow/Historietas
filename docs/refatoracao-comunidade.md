@@ -2747,3 +2747,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Login — Fase 1
 
 - A ação de envio do formulário foi movida para `useLoginSubmitAction`, preservando preparação, validação, recuperação, cadastro, sincronização de perfil, aceite, login, finalização e estados controlados pela página.
+
+## Admin Problemas Técnicos — Fase 1
+
+- O estado de dados, carregamento inicial e autenticação administrativa foram movidos para `useAdminProblemasTecnicosInitialData`, preservando loaders, normalização, nomes de usuário, autenticação, redirect, cancelamento e a orquestração de atualização na página.

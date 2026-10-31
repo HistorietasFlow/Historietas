@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 const page=readFileSync("app/admin/problemas-tecnicos/page.tsx","utf8");
+const hook=readFileSync("app/admin/problemas-tecnicos/hooks/use-admin-problemas-tecnicos-initial-data.ts","utf8");
 const source=readFileSync("app/admin/problemas-tecnicos/loaders/verificar-administrador-problemas-tecnicos.ts","utf8");
 test("loader preserva RPC principal, fallback e erro principal",()=>{
   assert.match(source,/rpc\("usuario_e_admin"\)/);
@@ -10,7 +11,8 @@ test("loader preserva RPC principal, fallback e erro principal",()=>{
   assert.match(source,/if \(erroSuporte\)[\s\S]*?throw erroPrincipal/);
   assert.match(source,/respostaSuporte === true/);
   assert.doesNotMatch(source,/useState|useEffect|router|localStorage|</);
-  assert.match(page,/verificarAdministradorProblemasTecnicos/);
-  assert.match(page,/supabase\.auth\.getUser\(\)/);
-  assert.match(page,/setUsuarioId|setEhAdmin/);
+  assert.match(hook,/verificarAdministradorProblemasTecnicos/);
+  assert.match(hook,/supabase\.auth\.getUser\(\)/);
+  assert.match(hook,/setUsuarioId|setEhAdmin/);
+  assert.match(page,/useAdminProblemasTecnicosInitialData/);
 });

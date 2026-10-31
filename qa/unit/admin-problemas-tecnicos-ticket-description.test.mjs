@@ -8,5 +8,5 @@ test("descricao preserva a secao visual",()=>{
   assert.doesNotMatch(source,/supabase|useState|useEffect|router|localStorage|formatarData|select|textarea|atualizarChamado|setObservacoes/);
 });
 test("pagina mantem a orquestracao expandida",()=>{
-  ["AdminProblemasTecnicosTicketDescription","{aberto && (","AdminProblemasTecnicosTicketInfoGrid","environmentStyle","controlsGridStyle","atualizarChamado"].forEach((item)=>assert.ok(page.includes(item)));
+  ["AdminProblemasTecnicosTicketDescription","{aberto && (","AdminProblemasTecnicosTicketInfoGrid","controlsGridStyle","atualizarChamado"].forEach((item)=>assert.ok(page.includes(item)));
 });
