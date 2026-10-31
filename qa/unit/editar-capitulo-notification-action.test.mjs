@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo(resultado = { error: null }) {
@@ -146,8 +153,8 @@ test("notificação de Editar Capítulo mantém warnings para erro retornado e e
 
 test("Editar Capítulo delega somente a notificação após o Diário", () => {
   assert.match(
-    pageSource,
-    /import \{ atualizarNotificacaoCapituloSupabase \} from "\.\/actions\/atualizar-notificacao-capitulo";/,
+    saveActionSource,
+    /import \{ atualizarNotificacaoCapituloSupabase \} from "\.\.\/actions\/atualizar-notificacao-capitulo";/,
   );
   assert.doesNotMatch(pageSource, /async function atualizarNotificacaoCapituloSupabase\(/);
   assert.match(source, /export async function atualizarNotificacaoCapituloSupabase\(/);
@@ -158,7 +165,7 @@ test("Editar Capítulo delega somente a notificação após o Diário", () => {
   assert.match(source, /p_tipo: "novo-capitulo"/);
   assert.match(source, /p_criado_em: atualizadoEm/);
   assert.match(
-    pageSource,
+    saveActionSource,
     /await registrarDiarioEdicaoCapitulo\([\s\S]*?\);\s*\n\s*await atualizarNotificacaoCapituloSupabase\(/,
   );
 });

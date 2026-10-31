@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const workNormalizerSource = readFileSync(
   new URL(
     "../../app/editar-capitulo/lib/editar-capitulo-work-normalizer.ts",
@@ -119,8 +126,8 @@ test("normalizarCapitulo preserva coerções e validação estrita de ordem", ()
 
 test("Editar Capítulo delega somente normalizarCapitulo ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{ normalizarObra \} from "\.\/lib\/editar-capitulo-work-normalizer";/,
+    saveActionSource,
+    /import \{ normalizarObra \} from "\.\.\/lib\/editar-capitulo-work-normalizer";/,
   );
   assert.doesNotMatch(pageSource, /function normalizarCapitulo\(/);
   assert.doesNotMatch(

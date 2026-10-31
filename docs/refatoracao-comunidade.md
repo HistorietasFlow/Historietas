@@ -1828,6 +1828,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle inicial foi movido para `hooks/useEditarCapituloInitialLoad.ts`, preservando rota, autenticação, fallback local, paginação Supabase, precedência remota, persistência, cancelamento e cleanup.
 
+## Registro da Fase 2 — Editar Capítulo
+
+- A ação de salvar a edição foi movida para `hooks/useEditarCapituloSaveAction.ts`, preservando validação, autenticação, autorização, sincronização Supabase, mutação local, backup, Diário, notificações, feedback e a ordem de atualização dos estados.
+
 ## Registro da Fase 1 — Adicionar Capítulo
 
 - Os helpers de storage por usuário foram isolados em `lib/adicionar-capitulo-storage-utils.ts`, preservando chaves, leitura segura, serialização e falhas silenciosas.

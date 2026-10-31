@@ -21,6 +21,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const localWorkStorageSource = readFileSync(
   new URL(
     "../../app/editar-capitulo/lib/editar-capitulo-local-work-storage.ts",
@@ -166,8 +173,8 @@ test("backup de Editar Capítulo sincroniza sem apagar entradas e restaura por p
 
 test("Editar Capítulo delega somente o backup de arquivos ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?restaurarArquivoObraComBackup,[\s\S]*?\} from "\.\/lib\/editar-capitulo-file-backup-utils";/,
+    saveActionSource,
+    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?restaurarArquivoObraComBackup,[\s\S]*?\} from "\.\.\/lib\/editar-capitulo-file-backup-utils";/,
   );
   for (const helper of [
     "criarChavesObra",

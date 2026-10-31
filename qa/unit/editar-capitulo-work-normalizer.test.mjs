@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const localWorkStorageSource = readFileSync(
   new URL(
     "../../app/editar-capitulo/lib/editar-capitulo-local-work-storage.ts",
@@ -248,13 +255,13 @@ test("normalizarObra preserva valores originais e a prioridade dos aliases de m�
 
 test("Editar Capítulo delega somente a normalização local de obra ao módulo extraído", () => {
   assert.match(
-    pageSource,
-    /import \{ normalizarObra \} from "\.\/lib\/editar-capitulo-work-normalizer";/,
+    saveActionSource,
+    /import \{ normalizarObra \} from "\.\.\/lib\/editar-capitulo-work-normalizer";/,
   );
   assert.doesNotMatch(pageSource, /function normalizarObra\(/);
   assert.doesNotMatch(pageSource, /normalizarArquivoObra\(obra\.arquivoObra\)/);
   assert.doesNotMatch(pageSource, /normalizarCapitulo\(capitulo, capituloIndex\)/);
-  assert.equal((pageSource.match(/normalizarObra\(/g) || []).length, 1);
+  assert.equal((saveActionSource.match(/normalizarObra\(/g) || []).length, 1);
   assert.match(
     localWorkStorageSource,
     /import \{ normalizarObra \} from "\.\/editar-capitulo-work-normalizer";/,
