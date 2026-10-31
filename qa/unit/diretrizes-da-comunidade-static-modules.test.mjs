@@ -27,6 +27,27 @@ const stylesSource = readFileSync(
   ),
   "utf8",
 );
+const overviewSource = readFileSync(
+  new URL(
+    "../../app/diretrizes-da-comunidade/components/DiretrizesComunidadeOverview.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const documentContentSource = readFileSync(
+  new URL(
+    "../../app/diretrizes-da-comunidade/components/DiretrizesComunidadeDocumentContent.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const footerSource = readFileSync(
+  new URL(
+    "../../app/diretrizes-da-comunidade/components/DiretrizesComunidadeFooter.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("content types and legal data moved without changing their contracts", () => {
   for (const declaration of [
@@ -86,7 +107,10 @@ test("dedicated SVG icon preserves names, forms, and accessibility", () => {
   assert.match(iconSource, /export function DiretrizesComunidadeSvgIcon/);
   assert.doesNotMatch(pageSource, /function SvgIcon/);
   assert.doesNotMatch(pageSource, /\bSvgIcon\b/);
-  assert.match(pageSource, /DiretrizesComunidadeSvgIcon/);
+  assert.doesNotMatch(pageSource, /DiretrizesComunidadeSvgIcon/);
+  assert.match(overviewSource, /DiretrizesComunidadeSvgIcon/);
+  assert.match(documentContentSource, /DiretrizesComunidadeSvgIcon/);
+  assert.match(footerSource, /DiretrizesComunidadeSvgIcon/);
   for (const icon of [
     "arrowLeft", "arrowRight", "users", "heart", "shield", "book",
     "copyright", "comment", "ban", "alert", "child", "flag", "scale",
@@ -104,7 +128,7 @@ test("dedicated SVG icon preserves names, forms, and accessibility", () => {
   assert.match(iconSource, /strokeLinejoin: "round"/);
 });
 
-test("static styles moved while page keeps legal JSX and conditions", () => {
+test("static styles moved while page composes legal components", () => {
   assert.match(stylesSource, /export const diretrizesCss/);
   assert.match(stylesSource, /data-historietas-diretrizes-root="true"/);
   assert.match(stylesSource, /data-historietas-tema-visual="foco"/);
@@ -118,11 +142,16 @@ test("static styles moved while page keeps legal JSX and conditions", () => {
   assert.match(pageSource, /useHistorietasLanguage/);
   assert.match(pageSource, /useHistorietasTheme/);
   assert.match(pageSource, /function t\(texto: TextoTraduzido\)/);
-  assert.match(pageSource, /PRINCIPIOS_COMUNIDADE\.map/);
-  assert.equal(pageSource.match(/SECOES_DIRETRIZES\.map/g)?.length, 2);
-  assert.match(pageSource, /secao\.permitido\?\.length/);
-  assert.match(pageSource, /secao\.proibido\?\.length/);
-  assert.match(pageSource, /secao\.id === "denuncias" \|\|/);
-  assert.match(pageSource, /href=\{`#\$\{secao\.id\}`\}/);
-  assert.match(pageSource, /className="diretrizes-toc-link"/);
+  assert.match(pageSource, /DiretrizesComunidadeOverview/);
+  assert.match(pageSource, /DiretrizesComunidadeDocumentContent/);
+  assert.match(pageSource, /DiretrizesComunidadeFooter/);
+  assert.doesNotMatch(pageSource, /PRINCIPIOS_COMUNIDADE\.map/);
+  assert.doesNotMatch(pageSource, /SECOES_DIRETRIZES\.map/);
+  assert.match(overviewSource, /PRINCIPIOS_COMUNIDADE\.map/);
+  assert.equal(documentContentSource.match(/SECOES_DIRETRIZES\.map/g)?.length, 2);
+  assert.match(documentContentSource, /secao\.permitido\?\.length/);
+  assert.match(documentContentSource, /secao\.proibido\?\.length/);
+  assert.match(documentContentSource, /secao\.id === "denuncias" \|\|/);
+  assert.match(documentContentSource, /href=\{`#\$\{secao\.id\}`\}/);
+  assert.match(documentContentSource, /className="diretrizes-toc-link"/);
 });
