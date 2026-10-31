@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const initialLoadHookSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloInitialLoad.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileLoaderSource = readFileSync(
   new URL(
     "../../app/editar-capitulo/actions/carregar-nome-profile-editar-capitulo.ts",
@@ -85,18 +92,19 @@ test("aplicacao de profile preserva referencias, ownership e autorId", () => {
 
 test("Editar Capitulo delega parser puro e loader de profile aos modulos extraidos", () => {
   assert.match(
-    pageSource,
-    /import \{ aplicarNomeAutorProfileEditarCapitulo \} from "\.\/lib\/editar-capitulo-profile-utils";/,
+    initialLoadHookSource,
+    /import \{ aplicarNomeAutorProfileEditarCapitulo \} from "\.\.\/lib\/editar-capitulo-profile-utils";/,
   );
   assert.doesNotMatch(pageSource, /function obterNomeProfileEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /function aplicarNomeAutorProfileEditarCapitulo\(/);
   assert.doesNotMatch(pageSource, /async function carregarNomeProfileEditarCapitulo\(/);
   assert.match(
-    pageSource,
-    /import \{ carregarNomeProfileEditarCapitulo \} from "\.\/actions\/carregar-nome-profile-editar-capitulo";/,
+    initialLoadHookSource,
+    /import \{ carregarNomeProfileEditarCapitulo \} from "\.\.\/actions\/carregar-nome-profile-editar-capitulo";/,
   );
   assert.equal(
-    (pageSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
+    (initialLoadHookSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length +
+      (pageSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
     2,
   );
   assert.match(
@@ -108,7 +116,7 @@ test("Editar Capitulo delega parser puro e loader de profile aos modulos extraid
     /obterNomeProfileEditarCapitulo\(profilePorUserId\)[\s\S]*?obterNomeProfileEditarCapitulo\(profilePorId\)/,
   );
   assert.equal(
-    (pageSource.match(/aplicarNomeAutorProfileEditarCapitulo\(/g) || []).length,
+    (initialLoadHookSource.match(/aplicarNomeAutorProfileEditarCapitulo\(/g) || []).length,
     2,
   );
   assert.doesNotMatch(profileUtilsSource, /supabase|\.from\(|useState|useEffect|localStorage|router/);

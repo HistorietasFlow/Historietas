@@ -1824,6 +1824,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A refatoração estrutural de `app/editar-capitulo/page.tsx` foi encerrada após a Fase 25, pois o restante concentra orquestração, estado, efeitos e JSX.
 
+## Registro da Fase 1 — Editar Capítulo
+
+- O lifecycle inicial foi movido para `hooks/useEditarCapituloInitialLoad.ts`, preservando rota, autenticação, fallback local, paginação Supabase, precedência remota, persistência, cancelamento e cleanup.
+
 ## Registro da Fase 1 — Adicionar Capítulo
 
 - Os helpers de storage por usuário foram isolados em `lib/adicionar-capitulo-storage-utils.ts`, preservando chaves, leitura segura, serialização e falhas silenciosas.
