@@ -21,6 +21,13 @@ const initialLoadHookSource = readFileSync(
   ),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const profileLoaderSource = readFileSync(
   new URL(
     "../../app/editar-capitulo/actions/carregar-nome-profile-editar-capitulo.ts",
@@ -104,7 +111,7 @@ test("Editar Capitulo delega parser puro e loader de profile aos modulos extraid
   );
   assert.equal(
     (initialLoadHookSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length +
-      (pageSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
+      (saveActionSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
     2,
   );
   assert.match(

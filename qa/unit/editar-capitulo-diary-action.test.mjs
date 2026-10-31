@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo(resultados = []) {
@@ -179,8 +186,8 @@ test("Diário de Editar Capítulo absorve exceções e preserva o aviso", async 
 
 test("Editar Capítulo delega somente a ação de Diário antes da notificação", () => {
   assert.match(
-    pageSource,
-    /import \{ registrarDiarioEdicaoCapitulo \} from "\.\/actions\/registrar-diario-edicao-capitulo";/,
+    saveActionSource,
+    /import \{ registrarDiarioEdicaoCapitulo \} from "\.\.\/actions\/registrar-diario-edicao-capitulo";/,
   );
   assert.doesNotMatch(pageSource, /async function registrarDiarioEdicaoCapitulo\(/);
   assert.match(source, /export async function registrarDiarioEdicaoCapitulo\(/);
@@ -193,7 +200,7 @@ test("Editar Capítulo delega somente a ação de Diário antes da notificação
     /console\.warn\("Não consegui registrar a edição do capítulo no Diário:", error\)/,
   );
   assert.match(
-    pageSource,
+    saveActionSource,
     /await registrarDiarioEdicaoCapitulo\([\s\S]*?\);\s*\n\s*await atualizarNotificacaoCapituloSupabase\(/,
   );
 });

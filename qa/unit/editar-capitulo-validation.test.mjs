@@ -21,6 +21,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const transpilar = (source) =>
   typescript.transpileModule(source, {
     compilerOptions: {
@@ -74,12 +81,13 @@ test("Editar Capítulo delega somente a validação pura do capítulo", () => {
   );
   assert.match(validationSource, /const textoLimpo = texto\.trim\(\);/);
   assert.match(
-    pageSource,
-    /import \{ validarCapitulo \} from "\.\/lib\/editar-capitulo-validation";/,
+    saveActionSource,
+    /import \{ validarCapitulo \} from "\.\.\/lib\/editar-capitulo-validation";/,
   );
+  assert.match(pageSource, /const \{ salvarEdicao \} = useEditarCapituloSaveAction\(/);
   assert.doesNotMatch(pageSource, /function validarCapitulo\(/);
   assert.match(
-    pageSource,
+    saveActionSource,
     /async function salvarEdicao\([\s\S]*?const erroValidacao = validarCapitulo\(\s*titulo,\s*texto,\s*numeroCapitulo,\s*\);/,
   );
   assert.doesNotMatch(validationSource, /supabase|localStorage|useState|useEffect|router|<\w+/);

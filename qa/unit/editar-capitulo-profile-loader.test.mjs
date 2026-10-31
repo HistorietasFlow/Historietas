@@ -21,6 +21,13 @@ const initialLoadHookSource = readFileSync(
   ),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function criarSupabase(consultas, chamadas) {
   return {
@@ -207,7 +214,7 @@ test("Editar Capitulo delega o loader de profile sem reintroduzir a consulta", (
   assert.doesNotMatch(pageSource, /async function carregarNomeProfileEditarCapitulo\(/);
   assert.equal(
     (initialLoadHookSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length +
-      (pageSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
+      (saveActionSource.match(/carregarNomeProfileEditarCapitulo\(userId\)/g) || []).length,
     2,
   );
 });

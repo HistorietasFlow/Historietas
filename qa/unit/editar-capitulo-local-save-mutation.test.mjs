@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const saveActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const normalizacoes = [];
 const progressos = [];
@@ -164,18 +171,23 @@ test("Editar Capítulo delega somente a mutação local determinística do salva
   assert.match(mutationSource, /progressoLeitura: calcularProgressoLeitura\(capitulosAtualizados\)/);
   assert.doesNotMatch(mutationSource, /supabase|localStorage|useState|useEffect|router|^\s*<[A-Za-z]/m);
   assert.match(
-    pageSource,
-    /import \{ aplicarEdicaoCapituloNasObrasLocais \} from "\.\/lib\/editar-capitulo-local-save-mutation";/,
+    saveActionSource,
+    /import \{ aplicarEdicaoCapituloNasObrasLocais \} from "\.\.\/lib\/editar-capitulo-local-save-mutation";/,
   );
-  const salvarEdicaoAteBackup = pageSource.slice(
-    pageSource.indexOf("async function salvarEdicao"),
-    pageSource.indexOf("const backupArquivos =", pageSource.indexOf("async function salvarEdicao")),
+  assert.match(
+    pageSource,
+    /import \{ useEditarCapituloSaveAction \} from "\.\/hooks\/useEditarCapituloSaveAction";/,
+  );
+  assert.match(pageSource, /const \{ salvarEdicao \} = useEditarCapituloSaveAction\(/);
+  const salvarEdicaoAteBackup = saveActionSource.slice(
+    saveActionSource.indexOf("async function salvarEdicao"),
+    saveActionSource.indexOf("const backupArquivos =", saveActionSource.indexOf("async function salvarEdicao")),
   );
   assert.match(salvarEdicaoAteBackup, /aplicarEdicaoCapituloNasObrasLocais\(\{/);
   assert.doesNotMatch(salvarEdicaoAteBackup, /const novasObras = obras\.map/);
-  assert.match(pageSource, /const backupArquivos =\s*carregarBackupArquivosObras\(userId\)/);
-  assert.match(pageSource, /salvarObrasEditarCapituloStorage\(/);
-  assert.match(pageSource, /setObras\(novasObrasDoUsuario\)/);
-  assert.match(pageSource, /registrarDiarioEdicaoCapitulo\(/);
-  assert.match(pageSource, /atualizarNotificacaoCapituloSupabase\(/);
+  assert.match(saveActionSource, /const backupArquivos =\s*carregarBackupArquivosObras\(userId\)/);
+  assert.match(saveActionSource, /salvarObrasEditarCapituloStorage\(/);
+  assert.match(saveActionSource, /setObras\(novasObrasDoUsuario\)/);
+  assert.match(saveActionSource, /registrarDiarioEdicaoCapitulo\(/);
+  assert.match(saveActionSource, /atualizarNotificacaoCapituloSupabase\(/);
 });
