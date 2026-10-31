@@ -375,7 +375,12 @@ export default function ObraDinamicaPage() {
     return () => {
       cancelado = true;
     };
-  }, [autenticacaoCarregada, slug, usuarioIdLogado]);
+  }, [
+    autenticacaoCarregada,
+    slug,
+    usuarioIdLogado,
+    identidadeAutenticadaObraRef,
+  ]);
 
   const obra = useMemo(
     () => obterObraDinamicaPorSlug(obrasLocais, slug),
