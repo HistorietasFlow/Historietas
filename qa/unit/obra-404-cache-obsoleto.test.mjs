@@ -37,6 +37,13 @@ const carregadorObra = readFileSync(
   ),
   "utf8",
 );
+const lifecycleCarregamentoObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-public-work-load.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const adultoUrl = criarUrlModulo(
   "export const normalizarAvisosConteudo18 = () => [];",
@@ -276,7 +283,7 @@ test("erro do Supabase preserva fallback local e e tratado como erro", () => {
   );
 
   const blocoEfeito = obterBloco(
-    paginaCliente,
+    lifecycleCarregamentoObra,
     "async function carregarObraPublica()",
     "void carregarObraPublica();",
   );

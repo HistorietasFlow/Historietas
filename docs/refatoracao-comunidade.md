@@ -2775,3 +2775,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Fase 1
 
 - O lifecycle de identidade e autenticação da obra foi movido para hook dedicado, preservando consulta versionada, assinatura Supabase, cleanup, troca de conta e as proteções contra resultados assíncronos obsoletos.
+
+## Obra — Fase 2
+
+- O lifecycle de carregamento principal da obra foi movido para hook dedicado, preservando espera pela autenticação, identidade versionada, fallback local, consulta remota, estados de carregamento e erro, cancelamento e descarte de resultados obsoletos.

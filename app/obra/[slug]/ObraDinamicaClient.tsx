@@ -26,6 +26,7 @@ import {
 } from "./lib/obra-dialog-focus";
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
 import { useObraAuthIdentityLifecycle } from "./hooks/use-obra-auth-identity-lifecycle";
+import { useObraPublicWorkLoad } from "./hooks/use-obra-public-work-load";
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
 import { useObraCommentRepliesVisibility } from "./hooks/use-obra-comment-replies-visibility";
@@ -45,8 +46,6 @@ import {
   carregarComentariosObraLocais,
   salvarComentariosObraLocais,
 } from "./lib/obra-local-comment-storage-utils";
-import { carregarObrasLocaisComBackup } from "./lib/obra-local-works-utils";
-import { carregarObraSupabasePorSlug } from "./lib/obra-public-work-loader";
 import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
 import { carregarPaginaComentariosObraSupabase } from "./lib/obra-supabase-comments-page-loader";
 import { normalizarComentariosObraSupabase } from "./lib/obra-supabase-comment-normalizer";
@@ -287,100 +286,15 @@ export default function ObraDinamicaPage() {
     comentariosDragResetTimerRef,
   );
   useObraDialogInitialFocus(comentariosAbertos, comentariosSheetRef);
-  useEffect(() => {
-    if (!autenticacaoCarregada) {
-      return;
-    }
-
-    let cancelado = false;
-    const identidadeEsperada = identidadeAutenticadaObraRef.current;
-
-    if (identidadeEsperada.usuarioId !== usuarioIdLogado.trim()) {
-      return;
-    }
-
-    function execucaoCarregamentoEstaAtual() {
-      return execucaoIdentidadeObraEstaAtual({
-        cancelada: cancelado,
-        identidadeEsperada,
-        identidadeAtual: identidadeAutenticadaObraRef.current,
-      });
-    }
-
-    async function carregarObraPublica() {
-      window.setTimeout(() => {
-        if (execucaoCarregamentoEstaAtual()) {
-          setCarregandoObras(true);
-          setErroCarregamentoObra(false);
-        }
-      }, 0);
-
-      try {
-        const obrasNormalizadas = carregarObrasLocaisComBackup(
-          identidadeEsperada.usuarioId,
-        );
-
-        if (!execucaoCarregamentoEstaAtual()) {
-          return;
-        }
-
-        window.setTimeout(() => {
-          if (execucaoCarregamentoEstaAtual()) {
-            setObrasLocais(obrasNormalizadas);
-          }
-        }, 0);
-
-        const resultadoSupabase = await carregarObraSupabasePorSlug(
-          slug,
-          obrasNormalizadas,
-          identidadeEsperada.usuarioId,
-          execucaoCarregamentoEstaAtual,
-        );
-
-        if (!execucaoCarregamentoEstaAtual()) {
-          return;
-        }
-
-        window.setTimeout(() => {
-          if (execucaoCarregamentoEstaAtual()) {
-            setObrasLocais(resultadoSupabase.obras);
-            setErroCarregamentoObra(resultadoSupabase.status === "erro");
-          }
-        }, 0);
-      } catch {
-        if (!execucaoCarregamentoEstaAtual()) {
-          return;
-        }
-
-        window.setTimeout(() => {
-          if (execucaoCarregamentoEstaAtual()) {
-            setErroCarregamentoObra(true);
-          }
-        }, 0);
-      } finally {
-        if (!execucaoCarregamentoEstaAtual()) {
-          return;
-        }
-
-        window.setTimeout(() => {
-          if (execucaoCarregamentoEstaAtual()) {
-            setCarregandoObras(false);
-          }
-        }, 0);
-      }
-    }
-
-    void carregarObraPublica();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [
+  useObraPublicWorkLoad({
     autenticacaoCarregada,
     slug,
     usuarioIdLogado,
     identidadeAutenticadaObraRef,
-  ]);
+    setObrasLocais,
+    setCarregandoObras,
+    setErroCarregamentoObra,
+  });
 
   const obra = useMemo(
     () => obterObraDinamicaPorSlug(obrasLocais, slug),
