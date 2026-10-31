@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-profile-report-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarAction(supabase) {
   const javascript = typescript.transpileModule(
@@ -94,9 +101,9 @@ test("propaga o erro do Supabase e exige o registro removido", async () => {
   );
 });
 
-test("Admin Comunidade mantém o fluxo de interface e delega a remoção de perfil", () => {
-  assert.match(pageSource, /import \{ persistirRemocaoDenunciaPerfilResolvidaModeracao \} from "\.\/actions\/remover-denuncia-perfil-resolvida-moderacao";/);
-  const funcao = pageSource.match(/async function removerDenunciaPerfilResolvida\([\s\S]*?(?=\n\s*function limparFiltros)/)?.[0] ?? "";
+test("hook de Admin Comunidade mantém o fluxo de interface e delega a remoção de perfil", () => {
+  assert.match(hookSource, /import \{ persistirRemocaoDenunciaPerfilResolvidaModeracao \} from "\.\.\/actions\/remover-denuncia-perfil-resolvida-moderacao";/);
+  const funcao = hookSource.match(/async function removerDenunciaPerfilResolvida\([\s\S]*?(?=\n\s*return \{)/)?.[0] ?? "";
   assert.match(funcao, /if \(!usuarioId \|\| !ehAdmin\)/);
   assert.match(funcao, /denunciasPerfis\.find\(\(item\) => item\.id === denunciaId\)/);
   assert.match(funcao, /denuncia\.status !== "resolvida"/);
@@ -108,5 +115,7 @@ test("Admin Comunidade mantém o fluxo de interface e delega a remoção de perf
   assert.match(funcao, /finally/);
   assert.doesNotMatch(funcao, /\.from\("denuncias_perfis"\)/);
   assert.doesNotMatch(pageSource, /import \{ supabase \} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/client";/);
+  assert.match(pageSource, /useAdminComunidadeProfileReportActions\(\{/);
+  assert.doesNotMatch(hookSource, /useState|useEffect|useMemo|router|localStorage|supabase|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/);
   assert.doesNotMatch(actionSource, /useState|useEffect|useMemo|router|localStorage|set[A-Z]|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/);
 });
