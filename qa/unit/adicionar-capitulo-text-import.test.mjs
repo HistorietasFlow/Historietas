@@ -195,7 +195,7 @@ test("Adicionar Capítulo delega a preparação de importação e mantém a orqu
   assert.doesNotMatch(pageSource, /await arquivo\.text\(\)/);
 
   const inicioHandler = pageSource.indexOf("async function importarArquivoTexto");
-  const fimHandler = pageSource.indexOf("async function criarCapitulo", inicioHandler);
+  const fimHandler = pageSource.indexOf("if (carregando)", inicioHandler);
   const handler = pageSource.slice(inicioHandler, fimHandler);
   assert.ok(handler.indexOf("if (!arquivo)") < handler.indexOf("limparFeedback();"));
   assert.ok(

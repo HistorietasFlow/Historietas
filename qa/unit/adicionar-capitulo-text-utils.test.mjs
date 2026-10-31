@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const createActionSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/hooks/useAdicionarCapituloCreateAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const metricsSource = readFileSync(
   new URL(
     "../../app/adicionar-capitulo/lib/adicionar-capitulo-metrics-utils.ts",
@@ -87,13 +94,13 @@ test("Adicionar Capítulo delega somente os helpers de texto ao módulo extraíd
   assert.match(textImportSource, /contarLetrasNumeros\(textoImportado\)/);
   assert.match(textImportSource, /criarTituloPorNomeArquivo\(arquivo\.name\)/);
   assert.match(
-    pageSource,
-    /import \{ validarCapitulo \} from "\.\/lib\/adicionar-capitulo-validation";/,
+    createActionSource,
+    /import \{ validarCapitulo \} from "\.\.\/lib\/adicionar-capitulo-validation";/,
   );
   assert.doesNotMatch(pageSource, /function validarCapitulo\(/);
   assert.match(
-    pageSource,
-    /const erroValidacao = validarCapitulo\(\s*titulo,\s*texto,\s*numeroNovoCapitulo\s*\);/,
+    createActionSource,
+    /const erroValidacao = validarCapitulo\(\s*titulo,\s*texto,\s*numeroNovoCapitulo,?\s*\);/,
   );
   assert.match(
     validationSource,
