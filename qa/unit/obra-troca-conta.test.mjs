@@ -152,6 +152,13 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     ),
     "utf8",
   );
+  const lifecycleCarregamentoObra = readFileSync(
+    new URL(
+      "../../app/obra/[slug]/hooks/use-obra-public-work-load.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
   const escritasUsuarioIdLogado =
     lifecycleAutenticacao.split("setUsuarioIdLogado(").length - 1;
 
@@ -161,8 +168,10 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     /useObraAuthIdentityLifecycle\(\{\s*onIdentidadeMudou: limparEstadoContaAnterior,\s*\}\)/,
   );
   assert.doesNotMatch(paginaObra, /supabase\.auth\.onAuthStateChange/);
+  assert.match(paginaObra, /useObraPublicWorkLoad\(\{/);
+  assert.doesNotMatch(paginaObra, /async function carregarObraPublica\(\)/);
   assert.match(
-    paginaObra,
+    lifecycleCarregamentoObra,
     /carregarObraSupabasePorSlug\([\s\S]*?execucaoCarregamentoEstaAtual,[\s\S]*?\);/,
   );
 
