@@ -2672,3 +2672,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Termos de Uso — Fase 2
 
 - O overview, conteúdo jurídico e rodapé foram movidos para componentes dedicados, preservando textos, traduções, links, IDs, âncoras, SVGs, estilos, acessibilidade e a ordem visual da página.
+
+## Política de Privacidade — Fase 1
+
+- Os tipos, conteúdo jurídico estruturado, ícones SVG e estilos estáticos foram movidos para módulos dedicados, preservando textos, traduções, links, acessibilidade, CSS e o JSX principal da página.
