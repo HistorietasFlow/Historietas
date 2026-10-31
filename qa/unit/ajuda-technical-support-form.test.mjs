@@ -36,17 +36,23 @@ test("o formulário técnico preserva controles, limites, callbacks e envio", ()
   assert.doesNotMatch(componente, /supabase|useEffect|useState|normalizarCategoriaProblemaTecnico/);
 });
 
-test("a página mantém submit, normalização e setters do formulário", () => {
+test("a página delega submit, normalização e setters ao hook de suporte", () => {
   assert.match(
     pagina,
     /import \{\s*AjudaTechnicalSupportForm,\s*\} from "\.\/components\/ajuda-technical-support-form";/,
   );
-  assert.match(pagina, /async function enviarProblemaTecnico\(/);
-  assert.match(pagina, /normalizarCategoriaProblemaTecnico\(\s*valor,/);
-  assert.match(pagina, /setCategoriaProblema\(/);
+  assert.match(
+    pagina,
+    /import \{ useAjudaTechnicalSupport \} from "\.\/hooks\/use-ajuda-technical-support";/,
+  );
+  assert.match(pagina, /atualizarCategoriaProblema,/);
+  assert.doesNotMatch(pagina, /async function enviarProblemaTecnico\(/);
+  assert.doesNotMatch(pagina, /normalizarCategoriaProblemaTecnico/);
+  assert.doesNotMatch(pagina, /setCategoriaProblema\(/);
   assert.match(pagina, /onPaginaChange=\{setPaginaProblema\}/);
   assert.match(pagina, /onTituloChange=\{setTituloProblema\}/);
   assert.match(pagina, /onDescricaoChange=\{setDescricaoProblema\}/);
   assert.match(pagina, /onSubmit=\{enviarProblemaTecnico\}/);
+  assert.match(pagina, /onCategoriaChange=\{atualizarCategoriaProblema\}/);
   assert.doesNotMatch(pagina, /<form onSubmit=\{enviarProblemaTecnico\}/);
 });
