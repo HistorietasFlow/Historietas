@@ -2779,3 +2779,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Fase 2
 
 - O lifecycle de carregamento principal da obra foi movido para hook dedicado, preservando espera pela autenticação, identidade versionada, fallback local, consulta remota, estados de carregamento e erro, cancelamento e descarte de resultados obsoletos.
+
+## Obra — Fase 3
+
+- O lifecycle de carregamento e paginação de comentários foi movido para hook dedicado, preservando abertura do painel, fallback local, primeira página Supabase, estados, versionamento, cancelamento, proteção de identidade e carregamento incremental.

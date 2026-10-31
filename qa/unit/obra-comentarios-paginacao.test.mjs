@@ -6,6 +6,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const hookCarregamentoComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-load-pagination.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const listaComentarios = readFileSync(
   new URL(
     "../../app/obra/[slug]/components/obra-comments-list.tsx",
@@ -42,14 +49,14 @@ const carregadorPaginaComentarios = readFileSync(
   "utf8",
 );
 
-function obterBloco(inicioTexto, fimTexto) {
-  const inicio = paginaObra.indexOf(inicioTexto);
-  const fim = paginaObra.indexOf(fimTexto, inicio);
+function obterBloco(conteudo, inicioTexto, fimTexto) {
+  const inicio = conteudo.indexOf(inicioTexto);
+  const fim = conteudo.indexOf(fimTexto, inicio);
 
   assert.ok(inicio >= 0);
   assert.ok(fim > inicio);
 
-  return paginaObra.slice(inicio, fim);
+  return conteudo.slice(inicio, fim);
 }
 
 function extrairCallbackUpdater(bloco, setter) {
@@ -74,10 +81,15 @@ function extrairCallbackUpdater(bloco, setter) {
 
 test("comentarios remotos so carregam quando o painel esta aberto", () => {
   const bloco = obterBloco(
+    hookCarregamentoComentarios,
     "const versaoConsulta = comentariosConsultaVersaoRef.current + 1;",
-    "}, [comentariosAbertos, obraIdComentarios, usuarioIdLogado]);",
+    "async function carregarMaisComentariosObra()",
   );
 
+  assert.match(
+    paginaObra,
+    /useObraCommentsLoadPagination\(\{\s*comentariosAbertos,\s*obraIdComentarios,/,
+  );
   assert.match(bloco, /if \(!comentariosAbertos\) \{\s*return;\s*\}/);
   assert.match(
     bloco,
@@ -90,8 +102,8 @@ test("pagina comentarios raiz e busca apenas respostas dos topicos carregados", 
   const bloco = carregadorPaginaComentarios;
 
   assert.match(
-    paginaObra,
-    /from "\.\/lib\/obra-supabase-comments-page-loader"/,
+    hookCarregamentoComentarios,
+    /from "\.\.\/lib\/obra-supabase-comments-page-loader"/,
   );
   assert.match(bloco, /const WORK_COMMENTS_PAGE_SIZE = 20/);
   assert.match(
@@ -135,8 +147,9 @@ test("pagina comentarios raiz e busca apenas respostas dos topicos carregados", 
 
 test("painel oferece carregamento incremental sem perder protecao de versao", () => {
   const bloco = obterBloco(
+    hookCarregamentoComentarios,
     "async function carregarMaisComentariosObra()",
-    "const estruturaComentariosObra = useMemo(",
+    "return {\n    carregarMaisComentariosObra,",
   );
 
   assert.match(bloco, /comentariosCarregandoMais/);
@@ -166,8 +179,9 @@ test("painel oferece carregamento incremental sem perder protecao de versao", ()
 
 test("updaters enfileirados de carregar mais ignoram execucao obsoleta", () => {
   const bloco = obterBloco(
+    hookCarregamentoComentarios,
     "async function carregarMaisComentariosObra()",
-    "const estruturaComentariosObra = useMemo(",
+    "return {\n    carregarMaisComentariosObra,",
   );
   const criarUpdaterComentarios = extrairCallbackUpdater(
     bloco,

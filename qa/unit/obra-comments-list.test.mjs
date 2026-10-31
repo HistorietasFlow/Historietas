@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const hookCarregamentoComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-load-pagination.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("lista preserva prioridade loading lista e vazio", () => {
   assert.match(listaComentarios, /<section style=\{commentsSheetListStyle\}>/);
@@ -75,9 +82,16 @@ test("cliente preserva estrutura memoizada paginação handlers e guards", () =>
     paginaObra,
     /const estruturaComentariosObra = useMemo\(\s*\(\) => criarEstruturaComentariosObra\(comentariosObra, ordenacaoComentarios\),/,
   );
-  assert.match(paginaObra, /async function carregarMaisComentariosObra\(\)/);
-  assert.match(paginaObra, /comentariosConsultaVersaoRef\.current === versaoConsulta/);
-  assert.match(paginaObra, /execucaoIdentidadeObraEstaAtual/);
+  assert.match(
+    paginaObra,
+    /useObraCommentsLoadPagination\(\{\s*comentariosAbertos,\s*obraIdComentarios,/,
+  );
+  assert.match(hookCarregamentoComentarios, /async function carregarMaisComentariosObra\(\)/);
+  assert.match(
+    hookCarregamentoComentarios,
+    /comentariosConsultaVersaoRef\.current === versaoConsulta/,
+  );
+  assert.match(hookCarregamentoComentarios, /execucaoIdentidadeObraEstaAtual/);
   assert.match(
     paginaObra,
     /<ObraCommentsList\s*comentariosCarregando=\{comentariosCarregando\}\s*comentariosRaiz=\{estruturaComentariosObra\.comentariosRaiz\}\s*respostasPorRaiz=\{estruturaComentariosObra\.respostasPorRaiz\}/,
