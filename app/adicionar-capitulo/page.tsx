@@ -2,20 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { idObraSupabaseValido } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import {
-  criarHrefAceiteTermos,
-  verificarAceiteTermosPublicacao,
-} from "../../lib/aceiteTermos";
 import { criarId } from "./lib/adicionar-capitulo-id-utils";
-import {
-  aplicarAutorProfileAdicionarCapitulo,
-} from "./lib/adicionar-capitulo-profile-utils";
 import {
   criarLoginHrefAdicionarCapitulo,
 } from "./lib/adicionar-capitulo-route-utils";
@@ -24,6 +17,7 @@ import { prepararImportacaoArquivoTextoAdicionarCapitulo } from "./lib/adicionar
 import { useAdicionarCapituloDesktopMode } from "./hooks/useAdicionarCapituloDesktopMode";
 import { useAdicionarCapituloDerivedValues } from "./hooks/useAdicionarCapituloDerivedValues";
 import { useAdicionarCapituloLanguageBridge } from "./hooks/useAdicionarCapituloLanguageBridge";
+import { useAdicionarCapituloInitialLoad } from "./hooks/useAdicionarCapituloInitialLoad";
 import {
   adicionarCapituloPageCss,
 } from "./lib/adicionar-capitulo-page-css";
@@ -102,9 +96,7 @@ import {
 import {
   carregarBackupArquivosObras,
 } from "./lib/adicionar-capitulo-file-backup-storage";
-import { normalizarObraSupabase } from "./lib/adicionar-capitulo-supabase-work-normalizer";
-import { mesclarObrasComSupabase } from "./lib/adicionar-capitulo-work-merge-utils";
-import { atualizarObrasLocaisDoUsuario, filtrarObrasDoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
+import { atualizarObrasLocaisDoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
 import {
   carregarObrasLocais,
   salvarObrasAdicionarCapituloStorage,
@@ -194,10 +186,15 @@ function registrarNotificacaoNovoCapituloLocal(
 export default function AdicionarCapituloPage() {
   const router = useRouter();
 
-  const [obraId, setObraId] = useState("");
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
-  const [obras, setObras] = useState<ObraLocal[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const {
+    obraId,
+    usuarioIdLogado,
+    obras,
+    carregando,
+    setObras,
+  } = useAdicionarCapituloInitialLoad({
+    router,
+  });
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState("");
   const [processando, setProcessando] = useState(false);
@@ -214,137 +211,6 @@ export default function AdicionarCapituloPage() {
   const { language } = useHistorietasLanguage();
   const criandoCapituloRef = useRef(false);
   const raizTraducaoRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    let cancelado = false;
-
-    const params = new URLSearchParams(window.location.search);
-    const obraIdParam = params.get("obraId") || "";
-    const atualizarObraIdTimer = window.setTimeout(() => {
-      if (!cancelado) {
-        setObraId(obraIdParam);
-      }
-    }, 0);
-
-    async function carregarDados() {
-      try {
-        const {
-          data: { user },
-          error: erroUsuario,
-        } = await supabase.auth.getUser();
-
-        if (cancelado) {
-          return;
-        }
-
-        if (erroUsuario || !user) {
-          setUsuarioIdLogado("");
-          setCarregando(false);
-          router.replace(criarLoginHrefAdicionarCapitulo(obraIdParam));
-          return;
-        }
-
-        const statusAceite = await verificarAceiteTermosPublicacao();
-
-        if (cancelado) {
-          return;
-        }
-
-        if (!statusAceite.aceito) {
-          const redirectTo = obraIdParam
-            ? `/adicionar-capitulo?obraId=${encodeURIComponent(obraIdParam)}`
-            : "/adicionar-capitulo";
-          router.replace(criarHrefAceiteTermos(redirectTo));
-          return;
-        }
-
-        setUsuarioIdLogado(user.id);
-
-        const nomeProfileAutor = await carregarNomeProfileAdicionarCapitulo(user.id);
-
-        let todasObrasLocais: ObraLocal[] = [];
-        let obrasLocais: ObraLocal[] = [];
-
-        try {
-          todasObrasLocais = carregarObrasLocais(user.id);
-          obrasLocais = aplicarAutorProfileAdicionarCapitulo(
-            filtrarObrasDoUsuario(todasObrasLocais, user.id),
-            user.id,
-            nomeProfileAutor
-          );
-        } catch {
-          todasObrasLocais = [];
-          obrasLocais = [];
-        }
-
-        let obrasFinais = obrasLocais;
-
-        try {
-          const { data, error } = await supabase
-            .from("obras")
-            .select(
-              "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em,capitulos(id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em)"
-            )
-            .eq("user_id", user.id)
-            .order("criada_em", { ascending: false })
-            .limit(80);
-
-          if (!error && Array.isArray(data)) {
-            const obrasLocaisPorId = new Map(
-              obrasLocais.map((obra) => [obra.id, obra])
-            );
-
-            const obrasSupabase = data.map((obra, index) =>
-              normalizarObraSupabase(
-                obra,
-                index,
-                obrasLocaisPorId.get(obra.id),
-                nomeProfileAutor
-              )
-            );
-
-            obrasFinais = aplicarAutorProfileAdicionarCapitulo(
-              mesclarObrasComSupabase(obrasLocais, obrasSupabase),
-              user.id,
-              nomeProfileAutor
-            );
-            const obrasLocaisAtualizadas = atualizarObrasLocaisDoUsuario(
-              todasObrasLocais,
-              obrasFinais,
-              user.id
-            );
-
-            salvarObrasAdicionarCapituloStorage(obrasLocaisAtualizadas, user.id);
-          }
-        } catch {
-          // Se o Supabase falhar, mantém somente as obras locais do usuário logado.
-        }
-
-        if (cancelado) {
-          return;
-        }
-
-        setObras(obrasFinais);
-        setCarregando(false);
-      } catch {
-        if (cancelado) {
-          return;
-        }
-
-        setUsuarioIdLogado("");
-        setObras([]);
-        setCarregando(false);
-        router.replace(criarLoginHrefAdicionarCapitulo(obraIdParam));
-      }
-    }
-
-    carregarDados();
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(atualizarObraIdTimer);
-    };
-  }, [router]);
 
   const {
     obraAtual,
