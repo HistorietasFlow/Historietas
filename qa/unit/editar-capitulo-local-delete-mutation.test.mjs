@@ -10,10 +10,6 @@ const mutationSource = readFileSync(
   ),
   "utf8",
 );
-const pageSource = readFileSync(
-  new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
-  "utf8",
-);
 const deleteActionSource = readFileSync(
   new URL(
     "../../app/editar-capitulo/hooks/useEditarCapituloDeleteAction.ts",
