@@ -10,10 +10,7 @@ import {
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import {
   STATUS_SOLICITACOES,
-  normalizarSolicitacao,
   type FiltroStatus,
-  type OperacaoRecuperavel,
-  type SolicitacaoExclusao,
 } from "./lib/admin-exclusoes-conta-normalization-utils";
 import {
   STATUS_LABEL,
@@ -22,10 +19,8 @@ import {
 } from "./lib/admin-exclusoes-conta-text-utils";
 import { filtrarSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-filter-utils";
 import { calcularTotaisSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-stats-utils";
-import { criarLoginHrefAdminExclusoesConta } from "./lib/admin-exclusoes-conta-route-utils";
-import { atualizarSolicitacaoExclusaoAdmin } from "./actions/atualizar-solicitacao-exclusao-admin";
-import { recuperarOperacaoExclusaoAdmin } from "./actions/recuperar-operacao-exclusao-admin";
 import { useAdminExclusoesContaInitialData } from "./hooks/use-admin-exclusoes-conta-initial-data";
+import { useAdminExclusoesContaActions } from "./hooks/use-admin-exclusoes-conta-actions";
 import { AdminExclusoesContaRecoverySection } from "./components/admin-exclusoes-conta-recovery-section";
 import { AdminExclusoesContaRequestCard } from "./components/admin-exclusoes-conta-request-card";
 import {
@@ -109,160 +104,21 @@ export default function AdminExclusoesContaPage() {
     [solicitacoes],
   );
 
-  async function salvarSolicitacao(solicitacao: SolicitacaoExclusao) {
-    const novoStatus = statusRascunho[solicitacao.id] || solicitacao.status;
-    const observacaoInterna = observacoes[solicitacao.id] || "";
-
-    if (observacaoInterna.length > 4000) {
-      setErro(
-        t({
-          pt: "A observação interna pode ter no máximo 4000 caracteres.",
-          en: "The internal note can have at most 4000 characters.",
-          es: "La observación interna puede tener como máximo 4000 caracteres.",
-        }),
-      );
-      return;
-    }
-
-    setAcaoEmAndamento(solicitacao.id);
-    setErro("");
-    setSucesso("");
-
-    try {
-      const { response, data } = await atualizarSolicitacaoExclusaoAdmin({
-        id: solicitacao.id,
-        status: novoStatus,
-        observacaoInterna,
-      });
-
-      if (response.status === 401) {
-        router.replace(criarLoginHrefAdminExclusoesConta());
-        return;
-      }
-
-      if (response.status === 403) {
-        setAcessoNegado(true);
-        return;
-      }
-
-      if (!response.ok || !data?.ok) {
-        throw new Error(
-          data?.mensagem ||
-            t({
-              pt: "Não foi possível atualizar a solicitação.",
-              en: "The request could not be updated.",
-              es: "No se pudo actualizar la solicitud.",
-            }),
-        );
-      }
-
-      const atualizada = normalizarSolicitacao(data.solicitacao);
-
-      if (!atualizada) {
-        throw new Error(
-          t({
-            pt: "O servidor não retornou a solicitação atualizada.",
-            en: "The server did not return the updated request.",
-            es: "El servidor no devolvió la solicitud actualizada.",
-          }),
-        );
-      }
-
-      setSolicitacoes((atuais) =>
-        atuais.map((item) => (item.id === atualizada.id ? atualizada : item)),
-      );
-      setStatusRascunho((atuais) => ({
-        ...atuais,
-        [atualizada.id]: atualizada.status,
-      }));
-      setObservacoes((atuais) => ({
-        ...atuais,
-        [atualizada.id]: atualizada.observacaoInterna,
-      }));
-      setSucesso(
-        t({
-          pt: "Solicitação atualizada com segurança.",
-          en: "Request updated safely.",
-          es: "Solicitud actualizada de forma segura.",
-        }),
-      );
-    } catch (error) {
-      setErro(
-        error instanceof Error
-          ? error.message
-          : t({
-              pt: "Não foi possível atualizar a solicitação.",
-              en: "The request could not be updated.",
-              es: "No se pudo actualizar la solicitud.",
-            }),
-      );
-    } finally {
-      setAcaoEmAndamento("");
-    }
-  }
-
-
-  async function recuperarOperacao(operacao: OperacaoRecuperavel) {
-    const chaveAcao = `operacao:${operacao.id}`;
-    setAcaoEmAndamento(chaveAcao);
-    setErro("");
-    setSucesso("");
-
-    try {
-      const { response, data } = await recuperarOperacaoExclusaoAdmin({
-        id: operacao.id,
-      });
-
-      if (response.status === 401) {
-        router.replace(criarLoginHrefAdminExclusoesConta());
-        return;
-      }
-
-      if (response.status === 403) {
-        setAcessoNegado(true);
-        return;
-      }
-
-      if (!response.ok || !data?.ok) {
-        throw new Error(
-          data?.mensagem ||
-            t({
-              pt: "Não foi possível retomar esta exclusão.",
-              en: "This deletion could not be resumed.",
-              es: "No se pudo reanudar esta eliminación.",
-            }),
-        );
-      }
-
-      await carregarOperacoesRecuperaveis();
-
-      setSucesso(
-        data.exclusaoConcluida
-          ? t({
-              pt: "A recuperação foi concluída e a operação foi finalizada.",
-              en: "Recovery completed and the operation was finalized.",
-              es: "La recuperación se completó y la operación fue finalizada.",
-            })
-          : t({
-              pt: "A recuperação foi executada, mas ainda há acompanhamento pendente.",
-              en: "Recovery ran, but follow-up is still pending.",
-              es: "La recuperación se ejecutó, pero aún requiere seguimiento.",
-            }),
-      );
-    } catch (error) {
-      setErro(
-        error instanceof Error
-          ? error.message
-          : t({
-              pt: "Não foi possível retomar esta exclusão.",
-              en: "This deletion could not be resumed.",
-              es: "No se pudo reanudar esta eliminación.",
-            }),
-      );
-    } finally {
-      setAcaoEmAndamento("");
-    }
-  }
+  const { salvarSolicitacao, recuperarOperacao } =
+    useAdminExclusoesContaActions({
+      router,
+      t,
+      statusRascunho,
+      observacoes,
+      carregarOperacoesRecuperaveis,
+      setAcessoNegado,
+      setSolicitacoes,
+      setStatusRascunho,
+      setObservacoes,
+      setAcaoEmAndamento,
+      setErro,
+      setSucesso,
+    });
 
   if (carregando) {
     return (
