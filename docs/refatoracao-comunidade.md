@@ -2755,3 +2755,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Admin Problemas Técnicos — Fase 2
 
 - A ação de atualização dos chamados foi movida para `useAdminProblemasTecnicosActions`, preservando autorização, payload, mutation isolada, normalização, atualizações locais, estados e mensagens.
+
+## Obra — Metadata / SEO
+
+- Os helpers puros de slug, idioma e metadata foram movidos para `obra-page-metadata-utils.ts`, preservando canonical, Open Graph, Twitter, noindex e a integração da rota com carregamento público e 404.
