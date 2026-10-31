@@ -35,9 +35,9 @@ test("Adicionar Capítulo delega a criação ao hook e mantém o formulário", (
   );
   assert.match(pageSource, /<form[\s\S]*?onSubmit=\{criarCapitulo\}/);
   assert.doesNotMatch(pageSource, /async function criarCapitulo\(/);
-  assert.match(pageSource, /function salvarObras\(/);
-  assert.match(pageSource, /function limparFeedback\(/);
-  assert.match(pageSource, /async function importarArquivoTexto\(/);
+  assert.doesNotMatch(pageSource, /function salvarObras\(/);
+  assert.doesNotMatch(pageSource, /function limparFeedback\(/);
+  assert.doesNotMatch(pageSource, /async function importarArquivoTexto\(/);
   assert.match(pageSource, /const \[titulo, setTitulo\] = useState\(""\);/);
   assert.match(pageSource, /const \[texto, setTexto\] = useState\(""\);/);
   assert.match(pageSource, /const \[processando, setProcessando\] = useState\(false\);/);
@@ -102,6 +102,6 @@ test("a action preserva ordem, insert, atualização local e efeitos não bloque
   antes("void registrarDiarioNovoCapitulo", "void registrarNotificacoesNovoCapituloSupabase");
   antes(
     "void registrarNotificacoesNovoCapituloSupabase",
-    "setNotificacaoCriada(\n        registrarNotificacaoNovoCapituloLocal",
+    "registrarNotificacaoNovoCapituloLocal(novaNotificacao)",
   );
 });

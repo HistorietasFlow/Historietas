@@ -2696,3 +2696,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Adicionar Capítulo — Fase 2
 
 - A action de criação de capítulo foi movida para `useAdicionarCapituloCreateAction`, preservando validação, autorização, consultas e insert Supabase, ordem, atualização local, Diário, notificações, feedback e desbloqueio do fluxo.
+
+## Adicionar Capítulo — Fase 3
+
+- A persistência local de obras e a importação de arquivo com limpeza de feedback foram movidas para hooks dedicados, preservando backup, isolamento por conta, ordem de gravação, estados do formulário e a orquestração da página.

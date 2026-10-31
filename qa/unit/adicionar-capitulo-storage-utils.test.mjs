@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const localPersistenceSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/hooks/useAdicionarCapituloLocalPersistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const backupStorageSource = readFileSync(
   new URL(
     "../../app/adicionar-capitulo/lib/adicionar-capitulo-file-backup-storage.ts",
@@ -172,8 +179,8 @@ test("Adicionar Capítulo delega somente utilidades de storage ao módulo extra�
   assert.doesNotMatch(pageSource, /function carregarBackupArquivosObras\(/);
   assert.doesNotMatch(pageSource, /function sincronizarBackupArquivosObras\(/);
   assert.match(
-    pageSource,
-    /from "\.\/lib\/adicionar-capitulo-local-work-storage";/,
+    localPersistenceSource,
+    /from "\.\.\/lib\/adicionar-capitulo-local-work-storage";/,
   );
   assert.doesNotMatch(pageSource, /const STORAGE_KEY\s*=/);
   assert.match(
