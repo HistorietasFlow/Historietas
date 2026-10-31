@@ -64,5 +64,6 @@ test("Comunidade delega somente alternarFixadoPost ao modulo", () => {
   );
   assert.doesNotMatch(pagina, /async function alternarFixadoPost\(/);
   assert.doesNotMatch(pagina, /await atualizarFixacaoPostSupabaseComunidade\(/);
-  assert.match(pagina, /async function removerPost\(/);
+  assert.match(pagina, /removerPostComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function removerPost\(/);
 });

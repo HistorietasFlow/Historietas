@@ -31,7 +31,8 @@ test("a pagina mantem a orquestracao e fornece slots preparados", () => {
   assert.match(pagina, /composerPortal=\{[\s\S]*?<CommunityPostComposerPortal/);
   assert.match(pagina, /interactionOverlays=\{[\s\S]*?<CommunityInteractionOverlaysComposition/);
   assert.match(pagina, /const renderizarPostComunidade = \(post: PostComunidade\) => \{/);
-  assert.match(pagina, /async function removerPost\(/);
+  assert.match(pagina, /removerPostComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function removerPost\(/);
   assert.doesNotMatch(pagina, /<CommunityPageContainer\s/);
   assert.doesNotMatch(pagina, /<CommunityContentContainer\s/);
   assert.doesNotMatch(pagina, /<CommunityMainLayout\s/);

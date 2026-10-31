@@ -44,7 +44,8 @@ test("a pagina continua orquestrando busca, contagem, posts e acoes", () => {
   assert.match(pagina, /obterEstadoApresentacaoPostComunidade\(\{/);
   assert.match(pagina, /criarAcoesPostComunidade\(\{/);
   assert.match(pagina, /onRemover: removerPost/);
-  assert.match(pagina, /async function removerPost\(/);
+  assert.match(pagina, /removerPostComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function removerPost\(/);
   assert.match(pagina, /renderizarPost: renderizarPostComunidade/);
   assert.match(pagina, /onCarregarMais: carregarMaisPostsComunidadeDaPagina/);
   assert.doesNotMatch(pagina, /<CommunityUserSearchResults/);

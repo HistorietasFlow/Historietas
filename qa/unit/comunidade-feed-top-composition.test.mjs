@@ -41,7 +41,8 @@ test("a pagina permanece orquestradora da composicao visual superior", () => {
   assert.match(pagina, /area="desktop-header"[\s\S]*?onAlternarMenuAcoes=/);
   assert.match(pagina, /area="feed-controls"[\s\S]*?onPublicar=[\s\S]*?onSelecionarMaisComentadas=/);
   assert.match(pagina, /carregarPostsComunidade: carregarPostsComunidadeDaPagina/);
-  assert.match(pagina, /async function removerPost\(/);
+  assert.match(pagina, /removerPostComunidade\(\{/);
+  assert.doesNotMatch(pagina, /async function removerPost\(/);
   assert.doesNotMatch(pagina, /<CommunityDesktopHeader>/);
   assert.doesNotMatch(pagina, /<CommunityFeedControls/);
   assert.doesNotMatch(pagina, /<CommunityFeedActionsSheet/);
