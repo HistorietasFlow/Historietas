@@ -2688,3 +2688,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Diretrizes da Comunidade — Fase 2
 
 - O overview, conteúdo das Diretrizes e rodapé foram movidos para componentes dedicados, preservando textos, traduções, regras, exemplos, IDs, âncoras, SVGs, estilos, acessibilidade e a ordem visual da página.
+
+## Adicionar Capítulo — Fase 1
+
+- O lifecycle inicial foi movido para `useAdicionarCapituloInitialLoad`, preservando leitura de rota, autenticação, aceite de termos, carregamento local, consulta e merge Supabase, persistência, redirects, cancelamento e os estados consumidos pela página.
