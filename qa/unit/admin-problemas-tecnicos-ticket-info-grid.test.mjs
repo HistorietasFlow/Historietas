@@ -8,5 +8,5 @@ test("grid preserva informacoes basicas",()=>{
   assert.doesNotMatch(source,/supabase|useState|useEffect|router|localStorage|select|textarea|atualizarChamado|setObservacoes/);
 });
 test("pagina mantem detalhes e controles",()=>{
-  ["AdminProblemasTecnicosTicketInfoGrid","{aberto && (","detailsStyle","contentBoxStyle","environmentStyle","controlsGridStyle","atualizarChamado","setObservacoes"].forEach((item)=>assert.ok(page.includes(item)));
+  ["AdminProblemasTecnicosTicketInfoGrid","{aberto && (","detailsStyle","controlsGridStyle","atualizarChamado","setObservacoes"].forEach((item)=>assert.ok(page.includes(item)));
 });

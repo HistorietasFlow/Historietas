@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync("app/admin/problemas-tecnicos/page.tsx", "utf8");
+const hook = readFileSync(
+  "app/admin/problemas-tecnicos/hooks/use-admin-problemas-tecnicos-initial-data.ts",
+  "utf8",
+);
 const loader = readFileSync(
   "app/admin/problemas-tecnicos/loaders/buscar-problemas-tecnicos-admin.ts",
   "utf8",
@@ -24,14 +28,15 @@ test("loader preserva a query da fila de problemas técnicos", () => {
 });
 
 test("página mantém normalização, erro e estados após delegar a query", () => {
-  assert.match(page, /import \{ buscarProblemasTecnicosAdmin \} from "\.\/loaders\/buscar-problemas-tecnicos-admin";/);
-  assert.match(page, /const \{ data, error \} = await buscarProblemasTecnicosAdmin\(\);/);
-  assert.match(page, /if \(error\) \{\s*throw error;\s*\}/);
-  assert.match(page, /const registros = \(data \|\| \[\]\)\.map/);
-  assert.match(page, /normalizarCategoria\(registro\.categoria\)/);
-  assert.match(page, /normalizarStatus\(registro\.status\)/);
-  assert.match(page, /normalizarPrioridade\(registro\.prioridade\)/);
-  assert.match(page, /setProblemas\(registros\)/);
-  assert.match(page, /setObservacoes\(/);
-  assert.match(page, /await carregarNomes\(registros\.map\(\(problema\) => problema\.userId\)\)/);
+  assert.match(hook, /import \{ buscarProblemasTecnicosAdmin \} from "\.\.\/loaders\/buscar-problemas-tecnicos-admin";/);
+  assert.match(hook, /const \{ data, error \} = await buscarProblemasTecnicosAdmin\(\);/);
+  assert.match(hook, /if \(error\) \{\s*throw error;\s*\}/);
+  assert.match(hook, /const registros = \(data \|\| \[\]\)\.map/);
+  assert.match(hook, /normalizarCategoria\(registro\.categoria\)/);
+  assert.match(hook, /normalizarStatus\(registro\.status\)/);
+  assert.match(hook, /normalizarPrioridade\(registro\.prioridade\)/);
+  assert.match(hook, /setProblemas\(registros\)/);
+  assert.match(hook, /setObservacoes\(/);
+  assert.match(hook, /await carregarNomes\(registros\.map\(\(problema\) => problema\.userId\)\)/);
+  assert.match(page, /useAdminProblemasTecnicosInitialData/);
 });
