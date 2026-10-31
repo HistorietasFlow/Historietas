@@ -27,6 +27,27 @@ const stylesSource = readFileSync(
   ),
   "utf8",
 );
+const overviewSource = readFileSync(
+  new URL(
+    "../../app/politica-de-privacidade/components/PoliticaPrivacidadeOverview.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const documentContentSource = readFileSync(
+  new URL(
+    "../../app/politica-de-privacidade/components/PoliticaPrivacidadeDocumentContent.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const footerSource = readFileSync(
+  new URL(
+    "../../app/politica-de-privacidade/components/PoliticaPrivacidadeFooter.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("legal content and types moved without changing their contracts", () => {
   for (const declaration of [
@@ -84,7 +105,10 @@ test("legal content and types moved without changing their contracts", () => {
 test("dedicated SVG icon preserves names, forms, and accessibility", () => {
   assert.match(iconSource, /export function PoliticaPrivacidadeSvgIcon/);
   assert.doesNotMatch(pageSource, /function SvgIcon/);
-  assert.match(pageSource, /PoliticaPrivacidadeSvgIcon/);
+  assert.doesNotMatch(pageSource, /PoliticaPrivacidadeSvgIcon/);
+  assert.match(overviewSource, /PoliticaPrivacidadeSvgIcon/);
+  assert.match(documentContentSource, /PoliticaPrivacidadeSvgIcon/);
+  assert.match(footerSource, /PoliticaPrivacidadeSvgIcon/);
   for (const icon of [
     "arrowLeft",
     "arrowRight",
@@ -118,7 +142,7 @@ test("dedicated SVG icon preserves names, forms, and accessibility", () => {
   assert.match(iconSource, /strokeLinejoin: "round"/);
 });
 
-test("static styles moved while page keeps legal JSX and conditions", () => {
+test("static styles moved while page composes legal components", () => {
   assert.match(stylesSource, /export const politicaPrivacidadeCss/);
   assert.match(stylesSource, /data-historietas-privacidade-root="true"/);
   assert.match(stylesSource, /data-historietas-tema-visual="foco"/);
@@ -132,13 +156,18 @@ test("static styles moved while page keeps legal JSX and conditions", () => {
   assert.match(pageSource, /useHistorietasLanguage/);
   assert.match(pageSource, /useHistorietasTheme/);
   assert.match(pageSource, /function t\(texto: TextoTraduzido\)/);
-  assert.match(pageSource, /DESTAQUES_PRIVACIDADE\.map/);
-  assert.match(pageSource, /SECOES_PRIVACIDADE\.map/);
-  assert.match(pageSource, /secao\.paragrafos\.map/);
-  assert.match(pageSource, /secao\.itens\?\.length/);
-  assert.match(pageSource, /secao\.id === "conteudo-publico"/);
-  assert.match(pageSource, /secao\.id === "armazenamento-local"/);
-  assert.match(pageSource, /secao\.id === "seguranca"/);
-  assert.match(pageSource, /secao\.id === "direitos" \|\| secao\.id === "contato"/);
-  assert.match(pageSource, /href=\{\`#\$\{secao\.id\}\`\}/);
+  assert.match(pageSource, /PoliticaPrivacidadeOverview/);
+  assert.match(pageSource, /PoliticaPrivacidadeDocumentContent/);
+  assert.match(pageSource, /PoliticaPrivacidadeFooter/);
+  assert.doesNotMatch(pageSource, /DESTAQUES_PRIVACIDADE\.map/);
+  assert.doesNotMatch(pageSource, /SECOES_PRIVACIDADE\.map/);
+  assert.match(overviewSource, /DESTAQUES_PRIVACIDADE\.map/);
+  assert.match(documentContentSource, /SECOES_PRIVACIDADE\.map/);
+  assert.match(documentContentSource, /secao\.paragrafos\.map/);
+  assert.match(documentContentSource, /secao\.itens\?\.length/);
+  assert.match(documentContentSource, /secao\.id === "conteudo-publico"/);
+  assert.match(documentContentSource, /secao\.id === "armazenamento-local"/);
+  assert.match(documentContentSource, /secao\.id === "seguranca"/);
+  assert.match(documentContentSource, /secao\.id === "direitos" \|\| secao\.id === "contato"/);
+  assert.match(documentContentSource, /privacidade-toc-link/);
 });
