@@ -28,6 +28,7 @@ import { publicarPostComunidade } from "./components/community-composer-publicat
 import { comentarPostComunidade } from "./components/community-comment-publication-action";
 import { alternarCurtidaComentarioComunidade } from "./components/community-comment-like-action";
 import { removerComentarioComunidade } from "./components/community-comment-removal-action";
+import { removerPostComunidade } from "./components/community-post-removal-action";
 import { alternarSeguirUsuarioBuscaComunidade } from "./components/community-search-follow-action";
 import { atualizarVisibilidadePostComunidade } from "./components/community-post-visibility-action";
 import { alternarFixadoPostComunidade } from "./components/community-post-pinning-action";
@@ -42,13 +43,6 @@ import { temFiltrosAtivosComunidade } from "./components/community-active-filter
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { obterEstadoApresentacaoPostComunidade } from "./components/community-post-presentation-state";
 import { criarAcoesPostComunidade } from "./components/community-post-action-factory";
-import {
-  removerPostDoEstadoComunidade,
-  removerPostSalvoDoEstadoComunidade,
-} from "./components/community-post-removal-state-updaters";
-import { consultarPostParaRemocaoComunidade } from "./components/community-post-removal-query";
-import { removerPostSupabaseComunidade } from "./components/community-post-removal-delete";
-import { consultarUsuarioEhAdminComunidade } from "./components/community-admin-status-query";
 import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
@@ -75,9 +69,6 @@ import { selecionarObraRelacionada } from "./components/community-related-work-s
 import type { GrupoPublicacaoObra } from "./components/community-publication-group";
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
-import { formatarErroSupabase } from "./components/community-supabase-error-formatter";
-import { obterUsuarioAutenticadoComunidadeAtual } from "./components/community-supabase-current-user-loader";
-import { removerReviewComunidadeDoDiario } from "./components/community-diary-review-remover";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
 import { fecharComentarios } from "./components/community-comments-closer";
@@ -87,9 +78,6 @@ import {
   selecionarTipoPublicacaoPost,
 } from "./components/community-poll-preparer";
 import { abrirPublicacaoRapidaComunidade } from "./components/community-quick-publication-opener";
-import {
-  CHAVE_POSTS_SALVOS_COMUNIDADE,
-} from "./components/community-storage-keys";
 import { CommunityFeedTopComposition } from "./components/community-feed-top-composition";
 import { CommunityFeedCenterComposition } from "./components/community-feed-center-composition";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
@@ -103,18 +91,12 @@ import {
 import { CommunityPostComposerPortal } from "./components/community-post-composer-portal";
 import { CommunityInteractionOverlaysComposition } from "./components/community-interaction-overlays-composition";
 import { emitirFeedbackAcao } from "./components/community-action-feedback-toast";
-import {
-  finalizarAcaoComunidade,
-  iniciarAcaoComunidade,
-} from "./components/community-action-lock";
 import { CommunityPostItem } from "./components/community-post-item";
-import { traduzirTextoComunidade } from "./components/community-text-translator";
 import { CommunityLanguageBridge } from "./components/community-language-bridge";
 import { CommunityPageShellComposition } from "./components/community-page-shell-composition";
 import {
   traduzirContagemResultadosComunidade,
 } from "./components/community-results-count-translator";
-import { salvarJsonUsuarioComunidade } from "./components/community-user-json-saver";
 
 export default function ComunidadePage() {
   const router = useRouter();
@@ -575,147 +557,27 @@ export default function ComunidadePage() {
       feedbackTimerRef,
     });
 
-  async function removerPost(postId: string) {
-    const chaveAcao = `remover-post:${postId}`;
-
-    if (!iniciarAcaoComunidade(acoesComunidadeRef, chaveAcao)) {
-      return;
-    }
-
-    setPostRemovendoId(postId);
-    setErro("");
-
-    try {
-      if (!exigirLogin() || !usuario) {
-        return;
-      }
-
-      const usuarioAutenticado = await obterUsuarioAutenticadoComunidadeAtual();
-      const usuarioAutenticadoId = usuarioAutenticado?.id?.trim() || "";
-      const usuarioEstadoId = usuario.id.trim();
-
-      if (
-        !usuarioAutenticadoId ||
-        usuarioAutenticadoId !== usuarioEstadoId
-      ) {
-        setUsuario(null);
-        setUsuarioEhAdmin(false);
-        setPostMenuAbertoId(null);
-        setErro(
-          "Sua conta mudou. Aguarde a Comunidade atualizar antes de tentar novamente."
-        );
-        return;
-      }
-
-      const usuarioAtualEhAdmin =
-        await consultarUsuarioEhAdminComunidade();
-
-      const resultadoConsultaPost =
-        await consultarPostParaRemocaoComunidade(postId);
-
-      if (!resultadoConsultaPost.sucesso) {
-        setErro(
-          formatarErroSupabase(
-            "Erro ao conferir publicação",
-            resultadoConsultaPost.erro
-          )
-        );
-        return;
-      }
-
-      const postBanco = resultadoConsultaPost.postBanco;
-
-      if (!postBanco) {
-        setPosts((postsAtuais) =>
-          removerPostDoEstadoComunidade(postsAtuais, postId)
-        );
-        setPostMenuAbertoId(null);
-        setErro("Esta publicação já não existe.");
-        return;
-      }
-
-      const autorPostId = postBanco.autor_id?.trim() || "";
-
-      if (
-        !usuarioAtualEhAdmin &&
-        autorPostId !== usuarioAutenticadoId
-      ) {
-        setPostMenuAbertoId(null);
-        setErro("Você só pode remover suas próprias publicações.");
-        return;
-      }
-
-      if (
-        !window.confirm(
-          traduzirTextoComunidade("Remover esta publicação?", language)
-        )
-      ) {
-        return;
-      }
-
-      const resultadoRemocaoPost = await removerPostSupabaseComunidade(
-        postId,
-        usuarioAutenticadoId,
-        usuarioAtualEhAdmin
-      );
-
-      if (!resultadoRemocaoPost.sucesso) {
-        setErro(
-          formatarErroSupabase(
-            "Erro ao remover publicação",
-            resultadoRemocaoPost.erro
-          )
-        );
-        return;
-      }
-
-      const postsRemovidos = resultadoRemocaoPost.postsRemovidos;
-
-      if (!Array.isArray(postsRemovidos) || postsRemovidos.length === 0) {
-        setErro(
-          "A publicação não foi removida. A conta atual não possui permissão para essa ação."
-        );
-        await carregarPostsComunidadeDaPagina(false, 0, obraRelacionadaFiltro);
-        return;
-      }
-
-      const postRemovido = postsRemovidos[0];
-
-      if (postRemovido.tipo_publicacao === "Review") {
-        await removerReviewComunidadeDoDiario({
-          userId: postRemovido.autor_id || autorPostId,
-          postId,
-        });
-        reviewsDiarioSincronizadasRef.current.delete(postId);
-      }
-
-      setUsuarioEhAdmin(usuarioAtualEhAdmin);
-      setPosts((postsAtuais) =>
-        removerPostDoEstadoComunidade(postsAtuais, postId)
-      );
-
-      const postsSalvosAtualizados = removerPostSalvoDoEstadoComunidade(
-        postsSalvosIds,
-        postId
-      );
-
-      setPostsSalvosIds(postsSalvosAtualizados);
-
-      salvarJsonUsuarioComunidade(
-        CHAVE_POSTS_SALVOS_COMUNIDADE,
-        usuarioAutenticadoId,
-        postsSalvosAtualizados
-      );
-
-      emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef, "Publicação removida.");
-      await carregarPostsComunidadeDaPagina(false, 0, obraRelacionadaFiltro);
-    } finally {
-      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-      setPostRemovendoId((postAtualId) =>
-        postAtualId === postId ? null : postAtualId
-      );
-    }
-  }
+  const removerPost = (postId: string) =>
+    removerPostComunidade({
+      postId,
+      acoesComunidadeRef,
+      setPostRemovendoId,
+      setErro,
+      exigirLogin,
+      usuario,
+      setUsuario,
+      setUsuarioEhAdmin,
+      setPostMenuAbertoId,
+      setPosts,
+      language,
+      reviewsDiarioSincronizadasRef,
+      postsSalvosIds,
+      setPostsSalvosIds,
+      setFeedbackAcao,
+      feedbackTimerRef,
+      carregarPostsComunidadeDaPagina,
+      obraRelacionadaFiltro,
+    });
 
   function alternarMenuOpcoesPostComunidade(postId: string) {
     setPostMenuAbertoId((postIdAtual) =>

@@ -1492,6 +1492,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 - O shell estrutural visual foi isolado em `community-page-shell-composition.tsx`.
 - A página prepara os slots de cabeçalho, erro, controles, feed, composer e overlays; estados, callbacks e regras de negócio permanecem explicitamente na orquestração principal.
 
+## Registro da Fase 23 — Comunidade
+
+- A ação de remoção de post foi movida para `community-post-removal-action.ts`, preservando autenticação, proteção contra troca de conta, permissões, confirmação, remoção remota, Diário, storage local, reload e cleanup do lock.
+
 ## Registro da Fase 9 — Editar Obra
 
 - Os helpers puros de normalização de nome e resolução de caminhos de Storage foram isolados em `editar-obra-storage-path-utils.ts`, preservando buckets, Data URLs, prefixes reconhecidos, decodificação e fallbacks.
