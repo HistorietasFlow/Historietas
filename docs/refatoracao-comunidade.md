@@ -2656,3 +2656,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Aceitar Termos — Fase 2
 
 - O lifecycle inicial e a ação de registrar o aceite foram movidos para hooks dedicados, preservando autenticação, redirects, query params, guards, mensagens, setters e JSX na página.
+
+## Termos — Fase 1
+
+- Os tipos, dados de políticas, ícones SVG e estilos estáticos da página de Termos foram movidos para módulos dedicados, preservando conteúdo, traduções, acessibilidade, tema e visual.
