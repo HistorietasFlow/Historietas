@@ -35,9 +35,20 @@ test("tipos e opções estáticas do suporte técnico preservam contratos e orde
   );
 });
 
-test("normalizadores dedicados mantêm contratos e a página os importa", () => {
-  assert.match(pagina, /from "\.\/lib\/ajuda-technical-support"/);
-  assert.match(pagina, /from "\.\/lib\/ajuda-technical-support-normalizers"/);
+test("normalizadores dedicados mantêm contratos e o hook de suporte os importa", async () => {
+  const hook = await readFile(
+    "app/ajuda/hooks/use-ajuda-technical-support.ts",
+    "utf8",
+  );
+  assert.match(
+    pagina,
+    /from "\.\/hooks\/use-ajuda-technical-support"/,
+  );
+  assert.match(hook, /from "\.\.\/lib\/ajuda-technical-support"/);
+  assert.match(
+    hook,
+    /from "\.\.\/lib\/ajuda-technical-support-normalizers"/,
+  );
   assert.match(normalizadores, /new Set<CategoriaProblemaTecnico>\(/);
   assert.match(normalizadores, /CATEGORIAS_PROBLEMA_TECNICO\.map\(/);
   assert.match(normalizadores, /: "outro";/);

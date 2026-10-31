@@ -2763,3 +2763,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Rota canônica de capítulo — validação de parâmetros
 
 - Os validadores puros de slug e número de capítulo foram movidos para módulo dedicado, preservando rejeições, redirecionamentos canônicos e a integração com a rota pública em cache.
+
+## Ajuda — Suporte técnico
+
+- O lifecycle, carregamento, validação e envio de chamados técnicos foram movidos para hook dedicado, preservando autenticação, RPCs, normalização, mensagens, recarga e a composição visual da página.

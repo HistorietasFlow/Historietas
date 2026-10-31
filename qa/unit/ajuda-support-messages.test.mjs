@@ -30,14 +30,19 @@ test("as mensagens do suporte preservam status, erro e login", () => {
   assert.doesNotMatch(componente, /supabase|useEffect|useState/);
 });
 
-test("a página mantém estados e setters das mensagens locais", () => {
+test("a página consome o estado de mensagens do hook de suporte", () => {
   assert.match(
     pagina,
     /import \{\s*AjudaSupportMessages,\s*\} from "\.\/components\/ajuda-support-messages";/,
   );
-  assert.match(pagina, /const \[mensagemProblema, setMensagemProblema\] = useState\(""\);/);
-  assert.match(pagina, /const \[erroProblema, setErroProblema\] = useState\(""\);/);
-  assert.match(pagina, /const \[usuarioAutenticado, setUsuarioAutenticado\]/);
+  assert.match(
+    pagina,
+    /import \{ useAjudaTechnicalSupport \} from "\.\/hooks\/use-ajuda-technical-support";/,
+  );
+  assert.match(
+    pagina,
+    /mensagemProblema,[\s\S]*?erroProblema,[\s\S]*?usuarioAutenticado,[\s\S]*?= useAjudaTechnicalSupport\(language\);/,
+  );
   assert.match(pagina, /<AjudaSupportMessages[\s\S]*?mensagem=\{mensagemProblema\}[\s\S]*?erro=\{erroProblema\}[\s\S]*?usuarioAutenticado=\{usuarioAutenticado\}/);
   assert.doesNotMatch(pagina, /supportLoginNoticeStyle/);
 });
