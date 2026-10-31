@@ -2680,3 +2680,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Política de Privacidade — Fase 2
 
 - O overview, conteúdo jurídico e rodapé foram movidos para componentes dedicados, preservando textos, traduções, links, IDs, âncoras, SVGs, estilos, acessibilidade e a ordem visual da página.
+
+## Diretrizes da Comunidade — Fase 1
+
+- Os tipos, conteúdo estruturado, ícones SVG e estilos estáticos da página de Diretrizes da Comunidade foram movidos para módulos dedicados, preservando textos, traduções, regras, exemplos, links, acessibilidade, CSS e o JSX principal da página.
