@@ -21,6 +21,13 @@ const hookSource = readFileSync(
   ),
   "utf8",
 );
+const actionsHookSource = readFileSync(
+  new URL(
+    "../../app/admin/exclusoes-conta/hooks/use-admin-exclusoes-conta-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
@@ -105,12 +112,12 @@ test("rota de login aceita destino iniciado por / e bloqueia //", () => {
 
 test("Admin Exclusões de Conta delega somente a rota de login", () => {
   assert.match(
-    pageSource,
-    /import \{ criarLoginHrefAdminExclusoesConta \} from "\.\/lib\/admin-exclusoes-conta-route-utils";/,
+    actionsHookSource,
+    /import \{ criarLoginHrefAdminExclusoesConta \} from "\.\.\/lib\/admin-exclusoes-conta-route-utils";/,
   );
   assert.doesNotMatch(pageSource, /function criarLoginHref\(/);
   assert.equal(
-    [pageSource, hookSource]
+    [pageSource, hookSource, actionsHookSource]
       .map(
         (sourceToCheck) =>
           (

@@ -81,7 +81,7 @@ test("lifecycle inicial preserva cancelamento, ordem, paralelismo, catch, finall
   );
 });
 
-test("página preserva tradução e ações, delegando somente dados iniciais ao hook", () => {
+test("página preserva tradução e delega dados iniciais ao hook", () => {
   assert.match(
     pageSource,
     /import \{ useAdminExclusoesContaInitialData \} from "\.\/hooks\/use-admin-exclusoes-conta-initial-data";/,
@@ -91,7 +91,8 @@ test("página preserva tradução e ações, delegando somente dados iniciais ao
   assert.match(pageSource, /useAdminExclusoesContaInitialData\(\{\s*router,\s*t,\s*setErro,\s*setSucesso,/);
   assert.doesNotMatch(pageSource, /const carregarSolicitacoes = useCallback/);
   assert.doesNotMatch(pageSource, /const carregarOperacoesRecuperaveis = useCallback/);
-  assert.match(pageSource, /async function salvarSolicitacao/);
-  assert.match(pageSource, /async function recuperarOperacao/);
+  assert.match(pageSource, /useAdminExclusoesContaActions/);
+  assert.doesNotMatch(pageSource, /async function salvarSolicitacao/);
+  assert.doesNotMatch(pageSource, /async function recuperarOperacao/);
   assert.match(pageSource, /void Promise\.all\(\[\s*carregarSolicitacoes\(\),\s*carregarOperacoesRecuperaveis\(\),/);
 });
