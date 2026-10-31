@@ -25,6 +25,7 @@ test("página delega somente o lifecycle de sessão existente", () => {
   assert.doesNotMatch(page, /async function redirecionarUsuarioJaLogado/);
   assert.match(page, /useLoginExistingSessionRedirect\(\{ router, salvarProfile, t, setErro \}\)/);
   assert.match(page, /const salvarProfile = useCallback/);
-  assert.match(page, /async function enviarFormulario/);
+  assert.match(page, /useLoginSubmitAction\(/);
+  assert.doesNotMatch(page, /async function enviarFormulario/);
   assert.doesNotMatch(source, /localStorage|<[A-Z][A-Za-z0-9]*/);
 });

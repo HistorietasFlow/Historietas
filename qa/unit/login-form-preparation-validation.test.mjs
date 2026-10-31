@@ -15,6 +15,10 @@ const pageSource = readFileSync(
   new URL("../../app/login/page.tsx", import.meta.url),
   "utf8",
 );
+const submitActionSource = readFileSync(
+  new URL("../../app/login/hooks/useLoginSubmitAction.ts", import.meta.url),
+  "utf8",
+);
 
 function carregarModulo(source) {
   const javascript = typescript.transpileModule(source, {
@@ -107,15 +111,16 @@ test("validação preserva cadastro, consentimentos e prioridade das regras", ()
 });
 
 test("Login mantém a orquestração e delega preparação e validação", () => {
-  assert.match(pageSource, /from "\.\/lib\/login-form-preparation";/);
-  assert.match(pageSource, /from "\.\/lib\/login-form-validation";/);
-  assert.doesNotMatch(pageSource, /const emailFinal = email\.trim\(\)\.toLowerCase\(\);/);
-  assert.doesNotMatch(pageSource, /const nomeFinal = nome\.trim\(\);/);
-  assert.doesNotMatch(pageSource, /!\[A-Za-zÀ-ÖØ-öø-ÿ\]\.test\(senha\)/);
-  assert.match(pageSource, /const chaveErro = validarFormularioLogin\(/);
-  assert.match(pageSource, /setErro\(t\(chaveErro\)\);/);
+  assert.match(pageSource, /useLoginSubmitAction\(/);
+  assert.match(submitActionSource, /from "\.\.\/lib\/login-form-preparation";/);
+  assert.match(submitActionSource, /from "\.\.\/lib\/login-form-validation";/);
+  assert.doesNotMatch(submitActionSource, /const emailFinal = email\.trim\(\)\.toLowerCase\(\);/);
+  assert.doesNotMatch(submitActionSource, /const nomeFinal = nome\.trim\(\);/);
+  assert.doesNotMatch(submitActionSource, /!\[A-Za-zÀ-ÖØ-öø-ÿ\]\.test\(senha\)/);
+  assert.match(submitActionSource, /const chaveErro = validarFormularioLogin\(/);
+  assert.match(submitActionSource, /setErro\(t\(chaveErro\)\);/);
   assert.match(
-    pageSource,
+    submitActionSource,
     /if \(chaveErro\) \{[\s\S]*?setErro\(t\(chaveErro\)\);[\s\S]*?return;[\s\S]*?\}\s*\n\s*setCarregando\(true\);/,
   );
   assert.doesNotMatch(

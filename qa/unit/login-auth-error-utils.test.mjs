@@ -11,6 +11,10 @@ const pageSource = readFileSync(
   new URL("../../app/login/page.tsx", import.meta.url),
   "utf8",
 );
+const submitActionSource = readFileSync(
+  new URL("../../app/login/hooks/useLoginSubmitAction.ts", import.meta.url),
+  "utf8",
+);
 
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
@@ -41,7 +45,11 @@ test("Login delega leitores e formatter de erro aos módulos extraídos", () => 
     source,
     /from\s+["']react["']|useState|useEffect|localStorage|router|import\s+\{\s*supabase\s*\}|supabase\.(?:auth|from|rpc)/i,
   );
-  assert.match(pageSource, /from "\.\/lib\/login-auth-error-formatter";/);
+  assert.match(pageSource, /useLoginSubmitAction/);
+  assert.match(
+    submitActionSource,
+    /from "\.\.\/lib\/login-auth-error-formatter";/,
+  );
   assert.doesNotMatch(pageSource, /type ErroAuthSupabase =/);
   assert.doesNotMatch(pageSource, /function obterMensagemErroAuth\(/);
   assert.doesNotMatch(pageSource, /function obterCodigoErroAuth\(/);
