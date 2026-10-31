@@ -21,6 +21,13 @@ const page = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const contextoLoader = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/loaders/carregar-denuncias-contexto-moderacao.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarModulo(source) {
   const javascript = typescript.transpileModule(source, {
@@ -153,8 +160,10 @@ test("Admin Comunidade delega apenas a criação dos mapas de contexto", () => {
   ]) {
     assert.doesNotMatch(page, new RegExp(`const ${nome} = new Map`));
   }
-  assert.match(page, /criarMapasContextoModeracao\(\{/);
-  assert.match(page, /montarDenunciasComContextoModeracao\(\{/);
+  assert.doesNotMatch(page, /criarMapasContextoModeracao\(/);
+  assert.doesNotMatch(page, /montarDenunciasComContextoModeracao\(/);
+  assert.match(contextoLoader, /criarMapasContextoModeracao\(\{/);
+  assert.match(contextoLoader, /montarDenunciasComContextoModeracao\(\{/);
   assert.match(page, /setDenuncias\(/);
   assert.match(page, /setObservacoes\(/);
   assert.match(

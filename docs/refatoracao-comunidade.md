@@ -2165,6 +2165,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O painel de filtros da moderação foi movido para `components/admin-comunidade-filters-sheet.tsx`, preservando status, limpeza, acessibilidade e apresentação da página.
 
+## Registro da Fase 30 — Admin Comunidade
+
+- A cadeia de carregamento e montagem de denúncias de conteúdo com contexto foi movida para `loaders/carregar-denuncias-contexto-moderacao.ts`, preservando ordem, dependências entre consultas, mapas e a orquestração de estado na página.
+
 ## Fase 1 — Admin Exclusões de Conta
 
 - Tipos e normalização dos contratos foram extraídos para `lib/admin-exclusoes-conta-normalization-utils.ts`, sem alteração de comportamento.

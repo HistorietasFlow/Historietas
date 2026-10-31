@@ -14,6 +14,13 @@ const page = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const contextoLoader = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/loaders/carregar-denuncias-contexto-moderacao.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarLoader(supabase) {
   const javascript = typescript.transpileModule(
@@ -181,9 +188,12 @@ test("erro de cada consulta preserva os resultados válidos da outra", async () 
 
 test("Admin Comunidade delega apenas o contexto de perfis ao loader", () => {
   assert.doesNotMatch(page, /const perfilIds/);
-  assert.match(page, /buscarPerfisContextoModeracao\(\{/);
-  assert.match(page, /criarMapasContextoModeracao\(\{/);
-  assert.match(page, /montarDenunciasComContextoModeracao\(\{/);
+  assert.doesNotMatch(page, /buscarPerfisContextoModeracao\(/);
+  assert.doesNotMatch(page, /criarMapasContextoModeracao\(/);
+  assert.doesNotMatch(page, /montarDenunciasComContextoModeracao\(/);
+  assert.match(contextoLoader, /buscarPerfisContextoModeracao\(\{/);
+  assert.match(contextoLoader, /criarMapasContextoModeracao\(\{/);
+  assert.match(contextoLoader, /montarDenunciasComContextoModeracao\(\{/);
   assert.match(page, /setDenuncias\(/);
   assert.doesNotMatch(
     source,
