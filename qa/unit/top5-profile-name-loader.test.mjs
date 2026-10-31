@@ -39,36 +39,12 @@ test("Top 5 delega somente o carregamento do nome de perfil", async () => {
 
   assert.match(
     page,
-    /import \{ resolverNomeUsuarioTop5 \} from "\.\/lib\/top5-user-name-resolver";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.doesNotMatch(page, /import \{ carregarNomePerfilTop5 \}/);
   assert.doesNotMatch(page, /\.from\("profiles"\)/);
   assert.doesNotMatch(page, /carregarNomePerfilTop5\(/);
-  assert.match(
-    page,
-    /import \{ carregarDadosIniciaisTop5 \} from "\.\/lib\/top5-initial-data-loader";/,
-  );
-  assert.match(page, /await carregarDadosIniciaisTop5\(\)/);
-  assert.match(
-    page,
-    /const nomeUsuario = await resolverNomeUsuarioTop5\(\s*userId,\s*authData\.user\?\.user_metadata\?\.nome,\s*authData\.user\?\.user_metadata\?\.name,\s*authData\.user\?\.email,\s*\);/,
-  );
-
-  const primeiroCancelamento = page.indexOf("if (cancelado)");
-  const carregamentoPerfil = page.indexOf("const nomeUsuario = await resolverNomeUsuarioTop5(");
-  const segundoCancelamento = page.indexOf(
-    "if (cancelado)",
-    primeiroCancelamento + 1,
-  );
-  assert.ok(primeiroCancelamento < carregamentoPerfil);
-  assert.ok(carregamentoPerfil < segundoCancelamento);
-
-  assert.match(
-    page,
-    /setUsuario\(\s*criarUsuarioTop5\(\s*userId,\s*nomeUsuario,\s*\),\s*\);/,
-  );
-  assert.match(page, /setObras\(obrasMescladas\);/);
-  assert.match(page, /setIdsSelecionados\(idsNormalizados\);/);
+  assert.doesNotMatch(page, /resolverNomeUsuarioTop5\(/);
   assert.match(page, /removerIdSelecionadoTop5\(/);
   assert.match(page, /moverIdSelecionadoTop5\(/);
   assert.match(page, /alternarIdSelecionadoTop5\(/);

@@ -50,7 +50,8 @@ test("Top 5 move somente o bridge de idioma para componente dedicado", async () 
   assert.doesNotMatch(page, /function Top5LanguageBridge\(\)/);
   assert.doesNotMatch(page, /useHistorietasLanguage/);
   assert.doesNotMatch(page, /traduzirTextoTop5/);
-  assert.match(page, /useEffect\(/);
+  assert.doesNotMatch(page, /useEffect\(/);
+  assert.match(page, /useTop5InitialLoad/);
 
   for (const forbidden of [
     "supabase",

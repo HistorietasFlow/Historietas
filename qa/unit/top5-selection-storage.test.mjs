@@ -53,7 +53,11 @@ test("Top 5 delega somente a persistência da seleção", async () => {
   assert.doesNotMatch(page, /const STORAGE_KEY = "historietas-obras";/);
   assert.doesNotMatch(page, /function carregarObrasLocaisTop5/);
   assert.doesNotMatch(page, /carregarObrasLocaisTop5\(userId\)/);
-  assert.match(page, /prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\)/);
+  assert.match(
+    page,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
+  );
+  assert.doesNotMatch(page, /prepararConteudoInicialTop5\(/);
   assert.doesNotMatch(page, /function normalizarIdsSelecionadosTop5/);
   assert.doesNotMatch(page, /normalizarIdsSelecionadosTop5\(/);
   assert.doesNotMatch(page, /salvarTop5\(/);

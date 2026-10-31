@@ -63,10 +63,7 @@ test("Top 5 delega somente os normalizadores de obra para módulo dedicado", asy
   assert.match(normalizers, /text\//);
   assert.match(normalizers, /markdown/);
 
-  assert.match(
-    page,
-    /import \{ pegarTexto \} from "\.\/lib\/top5-work-normalizers";/,
-  );
+  assert.doesNotMatch(page, /import \{ pegarTexto \} from "\.\/lib\/top5-work-normalizers";/);
   assert.doesNotMatch(
     page,
     /import \{ normalizarTexto \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/,

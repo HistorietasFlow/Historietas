@@ -2767,3 +2767,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Ajuda — Suporte técnico
 
 - O lifecycle, carregamento, validação e envio de chamados técnicos foram movidos para hook dedicado, preservando autenticação, RPCs, normalização, mensagens, recarga e a composição visual da página.
+
+## Top 5 do Perfil Autor — lifecycle inicial
+
+- O lifecycle inicial de autenticação, carregamento, composição, sincronização da seleção e cancelamento foi movido para hook dedicado, preservando estados, ordem dos efeitos, fallbacks e a composição da página.

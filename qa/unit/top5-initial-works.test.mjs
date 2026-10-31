@@ -71,7 +71,7 @@ test("Top 5 delega a composição inicial de obras sem alterar a ordem das fonte
 
   assert.match(
     page,
-    /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.doesNotMatch(
     page,
@@ -81,27 +81,7 @@ test("Top 5 delega a composição inicial de obras sem alterar a ordem das fonte
     page,
     /import \{ mesclarObrasTop5 \} from "\.\/lib\/top5-work-merge";/,
   );
-  assert.match(
-    page,
-    /prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\)/,
-  );
-  assert.match(
-    page,
-    /import \{ carregarDadosIniciaisTop5 \} from "\.\/lib\/top5-initial-data-loader";/,
-  );
-  assert.match(
-    page,
-    /const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(/,
-  );
-
-  const primeiroCancelamento = page.indexOf("if (cancelado)");
-  const composicao = page.indexOf("} = prepararConteudoInicialTop5(");
-  const segundoCancelamento = page.indexOf(
-    "if (cancelado)",
-    primeiroCancelamento + 1,
-  );
-  assert.ok(primeiroCancelamento < segundoCancelamento);
-  assert.ok(segundoCancelamento < composicao);
+  assert.doesNotMatch(page, /prepararConteudoInicialTop5\(/);
 
   for (const forbidden of [
     "react",

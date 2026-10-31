@@ -90,22 +90,13 @@ test("Top 5 delega a preparação inicial da seleção sem persistir", async () 
 
   assert.match(
     page,
-    /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.doesNotMatch(page, /carregarTop5Salvo\(/);
-  assert.match(
-    page,
-    /const \{\s*obrasMescladas,\s*idsSalvos,\s*idsNormalizados,\s*\} = prepararConteudoInicialTop5\(\s*userId,\s*obrasSupabase,\s*\);/,
-  );
+  assert.doesNotMatch(page, /prepararConteudoInicialTop5\(/);
   const inicioSalvar = page.indexOf("function salvarEscolhasTop5");
   const handlerSalvar = page.slice(inicioSalvar);
   assert.match(handlerSalvar, /persistirSelecaoTop5\(/);
-
-  const setUsuario = page.indexOf("setUsuario(");
-  const setObras = page.indexOf("setObras(obrasMescladas);");
-  const setIds = page.indexOf("setIdsSelecionados(idsNormalizados);");
-  assert.ok(setUsuario < setObras);
-  assert.ok(setObras < setIds);
 
   for (const forbidden of [
     "react",

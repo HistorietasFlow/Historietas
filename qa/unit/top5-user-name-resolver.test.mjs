@@ -116,30 +116,13 @@ test("Top 5 resolve o nome inicial e o perfil sem deslocar o lifecycle da págin
 
   assert.match(
     page,
-    /import \{ resolverNomeUsuarioTop5 \} from "\.\/lib\/top5-user-name-resolver";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.doesNotMatch(page, /import \{ obterNomeInicialUsuarioTop5 \}/);
   assert.doesNotMatch(page, /import \{ carregarNomePerfilTop5 \}/);
   assert.doesNotMatch(page, /obterNomeInicialUsuarioTop5\(authData\.user/);
   assert.doesNotMatch(page, /carregarNomePerfilTop5\(/);
-  assert.match(
-    page,
-    /const nomeUsuario = await resolverNomeUsuarioTop5\(\s*userId,\s*authData\.user\?\.user_metadata\?\.nome,\s*authData\.user\?\.user_metadata\?\.name,\s*authData\.user\?\.email,\s*\);/,
-  );
-
-  const primeiroCancelamento = page.indexOf("if (cancelado)");
-  const userId = page.indexOf('const userId = authData.user?.id || "";');
-  const resolucaoNome = page.indexOf("const nomeUsuario = await resolverNomeUsuarioTop5(");
-  const segundoCancelamento = page.indexOf(
-    "if (cancelado)",
-    primeiroCancelamento + 1,
-  );
-  const preparacao = page.indexOf("prepararConteudoInicialTop5(");
-
-  assert.ok(primeiroCancelamento < userId);
-  assert.ok(userId < resolucaoNome);
-  assert.ok(resolucaoNome < segundoCancelamento);
-  assert.ok(segundoCancelamento < preparacao);
+  assert.doesNotMatch(page, /resolverNomeUsuarioTop5\(/);
 
   for (const forbidden of [
     "react",

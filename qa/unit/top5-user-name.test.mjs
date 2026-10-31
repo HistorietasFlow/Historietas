@@ -65,7 +65,7 @@ test("Top 5 delega a composição pura do nome inicial do usuário", async () =>
 
   assert.match(
     page,
-    /import \{ resolverNomeUsuarioTop5 \} from "\.\/lib\/top5-user-name-resolver";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
   assert.doesNotMatch(page, /import \{ obterNomeInicialUsuarioTop5 \}/);
   assert.doesNotMatch(

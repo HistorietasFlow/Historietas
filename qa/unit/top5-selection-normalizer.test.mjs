@@ -49,9 +49,9 @@ test("Top 5 delega somente a normalização pura da seleção", async () => {
   );
   assert.match(
     page,
-    /import \{ prepararConteudoInicialTop5 \} from "\.\/lib\/top5-initial-content";/,
+    /import \{ useTop5InitialLoad \} from "\.\/hooks\/use-top5-initial-load";/,
   );
-  assert.match(page, /prepararConteudoInicialTop5\(/);
+  assert.doesNotMatch(page, /prepararConteudoInicialTop5\(/);
   assert.match(
     page,
     /import \{\s*criarMapaObrasTop5,\s*selecionarObrasTop5,\s*\} from "\.\/lib\/top5-work-selectors";/,
