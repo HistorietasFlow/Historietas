@@ -2751,3 +2751,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Admin Problemas Técnicos — Fase 1
 
 - O estado de dados, carregamento inicial e autenticação administrativa foram movidos para `useAdminProblemasTecnicosInitialData`, preservando loaders, normalização, nomes de usuário, autenticação, redirect, cancelamento e a orquestração de atualização na página.
+
+## Admin Problemas Técnicos — Fase 2
+
+- A ação de atualização dos chamados foi movida para `useAdminProblemasTecnicosActions`, preservando autorização, payload, mutation isolada, normalização, atualizações locais, estados e mensagens.

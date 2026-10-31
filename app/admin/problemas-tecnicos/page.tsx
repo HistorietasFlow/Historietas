@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import type { TablesUpdate } from "../../../lib/supabase/database.types";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -15,7 +14,7 @@ import {
   type TextoTraduzido,
 } from "./lib/admin-problemas-tecnicos-text-utils";
 import { criarMensagemErro } from "./lib/admin-problemas-tecnicos-error-utils";
-import { atualizarProblemaTecnicoAdmin } from "./actions/atualizar-problema-tecnico-admin";
+import { useAdminProblemasTecnicosActions } from "./hooks/use-admin-problemas-tecnicos-actions";
 import { useAdminProblemasTecnicosInitialData } from "./hooks/use-admin-problemas-tecnicos-initial-data";
 import { AdminProblemasTecnicosTicketSummary } from "./components/admin-problemas-tecnicos-ticket-summary";
 import { AdminProblemasTecnicosTicketInfoGrid } from "./components/admin-problemas-tecnicos-ticket-info-grid";
@@ -62,10 +61,7 @@ import {
 } from "./lib/admin-problemas-tecnicos-styles";
 import {
   STATUS_PROBLEMAS,
-  normalizarPrioridade,
-  normalizarStatus,
   type FiltroStatusProblema,
-  type ProblemaTecnico,
 } from "./lib/admin-problemas-tecnicos-normalization-utils";
 
 export default function AdminProblemasTecnicosPage() {
@@ -103,6 +99,17 @@ export default function AdminProblemasTecnicosPage() {
     setSucesso,
   });
 
+  const { atualizarChamado } = useAdminProblemasTecnicosActions({
+    usuarioId,
+    ehAdmin,
+    t,
+    setProblemas,
+    setObservacoes,
+    setAcaoEmAndamento,
+    setErro,
+    setSucesso,
+  });
+
   const problemasFiltrados = useMemo(
     () =>
       filtrarProblemasTecnicos({
@@ -119,82 +126,6 @@ export default function AdminProblemasTecnicosPage() {
     () => calcularTotaisProblemasTecnicos(problemas),
     [problemas],
   );
-
-  async function atualizarChamado(
-    problema: ProblemaTecnico,
-    alteracoes: Partial<
-      Pick<
-        ProblemaTecnico,
-        "status" | "prioridade" | "observacaoAdmin"
-      >
-    >,
-    mensagemSucesso: string,
-  ) {
-    if (!usuarioId || !ehAdmin) {
-      setErro(
-        t({
-          pt: "Apenas administradores podem atualizar chamados técnicos.",
-          en: "Only administrators can update technical tickets.",
-          es: "Solo los administradores pueden actualizar solicitudes técnicas.",
-        }),
-      );
-      return;
-    }
-
-    setAcaoEmAndamento(problema.id);
-    setErro("");
-    setSucesso("");
-
-    try {
-      const payload: TablesUpdate<"problemas_tecnicos"> = {};
-
-      if (alteracoes.status) payload.status = alteracoes.status;
-      if (alteracoes.prioridade) payload.prioridade = alteracoes.prioridade;
-      if (typeof alteracoes.observacaoAdmin === "string") {
-        payload.observacao_admin = alteracoes.observacaoAdmin.trim();
-      }
-
-      const { data, error } = await atualizarProblemaTecnicoAdmin({
-        id: problema.id,
-        payload,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data) {
-        throw new Error("O chamado não foi encontrado ou não pôde ser atualizado.");
-      }
-
-      const atualizado = data;
-
-      setProblemas((atuais) =>
-        atuais.map((item) =>
-          item.id === problema.id
-            ? {
-                ...item,
-                status: normalizarStatus(atualizado.status),
-                prioridade: normalizarPrioridade(atualizado.prioridade),
-                observacaoAdmin: String(atualizado.observacao_admin || ""),
-                analisadoPor: String(atualizado.analisado_por || ""),
-                analisadoEm: String(atualizado.analisado_em || ""),
-                atualizadoEm: String(atualizado.atualizado_em || ""),
-              }
-            : item,
-        ),
-      );
-      setObservacoes((atuais) => ({
-        ...atuais,
-        [problema.id]: String(atualizado.observacao_admin || ""),
-      }));
-      setSucesso(mensagemSucesso);
-    } catch (error) {
-      setErro(criarMensagemErro("Erro ao atualizar chamado técnico", error));
-    } finally {
-      setAcaoEmAndamento("");
-    }
-  }
 
   if (carregando) {
     return (
