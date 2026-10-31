@@ -10,6 +10,10 @@ const source = readFileSync(
   "app/admin/problemas-tecnicos/actions/atualizar-problema-tecnico-admin.ts",
   "utf8",
 );
+const hook = readFileSync(
+  "app/admin/problemas-tecnicos/hooks/use-admin-problemas-tecnicos-actions.ts",
+  "utf8",
+);
 
 test("action preserva a mutation isolada do chamado tecnico", () => {
   const fields =
@@ -26,24 +30,26 @@ test("action preserva a mutation isolada do chamado tecnico", () => {
   );
 });
 
-test("pagina preserva orquestracao e estado da atualizacao", () => {
-  assert.match(page, /atualizarProblemaTecnicoAdmin/);
-  assert.match(page, /if \(!usuarioId \|\| !ehAdmin\)/);
+test("hook preserva orquestracao e estado da atualizacao", () => {
+  assert.match(hook, /atualizarProblemaTecnicoAdmin/);
+  assert.match(hook, /if \(!usuarioId \|\| !ehAdmin\)/);
   assert.match(
-    page,
+    hook,
     /const payload: TablesUpdate<"problemas_tecnicos"> = \{\};/,
   );
-  assert.match(page, /alteracoes\.observacaoAdmin\.trim\(\)/);
-  assert.match(page, /id: problema\.id,\s*payload,/);
-  assert.match(page, /if \(error\) \{\s*throw error;/);
+  assert.match(hook, /alteracoes\.observacaoAdmin\.trim\(\)/);
+  assert.match(hook, /id: problema\.id,\s*payload,/);
+  assert.match(hook, /if \(error\) \{\s*throw error;/);
   assert.match(
-    page,
+    hook,
     /if \(!data\) \{\s*throw new Error\(\s*"O chamado não foi encontrado ou não pôde ser atualizado\."/,
   );
-  assert.match(page, /setProblemas/);
-  assert.match(page, /setObservacoes/);
-  assert.match(page, /normalizarStatus\(atualizado\.status\)/);
-  assert.match(page, /normalizarPrioridade\(atualizado\.prioridade\)/);
-  assert.match(page, /catch \(error\)/);
-  assert.match(page, /finally \{/);
+  assert.match(hook, /setProblemas/);
+  assert.match(hook, /setObservacoes/);
+  assert.match(hook, /normalizarStatus\(atualizado\.status\)/);
+  assert.match(hook, /normalizarPrioridade\(atualizado\.prioridade\)/);
+  assert.match(hook, /catch \(error\)/);
+  assert.match(hook, /finally \{/);
+  assert.match(page, /useAdminProblemasTecnicosActions/);
+  assert.doesNotMatch(page, /async function atualizarChamado/);
 });
