@@ -71,14 +71,16 @@ test("estilos estáticos de Termos preservam CSS e integração", () => {
   assert.match(pageSource, /\{`\$\{historietasThemeCss\}\$\{termosPageCss\}`\}/);
 });
 
-test("página mantém linguagem, tema, JSX e mapeamentos", () => {
+test("página mantém linguagem, tema e composição dos componentes", () => {
   assert.match(pageSource, /useHistorietasLanguage/);
   assert.match(pageSource, /useHistorietasTheme/);
   assert.match(pageSource, /function t\(texto: TextoTraduzido\)/);
-  assert.match(pageSource, /DOCUMENTOS_POLITICAS\.map/);
-  assert.match(pageSource, /PRINCIPIOS_PLATAFORMA\.map/);
-  assert.match(pageSource, /ETAPAS_LEITURA\.map/);
-  assert.match(pageSource, /ATALHOS_POLITICAS\.map/);
-  assert.match(pageSource, /TermosSvgIcon/);
+  assert.match(pageSource, /<TermosHeaderHero t=\{t\} \/>/);
+  assert.match(pageSource, /<TermosDocumentosSection t=\{t\} \/>/);
+  assert.match(pageSource, /<TermosSupportingSections t=\{t\} \/>/);
+  assert.doesNotMatch(pageSource, /DOCUMENTOS_POLITICAS\.map/);
+  assert.doesNotMatch(pageSource, /PRINCIPIOS_PLATAFORMA\.map/);
+  assert.doesNotMatch(pageSource, /ETAPAS_LEITURA\.map/);
+  assert.doesNotMatch(pageSource, /ATALHOS_POLITICAS\.map/);
   assert.doesNotMatch(pageSource, /function SvgIcon/);
 });
