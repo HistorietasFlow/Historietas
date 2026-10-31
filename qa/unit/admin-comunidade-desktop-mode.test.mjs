@@ -20,6 +20,13 @@ const contentActionsHook = readFileSync(
   ),
   "utf8",
 );
+const initialDataHook = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-initial-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useAdminComunidadeDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -67,8 +74,10 @@ test("Admin Comunidade delega apenas o modo desktop e mantém fronteiras sensív
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 16);
-  assert.match(pagina, /async function iniciarModeracao\(\)/);
-  assert.match(pagina, /verificarAcessoModeracao\(\)/);
+  assert.doesNotMatch(pagina, /async function iniciarModeracao\(\)/);
+  assert.doesNotMatch(pagina, /verificarAcessoModeracao\(\)/);
+  assert.match(initialDataHook, /async function iniciarModeracao\(\)/);
+  assert.match(initialDataHook, /verificarAcessoModeracao\(\)/);
   assert.doesNotMatch(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(
     contentActionsHook,
