@@ -2771,3 +2771,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Top 5 do Perfil Autor — lifecycle inicial
 
 - O lifecycle inicial de autenticação, carregamento, composição, sincronização da seleção e cancelamento foi movido para hook dedicado, preservando estados, ordem dos efeitos, fallbacks e a composição da página.
+
+## Obra — Fase 1
+
+- O lifecycle de identidade e autenticação da obra foi movido para hook dedicado, preservando consulta versionada, assinatura Supabase, cleanup, troca de conta e as proteções contra resultados assíncronos obsoletos.

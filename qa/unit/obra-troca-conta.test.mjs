@@ -138,6 +138,13 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
     "utf8",
   );
+  const lifecycleAutenticacao = readFileSync(
+    new URL(
+      "../../app/obra/[slug]/hooks/use-obra-auth-identity-lifecycle.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
   const carregadorObra = readFileSync(
     new URL(
       "../../app/obra/[slug]/lib/obra-public-work-loader.ts",
@@ -145,9 +152,15 @@ test("mantem autenticacao como unica proprietaria e protege backup do carregamen
     ),
     "utf8",
   );
-  const escritasUsuarioIdLogado = paginaObra.split("setUsuarioIdLogado(").length - 1;
+  const escritasUsuarioIdLogado =
+    lifecycleAutenticacao.split("setUsuarioIdLogado(").length - 1;
 
   assert.equal(escritasUsuarioIdLogado, 1);
+  assert.match(
+    paginaObra,
+    /useObraAuthIdentityLifecycle\(\{\s*onIdentidadeMudou: limparEstadoContaAnterior,\s*\}\)/,
+  );
+  assert.doesNotMatch(paginaObra, /supabase\.auth\.onAuthStateChange/);
   assert.match(
     paginaObra,
     /carregarObraSupabasePorSlug\([\s\S]*?execucaoCarregamentoEstaAtual,[\s\S]*?\);/,

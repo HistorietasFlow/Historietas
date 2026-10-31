@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { useParams, useRouter } from "next/navigation";
 import type {
@@ -16,8 +16,6 @@ import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { carregarSnapshotRemotoAvaliacaoObra } from "./lib/obra-supabase-rating-loader";
 import {
-  atualizarIdentidadeAutenticadaObra,
-  execucaoAutenticacaoObraEstaAtual,
   execucaoIdentidadeObraEstaAtual,
   type IdentidadeAutenticadaObra,
 } from "./lib/obra-auth-identity";
@@ -27,6 +25,7 @@ import {
   restaurarFocoAnterior,
 } from "./lib/obra-dialog-focus";
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
+import { useObraAuthIdentityLifecycle } from "./hooks/use-obra-auth-identity-lifecycle";
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
 import { useObraCommentRepliesVisibility } from "./hooks/use-obra-comment-replies-visibility";
@@ -196,8 +195,6 @@ export default function ObraDinamicaPage() {
     fecharPainelClassificacaoObra,
     resetarPainelClassificacaoObra,
   } = useObraClassificationPanel();
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
-  const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [perfilUsuarioLogado, setPerfilUsuarioLogado] =
     useState<PerfilPublicoObra | null>(null);
   const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -212,12 +209,28 @@ export default function ObraDinamicaPage() {
   const isDesktop = useObraDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const avaliacaoVersaoRef = useRef(0);
-  const identidadeAutenticadaObraRef =
-    useRef<IdentidadeAutenticadaObra>({
-      usuarioId: "",
-      versao: 0,
-    });
-  const versaoConsultaAutenticacaoObraRef = useRef(0);
+
+  const limparEstadoContaAnterior = useCallback(() => {
+    setObrasLocais([]);
+    setCarregandoObras(true);
+    setObraSeguida(false);
+    setObraFavoritada(false);
+    setObraConcluida(false);
+    setMetricasObra(metricasObraVazias);
+    setAvaliacaoObra(avaliacaoObraVazia);
+    setPerfilUsuarioLogado(null);
+    setComentariosObra([]);
+    setTotalComentariosObra(0);
+    setComentarioTexto("");
+    setComentarioStatus("");
+    setComentarioEnviando(false);
+    setComentarioRemovendoId("");
+    setComentarioCurtindoId("");
+    setRespostaComentario(null);
+    resetarRespostasVisiveis();
+    setMensagemAcao("");
+    avaliacaoVersaoRef.current += 1;
+  }, [resetarRespostasVisiveis]);
 
   useEffect(() => {
     if (!mensagemAcao) {
@@ -233,93 +246,13 @@ export default function ObraDinamicaPage() {
     };
   }, [mensagemAcao]);
 
-  useEffect(() => {
-    let componenteAtivo = true;
-
-    function limparEstadoContaAnterior() {
-      setObrasLocais([]);
-      setCarregandoObras(true);
-      setObraSeguida(false);
-      setObraFavoritada(false);
-      setObraConcluida(false);
-      setMetricasObra(metricasObraVazias);
-      setAvaliacaoObra(avaliacaoObraVazia);
-      setPerfilUsuarioLogado(null);
-      setComentariosObra([]);
-      setTotalComentariosObra(0);
-      setComentarioTexto("");
-      setComentarioStatus("");
-      setComentarioEnviando(false);
-      setComentarioRemovendoId("");
-      setComentarioCurtindoId("");
-      setRespostaComentario(null);
-      resetarRespostasVisiveis();
-      setMensagemAcao("");
-      avaliacaoVersaoRef.current += 1;
-    }
-
-    function aplicarIdentidadeAutenticada(usuarioId: string) {
-      const resultado = atualizarIdentidadeAutenticadaObra(
-        identidadeAutenticadaObraRef.current,
-        usuarioId,
-      );
-
-      if (resultado.mudou) {
-        identidadeAutenticadaObraRef.current = resultado.identidade;
-        limparEstadoContaAnterior();
-        setUsuarioIdLogado(resultado.identidade.usuarioId);
-      }
-
-      setAutenticacaoCarregada(true);
-    }
-
-    async function carregarUsuarioLogado() {
-      const versaoConsulta = versaoConsultaAutenticacaoObraRef.current + 1;
-      versaoConsultaAutenticacaoObraRef.current = versaoConsulta;
-
-      try {
-        const { data } = await supabase.auth.getUser();
-        const userId = data.user?.id || "";
-
-        if (
-          execucaoAutenticacaoObraEstaAtual({
-            cancelada: !componenteAtivo,
-            versaoEsperada: versaoConsulta,
-            versaoAtual: versaoConsultaAutenticacaoObraRef.current,
-          })
-        ) {
-          aplicarIdentidadeAutenticada(userId);
-        }
-      } catch {
-        if (
-          execucaoAutenticacaoObraEstaAtual({
-            cancelada: !componenteAtivo,
-            versaoEsperada: versaoConsulta,
-            versaoAtual: versaoConsultaAutenticacaoObraRef.current,
-          })
-        ) {
-          aplicarIdentidadeAutenticada("");
-        }
-      }
-    }
-
-    void carregarUsuarioLogado();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (componenteAtivo) {
-        versaoConsultaAutenticacaoObraRef.current += 1;
-        aplicarIdentidadeAutenticada(session?.user?.id || "");
-      }
-    });
-
-    return () => {
-      componenteAtivo = false;
-      versaoConsultaAutenticacaoObraRef.current += 1;
-      subscription.unsubscribe();
-    };
-  }, [resetarRespostasVisiveis]);
+  const {
+    usuarioIdLogado,
+    autenticacaoCarregada,
+    identidadeAutenticadaObraRef,
+  } = useObraAuthIdentityLifecycle({
+    onIdentidadeMudou: limparEstadoContaAnterior,
+  });
 
 
   useEffect(() => {
