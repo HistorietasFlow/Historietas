@@ -51,10 +51,8 @@ import {
 import { criarLoginHrefAdminModeracao } from "./lib/admin-comunidade-route-utils";
 import {
   type StatusDenuncia,
-  type StatusDenunciaPerfil,
   STATUS_DENUNCIAS,
   STATUS_LABEL,
-  STATUS_PERFIL_LABEL,
 } from "./lib/admin-comunidade-status-utils";
 import {
   rotuloSucessoRemocaoAlvo,
@@ -75,13 +73,11 @@ import {
 import {
   carregarDenunciasComContextoModeracao,
 } from "./loaders/carregar-denuncias-contexto-moderacao";
-import { persistirStatusDenunciaPerfilModeracao } from "./actions/atualizar-status-denuncia-perfil-moderacao";
 import { persistirStatusDenunciaModeracao } from "./actions/atualizar-status-denuncia-moderacao";
 import { removerConteudoDenunciadoModeracao } from "./actions/remover-conteudo-denunciado-moderacao";
 import { persistirArquivamentoDenunciaModeracao } from "./actions/arquivar-denuncia-moderacao";
 import { persistirRestauracaoDenunciaModeracao } from "./actions/restaurar-denuncia-moderacao";
 import { persistirRemocaoDenunciaResolvidaModeracao } from "./actions/remover-denuncia-resolvida-moderacao";
-import { persistirRemocaoDenunciaPerfilResolvidaModeracao } from "./actions/remover-denuncia-perfil-resolvida-moderacao";
 import {
   type StatusFiltroDenuncia,
   filtrarDenunciasModeracao,
@@ -95,6 +91,7 @@ import { verificarAcessoModeracao } from "./loaders/verificar-acesso-moderacao";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 import { AdminComunidadeProfileReportCard } from "./components/admin-comunidade-profile-report-card";
 import { AdminComunidadeContentReportCard } from "./components/admin-comunidade-content-report-card";
+import { useAdminComunidadeProfileReportActions } from "./hooks/use-admin-comunidade-profile-report-actions";
 
 export default function AdminComunidadePage() {
   const { language } = useHistorietasLanguage();
@@ -241,57 +238,20 @@ export default function AdminComunidadePage() {
     totalPerfisPendentes,
   } = calcularTotaisModeracao(denunciasAtivas, denunciasPerfis);
 
-  async function atualizarStatusDenunciaPerfil(
-    denunciaId: string,
-    novoStatus: StatusDenunciaPerfil
-  ) {
-    if (!usuarioId || !ehAdmin) {
-      setErro("Apenas moderadores podem atualizar denúncias de perfis.");
-      return;
-    }
-
-    const chaveAcao = `perfil-${denunciaId}-${novoStatus}`;
-
-    if (acaoEmAndamento) {
-      return;
-    }
-
-    setAcaoEmAndamento(chaveAcao);
-    setErro("");
-    setSucesso("");
-
-    const atualizadoEm = new Date().toISOString();
-
-    try {
-      await persistirStatusDenunciaPerfilModeracao({
-        denunciaId,
-        novoStatus,
-        atualizadoEm,
-      });
-
-      setDenunciasPerfis((denunciasAtuais) =>
-        denunciasAtuais.map((denuncia) =>
-          denuncia.id === denunciaId
-            ? {
-                ...denuncia,
-                status: novoStatus,
-                atualizadoEm,
-              }
-            : denuncia
-        )
-      );
-
-      setSucesso(
-        `Denúncia de perfil marcada como ${STATUS_PERFIL_LABEL[
-          novoStatus
-        ].toLowerCase()}.`
-      );
-    } catch (error) {
-      setErro(criarMensagemErro("Erro ao atualizar denúncia de perfil", error));
-    } finally {
-      setAcaoEmAndamento("");
-    }
-  }
+  const {
+    atualizarStatusDenunciaPerfil,
+    removerDenunciaPerfilResolvida,
+  } = useAdminComunidadeProfileReportActions({
+    usuarioId,
+    ehAdmin,
+    acaoEmAndamento,
+    denunciasPerfis,
+    setDenunciasPerfis,
+    setAcaoEmAndamento,
+    setErro,
+    setSucesso,
+    setMenuDenunciaAbertoId,
+  });
 
   async function atualizarStatusDenuncia(
     denunciaId: string,
@@ -553,49 +513,6 @@ export default function AdminComunidadePage() {
       setAcaoEmAndamento("");
     }
   }
-
-
-  async function removerDenunciaPerfilResolvida(denunciaId: string) {
-    if (!usuarioId || !ehAdmin) {
-      setErro("Apenas moderadores podem remover denúncias de perfis resolvidas.");
-      return;
-    }
-
-    if (acaoEmAndamento) {
-      return;
-    }
-
-    const denuncia = denunciasPerfis.find((item) => item.id === denunciaId);
-
-    if (!denuncia || denuncia.status !== "resolvida") {
-      setErro("Somente denúncias de perfis resolvidas podem ser removidas do painel.");
-      return;
-    }
-
-    const chaveAcao = `perfil-${denunciaId}-remover-denuncia`;
-
-    setMenuDenunciaAbertoId("");
-    setAcaoEmAndamento(chaveAcao);
-    setErro("");
-    setSucesso("");
-
-    try {
-      await persistirRemocaoDenunciaPerfilResolvidaModeracao({
-        denunciaId,
-      });
-
-      setDenunciasPerfis((denunciasAtuais) =>
-        denunciasAtuais.filter((denunciaAtual) => denunciaAtual.id !== denunciaId)
-      );
-
-      setSucesso("Denúncia de perfil resolvida removida do painel.");
-    } catch (error) {
-      setErro(criarMensagemErro("Erro ao remover denúncia de perfil resolvida", error));
-    } finally {
-      setAcaoEmAndamento("");
-    }
-  }
-
   function limparFiltros() {
     setStatusFiltro("todas");
     setBusca("");

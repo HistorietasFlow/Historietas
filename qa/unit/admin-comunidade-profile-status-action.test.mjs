@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-profile-report-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarAction(supabase) {
   const javascript = typescript.transpileModule(
@@ -128,32 +135,37 @@ test("exige o registro atualizado retornado", async () => {
   );
 });
 
-test("Admin Comunidade mantém o fluxo de interface e delega a persistência", () => {
+test("hook de Admin Comunidade mantém o fluxo de interface e delega a persistência", () => {
   assert.match(
-    pageSource,
-    /import \{ persistirStatusDenunciaPerfilModeracao \} from "\.\/actions\/atualizar-status-denuncia-perfil-moderacao";/,
+    hookSource,
+    /import \{ persistirStatusDenunciaPerfilModeracao \} from "\.\.\/actions\/atualizar-status-denuncia-perfil-moderacao";/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /const atualizadoEm = new Date\(\)\.toISOString\(\);/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /if \(!usuarioId \|\| !ehAdmin\) \{\s*setErro\("Apenas moderadores podem atualizar denúncias de perfis\."\);/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /await persistirStatusDenunciaPerfilModeracao\(\{\s*denunciaId,\s*novoStatus,\s*atualizadoEm,\s*\}\);/,
   );
-  assert.match(pageSource, /setDenunciasPerfis\(/);
-  assert.match(pageSource, /STATUS_PERFIL_LABEL\[\s*novoStatus\s*\]/);
+  assert.match(hookSource, /setDenunciasPerfis\(/);
+  assert.match(hookSource, /STATUS_PERFIL_LABEL\[\s*novoStatus\s*\]/);
+  assert.match(pageSource, /useAdminComunidadeProfileReportActions\(\{/);
 
-  const funcaoStatusPerfil = pageSource.match(
+  const funcaoStatusPerfil = hookSource.match(
     /async function atualizarStatusDenunciaPerfil[\s\S]*?(?=\n\s*async function removerDenunciaPerfilResolvida)/,
   )?.[0] ?? "";
   assert.doesNotMatch(funcaoStatusPerfil, /\.from\("denuncias_perfis"\)/);
   assert.match(funcaoStatusPerfil, /catch \(error\)/);
   assert.match(funcaoStatusPerfil, /finally/);
+  assert.doesNotMatch(
+    hookSource,
+    /useState|useEffect|useMemo|router|localStorage|supabase|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/,
+  );
   assert.doesNotMatch(
     actionSource,
     /useState|useEffect|useMemo|router|localStorage|set[A-Z]|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/,

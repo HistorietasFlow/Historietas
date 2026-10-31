@@ -2169,6 +2169,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A cadeia de carregamento e montagem de denúncias de conteúdo com contexto foi movida para `loaders/carregar-denuncias-contexto-moderacao.ts`, preservando ordem, dependências entre consultas, mapas e a orquestração de estado na página.
 
+## Registro da Fase 31 — Admin Comunidade
+
+- As ações de atualização e remoção de denúncias de perfil foram agrupadas em `hooks/use-admin-comunidade-profile-report-actions.ts`, preservando autorização, locks, persistência, mensagens e a propriedade dos estados na página.
+
 ## Fase 1 — Admin Exclusões de Conta
 
 - Tipos e normalização dos contratos foram extraídos para `lib/admin-exclusoes-conta-normalization-utils.ts`, sem alteração de comportamento.
