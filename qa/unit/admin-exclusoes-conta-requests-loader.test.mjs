@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/exclusoes-conta/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/exclusoes-conta/hooks/use-admin-exclusoes-conta-initial-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
@@ -81,26 +88,27 @@ test("loader retorna data nulo quando response.json falha", async () => {
   assert.equal(resultado.data, null);
 });
 
-test("Admin Exclusões de Conta mantém decisões HTTP, normalização e estados", () => {
+test("hook de dados iniciais mantém decisões HTTP, normalização e estados", () => {
   assert.match(
-    pageSource,
-    /import \{ buscarSolicitacoesExclusaoAdmin \} from "\.\/loaders\/buscar-solicitacoes-exclusao-admin";/,
+    hookSource,
+    /import \{ buscarSolicitacoesExclusaoAdmin \} from "\.\.\/loaders\/buscar-solicitacoes-exclusao-admin";/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /const \{ response, data \} = await buscarSolicitacoesExclusaoAdmin\(\);/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /if \(response\.status === 401\) \{\s*router\.replace\(criarLoginHrefAdminExclusoesConta\(\)\);/,
   );
   assert.match(
-    pageSource,
+    hookSource,
     /if \(response\.status === 403\) \{\s*setAcessoNegado\(true\);\s*setSolicitacoes\(\[\]\);/,
   );
-  assert.match(pageSource, /\.map\(normalizarSolicitacao\)/);
-  assert.match(pageSource, /setStatusRascunho\(/);
-  assert.match(pageSource, /setObservacoes\(/);
+  assert.match(hookSource, /\.map\(normalizarSolicitacao\)/);
+  assert.match(hookSource, /setStatusRascunho\(/);
+  assert.match(hookSource, /setObservacoes\(/);
+  assert.match(pageSource, /useAdminExclusoesContaInitialData/);
   assert.doesNotMatch(pageSource, /type RespostaLista\s*=/);
   assert.doesNotMatch(source, /response\.status === 401|response\.status === 403/);
   assert.doesNotMatch(source, /router|set[A-Z]|supabase|localStorage|sessionStorage/);

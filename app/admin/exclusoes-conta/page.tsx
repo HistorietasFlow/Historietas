@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -11,11 +11,9 @@ import { useHistorietasLanguage } from "../../../components/HistorietasLanguageP
 import {
   STATUS_SOLICITACOES,
   normalizarSolicitacao,
-  normalizarOperacaoRecuperavel,
   type FiltroStatus,
   type OperacaoRecuperavel,
   type SolicitacaoExclusao,
-  type StatusSolicitacaoExclusao,
 } from "./lib/admin-exclusoes-conta-normalization-utils";
 import {
   STATUS_LABEL,
@@ -25,10 +23,9 @@ import {
 import { filtrarSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-filter-utils";
 import { calcularTotaisSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-stats-utils";
 import { criarLoginHrefAdminExclusoesConta } from "./lib/admin-exclusoes-conta-route-utils";
-import { buscarSolicitacoesExclusaoAdmin } from "./loaders/buscar-solicitacoes-exclusao-admin";
-import { buscarOperacoesRecuperaveisAdmin } from "./loaders/buscar-operacoes-recuperaveis-admin";
 import { atualizarSolicitacaoExclusaoAdmin } from "./actions/atualizar-solicitacao-exclusao-admin";
 import { recuperarOperacaoExclusaoAdmin } from "./actions/recuperar-operacao-exclusao-admin";
+import { useAdminExclusoesContaInitialData } from "./hooks/use-admin-exclusoes-conta-initial-data";
 import { AdminExclusoesContaRecoverySection } from "./components/admin-exclusoes-conta-recovery-section";
 import { AdminExclusoesContaRequestCard } from "./components/admin-exclusoes-conta-request-card";
 import {
@@ -64,17 +61,9 @@ export default function AdminExclusoesContaPage() {
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  const [carregando, setCarregando] = useState(true);
-  const [acessoNegado, setAcessoNegado] = useState(false);
-  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoExclusao[]>([]);
-  const [operacoesRecuperaveis, setOperacoesRecuperaveis] = useState<OperacaoRecuperavel[]>([]);
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<FiltroStatus>("todos");
   const [abertaId, setAbertaId] = useState("");
-  const [statusRascunho, setStatusRascunho] = useState<
-    Record<string, StatusSolicitacaoExclusao>
-  >({});
-  const [observacoes, setObservacoes] = useState<Record<string, string>>({});
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -84,124 +73,25 @@ export default function AdminExclusoesContaPage() {
     [language],
   );
 
-  const carregarSolicitacoes = useCallback(async () => {
-    setErro("");
-
-    const { response, data } = await buscarSolicitacoesExclusaoAdmin();
-
-    if (response.status === 401) {
-      router.replace(criarLoginHrefAdminExclusoesConta());
-      return;
-    }
-
-    if (response.status === 403) {
-      setAcessoNegado(true);
-      setSolicitacoes([]);
-      return;
-    }
-
-    if (!response.ok || !data?.ok) {
-      throw new Error(
-        data?.mensagem ||
-          t({
-            pt: "Não foi possível carregar as solicitações de exclusão.",
-            en: "Deletion requests could not be loaded.",
-            es: "No se pudieron cargar las solicitudes de eliminación.",
-          }),
-      );
-    }
-
-    const registros = (data.solicitacoes || [])
-      .map(normalizarSolicitacao)
-      .filter((item): item is SolicitacaoExclusao => Boolean(item));
-
-    setAcessoNegado(false);
-    setSolicitacoes(registros);
-    setStatusRascunho(
-      registros.reduce<Record<string, StatusSolicitacaoExclusao>>(
-        (estado, item) => {
-          estado[item.id] = item.status;
-          return estado;
-        },
-        {},
-      ),
-    );
-    setObservacoes(
-      registros.reduce<Record<string, string>>((estado, item) => {
-        estado[item.id] = item.observacaoInterna;
-        return estado;
-      }, {}),
-    );
-  }, [router, t]);
-
-
-  const carregarOperacoesRecuperaveis = useCallback(async () => {
-    const { response, data } = await buscarOperacoesRecuperaveisAdmin();
-
-    if (response.status === 401) {
-      router.replace(criarLoginHrefAdminExclusoesConta());
-      return;
-    }
-
-    if (response.status === 403) {
-      setAcessoNegado(true);
-      setOperacoesRecuperaveis([]);
-      return;
-    }
-
-    if (!response.ok || !data?.ok) {
-      throw new Error(
-        data?.mensagem ||
-          t({
-            pt: "Não foi possível carregar as recuperações pendentes.",
-            en: "Pending recoveries could not be loaded.",
-            es: "No se pudieron cargar las recuperaciones pendientes.",
-          }),
-      );
-    }
-
-    setOperacoesRecuperaveis(
-      (data.operacoes || [])
-        .map(normalizarOperacaoRecuperavel)
-        .filter((item): item is OperacaoRecuperavel => Boolean(item)),
-    );
-  }, [router, t]);
-
-  useEffect(() => {
-    let cancelado = false;
-
-    async function iniciar() {
-      setCarregando(true);
-      setErro("");
-      setSucesso("");
-
-      try {
-        await Promise.all([carregarSolicitacoes(), carregarOperacoesRecuperaveis()]);
-      } catch (error) {
-        if (!cancelado) {
-          setErro(
-            error instanceof Error
-              ? error.message
-              : t({
-                  pt: "Não foi possível carregar as solicitações de exclusão.",
-                  en: "Deletion requests could not be loaded.",
-                  es: "No se pudieron cargar las solicitudes de eliminación.",
-                }),
-          );
-        }
-      } finally {
-        if (!cancelado) {
-          setCarregando(false);
-        }
-      }
-    }
-
-    void iniciar();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [carregarOperacoesRecuperaveis, carregarSolicitacoes, t]);
+  const {
+    carregando,
+    acessoNegado,
+    setAcessoNegado,
+    solicitacoes,
+    setSolicitacoes,
+    operacoesRecuperaveis,
+    statusRascunho,
+    setStatusRascunho,
+    observacoes,
+    setObservacoes,
+    carregarSolicitacoes,
+    carregarOperacoesRecuperaveis,
+  } = useAdminExclusoesContaInitialData({
+    router,
+    t,
+    setErro,
+    setSucesso,
+  });
 
   const solicitacoesFiltradas = useMemo(
     () =>
