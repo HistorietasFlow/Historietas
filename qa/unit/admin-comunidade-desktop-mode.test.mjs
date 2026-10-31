@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const contentActionsHook = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-content-report-actions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("useAdminComunidadeDesktopMode preserva o lifecycle responsivo síncrono", () => {
   assert.match(hook, /^"use client";/);
@@ -64,7 +71,7 @@ test("Admin Comunidade delega apenas o modo desktop e mantém fronteiras sensív
   assert.match(pagina, /verificarAcessoModeracao\(\)/);
   assert.doesNotMatch(pagina, /supabase\.auth\.getUser\(\)/);
   assert.match(
-    pagina,
+    contentActionsHook,
     /persistirRemocaoDenunciaResolvidaModeracao\(/,
   );
   assert.doesNotMatch(
