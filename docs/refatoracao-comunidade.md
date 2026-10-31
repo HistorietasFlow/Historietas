@@ -2664,3 +2664,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Termos — Fase 2
 
 - O cabeçalho e hero, a seção de documentos e as seções de apoio foram movidos para componentes dedicados, preservando conteúdo, traduções, links, SVGs, estilos, acessibilidade e a ordem visual da página.
+
+## Termos de Uso — Fase 1
+
+- Os tipos, conteúdo legal estruturado, ícones SVG e estilos estáticos foram movidos para módulos dedicados, preservando textos jurídicos, traduções, links, acessibilidade, CSS e o JSX principal da página.
