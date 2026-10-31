@@ -515,6 +515,13 @@ const editChapter = fs.readFileSync(
   ),
   "utf8"
 );
+const editChapterDeleteActionPath = path.join(
+  ROOT_DIR,
+  "app/editar-capitulo/hooks/useEditarCapituloDeleteAction.ts"
+);
+const editChapterDeleteAction = fs.existsSync(editChapterDeleteActionPath)
+  ? fs.readFileSync(editChapterDeleteActionPath, "utf8")
+  : "";
 
 const deletionChecks = [
   'from("capitulos")',
@@ -526,7 +533,7 @@ const deletionChecks = [
 ];
 
 const missingDeletion = deletionChecks.filter(
-  (snippet) => !editChapter.includes(snippet)
+  (snippet) => !`${editChapter}\n${editChapterDeleteAction}`.includes(snippet)
 );
 
 if (missingDeletion.length) {

@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloDeleteAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const normalizacoes = [];
 const progressos = [];
@@ -167,20 +174,20 @@ test("Editar Capítulo delega somente a mutação local determinística da exclu
   assert.match(mutationSource, /Math\.max\(\s*0,/);
   assert.doesNotMatch(mutationSource, /supabase|localStorage|useState|useEffect|router|^\s*<[A-Za-z]/m);
   assert.match(
-    pageSource,
-    /import \{ removerCapituloDasObrasLocais \} from "\.\/lib\/editar-capitulo-local-delete-mutation";/,
+    deleteActionSource,
+    /import \{ removerCapituloDasObrasLocais \} from "\.\.\/lib\/editar-capitulo-local-delete-mutation";/,
   );
-  const excluirCapituloAtePersistencia = pageSource.slice(
-    pageSource.indexOf("async function excluirCapitulo"),
-    pageSource.indexOf("const novasObrasDoUsuario =", pageSource.indexOf("async function excluirCapitulo")),
+  const excluirCapituloAtePersistencia = deleteActionSource.slice(
+    deleteActionSource.indexOf("async function excluirCapitulo"),
+    deleteActionSource.indexOf("const novasObrasDoUsuario =", deleteActionSource.indexOf("async function excluirCapitulo")),
   );
   assert.match(excluirCapituloAtePersistencia, /removerCapituloDasObrasLocais\(\{/);
   assert.doesNotMatch(excluirCapituloAtePersistencia, /const novasObras = obras\.map/);
-  const exclusaoAposPersistencia = pageSource.slice(
-    pageSource.indexOf("const novasObrasDoUsuario =", pageSource.indexOf("async function excluirCapitulo")),
-    pageSource.indexOf("} catch", pageSource.indexOf("async function excluirCapitulo")),
+  const exclusaoAposPersistencia = deleteActionSource.slice(
+    deleteActionSource.indexOf("const novasObrasDoUsuario =", deleteActionSource.indexOf("async function excluirCapitulo")),
+    deleteActionSource.indexOf("} catch", deleteActionSource.indexOf("async function excluirCapitulo")),
   );
-  assert.match(exclusaoAposPersistencia, /salvarObrasEditarCapituloStorage\(\s*novasObras,\s*userId\s*\)/);
+  assert.match(exclusaoAposPersistencia, /salvarObrasEditarCapituloStorage\(\s*novasObras,\s*userId,?\s*\)/);
   assert.match(exclusaoAposPersistencia, /setObras\(novasObrasDoUsuario\)/);
   assert.match(exclusaoAposPersistencia, /router\.replace\("\/painel-autor"\)/);
   assert.match(exclusaoAposPersistencia, /router\.refresh\(\)/);
