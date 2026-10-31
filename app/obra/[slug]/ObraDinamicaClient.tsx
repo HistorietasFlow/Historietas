@@ -31,6 +31,7 @@ import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profi
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
 import { useObraCommentRepliesVisibility } from "./hooks/use-obra-comment-replies-visibility";
 import { useObraCommentsOrdering } from "./hooks/use-obra-comments-ordering";
+import { useObraCommentsLoadPagination } from "./hooks/use-obra-comments-load-pagination";
 import { useObraActionsSheet } from "./hooks/use-obra-actions-sheet";
 import { useObraClassificationPanel } from "./hooks/use-obra-classification-panel";
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
@@ -42,12 +43,8 @@ import {
   lerStorageUsuarioObraPublica,
   salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
-import {
-  carregarComentariosObraLocais,
-  salvarComentariosObraLocais,
-} from "./lib/obra-local-comment-storage-utils";
+import { salvarComentariosObraLocais } from "./lib/obra-local-comment-storage-utils";
 import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
-import { carregarPaginaComentariosObraSupabase } from "./lib/obra-supabase-comments-page-loader";
 import { normalizarComentariosObraSupabase } from "./lib/obra-supabase-comment-normalizer";
 import {
   inserirComentarioObraSupabase,
@@ -84,7 +81,7 @@ import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { obterAcaoLeituraPrincipalObra, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
 import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
-import { criarComentarioObraId, criarEstruturaComentariosObra, mesclarComentariosObraPorId, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type RespostaComentarioObra } from "./lib/obra-comment-utils";
+import { criarComentarioObraId, criarEstruturaComentariosObra, obterIdsComentarioComRespostas, obterObraIdComentarios, type ComentarioObraPublico, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarLinkComFallback } from "./lib/obra-share-utils";
 import { obraPageCss } from "./lib/obra-page-css";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
@@ -203,7 +200,6 @@ export default function ObraDinamicaPage() {
   const comentariosDragOffsetYRef = useRef(0);
   const comentariosDragIgnorarCliqueRef = useRef(false);
   const comentariosDragResetTimerRef = useRef<number | null>(null);
-  const comentariosConsultaVersaoRef = useRef(0);
   const agoraComentarios = useObraCommentsNow(comentariosAbertos);
   const isDesktop = useObraDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -346,94 +342,23 @@ export default function ObraDinamicaPage() {
     arquivoObra: obra?.arquivoObra,
   });
   const obraIdComentarios = obterObraIdComentarios(obra);
-
-
-  useEffect(() => {
-    const versaoConsulta = comentariosConsultaVersaoRef.current + 1;
-    comentariosConsultaVersaoRef.current = versaoConsulta;
-
-    if (!comentariosAbertos) {
-      return;
-    }
-
-    let cancelado = false;
-    const execucaoAtual = () =>
-      !cancelado && comentariosConsultaVersaoRef.current === versaoConsulta;
-
-    async function carregarComentariosObra() {
-      setComentarioStatus("");
-      setComentariosCarregandoMais(false);
-      setComentariosTemMais(false);
-      setComentariosProximoOffset(0);
-
-      if (!obraIdComentarios) {
-        setComentariosObra([]);
-        setTotalComentariosObra(0);
-        setComentariosCarregando(false);
-        return;
-      }
-
-      const comentariosLocais = usuarioIdLogado
-        ? carregarComentariosObraLocais(usuarioIdLogado, obraIdComentarios)
-        : [];
-
-      if (!idObraSupabaseValido(obraIdComentarios)) {
-        setComentariosObra(comentariosLocais);
-        setTotalComentariosObra(comentariosLocais.length);
-        setComentariosCarregando(false);
-        return;
-      }
-
-      setComentariosCarregando(true);
-      setComentariosObra([]);
-
-      try {
-        const pagina = await carregarPaginaComentariosObraSupabase(
-          obraIdComentarios,
-          0,
-        );
-
-        if (!execucaoAtual()) {
-          return;
-        }
-
-        setComentariosObra(pagina.comentarios);
-        setComentariosTemMais(pagina.temMais);
-        setComentariosProximoOffset(pagina.proximoOffset);
-        setTotalComentariosObra((totalAtual) =>
-          Math.max(totalAtual, pagina.comentarios.length),
-        );
-
-        if (usuarioIdLogado) {
-          salvarComentariosObraLocais(
-            usuarioIdLogado,
-            obraIdComentarios,
-            pagina.comentarios,
-          );
-        }
-      } catch {
-        if (execucaoAtual()) {
-          setComentariosObra(comentariosLocais);
-          setTotalComentariosObra((totalAtual) =>
-            Math.max(totalAtual, comentariosLocais.length),
-          );
-          setComentarioStatus(
-            "Não foi possível carregar os comentários agora.",
-          );
-        }
-      } finally {
-        if (execucaoAtual()) {
-          setComentariosCarregando(false);
-        }
-      }
-    }
-
-    void carregarComentariosObra();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [comentariosAbertos, obraIdComentarios, usuarioIdLogado]);
+  const { carregarMaisComentariosObra } = useObraCommentsLoadPagination({
+    comentariosAbertos,
+    obraIdComentarios,
+    usuarioIdLogado,
+    identidadeAutenticadaObraRef,
+    comentariosCarregando,
+    comentariosCarregandoMais,
+    comentariosTemMais,
+    comentariosProximoOffset,
+    setComentariosObra,
+    setTotalComentariosObra,
+    setComentariosCarregando,
+    setComentariosCarregandoMais,
+    setComentariosTemMais,
+    setComentariosProximoOffset,
+    setComentarioStatus,
+  });
 
   useEffect(() => {
     if (!obraNormalizada) {
@@ -2136,74 +2061,6 @@ export default function ObraDinamicaPage() {
       alvoTitulo: `Comentário de ${comentario.nome}`,
     });
   }
-
-  async function carregarMaisComentariosObra() {
-    if (
-      !comentariosAbertos ||
-      comentariosCarregando ||
-      comentariosCarregandoMais ||
-      !comentariosTemMais ||
-      !obraIdComentarios ||
-      !idObraSupabaseValido(obraIdComentarios)
-    ) {
-      return;
-    }
-
-    const versaoConsulta = comentariosConsultaVersaoRef.current;
-    const identidadeEsperada = identidadeAutenticadaObraRef.current;
-    const execucaoAtual = () =>
-      comentariosConsultaVersaoRef.current === versaoConsulta &&
-      execucaoIdentidadeObraEstaAtual({
-        cancelada: false,
-        identidadeEsperada,
-        identidadeAtual: identidadeAutenticadaObraRef.current,
-      });
-
-    setComentariosCarregandoMais(true);
-    setComentarioStatus("");
-
-    try {
-      const pagina = await carregarPaginaComentariosObraSupabase(
-        obraIdComentarios,
-        comentariosProximoOffset,
-      );
-
-      if (!execucaoAtual()) {
-        return;
-      }
-
-      setComentariosObra((comentariosAtuais) => {
-        if (!execucaoAtual()) {
-          return comentariosAtuais;
-        }
-
-        return mesclarComentariosObraPorId(
-          comentariosAtuais,
-          pagina.comentarios,
-        );
-      });
-      setComentariosTemMais(pagina.temMais);
-      setComentariosProximoOffset(pagina.proximoOffset);
-      setTotalComentariosObra((totalAtual) => {
-        if (!execucaoAtual()) {
-          return totalAtual;
-        }
-
-        return Math.max(totalAtual, pagina.proximoOffset);
-      });
-    } catch {
-      if (execucaoAtual()) {
-        setComentarioStatus(
-          "Não foi possível carregar mais comentários agora.",
-        );
-      }
-    } finally {
-      if (execucaoAtual()) {
-        setComentariosCarregandoMais(false);
-      }
-    }
-  }
-
 
   const estruturaComentariosObra = useMemo(
     () => criarEstruturaComentariosObra(comentariosObra, ordenacaoComentarios),
