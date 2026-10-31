@@ -13,6 +13,13 @@ const page = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hook = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-initial-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("loader de denúncias de perfil preserva consultas, normalização e contexto", () => {
   assert.match(source, /from\("denuncias_perfis"\)/);
@@ -37,11 +44,12 @@ test("loader de denúncias de perfil preserva consultas, normalização e contex
 });
 
 test("Admin Comunidade mantém a orquestração de denúncias de perfil", () => {
-  assert.match(page, /buscarDenunciasPerfisModeracao/);
+  assert.match(hook, /buscarDenunciasPerfisModeracao/);
   assert.match(
-    page,
+    hook,
     /async function carregarDenunciasPerfis\(\) \{\s*const denunciasComContexto = await buscarDenunciasPerfisModeracao\(\);\s*setDenunciasPerfis\(denunciasComContexto\);/,
   );
-  assert.match(page, /Promise\.all\([\s\S]*?carregarDenunciasPerfis\(\)/);
+  assert.match(hook, /Promise\.all\([\s\S]*?carregarDenunciasPerfis\(\)/);
+  assert.match(page, /useAdminComunidadeInitialData\(/);
   assert.doesNotMatch(source, /useState|useEffect|useMemo|router|localStorage|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/);
 });

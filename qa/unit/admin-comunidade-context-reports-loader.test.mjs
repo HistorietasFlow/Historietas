@@ -11,6 +11,13 @@ const page = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hook = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-initial-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("loader de denúncias com contexto preserva a cadeia de carregamento", () => {
   assert.equal(existsSync(loaderPath), true);
@@ -57,11 +64,11 @@ test("loader de denúncias com contexto preserva a cadeia de carregamento", () =
 
 test("Admin Comunidade mantém a orquestração de estado na página", () => {
   assert.match(
-    page,
-    /import \{[\s\S]*?carregarDenunciasComContextoModeracao,[\s\S]*?\} from "\.\/loaders\/carregar-denuncias-contexto-moderacao";/,
+    hook,
+    /import \{ carregarDenunciasComContextoModeracao \} from "\.\.\/loaders\/carregar-denuncias-contexto-moderacao";/,
   );
   assert.match(
-    page,
+    hook,
     /async function carregarDenuncias\(\) \{[\s\S]*?setErro\(""\);[\s\S]*?const denunciasComContexto =[\s\S]*?await carregarDenunciasComContextoModeracao\(\);[\s\S]*?setDenuncias\(denunciasComContexto\);[\s\S]*?sincronizarObservacoesModeracao\([\s\S]*?denunciasComContexto/,
   );
   assert.doesNotMatch(page, /buscarDenunciasBaseModeracao/);
@@ -73,4 +80,5 @@ test("Admin Comunidade mantém a orquestração de estado na página", () => {
   assert.doesNotMatch(page, /buscarPerfisContextoModeracao/);
   assert.doesNotMatch(page, /criarMapasContextoModeracao/);
   assert.doesNotMatch(page, /montarDenunciasComContextoModeracao/);
+  assert.match(page, /useAdminComunidadeInitialData\(/);
 });

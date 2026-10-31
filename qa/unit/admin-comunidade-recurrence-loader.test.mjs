@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-initial-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 async function importarLoader(supabase) {
   const javascript = typescript.transpileModule(
@@ -81,16 +88,17 @@ test("loader preserva vazio e propaga erro da RPC", async () => {
 
 test("Admin Comunidade mantém a orquestração de reincidências na página", () => {
   assert.match(
-    pageSource,
-    /import \{ buscarReincidenciasModeracao \} from ".\/loaders\/carregar-reincidencias-moderacao";/,
+    hookSource,
+    /import \{ buscarReincidenciasModeracao \} from "\.\.\/loaders\/carregar-reincidencias-moderacao";/,
   );
-  assert.doesNotMatch(pageSource, /type ReincidenciaModeracaoRow =/);
-  assert.doesNotMatch(pageSource, /supabase\.rpc\(\s*"listar_reincidencias_moderacao"/);
+  assert.doesNotMatch(hookSource, /type ReincidenciaModeracaoRow =/);
+  assert.doesNotMatch(hookSource, /supabase\.rpc\(\s*"listar_reincidencias_moderacao"/);
   assert.match(
-    pageSource,
+    hookSource,
     /async function carregarReincidenciasModeracao\(\) \{\s*const proximoMapa = await buscarReincidenciasModeracao\(\);\s*setReincidenciasPorUsuario\(proximoMapa\);\s*\}/,
   );
-  assert.match(pageSource, /Promise\.all\([\s\S]*?carregarReincidenciasModeracao\(\)/);
+  assert.match(hookSource, /Promise\.all\([\s\S]*?carregarReincidenciasModeracao\(\)/);
+  assert.match(pageSource, /useAdminComunidadeInitialData\(/);
   assert.doesNotMatch(
     loaderSource,
     /useState|useEffect|useMemo|router|localStorage|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/,

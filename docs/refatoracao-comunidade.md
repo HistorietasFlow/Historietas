@@ -2177,6 +2177,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - As ações de denúncias de conteúdo foram movidas para `hooks/use-admin-comunidade-content-report-actions.ts`, preservando autorização, locks, confirmação, persistência, ordem de atualizações, mensagens e a propriedade dos estados na página.
 
+## Registro da Fase 33 — Admin Comunidade
+
+- O estado de dados e o lifecycle inicial da moderação foram movidos para `hooks/use-admin-comunidade-initial-data.ts`, preservando acesso, redirects, carregamento concorrente, sincronização de observações, cancelamento e a orquestração de filtros e ações na página.
+
 ## Fase 1 — Admin Exclusões de Conta
 
 - Tipos e normalização dos contratos foram extraídos para `lib/admin-exclusoes-conta-normalization-utils.ts`, sem alteração de comportamento.
