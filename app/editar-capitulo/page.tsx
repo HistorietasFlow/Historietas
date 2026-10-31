@@ -5,15 +5,14 @@ import { useRouter } from "next/navigation";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useState } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import type { ChangeEvent } from "react";
 import { EditarCapituloLanguageBridge } from "./components/EditarCapituloLanguageBridge";
 import { useEditarCapituloDesktopMode } from "./hooks/useEditarCapituloDesktopMode";
 import { useEditarCapituloDerivedValues } from "./hooks/useEditarCapituloDerivedValues";
 import { useEditarCapituloDeleteAction } from "./hooks/useEditarCapituloDeleteAction";
+import { useEditarCapituloImportAction } from "./hooks/useEditarCapituloImportAction";
 import { useEditarCapituloInitialLoad } from "./hooks/useEditarCapituloInitialLoad";
 import { useEditarCapituloSaveAction } from "./hooks/useEditarCapituloSaveAction";
 import { editarCapituloPageCss } from "./lib/editar-capitulo-page-css";
-import { prepararImportacaoArquivoTextoEditarCapitulo } from "./lib/editar-capitulo-text-import";
 import {
   mobileTopWaterFadeStyle,
   desktopTopWaterFadeStyle,
@@ -127,6 +126,21 @@ export default function EditarCapituloPage() {
     texto,
   });
 
+  const { marcarAlteracao, importarArquivoTexto } =
+    useEditarCapituloImportAction({
+      salvou,
+      erro,
+      arquivoImportadoErro,
+      titulo,
+      numeroCapitulo,
+      setSalvou,
+      setErro,
+      setArquivoImportadoErro,
+      setArquivoImportadoNome,
+      setTexto,
+      setTitulo,
+    });
+
   const { salvarEdicao } = useEditarCapituloSaveAction({
     router,
     obraId,
@@ -162,52 +176,6 @@ export default function EditarCapituloPage() {
     setTipoErro,
     setSalvou,
   });
-
-  function marcarAlteracao() {
-    if (salvou) {
-      setSalvou(false);
-    }
-
-    if (erro) {
-      setErro("");
-    }
-
-    if (arquivoImportadoErro) {
-      setArquivoImportadoErro("");
-    }
-  }
-
-  async function importarArquivoTexto(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0] || null;
-    event.target.value = "";
-
-    if (!arquivo) {
-      return;
-    }
-
-    marcarAlteracao();
-    setArquivoImportadoNome("");
-    setArquivoImportadoErro("");
-
-    const resultado = await prepararImportacaoArquivoTextoEditarCapitulo(
-      arquivo,
-      titulo,
-      numeroCapitulo,
-    );
-
-    if (!resultado.ok) {
-      setArquivoImportadoErro(resultado.erro);
-      return;
-    }
-
-    setTexto(resultado.textoImportado);
-
-    if (!titulo.trim() && resultado.tituloArquivo) {
-      setTitulo(resultado.tituloArquivo);
-    }
-
-    setArquivoImportadoNome(resultado.resumoArquivo);
-  }
 
   if (carregando || verificandoAcesso) {
     return (

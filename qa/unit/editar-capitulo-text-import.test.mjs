@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const importActionSource = readFileSync(
+  new URL(
+    "../../app/editar-capitulo/hooks/useEditarCapituloImportAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const chamadasEstatisticas = [];
 
 globalThis.__editarCapituloTextImport = {
@@ -52,6 +59,30 @@ const {
   prepararImportacaoArquivoTextoEditarCapitulo,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascriptImportacao).toString("base64")}`,
+);
+
+globalThis.__editarCapituloImportAction = {
+  prepararImportacaoArquivoTextoEditarCapitulo: async () => ({
+    ok: true,
+    textoImportado: "Texto importado",
+    tituloArquivo: "Título importado",
+    resumoArquivo: "arquivo.txt • 2 palavras • 1 min",
+  }),
+};
+const importActionJavascript = typescript.transpileModule(
+  importActionSource.replace(
+    'import { prepararImportacaoArquivoTextoEditarCapitulo } from "../lib/editar-capitulo-text-import";',
+    "const { prepararImportacaoArquivoTextoEditarCapitulo } = globalThis.__editarCapituloImportAction;",
+  ),
+  {
+    compilerOptions: {
+      module: typescript.ModuleKind.ESNext,
+      target: typescript.ScriptTarget.ES2022,
+    },
+  },
+).outputText;
+const { useEditarCapituloImportAction } = await import(
+  `data:text/javascript;base64,${Buffer.from(importActionJavascript).toString("base64")}`,
 );
 
 function criarArquivo({ nome, tamanho = 10, conteudo = "Texto válido com números 123.", falhar = false }) {
@@ -163,7 +194,53 @@ test("importação preserva validação mínima, fallbacks e falha de leitura", 
   );
 });
 
-test("Editar Capítulo delega a preparação de importação e mantém a orquestração", () => {
+test("a ação de importação preserva limpeza condicional, guard e ordem de atualização", async () => {
+  const eventos = [];
+  const { marcarAlteracao, importarArquivoTexto } = useEditarCapituloImportAction({
+    salvou: true,
+    erro: "Erro anterior",
+    arquivoImportadoErro: "Falha anterior",
+    titulo: "",
+    numeroCapitulo: 3,
+    setSalvou: (valor) => eventos.push(["salvou", valor]),
+    setErro: (valor) => eventos.push(["erro", valor]),
+    setArquivoImportadoErro: (valor) => eventos.push(["erro-arquivo", valor]),
+    setArquivoImportadoNome: (valor) => eventos.push(["nome-arquivo", valor]),
+    setTexto: (valor) => eventos.push(["texto", valor]),
+    setTitulo: (valor) => eventos.push(["titulo", valor]),
+  });
+  const eventoSemArquivo = { target: { files: [], value: "selecionado" } };
+
+  await importarArquivoTexto(eventoSemArquivo);
+  assert.equal(eventoSemArquivo.target.value, "");
+  assert.deepEqual(eventos, []);
+
+  marcarAlteracao();
+  assert.deepEqual(eventos, [
+    ["salvou", false],
+    ["erro", ""],
+    ["erro-arquivo", ""],
+  ]);
+
+  eventos.length = 0;
+  const eventoComArquivo = {
+    target: { files: [criarArquivo({ nome: "arquivo.txt" })], value: "selecionado" },
+  };
+  await importarArquivoTexto(eventoComArquivo);
+  assert.equal(eventoComArquivo.target.value, "");
+  assert.deepEqual(eventos, [
+    ["salvou", false],
+    ["erro", ""],
+    ["erro-arquivo", ""],
+    ["nome-arquivo", ""],
+    ["erro-arquivo", ""],
+    ["texto", "Texto importado"],
+    ["titulo", "Título importado"],
+    ["nome-arquivo", "arquivo.txt • 2 palavras • 1 min"],
+  ]);
+});
+
+test("Editar Capítulo delega a preparação de importação e mantém o JSX", () => {
   assert.match(
     textImportSource,
     /import \{[\s\S]*?contarLetrasNumeros,[\s\S]*?criarTituloPorNomeArquivo,[\s\S]*?\} from "\.\/editar-capitulo-text-utils";/,
@@ -176,22 +253,42 @@ test("Editar Capítulo delega a preparação de importação e mantém a orquest
   assert.match(textImportSource, /const conteudoArquivo = await arquivo\.text\(\);/);
   assert.match(textImportSource, /numeroCapitulo \|\| 1/);
   assert.match(
-    pageSource,
-    /import \{ prepararImportacaoArquivoTextoEditarCapitulo \} from "\.\/lib\/editar-capitulo-text-import";/,
+    importActionSource,
+    /import \{ prepararImportacaoArquivoTextoEditarCapitulo \} from "\.\.\/lib\/editar-capitulo-text-import";/,
   );
-  assert.match(pageSource, /event\.target\.value = "";/);
-  assert.doesNotMatch(pageSource, /arquivo\.name\.toLowerCase\(\)/);
-  assert.doesNotMatch(pageSource, /await arquivo\.text\(\)/);
+  assert.match(
+    pageSource,
+    /import \{ useEditarCapituloImportAction \} from "\.\/hooks\/useEditarCapituloImportAction";/,
+  );
+  assert.match(
+    pageSource,
+    /const \{ marcarAlteracao, importarArquivoTexto \} =\s*useEditarCapituloImportAction\(/,
+  );
+  assert.doesNotMatch(pageSource, /function marcarAlteracao\(/);
+  assert.doesNotMatch(pageSource, /async function importarArquivoTexto/);
+  assert.doesNotMatch(pageSource, /prepararImportacaoArquivoTextoEditarCapitulo/);
+  assert.match(pageSource, /setTitulo\(event\.target\.value\);[\s\S]*?marcarAlteracao\(\);/);
+  assert.match(pageSource, /setTexto\(event\.target\.value\);[\s\S]*?marcarAlteracao\(\);/);
+  assert.match(
+    pageSource,
+    /accept="\.txt,\.md,text\/plain,text\/markdown"[\s\S]*?onChange=\{importarArquivoTexto\}/,
+  );
+  assert.match(importActionSource, /event\.target\.files\?\.\[0\] \|\| null/);
+  assert.match(importActionSource, /event\.target\.value = "";/);
+  assert.match(importActionSource, /if \(!arquivo\) \{[\s\S]*?return;/);
+  assert.doesNotMatch(importActionSource, /arquivo\.name\.toLowerCase\(\)/);
+  assert.doesNotMatch(importActionSource, /await arquivo\.text\(\)/);
 
-  const inicioHandler = pageSource.indexOf("async function importarArquivoTexto");
-  const fimHandler = pageSource.indexOf("if (carregando || verificandoAcesso)", inicioHandler);
-  const handler = pageSource.slice(inicioHandler, fimHandler);
+  const inicioHandler = importActionSource.indexOf("async function importarArquivoTexto");
+  const fimHandler = importActionSource.indexOf("return { marcarAlteracao, importarArquivoTexto }", inicioHandler);
+  const handler = importActionSource.slice(inicioHandler, fimHandler);
+  assert.ok(handler.indexOf('event.target.value = "";') < handler.indexOf("if (!arquivo)"));
   assert.ok(handler.indexOf("if (!arquivo)") < handler.indexOf("marcarAlteracao();"));
   assert.ok(handler.indexOf("marcarAlteracao();") < handler.indexOf("prepararImportacaoArquivoTextoEditarCapitulo"));
   assert.ok(handler.indexOf("setTexto(resultado.textoImportado);") < handler.indexOf("setTitulo(resultado.tituloArquivo);"));
   assert.ok(handler.indexOf("setTitulo(resultado.tituloArquivo);") < handler.indexOf("setArquivoImportadoNome(resultado.resumoArquivo);"));
   assert.doesNotMatch(
-    textImportSource,
+    importActionSource,
     /supabase|localStorage|useState|useEffect|useRouter|^\s*<[A-Za-z]/m,
   );
 });

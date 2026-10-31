@@ -55,7 +55,16 @@ test("Editar Capítulo delega somente o lifecycle inicial ao hook", () => {
   assert.doesNotMatch(pageSource, /window\.location\.search/);
   assert.doesNotMatch(pageSource, /carregarTodasPaginasSupabase/);
   assert.doesNotMatch(pageSource, /useEffect\(/);
-  assert.match(pageSource, /async function importarArquivoTexto/);
+  assert.match(
+    pageSource,
+    /import \{ useEditarCapituloImportAction \} from "\.\/hooks\/useEditarCapituloImportAction";/,
+  );
+  assert.match(
+    pageSource,
+    /const \{\s*marcarAlteracao, importarArquivoTexto\s*\} =\s*useEditarCapituloImportAction\(/,
+  );
+  assert.doesNotMatch(pageSource, /function marcarAlteracao\(/);
+  assert.doesNotMatch(pageSource, /async function importarArquivoTexto/);
   assert.match(
     pageSource,
     /import \{ useEditarCapituloSaveAction \} from "\.\/hooks\/useEditarCapituloSaveAction";/,
