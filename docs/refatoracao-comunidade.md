@@ -2783,3 +2783,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Fase 3
 
 - O lifecycle de carregamento e paginação de comentários foi movido para hook dedicado, preservando abertura do painel, fallback local, primeira página Supabase, estados, versionamento, cancelamento, proteção de identidade e carregamento incremental.
+
+## Obra — Fase 4
+
+- As mutations de comentários foram movidas para useObraCommentMutations, preservando envio e respostas, remoção, curtidas, persistência local e Supabase, atualizações otimistas, rollback, locks e guards contra resultados assíncronos de contas anteriores.

@@ -27,6 +27,13 @@ const hookVisibilidade = readFileSync(
   ),
   "utf8",
 );
+const hookMutacoesComentarios = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comment-mutations.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("thread preserva os calculos de respostas visiveis e ocultas", () => {
   assert.match(
@@ -120,9 +127,10 @@ test("hook centraliza estado e updaters de visibilidade sem mover a composicao",
   assert.match(paginaObra, /\} = useObraCommentRepliesVisibility\(\);/);
   assert.match(paginaObra, /resetarRespostasVisiveis\(\);/);
   assert.match(
-    paginaObra,
+    hookMutacoesComentarios,
     /garantirRespostaVisivel\(comentarioTemporario\.comentarioPaiId\);/,
   );
+  assert.match(paginaObra, /garantirRespostaVisivel,/);
   assert.match(
     listaComentarios,
     /<ObraCommentThread\s*key=\{comentario\.id\}\s*comentario=\{comentario\}\s*respostas=\{respostas\}/,

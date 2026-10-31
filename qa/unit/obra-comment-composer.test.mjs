@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const mutacoesComentariosObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comment-mutations.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("compositor preserva a sequencia, chave e callback das reacoes rapidas", () => {
   assert.match(
@@ -110,7 +117,12 @@ test("estado, ref e handlers permanecem no cliente", () => {
     paginaObra,
     /const comentarioInputRef = useRef<HTMLTextAreaElement \| null>\(null\);/,
   );
-  assert.match(paginaObra, /async function enviarComentarioObra\(/);
+  assert.match(
+    paginaObra,
+    /import \{ useObraCommentMutations \} from "\.\/hooks\/use-obra-comment-mutations";/,
+  );
+  assert.match(paginaObra, /const \{\s*enviarComentarioObra,/);
+  assert.match(mutacoesComentariosObra, /async function enviarComentarioObra\(/);
   assert.match(paginaObra, /function inserirNoComentarioObra\(valor: string\)/);
   assert.match(paginaObra, /function responderComentarioObra\(/);
   assert.match(
