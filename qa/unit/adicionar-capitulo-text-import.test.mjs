@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const importActionSource = readFileSync(
+  new URL(
+    "../../app/adicionar-capitulo/hooks/useAdicionarCapituloImportAction.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const chamadasEstatisticas = [];
 
 globalThis.__adicionarCapituloTextImport = {
@@ -188,15 +195,19 @@ test("Adicionar Capítulo delega a preparação de importação e mantém a orqu
   assert.match(textImportSource, /const conteudoArquivo = await arquivo\.text\(\);/);
   assert.match(
     pageSource,
-    /import \{ prepararImportacaoArquivoTextoAdicionarCapitulo \} from "\.\/lib\/adicionar-capitulo-text-import";/,
+    /import \{ useAdicionarCapituloImportAction \} from "\.\/hooks\/useAdicionarCapituloImportAction";/,
   );
-  assert.match(pageSource, /event\.target\.value = "";/);
+  assert.doesNotMatch(pageSource, /function limparFeedback\(/);
+  assert.doesNotMatch(pageSource, /async function importarArquivoTexto\(/);
+  assert.match(importActionSource, /function limparFeedback\(/);
+  assert.match(importActionSource, /async function importarArquivoTexto\(/);
+  assert.match(importActionSource, /event\.target\.value = "";/);
   assert.doesNotMatch(pageSource, /arquivo\.name\.toLowerCase\(\)/);
   assert.doesNotMatch(pageSource, /await arquivo\.text\(\)/);
 
-  const inicioHandler = pageSource.indexOf("async function importarArquivoTexto");
-  const fimHandler = pageSource.indexOf("if (carregando)", inicioHandler);
-  const handler = pageSource.slice(inicioHandler, fimHandler);
+  const inicioHandler = importActionSource.indexOf("async function importarArquivoTexto");
+  const fimHandler = importActionSource.indexOf("return { limparFeedback, importarArquivoTexto }", inicioHandler);
+  const handler = importActionSource.slice(inicioHandler, fimHandler);
   assert.ok(handler.indexOf("if (!arquivo)") < handler.indexOf("limparFeedback();"));
   assert.ok(
     handler.indexOf("limparFeedback();") <
@@ -210,8 +221,22 @@ test("Adicionar Capítulo delega a preparação de importação e mantém a orqu
     handler.indexOf("setTitulo(resultado.tituloArquivo);") <
       handler.indexOf("setArquivoImportadoNome(resultado.resumoArquivo);"),
   );
+  assert.match(
+    pageSource,
+    /onChange=\{\(event\) => \{\s*setTitulo\(event\.target\.value\);\s*limparFeedback\(\);\s*setArquivoImportadoErro\(""\);\s*\}\}/,
+  );
+  assert.match(
+    pageSource,
+    /onChange=\{\(event\) => \{\s*setTexto\(event\.target\.value\);\s*limparFeedback\(\);\s*setArquivoImportadoErro\(""\);\s*\}\}/,
+  );
+  assert.match(pageSource, /accept="\.txt,\.md,text\/plain,text\/markdown"/);
+  assert.match(pageSource, /onChange=\{importarArquivoTexto\}/);
   assert.doesNotMatch(
     textImportSource,
+    /supabase|localStorage|useState|useEffect|useRouter|^\s*<[A-Za-z]/m,
+  );
+  assert.doesNotMatch(
+    importActionSource,
     /supabase|localStorage|useState|useEffect|useRouter|^\s*<[A-Za-z]/m,
   );
 });

@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import type { ChangeEvent } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import { prepararImportacaoArquivoTextoAdicionarCapitulo } from "./lib/adicionar-capitulo-text-import";
 import { useAdicionarCapituloCreateAction } from "./hooks/useAdicionarCapituloCreateAction";
 import { useAdicionarCapituloDesktopMode } from "./hooks/useAdicionarCapituloDesktopMode";
 import { useAdicionarCapituloDerivedValues } from "./hooks/useAdicionarCapituloDerivedValues";
+import { useAdicionarCapituloImportAction } from "./hooks/useAdicionarCapituloImportAction";
 import { useAdicionarCapituloLanguageBridge } from "./hooks/useAdicionarCapituloLanguageBridge";
 import { useAdicionarCapituloInitialLoad } from "./hooks/useAdicionarCapituloInitialLoad";
+import { useAdicionarCapituloLocalPersistence } from "./hooks/useAdicionarCapituloLocalPersistence";
 import {
   adicionarCapituloPageCss,
 } from "./lib/adicionar-capitulo-page-css";
@@ -78,18 +78,6 @@ import {
   desktopPreviewPanelStyle,
   desktopPreviewChapterCardStyle,
 } from "./lib/adicionar-capitulo-styles";
-import { normalizarObra } from "./lib/adicionar-capitulo-work-normalizer";
-import {
-  restaurarArquivoObraComBackup,
-} from "./lib/adicionar-capitulo-file-backup-utils";
-import {
-  carregarBackupArquivosObras,
-} from "./lib/adicionar-capitulo-file-backup-storage";
-import { atualizarObrasLocaisDoUsuario } from "./lib/adicionar-capitulo-ownership-utils";
-import {
-  carregarObrasLocais,
-  salvarObrasAdicionarCapituloStorage,
-} from "./lib/adicionar-capitulo-local-work-storage";
 
 type CapituloLocal = {
   id: string;
@@ -103,43 +91,6 @@ type CapituloLocal = {
   lidoEm: string;
   publicado?: boolean;
   ordem?: number;
-};
-
-type ArquivoObraLocal = {
-  nome: string;
-  tipo: string;
-  tamanho: number;
-  conteudo: string;
-  categoria: "texto" | "documento" | "imagem" | "outro";
-  criadoEm: string;
-};
-
-type ObraLocal = {
-  id: string;
-  titulo: string;
-  autor: string;
-  autorId?: string;
-  genero: string;
-  formato: string;
-  classificacaoIndicativa: string;
-  sinopse: string;
-  tags: string[];
-  capa: string;
-  capaNome: string;
-  arquivoObra?: ArquivoObraLocal | null;
-  publicado: boolean;
-  capitulos: CapituloLocal[];
-  criadaEm: string;
-  ultimoCapituloLidoId: string;
-  ultimaLeituraEm: string;
-  progressoLeitura: number;
-  visualizacoes?: number;
-  totalCurtidas?: number;
-  totalComentarios?: number;
-  totalSalvos?: number;
-  totalLidos?: number;
-  slug: string;
-  link: string;
 };
 
 type NotificacaoLocal = {
@@ -204,6 +155,27 @@ export default function AdicionarCapituloPage() {
     capituloCriado,
   });
 
+  const { salvarObras } = useAdicionarCapituloLocalPersistence({
+    usuarioIdLogado,
+    setObras,
+  });
+
+  const { limparFeedback, importarArquivoTexto } =
+    useAdicionarCapituloImportAction({
+      titulo,
+      numeroNovoCapitulo,
+      erro,
+      capituloCriado,
+      notificacaoCriada,
+      setTitulo,
+      setTexto,
+      setErro,
+      setCapituloCriado,
+      setNotificacaoCriada,
+      setArquivoImportadoNome,
+      setArquivoImportadoErro,
+    });
+
   const { criarCapitulo } = useAdicionarCapituloCreateAction({
     router,
     obraAtual,
@@ -232,86 +204,6 @@ export default function AdicionarCapituloPage() {
     carregando,
     obraAtual,
   });
-
-  function salvarObras(novasObras: ObraLocal[]) {
-    const backupArquivosObras = carregarBackupArquivosObras(usuarioIdLogado);
-    const obrasNormalizadas = novasObras.map((obra, index) =>
-      restaurarArquivoObraComBackup(
-        normalizarObra(obra, index),
-        backupArquivosObras
-      )
-    );
-
-    if (!usuarioIdLogado) {
-      setObras(obrasNormalizadas);
-      return;
-    }
-
-    let todasObrasLocaisAtuais: ObraLocal[] = [];
-
-    try {
-      todasObrasLocaisAtuais = carregarObrasLocais(usuarioIdLogado);
-    } catch {
-      todasObrasLocaisAtuais = [];
-    }
-
-    const obrasLocaisAtualizadas = atualizarObrasLocaisDoUsuario(
-      todasObrasLocaisAtuais,
-      obrasNormalizadas,
-      usuarioIdLogado
-    );
-
-    salvarObrasAdicionarCapituloStorage(obrasLocaisAtualizadas, usuarioIdLogado);
-    setObras(obrasNormalizadas);
-  }
-
-  function limparFeedback() {
-    if (erro) {
-      setErro("");
-    }
-
-    if (capituloCriado) {
-      setCapituloCriado(null);
-    }
-
-    if (notificacaoCriada) {
-      setNotificacaoCriada(null);
-    }
-  }
-
-  async function importarArquivoTexto(
-    event: ChangeEvent<HTMLInputElement>
-  ) {
-    const arquivo = event.target.files?.[0] || null;
-    event.target.value = "";
-
-    if (!arquivo) {
-      return;
-    }
-
-    limparFeedback();
-    setArquivoImportadoNome("");
-    setArquivoImportadoErro("");
-
-    const resultado = await prepararImportacaoArquivoTextoAdicionarCapitulo(
-      arquivo,
-      titulo,
-      numeroNovoCapitulo
-    );
-
-    if (!resultado.ok) {
-      setArquivoImportadoErro(resultado.erro);
-      return;
-    }
-
-    setTexto(resultado.textoImportado);
-
-    if (!titulo.trim() && resultado.tituloArquivo) {
-      setTitulo(resultado.tituloArquivo);
-    }
-
-    setArquivoImportadoNome(resultado.resumoArquivo);
-  }
 
   if (carregando) {
     return (
