@@ -14,6 +14,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/exclusoes-conta/page.tsx", import.meta.url),
   "utf8",
 );
+const hookSource = readFileSync(
+  new URL(
+    "../../app/admin/exclusoes-conta/hooks/use-admin-exclusoes-conta-initial-data.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
@@ -103,8 +110,16 @@ test("Admin Exclusões de Conta delega somente a rota de login", () => {
   );
   assert.doesNotMatch(pageSource, /function criarLoginHref\(/);
   assert.equal(
-    (pageSource.match(/router\.replace\(criarLoginHrefAdminExclusoesConta\(\)\);/g) || [])
-      .length,
+    [pageSource, hookSource]
+      .map(
+        (sourceToCheck) =>
+          (
+            sourceToCheck.match(
+              /router\.replace\(criarLoginHrefAdminExclusoesConta\(\)\);/g,
+            ) || []
+          ).length,
+      )
+      .reduce((total, quantidade) => total + quantidade, 0),
     4,
   );
   assert.match(source, /window\.location\.pathname/);

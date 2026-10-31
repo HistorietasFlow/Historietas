@@ -2736,3 +2736,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Adicionar Capítulo — Fase 3
 
 - A persistência local de obras e a importação de arquivo com limpeza de feedback foram movidas para hooks dedicados, preservando backup, isolamento por conta, ordem de gravação, estados do formulário e a orquestração da página.
+
+## Admin Exclusões de Conta — Fase 1
+
+- O estado de dados e o lifecycle inicial de carregamento foram movidos para `use-admin-exclusoes-conta-initial-data.ts`, preservando loaders, autenticação, redirecionamentos, status HTTP, normalização, paralelismo, cancelamento e ações na página.

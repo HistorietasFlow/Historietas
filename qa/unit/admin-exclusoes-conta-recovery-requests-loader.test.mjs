@@ -5,6 +5,10 @@ import typescript from "typescript";
 
 const source = readFileSync(new URL("../../app/admin/exclusoes-conta/loaders/buscar-operacoes-recuperaveis-admin.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("../../app/admin/exclusoes-conta/page.tsx", import.meta.url), "utf8");
+const hookSource = readFileSync(
+  new URL("../../app/admin/exclusoes-conta/hooks/use-admin-exclusoes-conta-initial-data.ts", import.meta.url),
+  "utf8",
+);
 const javascript = typescript.transpileModule(source, { compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 } }).outputText;
 const { buscarOperacoesRecuperaveisAdmin } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`);
 
@@ -29,13 +33,14 @@ test("loader retorna data nulo quando JSON falha", async () => {
   assert.equal(resultado.data, null);
 });
 
-test("página mantém decisões HTTP, normalização e estado das recuperações", () => {
-  assert.match(pageSource, /import \{ buscarOperacoesRecuperaveisAdmin \} from "\.\/loaders\/buscar-operacoes-recuperaveis-admin";/);
-  assert.match(pageSource, /const \{ response, data \} = await buscarOperacoesRecuperaveisAdmin\(\);/);
-  assert.match(pageSource, /if \(response\.status === 401\) \{\s*router\.replace\(criarLoginHrefAdminExclusoesConta\(\)\);/);
-  assert.match(pageSource, /if \(response\.status === 403\) \{\s*setAcessoNegado\(true\);\s*setOperacoesRecuperaveis\(\[\]\);/);
-  assert.match(pageSource, /\.map\(normalizarOperacaoRecuperavel\)/);
-  assert.match(pageSource, /setOperacoesRecuperaveis\(/);
+test("hook de dados iniciais mantém decisões HTTP, normalização e estado das recuperações", () => {
+  assert.match(hookSource, /import \{ buscarOperacoesRecuperaveisAdmin \} from "\.\.\/loaders\/buscar-operacoes-recuperaveis-admin";/);
+  assert.match(hookSource, /const \{ response, data \} = await buscarOperacoesRecuperaveisAdmin\(\);/);
+  assert.match(hookSource, /if \(response\.status === 401\) \{\s*router\.replace\(criarLoginHrefAdminExclusoesConta\(\)\);/);
+  assert.match(hookSource, /if \(response\.status === 403\) \{\s*setAcessoNegado\(true\);\s*setOperacoesRecuperaveis\(\[\]\);/);
+  assert.match(hookSource, /\.map\(normalizarOperacaoRecuperavel\)/);
+  assert.match(hookSource, /setOperacoesRecuperaveis\(/);
+  assert.match(pageSource, /useAdminExclusoesContaInitialData/);
   assert.doesNotMatch(pageSource, /type RespostaOperacoes\s*=/);
   assert.doesNotMatch(source, /response\.status === 401|response\.status === 403|router|set[A-Z]|supabase|localStorage|sessionStorage|useState|useEffect|useMemo|useCallback|<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/);
 });
