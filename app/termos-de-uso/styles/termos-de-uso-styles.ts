@@ -663,4 +663,3 @@ export const footerLinkStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 780,
 };
-
