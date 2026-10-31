@@ -2759,3 +2759,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Metadata / SEO
 
 - Os helpers puros de slug, idioma e metadata foram movidos para `obra-page-metadata-utils.ts`, preservando canonical, Open Graph, Twitter, noindex e a integração da rota com carregamento público e 404.
+
+## Rota canônica de capítulo — validação de parâmetros
+
+- Os validadores puros de slug e número de capítulo foram movidos para módulo dedicado, preservando rejeições, redirecionamentos canônicos e a integração com a rota pública em cache.
