@@ -2668,3 +2668,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Termos de Uso — Fase 1
 
 - Os tipos, conteúdo legal estruturado, ícones SVG e estilos estáticos foram movidos para módulos dedicados, preservando textos jurídicos, traduções, links, acessibilidade, CSS e o JSX principal da página.
+
+## Termos de Uso — Fase 2
+
+- O overview, conteúdo jurídico e rodapé foram movidos para componentes dedicados, preservando textos, traduções, links, IDs, âncoras, SVGs, estilos, acessibilidade e a ordem visual da página.

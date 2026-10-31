@@ -27,6 +27,27 @@ const stylesSource = readFileSync(
   ),
   "utf8",
 );
+const overviewSource = readFileSync(
+  new URL(
+    "../../app/termos-de-uso/components/TermosDeUsoOverview.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const documentContentSource = readFileSync(
+  new URL(
+    "../../app/termos-de-uso/components/TermosDeUsoDocumentContent.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const footerSource = readFileSync(
+  new URL(
+    "../../app/termos-de-uso/components/TermosDeUsoFooter.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("conteúdo legal e tipos foram movidos sem alterar contratos", () => {
   for (const declaration of [
@@ -91,7 +112,10 @@ test("ícone SVG dedicado preserva todos os nomes e atributos acessíveis", () =
   assert.match(iconSource, /viewBox="0 0 24 24"/);
   assert.match(iconSource, /aria-hidden="true"/);
   assert.match(iconSource, /focusable="false"/);
-  assert.match(pageSource, /TermosDeUsoSvgIcon/);
+  assert.doesNotMatch(pageSource, /TermosDeUsoSvgIcon/);
+  assert.match(overviewSource, /TermosDeUsoSvgIcon/);
+  assert.match(documentContentSource, /TermosDeUsoSvgIcon/);
+  assert.match(footerSource, /TermosDeUsoSvgIcon/);
 });
 
 test("estilos estáticos e JSX jurídico permanecem nas fronteiras corretas", () => {
@@ -107,12 +131,19 @@ test("estilos estáticos e JSX jurídico permanecem nas fronteiras corretas", ()
   assert.match(pageSource, /useHistorietasLanguage/);
   assert.match(pageSource, /useHistorietasTheme/);
   assert.match(pageSource, /function t\(texto: TextoTraduzido\)/);
-  assert.match(pageSource, /DESTAQUES_TERMOS\.map/);
-  assert.match(pageSource, /SECOES_TERMOS\.map/);
-  assert.match(pageSource, /secao\.paragrafos\.map/);
-  assert.match(pageSource, /secao\.itens\?\.length/);
-  assert.match(pageSource, /secao\.id === "direitos-autorais"/);
-  assert.match(pageSource, /secao\.id === "encerramento"/);
-  assert.match(pageSource, /secao\.id === "contato"/);
-  assert.match(pageSource, /href=\{`#\$\{secao\.id\}`\}/);
+  assert.doesNotMatch(pageSource, /DESTAQUES_TERMOS\.map/);
+  assert.doesNotMatch(pageSource, /SECOES_TERMOS\.map/);
+  assert.doesNotMatch(pageSource, /secao\.paragrafos\.map/);
+  assert.doesNotMatch(pageSource, /secao\.itens\?\.length/);
+  assert.doesNotMatch(pageSource, /secao\.id === "direitos-autorais"/);
+  assert.doesNotMatch(pageSource, /secao\.id === "encerramento"/);
+  assert.doesNotMatch(pageSource, /secao\.id === "contato"/);
+  assert.match(overviewSource, /DESTAQUES_TERMOS\.map/);
+  assert.match(documentContentSource, /SECOES_TERMOS\.map/);
+  assert.match(documentContentSource, /secao\.paragrafos\.map/);
+  assert.match(documentContentSource, /secao\.itens\?\.length/);
+  assert.match(documentContentSource, /secao\.id === "direitos-autorais"/);
+  assert.match(documentContentSource, /secao\.id === "encerramento"/);
+  assert.match(documentContentSource, /secao\.id === "contato"/);
+  assert.match(documentContentSource, /href=\{`#\$\{secao\.id\}`\}/);
 });
