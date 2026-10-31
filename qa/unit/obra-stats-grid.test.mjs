@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const interacoesObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-work-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("grid de metricas preserva layout responsivo, ordem e interacoes", () => {
   for (const trecho of [
@@ -58,9 +65,7 @@ test("cliente preserva estado, handlers e logica protegida das metricas", () => 
     "metricasObra",
     "totalComentariosObra",
     "sinopseAberta",
-    "async function alternarCurtidaObra()",
-    "criarGuardIdentidadeAcao",
-    "salvarCurtidaObraPublicaSupabase",
+    "} = useObraWorkInteractions({",
     "function abrirComentariosObra()",
     "setComentariosAbertos(true)",
     "const alternarSinopseObra = () => {",
@@ -72,6 +77,11 @@ test("cliente preserva estado, handlers e logica protegida das metricas", () => 
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
   }
+
+  assert.match(interacoesObra, /async function alternarCurtidaObra\(\)/);
+  assert.match(interacoesObra, /criarGuardIdentidadeAcao\(identidadeAcao\)/);
+  assert.match(interacoesObra, /salvarCurtidaObraPublicaSupabase/);
+  assert.doesNotMatch(paginaObra, /async function alternarCurtidaObra\(\)/);
 
   assert.doesNotMatch(statsGrid, /supabase|useState|setSinopseAberta/);
 });

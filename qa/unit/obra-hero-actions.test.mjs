@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const interacoesObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-work-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("acoes do hero preservam props, CTA condicional e estilos responsivos", () => {
   for (const trecho of [
@@ -36,7 +43,7 @@ test("acoes do hero preservam props, CTA condicional e estilos responsivos", () 
 });
 
 test("acoes do hero preservam seguir, estilos na ordem atual e menu acessivel", () => {
-  const indiceDesktop = acoesHero.indexOf("isDesktop\n            ? seguindo");
+  const indiceDesktop = acoesHero.search(/isDesktop\s+\? seguindo/);
   const indiceSeguindoDesktop = acoesHero.indexOf(
     "? desktopFollowedButtonStyle",
   );
@@ -70,7 +77,8 @@ test("cliente preserva a decisao de leitura, hook e callbacks do hero", () => {
   for (const trecho of [
     "const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obra)",
     "const [obraSeguida, setObraSeguida]",
-    "async function alternarSeguirObra()",
+    'import { useObraWorkInteractions } from "./hooks/use-obra-work-interactions"',
+    "} = useObraWorkInteractions({",
     'import { useObraActionsSheet } from "./hooks/use-obra-actions-sheet"',
     "} = useObraActionsSheet();",
     "<ObraHeroActions",
@@ -84,4 +92,8 @@ test("cliente preserva a decisao de leitura, hook e callbacks do hero", () => {
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
   }
+
+  assert.match(interacoesObra, /async function alternarSeguirObra\(\)/);
+  assert.match(interacoesObra, /criarGuardIdentidadeAcao\(identidadeAcao\)/);
+  assert.doesNotMatch(paginaObra, /async function alternarSeguirObra\(\)/);
 });

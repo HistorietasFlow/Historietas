@@ -2787,3 +2787,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Fase 4
 
 - As mutations de comentários foram movidas para useObraCommentMutations, preservando envio e respostas, remoção, curtidas, persistência local e Supabase, atualizações otimistas, rollback, locks e guards contra resultados assíncronos de contas anteriores.
+
+## Obra — Fase 5
+
+- As interações de seguir, curtir, favoritar e concluir a obra foram movidas para useObraWorkInteractions, preservando persistência local e Supabase, sincronização com o Diário, atualizações otimistas, rollback e guards de identidade contra resultados assíncronos de contas anteriores.

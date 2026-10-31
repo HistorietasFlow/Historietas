@@ -17,6 +17,13 @@ const mutacoesComentariosObra = readFileSync(
   ),
   "utf8",
 );
+const interacoesObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-work-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const persistenciaInteracoesObra = readFileSync(
   new URL(
     "../../app/obra/[slug]/lib/obra-supabase-interaction-persistence.ts",
@@ -118,7 +125,7 @@ test("resultado social da conta A nao e aplicado depois da troca para B", async 
 test("helper de acao valida versao e user id apos getUser", () => {
   const bloco = obterBloco(
     "async function obterIdentidadeLogadaParaAcao(",
-    "async function alternarSeguirObra()",
+    "} = useObraCommentMutations({",
   );
 
   assert.match(bloco, /const identidadeEsperada = identidadeAutenticadaObraRef\.current/);
@@ -129,13 +136,13 @@ test("helper de acao valida versao e user id apos getUser", () => {
 
 test("oito acoes sociais usam identidade versionada", () => {
   const handlers = [
-    [paginaObra, "async function alternarSeguirObra()", "async function alternarCurtidaObra()"],
-    [paginaObra, "async function alternarCurtidaObra()", "async function alternarFavoritoObra()"],
+    [interacoesObra, "async function alternarSeguirObra()", "async function alternarCurtidaObra()"],
+    [interacoesObra, "async function alternarCurtidaObra()", "async function alternarFavoritoObra()"],
     [mutacoesComentariosObra, "async function enviarComentarioObra(", "async function removerComentarioObra("],
     [mutacoesComentariosObra, "async function removerComentarioObra(", "async function alternarCurtidaComentarioObra("],
     [mutacoesComentariosObra, "async function alternarCurtidaComentarioObra(", "return {"],
-    [paginaObra, "async function alternarFavoritoObra()", "async function alternarConcluirObra()"],
-    [paginaObra, "async function alternarConcluirObra()", "async function avaliarObra("],
+    [interacoesObra, "async function alternarFavoritoObra()", "async function alternarConcluirObra()"],
+    [interacoesObra, "async function alternarConcluirObra()", "return {"],
     [paginaObra, "async function avaliarObra(", "async function compartilharObraAtual()"],
   ];
 
@@ -709,7 +716,8 @@ test("ativacao social nao apaga registro antes de inserir", () => {
     "export async function salvarCurtidaObraPublicaSupabase(",
     "throw ultimoErro || new Error",
   );
-  const seguir = obterBloco(
+  const seguir = obterBlocoEm(
+    interacoesObra,
     "async function alternarSeguirObra()",
     "async function alternarCurtidaObra()",
   );
@@ -747,18 +755,19 @@ test("ativacao social nao apaga registro antes de inserir", () => {
 });
 
 test("curtida local usa o user id capturado pela acao", () => {
-  const bloco = obterBloco(
+  const bloco = obterBlocoEm(
+    interacoesObra,
     "async function alternarCurtidaObra()",
     "async function alternarFavoritoObra()",
   );
 
   assert.match(
     bloco,
-    /lerStorageUsuarioObraPublica\(\s*LIKED_WORKS_STORAGE_KEY,\s*userId/,
+    /lerStorageUsuarioObraPublica\(\s*likedWorksStorageKey,\s*userId/,
   );
   assert.doesNotMatch(
     bloco,
-    /lerStorageUsuarioObraPublica\(\s*LIKED_WORKS_STORAGE_KEY,\s*usuarioIdLogado/,
+    /lerStorageUsuarioObraPublica\(\s*likedWorksStorageKey,\s*usuarioIdLogado/,
   );
 });
 
