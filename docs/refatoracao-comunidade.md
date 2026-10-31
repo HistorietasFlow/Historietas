@@ -2740,3 +2740,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Admin Exclusões de Conta — Fase 1
 
 - O estado de dados e o lifecycle inicial de carregamento foram movidos para `use-admin-exclusoes-conta-initial-data.ts`, preservando loaders, autenticação, redirecionamentos, status HTTP, normalização, paralelismo, cancelamento e ações na página.
+
+## Admin Exclusões de Conta — Fase 2
+
+- As ações administrativas de atualizar solicitações e recuperar operações foram movidas para `use-admin-exclusoes-conta-actions.ts`, preservando validações, payloads, status HTTP, normalização, recarga, feedback e setters na página.
