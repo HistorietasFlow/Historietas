@@ -67,7 +67,7 @@ test("a página preserva mounts e responsabilidades fora do bridge", () => {
     textUtils,
     /import type \{ HistorietasLanguage \} from "\.\.\/\.\.\/\.\.\/\.\.\/lib\/i18n";/,
   );
-  assert.match(pagina, /useEffect/);
+  assert.match(pagina, /useAdminComunidadeModerationFilters/);
   assert.doesNotMatch(pagina, /normalizarTexto/);
   assert.match(
     filterUtils,

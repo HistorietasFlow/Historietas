@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -53,12 +53,7 @@ import {
   STATUS_LABEL,
 } from "./lib/admin-comunidade-status-utils";
 import { conteudoDenunciadoIndisponivel } from "./lib/admin-comunidade-content-utils";
-import {
-  type StatusFiltroDenuncia,
-  filtrarDenunciasModeracao,
-  filtrarDenunciasPerfisModeracao,
-  obterDenunciasAtivas,
-} from "./lib/admin-comunidade-filter-utils";
+import { obterDenunciasAtivas } from "./lib/admin-comunidade-filter-utils";
 import { calcularTotaisModeracao } from "./lib/admin-comunidade-stats-utils";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 import { AdminComunidadeProfileReportCard } from "./components/admin-comunidade-profile-report-card";
@@ -66,17 +61,12 @@ import { AdminComunidadeContentReportCard } from "./components/admin-comunidade-
 import { useAdminComunidadeProfileReportActions } from "./hooks/use-admin-comunidade-profile-report-actions";
 import { useAdminComunidadeContentReportActions } from "./hooks/use-admin-comunidade-content-report-actions";
 import { useAdminComunidadeInitialData } from "./hooks/use-admin-comunidade-initial-data";
+import { useAdminComunidadeModerationFilters } from "./hooks/use-admin-comunidade-moderation-filters";
 
 export default function AdminComunidadePage() {
   const { language } = useHistorietasLanguage();
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
-  const [statusFiltro, setStatusFiltro] = useState<StatusFiltroDenuncia>(
-    "todas"
-  );
-  const [busca, setBusca] = useState("");
-  const [buscaModeracaoAberta, setBuscaModeracaoAberta] = useState(false);
-  const [mostrarFiltrosModeracao, setMostrarFiltrosModeracao] = useState(false);
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [menuDenunciaAbertoId, setMenuDenunciaAbertoId] = useState("");
   const isDesktop = useAdminComunidadeDesktopMode();
@@ -108,30 +98,23 @@ export default function AdminComunidadePage() {
     [denuncias]
   );
 
-  const denunciasFiltradas = useMemo(
-    () => filtrarDenunciasModeracao(denuncias, statusFiltro, busca),
-    [busca, denuncias, statusFiltro]
-  );
-
-  const denunciasPerfisFiltradas = useMemo(
-    () =>
-      filtrarDenunciasPerfisModeracao(
-        denunciasPerfis,
-        statusFiltro,
-        busca
-      ),
-    [busca, denunciasPerfis, statusFiltro]
-  );
-
-  useEffect(() => {
-    const fecharMenuTimer = window.setTimeout(() => {
-      setMenuDenunciaAbertoId("");
-    }, 0);
-
-    return () => {
-      window.clearTimeout(fecharMenuTimer);
-    };
-  }, [busca, statusFiltro]);
+  const {
+    statusFiltro,
+    setStatusFiltro,
+    busca,
+    setBusca,
+    buscaModeracaoAberta,
+    setBuscaModeracaoAberta,
+    mostrarFiltrosModeracao,
+    setMostrarFiltrosModeracao,
+    denunciasFiltradas,
+    denunciasPerfisFiltradas,
+    limparFiltros,
+  } = useAdminComunidadeModerationFilters({
+    denuncias,
+    denunciasPerfis,
+    setMenuDenunciaAbertoId,
+  });
 
   const {
     totalPendentes,
@@ -176,13 +159,6 @@ export default function AdminComunidadePage() {
     setSucesso,
     setMenuDenunciaAbertoId,
   });
-
-  function limparFiltros() {
-    setStatusFiltro("todas");
-    setBusca("");
-    setBuscaModeracaoAberta(false);
-    setMostrarFiltrosModeracao(false);
-  }
 
   if (carregando) {
     return (

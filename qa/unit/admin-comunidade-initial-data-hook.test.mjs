@@ -80,9 +80,8 @@ test("a página delega dados iniciais e mantém o lifecycle de fechamento do men
   assert.doesNotMatch(pageSource, /async function carregarReincidenciasModeracao/);
   assert.match(
     pageSource,
-    /window\.setTimeout\(\(\) => \{\s*setMenuDenunciaAbertoId\(""\);\s*\}, 0\);/,
+    /useAdminComunidadeModerationFilters\(\{\s*denuncias,\s*denunciasPerfis,\s*setMenuDenunciaAbertoId,\s*\}\)/,
   );
-  assert.match(pageSource, /\}, \[busca, statusFiltro\]\);/);
   assert.match(pageSource, /useAdminComunidadeProfileReportActions\(/);
   assert.match(pageSource, /useAdminComunidadeContentReportActions\(/);
 });
