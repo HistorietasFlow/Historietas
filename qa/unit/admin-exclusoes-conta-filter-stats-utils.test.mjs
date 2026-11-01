@@ -21,6 +21,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/exclusoes-conta/page.tsx", import.meta.url),
   "utf8",
 );
+const filtersHookSource = readFileSync(
+  new URL(
+    "../../app/admin/exclusoes-conta/hooks/use-admin-exclusoes-conta-filters.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 const filterExecutableSource = filterSource
   .replace(
@@ -205,26 +212,17 @@ test("filtros e totais não mutam suas entradas", () => {
 
 test("Admin Exclusões de Conta delega filtro e totais aos helpers puros", () => {
   assert.match(
-    pageSource,
-    /from "\.\/lib\/admin-exclusoes-conta-filter-utils";/,
+    filtersHookSource,
+    /from "\.\.\/lib\/admin-exclusoes-conta-filter-utils";/,
   );
   assert.match(
     pageSource,
     /from "\.\/lib\/admin-exclusoes-conta-stats-utils";/,
   );
-  const memoSection = pageSource.slice(
-    pageSource.indexOf("const solicitacoesFiltradas = useMemo"),
-    pageSource.indexOf("async function salvarSolicitacao"),
-  );
-  assert.match(memoSection, /filtrarSolicitacoesExclusao\(\{/);
-  assert.match(memoSection, /calcularTotaisSolicitacoesExclusao\(solicitacoes\)/);
-  assert.doesNotMatch(memoSection, /normalizarTexto\(/);
-  assert.doesNotMatch(memoSection, /solicitacoes\.filter\(/);
-  assert.match(
-    pageSource,
-    /from "\.\/lib\/admin-exclusoes-conta-route-utils";/,
-  );
-
+  assert.match(filtersHookSource, /filtrarSolicitacoesExclusao\(\{/);
+  assert.match(pageSource, /calcularTotaisSolicitacoesExclusao\(solicitacoes\)/);
+  assert.doesNotMatch(filtersHookSource, /normalizarTexto\(/);
+  assert.doesNotMatch(filtersHookSource, /solicitacoes\.filter\(/);
   for (const source of [filterSource, statsSource]) {
     assert.doesNotMatch(
       source,

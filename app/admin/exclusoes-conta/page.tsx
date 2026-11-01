@@ -17,10 +17,10 @@ import {
   traduzir,
   type TextoTraduzido,
 } from "./lib/admin-exclusoes-conta-text-utils";
-import { filtrarSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-filter-utils";
 import { calcularTotaisSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-stats-utils";
 import { useAdminExclusoesContaInitialData } from "./hooks/use-admin-exclusoes-conta-initial-data";
 import { useAdminExclusoesContaActions } from "./hooks/use-admin-exclusoes-conta-actions";
+import { useAdminExclusoesContaFilters } from "./hooks/use-admin-exclusoes-conta-filters";
 import { AdminExclusoesContaRecoverySection } from "./components/admin-exclusoes-conta-recovery-section";
 import { AdminExclusoesContaRequestCard } from "./components/admin-exclusoes-conta-request-card";
 import {
@@ -56,8 +56,6 @@ export default function AdminExclusoesContaPage() {
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  const [busca, setBusca] = useState("");
-  const [statusFiltro, setStatusFiltro] = useState<FiltroStatus>("todos");
   const [abertaId, setAbertaId] = useState("");
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [erro, setErro] = useState("");
@@ -88,16 +86,16 @@ export default function AdminExclusoesContaPage() {
     setSucesso,
   });
 
-  const solicitacoesFiltradas = useMemo(
-    () =>
-      filtrarSolicitacoesExclusao({
-        solicitacoes,
-        busca,
-        statusFiltro,
-        language,
-      }),
-    [busca, language, solicitacoes, statusFiltro],
-  );
+  const {
+    busca,
+    setBusca,
+    statusFiltro,
+    setStatusFiltro,
+    solicitacoesFiltradas,
+  } = useAdminExclusoesContaFilters({
+    solicitacoes,
+    language,
+  });
 
   const totais = useMemo(
     () => calcularTotaisSolicitacoesExclusao(solicitacoes),
