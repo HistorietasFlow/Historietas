@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/client";
+import { useNotificacoesAuthUserLifecycle } from "./hooks/use-notificacoes-auth-user-lifecycle";
 
 type NotificacoesContextValue = {
   usuarioId: string;
@@ -96,26 +97,6 @@ function erroEhSessaoAusente(error: unknown) {
   );
 }
 
-async function obterUsuarioIdAtualNotificacoes() {
-  try {
-    const { data, error } = await supabase.auth.getUser();
-
-    if (error) {
-      return "";
-    }
-
-    const userId = data.user?.id || "";
-
-    return idUsuarioSupabaseValido(userId) ? userId : "";
-  } catch (error) {
-    if (!erroEhSessaoAusente(error)) {
-      console.warn("Não consegui carregar usuário das notificações:", error);
-    }
-
-    return "";
-  }
-}
-
 async function buscarTotalNotificacoesNaoLidas(userId: string) {
   const userIdSeguro = userId.trim();
 
@@ -152,20 +133,12 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   const usuarioIdRef = useRef("");
   const receberAvisosRef = useRef(true);
   const atualizarTimerRef = useRef<number | null>(null);
-  const authTimerRef = useRef<number | null>(null);
   const requisicaoAtualRef = useRef(0);
 
   const limparAtualizacaoAgendada = useCallback(() => {
     if (atualizarTimerRef.current !== null) {
       window.clearTimeout(atualizarTimerRef.current);
       atualizarTimerRef.current = null;
-    }
-  }, []);
-
-  const limparAtualizacaoAuth = useCallback(() => {
-    if (authTimerRef.current !== null) {
-      window.clearTimeout(authTimerRef.current);
-      authTimerRef.current = null;
     }
   }, []);
 
@@ -291,83 +264,22 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     await atualizarNotificacoesPorUsuario(userIdSeguro);
   }, [atualizarNotificacoesPorUsuario]);
 
-  useEffect(() => {
-    montadoRef.current = true;
-
-    async function carregarUsuarioAtual() {
-      const userId = await obterUsuarioIdAtualNotificacoes();
-
-      if (!montadoRef.current) {
-        return;
-      }
-
-      const avisosAtivos = carregarReceberAvisos(userId);
-
-      usuarioIdRef.current = userId;
-      receberAvisosRef.current = avisosAtivos;
-      setUsuarioId(userId);
-      setReceberAvisos(avisosAtivos);
-      await atualizarNotificacoesPorUsuario(userId, true);
-    }
-
-    void carregarUsuarioAtual().catch((error) => {
-      if (!erroEhSessaoAusente(error)) {
-        console.warn("Não consegui iniciar notificações:", error);
-      }
-
-      if (montadoRef.current) {
-        usuarioIdRef.current = "";
-        receberAvisosRef.current = true;
-        setUsuarioId("");
-        setReceberAvisos(true);
-        setNotificacoesNaoLidas(0);
-        setCarregandoNotificacoes(false);
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const userId = session?.user?.id || "";
-      const userIdSeguro = idUsuarioSupabaseValido(userId) ? userId : "";
-
-      limparAtualizacaoAuth();
-      authTimerRef.current = window.setTimeout(() => {
-        authTimerRef.current = null;
-
-        if (!montadoRef.current) {
-          return;
-        }
-
-        requisicaoAtualRef.current += 1;
-        limparAtualizacaoAgendada();
-        limparCanal();
-        const avisosAtivos = userIdSeguro
-          ? carregarReceberAvisos(userIdSeguro)
-          : true;
-
-        usuarioIdRef.current = userIdSeguro;
-        receberAvisosRef.current = avisosAtivos;
-        setUsuarioId(userIdSeguro);
-        setReceberAvisos(avisosAtivos);
-        void atualizarNotificacoesPorUsuario(userIdSeguro, true);
-      }, 0);
-    });
-
-    return () => {
-      montadoRef.current = false;
-      requisicaoAtualRef.current += 1;
-      limparAtualizacaoAgendada();
-      limparAtualizacaoAuth();
-      subscription.unsubscribe();
-      limparCanal();
-    };
-  }, [
+  useNotificacoesAuthUserLifecycle({
+    montadoRef,
+    usuarioIdRef,
+    receberAvisosRef,
+    requisicaoAtualRef,
+    setUsuarioId,
+    setReceberAvisos,
+    setNotificacoesNaoLidas,
+    setCarregandoNotificacoes,
     atualizarNotificacoesPorUsuario,
     limparAtualizacaoAgendada,
-    limparAtualizacaoAuth,
     limparCanal,
-  ]);
+    carregarReceberAvisos,
+    idUsuarioSupabaseValido,
+    erroEhSessaoAusente,
+  });
 
   useEffect(() => {
     limparAtualizacaoAgendada();
