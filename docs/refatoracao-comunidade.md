@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comentários do capítulo — Fase 1: ações assíncronas de comentário
+
+- Os locks por comentário, estados de loading e ações seguras de curtir, remover e denunciar foram movidos para hook dedicado, preservando prevenção de duplicidade, `try/finally`, limpeza dos locks e IDs de loading; envio, resposta, drag, ordenação e renderização permanecem no sheet.
+
 ## Editar Obra — Fase 6: sincronização com Diário
 
 - A localização da obra atualizada e o registro da edição no Diário foram movidos para helper dedicado, preservando visibilidade pública/privada, timestamp e o comportamento sem efeito quando a obra não é encontrada; remoção final de Storage, estados finais e tratamento global de erro permanecem no hook de salvamento.

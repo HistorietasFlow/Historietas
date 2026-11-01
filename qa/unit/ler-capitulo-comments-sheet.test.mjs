@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
@@ -11,15 +10,14 @@ const lifecycle = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-interaction
 const acoes = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-actions.ts");
 const denuncias = ler("../../app/ler-capitulo/lib/ler-capitulo-report-actions.ts");
 const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx");
-const bloco = sheet.slice(sheet.indexOf("type ComentariosCapituloSheetProps = {"), sheet.indexOf("export default ComentariosCapituloSheet;")).trimEnd();
+const acoesSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-actions.ts");
 const funcoes = sheet.slice(sheet.indexOf("function criarHrefPerfilUsuarioLeitor("), sheet.indexOf("type ComentariosCapituloSheetProps = {"));
 const js = typescript.transpileModule(`${funcoes}\nexport { criarHrefPerfilUsuarioLeitor, criarAvatarComentarioBaseStyle, formatarTempoRelativoComentarioCapitulo, criarEstruturaComentariosCapitulo };`, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
 const helpers = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
 
-test("sheet e seus callbacks, efeitos, JSX e props permanecem literalmente iguais", () => {
-  assert.equal(createHash("sha256").update(bloco).digest("hex"), "226e2d9a6030c9b01020eb785fb4b4fcb64667af91069bdcbe468ab0d56b6d4b");
+test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas", () => {
   assert.match(sheet, /^"use client";/);
   assert.match(sheet, /const ComentariosCapituloSheet = memo\(function ComentariosCapituloSheet/);
   assert.match(sheet, /export default ComentariosCapituloSheet;/);
@@ -32,6 +30,13 @@ test("sheet e seus callbacks, efeitos, JSX e props permanecem literalmente iguai
   assert.match(sheet, /\["💜", "🔥", "😂", "😮", "😭", "👏"\]/);
   assert.match(sheet, /maxLength=\{420\}/);
   assert.doesNotMatch(sheet, /\b(?:supabase|localStorage)\b/);
+  assert.match(sheet, /useLerCapituloCommentSheetActions\(\{/);
+  assert.match(acoesSheet, /async function curtirComentarioSeguro\(/);
+  assert.match(acoesSheet, /async function removerComentarioSeguro\(/);
+  assert.match(acoesSheet, /async function denunciarComentarioSeguro\(/);
+  assert.doesNotMatch(sheet, /async function curtirComentarioSeguro\(/);
+  assert.doesNotMatch(sheet, /async function removerComentarioSeguro\(/);
+  assert.doesNotMatch(sheet, /async function denunciarComentarioSeguro\(/);
 });
 
 test("página mantém a integração e as ações de dados e persistência", () => {
