@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comentários do capítulo — Fase 5: item visual de comentário
+
+- A apresentação de cada comentário e resposta foi movida para componente dedicado, preservando avatar, links de perfil, tempo relativo, ações, curtidas, estados de loading e diferenças visuais; expansão, paginação, ordenação, composer e gestos permanecem no sheet.
+
 ## Comentários do capítulo — Fase 4: estrutura e ordenação das threads
 
 - A construção pura das threads e sua ordenação foram movidas para módulo dedicado, preservando datas inválidas, respostas órfãs, proteção contra ciclos, relevância e desempates; estados, ações e renderização permanecem no sheet.

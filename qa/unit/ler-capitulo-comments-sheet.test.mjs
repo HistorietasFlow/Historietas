@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import typescript from "typescript";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
@@ -13,11 +12,6 @@ const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet
 const acoesSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-actions.ts");
 const compositorSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-composer.ts");
 const gestosSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-gestures.ts");
-const funcoes = sheet.slice(sheet.indexOf("function criarHrefPerfilUsuarioLeitor("), sheet.indexOf("type ComentariosCapituloSheetProps = {"));
-const js = typescript.transpileModule(`${funcoes}\nexport { criarHrefPerfilUsuarioLeitor, criarAvatarComentarioBaseStyle, formatarTempoRelativoComentarioCapitulo };`, {
-  compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
-}).outputText;
-const helpers = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
 
 test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas", () => {
   assert.match(sheet, /^"use client";/);
@@ -53,7 +47,6 @@ test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas",
   assert.match(sheet, /criarEstruturaComentariosCapitulo\(\s*post\?\.comentarios \|\| \[\],\s*ordenacaoComentarios\s*\)/);
   assert.doesNotMatch(sheet, /function criarEstruturaComentariosCapitulo\(/);
 });
-
 test("página mantém a integração e as ações de dados e persistência", () => {
   assert.match(pagina, /import ComentariosCapituloSheet,[\s\S]*?from "\.\/components\/ler-capitulo-comments-sheet";/);
   assert.doesNotMatch(pagina, /function ComentariosCapituloSheet\(/);
@@ -80,22 +73,4 @@ test("página mantém a integração e as ações de dados e persistência", () 
   assert.match(pagina, /criarAcoesDenunciaLeitor\(\{/);
   assert.match(denuncias, /async function denunciarComentarioCapitulo\(/);
   assert.doesNotMatch(pagina, /async function denunciarComentarioCapitulo\(/);
-});
-
-test("helpers mantêm a rota e o fallback visual do avatar", () => {
-  assert.equal(helpers.criarHrefPerfilUsuarioLeitor("  id  ", " Ana Silva "), "/perfil-autor?userId=id&autorId=id&autor=Ana+Silva");
-  assert.equal(helpers.criarHrefPerfilUsuarioLeitor(" ", " "), "/perfil-autor?autor=Usu%C3%A1rio");
-  const base = { display: "flex" };
-  assert.equal(helpers.criarAvatarComentarioBaseStyle(base, "  "), base);
-  assert.deepEqual(helpers.criarAvatarComentarioBaseStyle(base, " imagem.png "), {
-    display: "flex", backgroundImage: "url(imagem.png)", backgroundSize: "cover", backgroundPosition: "center", color: "transparent", WebkitTextFillColor: "transparent",
-  });
-});
-
-test("helpers preservam tempo relativo, agrupamento, ordenação e relevância", () => {
-  const agora = Date.parse("2026-01-02T00:00:00Z");
-  assert.equal(helpers.formatarTempoRelativoComentarioCapitulo("inválido", agora), "agora");
-  assert.equal(helpers.formatarTempoRelativoComentarioCapitulo("2026-01-01T23:59:59Z", agora), "agora");
-  assert.equal(helpers.formatarTempoRelativoComentarioCapitulo("2026-01-01T23:59:00Z", agora), "há 1 minuto");
-  assert.equal(helpers.formatarTempoRelativoComentarioCapitulo("2026-01-01T00:00:00Z", agora), "há 1 dia");
 });

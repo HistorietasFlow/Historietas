@@ -6,6 +6,7 @@ import test from "node:test";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx");
+const item = ler("../../app/ler-capitulo/components/ler-capitulo-comment-item.tsx");
 const estilos = ler("../../app/ler-capitulo/lib/ler-capitulo-comments-styles.ts");
 const texto = ler("../../app/ler-capitulo/lib/ler-capitulo-text-style.ts");
 
@@ -28,12 +29,19 @@ test("estilos de comentários preservam literalmente os 55 objetos originais", (
 test("sheet consome os estilos sem duplicar declarações", () => {
   const nomes = [...estilos.matchAll(/^export const (\w+): CSSProperties = \{/gm)].map((m) => m[1]);
   assert.equal(nomes.length, 53);
-  const importacao = sheet.match(/import \{([\s\S]*?)\} from "\.\.\/lib\/ler-capitulo-comments-styles";/);
-  assert.ok(importacao);
+  const importacaoSheet = sheet.match(/import \{([\s\S]*?)\} from "\.\.\/lib\/ler-capitulo-comments-styles";/);
+  const importacaoItem = item.match(/import \{([\s\S]*?)\} from "\.\.\/lib\/ler-capitulo-comments-styles";/);
+  assert.ok(importacaoSheet);
+  assert.ok(importacaoItem);
   for (const nome of nomes) {
-    assert.match(importacao[1], new RegExp(`\\b${nome}\\b`));
+    const estiloImportado = new RegExp(`\\b${nome}\\b`);
+    assert.ok(
+      estiloImportado.test(importacaoSheet[1]) ||
+        estiloImportado.test(importacaoItem[1]),
+    );
     assert.doesNotMatch(pagina, new RegExp(`const ${nome}: CSSProperties`));
     assert.doesNotMatch(sheet, new RegExp(`const ${nome}: CSSProperties`));
+    assert.doesNotMatch(item, new RegExp(`const ${nome}: CSSProperties`));
   }
   assert.match(pagina, /<ComentariosCapituloSheet/);
   assert.match(sheet, /function ComentariosCapituloSheet\(/);

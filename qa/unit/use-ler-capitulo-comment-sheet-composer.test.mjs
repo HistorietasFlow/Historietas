@@ -5,6 +5,7 @@ import test from "node:test";
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const hook = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-composer.ts");
 const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx");
+const item = ler("../../app/ler-capitulo/components/ler-capitulo-comment-item.tsx");
 
 test("hook centraliza resposta e envio preservando o contrato do comentário", () => {
   assert.match(hook, /^"use client";/);
@@ -39,5 +40,6 @@ test("sheet delega envio e resposta, mantendo os locks da Fase 1", () => {
   }
   assert.match(sheet, /limparRespostaComentario\(\);/);
   assert.match(sheet, /<form onSubmit=\{enviarComentario\}/);
-  assert.match(sheet, /onClick=\{\(\) =>\s*responderComentario\(comentario, comentarioRaizId\)\s*\}/);
+  assert.match(sheet, /onResponderComentario=\{responderComentario\}/);
+  assert.match(item, /onClick=\{\(\) =>\s*onResponderComentario\(comentario, comentarioRaizId\)\s*\}/);
 });
