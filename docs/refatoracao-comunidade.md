@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comentários do capítulo — Fase 3: gestos e expansão do sheet
+
+- O estado de expansão, refs, drag, limites, transições e cleanup do timer do sheet foram movidos para hook dedicado, preservando o fechamento semântico, comportamento desktop e os gestos existentes.
+
 ## Comentários do capítulo — Fase 2: envio e resposta
 
 - O estado e fluxo de envio e resposta foram movidos para hook dedicado, reutilizando os locks já extraídos e preservando menção, foco, `comentarioPaiId`, limpeza após sucesso, expansão mínima de respostas e `try/finally`; renderização, gestos e ordenação permanecem no sheet.
