@@ -11,6 +11,7 @@ const acoes = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-actions.ts");
 const denuncias = ler("../../app/ler-capitulo/lib/ler-capitulo-report-actions.ts");
 const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx");
 const acoesSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-actions.ts");
+const compositorSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-composer.ts");
 const funcoes = sheet.slice(sheet.indexOf("function criarHrefPerfilUsuarioLeitor("), sheet.indexOf("type ComentariosCapituloSheetProps = {"));
 const js = typescript.transpileModule(`${funcoes}\nexport { criarHrefPerfilUsuarioLeitor, criarAvatarComentarioBaseStyle, formatarTempoRelativoComentarioCapitulo, criarEstruturaComentariosCapitulo };`, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
@@ -37,6 +38,11 @@ test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas",
   assert.doesNotMatch(sheet, /async function curtirComentarioSeguro\(/);
   assert.doesNotMatch(sheet, /async function removerComentarioSeguro\(/);
   assert.doesNotMatch(sheet, /async function denunciarComentarioSeguro\(/);
+  assert.match(sheet, /useLerCapituloCommentSheetComposer\(\{/);
+  assert.match(compositorSheet, /async function enviarComentario\(/);
+  assert.match(compositorSheet, /function responderComentario\(/);
+  assert.doesNotMatch(sheet, /async function enviarComentario\(/);
+  assert.doesNotMatch(sheet, /function responderComentario\(/);
 });
 
 test("página mantém a integração e as ações de dados e persistência", () => {

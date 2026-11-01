@@ -4,6 +4,7 @@ import test from "node:test";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const hook = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-actions.ts");
+const composer = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-composer.ts");
 const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx");
 
 test("hook centraliza locks e estados de loading das ações assíncronas por comentário", () => {
@@ -34,7 +35,7 @@ test("hook centraliza locks e estados de loading das ações assíncronas por co
   assert.doesNotMatch(hook, /\b(?:supabase|localStorage|onEnviar|JSX)\b/);
 });
 
-test("sheet delega as ações seguras, mas mantém envio e renderização", () => {
+test("sheet delega as ações seguras e o compositor reutiliza seus locks", () => {
   assert.match(sheet, /import \{ useLerCapituloCommentSheetActions \} from "\.\.\/hooks\/use-ler-capitulo-comment-sheet-actions";/);
   assert.match(sheet, /\} = useLerCapituloCommentSheetActions\(\{[\s\S]*?onCurtirComentario,[\s\S]*?onRemoverComentario,[\s\S]*?onDenunciarComentario,[\s\S]*?\}\);/);
   for (const nome of [
@@ -47,8 +48,9 @@ test("sheet delega as ações seguras, mas mantém envio e renderização", () =
     assert.match(sheet, new RegExp(`\\b${nome}\\b`));
     assert.doesNotMatch(sheet, new RegExp(`(?:async )?function ${nome}\\(`));
   }
-  assert.match(sheet, /async function enviarComentario\(event: FormEvent<HTMLFormElement>\)/);
-  assert.match(sheet, /const chaveAcao = `enviar-comentario:\$\{post\.id\}`;/);
-  assert.match(sheet, /if \(!iniciarAcaoComentario\(chaveAcao\)\)/);
-  assert.match(sheet, /finalizarAcaoComentario\(chaveAcao\);[\s\S]*?setComentarioEnviando\(false\);/);
+  assert.match(composer, /iniciarAcaoComentario,/);
+  assert.match(composer, /finalizarAcaoComentario,/);
+  assert.match(composer, /const chaveAcao = `enviar-comentario:\$\{post\.id\}`;/);
+  assert.doesNotMatch(sheet, /async function enviarComentario\(event: FormEvent<HTMLFormElement>\)/);
+  assert.match(sheet, /onSubmit=\{enviarComentario\}/);
 });
