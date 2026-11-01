@@ -35,6 +35,13 @@ const loaderComunidade = readFileSync(
   ),
   "utf8",
 );
+const loaderDadosComunidade = readFileSync(
+  new URL(
+    "../../app/notificacoes/lib/notificacoes-supabase-community-data-loader.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const textoUtilsJavascript = typescript.transpileModule(textoUtils, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -125,6 +132,10 @@ test("fronteiras delegam a correção e a limpeza aos helpers extraídos", () =>
   assert.match(normalizadores, /corrigirTextoQuebrado\(capitulo\.texto\)/);
   assert.match(normalizadoresDados, /return limparTextoExibicao\(texto\);/);
   assert.match(
+    loaderDadosComunidade,
+    /import \{[\s\S]*?pegarTexto,[\s\S]*?\} from "\.\/notificacoes-data-normalizers";/,
+  );
+  assert.doesNotMatch(
     loaderComunidade,
     /import \{[\s\S]*?pegarTexto,[\s\S]*?\} from "\.\/notificacoes-data-normalizers";/,
   );

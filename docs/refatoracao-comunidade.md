@@ -2823,3 +2823,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## NotificacoesProvider — Fase 3
 
 - Os eventos globais e a sincronização da preferência foram movidos para useNotificacoesGlobalEvents, preservando os eventos local, de configurações, storage, focus e visibilitychange, o recarregamento de receberAvisos, o debounce e cleanup, sem mover Auth, Realtime, consulta de não lidas ou Context.
+
+## Notificações — loader da Comunidade
+
+- A aquisição e preparação dos dados Supabase da Comunidade foram movidas para loader dedicado, preservando a ordem das consultas, filtros, limites, fallbacks, perfis relacionados e regras de conteúdo antes da composição final das notificações.
