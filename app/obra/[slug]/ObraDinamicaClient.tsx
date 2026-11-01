@@ -4,16 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { useParams, useRouter } from "next/navigation";
 import type { TouchEvent } from "react";
-import { supabase } from "../../../lib/supabase/client";
 import DenunciaModal from "../../../components/DenunciaModal";
 import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 import { formatarNumeroCompacto, normalizarTexto } from "../../../lib/utils";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
-import {
-  execucaoIdentidadeObraEstaAtual,
-  type IdentidadeAutenticadaObra,
-} from "./lib/obra-auth-identity";
 import {
   manterFocoNoDialogo,
   obterElementoComFocoAtual,
@@ -21,6 +16,7 @@ import {
 } from "./lib/obra-dialog-focus";
 import { useObraDialogInitialFocus } from "./hooks/use-obra-dialog-initial-focus";
 import { useObraAuthIdentityLifecycle } from "./hooks/use-obra-auth-identity-lifecycle";
+import { useObraActionAuthGuards } from "./hooks/use-obra-action-auth-guards";
 import { useObraPublicWorkLoad } from "./hooks/use-obra-public-work-load";
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
@@ -47,7 +43,7 @@ import {
 } from "./lib/obra-rating-utils";
 import { metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { obterClassificacaoIndicativaCompactaObra, obterContextoAutorObra, obterGeneroObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
-import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
+import { criarLinkComunidadeObra, criarLinkPerfilAutor } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { obterAcaoLeituraPrincipalObra, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
@@ -413,64 +409,14 @@ export default function ObraDinamicaPage() {
     setTotalComentariosObra,
   });
 
-  async function obterIdentidadeLogadaParaAcao(mensagem: string) {
-    const identidadeEsperada = identidadeAutenticadaObraRef.current;
-    const execucaoAtual = () =>
-      execucaoIdentidadeObraEstaAtual({
-        cancelada: false,
-        identidadeEsperada,
-        identidadeAtual: identidadeAutenticadaObraRef.current,
-      });
-
-    try {
-      const { data } = await supabase.auth.getUser();
-
-      if (!execucaoAtual()) {
-        return null;
-      }
-
-      const userId = data.user?.id || "";
-
-      if (userId && userId === identidadeEsperada.usuarioId) {
-        return identidadeEsperada;
-      }
-
-      if (!userId && !identidadeEsperada.usuarioId) {
-        const loginHref = await criarLoginHrefObraPublica();
-
-        if (execucaoAtual()) {
-          setMensagemAcao(mensagem);
-          router.push(loginHref);
-        }
-      }
-
-      return null;
-    } catch {
-      if (!execucaoAtual()) {
-        return null;
-      }
-
-      const loginHref = await criarLoginHrefObraPublica();
-
-      if (execucaoAtual()) {
-        setMensagemAcao(mensagem);
-        router.push(loginHref);
-      }
-
-      return null;
-    }
-  }
-
-  function criarGuardIdentidadeAcao(
-    identidadeEsperada: IdentidadeAutenticadaObra,
-  ) {
-    return () =>
-      execucaoIdentidadeObraEstaAtual({
-        cancelada: false,
-        identidadeEsperada,
-        identidadeAtual: identidadeAutenticadaObraRef.current,
-      });
-  }
+  const {
+    obterIdentidadeLogadaParaAcao,
+    criarGuardIdentidadeAcao,
+  } = useObraActionAuthGuards({
+    identidadeAutenticadaObraRef,
+    setMensagemAcao,
+    redirecionarParaLogin: (href) => router.push(href),
+  });
 
   const {
     enviarComentarioObra,

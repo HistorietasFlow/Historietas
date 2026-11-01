@@ -6,10 +6,6 @@ import {
   execucaoIdentidadeObraEstaAtual,
 } from "../../app/obra/[slug]/lib/obra-auth-identity.ts";
 
-const paginaObra = readFileSync(
-  new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
-  "utf8",
-);
 const mutacoesComentariosObra = readFileSync(
   new URL(
     "../../app/obra/[slug]/hooks/use-obra-comment-mutations.ts",
@@ -27,6 +23,13 @@ const interacoesObra = readFileSync(
 const lifecycleAvaliacaoObra = readFileSync(
   new URL(
     "../../app/obra/[slug]/hooks/use-obra-rating-lifecycle.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const guardsAutenticacaoAcoesObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-action-auth-guards.ts",
     import.meta.url,
   ),
   "utf8",
@@ -58,10 +61,6 @@ function obterBlocoEm(conteudo, inicioTexto, fimTexto) {
   assert.ok(fim > inicio);
 
   return conteudo.slice(inicio, fim);
-}
-
-function obterBloco(inicioTexto, fimTexto) {
-  return obterBlocoEm(paginaObra, inicioTexto, fimTexto);
 }
 
 function obterBlocoPersistencia(inicioTexto, fimTexto) {
@@ -130,9 +129,10 @@ test("resultado social da conta A nao e aplicado depois da troca para B", async 
 });
 
 test("helper de acao valida versao e user id apos getUser", () => {
-  const bloco = obterBloco(
+  const bloco = obterBlocoEm(
+    guardsAutenticacaoAcoesObra,
     "async function obterIdentidadeLogadaParaAcao(",
-    "} = useObraCommentMutations({",
+    "function criarGuardIdentidadeAcao(",
   );
 
   assert.match(bloco, /const identidadeEsperada = identidadeAutenticadaObraRef\.current/);
