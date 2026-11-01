@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Admin Exclusões de Conta — Fase 1: busca e filtro das solicitações
+
+- O estado de busca, o filtro de status e a lista filtrada de solicitações foram movidos para hook dedicado, preservando a memoização, os limites e os controles da página.
+
 ## Admin Problemas Técnicos — Fase 3: card completo do chamado
 
 - A composição visual e os controles de cada chamado foram movidos para componente dedicado, preservando abertura, ações, observações, mensagens, limites e estilos existentes.
