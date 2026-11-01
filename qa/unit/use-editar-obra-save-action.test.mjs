@@ -13,6 +13,13 @@ const source = readFileSync(
   ),
   "utf8",
 );
+const authIdentitySource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-save-auth-identity.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function antes(primeiro, segundo) {
   const inicioSalvarEdicao = source.indexOf("async function salvarEdicao");
@@ -38,17 +45,21 @@ test("a página delega salvarEdicao ao hook e mantém o submit", () => {
 
 test("o fluxo de salvamento preserva validação, autenticação e propriedade", () => {
   assert.match(source, /validarFormularioEdicaoObra\(\{/);
-  assert.match(source, /await supabase\.auth\.getUser\(\)/);
-  assert.match(source, /criarLoginHrefEditarObra\(obraId\)/);
-  assert.match(source, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "nome"\)/);
-  assert.match(source, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "name"\)/);
-  assert.match(source, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "full_name"\)/);
+  assert.match(
+    source,
+    /from "\.\.\/lib\/editar-obra-save-auth-identity";/,
+  );
+  assert.match(source, /await obterIdentidadeSalvamentoEdicaoObra\(\{/);
+  assert.doesNotMatch(source, /supabase\.auth\.getUser\(\)/);
+  assert.match(authIdentitySource, /await supabase\.auth\.getUser\(\)/);
+  assert.match(authIdentitySource, /criarLoginHrefEditarObra\(obraId\)/);
+  assert.match(authIdentitySource, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "nome"\)/);
+  assert.match(authIdentitySource, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "name"\)/);
+  assert.match(authIdentitySource, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "full_name"\)/);
   assert.match(source, /obraLocalAtual\?\.autorId && obraLocalAtual\.autorId !== userId/);
   assert.match(source, /\.from\("obras"\)[\s\S]*?\.select\([\s\S]*?"id,user_id,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,criada_em"[\s\S]*?\)[\s\S]*?\.eq\("id", obraId\)[\s\S]*?\.limit\(1\)[\s\S]*?\.maybeSingle\(\)/);
   antes("const erroValidacao", "setProcessando(true)");
-  antes("await supabase.auth.getUser()", ".from(\"obras\")");
-  antes('metadataUsuario, "nome"', 'metadataUsuario, "name"');
-  antes('metadataUsuario, "name"', 'metadataUsuario, "full_name"');
+  antes("await obterIdentidadeSalvamentoEdicaoObra", ".from(\"obras\")");
 });
 
 test("o fluxo preserva assets, rollback, atualização, backup e Diário", () => {

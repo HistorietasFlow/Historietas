@@ -28,6 +28,13 @@ const derivedStateSource = readFileSync(
   ),
   "utf8",
 );
+const saveAuthIdentitySource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-save-auth-identity.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(
     source.replace(
@@ -77,7 +84,11 @@ test("hrefs da obra preservam prioridade, publicação e fallbacks", () => {
 test("Editar Obra delega somente os cálculos de navegação", () => {
   assert.match(
     saveActionSource,
-    /import \{ criarLoginHrefEditarObra \} from "\.\.\/lib\/editar-obra-navigation-utils";/,
+    /import \{ obterIdentidadeSalvamentoEdicaoObra \} from "\.\.\/lib\/editar-obra-save-auth-identity";/,
+  );
+  assert.match(
+    saveAuthIdentitySource,
+    /import \{ criarLoginHrefEditarObra \} from "\.\/editar-obra-navigation-utils";/,
   );
   assert.doesNotMatch(saveActionSource, /function criarLoginHrefEditarObra\(/);
   assert.match(

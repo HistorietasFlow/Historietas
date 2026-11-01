@@ -2827,3 +2827,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Notificações — loader da Comunidade
 
 - A aquisição e preparação dos dados Supabase da Comunidade foram movidas para loader dedicado, preservando a ordem das consultas, filtros, limites, fallbacks, perfis relacionados e regras de conteúdo antes da composição final das notificações.
+
+## Editar Obra — Fase 1: autenticação e identidade do salvamento
+
+- A autenticação e resolução da identidade inicial do salvamento foram movidas para helper dedicado, preservando `getUser`, validação de usuário e obra, redirect de login, metadados, fallback do nome e consulta ao profile; confirmação de propriedade, uploads, atualização, backup, Diário e estados finais permanecem no hook de salvamento.

@@ -9,6 +9,10 @@ const saveActionSource = readFileSync(new URL(
   "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
   import.meta.url,
 ), "utf8");
+const saveAuthIdentitySource = readFileSync(new URL(
+  "../../app/editar-obra/lib/editar-obra-save-auth-identity.ts",
+  import.meta.url,
+), "utf8");
 let respostas = [];
 const consultas = [];
 
@@ -92,7 +96,14 @@ test("userId vazio devolve fallback sem consulta", async () => {
 });
 
 test("Editar Obra delega somente o carregamento de profile", () => {
-  assert.match(saveActionSource, /from "\.\.\/lib\/editar-obra-profile-loader";/);
+  assert.match(
+    saveActionSource,
+    /from "\.\.\/lib\/editar-obra-save-auth-identity";/,
+  );
+  assert.match(
+    saveAuthIdentitySource,
+    /from "\.\/editar-obra-profile-loader";/,
+  );
   for (const helper of ["obterTextoMetadataUsuarioEdicaoObra", "obterNomeProfileEdicaoObra", "carregarNomeAutorProfileEdicaoObra"]) {
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
