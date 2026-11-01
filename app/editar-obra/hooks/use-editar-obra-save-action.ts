@@ -1,5 +1,4 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
-import { supabase } from "../../../lib/supabase/client";
 import type { AvisoConteudo18 } from "../../../lib/historietasAdultContent";
 import {
   carregarBackupArquivosObras,
@@ -21,7 +20,7 @@ import {
   prepararEEnviarAssetsEdicaoObra,
   type ArquivoAntigoEdicaoObra,
 } from "../lib/editar-obra-save-assets-preparation";
-import { criarPayloadAtualizacaoObra } from "../lib/editar-obra-update-payload";
+import { atualizarObraRemotaEdicaoObra } from "../lib/editar-obra-remote-update";
 import { atualizarObraNaListaLocalEdicao } from "../lib/editar-obra-local-update";
 import type { ArquivoObraLocal, ObraLocal } from "../types";
 
@@ -228,47 +227,12 @@ export function useEditarObraSaveAction({
         arquivosAntigosParaRemover =
           assetsPreparados.arquivosAntigosParaRemover;
 
-        const { data: obraAtualizadaSupabase, error: erroAtualizarObra } =
-          await supabase
-            .from("obras")
-            .update(
-              criarPayloadAtualizacaoObra({
-                tituloFinal,
-                autorFinal,
-                generoFinalSalvo,
-                formatoFinalSalvo,
-                classificacaoFinal,
-                avisosConteudoFinal,
-                sinopseFinal,
-                tagsFinais,
-                capaFinal,
-                capaNomeFinal,
-                arquivoObraFinal,
-                agora,
-              }),
-            )
-            .eq("id", obraId)
-            .eq("user_id", userId)
-            .select("id")
-            .maybeSingle();
-
-        if (erroAtualizarObra) {
-          throw new Error(
-            `Não consegui atualizar a obra no Supabase: ${erroAtualizarObra.message}`
-          );
-        }
-
-        if (!obraAtualizadaSupabase?.id) {
-          throw new Error(
-            "Não consegui confirmar a atualização da obra no Supabase."
-          );
-        }
       } catch (erroSupabase) {
         await removerArquivosStorageEdicaoObra(
           arquivosNovosEnviados.map((arquivo) => ({
             bucket: arquivo.bucket,
             caminho: arquivo.caminho,
-          }))
+          })),
         );
 
         const mensagemSupabase =
@@ -278,6 +242,24 @@ export function useEditarObraSaveAction({
 
         throw new Error(mensagemSupabase);
       }
+
+      await atualizarObraRemotaEdicaoObra({
+        obraId,
+        userId,
+        tituloFinal,
+        autorFinal,
+        generoFinalSalvo,
+        formatoFinalSalvo,
+        classificacaoFinal,
+        avisosConteudoFinal,
+        sinopseFinal,
+        tagsFinais,
+        capaFinal,
+        capaNomeFinal,
+        arquivoObraFinal,
+        agora,
+        arquivosNovosEnviados,
+      });
 
       await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover);
 

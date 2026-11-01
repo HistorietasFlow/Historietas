@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Editar Obra — Fase 4: atualização remota e rollback dos uploads
+
+- A atualização remota da obra e o rollback dos uploads novos em caso de falha foram movidos para helper dedicado, preservando payload, consulta Supabase, filtros por `id` e `user_id`, confirmação do registro, mensagens e ordem entre update e rollback; remoção final dos arquivos antigos, persistência local, backup, Diário e estados finais permanecem no hook de salvamento.
+
 ## Editar Obra — Fase 3: preparação e uploads dos assets
 
 - A preparação dos assets atuais e os uploads de capa e arquivo foram movidos para helper dedicado, preservando a remoção imediata da capa bloqueada por classificação 18+, buckets, ordem, mensagens, montagem do arquivo final e as listas usadas pelo rollback posterior e pela remoção final; update remoto, rollback após update, backup, Diário e estados finais permanecem no hook de salvamento.

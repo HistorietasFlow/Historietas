@@ -228,8 +228,7 @@ test("o hook delega a preparacao e os uploads, mantendo update e rollback poster
   assert.doesNotMatch(saveActionSource, /prepararAssetsAtuaisEdicaoObra\(/);
   assert.doesNotMatch(saveActionSource, /enviarArquivoStorage\(/);
   assert.doesNotMatch(saveActionSource, /identificarCategoriaArquivo\(/);
-  assert.match(saveActionSource, /const \{ data: obraAtualizadaSupabase, error: erroAtualizarObra \} =/);
-  assert.match(saveActionSource, /await removerArquivosStorageEdicaoObra\([\s\S]*?arquivosNovosEnviados\.map/);
+  assert.match(saveActionSource, /await atualizarObraRemotaEdicaoObra\(\{/);
   assert.match(source, /await supabase\.storage[\s\S]*?\.from\("capas-obras"\)[\s\S]*?\.remove\(\[caminhoCapaRemotaAtual\]\)/);
   assert.match(source, /await enviarArquivoStorage\([\s\S]*?"capas-obras"/);
   assert.match(source, /await enviarArquivoStorage\([\s\S]*?"arquivos-obras"/);

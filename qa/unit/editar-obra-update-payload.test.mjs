@@ -7,9 +7,9 @@ const source = readFileSync(
   new URL("../../app/editar-obra/lib/editar-obra-update-payload.ts", import.meta.url),
   "utf8",
 );
-const saveActionSource = readFileSync(
+const remoteUpdateSource = readFileSync(
   new URL(
-    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    "../../app/editar-obra/lib/editar-obra-remote-update.ts",
     import.meta.url,
   ),
   "utf8",
@@ -86,20 +86,20 @@ test("preserva os fallbacks do arquivo ausente", () => {
 
 test("Editar Obra delega somente a construção pura do payload de atualização", () => {
   assert.match(
-    saveActionSource,
-    /import \{ criarPayloadAtualizacaoObra \} from "\.\.\/lib\/editar-obra-update-payload";/,
+    remoteUpdateSource,
+    /import \{ criarPayloadAtualizacaoObra \} from "\.\/editar-obra-update-payload";/,
   );
-  assert.match(saveActionSource, /\.from\("obras"\)/);
+  assert.match(remoteUpdateSource, /\.from\("obras"\)/);
   assert.match(
-    saveActionSource,
-    /\.update\(\s*criarPayloadAtualizacaoObra\(\{[\s\S]*?tituloFinal,[\s\S]*?arquivoObraFinal,[\s\S]*?agora,[\s\S]*?\}\),\s*\)/,
+    remoteUpdateSource,
+    /\.update\(criarPayloadAtualizacaoObra\(dadosAtualizacao\)\)/,
   );
-  assert.match(saveActionSource, /\.eq\("id", obraId\)/);
-  assert.match(saveActionSource, /\.eq\("user_id", userId\)/);
-  assert.match(saveActionSource, /\.select\("id"\)/);
-  assert.match(saveActionSource, /\.maybeSingle\(\)/);
-  assert.match(saveActionSource, /erroAtualizarObra/);
-  assert.match(saveActionSource, /obraAtualizadaSupabase\?\.id/);
+  assert.match(remoteUpdateSource, /\.eq\("id", obraId\)/);
+  assert.match(remoteUpdateSource, /\.eq\("user_id", userId\)/);
+  assert.match(remoteUpdateSource, /\.select\("id"\)/);
+  assert.match(remoteUpdateSource, /\.maybeSingle\(\)/);
+  assert.match(remoteUpdateSource, /erroAtualizarObra/);
+  assert.match(remoteUpdateSource, /obraAtualizadaSupabase\?\.id/);
   assert.match(source, /arquivoObraFinal\?\.conteudo \|\| ""/);
   assert.match(source, /arquivoObraFinal\?\.categoria \|\| "outro"/);
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect|await|new Date/);
