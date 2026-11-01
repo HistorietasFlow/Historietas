@@ -99,8 +99,7 @@ test("página delega somente ações e mantém atualização, callbacks e JSX", 
   assert.match(pageSource, /useAdminExclusoesContaActions\(\{/);
   assert.doesNotMatch(pageSource, /async function salvarSolicitacao/);
   assert.doesNotMatch(pageSource, /async function recuperarOperacao/);
-  assert.match(pageSource, /setAcaoEmAndamento\("recarregar"\);/);
-  assert.match(pageSource, /void Promise\.all\(\[\s*carregarSolicitacoes\(\),\s*carregarOperacoesRecuperaveis\(\),/);
+  assert.match(pageSource, /recarregarFila\(\{\s*carregarSolicitacoes,\s*carregarOperacoesRecuperaveis,\s*\}\)/);
   assert.match(pageSource, /onRecuperarOperacao=\{\(operacao\) =>\s*void recuperarOperacao\(operacao\)\}/);
   assert.match(pageSource, /onSalvar=\{\(\) => void salvarSolicitacao\(solicitacao\)\}/);
 });
