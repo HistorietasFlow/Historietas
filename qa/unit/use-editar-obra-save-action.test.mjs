@@ -27,6 +27,13 @@ const workOwnershipSource = readFileSync(
   ),
   "utf8",
 );
+const remoteUpdateSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-remote-update.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function antes(primeiro, segundo) {
   const inicioSalvarEdicao = source.indexOf("async function salvarEdicao");
@@ -72,7 +79,10 @@ test("o fluxo de salvamento preserva validação, autenticação e propriedade",
   assert.match(workOwnershipSource, /obraLocalAtual\?\.autorId && obraLocalAtual\.autorId !== userId/);
   assert.match(workOwnershipSource, /\.from\("obras"\)[\s\S]*?\.select\([\s\S]*?"id,user_id,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,criada_em"[\s\S]*?\)[\s\S]*?\.eq\("id", obraId\)[\s\S]*?\.eq\("user_id", userId\)[\s\S]*?\.limit\(1\)[\s\S]*?\.maybeSingle\(\)/);
   antes("const erroValidacao", "setProcessando(true)");
-  antes("await obterIdentidadeSalvamentoEdicaoObra", ".from(\"obras\")");
+  antes(
+    "await obterIdentidadeSalvamentoEdicaoObra",
+    "await confirmarPropriedadeObraParaSalvamentoEdicao",
+  );
 });
 
 test("o fluxo preserva assets, rollback, atualização, backup e Diário", () => {
@@ -80,15 +90,17 @@ test("o fluxo preserva assets, rollback, atualização, backup e Diário", () =>
   assert.doesNotMatch(source, /prepararAssetsAtuaisEdicaoObra\(/);
   assert.doesNotMatch(source, /enviarArquivoStorage\(/);
   assert.match(source, /const arquivosNovosEnviados: ArquivoStorageEdicaoObra\[\] = \[\];/);
-  assert.match(source, /await removerArquivosStorageEdicaoObra\([\s\S]*?arquivosNovosEnviados\.map/);
+  assert.match(source, /await atualizarObraRemotaEdicaoObra\(\{/);
+  assert.doesNotMatch(source, /supabase\.from\("obras"\)/);
+  assert.match(remoteUpdateSource, /await removerArquivosStorageEdicaoObra\([\s\S]*?arquivosNovosEnviados\.map/);
   assert.match(source, /atualizarObraNaListaLocalEdicao\(\{/);
   assert.match(source, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId\);/);
   assert.match(source, /salvarArquivoObraNoBackup\(/);
   assert.match(source, /registrarDiarioEdicaoObra\(\{/);
   assert.match(source, /setSalvou\(true\);/);
   assert.match(source, /finally \{[\s\S]*?setProcessando\(false\);/);
-  antes("const assetsPreparados", "data: obraAtualizadaSupabase");
-  antes("data: obraAtualizadaSupabase", "await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)");
+  antes("const assetsPreparados", "await atualizarObraRemotaEdicaoObra");
+  antes("await atualizarObraRemotaEdicaoObra", "await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)");
   antes("await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)", "const novasObras = atualizarObraNaListaLocalEdicao");
   antes("salvarArquivoObraNoBackup", "registrarDiarioEdicaoObra");
   antes("registrarDiarioEdicaoObra", "setSalvou(true)");
