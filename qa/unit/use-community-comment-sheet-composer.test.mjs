@@ -48,8 +48,9 @@ test("hook centraliza resposta e envio preservando o contrato do comentario", ()
   assert.match(hook, /setRespostaComentario\(null\);/);
   assert.match(
     hook,
-    /\[respostaAnterior\.comentarioPaiId\]: Math\.max\(\s*5,\s*estadoAtual\[respostaAnterior\.comentarioPaiId\] \|\| 0/,
+    /garantirRespostasVisiveis\(respostaAnterior\.comentarioPaiId\);/,
   );
+  assert.doesNotMatch(hook, /setRespostasVisiveisPorComentario/);
   assert.match(
     hook,
     /finally \{\s*finalizarAcaoComentario\(chaveAcao\);\s*setComentarioEnviando\(false\);/,
@@ -67,7 +68,7 @@ test("sheet delega envio e resposta, mantendo os locks da Fase 1", () => {
   );
   assert.match(
     sheet,
-    /\} = useCommunityCommentSheetComposer\(\{[\s\S]*?comentarioRef,[\s\S]*?post,[\s\S]*?onEnviar,[\s\S]*?iniciarAcaoComentario,[\s\S]*?finalizarAcaoComentario,[\s\S]*?setRespostasVisiveisPorComentario,[\s\S]*?\}\);/,
+    /\} = useCommunityCommentSheetComposer\(\{[\s\S]*?comentarioRef,[\s\S]*?post,[\s\S]*?onEnviar,[\s\S]*?iniciarAcaoComentario,[\s\S]*?finalizarAcaoComentario,[\s\S]*?garantirRespostasVisiveis,[\s\S]*?\}\);/,
   );
   for (const nome of ["responderComentario", "enviarComentario"]) {
     assert.match(sheet, new RegExp(`\\b${nome}\\b`));

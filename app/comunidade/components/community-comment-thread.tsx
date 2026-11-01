@@ -1,16 +1,5 @@
-import type { Dispatch, SetStateAction } from "react";
 import type { ComentarioComunidade } from "./community-comment";
 import { CommunityCommentItem } from "./community-comment-item";
-import {
-  mostrarMaisRespostasComunidade,
-  mostrarRespostasIniciaisComunidade,
-  ocultarRespostasComunidade,
-} from "./community-comment-replies-pagination-actions";
-import {
-  obterQuantidadeRespostasOcultasComunidade,
-  obterQuantidadeRespostasVisiveisComunidade,
-  obterRespostasVisiveisComunidade,
-} from "./community-comment-replies-pagination";
 import {
   obterTextoBotaoOcultarRespostasComunidade,
   obterTextoBotaoVerMaisRespostasComunidade,
@@ -22,20 +11,29 @@ import { CommunityCommentRepliesListContainer } from "./community-comment-replie
 import { CommunityCommentRepliesToggleButton } from "./community-comment-replies-toggle-button";
 import {
   deveExibirBotaoVerRespostasComunidade,
-  respostasEstaoExpandidasComunidade,
   temRespostasOcultasComunidade,
   temRespostasVisiveisComunidade,
 } from "./community-comment-replies-visibility";
 import { CommunityCommentThreadContainer } from "./community-comment-thread-container";
 import { obterRespostasComentarioComunidade } from "./community-comment-tree";
+import type { VisibilidadeRespostasComunidade } from "../hooks/use-community-comment-sheet-replies-visibility";
 
 type CommunityCommentThreadProps = {
   comentario: ComentarioComunidade;
   respostasPorRaiz: Map<string, ComentarioComunidade[]>;
-  respostasVisiveisPorComentario: Record<string, number>;
-  setRespostasVisiveisPorComentario: Dispatch<
-    SetStateAction<Record<string, number>>
-  >;
+  obterVisibilidadeRespostas: (
+    respostas: ComentarioComunidade[],
+    comentario: ComentarioComunidade,
+  ) => VisibilidadeRespostasComunidade;
+  onAbrirRespostas: (
+    respostas: ComentarioComunidade[],
+    comentario: ComentarioComunidade,
+  ) => void;
+  onCarregarMaisRespostas: (
+    respostas: ComentarioComunidade[],
+    comentario: ComentarioComunidade,
+  ) => void;
+  onOcultarRespostas: (comentario: ComentarioComunidade) => void;
   usuarioId: string;
   podeComentar: boolean;
   agoraComentarios: number;
@@ -61,8 +59,10 @@ type CommunityCommentThreadProps = {
 export function CommunityCommentThread({
   comentario,
   respostasPorRaiz,
-  respostasVisiveisPorComentario,
-  setRespostasVisiveisPorComentario,
+  obterVisibilidadeRespostas,
+  onAbrirRespostas,
+  onCarregarMaisRespostas,
+  onOcultarRespostas,
   usuarioId,
   podeComentar,
   agoraComentarios,
@@ -79,21 +79,11 @@ export function CommunityCommentThread({
     respostasPorRaiz,
     comentario.id
   );
-  const quantidadeVisivel = obterQuantidadeRespostasVisiveisComunidade(
-    respostas,
-    respostasVisiveisPorComentario,
-    comentario
-  );
-  const respostasVisiveis = obterRespostasVisiveisComunidade(
-    respostas,
-    quantidadeVisivel
-  );
-  const respostasOcultas = obterQuantidadeRespostasOcultasComunidade(
-    respostas,
-    quantidadeVisivel
-  );
-  const respostasExpandidas =
-    respostasEstaoExpandidasComunidade(quantidadeVisivel);
+  const {
+    respostasVisiveis,
+    respostasOcultas,
+    respostasExpandidas,
+  } = obterVisibilidadeRespostas(respostas, comentario);
 
   return (
     <CommunityCommentThreadContainer>
@@ -144,13 +134,7 @@ export function CommunityCommentThread({
       ) ? (
         <CommunityCommentRepliesToggleButton
           type="button"
-          onClick={() =>
-            mostrarRespostasIniciaisComunidade({
-              respostas,
-              comentario,
-              setRespostasVisiveisPorComentario,
-            })
-          }
+          onClick={() => onAbrirRespostas(respostas, comentario)}
         >
           {obterTextoBotaoVerRespostasComunidade(respostas.length)}
         </CommunityCommentRepliesToggleButton>
@@ -161,13 +145,7 @@ export function CommunityCommentThread({
           {temRespostasOcultasComunidade(respostasOcultas) ? (
             <CommunityCommentRepliesToggleButton
               type="button"
-              onClick={() =>
-                mostrarMaisRespostasComunidade({
-                  respostas,
-                  comentario,
-                  setRespostasVisiveisPorComentario,
-                })
-              }
+              onClick={() => onCarregarMaisRespostas(respostas, comentario)}
             >
               {obterTextoBotaoVerMaisRespostasComunidade(respostasOcultas)}
             </CommunityCommentRepliesToggleButton>
@@ -175,12 +153,7 @@ export function CommunityCommentThread({
 
           <CommunityCommentRepliesHideButton
             type="button"
-            onClick={() =>
-              ocultarRespostasComunidade({
-                comentario,
-                setRespostasVisiveisPorComentario,
-              })
-            }
+            onClick={() => onOcultarRespostas(comentario)}
           >
             {obterTextoBotaoOcultarRespostasComunidade()}
           </CommunityCommentRepliesHideButton>

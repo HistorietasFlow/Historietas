@@ -38,6 +38,7 @@ import { useCommunityCommentSheetActions } from "../hooks/use-community-comment-
 import { useCommunityCommentSheetComposer } from "../hooks/use-community-comment-sheet-composer";
 import { useCommunityCommentSheetGestures } from "../hooks/use-community-comment-sheet-gestures";
 import { useCommunityCommentSheetOrdering } from "../hooks/use-community-comment-sheet-ordering";
+import { useCommunityCommentSheetRepliesVisibility } from "../hooks/use-community-comment-sheet-replies-visibility";
 
 type PostComentariosComunidade = {
   id: string;
@@ -59,8 +60,6 @@ export const ComentariosSheet = memo(function ComentariosSheet({
   onDenunciarComentario,
 }: ComentariosSheetProps<PostComentariosComunidade>) {
   const comentarioRef = useRef<HTMLTextAreaElement | null>(null);
-  const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
-    useState<Record<string, number>>({});
   const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
   const {
     comentarioCurtindoId,
@@ -77,6 +76,13 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     onDenunciarComentario,
   });
   const {
+    abrirRespostasComentario,
+    carregarMaisRespostasComentario,
+    ocultarRespostasComentario,
+    garantirRespostasVisiveis,
+    obterVisibilidadeRespostas,
+  } = useCommunityCommentSheetRepliesVisibility();
+  const {
     comentarioEnviando,
     limparRespostaComentario,
     responderComentario,
@@ -88,7 +94,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     onEnviar,
     iniciarAcaoComentario,
     finalizarAcaoComentario,
-    setRespostasVisiveisPorComentario,
+    garantirRespostasVisiveis,
   });
   const {
     menuOrdenacaoAberto,
@@ -241,12 +247,10 @@ export const ComentariosSheet = memo(function ComentariosSheet({
                 key={comentario.id}
                 comentario={comentario}
                 respostasPorRaiz={estruturaComentarios.respostasPorRaiz}
-                respostasVisiveisPorComentario={
-                  respostasVisiveisPorComentario
-                }
-                setRespostasVisiveisPorComentario={
-                  setRespostasVisiveisPorComentario
-                }
+                obterVisibilidadeRespostas={obterVisibilidadeRespostas}
+                onAbrirRespostas={abrirRespostasComentario}
+                onCarregarMaisRespostas={carregarMaisRespostasComentario}
+                onOcultarRespostas={ocultarRespostasComentario}
                 usuarioId={usuarioId}
                 podeComentar={podeComentar}
                 agoraComentarios={agoraComentarios}
