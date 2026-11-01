@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync("app/admin/problemas-tecnicos/page.tsx", "utf8");
+const card = readFileSync(
+  "app/admin/problemas-tecnicos/components/admin-problemas-tecnicos-ticket-card.tsx",
+  "utf8",
+);
 const source = readFileSync(
   "app/admin/problemas-tecnicos/components/admin-problemas-tecnicos-ticket-last-review.tsx",
   "utf8",
@@ -25,11 +29,12 @@ test("ultima analise preserva conteudo, estilo e fallback", () => {
   );
 });
 
-test("pagina delega somente a ultima analise", () => {
-  assert.match(page, /AdminProblemasTecnicosTicketLastReview/);
-  assert.doesNotMatch(page, /formatarData/);
-  assert.doesNotMatch(page, /lastReviewStyle/);
-  assert.match(page, /atualizarChamado/);
-  assert.match(page, /setObservacoes/);
-  assert.match(page, /textarea/);
+test("card compõe a última análise sem reintroduzir detalhes na página", () => {
+  assert.match(card, /AdminProblemasTecnicosTicketLastReview/);
+  assert.doesNotMatch(card, /formatarData/);
+  assert.doesNotMatch(card, /lastReviewStyle/);
+  assert.match(card, /atualizarChamado/);
+  assert.match(card, /setObservacoes/);
+  assert.match(card, /textarea/);
+  assert.doesNotMatch(page, /AdminProblemasTecnicosTicketLastReview/);
 });

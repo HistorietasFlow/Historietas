@@ -10,6 +10,10 @@ const page = readFileSync(
   "app/admin/problemas-tecnicos/page.tsx",
   "utf8",
 );
+const card = readFileSync(
+  "app/admin/problemas-tecnicos/components/admin-problemas-tecnicos-ticket-card.tsx",
+  "utf8",
+);
 
 test("hook preserva a assinatura e a autorização da atualização", () => {
   assert.match(hook, /function useAdminProblemasTecnicosActions/);
@@ -81,7 +85,7 @@ test("hook preserva atualizações imutáveis, mensagens e limpeza", () => {
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
 });
 
-test("página delega a action e preserva controles e JSX", () => {
+test("página delega a action e o card preserva controles e JSX", () => {
   assert.match(
     page,
     /import \{ useAdminProblemasTecnicosActions \} from "\.\/hooks\/use-admin-problemas-tecnicos-actions";/,
@@ -90,10 +94,10 @@ test("página delega a action e preserva controles e JSX", () => {
   assert.doesNotMatch(page, /async function atualizarChamado\(/);
   assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas\)/);
   assert.match(page, /Atualizar/);
-  assert.equal((page.match(/atualizarChamado\(/g) || []).length, 3);
-  assert.match(page, /<AdminProblemasTecnicosTicketStatusControl/);
-  assert.match(page, /<AdminProblemasTecnicosTicketPriorityControl/);
-  assert.match(page, /textarea/);
+  assert.equal((card.match(/atualizarChamado\(/g) || []).length, 3);
+  assert.match(card, /<AdminProblemasTecnicosTicketStatusControl/);
+  assert.match(card, /<AdminProblemasTecnicosTicketPriorityControl/);
+  assert.match(card, /textarea/);
 });
 
 test("hook não contém estado próprio, router, storage ou JSX", () => {

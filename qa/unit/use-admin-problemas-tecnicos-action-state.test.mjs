@@ -8,6 +8,9 @@ const hook = ler(
   "../../app/admin/problemas-tecnicos/hooks/use-admin-problemas-tecnicos-action-state.ts",
 );
 const page = ler("../../app/admin/problemas-tecnicos/page.tsx");
+const card = ler(
+  "../../app/admin/problemas-tecnicos/components/admin-problemas-tecnicos-ticket-card.tsx",
+);
 
 test("hook centraliza estados de ação, feedback e abertura exclusiva", () => {
   assert.match(hook, /^"use client";/);
@@ -63,6 +66,6 @@ test("página delega estados e mantém integrações existentes", () => {
   assert.match(page, /useAdminProblemasTecnicosInitialData\(\{[\s\S]*?setErro,[\s\S]*?setSucesso,/);
   assert.match(page, /useAdminProblemasTecnicosActions\(\{[\s\S]*?setAcaoEmAndamento,[\s\S]*?setErro,[\s\S]*?setSucesso,/);
   assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas\)/);
-  assert.match(page, /alternarChamadoAberto\(problema\.id\)/);
+  assert.match(card, /alternarChamadoAberto\(problema\.id\)/);
   assert.match(page, /acaoEmAndamento === "recarregar"/);
 });
