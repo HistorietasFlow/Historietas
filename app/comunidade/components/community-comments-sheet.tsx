@@ -2,7 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent, TouchEvent } from "react";
+import type { TouchEvent } from "react";
 import type { ComentarioComunidade } from "./community-comment";
 import {
   alternarMenuOrdenacaoComentariosComunidade,
@@ -12,7 +12,6 @@ import {
   selecionarOrdenacaoComentariosRelevantesComunidade,
   type OrdenacaoComentariosComunidade,
 } from "./community-comment-order";
-import type { RespostaComentarioComunidade } from "./community-comment-reply";
 import { criarEstruturaComentariosComunidade } from "./community-comment-tree";
 import type { ComentariosSheetProps } from "./community-comments-sheet-props";
 import { CommunityCommentsSheetPanel } from "./community-comments-sheet-panel";
@@ -60,6 +59,7 @@ import {
 import { CommunityCommentsErrorNotice } from "./community-comments-error-notice";
 import { CommunityCommentsComposer } from "./community-comments-composer";
 import { useCommunityCommentSheetActions } from "../hooks/use-community-comment-sheet-actions";
+import { useCommunityCommentSheetComposer } from "../hooks/use-community-comment-sheet-composer";
 
 type PostComentariosComunidade = {
   id: string;
@@ -87,9 +87,6 @@ export const ComentariosSheet = memo(function ComentariosSheet({
   const dragIgnorarCliqueRef = useRef(false);
   const dragResetTimerRef = useRef<number | null>(null);
   const [sheetExpandido, setSheetExpandido] = useState(false);
-  const [comentarioEnviando, setComentarioEnviando] = useState(false);
-  const [respostaComentario, setRespostaComentario] =
-    useState<RespostaComentarioComunidade | null>(null);
   const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
     useState<Record<string, number>>({});
   const [ordenacaoComentarios, setOrdenacaoComentarios] =
@@ -109,6 +106,20 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     onCurtirComentario,
     onRemoverComentario,
     onDenunciarComentario,
+  });
+  const {
+    comentarioEnviando,
+    limparRespostaComentario,
+    responderComentario,
+    enviarComentario,
+  } = useCommunityCommentSheetComposer({
+    comentarioRef,
+    podeComentar,
+    post,
+    onEnviar,
+    iniciarAcaoComentario,
+    finalizarAcaoComentario,
+    setRespostasVisiveisPorComentario,
   });
 
   useEffect(() => {
@@ -137,7 +148,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
   function fecharComentarios() {
     setSheetExpandido(false);
     setMenuOrdenacaoAberto(false);
-    setRespostaComentario(null);
+    limparRespostaComentario();
     dragOffsetYRef.current = 0;
     onFechar();
   }
@@ -160,39 +171,6 @@ export const ComentariosSheet = memo(function ComentariosSheet({
 
     const novaPosicao = Math.min(inicio + valor.length, campo.value.length);
     campo.setSelectionRange(novaPosicao, novaPosicao);
-  }
-
-  function responderComentario(
-    comentario: ComentarioComunidade,
-    comentarioRaizId: string
-  ) {
-    if (!podeComentar) {
-      return;
-    }
-
-    const nomeLimpo = comentario.autorNome.replace(/\s+/g, " ").trim();
-    const raizIdLimpo = comentarioRaizId.trim();
-
-    if (!nomeLimpo || !raizIdLimpo) {
-      return;
-    }
-
-    setRespostaComentario({
-      comentarioPaiId: raizIdLimpo,
-      autorId: comentario.autorId,
-      autorNome: nomeLimpo,
-    });
-
-    window.setTimeout(() => {
-      if (!comentarioRef.current) {
-        return;
-      }
-
-      const mencao = `@${nomeLimpo} `;
-      comentarioRef.current.value = mencao;
-      comentarioRef.current.focus();
-      comentarioRef.current.setSelectionRange(mencao.length, mencao.length);
-    }, 0);
   }
 
   function iniciarArraste(event: TouchEvent<HTMLDivElement>) {
@@ -306,50 +284,6 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     }
 
     setSheetExpandido((expandidoAtual) => !expandidoAtual);
-  }
-
-  async function enviarComentario(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!post) {
-      return;
-    }
-
-    const chaveAcao = `enviar-comentario:${post.id}`;
-
-    if (!iniciarAcaoComentario(chaveAcao)) {
-      return;
-    }
-
-    setComentarioEnviando(true);
-
-    try {
-      const conteudoComentario = comentarioRef.current?.value || "";
-      const respostaAnterior = respostaComentario;
-      const enviado = await onEnviar(
-        post.id,
-        conteudoComentario,
-        respostaAnterior?.comentarioPaiId || ""
-      );
-
-      if (enviado && comentarioRef.current) {
-        comentarioRef.current.value = "";
-        setRespostaComentario(null);
-
-        if (respostaAnterior?.comentarioPaiId) {
-          setRespostasVisiveisPorComentario((estadoAtual) => ({
-            ...estadoAtual,
-            [respostaAnterior.comentarioPaiId]: Math.max(
-              5,
-              estadoAtual[respostaAnterior.comentarioPaiId] || 0
-            ),
-          }));
-        }
-      }
-    } finally {
-      finalizarAcaoComentario(chaveAcao);
-      setComentarioEnviando(false);
-    }
   }
 
   if (!post || typeof document === "undefined") {

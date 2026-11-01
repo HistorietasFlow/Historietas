@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade Comments Sheet — Fase 2: envio e resposta
+
+- O estado e o fluxo de envio/resposta foram movidos para hook dedicado, preservando menção e foco, lock de envio, limpeza do composer e a visibilidade mínima de cinco respostas após sucesso; ações de curtir, remover e denunciar, drag, ordenação, paginação e renderização permanecem nas suas fronteiras atuais.
+
 ## Comunidade Comments Sheet — Fase 1: ações assíncronas de comentário
 
 - Os locks por comentário, estados de loading e ações seguras de curtir, remover e denunciar foram movidos para hook dedicado, preservando prevenção de duplicidade, `try/finally`, limpeza dos locks e IDs de loading; envio, resposta, drag, ordenação, paginação e renderização permanecem no sheet.

@@ -10,6 +10,9 @@ const hook = ler(
 const sheet = ler(
   "../../app/comunidade/components/community-comments-sheet.tsx",
 );
+const composer = ler(
+  "../../app/comunidade/hooks/use-community-comment-sheet-composer.ts",
+);
 
 test("hook centraliza locks e estados de loading das ações assíncronas por comentário", () => {
   assert.match(hook, /^"use client";/);
@@ -65,6 +68,11 @@ test("sheet delega as ações seguras e mantém os locks usados pelo envio", () 
     assert.doesNotMatch(sheet, new RegExp(`(?:async )?function ${nome}\\(`));
   }
 
-  assert.match(sheet, /const chaveAcao = `enviar-comentario:\$\{post\.id\}`;/);
+  assert.match(
+    composer,
+    /const chaveAcao = `enviar-comentario:\$\{post\.id\}`;/,
+  );
+  assert.match(composer, /if \(!iniciarAcaoComentario\(chaveAcao\)\)/);
+  assert.match(composer, /finalizarAcaoComentario\(chaveAcao\);/);
   assert.match(sheet, /onEnviarComentario=\{enviarComentario\}/);
 });
