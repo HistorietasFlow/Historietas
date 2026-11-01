@@ -21,6 +21,13 @@ const saveActionSource = readFileSync(
   ),
   "utf8",
 );
+const localPersistenceSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const localWorkStorageSource = readFileSync(
   new URL(
     "../../app/editar-obra/lib/editar-obra-local-work-storage.ts",
@@ -248,7 +255,15 @@ test("backup de Editar Obra restaura o primeiro arquivo valido sem substituir ar
 test("Editar Obra delega somente o backup local de arquivos ao modulo extraido", () => {
   assert.match(
     saveActionSource,
-    /import \{[\s\S]*?carregarBackupArquivosObras,[\s\S]*?salvarArquivoObraNoBackup,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\.\/lib\/editar-obra-file-backup-storage";/,
+    /import \{ carregarBackupArquivosObras \} from "\.\.\/lib\/editar-obra-file-backup-storage";/,
+  );
+  assert.match(
+    saveActionSource,
+    /import \{ persistirObraLocalEBackupEdicaoObra \} from "\.\.\/lib\/editar-obra-local-persistence";/,
+  );
+  assert.match(
+    localPersistenceSource,
+    /import \{[\s\S]*?salvarArquivoObraNoBackup,[\s\S]*?sincronizarBackupArquivosObras,[\s\S]*?\} from "\.\/editar-obra-file-backup-storage";/,
   );
   assert.doesNotMatch(pageSource, /const FILE_BACKUP_STORAGE_KEY =/);
   for (const helper of [
@@ -260,7 +275,8 @@ test("Editar Obra delega somente o backup local de arquivos ao modulo extraido",
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
   assert.doesNotMatch(pageSource, /restaurarArquivoObraComBackup\(obra, backupArquivosObras\)/);
-  assert.match(saveActionSource, /salvarArquivoObraNoBackup\(/);
+  assert.doesNotMatch(saveActionSource, /salvarArquivoObraNoBackup\(/);
+  assert.match(localPersistenceSource, /salvarArquivoObraNoBackup\(/);
   assert.match(localWorkStorageSource, /const backupArquivosObras = carregarBackupArquivosObras\(usuarioId\);/);
   assert.match(localWorkStorageSource, /restaurarArquivoObraComBackup\(obra, backupArquivosObras\)/);
   assert.match(localWorkStorageSource, /sincronizarBackupArquivosObras\(obrasDoUsuarioComDono, usuarioId\);/);

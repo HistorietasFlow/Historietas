@@ -17,6 +17,13 @@ const saveActionSource = readFileSync(
   ),
   "utf8",
 );
+const localPersistenceSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const javascript = typescript
   .transpileModule(
     source.replace(
@@ -68,12 +75,17 @@ test("alvo de backup de Editar Obra preserva prioridades de slug e link", () => 
 test("Editar Obra delega somente a construção do alvo de backup", () => {
   assert.match(
     saveActionSource,
-    /import \{ criarAlvoBackupArquivoEdicaoObra \} from "\.\.\/lib\/editar-obra-backup-target";/,
+    /import \{ persistirObraLocalEBackupEdicaoObra \} from "\.\.\/lib\/editar-obra-local-persistence";/,
   );
   assert.match(
-    saveActionSource,
+    localPersistenceSource,
     /if \(arquivoObraRemovidoManualmente\) \{[\s\S]*?salvarArquivoObraNoBackup\([\s\S]*?criarAlvoBackupArquivoEdicaoObra\(\{[\s\S]*?obraId,[\s\S]*?obraLocalAtual,[\s\S]*?tituloFinal,[\s\S]*?\}\),[\s\S]*?null,[\s\S]*?userId[\s\S]*?\);[\s\S]*?\} else \{[\s\S]*?sincronizarBackupArquivosObras\(novasObrasDoUsuario, userId\);/,
   );
+  assert.match(
+    localPersistenceSource,
+    /import \{ criarAlvoBackupArquivoEdicaoObra \} from "\.\/editar-obra-backup-target";/,
+  );
+  assert.doesNotMatch(saveActionSource, /criarAlvoBackupArquivoEdicaoObra\(/);
   assert.match(
     source,
     /import \{ criarSlugBase \} from "\.\.\/\.\.\/\.\.\/lib\/utils";/,

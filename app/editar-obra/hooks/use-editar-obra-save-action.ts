@@ -1,12 +1,6 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type { AvisoConteudo18 } from "../../../lib/historietasAdultContent";
-import {
-  carregarBackupArquivosObras,
-  salvarArquivoObraNoBackup,
-  sincronizarBackupArquivosObras,
-} from "../lib/editar-obra-file-backup-storage";
-import { criarAlvoBackupArquivoEdicaoObra } from "../lib/editar-obra-backup-target";
-import { salvarObrasDoUsuarioPreservandoOutrasContas } from "../lib/editar-obra-local-work-storage";
+import { carregarBackupArquivosObras } from "../lib/editar-obra-file-backup-storage";
 import {
   removerArquivosStorageEdicaoObra,
   type ArquivoStorageEdicaoObra,
@@ -21,7 +15,7 @@ import {
   type ArquivoAntigoEdicaoObra,
 } from "../lib/editar-obra-save-assets-preparation";
 import { atualizarObraRemotaEdicaoObra } from "../lib/editar-obra-remote-update";
-import { atualizarObraNaListaLocalEdicao } from "../lib/editar-obra-local-update";
+import { persistirObraLocalEBackupEdicaoObra } from "../lib/editar-obra-local-persistence";
 import type { ArquivoObraLocal, ObraLocal } from "../types";
 
 type RouterEditarObra = {
@@ -263,10 +257,10 @@ export function useEditarObraSaveAction({
 
       await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover);
 
-      const novasObras = atualizarObraNaListaLocalEdicao({
+      const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra({
         obras,
         obraId,
-        titulo: tituloFinal,
+        tituloFinal,
         autor: autorFinal,
         genero: generoFinalSalvo,
         formato: formatoFinalSalvo,
@@ -277,24 +271,10 @@ export function useEditarObraSaveAction({
         capa: capaFinal,
         capaNome: capaNomeFinal,
         arquivoObra: arquivoObraFinal,
+        userId,
+        arquivoObraRemovidoManualmente,
+        obraLocalAtual,
       });
-
-      const novasObrasDoUsuario =
-        salvarObrasDoUsuarioPreservandoOutrasContas(novasObras, userId);
-
-      if (arquivoObraRemovidoManualmente) {
-        salvarArquivoObraNoBackup(
-          criarAlvoBackupArquivoEdicaoObra({
-            obraId,
-            obraLocalAtual,
-            tituloFinal,
-          }),
-          null,
-          userId
-        );
-      } else {
-        sincronizarBackupArquivosObras(novasObrasDoUsuario, userId);
-      }
 
       const obraAtualizadaDiario = novasObrasDoUsuario.find((obra) => obra.id === obraId);
 

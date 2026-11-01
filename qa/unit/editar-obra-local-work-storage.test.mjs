@@ -19,6 +19,13 @@ const saveActionSource = readFileSync(
   ),
   "utf8",
 );
+const localPersistenceSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const initialLoadSource = readFileSync(
   new URL(
     "../../app/editar-obra/hooks/use-editar-obra-initial-load.ts",
@@ -237,8 +244,13 @@ test("Editar Obra delega somente a persistência local das obras", () => {
   );
   assert.match(
     saveActionSource,
-    /import \{ salvarObrasDoUsuarioPreservandoOutrasContas \} from "\.\.\/lib\/editar-obra-local-work-storage";/,
+    /import \{ persistirObraLocalEBackupEdicaoObra \} from "\.\.\/lib\/editar-obra-local-persistence";/,
   );
+  assert.match(
+    localPersistenceSource,
+    /import \{ salvarObrasDoUsuarioPreservandoOutrasContas \} from "\.\/editar-obra-local-work-storage";/,
+  );
+  assert.doesNotMatch(saveActionSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(/);
   for (const helper of [
     "salvarObrasDoUsuarioPreservandoOutrasContas",
     "carregarObrasLocalStorageEdicaoObra",

@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Editar Obra — Fase 5: persistência local e backup
+
+- A atualização da lista local, a persistência isolada por usuário e a regra de remoção ou sincronização do backup foram movidas para helper dedicado, preservando ordem, dados e retorno da lista final; remoção de Storage, Diário, estados finais e tratamento global de erro permanecem no hook de salvamento.
+
 ## Editar Obra — Fase 4: atualização remota e rollback dos uploads
 
 - A atualização remota da obra e o rollback dos uploads novos em caso de falha foram movidos para helper dedicado, preservando payload, consulta Supabase, filtros por `id` e `user_id`, confirmação do registro, mensagens e ordem entre update e rollback; remoção final dos arquivos antigos, persistência local, backup, Diário e estados finais permanecem no hook de salvamento.

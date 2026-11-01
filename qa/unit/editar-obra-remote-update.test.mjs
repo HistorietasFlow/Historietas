@@ -170,7 +170,7 @@ test("o hook delega update e rollback remoto, mantendo cleanup local posterior",
   assert.doesNotMatch(saveActionSource, /criarPayloadAtualizacaoObra\(/);
   assert.match(
     saveActionSource,
-    /await removerArquivosStorageEdicaoObra\(arquivosAntigosParaRemover\);[\s\S]*?const novasObras = atualizarObraNaListaLocalEdicao/,
+    /await removerArquivosStorageEdicaoObra\(arquivosAntigosParaRemover\);[\s\S]*?const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra/,
   );
   assert.match(source, /criarPayloadAtualizacaoObra\(dadosAtualizacao\)/);
   assert.match(source, /\.from\("obras"\)[\s\S]*?\.update\([\s\S]*?\.eq\("id", obraId\)[\s\S]*?\.eq\("user_id", userId\)[\s\S]*?\.select\("id"\)[\s\S]*?\.maybeSingle\(\)/);
