@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Admin Comunidade — Fase 2: estado das ações e feedback da moderação
+
+- Os estados de feedback, ação em andamento e menu de denúncia foram movidos para hook dedicado, preservando os setters consumidos pelos hooks existentes e os callbacks semânticos de abrir e fechar menus usados pelos cards.
+
 ## Admin Comunidade — Fase 1: filtros e busca da moderação
 
 - O estado e o lifecycle de filtros e busca da moderação foram movidos para hook dedicado, preservando filtros memoizados, abertura dos controles, limpeza, filtro padrão e fechamento temporizado do menu ao mudar busca ou status; carregamento, autenticação, ações e layout permanecem na página.

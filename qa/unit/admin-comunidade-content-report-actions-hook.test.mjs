@@ -61,9 +61,13 @@ test("a página delega as cinco ações de denúncias de conteúdo ao hook", () 
     pageSource,
     /onRemoverDenunciaResolvida=\{\(denunciaId\) =>\s*void removerDenunciaResolvida\(denunciaId\)\s*\}/,
   );
-  assert.match(pageSource, /const \[denuncias, setDenuncias\] = useState/);
-  assert.match(pageSource, /const \[observacoes, setObservacoes\] = useState/);
-  assert.match(pageSource, /const \[acaoEmAndamento, setAcaoEmAndamento\] = useState/);
+  assert.match(pageSource, /useAdminComunidadeInitialData\(\{/);
+  assert.match(pageSource, /denuncias,\s*setDenuncias,/);
+  assert.match(pageSource, /observacoes,\s*setObservacoes,/);
+  assert.match(
+    pageSource,
+    /useAdminComunidadeModerationActionState\(\)/,
+  );
 });
 
 test("o hook preserva o contrato de atualização de status", () => {
