@@ -3,10 +3,6 @@ import { supabase } from "../../../lib/supabase/client";
 import type { AvisoConteudo18 } from "../../../lib/historietasAdultContent";
 import { identificarCategoriaArquivo } from "../lib/editar-obra-file-validation";
 import {
-  carregarNomeAutorProfileEdicaoObra,
-  obterTextoMetadataUsuarioEdicaoObra,
-} from "../lib/editar-obra-profile-loader";
-import {
   carregarBackupArquivosObras,
   salvarArquivoObraNoBackup,
   sincronizarBackupArquivosObras,
@@ -20,7 +16,7 @@ import {
 } from "../lib/editar-obra-remote-storage";
 import { registrarDiarioEdicaoObra } from "../lib/editar-obra-diary-action";
 import { validarFormularioEdicaoObra } from "../lib/editar-obra-form-validation";
-import { criarLoginHrefEditarObra } from "../lib/editar-obra-navigation-utils";
+import { obterIdentidadeSalvamentoEdicaoObra } from "../lib/editar-obra-save-auth-identity";
 import { prepararValoresSalvamentoEdicaoObra } from "../lib/editar-obra-save-preparation";
 import { prepararAssetsAtuaisEdicaoObra } from "../lib/editar-obra-current-assets-preparation";
 import { criarPayloadAtualizacaoObra } from "../lib/editar-obra-update-payload";
@@ -171,28 +167,18 @@ export function useEditarObraSaveAction({
     const agora = new Date().toISOString();
 
     try {
-      const { data: dadosUsuario, error: erroUsuario } =
-        await supabase.auth.getUser();
+      const identidadeSalvamento = await obterIdentidadeSalvamentoEdicaoObra({
+        obraId,
+        autorFormularioFinal,
+        router,
+        setErro,
+      });
 
-      const userId = dadosUsuario.user?.id || "";
-
-      if (erroUsuario || !userId || !obraId) {
-        setErro("Entre na sua conta antes de editar a obra.");
-        router.replace(criarLoginHrefEditarObra(obraId));
+      if (!identidadeSalvamento) {
         return;
       }
 
-      const metadataUsuario = dadosUsuario.user?.user_metadata as
-        | Record<string, unknown>
-        | undefined;
-      const nomeMetadataUsuario =
-        obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "nome") ||
-        obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "name") ||
-        obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "full_name");
-      const nomeProfileAtualizado = await carregarNomeAutorProfileEdicaoObra(
-        userId,
-        nomeMetadataUsuario || autorFormularioFinal
-      );
+      const { userId, nomeProfileAtualizado } = identidadeSalvamento;
       autorFinal = nomeProfileAtualizado || autorFinal;
       setNomeAutorProfile(nomeProfileAtualizado);
 
