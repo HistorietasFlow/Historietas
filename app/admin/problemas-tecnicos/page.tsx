@@ -23,7 +23,6 @@ import { AdminProblemasTecnicosTicketEnvironment } from "./components/admin-prob
 import { AdminProblemasTecnicosTicketStatusControl } from "./components/admin-problemas-tecnicos-ticket-status-control";
 import { AdminProblemasTecnicosTicketPriorityControl } from "./components/admin-problemas-tecnicos-ticket-priority-control";
 import { AdminProblemasTecnicosTicketLastReview } from "./components/admin-problemas-tecnicos-ticket-last-review";
-import { filtrarProblemasTecnicos } from "./lib/admin-problemas-tecnicos-filter-utils";
 import { calcularTotaisProblemasTecnicos } from "./lib/admin-problemas-tecnicos-stats-utils";
 import {
   adminProblemasCss,
@@ -63,15 +62,13 @@ import {
   STATUS_PROBLEMAS,
   type FiltroStatusProblema,
 } from "./lib/admin-problemas-tecnicos-normalization-utils";
+import { useAdminProblemasTecnicosFilters } from "./hooks/use-admin-problemas-tecnicos-filters";
 
 export default function AdminProblemasTecnicosPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  const [busca, setBusca] = useState("");
-  const [statusFiltro, setStatusFiltro] =
-    useState<FiltroStatusProblema>("todos");
   const [chamadoAbertoId, setChamadoAbertoId] = useState("");
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [erro, setErro] = useState("");
@@ -110,17 +107,17 @@ export default function AdminProblemasTecnicosPage() {
     setSucesso,
   });
 
-  const problemasFiltrados = useMemo(
-    () =>
-      filtrarProblemasTecnicos({
-        problemas,
-        busca,
-        statusFiltro,
-        nomesUsuarios,
-        language,
-      }),
-    [busca, language, nomesUsuarios, problemas, statusFiltro],
-  );
+  const {
+    busca,
+    setBusca,
+    statusFiltro,
+    setStatusFiltro,
+    problemasFiltrados,
+  } = useAdminProblemasTecnicosFilters({
+    problemas,
+    nomesUsuarios,
+    language,
+  });
 
   const totais = useMemo(
     () => calcularTotaisProblemasTecnicos(problemas),

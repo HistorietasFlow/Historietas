@@ -11,6 +11,10 @@ const statsSource = readFileSync(
   "app/admin/problemas-tecnicos/lib/admin-problemas-tecnicos-stats-utils.ts",
   "utf8",
 );
+const filterHookSource = readFileSync(
+  "app/admin/problemas-tecnicos/hooks/use-admin-problemas-tecnicos-filters.ts",
+  "utf8",
+);
 
 test("helper de filtro preserva status, busca e campos pesquisaveis", () => {
   assert.match(filterSource, /const termo = normalizarTexto\(busca\)/);
@@ -51,14 +55,16 @@ test("helper de totais preserva os cinco criterios", () => {
   );
 });
 
-test("pagina mantem os dois useMemo como delegacao", () => {
-  assert.match(page, /filtrarProblemasTecnicos/);
-  assert.match(page, /calcularTotaisProblemasTecnicos/);
-  assert.match(page, /useMemo\(/);
+test("pagina delega filtros e mantém totais como memoização local", () => {
+  assert.match(filterHookSource, /filtrarProblemasTecnicos/);
   assert.match(
-    page,
+    filterHookSource,
     /\[busca, language, nomesUsuarios, problemas, statusFiltro\]/,
   );
+  assert.match(page, /useAdminProblemasTecnicosFilters/);
+  assert.match(page, /calcularTotaisProblemasTecnicos/);
+  assert.match(page, /useMemo\(/);
   assert.match(page, /\[problemas\]/);
+  assert.doesNotMatch(page, /filtrarProblemasTecnicos/);
   assert.doesNotMatch(page, /const termo = normalizarTexto\(busca\)/);
 });

@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Admin Problemas Técnicos — Fase 1: busca e filtro dos chamados
+
+- A busca, o filtro de status e o resultado memoizado dos chamados foram movidos para hook dedicado, preservando filtro padrão, dependências, limite do campo e controles existentes na página.
+
 ## Comunidade Comments Sheet — Fase 5: visibilidade e paginação das respostas
 
 - O estado de visibilidade e as ações semânticas das respostas foram movidos para hook dedicado, reutilizando os helpers atuais e preservando grupos de cinco, limites, controles de exibição e expansão mínima após uma resposta enviada.
