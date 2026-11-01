@@ -71,7 +71,7 @@ test("sheet delega gestos e mantem fechamento local sem alterar o handle", () =>
   }
   assert.match(
     sheet,
-    /setMenuOrdenacaoAberto\(false\);[\s\S]*?limparRespostaComentario\(\);[\s\S]*?onFechar\(\);/,
+    /fecharMenuOrdenacao\(\);[\s\S]*?limparRespostaComentario\(\);[\s\S]*?onFechar\(\);/,
   );
   assert.match(sheet, /onClick=\{fecharSheetComentarios\}/);
   assert.match(sheet, /onTouchStart=\{iniciarArraste\}/);
