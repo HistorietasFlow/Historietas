@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent, TouchEvent } from "react";
+import type { CSSProperties, TouchEvent } from "react";
 import { createPortal } from "react-dom";
 import { useLerCapituloCommentSheetActions } from "../hooks/use-ler-capitulo-comment-sheet-actions";
+import { useLerCapituloCommentSheetComposer } from "../hooks/use-ler-capitulo-comment-sheet-composer";
 import { LoadingSpinner } from "./ler-capitulo-loading-spinner";
 import {
   commentsSheetOverlayStyle,
@@ -72,12 +73,6 @@ export type ComentarioCapituloPublico = {
   comentarioPaiId: string;
   meuComentario: boolean;
   curtidas: string[];
-};
-
-type RespostaComentarioCapitulo = {
-  comentarioPaiId: string;
-  autorId: string;
-  autorNome: string;
 };
 
 type OrdenacaoComentariosCapitulo = "relevantes" | "recentes";
@@ -283,9 +278,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
   const dragIgnorarCliqueRef = useRef(false);
   const dragResetTimerRef = useRef<number | null>(null);
   const [sheetExpandido, setSheetExpandido] = useState(false);
-  const [comentarioEnviando, setComentarioEnviando] = useState(false);
-  const [respostaComentario, setRespostaComentario] =
-    useState<RespostaComentarioCapitulo | null>(null);
   const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
     useState<Record<string, number>>({});
   const [ordenacaoComentarios, setOrdenacaoComentarios] =
@@ -305,6 +297,20 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
     onCurtirComentario,
     onRemoverComentario,
     onDenunciarComentario,
+  });
+  const {
+    comentarioEnviando,
+    limparRespostaComentario,
+    responderComentario,
+    enviarComentario,
+  } = useLerCapituloCommentSheetComposer({
+    comentarioRef,
+    podeComentar,
+    post,
+    onEnviar,
+    iniciarAcaoComentario,
+    finalizarAcaoComentario,
+    setRespostasVisiveisPorComentario,
   });
 
   useEffect(() => {
@@ -333,7 +339,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
   function fecharComentarios() {
     setSheetExpandido(false);
     setMenuOrdenacaoAberto(false);
-    setRespostaComentario(null);
+    limparRespostaComentario();
     dragOffsetYRef.current = 0;
     onFechar();
   }
@@ -356,39 +362,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
 
     const novaPosicao = Math.min(inicio + valor.length, campo.value.length);
     campo.setSelectionRange(novaPosicao, novaPosicao);
-  }
-
-  function responderComentario(
-    comentario: ComentarioCapituloPublico,
-    comentarioRaizId: string
-  ) {
-    if (!podeComentar) {
-      return;
-    }
-
-    const nomeLimpo = comentario.nome.replace(/\s+/g, " ").trim();
-    const raizIdLimpo = comentarioRaizId.trim();
-
-    if (!nomeLimpo || !raizIdLimpo) {
-      return;
-    }
-
-    setRespostaComentario({
-      comentarioPaiId: raizIdLimpo,
-      autorId: comentario.userId,
-      autorNome: nomeLimpo,
-    });
-
-    window.setTimeout(() => {
-      if (!comentarioRef.current) {
-        return;
-      }
-
-      const mencao = `@${nomeLimpo} `;
-      comentarioRef.current.value = mencao;
-      comentarioRef.current.focus();
-      comentarioRef.current.setSelectionRange(mencao.length, mencao.length);
-    }, 0);
   }
 
   function iniciarArraste(event: TouchEvent<HTMLDivElement>) {
@@ -488,50 +461,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
     }
 
     setSheetExpandido((expandidoAtual) => !expandidoAtual);
-  }
-
-  async function enviarComentario(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!post) {
-      return;
-    }
-
-    const chaveAcao = `enviar-comentario:${post.id}`;
-
-    if (!iniciarAcaoComentario(chaveAcao)) {
-      return;
-    }
-
-    setComentarioEnviando(true);
-
-    try {
-      const conteudoComentario = comentarioRef.current?.value || "";
-      const respostaAnterior = respostaComentario;
-      const enviado = await onEnviar(
-        post.id,
-        conteudoComentario,
-        respostaAnterior?.comentarioPaiId || ""
-      );
-
-      if (enviado && comentarioRef.current) {
-        comentarioRef.current.value = "";
-        setRespostaComentario(null);
-
-        if (respostaAnterior?.comentarioPaiId) {
-          setRespostasVisiveisPorComentario((estadoAtual) => ({
-            ...estadoAtual,
-            [respostaAnterior.comentarioPaiId]: Math.max(
-              5,
-              estadoAtual[respostaAnterior.comentarioPaiId] || 0
-            ),
-          }));
-        }
-      }
-    } finally {
-      finalizarAcaoComentario(chaveAcao);
-      setComentarioEnviando(false);
-    }
   }
 
   function renderizarComentario(

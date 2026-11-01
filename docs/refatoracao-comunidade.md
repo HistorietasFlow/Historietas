@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comentários do capítulo — Fase 2: envio e resposta
+
+- O estado e fluxo de envio e resposta foram movidos para hook dedicado, reutilizando os locks já extraídos e preservando menção, foco, `comentarioPaiId`, limpeza após sucesso, expansão mínima de respostas e `try/finally`; renderização, gestos e ordenação permanecem no sheet.
+
 ## Comentários do capítulo — Fase 1: ações assíncronas de comentário
 
 - Os locks por comentário, estados de loading e ações seguras de curtir, remover e denunciar foram movidos para hook dedicado, preservando prevenção de duplicidade, `try/finally`, limpeza dos locks e IDs de loading; envio, resposta, drag, ordenação e renderização permanecem no sheet.
