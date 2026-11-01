@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Editar Obra — Fase 3: preparação e uploads dos assets
+
+- A preparação dos assets atuais e os uploads de capa e arquivo foram movidos para helper dedicado, preservando a remoção imediata da capa bloqueada por classificação 18+, buckets, ordem, mensagens, montagem do arquivo final e as listas usadas pelo rollback posterior e pela remoção final; update remoto, rollback após update, backup, Diário e estados finais permanecem no hook de salvamento.
+
 ## Editar Obra — Fase 2: confirmação de propriedade da obra
 
 - A busca local e a confirmação remota de propriedade da obra foram movidas para helper dedicado, preservando consulta Supabase, filtros por `id` e `user_id`, campos, ordem de validação, mensagens, `setSalvou(false)` e o retorno das obras autorizadas; backup, assets, uploads, atualização, Diário e estados finais permanecem no hook de salvamento.

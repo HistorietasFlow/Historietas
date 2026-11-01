@@ -177,7 +177,7 @@ test("o hook delega somente a confirmacao de propriedade", () => {
   assert.doesNotMatch(saveActionSource, /obraLocalAtual\?\.autorId/);
   assert.doesNotMatch(saveActionSource, /\.from\("obras"\)[\s\S]*?\.limit\(1\)[\s\S]*?\.maybeSingle\(\)/);
   assert.match(saveActionSource, /const backupArquivosObras = carregarBackupArquivosObras\(userId\);/);
-  assert.match(saveActionSource, /prepararAssetsAtuaisEdicaoObra\(\{/);
+  assert.match(saveActionSource, /prepararEEnviarAssetsEdicaoObra\(\{/);
   assert.match(source, /\.from\("obras"\)/);
   assert.match(source, /\.eq\("id", obraId\)/);
   assert.match(source, /\.eq\("user_id", userId\)/);

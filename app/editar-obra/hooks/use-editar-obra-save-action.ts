@@ -1,7 +1,6 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import type { AvisoConteudo18 } from "../../../lib/historietasAdultContent";
-import { identificarCategoriaArquivo } from "../lib/editar-obra-file-validation";
 import {
   carregarBackupArquivosObras,
   salvarArquivoObraNoBackup,
@@ -10,7 +9,6 @@ import {
 import { criarAlvoBackupArquivoEdicaoObra } from "../lib/editar-obra-backup-target";
 import { salvarObrasDoUsuarioPreservandoOutrasContas } from "../lib/editar-obra-local-work-storage";
 import {
-  enviarArquivoStorage,
   removerArquivosStorageEdicaoObra,
   type ArquivoStorageEdicaoObra,
 } from "../lib/editar-obra-remote-storage";
@@ -19,7 +17,10 @@ import { validarFormularioEdicaoObra } from "../lib/editar-obra-form-validation"
 import { obterIdentidadeSalvamentoEdicaoObra } from "../lib/editar-obra-save-auth-identity";
 import { confirmarPropriedadeObraParaSalvamentoEdicao } from "../lib/editar-obra-save-work-ownership";
 import { prepararValoresSalvamentoEdicaoObra } from "../lib/editar-obra-save-preparation";
-import { prepararAssetsAtuaisEdicaoObra } from "../lib/editar-obra-current-assets-preparation";
+import {
+  prepararEEnviarAssetsEdicaoObra,
+  type ArquivoAntigoEdicaoObra,
+} from "../lib/editar-obra-save-assets-preparation";
 import { criarPayloadAtualizacaoObra } from "../lib/editar-obra-update-payload";
 import { atualizarObraNaListaLocalEdicao } from "../lib/editar-obra-local-update";
 import type { ArquivoObraLocal, ObraLocal } from "../types";
@@ -198,118 +199,34 @@ export function useEditarObraSaveAction({
       }
 
       const { obraLocalAtual, obraRemotaAtual } = confirmacaoPropriedade;
-      const assetsAtuais = prepararAssetsAtuaisEdicaoObra({
-        capa,
-        capaNome,
-        arquivoObra,
-        obraRemotaAtual,
-        obraLocalAtual,
-        backupArquivosObras,
-        capaRemovidaManualmente,
-        arquivoObraRemovidoManualmente,
-      });
-
-      let capaFinal = assetsAtuais.capaFinalInicial;
-      let capaNomeFinal = assetsAtuais.capaNomeFinalInicial;
-      let arquivoObraFinal: ArquivoObraLocal | null =
-        assetsAtuais.arquivoObraFinalInicial;
-
+      let capaFinal = "";
+      let capaNomeFinal = "";
+      let arquivoObraFinal: ArquivoObraLocal | null = null;
       const arquivosNovosEnviados: ArquivoStorageEdicaoObra[] = [];
-      const arquivosAntigosParaRemover: Array<{
-        bucket: "capas-obras" | "arquivos-obras";
-        caminho: string;
-      }> = [];
-      const {
-        caminhoCapaRemotaAtual,
-        caminhoArquivoRemotoAtual,
-      } = assetsAtuais;
-
-      if (capaBloqueadaPorClassificacao) {
-        capaFinal = "";
-        capaNomeFinal = "";
-
-        if (caminhoCapaRemotaAtual) {
-          const { error: erroRemoverCapaBloqueada } =
-            await supabase.storage
-              .from("capas-obras")
-              .remove([caminhoCapaRemotaAtual]);
-
-          if (erroRemoverCapaBloqueada) {
-            throw new Error(
-              `Nao consegui remover a capa publica antes de bloquear a obra 18+: ${erroRemoverCapaBloqueada.message}`
-            );
-          }
-        }
-      }
+      let arquivosAntigosParaRemover: ArquivoAntigoEdicaoObra[] = [];
 
       try {
-        if (capaArquivo && !capaBloqueadaPorClassificacao) {
-          const novaCapa = await enviarArquivoStorage(
-            "capas-obras",
-            userId,
-            capaArquivo
-          );
-
-          arquivosNovosEnviados.push(novaCapa);
-          capaFinal = novaCapa.referencia;
-          capaNomeFinal = capaArquivo.name;
-
-          if (
-            caminhoCapaRemotaAtual &&
-            caminhoCapaRemotaAtual !== novaCapa.caminho
-          ) {
-            arquivosAntigosParaRemover.push({
-              bucket: "capas-obras",
-              caminho: caminhoCapaRemotaAtual,
-            });
-          }
-        } else if (
-          !capaBloqueadaPorClassificacao &&
-          capaRemovidaManualmente &&
-          caminhoCapaRemotaAtual
-        ) {
-          arquivosAntigosParaRemover.push({
-            bucket: "capas-obras",
-            caminho: caminhoCapaRemotaAtual,
-          });
-        }
-
-        if (arquivoObraArquivo && arquivoObra) {
-          const novoArquivoObra = await enviarArquivoStorage(
-            "arquivos-obras",
-            userId,
-            arquivoObraArquivo
-          );
-
-          arquivosNovosEnviados.push(novoArquivoObra);
-          arquivoObraFinal = {
-            ...arquivoObra,
-            nome: arquivoObraArquivo.name,
-            tipo: arquivoObraArquivo.type || arquivoObra.tipo,
-            tamanho: arquivoObraArquivo.size,
-            conteudo: novoArquivoObra.referencia,
-            categoria: identificarCategoriaArquivo(arquivoObraArquivo),
-            criadoEm: arquivoObra.criadoEm || agora,
-          };
-
-          if (
-            caminhoArquivoRemotoAtual &&
-            caminhoArquivoRemotoAtual !== novoArquivoObra.caminho
-          ) {
-            arquivosAntigosParaRemover.push({
-              bucket: "arquivos-obras",
-              caminho: caminhoArquivoRemotoAtual,
-            });
-          }
-        } else if (
-          arquivoObraRemovidoManualmente &&
-          caminhoArquivoRemotoAtual
-        ) {
-          arquivosAntigosParaRemover.push({
-            bucket: "arquivos-obras",
-            caminho: caminhoArquivoRemotoAtual,
-          });
-        }
+        const assetsPreparados = await prepararEEnviarAssetsEdicaoObra({
+          capa,
+          capaNome,
+          arquivoObra,
+          obraRemotaAtual,
+          obraLocalAtual,
+          backupArquivosObras,
+          capaRemovidaManualmente,
+          arquivoObraRemovidoManualmente,
+          capaBloqueadaPorClassificacao,
+          capaArquivo,
+          arquivoObraArquivo,
+          userId,
+          agora,
+          arquivosNovosEnviados,
+        });
+        capaFinal = assetsPreparados.capaFinal;
+        capaNomeFinal = assetsPreparados.capaNomeFinal;
+        arquivoObraFinal = assetsPreparados.arquivoObraFinal;
+        arquivosAntigosParaRemover =
+          assetsPreparados.arquivosAntigosParaRemover;
 
         const { data: obraAtualizadaSupabase, error: erroAtualizarObra } =
           await supabase

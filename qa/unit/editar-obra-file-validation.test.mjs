@@ -8,9 +8,9 @@ const source = readFileSync(
   "utf8",
 );
 const pageSource = readFileSync(new URL("../../app/editar-obra/page.tsx", import.meta.url), "utf8");
-const saveActionSource = readFileSync(
+const saveAssetsPreparationSource = readFileSync(
   new URL(
-    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    "../../app/editar-obra/lib/editar-obra-save-assets-preparation.ts",
     import.meta.url,
   ),
   "utf8",
@@ -54,7 +54,7 @@ test("validadores preservam texto, PDF, categorias e aceitação de obra", () =>
 });
 
 test("Editar Obra delega somente a validação de arquivos", () => {
-  assert.match(saveActionSource, /from "\.\.\/lib\/editar-obra-file-validation";/);
+  assert.match(saveAssetsPreparationSource, /from "\.\/editar-obra-file-validation";/);
   for (const helper of ["arquivoTemExtensao", "tipoMimeCompativel", "arquivoImagemAceito", "arquivoTextoAceito", "arquivoPdfAceito", "identificarCategoriaArquivo", "arquivoObraAceito"]) {
     assert.doesNotMatch(pageSource, new RegExp(`function ${helper}\\(`));
   }
