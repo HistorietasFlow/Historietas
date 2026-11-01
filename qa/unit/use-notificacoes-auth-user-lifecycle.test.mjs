@@ -32,7 +32,10 @@ test("NotificacoesProvider delega somente o lifecycle de autenticação ao hook"
     provider,
     /import \{ useNotificacoesRealtimeLifecycle \} from "\.\/hooks\/use-notificacoes-realtime-lifecycle"/,
   );
-  assert.match(provider, /window\.addEventListener\("storage"/);
+  assert.match(
+    provider,
+    /import \{ useNotificacoesGlobalEvents \} from "\.\/hooks\/use-notificacoes-global-events"/,
+  );
 });
 
 test("hook preserva carregamento do usuário e preferência na troca de conta", () => {
