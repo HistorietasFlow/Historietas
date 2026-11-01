@@ -2,10 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const paginaObra = readFileSync(
-  new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
-  "utf8",
-);
 const lifecycleMetricas = readFileSync(
   new URL(
     "../../app/obra/[slug]/hooks/use-obra-work-metrics-lifecycle.ts",

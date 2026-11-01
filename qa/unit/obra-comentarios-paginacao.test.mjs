@@ -234,12 +234,20 @@ test("updaters enfileirados de carregar mais ignoram execucao obsoleta", () => {
 });
 
 test("total de comentarios e alimentado pelas metricas sem abrir o painel", () => {
+  const lifecycleMetricas = readFileSync(
+    new URL(
+      "../../app/obra/[slug]/hooks/use-obra-work-metrics-lifecycle.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
   assert.match(
-    paginaObra,
+    lifecycleMetricas,
     /setTotalComentariosObra\(metricasBase\.comentarios\);/,
   );
   assert.match(
-    paginaObra,
+    lifecycleMetricas,
     /setTotalComentariosObra\(metrica\.interacoesDiretas\.comentarios\);/,
   );
 });
