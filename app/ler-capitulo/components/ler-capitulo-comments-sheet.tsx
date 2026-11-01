@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, TouchEvent } from "react";
+import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useLerCapituloCommentSheetActions } from "../hooks/use-ler-capitulo-comment-sheet-actions";
 import { useLerCapituloCommentSheetComposer } from "../hooks/use-ler-capitulo-comment-sheet-composer";
+import { useLerCapituloCommentSheetGestures } from "../hooks/use-ler-capitulo-comment-sheet-gestures";
 import { LoadingSpinner } from "./ler-capitulo-loading-spinner";
 import {
   commentsSheetOverlayStyle,
@@ -272,12 +273,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
   onDenunciarComentario,
 }: ComentariosCapituloSheetProps) {
   const comentarioRef = useRef<HTMLTextAreaElement | null>(null);
-  const sheetRef = useRef<HTMLElement | null>(null);
-  const dragStartYRef = useRef(0);
-  const dragOffsetYRef = useRef(0);
-  const dragIgnorarCliqueRef = useRef(false);
-  const dragResetTimerRef = useRef<number | null>(null);
-  const [sheetExpandido, setSheetExpandido] = useState(false);
   const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
     useState<Record<string, number>>({});
   const [ordenacaoComentarios, setOrdenacaoComentarios] =
@@ -313,6 +308,24 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
     setRespostasVisiveisPorComentario,
   });
 
+  function fecharComentarios() {
+    setMenuOrdenacaoAberto(false);
+    limparRespostaComentario();
+    onFechar();
+  }
+  const {
+    sheetRef,
+    sheetExpandido,
+    fecharSheetComentarios,
+    iniciarArraste,
+    moverArraste,
+    finalizarArraste,
+    alternarExpansaoComentarios,
+  } = useLerCapituloCommentSheetGestures({
+    isDesktop,
+    onFecharComentarios: fecharComentarios,
+  });
+
   useEffect(() => {
     const timer = window.setInterval(() => {
       setAgoraComentarios(Date.now());
@@ -320,10 +333,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
 
     return () => {
       window.clearInterval(timer);
-
-      if (dragResetTimerRef.current !== null) {
-        window.clearTimeout(dragResetTimerRef.current);
-      }
     };
   }, []);
 
@@ -335,14 +344,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
       ),
     [ordenacaoComentarios, post?.comentarios]
   );
-
-  function fecharComentarios() {
-    setSheetExpandido(false);
-    setMenuOrdenacaoAberto(false);
-    limparRespostaComentario();
-    dragOffsetYRef.current = 0;
-    onFechar();
-  }
 
   function inserirNoComentario(valor: string) {
     if (!podeComentar || !comentarioRef.current) {
@@ -362,105 +363,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
 
     const novaPosicao = Math.min(inicio + valor.length, campo.value.length);
     campo.setSelectionRange(novaPosicao, novaPosicao);
-  }
-
-  function iniciarArraste(event: TouchEvent<HTMLDivElement>) {
-    if (isDesktop) {
-      return;
-    }
-
-    dragStartYRef.current = event.touches[0]?.clientY || 0;
-    dragOffsetYRef.current = 0;
-    dragIgnorarCliqueRef.current = false;
-
-    if (dragResetTimerRef.current !== null) {
-      window.clearTimeout(dragResetTimerRef.current);
-      dragResetTimerRef.current = null;
-    }
-
-    if (sheetRef.current) {
-      sheetRef.current.style.transition = "none";
-    }
-  }
-
-  function moverArraste(event: TouchEvent<HTMLDivElement>) {
-    if (isDesktop) {
-      return;
-    }
-
-    const posicaoAtual = event.touches[0]?.clientY || dragStartYRef.current;
-    const limiteSuperior = sheetExpandido ? -46 : -58;
-    const limiteInferior = sheetExpandido ? 112 : 132;
-    const deslocamento = Math.max(
-      limiteSuperior,
-      Math.min(limiteInferior, posicaoAtual - dragStartYRef.current)
-    );
-
-    dragOffsetYRef.current = deslocamento;
-
-    if (Math.abs(deslocamento) > 6) {
-      dragIgnorarCliqueRef.current = true;
-    }
-
-    if (sheetRef.current) {
-      const handle = sheetRef.current.querySelector(
-        "[data-comments-sheet-handle='true']"
-      ) as HTMLElement | null;
-
-      if (handle) {
-        handle.style.transform = `translate3d(0, ${deslocamento}px, 0)`;
-      }
-    }
-  }
-
-  function finalizarArraste() {
-    if (isDesktop) {
-      return;
-    }
-
-    const deslocamento = dragOffsetYRef.current;
-
-    if (sheetRef.current) {
-      sheetRef.current.style.transition = "height 220ms ease";
-
-      const handle = sheetRef.current.querySelector(
-        "[data-comments-sheet-handle='true']"
-      ) as HTMLElement | null;
-
-      if (handle) {
-        handle.style.transition = "transform 160ms ease";
-        handle.style.transform = "";
-      }
-    }
-
-    if (dragIgnorarCliqueRef.current) {
-      dragResetTimerRef.current = window.setTimeout(() => {
-        dragIgnorarCliqueRef.current = false;
-        dragResetTimerRef.current = null;
-      }, 350);
-    }
-
-    if (deslocamento < -34) {
-      setSheetExpandido(true);
-      return;
-    }
-
-    if (deslocamento > 52 && sheetExpandido) {
-      setSheetExpandido(false);
-      return;
-    }
-
-    if (deslocamento > 118 && !sheetExpandido) {
-      fecharComentarios();
-    }
-  }
-
-  function alternarExpansaoComentarios() {
-    if (isDesktop || dragIgnorarCliqueRef.current) {
-      return;
-    }
-
-    setSheetExpandido((expandidoAtual) => !expandidoAtual);
   }
 
   function renderizarComentario(
@@ -653,7 +555,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
       <button
         type="button"
         aria-label="Fechar comentários"
-        onClick={fecharComentarios}
+        onClick={fecharSheetComentarios}
         style={commentsSheetBackdropStyle}
       />
 

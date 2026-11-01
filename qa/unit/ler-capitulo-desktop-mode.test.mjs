@@ -91,7 +91,7 @@ test("Leitor delega apenas o modo desktop e preserva consumidores responsivos", 
   );
   assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 6);
   assert.equal((conteudo.match(/\bisDesktop\b/g) || []).length, 16);
-  assert.equal((sheet.match(/\bisDesktop\b/g) || []).length, 7);
+  assert.equal((sheet.match(/\bisDesktop\b/g) || []).length, 4);
   assert.equal((estilosLayout.match(/\bisDesktop\b/g) || []).length, 7);
   assert.match(
     pagina,

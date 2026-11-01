@@ -12,6 +12,7 @@ const denuncias = ler("../../app/ler-capitulo/lib/ler-capitulo-report-actions.ts
 const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet.tsx");
 const acoesSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-actions.ts");
 const compositorSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-composer.ts");
+const gestosSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-gestures.ts");
 const funcoes = sheet.slice(sheet.indexOf("function criarHrefPerfilUsuarioLeitor("), sheet.indexOf("type ComentariosCapituloSheetProps = {"));
 const js = typescript.transpileModule(`${funcoes}\nexport { criarHrefPerfilUsuarioLeitor, criarAvatarComentarioBaseStyle, formatarTempoRelativoComentarioCapitulo, criarEstruturaComentariosCapitulo };`, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
@@ -26,7 +27,7 @@ test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas",
   assert.match(sheet, /return createPortal\([\s\S]*?document\.body/);
   assert.match(sheet, /window\.setInterval\([\s\S]*?30000/);
   assert.match(sheet, /window\.clearInterval\(timer\)/);
-  assert.match(sheet, /window\.clearTimeout\(dragResetTimerRef\.current\)/);
+  assert.match(gestosSheet, /window\.clearTimeout\(dragResetTimerRef\.current\)/);
   assert.match(sheet, /event\.key === "Enter" \|\| event\.key === " "[\s\S]*?event\.preventDefault\(\)/);
   assert.match(sheet, /\["💜", "🔥", "😂", "😮", "😭", "👏"\]/);
   assert.match(sheet, /maxLength=\{420\}/);
@@ -43,6 +44,11 @@ test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas",
   assert.match(compositorSheet, /function responderComentario\(/);
   assert.doesNotMatch(sheet, /async function enviarComentario\(/);
   assert.doesNotMatch(sheet, /function responderComentario\(/);
+  assert.match(sheet, /useLerCapituloCommentSheetGestures\(\{/);
+  assert.match(gestosSheet, /function iniciarArraste\(/);
+  assert.match(gestosSheet, /function finalizarArraste\(/);
+  assert.doesNotMatch(sheet, /function iniciarArraste\(/);
+  assert.doesNotMatch(sheet, /function finalizarArraste\(/);
 });
 
 test("página mantém a integração e as ações de dados e persistência", () => {
