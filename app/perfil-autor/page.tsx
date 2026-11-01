@@ -26,6 +26,7 @@ import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actio
 import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-actions";
 import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
+import { usePerfilAutorProfileEditorState } from "./hooks/use-perfil-autor-profile-editor-state";
 import { usePerfilAutorLibraryCollectionActions } from "./hooks/use-perfil-autor-library-collection-actions";
 import { usePerfilAutorRatingActions } from "./hooks/use-perfil-autor-rating-actions";
 import { usePerfilAutorRatingSync } from "./hooks/use-perfil-autor-rating-sync";
@@ -167,7 +168,6 @@ function PerfilAutorPageContent() {
   const [mostrarDestaquesVisitante, setMostrarDestaquesVisitante] = useState(false);
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
-  const [avatarErro, setAvatarErro] = useState("");
   const { mensagemAcao, setMensagemAcao } = usePerfilAutorActionMessage();
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
@@ -182,15 +182,26 @@ function PerfilAutorPageContent() {
   const [menuPerfilAberto, setMenuPerfilAberto] = useState(false);
   const [usernameCabecalhoVisivel, setUsernameCabecalhoVisivel] =
     useState(false);
-  const [editorPerfilAberto, setEditorPerfilAberto] = useState(false);
-  const [nomePerfilEditor, setNomePerfilEditor] = useState("");
-  const [usernamePerfilEditor, setUsernamePerfilEditor] = useState("");
-  const [bioPerfilEditor, setBioPerfilEditor] = useState("");
-  const [avatarPerfilEditor, setAvatarPerfilEditor] = useState("");
-  const [avatarNomePerfilEditor, setAvatarNomePerfilEditor] = useState("");
-  const [avatarArquivoPerfilEditor, setAvatarArquivoPerfilEditor] =
-    useState<File | null>(null);
-  const [salvandoEditorPerfil, setSalvandoEditorPerfil] = useState(false);
+  const {
+    editorPerfilAberto,
+    setEditorPerfilAberto,
+    nomePerfilEditor,
+    setNomePerfilEditor,
+    usernamePerfilEditor,
+    setUsernamePerfilEditor,
+    bioPerfilEditor,
+    setBioPerfilEditor,
+    avatarPerfilEditor,
+    setAvatarPerfilEditor,
+    avatarNomePerfilEditor,
+    setAvatarNomePerfilEditor,
+    avatarArquivoPerfilEditor,
+    setAvatarArquivoPerfilEditor,
+    avatarErro,
+    setAvatarErro,
+    salvandoEditorPerfil,
+    setSalvandoEditorPerfil,
+  } = usePerfilAutorProfileEditorState();
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>(() =>
     normalizarAbaPerfilAutor(searchParams.get("aba")),

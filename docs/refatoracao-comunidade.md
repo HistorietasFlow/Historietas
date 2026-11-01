@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 1: estado do editor de perfil e avatar
+
+- Os estados locais do editor de perfil e avatar foram reunidos em hook dedicado, preservando valores iniciais, setters e integrações existentes com as actions e a UI.
+
 ## Admin Exclusões de Conta — Fase 2: estado de ações e feedback
 
 - O estado de abertura, feedback e ações em andamento foi movido para hook dedicado, preservando a recarga paralela da fila e os consumidores de cada estado.
