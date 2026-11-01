@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -62,13 +62,22 @@ import { useAdminComunidadeProfileReportActions } from "./hooks/use-admin-comuni
 import { useAdminComunidadeContentReportActions } from "./hooks/use-admin-comunidade-content-report-actions";
 import { useAdminComunidadeInitialData } from "./hooks/use-admin-comunidade-initial-data";
 import { useAdminComunidadeModerationFilters } from "./hooks/use-admin-comunidade-moderation-filters";
+import { useAdminComunidadeModerationActionState } from "./hooks/use-admin-comunidade-moderation-action-state";
 
 export default function AdminComunidadePage() {
   const { language } = useHistorietasLanguage();
-  const [erro, setErro] = useState("");
-  const [sucesso, setSucesso] = useState("");
-  const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
-  const [menuDenunciaAbertoId, setMenuDenunciaAbertoId] = useState("");
+  const {
+    erro,
+    setErro,
+    sucesso,
+    setSucesso,
+    acaoEmAndamento,
+    setAcaoEmAndamento,
+    menuDenunciaAbertoId,
+    setMenuDenunciaAbertoId,
+    alternarMenuDenuncia,
+    fecharMenuDenuncia,
+  } = useAdminComunidadeModerationActionState();
   const isDesktop = useAdminComunidadeDesktopMode();
   const router = useRouter();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -463,12 +472,8 @@ export default function AdminComunidadePage() {
                   acaoEmAndamento={acaoEmAndamento}
                   menuDenunciaAbertoId={menuDenunciaAbertoId}
                   totalReincidencias={totalReincidencias}
-                  onAlternarMenu={(menuIdPerfil) =>
-                    setMenuDenunciaAbertoId((denunciaAbertaId) =>
-                      denunciaAbertaId === menuIdPerfil ? "" : menuIdPerfil
-                    )
-                  }
-                  onFecharMenu={() => setMenuDenunciaAbertoId("")}
+                  onAlternarMenu={alternarMenuDenuncia}
+                  onFecharMenu={fecharMenuDenuncia}
                   onAtualizarStatus={(denunciaId, status) =>
                     void atualizarStatusDenunciaPerfil(denunciaId, status)
                   }
@@ -518,12 +523,8 @@ export default function AdminComunidadePage() {
                     denunciaResolvidaComConteudoIndisponivel
                   }
                   totalReincidencias={totalReincidencias}
-                  onAlternarMenu={() =>
-                    setMenuDenunciaAbertoId((denunciaAbertaId) =>
-                      denunciaAbertaId === denuncia.id ? "" : denuncia.id
-                    )
-                  }
-                  onFecharMenu={() => setMenuDenunciaAbertoId("")}
+                  onAlternarMenu={() => alternarMenuDenuncia(denuncia.id)}
+                  onFecharMenu={fecharMenuDenuncia}
                   onArquivarDenuncia={(denunciaId) =>
                     void arquivarDenuncia(denunciaId)
                   }

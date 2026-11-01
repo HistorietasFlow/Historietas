@@ -87,5 +87,5 @@ test("Admin Comunidade delega apenas o modo desktop e mantém fronteiras sensív
     pagina,
     /supabase\s*\.from\("comunidade_denuncias"\)/,
   );
-  assert.match(pagina, /setMenuDenunciaAbertoId\(""\)/);
+  assert.match(pagina, /fecharMenuDenuncia/);
 });
