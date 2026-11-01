@@ -21,6 +21,13 @@ const pageSource = readFileSync(
   new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
   "utf8",
 );
+const moderationFiltersHookSource = readFileSync(
+  new URL(
+    "../../app/admin/comunidade/hooks/use-admin-comunidade-moderation-filters.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function normalizarTexto(valor) {
   return String(valor)
@@ -283,11 +290,7 @@ test("Admin Comunidade preserva useMemo e delega filtros e totais", () => {
   );
   assert.match(
     pageSource,
-    /const denunciasFiltradas = useMemo\(\s*\(\) => filtrarDenunciasModeracao\(denuncias, statusFiltro, busca\),\s*\[busca, denuncias, statusFiltro\]/,
-  );
-  assert.match(
-    pageSource,
-    /const denunciasPerfisFiltradas = useMemo\([\s\S]*?filtrarDenunciasPerfisModeracao\([\s\S]*?\[busca, denunciasPerfis, statusFiltro\]/,
+    /useAdminComunidadeModerationFilters\(\{\s*denuncias,\s*denunciasPerfis,\s*setMenuDenunciaAbertoId,\s*\}\)/,
   );
   assert.match(
     pageSource,
@@ -301,6 +304,14 @@ test("Admin Comunidade preserva useMemo e delega filtros e totais", () => {
   assert.doesNotMatch(
     pageSource,
     /denunciasPerfis\.filter\(\s*\(denuncia\) => denuncia\.status ===/,
+  );
+  assert.match(
+    moderationFiltersHookSource,
+    /const denunciasFiltradas = useMemo\(\s*\(\) => filtrarDenunciasModeracao\(denuncias, statusFiltro, busca\),\s*\[busca, denuncias, statusFiltro\]/,
+  );
+  assert.match(
+    moderationFiltersHookSource,
+    /const denunciasPerfisFiltradas = useMemo\([\s\S]*?filtrarDenunciasPerfisModeracao\([\s\S]*?\[busca, denunciasPerfis, statusFiltro\]/,
   );
 
   for (const source of [filterSource, statsSource]) {

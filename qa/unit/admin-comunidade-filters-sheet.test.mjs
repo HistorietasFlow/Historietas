@@ -28,10 +28,8 @@ test("Admin Comunidade delega o painel de filtros ao componente dedicado", () =>
   );
   assert.match(
     pageSource,
-    /const \[statusFiltro, setStatusFiltro\] = useState<StatusFiltroDenuncia>/,
+    /useAdminComunidadeModerationFilters\(\{\s*denuncias,\s*denunciasPerfis,\s*setMenuDenunciaAbertoId,\s*\}\)/,
   );
-  assert.match(pageSource, /const \[busca, setBusca\] = useState\(""\);/);
-  assert.match(pageSource, /function limparFiltros\(\)/);
   assert.match(pageSource, /onSelecionarStatus=\{\(status\) => setStatusFiltro\(status\)\}/);
   assert.match(pageSource, /onLimparFiltros=\{limparFiltros\}/);
 });

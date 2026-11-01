@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Admin Comunidade — Fase 1: filtros e busca da moderação
+
+- O estado e o lifecycle de filtros e busca da moderação foram movidos para hook dedicado, preservando filtros memoizados, abertura dos controles, limpeza, filtro padrão e fechamento temporizado do menu ao mudar busca ou status; carregamento, autenticação, ações e layout permanecem na página.
+
 ## Comentários do capítulo — Fase 6: visibilidade e paginação das respostas
 
 - O estado, os limites e os cálculos de visibilidade das respostas foram movidos para hook dedicado, preservando abertura e carregamento em grupos de cinco, ocultação e a expansão mínima após envio de resposta; composer e layout permanecem no sheet.
