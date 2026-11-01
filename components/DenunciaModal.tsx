@@ -3,15 +3,14 @@
 import { createPortal } from "react-dom";
 import {
   type CSSProperties,
-  type FormEvent,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { supabase } from "../lib/supabase/client";
 import { useHistorietasLanguage } from "./HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../lib/i18n";
+import { useDenunciaSubmitAction } from "./hooks/use-denuncia-submit-action";
 
 export type TipoAlvoDenuncia =
   | "post"
@@ -390,35 +389,6 @@ function texto(
   return valor[idioma];
 }
 
-function obterCodigoErro(erro: unknown): string {
-  if (!erro || typeof erro !== "object") {
-    return "";
-  }
-
-  return String((erro as { code?: unknown }).code || "");
-}
-
-function obterMensagemErro(
-  erro: unknown,
-  idioma: HistorietasLanguage
-): string {
-  const codigo = obterCodigoErro(erro);
-
-  if (codigo === "23505") {
-    return texto(TEXTOS.duplicada, idioma);
-  }
-
-  if (codigo === "42501") {
-    return texto(TEXTOS.login, idioma);
-  }
-
-  if (codigo === "22023" || codigo === "23502") {
-    return texto(TEXTOS.alvoInvalido, idioma);
-  }
-
-  return texto(TEXTOS.erro, idioma);
-}
-
 export default function DenunciaModal({
   aberto,
   alvoTipo,
@@ -450,6 +420,28 @@ export default function DenunciaModal({
   const alvoDescricao = alvoTitulo.trim()
     ? `${alvoNome}: ${alvoTitulo.trim()}`
     : alvoNome;
+
+  const { enviarDenuncia } = useDenunciaSubmitAction({
+    alvoTipo,
+    alvoId,
+    alvoTitulo,
+    alvoUrl,
+    motivo,
+    descricao,
+    enviando,
+    enviado,
+    mensagens: {
+      motivoObrigatorio: texto(TEXTOS.motivoObrigatorio, language),
+      alvoInvalido: texto(TEXTOS.alvoInvalido, language),
+      duplicada: texto(TEXTOS.duplicada, language),
+      login: texto(TEXTOS.login, language),
+      erro: texto(TEXTOS.erro, language),
+    },
+    setEnviando,
+    setErro,
+    setEnviado,
+    onEnviada,
+  });
 
   useEffect(() => {
     const montarTimer = window.setTimeout(() => {
@@ -531,71 +523,6 @@ export default function DenunciaModal({
   function fecharModal() {
     if (!enviando) {
       onFechar();
-    }
-  }
-
-  async function enviarDenuncia(evento: FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
-
-    if (enviando || enviado) {
-      return;
-    }
-
-    if (!motivo) {
-      setErro(texto(TEXTOS.motivoObrigatorio, language));
-      return;
-    }
-
-    const alvoIdLimpo = alvoId.trim();
-
-    if (!alvoIdLimpo) {
-      setErro(texto(TEXTOS.alvoInvalido, language));
-      return;
-    }
-
-    setEnviando(true);
-    setErro("");
-
-    try {
-      const resposta =
-        alvoTipo === "perfil"
-          ? await supabase.rpc("criar_denuncia_perfil", {
-              p_denunciado_id: alvoIdLimpo,
-              p_perfil_nome: alvoTitulo.trim(),
-              p_perfil_url: alvoUrl.trim(),
-              p_motivo: motivo,
-              p_descricao: descricao.trim(),
-            })
-          : await supabase.rpc("criar_denuncia", {
-              p_alvo_tipo: alvoTipo,
-              p_alvo_id: alvoIdLimpo,
-              p_motivo: motivo,
-              p_detalhe: descricao.trim(),
-            });
-
-      const { data, error } = resposta;
-
-      if (error) {
-        setErro(obterMensagemErro(error, language));
-        return;
-      }
-
-      const primeiroRegistro = Array.isArray(data) ? data[0] : data;
-      const denunciaId =
-        primeiroRegistro &&
-        typeof primeiroRegistro === "object" &&
-        "denuncia_id" in primeiroRegistro
-          ? String(
-              (primeiroRegistro as { denuncia_id?: unknown }).denuncia_id || ""
-            )
-          : "";
-
-      setEnviado(true);
-      onEnviada?.(denunciaId);
-    } catch (erroDesconhecido) {
-      setErro(obterMensagemErro(erroDesconhecido, language));
-    } finally {
-      setEnviando(false);
     }
   }
 
