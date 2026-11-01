@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, TouchEvent } from "react";
 import { createPortal } from "react-dom";
+import { useLerCapituloCommentSheetActions } from "../hooks/use-ler-capitulo-comment-sheet-actions";
 import { LoadingSpinner } from "./ler-capitulo-loading-spinner";
 import {
   commentsSheetOverlayStyle,
@@ -283,9 +284,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
   const dragResetTimerRef = useRef<number | null>(null);
   const [sheetExpandido, setSheetExpandido] = useState(false);
   const [comentarioEnviando, setComentarioEnviando] = useState(false);
-  const [comentarioCurtindoId, setComentarioCurtindoId] = useState<string | null>(null);
-  const [comentarioRemovendoId, setComentarioRemovendoId] = useState<string | null>(null);
-  const [comentarioDenunciandoId, setComentarioDenunciandoId] = useState<string | null>(null);
   const [respostaComentario, setRespostaComentario] =
     useState<RespostaComentarioCapitulo | null>(null);
   const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
@@ -294,7 +292,20 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
     useState<OrdenacaoComentariosCapitulo>("relevantes");
   const [menuOrdenacaoAberto, setMenuOrdenacaoAberto] = useState(false);
   const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
-  const comentarioAcoesRef = useRef<Set<string>>(new Set<string>());
+  const {
+    comentarioCurtindoId,
+    comentarioRemovendoId,
+    comentarioDenunciandoId,
+    iniciarAcaoComentario,
+    finalizarAcaoComentario,
+    curtirComentarioSeguro,
+    removerComentarioSeguro,
+    denunciarComentarioSeguro,
+  } = useLerCapituloCommentSheetActions({
+    onCurtirComentario,
+    onRemoverComentario,
+    onDenunciarComentario,
+  });
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -345,76 +356,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
 
     const novaPosicao = Math.min(inicio + valor.length, campo.value.length);
     campo.setSelectionRange(novaPosicao, novaPosicao);
-  }
-
-  function iniciarAcaoComentario(chave: string) {
-    if (comentarioAcoesRef.current.has(chave)) {
-      return false;
-    }
-
-    comentarioAcoesRef.current.add(chave);
-    return true;
-  }
-
-  function finalizarAcaoComentario(chave: string) {
-    comentarioAcoesRef.current.delete(chave);
-  }
-
-  async function curtirComentarioSeguro(postId: string, comentarioId: string) {
-    const chaveAcao = `curtir-comentario:${comentarioId}`;
-
-    if (!iniciarAcaoComentario(chaveAcao)) {
-      return;
-    }
-
-    setComentarioCurtindoId(comentarioId);
-
-    try {
-      await onCurtirComentario(postId, comentarioId);
-    } finally {
-      finalizarAcaoComentario(chaveAcao);
-      setComentarioCurtindoId((comentarioAtualId) =>
-        comentarioAtualId === comentarioId ? null : comentarioAtualId
-      );
-    }
-  }
-
-  async function removerComentarioSeguro(postId: string, comentarioId: string) {
-    const chaveAcao = `remover-comentario:${comentarioId}`;
-
-    if (!iniciarAcaoComentario(chaveAcao)) {
-      return;
-    }
-
-    setComentarioRemovendoId(comentarioId);
-
-    try {
-      await onRemoverComentario(postId, comentarioId);
-    } finally {
-      finalizarAcaoComentario(chaveAcao);
-      setComentarioRemovendoId((comentarioAtualId) =>
-        comentarioAtualId === comentarioId ? null : comentarioAtualId
-      );
-    }
-  }
-
-  async function denunciarComentarioSeguro(comentarioId: string) {
-    const chaveAcao = `denunciar-comentario:${comentarioId}`;
-
-    if (!iniciarAcaoComentario(chaveAcao)) {
-      return;
-    }
-
-    setComentarioDenunciandoId(comentarioId);
-
-    try {
-      await onDenunciarComentario(comentarioId);
-    } finally {
-      finalizarAcaoComentario(chaveAcao);
-      setComentarioDenunciandoId((comentarioAtualId) =>
-        comentarioAtualId === comentarioId ? null : comentarioAtualId
-      );
-    }
   }
 
   function responderComentario(
