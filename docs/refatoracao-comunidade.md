@@ -2799,3 +2799,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Fase 7
 
 - O lifecycle de métricas da obra foi movido para useObraWorkMetricsLifecycle, preservando fallback local, carregamento remoto, sincronização de interações, total de comentários e cancelamento de resultados obsoletos.
+
+## Obra — Fase 8
+
+- Os guards de autenticação das ações foram movidos para useObraActionAuthGuards, preservando consulta Auth, redirecionamento de login, mensagens e proteção de identidade versionada para comentários, interações e avaliação.
