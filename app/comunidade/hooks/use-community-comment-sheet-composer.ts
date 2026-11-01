@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Dispatch, FormEvent, RefObject, SetStateAction } from "react";
+import type { FormEvent, RefObject } from "react";
 import type { ComentarioComunidade } from "../components/community-comment";
 import type { RespostaComentarioComunidade } from "../components/community-comment-reply";
 
@@ -16,9 +16,7 @@ type UseCommunityCommentSheetComposerParams = {
   ) => boolean | Promise<boolean>;
   iniciarAcaoComentario: (chave: string) => boolean;
   finalizarAcaoComentario: (chave: string) => void;
-  setRespostasVisiveisPorComentario: Dispatch<
-    SetStateAction<Record<string, number>>
-  >;
+  garantirRespostasVisiveis: (comentarioId: string) => void;
 };
 
 export function useCommunityCommentSheetComposer({
@@ -28,7 +26,7 @@ export function useCommunityCommentSheetComposer({
   onEnviar,
   iniciarAcaoComentario,
   finalizarAcaoComentario,
-  setRespostasVisiveisPorComentario,
+  garantirRespostasVisiveis,
 }: UseCommunityCommentSheetComposerParams) {
   const [comentarioEnviando, setComentarioEnviando] = useState(false);
   const [respostaComentario, setRespostaComentario] =
@@ -100,13 +98,7 @@ export function useCommunityCommentSheetComposer({
         setRespostaComentario(null);
 
         if (respostaAnterior?.comentarioPaiId) {
-          setRespostasVisiveisPorComentario((estadoAtual) => ({
-            ...estadoAtual,
-            [respostaAnterior.comentarioPaiId]: Math.max(
-              5,
-              estadoAtual[respostaAnterior.comentarioPaiId] || 0
-            ),
-          }));
+          garantirRespostasVisiveis(respostaAnterior.comentarioPaiId);
         }
       }
     } finally {

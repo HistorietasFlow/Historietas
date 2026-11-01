@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade Comments Sheet — Fase 5: visibilidade e paginação das respostas
+
+- O estado de visibilidade e as ações semânticas das respostas foram movidos para hook dedicado, reutilizando os helpers atuais e preservando grupos de cinco, limites, controles de exibição e expansão mínima após uma resposta enviada.
+
 ## Comunidade Comments Sheet — Fase 4: ordenação dos comentários
 
 - O estado e as ações semânticas de ordenação, incluindo a estrutura memoizada das threads, foram movidos para hook dedicado, preservando a ordem padrão, os helpers existentes, estados ativos, acessibilidade do menu e seu fechamento ao encerrar o sheet.
