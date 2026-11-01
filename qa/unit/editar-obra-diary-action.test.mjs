@@ -17,6 +17,13 @@ const saveActionSource = readFileSync(
   ),
   "utf8",
 );
+const diarySyncSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-diary-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo(resultados = []) {
@@ -178,9 +185,14 @@ test("Diário de Editar Obra absorve exceções e registra o aviso atual", async
 test("Editar Obra delega somente a ação de Diário", () => {
   assert.match(
     saveActionSource,
-    /import \{ registrarDiarioEdicaoObra \} from "\.\.\/lib\/editar-obra-diary-action";/,
+    /import \{ sincronizarDiarioEdicaoObra \} from "\.\.\/lib\/editar-obra-diary-sync";/,
   );
   assert.doesNotMatch(saveActionSource, /async function registrarDiarioEdicaoObra\(/);
+  assert.doesNotMatch(saveActionSource, /registrarDiarioEdicaoObra\(/);
+  assert.match(
+    diarySyncSource,
+    /import \{ registrarDiarioEdicaoObra \} from "\.\/editar-obra-diary-action";/,
+  );
   assert.match(source, /export async function registrarDiarioEdicaoObra\(/);
   assert.match(source, /\.from\("diario_atividades"\)\.insert\(payload\)/);
   assert.match(source, /await supabase\.from\("diario_atividades"\)\.insert\(\{/);

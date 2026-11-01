@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Editar Obra — Fase 6: sincronização com Diário
+
+- A localização da obra atualizada e o registro da edição no Diário foram movidos para helper dedicado, preservando visibilidade pública/privada, timestamp e o comportamento sem efeito quando a obra não é encontrada; remoção final de Storage, estados finais e tratamento global de erro permanecem no hook de salvamento.
+
 ## Editar Obra — Fase 5: persistência local e backup
 
 - A atualização da lista local, a persistência isolada por usuário e a regra de remoção ou sincronização do backup foram movidas para helper dedicado, preservando ordem, dados e retorno da lista final; remoção de Storage, Diário, estados finais e tratamento global de erro permanecem no hook de salvamento.

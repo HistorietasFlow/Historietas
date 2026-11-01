@@ -5,7 +5,7 @@ import {
   removerArquivosStorageEdicaoObra,
   type ArquivoStorageEdicaoObra,
 } from "../lib/editar-obra-remote-storage";
-import { registrarDiarioEdicaoObra } from "../lib/editar-obra-diary-action";
+import { sincronizarDiarioEdicaoObra } from "../lib/editar-obra-diary-sync";
 import { validarFormularioEdicaoObra } from "../lib/editar-obra-form-validation";
 import { obterIdentidadeSalvamentoEdicaoObra } from "../lib/editar-obra-save-auth-identity";
 import { confirmarPropriedadeObraParaSalvamentoEdicao } from "../lib/editar-obra-save-work-ownership";
@@ -276,16 +276,12 @@ export function useEditarObraSaveAction({
         obraLocalAtual,
       });
 
-      const obraAtualizadaDiario = novasObrasDoUsuario.find((obra) => obra.id === obraId);
-
-      if (obraAtualizadaDiario) {
-        await registrarDiarioEdicaoObra({
-          userId,
-          obra: obraAtualizadaDiario,
-          visibilidade: obraAtualizadaDiario.publicado ? "publico" : "privado",
-          atualizadoEm: agora,
-        });
-      }
+      await sincronizarDiarioEdicaoObra({
+        userId,
+        novasObrasDoUsuario,
+        obraId,
+        atualizadoEm: agora,
+      });
 
       setObras(novasObrasDoUsuario);
       setAutor(autorFinal);
