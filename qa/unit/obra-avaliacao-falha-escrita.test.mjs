@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const paginaObra = readFileSync(
-  new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
+const lifecycleAvaliacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-rating-lifecycle.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 const persistenciaAvaliacao = readFileSync(
@@ -22,13 +25,13 @@ const persistenciaDiario = readFileSync(
 );
 
 function obterBloco(inicioTexto, fimTexto) {
-  const inicio = paginaObra.indexOf(inicioTexto);
-  const fim = paginaObra.indexOf(fimTexto, inicio);
+  const inicio = lifecycleAvaliacao.indexOf(inicioTexto);
+  const fim = lifecycleAvaliacao.indexOf(fimTexto, inicio);
 
   assert.ok(inicio >= 0);
   assert.ok(fim > inicio);
 
-  return paginaObra.slice(inicio, fim);
+  return lifecycleAvaliacao.slice(inicio, fim);
 }
 
 test("troca de nota usa upsert sem apagar previamente a avaliacao existente", () => {
@@ -49,7 +52,7 @@ test("troca de nota usa upsert sem apagar previamente a avaliacao existente", ()
 test("falha de escrita restaura avaliacao e cache anteriores", () => {
   const bloco = obterBloco(
     "async function avaliarObra(nota: number)",
-    "async function compartilharObraAtual()",
+    "\n  return {\n    avaliarObra,",
   );
   const indiceAnterior = bloco.indexOf(
     "const avaliacaoAnterior = avaliacaoObra;",
@@ -89,7 +92,7 @@ test("falha de escrita restaura avaliacao e cache anteriores", () => {
 test("falha do Diario nao reverte avaliacao remota ja salva", () => {
   const bloco = obterBloco(
     "async function avaliarObra(nota: number)",
-    "async function compartilharObraAtual()",
+    "\n  return {\n    avaliarObra,",
   );
   const indiceSalvarRemoto = bloco.indexOf("await salvarAvaliacaoRemotaObra({");
   const indiceMensagemFalha = bloco.indexOf(

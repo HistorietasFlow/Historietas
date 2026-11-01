@@ -2791,3 +2791,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Fase 5
 
 - As interações de seguir, curtir, favoritar e concluir a obra foram movidas para useObraWorkInteractions, preservando persistência local e Supabase, sincronização com o Diário, atualizações otimistas, rollback e guards de identidade contra resultados assíncronos de contas anteriores.
+
+## Obra — Fase 6
+
+- O lifecycle e a mutation de avaliação da obra foram movidos para useObraRatingLifecycle, preservando fallback local, snapshot remoto, versionamento, persistência Supabase, sincronização com o Diário, rollback e guards contra resultados assíncronos obsoletos após troca de conta.

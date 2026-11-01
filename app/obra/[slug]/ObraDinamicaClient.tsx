@@ -11,7 +11,6 @@ import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historiet
 import { formatarNumeroCompacto, idObraSupabaseValido, normalizarTexto } from "../../../lib/utils";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
-import { carregarSnapshotRemotoAvaliacaoObra } from "./lib/obra-supabase-rating-loader";
 import {
   execucaoIdentidadeObraEstaAtual,
   type IdentidadeAutenticadaObra,
@@ -31,6 +30,7 @@ import { useObraCommentsOrdering } from "./hooks/use-obra-comments-ordering";
 import { useObraCommentsLoadPagination } from "./hooks/use-obra-comments-load-pagination";
 import { useObraCommentMutations } from "./hooks/use-obra-comment-mutations";
 import { useObraWorkInteractions } from "./hooks/use-obra-work-interactions";
+import { useObraRatingLifecycle } from "./hooks/use-obra-rating-lifecycle";
 import { useObraActionsSheet } from "./hooks/use-obra-actions-sheet";
 import { useObraClassificationPanel } from "./hooks/use-obra-classification-panel";
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
@@ -43,20 +43,10 @@ import {
   salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
 import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
-import { salvarAvaliacaoRemotaObra } from "./lib/obra-supabase-rating-persistence";
-import {
-  registrarAtividadeDiarioObra,
-  removerAtividadeDiarioObra,
-} from "./lib/obra-supabase-diary-activity-persistence";
 import {
   avaliacaoObraVazia,
-  calcularProximaAvaliacao,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
-import {
-  obterAvaliacaoLocalInicialObra,
-  salvarAvaliacaoLocal,
-} from "./lib/obra-local-rating-storage-utils";
 import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { obterClassificacaoIndicativaCompactaObra, obterContextoAutorObra, obterGeneroObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
@@ -186,7 +176,7 @@ export default function ObraDinamicaPage() {
   const agoraComentarios = useObraCommentsNow(comentariosAbertos);
   const isDesktop = useObraDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const avaliacaoVersaoRef = useRef(0);
+  const invalidarAvaliacaoObraRef = useRef<() => void>(() => {});
 
   const limparEstadoContaAnterior = useCallback(() => {
     setObrasLocais([]);
@@ -207,7 +197,7 @@ export default function ObraDinamicaPage() {
     setRespostaComentario(null);
     resetarRespostasVisiveis();
     setMensagemAcao("");
-    avaliacaoVersaoRef.current += 1;
+    invalidarAvaliacaoObraRef.current();
   }, [resetarRespostasVisiveis]);
 
   useEffect(() => {
@@ -610,110 +600,6 @@ export default function ObraDinamicaPage() {
     };
   }, [obra, obraNormalizada, usuarioIdLogado]);
 
-  useEffect(() => {
-    if (!obra) {
-      const resetAvaliacaoTimer = window.setTimeout(() => {
-        setAvaliacaoObra(avaliacaoObraVazia);
-      }, 0);
-
-      return () => {
-        window.clearTimeout(resetAvaliacaoTimer);
-      };
-    }
-
-    const obraAtual = obra;
-    const versaoAoIniciar = avaliacaoVersaoRef.current;
-    const avaliacaoLocalInicial = obterAvaliacaoLocalInicialObra(
-      obraAtual,
-      usuarioIdLogado,
-    );
-
-    const aplicarAvaliacaoLocalTimer = window.setTimeout(() => {
-      if (avaliacaoVersaoRef.current !== versaoAoIniciar) {
-        return;
-      }
-
-      setAvaliacaoObra({
-        media: avaliacaoLocalInicial.nota > 0 ? avaliacaoLocalInicial.nota : 0,
-        total: avaliacaoLocalInicial.nota > 0 ? 1 : 0,
-        minhaNota: avaliacaoLocalInicial.nota,
-        carregado: true,
-        salvando: false,
-      });
-    }, 0);
-
-    if (!obraAtual.id || !idObraSupabaseValido(obraAtual.id)) {
-      return () => {
-        window.clearTimeout(aplicarAvaliacaoLocalTimer);
-      };
-    }
-
-    let cancelado = false;
-
-    async function carregarAvaliacaoRealObra() {
-      try {
-        const snapshotRemoto = await carregarSnapshotRemotoAvaliacaoObra({
-          obra: obraAtual,
-          usuarioIdLogado,
-        });
-
-        if (!snapshotRemoto) {
-          return;
-        }
-
-        if (
-          cancelado ||
-          avaliacaoVersaoRef.current !== versaoAoIniciar
-        ) {
-          return;
-        }
-
-        if (
-          snapshotRemoto.userId &&
-          !snapshotRemoto.usuarioEhAutorDaObraAtual
-        ) {
-          salvarAvaliacaoLocal(
-            obraAtual,
-            snapshotRemoto.minhaNotaRemota,
-            snapshotRemoto.userId,
-          );
-        }
-
-        setAvaliacaoObra({
-          media: snapshotRemoto.media,
-          total: snapshotRemoto.total,
-          minhaNota: snapshotRemoto.minhaNota,
-          carregado: true,
-          salvando: false,
-        });
-      } catch (error) {
-        console.warn("Não consegui carregar a avaliação da obra:", error);
-
-        if (
-          !cancelado &&
-          avaliacaoVersaoRef.current === versaoAoIniciar
-        ) {
-          setAvaliacaoObra((avaliacaoAtual) => ({
-            ...avaliacaoAtual,
-            carregado: true,
-            salvando: false,
-          }));
-        }
-      }
-    }
-
-    void carregarAvaliacaoRealObra();
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(aplicarAvaliacaoLocalTimer);
-    };
-  }, [
-    obra,
-    obraNormalizada,
-    usuarioIdLogado,
-  ]);
-
   async function obterIdentidadeLogadaParaAcao(mensagem: string) {
     const identidadeEsperada = identidadeAutenticadaObraRef.current;
     const execucaoAtual = () =>
@@ -824,6 +710,25 @@ export default function ObraDinamicaPage() {
     setMensagemAcao,
   });
 
+  const {
+    avaliarObra,
+    invalidarAvaliacaoObra,
+  } = useObraRatingLifecycle({
+    obra,
+    obraNormalizada,
+    usuarioIdLogado,
+    autorObraId,
+    avaliacaoObra,
+    obterIdentidadeLogadaParaAcao,
+    criarGuardIdentidadeAcao,
+    setAvaliacaoObra,
+    setMensagemAcao,
+  });
+
+  useEffect(() => {
+    invalidarAvaliacaoObraRef.current = invalidarAvaliacaoObra;
+  }, [invalidarAvaliacaoObra]);
+
   function inserirNoComentarioObra(valor: string) {
     setComentarioTexto((textoAtual) => `${textoAtual}${valor}`.slice(0, 600));
     setComentarioStatus("");
@@ -856,180 +761,6 @@ export default function ObraDinamicaPage() {
     window.setTimeout(() => {
       comentarioInputRef.current?.focus();
     }, 0);
-  }
-
-  async function avaliarObra(nota: number) {
-    if (!obra || nota < 0 || nota > 5) {
-      return;
-    }
-
-    const identidadeAcao = await obterIdentidadeLogadaParaAcao(
-      "Entre na sua conta para avaliar esta obra."
-    );
-
-    if (!identidadeAcao) {
-      return;
-    }
-
-    const userId = identidadeAcao.usuarioId;
-    const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
-
-    if (!execucaoAcaoEstaAtual()) {
-      return;
-    }
-
-    if (autorObraId && userId === autorObraId) {
-      return;
-    }
-
-    if (!execucaoAcaoEstaAtual()) {
-      return;
-    }
-
-    const notaNormalizada = nota <= 0 ? 0 : Math.round(nota * 2) / 2;
-    const avaliacaoAnterior = avaliacaoObra;
-    const versaoAvaliacao = avaliacaoVersaoRef.current + 1;
-    avaliacaoVersaoRef.current = versaoAvaliacao;
-    const execucaoAvaliacaoEstaAtual = () =>
-      execucaoAcaoEstaAtual() &&
-      avaliacaoVersaoRef.current === versaoAvaliacao;
-
-    if (!execucaoAvaliacaoEstaAtual()) {
-      return;
-    }
-
-    const proximaAvaliacao = calcularProximaAvaliacao(
-      avaliacaoAnterior,
-      notaNormalizada
-    );
-
-    if (!execucaoAvaliacaoEstaAtual()) {
-      return;
-    }
-
-    setAvaliacaoObra(proximaAvaliacao);
-
-    if (!execucaoAvaliacaoEstaAtual()) {
-      return;
-    }
-
-    setMensagemAcao("");
-
-    if (!execucaoAvaliacaoEstaAtual()) {
-      return;
-    }
-
-    salvarAvaliacaoLocal(obra, notaNormalizada, userId);
-
-    if (!obra.id || !idObraSupabaseValido(obra.id)) {
-      if (execucaoAvaliacaoEstaAtual()) {
-        setAvaliacaoObra((avaliacaoAtual) => {
-          if (!execucaoAvaliacaoEstaAtual()) {
-            return avaliacaoAtual;
-          }
-
-          return {
-            ...avaliacaoAtual,
-            salvando: false,
-          };
-        });
-      }
-      return;
-    }
-
-    try {
-      if (!execucaoAvaliacaoEstaAtual()) {
-        return;
-      }
-
-      await salvarAvaliacaoRemotaObra({
-        obraId: obra.id,
-        userId,
-        nota: notaNormalizada,
-      });
-
-      if (!execucaoAvaliacaoEstaAtual()) {
-        return;
-      }
-    } catch (error) {
-      if (!execucaoAvaliacaoEstaAtual()) {
-        return;
-      }
-
-      console.warn("Não consegui salvar a avaliação da obra:", error);
-
-      salvarAvaliacaoLocal(
-        obra,
-        avaliacaoAnterior.minhaNota,
-        userId,
-      );
-      setAvaliacaoObra({
-        ...avaliacaoAnterior,
-        carregado: true,
-        salvando: false,
-      });
-      setMensagemAcao("Não foi possível salvar a avaliação agora.");
-      return;
-    }
-
-    if (!execucaoAvaliacaoEstaAtual()) {
-      return;
-    }
-
-    setMensagemAcao("");
-
-    try {
-      if (!execucaoAvaliacaoEstaAtual()) {
-        return;
-      }
-
-      if (notaNormalizada > 0) {
-        await registrarAtividadeDiarioObra({
-          userId,
-          obra,
-          tipo: "avaliou_obra",
-          nota: notaNormalizada,
-          visibilidade: "publico",
-          texto: `Avaliou ${obra.titulo} com ${notaNormalizada.toFixed(1).replace(".", ",")} estrelas.`,
-          execucaoAtual: execucaoAvaliacaoEstaAtual,
-        });
-      } else {
-        await removerAtividadeDiarioObra({
-          userId,
-          obra,
-          tipo: "avaliou_obra",
-          execucaoAtual: execucaoAvaliacaoEstaAtual,
-        });
-      }
-
-      if (!execucaoAvaliacaoEstaAtual()) {
-        return;
-      }
-    } catch (error) {
-      if (!execucaoAvaliacaoEstaAtual()) {
-        return;
-      }
-
-      console.warn(
-        "A avaliação foi salva, mas não consegui sincronizar o Diário:",
-        error,
-      );
-    }
-
-    if (!execucaoAvaliacaoEstaAtual()) {
-      return;
-    }
-
-    setAvaliacaoObra((avaliacaoAtual) => {
-      if (!execucaoAvaliacaoEstaAtual()) {
-        return avaliacaoAtual;
-      }
-
-      return {
-        ...avaliacaoAtual,
-        salvando: false,
-      };
-    });
   }
 
   async function compartilharObraAtual() {

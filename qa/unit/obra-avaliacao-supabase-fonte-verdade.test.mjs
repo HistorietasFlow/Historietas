@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const paginaObra = readFileSync(
-  new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
+const lifecycleAvaliacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-rating-lifecycle.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 const loaderAvaliacao = readFileSync(
@@ -15,10 +18,10 @@ const loaderAvaliacao = readFileSync(
 );
 
 function obterBlocoCarregamentoAvaliacao() {
-  const inicio = paginaObra.indexOf(
+  const inicio = lifecycleAvaliacao.indexOf(
     "async function carregarAvaliacaoRealObra()",
   );
-  const fim = paginaObra.indexOf(
+  const fim = lifecycleAvaliacao.indexOf(
     "void carregarAvaliacaoRealObra();",
     inicio,
   );
@@ -26,7 +29,7 @@ function obterBlocoCarregamentoAvaliacao() {
   assert.ok(inicio >= 0);
   assert.ok(fim > inicio);
 
-  return paginaObra.slice(inicio, fim);
+  return lifecycleAvaliacao.slice(inicio, fim);
 }
 
 test("Supabase prevalece sobre cache local quando a avaliacao remota carrega", () => {
@@ -63,11 +66,11 @@ test("cache de avaliacao so e sincronizado depois do guard da execucao atual", (
 
 test("localStorage continua disponivel apenas como fallback inicial", () => {
   assert.match(
-    paginaObra,
+    lifecycleAvaliacao,
     /const avaliacaoLocalInicial = obterAvaliacaoLocalInicialObra\(\s*obraAtual,\s*usuarioIdLogado,\s*\);/,
   );
   assert.match(
-    paginaObra,
+    lifecycleAvaliacao,
     /const aplicarAvaliacaoLocalTimer = window\.setTimeout\([\s\S]*?minhaNota: avaliacaoLocalInicial\.nota,/,
   );
 });

@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const lifecycleAvaliacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-rating-lifecycle.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("resumo preserva média, estrelas, total e acessibilidade", () => {
   for (const trecho of [
@@ -50,11 +57,14 @@ test("cliente preserva a variável, o estado e a posição do resumo no hero", (
     "media={avaliacaoObra.media}",
     "total={avaliacaoObra.total}",
     "const [avaliacaoObra, setAvaliacaoObra]",
-    "async function avaliarObra",
+    "useObraRatingLifecycle({",
     "{resumoAvaliacaoCabecalho}",
     "<ObraHeroHeader",
     "resumoAvaliacao={resumoAvaliacaoCabecalho}",
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
   }
+
+  assert.ok(lifecycleAvaliacao.includes("async function avaliarObra"));
+  assert.doesNotMatch(paginaObra, /async function avaliarObra/);
 });

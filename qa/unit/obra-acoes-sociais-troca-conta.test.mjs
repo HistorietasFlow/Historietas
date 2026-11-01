@@ -24,6 +24,13 @@ const interacoesObra = readFileSync(
   ),
   "utf8",
 );
+const lifecycleAvaliacaoObra = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-rating-lifecycle.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const persistenciaInteracoesObra = readFileSync(
   new URL(
     "../../app/obra/[slug]/lib/obra-supabase-interaction-persistence.ts",
@@ -143,7 +150,11 @@ test("oito acoes sociais usam identidade versionada", () => {
     [mutacoesComentariosObra, "async function alternarCurtidaComentarioObra(", "return {"],
     [interacoesObra, "async function alternarFavoritoObra()", "async function alternarConcluirObra()"],
     [interacoesObra, "async function alternarConcluirObra()", "return {"],
-    [paginaObra, "async function avaliarObra(", "async function compartilharObraAtual()"],
+    [
+      lifecycleAvaliacaoObra,
+      "async function avaliarObra(",
+      "\n  return {\n    avaliarObra,",
+    ],
   ];
 
   for (const [conteudo, inicio, fim] of handlers) {
@@ -1006,9 +1017,10 @@ test("avaliacao valida para a mesma identidade finaliza e uma versao mais nova b
 });
 
 test("avaliacao usa identidade versionada nos limites de persistencia, Diario e finalizacao", () => {
-  const bloco = obterBloco(
+  const bloco = obterBlocoEm(
+    lifecycleAvaliacaoObra,
     "async function avaliarObra(nota: number)",
-    "async function compartilharObraAtual()",
+    "\n  return {\n    avaliarObra,",
   );
   const indiceIdentidade = bloco.indexOf("await obterIdentidadeLogadaParaAcao");
   const indiceOtimista = bloco.indexOf("setAvaliacaoObra(proximaAvaliacao)");
