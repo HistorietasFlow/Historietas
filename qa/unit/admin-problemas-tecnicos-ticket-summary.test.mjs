@@ -18,7 +18,7 @@ test("pagina preserva a orquestracao do card", () => {
   assert.match(page, /const salvando = acaoEmAndamento === problema\.id/);
   assert.match(page, /const nomeUsuario/);
   assert.match(page, /\{aberto && \(/);
-  assert.match(page, /setChamadoAbertoId/);
+  assert.match(page, /alternarChamadoAberto\(problema\.id\)/);
   assert.match(page, /setObservacoes/);
   assert.match(page, /atualizarChamado/);
 });
