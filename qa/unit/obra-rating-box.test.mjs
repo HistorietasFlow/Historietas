@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const lifecycleAvaliacao = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-rating-lifecycle.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("rating box preserva layout, calculos e estrelas acessiveis", () => {
   for (const trecho of [
@@ -49,16 +56,12 @@ test("rating box preserva layout, calculos e estrelas acessiveis", () => {
   assert.equal((ratingBox.match(/★/g) || []).length, 2);
 });
 
-test("cliente preserva condicao, estado e avaliacao protegida", () => {
+test("cliente delega a avaliacao protegida e preserva a condicao da UI", () => {
   for (const trecho of [
     "autenticacaoCarregada && !usuarioEhAutorDaObra",
     "avaliacaoObra",
-    "async function avaliarObra(nota: number)",
-    "identidadeAcao",
-    "execucaoAvaliacaoEstaAtual",
-    "salvarAvaliacaoRemotaObra",
-    "registrarAtividadeDiarioObra",
-    "removerAtividadeDiarioObra",
+    'import { useObraRatingLifecycle } from "./hooks/use-obra-rating-lifecycle";',
+    "} = useObraRatingLifecycle({",
     "<ObraRatingBox",
     "minhaNota={avaliacaoObra.minhaNota}",
     "salvando={avaliacaoObra.salvando}",
@@ -67,8 +70,19 @@ test("cliente preserva condicao, estado e avaliacao protegida", () => {
     assert.ok(paginaObra.includes(trecho), trecho);
   }
 
+  for (const trecho of [
+    "async function avaliarObra(nota: number)",
+    "identidadeAcao",
+    "execucaoAvaliacaoEstaAtual",
+    "salvarAvaliacaoRemotaObra",
+    "registrarAtividadeDiarioObra",
+    "removerAtividadeDiarioObra",
+  ]) {
+    assert.ok(lifecycleAvaliacao.includes(trecho), trecho);
+  }
+
   assert.doesNotMatch(
     paginaObra,
-    /obterProximaNotaAvaliacao/,
+    /async function avaliarObra\(nota: number\)/,
   );
 });
