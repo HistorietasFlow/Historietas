@@ -2815,3 +2815,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## NotificacoesProvider — Fase 1
 
 - O lifecycle de autenticação e troca de usuário foi movido para useNotificacoesAuthUserLifecycle, preservando consulta Auth, preferência receberAvisos, invalidação da conta anterior, debounce, timers e cleanup, sem mover Realtime, eventos globais ou Context.
+
+## NotificacoesProvider — Fase 2
+
+- O lifecycle de Realtime foi movido para useNotificacoesRealtimeLifecycle, preservando canal Supabase, postgres_changes, atualização inicial, debounce, reset por usuário/preferência e cleanup, sem mover eventos globais ou Context.

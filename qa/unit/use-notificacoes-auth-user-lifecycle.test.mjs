@@ -28,7 +28,10 @@ test("NotificacoesProvider delega somente o lifecycle de autenticação ao hook"
   assert.match(provider, /\bcarregarReceberAvisos,\s*idUsuarioSupabaseValido,\s*erroEhSessaoAusente,/);
   assert.doesNotMatch(provider, /supabase\.auth\.getUser\(\)/);
   assert.doesNotMatch(provider, /supabase\.auth\.onAuthStateChange\(/);
-  assert.match(provider, /supabase\s*\.channel\(/);
+  assert.match(
+    provider,
+    /import \{ useNotificacoesRealtimeLifecycle \} from "\.\/hooks\/use-notificacoes-realtime-lifecycle"/,
+  );
   assert.match(provider, /window\.addEventListener\("storage"/);
 });
 
