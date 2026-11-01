@@ -2803,3 +2803,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Fase 8
 
 - Os guards de autenticação das ações foram movidos para useObraActionAuthGuards, preservando consulta Auth, redirecionamento de login, mensagens e proteção de identidade versionada para comentários, interações e avaliação.
+
+## DenunciaModal — Fase 1
+
+- O fluxo de envio da denúncia foi movido para useDenunciaSubmitAction, preservando validações, regras por tipo de alvo, RPCs Supabase, tratamento de erro e resultado de sucesso, enquanto o modal mantém portal, foco, teclado e composição visual.
