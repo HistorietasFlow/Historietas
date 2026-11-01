@@ -2811,3 +2811,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## DenunciaModal — Fase 2
 
 - O lifecycle do modal foi movido para useDenunciaModalLifecycle, preservando montagem do portal, reset ao abrir, bloqueio e restauração do body, foco inicial, Escape, focus trap, listeners e cleanup.
+
+## NotificacoesProvider — Fase 1
+
+- O lifecycle de autenticação e troca de usuário foi movido para useNotificacoesAuthUserLifecycle, preservando consulta Auth, preferência receberAvisos, invalidação da conta anterior, debounce, timers e cleanup, sem mover Realtime, eventos globais ou Context.
