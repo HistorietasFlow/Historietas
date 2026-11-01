@@ -26,12 +26,9 @@ test("NotificacoesProvider delega somente o lifecycle de Realtime ao hook", () =
   );
   assert.doesNotMatch(provider, /supabase\s*\.channel\(/);
   assert.doesNotMatch(provider, /supabase\.removeChannel\(/);
-  assert.match(provider, /window\.addEventListener\("storage"/);
-  assert.match(provider, /window\.addEventListener\("focus"/);
-  assert.match(provider, /document\.addEventListener\("visibilitychange"/);
   assert.match(
     provider,
-    /window\.addEventListener\(\s*"historietas:notificacoes-atualizadas"/,
+    /import \{ useNotificacoesGlobalEvents \} from "\.\/hooks\/use-notificacoes-global-events"/,
   );
   assert.match(provider, /createContext<NotificacoesContextValue/);
 });

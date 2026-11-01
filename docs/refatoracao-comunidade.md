@@ -2819,3 +2819,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## NotificacoesProvider — Fase 2
 
 - O lifecycle de Realtime foi movido para useNotificacoesRealtimeLifecycle, preservando canal Supabase, postgres_changes, atualização inicial, debounce, reset por usuário/preferência e cleanup, sem mover eventos globais ou Context.
+
+## NotificacoesProvider — Fase 3
+
+- Os eventos globais e a sincronização da preferência foram movidos para useNotificacoesGlobalEvents, preservando os eventos local, de configurações, storage, focus e visibilitychange, o recarregamento de receberAvisos, o debounce e cleanup, sem mover Auth, Realtime, consulta de não lidas ou Context.
