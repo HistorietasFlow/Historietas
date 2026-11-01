@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade Comments Sheet — Fase 3: gestos e expansão do sheet
+
+- O estado de expansão, refs e lifecycle de drag foram movidos para hook dedicado, reutilizando os helpers de movimento e decisão já existentes e preservando transições, timer, proteção contra clique após arraste e fechamento semântico no sheet.
+
 ## Comunidade Comments Sheet — Fase 2: envio e resposta
 
 - O estado e o fluxo de envio/resposta foram movidos para hook dedicado, preservando menção e foco, lock de envio, limpeza do composer e a visibilidade mínima de cinco respostas após sucesso; ações de curtir, remover e denunciar, drag, ordenação, paginação e renderização permanecem nas suas fronteiras atuais.
