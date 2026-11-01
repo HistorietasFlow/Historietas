@@ -6,12 +6,19 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const lifecycleMetricas = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-work-metrics-lifecycle.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function obterBlocoMetricasReais() {
-  const inicio = paginaObra.indexOf(
+  const inicio = lifecycleMetricas.indexOf(
     "async function carregarMetricasReaisObra()",
   );
-  const fim = paginaObra.indexOf(
+  const fim = lifecycleMetricas.indexOf(
     "void carregarMetricasReaisObra();",
     inicio,
   );
@@ -19,7 +26,7 @@ function obterBlocoMetricasReais() {
   assert.ok(inicio >= 0);
   assert.ok(fim > inicio);
 
-  return paginaObra.slice(inicio, fim);
+  return lifecycleMetricas.slice(inicio, fim);
 }
 
 test("Supabase prevalece sobre cache local nas interacoes da obra", () => {
@@ -52,16 +59,16 @@ test("cache local e sincronizado somente depois do guard da execucao atual", () 
   const bloco = obterBlocoMetricasReais();
   const indiceGuard = bloco.indexOf("if (cancelado)");
   const indiceCacheCurtidas = bloco.indexOf(
-    "salvarStorageUsuarioObraPublica(\n            LIKED_WORKS_STORAGE_KEY",
+    "salvarStorageUsuarioObraPublica(\n            likedWorksStorageKey",
   );
   const indiceCacheSeguidas = bloco.indexOf(
-    "salvarStorageUsuarioObraPublica(\n            FOLLOWED_WORKS_STORAGE_KEY",
+    "salvarStorageUsuarioObraPublica(\n            followedWorksStorageKey",
   );
   const indiceCacheFavoritos = bloco.indexOf(
-    "salvarListaLocalObraPublica(\n            obraAtual,\n            FAVORITES_STORAGE_KEY",
+    "salvarListaLocalObraPublica(\n            obraAtual,\n            favoritesStorageKey",
   );
   const indiceCacheConcluidas = bloco.indexOf(
-    "salvarListaLocalObraPublica(\n            obraAtual,\n            COMPLETED_STORAGE_KEY",
+    "salvarListaLocalObraPublica(\n            obraAtual,\n            completedStorageKey",
   );
   const indiceEstado = bloco.indexOf("setObraSeguida(seguindoAtivo);");
 
@@ -74,12 +81,12 @@ test("cache local e sincronizado somente depois do guard da execucao atual", () 
 });
 
 test("fallback local continua aplicado antes da leitura remota", () => {
-  const inicioEfeito = paginaObra.indexOf("const metricasBase = criarMetricasBaseObra");
-  const inicioRemoto = paginaObra.indexOf(
+  const inicioEfeito = lifecycleMetricas.indexOf("const metricasBase = criarMetricasBaseObra");
+  const inicioRemoto = lifecycleMetricas.indexOf(
     "async function carregarMetricasReaisObra()",
     inicioEfeito,
   );
-  const blocoFallback = paginaObra.slice(inicioEfeito, inicioRemoto);
+  const blocoFallback = lifecycleMetricas.slice(inicioEfeito, inicioRemoto);
 
   assert.match(blocoFallback, /curtidaAtiva: curtidaLocalAtiva/);
   assert.match(blocoFallback, /setObraSeguida\(seguindoLocalAtivo\)/);

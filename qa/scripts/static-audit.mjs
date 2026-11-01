@@ -1104,7 +1104,7 @@ const metricsConsumerFiles = [
   "app/seguindo/lib/seguindo-work-query-utils.ts",
   "app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
   "app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
-  "app/obra/[slug]/ObraDinamicaClient.tsx",
+  "app/obra/[slug]/hooks/use-obra-work-metrics-lifecycle.ts",
   "app/ler-capitulo/lib/ler-capitulo-metrics.ts"
 ];
 const consumersOutsideMetricsContract = metricsConsumerFiles.filter(

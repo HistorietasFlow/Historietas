@@ -8,9 +8,8 @@ import { supabase } from "../../../lib/supabase/client";
 import DenunciaModal from "../../../components/DenunciaModal";
 import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
-import { formatarNumeroCompacto, idObraSupabaseValido, normalizarTexto } from "../../../lib/utils";
+import { formatarNumeroCompacto, normalizarTexto } from "../../../lib/utils";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
-import { carregarMetricasConteudos } from "../../../lib/metricas";
 import {
   execucaoIdentidadeObraEstaAtual,
   type IdentidadeAutenticadaObra,
@@ -31,6 +30,7 @@ import { useObraCommentsLoadPagination } from "./hooks/use-obra-comments-load-pa
 import { useObraCommentMutations } from "./hooks/use-obra-comment-mutations";
 import { useObraWorkInteractions } from "./hooks/use-obra-work-interactions";
 import { useObraRatingLifecycle } from "./hooks/use-obra-rating-lifecycle";
+import { useObraWorkMetricsLifecycle } from "./hooks/use-obra-work-metrics-lifecycle";
 import { useObraActionsSheet } from "./hooks/use-obra-actions-sheet";
 import { useObraClassificationPanel } from "./hooks/use-obra-classification-panel";
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
@@ -38,22 +38,20 @@ import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
 import { useObraViewRegistration } from "./hooks/use-obra-view-registration";
 import {
-  carregarListaLocalObraPublica,
   lerStorageUsuarioObraPublica,
-  salvarStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
 import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
 import {
   avaliacaoObraVazia,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
-import { criarMetricasBaseObra, metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
+import { metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
 import { obterClassificacaoIndicativaCompactaObra, obterContextoAutorObra, obterGeneroObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor, criarLoginHrefObraPublica } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { obterAcaoLeituraPrincipalObra, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
-import { obraEstaEmListaLocalObraPublica, salvarListaLocalObraPublica } from "./lib/obra-interaction-utils";
+import { obraEstaEmListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarEstruturaComentariosObra, obterObraIdComentarios, type ComentarioObraPublico, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarLinkComFallback } from "./lib/obra-share-utils";
 import { obraPageCss } from "./lib/obra-page-css";
@@ -399,206 +397,21 @@ export default function ObraDinamicaPage() {
     };
   }, [obra, obraNormalizada, usuarioIdLogado]);
 
-  useEffect(() => {
-    if (!obra) {
-      const resetMetricasTimer = window.setTimeout(() => {
-        setMetricasObra(metricasObraVazias);
-        setTotalComentariosObra(0);
-      }, 0);
-
-      return () => {
-        window.clearTimeout(resetMetricasTimer);
-      };
-    }
-
-    const obraAtual = obra;
-    const obraId = obraAtual.id;
-    const metricasBase = criarMetricasBaseObra(obraAtual);
-    let curtidaLocalAtiva = false;
-    let seguindoLocalAtivo = false;
-    try {
-      const curtidasTexto = lerStorageUsuarioObraPublica(
-        LIKED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
-      );
-      const curtidasJson: unknown = curtidasTexto
-        ? JSON.parse(curtidasTexto)
-        : [];
-      const obrasCurtidas = Array.isArray(curtidasJson)
-        ? curtidasJson.filter(
-            (titulo): titulo is string =>
-              typeof titulo === "string" && Boolean(titulo.trim())
-          )
-        : [];
-
-      curtidaLocalAtiva = obrasCurtidas.includes(obraNormalizada);
-    } catch {
-      curtidaLocalAtiva = false;
-    }
-
-    try {
-      const seguidasTexto = lerStorageUsuarioObraPublica(
-        FOLLOWED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
-      );
-      const seguidasJson: unknown = seguidasTexto
-        ? JSON.parse(seguidasTexto)
-        : [];
-      const obrasSeguidas = Array.isArray(seguidasJson)
-        ? seguidasJson.filter(
-            (titulo): titulo is string =>
-              typeof titulo === "string" && Boolean(titulo.trim())
-          )
-        : [];
-
-      seguindoLocalAtivo = obrasSeguidas.includes(obraNormalizada);
-    } catch {
-      seguindoLocalAtivo = false;
-    }
-
-    const aplicarMetricasLocaisTimer = window.setTimeout(() => {
-      setObraSeguida(seguindoLocalAtivo);
-      setMetricasComunidadeObra({
-        ...metricasComunidadeObraVazias,
-        carregado: true,
-      });
-      setMetricasObra({
-        ...metricasBase,
-        curtidaAtiva: curtidaLocalAtiva,
-        curtidas: Math.max(
-          metricasBase.curtidas,
-          curtidaLocalAtiva ? 1 : 0
-        ),
-        seguidores: Math.max(
-          metricasBase.seguidores,
-          seguindoLocalAtivo ? 1 : 0
-        ),
-        carregado: true,
-      });
-      setTotalComentariosObra(metricasBase.comentarios);
-    }, 0);
-
-    if (
-      obraAtual.origem !== "local" ||
-      !obraId ||
-      !idObraSupabaseValido(obraId)
-    ) {
-      return () => {
-        window.clearTimeout(aplicarMetricasLocaisTimer);
-      };
-    }
-
-    let cancelado = false;
-
-    async function carregarMetricasReaisObra() {
-      try {
-        const contrato = await carregarMetricasConteudos({
-          obraIds: [obraId],
-        });
-        const metrica = contrato.obras.get(obraId);
-
-        if (!contrato.carregado || !metrica) {
-          throw new Error("Métricas da obra indisponíveis.");
-        }
-
-        const curtidaAtiva = metrica.usuario.curtiu;
-        const seguindoAtivo = metrica.usuario.seguiu;
-        const favoritadaAtiva = metrica.usuario.favoritou;
-        const concluidaAtiva = metrica.usuario.concluiu;
-
-        if (cancelado) {
-          return;
-        }
-
-        if (usuarioIdLogado) {
-          const obrasCurtidas = carregarListaLocalObraPublica(
-            LIKED_WORKS_STORAGE_KEY,
-            usuarioIdLogado,
-          );
-          const novasObrasCurtidas = curtidaAtiva
-            ? Array.from(new Set([...obrasCurtidas, obraNormalizada]))
-            : obrasCurtidas.filter((titulo) => titulo !== obraNormalizada);
-
-          salvarStorageUsuarioObraPublica(
-            LIKED_WORKS_STORAGE_KEY,
-            usuarioIdLogado,
-            novasObrasCurtidas,
-          );
-
-          const obrasSeguidas = carregarListaLocalObraPublica(
-            FOLLOWED_WORKS_STORAGE_KEY,
-            usuarioIdLogado,
-          );
-          const chavesObraAtual = Array.from(
-            new Set(
-              [
-                obraNormalizada,
-                obraAtual.id || "",
-                obraAtual.slug || "",
-                obraAtual.link || "",
-              ].filter((chave) => Boolean(chave.trim())),
-            ),
-          );
-          const novasObrasSeguidas = seguindoAtivo
-            ? Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]))
-            : obrasSeguidas.filter(
-                (chave) => !chavesObraAtual.includes(chave),
-              );
-
-          salvarStorageUsuarioObraPublica(
-            FOLLOWED_WORKS_STORAGE_KEY,
-            usuarioIdLogado,
-            novasObrasSeguidas,
-          );
-          salvarListaLocalObraPublica(
-            obraAtual,
-            FAVORITES_STORAGE_KEY,
-            favoritadaAtiva,
-            usuarioIdLogado,
-          );
-          salvarListaLocalObraPublica(
-            obraAtual,
-            COMPLETED_STORAGE_KEY,
-            concluidaAtiva,
-            usuarioIdLogado,
-          );
-        }
-
-        setObraSeguida(seguindoAtivo);
-        setObraFavoritada(favoritadaAtiva);
-        setObraConcluida(concluidaAtiva);
-        setMetricasObra({
-          visualizacoes: metrica.visualizacoes,
-          curtidas: metrica.interacoesDiretas.curtidas,
-          comentarios: metrica.interacoesDiretas.comentarios,
-          seguidores: metrica.interacoesDiretas.seguidores,
-          curtidaAtiva,
-          carregado: true,
-        });
-        setTotalComentariosObra(metrica.interacoesDiretas.comentarios);
-        setMetricasComunidadeObra({
-          teorias: metrica.comunidade.teorias,
-          reviews: metrica.comunidade.reviews,
-          posts: metrica.comunidade.posts,
-          carregado: true,
-        });
-      } catch {
-        if (!cancelado) {
-          setMetricasObra((metricasAtuais) => ({
-            ...metricasAtuais,
-            carregado: true,
-          }));
-        }
-      }
-    }
-
-    void carregarMetricasReaisObra();
-
-    return () => {
-      cancelado = true;
-      window.clearTimeout(aplicarMetricasLocaisTimer);
-    };
-  }, [obra, obraNormalizada, usuarioIdLogado]);
+  useObraWorkMetricsLifecycle({
+    obra,
+    obraNormalizada,
+    usuarioIdLogado,
+    followedWorksStorageKey: FOLLOWED_WORKS_STORAGE_KEY,
+    likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY,
+    favoritesStorageKey: FAVORITES_STORAGE_KEY,
+    completedStorageKey: COMPLETED_STORAGE_KEY,
+    setObraSeguida,
+    setObraFavoritada,
+    setObraConcluida,
+    setMetricasObra,
+    setMetricasComunidadeObra,
+    setTotalComentariosObra,
+  });
 
   async function obterIdentidadeLogadaParaAcao(mensagem: string) {
     const identidadeEsperada = identidadeAutenticadaObraRef.current;
