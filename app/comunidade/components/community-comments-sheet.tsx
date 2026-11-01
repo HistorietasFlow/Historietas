@@ -1,17 +1,8 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { ComentarioComunidade } from "./community-comment";
-import {
-  alternarMenuOrdenacaoComentariosComunidade,
-  ordenacaoComentariosEhRecentesComunidade,
-  ordenacaoComentariosEhRelevantesComunidade,
-  selecionarOrdenacaoComentariosRecentesComunidade,
-  selecionarOrdenacaoComentariosRelevantesComunidade,
-  type OrdenacaoComentariosComunidade,
-} from "./community-comment-order";
-import { criarEstruturaComentariosComunidade } from "./community-comment-tree";
 import type { ComentariosSheetProps } from "./community-comments-sheet-props";
 import { CommunityCommentsSheetPanel } from "./community-comments-sheet-panel";
 import { CommunityCommentsSheetOverlay } from "./community-comments-sheet-overlay";
@@ -46,6 +37,7 @@ import { CommunityCommentsComposer } from "./community-comments-composer";
 import { useCommunityCommentSheetActions } from "../hooks/use-community-comment-sheet-actions";
 import { useCommunityCommentSheetComposer } from "../hooks/use-community-comment-sheet-composer";
 import { useCommunityCommentSheetGestures } from "../hooks/use-community-comment-sheet-gestures";
+import { useCommunityCommentSheetOrdering } from "../hooks/use-community-comment-sheet-ordering";
 
 type PostComentariosComunidade = {
   id: string;
@@ -69,9 +61,6 @@ export const ComentariosSheet = memo(function ComentariosSheet({
   const comentarioRef = useRef<HTMLTextAreaElement | null>(null);
   const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
     useState<Record<string, number>>({});
-  const [ordenacaoComentarios, setOrdenacaoComentarios] =
-    useState<OrdenacaoComentariosComunidade>("relevantes");
-  const [menuOrdenacaoAberto, setMenuOrdenacaoAberto] = useState(false);
   const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
   const {
     comentarioCurtindoId,
@@ -102,6 +91,18 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     setRespostasVisiveisPorComentario,
   });
   const {
+    menuOrdenacaoAberto,
+    estruturaComentarios,
+    ordenacaoRelevantesAtiva,
+    ordenacaoRecentesAtiva,
+    alternarMenuOrdenacao,
+    selecionarOrdenacaoRelevantes,
+    selecionarOrdenacaoRecentes,
+    fecharMenuOrdenacao,
+  } = useCommunityCommentSheetOrdering({
+    comentarios: post?.comentarios,
+  });
+  const {
     sheetRef,
     sheetExpandido,
     fecharSheetComentarios,
@@ -124,17 +125,8 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     };
   }, []);
 
-  const estruturaComentarios = useMemo(
-    () =>
-      criarEstruturaComentariosComunidade(
-        post?.comentarios || [],
-        ordenacaoComentarios
-      ),
-    [ordenacaoComentarios, post?.comentarios]
-  );
-
   function fecharComentarios() {
-    setMenuOrdenacaoAberto(false);
+    fecharMenuOrdenacao();
     limparRespostaComentario();
     onFechar();
   }
@@ -206,11 +198,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
           <CommunityCommentsSortMenuContainer>
             <CommunityCommentsSortMenuTrigger
               type="button"
-              onClick={() =>
-                alternarMenuOrdenacaoComentariosComunidade(
-                  setMenuOrdenacaoAberto
-                )
-              }
+              onClick={alternarMenuOrdenacao}
               aria-label={obterAriaLabelOrdenacaoComentariosComunidade()}
               aria-haspopup="menu"
               aria-expanded={menuOrdenacaoAberto}
@@ -222,15 +210,8 @@ export const ComentariosSheet = memo(function ComentariosSheet({
               <CommunityCommentsSortMenuPanel role="menu">
                 <CommunityCommentsSortMenuItem
                   type="button"
-                  onClick={() =>
-                    selecionarOrdenacaoComentariosRelevantesComunidade({
-                      setOrdenacaoComentarios,
-                      setMenuOrdenacaoAberto,
-                    })
-                  }
-                  active={ordenacaoComentariosEhRelevantesComunidade(
-                    ordenacaoComentarios
-                  )}
+                  onClick={selecionarOrdenacaoRelevantes}
+                  active={ordenacaoRelevantesAtiva}
                   role="menuitem"
                 >
                   {obterTextoOrdenacaoComentariosRelevantesComunidade()}
@@ -240,15 +221,8 @@ export const ComentariosSheet = memo(function ComentariosSheet({
 
                 <CommunityCommentsSortMenuItem
                   type="button"
-                  onClick={() =>
-                    selecionarOrdenacaoComentariosRecentesComunidade({
-                      setOrdenacaoComentarios,
-                      setMenuOrdenacaoAberto,
-                    })
-                  }
-                  active={ordenacaoComentariosEhRecentesComunidade(
-                    ordenacaoComentarios
-                  )}
+                  onClick={selecionarOrdenacaoRecentes}
+                  active={ordenacaoRecentesAtiva}
                   role="menuitem"
                 >
                   {obterTextoOrdenacaoComentariosRecentesComunidade()}
