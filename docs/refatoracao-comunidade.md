@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comentários do capítulo — Fase 6: visibilidade e paginação das respostas
+
+- O estado, os limites e os cálculos de visibilidade das respostas foram movidos para hook dedicado, preservando abertura e carregamento em grupos de cinco, ocultação e a expansão mínima após envio de resposta; composer e layout permanecem no sheet.
+
 ## Comentários do capítulo — Fase 5: item visual de comentário
 
 - A apresentação de cada comentário e resposta foi movida para componente dedicado, preservando avatar, links de perfil, tempo relativo, ações, curtidas, estados de loading e diferenças visuais; expansão, paginação, ordenação, composer e gestos permanecem no sheet.

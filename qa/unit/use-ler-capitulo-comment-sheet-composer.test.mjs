@@ -26,14 +26,14 @@ test("hook centraliza resposta e envio preservando o contrato do comentário", (
   assert.match(hook, /await onEnviar\(\s*post\.id,\s*conteudoComentario,\s*respostaAnterior\?\.comentarioPaiId \|\| ""/);
   assert.match(hook, /comentarioRef\.current\.value = "";/);
   assert.match(hook, /setRespostaComentario\(null\);/);
-  assert.match(hook, /\[respostaAnterior\.comentarioPaiId\]: Math\.max\(\s*5,/);
+  assert.match(hook, /garantirRespostasVisiveis\(respostaAnterior\.comentarioPaiId\);/);
   assert.match(hook, /finally \{\s*finalizarAcaoComentario\(chaveAcao\);\s*setComentarioEnviando\(false\);/);
   assert.doesNotMatch(hook, /\b(?:supabase|localStorage|curtirComentarioSeguro|removerComentarioSeguro|denunciarComentarioSeguro|JSX)\b/);
 });
 
 test("sheet delega envio e resposta, mantendo os locks da Fase 1", () => {
   assert.match(sheet, /import \{ useLerCapituloCommentSheetComposer \} from "\.\.\/hooks\/use-ler-capitulo-comment-sheet-composer";/);
-  assert.match(sheet, /\} = useLerCapituloCommentSheetComposer\(\{[\s\S]*?comentarioRef,[\s\S]*?post,[\s\S]*?onEnviar,[\s\S]*?iniciarAcaoComentario,[\s\S]*?finalizarAcaoComentario,[\s\S]*?setRespostasVisiveisPorComentario,[\s\S]*?\}\);/);
+  assert.match(sheet, /\} = useLerCapituloCommentSheetComposer\(\{[\s\S]*?comentarioRef,[\s\S]*?post,[\s\S]*?onEnviar,[\s\S]*?iniciarAcaoComentario,[\s\S]*?finalizarAcaoComentario,[\s\S]*?garantirRespostasVisiveis,[\s\S]*?\}\);/);
   for (const nome of ["responderComentario", "enviarComentario"]) {
     assert.match(sheet, new RegExp(`\\b${nome}\\b`));
     assert.doesNotMatch(sheet, new RegExp(`(?:async )?function ${nome}\\(`));

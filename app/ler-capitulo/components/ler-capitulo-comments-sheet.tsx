@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useLerCapituloCommentSheetActions } from "../hooks/use-ler-capitulo-comment-sheet-actions";
 import { useLerCapituloCommentSheetComposer } from "../hooks/use-ler-capitulo-comment-sheet-composer";
 import { useLerCapituloCommentSheetGestures } from "../hooks/use-ler-capitulo-comment-sheet-gestures";
+import { useLerCapituloCommentRepliesVisibility } from "../hooks/use-ler-capitulo-comment-replies-visibility";
 import {
   criarEstruturaComentariosCapitulo,
   type OrdenacaoComentariosCapitulo,
@@ -106,8 +107,6 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
   onDenunciarComentario,
 }: ComentariosCapituloSheetProps) {
   const comentarioRef = useRef<HTMLTextAreaElement | null>(null);
-  const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
-    useState<Record<string, number>>({});
   const [ordenacaoComentarios, setOrdenacaoComentarios] =
     useState<OrdenacaoComentariosCapitulo>("relevantes");
   const [menuOrdenacaoAberto, setMenuOrdenacaoAberto] = useState(false);
@@ -127,6 +126,13 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
     onDenunciarComentario,
   });
   const {
+    abrirRespostasComentario,
+    carregarMaisRespostasComentario,
+    ocultarRespostasComentario,
+    garantirRespostasVisiveis,
+    obterVisibilidadeRespostas,
+  } = useLerCapituloCommentRepliesVisibility();
+  const {
     comentarioEnviando,
     limparRespostaComentario,
     responderComentario,
@@ -138,7 +144,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
     onEnviar,
     iniciarAcaoComentario,
     finalizarAcaoComentario,
-    setRespostasVisiveisPorComentario,
+    garantirRespostasVisiveis,
   });
 
   function fecharComentarios() {
@@ -313,16 +319,11 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
             estruturaComentarios.comentariosRaiz.map((comentario) => {
               const respostas =
                 estruturaComentarios.respostasPorRaiz.get(comentario.id) || [];
-              const quantidadeVisivel = Math.min(
-                respostas.length,
-                respostasVisiveisPorComentario[comentario.id] || 0
-              );
-              const respostasVisiveis = respostas.slice(0, quantidadeVisivel);
-              const respostasOcultas = Math.max(
-                0,
-                respostas.length - quantidadeVisivel
-              );
-              const respostasExpandidas = quantidadeVisivel > 0;
+              const {
+                respostasVisiveis,
+                respostasOcultas,
+                respostasExpandidas,
+              } = obterVisibilidadeRespostas(comentario.id, respostas);
 
               return (
                 <section key={comentario.id} style={commentThreadStyle}>
@@ -370,10 +371,10 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
                     <button
                       type="button"
                       onClick={() =>
-                        setRespostasVisiveisPorComentario((estadoAtual) => ({
-                          ...estadoAtual,
-                          [comentario.id]: Math.min(5, respostas.length),
-                        }))
+                        abrirRespostasComentario(
+                          comentario.id,
+                          respostas.length,
+                        )
                       }
                       style={commentRepliesToggleStyle}
                     >
@@ -390,13 +391,10 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
                         <button
                           type="button"
                           onClick={() =>
-                            setRespostasVisiveisPorComentario((estadoAtual) => ({
-                              ...estadoAtual,
-                              [comentario.id]: Math.min(
-                                respostas.length,
-                                (estadoAtual[comentario.id] || 0) + 5
-                              ),
-                            }))
+                            carregarMaisRespostasComentario(
+                              comentario.id,
+                              respostas.length,
+                            )
                           }
                           style={commentRepliesToggleStyle}
                         >
@@ -410,10 +408,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
                       <button
                         type="button"
                         onClick={() =>
-                          setRespostasVisiveisPorComentario((estadoAtual) => ({
-                            ...estadoAtual,
-                            [comentario.id]: 0,
-                          }))
+                          ocultarRespostasComentario(comentario.id)
                         }
                         style={commentRepliesHideButtonStyle}
                       >

@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type {
-  Dispatch,
-  FormEvent,
-  RefObject,
-  SetStateAction,
-} from "react";
+import type { FormEvent, RefObject } from "react";
 import type {
   ComentarioCapituloPublico,
   ComentariosCapituloPost,
@@ -29,9 +24,7 @@ type UseLerCapituloCommentSheetComposerParams = {
   ) => boolean | Promise<boolean>;
   iniciarAcaoComentario: (chave: string) => boolean;
   finalizarAcaoComentario: (chave: string) => void;
-  setRespostasVisiveisPorComentario: Dispatch<
-    SetStateAction<Record<string, number>>
-  >;
+  garantirRespostasVisiveis: (comentarioId: string) => void;
 };
 
 export function useLerCapituloCommentSheetComposer({
@@ -41,7 +34,7 @@ export function useLerCapituloCommentSheetComposer({
   onEnviar,
   iniciarAcaoComentario,
   finalizarAcaoComentario,
-  setRespostasVisiveisPorComentario,
+  garantirRespostasVisiveis,
 }: UseLerCapituloCommentSheetComposerParams) {
   const [comentarioEnviando, setComentarioEnviando] = useState(false);
   const [respostaComentario, setRespostaComentario] =
@@ -113,13 +106,7 @@ export function useLerCapituloCommentSheetComposer({
         setRespostaComentario(null);
 
         if (respostaAnterior?.comentarioPaiId) {
-          setRespostasVisiveisPorComentario((estadoAtual) => ({
-            ...estadoAtual,
-            [respostaAnterior.comentarioPaiId]: Math.max(
-              5,
-              estadoAtual[respostaAnterior.comentarioPaiId] || 0
-            ),
-          }));
+          garantirRespostasVisiveis(respostaAnterior.comentarioPaiId);
         }
       }
     } finally {
