@@ -14,6 +14,13 @@ const saveActionSource = readFileSync(
   ),
   "utf8",
 );
+const localPersistenceSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const chamadasNormalizacao = [];
 globalThis.__chamadasNormalizacaoEditarObra = chamadasNormalizacao;
 const javascript = typescript
@@ -91,13 +98,17 @@ test("reconstrói a lista, preserva a ordem e normaliza duas vezes somente a obr
 test("Editar Obra delega somente a atualização pura da lista local", () => {
   assert.match(
     saveActionSource,
-    /import \{ atualizarObraNaListaLocalEdicao \} from "\.\.\/lib\/editar-obra-local-update";/,
+    /import \{ persistirObraLocalEBackupEdicaoObra \} from "\.\.\/lib\/editar-obra-local-persistence";/,
   );
   assert.match(
     saveActionSource,
-    /await removerArquivosStorageEdicaoObra\(arquivosAntigosParaRemover\);[\s\S]*?const novasObras = atualizarObraNaListaLocalEdicao\(\{[\s\S]*?obras,[\s\S]*?arquivoObra: arquivoObraFinal,[\s\S]*?\}\);/,
+    /await removerArquivosStorageEdicaoObra\(arquivosAntigosParaRemover\);[\s\S]*?const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra\(\{[\s\S]*?obras,[\s\S]*?arquivoObra: arquivoObraFinal,[\s\S]*?\}\);/,
   );
-  assert.match(saveActionSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId\)/);
+  assert.doesNotMatch(saveActionSource, /atualizarObraNaListaLocalEdicao\(/);
+  assert.match(
+    localPersistenceSource,
+    /import \{ atualizarObraNaListaLocalEdicao \} from "\.\/editar-obra-local-update";/,
+  );
   assert.match(source, /return obras\.map\(\(obra, index\) => \{/);
   assert.match(source, /const obraNormalizada = normalizarObra\(obra, index\);/);
   assert.match(source, /if \(obraNormalizada\.id !== obraId\)/);

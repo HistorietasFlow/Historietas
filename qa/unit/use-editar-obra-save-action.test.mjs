@@ -34,6 +34,13 @@ const remoteUpdateSource = readFileSync(
   ),
   "utf8",
 );
+const localPersistenceSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-local-persistence.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function antes(primeiro, segundo) {
   const inicioSalvarEdicao = source.indexOf("async function salvarEdicao");
@@ -93,15 +100,19 @@ test("o fluxo preserva assets, rollback, atualização, backup e Diário", () =>
   assert.match(source, /await atualizarObraRemotaEdicaoObra\(\{/);
   assert.doesNotMatch(source, /supabase\.from\("obras"\)/);
   assert.match(remoteUpdateSource, /await removerArquivosStorageEdicaoObra\([\s\S]*?arquivosNovosEnviados\.map/);
-  assert.match(source, /atualizarObraNaListaLocalEdicao\(\{/);
-  assert.match(source, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId\);/);
-  assert.match(source, /salvarArquivoObraNoBackup\(/);
+  assert.match(source, /persistirObraLocalEBackupEdicaoObra\(\{/);
+  assert.doesNotMatch(source, /atualizarObraNaListaLocalEdicao\(/);
+  assert.doesNotMatch(source, /salvarObrasDoUsuarioPreservandoOutrasContas\(/);
+  assert.doesNotMatch(source, /salvarArquivoObraNoBackup\(/);
+  assert.match(localPersistenceSource, /atualizarObraNaListaLocalEdicao\(\{/);
+  assert.match(localPersistenceSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId\)/);
+  assert.match(localPersistenceSource, /salvarArquivoObraNoBackup\(/);
   assert.match(source, /registrarDiarioEdicaoObra\(\{/);
   assert.match(source, /setSalvou\(true\);/);
   assert.match(source, /finally \{[\s\S]*?setProcessando\(false\);/);
   antes("const assetsPreparados", "await atualizarObraRemotaEdicaoObra");
   antes("await atualizarObraRemotaEdicaoObra", "await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)");
-  antes("await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)", "const novasObras = atualizarObraNaListaLocalEdicao");
-  antes("salvarArquivoObraNoBackup", "registrarDiarioEdicaoObra");
+  antes("await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)", "const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra");
+  antes("const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra", "registrarDiarioEdicaoObra");
   antes("registrarDiarioEdicaoObra", "setSalvou(true)");
 });
