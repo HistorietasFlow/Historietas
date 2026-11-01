@@ -10,9 +10,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/client";
 import { useNotificacoesAuthUserLifecycle } from "./hooks/use-notificacoes-auth-user-lifecycle";
+import { useNotificacoesRealtimeLifecycle } from "./hooks/use-notificacoes-realtime-lifecycle";
 
 type NotificacoesContextValue = {
   usuarioId: string;
@@ -128,63 +128,10 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   const [receberAvisos, setReceberAvisos] = useState(true);
   const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
   const [carregandoNotificacoes, setCarregandoNotificacoes] = useState(true);
-  const canalRef = useRef<RealtimeChannel | null>(null);
   const montadoRef = useRef(false);
   const usuarioIdRef = useRef("");
   const receberAvisosRef = useRef(true);
-  const atualizarTimerRef = useRef<number | null>(null);
   const requisicaoAtualRef = useRef(0);
-
-  const limparAtualizacaoAgendada = useCallback(() => {
-    if (atualizarTimerRef.current !== null) {
-      window.clearTimeout(atualizarTimerRef.current);
-      atualizarTimerRef.current = null;
-    }
-  }, []);
-
-  const limparCanal = useCallback(() => {
-    if (canalRef.current) {
-      const canalAtual = canalRef.current;
-      canalRef.current = null;
-      void supabase.removeChannel(canalAtual);
-    }
-  }, []);
-
-  const aplicarReceberAvisos = useCallback(
-    (ativo: boolean) => {
-      const receber = Boolean(ativo);
-
-      receberAvisosRef.current = receber;
-
-      if (!montadoRef.current) {
-        return;
-      }
-
-      setReceberAvisos(receber);
-
-      if (!receber) {
-        requisicaoAtualRef.current += 1;
-        limparAtualizacaoAgendada();
-        limparCanal();
-        setNotificacoesNaoLidas(0);
-        setCarregandoNotificacoes(false);
-      }
-    },
-    [limparAtualizacaoAgendada, limparCanal],
-  );
-
-  const definirNotificacoesNaoLidas = useCallback((total: number) => {
-    if (!montadoRef.current) {
-      return;
-    }
-
-    if (!receberAvisosRef.current) {
-      setNotificacoesNaoLidas(0);
-      return;
-    }
-
-    setNotificacoesNaoLidas(normalizarTotalNotificacoes(total));
-  }, []);
 
   const atualizarNotificacoesPorUsuario = useCallback(
     async (userId: string, mostrarCarregamento = false) => {
@@ -237,27 +184,57 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const agendarAtualizacaoNotificacoes = useCallback(
-    (userId: string) => {
-      const userIdSeguro = userId.trim();
+  const {
+    limparAtualizacaoAgendada,
+    limparCanal,
+    agendarAtualizacaoNotificacoes,
+  } = useNotificacoesRealtimeLifecycle({
+    usuarioId,
+    receberAvisos,
+    montadoRef,
+    usuarioIdRef,
+    receberAvisosRef,
+    setNotificacoesNaoLidas,
+    setCarregandoNotificacoes,
+    atualizarNotificacoesPorUsuario,
+    idUsuarioSupabaseValido,
+  });
 
-      if (
-        !receberAvisosRef.current ||
-        !idUsuarioSupabaseValido(userIdSeguro) ||
-        usuarioIdRef.current !== userIdSeguro
-      ) {
+  const aplicarReceberAvisos = useCallback(
+    (ativo: boolean) => {
+      const receber = Boolean(ativo);
+
+      receberAvisosRef.current = receber;
+
+      if (!montadoRef.current) {
         return;
       }
 
-      limparAtualizacaoAgendada();
+      setReceberAvisos(receber);
 
-      atualizarTimerRef.current = window.setTimeout(() => {
-        atualizarTimerRef.current = null;
-        void atualizarNotificacoesPorUsuario(userIdSeguro);
-      }, 250);
+      if (!receber) {
+        requisicaoAtualRef.current += 1;
+        limparAtualizacaoAgendada();
+        limparCanal();
+        setNotificacoesNaoLidas(0);
+        setCarregandoNotificacoes(false);
+      }
     },
-    [atualizarNotificacoesPorUsuario, limparAtualizacaoAgendada],
+    [limparAtualizacaoAgendada, limparCanal],
   );
+
+  const definirNotificacoesNaoLidas = useCallback((total: number) => {
+    if (!montadoRef.current) {
+      return;
+    }
+
+    if (!receberAvisosRef.current) {
+      setNotificacoesNaoLidas(0);
+      return;
+    }
+
+    setNotificacoesNaoLidas(normalizarTotalNotificacoes(total));
+  }, []);
 
   const atualizarNotificacoes = useCallback(async () => {
     const userIdSeguro = usuarioIdRef.current;
@@ -280,66 +257,6 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     idUsuarioSupabaseValido,
     erroEhSessaoAusente,
   });
-
-  useEffect(() => {
-    limparAtualizacaoAgendada();
-    limparCanal();
-
-    const userIdSeguro = usuarioId.trim();
-
-    if (!receberAvisos || !idUsuarioSupabaseValido(userIdSeguro)) {
-      const resetNotificacoesTimer = window.setTimeout(() => {
-        if (montadoRef.current && usuarioIdRef.current === userIdSeguro) {
-          setNotificacoesNaoLidas(0);
-          setCarregandoNotificacoes(false);
-        }
-      }, 0);
-
-      return () => {
-        window.clearTimeout(resetNotificacoesTimer);
-      };
-    }
-
-    const atualizacaoInicialTimer = window.setTimeout(() => {
-      void atualizarNotificacoesPorUsuario(userIdSeguro);
-    }, 0);
-
-    const canal = supabase
-      .channel(`notificacoes-provider-${userIdSeguro}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "notificacoes",
-          filter: `user_id=eq.${userIdSeguro}`,
-        },
-        () => {
-          agendarAtualizacaoNotificacoes(userIdSeguro);
-        },
-      )
-      .subscribe();
-
-    canalRef.current = canal;
-
-    return () => {
-      window.clearTimeout(atualizacaoInicialTimer);
-      limparAtualizacaoAgendada();
-
-      if (canalRef.current === canal) {
-        canalRef.current = null;
-      }
-
-      void supabase.removeChannel(canal);
-    };
-  }, [
-    agendarAtualizacaoNotificacoes,
-    limparAtualizacaoAgendada,
-    limparCanal,
-    receberAvisos,
-    usuarioId,
-    atualizarNotificacoesPorUsuario,
-  ]);
 
   useEffect(() => {
     function atualizarAoReceberEventoLocal() {
