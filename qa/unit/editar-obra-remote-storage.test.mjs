@@ -19,6 +19,13 @@ const saveActionSource = readFileSync(
   ),
   "utf8",
 );
+const saveAssetsPreparationSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-save-assets-preparation.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo({
@@ -214,11 +221,15 @@ test("remoção ignora vazios, deduplica, usa caminhos com trim e tolera erros i
 
 test("Editar Obra delega somente operações remotas de Storage", () => {
   assert.match(
+    saveAssetsPreparationSource,
+    /import \{[\s\S]*?enviarArquivoStorage,[\s\S]*?type ArquivoStorageEdicaoObra,[\s\S]*?\} from "\.\/editar-obra-remote-storage";/,
+  );
+  assert.match(
     saveActionSource,
-    /import \{[\s\S]*?enviarArquivoStorage,[\s\S]*?removerArquivosStorageEdicaoObra,[\s\S]*?type ArquivoStorageEdicaoObra,[\s\S]*?\} from "\.\.\/lib\/editar-obra-remote-storage";/,
+    /import \{[\s\S]*?removerArquivosStorageEdicaoObra,[\s\S]*?type ArquivoStorageEdicaoObra,[\s\S]*?\} from "\.\.\/lib\/editar-obra-remote-storage";/,
   );
   for (const helper of ["enviarArquivoStorage", "removerArquivosStorageEdicaoObra"]) {
-    assert.doesNotMatch(saveActionSource, new RegExp(`async function ${helper}\\(`));
+    assert.doesNotMatch(saveAssetsPreparationSource, new RegExp(`async function ${helper}\\(`));
     assert.match(source, new RegExp(`export async function ${helper}\\(`));
   }
   assert.doesNotMatch(pageSource, /mensagemAmigavelErroUploadStorage/);

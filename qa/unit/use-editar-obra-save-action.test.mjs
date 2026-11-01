@@ -76,9 +76,9 @@ test("o fluxo de salvamento preserva validação, autenticação e propriedade",
 });
 
 test("o fluxo preserva assets, rollback, atualização, backup e Diário", () => {
-  assert.match(source, /prepararAssetsAtuaisEdicaoObra\(\{/);
-  assert.match(source, /if \(capaBloqueadaPorClassificacao\) \{[\s\S]*?if \(caminhoCapaRemotaAtual\)/);
-  assert.match(source, /Nao consegui remover a capa publica antes de bloquear a obra 18\+/);
+  assert.match(source, /prepararEEnviarAssetsEdicaoObra\(\{/);
+  assert.doesNotMatch(source, /prepararAssetsAtuaisEdicaoObra\(/);
+  assert.doesNotMatch(source, /enviarArquivoStorage\(/);
   assert.match(source, /const arquivosNovosEnviados: ArquivoStorageEdicaoObra\[\] = \[\];/);
   assert.match(source, /await removerArquivosStorageEdicaoObra\([\s\S]*?arquivosNovosEnviados\.map/);
   assert.match(source, /atualizarObraNaListaLocalEdicao\(\{/);
@@ -87,8 +87,8 @@ test("o fluxo preserva assets, rollback, atualização, backup e Diário", () =>
   assert.match(source, /registrarDiarioEdicaoObra\(\{/);
   assert.match(source, /setSalvou\(true\);/);
   assert.match(source, /finally \{[\s\S]*?setProcessando\(false\);/);
-  antes("prepararAssetsAtuaisEdicaoObra", "enviarArquivoStorage");
-  antes("const obraAtualizadaSupabase", "await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)");
+  antes("const assetsPreparados", "data: obraAtualizadaSupabase");
+  antes("data: obraAtualizadaSupabase", "await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)");
   antes("await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)", "const novasObras = atualizarObraNaListaLocalEdicao");
   antes("salvarArquivoObraNoBackup", "registrarDiarioEdicaoObra");
   antes("registrarDiarioEdicaoObra", "setSalvou(true)");

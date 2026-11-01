@@ -7,9 +7,9 @@ const source = readFileSync(
   new URL("../../app/editar-obra/lib/editar-obra-current-assets-preparation.ts", import.meta.url),
   "utf8",
 );
-const saveActionSource = readFileSync(
+const saveAssetsPreparationSource = readFileSync(
   new URL(
-    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    "../../app/editar-obra/lib/editar-obra-save-assets-preparation.ts",
     import.meta.url,
   ),
   "utf8",
@@ -121,13 +121,13 @@ test("preserva prioridades local, backup e remoções manuais", () => {
 
 test("Editar Obra delega somente a preparação pura dos assets atuais", () => {
   assert.match(
-    saveActionSource,
-    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\.\/lib\/editar-obra-current-assets-preparation";/,
+    saveAssetsPreparationSource,
+    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\/editar-obra-current-assets-preparation";/,
   );
-  assert.match(saveActionSource, /const assetsAtuais = prepararAssetsAtuaisEdicaoObra\(\{[\s\S]*?obraRemotaAtual,[\s\S]*?backupArquivosObras,[\s\S]*?\}\);/);
-  assert.match(saveActionSource, /let capaFinal = assetsAtuais\.capaFinalInicial;/);
-  assert.match(saveActionSource, /let capaNomeFinal = assetsAtuais\.capaNomeFinalInicial;/);
-  assert.match(saveActionSource, /assetsAtuais\.arquivoObraFinalInicial;/);
+  assert.match(saveAssetsPreparationSource, /const assetsAtuais = prepararAssetsAtuaisEdicaoObra\(\{[\s\S]*?obraRemotaAtual,[\s\S]*?backupArquivosObras,[\s\S]*?\}\);/);
+  assert.match(saveAssetsPreparationSource, /let capaFinal = assetsAtuais\.capaFinalInicial;/);
+  assert.match(saveAssetsPreparationSource, /let capaNomeFinal = assetsAtuais\.capaNomeFinalInicial;/);
+  assert.match(saveAssetsPreparationSource, /assetsAtuais\.arquivoObraFinalInicial;/);
   assert.match(source, /obterChavesBackupArquivoEdicaoObra\(obraLocalAtual\)/);
   assert.match(source, /criarArquivoRemotoEdicaoObra\(obraRemotaAtual\)/);
   assert.match(source, /obterCaminhoStorageEdicaoObra\([\s\S]*?"capas-obras"/);

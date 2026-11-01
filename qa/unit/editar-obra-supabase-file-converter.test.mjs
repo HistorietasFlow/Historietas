@@ -14,16 +14,16 @@ const pageSource = readFileSync(
   new URL("../../app/editar-obra/page.tsx", import.meta.url),
   "utf8",
 );
-const saveActionSource = readFileSync(
+const currentAssetsPreparationSource = readFileSync(
   new URL(
-    "../../app/editar-obra/hooks/use-editar-obra-save-action.ts",
+    "../../app/editar-obra/lib/editar-obra-current-assets-preparation.ts",
     import.meta.url,
   ),
   "utf8",
 );
-const currentAssetsPreparationSource = readFileSync(
+const saveAssetsPreparationSource = readFileSync(
   new URL(
-    "../../app/editar-obra/lib/editar-obra-current-assets-preparation.ts",
+    "../../app/editar-obra/lib/editar-obra-save-assets-preparation.ts",
     import.meta.url,
   ),
   "utf8",
@@ -158,8 +158,8 @@ test("arquivo remoto preserva guards, tamanho e categoria", () => {
 
 test("Editar Obra delega somente a conversão de arquivos Supabase", () => {
   assert.match(
-    saveActionSource,
-    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\.\/lib\/editar-obra-current-assets-preparation";/,
+    saveAssetsPreparationSource,
+    /import \{ prepararAssetsAtuaisEdicaoObra \} from "\.\/editar-obra-current-assets-preparation";/,
   );
   assert.match(
     currentAssetsPreparationSource,
