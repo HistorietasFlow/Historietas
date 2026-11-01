@@ -7,6 +7,10 @@ import { createPortal } from "react-dom";
 import { useLerCapituloCommentSheetActions } from "../hooks/use-ler-capitulo-comment-sheet-actions";
 import { useLerCapituloCommentSheetComposer } from "../hooks/use-ler-capitulo-comment-sheet-composer";
 import { useLerCapituloCommentSheetGestures } from "../hooks/use-ler-capitulo-comment-sheet-gestures";
+import {
+  criarEstruturaComentariosCapitulo,
+  type OrdenacaoComentariosCapitulo,
+} from "../lib/ler-capitulo-comment-thread-structure";
 import { LoadingSpinner } from "./ler-capitulo-loading-spinner";
 import {
   commentsSheetOverlayStyle,
@@ -76,8 +80,6 @@ export type ComentarioCapituloPublico = {
   curtidas: string[];
 };
 
-type OrdenacaoComentariosCapitulo = "relevantes" | "recentes";
-
 export type ComentariosCapituloPost = {
   id: string;
   comentarios: ComentarioCapituloPublico[];
@@ -118,12 +120,6 @@ function criarAvatarComentarioBaseStyle(
   };
 }
 
-function dataComentarioCapitulo(comentario: ComentarioCapituloPublico) {
-  const data = new Date(comentario.criadoEm).getTime();
-
-  return Number.isNaN(data) ? 0 : data;
-}
-
 function formatarTempoRelativoComentarioCapitulo(
   criadaEm: string,
   agora = Date.now()
@@ -159,82 +155,6 @@ function formatarTempoRelativoComentarioCapitulo(
   const dias = Math.floor(horas / 24);
 
   return `há ${dias} ${dias === 1 ? "dia" : "dias"}`;
-}
-
-function criarEstruturaComentariosCapitulo(
-  comentarios: ComentarioCapituloPublico[],
-  ordenacao: OrdenacaoComentariosCapitulo
-) {
-  const comentariosPorId = new Map(
-    comentarios.map((comentario) => [comentario.id, comentario])
-  );
-  const respostasPorRaiz = new Map<string, ComentarioCapituloPublico[]>();
-  const comentariosRaiz: ComentarioCapituloPublico[] = [];
-
-  function obterRaiz(comentario: ComentarioCapituloPublico) {
-    let atual = comentario;
-    const visitados = new Set<string>([comentario.id]);
-
-    while (atual.comentarioPaiId) {
-      const pai = comentariosPorId.get(atual.comentarioPaiId);
-
-      if (!pai || visitados.has(pai.id)) {
-        break;
-      }
-
-      visitados.add(pai.id);
-      atual = pai;
-    }
-
-    return atual;
-  }
-
-  comentarios.forEach((comentario) => {
-    const paiExiste = Boolean(
-      comentario.comentarioPaiId &&
-        comentariosPorId.has(comentario.comentarioPaiId)
-    );
-
-    if (!paiExiste) {
-      comentariosRaiz.push(comentario);
-      return;
-    }
-
-    const raiz = obterRaiz(comentario);
-    const respostasAtuais = respostasPorRaiz.get(raiz.id) || [];
-
-    respostasPorRaiz.set(raiz.id, [...respostasAtuais, comentario]);
-  });
-
-  respostasPorRaiz.forEach((respostas, raizId) => {
-    respostasPorRaiz.set(
-      raizId,
-      [...respostas].sort(
-        (a, b) => dataComentarioCapitulo(a) - dataComentarioCapitulo(b)
-      )
-    );
-  });
-
-  comentariosRaiz.sort((a, b) => {
-    if (ordenacao === "recentes") {
-      return dataComentarioCapitulo(b) - dataComentarioCapitulo(a);
-    }
-
-    const relevanciaA =
-      a.curtidas.length * 3 + (respostasPorRaiz.get(a.id)?.length || 0);
-    const relevanciaB =
-      b.curtidas.length * 3 + (respostasPorRaiz.get(b.id)?.length || 0);
-
-    return (
-      relevanciaB - relevanciaA ||
-      dataComentarioCapitulo(b) - dataComentarioCapitulo(a)
-    );
-  });
-
-  return {
-    comentariosRaiz,
-    respostasPorRaiz,
-  };
 }
 
 type ComentariosCapituloSheetProps = {

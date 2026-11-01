@@ -14,7 +14,7 @@ const acoesSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sh
 const compositorSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-composer.ts");
 const gestosSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-gestures.ts");
 const funcoes = sheet.slice(sheet.indexOf("function criarHrefPerfilUsuarioLeitor("), sheet.indexOf("type ComentariosCapituloSheetProps = {"));
-const js = typescript.transpileModule(`${funcoes}\nexport { criarHrefPerfilUsuarioLeitor, criarAvatarComentarioBaseStyle, formatarTempoRelativoComentarioCapitulo, criarEstruturaComentariosCapitulo };`, {
+const js = typescript.transpileModule(`${funcoes}\nexport { criarHrefPerfilUsuarioLeitor, criarAvatarComentarioBaseStyle, formatarTempoRelativoComentarioCapitulo };`, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
 }).outputText;
 const helpers = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
@@ -49,6 +49,9 @@ test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas",
   assert.match(gestosSheet, /function finalizarArraste\(/);
   assert.doesNotMatch(sheet, /function iniciarArraste\(/);
   assert.doesNotMatch(sheet, /function finalizarArraste\(/);
+  assert.match(sheet, /from "\.\.\/lib\/ler-capitulo-comment-thread-structure";/);
+  assert.match(sheet, /criarEstruturaComentariosCapitulo\(\s*post\?\.comentarios \|\| \[\],\s*ordenacaoComentarios\s*\)/);
+  assert.doesNotMatch(sheet, /function criarEstruturaComentariosCapitulo\(/);
 });
 
 test("página mantém a integração e as ações de dados e persistência", () => {
@@ -95,16 +98,4 @@ test("helpers preservam tempo relativo, agrupamento, ordenação e relevância",
   assert.equal(helpers.formatarTempoRelativoComentarioCapitulo("2026-01-01T23:59:59Z", agora), "agora");
   assert.equal(helpers.formatarTempoRelativoComentarioCapitulo("2026-01-01T23:59:00Z", agora), "há 1 minuto");
   assert.equal(helpers.formatarTempoRelativoComentarioCapitulo("2026-01-01T00:00:00Z", agora), "há 1 dia");
-  const comentario = (id, criadoEm, curtidas, comentarioPaiId = "") => ({ id, criadoEm, curtidas, comentarioPaiId });
-  const dados = [
-    comentario("a", "2026-01-01", ["u1", "u2"]),
-    comentario("b", "2026-01-02", []),
-    comentario("r1", "2026-01-03", [], "b"),
-    comentario("r2", "2026-01-04", [], "r1"),
-    comentario("orfa", "inválido", [], "ausente"),
-  ];
-  const relevantes = helpers.criarEstruturaComentariosCapitulo(dados, "relevantes");
-  assert.deepEqual(relevantes.comentariosRaiz.map((c) => c.id), ["a", "b", "orfa"]);
-  assert.deepEqual(relevantes.respostasPorRaiz.get("b").map((c) => c.id), ["r1", "r2"]);
-  assert.deepEqual(helpers.criarEstruturaComentariosCapitulo(dados, "recentes").comentariosRaiz.map((c) => c.id), ["b", "a", "orfa"]);
 });

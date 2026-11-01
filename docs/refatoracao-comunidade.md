@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comentários do capítulo — Fase 4: estrutura e ordenação das threads
+
+- A construção pura das threads e sua ordenação foram movidas para módulo dedicado, preservando datas inválidas, respostas órfãs, proteção contra ciclos, relevância e desempates; estados, ações e renderização permanecem no sheet.
+
 ## Comentários do capítulo — Fase 3: gestos e expansão do sheet
 
 - O estado de expansão, refs, drag, limites, transições e cleanup do timer do sheet foram movidos para hook dedicado, preservando o fechamento semântico, comportamento desktop e os gestos existentes.
