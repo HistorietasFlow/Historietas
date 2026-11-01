@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade Comments Sheet — Fase 1: ações assíncronas de comentário
+
+- Os locks por comentário, estados de loading e ações seguras de curtir, remover e denunciar foram movidos para hook dedicado, preservando prevenção de duplicidade, `try/finally`, limpeza dos locks e IDs de loading; envio, resposta, drag, ordenação, paginação e renderização permanecem no sheet.
+
 ## Admin Comunidade — Fase 2: estado das ações e feedback da moderação
 
 - Os estados de feedback, ação em andamento e menu de denúncia foram movidos para hook dedicado, preservando os setters consumidos pelos hooks existentes e os callbacks semânticos de abrir e fechar menus usados pelos cards.
