@@ -88,7 +88,7 @@ test("página delega a action e preserva controles e JSX", () => {
   );
   assert.match(page, /const \{ atualizarChamado \} = useAdminProblemasTecnicosActions\(/);
   assert.doesNotMatch(page, /async function atualizarChamado\(/);
-  assert.match(page, /void carregarProblemas\(\)/);
+  assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas\)/);
   assert.match(page, /Atualizar/);
   assert.equal((page.match(/atualizarChamado\(/g) || []).length, 3);
   assert.match(page, /<AdminProblemasTecnicosTicketStatusControl/);

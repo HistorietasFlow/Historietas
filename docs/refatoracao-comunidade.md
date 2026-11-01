@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Admin Problemas Técnicos — Fase 2: estado de ações e feedback
+
+- O estado de abertura, feedback e ações em andamento dos chamados foi movido para hook dedicado, incluindo a recarga com o mesmo tratamento de erro e finalização da ação.
+
 ## Admin Problemas Técnicos — Fase 1: busca e filtro dos chamados
 
 - A busca, o filtro de status e o resultado memoizado dos chamados foram movidos para hook dedicado, preservando filtro padrão, dependências, limite do campo e controles existentes na página.

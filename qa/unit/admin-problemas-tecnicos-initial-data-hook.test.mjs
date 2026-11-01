@@ -74,5 +74,5 @@ test("hook preserva lifecycle administrativo, cancelamento e contrato da página
   assert.doesNotMatch(page, /const carregarProblemas = useCallback/);
   assert.doesNotMatch(page, /useEffect\(\(\) => \{/);
   assert.match(page, /useAdminProblemasTecnicosActions/);
-  assert.match(page, /void carregarProblemas\(\)/);
+  assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas\)/);
 });

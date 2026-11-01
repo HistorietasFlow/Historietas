@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -13,9 +13,9 @@ import {
   traduzir,
   type TextoTraduzido,
 } from "./lib/admin-problemas-tecnicos-text-utils";
-import { criarMensagemErro } from "./lib/admin-problemas-tecnicos-error-utils";
 import { useAdminProblemasTecnicosActions } from "./hooks/use-admin-problemas-tecnicos-actions";
 import { useAdminProblemasTecnicosInitialData } from "./hooks/use-admin-problemas-tecnicos-initial-data";
+import { useAdminProblemasTecnicosActionState } from "./hooks/use-admin-problemas-tecnicos-action-state";
 import { AdminProblemasTecnicosTicketSummary } from "./components/admin-problemas-tecnicos-ticket-summary";
 import { AdminProblemasTecnicosTicketInfoGrid } from "./components/admin-problemas-tecnicos-ticket-info-grid";
 import { AdminProblemasTecnicosTicketDescription } from "./components/admin-problemas-tecnicos-ticket-description";
@@ -69,10 +69,17 @@ export default function AdminProblemasTecnicosPage() {
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  const [chamadoAbertoId, setChamadoAbertoId] = useState("");
-  const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
-  const [erro, setErro] = useState("");
-  const [sucesso, setSucesso] = useState("");
+  const {
+    chamadoAbertoId,
+    acaoEmAndamento,
+    setAcaoEmAndamento,
+    erro,
+    setErro,
+    sucesso,
+    setSucesso,
+    alternarChamadoAberto,
+    recarregarProblemasTecnicos,
+  } = useAdminProblemasTecnicosActionState();
 
   const t = useCallback(
     (texto: TextoTraduzido) => traduzir(texto, language),
@@ -235,21 +242,9 @@ export default function AdminProblemasTecnicosPage() {
               type="button"
               className="admin-tech-primary-button"
               disabled={acaoEmAndamento === "recarregar"}
-              onClick={() => {
-                setAcaoEmAndamento("recarregar");
-                setErro("");
-                setSucesso("");
-                void carregarProblemas()
-                  .catch((error) =>
-                    setErro(
-                      criarMensagemErro(
-                        "Erro ao atualizar problemas técnicos",
-                        error,
-                      ),
-                    ),
-                  )
-                  .finally(() => setAcaoEmAndamento(""));
-              }}
+              onClick={() =>
+                void recarregarProblemasTecnicos(carregarProblemas)
+              }
             >
               {acaoEmAndamento === "recarregar"
                 ? t({
@@ -417,9 +412,7 @@ export default function AdminProblemasTecnicosPage() {
                     nomeUsuario={nomeUsuario}
                     t={t}
                     onAlternarAbertura={() =>
-                      setChamadoAbertoId((atual) =>
-                        atual === problema.id ? "" : problema.id,
-                      )
+                      alternarChamadoAberto(problema.id)
                     }
                   />
 
