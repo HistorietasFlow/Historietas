@@ -3,14 +3,13 @@
 import { createPortal } from "react-dom";
 import {
   type CSSProperties,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { useHistorietasLanguage } from "./HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../lib/i18n";
 import { useDenunciaSubmitAction } from "./hooks/use-denuncia-submit-action";
+import { useDenunciaModalLifecycle } from "./hooks/use-denuncia-modal-lifecycle";
 
 export type TipoAlvoDenuncia =
   | "post"
@@ -399,14 +398,11 @@ export default function DenunciaModal({
   onEnviada,
 }: DenunciaModalProps) {
   const { language } = useHistorietasLanguage();
-  const [montado, setMontado] = useState(false);
   const [motivo, setMotivo] = useState<MotivoDenuncia | "">("");
   const [descricao, setDescricao] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [enviado, setEnviado] = useState(false);
-  const painelRef = useRef<HTMLDivElement | null>(null);
-  const botaoFecharRef = useRef<HTMLButtonElement | null>(null);
 
   const motivosDisponiveis = useMemo(
     () =>
@@ -443,82 +439,22 @@ export default function DenunciaModal({
     onEnviada,
   });
 
-  useEffect(() => {
-    const montarTimer = window.setTimeout(() => {
-      setMontado(true);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(montarTimer);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!aberto) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const focarTimer = window.setTimeout(() => {
-      setMotivo("");
-      setDescricao("");
-      setErro("");
-      setEnviado(false);
-      setEnviando(false);
-      botaoFecharRef.current?.focus();
-    }, 0);
-
-    return () => {
-      window.clearTimeout(focarTimer);
-      document.body.style.overflow = overflowAnterior;
-    };
-  }, [aberto, alvoId, alvoTipo]);
-
-  useEffect(() => {
-    if (!aberto) {
-      return;
-    }
-
-    function aoPressionarTecla(evento: KeyboardEvent) {
-      if (evento.key === "Escape" && !enviando) {
-        onFechar();
-        return;
-      }
-
-      if (evento.key !== "Tab" || !painelRef.current) {
-        return;
-      }
-
-      const focaveis = Array.from(
-        painelRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      );
-
-      if (focaveis.length === 0) {
-        return;
-      }
-
-      const primeiro = focaveis[0];
-      const ultimo = focaveis[focaveis.length - 1];
-
-      if (evento.shiftKey && document.activeElement === primeiro) {
-        evento.preventDefault();
-        ultimo.focus();
-      } else if (!evento.shiftKey && document.activeElement === ultimo) {
-        evento.preventDefault();
-        primeiro.focus();
-      }
-    }
-
-    document.addEventListener("keydown", aoPressionarTecla);
-
-    return () => {
-      document.removeEventListener("keydown", aoPressionarTecla);
-    };
-  }, [aberto, enviando, onFechar]);
+  const {
+    montado,
+    painelRef,
+    botaoFecharRef,
+  } = useDenunciaModalLifecycle({
+    aberto,
+    alvoId,
+    alvoTipo,
+    enviando,
+    onFechar,
+    setMotivo,
+    setDescricao,
+    setErro,
+    setEnviado,
+    setEnviando,
+  });
 
   function fecharModal() {
     if (!enviando) {
