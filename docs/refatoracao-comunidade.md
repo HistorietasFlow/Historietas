@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Editar Obra — Fase 2: confirmação de propriedade da obra
+
+- A busca local e a confirmação remota de propriedade da obra foram movidas para helper dedicado, preservando consulta Supabase, filtros por `id` e `user_id`, campos, ordem de validação, mensagens, `setSalvou(false)` e o retorno das obras autorizadas; backup, assets, uploads, atualização, Diário e estados finais permanecem no hook de salvamento.
+
 ## Perfil do Autor — Fase 10
 
 - Os estados derivados puros de notificações e de apresentação da página foram movidos para helpers dedicados, preservando precedência da contagem, rótulos acessíveis, prioridades de loading/erro e mantendo hooks, estados e JSX na página.

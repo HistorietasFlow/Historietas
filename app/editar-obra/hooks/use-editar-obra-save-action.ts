@@ -17,6 +17,7 @@ import {
 import { registrarDiarioEdicaoObra } from "../lib/editar-obra-diary-action";
 import { validarFormularioEdicaoObra } from "../lib/editar-obra-form-validation";
 import { obterIdentidadeSalvamentoEdicaoObra } from "../lib/editar-obra-save-auth-identity";
+import { confirmarPropriedadeObraParaSalvamentoEdicao } from "../lib/editar-obra-save-work-ownership";
 import { prepararValoresSalvamentoEdicaoObra } from "../lib/editar-obra-save-preparation";
 import { prepararAssetsAtuaisEdicaoObra } from "../lib/editar-obra-current-assets-preparation";
 import { criarPayloadAtualizacaoObra } from "../lib/editar-obra-update-payload";
@@ -183,41 +184,20 @@ export function useEditarObraSaveAction({
       setNomeAutorProfile(nomeProfileAtualizado);
 
       const backupArquivosObras = carregarBackupArquivosObras(userId);
-      const obraLocalAtual = obras.find((obra) => obra.id === obraId) || null;
+      const confirmacaoPropriedade =
+        await confirmarPropriedadeObraParaSalvamentoEdicao({
+          obras,
+          obraId,
+          userId,
+          setErro,
+          setSalvou,
+        });
 
-      if (obraLocalAtual?.autorId && obraLocalAtual.autorId !== userId) {
-        setErro("Você não tem permissão para editar esta obra.");
-        setSalvou(false);
+      if (!confirmacaoPropriedade) {
         return;
       }
 
-      const { data: obraAutorizadaSupabase, error: erroConfirmarObra } =
-        await supabase
-          .from("obras")
-          .select(
-            "id,user_id,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,criada_em"
-          )
-          .eq("id", obraId)
-          .eq("user_id", userId)
-          .limit(1)
-          .maybeSingle();
-
-      if (erroConfirmarObra) {
-        setErro(
-          `Não consegui confirmar sua permissão para editar esta obra: ${erroConfirmarObra.message}`
-        );
-        setSalvou(false);
-        return;
-      }
-
-      if (!obraAutorizadaSupabase?.id) {
-        setErro("Você não tem permissão para editar esta obra.");
-        setSalvou(false);
-        return;
-      }
-
-      const obraRemotaAtual =
-        obraAutorizadaSupabase;
+      const { obraLocalAtual, obraRemotaAtual } = confirmacaoPropriedade;
       const assetsAtuais = prepararAssetsAtuaisEdicaoObra({
         capa,
         capaNome,

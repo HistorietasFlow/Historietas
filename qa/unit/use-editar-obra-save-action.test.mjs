@@ -20,6 +20,13 @@ const authIdentitySource = readFileSync(
   ),
   "utf8",
 );
+const workOwnershipSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-save-work-ownership.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function antes(primeiro, segundo) {
   const inicioSalvarEdicao = source.indexOf("async function salvarEdicao");
@@ -56,8 +63,14 @@ test("o fluxo de salvamento preserva validação, autenticação e propriedade",
   assert.match(authIdentitySource, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "nome"\)/);
   assert.match(authIdentitySource, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "name"\)/);
   assert.match(authIdentitySource, /obterTextoMetadataUsuarioEdicaoObra\(metadataUsuario, "full_name"\)/);
-  assert.match(source, /obraLocalAtual\?\.autorId && obraLocalAtual\.autorId !== userId/);
-  assert.match(source, /\.from\("obras"\)[\s\S]*?\.select\([\s\S]*?"id,user_id,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,criada_em"[\s\S]*?\)[\s\S]*?\.eq\("id", obraId\)[\s\S]*?\.limit\(1\)[\s\S]*?\.maybeSingle\(\)/);
+  assert.match(
+    source,
+    /from "\.\.\/lib\/editar-obra-save-work-ownership"/,
+  );
+  assert.match(source, /await confirmarPropriedadeObraParaSalvamentoEdicao\(\{/);
+  assert.doesNotMatch(source, /obraLocalAtual\?\.autorId && obraLocalAtual\.autorId !== userId/);
+  assert.match(workOwnershipSource, /obraLocalAtual\?\.autorId && obraLocalAtual\.autorId !== userId/);
+  assert.match(workOwnershipSource, /\.from\("obras"\)[\s\S]*?\.select\([\s\S]*?"id,user_id,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,criada_em"[\s\S]*?\)[\s\S]*?\.eq\("id", obraId\)[\s\S]*?\.eq\("user_id", userId\)[\s\S]*?\.limit\(1\)[\s\S]*?\.maybeSingle\(\)/);
   antes("const erroValidacao", "setProcessando(true)");
   antes("await obterIdentidadeSalvamentoEdicaoObra", ".from(\"obras\")");
 });
