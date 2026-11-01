@@ -2795,3 +2795,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Obra — Fase 6
 
 - O lifecycle e a mutation de avaliação da obra foram movidos para useObraRatingLifecycle, preservando fallback local, snapshot remoto, versionamento, persistência Supabase, sincronização com o Diário, rollback e guards contra resultados assíncronos obsoletos após troca de conta.
+
+## Obra — Fase 7
+
+- O lifecycle de métricas da obra foi movido para useObraWorkMetricsLifecycle, preservando fallback local, carregamento remoto, sincronização de interações, total de comentários e cancelamento de resultados obsoletos.
