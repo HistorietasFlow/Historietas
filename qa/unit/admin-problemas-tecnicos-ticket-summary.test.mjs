@@ -10,15 +10,13 @@ test("resumo visual preserva o contrato do card", () => {
   assert.doesNotMatch(source, /supabase|useState|useEffect|router|localStorage|atualizarChamado|setObservacoes/);
 });
 
-test("pagina preserva a orquestracao do card", () => {
-  assert.match(page, /AdminProblemasTecnicosTicketSummary/);
+test("pagina delega a orquestracao do card", () => {
+  assert.match(page, /AdminProblemasTecnicosTicketCard/);
   assert.match(page, /problemasFiltrados\.map/);
-  assert.match(page, /<article key=\{problema\.id\}/);
-  assert.match(page, /const aberto = chamadoAbertoId === problema\.id/);
-  assert.match(page, /const salvando = acaoEmAndamento === problema\.id/);
-  assert.match(page, /const nomeUsuario/);
-  assert.match(page, /\{aberto && \(/);
-  assert.match(page, /alternarChamadoAberto\(problema\.id\)/);
-  assert.match(page, /setObservacoes/);
-  assert.match(page, /atualizarChamado/);
+  assert.match(page, /key=\{problema\.id\}/);
+  assert.doesNotMatch(page, /AdminProblemasTecnicosTicketSummary/);
+  assert.doesNotMatch(page, /const aberto = chamadoAbertoId === problema\.id/);
+  assert.doesNotMatch(page, /const salvando = acaoEmAndamento === problema\.id/);
+  assert.doesNotMatch(page, /const nomeUsuario/);
+  assert.doesNotMatch(page, /\{aberto && \(/);
 });

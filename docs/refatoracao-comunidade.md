@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Admin Problemas Técnicos — Fase 3: card completo do chamado
+
+- A composição visual e os controles de cada chamado foram movidos para componente dedicado, preservando abertura, ações, observações, mensagens, limites e estilos existentes.
+
 ## Admin Problemas Técnicos — Fase 2: estado de ações e feedback
 
 - O estado de abertura, feedback e ações em andamento dos chamados foi movido para hook dedicado, incluindo a recarga com o mesmo tratamento de erro e finalização da ação.
