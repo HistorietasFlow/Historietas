@@ -26,7 +26,6 @@ test("modal delega somente o envio da denúncia para a action dedicada", () => {
   assert.doesNotMatch(modal, /async function enviarDenuncia\(/);
   assert.doesNotMatch(modal, /supabase\.rpc\(/);
   assert.match(modal, /createPortal\(/);
-  assert.match(modal, /document\.addEventListener\("keydown", aoPressionarTecla\)/);
   assert.match(modal, /<form onSubmit=\{enviarDenuncia\}/);
 });
 

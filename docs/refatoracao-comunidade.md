@@ -2807,3 +2807,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## DenunciaModal — Fase 1
 
 - O fluxo de envio da denúncia foi movido para useDenunciaSubmitAction, preservando validações, regras por tipo de alvo, RPCs Supabase, tratamento de erro e resultado de sucesso, enquanto o modal mantém portal, foco, teclado e composição visual.
+
+## DenunciaModal — Fase 2
+
+- O lifecycle do modal foi movido para useDenunciaModalLifecycle, preservando montagem do portal, reset ao abrir, bloqueio e restauração do body, foco inicial, Escape, focus trap, listeners e cleanup.
