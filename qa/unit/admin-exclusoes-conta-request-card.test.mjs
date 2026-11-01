@@ -24,6 +24,6 @@ test("card de solicitações preserva a apresentação e os controles", () => {
 test("página mantém o map e a orquestração do card", () => {
   assert.match(page, /AdminExclusoesContaRequestCard/);
   assert.match(page, /solicitacoesFiltradas\.map/);
-  ["const aberta", "const salvando", "const statusAtual", "const observacaoAtual", "const alterado", "setAbertaId", "setStatusRascunho", "setObservacoes", "salvarSolicitacao"].forEach((item) => assert.ok(page.includes(item), item));
+  ["const aberta", "const salvando", "const statusAtual", "const observacaoAtual", "const alterado", "alternarSolicitacaoAberta", "setStatusRascunho", "setObservacoes", "salvarSolicitacao"].forEach((item) => assert.ok(page.includes(item), item));
   assert.doesNotMatch(page, /<article key=\{solicitacao\.id\} style=\{cardStyle\}>/);
 });

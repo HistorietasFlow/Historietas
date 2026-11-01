@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -21,6 +21,7 @@ import { calcularTotaisSolicitacoesExclusao } from "./lib/admin-exclusoes-conta-
 import { useAdminExclusoesContaInitialData } from "./hooks/use-admin-exclusoes-conta-initial-data";
 import { useAdminExclusoesContaActions } from "./hooks/use-admin-exclusoes-conta-actions";
 import { useAdminExclusoesContaFilters } from "./hooks/use-admin-exclusoes-conta-filters";
+import { useAdminExclusoesContaActionState } from "./hooks/use-admin-exclusoes-conta-action-state";
 import { AdminExclusoesContaRecoverySection } from "./components/admin-exclusoes-conta-recovery-section";
 import { AdminExclusoesContaRequestCard } from "./components/admin-exclusoes-conta-request-card";
 import {
@@ -56,15 +57,22 @@ export default function AdminExclusoesContaPage() {
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  const [abertaId, setAbertaId] = useState("");
-  const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
-  const [erro, setErro] = useState("");
-  const [sucesso, setSucesso] = useState("");
-
   const t = useCallback(
     (texto: TextoTraduzido) => traduzir(texto, language),
     [language],
   );
+
+  const {
+    abertaId,
+    acaoEmAndamento,
+    setAcaoEmAndamento,
+    erro,
+    setErro,
+    sucesso,
+    setSucesso,
+    alternarSolicitacaoAberta,
+    recarregarFila,
+  } = useAdminExclusoesContaActionState(t);
 
   const {
     carregando,
@@ -223,27 +231,12 @@ export default function AdminExclusoesContaPage() {
               type="button"
               className="admin-delete-primary-button"
               disabled={acaoEmAndamento === "recarregar"}
-              onClick={() => {
-                setAcaoEmAndamento("recarregar");
-                setErro("");
-                setSucesso("");
-                void Promise.all([
-                  carregarSolicitacoes(),
-                  carregarOperacoesRecuperaveis(),
-                ])
-                  .catch((error) =>
-                    setErro(
-                      error instanceof Error
-                        ? error.message
-                        : t({
-                            pt: "Não foi possível atualizar a fila.",
-                            en: "The queue could not be refreshed.",
-                            es: "No se pudo actualizar la cola.",
-                          }),
-                    ),
-                  )
-                  .finally(() => setAcaoEmAndamento(""));
-              }}
+              onClick={() =>
+                void recarregarFila({
+                  carregarSolicitacoes,
+                  carregarOperacoesRecuperaveis,
+                })
+              }
             >
               {acaoEmAndamento === "recarregar"
                 ? t({
@@ -440,9 +433,7 @@ export default function AdminExclusoesContaPage() {
                   language={language}
                   t={t}
                   onAlternarAbertura={() =>
-                    setAbertaId((atual) =>
-                      atual === solicitacao.id ? "" : solicitacao.id,
-                    )
+                    alternarSolicitacaoAberta(solicitacao.id)
                   }
                   onAlterarStatus={(status) =>
                     setStatusRascunho((atuais) => ({

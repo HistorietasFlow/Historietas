@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Admin Exclusões de Conta — Fase 2: estado de ações e feedback
+
+- O estado de abertura, feedback e ações em andamento foi movido para hook dedicado, preservando a recarga paralela da fila e os consumidores de cada estado.
+
 ## Admin Exclusões de Conta — Fase 1: busca e filtro das solicitações
 
 - O estado de busca, o filtro de status e a lista filtrada de solicitações foram movidos para hook dedicado, preservando a memoização, os limites e os controles da página.

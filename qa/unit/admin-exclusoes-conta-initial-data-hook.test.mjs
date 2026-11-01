@@ -94,5 +94,5 @@ test("página preserva tradução e delega dados iniciais ao hook", () => {
   assert.match(pageSource, /useAdminExclusoesContaActions/);
   assert.doesNotMatch(pageSource, /async function salvarSolicitacao/);
   assert.doesNotMatch(pageSource, /async function recuperarOperacao/);
-  assert.match(pageSource, /void Promise\.all\(\[\s*carregarSolicitacoes\(\),\s*carregarOperacoesRecuperaveis\(\),/);
+  assert.match(pageSource, /recarregarFila\(\{\s*carregarSolicitacoes,\s*carregarOperacoesRecuperaveis,\s*\}\)/);
 });
