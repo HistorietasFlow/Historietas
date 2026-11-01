@@ -41,6 +41,13 @@ const localPersistenceSource = readFileSync(
   ),
   "utf8",
 );
+const diarySyncSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-diary-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function antes(primeiro, segundo) {
   const inicioSalvarEdicao = source.indexOf("async function salvarEdicao");
@@ -107,12 +114,14 @@ test("o fluxo preserva assets, rollback, atualização, backup e Diário", () =>
   assert.match(localPersistenceSource, /atualizarObraNaListaLocalEdicao\(\{/);
   assert.match(localPersistenceSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId\)/);
   assert.match(localPersistenceSource, /salvarArquivoObraNoBackup\(/);
-  assert.match(source, /registrarDiarioEdicaoObra\(\{/);
+  assert.match(source, /sincronizarDiarioEdicaoObra\(\{/);
+  assert.doesNotMatch(source, /registrarDiarioEdicaoObra\(/);
+  assert.match(diarySyncSource, /registrarDiarioEdicaoObra\(\{/);
   assert.match(source, /setSalvou\(true\);/);
   assert.match(source, /finally \{[\s\S]*?setProcessando\(false\);/);
   antes("const assetsPreparados", "await atualizarObraRemotaEdicaoObra");
   antes("await atualizarObraRemotaEdicaoObra", "await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)");
   antes("await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover)", "const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra");
-  antes("const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra", "registrarDiarioEdicaoObra");
-  antes("registrarDiarioEdicaoObra", "setSalvou(true)");
+  antes("const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra", "sincronizarDiarioEdicaoObra");
+  antes("sincronizarDiarioEdicaoObra", "setSalvou(true)");
 });

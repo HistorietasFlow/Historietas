@@ -17,6 +17,13 @@ const saveActionSource = readFileSync(
   ),
   "utf8",
 );
+const diarySyncSource = readFileSync(
+  new URL(
+    "../../app/editar-obra/lib/editar-obra-diary-sync.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 let indiceModulo = 0;
 
 async function carregarModulo() {
@@ -146,7 +153,8 @@ test("o hook delega a persistência local e mantém Diário e estados finais", (
   assert.doesNotMatch(saveActionSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(/);
   assert.doesNotMatch(saveActionSource, /salvarArquivoObraNoBackup\(/);
   assert.doesNotMatch(saveActionSource, /sincronizarBackupArquivosObras\(/);
-  assert.match(saveActionSource, /registrarDiarioEdicaoObra\([\s\S]*?obra: obraAtualizadaDiario/);
+  assert.match(saveActionSource, /await sincronizarDiarioEdicaoObra\(\{/);
+  assert.match(diarySyncSource, /registrarDiarioEdicaoObra\([\s\S]*?obra: obraAtualizadaDiario/);
   assert.match(saveActionSource, /setObras\(novasObrasDoUsuario\);/);
   assert.match(source, /atualizarObraNaListaLocalEdicao\([\s\S]*?salvarObrasDoUsuarioPreservandoOutrasContas[\s\S]*?if \(arquivoObraRemovidoManualmente\)/);
   assert.doesNotMatch(source, /supabase|storage\.from|useState|useEffect|await|registrarDiarioEdicaoObra/);
