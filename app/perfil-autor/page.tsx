@@ -14,6 +14,7 @@ import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-naviga
 import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-actions";
 import { usePerfilAutorAuthIdentitySync } from "./hooks/use-perfil-autor-auth-identity-sync";
 import { usePerfilAutorAuthLoadingState } from "./hooks/use-perfil-autor-auth-loading-state";
+import { usePerfilAutorTargetProfileState } from "./hooks/use-perfil-autor-target-profile-state";
 import { usePerfilAutorProfileLoadSync } from "./hooks/use-perfil-autor-profile-load-sync";
 import { usePerfilAutorLoginRedirect } from "./hooks/use-perfil-autor-login-redirect";
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
@@ -63,7 +64,6 @@ import type {
   AbaPerfilAutor,
   ObraLocal,
   PerfisAutoresSalvos,
-  PerfilUsuarioRemoto,
   TotaisInteracoesObrasPerfilAutor,
 } from "./types";
 import {
@@ -152,8 +152,14 @@ function PerfilAutorPageContent() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [totaisInteracoesObras, setTotaisInteracoesObras] =
     useState<TotaisInteracoesObrasPerfilAutor>(totaisInteracoesObrasPerfilVazio);
-  const [autorSelecionado, setAutorSelecionado] = useState("");
-  const [autorIdSelecionado, setAutorIdSelecionado] = useState("");
+  const {
+    autorSelecionado,
+    setAutorSelecionado,
+    autorIdSelecionado,
+    setAutorIdSelecionado,
+    perfilUsuarioRemoto,
+    setPerfilUsuarioRemoto,
+  } = usePerfilAutorTargetProfileState();
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
@@ -173,8 +179,6 @@ function PerfilAutorPageContent() {
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const { mensagemAcao, setMensagemAcao } = usePerfilAutorActionMessage();
-  const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
-    useState<PerfilUsuarioRemoto | null>(null);
   const {
     usuarioIdLogado,
     setUsuarioIdLogado,

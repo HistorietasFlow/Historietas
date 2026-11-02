@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 14: estado do perfil-alvo
+
+- Os estados locais de autor selecionado, ID de autor selecionado e perfil remoto foram reunidos em hook dedicado, preservando setters, carregamento, limpeza por identidade e atualizações otimistas existentes.
+
 ## Perfil Autor — Fase 13: estado de autenticação e carregamento
 
 - Os estados locais de identidade autenticada, autenticação carregada e carregamento da página foram reunidos em hook dedicado, preservando setters, lifecycle e consumidores existentes.
