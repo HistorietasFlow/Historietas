@@ -79,6 +79,6 @@ test("bloco final preserva texto, condição e props da atividade recente", () =
   );
   assert.match(
     pagina,
-    /<ProfileAboutSection[\s\S]*?memberSince=\{entradaHistorietasPerfil\}[\s\S]*?showRecentActivity=\{atividadesPerfilVisivel\}[\s\S]*?recentActivityExpanded=\{atividadeSobreAberta\}[\s\S]*?recentActivityLoading=\{diarioPerfilCarregando\}[\s\S]*?recentActivityItems=\{atividadesDiarioPerfil\}[\s\S]*?onToggleRecentActivity=\{\(\) =>[\s\S]*?setAtividadeSobreAberta\(\(valorAtual\) => !valorAtual\)/,
+    /<ProfileAboutSection[\s\S]*?memberSince=\{entradaHistorietasPerfil\}[\s\S]*?showRecentActivity=\{atividadesPerfilVisivel\}[\s\S]*?recentActivityExpanded=\{atividadeSobreAberta\}[\s\S]*?recentActivityLoading=\{diarioPerfilCarregando\}[\s\S]*?recentActivityItems=\{atividadesDiarioPerfil\}[\s\S]*?onToggleRecentActivity=\{alternarAtividadeSobre\}/,
   );
 });

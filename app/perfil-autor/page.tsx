@@ -21,6 +21,7 @@ import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actio
 import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-actions";
 import { usePerfilAutorReportState } from "./hooks/use-perfil-autor-report-state";
 import { usePerfilAutorHeaderMenuState } from "./hooks/use-perfil-autor-header-menu-state";
+import { usePerfilAutorAboutState } from "./hooks/use-perfil-autor-about-state";
 import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
 import { usePerfilAutorProfileEditorState } from "./hooks/use-perfil-autor-profile-editor-state";
@@ -215,7 +216,12 @@ function PerfilAutorPageContent() {
     salvandoEditorPerfil,
     setSalvandoEditorPerfil,
   } = usePerfilAutorProfileEditorState();
-  const [editorSobreAberto, setEditorSobreAberto] = useState(false);
+  const {
+    editorSobreAberto,
+    atividadeSobreAberta,
+    alternarEditorSobre,
+    alternarAtividadeSobre,
+  } = usePerfilAutorAboutState();
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>(() =>
     normalizarAbaPerfilAutor(searchParams.get("aba")),
   );
@@ -263,7 +269,6 @@ function PerfilAutorPageContent() {
     useState<DiarioPerfilEstado>(diarioPerfilVazio);
   const [comunidadePerfil, setComunidadePerfil] =
     useState<ComunidadePerfilEstado>(comunidadePerfilVazia);
-  const [atividadeSobreAberta, setAtividadeSobreAberta] = useState(false);
   const {
     seguindoUsuarioPerfil,
     setSeguindoUsuarioPerfil,
@@ -1251,9 +1256,7 @@ function PerfilAutorPageContent() {
             heroText={bioSobreAutorExibido}
             heroUserContent={bioSobreAutorUserContent}
             heroCanEdit={podeEditarPerfil}
-            onToggleHeroEditor={() =>
-              setEditorSobreAberto((aberto) => !aberto)
-            }
+            onToggleHeroEditor={alternarEditorSobre}
             heroEditorVisible={editorSobreVisivel}
             heroEditorValue={perfilSalvoAutor.sobreBio}
             onHeroEditorChange={(event) =>
@@ -1286,9 +1289,7 @@ function PerfilAutorPageContent() {
             recentActivityExpanded={atividadeSobreAberta}
             recentActivityLoading={diarioPerfilCarregando}
             recentActivityItems={atividadesDiarioPerfil}
-            onToggleRecentActivity={() =>
-              setAtividadeSobreAberta((valorAtual) => !valorAtual)
-            }
+            onToggleRecentActivity={alternarAtividadeSobre}
             />
           )}
           renderObras={() => (

@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 8: estado da seção Sobre
+
+- Os estados de interface do editor de bio e da atividade recente da seção Sobre foram reunidos em hook dedicado, preservando a visibilidade derivada, os dados e as ações existentes.
+
 ## Perfil Autor — Fase 7: estado do cabeçalho e menu
 
 - Os estados locais de abertura do menu e visibilidade do username do cabeçalho foram reunidos em hook dedicado, preservando setters, ações semânticas e integrações existentes.
