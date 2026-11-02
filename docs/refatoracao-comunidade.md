@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 11: estado das avaliações
+
+- Os estados locais das avaliações de autor e Diário foram reunidos em hook dedicado, preservando valores iniciais, setters e todos os consumidores de sincronização, ações e apresentação.
+
 ## Perfil Autor — Fase 10: estado dos menus de obra e Biblioteca
 
 - Os IDs locais dos menus/action sheets de obra e Biblioteca foram reunidos em hook dedicado, preservando setters, fechamentos semânticos e a ordem das ações existentes.
