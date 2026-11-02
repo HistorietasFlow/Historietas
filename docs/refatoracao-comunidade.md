@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 4: estado do menu de obra
+
+- Os estados locais do menu de obra foram reunidos em hook dedicado, preservando valores iniciais, setters, lifecycle, ações de Quero ler, compartilhamento, anotações e consumidores existentes.
+
 ## Listas — Fase 3: estado dos dados principais carregados
 
 - Os estados locais das listas do perfil, obras públicas e autores foram reunidos em hook dedicado, preservando valores iniciais, setters, loader, ações de anotação e consumidores de resultados existentes.

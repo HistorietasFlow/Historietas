@@ -24,6 +24,7 @@ import { useListasWorkActionSheetRenderer } from "./hooks/use-listas-work-action
 import { useListasIdentityProfileState } from "./hooks/use-listas-identity-profile-state";
 import { useListasPageLoadState } from "./hooks/use-listas-page-load-state";
 import { useListasLoadedDataState } from "./hooks/use-listas-loaded-data-state";
+import { useListasWorkMenuState } from "./hooks/use-listas-work-menu-state";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
@@ -119,7 +120,6 @@ import {
   type CategoriaPerfil,
   type EditorAnotacaoListasEstado,
   type ItemObraLista,
-  type ObraLista,
 } from "./types";
 import {
   historietasThemeCss,
@@ -175,13 +175,18 @@ function ListasUniversaisContent() {
     erro,
     setErro,
   } = useListasPageLoadState();
-  const [obraMenuAberta, setObraMenuAberta] = useState<ObraLista | null>(null);
-  const [itemPerfilMenuAberto, setItemPerfilMenuAberto] =
-    useState<ItemObraLista | null>(null);
-  const [categoriaMenuAberta, setCategoriaMenuAberta] =
-    useState<CategoriaPerfil>("tudo");
-  const [salvandoQueroLer, setSalvandoQueroLer] = useState(false);
-  const [obraMenuNoQueroLer, setObraMenuNoQueroLer] = useState(false);
+  const {
+    obraMenuAberta,
+    setObraMenuAberta,
+    itemPerfilMenuAberto,
+    setItemPerfilMenuAberto,
+    categoriaMenuAberta,
+    setCategoriaMenuAberta,
+    salvandoQueroLer,
+    setSalvandoQueroLer,
+    obraMenuNoQueroLer,
+    setObraMenuNoQueroLer,
+  } = useListasWorkMenuState();
   const [editorAnotacao, setEditorAnotacao] =
     useState<EditorAnotacaoListasEstado>(EDITOR_ANOTACAO_LISTAS_VAZIO);
   const [interacoesAnotacoes, setInteracoesAnotacoes] =
