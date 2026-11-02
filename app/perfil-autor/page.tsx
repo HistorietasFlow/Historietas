@@ -9,7 +9,6 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import {
   type EstadoBloqueioPerfil,
-  type PermissoesAbasPerfil,
 } from "../../lib/historietasPrivacy";
 import { Suspense, useRef, useState } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
@@ -44,6 +43,7 @@ import { usePerfilAutorCommunitySync } from "./hooks/use-perfil-autor-community-
 import { usePerfilAutorBlockStateSync } from "./hooks/use-perfil-autor-block-state-sync";
 import { usePerfilAutorFollowStateSync } from "./hooks/use-perfil-autor-follow-state-sync";
 import { usePerfilAutorFollowRelationshipState } from "./hooks/use-perfil-autor-follow-relationship-state";
+import { usePerfilAutorTabPrivacyState } from "./hooks/use-perfil-autor-tab-privacy-state";
 import { usePerfilAutorInteractionTotalsSync } from "./hooks/use-perfil-autor-interaction-totals-sync";
 import { usePerfilAutorNotificationCountSync } from "./hooks/use-perfil-autor-notification-count-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
@@ -68,7 +68,6 @@ import type {
 } from "./types";
 import {
   BIO_MAX_LENGTH,
-  PERMISSOES_ABAS_PERFIL_PADRAO,
   SOBRE_BIO_MAX_LENGTH,
   avaliacaoAutorVazia,
   avaliacaoDiarioVazia,
@@ -272,10 +271,12 @@ function PerfilAutorPageContent() {
     estadoRelacionamentoPerfil,
     setEstadoRelacionamentoPerfil,
   } = usePerfilAutorFollowRelationshipState();
-  const [permissoesAbasPerfil, setPermissoesAbasPerfil] =
-    useState<PermissoesAbasPerfil>(PERMISSOES_ABAS_PERFIL_PADRAO);
-  const [privacidadePerfilCarregando, setPrivacidadePerfilCarregando] =
-    useState(true);
+  const {
+    permissoesAbasPerfil,
+    setPermissoesAbasPerfil,
+    privacidadePerfilCarregando,
+    setPrivacidadePerfilCarregando,
+  } = usePerfilAutorTabPrivacyState();
   const [denunciaPerfilAberta, setDenunciaPerfilAberta] = useState(false);
   const [
     alvoDenunciaConteudoPerfil,
