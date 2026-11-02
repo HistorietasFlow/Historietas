@@ -28,6 +28,7 @@ import { useListasWorkMenuState } from "./hooks/use-listas-work-menu-state";
 import { useListasDiaryAnnotationState } from "./hooks/use-listas-diary-annotation-state";
 import { useListasDiaryCommentsState } from "./hooks/use-listas-diary-comments-state";
 import { useListasProfileAccessState } from "./hooks/use-listas-profile-access-state";
+import { useListasResultsNavigationState } from "./hooks/use-listas-results-navigation-state";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
@@ -159,9 +160,15 @@ function ListasUniversaisContent() {
     autores,
     setAutores,
   } = useListasLoadedDataState();
-  const [categoria, setCategoria] = useState<CategoriaPerfil>(categoriaUrl);
+  const {
+    categoria,
+    setCategoria,
+    quantidadeVisivel,
+    setQuantidadeVisivel,
+    obraDestacadaId,
+    setObraDestacadaId,
+  } = useListasResultsNavigationState(categoriaUrl);
   const busca = "";
-  const [quantidadeVisivel, setQuantidadeVisivel] = useState(40);
   const {
     carregando,
     setCarregando,
@@ -218,7 +225,6 @@ function ListasUniversaisContent() {
     setRespostasVisiveisComentariosDiario,
   } = useListasDiaryCommentsState();
   const isDesktop = useListasDesktopMode();
-  const [obraDestacadaId, setObraDestacadaId] = useState("");
 
   useListasRouteUiSync({
     categoriaUrl,

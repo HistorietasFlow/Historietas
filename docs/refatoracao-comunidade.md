@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 8: estado de navegação e apresentação dos resultados
+
+- Os estados locais de categoria, quantidade visível e destaque temporário da obra foram reunidos em hook dedicado, preservando sincronização de rota, paginação, foco, scroll, URL e consumidores existentes.
+
 ## Listas — Fase 7: estado de acesso e privacidade do perfil
 
 - Os estados locais das preferências de privacidade e do relacionamento do perfil foram reunidos em hook dedicado, preservando setters, loader, permissões, visibilidade do Diário e consumidores existentes.
