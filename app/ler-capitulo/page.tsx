@@ -67,6 +67,7 @@ import { useLerCapituloLoadedDataState } from "./hooks/use-ler-capitulo-loaded-d
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
 import { useLerCapituloSessionPreferencesState } from "./hooks/use-ler-capitulo-session-preferences-state";
 import { useLerCapituloCommentsState } from "./hooks/use-ler-capitulo-comments-state";
+import { useLerCapituloFeedbackOverlaysState } from "./hooks/use-ler-capitulo-feedback-overlays-state";
 import { useLerCapituloInteractionData } from "./hooks/use-ler-capitulo-interaction-data";
 import { useLerCapituloMetricsInteractionsState } from "./hooks/use-ler-capitulo-metrics-interactions-state";
 import { useLerCapituloViewRegistration, useLerCapituloEntryActivity } from "./hooks/use-ler-capitulo-entry-lifecycle";
@@ -79,7 +80,6 @@ import { criarAcaoProgressoLeituraCapitulo } from "./lib/ler-capitulo-reading-pr
 import { criarAcoesAutenticacaoLeitor } from "./lib/ler-capitulo-auth-actions";
 import {
   criarAcoesDenunciaLeitor,
-  type AlvoDenunciaLeitor,
 } from "./lib/ler-capitulo-report-actions";
 import {
   criarControlesComentariosCapitulo,
@@ -127,8 +127,14 @@ export default function LerCapituloPage() {
     mostrarComentario,
     setMostrarComentario,
   } = useLerCapituloCommentsState();
-  const [denunciaAlvo, setDenunciaAlvo] =
-    useState<AlvoDenunciaLeitor | null>(null);
+  const {
+    denunciaAlvo,
+    setDenunciaAlvo,
+    mensagemAcao,
+    setMensagemAcao,
+    mostrarAjustes,
+    setMostrarAjustes,
+  } = useLerCapituloFeedbackOverlaysState();
   const {
     metricasCapitulo,
     setMetricasCapitulo,
@@ -152,8 +158,6 @@ export default function LerCapituloPage() {
     preferenciasCarregadas,
     setPreferenciasCarregadas,
   } = useLerCapituloSessionPreferencesState();
-  const [mensagemAcao, setMensagemAcao] = useState("");
-  const [mostrarAjustes, setMostrarAjustes] = useState(false);
   const [progressoRolagem, setProgressoRolagem] = useState(0);
   const isDesktop = useLerCapituloDesktopMode();
   const visualizacaoCapituloRegistradaRef = useRef("");

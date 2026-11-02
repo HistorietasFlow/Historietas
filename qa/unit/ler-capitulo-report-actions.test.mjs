@@ -6,6 +6,7 @@ import typescript from "typescript";
 const ler = (path) =>
   readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-report-actions.ts");
+const fonteEstado = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-feedback-overlays-state.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const loginRoute = ler("../../app/ler-capitulo/lib/ler-capitulo-login-route.ts");
 const dataUrl = (codigo) =>
@@ -53,6 +54,13 @@ test("a factory concentra somente os callbacks de denúncia e a página preserva
   assert.match(fonte, /comentariosCapitulo\.find/);
   assert.match(fonte, /"Comentário de capítulo"/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-report-actions";/);
+  assert.match(pagina, /import \{ useLerCapituloFeedbackOverlaysState \} from "\.\/hooks\/use-ler-capitulo-feedback-overlays-state";/);
+  assert.match(pagina, /\} = useLerCapituloFeedbackOverlaysState\(\);/);
+  assert.doesNotMatch(pagina, /const \[denunciaAlvo, setDenunciaAlvo\]/);
+  assert.match(fonteEstado, /import type \{ AlvoDenunciaLeitor \} from "\.\.\/lib\/ler-capitulo-report-actions";/);
+  assert.match(fonteEstado, /useState<AlvoDenunciaLeitor \| null>\(null\)/);
+  assert.match(fonteEstado, /const \[mostrarAjustes, setMostrarAjustes\] = useState\(false\);/);
+  assert.doesNotMatch(fonteEstado, /useEffect|useRef|supabase|localStorage|setTimeout/);
   assert.match(pagina, /criarAcoesDenunciaLeitor\(\{[\s\S]*?capituloAtual,[\s\S]*?comentariosCapitulo,[\s\S]*?setDenunciaAlvo,/);
   assert.match(pagina, /abrirDenunciaCapituloAtual=\{abrirDenunciaCapituloAtual\}/);
   assert.match(pagina, /onDenunciarComentario=\{denunciarComentarioCapitulo\}/);
