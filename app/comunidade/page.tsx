@@ -27,6 +27,7 @@ import { useComunidadeFeedNavigationState } from "./hooks/use-comunidade-feed-na
 import { useComunidadeFeedPaginationState } from "./hooks/use-comunidade-feed-pagination-state";
 import { useComunidadePollState } from "./hooks/use-comunidade-poll-state";
 import { useComunidadeFeedActionState } from "./hooks/use-comunidade-feed-action-state";
+import { useComunidadePublicationOverlaysState } from "./hooks/use-comunidade-publication-overlays-state";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
@@ -51,10 +52,7 @@ import {
   selecionarOrdenacaoMaisComentadasComunidade,
   selecionarOrdenacaoRecentesComunidade,
 } from "./components/community-feed-order-actions";
-import type {
-  AlvoDenunciaComunidade,
-  DenunciaAlvoComunidade,
-} from "./components/community-report-target";
+import type { AlvoDenunciaComunidade } from "./components/community-report-target";
 import type {
   UsuarioBuscaComunidade,
 } from "./components/community-user";
@@ -166,11 +164,17 @@ export default function ComunidadePage() {
     postVisibilidadeAtualizandoId,
     setPostVisibilidadeAtualizandoId,
   } = useComunidadeFeedActionState();
-  const [postMenuAbertoId, setPostMenuAbertoId] = useState<string | null>(null);
-  const [denunciaAlvo, setDenunciaAlvo] =
-    useState<DenunciaAlvoComunidade | null>(null);
+  const {
+    postMenuAbertoId,
+    setPostMenuAbertoId,
+    denunciaAlvo,
+    setDenunciaAlvo,
+    comentariosPostId,
+    setComentariosPostId,
+    fecharMenuPublicacao,
+    fecharDenunciaPublicacao,
+  } = useComunidadePublicationOverlaysState();
   const [erro, setErro] = useState("");
-  const [comentariosPostId, setComentariosPostId] = useState<string | null>(null);
   const [obrasRelacionadasSugestoes, setObrasRelacionadasSugestoes] = useState<
     ObraRelacionadaSugestao[]
   >([]);
@@ -611,7 +615,7 @@ export default function ComunidadePage() {
   }
 
   function fecharMenuOpcoesPostComunidade() {
-    setPostMenuAbertoId(null);
+    fecharMenuPublicacao();
   }
 
   function denunciarPostComunidade(postId: string) {
@@ -951,7 +955,7 @@ export default function ComunidadePage() {
           alvoTipo: denunciaAlvo?.alvoTipo || "post",
           alvoId: denunciaAlvo?.alvoId || "",
           alvoTitulo: denunciaAlvo?.alvoTitulo || "",
-          onFechar: () => setDenunciaAlvo(null),
+          onFechar: fecharDenunciaPublicacao,
           onEnviada: () => {
             setErro("");
             emitirFeedbackAcao(

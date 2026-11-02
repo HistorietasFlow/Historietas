@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade — Fase 6: estado dos overlays de publicação
+
+- Os estados locais de menu, denúncia e comentários de publicação foram reunidos em hook dedicado, preservando valores iniciais, setters, resets, navegação por URL, body lock e fechamentos existentes.
+
 ## Comunidade — Fase 5: estado das ações do feed
 
 - Os estados locais de feedback, publicação e ações de posts foram reunidos em hook dedicado, preservando valores iniciais, setters, locks, resets e consumidores existentes.
