@@ -9,7 +9,7 @@ import {
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { LerCapituloLanguageBridge } from "./components/ler-capitulo-language-bridge";
 import { LoadingSpinner } from "./components/ler-capitulo-loading-spinner";
-import ComentariosCapituloSheet, { type ComentarioCapituloPublico, type ComentariosCapituloPost } from "./components/ler-capitulo-comments-sheet";
+import ComentariosCapituloSheet, { type ComentariosCapituloPost } from "./components/ler-capitulo-comments-sheet";
 import LerCapituloReaderContent from "./components/ler-capitulo-reader-content";
 import { supabase } from "../../lib/supabase/client";
 import DenunciaModal from "../../components/DenunciaModal";
@@ -66,6 +66,7 @@ import { useLerCapituloRouteIdentityState } from "./hooks/use-ler-capitulo-route
 import { useLerCapituloLoadedDataState } from "./hooks/use-ler-capitulo-loaded-data-state";
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
 import { useLerCapituloSessionPreferencesState } from "./hooks/use-ler-capitulo-session-preferences-state";
+import { useLerCapituloCommentsState } from "./hooks/use-ler-capitulo-comments-state";
 import { useLerCapituloInteractionData } from "./hooks/use-ler-capitulo-interaction-data";
 import { useLerCapituloMetricsInteractionsState } from "./hooks/use-ler-capitulo-metrics-interactions-state";
 import { useLerCapituloViewRegistration, useLerCapituloEntryActivity } from "./hooks/use-ler-capitulo-entry-lifecycle";
@@ -115,11 +116,19 @@ export default function LerCapituloPage() {
     useLerCapituloRouteIdentityState();
   const { obras, setObras, carregando, setCarregando } =
     useLerCapituloLoadedDataState();
-  const [, setComentarioDigitado] = useState("");
-  const [comentarioStatus, setComentarioStatus] = useState("");
+  const {
+    setComentarioDigitado,
+    comentarioStatus,
+    setComentarioStatus,
+    comentariosCapitulo,
+    setComentariosCapitulo,
+    comentariosCarregando,
+    setComentariosCarregando,
+    mostrarComentario,
+    setMostrarComentario,
+  } = useLerCapituloCommentsState();
   const [denunciaAlvo, setDenunciaAlvo] =
     useState<AlvoDenunciaLeitor | null>(null);
-  const [comentariosCapitulo, setComentariosCapitulo] = useState<ComentarioCapituloPublico[]>([]);
   const {
     metricasCapitulo,
     setMetricasCapitulo,
@@ -130,7 +139,6 @@ export default function LerCapituloPage() {
     lidoCapituloSalvando,
     setLidoCapituloSalvando,
   } = useLerCapituloMetricsInteractionsState();
-  const [comentariosCarregando, setComentariosCarregando] = useState(false);
   const comentariosCapituloCarregadoIdRef = useRef("");
   const {
     perfilComentarioLeitor,
@@ -146,7 +154,6 @@ export default function LerCapituloPage() {
   } = useLerCapituloSessionPreferencesState();
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
-  const [mostrarComentario, setMostrarComentario] = useState(false);
   const [progressoRolagem, setProgressoRolagem] = useState(0);
   const isDesktop = useLerCapituloDesktopMode();
   const visualizacaoCapituloRegistradaRef = useRef("");
