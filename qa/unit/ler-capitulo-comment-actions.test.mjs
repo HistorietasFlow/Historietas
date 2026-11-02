@@ -6,6 +6,7 @@ import typescript from "typescript";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-actions.ts");
+const fonteEstado = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comments-state.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const controles = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-controls.ts");
 const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
@@ -85,7 +86,12 @@ test("os corpos originais permanecem literais e a página continua proprietária
     assert.doesNotMatch(pagina, new RegExp(`async function ${nome}\\(`));
     assert.match(fonte, new RegExp(`async function ${nome}\\(`));
   }
-  assert.match(pagina, /const \[comentariosCapitulo, setComentariosCapitulo\] = useState/);
+  assert.match(pagina, /import \{ useLerCapituloCommentsState \} from "\.\/hooks\/use-ler-capitulo-comments-state";/);
+  assert.match(pagina, /\} = useLerCapituloCommentsState\(\);/);
+  assert.doesNotMatch(pagina, /const \[comentariosCapitulo, setComentariosCapitulo\]/);
+  assert.match(fonteEstado, /import type \{ ComentarioCapituloPublico \} from "\.\.\/components\/ler-capitulo-comments-sheet";/);
+  assert.match(fonteEstado, /useState<ComentarioCapituloPublico\[\]>\(\[\]\)/);
+  assert.doesNotMatch(fonteEstado, /useEffect|useRef|supabase|localStorage|setTimeout/);
   assert.match(pagina, /import \{[\s\S]*?salvarComentarioCapituloSupabase,[\s\S]*?TABELA_COMENTARIOS_CAPITULOS_CURTIDAS,[\s\S]*?\} from "\.\/lib\/ler-capitulo-comment-persistence";/);
   assert.doesNotMatch(pagina, /async function salvarComentarioCapituloSupabase\(/);
   assert.match(persistencia, /export async function salvarComentarioCapituloSupabase\(/);

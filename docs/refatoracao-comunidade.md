@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 5: estado dos comentários do capítulo
+
+- Os estados locais do fluxo de comentários foram reunidos em hook dedicado, preservando reset, body lock, carregamento, ações, métricas e consumidores existentes.
+
 ## Ler Capítulo — Fase 4: estado de métricas e salvamento das interações
 
 - Os estados locais de métricas e flags de salvamento das interações foram reunidos em hook dedicado, preservando refs, atualizações otimistas, rollback, recarga e consumidores existentes.

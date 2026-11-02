@@ -6,6 +6,7 @@ import typescript from "typescript";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-interaction-data.ts");
+const fonteEstado = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comments-state.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const mockada = fonte
   .replace('import { useEffect, useEffectEvent } from "react";', "const useEffect = (...args) => globalThis.__interacaoLeitor.useEffect(...args); const useEffectEvent = (...args) => globalThis.__interacaoLeitor.useEffectEvent(...args);")
@@ -80,7 +81,8 @@ test("efeitos, dependências e integração preservam a fronteira original", asy
   ).trimEnd();
   assert.equal(createHash("sha256").update(corpo).digest("hex"), "664a74865e24f681fd99d0376b91081a0a9e11cdc82fa9ebc2935660dc3039be");
   assert.match(pagina, /useLerCapituloInteractionData\(\{[\s\S]*?comentariosCapituloCarregadoIdRef,[\s\S]*?curtidaCapituloSalvandoRef,[\s\S]*?salvoCapituloSalvandoRef,[\s\S]*?atualizarCapitulo,/);
-  assert.match(pagina, /const \[comentariosCapitulo, setComentariosCapitulo\] = useState/);
+  assert.doesNotMatch(pagina, /const \[comentariosCapitulo, setComentariosCapitulo\]/);
+  assert.match(fonteEstado, /const \[comentariosCarregando, setComentariosCarregando\] = useState\(false\);/);
   assert.match(pagina, /const comentariosCapituloCarregadoIdRef = useRef\(""\)/);
   assert.doesNotMatch(pagina, /async function carregarComentariosCapitulo\(/);
   assert.doesNotMatch(pagina, /async function carregarMetricasCapituloAtual\(/);
