@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 13: estado de autenticação e carregamento
+
+- Os estados locais de identidade autenticada, autenticação carregada e carregamento da página foram reunidos em hook dedicado, preservando setters, lifecycle e consumidores existentes.
+
 ## Perfil Autor — Fase 12: estado de conteúdo do Diário e Comunidade
 
 - Os estados locais de conteúdo do Diário e Comunidade foram reunidos em hook dedicado, preservando valores iniciais, setters e os consumidores de sincronização e apresentação existentes.
