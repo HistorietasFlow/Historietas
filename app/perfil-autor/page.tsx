@@ -9,7 +9,6 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import {
   type EstadoBloqueioPerfil,
-  type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
 } from "../../lib/historietasPrivacy";
 import { Suspense, useRef, useState } from "react";
@@ -44,6 +43,7 @@ import { usePerfilAutorVisibleTabSync } from "./hooks/use-perfil-autor-visible-t
 import { usePerfilAutorCommunitySync } from "./hooks/use-perfil-autor-community-sync";
 import { usePerfilAutorBlockStateSync } from "./hooks/use-perfil-autor-block-state-sync";
 import { usePerfilAutorFollowStateSync } from "./hooks/use-perfil-autor-follow-state-sync";
+import { usePerfilAutorFollowRelationshipState } from "./hooks/use-perfil-autor-follow-relationship-state";
 import { usePerfilAutorInteractionTotalsSync } from "./hooks/use-perfil-autor-interaction-totals-sync";
 import { usePerfilAutorNotificationCountSync } from "./hooks/use-perfil-autor-notification-count-sync";
 import { usePerfilAutorProfileSaveActions } from "./hooks/use-perfil-autor-profile-save-actions";
@@ -260,14 +260,18 @@ function PerfilAutorPageContent() {
   const [comunidadePerfil, setComunidadePerfil] =
     useState<ComunidadePerfilEstado>(comunidadePerfilVazia);
   const [atividadeSobreAberta, setAtividadeSobreAberta] = useState(false);
-  const [seguindoUsuarioPerfil, setSeguindoUsuarioPerfil] = useState(false);
-  const [seguidoresUsuarioPerfilTotal, setSeguidoresUsuarioPerfilTotal] =
-    useState(0);
-  const [seguindoUsuarioPerfilTotal, setSeguindoUsuarioPerfilTotal] =
-    useState(0);
-  const [seguirUsuarioSalvando, setSeguirUsuarioSalvando] = useState(false);
-  const [estadoRelacionamentoPerfil, setEstadoRelacionamentoPerfil] =
-    useState<EstadoRelacionamentoPerfil>("nenhum");
+  const {
+    seguindoUsuarioPerfil,
+    setSeguindoUsuarioPerfil,
+    seguidoresUsuarioPerfilTotal,
+    setSeguidoresUsuarioPerfilTotal,
+    seguindoUsuarioPerfilTotal,
+    setSeguindoUsuarioPerfilTotal,
+    seguirUsuarioSalvando,
+    setSeguirUsuarioSalvando,
+    estadoRelacionamentoPerfil,
+    setEstadoRelacionamentoPerfil,
+  } = usePerfilAutorFollowRelationshipState();
   const [permissoesAbasPerfil, setPermissoesAbasPerfil] =
     useState<PermissoesAbasPerfil>(PERMISSOES_ABAS_PERFIL_PADRAO);
   const [privacidadePerfilCarregando, setPrivacidadePerfilCarregando] =
