@@ -23,6 +23,7 @@ import { usePerfilAutorReportState } from "./hooks/use-perfil-autor-report-state
 import { usePerfilAutorHeaderMenuState } from "./hooks/use-perfil-autor-header-menu-state";
 import { usePerfilAutorAboutState } from "./hooks/use-perfil-autor-about-state";
 import { usePerfilAutorLibraryState } from "./hooks/use-perfil-autor-library-state";
+import { usePerfilAutorActionSheetMenuState } from "./hooks/use-perfil-autor-action-sheet-menu-state";
 import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
 import { usePerfilAutorProfileEditorState } from "./hooks/use-perfil-autor-profile-editor-state";
@@ -262,8 +263,14 @@ function PerfilAutorPageContent() {
     setObrasSeguidasBiblioteca,
     setVersaoSincronizacaoBiblioteca,
   });
-  const [obraMenuAbertoId, setObraMenuAbertoId] = useState("");
-  const [bibliotecaMenuAbertoChave, setBibliotecaMenuAbertoChave] = useState("");
+  const {
+    obraMenuAbertoId,
+    setObraMenuAbertoId,
+    bibliotecaMenuAbertoChave,
+    setBibliotecaMenuAbertoChave,
+    fecharMenuObra,
+    fecharMenuBiblioteca,
+  } = usePerfilAutorActionSheetMenuState();
   const [avaliacaoAutor, setAvaliacaoAutor] =
     useState<AvaliacaoAutorPublica>(avaliacaoAutorVazia);
   const [avaliacaoDiario, setAvaliacaoDiario] =
@@ -1316,12 +1323,12 @@ function PerfilAutorPageContent() {
           rotuloRemoverSheetBibliotecaPerfil={rotuloRemoverSheetBibliotecaPerfil}
           rotulosSheetBibliotecaPerfil={rotulosSheetBibliotecaPerfil}
           rotulosSheetObraPerfil={rotulosSheetObraPerfil}
-          onCloseBiblioteca={() => setBibliotecaMenuAbertoChave("")}
-          onCloseObra={() => setObraMenuAbertoId("")}
-          onReadBiblioteca={() => setBibliotecaMenuAbertoChave("")}
-          onReadObra={() => setObraMenuAbertoId("")}
+          onCloseBiblioteca={fecharMenuBiblioteca}
+          onCloseObra={fecharMenuObra}
+          onReadBiblioteca={fecharMenuBiblioteca}
+          onReadObra={fecharMenuObra}
           onRemoveBiblioteca={() => {
-            setBibliotecaMenuAbertoChave("");
+            fecharMenuBiblioteca();
             void removerItemBibliotecaPerfil(bibliotecaMenuAberto!);
           }}
           onReportObra={() =>
@@ -1332,31 +1339,31 @@ function PerfilAutorPageContent() {
             )
           }
           onShareBiblioteca={() => {
-            setBibliotecaMenuAbertoChave("");
+            fecharMenuBiblioteca();
             void compartilharObraPerfilAutor(bibliotecaMenuAberto!.obra);
           }}
           onShareObra={() => void compartilharObraPerfilAutor(obraMenuAberta!)}
           onToggleBibliotecaCompleted={() => {
-            setBibliotecaMenuAbertoChave("");
+            fecharMenuBiblioteca();
             void alternarConcluidoObra(bibliotecaMenuAberto!.obra.id);
           }}
           onToggleBibliotecaFavorite={() => {
-            setBibliotecaMenuAbertoChave("");
+            fecharMenuBiblioteca();
             void alternarFavoritoObra(bibliotecaMenuAberto!.obra.id);
           }}
           onToggleBibliotecaWantToRead={() => {
-            setBibliotecaMenuAbertoChave("");
+            fecharMenuBiblioteca();
             void alternarObraSeguindoBibliotecaPerfil(
               bibliotecaMenuAberto!.obra,
               !dadosSheetBibliotecaPerfil!.obraNoQueroLer,
             );
           }}
           onToggleObraCompleted={() => {
-            setObraMenuAbertoId("");
+            fecharMenuObra();
             void alternarConcluidoObra(obraMenuAberta!.id);
           }}
           onToggleObraFavorite={() => {
-            setObraMenuAbertoId("");
+            fecharMenuObra();
             void alternarFavoritoObra(obraMenuAberta!.id);
           }}
         />
