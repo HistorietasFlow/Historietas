@@ -29,6 +29,10 @@ const navigationFilterState = readFileSync(
   new URL("../../app/explorar/hooks/use-explorar-navigation-filter-state.ts", import.meta.url),
   "utf8",
 );
+const interfaceControlsState = readFileSync(
+  new URL("../../app/explorar/hooks/use-explorar-interface-controls-state.ts", import.meta.url),
+  "utf8",
+);
 
 test("explorarBuscaToggleCss preserva literalmente as regras exclusivas de busca", () => {
   assert.equal(
@@ -131,6 +135,15 @@ test("Explorar mantém o único consumidor e as fronteiras da busca", () => {
   );
   assert.match(
     pagina,
+    /import \{ useExplorarInterfaceControlsState \} from "\.\/hooks\/use-explorar-interface-controls-state";/,
+  );
+  assert.match(pagina, /\} = useExplorarInterfaceControlsState\(\);/);
+  assert.doesNotMatch(
+    pagina,
+    /const \[buscaMobileAberta, setBuscaMobileAberta\] = useState\(false\);/,
+  );
+  assert.match(
+    interfaceControlsState,
     /const \[buscaMobileAberta, setBuscaMobileAberta\] = useState\(false\);/,
   );
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
