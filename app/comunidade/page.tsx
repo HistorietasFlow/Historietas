@@ -22,6 +22,7 @@ import {
 } from "./hooks/use-comunidade-personal-data-sync";
 import { useComunidadeRelatedWorkDiarySync } from "./hooks/use-comunidade-related-work-diary-sync";
 import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-account-lifecycle";
+import { useComunidadeAuthAccountState } from "./hooks/use-comunidade-auth-account-state";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
@@ -56,7 +57,6 @@ import type {
 } from "./components/community-report-target";
 import type {
   UsuarioBuscaComunidade,
-  UsuarioComunidade,
 } from "./components/community-user";
 import type { ObraRelacionadaSugestao } from "./components/community-related-work-suggestion";
 import { obterSugestoesObrasRelacionadasVisiveisComunidade } from "./components/community-visible-related-work-suggestions";
@@ -101,9 +101,14 @@ import {
 export default function ComunidadePage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
-  const [usuario, setUsuario] = useState<UsuarioComunidade | null>(null);
-  const [usuarioEhAdmin, setUsuarioEhAdmin] = useState(false);
-  const [carregandoUsuario, setCarregandoUsuario] = useState(true);
+  const {
+    usuario,
+    setUsuario,
+    usuarioEhAdmin,
+    setUsuarioEhAdmin,
+    carregandoUsuario,
+    setCarregandoUsuario,
+  } = useComunidadeAuthAccountState();
   const [posts, setPosts] = useState<PostComunidade[]>([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaComunidade | "Todos">(
     "Todos"
