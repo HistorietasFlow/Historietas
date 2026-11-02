@@ -26,6 +26,7 @@ import { useListasPageLoadState } from "./hooks/use-listas-page-load-state";
 import { useListasLoadedDataState } from "./hooks/use-listas-loaded-data-state";
 import { useListasWorkMenuState } from "./hooks/use-listas-work-menu-state";
 import { useListasDiaryAnnotationState } from "./hooks/use-listas-diary-annotation-state";
+import { useListasDiaryCommentsState } from "./hooks/use-listas-diary-comments-state";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
@@ -118,7 +119,6 @@ import {
 import {
   type AlvoDenunciaDiarioListas,
   type CategoriaPerfil,
-  type ItemObraLista,
 } from "./types";
 import {
   historietasThemeCss,
@@ -202,19 +202,23 @@ function ListasUniversaisContent() {
     useState<EstadoRelacionamentoPerfil>("nenhum");
   const [avaliacaoDiario, setAvaliacaoDiario] =
     useState<AvaliacaoDiarioListasEstado>(AVALIACAO_DIARIO_LISTAS_VAZIA);
-  const [comentarioCurtindoId, setComentarioCurtindoId] = useState("");
-  const [comentarioRemovendoId, setComentarioRemovendoId] = useState("");
   const { mensagemAcao, setMensagemAcao } = useListasActionMessage();
   const [alvoDenunciaDiario, setAlvoDenunciaDiario] =
     useState<AlvoDenunciaDiarioListas | null>(null);
-  const [comentariosDiarioItem, setComentariosDiarioItem] =
-    useState<ItemObraLista | null>(null);
-  const [comentariosDiarioExpandido, setComentariosDiarioExpandido] =
-    useState(false);
-  const [menuOrdenacaoComentariosDiarioAberto, setMenuOrdenacaoComentariosDiarioAberto] =
-    useState(false);
-  const [respostasVisiveisComentariosDiario, setRespostasVisiveisComentariosDiario] =
-    useState<Record<string, number>>({});
+  const {
+    comentarioCurtindoId,
+    setComentarioCurtindoId,
+    comentarioRemovendoId,
+    setComentarioRemovendoId,
+    comentariosDiarioItem,
+    setComentariosDiarioItem,
+    comentariosDiarioExpandido,
+    setComentariosDiarioExpandido,
+    menuOrdenacaoComentariosDiarioAberto,
+    setMenuOrdenacaoComentariosDiarioAberto,
+    respostasVisiveisComentariosDiario,
+    setRespostasVisiveisComentariosDiario,
+  } = useListasDiaryCommentsState();
   const isDesktop = useListasDesktopMode();
   const [obraDestacadaId, setObraDestacadaId] = useState("");
 
