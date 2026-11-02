@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Explorar — Fase 3: estado dos dados de autores
+
+- Os estados locais de perfis e avaliações dos autores foram reunidos em hook dedicado, preservando carregamento paralelo, limpeza, cancelamento, dados derivados e renderização existentes.
+
 ## Explorar — Fase 2: estado de navegação e filtros
 
 - Os estados locais de navegação e filtros foram reunidos em hook dedicado, preservando handlers, URL, autenticação, confirmação 18+, consulta personalizada, resets e consumidores existentes.
