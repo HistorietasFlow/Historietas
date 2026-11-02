@@ -13,6 +13,7 @@ import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-mes
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
 import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-actions";
 import { usePerfilAutorAuthIdentitySync } from "./hooks/use-perfil-autor-auth-identity-sync";
+import { usePerfilAutorAuthLoadingState } from "./hooks/use-perfil-autor-auth-loading-state";
 import { usePerfilAutorProfileLoadSync } from "./hooks/use-perfil-autor-profile-load-sync";
 import { usePerfilAutorLoginRedirect } from "./hooks/use-perfil-autor-login-redirect";
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
@@ -174,14 +175,19 @@ function PerfilAutorPageContent() {
   const { mensagemAcao, setMensagemAcao } = usePerfilAutorActionMessage();
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const {
+    usuarioIdLogado,
+    setUsuarioIdLogado,
+    autenticacaoCarregada,
+    setAutenticacaoCarregada,
+    carregando,
+    setCarregando,
+  } = usePerfilAutorAuthLoadingState();
   const { salvarObrasBibliotecaPerfil } =
     usePerfilAutorLibraryStorageActions({
       usuarioIdLogado,
       setObras,
     });
-  const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
-  const [carregando, setCarregando] = useState(true);
   const {
     menuPerfilAberto,
     setMenuPerfilAberto,
