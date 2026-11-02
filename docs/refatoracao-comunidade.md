@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade — Fase 7: estado de busca e seguimento de usuários
+
+- Os estados locais de busca e seguimento de usuários foram reunidos em hook dedicado, preservando valores iniciais, setters, sincronização, debounce, resets e ações existentes.
+
 ## Comunidade — Fase 6: estado dos overlays de publicação
 
 - Os estados locais de menu, denúncia e comentários de publicação foram reunidos em hook dedicado, preservando valores iniciais, setters, resets, navegação por URL, body lock e fechamentos existentes.
