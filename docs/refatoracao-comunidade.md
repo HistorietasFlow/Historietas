@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 3: estado dos dados principais carregados
+
+- Os estados locais das listas do perfil, obras públicas e autores foram reunidos em hook dedicado, preservando valores iniciais, setters, loader, ações de anotação e consumidores de resultados existentes.
+
 ## Listas — Fase 2: estado de carregamento da página
 
 - Os estados locais de carregamento, acesso bloqueado e erro foram reunidos em hook dedicado, preservando valores iniciais, setters, loader e consumidores visuais existentes.
