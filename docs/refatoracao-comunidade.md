@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 1: estado de identidade e perfil
+
+- Os estados locais de identidade autenticada e perfil foram reunidos em hook dedicado, preservando valores iniciais, setters, carregamento, fallbacks e consumidores existentes.
+
 ## Comunidade — Fase 7: estado de busca e seguimento de usuários
 
 - Os estados locais de busca e seguimento de usuários foram reunidos em hook dedicado, preservando valores iniciais, setters, sincronização, debounce, resets e ações existentes.

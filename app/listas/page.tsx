@@ -21,6 +21,7 @@ import { useListasResultsViewState } from "./hooks/use-listas-results-view-state
 import { useListasProfileItemRenderer } from "./hooks/use-listas-profile-item-renderer";
 import { useListasDiaryCommentsRenderer } from "./hooks/use-listas-diary-comments-renderer";
 import { useListasWorkActionSheetRenderer } from "./hooks/use-listas-work-action-sheet-renderer";
+import { useListasIdentityProfileState } from "./hooks/use-listas-identity-profile-state";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
@@ -119,7 +120,6 @@ import {
   type ItemObraLista,
   type ListasPerfilEstado,
   type ObraLista,
-  type PerfilLista,
 } from "./types";
 import {
   historietasThemeCss,
@@ -148,10 +148,14 @@ function ListasUniversaisContent() {
     ordenacao,
   } = obterEstadoRotaListas(searchParams);
 
-  const [usuarioAtualId, setUsuarioAtualId] = useState("");
-  const [usuarioAtualPerfil, setUsuarioAtualPerfil] =
-    useState<PerfilLista | null>(null);
-  const [perfil, setPerfil] = useState<PerfilLista | null>(null);
+  const {
+    usuarioAtualId,
+    setUsuarioAtualId,
+    usuarioAtualPerfil,
+    setUsuarioAtualPerfil,
+    perfil,
+    setPerfil,
+  } = useListasIdentityProfileState();
   const [listasPerfil, setListasPerfil] =
     useState<ListasPerfilEstado>(LISTAS_PERFIL_VAZIAS);
   const [obrasPublicas, setObrasPublicas] = useState<ObraLista[]>([]);
