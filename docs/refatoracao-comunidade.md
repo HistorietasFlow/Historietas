@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 1: identidade da rota
+
+- Os estados locais de obra e capítulo da rota foram reunidos em hook dedicado, preservando leitura da URL, lifecycle e troca de capítulo existentes.
+
 ## Explorar — Fase 6: estado dos controles e overlays da interface
 
 - Os estados locais de busca mobile, filtros avançados e confirmação 18+ foram reunidos em hook dedicado, preservando body lock, handlers, resets e regras atuais.
