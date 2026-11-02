@@ -22,6 +22,7 @@ import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-act
 import { usePerfilAutorReportState } from "./hooks/use-perfil-autor-report-state";
 import { usePerfilAutorHeaderMenuState } from "./hooks/use-perfil-autor-header-menu-state";
 import { usePerfilAutorAboutState } from "./hooks/use-perfil-autor-about-state";
+import { usePerfilAutorLibraryState } from "./hooks/use-perfil-autor-library-state";
 import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
 import { usePerfilAutorProfileEditorState } from "./hooks/use-perfil-autor-profile-editor-state";
@@ -55,7 +56,6 @@ import { usePerfilAutorWorkItemRenderer } from "./hooks/use-perfil-autor-work-it
 import { usePerfilAutorCommunityPostRenderer } from "./hooks/use-perfil-autor-community-post-renderer";
 import { usePerfilAutorLibraryItemRenderer } from "./hooks/use-perfil-autor-library-item-renderer";
 import type {
-  AbaBibliotecaPerfil,
   AbaPerfilAutor,
   AvaliacaoAutorPublica,
   AvaliacaoDiarioPublica,
@@ -234,11 +234,14 @@ function PerfilAutorPageContent() {
       setMensagemAcao,
       setMenuPerfilAberto,
     });
-  const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
-    useState<AbaBibliotecaPerfil>("tudo");
-  const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
-  const [versaoSincronizacaoBiblioteca, setVersaoSincronizacaoBiblioteca] =
-    useState(0);
+  const {
+    abaBibliotecaPerfil,
+    setAbaBibliotecaPerfil,
+    obrasSeguidasBiblioteca,
+    setObrasSeguidasBiblioteca,
+    versaoSincronizacaoBiblioteca,
+    setVersaoSincronizacaoBiblioteca,
+  } = usePerfilAutorLibraryState();
   const {
     alternarFavoritoObra,
     alternarConcluidoObra,

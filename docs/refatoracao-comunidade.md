@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 9: estado principal da Biblioteca
+
+- O estado local principal da Biblioteca foi reunido em hook dedicado, preservando aba ativa, obras seguidas, versão de sincronização e todos os setters consumidos pelos hooks existentes.
+
 ## Perfil Autor — Fase 8: estado da seção Sobre
 
 - Os estados de interface do editor de bio e da atividade recente da seção Sobre foram reunidos em hook dedicado, preservando a visibilidade derivada, os dados e as ações existentes.
