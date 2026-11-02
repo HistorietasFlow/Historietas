@@ -61,6 +61,7 @@ import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
 import { useExplorarCatalogQuery } from "./hooks/use-explorar-catalog-query";
 import { useExplorarCatalogPaginationState } from "./hooks/use-explorar-catalog-pagination-state";
+import { useExplorarNavigationFilterState } from "./hooks/use-explorar-navigation-filter-state";
 import { themePageCss } from "./lib/explorar-page-css";
 import { explorarBuscaToggleCss } from "./lib/explorar-search-toggle-css";
 import {
@@ -98,10 +99,7 @@ import {
   criarSecoesObrasPorGeneroExplorar,
   criarSecoesAutoresPorGeneroExplorar,
 } from "./lib/explorar-derived-utils";
-import type {
-  OrdenacaoExplorar,
-  FiltroColecaoExplorar,
-} from "./lib/explorar-derived-utils";
+import type { FiltroColecaoExplorar } from "./lib/explorar-derived-utils";
 
 export default function ExplorarPage() {
   const router = useRouter();
@@ -121,21 +119,29 @@ export default function ExplorarPage() {
   } = useExplorarCatalogPaginationState();
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
-  const [modoConteudo, setModoConteudo] =
-    useState<ModoConteudoExplorar>("obras");
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
+  const {
+    modoConteudo,
+    setModoConteudo,
+    categoriaSelecionada,
+    setCategoriaSelecionada,
+    busca,
+    setBusca,
+    filtroFormato,
+    setFiltroFormato,
+    filtroClassificacao,
+    setFiltroClassificacao,
+    filtroCapitulos,
+    setFiltroCapitulos,
+    filtroColecao,
+    setFiltroColecao,
+    ordenacao,
+    setOrdenacao,
+  } = useExplorarNavigationFilterState();
   const [perfisAutores, setPerfisAutores] =
     useState<PerfisAutoresExplorar>({});
   const [avaliacoesAutores, setAvaliacoesAutores] =
     useState<AvaliacoesAutoresExplorar>({});
-  const [busca, setBusca] = useState("");
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
-  const [filtroFormato, setFiltroFormato] = useState("todos");
-  const [filtroClassificacao, setFiltroClassificacao] = useState("todos");
-  const [filtroCapitulos, setFiltroCapitulos] = useState("todos");
-  const [filtroColecao, setFiltroColecao] =
-    useState<FiltroColecaoExplorar>("todos");
-  const [ordenacao, setOrdenacao] = useState<OrdenacaoExplorar>("relevancia");
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [mostrarConfirmacaoConteudo18, setMostrarConfirmacaoConteudo18] =
     useState(false);
