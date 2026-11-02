@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade — Fase 3: estado principal do feed e paginação
+
+- Os estados locais de posts, carregamento e paginação do feed foram reunidos em hook dedicado, preservando valores iniciais, setters, lifecycle, resets de conta e consumidores existentes.
+
 ## Comunidade — Fase 2: estado de filtros e navegação do feed
 
 - Os estados locais de filtros e navegação do feed foram reunidos em hook dedicado, preservando valores iniciais, setters, busca adiada, lifecycles e consumidores existentes.

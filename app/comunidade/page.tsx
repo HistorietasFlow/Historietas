@@ -24,6 +24,7 @@ import { useComunidadeRelatedWorkDiarySync } from "./hooks/use-comunidade-relate
 import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-account-lifecycle";
 import { useComunidadeAuthAccountState } from "./hooks/use-comunidade-auth-account-state";
 import { useComunidadeFeedNavigationState } from "./hooks/use-comunidade-feed-navigation-state";
+import { useComunidadeFeedPaginationState } from "./hooks/use-comunidade-feed-pagination-state";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
@@ -105,7 +106,18 @@ export default function ComunidadePage() {
     carregandoUsuario,
     setCarregandoUsuario,
   } = useComunidadeAuthAccountState();
-  const [posts, setPosts] = useState<PostComunidade[]>([]);
+  const {
+    posts,
+    setPosts,
+    carregandoFeed,
+    setCarregandoFeed,
+    paginaFeedComunidade,
+    setPaginaFeedComunidade,
+    temMaisPostsComunidade,
+    setTemMaisPostsComunidade,
+    carregandoMaisPostsComunidade,
+    setCarregandoMaisPostsComunidade,
+  } = useComunidadeFeedPaginationState();
   const {
     categoriaAtiva,
     setCategoriaAtiva,
@@ -145,10 +157,6 @@ export default function ComunidadePage() {
   const [postMenuAbertoId, setPostMenuAbertoId] = useState<string | null>(null);
   const [denunciaAlvo, setDenunciaAlvo] =
     useState<DenunciaAlvoComunidade | null>(null);
-  const [carregandoFeed, setCarregandoFeed] = useState(true);
-  const [paginaFeedComunidade, setPaginaFeedComunidade] = useState(0);
-  const [temMaisPostsComunidade, setTemMaisPostsComunidade] = useState(false);
-  const [carregandoMaisPostsComunidade, setCarregandoMaisPostsComunidade] = useState(false);
   const [erro, setErro] = useState("");
   const [comentariosPostId, setComentariosPostId] = useState<string | null>(null);
   const [obrasRelacionadasSugestoes, setObrasRelacionadasSugestoes] = useState<
