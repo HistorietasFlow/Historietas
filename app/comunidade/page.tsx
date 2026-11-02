@@ -28,6 +28,7 @@ import { useComunidadeFeedPaginationState } from "./hooks/use-comunidade-feed-pa
 import { useComunidadePollState } from "./hooks/use-comunidade-poll-state";
 import { useComunidadeFeedActionState } from "./hooks/use-comunidade-feed-action-state";
 import { useComunidadePublicationOverlaysState } from "./hooks/use-comunidade-publication-overlays-state";
+import { useComunidadeUserSearchFollowState } from "./hooks/use-comunidade-user-search-follow-state";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
@@ -213,14 +214,18 @@ export default function ComunidadePage() {
   } = useComunidadeComposerState();
   const [menuAcoesRapidasComunidadeAberto, setMenuAcoesRapidasComunidadeAberto] =
     useState(false);
-  const [buscaComunidadeAberta, setBuscaComunidadeAberta] = useState(false);
-  const [usuariosBuscaComunidade, setUsuariosBuscaComunidade] = useState<
-    UsuarioBuscaComunidade[]
-  >([]);
-  const [carregandoUsuariosBuscaComunidade, setCarregandoUsuariosBuscaComunidade] =
-    useState(false);
-  const [usuariosSeguidosIds, setUsuariosSeguidosIds] = useState<string[]>([]);
-  const [usuarioSeguindoId, setUsuarioSeguindoId] = useState<string | null>(null);
+  const {
+    buscaComunidadeAberta,
+    setBuscaComunidadeAberta,
+    usuariosBuscaComunidade,
+    setUsuariosBuscaComunidade,
+    carregandoUsuariosBuscaComunidade,
+    setCarregandoUsuariosBuscaComunidade,
+    usuariosSeguidosIds,
+    setUsuariosSeguidosIds,
+    usuarioSeguindoId,
+    setUsuarioSeguindoId,
+  } = useComunidadeUserSearchFollowState();
   const isDesktop = useComunidadeDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(communityPageStyle);
 
