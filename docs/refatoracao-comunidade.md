@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 12: estado de conteúdo do Diário e Comunidade
+
+- Os estados locais de conteúdo do Diário e Comunidade foram reunidos em hook dedicado, preservando valores iniciais, setters e os consumidores de sincronização e apresentação existentes.
+
 ## Perfil Autor — Fase 11: estado das avaliações
 
 - Os estados locais das avaliações de autor e Diário foram reunidos em hook dedicado, preservando valores iniciais, setters e todos os consumidores de sincronização, ações e apresentação.
