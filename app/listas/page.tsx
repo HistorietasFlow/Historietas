@@ -22,6 +22,7 @@ import { useListasProfileItemRenderer } from "./hooks/use-listas-profile-item-re
 import { useListasDiaryCommentsRenderer } from "./hooks/use-listas-diary-comments-renderer";
 import { useListasWorkActionSheetRenderer } from "./hooks/use-listas-work-action-sheet-renderer";
 import { useListasIdentityProfileState } from "./hooks/use-listas-identity-profile-state";
+import { useListasPageLoadState } from "./hooks/use-listas-page-load-state";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
@@ -163,9 +164,14 @@ function ListasUniversaisContent() {
   const [categoria, setCategoria] = useState<CategoriaPerfil>(categoriaUrl);
   const busca = "";
   const [quantidadeVisivel, setQuantidadeVisivel] = useState(40);
-  const [carregando, setCarregando] = useState(true);
-  const [bloqueado, setBloqueado] = useState(false);
-  const [erro, setErro] = useState("");
+  const {
+    carregando,
+    setCarregando,
+    bloqueado,
+    setBloqueado,
+    erro,
+    setErro,
+  } = useListasPageLoadState();
   const [obraMenuAberta, setObraMenuAberta] = useState<ObraLista | null>(null);
   const [itemPerfilMenuAberto, setItemPerfilMenuAberto] =
     useState<ItemObraLista | null>(null);

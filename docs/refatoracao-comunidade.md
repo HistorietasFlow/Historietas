@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 2: estado de carregamento da página
+
+- Os estados locais de carregamento, acesso bloqueado e erro foram reunidos em hook dedicado, preservando valores iniciais, setters, loader e consumidores visuais existentes.
+
 ## Listas — Fase 1: estado de identidade e perfil
 
 - Os estados locais de identidade autenticada e perfil foram reunidos em hook dedicado, preservando valores iniciais, setters, carregamento, fallbacks e consumidores existentes.
