@@ -47,7 +47,7 @@ test("página delega os blocos de bio do Sobre e mantém as derivações no esta
   assert.match(pagina, /obterEstadoVisualAcessoPerfilAutor\(/);
   assert.match(
     pagina,
-    /<ProfileAboutSection[\s\S]*?heroTitle=\{obterTituloSobrePerfilAutor\(perfilNome\)\}[\s\S]*?heroText=\{bioSobreAutorExibido\}[\s\S]*?heroUserContent=\{bioSobreAutorUserContent\}[\s\S]*?heroCanEdit=\{podeEditarPerfil\}[\s\S]*?onToggleHeroEditor=\{\(\) =>[\s\S]*?setEditorSobreAberto\(\(aberto\) => !aberto\)/,
+    /<ProfileAboutSection[\s\S]*?heroTitle=\{obterTituloSobrePerfilAutor\(perfilNome\)\}[\s\S]*?heroText=\{bioSobreAutorExibido\}[\s\S]*?heroUserContent=\{bioSobreAutorUserContent\}[\s\S]*?heroCanEdit=\{podeEditarPerfil\}[\s\S]*?onToggleHeroEditor=\{alternarEditorSobre\}/,
   );
   assert.match(
     pagina,
