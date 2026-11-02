@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 2: estado dos dados carregados
+
+- Os estados locais de obras e carregamento foram reunidos em hook dedicado, preservando lifecycle, fallback, cancelamento e ações existentes.
+
 ## Ler Capítulo — Fase 1: identidade da rota
 
 - Os estados locais de obra e capítulo da rota foram reunidos em hook dedicado, preservando leitura da URL, lifecycle e troca de capítulo existentes.
