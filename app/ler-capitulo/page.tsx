@@ -10,7 +10,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import { LerCapituloLanguageBridge } from "./components/ler-capitulo-language-bridge";
 import { LoadingSpinner } from "./components/ler-capitulo-loading-spinner";
 import ComentariosCapituloSheet, { type ComentarioCapituloPublico, type ComentariosCapituloPost } from "./components/ler-capitulo-comments-sheet";
-import LerCapituloReaderContent, { type TamanhoFonte } from "./components/ler-capitulo-reader-content";
+import LerCapituloReaderContent from "./components/ler-capitulo-reader-content";
 import { supabase } from "../../lib/supabase/client";
 import DenunciaModal from "../../components/DenunciaModal";
 import AdultContentGate from "../../components/AdultContentGate";
@@ -56,7 +56,6 @@ import {
 import {
   carregarPerfilComentarioLeitor,
   obterTextoRegistroLeitor,
-  type PerfilComentarioLeitor,
 } from "./lib/ler-capitulo-comments-read-loader";
 import {
   calcularProgressoLeitura,
@@ -66,6 +65,7 @@ import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load
 import { useLerCapituloRouteIdentityState } from "./hooks/use-ler-capitulo-route-identity-state";
 import { useLerCapituloLoadedDataState } from "./hooks/use-ler-capitulo-loaded-data-state";
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
+import { useLerCapituloSessionPreferencesState } from "./hooks/use-ler-capitulo-session-preferences-state";
 import { useLerCapituloInteractionData, type MetricasCapituloLeitor } from "./hooks/use-ler-capitulo-interaction-data";
 import { useLerCapituloViewRegistration, useLerCapituloEntryActivity } from "./hooks/use-ler-capitulo-entry-lifecycle";
 import { incrementarVisualizacaoCapituloSupabase, salvarProgressoLeituraSupabase, salvarRegistroCapituloSupabase } from "./lib/ler-capitulo-interaction-persistence";
@@ -126,21 +126,23 @@ export default function LerCapituloPage() {
   const [lidoCapituloSalvando, setLidoCapituloSalvando] = useState(false);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
   const comentariosCapituloCarregadoIdRef = useRef("");
-  const [perfilComentarioLeitor, setPerfilComentarioLeitor] =
-    useState<PerfilComentarioLeitor>({
-      userId: "",
-      nome: "Usuário",
-      avatar: "",
-    });
+  const {
+    perfilComentarioLeitor,
+    setPerfilComentarioLeitor,
+    usuarioIdLogado,
+    setUsuarioIdLogado,
+    tamanhoFonte,
+    setTamanhoFonte,
+    mostrarLinhaProgresso,
+    setMostrarLinhaProgresso,
+    preferenciasCarregadas,
+    setPreferenciasCarregadas,
+  } = useLerCapituloSessionPreferencesState();
   const [mensagemAcao, setMensagemAcao] = useState("");
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
-  const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(3);
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
-  const [mostrarLinhaProgresso, setMostrarLinhaProgresso] = useState(false);
   const [mostrarComentario, setMostrarComentario] = useState(false);
   const [progressoRolagem, setProgressoRolagem] = useState(0);
   const isDesktop = useLerCapituloDesktopMode();
-  const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
   const visualizacaoCapituloRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
   const curtidaCapituloSalvandoRef = useRef(false);
