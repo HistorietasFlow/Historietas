@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Explorar — Fase 1: estado do catálogo e paginação
+
+- Os estados locais do catálogo e sua paginação foram reunidos em hook dedicado, preservando carregamento inicial, fallback/cache local, consulta versionada, debounce, cursor, merge, `finally` e consumidores existentes.
+
 ## Listas — Fase 8: estado de navegação e apresentação dos resultados
 
 - Os estados locais de categoria, quantidade visível e destaque temporário da obra foram reunidos em hook dedicado, preservando sincronização de rota, paginação, foco, scroll, URL e consumidores existentes.
