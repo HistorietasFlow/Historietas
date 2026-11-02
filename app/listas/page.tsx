@@ -23,6 +23,7 @@ import { useListasDiaryCommentsRenderer } from "./hooks/use-listas-diary-comment
 import { useListasWorkActionSheetRenderer } from "./hooks/use-listas-work-action-sheet-renderer";
 import { useListasIdentityProfileState } from "./hooks/use-listas-identity-profile-state";
 import { useListasPageLoadState } from "./hooks/use-listas-page-load-state";
+import { useListasLoadedDataState } from "./hooks/use-listas-loaded-data-state";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
@@ -115,11 +116,9 @@ import {
 } from "./lib/listas-page-constants";
 import {
   type AlvoDenunciaDiarioListas,
-  type AutorLista,
   type CategoriaPerfil,
   type EditorAnotacaoListasEstado,
   type ItemObraLista,
-  type ListasPerfilEstado,
   type ObraLista,
 } from "./types";
 import {
@@ -157,10 +156,14 @@ function ListasUniversaisContent() {
     perfil,
     setPerfil,
   } = useListasIdentityProfileState();
-  const [listasPerfil, setListasPerfil] =
-    useState<ListasPerfilEstado>(LISTAS_PERFIL_VAZIAS);
-  const [obrasPublicas, setObrasPublicas] = useState<ObraLista[]>([]);
-  const [autores, setAutores] = useState<AutorLista[]>([]);
+  const {
+    listasPerfil,
+    setListasPerfil,
+    obrasPublicas,
+    setObrasPublicas,
+    autores,
+    setAutores,
+  } = useListasLoadedDataState();
   const [categoria, setCategoria] = useState<CategoriaPerfil>(categoriaUrl);
   const busca = "";
   const [quantidadeVisivel, setQuantidadeVisivel] = useState(40);
