@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 15: estado de obras e métricas
+
+- Os estados locais de obras e totais de interações foram reunidos em hook dedicado, preservando valores iniciais, setters e os consumidores de carregamento, autenticação, edição e apresentação existentes.
+
 ## Perfil Autor — Fase 14: estado do perfil-alvo
 
 - Os estados locais de autor selecionado, ID de autor selecionado e perfil remoto foram reunidos em hook dedicado, preservando setters, carregamento, limpeza por identidade e atualizações otimistas existentes.

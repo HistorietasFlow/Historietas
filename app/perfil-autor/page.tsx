@@ -15,6 +15,7 @@ import { usePerfilAutorSessionActions } from "./hooks/use-perfil-autor-session-a
 import { usePerfilAutorAuthIdentitySync } from "./hooks/use-perfil-autor-auth-identity-sync";
 import { usePerfilAutorAuthLoadingState } from "./hooks/use-perfil-autor-auth-loading-state";
 import { usePerfilAutorTargetProfileState } from "./hooks/use-perfil-autor-target-profile-state";
+import { usePerfilAutorWorksMetricsState } from "./hooks/use-perfil-autor-works-metrics-state";
 import { usePerfilAutorProfileLoadSync } from "./hooks/use-perfil-autor-profile-load-sync";
 import { usePerfilAutorLoginRedirect } from "./hooks/use-perfil-autor-login-redirect";
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
@@ -62,14 +63,11 @@ import { usePerfilAutorCommunityPostRenderer } from "./hooks/use-perfil-autor-co
 import { usePerfilAutorLibraryItemRenderer } from "./hooks/use-perfil-autor-library-item-renderer";
 import type {
   AbaPerfilAutor,
-  ObraLocal,
   PerfisAutoresSalvos,
-  TotaisInteracoesObrasPerfilAutor,
 } from "./types";
 import {
   BIO_MAX_LENGTH,
   SOBRE_BIO_MAX_LENGTH,
-  totaisInteracoesObrasPerfilVazio,
 } from "./constants";
 import { PerfilAutorLanguageBridge } from "./translations";
 import {
@@ -149,9 +147,12 @@ function PerfilAutorPageContent() {
   const searchParams = useSearchParams();
   const { language } = useHistorietasLanguage();
   const queryPerfilAtual = searchParams.toString();
-  const [obras, setObras] = useState<ObraLocal[]>([]);
-  const [totaisInteracoesObras, setTotaisInteracoesObras] =
-    useState<TotaisInteracoesObrasPerfilAutor>(totaisInteracoesObrasPerfilVazio);
+  const {
+    obras,
+    setObras,
+    totaisInteracoesObras,
+    setTotaisInteracoesObras,
+  } = usePerfilAutorWorksMetricsState();
   const {
     autorSelecionado,
     setAutorSelecionado,
