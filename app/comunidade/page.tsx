@@ -26,6 +26,7 @@ import { useComunidadeAuthAccountState } from "./hooks/use-comunidade-auth-accou
 import { useComunidadeFeedNavigationState } from "./hooks/use-comunidade-feed-navigation-state";
 import { useComunidadeFeedPaginationState } from "./hooks/use-comunidade-feed-pagination-state";
 import { useComunidadePollState } from "./hooks/use-comunidade-poll-state";
+import { useComunidadeFeedActionState } from "./hooks/use-comunidade-feed-action-state";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
@@ -147,17 +148,24 @@ export default function ComunidadePage() {
     votandoEnqueteId,
     setVotandoEnqueteId,
   } = useComunidadePollState();
-  const [feedbackAcao, setFeedbackAcao] = useState("");
-  const [publicandoPost, setPublicandoPost] = useState(false);
-  const [postCurtindoId, setPostCurtindoId] = useState<string | null>(null);
-  const [postSalvandoId, setPostSalvandoId] = useState<string | null>(null);
-  const [postCompartilhandoId, setPostCompartilhandoId] = useState<
-    string | null
-  >(null);
-  const [postRemovendoId, setPostRemovendoId] = useState<string | null>(null);
-  const [postFixandoId, setPostFixandoId] = useState<string | null>(null);
-  const [postVisibilidadeAtualizandoId, setPostVisibilidadeAtualizandoId] =
-    useState<string | null>(null);
+  const {
+    feedbackAcao,
+    setFeedbackAcao,
+    publicandoPost,
+    setPublicandoPost,
+    postCurtindoId,
+    setPostCurtindoId,
+    postSalvandoId,
+    setPostSalvandoId,
+    postCompartilhandoId,
+    setPostCompartilhandoId,
+    postRemovendoId,
+    setPostRemovendoId,
+    postFixandoId,
+    setPostFixandoId,
+    postVisibilidadeAtualizandoId,
+    setPostVisibilidadeAtualizandoId,
+  } = useComunidadeFeedActionState();
   const [postMenuAbertoId, setPostMenuAbertoId] = useState<string | null>(null);
   const [denunciaAlvo, setDenunciaAlvo] =
     useState<DenunciaAlvoComunidade | null>(null);
