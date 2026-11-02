@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade — Fase 4: estado das enquetes
+
+- Os estados locais de votos, resultados e envio de enquetes foram reunidos em hook dedicado, preservando valores iniciais, setters, sincronização, limpeza por conta e consumidores existentes.
+
 ## Comunidade — Fase 3: estado principal do feed e paginação
 
 - Os estados locais de posts, carregamento e paginação do feed foram reunidos em hook dedicado, preservando valores iniciais, setters, lifecycle, resets de conta e consumidores existentes.
