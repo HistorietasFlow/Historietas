@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 5: estado das anotações do Diário
+
+- Os estados locais do editor, interações, abertura e spoiler das anotações do Diário foram reunidos em hook dedicado, preservando setters, lifecycle, sincronização, persistência e mutations existentes.
+
 ## Listas — Fase 4: estado do menu de obra
 
 - Os estados locais do menu de obra foram reunidos em hook dedicado, preservando valores iniciais, setters, lifecycle, ações de Quero ler, compartilhamento, anotações e consumidores existentes.
