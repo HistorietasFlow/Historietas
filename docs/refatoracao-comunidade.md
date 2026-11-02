@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Explorar — Fase 4: estado das coleções pessoais
+
+- Os estados locais de favoritas e concluídas foram reunidos em hook dedicado, preservando carregamento, normalização, storage, fallback, filtros pessoais e resultados derivados existentes.
+
 ## Explorar — Fase 3: estado dos dados de autores
 
 - Os estados locais de perfis e avaliações dos autores foram reunidos em hook dedicado, preservando carregamento paralelo, limpeza, cancelamento, dados derivados e renderização existentes.

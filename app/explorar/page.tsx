@@ -63,6 +63,7 @@ import { useExplorarCatalogQuery } from "./hooks/use-explorar-catalog-query";
 import { useExplorarCatalogPaginationState } from "./hooks/use-explorar-catalog-pagination-state";
 import { useExplorarNavigationFilterState } from "./hooks/use-explorar-navigation-filter-state";
 import { useExplorarAuthorDataState } from "./hooks/use-explorar-author-data-state";
+import { useExplorarPersonalCollectionsState } from "./hooks/use-explorar-personal-collections-state";
 import { themePageCss } from "./lib/explorar-page-css";
 import { explorarBuscaToggleCss } from "./lib/explorar-search-toggle-css";
 import {
@@ -114,8 +115,12 @@ export default function ExplorarPage() {
     carregandoMaisCatalogo,
     setCarregandoMaisCatalogo,
   } = useExplorarCatalogPaginationState();
-  const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
-  const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
+  const {
+    obrasFavoritas,
+    setObrasFavoritas,
+    obrasConcluidas,
+    setObrasConcluidas,
+  } = useExplorarPersonalCollectionsState();
   const {
     modoConteudo,
     setModoConteudo,
