@@ -1,5 +1,7 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+
 import { useEffect, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +14,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
   const router = useRouter();
 
   useEffect(() => {
+    Sentry.captureException(error);
     console.error("Erro global na Historietas:", error);
   }, [error]);
 
