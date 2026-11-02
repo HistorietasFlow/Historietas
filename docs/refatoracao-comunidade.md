@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 4: estado de métricas e salvamento das interações
+
+- Os estados locais de métricas e flags de salvamento das interações foram reunidos em hook dedicado, preservando refs, atualizações otimistas, rollback, recarga e consumidores existentes.
+
 ## Ler Capítulo — Fase 3: estado de sessão e preferências do leitor
 
 - Os estados locais de sessão, perfil de comentário e preferências do leitor foram reunidos em hook dedicado, preservando lifecycle, autenticação, storage, ações e consumidores existentes.

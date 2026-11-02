@@ -66,7 +66,8 @@ import { useLerCapituloRouteIdentityState } from "./hooks/use-ler-capitulo-route
 import { useLerCapituloLoadedDataState } from "./hooks/use-ler-capitulo-loaded-data-state";
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
 import { useLerCapituloSessionPreferencesState } from "./hooks/use-ler-capitulo-session-preferences-state";
-import { useLerCapituloInteractionData, type MetricasCapituloLeitor } from "./hooks/use-ler-capitulo-interaction-data";
+import { useLerCapituloInteractionData } from "./hooks/use-ler-capitulo-interaction-data";
+import { useLerCapituloMetricsInteractionsState } from "./hooks/use-ler-capitulo-metrics-interactions-state";
 import { useLerCapituloViewRegistration, useLerCapituloEntryActivity } from "./hooks/use-ler-capitulo-entry-lifecycle";
 import { incrementarVisualizacaoCapituloSupabase, salvarProgressoLeituraSupabase, salvarRegistroCapituloSupabase } from "./lib/ler-capitulo-interaction-persistence";
 import { metricasCapituloVazias, criarMetricasCapituloLocais, carregarMetricasCapituloSupabase, formatarContadorCapituloLeitor } from "./lib/ler-capitulo-metrics";
@@ -119,11 +120,16 @@ export default function LerCapituloPage() {
   const [denunciaAlvo, setDenunciaAlvo] =
     useState<AlvoDenunciaLeitor | null>(null);
   const [comentariosCapitulo, setComentariosCapitulo] = useState<ComentarioCapituloPublico[]>([]);
-  const [metricasCapitulo, setMetricasCapitulo] =
-    useState<MetricasCapituloLeitor>(metricasCapituloVazias);
-  const [curtidaCapituloSalvando, setCurtidaCapituloSalvando] = useState(false);
-  const [salvoCapituloSalvando, setSalvoCapituloSalvando] = useState(false);
-  const [lidoCapituloSalvando, setLidoCapituloSalvando] = useState(false);
+  const {
+    metricasCapitulo,
+    setMetricasCapitulo,
+    curtidaCapituloSalvando,
+    setCurtidaCapituloSalvando,
+    salvoCapituloSalvando,
+    setSalvoCapituloSalvando,
+    lidoCapituloSalvando,
+    setLidoCapituloSalvando,
+  } = useLerCapituloMetricsInteractionsState();
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
   const comentariosCapituloCarregadoIdRef = useRef("");
   const {
