@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 4: estado de privacidade das abas
+
+- Os estados locais de permissões das abas e carregamento de privacidade foram reunidos em hook dedicado, preservando valores iniciais, setters e integrações existentes com sincronização e bloqueio.
+
 ## Perfil Autor — Fase 3: estado de seguimento e relacionamento
 
 - Os estados locais de seguimento e relacionamento foram reunidos em hook dedicado, preservando valores iniciais, setters e todos os consumidores de sincronização, privacidade e ações existentes.
