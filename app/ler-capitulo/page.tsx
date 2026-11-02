@@ -64,6 +64,7 @@ import {
   type ObraLocal,
 } from "./lib/ler-capitulo-work-normalization";
 import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load";
+import { useLerCapituloRouteIdentityState } from "./hooks/use-ler-capitulo-route-identity-state";
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
 import { useLerCapituloInteractionData, type MetricasCapituloLeitor } from "./hooks/use-ler-capitulo-interaction-data";
 import { useLerCapituloViewRegistration, useLerCapituloEntryActivity } from "./hooks/use-ler-capitulo-entry-lifecycle";
@@ -109,8 +110,8 @@ const registrarNotificacaoInteracaoCapituloSupabase =
 export default function LerCapituloPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
-  const [obraId, setObraId] = useState("");
-  const [capituloId, setCapituloId] = useState("");
+  const { obraId, setObraId, capituloId, setCapituloId } =
+    useLerCapituloRouteIdentityState();
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [, setComentarioDigitado] = useState("");
