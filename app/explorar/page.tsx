@@ -62,6 +62,7 @@ import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
 import { useExplorarCatalogQuery } from "./hooks/use-explorar-catalog-query";
 import { useExplorarCatalogPaginationState } from "./hooks/use-explorar-catalog-pagination-state";
 import { useExplorarNavigationFilterState } from "./hooks/use-explorar-navigation-filter-state";
+import { useExplorarAuthorDataState } from "./hooks/use-explorar-author-data-state";
 import { themePageCss } from "./lib/explorar-page-css";
 import { explorarBuscaToggleCss } from "./lib/explorar-search-toggle-css";
 import {
@@ -82,10 +83,6 @@ import {
 } from "./lib/explorar-local-storage";
 import {
   criarBioAutorExplorar,
-} from "./lib/explorar-author-profile-utils";
-import type {
-  AvaliacoesAutoresExplorar,
-  PerfisAutoresExplorar,
 } from "./lib/explorar-author-profile-utils";
 
 
@@ -137,10 +134,12 @@ export default function ExplorarPage() {
     ordenacao,
     setOrdenacao,
   } = useExplorarNavigationFilterState();
-  const [perfisAutores, setPerfisAutores] =
-    useState<PerfisAutoresExplorar>({});
-  const [avaliacoesAutores, setAvaliacoesAutores] =
-    useState<AvaliacoesAutoresExplorar>({});
+  const {
+    perfisAutores,
+    setPerfisAutores,
+    avaliacoesAutores,
+    setAvaliacoesAutores,
+  } = useExplorarAuthorDataState();
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [mostrarConfirmacaoConteudo18, setMostrarConfirmacaoConteudo18] =
