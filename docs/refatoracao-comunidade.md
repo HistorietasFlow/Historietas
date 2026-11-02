@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 6: estado de feedback e overlays do leitor
+
+- Os estados locais de denúncia, mensagem de ação e ajustes do leitor foram reunidos em hook dedicado, preservando autenticação, mensagens, denúncia, callbacks e consumidores existentes.
+
 ## Ler Capítulo — Fase 5: estado dos comentários do capítulo
 
 - Os estados locais do fluxo de comentários foram reunidos em hook dedicado, preservando reset, body lock, carregamento, ações, métricas e consumidores existentes.
