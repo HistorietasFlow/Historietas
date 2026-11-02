@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Explorar — Fase 2: estado de navegação e filtros
+
+- Os estados locais de navegação e filtros foram reunidos em hook dedicado, preservando handlers, URL, autenticação, confirmação 18+, consulta personalizada, resets e consumidores existentes.
+
 ## Explorar — Fase 1: estado do catálogo e paginação
 
 - Os estados locais do catálogo e sua paginação foram reunidos em hook dedicado, preservando carregamento inicial, fallback/cache local, consulta versionada, debounce, cursor, merge, `finally` e consumidores existentes.

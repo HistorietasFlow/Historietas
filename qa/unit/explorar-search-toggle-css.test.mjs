@@ -25,6 +25,10 @@ const loadingState = readFileSync(
   new URL("../../app/explorar/components/explorar-loading-state.tsx", import.meta.url),
   "utf8",
 );
+const navigationFilterState = readFileSync(
+  new URL("../../app/explorar/hooks/use-explorar-navigation-filter-state.ts", import.meta.url),
+  "utf8",
+);
 
 test("explorarBuscaToggleCss preserva literalmente as regras exclusivas de busca", () => {
   assert.equal(
@@ -115,7 +119,16 @@ test("Explorar mantém o único consumidor e as fronteiras da busca", () => {
   );
   assert.match(estilos, /export const safeTextStyle: CSSProperties/);
   assert.match(pagina, /from "\.\/lib\/explorar-layout-styles"/);
-  assert.match(pagina, /const \[busca, setBusca\] = useState\(""\);/);
+  assert.match(
+    pagina,
+    /import \{ useExplorarNavigationFilterState \} from "\.\/hooks\/use-explorar-navigation-filter-state";/,
+  );
+  assert.match(pagina, /\} = useExplorarNavigationFilterState\(\);/);
+  assert.doesNotMatch(pagina, /const \[busca, setBusca\] = useState\(""\);/);
+  assert.match(
+    navigationFilterState,
+    /const \[busca, setBusca\] = useState\(""\);/,
+  );
   assert.match(
     pagina,
     /const \[buscaMobileAberta, setBuscaMobileAberta\] = useState\(false\);/,
