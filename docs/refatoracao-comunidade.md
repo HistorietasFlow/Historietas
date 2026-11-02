@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 3: estado de seguimento e relacionamento
+
+- Os estados locais de seguimento e relacionamento foram reunidos em hook dedicado, preservando valores iniciais, setters e todos os consumidores de sincronização, privacidade e ações existentes.
+
 ## Perfil Autor — Fase 2: estado de Top Five e Destaques
 
 - Os estados locais de Top Five e Destaques foram reunidos em hook dedicado, preservando os setters usados pelos hooks existentes e o toggle semântico de destaques para visitantes.
