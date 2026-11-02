@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Explorar — Fase 5: estado de autenticação e aviso de login
+
+- Os estados locais de autenticação e aviso de login foram reunidos em hook dedicado, preservando lifecycle de auth, filtros pessoais, redirecionamento e feedback existentes.
+
 ## Explorar — Fase 4: estado das coleções pessoais
 
 - Os estados locais de favoritas e concluídas foram reunidos em hook dedicado, preservando carregamento, normalização, storage, fallback, filtros pessoais e resultados derivados existentes.

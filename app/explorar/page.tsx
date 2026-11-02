@@ -64,6 +64,7 @@ import { useExplorarCatalogPaginationState } from "./hooks/use-explorar-catalog-
 import { useExplorarNavigationFilterState } from "./hooks/use-explorar-navigation-filter-state";
 import { useExplorarAuthorDataState } from "./hooks/use-explorar-author-data-state";
 import { useExplorarPersonalCollectionsState } from "./hooks/use-explorar-personal-collections-state";
+import { useExplorarAuthLoginState } from "./hooks/use-explorar-auth-login-state";
 import { themePageCss } from "./lib/explorar-page-css";
 import { explorarBuscaToggleCss } from "./lib/explorar-search-toggle-css";
 import {
@@ -152,8 +153,12 @@ export default function ExplorarPage() {
   const [confirmouIdadeConteudo18, setConfirmouIdadeConteudo18] =
     useState(false);
   const isDesktop = useExplorarDesktopMode();
-  const [usuarioLogado, setUsuarioLogado] = useState(false);
-  const [mensagemLogin, setMensagemLogin] = useState("");
+  const {
+    usuarioLogado,
+    setUsuarioLogado,
+    mensagemLogin,
+    setMensagemLogin,
+  } = useExplorarAuthLoginState();
   const obrasCacheLocalRef = useRef<ObraLocal[]>([]);
   const usuarioIdExplorarRef = useRef("");
 

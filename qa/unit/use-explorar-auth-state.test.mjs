@@ -6,6 +6,7 @@ const ler = (caminho) =>
   readFileSync(new URL(caminho, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
 const hook = ler("../../app/explorar/hooks/use-explorar-auth-state.ts");
+const hookEstado = ler("../../app/explorar/hooks/use-explorar-auth-login-state.ts");
 const pagina = ler("../../app/explorar/page.tsx");
 
 test("hook de autenticação preserva consulta, assinatura e limpeza", () => {
@@ -25,8 +26,13 @@ test("hook de autenticação preserva consulta, assinatura e limpeza", () => {
 
 test("página mantém estados e delega somente o lifecycle de autenticação", () => {
   assert.match(pagina, /import \{ useExplorarAuthState \} from "\.\/hooks\/use-explorar-auth-state";/);
-  assert.match(pagina, /const \[usuarioLogado, setUsuarioLogado\] = useState\(false\);/);
-  assert.match(pagina, /const \[mensagemLogin, setMensagemLogin\] = useState\(""\);/);
+  assert.match(hookEstado, /usuarioLogado, setUsuarioLogado\] = useState\(false\)/);
+  assert.match(hookEstado, /mensagemLogin, setMensagemLogin\] = useState\(""\)/);
+  assert.doesNotMatch(hookEstado, /useEffect|supabase|return\s*\(\s*</);
+  assert.match(pagina, /import \{ useExplorarAuthLoginState \} from "\.\/hooks\/use-explorar-auth-login-state";/);
+  assert.match(pagina, /\} = useExplorarAuthLoginState\(\);/);
+  assert.doesNotMatch(pagina, /const \[usuarioLogado, setUsuarioLogado\]/);
+  assert.doesNotMatch(pagina, /const \[mensagemLogin, setMensagemLogin\]/);
   assert.match(pagina, /useExplorarAuthState\(\{\s*setUsuarioLogado,\s*setMensagemLogin,\s*setFiltroColecao,\s*\}\);/);
   assert.doesNotMatch(pagina, /supabase\.auth\.getUser|supabase\.auth\.onAuthStateChange|async function verificarUsuarioLogado/);
 });
