@@ -1152,11 +1152,8 @@ test("página delega a composição do cabeçalho do perfil", () => {
   assert.match(pagina, /headerStyle=\{profileHeaderAtualStyle\}/);
   assert.match(pagina, /menuOpen=\{menuPerfilAberto\}/);
   assert.match(pagina, /onCopyUsername=\{copiarUsernameCabecalho\}/);
-  assert.match(pagina, /onOpenMenu=\{\(\) => setMenuPerfilAberto\(true\)\}/);
-  assert.match(
-    pagina,
-    /onToggleUsername=\{\(\) =>\s*setUsernameCabecalhoVisivel\(\(visivel\) => !visivel\)\s*\}/,
-  );
+  assert.match(pagina, /onOpenMenu=\{abrirMenuPerfil\}/);
+  assert.match(pagina, /onToggleUsername=\{alternarUsernameCabecalho\}/);
   assert.match(
     profileHeaderSource,
     /import \{ ProfileHeaderUsername \} from "\.\/profile-header-username";/,
@@ -1363,7 +1360,7 @@ test("Perfil de Autor delega a composição do menu aos componentes apresentacio
   assert.equal((pagina.match(/<ProfileMenu/g) || []).length, 1);
   assert.match(pagina, /isOwner=\{podeEditarPerfil\}/);
   assert.match(pagina, /communityHref=\{comunidadeAutorHref\}/);
-  assert.match(pagina, /onClose=\{\(\) => setMenuPerfilAberto\(false\)\}/);
+  assert.match(pagina, /onClose=\{fecharMenuPerfil\}/);
   assert.match(pagina, /onCopyLink=\{\(\) => void copiarLinkPerfil\(\)\}/);
   assert.match(pagina, /onReport=\{abrirDenunciaPerfil\}/);
   assert.match(pagina, /onBlock=\{\(\) => void alternarBloqueioPerfil\(\)\}/);

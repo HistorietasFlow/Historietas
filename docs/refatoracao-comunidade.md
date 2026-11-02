@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 7: estado do cabeçalho e menu
+
+- Os estados locais de abertura do menu e visibilidade do username do cabeçalho foram reunidos em hook dedicado, preservando setters, ações semânticas e integrações existentes.
+
 ## Perfil Autor — Fase 6: estado das denúncias
 
 - Os estados locais das denúncias de perfil e conteúdo foram reunidos em hook dedicado, preservando setters, fechamentos semânticos e as mensagens de confirmação atuais.
