@@ -34,6 +34,7 @@ import { usePerfilAutorRatingSync } from "./hooks/use-perfil-autor-rating-sync";
 import { usePerfilAutorDiaryRatingActions } from "./hooks/use-perfil-autor-diary-rating-actions";
 import { usePerfilAutorDiaryRatingSync } from "./hooks/use-perfil-autor-diary-rating-sync";
 import { usePerfilAutorDiarySync } from "./hooks/use-perfil-autor-diary-sync";
+import { usePerfilAutorContentState } from "./hooks/use-perfil-autor-content-state";
 import { usePerfilAutorBlockActions } from "./hooks/use-perfil-autor-block-actions";
 import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-actions";
 import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
@@ -59,8 +60,6 @@ import { usePerfilAutorCommunityPostRenderer } from "./hooks/use-perfil-autor-co
 import { usePerfilAutorLibraryItemRenderer } from "./hooks/use-perfil-autor-library-item-renderer";
 import type {
   AbaPerfilAutor,
-  ComunidadePerfilEstado,
-  DiarioPerfilEstado,
   ObraLocal,
   PerfisAutoresSalvos,
   PerfilUsuarioRemoto,
@@ -69,8 +68,6 @@ import type {
 import {
   BIO_MAX_LENGTH,
   SOBRE_BIO_MAX_LENGTH,
-  comunidadePerfilVazia,
-  diarioPerfilVazio,
   totaisInteracoesObrasPerfilVazio,
 } from "./constants";
 import { PerfilAutorLanguageBridge } from "./translations";
@@ -274,10 +271,12 @@ function PerfilAutorPageContent() {
     avaliacaoDiario,
     setAvaliacaoDiario,
   } = usePerfilAutorRatingState();
-  const [diarioPerfil, setDiarioPerfil] =
-    useState<DiarioPerfilEstado>(diarioPerfilVazio);
-  const [comunidadePerfil, setComunidadePerfil] =
-    useState<ComunidadePerfilEstado>(comunidadePerfilVazia);
+  const {
+    diarioPerfil,
+    setDiarioPerfil,
+    comunidadePerfil,
+    setComunidadePerfil,
+  } = usePerfilAutorContentState();
   const {
     seguindoUsuarioPerfil,
     setSeguindoUsuarioPerfil,
