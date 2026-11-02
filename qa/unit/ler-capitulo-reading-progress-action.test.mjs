@@ -6,6 +6,7 @@ import typescript from "typescript";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-reading-progress-action.ts");
+const fonteEstado = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-metrics-interactions-state.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-interaction-persistence.ts");
 const js = typescript.transpileModule(fonte, {
@@ -70,7 +71,8 @@ test("a ação mantém corpo literal e a página continua proprietária de estad
   assert.match(persistencia, /export async function salvarProgressoLeituraSupabase\(/);
   assert.doesNotMatch(pagina, /async function salvarProgressoLeituraSupabase\(/);
   assert.match(pagina, /const lidoCapituloSalvandoRef = useRef\(false\)/);
-  assert.match(pagina, /const \[lidoCapituloSalvando, setLidoCapituloSalvando\] = useState\(false\)/);
+  assert.doesNotMatch(pagina, /const \[lidoCapituloSalvando, setLidoCapituloSalvando\]/);
+  assert.match(fonteEstado, /const \[lidoCapituloSalvando, setLidoCapituloSalvando\] = useState\(false\);/);
   assert.match(pagina, /alternarLido=\{alternarLido\}/);
   assert.doesNotMatch(fonte, /\b(?:useState|useEffect|useRef|supabase|localStorage)\b/);
 });

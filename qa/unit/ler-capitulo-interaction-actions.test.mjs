@@ -6,6 +6,7 @@ import typescript from "typescript";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-interaction-actions.ts");
+const fonteEstado = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-metrics-interactions-state.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-interaction-persistence.ts");
 const js = typescript.transpileModule(fonte, {
@@ -67,6 +68,16 @@ test("os corpos originais permanecem literais e a página preserva os estados e 
   assert.doesNotMatch(pagina, /async function salvarRegistroCapituloSupabase\(/);
   assert.match(pagina, /const curtidaCapituloSalvandoRef = useRef\(false\)/);
   assert.match(pagina, /const salvoCapituloSalvandoRef = useRef\(false\)/);
+  assert.match(pagina, /import \{ useLerCapituloMetricsInteractionsState \} from "\.\/hooks\/use-ler-capitulo-metrics-interactions-state";/);
+  assert.match(pagina, /\} = useLerCapituloMetricsInteractionsState\(\);/);
+  assert.doesNotMatch(pagina, /const \[metricasCapitulo, setMetricasCapitulo\]/);
+  assert.doesNotMatch(pagina, /const \[curtidaCapituloSalvando, setCurtidaCapituloSalvando\]/);
+  assert.doesNotMatch(pagina, /const \[salvoCapituloSalvando, setSalvoCapituloSalvando\]/);
+  assert.match(fonteEstado, /useState<MetricasCapituloLeitor>\(metricasCapituloVazias\)/);
+  assert.match(fonteEstado, /const \[curtidaCapituloSalvando, setCurtidaCapituloSalvando\] = useState\(false\);/);
+  assert.match(fonteEstado, /const \[salvoCapituloSalvando, setSalvoCapituloSalvando\] = useState\(false\);/);
+  assert.match(fonteEstado, /const \[lidoCapituloSalvando, setLidoCapituloSalvando\] = useState\(false\);/);
+  assert.doesNotMatch(fonteEstado, /useEffect|useRef|supabase|localStorage|setTimeout/);
   assert.doesNotMatch(fonte, /\b(?:useState|useEffect|useRef|supabase|localStorage)\b/);
 });
 
