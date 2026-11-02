@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Ler Capítulo — Fase 3: estado de sessão e preferências do leitor
+
+- Os estados locais de sessão, perfil de comentário e preferências do leitor foram reunidos em hook dedicado, preservando lifecycle, autenticação, storage, ações e consumidores existentes.
+
 ## Ler Capítulo — Fase 2: estado dos dados carregados
 
 - Os estados locais de obras e carregamento foram reunidos em hook dedicado, preservando lifecycle, fallback, cancelamento e ações existentes.

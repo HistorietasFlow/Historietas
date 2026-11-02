@@ -6,6 +6,7 @@ import typescript from "typescript";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-session-preferences.ts");
+const fonteEstado = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-session-preferences-state.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const mockada = fonte
   .replace('import { useEffect } from "react";', "const useEffect = (...args) => globalThis.__sessaoLeitor.useEffect(...args);")
@@ -75,9 +76,17 @@ test("página delega ao hook e mantém estados, ordem e dependências", async ()
   ).trimEnd();
   assert.equal(createHash("sha256").update(efeitosOriginais).digest("hex"), "76bd3b10767bcbde4bc0a6451d81fd04fade1b68289c919b961fbadf2d4c57d9");
   assert.match(pagina, /import \{ useLerCapituloSessionPreferences \} from "\.\/hooks\/use-ler-capitulo-session-preferences";/);
+  assert.match(pagina, /import \{ useLerCapituloSessionPreferencesState \} from "\.\/hooks\/use-ler-capitulo-session-preferences-state";/);
+  assert.match(pagina, /\} = useLerCapituloSessionPreferencesState\(\);/);
   assert.match(pagina, /useLerCapituloSessionPreferences\(\{\s*usuarioIdLogado,\s*tamanhoFonte,\s*mostrarLinhaProgresso,\s*preferenciasCarregadas,\s*setUsuarioIdLogado,\s*setPerfilComentarioLeitor,\s*setTamanhoFonte,\s*setMostrarLinhaProgresso,\s*setPreferenciasCarregadas,/);
-  assert.match(pagina, /useState<PerfilComentarioLeitor>/);
-  assert.match(pagina, /useState<TamanhoFonte>\(3\)/);
+  assert.doesNotMatch(pagina, /const \[perfilComentarioLeitor, setPerfilComentarioLeitor\]/);
+  assert.doesNotMatch(pagina, /const \[usuarioIdLogado, setUsuarioIdLogado\]/);
+  assert.match(fonteEstado, /useState<PerfilComentarioLeitor>\(\{\s*userId: "",\s*nome: "Usuário",\s*avatar: "",\s*\}\)/);
+  assert.match(fonteEstado, /const \[usuarioIdLogado, setUsuarioIdLogado\] = useState\(""\);/);
+  assert.match(fonteEstado, /const \[tamanhoFonte, setTamanhoFonte\] = useState<TamanhoFonte>\(3\);/);
+  assert.match(fonteEstado, /const \[mostrarLinhaProgresso, setMostrarLinhaProgresso\] = useState\(false\);/);
+  assert.match(fonteEstado, /const \[preferenciasCarregadas, setPreferenciasCarregadas\] = useState\(false\);/);
+  assert.doesNotMatch(fonteEstado, /useEffect|supabase|localStorage|setTimeout/);
   assert.doesNotMatch(pagina, /async function carregarUsuarioLogado\(/);
   assert.doesNotMatch(pagina, /async function carregarPerfilComentario\(/);
   assert.match(fonte, /subscription\.unsubscribe\(\)/);
