@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade — Fase 1: estado de autenticação/conta
+
+- Os estados locais de usuário, permissão administrativa e carregamento da conta foram reunidos em hook dedicado, preservando valores iniciais, setters e o lifecycle de autenticação existente.
+
 ## Perfil Autor — Fase 16: estado das coleções do usuário
 
 - As coleções locais de autores seguidos, obras favoritas e obras concluídas foram reunidas em hook dedicado, preservando valores iniciais, setters e os consumidores de carregamento, autenticação, Diário e Biblioteca existentes.
