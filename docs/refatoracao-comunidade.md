@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 7: estado de acesso e privacidade do perfil
+
+- Os estados locais das preferências de privacidade e do relacionamento do perfil foram reunidos em hook dedicado, preservando setters, loader, permissões, visibilidade do Diário e consumidores existentes.
+
 ## Listas — Fase 6: estado dos comentários do Diário
 
 - Os estados locais do sheet de comentários do Diário foram reunidos em hook dedicado, preservando setters, lifecycle, gestos, ordenação, paginação, body lock, Escape e mutations existentes.

@@ -27,6 +27,7 @@ import { useListasLoadedDataState } from "./hooks/use-listas-loaded-data-state";
 import { useListasWorkMenuState } from "./hooks/use-listas-work-menu-state";
 import { useListasDiaryAnnotationState } from "./hooks/use-listas-diary-annotation-state";
 import { useListasDiaryCommentsState } from "./hooks/use-listas-diary-comments-state";
+import { useListasProfileAccessState } from "./hooks/use-listas-profile-access-state";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
@@ -124,11 +125,6 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
-import {
-  preferenciasPrivacidadePadrao,
-  type EstadoRelacionamentoPerfil,
-  type PreferenciasPrivacidadeHistorietas,
-} from "../../lib/historietasPrivacy";
 
 function ListasUniversaisContent() {
   const router = useRouter();
@@ -196,10 +192,12 @@ function ListasUniversaisContent() {
     anotacoesSpoilerReveladas,
     setAnotacoesSpoilerReveladas,
   } = useListasDiaryAnnotationState();
-  const [preferenciasPerfil, setPreferenciasPerfil] =
-    useState<PreferenciasPrivacidadeHistorietas>(preferenciasPrivacidadePadrao);
-  const [relacionamentoPerfil, setRelacionamentoPerfil] =
-    useState<EstadoRelacionamentoPerfil>("nenhum");
+  const {
+    preferenciasPerfil,
+    setPreferenciasPerfil,
+    relacionamentoPerfil,
+    setRelacionamentoPerfil,
+  } = useListasProfileAccessState();
   const [avaliacaoDiario, setAvaliacaoDiario] =
     useState<AvaliacaoDiarioListasEstado>(AVALIACAO_DIARIO_LISTAS_VAZIA);
   const { mensagemAcao, setMensagemAcao } = useListasActionMessage();
