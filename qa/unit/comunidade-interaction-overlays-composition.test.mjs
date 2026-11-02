@@ -26,7 +26,7 @@ test("a página mantém callbacks e decisões dos overlays", () => {
   assert.match(pagina, /onCurtirComentario: alternarCurtidaComentario,/);
   assert.match(pagina, /onRemoverComentario: removerComentario,/);
   assert.match(pagina, /denunciarConteudo\("comentario", comentarioId\)/);
-  assert.match(pagina, /denunciaModalProps=\{\{[\s\S]*?onFechar: \(\) => setDenunciaAlvo\(null\)/);
+  assert.match(pagina, /denunciaModalProps=\{\{[\s\S]*?onFechar: fecharDenunciaPublicacao,/);
   assert.match(pagina, /emitirFeedbackAcao\([\s\S]*?"Denúncia enviada para análise\.",/);
   assert.match(pagina, /feedbackAcao=\{feedbackAcao\}/);
   assert.doesNotMatch(pagina, /<ComentariosSheet\s/);
