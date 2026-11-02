@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Listas — Fase 6: estado dos comentários do Diário
+
+- Os estados locais do sheet de comentários do Diário foram reunidos em hook dedicado, preservando setters, lifecycle, gestos, ordenação, paginação, body lock, Escape e mutations existentes.
+
 ## Listas — Fase 5: estado das anotações do Diário
 
 - Os estados locais do editor, interações, abertura e spoiler das anotações do Diário foram reunidos em hook dedicado, preservando setters, lifecycle, sincronização, persistência e mutations existentes.
