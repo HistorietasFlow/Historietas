@@ -17,7 +17,12 @@ test("composição do leitor preserva literalmente as 368 linhas de JSX originai
 });
 
 test("página mantém estados e repassa valores e callbacks sem wrappers", () => {
-  assert.match(pagina, /import LerCapituloReaderContent, \{ type TamanhoFonte \} from "\.\/components\/ler-capitulo-reader-content";/);
+  const estadoSessao = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-session-preferences-state.ts");
+  assert.match(pagina, /import LerCapituloReaderContent from "\.\/components\/ler-capitulo-reader-content";/);
+  assert.match(
+    estadoSessao,
+    /import type \{ TamanhoFonte \} from "\.\.\/components\/ler-capitulo-reader-content";/,
+  );
   const chamada = pagina.match(/<LerCapituloReaderContent([\s\S]*?)\/>/);
   assert.ok(chamada);
   for (const nome of [
