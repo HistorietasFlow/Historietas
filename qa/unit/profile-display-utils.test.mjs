@@ -478,8 +478,8 @@ test("estado visual das denúncias delega a visibilidade dos modais", () => {
   assert.match(reportModalsSource, /onSent=\{onProfileSent\}/);
   assert.match(reportModalsSource, /onClose=\{onContentClose\}/);
   assert.match(reportModalsSource, /onSent=\{onContentSent\}/);
-  assert.match(pagina, /onProfileClose=\{\(\) => setDenunciaPerfilAberta\(false\)\}/);
-  assert.match(pagina, /onContentClose=\{\(\) => setAlvoDenunciaConteudoPerfil\(null\)\}/);
+  assert.match(pagina, /onProfileClose=\{fecharDenunciaPerfil\}/);
+  assert.match(pagina, /onContentClose=\{fecharDenunciaConteudo\}/);
   assert.doesNotMatch(
     pagina,
     /Boolean\(perfilParaMostrar\)|Boolean\(alvoDenunciaConteudoPerfil\)/,
