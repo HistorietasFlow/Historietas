@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 5: estado de bloqueio do perfil
+
+- Os estados locais de bloqueio e de salvamento do bloqueio foram reunidos em hook dedicado, preservando valores iniciais, setters e integrações existentes com sincronização, ações e componentes.
+
 ## Perfil Autor — Fase 4: estado de privacidade das abas
 
 - Os estados locais de permissões das abas e carregamento de privacidade foram reunidos em hook dedicado, preservando valores iniciais, setters e integrações existentes com sincronização e bloqueio.

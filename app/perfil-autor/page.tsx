@@ -7,9 +7,6 @@ import {
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import {
-  type EstadoBloqueioPerfil,
-} from "../../lib/historietasPrivacy";
 import { Suspense, useRef, useState } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
@@ -41,6 +38,7 @@ import { usePerfilAutorPrivacySync } from "./hooks/use-perfil-autor-privacy-sync
 import { usePerfilAutorVisibleTabSync } from "./hooks/use-perfil-autor-visible-tab-sync";
 import { usePerfilAutorCommunitySync } from "./hooks/use-perfil-autor-community-sync";
 import { usePerfilAutorBlockStateSync } from "./hooks/use-perfil-autor-block-state-sync";
+import { usePerfilAutorBlockState } from "./hooks/use-perfil-autor-block-state";
 import { usePerfilAutorFollowStateSync } from "./hooks/use-perfil-autor-follow-state-sync";
 import { usePerfilAutorFollowRelationshipState } from "./hooks/use-perfil-autor-follow-relationship-state";
 import { usePerfilAutorTabPrivacyState } from "./hooks/use-perfil-autor-tab-privacy-state";
@@ -282,14 +280,12 @@ function PerfilAutorPageContent() {
     alvoDenunciaConteudoPerfil,
     setAlvoDenunciaConteudoPerfil,
   ] = useState<AlvoDenunciaConteudoPerfil>(null);
-  const [estadoBloqueioPerfil, setEstadoBloqueioPerfil] =
-    useState<EstadoBloqueioPerfil>({
-      bloqueadoPorMim: false,
-      bloqueadoPeloPerfil: false,
-      existeBloqueio: false,
-    });
-  const [bloqueioPerfilSalvando, setBloqueioPerfilSalvando] =
-    useState(false);
+  const {
+    estadoBloqueioPerfil,
+    setEstadoBloqueioPerfil,
+    bloqueioPerfilSalvando,
+    setBloqueioPerfilSalvando,
+  } = usePerfilAutorBlockState();
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const { selecionarAvatarAutor, removerAvatarAutor } =
     usePerfilAutorAvatarEditorActions({
