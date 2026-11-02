@@ -13,9 +13,6 @@ import {
   acessoConteudo18Confirmado,
   confirmarAcessoConteudo18,
 } from "../../lib/historietasAdultContent";
-import {
-  type CursorCatalogo,
-} from "../../lib/catalogo";
 import { ExplorarLoadingState } from "./components/explorar-loading-state";
 import { ExplorarLoadMoreButton } from "./components/explorar-load-more-button";
 import { ExplorarLoginNotice } from "./components/explorar-login-notice";
@@ -63,6 +60,7 @@ import { useExplorarAuthorData } from "./hooks/use-explorar-author-data";
 import { useExplorarDesktopMode } from "./hooks/use-explorar-desktop-mode";
 import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
 import { useExplorarCatalogQuery } from "./hooks/use-explorar-catalog-query";
+import { useExplorarCatalogPaginationState } from "./hooks/use-explorar-catalog-pagination-state";
 import { themePageCss } from "./lib/explorar-page-css";
 import { explorarBuscaToggleCss } from "./lib/explorar-search-toggle-css";
 import {
@@ -109,7 +107,18 @@ export default function ExplorarPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
+  const {
+    obrasLocais,
+    setObrasLocais,
+    dadosExplorarCarregados,
+    setDadosExplorarCarregados,
+    proximoCursorCatalogo,
+    setProximoCursorCatalogo,
+    catalogoTemMais,
+    setCatalogoTemMais,
+    carregandoMaisCatalogo,
+    setCarregandoMaisCatalogo,
+  } = useExplorarCatalogPaginationState();
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [modoConteudo, setModoConteudo] =
@@ -135,11 +144,6 @@ export default function ExplorarPage() {
   const isDesktop = useExplorarDesktopMode();
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [mensagemLogin, setMensagemLogin] = useState("");
-  const [dadosExplorarCarregados, setDadosExplorarCarregados] = useState(false);
-  const [proximoCursorCatalogo, setProximoCursorCatalogo] =
-    useState<CursorCatalogo | null>(null);
-  const [catalogoTemMais, setCatalogoTemMais] = useState(false);
-  const [carregandoMaisCatalogo, setCarregandoMaisCatalogo] = useState(false);
   const obrasCacheLocalRef = useRef<ObraLocal[]>([]);
   const usuarioIdExplorarRef = useRef("");
 
