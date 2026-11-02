@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Explorar — Fase 6: estado dos controles e overlays da interface
+
+- Os estados locais de busca mobile, filtros avançados e confirmação 18+ foram reunidos em hook dedicado, preservando body lock, handlers, resets e regras atuais.
+
 ## Explorar — Fase 5: estado de autenticação e aviso de login
 
 - Os estados locais de autenticação e aviso de login foram reunidos em hook dedicado, preservando lifecycle de auth, filtros pessoais, redirecionamento e feedback existentes.

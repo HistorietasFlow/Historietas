@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const interfaceControlsState = readFileSync(
+  new URL(
+    "../../app/explorar/hooks/use-explorar-interface-controls-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const estilos = readFileSync(
   new URL("../../app/explorar/lib/explorar-content-styles.ts", import.meta.url),
   "utf8",
@@ -91,6 +98,15 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
   );
   assert.match(
     pagina,
+    /import \{ useExplorarInterfaceControlsState \} from "\.\/hooks\/use-explorar-interface-controls-state";/,
+  );
+  assert.match(pagina, /\} = useExplorarInterfaceControlsState\(\);/);
+  assert.doesNotMatch(
+    pagina,
+    /const \[mostrarFiltrosAvancados, setMostrarFiltrosAvancados\] = useState\(false\);/,
+  );
+  assert.match(
+    interfaceControlsState,
     /const \[mostrarFiltrosAvancados, setMostrarFiltrosAvancados\] = useState\(false\);/,
   );
   assert.match(pagina, /useExplorarInitialLoad\(\{/);

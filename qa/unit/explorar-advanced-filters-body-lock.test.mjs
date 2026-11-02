@@ -72,7 +72,7 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
   );
   assert.match(
     pagina,
-    /const \[mostrarFiltrosAvancados, setMostrarFiltrosAvancados\] = useState\(false\);/,
+    /useExplorarInterfaceControlsState\(\);/,
   );
   assert.match(pagina, /\{mostrarFiltrosAvancados && \(/);
   assert.match(pagina, /setMostrarFiltrosAvancados\(false\)/);
@@ -84,15 +84,15 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
   assert.match(shell, /stopPropagation\(\)/);
   assert.match(
     pagina,
-    /const \[mostrarConfirmacaoConteudo18, setMostrarConfirmacaoConteudo18\]/,
+    /useExplorarInterfaceControlsState\(\);/,
   );
   assert.match(
     pagina,
-    /const \[confirmouIdadeConteudo18, setConfirmouIdadeConteudo18\]/,
+    /setConfirmouIdadeConteudo18,/,
   );
   assert.match(
     pagina,
-    /import \{ useMemo, useRef, useState \} from "react";/,
+    /import \{ useMemo, useRef \} from "react";/,
   );
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.match(
