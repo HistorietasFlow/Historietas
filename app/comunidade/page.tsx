@@ -23,6 +23,7 @@ import {
 import { useComunidadeRelatedWorkDiarySync } from "./hooks/use-comunidade-related-work-diary-sync";
 import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-account-lifecycle";
 import { useComunidadeAuthAccountState } from "./hooks/use-comunidade-auth-account-state";
+import { useComunidadeFeedNavigationState } from "./hooks/use-comunidade-feed-navigation-state";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
@@ -35,16 +36,12 @@ import { atualizarVisibilidadePostComunidade } from "./components/community-post
 import { alternarFixadoPostComunidade } from "./components/community-post-pinning-action";
 import { denunciarConteudoComunidade } from "./components/community-report-preparation-action";
 import { useComunidadePostEngagementActions } from "./components/community-post-engagement-actions";
-import type { CategoriaComunidade } from "./components/community-category";
 import type { VisibilidadePostComunidade } from "./components/community-post-visibility";
 import { normalizarVisibilidadePostComunidade } from "./components/community-post-visibility-normalizer";
-import type { TipoPublicacaoFiltro } from "./components/community-publication-filter";
-import type { OrdenacaoComunidade } from "./components/community-sort-order";
 import { temFiltrosAtivosComunidade } from "./components/community-active-filters-check";
 import { normalizarTermoBuscaComunidade } from "./components/community-search-term-normalizer";
 import { obterEstadoApresentacaoPostComunidade } from "./components/community-post-presentation-state";
 import { criarAcoesPostComunidade } from "./components/community-post-action-factory";
-import type { AbaFeedComunidade } from "./components/community-feed-tab";
 import { limparFiltrosComunidade, selecionarAbaFeedComunidade } from "./components/community-feed-tabs";
 import {
   selecionarOrdenacaoEmAltaComunidade,
@@ -66,7 +63,6 @@ import { obterPostComentariosAbertoComunidade } from "./components/community-ope
 import { CommunityFeedLoadingState } from "./components/community-feed-loading-state";
 import { communityPageStyle } from "./components/community-page-style";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
-import type { GrupoPublicacaoObra } from "./components/community-publication-group";
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
 import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
@@ -110,22 +106,26 @@ export default function ComunidadePage() {
     setCarregandoUsuario,
   } = useComunidadeAuthAccountState();
   const [posts, setPosts] = useState<PostComunidade[]>([]);
-  const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaComunidade | "Todos">(
-    "Todos"
-  );
-  const [tipoPublicacaoAtiva, setTipoPublicacaoAtiva] =
-    useState<TipoPublicacaoFiltro>("Todos");
-  const [obraRelacionadaFiltro, setObraRelacionadaFiltro] = useState("");
-  const [grupoPublicacaoObra, setGrupoPublicacaoObra] =
-    useState<GrupoPublicacaoObra>("");
+  const {
+    categoriaAtiva,
+    setCategoriaAtiva,
+    tipoPublicacaoAtiva,
+    setTipoPublicacaoAtiva,
+    obraRelacionadaFiltro,
+    setObraRelacionadaFiltro,
+    grupoPublicacaoObra,
+    setGrupoPublicacaoObra,
+    termoBusca,
+    setTermoBusca,
+    ordenacaoAtiva,
+    setOrdenacaoAtiva,
+    abaFeedAtiva,
+    setAbaFeedAtiva,
+    mostrarApenasSalvos,
+    setMostrarApenasSalvos,
+  } = useComunidadeFeedNavigationState();
   const [spoilersReveladosIds, setSpoilersReveladosIds] = useState<string[]>([]);
-  const [termoBusca, setTermoBusca] = useState("");
   const termoBuscaAdiado = useDeferredValue(termoBusca);
-  const [ordenacaoAtiva, setOrdenacaoAtiva] =
-    useState<OrdenacaoComunidade>("Recentes");
-  const [abaFeedAtiva, setAbaFeedAtiva] =
-    useState<AbaFeedComunidade>("Para você");
-  const [mostrarApenasSalvos, setMostrarApenasSalvos] = useState(false);
   const [postsSalvosIds, setPostsSalvosIds] = useState<string[]>([]);
   const [votosEnquetes, setVotosEnquetes] = useState<Record<string, string>>({});
   const [resultadosEnquetes, setResultadosEnquetes] =
