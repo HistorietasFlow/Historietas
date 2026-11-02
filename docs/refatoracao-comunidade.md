@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 16: estado das coleções do usuário
+
+- As coleções locais de autores seguidos, obras favoritas e obras concluídas foram reunidas em hook dedicado, preservando valores iniciais, setters e os consumidores de carregamento, autenticação, Diário e Biblioteca existentes.
+
 ## Perfil Autor — Fase 15: estado de obras e métricas
 
 - Os estados locais de obras e totais de interações foram reunidos em hook dedicado, preservando valores iniciais, setters e os consumidores de carregamento, autenticação, edição e apresentação existentes.
