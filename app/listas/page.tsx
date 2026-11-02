@@ -25,6 +25,7 @@ import { useListasIdentityProfileState } from "./hooks/use-listas-identity-profi
 import { useListasPageLoadState } from "./hooks/use-listas-page-load-state";
 import { useListasLoadedDataState } from "./hooks/use-listas-loaded-data-state";
 import { useListasWorkMenuState } from "./hooks/use-listas-work-menu-state";
+import { useListasDiaryAnnotationState } from "./hooks/use-listas-diary-annotation-state";
 import { ListasPageHeader } from "./components/listas-page-header";
 import { ListasProfileCategoryControls } from "./components/listas-profile-category-controls";
 import { ListasResultsSection } from "./components/listas-results-section";
@@ -92,7 +93,6 @@ import { criarAvatarStyle, criarCapaStyle } from "./lib/listas-row-media-utils";
 import {
   criarInteracaoAnotacaoListasVazia,
 } from "./lib/listas-diary-comment-utils";
-import { type InteracoesAnotacoesListasEstado } from "./lib/listas-diary-interactions-loader";
 import { carregarAvaliacaoDiarioListas } from "./lib/listas-profile-records-loader";
 import { obterPermissoesAnotacaoListas } from "./lib/listas-diary-annotation-permissions-utils";
 import {
@@ -118,7 +118,6 @@ import {
 import {
   type AlvoDenunciaDiarioListas,
   type CategoriaPerfil,
-  type EditorAnotacaoListasEstado,
   type ItemObraLista,
 } from "./types";
 import {
@@ -187,14 +186,16 @@ function ListasUniversaisContent() {
     obraMenuNoQueroLer,
     setObraMenuNoQueroLer,
   } = useListasWorkMenuState();
-  const [editorAnotacao, setEditorAnotacao] =
-    useState<EditorAnotacaoListasEstado>(EDITOR_ANOTACAO_LISTAS_VAZIO);
-  const [interacoesAnotacoes, setInteracoesAnotacoes] =
-    useState<InteracoesAnotacoesListasEstado>({});
-  const [anotacoesAbertas, setAnotacoesAbertas] =
-    useState<Record<string, boolean>>({});
-  const [anotacoesSpoilerReveladas, setAnotacoesSpoilerReveladas] =
-    useState<Record<string, boolean>>({});
+  const {
+    editorAnotacao,
+    setEditorAnotacao,
+    interacoesAnotacoes,
+    setInteracoesAnotacoes,
+    anotacoesAbertas,
+    setAnotacoesAbertas,
+    anotacoesSpoilerReveladas,
+    setAnotacoesSpoilerReveladas,
+  } = useListasDiaryAnnotationState();
   const [preferenciasPerfil, setPreferenciasPerfil] =
     useState<PreferenciasPrivacidadeHistorietas>(preferenciasPrivacidadePadrao);
   const [relacionamentoPerfil, setRelacionamentoPerfil] =
