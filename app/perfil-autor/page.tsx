@@ -16,6 +16,7 @@ import { usePerfilAutorAuthIdentitySync } from "./hooks/use-perfil-autor-auth-id
 import { usePerfilAutorAuthLoadingState } from "./hooks/use-perfil-autor-auth-loading-state";
 import { usePerfilAutorTargetProfileState } from "./hooks/use-perfil-autor-target-profile-state";
 import { usePerfilAutorWorksMetricsState } from "./hooks/use-perfil-autor-works-metrics-state";
+import { usePerfilAutorUserCollectionsState } from "./hooks/use-perfil-autor-user-collections-state";
 import { usePerfilAutorProfileLoadSync } from "./hooks/use-perfil-autor-profile-load-sync";
 import { usePerfilAutorLoginRedirect } from "./hooks/use-perfil-autor-login-redirect";
 import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-library-storage-actions";
@@ -161,9 +162,14 @@ function PerfilAutorPageContent() {
     perfilUsuarioRemoto,
     setPerfilUsuarioRemoto,
   } = usePerfilAutorTargetProfileState();
-  const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
-  const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
-  const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
+  const {
+    autoresSeguidos,
+    setAutoresSeguidos,
+    obrasFavoritas,
+    setObrasFavoritas,
+    obrasConcluidas,
+    setObrasConcluidas,
+  } = usePerfilAutorUserCollectionsState();
   const {
     topFiveObraIds,
     setTopFiveObraIds,
