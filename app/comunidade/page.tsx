@@ -25,6 +25,7 @@ import { useComunidadeAuthAccountLifecycle } from "./hooks/use-comunidade-auth-a
 import { useComunidadeAuthAccountState } from "./hooks/use-comunidade-auth-account-state";
 import { useComunidadeFeedNavigationState } from "./hooks/use-comunidade-feed-navigation-state";
 import { useComunidadeFeedPaginationState } from "./hooks/use-comunidade-feed-pagination-state";
+import { useComunidadePollState } from "./hooks/use-comunidade-poll-state";
 import { useComunidadeFeedLifecycle } from "./hooks/use-comunidade-feed-lifecycle";
 import { useComunidadeComposerState } from "./hooks/use-comunidade-composer-state";
 import { publicarPostComunidade } from "./components/community-composer-publication-action";
@@ -66,7 +67,6 @@ import { communityPageStyle } from "./components/community-page-style";
 import { selecionarObraRelacionada } from "./components/community-related-work-selector";
 import { exigirLogin as exigirLoginComunidade } from "./components/community-login-requirement";
 import { garantirAceiteAntesDePublicarComunidade as garantirAceiteAntesDePublicarComunidadeExtraido } from "./components/community-publication-terms-requirement";
-import type { ResultadoVotosEnquete } from "./components/community-poll-votes-result";
 import { obterPostsVisiveisComunidade } from "./components/community-visible-posts";
 import { fecharComentarios } from "./components/community-comments-closer";
 import { abrirComentarios } from "./components/community-comments-opener";
@@ -139,10 +139,14 @@ export default function ComunidadePage() {
   const [spoilersReveladosIds, setSpoilersReveladosIds] = useState<string[]>([]);
   const termoBuscaAdiado = useDeferredValue(termoBusca);
   const [postsSalvosIds, setPostsSalvosIds] = useState<string[]>([]);
-  const [votosEnquetes, setVotosEnquetes] = useState<Record<string, string>>({});
-  const [resultadosEnquetes, setResultadosEnquetes] =
-    useState<ResultadoVotosEnquete>({});
-  const [votandoEnqueteId, setVotandoEnqueteId] = useState<string | null>(null);
+  const {
+    votosEnquetes,
+    setVotosEnquetes,
+    resultadosEnquetes,
+    setResultadosEnquetes,
+    votandoEnqueteId,
+    setVotandoEnqueteId,
+  } = useComunidadePollState();
   const [feedbackAcao, setFeedbackAcao] = useState("");
   const [publicandoPost, setPublicandoPost] = useState(false);
   const [postCurtindoId, setPostCurtindoId] = useState<string | null>(null);
