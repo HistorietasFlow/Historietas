@@ -38,6 +38,7 @@ import { usePerfilAutorFollowActions } from "./hooks/use-perfil-autor-follow-act
 import { usePerfilAutorTopFiveLikeActions } from "./hooks/use-perfil-autor-top-five-like-actions";
 import { usePerfilAutorTopFiveStorageSync } from "./hooks/use-perfil-autor-top-five-storage-sync";
 import { usePerfilAutorTopFiveLikesSync } from "./hooks/use-perfil-autor-top-five-likes-sync";
+import { usePerfilAutorTopFiveState } from "./hooks/use-perfil-autor-top-five-state";
 import { usePerfilAutorPrivacySync } from "./hooks/use-perfil-autor-privacy-sync";
 import { usePerfilAutorVisibleTabSync } from "./hooks/use-perfil-autor-visible-tab-sync";
 import { usePerfilAutorCommunitySync } from "./hooks/use-perfil-autor-community-sync";
@@ -161,11 +162,19 @@ function PerfilAutorPageContent() {
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
-  const [topFiveObraIds, setTopFiveObraIds] = useState<string[]>([]);
-  const [topFiveCurtidasTotal, setTopFiveCurtidasTotal] = useState(0);
-  const [topFiveCurtidoPorMim, setTopFiveCurtidoPorMim] = useState(false);
-  const [topFiveCurtidaSalvando, setTopFiveCurtidaSalvando] = useState(false);
-  const [mostrarDestaquesVisitante, setMostrarDestaquesVisitante] = useState(false);
+  const {
+    topFiveObraIds,
+    setTopFiveObraIds,
+    topFiveCurtidasTotal,
+    setTopFiveCurtidasTotal,
+    topFiveCurtidoPorMim,
+    setTopFiveCurtidoPorMim,
+    topFiveCurtidaSalvando,
+    setTopFiveCurtidaSalvando,
+    mostrarDestaquesVisitante,
+    setMostrarDestaquesVisitante,
+    alternarMostrarDestaquesVisitante,
+  } = usePerfilAutorTopFiveState();
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const { mensagemAcao, setMensagemAcao } = usePerfilAutorActionMessage();
@@ -1119,9 +1128,7 @@ function PerfilAutorPageContent() {
           followLabel={rotuloSeguimento}
           mostrarDestaquesVisitante={mostrarDestaquesVisitante}
           obrasVisiveis={obrasPerfilVisivel}
-          onToggleVisitorHighlights={() =>
-            setMostrarDestaquesVisitante((valorAtual) => !valorAtual)
-          }
+          onToggleVisitorHighlights={alternarMostrarDestaquesVisitante}
           message={mensagemAcao}
         />
 

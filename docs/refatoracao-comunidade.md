@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 2: estado de Top Five e Destaques
+
+- Os estados locais de Top Five e Destaques foram reunidos em hook dedicado, preservando os setters usados pelos hooks existentes e o toggle semântico de destaques para visitantes.
+
 ## Perfil Autor — Fase 1: estado do editor de perfil e avatar
 
 - Os estados locais do editor de perfil e avatar foram reunidos em hook dedicado, preservando valores iniciais, setters e integrações existentes com as actions e a UI.
