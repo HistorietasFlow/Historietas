@@ -65,6 +65,7 @@ import { useExplorarNavigationFilterState } from "./hooks/use-explorar-navigatio
 import { useExplorarAuthorDataState } from "./hooks/use-explorar-author-data-state";
 import { useExplorarPersonalCollectionsState } from "./hooks/use-explorar-personal-collections-state";
 import { useExplorarAuthLoginState } from "./hooks/use-explorar-auth-login-state";
+import { useExplorarInterfaceControlsState } from "./hooks/use-explorar-interface-controls-state";
 import { themePageCss } from "./lib/explorar-page-css";
 import { explorarBuscaToggleCss } from "./lib/explorar-search-toggle-css";
 import {
@@ -146,12 +147,16 @@ export default function ExplorarPage() {
     avaliacoesAutores,
     setAvaliacoesAutores,
   } = useExplorarAuthorDataState();
-  const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
-  const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
-  const [mostrarConfirmacaoConteudo18, setMostrarConfirmacaoConteudo18] =
-    useState(false);
-  const [confirmouIdadeConteudo18, setConfirmouIdadeConteudo18] =
-    useState(false);
+  const {
+    buscaMobileAberta,
+    setBuscaMobileAberta,
+    mostrarFiltrosAvancados,
+    setMostrarFiltrosAvancados,
+    mostrarConfirmacaoConteudo18,
+    setMostrarConfirmacaoConteudo18,
+    confirmouIdadeConteudo18,
+    setConfirmouIdadeConteudo18,
+  } = useExplorarInterfaceControlsState();
   const isDesktop = useExplorarDesktopMode();
   const {
     usuarioLogado,
