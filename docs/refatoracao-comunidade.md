@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 10: estado dos menus de obra e Biblioteca
+
+- Os IDs locais dos menus/action sheets de obra e Biblioteca foram reunidos em hook dedicado, preservando setters, fechamentos semânticos e a ordem das ações existentes.
+
 ## Perfil Autor — Fase 9: estado principal da Biblioteca
 
 - O estado local principal da Biblioteca foi reunido em hook dedicado, preservando aba ativa, obras seguidas, versão de sincronização e todos os setters consumidos pelos hooks existentes.
