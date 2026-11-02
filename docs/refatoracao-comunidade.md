@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Comunidade — Fase 2: estado de filtros e navegação do feed
+
+- Os estados locais de filtros e navegação do feed foram reunidos em hook dedicado, preservando valores iniciais, setters, busca adiada, lifecycles e consumidores existentes.
+
 ## Comunidade — Fase 1: estado de autenticação/conta
 
 - Os estados locais de usuário, permissão administrativa e carregamento da conta foram reunidos em hook dedicado, preservando valores iniciais, setters e o lifecycle de autenticação existente.
