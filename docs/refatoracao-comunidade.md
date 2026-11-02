@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Perfil Autor — Fase 6: estado das denúncias
+
+- Os estados locais das denúncias de perfil e conteúdo foram reunidos em hook dedicado, preservando setters, fechamentos semânticos e as mensagens de confirmação atuais.
+
 ## Perfil Autor — Fase 5: estado de bloqueio do perfil
 
 - Os estados locais de bloqueio e de salvamento do bloqueio foram reunidos em hook dedicado, preservando valores iniciais, setters e integrações existentes com sincronização, ações e componentes.

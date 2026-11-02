@@ -19,6 +19,7 @@ import { usePerfilAutorLibraryStorageActions } from "./hooks/use-perfil-autor-li
 import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avatar-editor-actions";
 import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actions";
 import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-actions";
+import { usePerfilAutorReportState } from "./hooks/use-perfil-autor-report-state";
 import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
 import { usePerfilAutorProfileEditorState } from "./hooks/use-perfil-autor-profile-editor-state";
@@ -54,7 +55,6 @@ import { usePerfilAutorLibraryItemRenderer } from "./hooks/use-perfil-autor-libr
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
-  AlvoDenunciaConteudoPerfil,
   AvaliacaoAutorPublica,
   AvaliacaoDiarioPublica,
   ComunidadePerfilEstado,
@@ -275,11 +275,14 @@ function PerfilAutorPageContent() {
     privacidadePerfilCarregando,
     setPrivacidadePerfilCarregando,
   } = usePerfilAutorTabPrivacyState();
-  const [denunciaPerfilAberta, setDenunciaPerfilAberta] = useState(false);
-  const [
+  const {
+    denunciaPerfilAberta,
+    setDenunciaPerfilAberta,
     alvoDenunciaConteudoPerfil,
     setAlvoDenunciaConteudoPerfil,
-  ] = useState<AlvoDenunciaConteudoPerfil>(null);
+    fecharDenunciaPerfil,
+    fecharDenunciaConteudo,
+  } = usePerfilAutorReportState();
   const {
     estadoBloqueioPerfil,
     setEstadoBloqueioPerfil,
@@ -1078,14 +1081,14 @@ function PerfilAutorPageContent() {
           contentTargetType={dadosDenunciaConteudoPerfil.alvoTipo}
           contentTargetId={dadosDenunciaConteudoPerfil.alvoId}
           contentTargetTitle={dadosDenunciaConteudoPerfil.alvoTitulo}
-          onProfileClose={() => setDenunciaPerfilAberta(false)}
+          onProfileClose={fecharDenunciaPerfil}
           onProfileSent={() => {
-            setDenunciaPerfilAberta(false);
+            fecharDenunciaPerfil();
             setMensagemAcao("Denúncia enviada para análise.");
           }}
-          onContentClose={() => setAlvoDenunciaConteudoPerfil(null)}
+          onContentClose={fecharDenunciaConteudo}
           onContentSent={() => {
-            setAlvoDenunciaConteudoPerfil(null);
+            fecharDenunciaConteudo();
             setMensagemAcao("Denúncia enviada para análise.");
           }}
         />
