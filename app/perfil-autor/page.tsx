@@ -20,6 +20,7 @@ import { usePerfilAutorAvatarEditorActions } from "./hooks/use-perfil-autor-avat
 import { usePerfilAutorShareActions } from "./hooks/use-perfil-autor-share-actions";
 import { usePerfilAutorReportActions } from "./hooks/use-perfil-autor-report-actions";
 import { usePerfilAutorReportState } from "./hooks/use-perfil-autor-report-state";
+import { usePerfilAutorHeaderMenuState } from "./hooks/use-perfil-autor-header-menu-state";
 import { usePerfilAutorAboutActions } from "./hooks/use-perfil-autor-about-actions";
 import { usePerfilAutorProfileEditorActions } from "./hooks/use-perfil-autor-profile-editor-actions";
 import { usePerfilAutorProfileEditorState } from "./hooks/use-perfil-autor-profile-editor-state";
@@ -185,9 +186,15 @@ function PerfilAutorPageContent() {
     });
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [carregando, setCarregando] = useState(true);
-  const [menuPerfilAberto, setMenuPerfilAberto] = useState(false);
-  const [usernameCabecalhoVisivel, setUsernameCabecalhoVisivel] =
-    useState(false);
+  const {
+    menuPerfilAberto,
+    setMenuPerfilAberto,
+    usernameCabecalhoVisivel,
+    setUsernameCabecalhoVisivel,
+    abrirMenuPerfil,
+    fecharMenuPerfil,
+    alternarUsernameCabecalho,
+  } = usePerfilAutorHeaderMenuState();
   const {
     editorPerfilAberto,
     setEditorPerfilAberto,
@@ -1005,10 +1012,8 @@ function PerfilAutorPageContent() {
           headerStyle={profileHeaderAtualStyle}
           menuOpen={menuPerfilAberto}
           onCopyUsername={copiarUsernameCabecalho}
-          onOpenMenu={() => setMenuPerfilAberto(true)}
-          onToggleUsername={() =>
-            setUsernameCabecalhoVisivel((visivel) => !visivel)
-          }
+          onOpenMenu={abrirMenuPerfil}
+          onToggleUsername={alternarUsernameCabecalho}
           username={usernameExibidoCabecalho}
           usernameVisible={usernameCabecalhoVisivel}
         />
@@ -1025,7 +1030,7 @@ function PerfilAutorPageContent() {
             isOwner={podeEditarPerfil}
             notificationsUnreadFormatted={notificacoesNaoLidasFormatadas}
             onBlock={() => void alternarBloqueioPerfil()}
-            onClose={() => setMenuPerfilAberto(false)}
+            onClose={fecharMenuPerfil}
             onCopyLink={() => void copiarLinkPerfil()}
             onReport={abrirDenunciaPerfil}
             onSignOut={() => void sairDaConta()}
