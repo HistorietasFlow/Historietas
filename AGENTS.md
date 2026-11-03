@@ -50,3 +50,17 @@ Antes de concluir qualquer fase, execute todas as verificações equivalentes à
 11. Ao final, execute novamente `git diff --check` e confira `git status --short`.
 
 Use Node.js 22, instalação reproduzível com `npm ci` e as versões travadas nos lockfiles. Integrações e E2E devem usar somente o Supabase local descartável; nunca aponte testes destrutivos para um projeto remoto.
+
+## Memory Bank do projeto
+
+O repositório mantém contexto persistente em `docs/memory/`.
+
+Antes de iniciar uma tarefa relevante:
+
+1. Leia `docs/memory/README.md`.
+2. Leia pelo menos `docs/memory/PROJECT_CONTEXT.md` e `docs/memory/CURRENT_STATUS.md`.
+3. Consulte `DECISIONS.md`, `ARCHITECTURE.md`, `PROBLEMS_AND_SOLUTIONS.md` e `PR_HISTORY.md` quando forem pertinentes ao escopo.
+
+Depois de uma mudança que altere de forma duradoura arquitetura, regras, segurança, CI/CD, integrações, estado de refatoração ou solução de problema recorrente, atualize os arquivos correspondentes do Memory Bank no mesmo PR quando isso fizer parte natural da mudança.
+
+O Memory Bank é contexto auxiliar. Código, migrations, configurações e o estado real do GitHub têm prioridade quando houver divergência. Nunca registre segredos, tokens, senhas ou chaves privadas nesses arquivos.
