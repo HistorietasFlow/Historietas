@@ -147,6 +147,39 @@ jobs:
       - name: Gerar aplicação para os testes locais
         run: npm run build
 
+      - name: Executar OWASP ZAP baseline passivo no app local
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p qa/reports/zap
+          chmod 0777 qa/reports/zap
+
+          npm run start > /tmp/historietas-zap-app.log 2>&1 &
+          app_pid=$!
+
+          cleanup() {
+            kill "$app_pid" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          app_ready="false"
+          for tentativa in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ >/dev/null; then
+              app_ready="true"
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$app_ready" != "true" ]; then
+            cat /tmp/historietas-zap-app.log
+            echo "O app local não ficou pronto para o scan do ZAP."
+            exit 1
+          fi
+
+          docker run --rm             --network host             -v "$PWD/qa/reports/zap:/zap/wrk:rw"             ghcr.io/zaproxy/zaproxy:stable             zap-baseline.py               -t http://127.0.0.1:3000               -m 1               -I               -s               -r zap-report.html               -J zap-report.json
+
       - name: Instalar Chromium
         working-directory: qa
         run: npm exec -- playwright install --with-deps chromium
