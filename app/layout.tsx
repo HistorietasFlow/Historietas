@@ -9,12 +9,12 @@ import SupabaseSessionRecovery from "../components/SupabaseSessionRecovery";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import {
-import { SpeedInsights } from "@vercel/speed-insights/next";
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_TITLE,
   SITE_URL,
 } from "../lib/seo";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -1547,7 +1547,7 @@ export default function RootLayout({
           />
           </NotificacoesProvider>
         </HistorietasLanguageProvider>
-              <SpeedInsights />
+        <SpeedInsights />
       </body>
     </html>
   );
