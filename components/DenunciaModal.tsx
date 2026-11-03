@@ -10,31 +10,9 @@ import { useHistorietasLanguage } from "./HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../lib/i18n";
 import { useDenunciaSubmitAction } from "./hooks/use-denuncia-submit-action";
 import { useDenunciaModalLifecycle } from "./hooks/use-denuncia-modal-lifecycle";
+import type { MotivoDenuncia, TipoAlvoDenuncia } from "./denuncia-types";
 
-export type TipoAlvoDenuncia =
-  | "post"
-  | "comentario"
-  | "comentario_capitulo"
-  | "obra"
-  | "capitulo"
-  | "comentario_obra"
-  | "diario_anotacao"
-  | "comentario_diario"
-  | "perfil";
-
-export type MotivoDenuncia =
-  | "conteudo_inadequado"
-  | "spam"
-  | "assedio"
-  | "odio_discriminacao"
-  | "ameaca_violencia"
-  | "conteudo_sexual"
-  | "risco_menor"
-  | "plagio_direitos_autorais"
-  | "informacoes_pessoais"
-  | "fraude"
-  | "perfil_falso"
-  | "outro";
+export type { MotivoDenuncia, TipoAlvoDenuncia } from "./denuncia-types";
 
 type DenunciaModalProps = {
   aberto: boolean;
