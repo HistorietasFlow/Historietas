@@ -17,6 +17,7 @@ Concluídos:
 - Gitleaks (scan bloqueante de segredos no histórico Git, com allowlists específicas para falsos positivos conhecidos)
 - Dependency Cruiser (baseline de dependências circulares em `app/`, `components/` e `lib/`)
 - OWASP ZAP (baseline passivo contra o app local da CI; sem scan ativo em produção)
+- k6 (baseline leve de carga/desempenho contra rotas públicas do app local da CI)
 
 ## Produção Vercel
 
