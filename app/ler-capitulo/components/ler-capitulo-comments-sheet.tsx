@@ -10,10 +10,7 @@ import {
   criarEstruturaComentariosCapitulo,
   type OrdenacaoComentariosCapitulo,
 } from "../lib/ler-capitulo-comment-thread-structure";
-import type {
-  ComentarioCapituloPublico,
-  ComentariosCapituloPost,
-} from "../lib/ler-capitulo-comment-types";
+import type { ComentariosCapituloPost } from "../lib/ler-capitulo-comment-types";
 import {
   criarAvatarComentarioBaseStyle,
   LerCapituloCommentItem,
