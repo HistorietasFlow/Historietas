@@ -21,6 +21,8 @@ const helpers = await import(`data:text/javascript;base64,${Buffer.from(js).toSt
 test("item visual preserva avatar, perfil, ações e curtida do comentário", () => {
   assert.match(item, /^"use client";/);
   assert.match(item, /export function LerCapituloCommentItem\(/);
+  assert.ok(item.includes('from "../lib/ler-capitulo-comment-types";'));
+  assert.ok(!item.includes('from "./ler-capitulo-comments-sheet";'));
   assert.match(item, /resposta \? commentReplyItemStyle : commentItemStyle/);
   assert.match(item, /criarHrefPerfilUsuarioLeitor\(/);
   assert.match(item, /criarAvatarComentarioBaseStyle\(/);
