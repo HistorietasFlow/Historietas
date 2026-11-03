@@ -163,6 +163,39 @@ jobs:
       - name: Executar Lighthouse CI baseline
         run: lhci autorun
 
+      - name: Executar OWASP ZAP baseline passivo no app local
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p qa/reports/zap
+          chmod 0777 qa/reports/zap
+
+          npm run start > /tmp/historietas-zap-app.log 2>&1 &
+          app_pid=$!
+
+          cleanup() {
+            kill "$app_pid" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          app_ready="false"
+          for tentativa in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ >/dev/null; then
+              app_ready="true"
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$app_ready" != "true" ]; then
+            cat /tmp/historietas-zap-app.log
+            echo "O app local não ficou pronto para o scan do ZAP."
+            exit 1
+          fi
+
+          docker run --rm             --network host             -v "$PWD/qa/reports/zap:/zap/wrk:rw"             ghcr.io/zaproxy/zaproxy:stable             zap-baseline.py               -t http://127.0.0.1:3000               -m 1               -I               -s               -r zap-report.html               -J zap-report.json
+
       - name: Remover ambiente Supabase local
         if: ${{ always() }}
         run: |
@@ -176,6 +209,15 @@ jobs:
         with:
           name: lighthouse-reports
           path: .lighthouseci/reports
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Salvar relatório do OWASP ZAP
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: zap-baseline-report
+          path: qa/reports/zap
           if-no-files-found: ignore
           retention-days: 7
 

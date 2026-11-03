@@ -16,6 +16,7 @@ Concluídos:
 - Knip (diagnóstico de código/dependências não utilizados; inicialmente não bloqueante)
 - Gitleaks (scan bloqueante de segredos no histórico Git, com allowlists específicas para falsos positivos conhecidos)
 - Dependency Cruiser (baseline de dependências circulares em `app/`, `components/` e `lib/`)
+- OWASP ZAP (baseline passivo contra o app local da CI; sem scan ativo em produção)
 
 ## Produção Vercel
 
