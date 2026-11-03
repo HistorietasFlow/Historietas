@@ -19,7 +19,7 @@ module.exports = {
     doNotFollow: {
       path: ["node_modules"],
     },
-    tsPreCompilationDeps: true,
+    parser: "swc",
     tsConfig: {
       fileName: "tsconfig.json",
     },
