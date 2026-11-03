@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import type { ComentarioCapituloPublico } from "./ler-capitulo-comments-sheet";
+import type { ComentarioCapituloPublico } from "../lib/ler-capitulo-comment-types";
 import {
   commentActionsRowStyle,
   commentAuthorLinkStyle,
