@@ -2749,13 +2749,13 @@ const ciContracts = [
   },
   {
     name: "CI usa Node.js 22 em todos os jobs",
-    valid: (ciWorkflow.match(/node-version:\s*22/g) || []).length === 5
+    valid: (ciWorkflow.match(/node-version:\s*22/g) || []).length === 6
   },
   {
     name: "CI limita o token do GitHub a leitura",
     valid:
       /permissions:\s*\n\s*contents:\s*read/.test(ciWorkflow) &&
-      (ciWorkflow.match(/persist-credentials:\s*false/g) || []).length === 5
+      (ciWorkflow.match(/persist-credentials:\s*false/g) || []).length === 6
   }
 ];
 
