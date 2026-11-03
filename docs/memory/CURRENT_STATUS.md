@@ -14,7 +14,7 @@ Concluídos:
 - Lighthouse CI
 - Vercel Speed Insights
 - Knip (diagnóstico de código/dependências não utilizados; inicialmente não bloqueante)
-- Gitleaks (scan de segredos no histórico Git; baseline inicial em diagnóstico)
+- Gitleaks (scan bloqueante de segredos no histórico Git, com allowlists específicas para falsos positivos conhecidos)
 
 ## Produção Vercel
 
