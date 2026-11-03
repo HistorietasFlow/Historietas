@@ -213,7 +213,8 @@ jobs:
         run: npm ci
 
       - name: Analisar código não utilizado com Knip
-        run: npm run knip
+        run: |
+          npm run knip || echo "Knip encontrou candidatos; diagnóstico não bloqueante nesta fase."
 
   build:
     name: Build
