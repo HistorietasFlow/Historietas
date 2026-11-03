@@ -19,7 +19,7 @@ for (const file of migrationFiles) {
     ...sql.matchAll(
       /create\s+table\s+(?:if\s+not\s+exists\s+)?public\.("?([a-zA-Z0-9_]+)"?)/gi,
     ),
-  ].map((match) => match[1]);
+  ].map((match) => match[2]);
 
   for (const table of createdTables) {
     const escapedTable = table.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
