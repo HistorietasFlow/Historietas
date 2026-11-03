@@ -15,6 +15,7 @@ Concluídos:
 - Vercel Speed Insights
 - Knip (diagnóstico de código/dependências não utilizados; inicialmente não bloqueante)
 - Gitleaks (scan bloqueante de segredos no histórico Git, com allowlists específicas para falsos positivos conhecidos)
+- Dependency Cruiser (baseline de dependências circulares em `app/`, `components/` e `lib/`)
 
 ## Produção Vercel
 
