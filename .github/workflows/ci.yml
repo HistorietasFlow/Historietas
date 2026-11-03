@@ -97,6 +97,9 @@ jobs:
       - name: Executar testes estáticos
         run: npm run test:static
 
+      - name: Validar GRANT/REVOKE explícito em novas tabelas public
+        run: node qa/scripts/check-public-table-grants.mjs
+
       - name: Executar testes de paginação em alto volume
         run: npm run test:pagination
 
@@ -128,6 +131,9 @@ jobs:
             echo "Tentativa $tentativa falhou; aguardando ${espera}s antes de tentar novamente."
             sleep "$espera"
           done
+
+      - name: Executar testes de banco com pgTAP
+        run: supabase test db
 
       - name: Executar paginação real pela Data API
         run: npm run test:pagination:integration
