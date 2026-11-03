@@ -129,6 +129,9 @@ jobs:
             sleep "$espera"
           done
 
+      - name: Executar testes de banco com pgTAP
+        run: supabase test db
+
       - name: Executar paginação real pela Data API
         run: npm run test:pagination:integration
 
