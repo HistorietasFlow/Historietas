@@ -1547,7 +1547,7 @@ export default function RootLayout({
           />
           </NotificacoesProvider>
         </HistorietasLanguageProvider>
-        <SpeedInsights />
+        {process.env.VERCEL === "1" ? <SpeedInsights /> : null}
       </body>
     </html>
   );
