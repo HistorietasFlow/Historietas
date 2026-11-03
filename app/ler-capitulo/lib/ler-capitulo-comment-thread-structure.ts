@@ -1,4 +1,4 @@
-import type { ComentarioCapituloPublico } from "../components/ler-capitulo-comments-sheet";
+import type { ComentarioCapituloPublico } from "./ler-capitulo-comment-types";
 
 export type OrdenacaoComentariosCapitulo = "relevantes" | "recentes";
 
