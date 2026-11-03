@@ -40,6 +40,21 @@ Objetivo: continuar desenvolvimento e deploys sem deixar o site público.
 
 ## Pendências conhecidas
 
+### OWASP ZAP — headers de segurança de baixo risco
+
+Foi criada uma fase dedicada para os headers apontados pelo baseline do ZAP, começando apenas pelos de baixo risco:
+
+- `X-Content-Type-Options: nosniff`;
+- `X-Frame-Options: SAMEORIGIN`;
+- `Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()`.
+
+A configuração é global via `next.config.ts` e possui validação Playwright no app real, incluindo rota protegida com redirect para login.
+
+CSP e Cross-Origin-Embedder-Policy permanecem fora desta fase por poderem quebrar scripts inline, Sentry, Supabase ou outros recursos sem uma política calibrada.
+
+O aviso `Content-Type Header Missing` observado em rotas protegidas está associado a respostas de redirect e não é forçado artificialmente nesta fase.
+
+
 ### OWASP ZAP — Potential XSS revisado
 
 O alerta `User Controllable HTML Element Attribute (Potential XSS)` do baseline foi revisado e classificado como falso positivo no estado atual.
