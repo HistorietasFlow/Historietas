@@ -5,7 +5,7 @@ import type { FormEvent, RefObject } from "react";
 import type {
   ComentarioCapituloPublico,
   ComentariosCapituloPost,
-} from "../components/ler-capitulo-comments-sheet";
+} from "../lib/ler-capitulo-comment-types";
 
 type RespostaComentarioCapitulo = {
   comentarioPaiId: string;

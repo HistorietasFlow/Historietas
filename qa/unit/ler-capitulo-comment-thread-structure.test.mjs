@@ -53,6 +53,8 @@ test("estrutura protege contra ciclos sem elevar comentários cíclicos a raíze
 
 test("módulo contém somente a estrutura pura das threads", () => {
   assert.match(estrutura, /export type OrdenacaoComentariosCapitulo = "relevantes" \| "recentes";/);
+  assert.ok(estrutura.includes('from "./ler-capitulo-comment-types";'));
+  assert.ok(!estrutura.includes('from "../components/ler-capitulo-comments-sheet";'));
   assert.match(estrutura, /export function dataComentarioCapitulo\(/);
   assert.match(estrutura, /export function criarEstruturaComentariosCapitulo\(/);
   assert.match(estrutura, /new Set<string>\(\[comentario\.id\]\)/);
