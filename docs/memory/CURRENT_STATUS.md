@@ -13,6 +13,7 @@ Concluídos:
 - Playwright
 - Lighthouse CI
 - Vercel Speed Insights
+- Knip (diagnóstico de código/dependências não utilizados; inicialmente não bloqueante)
 
 ## Produção Vercel
 
