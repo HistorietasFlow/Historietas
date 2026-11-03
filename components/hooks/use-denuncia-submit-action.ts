@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabase/client";
 import type {
   MotivoDenuncia,
   TipoAlvoDenuncia,
-} from "../DenunciaModal";
+} from "../denuncia-types";
 
 type MensagensEnvioDenuncia = {
   motivoObrigatorio: string;

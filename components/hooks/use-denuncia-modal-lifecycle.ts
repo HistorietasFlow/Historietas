@@ -9,7 +9,7 @@ import {
 import type {
   MotivoDenuncia,
   TipoAlvoDenuncia,
-} from "../DenunciaModal";
+} from "../denuncia-types";
 
 type UseDenunciaModalLifecycleParams = {
   aberto: boolean;

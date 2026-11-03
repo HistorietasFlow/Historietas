@@ -40,6 +40,15 @@ Objetivo: continuar desenvolvimento e deploys sem deixar o site público.
 
 ## Pendências conhecidas
 
+### Dependency Cruiser — ciclos do DenunciaModal
+
+Os tipos compartilhados de denúncia foram extraídos de `components/DenunciaModal.tsx` para `components/denuncia-types.ts`.
+
+Os hooks `use-denuncia-submit-action.ts` e `use-denuncia-modal-lifecycle.ts` deixam de importar o componente do modal, removendo os 2 ciclos associados ao `DenunciaModal` sem alterar comportamento.
+
+A compatibilidade de imports externos é preservada porque `DenunciaModal.tsx` continua reexportando os mesmos tipos.
+
+
 ### OWASP ZAP — headers de segurança de baixo risco
 
 Foi criada uma fase dedicada para os headers apontados pelo baseline do ZAP, começando apenas pelos de baixo risco:
