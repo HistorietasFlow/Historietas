@@ -10,6 +10,10 @@ const item = ler("../../app/ler-capitulo/components/ler-capitulo-comment-item.ts
 test("hook centraliza resposta e envio preservando o contrato do comentário", () => {
   assert.match(hook, /^"use client";/);
   assert.match(hook, /export function useLerCapituloCommentSheetComposer\(/);
+  assert.ok(hook.includes('from "../lib/ler-capitulo-comment-types";'));
+  assert.ok(!hook.includes('from "../components/ler-capitulo-comments-sheet";'));
+  assert.ok(sheet.includes('from "../lib/ler-capitulo-comment-types";'));
+  assert.ok(sheet.includes('export type {\n  ComentarioCapituloPublico,\n  ComentariosCapituloPost,\n} from "../lib/ler-capitulo-comment-types";'));
   assert.match(hook, /const \[comentarioEnviando, setComentarioEnviando\] = useState\(false\);/);
   assert.match(hook, /const \[respostaComentario, setRespostaComentario\] =\s*useState<RespostaComentarioCapitulo \| null>\(null\);/);
   assert.match(hook, /function responderComentario\(/);
