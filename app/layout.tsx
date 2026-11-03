@@ -9,6 +9,7 @@ import SupabaseSessionRecovery from "../components/SupabaseSessionRecovery";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import {
+import { SpeedInsights } from "@vercel/speed-insights/next";
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_TITLE,
@@ -1546,6 +1547,7 @@ export default function RootLayout({
           />
           </NotificacoesProvider>
         </HistorietasLanguageProvider>
+              <SpeedInsights />
       </body>
     </html>
   );
