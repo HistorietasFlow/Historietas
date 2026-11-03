@@ -97,6 +97,9 @@ jobs:
       - name: Executar testes estáticos
         run: npm run test:static
 
+      - name: Validar GRANT/REVOKE explícito em novas tabelas public
+        run: node qa/scripts/check-public-table-grants.mjs
+
       - name: Executar testes de paginação em alto volume
         run: npm run test:pagination
 
