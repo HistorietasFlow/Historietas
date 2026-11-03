@@ -40,6 +40,19 @@ Objetivo: continuar desenvolvimento e deploys sem deixar o site público.
 
 ## Pendências conhecidas
 
+### OWASP ZAP — Potential XSS revisado
+
+O alerta `User Controllable HTML Element Attribute (Potential XSS)` do baseline foi revisado e classificado como falso positivo no estado atual.
+
+- URL observada: `/login?redirectTo=%2Fpublicar`;
+- o ZAP associou o valor `/publicar` ao `href` fixo da bottom nav em `app/layout.tsx`;
+- o parâmetro `redirectTo` não é interpolado nesse link;
+- redirects do login passam por `obterRedirectToSeguro`, que restringe o destino a caminhos internos e normaliza caracteres perigosos;
+- foi adicionada cobertura de regressão para esquemas perigosos, origens externas e tentativa de quebra de atributo HTML.
+
+Não houve alteração funcional no app para esse alerta.
+
+
 ### Supabase Storage
 
 Security Advisor apontou warnings relacionados a listagem pública nos buckets:
