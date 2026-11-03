@@ -1,0 +1,29 @@
+title = "Historietas Gitleaks"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Hashes SHA-256 usados como contratos em testes de persistência"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = [
+  '''^qa/unit/ler-capitulo-metrics-persistence\.test\.mjs$''',
+  '''^qa/unit/ler-capitulo-social-persistence\.test\.mjs$'''
+]
+regexTarget = "secret"
+regexes = [
+  '''^[0-9a-f]{64}$'''
+]
+
+[[allowlists]]
+description = "Identificador fake de comentário de capítulo em teste de moderação"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = [
+  '''^qa/unit/admin-comunidade-report-context-utils\.test\.mjs$'''
+]
+regexTarget = "secret"
+regexes = [
+  '''^comentario-capitulo-[0-9]+$'''
+]
