@@ -52,3 +52,27 @@ Adicionar `eslint-plugin-react-hooks` explicitamente e registrar o plugin na con
 Alguns testes locais podem divergir do Ubuntu da CI por diferenças de final de linha CRLF/LF.
 
 Não assumir regressão funcional apenas por esse sintoma. Comparar com GitHub Actions e investigar o diff real antes de alterar código.
+
+
+## OWASP ZAP: `Potential XSS` em `/login?redirectTo=/publicar`
+
+### Sintoma
+
+O baseline passivo do ZAP marcou `User Controllable HTML Element Attribute (Potential XSS)` para o parâmetro `redirectTo`, apontando um `a[href]` com valor `/publicar`.
+
+### Investigação
+
+O relatório do ZAP mostrou a rota `/login?redirectTo=%2Fpublicar` e associou o valor `/publicar` a um atributo `href`.
+
+A revisão do código mostrou que o `href="/publicar"` vem do link fixo da navegação inferior em `app/layout.tsx`; ele não é construído com o parâmetro `redirectTo`.
+
+A proteção do login passa por `obterRedirectToSeguro`, e a cobertura foi reforçada em duas camadas:
+
+- teste unitário para esquemas perigosos, URLs externas e caracteres que poderiam quebrar atributos HTML;
+- teste Playwright no DOM real para confirmar que `redirectTo` não cria `href` executável, URL externa ou handler HTML.
+
+### Conclusão
+
+Falso positivo por coincidência de valor entre `redirectTo=/publicar` e o link estático `/publicar`.
+
+Não alterar a lógica funcional do app para “corrigir” esse alerta. Manter os testes de regressão unitário e E2E.
