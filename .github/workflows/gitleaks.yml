@@ -42,4 +42,4 @@ jobs:
 
       - name: Analisar histórico Git por segredos
         continue-on-error: true
-        run: gitleaks git --redact --verbose .
+        run: gitleaks git --config=.gitleaks.toml --redact --verbose .
