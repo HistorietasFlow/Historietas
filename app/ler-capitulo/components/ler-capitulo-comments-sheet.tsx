@@ -10,6 +10,10 @@ import {
   criarEstruturaComentariosCapitulo,
   type OrdenacaoComentariosCapitulo,
 } from "../lib/ler-capitulo-comment-thread-structure";
+import type {
+  ComentarioCapituloPublico,
+  ComentariosCapituloPost,
+} from "../lib/ler-capitulo-comment-types";
 import {
   criarAvatarComentarioBaseStyle,
   LerCapituloCommentItem,
@@ -54,22 +58,10 @@ import {
   commentsSheetSendStyle,
 } from "../lib/ler-capitulo-comments-styles";
 
-export type ComentarioCapituloPublico = {
-  id: string;
-  userId: string;
-  nome: string;
-  avatar: string;
-  texto: string;
-  criadoEm: string;
-  comentarioPaiId: string;
-  meuComentario: boolean;
-  curtidas: string[];
-};
-
-export type ComentariosCapituloPost = {
-  id: string;
-  comentarios: ComentarioCapituloPublico[];
-};
+export type {
+  ComentarioCapituloPublico,
+  ComentariosCapituloPost,
+} from "../lib/ler-capitulo-comment-types";
 
 type ComentariosCapituloSheetProps = {
   post: ComentariosCapituloPost | null;
