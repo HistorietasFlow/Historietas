@@ -14,6 +14,7 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "../lib/seo";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -1546,6 +1547,7 @@ export default function RootLayout({
           />
           </NotificacoesProvider>
         </HistorietasLanguageProvider>
+        {process.env.VERCEL === "1" ? <SpeedInsights /> : null}
       </body>
     </html>
   );
