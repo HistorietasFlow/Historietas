@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import reactHooks from "eslint-plugin-react-hooks";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -27,6 +28,10 @@ const eslintConfig = defineConfig([
   ]),
 
   {
+    plugins: {
+      "react-hooks": reactHooks,
+    },
+
     linterOptions: {
       reportUnusedDisableDirectives: "warn",
     },

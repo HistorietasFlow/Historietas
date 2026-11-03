@@ -157,12 +157,27 @@ jobs:
           E2E_WEB_SERVER_COMMAND: npm --prefix .. run start
         run: npm --prefix qa test
 
+      - name: Instalar Lighthouse CI
+        run: npm install --global @lhci/cli@0.15.1
+
+      - name: Executar Lighthouse CI baseline
+        run: lhci autorun
+
       - name: Remover ambiente Supabase local
         if: ${{ always() }}
         run: |
           if supabase status >/dev/null 2>&1; then
             supabase stop --no-backup
           fi
+
+      - name: Salvar relatórios do Lighthouse
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/reports
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Salvar diagnóstico do Playwright em caso de falha
         if: ${{ failure() }}
