@@ -14,7 +14,7 @@ export const options = {
   },
 };
 
-export default function () {
+export default function executarBaselineK6() {
   for (const route of routes) {
     const response = http.get(`${baseUrl}${route}`, {
       redirects: 3,
