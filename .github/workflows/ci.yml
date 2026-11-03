@@ -147,6 +147,22 @@ jobs:
       - name: Gerar aplicação para os testes locais
         run: npm run build
 
+      - name: Instalar Chromium
+        working-directory: qa
+        run: npm exec -- playwright install --with-deps chromium
+
+      - name: Executar testes públicos e autenticados no código do PR
+        env:
+          E2E_BASE_URL: http://127.0.0.1:3000
+          E2E_WEB_SERVER_COMMAND: npm --prefix .. run start
+        run: npm --prefix qa test
+
+      - name: Instalar Lighthouse CI
+        run: npm install --global @lhci/cli@0.15.1
+
+      - name: Executar Lighthouse CI baseline
+        run: lhci autorun
+
       - name: Executar OWASP ZAP baseline passivo no app local
         shell: bash
         run: |
@@ -179,22 +195,6 @@ jobs:
           fi
 
           docker run --rm             --network host             -v "$PWD/qa/reports/zap:/zap/wrk:rw"             ghcr.io/zaproxy/zaproxy:stable             zap-baseline.py               -t http://127.0.0.1:3000               -m 1               -I               -s               -r zap-report.html               -J zap-report.json
-
-      - name: Instalar Chromium
-        working-directory: qa
-        run: npm exec -- playwright install --with-deps chromium
-
-      - name: Executar testes públicos e autenticados no código do PR
-        env:
-          E2E_BASE_URL: http://127.0.0.1:3000
-          E2E_WEB_SERVER_COMMAND: npm --prefix .. run start
-        run: npm --prefix qa test
-
-      - name: Instalar Lighthouse CI
-        run: npm install --global @lhci/cli@0.15.1
-
-      - name: Executar Lighthouse CI baseline
-        run: lhci autorun
 
       - name: Remover ambiente Supabase local
         if: ${{ always() }}
