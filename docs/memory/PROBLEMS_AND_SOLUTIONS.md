@@ -110,6 +110,23 @@ de rota do leitor escuta `popstate` para restaurar esses IDs.
 Não derive a identidade de uma rota canônica a partir de query params durante
 Back/Forward: os dados iniciais canônicos continuam tendo prioridade absoluta.
 
+A navegação externa por `pushState` envia somente a identidade do leitor. O
+patch do Next copia os campos internos necessários; repassar `__NA` manualmente
+faz o router tratar a chamada como interna e ignorar a nova URL. Um commit
+posterior do Next pode então restaurar a URL anterior e apagar a identidade da
+entrada, deixando URL e conteúdo divergentes. A comparação repetida reproduziu
+esse problema tanto com React 19.2.4 quanto com 19.3.1.
+
+Antes de sair de uma entrada, a ação de troca confirma sua identidade com
+`replaceState` quando necessário. Isso cobre commits iniciais do Next que podem
+ter removido a marcação feita pelo effect de montagem; sem essa confirmação,
+Voltar chega à URL anterior sem os IDs necessários ao listener de `popstate`.
+
+Os IDs canônicos já inicializados no estado da rota não são reaplicados pelo
+timer do carregamento inicial: isso poderia desfazer uma seleção de capítulo
+feita antes da conclusão da carga. O leitor interno por query mantém sua
+inicialização adiada e os guards de identidade/cancelamento existentes.
+
 
 ## OWASP ZAP: `Potential XSS` em `/login?redirectTo=/publicar`
 

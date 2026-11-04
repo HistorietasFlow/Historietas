@@ -545,6 +545,7 @@ export function LerCapituloClient({
   } =
     criarAcaoTrocaCapituloLeitor({
       obraAtual,
+      capituloId,
       setCapituloId,
     });
 
