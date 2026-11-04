@@ -14,6 +14,7 @@ import { useObraAuthIdentityLifecycle } from "./hooks/use-obra-auth-identity-lif
 import { useObraActionAuthGuards } from "./hooks/use-obra-action-auth-guards";
 import { useObraPublicWorkLoad } from "./hooks/use-obra-public-work-load";
 import { useObraAuthorPublicProfile } from "./hooks/use-obra-author-public-profile";
+import { useObraCurrentUserPublicProfile } from "./hooks/use-obra-current-user-public-profile";
 import { useObraCommentsNow } from "./hooks/use-obra-comments-now";
 import { useObraCommentRepliesVisibility } from "./hooks/use-obra-comment-replies-visibility";
 import { useObraCommentsOrdering } from "./hooks/use-obra-comments-ordering";
@@ -32,13 +33,12 @@ import { useObraViewRegistration } from "./hooks/use-obra-view-registration";
 import {
   lerStorageUsuarioObraPublica,
 } from "./lib/obra-user-storage";
-import { carregarPerfilPublicoObra } from "./lib/obra-public-profile-resolver";
 import {
   avaliacaoObraVazia,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
 import { metricasComunidadeObraVazias, metricasObraVazias, type MetricasComunidadeObra, type MetricasObraPublica } from "./lib/obra-metric-utils";
-import { obterClassificacaoIndicativaCompactaObra, obterContextoAutorObra, obterGeneroObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra, type PerfilPublicoObra } from "./lib/obra-text-utils";
+import { obterClassificacaoIndicativaCompactaObra, obterContextoAutorObra, obterGeneroObraExibido, obterSinopseObraExibida, obterTextosPainelClassificacaoObra } from "./lib/obra-text-utils";
 import { criarLinkComunidadeObra, criarLinkPerfilAutor } from "./lib/obra-navigation-utils";
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
@@ -169,8 +169,6 @@ export default function ObraDinamicaPage() {
     fecharPainelClassificacaoObra,
     resetarPainelClassificacaoObra,
   } = useObraClassificationPanel();
-  const [perfilUsuarioLogado, setPerfilUsuarioLogado] =
-    useState<PerfilPublicoObra | null>(null);
   const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
   const agoraComentarios = useObraCommentsNow(comentariosAbertos);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -184,7 +182,6 @@ export default function ObraDinamicaPage() {
     setObraConcluida(false);
     setMetricasObra(metricasObraVazias);
     setAvaliacaoObra(avaliacaoObraVazia);
-    setPerfilUsuarioLogado(null);
     setComentariosObra([]);
     setTotalComentariosObra(0);
     setComentarioTexto("");
@@ -219,33 +216,8 @@ export default function ObraDinamicaPage() {
   } = useObraAuthIdentityLifecycle({
     onIdentidadeMudou: limparEstadoContaAnterior,
   });
-
-
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarPerfilUsuarioAtual() {
-      if (!usuarioIdLogado) {
-        setPerfilUsuarioLogado(null);
-        return;
-      }
-
-      const perfil = await carregarPerfilPublicoObra(
-        usuarioIdLogado,
-        "Você"
-      );
-
-      if (!cancelado) {
-        setPerfilUsuarioLogado(perfil);
-      }
-    }
-
-    void carregarPerfilUsuarioAtual();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [usuarioIdLogado]);
+  const perfilUsuarioLogado =
+    useObraCurrentUserPublicProfile(usuarioIdLogado);
 
 
   useObraCommentsSheetBodyLock(

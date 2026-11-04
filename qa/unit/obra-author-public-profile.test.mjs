@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import "./use-obra-current-user-public-profile.test.mjs";
 
 const hook = readFileSync(
   new URL(
