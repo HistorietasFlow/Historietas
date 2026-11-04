@@ -4,6 +4,13 @@ import type { PerfilComunidadeRow } from "./community-supabase-profile-row";
 import type { UsuarioBuscaComunidade } from "./community-user";
 import { normalizarUsuarioBuscaComunidade } from "./community-search-user-normalizer";
 
+export function escaparTermoBuscaLiteralIlike(termo: string) {
+  return termo
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
+}
+
 export async function buscarUsuariosComunidadeSupabase(termo: string) {
   const termoLimpo = termo.trim().replace(/^@+/, "").slice(0, 80);
 
@@ -11,7 +18,7 @@ export async function buscarUsuariosComunidadeSupabase(termo: string) {
     return [] as UsuarioBuscaComunidade[];
   }
 
-  const padrao = `%${termoLimpo.replace(/[%_]/g, "")}%`;
+  const padrao = `%${escaparTermoBuscaLiteralIlike(termoLimpo)}%`;
   const consultas = [
     {
       coluna: "nome",
