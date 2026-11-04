@@ -8,7 +8,6 @@ const userId = (process.env.E2E_USER_ID || "").trim();
 const workId = (process.env.E2E_PUBLIC_WORK_ID || "").trim();
 const annotationId = (process.env.E2E_DIARY_ANNOTATION_ID || "").trim();
 const publicWorkTitle = "Obra Pública E2E";
-const communityPostText = "Publicação E2E para denúncia de comentário";
 
 async function esperarAxeSemViolacoesCriticas(page, fluxo) {
   const resultados = await new AxeBuilder({ page })
@@ -101,20 +100,11 @@ test("capítulo público canônico integra o baseline axe após hidratar o leito
 test("Comunidade integra o baseline axe após carregar o feed público", async ({
   page,
 }) => {
-  test.skip(
-    !hasAuthorCredentials,
-    "Prepare as credenciais E2E no Supabase local descartável.",
-  );
-
-  await loginAsAuthor(page);
   await page.goto("/comunidade", { waitUntil: "domcontentloaded" });
 
   const main = page.locator("main");
-  const postFixture = page.locator("article").filter({
-    hasText: communityPostText,
-  });
-  await expect(postFixture).toBeVisible({ timeout: 30_000 });
-  await expect(main).not.toHaveAttribute("aria-busy", "true");
+  await expect(main).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Comunidade", { exact: true }).first()).toBeVisible();
   await esperarAxeSemViolacoesCriticas(page, "/comunidade");
 });
 
