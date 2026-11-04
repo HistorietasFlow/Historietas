@@ -85,7 +85,18 @@ test("ausência real usa 404 e erro de infraestrutura continua propagando", () =
     page,
     /obterLeituraCapituloPublico\([\s\S]*?\.catch\(\(\) => null\)/,
   );
-  assert.match(page, /criarMetadataObraNaoEncontrada\("pt-BR"\)/);
+  assert.match(
+    page,
+    /export async function generateMetadata[\s\S]*?if \(!slug \|\| numero === null\) \{\s*notFound\(\);/,
+  );
+  assert.match(
+    page,
+    /export async function generateMetadata[\s\S]*?if \(!leitura\) \{\s*notFound\(\);[\s\S]*?return criarMetadataCapituloPublico/,
+  );
+  assert.match(
+    page,
+    /try \{\s*leitura = await obterLeituraCapituloPublico\(slug, numero\);\s*\} catch \{\s*return criarMetadataPadrao/,
+  );
 });
 
 test("metadata e loader público preservam canonical, capítulo e conteúdo inicial", () => {
