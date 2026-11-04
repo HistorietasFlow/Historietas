@@ -17,6 +17,7 @@ const DEFAULTS = Object.freeze({
   communityPostId: "e2e00000-0000-4000-8000-000000000002",
   communityCommentId: "e2e00000-0000-4000-8000-000000000003",
   communityCommentAuthorId: "a0000000-0000-0000-0000-000000000001",
+  diaryAnnotationId: "e2e00000-0000-4000-8000-000000000005",
   communityPostText: "Publicação E2E para denúncia de comentário",
   communityCommentText: "Comentário E2E disponível para denúncia",
   publicWorkTitle: "Obra Pública E2E",
@@ -348,6 +349,31 @@ async function preparar() {
     .single();
   exigirSemErro(publishError, "Não foi possível publicar a obra E2E local");
   assert.equal(published?.publicado, true, "A obra E2E local não ficou pública.");
+
+  const { data: diaryAnnotation, error: diaryAnnotationError } =
+    await authenticated
+      .from("diario_anotacoes")
+      .insert({
+        id: DEFAULTS.diaryAnnotationId,
+        user_id: userId,
+        obra_id: workId,
+        tipo: "lendo",
+        texto: "Anotação E2E para validar os comentários do Diário.",
+        visibilidade: "publico",
+        quem_pode_comentar: "todos",
+        visibilidade_comentarios: "publico",
+        permitir_curtidas: true,
+        contem_spoiler: false,
+        criado_em: now,
+        atualizado_em: now,
+      })
+      .select("id")
+      .single();
+  exigirSemErro(
+    diaryAnnotationError,
+    "Não foi possível criar a anotação do Diário E2E local",
+  );
+  assert.equal(diaryAnnotation?.id, DEFAULTS.diaryAnnotationId);
 
   const { data: communityPost, error: communityPostError } = await admin
     .from("comunidade_posts")

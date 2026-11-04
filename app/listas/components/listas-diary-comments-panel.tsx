@@ -110,6 +110,7 @@ type ListasDiaryCommentsPanelProps<TItem extends ItemDiarioListas> = {
   onCancelReply: (anotacaoId: string) => void;
   onChangeComentario: (anotacaoId: string, texto: string) => void;
   onClose: () => void;
+  onDialogKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   onHandleKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
   onHandleTouchCancel: () => void;
   onHandleTouchEnd: () => void;
@@ -145,6 +146,7 @@ export function ListasDiaryCommentsPanel<TItem extends ItemDiarioListas>({
   onCancelReply,
   onChangeComentario,
   onClose,
+  onDialogKeyDown,
   onHandleKeyDown,
   onHandleTouchCancel,
   onHandleTouchEnd,
@@ -271,6 +273,7 @@ export function ListasDiaryCommentsPanel<TItem extends ItemDiarioListas>({
     onCancelReply={() => onCancelReply(anotacaoId)}
     onChangeComentario={(texto) => onChangeComentario(anotacaoId, texto)}
     onClose={onClose}
+    onDialogKeyDown={onDialogKeyDown}
     onHandleKeyDown={onHandleKeyDown}
     onHandleTouchCancel={onHandleTouchCancel}
     onHandleTouchEnd={onHandleTouchEnd}

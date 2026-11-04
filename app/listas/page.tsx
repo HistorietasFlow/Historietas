@@ -275,12 +275,13 @@ function ListasUniversaisContent() {
     setAutores,
   });
 
-  useListasDiaryCommentsSheetLifecycle({
-    comentariosDiarioItem,
-    setComentariosDiarioItem,
-    setComentariosDiarioExpandido,
-    setMenuOrdenacaoComentariosDiarioAberto,
-  });
+  const { aoPressionarTeclaDialogo, comentariosSheetRef } =
+    useListasDiaryCommentsSheetLifecycle({
+      comentariosDiarioItem,
+      setComentariosDiarioItem,
+      setComentariosDiarioExpandido,
+      setMenuOrdenacaoComentariosDiarioAberto,
+    });
 
   useListasDiaryInteractionsSync({
     listasPerfil,
@@ -427,7 +428,6 @@ function ListasUniversaisContent() {
   const {
     abrirComentariosDiario,
     alternarExpansaoComentariosDiario,
-    comentariosSheetRef,
     fecharComentariosDiario,
     finalizarArrasteComentariosDiario,
     iniciarArrasteComentariosDiario,
@@ -436,6 +436,7 @@ function ListasUniversaisContent() {
   } = useListasDiaryCommentsControls({
     comentariosDiarioExpandido,
     comentariosDiarioItem,
+    comentariosSheetRef,
     criarInteracaoVazia: criarInteracaoAnotacaoListasVazia,
     interacoesAnotacoes,
     isDesktop,
@@ -490,6 +491,7 @@ function ListasUniversaisContent() {
       alterarOrdenacaoComentariosAnotacaoListas,
       alternarCurtidaComentarioAnotacaoListas,
       alternarExpansaoComentariosDiario,
+      aoPressionarTeclaDialogo,
       atualizarComentarioAnotacaoListas,
       cancelarRespostaComentarioAnotacaoListas,
       comentarioCurtindoId,

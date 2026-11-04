@@ -60,6 +60,7 @@ type ListasDiaryCommentsSheetProps = {
   onCancelReply: () => void;
   onChangeComentario: (texto: string) => void;
   onClose: () => void;
+  onDialogKeyDown: KeyboardEventHandler<HTMLElement>;
   onHandleKeyDown: KeyboardEventHandler<HTMLDivElement>;
   onHandleTouchCancel: TouchEventHandler<HTMLDivElement>;
   onHandleTouchEnd: TouchEventHandler<HTMLDivElement>;
@@ -98,6 +99,7 @@ export function ListasDiaryCommentsSheet({
   onCancelReply,
   onChangeComentario,
   onClose,
+  onDialogKeyDown,
   onHandleKeyDown,
   onHandleTouchCancel,
   onHandleTouchEnd,
@@ -122,7 +124,11 @@ export function ListasDiaryCommentsSheet({
   }
 
   return createPortal(
-    <section style={styles.overlay} aria-label="Comentários">
+    <section
+      data-historietas-listas-diary-comments-root="true"
+      style={styles.overlay}
+      aria-label="Comentários"
+    >
       <button
         type="button"
         aria-label="Fechar comentários"
@@ -135,6 +141,7 @@ export function ListasDiaryCommentsSheet({
         role="dialog"
         aria-modal="true"
         aria-label={`Comentários de ${tituloObra}`}
+        onKeyDown={onDialogKeyDown}
         style={
           isDesktop
             ? styles.desktop
@@ -146,6 +153,7 @@ export function ListasDiaryCommentsSheet({
       >
         <div
           data-comments-sheet-handle="true"
+          data-dialog-initial-focus="true"
           style={styles.handleWrap}
           onClick={onToggleExpand}
           onTouchStart={onHandleTouchStart}

@@ -23,6 +23,10 @@ const controles = await readFile(
   "app/listas/hooks/use-listas-diary-comments-controls.ts",
   "utf8",
 );
+const lifecycle = await readFile(
+  "app/listas/hooks/use-listas-diary-comments-sheet-lifecycle.ts",
+  "utf8",
+);
 const diaryCommentsRenderer = await readFile(
   "app/listas/hooks/use-listas-diary-comments-renderer.tsx",
   "utf8",
@@ -95,7 +99,10 @@ test("sheet preserva portal, diálogo, handle, ordenação, estados e composer",
   assert.match(sheet, /document\.body/);
   assert.match(sheet, /role="dialog"/);
   assert.match(sheet, /aria-modal="true"/);
+  assert.match(sheet, /aria-label=\{`Comentários de \$\{tituloObra\}`\}/);
+  assert.match(sheet, /onKeyDown=\{onDialogKeyDown\}/);
   assert.match(sheet, /data-comments-sheet-handle="true"/);
+  assert.match(sheet, /data-dialog-initial-focus="true"/);
   assert.match(sheet, /onTouchStart=\{onHandleTouchStart\}/);
   assert.match(sheet, /onKeyDown=\{onHandleKeyDown\}/);
   assert.match(sheet, /Recolher comentários/);
@@ -110,4 +117,16 @@ test("sheet preserva portal, diálogo, handle, ordenação, estados e composer",
   assert.match(sheet, /maxLength=\{maxLength\}/);
   assert.match(sheet, /quickReactions\.map/);
   assert.doesNotMatch(sheet, /supabase/);
+});
+
+test("lifecycle reutiliza o contrato compartilhado de foco sem Escape concorrente", () => {
+  assert.match(
+    lifecycle,
+    /from "\.\.\/\.\.\/obra\/\[slug\]\/lib\/obra-dialog-focus"/,
+  );
+  assert.match(lifecycle, /obterElementoComFocoAtual\(\)/);
+  assert.match(lifecycle, /focarInicioDialogo\(comentariosSheetRef\.current\)/);
+  assert.match(lifecycle, /manterFocoNoDialogo\(event, fecharComentariosDiarioPorTeclado\)/);
+  assert.match(lifecycle, /restaurarFocoAnterior\(elementoComFocoAnterior\)/);
+  assert.doesNotMatch(lifecycle, /window\.addEventListener\("keydown"/);
 });

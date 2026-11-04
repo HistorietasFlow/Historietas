@@ -23,10 +23,19 @@ const targetFocusSource = readFileSync(
 
 async function importarHook(source) {
   const javascript = typescript.transpileModule(
-    source.replace(
-      'import { useEffect, type Dispatch, type SetStateAction } from "react";',
-      "const useEffect = globalThis.__listasUseEffect;",
-    ),
+    source
+      .replace(
+        'import { useEffect, type Dispatch, type SetStateAction } from "react";',
+        "const useEffect = globalThis.__listasUseEffect;",
+      )
+      .replace(
+        /import \{\s*useEffect,\s*useRef,\s*type Dispatch,\s*type KeyboardEvent,\s*type SetStateAction,\s*\} from "react";/,
+        "const useEffect = globalThis.__listasUseEffect; const useRef = globalThis.__listasUseRef;",
+      )
+      .replace(
+        /import \{\s*focarInicioDialogo,\s*manterFocoNoDialogo,\s*obterElementoComFocoAtual,\s*restaurarFocoAnterior,\s*\} from "\.\.\/\.\.\/obra\/\[slug\]\/lib\/obra-dialog-focus";/,
+        "const { focarInicioDialogo, manterFocoNoDialogo, obterElementoComFocoAtual, restaurarFocoAnterior } = globalThis.__listasDialogFocus;",
+      ),
     {
       compilerOptions: {
         module: typescript.ModuleKind.ESNext,
@@ -45,6 +54,7 @@ function prepararUseEffect() {
   globalThis.__listasUseEffect = (callback, dependencies) => {
     effects.push({ callback, dependencies });
   };
+  globalThis.__listasUseRef = (valorInicial) => ({ current: valorInicial });
   return effects;
 }
 
@@ -148,44 +158,68 @@ test("bloqueia e restaura o body do menu de obra, fechando somente com Escape", 
   }
 });
 
-test("bloqueia e restaura o body do sheet de comentários ao fechar com Escape", async () => {
+test("sheet de comentários gerencia foco, body e Escape por um único handler", async () => {
   const effects = prepararUseEffect();
-  const { useListasDiaryCommentsSheetLifecycle } = await importarHook(commentsSheetSource);
   const anteriorDocument = globalThis.document;
   const anteriorWindow = globalThis.window;
-  const listeners = new Map();
+  const anteriorDialogFocus = globalThis.__listasDialogFocus;
   const chamadas = [];
+  const timers = [];
+  const focoAnterior = { id: "acionador" };
+  const sheet = { id: "sheet" };
 
   globalThis.document = { body: { style: { overflow: "auto" } } };
   globalThis.window = {
-    addEventListener: (tipo, listener) => listeners.set(tipo, listener),
-    removeEventListener: (tipo, listener) => {
-      if (listeners.get(tipo) === listener) listeners.delete(tipo);
+    setTimeout: (callback, atraso) => {
+      timers.push({ callback, atraso });
+      return timers.length;
     },
+    clearTimeout: (timer) => chamadas.push(["timer-limpo", timer]),
+  };
+  globalThis.__listasDialogFocus = {
+    focarInicioDialogo: (elemento) => chamadas.push(["foco-inicial", elemento]),
+    manterFocoNoDialogo: (event, fechar) => {
+      chamadas.push(["tecla", event.key, event.shiftKey]);
+      if (event.key === "Escape") fechar();
+    },
+    obterElementoComFocoAtual: () => focoAnterior,
+    restaurarFocoAnterior: (elemento) => chamadas.push(["foco-restaurado", elemento]),
   };
 
   try {
-    useListasDiaryCommentsSheetLifecycle({
+    const { useListasDiaryCommentsSheetLifecycle } = await importarHook(commentsSheetSource);
+    const lifecycle = useListasDiaryCommentsSheetLifecycle({
       comentariosDiarioItem: { chave: "item-1" },
       setComentariosDiarioItem: (valor) => chamadas.push(["item", valor]),
       setComentariosDiarioExpandido: (valor) => chamadas.push(["expandido", valor]),
       setMenuOrdenacaoComentariosDiarioAberto: (valor) => chamadas.push(["ordenacao", valor]),
     });
+    lifecycle.comentariosSheetRef.current = sheet;
 
     const cleanup = effects[0].callback();
     assert.equal(globalThis.document.body.style.overflow, "hidden");
-    listeners.get("keydown")({ key: "Escape" });
-    assert.deepEqual(chamadas, [
+    assert.deepEqual(timers.map(({ atraso }) => atraso), [0]);
+    timers[0].callback();
+    lifecycle.aoPressionarTeclaDialogo({ key: "Tab", shiftKey: true });
+    lifecycle.aoPressionarTeclaDialogo({ key: "Escape", shiftKey: false });
+    assert.deepEqual(chamadas.slice(0, 6), [
+      ["foco-inicial", sheet],
+      ["tecla", "Tab", true],
+      ["tecla", "Escape", false],
       ["item", null],
       ["expandido", false],
       ["ordenacao", false],
     ]);
     cleanup();
     assert.equal(globalThis.document.body.style.overflow, "auto");
-    assert.equal(listeners.has("keydown"), false);
+    assert.deepEqual(chamadas.slice(6), [
+      ["timer-limpo", 1],
+      ["foco-restaurado", focoAnterior],
+    ]);
   } finally {
     globalThis.document = anteriorDocument;
     globalThis.window = anteriorWindow;
+    globalThis.__listasDialogFocus = anteriorDialogFocus;
   }
 });
 
