@@ -3072,6 +3072,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle e as interações visuais do comments sheet foram movidos para hook dedicado, preservando foco, gestos, expansão, fechamento, ordenação e reset de resposta.
 
+## Obra — Fase 10
+
+- O lifecycle do perfil público do usuário logado foi movido para `useObraCurrentUserPublicProfile`, preservando o fallback "Você", o estado nulo sem usuário e o descarte de resultados assíncronos após troca de conta ou cleanup.
+
 ## DenunciaModal — Fase 1
 
 - O fluxo de envio da denúncia foi movido para useDenunciaSubmitAction, preservando validações, regras por tipo de alvo, RPCs Supabase, tratamento de erro e resultado de sucesso, enquanto o modal mantém portal, foco, teclado e composição visual.
