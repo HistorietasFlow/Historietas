@@ -148,7 +148,7 @@ test("visitante mantém fluxo público sem interações de conta", async () => {
 test("rota canônica preserva os dados públicos iniciais enquanto o lifecycle confirma a fonte", async () => {
   const inicial = obra("obra", "autor");
   await cenario({
-    busca: "",
+    busca: "?obraId=outra-obra&capituloId=outro-capitulo",
     pathname: "/obra/slug-publico/capitulo/1",
     obraIdInicial: "obra",
     capituloIdInicial: "publicado",
@@ -159,6 +159,9 @@ test("rota canônica preserva os dados públicos iniciais enquanto o lifecycle c
     await tick();
     assert.deepEqual(eventos.find(([nome]) => nome === "setObraId"), ["setObraId", "obra"]);
     assert.deepEqual(eventos.find(([nome]) => nome === "setCapituloId"), ["setCapituloId", "publicado"]);
+    assert.deepEqual(eventos.find(([nome]) => nome === "remoto")?.slice(0, 2), ["remoto", "obra"]);
+    assert.ok(!eventos.some((evento) => evento.includes("outra-obra")));
+    assert.ok(!eventos.some((evento) => evento.includes("outro-capitulo")));
     assert.ok(!eventos.some(([nome, valor]) => nome === "setCarregando" && valor === true));
     assert.deepEqual(eventos.find(([nome]) => nome === "setObras")?.[1], [inicial]);
     assert.deepEqual(eventos.at(-1), ["setCarregando", false]);

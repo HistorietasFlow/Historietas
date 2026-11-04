@@ -56,6 +56,27 @@ test.describe("capítulo público canônico", () => {
     await expect(page.getByText("Tamanho da fonte")).toBeVisible();
   });
 
+  test("ignora IDs conflitantes da query após hidratar a rota canônica", async ({
+    page,
+  }) => {
+    const urlComQueryConflitante = `${canonicalPath}?obraId=outra-obra&capituloId=outro-capitulo`;
+    const response = await page.goto(urlComQueryConflitante, {
+      waitUntil: "domcontentloaded",
+    });
+
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(urlComQueryConflitante);
+    await expect(page.getByRole("heading", { name: "Capítulo 1" })).toBeVisible();
+    await expect(
+      page.getByText(
+        "Este capítulo existe somente no ambiente local descartável dos testes E2E.",
+      ),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Ajustes" }).click();
+    await expect(page.getByText("Tamanho da fonte")).toBeVisible();
+  });
+
   test("mantém o leitor interno por IDs", async ({ page }) => {
     const internalPath = `/ler-capitulo?obraId=${encodeURIComponent(
       workId,

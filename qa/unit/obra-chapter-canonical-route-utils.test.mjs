@@ -115,8 +115,10 @@ test("o leitor interno continua disponível e aceita dados públicos iniciais", 
   ].forEach((contract) => assert.ok(readerPage.includes(contract), contract));
 
   [
-    'params.get("obraId") || obraIdInicial',
-    'params.get("capituloId") || capituloIdInicial',
+    "const obraIdParam = possuiDadosIniciais",
+    "? obraIdInicial",
+    "const capituloIdParam = possuiDadosIniciais",
+    "? capituloIdInicial",
     "if (!possuiDadosIniciais)",
     "execucaoCarregamentoEstaAtual()",
   ].forEach((contract) => assert.ok(initialLoad.includes(contract), contract));

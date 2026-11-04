@@ -83,8 +83,12 @@ export function useLerCapituloInitialLoad({
 
     async function carregarDados() {
       const params = new URLSearchParams(window.location.search);
-      const obraIdParam = params.get("obraId") || obraIdInicial;
-      const capituloIdParam = params.get("capituloId") || capituloIdInicial;
+      const obraIdParam = possuiDadosIniciais
+        ? obraIdInicial
+        : params.get("obraId") || "";
+      const capituloIdParam = possuiDadosIniciais
+        ? capituloIdInicial
+        : params.get("capituloId") || "";
 
       window.setTimeout(() => {
         if (execucaoCarregamentoEstaAtual()) {
