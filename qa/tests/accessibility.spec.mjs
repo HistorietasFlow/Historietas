@@ -3,6 +3,25 @@ import AxeBuilder from "@axe-core/playwright";
 
 const rotasPublicas = ["/", "/explorar", "/login"];
 
+test("viewport global permite zoom do usuário", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const viewport = await page
+    .locator('meta[name="viewport"]')
+    .getAttribute("content");
+
+  expect(viewport).not.toBeNull();
+  expect(viewport).not.toMatch(/user-scalable\s*=\s*(?:no|0)/i);
+
+  const maximumScale = viewport?.match(
+    /maximum-scale\s*=\s*([0-9]+(?:\.[0-9]+)?)/i,
+  );
+
+  if (maximumScale) {
+    expect(Number(maximumScale[1])).toBeGreaterThanOrEqual(2);
+  }
+});
+
 for (const rota of rotasPublicas) {
   test(`acessibilidade básica sem violações críticas em ${rota}`, async ({ page }) => {
     await page.goto(rota, { waitUntil: "domcontentloaded" });
