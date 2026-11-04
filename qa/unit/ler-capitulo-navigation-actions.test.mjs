@@ -44,6 +44,7 @@ function cenario(obraAtual) {
   };
   const acao = criarAcaoTrocaCapituloLeitor({
     obraAtual,
+    capituloId: "anterior",
     setCapituloId(capituloId) {
       eventos.push(["setter", capituloId]);
     },
@@ -119,13 +120,16 @@ test("sem obra não há setter, navegação nem rolagem", () => {
   }
 });
 
-test("com obra preserva a ordem setter, pushState e scrollTo", () => {
+test("identifica a entrada de origem antes de setter, pushState e scrollTo", () => {
   const anterior = globalThis.window;
   const obra = { id: "obra" };
   const atual = cenario(obra);
   globalThis.window = {
     history: {
       state: { __NA: true },
+      replaceState(...args) {
+        atual.eventos.push(["replace", ...args]);
+      },
       pushState(...args) {
         atual.eventos.push(["push", ...args]);
       },
@@ -137,6 +141,10 @@ test("com obra preserva a ordem setter, pushState e scrollTo", () => {
   try {
     atual.acao.trocarCapitulo("novo");
     assert.deepEqual(atual.eventos, [
+      ["replace", {
+        __NA: true,
+        __historietasLeitorCapitulo: { obraId: "obra", capituloId: "anterior" },
+      }, ""],
       ["setter", "novo"],
       ["href", obra, "novo"],
       [
@@ -168,6 +176,9 @@ test("navegação externa deixa o Next sincronizar a URL e copiar seu estado int
   globalThis.window = {
     history: {
       state: estadoNext,
+      replaceState(data) {
+        this.state = data;
+      },
       pushState(data) {
         // Contrato do patch nativo do App Router: marcadores internos desviam
         // da sincronização; chamadas externas recebem os campos do Next.

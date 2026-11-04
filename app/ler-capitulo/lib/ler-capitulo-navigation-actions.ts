@@ -52,6 +52,7 @@ export function obterIdentidadeHistoricoLeitor(
 
 type CriarAcaoTrocaCapituloLeitorProps = {
   obraAtual: ObraLocal | null;
+  capituloId: string;
 
   setCapituloId:
     (capituloId: string) => void;
@@ -59,6 +60,7 @@ type CriarAcaoTrocaCapituloLeitorProps = {
 
 export function criarAcaoTrocaCapituloLeitor({
   obraAtual,
+  capituloId,
   setCapituloId,
 }: CriarAcaoTrocaCapituloLeitorProps) {
   function trocarCapitulo(
@@ -66,6 +68,22 @@ export function criarAcaoTrocaCapituloLeitor({
   ) {
     if (!obraAtual) {
       return;
+    }
+
+    // Um commit inicial do Next pode ter substituído o estado da entrada.
+    // Identifique a origem antes de criar a próxima entrada do histórico.
+    const identidadeAtual = obterIdentidadeHistoricoLeitor(window.history.state);
+    if (
+      identidadeAtual?.obraId !== obraAtual.id ||
+      identidadeAtual.capituloId !== capituloId
+    ) {
+      window.history.replaceState(
+        criarEstadoHistoricoLeitor(window.history.state, {
+          obraId: obraAtual.id,
+          capituloId,
+        }),
+        "",
+      );
     }
 
     setCapituloId(
