@@ -61,11 +61,11 @@ jobs:
       - run: npm run test:e2e:prepare:local -- --github-env "$GITHUB_ENV"
       - run: npm run build
       - run: npm --prefix qa exec -- playwright install --with-deps chromium
-      - name: Repeat only the original Back-Forward regression twelve times
+      - name: Repeat only the original Back-Forward regression twenty times
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
           E2E_WEB_SERVER_COMMAND: npm --prefix .. run start
-        run: npm --prefix qa test -- tests/chapter-canonical.spec.mjs --grep 'sincroniza conteúdo e URL ao voltar e avançar entre capítulos' --repeat-each=12
+        run: npm --prefix qa test -- tests/chapter-canonical.spec.mjs --grep 'sincroniza conteúdo e URL ao voltar e avançar entre capítulos' --repeat-each=20
       - name: Save comparison evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
