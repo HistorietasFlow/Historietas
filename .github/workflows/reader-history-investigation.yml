@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        react: [19.2.4]
+        react: [19.2.4, 19.3.1]
     env:
       CI: "true"
       NEXT_TELEMETRY_DISABLED: "1"
