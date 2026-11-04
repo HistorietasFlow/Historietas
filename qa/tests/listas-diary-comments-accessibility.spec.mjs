@@ -7,17 +7,48 @@ import {
 } from "./helpers.mjs";
 
 const PUBLIC_WORK_TITLE = "Obra Pública E2E";
+const userId = (process.env.E2E_USER_ID || "").trim();
+const workId = (process.env.E2E_PUBLIC_WORK_ID || "").trim();
+const annotationId = (process.env.E2E_DIARY_ANNOTATION_ID || "").trim();
 
 test("sheet de comentários do Diário preserva diálogo, foco e teclado", async ({
   page,
 }) => {
   test.skip(
-    !hasAuthorCredentials,
-    "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD.",
+    !hasAuthorCredentials || !userId || !workId || !annotationId,
+    "Prepare as credenciais e os IDs E2E locais.",
   );
 
   await loginAsAuthor(page);
   const runtime = monitorRuntime(page);
+
+  await page.evaluate(
+    ({ annotationIdValue, userIdValue, workIdValue }) => {
+      window.localStorage.setItem(
+        `historietas-diario-anotacoes:${userIdValue.toLowerCase()}`,
+        JSON.stringify([
+          {
+            id: annotationIdValue,
+            user_id: userIdValue,
+            obra_id: workIdValue,
+            tipo: "lendo",
+            texto: "Anotação E2E para validar os comentários do Diário.",
+            visibilidade: "publico",
+            quem_pode_comentar: "todos",
+            visibilidade_comentarios: "publico",
+            permitir_curtidas: true,
+            contem_spoiler: false,
+            atualizado_em: new Date().toISOString(),
+          },
+        ]),
+      );
+    },
+    {
+      annotationIdValue: annotationId,
+      userIdValue: userId,
+      workIdValue: workId,
+    },
+  );
 
   await page.goto("/listas?modo=perfil&origem=diario", {
     waitUntil: "domcontentloaded",

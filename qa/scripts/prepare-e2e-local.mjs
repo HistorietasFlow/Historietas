@@ -458,13 +458,16 @@ async function preparar() {
     NEXT_PUBLIC_SUPABASE_URL: ambiente.url,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ambiente.publicKey,
     SUPABASE_SERVICE_ROLE_KEY: ambiente.secretKey,
+    E2E_USER_ID: userId,
     E2E_USER_EMAIL: email,
     E2E_USER_PASSWORD: password,
     E2E_VISITOR_EMAIL: visitorEmail,
     E2E_VISITOR_PASSWORD: visitorPassword,
     E2E_ALLOW_DESTRUCTIVE: "true",
     E2E_PUBLIC_WORK_SLUG: publicWorkSlug,
+    E2E_PUBLIC_WORK_ID: workId,
     E2E_PUBLIC_CHAPTER_NUMBER: publicChapterNumber,
+    E2E_DIARY_ANNOTATION_ID: DEFAULTS.diaryAnnotationId,
   });
 
   console.log(
