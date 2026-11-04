@@ -100,6 +100,16 @@ troca de conta. Em falhas, conteúdo público/local já disponível é preservad
 mas a identidade só é marcada como aplicada depois de uma carga completa, para
 que ações privadas não persistam dados de uma carga incompleta.
 
+### Back/Forward entre capítulos
+
+A navegação interna do leitor continua usando `history.pushState`, mas cada
+entrada preserva o estado do Next e registra explicitamente os IDs da obra e do
+capítulo. A entrada inicial também é identificada com `replaceState`, e o estado
+de rota do leitor escuta `popstate` para restaurar esses IDs.
+
+Não derive a identidade de uma rota canônica a partir de query params durante
+Back/Forward: os dados iniciais canônicos continuam tendo prioridade absoluta.
+
 
 ## OWASP ZAP: `Potential XSS` em `/login?redirectTo=/publicar`
 

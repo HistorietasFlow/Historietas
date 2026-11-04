@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  criarEstadoHistoricoLeitor,
+  obterIdentidadeHistoricoLeitor,
+} from "../lib/ler-capitulo-navigation-actions";
 
 export function useLerCapituloRouteIdentityState({
   obraIdInicial = "",
@@ -11,6 +15,50 @@ export function useLerCapituloRouteIdentityState({
 } = {}) {
   const [obraId, setObraId] = useState(obraIdInicial);
   const [capituloId, setCapituloId] = useState(capituloIdInicial);
+
+  useEffect(() => {
+    if (!obraId || !capituloId) {
+      return;
+    }
+
+    const identidadeAtual = obterIdentidadeHistoricoLeitor(
+      window.history.state,
+    );
+
+    if (
+      identidadeAtual?.obraId === obraId &&
+      identidadeAtual.capituloId === capituloId
+    ) {
+      return;
+    }
+
+    window.history.replaceState(
+      criarEstadoHistoricoLeitor(window.history.state, {
+        obraId,
+        capituloId,
+      }),
+      "",
+    );
+  }, [obraId, capituloId]);
+
+  useEffect(() => {
+    function sincronizarIdentidadeComHistorico(event: PopStateEvent) {
+      const identidade = obterIdentidadeHistoricoLeitor(event.state);
+
+      if (!identidade) {
+        return;
+      }
+
+      setObraId(identidade.obraId);
+      setCapituloId(identidade.capituloId);
+    }
+
+    window.addEventListener("popstate", sincronizarIdentidadeComHistorico);
+
+    return () => {
+      window.removeEventListener("popstate", sincronizarIdentidadeComHistorico);
+    };
+  }, []);
 
   return { obraId, setObraId, capituloId, setCapituloId };
 }

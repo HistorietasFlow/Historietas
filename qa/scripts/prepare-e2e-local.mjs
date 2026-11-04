@@ -309,6 +309,7 @@ async function preparar() {
 
   const workId = randomUUID();
   const chapterId = randomUUID();
+  const secondChapterId = randomUUID();
   const { error: workError } = await authenticated.from("obras").insert({
     id: workId,
     user_id: userId,
@@ -327,18 +328,31 @@ async function preparar() {
   });
   exigirSemErro(workError, "Não foi possível criar a obra E2E local");
 
-  const { error: chapterError } = await authenticated.from("capitulos").insert({
-    id: chapterId,
-    obra_id: workId,
-    user_id: userId,
-    titulo: "Capítulo 1",
-    texto: "Este capítulo existe somente no ambiente local descartável dos testes E2E.",
-    ordem: 1,
-    publicado: true,
-    criado_em: now,
-    atualizado_em: now,
-  });
-  exigirSemErro(chapterError, "Não foi possível criar o capítulo E2E local");
+  const { error: chapterError } = await authenticated.from("capitulos").insert([
+    {
+      id: chapterId,
+      obra_id: workId,
+      user_id: userId,
+      titulo: "Capítulo 1",
+      texto: "Este capítulo existe somente no ambiente local descartável dos testes E2E.",
+      ordem: 1,
+      publicado: true,
+      criado_em: now,
+      atualizado_em: now,
+    },
+    {
+      id: secondChapterId,
+      obra_id: workId,
+      user_id: userId,
+      titulo: "Capítulo 2",
+      texto: "Este é o segundo capítulo público descartável dos testes E2E.",
+      ordem: 2,
+      publicado: true,
+      criado_em: now,
+      atualizado_em: now,
+    },
+  ]);
+  exigirSemErro(chapterError, "Não foi possível criar os capítulos E2E locais");
 
   const { data: published, error: publishError } = await authenticated
     .from("obras")
@@ -453,6 +467,20 @@ async function preparar() {
     .single();
   exigirSemErro(publicChapterError, "O capítulo E2E não ficou visível anonimamente");
   assert.equal(publicChapter?.id, chapterId);
+
+  const { data: secondPublicChapter, error: secondPublicChapterError } =
+    await anonymous
+      .from("capitulos")
+      .select("id, obra_id, ordem, publicado")
+      .eq("obra_id", workId)
+      .eq("ordem", 2)
+      .eq("publicado", true)
+      .single();
+  exigirSemErro(
+    secondPublicChapterError,
+    "O segundo capítulo E2E não ficou visível anonimamente",
+  );
+  assert.equal(secondPublicChapter?.id, secondChapterId);
 
   salvarGithubEnv(obterArquivoGithubEnv(), {
     NEXT_PUBLIC_SUPABASE_URL: ambiente.url,

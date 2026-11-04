@@ -94,6 +94,36 @@ test.describe("capítulo público canônico", () => {
     await expect(page.getByText("Tamanho da fonte")).toBeVisible();
   });
 
+  test("sincroniza conteúdo e URL ao voltar e avançar entre capítulos", async ({
+    page,
+  }) => {
+    const chapterOnePath = `/obra/${encodeURIComponent(slug)}/capitulo/1`;
+    const chapterTwoPath = `/obra/${encodeURIComponent(slug)}/capitulo/2`;
+    const chapterOneText =
+      "Este capítulo existe somente no ambiente local descartável dos testes E2E.";
+    const chapterTwoText =
+      "Este é o segundo capítulo público descartável dos testes E2E.";
+
+    await page.goto(chapterOnePath, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Capítulo 1" })).toBeVisible();
+    await expect(page.getByText(chapterOneText)).toBeVisible();
+
+    await page.getByRole("button", { name: "Próximo capítulo" }).click();
+    await expect(page).toHaveURL(new RegExp(`${chapterTwoPath}$`));
+    await expect(page.getByRole("heading", { name: "Capítulo 2" })).toBeVisible();
+    await expect(page.getByText(chapterTwoText)).toBeVisible();
+
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`${chapterOnePath}$`));
+    await expect(page.getByRole("heading", { name: "Capítulo 1" })).toBeVisible();
+    await expect(page.getByText(chapterOneText)).toBeVisible();
+
+    await page.goForward();
+    await expect(page).toHaveURL(new RegExp(`${chapterTwoPath}$`));
+    await expect(page.getByRole("heading", { name: "Capítulo 2" })).toBeVisible();
+    await expect(page.getByText(chapterTwoText)).toBeVisible();
+  });
+
   test("mantém o leitor interno por IDs", async ({ page }) => {
     const internalPath = `/ler-capitulo?obraId=${encodeURIComponent(
       workId,
