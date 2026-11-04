@@ -2863,6 +2863,18 @@ const seoContracts = [
       /export const revalidate\s*=\s*3600/.test(sitemapSource)
   },
   {
+    name: "sitemap pagina capítulos publicados e preserva a ordem real",
+    valid:
+      sitemapSource.includes('.from("capitulos")') &&
+      sitemapSource.includes(
+        '.select("obra_id,ordem,atualizado_em,publicado")'
+      ) &&
+      /\.eq\("publicado",\s*true\)/.test(sitemapSource) &&
+      /\.order\("obra_id",\s*\{\s*ascending:\s*true\s*\}\)[\s\S]*?\.order\("ordem",\s*\{\s*ascending:\s*true\s*\}\)[\s\S]*?\.range\(inicio, fim\)/.test(
+        sitemapSource
+      )
+  },
+  {
     name: "sitemap exclui conteúdo bloqueado e tolera indisponibilidade",
     valid:
       sitemapSource.includes("ehClassificacao18") &&

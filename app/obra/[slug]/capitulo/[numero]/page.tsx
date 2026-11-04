@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { LerCapituloClient } from "../../../../ler-capitulo/page";
 import { obterLeituraCapituloPublico } from "../../../../../lib/cache/obrasPublicas";
 import {
@@ -53,22 +53,20 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
     await obterParametrosSeguros(params);
 
   if (!slugSeguro) {
-    redirect("/explorar");
+    notFound();
   }
 
-  const obraHref = `/obra/${encodeURIComponent(slugSeguro)}`;
-
   if (numeroCapitulo === null) {
-    redirect(obraHref);
+    notFound();
   }
 
   const leitura = await obterLeituraCapituloPublico(
     slugSeguro,
     numeroCapitulo,
-  ).catch(() => null);
+  );
 
   if (!leitura) {
-    redirect(obraHref);
+    notFound();
   }
 
   return (

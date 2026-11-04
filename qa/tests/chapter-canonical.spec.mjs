@@ -35,6 +35,21 @@ test.describe("capítulo público canônico", () => {
     expect(html).toContain("Capítulo 1 — Obra Pública E2E");
   });
 
+  test("capítulo público inexistente responde 404 sem redirect", async ({
+    request,
+  }) => {
+    const response = await request.get(
+      `/obra/${encodeURIComponent(slug)}/capitulo/999999`,
+      { maxRedirects: 0 },
+    );
+    const html = await response.text();
+
+    expect(response.status()).toBe(404);
+    expect(response.headers().location).toBeUndefined();
+    expect(response.url()).not.toContain("/ler-capitulo");
+    expect(html).toContain('name="robots" content="noindex"');
+  });
+
   test("hidrata o leitor compartilhado sem trocar a URL canônica", async ({
     page,
   }) => {

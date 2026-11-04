@@ -51,9 +51,9 @@ Essa política não altera os workflows do GitHub Actions nem as configurações
 
 ### Capítulos públicos canônicos
 
-A rota `/obra/[slug]/capitulo/[numero]` passou a entregar o leitor compartilhado com HTTP 200, metadata de capítulo, canonical próprio e título/texto no HTML inicial para capítulos públicos válidos.
+A rota `/obra/[slug]/capitulo/[numero]` entrega o leitor compartilhado com HTTP 200, metadata de capítulo, canonical próprio e título/texto no HTML inicial para capítulos públicos válidos. Capítulos publicados permitidos também entram no sitemap usando sua `ordem` real, enquanto combinações inexistentes ou inválidas respondem HTTP 404 sem redirect.
 
-O leitor interno por query (`/ler-capitulo`) continua disponível. Sitemap de capítulos, structured data e a política definitiva de `notFound()` permanecem em etapas separadas.
+O leitor interno por query (`/ler-capitulo`) continua disponível. Structured data permanece em etapa separada.
 
 ### Dependency Cruiser — ciclos do DenunciaModal
 
