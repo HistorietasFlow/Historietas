@@ -11,6 +11,7 @@ const source = ler(
   "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-canonical-route-utils.ts",
 );
 const page = ler("../../app/obra/[slug]/capitulo/[numero]/page.tsx");
+const nextConfig = ler("../../next.config.ts");
 const metadataUtils = ler(
   "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-metadata-utils.ts",
 );
@@ -97,6 +98,7 @@ test("ausência real usa 404 e erro de infraestrutura continua propagando", () =
     page,
     /try \{\s*leitura = await obterLeituraCapituloPublico\(slug, numero\);\s*\} catch \{\s*return criarMetadataPadrao/,
   );
+  assert.match(nextConfig, /htmlLimitedBots:\s*\/\.\*\//);
 });
 
 test("metadata e loader público preservam canonical, capítulo e conteúdo inicial", () => {

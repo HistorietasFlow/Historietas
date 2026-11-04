@@ -45,6 +45,8 @@ if (supabaseUrl) {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // A rota canônica de capítulo precisa decidir 404 antes de iniciar a resposta.
+  htmlLimitedBots: /.*/,
   async headers() {
     return [
       {
