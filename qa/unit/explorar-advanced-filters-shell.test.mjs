@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const componente = readFileSync(new URL("../../app/explorar/components/explorar-advanced-filters-shell.tsx", import.meta.url), "utf8");
+const composicao = readFileSync(new URL("../../app/explorar/components/explorar-advanced-filters-composition.tsx", import.meta.url), "utf8");
 const pagina = readFileSync(new URL("../../app/explorar/page.tsx", import.meta.url), "utf8");
 
 test("ExplorarAdvancedFiltersShell preserva o envelope visual do modal", () => {
@@ -22,13 +23,13 @@ test("ExplorarAdvancedFiltersShell preserva o envelope visual do modal", () => {
   assert.match(componente, /\{children\}/);
 });
 
-test("Explorar mantém condição, fechamento e regras do modal na página", () => {
-  assert.match(pagina, /import \{ ExplorarAdvancedFiltersShell \} from "\.\/components\/explorar-advanced-filters-shell";/);
+test("Explorar mantém condição, fechamento e regras do modal na composição adiada", () => {
+  assert.match(composicao, /import \{ ExplorarAdvancedFiltersShell \} from "\.\/explorar-advanced-filters-shell";/);
   assert.match(pagina, /\{mostrarFiltrosAvancados && \(/);
-  assert.match(pagina, /<ExplorarAdvancedFiltersShell/);
+  assert.match(pagina, /<ExplorarAdvancedFiltersComposition/);
   assert.match(pagina, /onFechar=\{\(\) => \{\s*setMostrarFiltrosAvancados\(false\);\s*setMostrarConfirmacaoConteudo18\(false\);\s*setConfirmouIdadeConteudo18\(false\);\s*\}\}/);
   assert.match(pagina, /ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO/);
-  assert.match(pagina, /<ExplorarOrderingOptions/);
-  assert.match(pagina, /onSelecionar=\{setOrdenacao\}/);
-  assert.match(pagina, /limparFiltros/);
+  assert.match(composicao, /<ExplorarOrderingOptions/);
+  assert.match(pagina, /onSelecionarOrdenacao=\{setOrdenacao\}/);
+  assert.match(pagina, /onLimparFiltros=\{limparFiltros\}/);
 });

@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const composicao = readFileSync(
+  new URL(
+    "../../app/explorar/components/explorar-advanced-filters-composition.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const shell = readFileSync(
   new URL(
     "../../app/explorar/components/explorar-advanced-filters-shell.tsx",
@@ -77,10 +84,10 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
   assert.match(pagina, /\{mostrarFiltrosAvancados && \(/);
   assert.match(pagina, /setMostrarFiltrosAvancados\(false\)/);
   assert.match(
-    pagina,
-    /import \{ ExplorarAdvancedFiltersShell \} from "\.\/components\/explorar-advanced-filters-shell";/,
+    composicao,
+    /import \{ ExplorarAdvancedFiltersShell \} from "\.\/explorar-advanced-filters-shell";/,
   );
-  assert.match(pagina, /<ExplorarAdvancedFiltersShell/);
+  assert.match(composicao, /<ExplorarAdvancedFiltersShell/);
   assert.match(shell, /stopPropagation\(\)/);
   assert.match(
     pagina,
@@ -92,7 +99,7 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
   );
   assert.match(
     pagina,
-    /import \{ useMemo, useRef \} from "react";/,
+    /import \{ lazy, Suspense, useMemo, useRef \} from "react";/,
   );
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.match(

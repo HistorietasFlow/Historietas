@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const composicao = readFileSync(
+  new URL(
+    "../../app/explorar/components/explorar-advanced-filters-composition.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("ExplorarOrderingOptions preserva as opções e a ordem de ordenação", () => {
   assert.match(componente, /import type \{ OrdenacaoExplorar \}/);
@@ -30,10 +37,10 @@ test("ExplorarOrderingOptions preserva as opções e a ordem de ordenação", ()
   assert.match(componente, /traduzirTextoExplorar\(rotulo, language\)/);
 });
 
-test("Explorar mantém a condição e o setter de ordenação na página", () => {
-  assert.match(pagina, /import \{ ExplorarOrderingOptions \} from "\.\/components\/explorar-ordering-options";/);
-  assert.match(pagina, /!mostrarConfirmacaoConteudo18 && \(/);
-  assert.match(pagina, /traduzirTextoExplorar\("Ordenar", language\)/);
-  assert.match(pagina, /<ExplorarOrderingOptions/);
-  assert.match(pagina, /onSelecionar=\{setOrdenacao\}/);
+test("Explorar mantém a condição e o setter de ordenação na composição adiada", () => {
+  assert.match(composicao, /import \{ ExplorarOrderingOptions \} from "\.\/explorar-ordering-options";/);
+  assert.match(composicao, /!mostrarConfirmacaoConteudo18 && \(/);
+  assert.match(composicao, /traduzirTextoExplorar\("Ordenar", language\)/);
+  assert.match(composicao, /<ExplorarOrderingOptions/);
+  assert.match(pagina, /onSelecionarOrdenacao=\{setOrdenacao\}/);
 });
