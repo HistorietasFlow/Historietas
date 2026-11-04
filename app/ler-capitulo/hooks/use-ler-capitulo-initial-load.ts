@@ -27,6 +27,8 @@ type InicializacaoLeitor = {
   setCarregando: Dispatch<SetStateAction<boolean>>;
   setErroCarregamento: Dispatch<SetStateAction<boolean>>;
   versaoCarregamento: number;
+  obraIdInicial?: string;
+  capituloIdInicial?: string;
 };
 
 export function useLerCapituloInitialLoad({
@@ -39,6 +41,8 @@ export function useLerCapituloInitialLoad({
   setCarregando,
   setErroCarregamento,
   versaoCarregamento,
+  obraIdInicial = "",
+  capituloIdInicial = "",
 }: InicializacaoLeitor) {
   const [identidadeDadosAplicada, setIdentidadeDadosAplicada] =
     useState<IdentidadeAutenticadaLeitor | null>(null);
@@ -58,7 +62,11 @@ export function useLerCapituloInitialLoad({
 
     const versaoExecucao = versaoExecucaoCarregamentoRef.current + 1;
     versaoExecucaoCarregamentoRef.current = versaoExecucao;
-    setCarregando(true);
+    const possuiDadosIniciais = Boolean(obraIdInicial && capituloIdInicial);
+
+    if (!possuiDadosIniciais) {
+      setCarregando(true);
+    }
     setErroCarregamento(false);
     setIdentidadeDadosAplicada(null);
 
@@ -75,8 +83,8 @@ export function useLerCapituloInitialLoad({
 
     async function carregarDados() {
       const params = new URLSearchParams(window.location.search);
-      const obraIdParam = params.get("obraId") || "";
-      const capituloIdParam = params.get("capituloId") || "";
+      const obraIdParam = params.get("obraId") || obraIdInicial;
+      const capituloIdParam = params.get("capituloId") || capituloIdInicial;
 
       window.setTimeout(() => {
         if (execucaoCarregamentoEstaAtual()) {
@@ -204,6 +212,8 @@ export function useLerCapituloInitialLoad({
     setCarregando,
     setErroCarregamento,
     versaoCarregamento,
+    obraIdInicial,
+    capituloIdInicial,
   ]);
 
   return { identidadeDadosAplicada };

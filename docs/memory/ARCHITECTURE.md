@@ -8,6 +8,13 @@
 - Node.js 22 para CI e desenvolvimento suportado
 - Instalação reproduzível com `npm ci`
 
+### Leitura pública de capítulos
+
+- `/obra/[slug]/capitulo/[numero]` é a rota canônica pública de capítulos publicados e responde com o leitor real, sem redirecionar para `/ler-capitulo`.
+- O servidor consulta somente obra e capítulos públicos com o cliente anônimo/RLS, gera metadata própria e fornece o estado público inicial ao mesmo Client Component usado pelo leitor interno.
+- O título e o texto do capítulo são renderizados no HTML inicial; após a hidratação, o lifecycle existente recarrega interações e estado da identidade autenticada sem substituir dados com respostas obsoletas.
+- `/ler-capitulo?obraId=...&capituloId=...` permanece disponível para fluxos internos, drafts e leituras por identificador.
+
 ## Backend e dados
 
 Supabase é usado para autenticação, banco e fluxos de dados da aplicação.

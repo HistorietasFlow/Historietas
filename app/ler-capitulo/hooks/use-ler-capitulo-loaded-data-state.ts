@@ -3,9 +3,11 @@
 import { useCallback, useState } from "react";
 import type { ObraLocal } from "../lib/ler-capitulo-work-normalization";
 
-export function useLerCapituloLoadedDataState() {
-  const [obras, setObras] = useState<ObraLocal[]>([]);
-  const [carregando, setCarregando] = useState(true);
+export function useLerCapituloLoadedDataState(
+  obrasIniciais: ObraLocal[] = [],
+) {
+  const [obras, setObras] = useState<ObraLocal[]>(obrasIniciais);
+  const [carregando, setCarregando] = useState(obrasIniciais.length === 0);
   const [erroCarregamento, setErroCarregamento] = useState(false);
   const [versaoCarregamento, setVersaoCarregamento] = useState(0);
 

@@ -3,19 +3,21 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
 
-const source = readFileSync(
-  new URL(
-    "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-canonical-route-utils.ts",
-    import.meta.url,
-  ),
-  "utf8",
+function ler(caminho) {
+  return readFileSync(new URL(caminho, import.meta.url), "utf8");
+}
+
+const source = ler(
+  "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-canonical-route-utils.ts",
 );
-const page = readFileSync(
-  new URL(
-    "../../app/obra/[slug]/capitulo/[numero]/page.tsx",
-    import.meta.url,
-  ),
-  "utf8",
+const page = ler("../../app/obra/[slug]/capitulo/[numero]/page.tsx");
+const metadataUtils = ler(
+  "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-metadata-utils.ts",
+);
+const publicCache = ler("../../lib/cache/obrasPublicas.ts");
+const readerPage = ler("../../app/ler-capitulo/page.tsx");
+const initialLoad = ler(
+  "../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts",
 );
 const javascript = typescript.transpileModule(source, {
   compilerOptions: {
@@ -53,23 +55,69 @@ test("obterNumeroCapituloSeguro preserva o contrato de inteiros positivos seguro
   );
 });
 
-test("a página delega somente as validações e preserva a rota canônica", () => {
+test("a página pública renderiza o leitor compartilhado sem redirecionar capítulos válidos", () => {
   [
     'from "./lib/obra-chapter-canonical-route-utils";',
     'decodificarSlugSeguro(slug || "")',
     'obterNumeroCapituloSeguro(numero || "")',
     'redirect("/explorar")',
-    'const obraHref = \`/obra/\${encodeURIComponent(slugSeguro)}\`;',
-    "await obterRotaCapituloPublico(",
+    "const obraHref = `/obra/${encodeURIComponent(slugSeguro)}`;",
+    "await obterLeituraCapituloPublico(",
     ").catch(() => null)",
-    "new URLSearchParams({",
-    "obraId: rotaCapitulo.obraId",
-    "capituloId: rotaCapitulo.capituloId",
-    "redirect(\`/ler-capitulo?\${leituraParams.toString()}\`)",
+    "<LerCapituloClient",
+    "obraId: leitura.obraId",
+    "capituloId: leitura.capituloId",
+    "obras: [leitura.obra]",
+  ].forEach((contract) => assert.ok(page.includes(contract), contract));
+
+  assert.ok(!page.includes("redirect(`/ler-capitulo"));
+  assert.ok(!page.includes("new URLSearchParams"));
+  assert.ok(!page.includes("function decodificarSlugSeguro"));
+  assert.ok(!page.includes("function obterNumeroCapituloSeguro"));
+});
+
+test("metadata e loader público preservam canonical, capítulo e conteúdo inicial", () => {
+  [
+    "export async function generateMetadata",
+    "criarMetadataCapituloPublico({ leitura, slug })",
   ].forEach((contract) => assert.ok(page.includes(contract), contract));
 
   [
-    "function decodificarSlugSeguro",
-    "function obterNumeroCapituloSeguro",
-  ].forEach((contract) => assert.ok(!page.includes(contract), contract));
+    "alternates:",
+    "canonical: hrefCanonico",
+    'type: "article"',
+    "authors: [{ name: autor }]",
+    "capitulo?.texto.trim()",
+    "criarHrefCanonicoCapitulo(slug, leitura.numeroCapitulo)",
+  ].forEach((contract) =>
+    assert.ok(metadataUtils.includes(contract), contract),
+  );
+
+  [
+    "export const obterLeituraCapituloPublico = unstable_cache(",
+    '.eq("publicado", true)',
+    '.select("id,titulo,texto,ordem,publicado,visualizacoes,criado_em")',
+    'nomeColecao: "capítulos públicos da leitura canônica"',
+    "ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO",
+    "capitulos: capitulosNormalizados",
+  ].forEach((contract) => assert.ok(publicCache.includes(contract), contract));
+});
+
+test("o leitor interno continua disponível e aceita dados públicos iniciais", () => {
+  [
+    "export function LerCapituloClient({",
+    "dadosIniciais?: DadosIniciaisLerCapitulo",
+    "useLerCapituloLoadedDataState(dadosIniciais?.obras)",
+    "obraIdInicial: dadosIniciais?.obraId",
+    "capituloIdInicial: dadosIniciais?.capituloId",
+    "export default function LerCapituloPage()",
+    "return <LerCapituloClient />",
+  ].forEach((contract) => assert.ok(readerPage.includes(contract), contract));
+
+  [
+    'params.get("obraId") || obraIdInicial',
+    'params.get("capituloId") || capituloIdInicial',
+    "if (!possuiDadosIniciais)",
+    "execucaoCarregamentoEstaAtual()",
+  ].forEach((contract) => assert.ok(initialLoad.includes(contract), contract));
 });

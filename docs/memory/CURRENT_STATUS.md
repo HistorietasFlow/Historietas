@@ -49,6 +49,12 @@ Essa política não altera os workflows do GitHub Actions nem as configurações
 
 ## Pendências conhecidas
 
+### Capítulos públicos canônicos
+
+A rota `/obra/[slug]/capitulo/[numero]` passou a entregar o leitor compartilhado com HTTP 200, metadata de capítulo, canonical próprio e título/texto no HTML inicial para capítulos públicos válidos.
+
+O leitor interno por query (`/ler-capitulo`) continua disponível. Sitemap de capítulos, structured data e a política definitiva de `notFound()` permanecem em etapas separadas.
+
 ### Dependency Cruiser — ciclos do DenunciaModal
 
 Os tipos compartilhados de denúncia foram extraídos de `components/DenunciaModal.tsx` para `components/denuncia-types.ts`.

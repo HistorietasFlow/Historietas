@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 
-export function useLerCapituloRouteIdentityState() {
-  const [obraId, setObraId] = useState("");
-  const [capituloId, setCapituloId] = useState("");
+export function useLerCapituloRouteIdentityState({
+  obraIdInicial = "",
+  capituloIdInicial = "",
+}: {
+  obraIdInicial?: string;
+  capituloIdInicial?: string;
+} = {}) {
+  const [obraId, setObraId] = useState(obraIdInicial);
+  const [capituloId, setCapituloId] = useState(capituloIdInicial);
 
   return { obraId, setObraId, capituloId, setCapituloId };
 }

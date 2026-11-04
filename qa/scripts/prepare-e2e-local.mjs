@@ -466,6 +466,7 @@ async function preparar() {
     E2E_ALLOW_DESTRUCTIVE: "true",
     E2E_PUBLIC_WORK_SLUG: publicWorkSlug,
     E2E_PUBLIC_WORK_ID: workId,
+    E2E_PUBLIC_CHAPTER_ID: chapterId,
     E2E_PUBLIC_CHAPTER_NUMBER: publicChapterNumber,
     E2E_DIARY_ANNOTATION_ID: DEFAULTS.diaryAnnotationId,
   });
