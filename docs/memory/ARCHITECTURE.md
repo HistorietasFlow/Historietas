@@ -14,8 +14,8 @@
 - O servidor consulta somente obra e capítulos públicos com o cliente anônimo/RLS, gera metadata própria e fornece o estado público inicial ao mesmo Client Component usado pelo leitor interno.
 - O título e o texto do capítulo são renderizados no HTML inicial; após a hidratação, o lifecycle existente recarrega interações e estado da identidade autenticada sem substituir dados com respostas obsoletas.
 - O sitemap cruza consultas públicas paginadas de obras e capítulos sem N+1, publica somente combinações permitidas e usa o valor persistido de `capitulos.ordem` na URL canônica.
-- Combinações canônicas inválidas ou ausentes respondem com `notFound()`/HTTP 404; falhas de infraestrutura continuam propagando como erro, sem serem convertidas em ausência de conteúdo.
-- O streaming de metadata do Next.js fica desativado para todos os user agents (`htmlLimitedBots: /.*/`) para que a decisão de `notFound()` da rota canônica ocorra antes do início da resposta e preserve o status HTTP 404 real.
+- Combinações canônicas inválidas ou ausentes são verificadas antes do streaming pelo proxy com cliente público/RLS e recebem rewrite interno para `/_not-found` com HTTP 404; a página mantém `notFound()` como defesa adicional.
+- Falhas de infraestrutura nessa verificação não viram ausência: a requisição segue para o loader server-side, que preserva o tratamento de erro normal.
 - `/ler-capitulo?obraId=...&capituloId=...` permanece disponível para fluxos internos, drafts e leituras por identificador.
 
 ## Backend e dados

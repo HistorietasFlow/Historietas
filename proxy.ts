@@ -1,6 +1,18 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  decodificarSlugSeguro,
+  obterNumeroCapituloSeguro,
+} from "@/app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-canonical-route-utils";
+import {
+  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
+  ehClassificacao18,
+} from "@/lib/historietasAdultContent";
+import {
+  criarSupabasePublicClient,
+  supabasePublicoConfigurado,
+} from "@/lib/supabase/public";
+import {
   erroExigeLimpezaSessaoLocal,
   obterNomesCookiesSessaoSupabase,
 } from "@/lib/supabase/session-recovery.mjs";
@@ -94,6 +106,68 @@ function obterPathComBusca(request: NextRequest) {
   return `${request.nextUrl.pathname}${request.nextUrl.search}`;
 }
 
+function obterAlvoCapituloCanonico(pathname: string) {
+  const correspondencia = pathname.match(
+    /^\/obra\/([^/]+)\/capitulo\/([^/]+)$/,
+  );
+
+  if (!correspondencia) {
+    return null;
+  }
+
+  const slug = decodificarSlugSeguro(correspondencia[1] || "");
+  const numero = obterNumeroCapituloSeguro(correspondencia[2] || "");
+
+  return { slug, numero };
+}
+
+async function capituloCanonicoPublicoInexistente(pathname: string) {
+  const alvo = obterAlvoCapituloCanonico(pathname);
+
+  if (!alvo) {
+    return false;
+  }
+
+  if (!alvo.slug || alvo.numero === null) {
+    return true;
+  }
+
+  if (!supabasePublicoConfigurado) {
+    return false;
+  }
+
+  try {
+    const supabase = criarSupabasePublicClient();
+    const { data, error } = await supabase
+      .from("capitulos")
+      .select(
+        "id,obras!inner(slug,publicado,classificacao_indicativa)",
+      )
+      .eq("ordem", alvo.numero)
+      .eq("publicado", true)
+      .eq("obras.slug", alvo.slug)
+      .eq("obras.publicado", true)
+      .limit(1);
+
+    if (error) {
+      return false;
+    }
+
+    const obra = data?.[0]?.obras;
+
+    if (!obra) {
+      return true;
+    }
+
+    return Boolean(
+      ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
+        ehClassificacao18(obra.classificacao_indicativa),
+    );
+  } catch {
+    return false;
+  }
+}
+
 function aplicarCookiesNaResposta(
   resposta: NextResponse,
   cookiesParaSalvar: CookieParaSalvar[],
@@ -117,6 +191,16 @@ function criarRespostaContinuar(
     }),
     cookiesParaSalvar,
   );
+}
+
+function criarRespostaNaoEncontrado(request: NextRequest) {
+  const destino = request.nextUrl.clone();
+
+  destino.pathname = "/_not-found";
+  destino.search = "";
+  destino.hash = "";
+
+  return NextResponse.rewrite(destino, { status: 404 });
 }
 
 function criarRedirectSeguro(
@@ -199,6 +283,10 @@ export async function proxy(request: NextRequest) {
   const pathname = normalizarPathname(request.nextUrl.pathname);
   const estaNoLogin = pathname === "/login";
   const precisaLogin = rotaEstaProtegida(pathname);
+
+  if (await capituloCanonicoPublicoInexistente(pathname)) {
+    return criarRespostaNaoEncontrado(request);
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
   const supabasePublicKey =

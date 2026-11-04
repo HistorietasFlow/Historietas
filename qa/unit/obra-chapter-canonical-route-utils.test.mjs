@@ -11,7 +11,7 @@ const source = ler(
   "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-canonical-route-utils.ts",
 );
 const page = ler("../../app/obra/[slug]/capitulo/[numero]/page.tsx");
-const nextConfig = ler("../../next.config.ts");
+const proxy = ler("../../proxy.ts");
 const metadataUtils = ler(
   "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-metadata-utils.ts",
 );
@@ -98,7 +98,23 @@ test("ausência real usa 404 e erro de infraestrutura continua propagando", () =
     page,
     /try \{\s*leitura = await obterLeituraCapituloPublico\(slug, numero\);\s*\} catch \{\s*return criarMetadataPadrao/,
   );
-  assert.match(nextConfig, /htmlLimitedBots:\s*\/\.\*\//);
+  [
+    "capituloCanonicoPublicoInexistente(pathname)",
+    '.from("capitulos")',
+    '"id,obras!inner(slug,publicado,classificacao_indicativa)"',
+    '.eq("ordem", alvo.numero)',
+    '.eq("publicado", true)',
+    '.eq("obras.slug", alvo.slug)',
+    '.eq("obras.publicado", true)',
+    "ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO",
+    'destino.pathname = "/_not-found"',
+    "NextResponse.rewrite(destino, { status: 404 })",
+  ].forEach((contract) => assert.ok(proxy.includes(contract), contract));
+
+  assert.match(proxy, /if \(error\) \{\s*return false;\s*\}/);
+  assert.match(proxy, /catch \{\s*return false;\s*\}/);
+  assert.ok(!proxy.includes("service_role"));
+  assert.ok(!proxy.includes("NextResponse.redirect(destino"));
 });
 
 test("metadata e loader público preservam canonical, capítulo e conteúdo inicial", () => {
