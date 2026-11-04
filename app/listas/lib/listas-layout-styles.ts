@@ -338,7 +338,7 @@ export const footerStyle: CSSProperties = {
   width: "min(100%, 920px)",
   margin: "28px auto 0",
   padding: "0 14px",
-  color: "rgba(255,255,255,0.32)",
+  color: "rgba(255,255,255,0.46)",
   fontSize: "10px",
   fontWeight: 750,
   textAlign: "center",
