@@ -13,6 +13,8 @@
 - RLS deve continuar sendo tratado separadamente de GRANT.
 - Novas tabelas `public` precisam declarar permissões explicitamente nas migrations aplicáveis à Data API.
 - Testes destrutivos nunca devem apontar para Supabase remoto.
+- Buckets públicos de mídia não concedem listagem pública de metadados: `avatars` e `capas-obras` mantêm entrega pública por URL conhecida, enquanto `SELECT` em `storage.objects` fica restrito ao prefixo da identidade autenticada.
+- O `SELECT` do proprietário em `avatars` não deve ser removido enquanto o fluxo de avatar usar `upsert: true`, pois a substituição exige `INSERT`, `SELECT` e `UPDATE`.
 
 ## Vercel
 

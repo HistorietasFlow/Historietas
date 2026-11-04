@@ -144,6 +144,9 @@ jobs:
       - name: Executar proteção anti-spam pela Data API
         run: npm run test:spam:integration
 
+      - name: Validar policies do Storage pela API local
+        run: npm run test:storage:integration
+
       - name: Preparar autenticação e conteúdo E2E locais
         run: npm run test:e2e:prepare:local -- --github-env "$GITHUB_ENV"
 

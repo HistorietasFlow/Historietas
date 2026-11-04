@@ -96,12 +96,15 @@ Não houve alteração funcional no app para esse alerta.
 
 ### Supabase Storage
 
-Security Advisor apontou warnings relacionados a listagem pública nos buckets:
+A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi
+restrita ao prefixo do usuário autenticado. URLs públicas conhecidas continuam
+acessíveis, mas usuários anônimos não enumeram os buckets e uma conta não lista
+objetos de outra.
 
-- `avatars`
-- `capas-obras`
-
-Não alterar essas policies sem uma fase dedicada e testes, porque podem existir dependências de list/upsert no app.
+O `SELECT` do proprietário deve ser preservado porque o upload de avatar usa
+`upsert: true`, que depende de `SELECT` e `UPDATE`. A cobertura local valida
+listagem, URL pública, escrita própria, isolamento entre contas, quotas, MIME,
+tamanho e limpeza administrativa com service role.
 
 ### Supabase Auth
 
