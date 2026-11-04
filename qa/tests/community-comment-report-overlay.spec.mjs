@@ -97,7 +97,9 @@ test("modal de denúncia de comentário fica acima do comments sheet", async ({
     const commentsSheet = document.querySelector(
       '[data-historietas-comunidade-sheet="true"]'
     );
-    const dialog = document.querySelector('[role="dialog"]');
+    const dialog = document.querySelector(
+      '[role="dialog"][aria-labelledby="denuncia-modal-titulo"]'
+    );
     const modalOverlay = dialog?.parentElement;
 
     return {
