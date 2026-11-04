@@ -111,6 +111,9 @@ jobs:
         with:
           version: 2.116.0
 
+      - name: Confirmar versão do Supabase CLI
+        run: test "$(supabase --version)" = "2.116.0"
+
       - name: Iniciar ambiente Supabase local descartável
         run: |
           supabase init
