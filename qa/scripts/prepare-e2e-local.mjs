@@ -351,7 +351,7 @@ async function preparar() {
   assert.equal(published?.publicado, true, "A obra E2E local não ficou pública.");
 
   const { data: diaryAnnotation, error: diaryAnnotationError } =
-    await authenticated
+    await admin
       .from("diario_anotacoes")
       .insert({
         id: DEFAULTS.diaryAnnotationId,
