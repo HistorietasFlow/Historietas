@@ -28,7 +28,7 @@ test("página mantém estados e repassa valores e callbacks sem wrappers", () =>
   for (const nome of [
     "obraAtual", "capituloAtual", "isDesktop", "mostrarAjustes", "setMostrarAjustes",
     "language", "metricasCapitulo", "tamanhoFonte", "setTamanhoFonte",
-    "mostrarLinhaProgresso", "setMostrarLinhaProgresso", "usuarioIdLogado",
+    "mostrarLinhaProgresso", "setMostrarLinhaProgresso",
     "obterAutorIdSeguro", "statusLeituraTexto", "totalPalavras", "trocarCapitulo",
     "abrirDenunciaCapituloAtual", "criarTextoLeituraDesktopStyle", "criarTextoLeituraStyle",
     "curtidaCapituloSalvando", "alternarCurtida", "salvoCapituloSalvando", "alternarSalvo",
@@ -38,6 +38,7 @@ test("página mantém estados e repassa valores e callbacks sem wrappers", () =>
   ]) {
     assert.match(chamada[1], new RegExp(`\\b${nome}=\\{${nome}\\}`));
   }
+  assert.match(chamada[1], /usuarioIdLogado=\{usuarioIdDadosAplicados\}/);
   assert.match(pagina, /const \{ alternarCurtida, alternarSalvo \} = criarAcoesInteracoesCapitulo\(\{/);
   assert.match(pagina, /const \{ alternarLido \} = criarAcaoProgressoLeituraCapitulo\(\{/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-navigation-actions";/);
