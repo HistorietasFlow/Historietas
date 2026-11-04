@@ -227,7 +227,12 @@ export default function RootLayout({
               <span className="historietas-bottom-nav-label">Home</span>
             </Link>
 
-            <Link href="/explorar" className="historietas-bottom-nav-item" aria-label="Explorar">
+            <Link
+              href="/explorar"
+              prefetch={false}
+              className="historietas-bottom-nav-item"
+              aria-label="Explorar"
+            >
               <span className="historietas-bottom-nav-icon" aria-hidden="true">
                 <svg
                   className="historietas-bottom-nav-svg"
@@ -253,7 +258,12 @@ export default function RootLayout({
               <span className="historietas-bottom-nav-label">Explorar</span>
             </Link>
 
-            <Link href="/publicar" className="historietas-bottom-nav-item" aria-label="Publicar">
+            <Link
+              href="/publicar"
+              prefetch={false}
+              className="historietas-bottom-nav-item"
+              aria-label="Publicar"
+            >
               <span className="historietas-bottom-nav-icon historietas-bottom-nav-publish-icon" aria-hidden="true">
                 <svg
                   className="historietas-bottom-nav-svg"
@@ -272,7 +282,12 @@ export default function RootLayout({
               <span className="historietas-bottom-nav-label">Publicar</span>
             </Link>
 
-            <Link href="/comunidade" className="historietas-bottom-nav-item" aria-label="Comunidade">
+            <Link
+              href="/comunidade"
+              prefetch={false}
+              className="historietas-bottom-nav-item"
+              aria-label="Comunidade"
+            >
               <span className="historietas-bottom-nav-icon" aria-hidden="true">
                 <svg
                   className="historietas-bottom-nav-svg"
@@ -293,7 +308,12 @@ export default function RootLayout({
             </Link>
 
 
-            <Link href="/perfil-autor" className="historietas-bottom-nav-item" aria-label="Perfil">
+            <Link
+              href="/perfil-autor"
+              prefetch={false}
+              className="historietas-bottom-nav-item"
+              aria-label="Perfil"
+            >
               <span
                 className="historietas-bottom-nav-profile-avatar"
                 data-bottom-profile-avatar="true"
