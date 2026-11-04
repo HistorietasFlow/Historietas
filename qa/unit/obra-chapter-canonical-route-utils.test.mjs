@@ -11,6 +11,7 @@ const source = ler(
   "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-canonical-route-utils.ts",
 );
 const page = ler("../../app/obra/[slug]/capitulo/[numero]/page.tsx");
+const proxy = ler("../../proxy.ts");
 const metadataUtils = ler(
   "../../app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-metadata-utils.ts",
 );
@@ -60,20 +61,60 @@ test("a página pública renderiza o leitor compartilhado sem redirecionar capí
     'from "./lib/obra-chapter-canonical-route-utils";',
     'decodificarSlugSeguro(slug || "")',
     'obterNumeroCapituloSeguro(numero || "")',
-    'redirect("/explorar")',
-    "const obraHref = `/obra/${encodeURIComponent(slugSeguro)}`;",
+    'import { notFound } from "next/navigation";',
     "await obterLeituraCapituloPublico(",
-    ").catch(() => null)",
+    "notFound();",
     "<LerCapituloClient",
     "obraId: leitura.obraId",
     "capituloId: leitura.capituloId",
     "obras: [leitura.obra]",
   ].forEach((contract) => assert.ok(page.includes(contract), contract));
 
-  assert.ok(!page.includes("redirect(`/ler-capitulo"));
+  assert.ok(!page.includes("redirect("));
+  assert.ok(!page.includes(".catch(() => null)"));
   assert.ok(!page.includes("new URLSearchParams"));
   assert.ok(!page.includes("function decodificarSlugSeguro"));
   assert.ok(!page.includes("function obterNumeroCapituloSeguro"));
+});
+
+test("ausência real usa 404 e erro de infraestrutura continua propagando", () => {
+  assert.match(
+    page,
+    /const leitura = await obterLeituraCapituloPublico\([\s\S]*?if \(!leitura\) \{\s*notFound\(\);/,
+  );
+  assert.doesNotMatch(
+    page,
+    /obterLeituraCapituloPublico\([\s\S]*?\.catch\(\(\) => null\)/,
+  );
+  assert.match(
+    page,
+    /export async function generateMetadata[\s\S]*?if \(!slug \|\| numero === null\) \{\s*notFound\(\);/,
+  );
+  assert.match(
+    page,
+    /export async function generateMetadata[\s\S]*?if \(!leitura\) \{\s*notFound\(\);[\s\S]*?return criarMetadataCapituloPublico/,
+  );
+  assert.match(
+    page,
+    /try \{\s*leitura = await obterLeituraCapituloPublico\(slug, numero\);\s*\} catch \{\s*return criarMetadataPadrao/,
+  );
+  [
+    "capituloCanonicoPublicoInexistente(pathname)",
+    '.from("capitulos")',
+    '"id,obras!inner(slug,publicado,classificacao_indicativa)"',
+    '.eq("ordem", alvo.numero)',
+    '.eq("publicado", true)',
+    '.eq("obras.slug", alvo.slug)',
+    '.eq("obras.publicado", true)',
+    "ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO",
+    'destino.pathname = "/_not-found"',
+    "NextResponse.rewrite(destino, { status: 404 })",
+  ].forEach((contract) => assert.ok(proxy.includes(contract), contract));
+
+  assert.match(proxy, /if \(error\) \{\s*return false;\s*\}/);
+  assert.match(proxy, /catch \{\s*return false;\s*\}/);
+  assert.ok(!proxy.includes("service_role"));
+  assert.ok(!proxy.includes("NextResponse.redirect(destino"));
 });
 
 test("metadata e loader público preservam canonical, capítulo e conteúdo inicial", () => {

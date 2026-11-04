@@ -59,8 +59,17 @@ test("robots, sitemap, favicon e cabeçalhos de produção", async ({ request })
   expect(sitemapText).toContain("historietas.com.br");
 
   const publicWorkSlug = (process.env.E2E_PUBLIC_WORK_SLUG || "").trim();
+  const publicChapterNumber = (
+    process.env.E2E_PUBLIC_CHAPTER_NUMBER || ""
+  ).trim();
   if (publicWorkSlug) {
     expect(sitemapText).toContain(`/obra/${encodeURIComponent(publicWorkSlug)}`);
+
+    if (publicChapterNumber) {
+      expect(sitemapText).toContain(
+        `/obra/${encodeURIComponent(publicWorkSlug)}/capitulo/${publicChapterNumber}`,
+      );
+    }
   }
 
   if (process.env.E2E_ALLOW_DESTRUCTIVE === "true") {

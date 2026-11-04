@@ -1,5 +1,10 @@
 import type { MetadataRoute } from "next";
 import {
+  criarRotasConteudoPublicoSitemap,
+  type CapituloPublicoSitemap,
+  type ObraPublicaSitemap,
+} from "./lib/sitemap-public-content-utils";
+import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   ehClassificacao18,
 } from "../lib/historietasAdultContent";
@@ -14,12 +19,6 @@ import {
 } from "../lib/supabase/public";
 
 export const revalidate = 3600;
-
-type ObraSitemap = {
-  slug: string;
-  atualizado_em: string;
-  classificacao_indicativa: string;
-};
 
 const ROTAS_ESTATICAS: MetadataRoute.Sitemap = [
   { url: SITE_URL, changeFrequency: "daily", priority: 1 },
@@ -43,41 +42,43 @@ const ROTAS_ESTATICAS: MetadataRoute.Sitemap = [
   },
 ];
 
-function normalizarSlugSitemap(valor: unknown) {
-  if (typeof valor !== "string") return "";
-
-  const slug = valor.trim();
-
-  return slug &&
-    slug.length <= 180 &&
-    !slug.includes("/") &&
-    !slug.includes("\\") &&
-    !/[\u0000-\u001F\u007F]/.test(slug)
-    ? slug
-    : "";
-}
-
-function obterDataValida(valor: unknown) {
-  if (typeof valor !== "string" || !valor.trim()) return undefined;
-
-  const data = new Date(valor);
-  return Number.isNaN(data.getTime()) ? undefined : data;
-}
-
-async function listarObrasPublicadas(): Promise<ObraSitemap[]> {
+async function listarObrasPublicadas(): Promise<ObraPublicaSitemap[]> {
   if (!supabasePublicoConfigurado) return [];
 
   const supabase = criarSupabasePublicClient();
 
-  return carregarTodasPaginasSupabase<ObraSitemap>({
+  return carregarTodasPaginasSupabase<ObraPublicaSitemap>({
     nomeColecao: "obras publicadas do sitemap",
     tamanhoPagina: TAMANHO_PAGINA_SUPABASE,
     buscarPagina: async (inicio, fim) => {
       const { data, error } = await supabase
         .from("obras")
-        .select("slug,atualizado_em,classificacao_indicativa")
+        .select("id,slug,atualizado_em,classificacao_indicativa,publicado")
         .eq("publicado", true)
         .order("slug", { ascending: true })
+        .order("id", { ascending: true })
+        .range(inicio, fim);
+
+      return { data, error };
+    },
+  });
+}
+
+async function listarCapitulosPublicados(): Promise<CapituloPublicoSitemap[]> {
+  if (!supabasePublicoConfigurado) return [];
+
+  const supabase = criarSupabasePublicClient();
+
+  return carregarTodasPaginasSupabase<CapituloPublicoSitemap>({
+    nomeColecao: "capítulos publicados do sitemap",
+    tamanhoPagina: TAMANHO_PAGINA_SUPABASE,
+    buscarPagina: async (inicio, fim) => {
+      const { data, error } = await supabase
+        .from("capitulos")
+        .select("obra_id,ordem,atualizado_em,publicado")
+        .eq("publicado", true)
+        .order("obra_id", { ascending: true })
+        .order("ordem", { ascending: true })
         .range(inicio, fim);
 
       return { data, error };
@@ -88,31 +89,28 @@ async function listarObrasPublicadas(): Promise<ObraSitemap[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const obras = await listarObrasPublicadas();
-    const slugsIncluidos = new Set<string>();
-    const rotasObras: MetadataRoute.Sitemap = [];
-
-    for (const obra of obras) {
-      const slug = normalizarSlugSitemap(obra.slug);
-
-      if (
-        !slug ||
-        slugsIncluidos.has(slug) ||
-        (ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
-          ehClassificacao18(obra.classificacao_indicativa))
-      ) {
-        continue;
-      }
-
-      slugsIncluidos.add(slug);
-      rotasObras.push({
-        url: `${SITE_URL}/obra/${encodeURIComponent(slug)}`,
-        lastModified: obterDataValida(obra.atualizado_em),
-        changeFrequency: "weekly",
-        priority: 0.7,
+    const criarRotas = (capitulos: CapituloPublicoSitemap[]) =>
+      criarRotasConteudoPublicoSitemap({
+        obras,
+        capitulos,
+        siteUrl: SITE_URL,
+        conteudo18Bloqueado: ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
+        ehClassificacao18,
       });
-    }
+    const { rotasObras } = criarRotas([]);
 
-    return [...ROTAS_ESTATICAS, ...rotasObras];
+    try {
+      const capitulos = await listarCapitulosPublicados();
+      const { rotasCapitulos } = criarRotas(capitulos);
+
+      return [...ROTAS_ESTATICAS, ...rotasObras, ...rotasCapitulos];
+    } catch (error) {
+      console.error(
+        "Não foi possível adicionar os capítulos publicados ao sitemap.",
+        error,
+      );
+      return [...ROTAS_ESTATICAS, ...rotasObras];
+    }
   } catch (error) {
     console.error(
       "Não foi possível adicionar as obras publicadas ao sitemap.",
