@@ -17,6 +17,7 @@ export function useLerCapituloRouteIdentityState({
   const [capituloId, setCapituloId] = useState(capituloIdInicial);
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent("historietas:history-probe", { detail: { source: "identity-effect", obraId, capituloId } }));
     if (!obraId || !capituloId) {
       return;
     }
@@ -43,6 +44,7 @@ export function useLerCapituloRouteIdentityState({
 
   useEffect(() => {
     function sincronizarIdentidadeComHistorico(event: PopStateEvent) {
+      window.dispatchEvent(new CustomEvent("historietas:history-probe", { detail: { source: "reader-popstate", identity: obterIdentidadeHistoricoLeitor(event.state) } }));
       const identidade = obterIdentidadeHistoricoLeitor(event.state);
 
       if (!identidade) {

@@ -92,6 +92,7 @@ export function useLerCapituloInitialLoad({
 
       window.setTimeout(() => {
         if (execucaoCarregamentoEstaAtual()) {
+          window.dispatchEvent(new CustomEvent("historietas:history-probe", { detail: { source: "initial-load-timer", obraId: obraIdParam, capituloId: capituloIdParam } }));
           setObraId(obraIdParam);
           setCapituloId(capituloIdParam);
         }

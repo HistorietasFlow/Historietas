@@ -9,6 +9,54 @@ const publicChapterNumber =
 const canonicalPath = `/obra/${encodeURIComponent(slug)}/capitulo/${publicChapterNumber}`;
 
 test.describe("capítulo público canônico", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const events = [];
+      window.__readerHistoryProbe = events;
+      const snapshot = (source, detail = {}) => {
+        const state = window.history.state;
+        events.push({
+          time: performance.now(), source, url: location.href,
+          heading: document.querySelector("h1")?.textContent,
+          historyLength: history.length,
+          state: state && {
+            keys: Object.keys(state), __NA: state.__NA,
+            identity: state.__historietasLeitorCapitulo,
+            tree: state.__PRIVATE_NEXTJS_INTERNALS_TREE,
+          },
+          ...detail,
+        });
+      };
+      for (const method of ["pushState", "replaceState"]) {
+        const original = history[method];
+        history[method] = function(data, unused, url) {
+          snapshot(`${method}:before`, { targetUrl: url, incomingIdentity: data?.__historietasLeitorCapitulo, incomingNA: data?.__NA, stack: new Error().stack });
+          const result = original.call(this, data, unused, url);
+          snapshot(`${method}:after`);
+          return result;
+        };
+      }
+      addEventListener("popstate", event => snapshot("native-popstate", { incomingIdentity: event.state?.__historietasLeitorCapitulo }));
+      addEventListener("historietas:history-probe", event => snapshot(event.detail.source, event.detail));
+      addEventListener("click", event => {
+        const button = event.target.closest?.("button");
+        if (button) snapshot("click", { button: button.textContent });
+      }, true);
+      new MutationObserver(() => {
+        const heading = document.querySelector("h1")?.textContent;
+        if (heading !== window.__lastReaderProbeHeading) {
+          window.__lastReaderProbeHeading = heading;
+          snapshot("heading-change");
+        }
+      }).observe(document, { childList: true, subtree: true, characterData: true });
+    });
+  });
+  test.afterEach(async ({ page }, testInfo) => {
+    const events = await page.evaluate(() => window.__readerHistoryProbe || []).catch(() => []);
+    const report = { react: process.env.PROBE_REACT_VERSION, repeat: testInfo.repeatEachIndex, retry: testInfo.retry, status: testInfo.status, events };
+    await testInfo.attach("history-probe", { body: JSON.stringify(report, null, 2), contentType: "application/json" });
+    console.log(`HISTORY_PROBE ${JSON.stringify(report)}`);
+  });
   test.beforeEach(() => {
     test.skip(
       !slug || !workId || !chapterId,

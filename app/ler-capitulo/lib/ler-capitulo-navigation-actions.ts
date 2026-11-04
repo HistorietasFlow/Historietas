@@ -64,6 +64,7 @@ export function criarAcaoTrocaCapituloLeitor({
   function trocarCapitulo(
     novoCapituloId: string,
   ) {
+    window.dispatchEvent(new CustomEvent("historietas:history-probe", { detail: { source: "trocarCapitulo", novoCapituloId, obraId: obraAtual?.id } }));
     if (!obraAtual) {
       return;
     }
