@@ -31,6 +31,13 @@ const hookClassificacao = readFileSync(
   ),
   "utf8",
 );
+const hookInteracoesSheet = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-sheet-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const obraStyleUtils = readFileSync(
   new URL("../../app/obra/[slug]/lib/obra-style-utils.ts", import.meta.url),
   "utf8",
@@ -150,11 +157,6 @@ test("os tres dialogs usam aria modal tabIndex e controle de teclado", () => {
 });
 
 test("fechamento normal restaura foco ao elemento que abriu o dialog", () => {
-  const bloco = obterBloco(
-    "function abrirComentariosObra()",
-    "function iniciarArrasteComentariosObra(",
-  );
-
   assert.match(
     hookClassificacao,
     /focoAntesClassificacaoRef\.current = obterElementoComFocoAtual\(\)/,
@@ -164,11 +166,11 @@ test("fechamento normal restaura foco ao elemento que abriu o dialog", () => {
     /focoAntesAcoesObraRef\.current = obterElementoComFocoAtual\(\)/,
   );
   assert.match(
-    bloco,
+    hookInteracoesSheet,
     /focoAntesComentariosRef\.current = obterElementoComFocoAtual\(\)/,
   );
 
-  const restauracoes = bloco.match(/restaurarFocoAnterior\(focoAnterior\)/g) || [];
+  const restauracoes = hookInteracoesSheet.match(/restaurarFocoAnterior\(focoAnterior\)/g) || [];
   assert.equal(restauracoes.length, 1);
   assert.match(
     hookClassificacao,

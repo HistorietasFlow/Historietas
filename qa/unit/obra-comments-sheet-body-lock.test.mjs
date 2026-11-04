@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import "./use-obra-comments-sheet-interactions.test.mjs";
 
 const hook = readFileSync(
   new URL(
@@ -11,6 +12,13 @@ const hook = readFileSync(
 );
 const cliente = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
+  "utf8",
+);
+const interacoesSheet = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-sheet-interactions.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 
@@ -39,7 +47,7 @@ test("hook preserva a ordem de cleanup do body e do timer de drag", () => {
   );
 });
 
-test("cliente delega somente o lifecycle do painel ao hook e preserva o drag", () => {
+test("cliente preserva o body lock e delega o drag ao hook de interacoes", () => {
   assert.match(
     cliente,
     /import \{ useObraCommentsSheetBodyLock \} from "\.\/hooks\/use-obra-comments-sheet-body-lock";/,
@@ -49,8 +57,8 @@ test("cliente delega somente o lifecycle do painel ao hook e preserva o drag", (
     /useObraCommentsSheetBodyLock\(\s*comentariosAbertos,\s*comentariosDragResetTimerRef,\s*\);/,
   );
   assert.doesNotMatch(cliente, /const overflowAnterior = document\.body\.style\.overflow;/);
-  assert.match(cliente, /function iniciarArrasteComentariosObra\(/);
-  assert.match(cliente, /function moverArrasteComentariosObra\(/);
-  assert.match(cliente, /function finalizarArrasteComentariosObra\(\)/);
-  assert.match(cliente, /}, 350\);/);
+  assert.match(interacoesSheet, /function iniciarArrasteComentariosObra\(/);
+  assert.match(interacoesSheet, /function moverArrasteComentariosObra\(/);
+  assert.match(interacoesSheet, /function finalizarArrasteComentariosObra\(\)/);
+  assert.match(interacoesSheet, /}, 350\);/);
 });

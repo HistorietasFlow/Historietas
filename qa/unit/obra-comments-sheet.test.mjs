@@ -63,8 +63,7 @@ test("cliente preserva condicao foco ref e composicao dos filhos", () => {
     paginaObra,
     /onKeyDown=\{\(event\) =>\s*manterFocoNoDialogo\(event, fecharComentariosObra\)\s*\}/,
   );
-  assert.match(paginaObra, /const comentariosSheetRef = useRef<HTMLElement \| null>\(null\)/);
-  assert.match(paginaObra, /function fecharComentariosObra\(\)/);
+  assert.match(paginaObra, /\} = useObraCommentsSheetInteractions\(\{/);
 
   const inicioHandle = paginaObra.indexOf("<ObraCommentsHandle");
   const inicioHeader = paginaObra.indexOf("<ObraCommentsHeader");
