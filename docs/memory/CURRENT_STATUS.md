@@ -1,6 +1,6 @@
 # Estado atual
 
-Atualizado em: 2026-11-03
+Atualizado em: 2026-11-04
 
 ## Infraestrutura e ferramentas
 
@@ -37,6 +37,15 @@ O projeto está temporariamente protegido com:
 - All Deployments
 
 Objetivo: continuar desenvolvimento e deploys sem deixar o site público.
+
+O projeto voltou a ser pausado pelo Spend Management após consumo elevado de Build CPU, Function Storage e Deployment Storage.
+
+Para reduzir esse consumo quando o projeto for retomado, os deployments automáticos por Git estão configurados em `vercel.json` assim:
+
+- `main`: habilitado, mantendo o deployment automático de produção;
+- demais branches e PRs: desabilitados, sem Preview Deployment automático.
+
+Essa política não altera os workflows do GitHub Actions nem as configurações de Vercel Authentication e domínio.
 
 ## Pendências conhecidas
 
