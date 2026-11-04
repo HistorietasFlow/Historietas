@@ -3107,3 +3107,7 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Editar Obra — Fase 1: autenticação e identidade do salvamento
 
 - A autenticação e resolução da identidade inicial do salvamento foram movidas para helper dedicado, preservando `getUser`, validação de usuário e obra, redirect de login, metadados, fallback do nome e consulta ao profile; confirmação de propriedade, uploads, atualização, backup, Diário e estados finais permanecem no hook de salvamento.
+
+## Performance — Fase 1: filtros avançados do Explorar
+
+- A composição visual dos filtros avançados de `/explorar` passou a ser carregada em um chunk sob demanda, preservando na página os estados, regras de negócio, body lock e callbacks existentes.

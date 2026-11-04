@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useRef } from "react";
+import { lazy, Suspense, useMemo, useRef } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { normalizarTexto } from "../../lib/utils";
 import {
@@ -16,14 +16,9 @@ import {
 import { ExplorarLoadingState } from "./components/explorar-loading-state";
 import { ExplorarLoadMoreButton } from "./components/explorar-load-more-button";
 import { ExplorarLoginNotice } from "./components/explorar-login-notice";
-import { ExplorarCollectionFilterOptions } from "./components/explorar-collection-filter-options";
 import { ExplorarCategoriesBar } from "./components/explorar-categories-bar";
 import { ExplorarDesktopHeader } from "./components/explorar-desktop-header";
 import { ExplorarMobileHeader } from "./components/explorar-mobile-header";
-import { ExplorarAdvancedFiltersShell } from "./components/explorar-advanced-filters-shell";
-import { ExplorarAdultContentFilter } from "./components/explorar-adult-content-filter";
-import { ExplorarOrderingOptions } from "./components/explorar-ordering-options";
-import { ExplorarClearFiltersAction } from "./components/explorar-clear-filters-action";
 import { ExplorarCreativeWorkSections } from "./components/explorar-creative-work-sections";
 import { ExplorarGenreWorkSections } from "./components/explorar-genre-work-sections";
 import { ExplorarFilteredWorksSection } from "./components/explorar-filtered-works-section";
@@ -74,7 +69,6 @@ import {
   pageStyle,
   criarExplorarPageStyle,
   containerStyle,
-  explorarModalSectionLabelStyle,
   desktopContainerStyle,
 } from "./lib/explorar-layout-styles";
 import {
@@ -100,6 +94,10 @@ import {
   criarSecoesAutoresPorGeneroExplorar,
 } from "./lib/explorar-derived-utils";
 import type { FiltroColecaoExplorar } from "./lib/explorar-derived-utils";
+
+const ExplorarAdvancedFiltersComposition = lazy(
+  () => import("./components/explorar-advanced-filters-composition"),
+);
 
 export default function ExplorarPage() {
   const router = useRouter();
@@ -525,63 +523,39 @@ export default function ExplorarPage() {
         </section>
 
         {mostrarFiltrosAvancados && (
-          <ExplorarAdvancedFiltersShell
-            isDesktop={isDesktop}
-            language={language}
-            onFechar={() => {
-              setMostrarFiltrosAvancados(false);
-              setMostrarConfirmacaoConteudo18(false);
-              setConfirmouIdadeConteudo18(false);
-            }}
-          >
-            <p style={explorarModalSectionLabelStyle}>
-                  {traduzirTextoExplorar("Mostrar", language)}
-                </p>
-
-                <ExplorarCollectionFilterOptions filtroColecao={filtroColecao} language={language} onSelecionar={selecionarFiltroColecao} />
-
-                {modoConteudo === "obras" && (
-                  <ExplorarAdultContentFilter
-                    filtroClassificacao={filtroClassificacao}
-                    mostrarConfirmacao={mostrarConfirmacaoConteudo18}
-                    confirmouIdade={confirmouIdadeConteudo18}
-                    acessoTemporariamenteBloqueado={
-                      ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO
-                    }
-                    language={language}
-                    onSelecionarClassificacao={
-                      selecionarFiltroClassificacaoExplorar
-                    }
-                    onConfirmouIdadeChange={setConfirmouIdadeConteudo18}
-                    onVoltar={() => {
-                      setMostrarConfirmacaoConteudo18(false);
-                      setConfirmouIdadeConteudo18(false);
-                    }}
-                    onConfirmar={confirmarFiltroConteudo18Explorar}
-                  />
-                )}
-
-                {!mostrarConfirmacaoConteudo18 && (
-                  <>
-                    <p style={explorarModalSectionLabelStyle}>
-                      {traduzirTextoExplorar("Ordenar", language)}
-                    </p>
-
-                    <ExplorarOrderingOptions
-                      ordenacao={ordenacao}
-                      language={language}
-                      onSelecionar={setOrdenacao}
-                    />
-                  </>
-                )}
-
-                {!mostrarConfirmacaoConteudo18 && filtrosAtivos && (
-                  <ExplorarClearFiltersAction
-                    language={language}
-                    onLimpar={limparFiltros}
-                  />
-                )}
-          </ExplorarAdvancedFiltersShell>
+          <Suspense fallback={null}>
+            <ExplorarAdvancedFiltersComposition
+              isDesktop={isDesktop}
+              language={language}
+              modoConteudo={modoConteudo}
+              filtroColecao={filtroColecao}
+              filtroClassificacao={filtroClassificacao}
+              mostrarConfirmacaoConteudo18={mostrarConfirmacaoConteudo18}
+              confirmouIdadeConteudo18={confirmouIdadeConteudo18}
+              acessoConteudo18TemporariamenteBloqueado={
+                ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO
+              }
+              ordenacao={ordenacao}
+              filtrosAtivos={filtrosAtivos}
+              onFechar={() => {
+                setMostrarFiltrosAvancados(false);
+                setMostrarConfirmacaoConteudo18(false);
+                setConfirmouIdadeConteudo18(false);
+              }}
+              onSelecionarColecao={selecionarFiltroColecao}
+              onSelecionarClassificacao={
+                selecionarFiltroClassificacaoExplorar
+              }
+              onConfirmouIdadeChange={setConfirmouIdadeConteudo18}
+              onVoltarConteudo18={() => {
+                setMostrarConfirmacaoConteudo18(false);
+                setConfirmouIdadeConteudo18(false);
+              }}
+              onConfirmarConteudo18={confirmarFiltroConteudo18Explorar}
+              onSelecionarOrdenacao={setOrdenacao}
+              onLimparFiltros={limparFiltros}
+            />
+          </Suspense>
         )}
 
         {modoConteudo === "obras" &&

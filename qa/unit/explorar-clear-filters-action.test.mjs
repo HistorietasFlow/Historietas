@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const composicao = readFileSync(
+  new URL(
+    "../../app/explorar/components/explorar-advanced-filters-composition.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("ExplorarClearFiltersAction preserva o divisor e a ação visual", () => {
   assert.match(componente, /export function ExplorarClearFiltersAction/);
@@ -26,10 +33,10 @@ test("ExplorarClearFiltersAction preserva o divisor e a ação visual", () => {
   assert.match(componente, /traduzirTextoExplorar\("Limpar filtros", language\)/);
 });
 
-test("Explorar mantém a decisão de limpar filtros na página", () => {
-  assert.match(pagina, /import \{ ExplorarClearFiltersAction \} from "\.\/components\/explorar-clear-filters-action";/);
-  assert.match(pagina, /!mostrarConfirmacaoConteudo18 && filtrosAtivos && \(/);
+test("Explorar mantém a decisão de limpar filtros na composição adiada", () => {
+  assert.match(composicao, /import \{ ExplorarClearFiltersAction \} from "\.\/explorar-clear-filters-action";/);
+  assert.match(composicao, /!mostrarConfirmacaoConteudo18 && filtrosAtivos && \(/);
   assert.match(pagina, /function limparFiltros\(\)/);
-  assert.match(pagina, /<ExplorarClearFiltersAction/);
-  assert.match(pagina, /onLimpar=\{limparFiltros\}/);
+  assert.match(composicao, /<ExplorarClearFiltersAction/);
+  assert.match(pagina, /onLimparFiltros=\{limparFiltros\}/);
 });

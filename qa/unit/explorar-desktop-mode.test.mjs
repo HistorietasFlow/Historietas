@@ -13,6 +13,13 @@ const pagina = readFileSync(
   new URL("../../app/explorar/page.tsx", import.meta.url),
   "utf8",
 );
+const composicaoFiltros = readFileSync(
+  new URL(
+    "../../app/explorar/components/explorar-advanced-filters-composition.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const interfaceControlsState = readFileSync(
   new URL(
     "../../app/explorar/hooks/use-explorar-interface-controls-state.ts",
@@ -77,7 +84,7 @@ test("Explorar delega apenas o modo desktop e mantém as fronteiras sensíveis",
     pagina,
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
-  assert.match(pagina, /<ExplorarAdvancedFiltersShell\s+isDesktop=\{isDesktop\}/);
+  assert.match(composicaoFiltros, /<ExplorarAdvancedFiltersShell\s+isDesktop=\{isDesktop\}/);
   assert.match(modalShell, /isDesktop: boolean/);
   assert.match(modalShell, /isDesktop\s*\?\s*desktopExplorarModalSheetStyle/);
   assert.equal((categoriesBar.match(/\bisDesktop\b/g) || []).length, 3);
