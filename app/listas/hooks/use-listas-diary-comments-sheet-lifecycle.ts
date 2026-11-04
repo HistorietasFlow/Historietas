@@ -55,7 +55,6 @@ export function useListasDiaryCommentsSheetLifecycle<TItem>({
       document.body.style.overflow = overflowAnterior;
       restaurarFocoAnterior(elementoComFocoAnterior);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Preserva as dependências do efeito original.
   }, [comentariosDiarioItem]);
 
   return {
