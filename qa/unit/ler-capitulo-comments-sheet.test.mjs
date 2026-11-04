@@ -12,6 +12,7 @@ const sheet = ler("../../app/ler-capitulo/components/ler-capitulo-comments-sheet
 const acoesSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-actions.ts");
 const compositorSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-composer.ts");
 const gestosSheet = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comment-sheet-gestures.ts");
+const acessibilidadeDialogo = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comments-dialog-accessibility.ts");
 
 test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas", () => {
   assert.match(sheet, /^"use client";/);
@@ -43,6 +44,14 @@ test("sheet preserva efeitos, JSX e props enquanto delega ações assíncronas",
   assert.match(gestosSheet, /function finalizarArraste\(/);
   assert.doesNotMatch(sheet, /function iniciarArraste\(/);
   assert.doesNotMatch(sheet, /function finalizarArraste\(/);
+  assert.match(sheet, /role="dialog"/);
+  assert.match(sheet, /aria-modal="true"/);
+  assert.match(sheet, /aria-labelledby="ler-capitulo-comments-title"/);
+  assert.match(sheet, /data-dialog-initial-focus="true"/);
+  assert.match(sheet, /onKeyDown=\{aoPressionarTeclaDialogo\}/);
+  assert.match(acessibilidadeDialogo, /focarInicioDialogo\(dialogRef\.current\)/);
+  assert.match(acessibilidadeDialogo, /manterFocoNoDialogo\(event, onFechar\)/);
+  assert.match(acessibilidadeDialogo, /restaurarFocoAnterior\(focoAnterior\)/);
   assert.match(sheet, /from "\.\.\/lib\/ler-capitulo-comment-thread-structure";/);
   assert.match(sheet, /criarEstruturaComentariosCapitulo\(\s*post\?\.comentarios \|\| \[\],\s*ordenacaoComentarios\s*\)/);
   assert.doesNotMatch(sheet, /function criarEstruturaComentariosCapitulo\(/);

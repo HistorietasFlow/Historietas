@@ -123,3 +123,7 @@ A proteção do login passa por `obterRedirectToSeguro`, e a cobertura foi refor
 Falso positivo por coincidência de valor entre `redirectTo=/publicar` e o link estático `/publicar`.
 
 Não alterar a lógica funcional do app para “corrigir” esse alerta. Manter os testes de regressão unitário e E2E.
+
+## Diálogos interativos devem compartilhar o contrato completo de foco
+
+Sheets que se comportam como modal precisam expor `role="dialog"`, `aria-modal="true"` e nome acessível, além de foco inicial previsível, contenção de Tab/Shift+Tab, fechamento por Escape e restauração do foco ao acionador. O leitor reutiliza os helpers de foco já adotados pela página pública de obra; gestos, body lock e regras funcionais permanecem em seus lifecycles próprios.

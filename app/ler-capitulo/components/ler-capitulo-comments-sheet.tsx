@@ -6,6 +6,7 @@ import { useLerCapituloCommentSheetActions } from "../hooks/use-ler-capitulo-com
 import { useLerCapituloCommentSheetComposer } from "../hooks/use-ler-capitulo-comment-sheet-composer";
 import { useLerCapituloCommentSheetGestures } from "../hooks/use-ler-capitulo-comment-sheet-gestures";
 import { useLerCapituloCommentRepliesVisibility } from "../hooks/use-ler-capitulo-comment-replies-visibility";
+import { useLerCapituloCommentsDialogAccessibility } from "../hooks/use-ler-capitulo-comments-dialog-accessibility";
 import {
   criarEstruturaComentariosCapitulo,
   type OrdenacaoComentariosCapitulo,
@@ -153,6 +154,12 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
     isDesktop,
     onFecharComentarios: fecharComentarios,
   });
+  const { aoPressionarTeclaDialogo } =
+    useLerCapituloCommentsDialogAccessibility({
+      aberto: Boolean(post),
+      dialogRef: sheetRef,
+      onFechar: fecharSheetComentarios,
+    });
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -208,6 +215,11 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
 
       <article
         ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ler-capitulo-comments-title"
+        tabIndex={-1}
+        onKeyDown={aoPressionarTeclaDialogo}
         style={
           isDesktop
             ? desktopCommentsSheetStyle
@@ -229,6 +241,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
           onTouchCancel={finalizarArraste}
           role="button"
           tabIndex={0}
+          data-dialog-initial-focus="true"
           aria-label={
             sheetExpandido ? "Recolher comentários" : "Expandir comentários"
           }
@@ -245,7 +258,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
         <header style={commentsSheetHeaderStyle}>
           <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
 
-          <strong style={commentsSheetTitleStyle}>
+          <strong id="ler-capitulo-comments-title" style={commentsSheetTitleStyle}>
             {post.comentarios.length === 1
               ? "1 comentário"
               : `${post.comentarios.length} comentários`}
