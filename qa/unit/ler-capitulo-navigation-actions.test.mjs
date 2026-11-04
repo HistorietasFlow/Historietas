@@ -19,9 +19,20 @@ const js = typescript.transpileModule(fonte, {
   /import \{\s*criarHrefLeituraCapituloLeitor,?\s*\} from "\.\/ler-capitulo-chapter-route";/,
   "const criarHrefLeituraCapituloLeitor = (...args) => globalThis.__lerCapituloNavigation.href(...args);",
 );
-const { criarAcaoTrocaCapituloLeitor } = await import(
+const {
+  criarAcaoTrocaCapituloLeitor,
+  criarEstadoHistoricoLeitor,
+  obterIdentidadeHistoricoLeitor,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`,
 );
+const fonteEstadoRota = readFileSync(
+  new URL(
+    "../../app/ler-capitulo/hooks/use-ler-capitulo-route-identity-state.ts",
+    import.meta.url,
+  ),
+  "utf8",
+).replace(/\r\n/g, "\n");
 
 function cenario(obraAtual) {
   const eventos = [];
@@ -51,11 +62,52 @@ test("ação preserva a fronteira visual sem persistência", () => {
   assert.doesNotMatch(fonte, /\b(?:supabase|localStorage|useState|useEffect|router)\b/);
 });
 
+test("estado do histórico preserva o estado do Next e valida a identidade do capítulo", () => {
+  const estado = criarEstadoHistoricoLeitor(
+    { __NA: true },
+    { obraId: "obra-a", capituloId: "capitulo-2" },
+  );
+
+  assert.deepEqual(estado, {
+    __NA: true,
+    __historietasLeitorCapitulo: {
+      obraId: "obra-a",
+      capituloId: "capitulo-2",
+    },
+  });
+  assert.deepEqual(obterIdentidadeHistoricoLeitor(estado), {
+    obraId: "obra-a",
+    capituloId: "capitulo-2",
+  });
+  assert.equal(obterIdentidadeHistoricoLeitor(null), null);
+  assert.equal(
+    obterIdentidadeHistoricoLeitor({
+      __historietasLeitorCapitulo: { obraId: "obra-a" },
+    }),
+    null,
+  );
+});
+
+test("estado da rota registra e limpa o listener de popstate", () => {
+  assert.match(fonteEstadoRota, /window\.history\.replaceState\(/);
+  assert.match(
+    fonteEstadoRota,
+    /window\.addEventListener\("popstate", sincronizarIdentidadeComHistorico\)/,
+  );
+  assert.match(
+    fonteEstadoRota,
+    /window\.removeEventListener\("popstate", sincronizarIdentidadeComHistorico\)/,
+  );
+  assert.match(fonteEstadoRota, /setObraId\(identidade\.obraId\)/);
+  assert.match(fonteEstadoRota, /setCapituloId\(identidade\.capituloId\)/);
+  assert.doesNotMatch(fonteEstadoRota, /URLSearchParams|location\.search/);
+});
+
 test("sem obra não há setter, navegação nem rolagem", () => {
   const anterior = globalThis.window;
   const atual = cenario(null);
   globalThis.window = {
-    history: { pushState: () => atual.eventos.push(["push"]) },
+    history: { state: null, pushState: () => atual.eventos.push(["push"]) },
     scrollTo: () => atual.eventos.push(["scroll"]),
   };
   try {
@@ -73,6 +125,7 @@ test("com obra preserva a ordem setter, pushState e scrollTo", () => {
   const atual = cenario(obra);
   globalThis.window = {
     history: {
+      state: { __NA: true },
       pushState(...args) {
         atual.eventos.push(["push", ...args]);
       },
@@ -86,7 +139,18 @@ test("com obra preserva a ordem setter, pushState e scrollTo", () => {
     assert.deepEqual(atual.eventos, [
       ["setter", "novo"],
       ["href", obra, "novo"],
-      ["push", null, "", "/obra/obra/novo"],
+      [
+        "push",
+        {
+          __NA: true,
+          __historietasLeitorCapitulo: {
+            obraId: "obra",
+            capituloId: "novo",
+          },
+        },
+        "",
+        "/obra/obra/novo",
+      ],
       ["scroll", { top: 0, behavior: "smooth" }],
     ]);
   } finally {
