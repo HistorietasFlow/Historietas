@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import {
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -62,6 +63,7 @@ import {
   normalizarObra,
 } from "./lib/ler-capitulo-work-normalization";
 import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load";
+import { useLerCapituloAuthIdentityLifecycle } from "./hooks/use-ler-capitulo-auth-identity-lifecycle";
 import { useLerCapituloRouteIdentityState } from "./hooks/use-ler-capitulo-route-identity-state";
 import { useLerCapituloLoadedDataState } from "./hooks/use-ler-capitulo-loaded-data-state";
 import { useLerCapituloSessionPreferences } from "./hooks/use-ler-capitulo-session-preferences";
@@ -78,6 +80,9 @@ import { criarAcoesComentariosCapitulo } from "./lib/ler-capitulo-comment-action
 import { criarAcoesInteracoesCapitulo } from "./lib/ler-capitulo-interaction-actions";
 import { criarAcaoProgressoLeituraCapitulo } from "./lib/ler-capitulo-reading-progress-action";
 import { criarAcoesAutenticacaoLeitor } from "./lib/ler-capitulo-auth-actions";
+import {
+  removerEstadoUsuarioObrasLeitor,
+} from "./lib/ler-capitulo-auth-identity";
 import {
   criarAcoesDenunciaLeitor,
 } from "./lib/ler-capitulo-report-actions";
@@ -167,6 +172,42 @@ export default function LerCapituloPage() {
   const lidoCapituloSalvandoRef = useRef(false);
   const acoesComentariosCapituloRef = useRef<Set<string>>(new Set<string>());
 
+  const limparEstadoContaAnterior = useCallback(() => {
+    setObras((obrasAtuais) => removerEstadoUsuarioObrasLeitor(obrasAtuais));
+    setComentariosCapitulo([]);
+    setComentariosCarregando(false);
+    setMetricasCapitulo((metricasAtuais) => ({
+      ...metricasAtuais,
+      curtiu: false,
+      salvo: false,
+      carregado: false,
+    }));
+    setCurtidaCapituloSalvando(false);
+    setSalvoCapituloSalvando(false);
+    setLidoCapituloSalvando(false);
+    comentariosCapituloCarregadoIdRef.current = "";
+    curtidaCapituloSalvandoRef.current = false;
+    salvoCapituloSalvandoRef.current = false;
+    lidoCapituloSalvandoRef.current = false;
+    acoesComentariosCapituloRef.current.clear();
+  }, [
+    setComentariosCapitulo,
+    setComentariosCarregando,
+    setCurtidaCapituloSalvando,
+    setLidoCapituloSalvando,
+    setMetricasCapitulo,
+    setObras,
+    setSalvoCapituloSalvando,
+  ]);
+
+  const {
+    autenticacaoCarregada,
+    identidadeAutenticadaLeitorRef,
+  } = useLerCapituloAuthIdentityLifecycle({
+    onIdentidadeMudou: limparEstadoContaAnterior,
+    setUsuarioIdLogado,
+  });
+
   useLerCapituloCommentsBodyLock(
     mostrarComentario,
   );
@@ -176,19 +217,37 @@ export default function LerCapituloPage() {
     tamanhoFonte,
     mostrarLinhaProgresso,
     preferenciasCarregadas,
-    setUsuarioIdLogado,
     setPerfilComentarioLeitor,
     setTamanhoFonte,
     setMostrarLinhaProgresso,
     setPreferenciasCarregadas,
   });
 
-  useLerCapituloInitialLoad({
+  const { identidadeDadosAplicada } = useLerCapituloInitialLoad({
+    autenticacaoCarregada,
+    usuarioIdLogado,
+    identidadeAutenticadaLeitorRef,
     setObraId,
     setCapituloId,
     setObras,
     setCarregando,
   });
+
+  const {
+    obterUsuarioLogadoIdAtual,
+    exigirLogin,
+    execucaoIdentidadeAcaoEstaAtual,
+  } = criarAcoesAutenticacaoLeitor({
+    obraId,
+    capituloId,
+    router,
+    identidadeDadosAplicada,
+    identidadeAutenticadaLeitorRef,
+    setMensagemAcao,
+  });
+  const usuarioIdDadosAplicados = execucaoIdentidadeAcaoEstaAtual()
+    ? usuarioIdLogado
+    : "";
 
   const obraAtual = useMemo(
     () => obterObraAtualLeitor(obras, obraId),
@@ -208,7 +267,8 @@ export default function LerCapituloPage() {
       obras,
       obraAtual,
       capituloAtual,
-      usuarioIdLogado,
+      usuarioIdLogado: usuarioIdDadosAplicados,
+      execucaoIdentidadeAcaoEstaAtual,
       setObras,
     });
 
@@ -225,6 +285,8 @@ export default function LerCapituloPage() {
     capituloAtual,
     comentariosCapitulo,
     usuarioIdLogado,
+    identidadeDadosAplicada,
+    identidadeAutenticadaLeitorRef,
     comentariosCapituloCarregadoIdRef,
     curtidaCapituloSalvandoRef,
     salvoCapituloSalvandoRef,
@@ -290,7 +352,7 @@ export default function LerCapituloPage() {
   });
 
   useLerCapituloEntryActivity({
-    usuarioIdLogado,
+    usuarioIdLogado: usuarioIdDadosAplicados,
     obraAtual,
     capituloAtual,
     numeroCapitulo,
@@ -300,20 +362,11 @@ export default function LerCapituloPage() {
     registrarAtividadeDiarioLeitor,
   });
 
-  const {
-    obterUsuarioLogadoIdAtual,
-    exigirLogin,
-  } =
-    criarAcoesAutenticacaoLeitor({
-      usuarioIdLogado,
-      obraId,
-      capituloId,
-      router,
-      setUsuarioIdLogado,
-      setMensagemAcao,
-    });
-
   async function recarregarMetricasCapituloAtual() {
+    if (!execucaoIdentidadeAcaoEstaAtual()) {
+      return;
+    }
+
     if (!capituloAtual) {
       setMetricasCapitulo(metricasCapituloVazias);
       return;
@@ -323,6 +376,10 @@ export default function LerCapituloPage() {
       capituloAtual,
       comentariosCapitulo.length
     );
+
+    if (!execucaoIdentidadeAcaoEstaAtual()) {
+      return;
+    }
 
     setMetricasCapitulo(metricas);
 
@@ -363,6 +420,7 @@ export default function LerCapituloPage() {
     salvoCapituloSalvandoRef,
     exigirLogin,
     obterUsuarioLogadoIdAtual,
+    execucaoIdentidadeAcaoEstaAtual,
     atualizarCapitulo,
     salvarRegistroCapituloSupabase,
     recarregarMetricasCapituloAtual,
@@ -387,6 +445,7 @@ export default function LerCapituloPage() {
     lidoCapituloSalvandoRef,
     exigirLogin,
     obterUsuarioLogadoIdAtual,
+    execucaoIdentidadeAcaoEstaAtual,
     normalizarObra,
     calcularProgressoLeitura,
     salvarObras,
@@ -412,6 +471,7 @@ export default function LerCapituloPage() {
     iniciarAcaoComentariosCapitulo,
     finalizarAcaoComentariosCapitulo,
     obterUsuarioLogadoIdAtual,
+    execucaoIdentidadeAcaoEstaAtual,
     criarLoginHrefLeitor,
     criarHrefLeituraCapituloLeitor,
     carregarPerfilComentarioLeitor,
@@ -560,7 +620,7 @@ export default function LerCapituloPage() {
         setTamanhoFonte={setTamanhoFonte}
         mostrarLinhaProgresso={mostrarLinhaProgresso}
         setMostrarLinhaProgresso={setMostrarLinhaProgresso}
-        usuarioIdLogado={usuarioIdLogado}
+        usuarioIdLogado={usuarioIdDadosAplicados}
         obterAutorIdSeguro={obterAutorIdSeguro}
         statusLeituraTexto={statusLeituraTexto}
         totalPalavras={totalPalavras}
@@ -587,8 +647,8 @@ export default function LerCapituloPage() {
       <ComentariosCapituloSheet
         key={mostrarComentario ? postComentariosCapitulo?.id || "comentarios-fechados" : "comentarios-fechados"}
         post={mostrarComentario ? postComentariosCapitulo : null}
-        podeComentar={Boolean(usuarioIdLogado)}
-        usuarioId={usuarioIdLogado}
+        podeComentar={Boolean(usuarioIdDadosAplicados)}
+        usuarioId={usuarioIdDadosAplicados}
         usuarioNome={perfilComentarioLeitor.nome}
         usuarioAvatar={perfilComentarioLeitor.avatar}
         erroInteracao={comentarioStatus}

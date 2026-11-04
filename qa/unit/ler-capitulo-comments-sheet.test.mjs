@@ -60,7 +60,7 @@ test("página mantém a integração e as ações de dados e persistência", () 
     assert.match(pagina, new RegExp(`${prop}=\\{${valor}\\}`));
   }
   assert.match(pagina, /post=\{mostrarComentario \? postComentariosCapitulo : null\}/);
-  assert.match(pagina, /podeComentar=\{Boolean\(usuarioIdLogado\)\}/);
+  assert.match(pagina, /podeComentar=\{Boolean\(usuarioIdDadosAplicados\)\}/);
   assert.match(pagina, /criarAcoesComentariosCapitulo\(\{/);
   assert.match(acoes, /async function enviarComentarioCapitulo\(/);
   assert.match(pagina, /useLerCapituloInteractionData\(\{/);

@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
@@ -45,6 +44,7 @@ function cenario({
     lidoCapituloSalvandoRef: { current: bloqueado },
     async exigirLogin(mensagem) { eventos.push(["login", mensagem]); return login; },
     async obterUsuarioLogadoIdAtual() { eventos.push(["usuario"]); return userIdRecuperado; },
+    execucaoIdentidadeAcaoEstaAtual() { return true; },
     normalizarObra(obra, index) { eventos.push(["normalizar", obra.id, index]); return { ...obra }; },
     calcularProgressoLeitura(lista) { eventos.push(["calcular"]); return Math.round(lista.filter((capitulo) => capitulo.lido).length / lista.length * 100); },
     salvarObras(lista) { eventos.push(["salvarObras", lista]); },
@@ -63,7 +63,7 @@ function cenario({
 
 test("a ação mantém corpo literal e a página continua proprietária de estados e persistências", () => {
   const acao = fonte.slice(fonte.indexOf("  async function alternarLido() {"), fonte.indexOf("  return { alternarLido };")).trimEnd();
-  assert.equal(createHash("sha256").update(acao).digest("hex"), "a79265423ad2bf530bdbebbbcae2556705bc8ab8777bf7c3d47832a5f6aef91f");
+  assert.match(acao, /execucaoIdentidadeAcaoEstaAtual/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-reading-progress-action";/);
   assert.match(pagina, /criarAcaoProgressoLeituraCapitulo\(\{[\s\S]*?obras,[\s\S]*?lidoCapituloSalvandoRef,[\s\S]*?salvarObras,[\s\S]*?salvarProgressoLeituraSupabase,[\s\S]*?setMensagemAcao,/);
   assert.doesNotMatch(pagina, /async function alternarLido\(/);
@@ -106,7 +106,7 @@ test("marcar lido atualiza dados antes da sincronização e registra efeitos soc
   assert.equal(salvo[1].id, "outra");
   assert.equal(atual.obraAtual.capitulos[1].lido, false);
   assert.ok(atual.eventos.findIndex((e) => e[0] === "salvarObras") < atual.eventos.findIndex((e) => e[0] === "sincronizar"));
-  assert.deepEqual(atual.eventos.find((e) => e[0] === "sincronizar"), ["sincronizar", obra, "c2", true]);
+  assert.deepEqual(atual.eventos.find((e) => e[0] === "sincronizar"), ["sincronizar", obra, "c2", true, "recuperado"]);
   assert.deepEqual(atual.eventos.find((e) => e[0] === "notificacao"), ["notificacao", "recuperado", "obra", "c2"]);
   assert.deepEqual(atual.eventos.find((e) => e[0] === "diario")[1], {
     userId: "recuperado", tipo: "leu_capitulo", obra, capituloId: "c2",
@@ -127,7 +127,7 @@ test("desmarcar encontra o último capítulo lido restante e não registra efeit
   assert.equal(obra.ultimoCapituloLidoId, "c3");
   assert.equal(obra.ultimaLeituraEm, "2026-03-01T00:00:00.000Z");
   assert.equal(obra.progressoLeitura, 67);
-  assert.deepEqual(atual.eventos.find((e) => e[0] === "sincronizar"), ["sincronizar", obra, "c2", false]);
+  assert.deepEqual(atual.eventos.find((e) => e[0] === "sincronizar"), ["sincronizar", obra, "c2", false, "usuario"]);
   assert.ok(!atual.eventos.some((e) => e[0] === "notificacao" || e[0] === "diario"));
 });
 

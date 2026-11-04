@@ -39,7 +39,8 @@ export async function incrementarVisualizacaoCapituloSupabase(
 export async function salvarProgressoLeituraSupabase(
   obra: ObraLocal,
   capituloId: string,
-  lido: boolean
+  lido: boolean,
+  userIdEsperado = "",
 ) {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
@@ -48,6 +49,7 @@ export async function salvarProgressoLeituraSupabase(
 
     if (
       !userId ||
+      (userIdEsperado && userId !== userIdEsperado) ||
       !idObraSupabaseValido(obra.id) ||
       !capituloIdLimpo
     ) {
@@ -98,13 +100,18 @@ export async function salvarProgressoLeituraSupabase(
 export async function salvarRegistroCapituloSupabase(
   tabela: "curtidas_capitulos" | "salvos_capitulos",
   capituloId: string,
-  ativo: boolean
+  ativo: boolean,
+  userIdEsperado = "",
 ) {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
     const userId = dadosUsuario.user?.id || "";
 
-    if (!userId || !capituloId.trim()) {
+    if (
+      !userId ||
+      (userIdEsperado && userId !== userIdEsperado) ||
+      !capituloId.trim()
+    ) {
       return false;
     }
 

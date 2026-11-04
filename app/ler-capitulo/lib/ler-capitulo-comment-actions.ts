@@ -19,10 +19,16 @@ type DependenciasAcoesComentarios<T extends MetricasComentarios> = {
   iniciarAcaoComentariosCapitulo: (chave: string) => boolean;
   finalizarAcaoComentariosCapitulo: (chave: string) => void;
   obterUsuarioLogadoIdAtual: () => Promise<string>;
+  execucaoIdentidadeAcaoEstaAtual: () => boolean;
   criarLoginHrefLeitor: (obraId?: string, capituloId?: string) => string;
   criarHrefLeituraCapituloLeitor: (obra: ObraLocal, capituloId: string) => string;
   carregarPerfilComentarioLeitor: (userId: string) => Promise<PerfilComentarioLeitor>;
-  salvarComentarioCapituloSupabase: (capituloId: string, comentario: string, comentarioPaiId?: string) => Promise<Record<string, unknown> | null>;
+  salvarComentarioCapituloSupabase: (
+    capituloId: string,
+    comentario: string,
+    comentarioPaiId?: string,
+    userIdEsperado?: string,
+  ) => Promise<Record<string, unknown> | null>;
   obterTextoRegistroLeitor: (registro: Record<string, unknown> | null | undefined, chave: string) => string;
   registrarNotificacaoInteracaoCapituloSupabase: (args: {
     tipo: "comentario-capitulo" | "curtida-comentario-capitulo";
@@ -32,6 +38,7 @@ type DependenciasAcoesComentarios<T extends MetricasComentarios> = {
     titulo: string;
     mensagem: string;
     link: string;
+    usuarioIdEsperado?: string;
   }) => Promise<boolean>;
   salvarCurtidaComentarioCapituloLocal: (userId: string, comentarioId: string, curtiu: boolean) => void;
   TABELA_COMENTARIOS_CAPITULOS_CURTIDAS: "comentarios_capitulos_curtidas";
@@ -81,6 +88,7 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
   iniciarAcaoComentariosCapitulo,
   finalizarAcaoComentariosCapitulo,
   obterUsuarioLogadoIdAtual,
+  execucaoIdentidadeAcaoEstaAtual,
   criarLoginHrefLeitor,
   criarHrefLeituraCapituloLeitor,
   carregarPerfilComentarioLeitor,
@@ -105,7 +113,10 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
   ) {
     const chaveAcao = `enviar-comentario-capitulo:${postId}`;
 
-    if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
+    if (
+      !execucaoIdentidadeAcaoEstaAtual() ||
+      !iniciarAcaoComentariosCapitulo(chaveAcao)
+    ) {
       return false;
     }
 
@@ -113,6 +124,10 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
 
     try {
       const userIdAtual = await obterUsuarioLogadoIdAtual();
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return false;
+      }
 
       if (!userIdAtual) {
         setMensagemAcao("Entre na sua conta para comentar este capítulo.");
@@ -128,14 +143,25 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
       }
 
       const perfilAtual = await carregarPerfilComentarioLeitor(userIdAtual);
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return false;
+      }
+
       setPerfilComentarioLeitor(perfilAtual);
 
       const comentarioPaiIdLimpo = comentarioPaiId.trim();
       const comentarioSalvo = await salvarComentarioCapituloSupabase(
         postId,
         textoLimpo,
-        comentarioPaiIdLimpo
+        comentarioPaiIdLimpo,
+        userIdAtual,
       );
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return false;
+      }
+
       const agora = new Date().toISOString();
       const comentarioId = obterTextoRegistroLeitor(comentarioSalvo, "id");
 
@@ -190,12 +216,15 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
           titulo: "Novo comentário no capítulo",
           mensagem: `${perfilAtual.nome || "Um leitor"} comentou em ${capituloAtual.titulo}: ${textoLimpo.slice(0, 120)}`,
           link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
+          usuarioIdEsperado: userIdAtual,
         });
       }
 
       return true;
     } finally {
-      finalizarAcaoComentariosCapitulo(chaveAcao);
+      if (execucaoIdentidadeAcaoEstaAtual()) {
+        finalizarAcaoComentariosCapitulo(chaveAcao);
+      }
     }
   }
 
@@ -203,7 +232,10 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
   async function removerComentarioCapitulo(postId: string, comentarioId: string) {
     const chaveAcao = `remover-comentario-capitulo:${comentarioId}`;
 
-    if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
+    if (
+      !execucaoIdentidadeAcaoEstaAtual() ||
+      !iniciarAcaoComentariosCapitulo(chaveAcao)
+    ) {
       return;
     }
 
@@ -211,6 +243,10 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
 
     try {
       const userIdAtual = await obterUsuarioLogadoIdAtual();
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return;
+      }
 
       if (!userIdAtual) {
         setMensagemAcao("Entre na sua conta para apagar seu comentário.");
@@ -236,6 +272,10 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
         .delete()
         .eq("id", comentarioId)
         .eq("user_id", userIdAtual);
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return;
+      }
 
       if (error) {
         setComentarioStatus("Não foi possível remover o comentário agora.");
@@ -264,7 +304,9 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
       }));
       void postId;
     } finally {
-      finalizarAcaoComentariosCapitulo(chaveAcao);
+      if (execucaoIdentidadeAcaoEstaAtual()) {
+        finalizarAcaoComentariosCapitulo(chaveAcao);
+      }
     }
   }
 
@@ -274,7 +316,10 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
   ) {
     const chaveAcao = `curtir-comentario-capitulo:${comentarioId}`;
 
-    if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
+    if (
+      !execucaoIdentidadeAcaoEstaAtual() ||
+      !iniciarAcaoComentariosCapitulo(chaveAcao)
+    ) {
       return;
     }
 
@@ -282,6 +327,10 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
 
     try {
       const userIdAtual = await obterUsuarioLogadoIdAtual();
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return;
+      }
 
       if (!userIdAtual) {
         setMensagemAcao("Entre na sua conta para curtir comentários.");
@@ -317,6 +366,10 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
           .eq("comentario_id", comentarioId)
           .eq("usuario_id", userIdAtual);
 
+        if (!execucaoIdentidadeAcaoEstaAtual()) {
+          return;
+        }
+
         if (erroLimparCurtida) {
           throw erroLimparCurtida;
         }
@@ -329,12 +382,20 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
               usuario_id: userIdAtual,
             });
 
+          if (!execucaoIdentidadeAcaoEstaAtual()) {
+            return;
+          }
+
           if (erroInserirCurtida) {
             throw erroInserirCurtida;
           }
 
           if (obraAtual && capituloAtual && comentarioAtual) {
             const perfilAtual = await carregarPerfilComentarioLeitor(userIdAtual);
+
+            if (!execucaoIdentidadeAcaoEstaAtual()) {
+              return;
+            }
 
             void registrarNotificacaoInteracaoCapituloSupabase({
               tipo: "curtida-comentario-capitulo",
@@ -344,10 +405,15 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
               titulo: "Nova curtida no comentário",
               mensagem: `${perfilAtual.nome || "Um leitor"} curtiu seu comentário em ${capituloAtual.titulo}.`,
               link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
+              usuarioIdEsperado: userIdAtual,
             });
           }
         }
       } catch (error) {
+        if (!execucaoIdentidadeAcaoEstaAtual()) {
+          return;
+        }
+
         setComentariosCapitulo((comentariosAtuais) =>
           comentariosAtuais.map((comentario) => {
             if (comentario.id !== comentarioId) {
@@ -377,7 +443,9 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
 
       void postId;
     } finally {
-      finalizarAcaoComentariosCapitulo(chaveAcao);
+      if (execucaoIdentidadeAcaoEstaAtual()) {
+        finalizarAcaoComentariosCapitulo(chaveAcao);
+      }
     }
   }
 

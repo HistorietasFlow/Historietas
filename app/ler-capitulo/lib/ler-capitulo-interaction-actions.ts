@@ -19,11 +19,13 @@ type DependenciasAcoesInteracoes<T extends MetricasInteracoes> = {
   salvoCapituloSalvandoRef: { current: boolean };
   exigirLogin: (mensagem: string) => Promise<boolean>;
   obterUsuarioLogadoIdAtual: () => Promise<string>;
+  execucaoIdentidadeAcaoEstaAtual: () => boolean;
   atualizarCapitulo: (dados: Partial<CapituloLocal>) => void;
   salvarRegistroCapituloSupabase: (
     tabela: "curtidas_capitulos" | "salvos_capitulos",
     capituloId: string,
-    ativo: boolean
+    ativo: boolean,
+    userIdEsperado?: string,
   ) => Promise<boolean>;
   recarregarMetricasCapituloAtual: () => Promise<void>;
   carregarPerfilComentarioLeitor: (userId: string) => Promise<{ nome: string }>;
@@ -34,6 +36,7 @@ type DependenciasAcoesInteracoes<T extends MetricasInteracoes> = {
     titulo: string;
     mensagem: string;
     link: string;
+    usuarioIdEsperado?: string;
   }) => Promise<boolean>;
   criarHrefLeituraCapituloLeitor: (obra: ObraLocal, capituloId: string) => string;
   registrarAtividadeDiarioLeitor: (args: {
@@ -61,6 +64,7 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
   salvoCapituloSalvandoRef,
   exigirLogin,
   obterUsuarioLogadoIdAtual,
+  execucaoIdentidadeAcaoEstaAtual,
   atualizarCapitulo,
   salvarRegistroCapituloSupabase,
   recarregarMetricasCapituloAtual,
@@ -74,7 +78,11 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
   setMetricasCapitulo,
 }: DependenciasAcoesInteracoes<T>) {
   async function alternarCurtida() {
-    if (!capituloAtual || curtidaCapituloSalvandoRef.current) {
+    if (
+      !capituloAtual ||
+      curtidaCapituloSalvandoRef.current ||
+      !execucaoIdentidadeAcaoEstaAtual()
+    ) {
       return;
     }
 
@@ -84,7 +92,7 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
 
     const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
 
-    if (!userIdAtual) {
+    if (!userIdAtual || !execucaoIdentidadeAcaoEstaAtual()) {
       return;
     }
 
@@ -113,8 +121,13 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
       const curtidaSalva = await salvarRegistroCapituloSupabase(
         "curtidas_capitulos",
         capituloAtual.id,
-        novoStatusCurtida
+        novoStatusCurtida,
+        userIdAtual,
       );
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return;
+      }
 
       if (!curtidaSalva) {
         atualizarCapitulo({
@@ -131,10 +144,19 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
       }
 
       await recarregarMetricasCapituloAtual();
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return;
+      }
+
       setMensagemAcao("");
 
       if (novoStatusCurtida && obraAtual) {
         const perfilAtual = await carregarPerfilComentarioLeitor(userIdAtual);
+
+        if (!execucaoIdentidadeAcaoEstaAtual()) {
+          return;
+        }
 
         void registrarNotificacaoInteracaoCapituloSupabase({
           tipo: "curtida-capitulo",
@@ -143,16 +165,23 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
           titulo: "Nova curtida no capítulo",
           mensagem: `${perfilAtual.nome || "Um leitor"} curtiu ${capituloAtual.titulo}.`,
           link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
+          usuarioIdEsperado: userIdAtual,
         });
       }
     } finally {
-      curtidaCapituloSalvandoRef.current = false;
-      setCurtidaCapituloSalvando(false);
+      if (execucaoIdentidadeAcaoEstaAtual()) {
+        curtidaCapituloSalvandoRef.current = false;
+        setCurtidaCapituloSalvando(false);
+      }
     }
   }
 
   async function alternarSalvo() {
-    if (!capituloAtual || salvoCapituloSalvandoRef.current) {
+    if (
+      !capituloAtual ||
+      salvoCapituloSalvandoRef.current ||
+      !execucaoIdentidadeAcaoEstaAtual()
+    ) {
       return;
     }
 
@@ -162,7 +191,7 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
 
     const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
 
-    if (!userIdAtual) {
+    if (!userIdAtual || !execucaoIdentidadeAcaoEstaAtual()) {
       return;
     }
 
@@ -191,8 +220,13 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
       const salvoSincronizado = await salvarRegistroCapituloSupabase(
         "salvos_capitulos",
         capituloAtual.id,
-        novoStatusSalvo
+        novoStatusSalvo,
+        userIdAtual,
       );
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return;
+      }
 
       if (!salvoSincronizado) {
         atualizarCapitulo({
@@ -209,6 +243,11 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
       }
 
       await recarregarMetricasCapituloAtual();
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return;
+      }
+
       setMensagemAcao("");
 
       if (novoStatusSalvo && obraAtual) {
@@ -227,8 +266,10 @@ export function criarAcoesInteracoesCapitulo<T extends MetricasInteracoes>({
         });
       }
     } finally {
-      salvoCapituloSalvandoRef.current = false;
-      setSalvoCapituloSalvando(false);
+      if (execucaoIdentidadeAcaoEstaAtual()) {
+        salvoCapituloSalvandoRef.current = false;
+        setSalvoCapituloSalvando(false);
+      }
     }
   }
 

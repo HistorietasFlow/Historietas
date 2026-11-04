@@ -1,6 +1,10 @@
 import { useEffect, useEffectEvent } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { ComentarioCapituloPublico } from "../components/ler-capitulo-comments-sheet";
+import {
+  execucaoIdentidadeLeitorEstaAtual,
+  type IdentidadeAutenticadaLeitor,
+} from "../lib/ler-capitulo-auth-identity";
 import { carregarComentariosCapituloSupabase } from "../lib/ler-capitulo-comments-read-loader";
 import { aplicarCurtidasComentariosCapitulosLocais } from "../lib/ler-capitulo-local-storage";
 import type { CapituloLocal } from "../lib/ler-capitulo-work-normalization";
@@ -19,6 +23,8 @@ type DadosInteracaoCapitulo = {
   capituloAtual: CapituloLocal | null;
   comentariosCapitulo: ComentarioCapituloPublico[];
   usuarioIdLogado: string;
+  identidadeDadosAplicada: IdentidadeAutenticadaLeitor | null;
+  identidadeAutenticadaLeitorRef: RefObject<IdentidadeAutenticadaLeitor>;
   comentariosCapituloCarregadoIdRef: RefObject<string>;
   curtidaCapituloSalvandoRef: RefObject<boolean>;
   salvoCapituloSalvandoRef: RefObject<boolean>;
@@ -36,6 +42,8 @@ export function useLerCapituloInteractionData({
   capituloAtual,
   comentariosCapitulo,
   usuarioIdLogado,
+  identidadeDadosAplicada,
+  identidadeAutenticadaLeitorRef,
   comentariosCapituloCarregadoIdRef,
   curtidaCapituloSalvandoRef,
   salvoCapituloSalvandoRef,
@@ -54,11 +62,30 @@ export function useLerCapituloInteractionData({
 
   useEffect(() => {
     let cancelado = false;
+    const identidadeEsperada = identidadeDadosAplicada;
+
+    function execucaoInteracaoEstaAtual() {
+      return Boolean(
+        identidadeEsperada &&
+        execucaoIdentidadeLeitorEstaAtual({
+          cancelada: cancelado,
+          identidadeEsperada,
+          identidadeAtual: identidadeAutenticadaLeitorRef.current,
+        }),
+      );
+    }
 
     async function carregarComentariosCapitulo() {
+      if (!execucaoInteracaoEstaAtual()) {
+        comentariosCapituloCarregadoIdRef.current = "";
+        setComentariosCapitulo([]);
+        setComentariosCarregando(Boolean(capituloAtual?.id));
+        return;
+      }
+
       if (!capituloAtual?.id) {
         window.setTimeout(() => {
-          if (!cancelado) {
+          if (execucaoInteracaoEstaAtual()) {
             setComentariosCapitulo([]);
             setComentariosCarregando(false);
           }
@@ -82,7 +109,7 @@ export function useLerCapituloInteractionData({
         },
       );
 
-      if (!cancelado) {
+      if (execucaoInteracaoEstaAtual()) {
         comentariosCapituloCarregadoIdRef.current = capituloAtual.id;
         setComentariosCapitulo(comentarios);
         setComentariosCarregando(false);
@@ -96,12 +123,39 @@ export function useLerCapituloInteractionData({
     };
     // O ref e os setters pertencem à página e são estáveis; preserva-se a dependência original.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [capituloAtual?.id, usuarioIdLogado]);
+  }, [
+    capituloAtual?.id,
+    usuarioIdLogado,
+    identidadeDadosAplicada,
+    identidadeAutenticadaLeitorRef,
+  ]);
 
   useEffect(() => {
     let cancelado = false;
+    const identidadeEsperada = identidadeDadosAplicada;
+
+    function execucaoInteracaoEstaAtual() {
+      return Boolean(
+        identidadeEsperada &&
+        execucaoIdentidadeLeitorEstaAtual({
+          cancelada: cancelado,
+          identidadeEsperada,
+          identidadeAtual: identidadeAutenticadaLeitorRef.current,
+        }),
+      );
+    }
 
     async function carregarMetricasCapituloAtual() {
+      if (!execucaoInteracaoEstaAtual()) {
+        setMetricasCapitulo((metricasAtuais) => ({
+          ...metricasAtuais,
+          curtiu: false,
+          salvo: false,
+          carregado: false,
+        }));
+        return;
+      }
+
       if (
         curtidaCapituloSalvandoRef.current ||
         salvoCapituloSalvandoRef.current
@@ -126,7 +180,7 @@ export function useLerCapituloInteractionData({
         comentariosCapitulo.length
       );
 
-      if (cancelado) {
+      if (!execucaoInteracaoEstaAtual()) {
         return;
       }
 
@@ -160,5 +214,7 @@ export function useLerCapituloInteractionData({
     capituloAtual,
     comentariosCapitulo.length,
     usuarioIdLogado,
+    identidadeDadosAplicada,
+    identidadeAutenticadaLeitorRef,
   ]);
 }

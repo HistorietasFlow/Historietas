@@ -26,8 +26,8 @@ const obra = { id: "obra", capitulos: [capitulo] };
 test("os seis helpers preservam literalmente os corpos e a nova fronteira", () => {
   const contratos = {
     incrementarVisualizacaoCapituloSupabase: "28a08f1ce01c4d393fd89ae94ed741f32969674f1c5e11642926fc839fe64728",
-    salvarProgressoLeituraSupabase: "f833e163fa55dc13f54cff89fa880362da8fe5aad8bfb5bc5e9efc0f25c3ad1a",
-    salvarRegistroCapituloSupabase: "f614e2d91baad1ae73b25f2b7ff75c020d130b0eb70bf659eba8a009e0939005",
+    salvarProgressoLeituraSupabase: "cdd8a9e0192f6e14828ba8aa71ca37f7b32b69aa22b1cb5340b2253579adac7f",
+    salvarRegistroCapituloSupabase: "9d3f36d27ae5209d6531efb8790229cb11116d6835b4b4b72b194b16f66cbbd4",
     criarMetricasCapituloLocais: "530c4327e389c25dcb1a10f84e46f684d08beba3ee03dc0e2d0183530a5e670b",
     carregarMetricasCapituloSupabase: "14b55dd2ea91f612cd4fc840c69ddedab51e6ae13862a916ce265122d27ba536",
     formatarContadorCapituloLeitor: "8c6eac1d77d79f08413b7c28d420cb418a1e49bf315395f3b13d8d9c8300dda4",

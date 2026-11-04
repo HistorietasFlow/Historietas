@@ -5,7 +5,8 @@ export const TABELA_COMENTARIOS_CAPITULOS_CURTIDAS = "comentarios_capitulos_curt
 export async function salvarComentarioCapituloSupabase(
   capituloId: string,
   comentario: string,
-  comentarioPaiId = ""
+  comentarioPaiId = "",
+  userIdEsperado = "",
 ): Promise<Record<string, unknown> | null> {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
@@ -15,7 +16,12 @@ export async function salvarComentarioCapituloSupabase(
     const comentarioPaiIdLimpo = comentarioPaiId.trim();
     const agora = new Date().toISOString();
 
-    if (!userId || !capituloIdLimpo || !comentarioLimpo) {
+    if (
+      !userId ||
+      (userIdEsperado && userId !== userIdEsperado) ||
+      !capituloIdLimpo ||
+      !comentarioLimpo
+    ) {
       return null;
     }
 

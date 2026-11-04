@@ -10,7 +10,7 @@ const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-social-persistence.ts
 const rotaCapitulo = ler("../../app/ler-capitulo/lib/ler-capitulo-chapter-route.ts");
 const persistenciaComentario = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 const mockada = fonte
-  .replace('import { supabase } from "../../../lib/supabase/client";', 'const supabase = { from: (...args) => globalThis.__socialLeitor.supabase.from(...args), rpc: (...args) => globalThis.__socialLeitor.supabase.rpc(...args) };')
+  .replace('import { supabase } from "../../../lib/supabase/client";', 'const supabase = { get auth() { return globalThis.__socialLeitor.supabase.auth; }, from: (...args) => globalThis.__socialLeitor.supabase.from(...args), rpc: (...args) => globalThis.__socialLeitor.supabase.rpc(...args) };')
   .replace('import { idObraSupabaseValido } from "../../../lib/utils";', 'const idObraSupabaseValido = (...args) => globalThis.__socialLeitor.idValido(...args);');
 const js = typescript.transpileModule(mockada, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
@@ -25,7 +25,7 @@ const dadosNotificacao = {
 test("os três corpos e tipos sociais preservam os contratos e a navegação permanece na página", () => {
   const contratos = {
     marcarNotificacaoCapituloComoLidaSupabase: "ed0dd33c1106d30a792da0cf9580448ff66cd9b7ea3930966aa47f92b0661364",
-    registrarNotificacaoInteracaoCapituloSupabase: "d2b31fdc95b5b8843480471e524a8eb24a2279001418e4e9781e44805dffaae0",
+    registrarNotificacaoInteracaoCapituloSupabase: "37d113c562785e0b563a23837304ad8e15e26ab368937aed9efd05017203e841",
     registrarAtividadeDiarioLeitor: "c24e0b9732d2f6e2eb1ca0e4e1cadfb0d68a07aba1dd6a17bf07feb648193153",
   };
   for (const [nome, hash] of Object.entries(contratos)) {
@@ -59,6 +59,12 @@ async function cenario(opcoes, teste) {
   const avisos = [];
   const warnOriginal = console.warn;
   const supabase = {
+    auth: {
+      async getUser() {
+        eventos.push(["getUser"]);
+        return { data: { user: opcoes.userId === null ? null : { id: opcoes.userId || "usuario" } } };
+      },
+    },
     from(tabela) {
       eventos.push(["from", tabela]);
       const builder = {
@@ -143,6 +149,31 @@ test("notificação rejeita alvos inválidos e retorna falso com warning na falh
       assert.equal(avisos[0][0], "Não consegui criar notificação da interação do capítulo:");
     });
   }
+});
+
+test("notificação não aplica estado antigo quando a sessão já pertence a outra conta", async () => {
+  await cenario({ userId: "usuario-b" }, async ({ notificar, eventos }) => {
+    assert.equal(
+      await notificar({
+        ...dadosNotificacao,
+        usuarioIdEsperado: "usuario-a",
+      }),
+      false,
+    );
+    assert.deepEqual(eventos, [["getUser"]]);
+  });
+
+  await cenario({ userId: "usuario-b" }, async ({ notificar, eventos }) => {
+    assert.equal(
+      await notificar({
+        ...dadosNotificacao,
+        usuarioIdEsperado: "usuario-b",
+      }),
+      true,
+    );
+    assert.equal(eventos[0][0], "getUser");
+    assert.equal(eventos[1][0], "rpc");
+  });
 });
 
 test("Diário preserva payload, metadata, guards e fallbacks sem bloquear a leitura", async () => {

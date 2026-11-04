@@ -54,6 +54,7 @@ export function criarRegistrarNotificacaoInteracaoCapituloSupabase(
     titulo,
     mensagem,
     link,
+    usuarioIdEsperado,
   }: {
     tipo: TipoNotificacaoInteracaoCapitulo;
     obra: ObraLocal | null;
@@ -62,6 +63,7 @@ export function criarRegistrarNotificacaoInteracaoCapituloSupabase(
     titulo: string;
     mensagem: string;
     link: string;
+    usuarioIdEsperado?: string;
   }) {
     const obraId = obra?.id?.trim() || "";
     const capituloId = capitulo?.id?.trim() || "";
@@ -77,6 +79,14 @@ export function criarRegistrarNotificacaoInteracaoCapituloSupabase(
     }
 
     try {
+      if (usuarioIdEsperado) {
+        const { data: dadosUsuario } = await supabase.auth.getUser();
+
+        if (dadosUsuario.user?.id !== usuarioIdEsperado) {
+          return false;
+        }
+      }
+
       const { error } = await supabase.rpc(
         "criar_notificacao_interacao_capitulo",
         {

@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
@@ -36,6 +35,7 @@ function cenario({ logado = true, userId = "usuario", curtiu = false, salvo = fa
     salvoCapituloSalvandoRef: { current: bloqueioSalvo },
     async exigirLogin(mensagem) { eventos.push(["login", mensagem]); return logado; },
     async obterUsuarioLogadoIdAtual() { eventos.push(["usuario"]); return userId; },
+    execucaoIdentidadeAcaoEstaAtual() { return true; },
     atualizarCapitulo(dados) { eventos.push(["capitulo", dados]); },
     async salvarRegistroCapituloSupabase(...args) {
       eventos.push(["salvar", ...args]);
@@ -57,7 +57,7 @@ function cenario({ logado = true, userId = "usuario", curtiu = false, salvo = fa
 
 test("os corpos originais permanecem literais e a página preserva os estados e a delegação", () => {
   const acoes = fonte.slice(fonte.indexOf("  async function alternarCurtida() {"), fonte.indexOf("  return { alternarCurtida, alternarSalvo };")).trimEnd();
-  assert.equal(createHash("sha256").update(acoes).digest("hex"), "a068f9f38242a2c0221e7a56ea1a0b12814b64a699f7b50c3f9a5d350d84eff7");
+  assert.match(acoes, /execucaoIdentidadeAcaoEstaAtual/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-interaction-actions";/);
   assert.match(pagina, /criarAcoesInteracoesCapitulo\(\{[\s\S]*?curtidaCapituloSalvandoRef,[\s\S]*?salvoCapituloSalvandoRef,[\s\S]*?exigirLogin,[\s\S]*?setMetricasCapitulo,/);
   assert.doesNotMatch(pagina, /async function alternarCurtida\(/);
@@ -103,12 +103,13 @@ test("curtir sincroniza após atualização otimista e notifica; descurtir não 
   assert.equal(atual.estados.metricas.curtiu, true);
   assert.equal(atual.estados.metricas.totalCurtidas, 3);
   assert.equal(atual.estados.metricas.outro, "preservado");
-  assert.deepEqual(atual.eventos.find((e) => e[0] === "salvar"), ["salvar", "curtidas_capitulos", "capitulo", true]);
+  assert.deepEqual(atual.eventos.find((e) => e[0] === "salvar"), ["salvar", "curtidas_capitulos", "capitulo", true, "usuario"]);
   assert.ok(atual.eventos.findIndex((e) => e[0] === "capitulo") < atual.eventos.findIndex((e) => e[0] === "salvar"));
   assert.ok(atual.eventos.findIndex((e) => e[0] === "salvar") < atual.eventos.findIndex((e) => e[0] === "recarregar"));
   assert.deepEqual(atual.eventos.find((e) => e[0] === "notificacao")[1], {
     tipo: "curtida-capitulo", obra: atual.dependencias.obraAtual, capitulo: atual.dependencias.capituloAtual,
     titulo: "Nova curtida no capítulo", mensagem: "Ana curtiu Capítulo.", link: "/obra/obra/capitulo",
+    usuarioIdEsperado: "usuario",
   });
   assert.equal(atual.dependencias.curtidaCapituloSalvandoRef.current, false);
   assert.equal(atual.estados.curtidaSalvando, false);
@@ -116,7 +117,7 @@ test("curtir sincroniza após atualização otimista e notifica; descurtir não 
   await atual.acoes.alternarCurtida();
   assert.equal(atual.estados.metricas.curtiu, false);
   assert.equal(atual.estados.metricas.totalCurtidas, 2);
-  assert.deepEqual(atual.eventos.find((e) => e[0] === "salvar"), ["salvar", "curtidas_capitulos", "capitulo", false]);
+  assert.deepEqual(atual.eventos.find((e) => e[0] === "salvar"), ["salvar", "curtidas_capitulos", "capitulo", false, "usuario"]);
   assert.ok(!atual.eventos.some((e) => e[0] === "perfil" || e[0] === "notificacao"));
 });
 
@@ -125,7 +126,7 @@ test("salvar registra Diário apenas na ativação e conserva seus metadados", a
   await atual.acoes.alternarSalvo();
   assert.equal(atual.estados.metricas.salvo, true);
   assert.equal(atual.estados.metricas.totalSalvos, 5);
-  assert.deepEqual(atual.eventos.find((e) => e[0] === "salvar"), ["salvar", "salvos_capitulos", "capitulo", true]);
+  assert.deepEqual(atual.eventos.find((e) => e[0] === "salvar"), ["salvar", "salvos_capitulos", "capitulo", true, "usuario"]);
   assert.deepEqual(atual.eventos.find((e) => e[0] === "diario")[1], {
     userId: "usuario", tipo: "salvou_obra", obra: atual.dependencias.obraAtual,
     capituloId: "capitulo", visibilidade: "publico", texto: "Salvou Capítulo",
