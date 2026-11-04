@@ -87,6 +87,19 @@ Não remover essa associação explícita: usar apenas um booleano de
 “preferências carregadas” permite que um render intermediário grave valores da
 conta anterior na chave da conta nova.
 
+### Erro temporário não é conteúdo inexistente
+
+O carregamento inicial do leitor diferencia ausência confirmada da obra ou do
+capítulo de falhas temporárias de Auth, rede, Data API ou paginação. Consultas
+com erro devem propagar a falha ao lifecycle; retornar `null` ou uma lista vazia
+fica reservado a respostas válidas sem conteúdo.
+
+O retry usa uma versão monotônica própria, além da versão da identidade. Assim,
+uma resposta anterior não pode sobrescrever uma tentativa mais recente nem uma
+troca de conta. Em falhas, conteúdo público/local já disponível é preservado,
+mas a identidade só é marcada como aplicada depois de uma carga completa, para
+que ações privadas não persistam dados de uma carga incompleta.
+
 
 ## OWASP ZAP: `Potential XSS` em `/login?redirectTo=/publicar`
 

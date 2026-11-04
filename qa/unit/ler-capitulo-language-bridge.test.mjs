@@ -137,7 +137,7 @@ test("preserva o lifecycle, filtro de nós e cleanup do bridge", () => {
   assert.match(bridge, /return null;/);
 });
 
-test("a página mantém apenas os três mounts e continua dona do idioma", () => {
+test("a página mantém os bridges dos estados visuais e continua dona do idioma", () => {
   assert.match(
     pagina,
     /import \{ LerCapituloLanguageBridge \} from "\.\/components\/ler-capitulo-language-bridge";/,
@@ -145,7 +145,7 @@ test("a página mantém apenas os três mounts e continua dona do idioma", () =>
   assert.match(pagina, /const \{ language \} = useHistorietasLanguage\(\);/);
   assert.equal(
     (pagina.match(/<LerCapituloLanguageBridge \/>/g) || []).length,
-    3,
+    4,
   );
   assert.doesNotMatch(pagina, /const LER_CAPITULO_UI_TRANSLATIONS/);
   assert.doesNotMatch(pagina, /function traduzirTextoLerCapitulo\(/);

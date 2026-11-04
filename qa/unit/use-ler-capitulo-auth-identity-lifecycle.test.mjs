@@ -20,7 +20,7 @@ const fonte = readFileSync(
   "utf8",
 ).replace(/\r\n/g, "\n");
 const mockada = fonte
-  .replace('import { useEffect, useRef, useState } from "react";', "const useEffect = (...args) => globalThis.__authLeitor.useEffect(...args); const useRef = (...args) => globalThis.__authLeitor.useRef(...args); const useState = (...args) => globalThis.__authLeitor.useState(...args);")
+  .replace('import { useCallback, useEffect, useRef, useState } from "react";', "const useCallback = (callback) => callback; const useEffect = (...args) => globalThis.__authLeitor.useEffect(...args); const useRef = (...args) => globalThis.__authLeitor.useRef(...args); const useState = (...args) => globalThis.__authLeitor.useState(...args);")
   .replace('import { supabase } from "../../../lib/supabase/client";', "const supabase = { get auth() { return globalThis.__authLeitor.supabase.auth; } };")
   .replace(/import \{\s*atualizarIdentidadeAutenticadaLeitor,[\s\S]*?\} from "\.\.\/lib\/ler-capitulo-auth-identity";/, "const atualizarIdentidadeAutenticadaLeitor = (...args) => globalThis.__authLeitor.atualizar(...args); const execucaoAutenticacaoLeitorEstaAtual = (...args) => globalThis.__authLeitor.execucaoAtual(...args);");
 const js = typescript.transpileModule(mockada, {
@@ -101,4 +101,28 @@ test("evento B invalida resposta getUser atrasada de A", async () => {
     usuarioId: "usuario-b",
     versao: 1,
   });
+});
+
+test("falha de sessao nao e convertida em visitante e pode ser tentada novamente", async () => {
+  const atual = useMontar({
+    getUser: async () => ({
+      data: { user: null },
+      error: new Error("auth indisponivel"),
+    }),
+  });
+  atual.efeito.callback();
+  await tick();
+
+  assert.ok(!atual.eventos.some(([tipo]) => tipo === "usuario"));
+  assert.deepEqual(
+    atual.eventos.filter(([tipo]) => tipo === "autenticacao").slice(-2),
+    [["autenticacao", false], ["autenticacao", true]],
+  );
+
+  atual.retorno.tentarCarregarAutenticacaoNovamente();
+  assert.deepEqual(atual.eventos.slice(-3, -1), [
+    ["autenticacao", false],
+    ["autenticacao", false],
+  ]);
+  assert.equal(typeof atual.eventos.at(-1)[1], "function");
 });

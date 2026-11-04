@@ -82,7 +82,7 @@ test("Leitor consome somente o CSS extraído na ordem original", () => {
         /<style>\{`\$\{historietasThemeCss\}\$\{leitorPageCss\}`\}<\/style>/g,
       ) || []
     ).length,
-    4,
+    5,
   );
   assert.doesNotMatch(pagina, /\$\{leitorPageCss\}\$\{historietasThemeCss\}/);
   assert.match(

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { idObraSupabaseValido } from "../../../lib/utils";
 import {
@@ -25,6 +25,8 @@ type InicializacaoLeitor = {
   setCapituloId: Dispatch<SetStateAction<string>>;
   setObras: Dispatch<SetStateAction<ObraLocal[]>>;
   setCarregando: Dispatch<SetStateAction<boolean>>;
+  setErroCarregamento: Dispatch<SetStateAction<boolean>>;
+  versaoCarregamento: number;
 };
 
 export function useLerCapituloInitialLoad({
@@ -35,9 +37,12 @@ export function useLerCapituloInitialLoad({
   setCapituloId,
   setObras,
   setCarregando,
+  setErroCarregamento,
+  versaoCarregamento,
 }: InicializacaoLeitor) {
   const [identidadeDadosAplicada, setIdentidadeDadosAplicada] =
     useState<IdentidadeAutenticadaLeitor | null>(null);
+  const versaoExecucaoCarregamentoRef = useRef(0);
 
   useEffect(() => {
     if (!autenticacaoCarregada) {
@@ -51,12 +56,21 @@ export function useLerCapituloInitialLoad({
       return;
     }
 
+    const versaoExecucao = versaoExecucaoCarregamentoRef.current + 1;
+    versaoExecucaoCarregamentoRef.current = versaoExecucao;
+    setCarregando(true);
+    setErroCarregamento(false);
+    setIdentidadeDadosAplicada(null);
+
     function execucaoCarregamentoEstaAtual() {
-      return execucaoIdentidadeLeitorEstaAtual({
-        cancelada: cancelado,
-        identidadeEsperada,
-        identidadeAtual: identidadeAutenticadaLeitorRef.current,
-      });
+      return (
+        versaoExecucao === versaoExecucaoCarregamentoRef.current &&
+        execucaoIdentidadeLeitorEstaAtual({
+          cancelada: cancelado,
+          identidadeEsperada,
+          identidadeAtual: identidadeAutenticadaLeitorRef.current,
+        })
+      );
     }
 
     async function carregarDados() {
@@ -70,6 +84,8 @@ export function useLerCapituloInitialLoad({
           setCapituloId(capituloIdParam);
         }
       }, 0);
+
+      let obrasLocaisDisponiveis: ObraLocal[] | null = null;
 
       try {
         const userId = identidadeEsperada.usuarioId;
@@ -91,6 +107,7 @@ export function useLerCapituloInitialLoad({
               ),
             };
           });
+        obrasLocaisDisponiveis = obrasLocais;
         let obrasAtualizadas = obrasLocais;
 
         if (obraIdParam) {
@@ -155,8 +172,15 @@ export function useLerCapituloInitialLoad({
         }
       } catch {
         if (execucaoCarregamentoEstaAtual()) {
-          setObras([]);
-          setIdentidadeDadosAplicada(identidadeEsperada);
+          const obrasFallback = obrasLocaisDisponiveis;
+
+          if (obrasFallback) {
+            setObras((obrasAtuais) =>
+              obrasAtuais.length > 0 ? obrasAtuais : obrasFallback,
+            );
+          }
+
+          setErroCarregamento(true);
         }
       } finally {
         if (execucaoCarregamentoEstaAtual()) {
@@ -178,6 +202,8 @@ export function useLerCapituloInitialLoad({
     setCapituloId,
     setObras,
     setCarregando,
+    setErroCarregamento,
+    versaoCarregamento,
   ]);
 
   return { identidadeDadosAplicada };

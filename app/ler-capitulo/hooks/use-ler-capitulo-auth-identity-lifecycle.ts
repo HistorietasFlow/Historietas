@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import {
@@ -17,6 +17,9 @@ export function useLerCapituloAuthIdentityLifecycle({
   setUsuarioIdLogado,
 }: UseLerCapituloAuthIdentityLifecycleParams) {
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
+  const [erroAutenticacao, setErroAutenticacao] = useState(false);
+  const [versaoTentativaAutenticacao, setVersaoTentativaAutenticacao] =
+    useState(0);
   const identidadeAutenticadaLeitorRef =
     useRef<IdentidadeAutenticadaLeitor>({
       usuarioId: "",
@@ -39,6 +42,7 @@ export function useLerCapituloAuthIdentityLifecycle({
         setUsuarioIdLogado(resultado.identidade.usuarioId);
       }
 
+      setErroAutenticacao(false);
       setAutenticacaoCarregada(true);
     }
 
@@ -47,7 +51,11 @@ export function useLerCapituloAuthIdentityLifecycle({
       versaoConsultaAutenticacaoLeitorRef.current = versaoConsulta;
 
       try {
-        const { data } = await supabase.auth.getUser();
+        const { data, error } = await supabase.auth.getUser();
+
+        if (error) {
+          throw error;
+        }
 
         if (
           execucaoAutenticacaoLeitorEstaAtual({
@@ -66,7 +74,8 @@ export function useLerCapituloAuthIdentityLifecycle({
             versaoAtual: versaoConsultaAutenticacaoLeitorRef.current,
           })
         ) {
-          aplicarIdentidadeAutenticada("");
+          setAutenticacaoCarregada(false);
+          setErroAutenticacao(true);
         }
       }
     }
@@ -87,10 +96,22 @@ export function useLerCapituloAuthIdentityLifecycle({
       versaoConsultaAutenticacaoLeitorRef.current += 1;
       subscription.unsubscribe();
     };
-  }, [onIdentidadeMudou, setUsuarioIdLogado]);
+  }, [
+    onIdentidadeMudou,
+    setUsuarioIdLogado,
+    versaoTentativaAutenticacao,
+  ]);
+
+  const tentarCarregarAutenticacaoNovamente = useCallback(() => {
+    setErroAutenticacao(false);
+    setAutenticacaoCarregada(false);
+    setVersaoTentativaAutenticacao((versaoAtual) => versaoAtual + 1);
+  }, []);
 
   return {
     autenticacaoCarregada,
+    erroAutenticacao,
     identidadeAutenticadaLeitorRef,
+    tentarCarregarAutenticacaoNovamente,
   };
 }
