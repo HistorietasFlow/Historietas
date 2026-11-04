@@ -19,6 +19,7 @@ type UseListasDiaryCommentsRendererProps = {
   alterarOrdenacaoComentariosAnotacaoListas: (anotacaoId: string, ordenacao: "relevantes" | "recentes") => void;
   alternarCurtidaComentarioAnotacaoListas: (anotacaoId: string, comentario: ComentarioAnotacaoListas) => Promise<void>;
   alternarExpansaoComentariosDiario: () => void;
+  aoPressionarTeclaDialogo: (event: KeyboardEvent<HTMLElement>) => void;
   atualizarComentarioAnotacaoListas: (anotacaoId: string, texto: string) => void;
   cancelarRespostaComentarioAnotacaoListas: (anotacaoId: string) => void;
   comentarioCurtindoId: string;
@@ -52,6 +53,7 @@ export function useListasDiaryCommentsRenderer({
   alterarOrdenacaoComentariosAnotacaoListas,
   alternarCurtidaComentarioAnotacaoListas,
   alternarExpansaoComentariosDiario,
+  aoPressionarTeclaDialogo,
   atualizarComentarioAnotacaoListas,
   cancelarRespostaComentarioAnotacaoListas,
   comentarioCurtindoId,
@@ -108,6 +110,7 @@ export function useListasDiaryCommentsRenderer({
         onCancelReply={cancelarRespostaComentarioAnotacaoListas}
         onChangeComentario={atualizarComentarioAnotacaoListas}
         onClose={fecharComentariosDiario}
+        onDialogKeyDown={aoPressionarTeclaDialogo}
         onHandleKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();

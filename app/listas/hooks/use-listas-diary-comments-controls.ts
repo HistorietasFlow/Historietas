@@ -1,4 +1,10 @@
-import { useRef, type Dispatch, type SetStateAction, type TouchEvent } from "react";
+import {
+  useRef,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+  type TouchEvent,
+} from "react";
 
 type ItemComAnotacaoListas = {
   anotacaoId?: string;
@@ -11,6 +17,7 @@ type InteracaoComentarioListas = {
 type UseListasDiaryCommentsControlsParams<TItem extends ItemComAnotacaoListas> = {
   comentariosDiarioExpandido: boolean;
   comentariosDiarioItem: TItem | null;
+  comentariosSheetRef: RefObject<HTMLElement | null>;
   criarInteracaoVazia: () => InteracaoComentarioListas;
   interacoesAnotacoes: Record<string, InteracaoComentarioListas | undefined>;
   isDesktop: boolean;
@@ -26,6 +33,7 @@ type UseListasDiaryCommentsControlsParams<TItem extends ItemComAnotacaoListas> =
 export function useListasDiaryCommentsControls<TItem extends ItemComAnotacaoListas>({
   comentariosDiarioExpandido,
   comentariosDiarioItem,
+  comentariosSheetRef,
   criarInteracaoVazia,
   interacoesAnotacoes,
   isDesktop,
@@ -37,7 +45,6 @@ export function useListasDiaryCommentsControls<TItem extends ItemComAnotacaoList
   setRespostasVisiveisComentariosDiario,
   atualizarComentario,
 }: UseListasDiaryCommentsControlsParams<TItem>) {
-  const comentariosSheetRef = useRef<HTMLElement | null>(null);
   const comentariosDragStartYRef = useRef(0);
   const comentariosDragOffsetYRef = useRef(0);
   const comentariosDragIgnorarCliqueRef = useRef(false);
@@ -189,7 +196,6 @@ export function useListasDiaryCommentsControls<TItem extends ItemComAnotacaoList
   return {
     abrirComentariosDiario,
     alternarExpansaoComentariosDiario,
-    comentariosSheetRef,
     fecharComentariosDiario,
     finalizarArrasteComentariosDiario,
     iniciarArrasteComentariosDiario,

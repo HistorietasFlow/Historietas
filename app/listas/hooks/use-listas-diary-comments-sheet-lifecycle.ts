@@ -1,4 +1,16 @@
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useRef,
+  type Dispatch,
+  type KeyboardEvent,
+  type SetStateAction,
+} from "react";
+import {
+  focarInicioDialogo,
+  manterFocoNoDialogo,
+  obterElementoComFocoAtual,
+  restaurarFocoAnterior,
+} from "../../obra/[slug]/lib/obra-dialog-focus";
 
 type UseListasDiaryCommentsSheetLifecycleParams<TItem> = {
   comentariosDiarioItem: TItem | null;
@@ -13,27 +25,40 @@ export function useListasDiaryCommentsSheetLifecycle<TItem>({
   setComentariosDiarioExpandido,
   setMenuOrdenacaoComentariosDiarioAberto,
 }: UseListasDiaryCommentsSheetLifecycleParams<TItem>) {
+  const comentariosSheetRef = useRef<HTMLElement | null>(null);
+
+  function fecharComentariosDiarioPorTeclado() {
+    setComentariosDiarioItem(null);
+    setComentariosDiarioExpandido(false);
+    setMenuOrdenacaoComentariosDiarioAberto(false);
+  }
+
+  function aoPressionarTeclaDialogo(event: KeyboardEvent<HTMLElement>) {
+    manterFocoNoDialogo(event, fecharComentariosDiarioPorTeclado);
+  }
+
   useEffect(() => {
     if (!comentariosDiarioItem) {
       return;
     }
 
     const overflowAnterior = document.body.style.overflow;
-    const aoPressionarTecla = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setComentariosDiarioItem(null);
-        setComentariosDiarioExpandido(false);
-        setMenuOrdenacaoComentariosDiarioAberto(false);
-      }
-    };
+    const elementoComFocoAnterior = obterElementoComFocoAtual();
+    const focoInicialTimer = window.setTimeout(() => {
+      focarInicioDialogo(comentariosSheetRef.current);
+    }, 0);
 
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", aoPressionarTecla);
 
     return () => {
+      window.clearTimeout(focoInicialTimer);
       document.body.style.overflow = overflowAnterior;
-      window.removeEventListener("keydown", aoPressionarTecla);
+      restaurarFocoAnterior(elementoComFocoAnterior);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Preserva as dependências do efeito original.
   }, [comentariosDiarioItem]);
+
+  return {
+    aoPressionarTeclaDialogo,
+    comentariosSheetRef,
+  };
 }
