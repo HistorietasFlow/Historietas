@@ -20,6 +20,13 @@ const hookOrdenacao = readFileSync(
   ),
   "utf8",
 );
+const hookInteracoesSheet = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-sheet-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("cabecalho preserva contador singular plural e trigger acessivel", () => {
   assert.match(
@@ -103,16 +110,16 @@ test("hook centraliza estado e selecao do menu sem mover o cabecalho", () => {
 });
 
 test("abertura e fechamento do sheet continuam zerando o menu", () => {
-  const aberturaInicio = paginaObra.indexOf("function abrirComentariosObra()");
-  const fechamentoInicio = paginaObra.indexOf("function fecharComentariosObra()");
-  const fim = paginaObra.indexOf("function iniciarArrasteComentariosObra", fechamentoInicio);
+  const aberturaInicio = hookInteracoesSheet.indexOf("function abrirComentariosObra()");
+  const fechamentoInicio = hookInteracoesSheet.indexOf("function fecharComentariosObra()");
+  const fim = hookInteracoesSheet.indexOf("function iniciarArrasteComentariosObra", fechamentoInicio);
 
   assert.ok(aberturaInicio >= 0);
   assert.ok(fechamentoInicio > aberturaInicio);
   assert.ok(fim > fechamentoInicio);
 
-  const abertura = paginaObra.slice(aberturaInicio, fechamentoInicio);
-  const fechamento = paginaObra.slice(fechamentoInicio, fim);
+  const abertura = hookInteracoesSheet.slice(aberturaInicio, fechamentoInicio);
+  const fechamento = hookInteracoesSheet.slice(fechamentoInicio, fim);
 
   assert.match(abertura, /fecharMenuOrdenacaoComentarios\(\);/);
   assert.match(fechamento, /fecharMenuOrdenacaoComentarios\(\);/);

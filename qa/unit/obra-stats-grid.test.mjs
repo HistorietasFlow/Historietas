@@ -20,6 +20,13 @@ const interacoesObra = readFileSync(
   ),
   "utf8",
 );
+const interacoesSheet = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-sheet-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("grid de metricas preserva layout responsivo, ordem e interacoes", () => {
   for (const trecho of [
@@ -66,8 +73,7 @@ test("cliente preserva estado, handlers e logica protegida das metricas", () => 
     "totalComentariosObra",
     "sinopseAberta",
     "} = useObraWorkInteractions({",
-    "function abrirComentariosObra()",
-    "setComentariosAbertos(true)",
+    "} = useObraCommentsSheetInteractions({",
     "const alternarSinopseObra = () => {",
     "setSinopseAberta((aberta) => !aberta);",
     "<ObraStatsGrid",
@@ -77,6 +83,9 @@ test("cliente preserva estado, handlers e logica protegida das metricas", () => 
   ]) {
     assert.ok(paginaObra.includes(trecho), trecho);
   }
+
+  assert.match(interacoesSheet, /function abrirComentariosObra\(\)/);
+  assert.match(interacoesSheet, /setComentariosAbertos\(true\)/);
 
   assert.match(interacoesObra, /async function alternarCurtidaObra\(\)/);
   assert.match(interacoesObra, /criarGuardIdentidadeAcao\(identidadeAcao\)/);

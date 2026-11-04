@@ -13,6 +13,13 @@ const cliente = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const interacoesSheet = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-sheet-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("hook preserva estados iniciais e callbacks estaveis de ordenacao", () => {
   assert.match(hook, /export function useObraCommentsOrdering\(\)/);
@@ -57,8 +64,8 @@ test("cliente preserva sheet, memoizacao e cabecalho como consumidores", () => {
     cliente,
     /const estruturaComentariosObra = useMemo\(\s*\(\) => criarEstruturaComentariosObra\(comentariosObra, ordenacaoComentarios\),/,
   );
-  assert.match(cliente, /function abrirComentariosObra\(\)[\s\S]*?fecharMenuOrdenacaoComentarios\(\);/);
-  assert.match(cliente, /function fecharComentariosObra\(\)[\s\S]*?fecharMenuOrdenacaoComentarios\(\);/);
+  assert.match(interacoesSheet, /function abrirComentariosObra\(\)[\s\S]*?fecharMenuOrdenacaoComentarios\(\);/);
+  assert.match(interacoesSheet, /function fecharComentariosObra\(\)[\s\S]*?fecharMenuOrdenacaoComentarios\(\);/);
   assert.match(cliente, /onAlternarMenu=\{alternarMenuOrdenacaoComentarios\}/);
   assert.match(cliente, /onSelecionarRelevantes=\{selecionarComentariosRelevantes\}/);
   assert.match(cliente, /onSelecionarRecentes=\{selecionarComentariosRecentes\}/);

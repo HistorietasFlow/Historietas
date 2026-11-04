@@ -13,6 +13,13 @@ const paginaObra = readFileSync(
   new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url),
   "utf8",
 );
+const interacoesSheet = readFileSync(
+  new URL(
+    "../../app/obra/[slug]/hooks/use-obra-comments-sheet-interactions.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("handle preserva atributos, estilos, toque e rotulo de expansao", () => {
   assert.match(handleComentarios, /data-comments-sheet-handle="true"/);
@@ -39,27 +46,28 @@ test("handle preserva teclado com Enter espaco e preventDefault", () => {
   );
 });
 
-test("cliente preserva drag e fornece todos os handlers ao handle", () => {
+test("cliente delega drag e fornece todos os handlers ao handle", () => {
   assert.match(
     paginaObra,
     /<ObraCommentsHandle\s*expandido=\{comentariosSheetExpandido\}\s*onAlternarExpansao=\{alternarExpansaoComentariosObra\}\s*onTouchStart=\{iniciarArrasteComentariosObra\}\s*onTouchMove=\{moverArrasteComentariosObra\}\s*onTouchEnd=\{finalizarArrasteComentariosObra\}\s*onTouchCancel=\{finalizarArrasteComentariosObra\}/,
   );
   assert.match(
-    paginaObra,
+    interacoesSheet,
     /function iniciarArrasteComentariosObra\(\s*event: TouchEvent<HTMLDivElement>/,
   );
   assert.match(
-    paginaObra,
+    interacoesSheet,
     /function moverArrasteComentariosObra\(\s*event: TouchEvent<HTMLDivElement>/,
   );
-  assert.match(paginaObra, /function finalizarArrasteComentariosObra\(\)/);
-  assert.match(paginaObra, /function alternarExpansaoComentariosObra\(\)/);
-  assert.match(paginaObra, /comentariosDragStartYRef/);
-  assert.match(paginaObra, /comentariosDragOffsetYRef/);
-  assert.match(paginaObra, /comentariosDragIgnorarCliqueRef/);
-  assert.match(paginaObra, /comentariosDragResetTimerRef/);
-  assert.match(paginaObra, /comentariosSheetRef/);
-  assert.match(paginaObra, /isDesktop/);
+  assert.match(interacoesSheet, /function finalizarArrasteComentariosObra\(\)/);
+  assert.match(interacoesSheet, /function alternarExpansaoComentariosObra\(\)/);
+  assert.match(interacoesSheet, /comentariosDragStartYRef/);
+  assert.match(interacoesSheet, /comentariosDragOffsetYRef/);
+  assert.match(interacoesSheet, /comentariosDragIgnorarCliqueRef/);
+  assert.match(interacoesSheet, /comentariosDragResetTimerRef/);
+  assert.match(interacoesSheet, /comentariosSheetRef/);
+  assert.match(interacoesSheet, /isDesktop/);
+  assert.match(paginaObra, /\} = useObraCommentsSheetInteractions\(\{/);
 });
 
 test("handle nao ganha estado refs ou logica de drag", () => {
