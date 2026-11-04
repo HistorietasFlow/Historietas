@@ -30,6 +30,7 @@ export default function ObraRatingSummary({
       </strong>
       <span
         style={ratingStarsStyle}
+        role="img"
         aria-label={`Média ${formatarMediaAvaliacao(media)} de 5`}
       >
         {NOTAS_AVALIACAO_OBRA.map((estrela) => (

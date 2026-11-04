@@ -114,6 +114,7 @@ export function ListasPageHeader({
                   </strong>
                   <span
                     style={listDiaryRatingSummaryStarsStyle}
+                    role="img"
                     aria-label={`Média ${formatarNota(
                       avaliacaoDiario.media,
                     )} de 5`}

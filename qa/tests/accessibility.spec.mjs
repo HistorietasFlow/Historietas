@@ -101,13 +101,19 @@ test("capítulo público canônico integra o baseline axe após hidratar o leito
 test("Comunidade integra o baseline axe após carregar o feed público", async ({
   page,
 }) => {
+  test.skip(
+    !hasAuthorCredentials,
+    "Prepare as credenciais E2E no Supabase local descartável.",
+  );
+
+  await loginAsAuthor(page);
   await page.goto("/comunidade", { waitUntil: "domcontentloaded" });
 
   const main = page.locator("main");
   const postFixture = page.locator("article").filter({
     hasText: communityPostText,
   });
-  await expect(postFixture).toBeVisible();
+  await expect(postFixture).toBeVisible({ timeout: 30_000 });
   await expect(main).not.toHaveAttribute("aria-busy", "true");
   await esperarAxeSemViolacoesCriticas(page, "/comunidade");
 });
