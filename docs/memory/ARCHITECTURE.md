@@ -61,5 +61,5 @@ Em 2026-11-03 o projeto estava protegido por **Vercel Authentication: All Deploy
 Os deployments automáticos da integração Git são controlados pelo `vercel.json` da raiz:
 
 - `main` permanece habilitada como branch de deployment automático de produção;
-- o padrão `*` fica desabilitado, impedindo Preview Deployments automáticos nas demais branches e PRs;
+- o padrão globstar `**` fica desabilitado, impedindo Preview Deployments automáticos inclusive em branches com `/`;
 - os workflows do GitHub Actions continuam independentes dessa política.
