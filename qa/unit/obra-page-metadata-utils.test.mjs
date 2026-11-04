@@ -99,7 +99,7 @@ test("página preserva a integração Next e delega somente helpers puros", () =
     "export async function generateMetadata",
     "await headers()",
     "obterObraMetadataPublica(slug)",
-    "return <ObraDinamicaClient />;",
+    "<ObraDinamicaClient />",
     "normalizarSlugParametro",
     "resolverIdiomaMetadata",
     "criarMetadataPadrao",

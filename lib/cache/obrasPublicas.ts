@@ -44,6 +44,12 @@ export type LeituraCapituloPublico = {
   obraId: string;
   capituloId: string;
   numeroCapitulo: number;
+  dadosEstruturados: {
+    autor: string;
+    sinopse: string;
+    capa: string;
+    textoCapitulo: string;
+  };
   obra: {
     id: string;
     titulo: string;
@@ -273,6 +279,15 @@ export const obterLeituraCapituloPublico = unstable_cache(
       obraId: obra.id,
       capituloId: capituloSolicitado.id,
       numeroCapitulo,
+      dadosEstruturados: {
+        autor: obra.autor?.trim() || "",
+        sinopse: obra.sinopse?.trim() || "",
+        capa: obra.capa_url?.trim() || "",
+        textoCapitulo:
+          typeof capituloSolicitado.texto === "string"
+            ? capituloSolicitado.texto.trim()
+            : "",
+      },
       obra: {
         id: obra.id,
         titulo: tituloObra,
