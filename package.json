@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "prelint": "node --test qa/unit/vercel-deployment-policy.test.mjs",
     "lint": "eslint . --max-warnings=0",
     "knip": "npx --yes knip@6.44.1 --production --reporter compact",
     "deps:cruise": "npx --yes --package dependency-cruiser@18.7.2 --package @swc/core@1.16.21 dependency-cruiser app components lib --config .dependency-cruiser.cjs --output-type err-long",
