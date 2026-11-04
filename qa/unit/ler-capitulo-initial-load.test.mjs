@@ -37,7 +37,19 @@ const adiado = () => {
   return { promise, resolver, rejeitar };
 };
 
-async function cenario({ userId = "", versao = 0, obras = [], remoto = null, remotoPromise, carregarRemoto, busca = "?obraId=obra&capituloId=cap", autenticacaoCarregada = true } = {}, teste) {
+async function cenario({
+  userId = "",
+  versao = 0,
+  obras = [],
+  remoto = null,
+  remotoPromise,
+  carregarRemoto,
+  busca = "?obraId=obra&capituloId=cap",
+  pathname = "/ler-capitulo",
+  obraIdInicial = "",
+  capituloIdInicial = "",
+  autenticacaoCarregada = true,
+} = {}, teste) {
   const anteriorWindow = globalThis.window;
   const eventos = [];
   const efeitos = [];
@@ -46,7 +58,7 @@ async function cenario({ userId = "", versao = 0, obras = [], remoto = null, rem
   let indiceRef = 0;
   const identidadeRef = { current: { usuarioId: userId, versao } };
   globalThis.window = {
-    location: { search: busca },
+    location: { search: busca, pathname },
     setTimeout(callback, atraso) { eventos.push(["timer", atraso]); timers.push(callback); },
   };
   globalThis.__leitorInicial = {
@@ -79,6 +91,8 @@ async function cenario({ userId = "", versao = 0, obras = [], remoto = null, rem
         usuarioIdLogado: usuarioId,
         identidadeAutenticadaLeitorRef: identidadeRef,
         versaoCarregamento,
+        obraIdInicial,
+        capituloIdInicial,
         ...setters,
       });
     }
@@ -127,6 +141,29 @@ test("visitante mantém fluxo público sem interações de conta", async () => {
       eventos.find(([nome, valor]) => nome === "setIdentidadeDados" && valor)?.[1],
       { usuarioId: "", versao: 0 },
     );
+    assert.deepEqual(eventos.at(-1), ["setCarregando", false]);
+  });
+});
+
+test("rota canônica preserva os dados públicos iniciais enquanto o lifecycle confirma a fonte", async () => {
+  const inicial = obra("obra", "autor");
+  await cenario({
+    busca: "?obraId=outra-obra&capituloId=outro-capitulo",
+    pathname: "/obra/slug-publico/capitulo/1",
+    obraIdInicial: "obra",
+    capituloIdInicial: "publicado",
+    remoto: inicial,
+  }, async ({ efeitos, eventos, timers }) => {
+    efeitos[0].callback();
+    timers[0]();
+    await tick();
+    assert.deepEqual(eventos.find(([nome]) => nome === "setObraId"), ["setObraId", "obra"]);
+    assert.deepEqual(eventos.find(([nome]) => nome === "setCapituloId"), ["setCapituloId", "publicado"]);
+    assert.deepEqual(eventos.find(([nome]) => nome === "remoto")?.slice(0, 2), ["remoto", "obra"]);
+    assert.ok(!eventos.some((evento) => evento.includes("outra-obra")));
+    assert.ok(!eventos.some((evento) => evento.includes("outro-capitulo")));
+    assert.ok(!eventos.some(([nome, valor]) => nome === "setCarregando" && valor === true));
+    assert.deepEqual(eventos.find(([nome]) => nome === "setObras")?.[1], [inicial]);
     assert.deepEqual(eventos.at(-1), ["setCarregando", false]);
   });
 });

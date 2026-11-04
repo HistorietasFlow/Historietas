@@ -62,6 +62,7 @@ import {
 import {
   calcularProgressoLeitura,
   normalizarObra,
+  type ObraLocal,
 } from "./lib/ler-capitulo-work-normalization";
 import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load";
 import { useLerCapituloAuthIdentityLifecycle } from "./hooks/use-ler-capitulo-auth-identity-lifecycle";
@@ -111,15 +112,24 @@ import {
 const registrarNotificacaoInteracaoCapituloSupabase =
   criarRegistrarNotificacaoInteracaoCapituloSupabase(criarHrefLeituraCapituloLeitor);
 
+export type DadosIniciaisLerCapitulo = {
+  obraId: string;
+  capituloId: string;
+  obras: ObraLocal[];
+};
 
-
-
-
-export default function LerCapituloPage() {
+export function LerCapituloClient({
+  dadosIniciais,
+}: {
+  dadosIniciais?: DadosIniciaisLerCapitulo;
+}) {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
   const { obraId, setObraId, capituloId, setCapituloId } =
-    useLerCapituloRouteIdentityState();
+    useLerCapituloRouteIdentityState({
+      obraIdInicial: dadosIniciais?.obraId,
+      capituloIdInicial: dadosIniciais?.capituloId,
+    });
   const {
     obras,
     setObras,
@@ -129,7 +139,7 @@ export default function LerCapituloPage() {
     setErroCarregamento,
     versaoCarregamento,
     tentarCarregarNovamente,
-  } = useLerCapituloLoadedDataState();
+  } = useLerCapituloLoadedDataState(dadosIniciais?.obras);
   const {
     setComentarioDigitado,
     comentarioStatus,
@@ -249,6 +259,8 @@ export default function LerCapituloPage() {
     setCarregando,
     setErroCarregamento,
     versaoCarregamento,
+    obraIdInicial: dadosIniciais?.obraId,
+    capituloIdInicial: dadosIniciais?.capituloId,
   });
 
   const {
@@ -713,4 +725,8 @@ export default function LerCapituloPage() {
 
     </main>
   );
+}
+
+export default function LerCapituloPage() {
+  return <LerCapituloClient />;
 }

@@ -28,6 +28,12 @@
 - Playwright deve usar o servidor iniciado pela CI; reutilização de servidor existente fica desabilitada em CI.
 - Lighthouse iniciou como baseline com thresholds em modo de aviso, evitando bloquear PRs por variação de medição até haver baseline estável.
 
+## Rotas públicas e SEO
+
+- Capítulos publicados usam `/obra/[slug]/capitulo/[numero]` como página canônica real, com HTTP 200, metadata própria e conteúdo no HTML inicial.
+- A rota pública reutiliza o leitor cliente existente com dados públicos iniciais carregados no servidor; não deve haver uma segunda implementação visual nem redirect para `/ler-capitulo` em capítulos públicos válidos.
+- O carregamento server-side respeita o cliente público do Supabase, RLS, publicação e o bloqueio vigente de conteúdo 18+.
+
 ## Dependências e segurança
 
 - Dependabot roda semanalmente.
