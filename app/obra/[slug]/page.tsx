@@ -8,6 +8,11 @@ import {
   type HistorietasLanguage,
 } from "../../../lib/i18n";
 import {
+  criarJsonLdObraPublica,
+  serializarJsonLdSeguro,
+} from "../../../lib/seo/public-content-json-ld";
+import {
+  criarHrefCanonicoObra,
   criarMetadataObraNaoEncontrada,
   criarMetadataObraPublica,
   criarMetadataPadrao,
@@ -79,5 +84,25 @@ export default async function ObraPage({ params }: PageProps) {
     notFound();
   }
 
-  return <ObraDinamicaClient />;
+  const slugCanonico = normalizarSlugParametro(obra.slug) || slug;
+  const dadosEstruturados = criarJsonLdObraPublica({
+    hrefCanonico: criarHrefCanonicoObra(slugCanonico),
+    nome: obra.titulo || "",
+    descricao: obra.sinopse,
+    autor: obra.autor,
+    imagem: obra.capa_url,
+  });
+
+  return (
+    <>
+      <script
+        id="obra-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializarJsonLdSeguro(dadosEstruturados),
+        }}
+      />
+      <ObraDinamicaClient />
+    </>
+  );
 }

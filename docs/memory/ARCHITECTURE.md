@@ -16,6 +16,7 @@
 - O sitemap cruza consultas públicas paginadas de obras e capítulos sem N+1, publica somente combinações permitidas e usa o valor persistido de `capitulos.ordem` na URL canônica.
 - Combinações canônicas inválidas ou ausentes são verificadas antes do streaming pelo proxy com cliente público/RLS e recebem rewrite interno para `/_not-found` com HTTP 404; a página mantém `notFound()` como defesa adicional.
 - Falhas de infraestrutura nessa verificação não viram ausência: a requisição segue para o loader server-side, que preserva o tratamento de erro normal.
+- Obras públicas renderizam JSON-LD `CreativeWork` e capítulos públicos renderizam `Chapter` no HTML inicial; o capítulo referencia a obra por `isPartOf`, sempre com URLs canônicas absolutas e conteúdo serializado com neutralização de caracteres capazes de encerrar o script.
 - `/ler-capitulo?obraId=...&capituloId=...` permanece disponível para fluxos internos, drafts e leituras por identificador.
 
 ## Backend e dados

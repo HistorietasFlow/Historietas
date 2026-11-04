@@ -2,12 +2,22 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LerCapituloClient } from "../../../../ler-capitulo/page";
 import { obterLeituraCapituloPublico } from "../../../../../lib/cache/obrasPublicas";
-import { criarMetadataPadrao } from "../../lib/obra-page-metadata-utils";
+import {
+  criarJsonLdCapituloPublico,
+  serializarJsonLdSeguro,
+} from "../../../../../lib/seo/public-content-json-ld";
+import {
+  criarHrefCanonicoObra,
+  criarMetadataPadrao,
+} from "../../lib/obra-page-metadata-utils";
 import {
   decodificarSlugSeguro,
   obterNumeroCapituloSeguro,
 } from "./lib/obra-chapter-canonical-route-utils";
-import { criarMetadataCapituloPublico } from "./lib/obra-chapter-metadata-utils";
+import {
+  criarHrefCanonicoCapitulo,
+  criarMetadataCapituloPublico,
+} from "./lib/obra-chapter-metadata-utils";
 
 type PageProps = {
   params: Promise<{
@@ -70,13 +80,44 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
     notFound();
   }
 
+  const capitulo = leitura.obra.capitulos.find(
+    (item) => item.id === leitura.capituloId,
+  );
+  const slugCanonico = leitura.obra.slug || slugSeguro;
+  const dadosEstruturados = criarJsonLdCapituloPublico({
+    hrefCanonico: criarHrefCanonicoCapitulo(
+      slugCanonico,
+      leitura.numeroCapitulo,
+    ),
+    nome: capitulo?.titulo || `Capítulo ${leitura.numeroCapitulo}`,
+    posicao: leitura.numeroCapitulo,
+    descricao:
+      leitura.dadosEstruturados.textoCapitulo ||
+      leitura.dadosEstruturados.sinopse,
+    autor: leitura.dadosEstruturados.autor,
+    imagem: leitura.dadosEstruturados.capa,
+    obra: {
+      hrefCanonico: criarHrefCanonicoObra(slugCanonico),
+      nome: leitura.obra.titulo,
+    },
+  });
+
   return (
-    <LerCapituloClient
-      dadosIniciais={{
-        obraId: leitura.obraId,
-        capituloId: leitura.capituloId,
-        obras: [leitura.obra],
-      }}
-    />
+    <>
+      <script
+        id="capitulo-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializarJsonLdSeguro(dadosEstruturados),
+        }}
+      />
+      <LerCapituloClient
+        dadosIniciais={{
+          obraId: leitura.obraId,
+          capituloId: leitura.capituloId,
+          obras: [leitura.obra],
+        }}
+      />
+    </>
   );
 }
