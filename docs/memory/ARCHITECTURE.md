@@ -29,6 +29,7 @@ Regras importantes:
 - Tabelas novas no schema `public`, em migrations datadas a partir de 2026-10-30, precisam de GRANT/REVOKE explícito quando forem expostas ou bloqueadas para Data API.
 - CI valida essa regra com `qa/scripts/check-public-table-grants.mjs`.
 - Testes de banco usam pgTAP contra Supabase local descartável.
+- `avatars` e `capas-obras` permanecem buckets públicos para entrega por URL conhecida, mas a listagem de `storage.objects` é limitada ao prefixo do usuário autenticado; rotinas administrativas usam service role no servidor.
 
 ## Observabilidade e qualidade
 
