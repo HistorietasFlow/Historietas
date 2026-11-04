@@ -39,6 +39,7 @@ import { useCommunityCommentSheetComposer } from "../hooks/use-community-comment
 import { useCommunityCommentSheetGestures } from "../hooks/use-community-comment-sheet-gestures";
 import { useCommunityCommentSheetOrdering } from "../hooks/use-community-comment-sheet-ordering";
 import { useCommunityCommentSheetRepliesVisibility } from "../hooks/use-community-comment-sheet-replies-visibility";
+import { useCommunityCommentsDialogAccessibility } from "../hooks/use-community-comments-dialog-accessibility";
 
 type PostComentariosComunidade = {
   id: string;
@@ -120,6 +121,12 @@ export const ComentariosSheet = memo(function ComentariosSheet({
     isDesktop,
     onFecharComentarios: fecharComentarios,
   });
+  const { aoPressionarTeclaDialogo } =
+    useCommunityCommentsDialogAccessibility({
+      aberto: Boolean(post),
+      dialogRef: sheetRef,
+      onFechar: fecharSheetComentarios,
+    });
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -169,9 +176,11 @@ export const ComentariosSheet = memo(function ComentariosSheet({
         ref={sheetRef}
         isDesktop={isDesktop}
         expanded={sheetExpandido}
+        onKeyDown={aoPressionarTeclaDialogo}
       >
         <CommunityCommentsSheetHandleContainer
           data-comments-sheet-handle="true"
+          data-dialog-initial-focus="true"
           onClick={alternarExpansaoComentarios}
           onTouchStart={iniciarArraste}
           onTouchMove={moverArraste}
@@ -197,7 +206,7 @@ export const ComentariosSheet = memo(function ComentariosSheet({
         <CommunityCommentsSheetHeaderContainer>
           <CommunityCommentsSheetHeaderSpacer />
 
-          <CommunityCommentsSheetTitle>
+          <CommunityCommentsSheetTitle id="community-comments-title">
             {obterTituloComentariosComunidade(post.comentarios.length)}
           </CommunityCommentsSheetTitle>
 

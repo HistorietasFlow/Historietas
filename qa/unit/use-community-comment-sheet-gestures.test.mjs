@@ -10,6 +10,12 @@ const hook = ler(
 const sheet = ler(
   "../../app/comunidade/components/community-comments-sheet.tsx",
 );
+const panel = ler(
+  "../../app/comunidade/components/community-comments-sheet-panel.tsx",
+);
+const acessibilidadeDialogo = ler(
+  "../../app/comunidade/hooks/use-community-comments-dialog-accessibility.ts",
+);
 
 test("hook centraliza expansao, drag, helpers, transicoes e limpeza do sheet", () => {
   assert.match(hook, /^"use client";/);
@@ -78,4 +84,31 @@ test("sheet delega gestos e mantem fechamento local sem alterar o handle", () =>
   assert.match(sheet, /onTouchMove=\{moverArraste\}/);
   assert.match(sheet, /onTouchEnd=\{finalizarArraste\}/);
   assert.match(sheet, /onTouchCancel=\{finalizarArraste\}/);
+});
+
+test("sheet preserva semantica, foco e teclado do dialogo modal", () => {
+  assert.match(panel, /role="dialog"/);
+  assert.match(panel, /aria-modal="true"/);
+  assert.match(panel, /aria-labelledby="community-comments-title"/);
+  assert.match(panel, /tabIndex=\{-1\}/);
+  assert.match(panel, /onKeyDown=\{onKeyDown\}/);
+  assert.match(sheet, /id="community-comments-title"/);
+  assert.match(sheet, /data-dialog-initial-focus="true"/);
+  assert.match(sheet, /onKeyDown=\{aoPressionarTeclaDialogo\}/);
+  assert.match(
+    acessibilidadeDialogo,
+    /focarInicioDialogo\(dialogRef\.current\)/,
+  );
+  assert.match(
+    acessibilidadeDialogo,
+    /manterFocoNoDialogo\(event, onFechar\)/,
+  );
+  assert.match(
+    acessibilidadeDialogo,
+    /restaurarFocoAnterior\(focoAnterior\)/,
+  );
+  assert.match(
+    acessibilidadeDialogo,
+    /from "\.\.\/\.\.\/obra\/\[slug\]\/lib\/obra-dialog-focus"/,
+  );
 });
