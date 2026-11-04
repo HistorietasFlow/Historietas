@@ -71,8 +71,21 @@ ações executadas já na sessão de B.
 - confirmar o usuário esperado novamente na fronteira de persistência.
 
 Esse padrão deve ser preservado em novos fluxos assíncronos do leitor. As
-preferências visuais de leitura continuam em um lifecycle separado e não devem
-ser acopladas a essa proteção sem uma fase própria.
+preferências visuais de leitura continuam em um lifecycle separado.
+
+### Preferências visuais durante troca de conta
+
+O lifecycle de preferências mantém a identidade/versionamento autenticado como
+fonte de validade, mas registra separadamente qual identidade teve suas
+preferências efetivamente aplicadas. Ao trocar de conta, as preferências deixam
+de ser consideradas carregadas antes da nova leitura, timers antigos são
+invalidados e a persistência só é permitida quando identidade autenticada,
+identidade aplicada e usuário de destino coincidem. No logout, apenas os
+valores padrão do visitante são aplicados e nenhuma chave privada é escrita.
+
+Não remover essa associação explícita: usar apenas um booleano de
+“preferências carregadas” permite que um render intermediário grave valores da
+conta anterior na chave da conta nova.
 
 
 ## OWASP ZAP: `Potential XSS` em `/login?redirectTo=/publicar`

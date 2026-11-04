@@ -162,6 +162,8 @@ export default function LerCapituloPage() {
     setMostrarLinhaProgresso,
     preferenciasCarregadas,
     setPreferenciasCarregadas,
+    identidadePreferenciasAplicada,
+    setIdentidadePreferenciasAplicada,
   } = useLerCapituloSessionPreferencesState();
   const [progressoRolagem, setProgressoRolagem] = useState(0);
   const isDesktop = useLerCapituloDesktopMode();
@@ -217,10 +219,13 @@ export default function LerCapituloPage() {
     tamanhoFonte,
     mostrarLinhaProgresso,
     preferenciasCarregadas,
+    identidadePreferenciasAplicada,
+    identidadeAutenticadaLeitorRef,
     setPerfilComentarioLeitor,
     setTamanhoFonte,
     setMostrarLinhaProgresso,
     setPreferenciasCarregadas,
+    setIdentidadePreferenciasAplicada,
   });
 
   const { identidadeDadosAplicada } = useLerCapituloInitialLoad({

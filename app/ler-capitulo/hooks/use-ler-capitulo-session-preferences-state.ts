@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { TamanhoFonte } from "../components/ler-capitulo-reader-content";
+import type { IdentidadeAutenticadaLeitor } from "../lib/ler-capitulo-auth-identity";
 import type { PerfilComentarioLeitor } from "../lib/ler-capitulo-comments-read-loader";
 
 export function useLerCapituloSessionPreferencesState() {
@@ -15,6 +16,8 @@ export function useLerCapituloSessionPreferencesState() {
   const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(3);
   const [mostrarLinhaProgresso, setMostrarLinhaProgresso] = useState(false);
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
+  const [identidadePreferenciasAplicada, setIdentidadePreferenciasAplicada] =
+    useState<IdentidadeAutenticadaLeitor | null>(null);
 
   return {
     perfilComentarioLeitor,
@@ -27,5 +30,7 @@ export function useLerCapituloSessionPreferencesState() {
     setMostrarLinhaProgresso,
     preferenciasCarregadas,
     setPreferenciasCarregadas,
+    identidadePreferenciasAplicada,
+    setIdentidadePreferenciasAplicada,
   };
 }
