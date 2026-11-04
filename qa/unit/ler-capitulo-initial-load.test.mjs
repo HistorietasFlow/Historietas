@@ -155,16 +155,37 @@ test("rota canônica preserva os dados públicos iniciais enquanto o lifecycle c
     remoto: inicial,
   }, async ({ efeitos, eventos, timers }) => {
     efeitos[0].callback();
-    timers[0]();
     await tick();
-    assert.deepEqual(eventos.find(([nome]) => nome === "setObraId"), ["setObraId", "obra"]);
-    assert.deepEqual(eventos.find(([nome]) => nome === "setCapituloId"), ["setCapituloId", "publicado"]);
+    assert.equal(timers.length, 0);
+    assert.ok(!eventos.some(([nome]) => nome === "setObraId" || nome === "setCapituloId"));
     assert.deepEqual(eventos.find(([nome]) => nome === "remoto")?.slice(0, 2), ["remoto", "obra"]);
     assert.ok(!eventos.some((evento) => evento.includes("outra-obra")));
     assert.ok(!eventos.some((evento) => evento.includes("outro-capitulo")));
     assert.ok(!eventos.some(([nome, valor]) => nome === "setCarregando" && valor === true));
     assert.deepEqual(eventos.find(([nome]) => nome === "setObras")?.[1], [inicial]);
     assert.deepEqual(eventos.at(-1), ["setCarregando", false]);
+  });
+});
+
+test("carga canônica atrasada e retry não restauram o capítulo inicial após navegação", async () => {
+  const remoto = adiado();
+  await cenario({
+    obraIdInicial: "obra",
+    capituloIdInicial: "publicado",
+    remotoPromise: remoto.promise,
+    busca: "?obraId=outra-obra&capituloId=outro-capitulo",
+  }, async ({ efeitos, eventos, timers, render }) => {
+    const cleanup = efeitos[0].callback();
+    eventos.push(["setCapituloId", "capitulo-2"]);
+    remoto.resolver(obra("obra", "autor"));
+    await tick();
+    cleanup();
+    render(1);
+    efeitos[1].callback();
+    await tick();
+    assert.equal(timers.length, 0);
+    assert.deepEqual(eventos.filter(([nome]) => nome === "setCapituloId"), [["setCapituloId", "capitulo-2"]]);
+    assert.ok(eventos.some(([nome]) => nome === "setObras"));
   });
 });
 

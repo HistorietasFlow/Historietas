@@ -142,7 +142,6 @@ test("com obra preserva a ordem setter, pushState e scrollTo", () => {
       [
         "push",
         {
-          __NA: true,
           __historietasLeitorCapitulo: {
             obraId: "obra",
             capituloId: "novo",
@@ -153,6 +152,39 @@ test("com obra preserva a ordem setter, pushState e scrollTo", () => {
       ],
       ["scroll", { top: 0, behavior: "smooth" }],
     ]);
+  } finally {
+    if (anterior === undefined) delete globalThis.window;
+    else globalThis.window = anterior;
+  }
+});
+
+test("navegação externa deixa o Next sincronizar a URL e copiar seu estado interno", () => {
+  const anterior = globalThis.window;
+  const obra = { id: "obra" };
+  const atual = cenario(obra);
+  const estadoNext = { __NA: true, __PRIVATE_NEXTJS_INTERNALS_TREE: { tree: "capitulo-1" } };
+  let restauracoes = 0;
+  let estadoPersistido;
+  globalThis.window = {
+    history: {
+      state: estadoNext,
+      pushState(data) {
+        // Contrato do patch nativo do App Router: marcadores internos desviam
+        // da sincronização; chamadas externas recebem os campos do Next.
+        if (!data?.__NA && !data?._N) restauracoes += 1;
+        estadoPersistido = { ...data, ...estadoNext };
+      },
+    },
+    scrollTo() {},
+  };
+  try {
+    atual.acao.trocarCapitulo("novo");
+    assert.equal(restauracoes, 1);
+    assert.deepEqual(estadoPersistido, {
+      ...estadoNext,
+      __historietasLeitorCapitulo: { obraId: "obra", capituloId: "novo" },
+    });
+    assert.deepEqual(estadoNext, { __NA: true, __PRIVATE_NEXTJS_INTERNALS_TREE: { tree: "capitulo-1" } });
   } finally {
     if (anterior === undefined) delete globalThis.window;
     else globalThis.window = anterior;

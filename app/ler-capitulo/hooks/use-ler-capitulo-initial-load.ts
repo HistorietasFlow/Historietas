@@ -90,12 +90,16 @@ export function useLerCapituloInitialLoad({
         ? capituloIdInicial
         : params.get("capituloId") || "";
 
-      window.setTimeout(() => {
-        if (execucaoCarregamentoEstaAtual()) {
-          setObraId(obraIdParam);
-          setCapituloId(capituloIdParam);
-        }
-      }, 0);
+      // A rota canônica já inicializou os IDs sincronamente. Reaplicá-los
+      // depois poderia desfazer uma troca de capítulo feita durante a carga.
+      if (!possuiDadosIniciais) {
+        window.setTimeout(() => {
+          if (execucaoCarregamentoEstaAtual()) {
+            setObraId(obraIdParam);
+            setCapituloId(capituloIdParam);
+          }
+        }, 0);
+      }
 
       let obrasLocaisDisponiveis: ObraLocal[] | null = null;
 

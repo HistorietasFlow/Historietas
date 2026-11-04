@@ -73,7 +73,9 @@ export function criarAcaoTrocaCapituloLeitor({
     );
 
     window.history.pushState(
-      criarEstadoHistoricoLeitor(window.history.state, {
+      // O Next copia seu estado interno ao receber uma navegação externa.
+      // Repassar __NA faria o Next ignorar a atualização da URL canônica.
+      criarEstadoHistoricoLeitor(null, {
         obraId: obraAtual.id,
         capituloId: novoCapituloId,
       }),
