@@ -3,7 +3,10 @@ import type { Dispatch, SetStateAction } from "react";
 import { carregarMetricasConteudos } from "../../../../lib/metricas";
 import { idObraSupabaseValido } from "../../../../lib/utils";
 import type { ObraDinamica } from "../lib/obra-data-utils";
-import { salvarListaLocalObraPublica } from "../lib/obra-interaction-utils";
+import {
+  obraEstaEmListaLocalObraPublica,
+  salvarListaLocalObraPublica,
+} from "../lib/obra-interaction-utils";
 import {
   criarMetricasBaseObra,
   metricasComunidadeObraVazias,
@@ -53,6 +56,8 @@ export function useObraWorkMetricsLifecycle({
   useEffect(() => {
     if (!obra) {
       const resetMetricasTimer = window.setTimeout(() => {
+        setObraFavoritada(false);
+        setObraConcluida(false);
         setMetricasObra(metricasObraVazias);
         setTotalComentariosObra(0);
       }, 0);
@@ -65,28 +70,7 @@ export function useObraWorkMetricsLifecycle({
     const obraAtual = obra;
     const obraId = obraAtual.id;
     const metricasBase = criarMetricasBaseObra(obraAtual);
-    let curtidaLocalAtiva = false;
     let seguindoLocalAtivo = false;
-    try {
-      const curtidasTexto = lerStorageUsuarioObraPublica(
-        likedWorksStorageKey,
-        usuarioIdLogado,
-      );
-      const curtidasJson: unknown = curtidasTexto
-        ? JSON.parse(curtidasTexto)
-        : [];
-      const obrasCurtidas = Array.isArray(curtidasJson)
-        ? curtidasJson.filter(
-            (titulo): titulo is string =>
-              typeof titulo === "string" && Boolean(titulo.trim()),
-          )
-        : [];
-
-      curtidaLocalAtiva = obrasCurtidas.includes(obraNormalizada);
-    } catch {
-      curtidaLocalAtiva = false;
-    }
-
     try {
       const seguidasTexto = lerStorageUsuarioObraPublica(
         followedWorksStorageKey,
@@ -107,8 +91,42 @@ export function useObraWorkMetricsLifecycle({
       seguindoLocalAtivo = false;
     }
 
+    const favoritadaLocalAtiva = obraEstaEmListaLocalObraPublica(
+      obraAtual,
+      favoritesStorageKey,
+      usuarioIdLogado,
+    );
+    const concluidaLocalAtiva = obraEstaEmListaLocalObraPublica(
+      obraAtual,
+      completedStorageKey,
+      usuarioIdLogado,
+    );
+
+    let curtidaLocalAtiva = false;
+    try {
+      const curtidasTexto = lerStorageUsuarioObraPublica(
+        likedWorksStorageKey,
+        usuarioIdLogado,
+      );
+      const curtidasJson: unknown = curtidasTexto
+        ? JSON.parse(curtidasTexto)
+        : [];
+      const obrasCurtidas = Array.isArray(curtidasJson)
+        ? curtidasJson.filter(
+            (titulo): titulo is string =>
+              typeof titulo === "string" && Boolean(titulo.trim()),
+          )
+        : [];
+
+      curtidaLocalAtiva = obrasCurtidas.includes(obraNormalizada);
+    } catch {
+      curtidaLocalAtiva = false;
+    }
+
     const aplicarMetricasLocaisTimer = window.setTimeout(() => {
       setObraSeguida(seguindoLocalAtivo);
+      setObraFavoritada(favoritadaLocalAtiva);
+      setObraConcluida(concluidaLocalAtiva);
       setMetricasComunidadeObra({
         ...metricasComunidadeObraVazias,
         carregado: true,

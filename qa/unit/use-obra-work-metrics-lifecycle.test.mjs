@@ -25,6 +25,8 @@ test("cliente delega o lifecycle de metricas ao hook", () => {
   );
   assert.doesNotMatch(paginaObra, /async function carregarMetricasReaisObra\(/);
   assert.doesNotMatch(paginaObra, /carregarMetricasConteudos/);
+  assert.doesNotMatch(paginaObra, /lerStorageUsuarioObraPublica/);
+  assert.doesNotMatch(paginaObra, /obraEstaEmListaLocalObraPublica/);
 });
 
 test("hook preserva fallback local, snapshot remoto e total de comentarios", () => {
@@ -33,7 +35,11 @@ test("hook preserva fallback local, snapshot remoto e total de comentarios", () 
     "const metricasBase = criarMetricasBaseObra(obraAtual);",
     "const curtidasTexto = lerStorageUsuarioObraPublica(",
     "const seguidasTexto = lerStorageUsuarioObraPublica(",
+    "const favoritadaLocalAtiva = obraEstaEmListaLocalObraPublica(",
+    "const concluidaLocalAtiva = obraEstaEmListaLocalObraPublica(",
     "const aplicarMetricasLocaisTimer = window.setTimeout(",
+    "setObraFavoritada(favoritadaLocalAtiva);",
+    "setObraConcluida(concluidaLocalAtiva);",
     "setTotalComentariosObra(metricasBase.comentarios);",
     "async function carregarMetricasReaisObra()",
     "await carregarMetricasConteudos({",
