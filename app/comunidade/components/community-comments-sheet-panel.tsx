@@ -1,8 +1,14 @@
-import { forwardRef, type CSSProperties, type ReactNode } from "react";
+import {
+  forwardRef,
+  type CSSProperties,
+  type KeyboardEventHandler,
+  type ReactNode,
+} from "react";
 
 type CommunityCommentsSheetPanelProps = {
   isDesktop: boolean;
   expanded: boolean;
+  onKeyDown: KeyboardEventHandler<HTMLElement>;
   children: ReactNode;
 };
 
@@ -10,12 +16,17 @@ export const CommunityCommentsSheetPanel = forwardRef<
   HTMLElement,
   CommunityCommentsSheetPanelProps
 >(function CommunityCommentsSheetPanel(
-  { isDesktop, expanded, children },
+  { isDesktop, expanded, onKeyDown, children },
   ref
 ) {
   return (
     <article
       ref={ref}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="community-comments-title"
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
       style={
         isDesktop
           ? desktopCommentsSheetStyle
