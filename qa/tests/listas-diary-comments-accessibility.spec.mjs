@@ -25,6 +25,10 @@ test("sheet de comentários do Diário preserva diálogo, foco e teclado", async
   await page.evaluate(
     ({ annotationIdValue, userIdValue, workIdValue }) => {
       window.localStorage.setItem(
+        `historietas-obras-seguidas:${userIdValue}`,
+        JSON.stringify([workIdValue]),
+      );
+      window.localStorage.setItem(
         `historietas-diario-anotacoes:${userIdValue.toLowerCase()}`,
         JSON.stringify([
           {
