@@ -16,6 +16,11 @@ const LER_CAPITULO_UI_TRANSLATIONS: Record<
   "Carregando": { en: "Loading", es: "Cargando" },
   "Carregando capítulo": { en: "Loading chapter", es: "Cargando capítulo" },
   "Capítulo não encontrado": { en: "Chapter not found", es: "Capítulo no encontrado" },
+  "Não foi possível carregar o capítulo agora. Verifique sua conexão e tente novamente.": {
+    en: "The chapter could not be loaded right now. Check your connection and try again.",
+    es: "No se pudo cargar el capítulo ahora. Comprueba tu conexión e inténtalo de nuevo.",
+  },
+  "Tentar novamente": { en: "Try again", es: "Intentar de nuevo" },
   "Voltar para a Home": { en: "Back to Home", es: "Volver al inicio" },
   "Notificações": { en: "Notifications", es: "Notificaciones" },
   "Fechar": { en: "Close", es: "Cerrar" },

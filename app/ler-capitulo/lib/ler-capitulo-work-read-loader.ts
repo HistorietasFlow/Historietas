@@ -30,7 +30,11 @@ export async function carregarObraSupabase(
     .limit(1)
     .maybeSingle();
 
-  if (erroObra || !obraSupabase) {
+  if (erroObra) {
+    throw erroObra;
+  }
+
+  if (!obraSupabase) {
     return null;
   }
 
@@ -44,28 +48,24 @@ export async function carregarObraSupabase(
 
   let capitulosSupabase: CapituloSupabaseRow[] = [];
 
-  try {
-    capitulosSupabase = await carregarTodasPaginasSupabase<CapituloSupabaseRow>({
-      nomeColecao: "capítulos da leitura",
-      buscarPagina: async (inicio, fim) => {
-        let query = supabase
-          .from("capitulos")
-          .select("id,obra_id,user_id,titulo,texto,ordem,publicado,visualizacoes,criado_em,atualizado_em")
-          .eq("obra_id", obraId);
+  capitulosSupabase = await carregarTodasPaginasSupabase<CapituloSupabaseRow>({
+    nomeColecao: "capítulos da leitura",
+    buscarPagina: async (inicio, fim) => {
+      let query = supabase
+        .from("capitulos")
+        .select("id,obra_id,user_id,titulo,texto,ordem,publicado,visualizacoes,criado_em,atualizado_em")
+        .eq("obra_id", obraId);
 
-        if (!usuarioEhDono) {
-          query = query.eq("publicado", true);
-        }
+      if (!usuarioEhDono) {
+        query = query.eq("publicado", true);
+      }
 
-        return query
-          .order("ordem", { ascending: true })
-          .order("id", { ascending: true })
-          .range(inicio, fim);
-      },
-    });
-  } catch {
-    capitulosSupabase = [];
-  }
+      return query
+        .order("ordem", { ascending: true })
+        .order("id", { ascending: true })
+        .range(inicio, fim);
+    },
+  });
 
   return mesclarObraSupabaseComLocal(
     obraBanco,

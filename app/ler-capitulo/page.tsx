@@ -10,6 +10,7 @@ import {
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { LerCapituloLanguageBridge } from "./components/ler-capitulo-language-bridge";
 import { LoadingSpinner } from "./components/ler-capitulo-loading-spinner";
+import LerCapituloLoadError from "./components/ler-capitulo-load-error";
 import ComentariosCapituloSheet, { type ComentariosCapituloPost } from "./components/ler-capitulo-comments-sheet";
 import LerCapituloReaderContent from "./components/ler-capitulo-reader-content";
 import { supabase } from "../../lib/supabase/client";
@@ -119,8 +120,16 @@ export default function LerCapituloPage() {
   const { language } = useHistorietasLanguage();
   const { obraId, setObraId, capituloId, setCapituloId } =
     useLerCapituloRouteIdentityState();
-  const { obras, setObras, carregando, setCarregando } =
-    useLerCapituloLoadedDataState();
+  const {
+    obras,
+    setObras,
+    carregando,
+    setCarregando,
+    erroCarregamento,
+    setErroCarregamento,
+    versaoCarregamento,
+    tentarCarregarNovamente,
+  } = useLerCapituloLoadedDataState();
   const {
     setComentarioDigitado,
     comentarioStatus,
@@ -204,7 +213,9 @@ export default function LerCapituloPage() {
 
   const {
     autenticacaoCarregada,
+    erroAutenticacao,
     identidadeAutenticadaLeitorRef,
+    tentarCarregarAutenticacaoNovamente,
   } = useLerCapituloAuthIdentityLifecycle({
     onIdentidadeMudou: limparEstadoContaAnterior,
     setUsuarioIdLogado,
@@ -236,6 +247,8 @@ export default function LerCapituloPage() {
     setCapituloId,
     setObras,
     setCarregando,
+    setErroCarregamento,
+    versaoCarregamento,
   });
 
   const {
@@ -263,6 +276,10 @@ export default function LerCapituloPage() {
     () => obterCapituloAtualLeitor(obraAtual, capituloId),
     [obraAtual, capituloId],
   );
+  const erroCarregamentoInicial = erroAutenticacao || erroCarregamento;
+  const tentarCarregamentoInicialNovamente = erroAutenticacao
+    ? tentarCarregarAutenticacaoNovamente
+    : tentarCarregarNovamente;
 
   const {
     salvarObras,
@@ -519,12 +536,26 @@ export default function LerCapituloPage() {
       setCapituloId,
     });
 
-  if (carregando) {
+  if (carregando && !erroAutenticacao) {
     return (
       <main data-historietas-ler-capitulo-root="true" style={focusPageStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
         <LerCapituloLanguageBridge />
         <LoadingSpinner label="Carregando capítulo" />
+      </main>
+    );
+  }
+
+  if (erroCarregamentoInicial && (!obraAtual || !capituloAtual)) {
+    return (
+      <main data-historietas-ler-capitulo-root="true" style={focusPageStyle}>
+        <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
+        <LerCapituloLanguageBridge />
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <LerCapituloLoadError
+            onTentarNovamente={tentarCarregamentoInicialNovamente}
+          />
+        </section>
       </main>
     );
   }
@@ -612,6 +643,12 @@ export default function LerCapituloPage() {
 
       <LerCapituloLanguageBridge />
       <style>{focusBottomNavigationCss}</style>
+
+      {erroCarregamentoInicial && (
+        <LerCapituloLoadError
+          onTentarNovamente={tentarCarregamentoInicialNovamente}
+        />
+      )}
 
       <LerCapituloReaderContent
         obraAtual={obraAtual}

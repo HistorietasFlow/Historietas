@@ -83,7 +83,7 @@ function cenario({
 test("os dois helpers e seus contratos permanecem literalmente iguais", () => {
   const corpo = fonte.slice(fonte.indexOf("export async function carregarObraSupabase("))
     .replaceAll("export async function ", "async function ").trimEnd();
-  assert.equal(createHash("sha256").update(corpo).digest("hex"), "f63dc60eb6b106c1f560c919fa5c0fb797d52da1200f1cd564814a75528d7492");
+  assert.equal(createHash("sha256").update(corpo).digest("hex"), "7109108ee2347a15a2805ea081d357b18a7a4a24a3a4881846b9d1e47fb57233");
   const inicializacao = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts");
   assert.match(inicializacao, /from "\.\.\/lib\/ler-capitulo-work-read-loader";/);
   assert.match(pagina, /useLerCapituloInitialLoad\(/);
@@ -107,7 +107,10 @@ test("obra ausente ou não publicada não é carregada para visitante", async ()
   assert.equal(await loader.carregarObraSupabase("obra"), null);
   assert.equal(atual.consultas.length, 1);
   atual = cenario({ erroObra: { message: "erro" } });
-  assert.equal(await loader.carregarObraSupabase("obra"), null);
+  await assert.rejects(
+    loader.carregarObraSupabase("obra"),
+    (erro) => erro?.message === "erro",
+  );
   atual = cenario({ obraBanco: { id: "obra", user_id: "autor", publicado: false } });
   assert.equal(await loader.carregarObraSupabase("obra", null, "visitante"), null);
   assert.equal(atual.consultas.length, 1);
@@ -134,9 +137,9 @@ test("leitura preserva filtros, ordenação e paginação de visitante e dono", 
   assert.ok(!atual.consultas[1].passos.some((passo) => passo[0] === "eq" && passo[1] === "publicado"));
 });
 
-test("falha de paginação preserva composição da obra com capítulos vazios", async () => {
+test("falha de paginação é propagada para não simular capítulo ausente", async () => {
   cenario({ falhaCapitulos: true });
-  assert.deepEqual((await loader.carregarObraSupabase("obra")).resultado[1], []);
+  await assert.rejects(loader.carregarObraSupabase("obra"));
 });
 
 test("sem capítulos não há consulta; interações remotas preservam comentários e progresso", async () => {
