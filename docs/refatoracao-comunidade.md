@@ -3076,6 +3076,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - O lifecycle do perfil público do usuário logado foi movido para `useObraCurrentUserPublicProfile`, preservando o fallback "Você", o estado nulo sem usuário e o descarte de resultados assíncronos após troca de conta ou cleanup.
 
+## Obra — Fase 11
+
+- A inicialização local de seguir, favoritar e concluir foi consolidada em `useObraWorkMetricsLifecycle`, preservando isolamento por usuário, timers, cleanup e a sincronização posterior com o Supabase sem leituras duplicadas no cliente.
+
 ## DenunciaModal — Fase 1
 
 - O fluxo de envio da denúncia foi movido para useDenunciaSubmitAction, preservando validações, regras por tipo de alvo, RPCs Supabase, tratamento de erro e resultado de sucesso, enquanto o modal mantém portal, foco, teclado e composição visual.

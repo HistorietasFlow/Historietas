@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import "./use-obra-work-metrics-lifecycle-behavior.test.mjs";
 
 const lifecycleMetricas = readFileSync(
   new URL(

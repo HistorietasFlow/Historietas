@@ -31,9 +31,6 @@ import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
 import { useObraViewRegistration } from "./hooks/use-obra-view-registration";
 import {
-  lerStorageUsuarioObraPublica,
-} from "./lib/obra-user-storage";
-import {
   avaliacaoObraVazia,
   type AvaliacaoObraPublica,
 } from "./lib/obra-rating-utils";
@@ -43,7 +40,6 @@ import { criarLinkComunidadeObra, criarLinkPerfilAutor } from "./lib/obra-naviga
 import { ObraDinamicaLanguageBridge } from "./components/obra-dinamica-language-bridge";
 import { capaObraPodeSerOtimizada, obterIniciaisCapaObra } from "./lib/obra-cover-utils";
 import { obterAcaoLeituraPrincipalObra, obterCapitulosObraPublica, obterIndicadorConteudoObraPublica, obterObraDisponivelExibida, obterTextoDisponibilidadeCapitulosObra, type CapituloDinamico } from "./lib/obra-reading-utils";
-import { obraEstaEmListaLocalObraPublica } from "./lib/obra-interaction-utils";
 import { criarEstruturaComentariosObra, obterObraIdComentarios, type ComentarioObraPublico, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarLinkComFallback } from "./lib/obra-share-utils";
 import { obraPageCss } from "./lib/obra-page-css";
@@ -302,72 +298,6 @@ export default function ObraDinamicaPage() {
     setComentariosProximoOffset,
     setComentarioStatus,
   });
-
-  useEffect(() => {
-    if (!obraNormalizada) {
-      return;
-    }
-
-    try {
-      const obrasSeguidasTexto = lerStorageUsuarioObraPublica(
-        FOLLOWED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
-      );
-      const obrasSeguidasJson: unknown = obrasSeguidasTexto
-        ? JSON.parse(obrasSeguidasTexto)
-        : [];
-
-      const obrasSeguidas = Array.isArray(obrasSeguidasJson)
-        ? obrasSeguidasJson.filter(
-            (titulo): titulo is string =>
-              typeof titulo === "string" && Boolean(titulo.trim())
-          )
-        : [];
-      const seguida = obrasSeguidas.includes(obraNormalizada);
-
-      window.setTimeout(() => {
-        setObraSeguida(seguida);
-      }, 0);
-    } catch {
-      window.setTimeout(() => {
-        setObraSeguida(false);
-      }, 0);
-    }
-  }, [obraNormalizada, usuarioIdLogado]);
-
-  useEffect(() => {
-    if (!obra) {
-      const resetColecoesTimer = window.setTimeout(() => {
-        setObraFavoritada(false);
-        setObraConcluida(false);
-      }, 0);
-
-      return () => {
-        window.clearTimeout(resetColecoesTimer);
-      };
-    }
-
-    const obraAtual = obra;
-    const estadoFavoritadaLocal = obraEstaEmListaLocalObraPublica(
-      obraAtual,
-      FAVORITES_STORAGE_KEY,
-      usuarioIdLogado
-    );
-    const estadoConcluidaLocal = obraEstaEmListaLocalObraPublica(
-      obraAtual,
-      COMPLETED_STORAGE_KEY,
-      usuarioIdLogado
-    );
-
-    const aplicarEstadoColecoesTimer = window.setTimeout(() => {
-      setObraFavoritada(estadoFavoritadaLocal);
-      setObraConcluida(estadoConcluidaLocal);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(aplicarEstadoColecoesTimer);
-    };
-  }, [obra, obraNormalizada, usuarioIdLogado]);
 
   useObraWorkMetricsLifecycle({
     obra,
