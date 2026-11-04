@@ -36,17 +36,19 @@ test.describe("capítulo público canônico", () => {
   });
 
   test("capítulo público inexistente responde 404 sem redirect", async ({
-    request,
+    page,
   }) => {
-    const response = await request.get(
+    const response = await page.goto(
       `/obra/${encodeURIComponent(slug)}/capitulo/999999`,
-      { maxRedirects: 0 },
+      { waitUntil: "domcontentloaded" },
     );
-    const html = await response.text();
+    const html = await page.content();
 
-    expect(response.status()).toBe(404);
-    expect(response.headers().location).toBeUndefined();
-    expect(response.url()).not.toContain("/ler-capitulo");
+    expect(response?.status()).toBe(404);
+    expect(page.url()).toContain(
+      `/obra/${encodeURIComponent(slug)}/capitulo/999999`,
+    );
+    expect(page.url()).not.toContain("/ler-capitulo");
     expect(html).toContain('name="robots" content="noindex"');
   });
 
