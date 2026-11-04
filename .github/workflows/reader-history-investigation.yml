@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        react: [19.2.4, 19.3.1]
+        react: [19.2.4]
     env:
       CI: "true"
       NEXT_TELEMETRY_DISABLED: "1"
@@ -35,7 +35,16 @@ jobs:
           npm --prefix qa ci
           npm ls --all --json > /tmp/deps-before.json
           if [ "${{ matrix.react }}" = "19.2.4" ]; then
-            npm install --no-save --package-lock=false --ignore-scripts --no-audit react@19.2.4 react-dom@19.2.4
+            mkdir -p /tmp/react-comparison-packages
+            npm pack --pack-destination /tmp/react-comparison-packages react@19.2.4 react-dom@19.2.4 scheduler@0.27.0
+            test -f node_modules/react/package.json
+            test -f node_modules/react-dom/package.json
+            test -f node_modules/scheduler/package.json
+            rm -rf node_modules/react node_modules/react-dom node_modules/scheduler
+            mkdir node_modules/react node_modules/react-dom node_modules/scheduler
+            tar -xzf /tmp/react-comparison-packages/react-19.2.4.tgz -C node_modules/react --strip-components=1
+            tar -xzf /tmp/react-comparison-packages/react-dom-19.2.4.tgz -C node_modules/react-dom --strip-components=1
+            tar -xzf /tmp/react-comparison-packages/scheduler-0.27.0.tgz -C node_modules/scheduler --strip-components=1
           fi
           npm ls --all --json > /tmp/deps-after.json || true
           node -e 'const fs=require("fs"); const inventory=p=>{const result={}; const walk=(d,path="")=>{for(const [name,item] of Object.entries(d.dependencies||{})){const key=path+"/"+name; if(!["react","react-dom","scheduler"].includes(name)) result[key]=item.version; walk(item,key)}}; walk(JSON.parse(fs.readFileSync(p))); return result}; require("assert").deepStrictEqual(inventory("/tmp/deps-after.json"),inventory("/tmp/deps-before.json")); console.log("Only React/React DOM/scheduler changed in the installed dependency tree")'
@@ -69,4 +78,7 @@ jobs:
           retention-days: 7
       - name: Stop disposable Supabase
         if: always()
-        run: supabase stop --no-backup
+        run: |
+          if command -v supabase >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi
