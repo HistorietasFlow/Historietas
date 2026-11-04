@@ -46,6 +46,9 @@ function cenario({ obraAtual = { id: "obra" }, capituloAtual = { id: "capitulo" 
     obraAtual,
     capituloAtual,
     usuarioIdLogado: "usuario",
+    execucaoIdentidadeAcaoEstaAtual() {
+      return true;
+    },
     setObras(obras) {
       eventos.push(["estado", obras]);
     },

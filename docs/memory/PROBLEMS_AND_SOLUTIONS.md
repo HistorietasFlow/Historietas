@@ -53,6 +53,27 @@ Alguns testes locais podem divergir do Ubuntu da CI por diferenças de final de 
 
 Não assumir regressão funcional apenas por esse sintoma. Comparar com GitHub Actions e investigar o diff real antes de alterar código.
 
+## Leitor: troca de conta sem desmontar a página
+
+### Sintoma
+
+Ao trocar de A para B com o leitor aberto, respostas assíncronas e estado de
+progresso/interações carregados para A podiam continuar em memória e alimentar
+ações executadas já na sessão de B.
+
+### Padrão aplicado
+
+- manter a identidade autenticada com uma versão monotônica;
+- invalidar `getUser`, loaders e ações quando usuário ou versão divergirem;
+- associar o estado aplicado à identidade que concluiu o carregamento;
+- remover imediatamente dados privados e interações da conta anterior,
+  preservando apenas o conteúdo público enquanto a nova carga termina;
+- confirmar o usuário esperado novamente na fronteira de persistência.
+
+Esse padrão deve ser preservado em novos fluxos assíncronos do leitor. As
+preferências visuais de leitura continuam em um lifecycle separado e não devem
+ser acopladas a essa proteção sem uma fase própria.
+
 
 ## OWASP ZAP: `Potential XSS` em `/login?redirectTo=/publicar`
 

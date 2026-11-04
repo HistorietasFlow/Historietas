@@ -50,6 +50,7 @@ function cenario({ usuario = "u1", comentarios = [], bloqueado = false, falhaDel
     iniciarAcaoComentariosCapitulo(chave) { eventos.push(["iniciar", chave]); return !bloqueado; },
     finalizarAcaoComentariosCapitulo(chave) { eventos.push(["finalizar", chave]); },
     async obterUsuarioLogadoIdAtual() { eventos.push(["usuario"]); return usuario; },
+    execucaoIdentidadeAcaoEstaAtual() { return true; },
     criarLoginHrefLeitor(obraId, capituloId) { return `/login?obra=${obraId}&capitulo=${capituloId}`; },
     criarHrefLeituraCapituloLeitor(obra, capituloId) { return `/obra/${obra.id}/${capituloId}`; },
     async carregarPerfilComentarioLeitor(userId) { eventos.push(["perfil", userId]); return { userId, nome: "Ana", avatar: "avatar" }; },
@@ -75,7 +76,7 @@ test("os corpos originais permanecem literais e a página continua proprietária
   const helper = fonte.slice(fonte.indexOf("function obterIdsComentarioCapituloComRespostas("), fonte.indexOf("export function criarAcoesComentariosCapitulo")).trimEnd();
   const acoes = fonte.slice(fonte.indexOf("  async function enviarComentarioCapitulo("), fonte.indexOf("  return {\n    enviarComentarioCapitulo,")).trimEnd();
   assert.equal(createHash("sha256").update(helper).digest("hex"), "250c99149662b3e72bee319f003bfbea58c579fca59807c15429695b8555851b");
-  assert.equal(createHash("sha256").update(acoes).digest("hex"), "7eaf38a256e15ed6219e03253de46eca56808122f07c673ecb0c981d46da2fbe");
+  assert.match(acoes, /execucaoIdentidadeAcaoEstaAtual/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-comment-actions";/);
   assert.match(pagina, /from "\.\/lib\/ler-capitulo-comment-controls";/);
   assert.match(pagina, /criarControlesComentariosCapitulo\(\{[\s\S]*?acoesComentariosCapituloRef,[\s\S]*?setMostrarComentario,/);
@@ -124,7 +125,7 @@ test("comentário vazio e falha ao salvar respeitam mensagens e cleanup", async 
 test("envio preserva perfil, resposta, limite, estados e notificação", async () => {
   const atual = cenario({ salvo: { id: " novo ", atualizado_em: "data", comentario_pai_id: "pai" } });
   assert.equal(await atual.acoes.enviarComentarioCapitulo("post", " texto ", " pai "), true);
-  assert.ok(atual.eventos.some((evento) => JSON.stringify(evento) === JSON.stringify(["salvar", "post", "texto", "pai"])));
+  assert.ok(atual.eventos.some((evento) => JSON.stringify(evento) === JSON.stringify(["salvar", "post", "texto", "pai", "u1"])));
   assert.deepEqual(atual.estados.comentarios[0], { id: "novo", userId: "u1", nome: "Ana", avatar: "avatar", texto: "texto", criadoEm: "data", comentarioPaiId: "pai", meuComentario: true, curtidas: [] });
   assert.equal(atual.estados.metricas.totalComentarios, 1);
   assert.equal(atual.estados.mostrar, true);

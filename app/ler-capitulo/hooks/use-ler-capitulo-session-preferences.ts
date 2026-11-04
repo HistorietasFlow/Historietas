@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { supabase } from "../../../lib/supabase/client";
 import type { TamanhoFonte } from "../components/ler-capitulo-reader-content";
 import { carregarPerfilComentarioLeitor, type PerfilComentarioLeitor } from "../lib/ler-capitulo-comments-read-loader";
 import { carregarPreferenciasLeitura, salvarPreferenciasLeitura } from "../lib/ler-capitulo-reading-preferences";
@@ -10,7 +9,6 @@ type SessaoPreferenciasLeitor = {
   tamanhoFonte: TamanhoFonte;
   mostrarLinhaProgresso: boolean;
   preferenciasCarregadas: boolean;
-  setUsuarioIdLogado: Dispatch<SetStateAction<string>>;
   setPerfilComentarioLeitor: Dispatch<SetStateAction<PerfilComentarioLeitor>>;
   setTamanhoFonte: Dispatch<SetStateAction<TamanhoFonte>>;
   setMostrarLinhaProgresso: Dispatch<SetStateAction<boolean>>;
@@ -22,49 +20,11 @@ export function useLerCapituloSessionPreferences({
   tamanhoFonte,
   mostrarLinhaProgresso,
   preferenciasCarregadas,
-  setUsuarioIdLogado,
   setPerfilComentarioLeitor,
   setTamanhoFonte,
   setMostrarLinhaProgresso,
   setPreferenciasCarregadas,
 }: SessaoPreferenciasLeitor) {
-  useEffect(() => {
-    let cancelado = false;
-
-    async function carregarUsuarioLogado() {
-      try {
-        const { data } = await supabase.auth.getUser();
-
-        if (!cancelado) {
-          setUsuarioIdLogado(data.user?.id || "");
-        }
-      } catch {
-        if (!cancelado) {
-          setUsuarioIdLogado("");
-        }
-      }
-    }
-
-    void carregarUsuarioLogado();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelado) {
-        setUsuarioIdLogado(session?.user?.id || "");
-      }
-    });
-
-    return () => {
-      cancelado = true;
-      subscription.unsubscribe();
-    };
-    // Os setters pertencem à página e são estáveis; a assinatura continua registrada uma vez.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-
-
   useEffect(() => {
     let cancelado = false;
 

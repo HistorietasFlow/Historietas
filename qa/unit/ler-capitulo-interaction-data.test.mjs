@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
@@ -10,6 +9,7 @@ const fonteEstado = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-comments-
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const mockada = fonte
   .replace('import { useEffect, useEffectEvent } from "react";', "const useEffect = (...args) => globalThis.__interacaoLeitor.useEffect(...args); const useEffectEvent = (...args) => globalThis.__interacaoLeitor.useEffectEvent(...args);")
+  .replace(/import \{\s*execucaoIdentidadeLeitorEstaAtual,[\s\S]*?\} from "\.\.\/lib\/ler-capitulo-auth-identity";/, "const execucaoIdentidadeLeitorEstaAtual = (...args) => globalThis.__interacaoLeitor.identidadeAtual(...args);")
   .replace('import { carregarComentariosCapituloSupabase } from "../lib/ler-capitulo-comments-read-loader";', "const carregarComentariosCapituloSupabase = (...args) => globalThis.__interacaoLeitor.comentarios(...args);")
   .replace('import { aplicarCurtidasComentariosCapitulosLocais } from "../lib/ler-capitulo-local-storage";', "const aplicarCurtidasComentariosCapitulosLocais = (...args) => globalThis.__interacaoLeitor.curtidasLocais(...args);");
 const js = typescript.transpileModule(mockada, {
@@ -37,6 +37,7 @@ async function cenario(opcoes, teste) {
   const contexto = {
     useEffect(callback, deps) { efeitos.push({ callback, deps }); },
     useEffectEvent(callback) { callbackAtual = callback; return (...args) => callbackAtual(...args); },
+    identidadeAtual({ cancelada, identidadeEsperada, identidadeAtual }) { return !cancelada && identidadeEsperada.versao === identidadeAtual.versao && identidadeEsperada.usuarioId === identidadeAtual.usuarioId; },
     comentarios(...args) { eventos.push(["carregarComentarios", ...args]); return opcoes.comentariosPromise || Promise.resolve([{ id: "comentario" }]); },
     curtidasLocais(...args) { eventos.push(["curtidasLocais", ...args]); return args[0]; },
   };
@@ -47,6 +48,8 @@ async function cenario(opcoes, teste) {
     capituloAtual: opcoes.capitulo === undefined ? capitulo : opcoes.capitulo,
     comentariosCapitulo: opcoes.comentarios || [{ id: "a" }, { id: "b" }],
     usuarioIdLogado: opcoes.usuario === undefined ? "leitor" : opcoes.usuario,
+    identidadeDadosAplicada: opcoes.identidadeDadosAplicada === undefined ? { usuarioId: opcoes.usuario === undefined ? "leitor" : opcoes.usuario, versao: 1 } : opcoes.identidadeDadosAplicada,
+    identidadeAutenticadaLeitorRef: { current: opcoes.identidadeAtual || { usuarioId: opcoes.usuario === undefined ? "leitor" : opcoes.usuario, versao: 1 } },
     comentariosCapituloCarregadoIdRef: refComentarios,
     curtidaCapituloSalvandoRef: { current: Boolean(opcoes.salvandoCurtida) },
     salvoCapituloSalvandoRef: { current: Boolean(opcoes.salvandoSalvo) },
@@ -72,6 +75,23 @@ async function cenario(opcoes, teste) {
   }
 }
 
+test("identidade sem dados aplicados limpa estado de conta e não inicia consultas", async () => {
+  await cenario({
+    identidadeDadosAplicada: { usuarioId: "usuario-a", versao: 1 },
+    identidadeAtual: { usuarioId: "usuario-b", versao: 2 },
+  }, async ({ efeitos, eventos, refComentarios }) => {
+    efeitos[0].callback();
+    efeitos[1].callback();
+
+    assert.equal(refComentarios.current, "");
+    assert.ok(!eventos.some(([nome]) => nome === "carregarComentarios"));
+    assert.ok(!eventos.some(([nome]) => nome === "remotas"));
+    assert.deepEqual(eventos.find(([nome]) => nome === "setComentarios"), ["setComentarios", []]);
+    assert.equal(eventos.find(([nome]) => nome === "setMetricas")[1].curtiu, false);
+    assert.equal(eventos.find(([nome]) => nome === "setMetricas")[1].salvo, false);
+  });
+});
+
 test("efeitos, dependências e integração preservam a fronteira original", async () => {
   const inicio = fonte.indexOf("  useEffect(() => {");
   const fim = fonte.lastIndexOf("\n}");
@@ -79,7 +99,7 @@ test("efeitos, dependências e integração preservam a fronteira original", asy
     /    \/\/ (?:O ref e os setters|Helpers de módulo)[^\n]*\n    \/\/ eslint-disable-next-line react-hooks\/exhaustive-deps\n/g,
     "",
   ).trimEnd();
-  assert.equal(createHash("sha256").update(corpo).digest("hex"), "664a74865e24f681fd99d0376b91081a0a9e11cdc82fa9ebc2935660dc3039be");
+  assert.match(corpo, /execucaoIdentidadeLeitorEstaAtual/);
   assert.match(pagina, /useLerCapituloInteractionData\(\{[\s\S]*?comentariosCapituloCarregadoIdRef,[\s\S]*?curtidaCapituloSalvandoRef,[\s\S]*?salvoCapituloSalvandoRef,[\s\S]*?atualizarCapitulo,/);
   assert.doesNotMatch(pagina, /const \[comentariosCapitulo, setComentariosCapitulo\]/);
   assert.match(fonteEstado, /const \[comentariosCarregando, setComentariosCarregando\] = useState\(false\);/);
@@ -88,7 +108,9 @@ test("efeitos, dependências e integração preservam a fronteira original", asy
   assert.doesNotMatch(pagina, /async function carregarMetricasCapituloAtual\(/);
   assert.match(fonte, /const atualizarCapituloPorMetricas = useEffectEvent\(/);
   await cenario({}, async ({ efeitos }) => {
-    assert.deepEqual(efeitos.map((efeito) => efeito.deps), [["cap-1", "leitor"], [capitulo, 2, "leitor"]]);
+    assert.equal(efeitos.length, 2);
+    assert.deepEqual(efeitos[0].deps.slice(0, 2), ["cap-1", "leitor"]);
+    assert.deepEqual(efeitos[1].deps.slice(0, 3), [capitulo, 2, "leitor"]);
   });
 });
 

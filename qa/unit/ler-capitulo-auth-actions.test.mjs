@@ -8,9 +8,11 @@ const ler = (path) =>
 const fonte = ler("../../app/ler-capitulo/lib/ler-capitulo-auth-actions.ts");
 const pagina = ler("../../app/ler-capitulo/page.tsx");
 const loginRoute = ler("../../app/ler-capitulo/lib/ler-capitulo-login-route.ts");
+const identidade = ler("../../app/ler-capitulo/lib/ler-capitulo-auth-identity.ts")
+  .replace(/^import type .*\n/m, "");
 const dataUrl = (codigo) =>
   `data:text/javascript;base64,${Buffer.from(codigo).toString("base64")}`;
-const js = (codigo) =>
+const transpilar = (codigo) =>
   typescript.transpileModule(codigo, {
     compilerOptions: {
       module: typescript.ModuleKind.ESNext,
@@ -28,25 +30,28 @@ const cliente = {
 
 globalThis.__lerCapituloAuthSupabase = cliente;
 
-const loginRouteUrl = dataUrl(js(loginRoute));
-const supabaseUrl = dataUrl(
-  "export const supabase = globalThis.__lerCapituloAuthSupabase;",
-);
-const executavel = js(fonte)
+const executavel = transpilar(fonte)
   .replace(
     '"../../../lib/supabase/client"',
-    JSON.stringify(supabaseUrl),
+    JSON.stringify(dataUrl("export const supabase = globalThis.__lerCapituloAuthSupabase;")),
   )
   .replace(
     '"./ler-capitulo-login-route"',
-    JSON.stringify(loginRouteUrl),
+    JSON.stringify(dataUrl(transpilar(loginRoute))),
+  )
+  .replace(
+    '"./ler-capitulo-auth-identity"',
+    JSON.stringify(dataUrl(transpilar(identidade))),
   );
 const { criarAcoesAutenticacaoLeitor } = await import(dataUrl(executavel));
 
-function cenario(usuarioIdLogado = "") {
+function cenario({ usuario = "usuario", versaoDados = 1, versaoAtual = versaoDados } = {}) {
   const eventos = [];
+  const identidadeDadosAplicada = { usuarioId: usuario, versao: versaoDados };
+  const identidadeAutenticadaLeitorRef = {
+    current: { usuarioId: usuario, versao: versaoAtual },
+  };
   const acoes = criarAcoesAutenticacaoLeitor({
-    usuarioIdLogado,
     obraId: "obra",
     capituloId: "capitulo",
     router: {
@@ -54,76 +59,65 @@ function cenario(usuarioIdLogado = "") {
         eventos.push(["push", href]);
       },
     },
-    setUsuarioIdLogado(valor) {
-      eventos.push(["usuario", valor]);
-    },
+    identidadeDadosAplicada,
+    identidadeAutenticadaLeitorRef,
     setMensagemAcao(valor) {
       eventos.push(["mensagem", valor]);
     },
   });
 
-  return { acoes, eventos };
+  return { acoes, eventos, identidadeAutenticadaLeitorRef };
 }
 
-test("a factory preserva autenticação, rota e delegação da página", () => {
-  assert.match(fonte, /export function criarAcoesAutenticacaoLeitor\(/);
+test("factory exige identidade aplicada atual e página compartilha o guard", () => {
+  assert.match(fonte, /execucaoIdentidadeLeitorEstaAtual/);
   assert.match(fonte, /await supabase\.auth\.getUser\(\)/);
-  assert.match(fonte, /if \(usuarioIdLogado\) \{[\s\S]*?return usuarioIdLogado;/);
-  assert.match(fonte, /setUsuarioIdLogado\(userId\)/);
-  assert.match(fonte, /setUsuarioIdLogado\(""\)/);
-  assert.match(fonte, /criarLoginHrefLeitor\([\s\S]*?obraId,[\s\S]*?capituloId,/);
-  assert.match(pagina, /from "\.\/lib\/ler-capitulo-auth-actions";/);
-  assert.match(pagina, /criarAcoesAutenticacaoLeitor\(\{[\s\S]*?usuarioIdLogado,[\s\S]*?setMensagemAcao,/);
-  assert.match(pagina, /criarAcoesInteracoesCapitulo\(\{[\s\S]*?exigirLogin,[\s\S]*?obterUsuarioLogadoIdAtual,/);
-  assert.match(pagina, /criarAcaoProgressoLeituraCapitulo\(\{[\s\S]*?exigirLogin,[\s\S]*?obterUsuarioLogadoIdAtual,/);
-  assert.match(pagina, /criarAcoesComentariosCapitulo\(\{[\s\S]*?obterUsuarioLogadoIdAtual,/);
+  assert.match(fonte, /userId === identidadeDadosAplicada\?\.usuarioId/);
+  assert.match(pagina, /useLerCapituloAuthIdentityLifecycle\(\{/);
+  assert.match(pagina, /identidadeDadosAplicada,/);
+  assert.match(pagina, /execucaoIdentidadeAcaoEstaAtual,/);
   assert.doesNotMatch(pagina, /async function obterUsuarioLogadoIdAtual\(/);
-  assert.doesNotMatch(pagina, /async function exigirLogin\(/);
-  assert.doesNotMatch(fonte, /\b(?:useState|useEffect|router\.replace|localStorage|JSX)\b/);
 });
 
-test("usa o identificador em cache sem consultar o Supabase", async () => {
-  let chamadas = 0;
-  cliente.auth.getUser = async () => {
-    chamadas += 1;
-    return { data: { user: { id: "remoto" } } };
+test("aceita apenas a sessão correspondente aos dados aplicados", async () => {
+  cliente.auth.getUser = async () => ({ data: { user: { id: "usuario" } } });
+  const atual = cenario();
+
+  assert.equal(await atual.acoes.obterUsuarioLogadoIdAtual(), "usuario");
+  assert.equal(atual.acoes.execucaoIdentidadeAcaoEstaAtual(), true);
+
+  cliente.auth.getUser = async () => ({ data: { user: { id: "outra" } } });
+  assert.equal(await atual.acoes.obterUsuarioLogadoIdAtual(), "");
+});
+
+test("troca durante getUser invalida a ação sem aplicar a conta antiga", async () => {
+  let resolver;
+  cliente.auth.getUser = () => new Promise((resolve) => {
+    resolver = resolve;
+  });
+  const atual = cenario();
+  const consulta = atual.acoes.obterUsuarioLogadoIdAtual();
+
+  atual.identidadeAutenticadaLeitorRef.current = {
+    usuarioId: "usuario-b",
+    versao: 2,
   };
-  const atual = cenario("cache");
+  resolver({ data: { user: { id: "usuario" } } });
 
-  assert.equal(await atual.acoes.obterUsuarioLogadoIdAtual(), "cache");
-  assert.equal(chamadas, 0);
-  assert.deepEqual(atual.eventos, []);
+  assert.equal(await consulta, "");
+  assert.equal(atual.acoes.execucaoIdentidadeAcaoEstaAtual(), false);
 });
 
-test("consulta o Supabase e preserva os fallbacks de usuário", async () => {
-  cliente.auth.getUser = async () => ({ data: { user: { id: "remoto" } } });
+test("exigirLogin preserva sucesso e redirect do visitante", async () => {
+  cliente.auth.getUser = async () => ({ data: { user: { id: "usuario" } } });
   let atual = cenario();
-  assert.equal(await atual.acoes.obterUsuarioLogadoIdAtual(), "remoto");
-  assert.deepEqual(atual.eventos, [["usuario", "remoto"]]);
-
-  cliente.auth.getUser = async () => ({ data: { user: null } });
-  atual = cenario();
-  assert.equal(await atual.acoes.obterUsuarioLogadoIdAtual(), "");
-  assert.deepEqual(atual.eventos, [["usuario", ""]]);
-
-  cliente.auth.getUser = async () => {
-    throw new Error("falha");
-  };
-  atual = cenario();
-  assert.equal(await atual.acoes.obterUsuarioLogadoIdAtual(), "");
-  assert.deepEqual(atual.eventos, [["usuario", ""]]);
-});
-
-test("exigirLogin limpa a mensagem para usuário e redireciona visitante", async () => {
-  let atual = cenario("logado");
   assert.equal(await atual.acoes.exigirLogin("Entre"), true);
   assert.deepEqual(atual.eventos, [["mensagem", ""]]);
 
   cliente.auth.getUser = async () => ({ data: { user: null } });
-  atual = cenario();
+  atual = cenario({ usuario: "", versaoDados: 0, versaoAtual: 0 });
   assert.equal(await atual.acoes.exigirLogin("Entre para continuar."), false);
   assert.deepEqual(atual.eventos, [
-    ["usuario", ""],
     ["mensagem", "Entre para continuar."],
     ["push", "/login?redirectTo=%2Fler-capitulo%3FobraId%3Dobra%26capituloId%3Dcapitulo"],
   ]);

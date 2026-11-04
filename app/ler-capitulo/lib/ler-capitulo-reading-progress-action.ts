@@ -10,13 +10,15 @@ type DependenciasAcaoProgresso = {
   lidoCapituloSalvandoRef: { current: boolean };
   exigirLogin: (mensagem: string) => Promise<boolean>;
   obterUsuarioLogadoIdAtual: () => Promise<string>;
+  execucaoIdentidadeAcaoEstaAtual: () => boolean;
   normalizarObra: (obra: Partial<ObraLocal>, index: number) => ObraLocal;
   calcularProgressoLeitura: (capitulos: CapituloLocal[]) => number;
   salvarObras: (obras: ObraLocal[]) => void;
   salvarProgressoLeituraSupabase: (
     obra: ObraLocal,
     capituloId: string,
-    lido: boolean
+    lido: boolean,
+    userIdEsperado?: string,
   ) => Promise<boolean>;
   marcarNotificacaoCapituloComoLidaSupabase: (
     userId: string,
@@ -45,6 +47,7 @@ export function criarAcaoProgressoLeituraCapitulo({
   lidoCapituloSalvandoRef,
   exigirLogin,
   obterUsuarioLogadoIdAtual,
+  execucaoIdentidadeAcaoEstaAtual,
   normalizarObra,
   calcularProgressoLeitura,
   salvarObras,
@@ -58,7 +61,8 @@ export function criarAcaoProgressoLeituraCapitulo({
     if (
       !obraAtual ||
       !capituloAtual ||
-      lidoCapituloSalvandoRef.current
+      lidoCapituloSalvandoRef.current ||
+      !execucaoIdentidadeAcaoEstaAtual()
     ) {
       return;
     }
@@ -69,7 +73,7 @@ export function criarAcaoProgressoLeituraCapitulo({
 
     const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
 
-    if (!userIdAtual) {
+    if (!userIdAtual || !execucaoIdentidadeAcaoEstaAtual()) {
       return;
     }
 
@@ -133,8 +137,13 @@ export function criarAcaoProgressoLeituraCapitulo({
       const progressoSincronizado = await salvarProgressoLeituraSupabase(
         obraAtualizada,
         capituloAtual.id,
-        novoStatusLido
+        novoStatusLido,
+        userIdAtual,
       );
+
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return;
+      }
 
       if (!progressoSincronizado) {
         salvarObras(obrasAnteriores);
@@ -167,8 +176,10 @@ export function criarAcaoProgressoLeituraCapitulo({
         });
       }
     } finally {
-      lidoCapituloSalvandoRef.current = false;
-      setLidoCapituloSalvando(false);
+      if (execucaoIdentidadeAcaoEstaAtual()) {
+        lidoCapituloSalvandoRef.current = false;
+        setLidoCapituloSalvando(false);
+      }
     }
   }
 

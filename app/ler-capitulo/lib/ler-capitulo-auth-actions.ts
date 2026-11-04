@@ -3,45 +3,63 @@ import { supabase } from "../../../lib/supabase/client";
 import {
   criarLoginHrefLeitor,
 } from "./ler-capitulo-login-route";
+import {
+  execucaoIdentidadeLeitorEstaAtual,
+  type IdentidadeAutenticadaLeitor,
+} from "./ler-capitulo-auth-identity";
 
 type RouterLeitor = {
   push: (href: string) => void;
 };
 
 type CriarAcoesAutenticacaoLeitorProps = {
-  usuarioIdLogado: string;
   obraId: string;
   capituloId: string;
   router: RouterLeitor;
-  setUsuarioIdLogado: (valor: string) => void;
+  identidadeDadosAplicada: IdentidadeAutenticadaLeitor | null;
+  identidadeAutenticadaLeitorRef: {
+    current: IdentidadeAutenticadaLeitor;
+  };
   setMensagemAcao: (valor: string) => void;
 };
 
 export function criarAcoesAutenticacaoLeitor({
-  usuarioIdLogado,
   obraId,
   capituloId,
   router,
-  setUsuarioIdLogado,
+  identidadeDadosAplicada,
+  identidadeAutenticadaLeitorRef,
   setMensagemAcao,
 }: CriarAcoesAutenticacaoLeitorProps) {
+  function execucaoIdentidadeAcaoEstaAtual() {
+    return Boolean(
+      identidadeDadosAplicada &&
+      execucaoIdentidadeLeitorEstaAtual({
+        cancelada: false,
+        identidadeEsperada: identidadeDadosAplicada,
+        identidadeAtual: identidadeAutenticadaLeitorRef.current,
+      }),
+    );
+  }
+
   async function obterUsuarioLogadoIdAtual() {
-    if (usuarioIdLogado) {
-      return usuarioIdLogado;
+    if (!execucaoIdentidadeAcaoEstaAtual()) {
+      return "";
     }
 
     try {
       const { data } =
         await supabase.auth.getUser();
 
+      if (!execucaoIdentidadeAcaoEstaAtual()) {
+        return "";
+      }
+
       const userId =
         data.user?.id || "";
 
-      setUsuarioIdLogado(userId);
-
-      return userId;
+      return userId === identidadeDadosAplicada?.usuarioId ? userId : "";
     } catch {
-      setUsuarioIdLogado("");
       return "";
     }
   }
@@ -72,5 +90,6 @@ export function criarAcoesAutenticacaoLeitor({
   return {
     obterUsuarioLogadoIdAtual,
     exigirLogin,
+    execucaoIdentidadeAcaoEstaAtual,
   };
 }
