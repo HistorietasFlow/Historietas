@@ -291,11 +291,15 @@ for (const dispositivo of [
 
     await page.goto("/explorar", { waitUntil: "domcontentloaded" });
 
-    const aviso = page.getByRole("alert");
+    const botaoTentarNovamente = page.getByRole("button", {
+      name: "Tentar novamente",
+      exact: true,
+    });
+    const aviso = page.getByRole("alert").filter({
+      has: botaoTentarNovamente,
+    });
     await expect(aviso).toBeVisible();
-    await expect(
-      aviso.getByRole("button", { name: "Tentar novamente", exact: true }),
-    ).toBeVisible();
+    await expect(botaoTentarNovamente).toBeVisible();
     await expect(
       page.getByText("PUBLIQUE SUA HISTÓRIA", { exact: true }),
     ).toHaveCount(0);
@@ -304,9 +308,7 @@ for (const dispositivo of [
       "**/rest/v1/rpc/listar_obras_catalogo",
       interromperCatalogo,
     );
-    await aviso
-      .getByRole("button", { name: "Tentar novamente", exact: true })
-      .click();
+    await botaoTentarNovamente.click();
 
     await expect(aviso).toBeHidden();
     await expect(
@@ -323,14 +325,22 @@ test("Home e Explorar não criam rolagem horizontal no celular", async ({
     height: 844,
   });
 
-  for (const route of ["/", "/explorar"]) {
+  for (const { route, contentReady } of [
+    {
+      route: "/",
+      contentReady: () => page.getByLabel("Navegação principal"),
+    },
+    {
+      route: "/explorar",
+      contentReady: () =>
+        page.getByRole("heading", { name: "Explorar", exact: true }),
+    },
+  ]) {
     await page.goto(route, {
       waitUntil: "domcontentloaded",
     });
 
-    await expect(
-      page.locator("main")
-    ).toBeVisible();
+    await expect(contentReady()).toBeVisible();
 
     const dimensions = await page.evaluate(
       () => ({
