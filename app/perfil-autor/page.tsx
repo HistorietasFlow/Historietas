@@ -7,7 +7,7 @@ import {
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
@@ -430,15 +430,27 @@ function PerfilAutorPageContent() {
     perfilNome,
     obrasPerfil,
     totalObrasPerfil,
-  } = obterEstadoAlvoPerfilAutor({
-    obras,
-    totaisInteracoesObras,
-    perfilUsuarioRemoto,
-    autorSelecionado,
-    autorIdSelecionado,
-    usuarioIdLogado,
-    autenticacaoCarregada,
-  });
+  } = useMemo(
+    () =>
+      obterEstadoAlvoPerfilAutor({
+        obras,
+        totaisInteracoesObras,
+        perfilUsuarioRemoto,
+        autorSelecionado,
+        autorIdSelecionado,
+        usuarioIdLogado,
+        autenticacaoCarregada,
+      }),
+    [
+      obras,
+      totaisInteracoesObras,
+      perfilUsuarioRemoto,
+      autorSelecionado,
+      autorIdSelecionado,
+      usuarioIdLogado,
+      autenticacaoCarregada,
+    ],
+  );
   const {
     temAvatarPerfilEditor,
     rotuloAcaoAvatar,
