@@ -198,3 +198,17 @@ Filtros pessoais de coleção e a confirmação local de conteúdo adulto não d
 ser serializados na URL. Parâmetros desconhecidos ou inválidos usam os valores
 padrão, e links antigos contendo somente `tipo` e `categoria` permanecem
 compatíveis.
+
+## Explorar: resultados full-text não devem ser refiltrados por substring
+
+Quando `listar_obras_catalogo` responde uma busca, os IDs retornados pela RPC
+são a fonte autoritativa para a correspondência textual. Reaplicar no cliente
+um `includes` sobre título, autor e metadados descarta correspondências válidas
+do PostgreSQL, como stemming em português e variações singular/plural.
+
+O cliente ainda aplica os filtros explícitos de publicação, conteúdo,
+classificação, formato, categoria e coleção. A comparação local por substring
+fica restrita ao fallback em que a consulta remota não produz uma página de
+catálogo. Resultado remoto vazio (`[]`) é diferente de fallback (`null`), e a
+paginação acumula somente IDs da consulta ativa para preservar os guards contra
+respostas antigas.

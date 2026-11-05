@@ -33,6 +33,10 @@ test("hook centraliza somente os estados de catálogo e paginação de Explorar"
     hook,
     /carregandoMaisCatalogo, setCarregandoMaisCatalogo\] = useState\(false\)/,
   );
+  assert.match(
+    hook,
+    /obraIdsBuscaRemota, setObraIdsBuscaRemota\] = useState<\s*string\[\] \| null\s*>\(null\)/,
+  );
   assert.doesNotMatch(
     hook,
     /useEffect|useMemo|supabase|localStorage|setTimeout|return\s*\(\s*</,
@@ -52,6 +56,7 @@ test("Explorar delega os estados e preserva carregamento, consulta e autores", (
     "const [proximoCursorCatalogo, setProximoCursorCatalogo]",
     "const [catalogoTemMais, setCatalogoTemMais]",
     "const [carregandoMaisCatalogo, setCarregandoMaisCatalogo]",
+    "const [obraIdsBuscaRemota, setObraIdsBuscaRemota]",
   ]) {
     assert.equal(pagina.includes(estadoLocal), false, estadoLocal);
   }
@@ -62,7 +67,7 @@ test("Explorar delega os estados e preserva carregamento, consulta e autores", (
   );
   assert.match(
     pagina,
-    /useExplorarCatalogQuery\(\{[\s\S]*?dadosExplorarCarregados,[\s\S]*?obrasLocais,[\s\S]*?proximoCursorCatalogo,[\s\S]*?carregandoMaisCatalogo,[\s\S]*?setObrasLocais,[\s\S]*?setProximoCursorCatalogo,[\s\S]*?setCatalogoTemMais,[\s\S]*?setCarregandoMaisCatalogo,/,
+    /useExplorarCatalogQuery\(\{[\s\S]*?dadosExplorarCarregados,[\s\S]*?obrasLocais,[\s\S]*?proximoCursorCatalogo,[\s\S]*?carregandoMaisCatalogo,[\s\S]*?setObrasLocais,[\s\S]*?setProximoCursorCatalogo,[\s\S]*?setCatalogoTemMais,[\s\S]*?setCarregandoMaisCatalogo,[\s\S]*?setObraIdsBuscaRemota,/,
   );
   assert.match(pagina, /useExplorarAuthorData\(\{\s*obrasLocais,/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -76,5 +81,10 @@ test("Explorar delega os estados e preserva carregamento, consulta e autores", (
   assert.match(catalogQuery, /\}, 350\);/);
   assert.match(catalogQuery, /setCarregandoMaisCatalogo\(false\);/);
   assert.match(catalogQuery, /setObrasLocais\(resultado\.obras\);/);
+  assert.match(catalogQuery, /setObraIdsBuscaRemota\(/);
+  assert.match(
+    pagina,
+    /filtrarObrasExplorar\(\{[\s\S]*?obraIdsBuscaRemota,/,
+  );
   assert.match(authorData, /obrasLocais/);
 });

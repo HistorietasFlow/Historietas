@@ -118,6 +118,8 @@ export default function ExplorarPage() {
     setCatalogoTemMais,
     carregandoMaisCatalogo,
     setCarregandoMaisCatalogo,
+    obraIdsBuscaRemota,
+    setObraIdsBuscaRemota,
   } = useExplorarCatalogPaginationState();
   const {
     obrasFavoritas,
@@ -228,6 +230,7 @@ export default function ExplorarPage() {
       setProximoCursorCatalogo,
       setCatalogoTemMais,
       setCarregandoMaisCatalogo,
+      setObraIdsBuscaRemota,
     });
 
   const obrasBaseFiltradas = useMemo(() => {
@@ -260,8 +263,14 @@ export default function ExplorarPage() {
       obrasBaseFiltradas,
       categoriaSelecionada,
       termoBusca,
+      obraIdsBuscaRemota,
     });
-  }, [obrasBaseFiltradas, categoriaSelecionada, termoBusca]);
+  }, [
+    obrasBaseFiltradas,
+    categoriaSelecionada,
+    termoBusca,
+    obraIdsBuscaRemota,
+  ]);
 
   const autoresExplorar = useMemo(() => {
     return criarAutoresExplorar({

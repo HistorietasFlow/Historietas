@@ -28,6 +28,7 @@ type OpcoesConsultaCatalogoExplorar = {
   setProximoCursorCatalogo: Dispatch<SetStateAction<CursorCatalogo | null>>;
   setCatalogoTemMais: Dispatch<SetStateAction<boolean>>;
   setCarregandoMaisCatalogo: Dispatch<SetStateAction<boolean>>;
+  setObraIdsBuscaRemota: Dispatch<SetStateAction<string[] | null>>;
 };
 
 export function useExplorarCatalogQuery({
@@ -48,6 +49,7 @@ export function useExplorarCatalogQuery({
   setProximoCursorCatalogo,
   setCatalogoTemMais,
   setCarregandoMaisCatalogo,
+  setObraIdsBuscaRemota,
 }: OpcoesConsultaCatalogoExplorar) {
   // Os setters e refs da página são estáveis durante seu ciclo de vida.
   const dependenciasEstaveisRef = useRef({
@@ -57,6 +59,7 @@ export function useExplorarCatalogQuery({
     setProximoCursorCatalogo,
     setCatalogoTemMais,
     setCarregandoMaisCatalogo,
+    setObraIdsBuscaRemota,
   });
   const consultaCatalogoRef = useRef(0);
   const consultaPersonalizadaAtivaRef = useRef(false);
@@ -101,6 +104,7 @@ export function useExplorarCatalogQuery({
       setProximoCursorCatalogo,
       setCatalogoTemMais,
       setCarregandoMaisCatalogo,
+      setObraIdsBuscaRemota,
     } = dependenciasEstaveisRef.current;
 
     if (!dadosExplorarCarregados) {
@@ -115,6 +119,7 @@ export function useExplorarCatalogQuery({
     }
 
     consultaPersonalizadaAtivaRef.current = consultaCatalogoPersonalizada;
+    setObraIdsBuscaRemota(null);
     const numeroConsulta = consultaCatalogoRef.current + 1;
     consultaCatalogoRef.current = numeroConsulta;
     let cancelado = false;
@@ -133,6 +138,11 @@ export function useExplorarCatalogQuery({
 
         if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
           setObrasLocais(resultado.obras);
+          setObraIdsBuscaRemota(
+            termoBusca && resultado.pagina
+              ? [...resultado.pagina.obraIds]
+              : null,
+          );
           setProximoCursorCatalogo(
             resultado.pagina?.proximoCursor || null,
           );
@@ -153,6 +163,7 @@ export function useExplorarCatalogQuery({
     consultaCatalogoAtual,
     consultaCatalogoPersonalizada,
     dadosExplorarCarregados,
+    termoBusca,
   ]);
 
   async function carregarMaisObrasCatalogo() {
@@ -162,6 +173,7 @@ export function useExplorarCatalogQuery({
       setProximoCursorCatalogo,
       setCatalogoTemMais,
       setCarregandoMaisCatalogo,
+      setObraIdsBuscaRemota,
     } = dependenciasEstaveisRef.current;
 
     if (
@@ -185,6 +197,17 @@ export function useExplorarCatalogQuery({
 
       if (consultaCatalogoRef.current === numeroConsulta) {
         setObrasLocais(resultado.obras);
+        const pagina = resultado.pagina;
+        if (termoBusca && pagina) {
+          setObraIdsBuscaRemota((obraIdsAtuais) =>
+            Array.from(
+              new Set([
+                ...(obraIdsAtuais || []),
+                ...pagina.obraIds,
+              ]),
+            ),
+          );
+        }
         setProximoCursorCatalogo(resultado.pagina?.proximoCursor || null);
         setCatalogoTemMais(Boolean(resultado.pagina?.temMais));
       }

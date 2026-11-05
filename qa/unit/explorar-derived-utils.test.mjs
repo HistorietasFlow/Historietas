@@ -83,7 +83,7 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     return codigo.slice(corpo, fim);
   });
   assert.equal(createHash("sha256").update(corpos.join("\n---\n")).digest("hex"),
-    "9a46286da748759c23ffd901d2c196882f79b56f89ece45078ca98733bf56d7f");
+    "c3b380f458ec08f17c5f1513e5468c76a865dc55cb3dfc0c3685a9f00ac64998");
   for (const nome of funcoes) assert.match(pagina, new RegExp(`return ${nome}\\(\\{`));
   const nomesMemo = [
     "obrasBaseFiltradas", "obrasLocaisFiltradas", "autoresExplorar",
@@ -99,8 +99,11 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     return pagina.slice(abertura, fim + 1);
   });
   assert.equal(createHash("sha256").update(dependencias.join("\n---\n")).digest("hex"),
-    "de43d25061d4620d3c87c39c6abb37838448a6451784eef083db4934752370e0");
-  assert.match(pagina, /\[obrasBaseFiltradas, categoriaSelecionada, termoBusca\]/);
+    "0c2f09881a17e0e8f0f0909afbad2bcd744b8e5950ee1f635f943c09acbf1889");
+  assert.match(
+    pagina,
+    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*\]/,
+  );
   assert.match(pagina, /\[autoresExplorar, categoriaSelecionada, termoBusca\]/);
   assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);
   assert.doesNotMatch(codigo, /\b(?:window|document|localStorage|supabase|useMemo|useEffect)\b/);
@@ -158,6 +161,80 @@ test("busca normalizada combina categoria, título, tags e capítulos", () => {
     assert.deepEqual(ids(filtrarObrasExplorar({ obrasBaseFiltradas: lista, categoriaSelecionada: "Ficção", termoBusca })), ["um"]);
   }
   assert.deepEqual(filtrarObrasExplorar({ obrasBaseFiltradas: lista, categoriaSelecionada: "Romance", termoBusca: "despertar" }), []);
+});
+
+test("busca remota preserva stemming sem liberar resultados fora dos filtros", () => {
+  const historiaSingular = obra("historia", {
+    titulo: "História distante",
+    genero: "Fantasia",
+  });
+  const acaoSingular = obra("acao", {
+    titulo: "Ação inesperada",
+    genero: "Fantasia",
+  });
+  const literalLocal = obra("literal", {
+    titulo: "Histórias literais",
+    genero: "Fantasia",
+  });
+  const categoriaIncorreta = obra("romance", {
+    titulo: "História romântica",
+    genero: "Romance",
+  });
+  const adulta = obra("adulta", {
+    titulo: "História adulta",
+    genero: "Fantasia",
+    classificacaoIndicativa: "18+",
+  });
+  const rascunho = obra("rascunho", {
+    titulo: "História privada",
+    genero: "Fantasia",
+    publicado: false,
+  });
+  const obrasBaseFiltradas = filtrarObrasBaseExplorar(base([
+    historiaSingular,
+    acaoSingular,
+    literalLocal,
+    categoriaIncorreta,
+    adulta,
+    rascunho,
+  ]));
+
+  assert.deepEqual(
+    ids(filtrarObrasExplorar({
+      obrasBaseFiltradas,
+      categoriaSelecionada: "Fantasia",
+      termoBusca: "historias",
+      obraIdsBuscaRemota: ["historia", "adulta", "rascunho", "romance"],
+    })),
+    ["historia"],
+  );
+  assert.deepEqual(
+    ids(filtrarObrasExplorar({
+      obrasBaseFiltradas,
+      categoriaSelecionada: "Fantasia",
+      termoBusca: "acoes",
+      obraIdsBuscaRemota: ["acao"],
+    })),
+    ["acao"],
+  );
+  assert.deepEqual(
+    filtrarObrasExplorar({
+      obrasBaseFiltradas,
+      categoriaSelecionada: "",
+      termoBusca: "historias",
+      obraIdsBuscaRemota: [],
+    }),
+    [],
+  );
+  assert.deepEqual(
+    ids(filtrarObrasExplorar({
+      obrasBaseFiltradas,
+      categoriaSelecionada: "Fantasia",
+      termoBusca: "historias",
+      obraIdsBuscaRemota: null,
+    })),
+    ["literal"],
+  );
 });
 
 test("autores agregam obras únicas, métricas, perfil, avaliação, idioma e categorias", () => {

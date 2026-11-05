@@ -171,10 +171,12 @@ export function filtrarObrasExplorar({
   obrasBaseFiltradas,
   categoriaSelecionada,
   termoBusca,
+  obraIdsBuscaRemota,
 }: {
   obrasBaseFiltradas: ObraLocal[];
   categoriaSelecionada: string;
   termoBusca: string;
+  obraIdsBuscaRemota?: readonly string[] | null;
 }) {
     return obrasBaseFiltradas.filter((obra) => {
       const passaCategoria = categoriaSelecionada
@@ -196,7 +198,11 @@ export function filtrarObrasExplorar({
         ].join(" ")
       );
 
-      const passaBusca = termoBusca ? textoBusca.includes(termoBusca) : true;
+      const passaBusca = termoBusca
+        ? obraIdsBuscaRemota !== null && obraIdsBuscaRemota !== undefined
+          ? obraIdsBuscaRemota.includes(obra.id)
+          : textoBusca.includes(termoBusca)
+        : true;
 
       return passaCategoria && passaBusca;
     });
