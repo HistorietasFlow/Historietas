@@ -14,6 +14,17 @@ const pagina = readFileSync(
   "utf8",
 );
 
+test("Perfil memoiza o estado-alvo para não reiniciar o Diário em renders internos", () => {
+  assert.match(
+    pagina,
+    /import \{ Suspense, useMemo, useRef, useState \} from "react";/,
+  );
+  assert.match(
+    pagina,
+    /\} = useMemo\(\s*\(\) =>\s*obterEstadoAlvoPerfilAutor\(\{[\s\S]*?obras,[\s\S]*?totaisInteracoesObras,[\s\S]*?perfilUsuarioRemoto,[\s\S]*?autorSelecionado,[\s\S]*?autorIdSelecionado,[\s\S]*?usuarioIdLogado,[\s\S]*?autenticacaoCarregada,[\s\S]*?\}\),\s*\[[\s\S]*?obras,[\s\S]*?totaisInteracoesObras,[\s\S]*?perfilUsuarioRemoto,[\s\S]*?autorSelecionado,[\s\S]*?autorIdSelecionado,[\s\S]*?usuarioIdLogado,[\s\S]*?autenticacaoCarregada,[\s\S]*?\],\s*\);/,
+  );
+});
+
 test("Perfil de Autor delega a sincronização do Diário", () => {
   assert.match(pagina, /usePerfilAutorDiarySync/);
   assert.match(
