@@ -267,6 +267,11 @@ test("Explorar busca no catálogo real e carrega a próxima página", async ({
     page.locator('a[href="/obra/qa-paginacao-obra-000600"]').first(),
   ).toBeVisible();
 
+  await search.fill("QA Paginações Obra 000600");
+  await expect(
+    page.locator('a[href="/obra/qa-paginacao-obra-000600"]').first(),
+  ).toBeVisible();
+
   runtime.assertClean();
 });
 

@@ -11,6 +11,9 @@ export function useExplorarCatalogPaginationState() {
     useState<CursorCatalogo | null>(null);
   const [catalogoTemMais, setCatalogoTemMais] = useState(false);
   const [carregandoMaisCatalogo, setCarregandoMaisCatalogo] = useState(false);
+  const [obraIdsBuscaRemota, setObraIdsBuscaRemota] = useState<
+    string[] | null
+  >(null);
 
   return {
     obrasLocais,
@@ -23,5 +26,7 @@ export function useExplorarCatalogPaginationState() {
     setCatalogoTemMais,
     carregandoMaisCatalogo,
     setCarregandoMaisCatalogo,
+    obraIdsBuscaRemota,
+    setObraIdsBuscaRemota,
   };
 }

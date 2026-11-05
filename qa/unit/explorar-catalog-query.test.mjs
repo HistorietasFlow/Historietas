@@ -87,8 +87,12 @@ function preparar(t, overrides = {}) {
     obrasCacheLocalRef: { current: [{ id: "cache" }] }, usuarioIdExplorarRef: { current: "usuario" },
     ...overrides,
   };
-  for (const nome of ["ObrasLocais", "ProximoCursorCatalogo", "CatalogoTemMais", "CarregandoMaisCatalogo"]) {
-    props[`set${nome}`] = (valor) => { chamadas.push([`set${nome}`, valor]); estado[nome] = valor; };
+  for (const nome of ["ObrasLocais", "ProximoCursorCatalogo", "CatalogoTemMais", "CarregandoMaisCatalogo", "ObraIdsBuscaRemota"]) {
+    props[`set${nome}`] = (valor) => {
+      const valorResolvido = typeof valor === "function" ? valor(estado[nome]) : valor;
+      chamadas.push([`set${nome}`, valorResolvido]);
+      estado[nome] = valorResolvido;
+    };
   }
   const render = (alteracoes = {}) => {
     Object.assign(props, alteracoes);
@@ -107,7 +111,7 @@ function preparar(t, overrides = {}) {
   return { chamadas, estado, timers, respostas, props, render, disparar, cancelar: () => cleanup?.() };
 }
 
-test("memo, condição, efeito e paginação preservam literalmente a base", () => {
+test("memo, condição, efeito e paginação preservam o contrato atualizado", () => {
   const inicio = codigo.indexOf("  const buscaCatalogo = busca.trim();");
   const fim = codigo.indexOf("\n\n  return { consultaCatalogoPersonalizada", inicio);
   const original = codigo.slice(inicio, fim).replace(
@@ -115,7 +119,7 @@ test("memo, condição, efeito e paginação preservam literalmente a base", () 
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "65be89aa3220eae4c3f83b417bd6b57de2bea5d5a8044dd1400ce3bad724f423");
+    "b270f65acd6cfc1c6dbe8f566652047433bacb4a79e218770202c4d1b4903214");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -146,19 +150,41 @@ test("consulta personalizada respeita debounce, filtros e ordem das atualizaçõ
   });
   assert.equal(c.render().consultaCatalogoPersonalizada, true);
   assert.equal([...c.timers.values()][0].ms, 350);
-  assert.equal(c.chamadas.length, 0);
+  assert.deepEqual(c.chamadas, [["setObraIdsBuscaRemota", null]]);
   const cursor = { valor: 3, data: "2024-01-01", id: "cursor" };
-  c.respostas.push(Promise.resolve({ obras: [{ id: "remota" }], pagina: { proximoCursor: cursor, temMais: true } }));
+  c.respostas.push(Promise.resolve({ obras: [{ id: "remota" }], pagina: { obraIds: ["remota"], proximoCursor: cursor, temMais: true } }));
   await c.disparar();
   assert.deepEqual(c.chamadas, [
+    ["setObraIdsBuscaRemota", null],
     ["setCarregandoMaisCatalogo", true],
     ["carregar", [{ id: "cache" }], "usuario", [{
       busca: "Ação", genero: "Fantasia", formato: "Livro", classificacao: "18+",
       filtroCapitulos: "com-capitulos", ordenacao: "recentes", limite: 24,
     }]],
-    ["setObrasLocais", [{ id: "remota" }]], ["setProximoCursorCatalogo", cursor],
+    ["setObrasLocais", [{ id: "remota" }]], ["setObraIdsBuscaRemota", ["remota"]],
+    ["setProximoCursorCatalogo", cursor],
     ["setCatalogoTemMais", true], ["setCarregandoMaisCatalogo", false],
   ]);
+});
+
+test("busca diferencia resposta remota vazia de fallback local", async (t) => {
+  const remotoVazio = preparar(t, { busca: "histórias", termoBusca: "historias" });
+  remotoVazio.render();
+  remotoVazio.respostas.push(Promise.resolve({
+    obras: [{ id: "cache-local" }],
+    pagina: { obraIds: [], proximoCursor: null, temMais: false },
+  }));
+  await remotoVazio.disparar();
+  assert.deepEqual(remotoVazio.estado.ObraIdsBuscaRemota, []);
+
+  const fallbackLocal = preparar(t, { busca: "histórias", termoBusca: "historias" });
+  fallbackLocal.render();
+  fallbackLocal.respostas.push(Promise.resolve({
+    obras: [{ id: "cache-local" }],
+    pagina: null,
+  }));
+  await fallbackLocal.disparar();
+  assert.equal(fallbackLocal.estado.ObraIdsBuscaRemota, null);
 });
 
 test("cada filtro individual ativa consulta; capítulo desconhecido mantém fallback todos", async (t) => {
@@ -199,13 +225,22 @@ test("resposta antiga e cleanup não aplicam dados nem encerram o loading da nov
   const aguardandoPrimeira = c.disparar();
   c.render({ termoBusca: "b", busca: "b" });
   const aguardandoSegunda = c.disparar();
-  primeira.resolve({ obras: [{ id: "antiga" }], pagina: null });
+  primeira.resolve({
+    obras: [{ id: "antiga" }],
+    pagina: { obraIds: ["antiga"], proximoCursor: null, temMais: false },
+  });
   await aguardandoPrimeira;
   assert.equal(c.chamadas.filter(([nome]) => nome === "setObrasLocais").length, 0);
+  assert.equal(c.chamadas.some(([nome, valor]) =>
+    nome === "setObraIdsBuscaRemota" && valor?.includes?.("antiga")), false);
   assert.equal(c.chamadas.filter(([nome, valor]) => nome === "setCarregandoMaisCatalogo" && !valor).length, 0);
-  segunda.resolve({ obras: [{ id: "nova" }], pagina: null });
+  segunda.resolve({
+    obras: [{ id: "nova" }],
+    pagina: { obraIds: ["nova"], proximoCursor: null, temMais: false },
+  });
   await aguardandoSegunda;
   assert.deepEqual(c.estado.ObrasLocais, [{ id: "nova" }]);
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["nova"]);
   assert.equal(c.estado.CarregandoMaisCatalogo, false);
   c.render({ termoBusca: "c", busca: "c" });
   c.cancelar();
@@ -216,13 +251,16 @@ test("carregar mais respeita guardas, cursor e atualizações na ordem original"
   const cursor = { valor: 1, data: "2024-01-01", id: "a" };
   const c = preparar(t, { termoBusca: "x", busca: "x" });
   let resultado = c.render();
+  assert.deepEqual(c.chamadas, [["setObraIdsBuscaRemota", null]]);
+  c.chamadas.length = 0;
   await resultado.carregarMaisObrasCatalogo();
   assert.equal(c.chamadas.length, 0);
   resultado = c.render({ proximoCursorCatalogo: cursor, carregandoMaisCatalogo: true });
   await resultado.carregarMaisObrasCatalogo();
   assert.equal(c.chamadas.length, 0);
   resultado = c.render({ carregandoMaisCatalogo: false });
-  c.respostas.push(Promise.resolve({ obras: [{ id: "p2" }], pagina: { proximoCursor: null, temMais: false } }));
+  c.estado.ObraIdsBuscaRemota = ["p1"];
+  c.respostas.push(Promise.resolve({ obras: [{ id: "p2" }], pagina: { obraIds: ["p2"], proximoCursor: null, temMais: false } }));
   await resultado.carregarMaisObrasCatalogo();
   assert.deepEqual(c.chamadas, [
     ["setCarregandoMaisCatalogo", true],
@@ -230,7 +268,8 @@ test("carregar mais respeita guardas, cursor e atualizações na ordem original"
       busca: "x", genero: "", formato: "", classificacao: "", filtroCapitulos: "todos",
       ordenacao: "relevancia", limite: 24, cursor,
     }]],
-    ["setObrasLocais", [{ id: "p2" }]], ["setProximoCursorCatalogo", null],
+    ["setObrasLocais", [{ id: "p2" }]], ["setObraIdsBuscaRemota", ["p1", "p2"]],
+    ["setProximoCursorCatalogo", null],
     ["setCatalogoTemMais", false], ["setCarregandoMaisCatalogo", false],
   ]);
   const d = preparar(t, { proximoCursorCatalogo: cursor });
