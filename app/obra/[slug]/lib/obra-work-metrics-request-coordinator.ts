@@ -13,18 +13,13 @@ export type CarregarMetricasObra = (
 
 type RequisicaoMetricasObraCompartilhada = {
   promise: Promise<ContratoMetricas>;
-  consumidores: number;
-  concluida: boolean;
 };
-
-const TOTAL_CONSUMIDORES_INICIAIS = 2;
 
 export function criarCoordenadorMetricasObraEmVoo(
   executarMetricas: ExecutarMetricasObra = carregarMetricasConteudos,
 ) {
-  // Os lifecycles de métricas e avaliação consomem o mesmo snapshot inicial.
-  // Mantemos o resultado somente até ambos o receberem; chamadas seguintes
-  // voltam a consultar a origem para não esconder atualizações legítimas.
+  // Os lifecycles de métricas e avaliação compartilham somente a requisição
+  // em andamento. Depois da resolução, uma nova leitura consulta a origem.
   const requisicoesCompartilhadas = new Map<
     string,
     RequisicaoMetricasObraCompartilhada
@@ -43,31 +38,17 @@ export function criarCoordenadorMetricasObraEmVoo(
     const requisicaoExistente = requisicoesCompartilhadas.get(chave);
 
     if (requisicaoExistente) {
-      requisicaoExistente.consumidores += 1;
-
-      if (
-        requisicaoExistente.concluida &&
-        requisicaoExistente.consumidores >= TOTAL_CONSUMIDORES_INICIAIS
-      ) {
-        requisicoesCompartilhadas.delete(chave);
-      }
-
       return requisicaoExistente.promise;
     }
 
     const requisicaoCompartilhada: RequisicaoMetricasObraCompartilhada = {
       promise: executarMetricas({ obraIds: [obraIdLimpo] }),
-      consumidores: 1,
-      concluida: false,
     };
     requisicoesCompartilhadas.set(chave, requisicaoCompartilhada);
 
     const concluirRequisicaoCompartilhada = () => {
-      requisicaoCompartilhada.concluida = true;
-
       if (
-        requisicoesCompartilhadas.get(chave) === requisicaoCompartilhada &&
-        requisicaoCompartilhada.consumidores >= TOTAL_CONSUMIDORES_INICIAIS
+        requisicoesCompartilhadas.get(chave) === requisicaoCompartilhada
       ) {
         requisicoesCompartilhadas.delete(chave);
       }

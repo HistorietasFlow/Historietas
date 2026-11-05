@@ -46,19 +46,32 @@ function criarExecutorControlado() {
   return { executar, chamadas, pendentes };
 }
 
-test("duas solicitacoes equivalentes compartilham uma unica RPC mesmo apos resolucao rapida", async () => {
+test("duas solicitacoes simultaneas equivalentes compartilham uma unica RPC", async () => {
   const controle = criarExecutorControlado();
   const carregar = criarCoordenadorMetricasObraEmVoo(controle.executar);
   const primeira = carregar({ obraId: "obra-a", usuarioId: "usuario-a" });
+  const segunda = carregar({ obraId: "obra-a", usuarioId: "usuario-a" });
   const resultado = { carregado: true, obras: new Map() };
 
   controle.pendentes[0].resolver(resultado);
-  assert.strictEqual(await primeira, resultado);
 
-  const segunda = carregar({ obraId: "obra-a", usuarioId: "usuario-a" });
-
-  assert.strictEqual(await segunda, resultado);
+  assert.deepEqual(await Promise.all([primeira, segunda]), [resultado, resultado]);
   assert.deepEqual(controle.chamadas, [{ obraIds: ["obra-a"] }]);
+});
+
+test("consumidor unico nao mantem resultado resolvido para leitura posterior", async () => {
+  const controle = criarExecutorControlado();
+  const carregar = criarCoordenadorMetricasObraEmVoo(controle.executar);
+  const primeira = carregar({ obraId: "obra-a", usuarioId: "usuario-a" });
+
+  controle.pendentes[0].resolver({ carregado: true, versao: 1 });
+  assert.deepEqual(await primeira, { carregado: true, versao: 1 });
+
+  const atualizacao = carregar({ obraId: "obra-a", usuarioId: "usuario-a" });
+  controle.pendentes[1].resolver({ carregado: true, versao: 2 });
+
+  assert.deepEqual(await atualizacao, { carregado: true, versao: 2 });
+  assert.equal(controle.chamadas.length, 2);
 });
 
 test("obra ou identidade diferente mantem consultas independentes", async () => {
@@ -83,7 +96,7 @@ test("obra ou identidade diferente mantem consultas independentes", async () => 
   );
 });
 
-test("falha compartilhada chega aos dois consumidores e retry posterior cria nova RPC", async () => {
+test("falha compartilhada e removida para permitir retry posterior", async () => {
   const controle = criarExecutorControlado();
   const carregar = criarCoordenadorMetricasObraEmVoo(controle.executar);
   const primeira = carregar({ obraId: "obra-a", usuarioId: "usuario-a" });
