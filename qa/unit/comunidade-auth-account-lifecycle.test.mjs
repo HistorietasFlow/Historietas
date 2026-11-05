@@ -52,7 +52,11 @@ test("useComunidadeAuthAccountLifecycle preserva reset, recarga e cleanup na tro
     hook,
     /textoPostRef\.current\.value = "";[\s\S]*?obraRelacionadaRef\.current\.value = "";/,
   );
-  assert.match(hook, /supabase\.auth\.onAuthStateChange\(\(\) => \{/);
+  assert.match(hook, /supabase\.auth\.onAuthStateChange\(\(event\) => \{/);
+  assert.match(
+    hook,
+    /if \(event === "INITIAL_SESSION"\) \{\s*return;\s*\}/,
+  );
   assert.match(
     hook,
     /autenticacaoComunidadeVersaoRef\.current \+= 1;[\s\S]*?limparEstadoContaAnterior\(\);[\s\S]*?setPosts\(\[\]\);[\s\S]*?setCarregandoFeed\(true\);/,
@@ -85,4 +89,26 @@ test("Comunidade delega apenas o lifecycle de autenticação e troca de conta ao
   assert.doesNotMatch(pagina, /async function atualizarVisibilidadePost\(/);
   assert.match(pagina, /removerPostComunidade\(\{/);
   assert.doesNotMatch(pagina, /async function removerPost\(/);
+});
+
+test("INITIAL_SESSION não repete a carga inicial da Comunidade", () => {
+  const inicioCallback = hook.indexOf(
+    "supabase.auth.onAuthStateChange((event) => {",
+  );
+  const fimCallback = hook.indexOf("    return () => {", inicioCallback);
+  const callback = hook.slice(inicioCallback, fimCallback);
+
+  const guardInicial = callback.indexOf('event === "INITIAL_SESSION"');
+  const resetConta = callback.indexOf("limparEstadoContaAnterior();");
+  const recargaFeed = callback.indexOf("carregarPostsComunidadeNoEfeito(");
+
+  assert.ok(inicioCallback >= 0);
+  assert.ok(fimCallback > inicioCallback);
+  assert.ok(guardInicial >= 0);
+  assert.ok(resetConta > guardInicial);
+  assert.ok(recargaFeed > guardInicial);
+  assert.match(
+    callback.slice(guardInicial, resetConta),
+    /event === "INITIAL_SESSION"\) \{\s*return;/,
+  );
 });

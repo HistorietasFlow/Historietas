@@ -222,7 +222,11 @@ export function useComunidadeAuthAccountLifecycle({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "INITIAL_SESSION") {
+        return;
+      }
+
       autenticacaoComunidadeVersaoRef.current += 1;
       limparEstadoContaAnterior();
       setCarregandoUsuario(true);
