@@ -7,6 +7,10 @@ const source = readFileSync(
   "app/login/actions/sincronizar-profile-login-uma-vez.ts",
   "utf8",
 );
+const coordinator = readFileSync(
+  "app/login/actions/sincronizar-profile-login.ts",
+  "utf8",
+);
 
 test("sincronização única de profile preserva consultas e mutações Supabase", () => {
   assert.match(source, /\.from\("profiles_publicos"\)[\s\S]*?\.eq\("user_id", userIdLimpo\)/);
@@ -21,11 +25,25 @@ test("sincronização única de profile preserva consultas e mutações Supabase
   assert.match(source, /O perfil não pôde ser criado ou não ficou visível após a criação/);
 });
 
-test("Login mantém a orquestração de tentativas na página", () => {
+test("Login delega a orquestração de tentativas para a action", () => {
   assert.doesNotMatch(page, /async function sincronizarUmaVez/);
-  assert.match(page, /for \(let tentativa = 1; tentativa <= 2; tentativa \+= 1\)/);
-  assert.match(page, /await sincronizarProfileLoginUmaVez\(\{ userIdLimpo, nomeFinal \}\)/);
-  assert.match(page, /aguardarLogin\(350\)/);
-  assert.match(page, /sessionStorage\.removeItem\(PROFILE_SYNC_FAILURE_STORAGE_KEY\)/);
+  assert.match(
+    page,
+    /import \{ sincronizarProfileLogin \} from "\.\/actions\/sincronizar-profile-login"/,
+  );
+  assert.match(page, /sincronizarProfileLogin\(/);
+  assert.match(
+    coordinator,
+    /for \(let tentativa = 1; tentativa <= 2; tentativa \+= 1\)/,
+  );
+  assert.match(
+    coordinator,
+    /await sincronizarProfileLoginUmaVez\(\{ userIdLimpo, nomeFinal \}\)/,
+  );
+  assert.match(coordinator, /aguardarLogin\(350\)/);
+  assert.match(
+    coordinator,
+    /sessionStorage\.removeItem\(PROFILE_SYNC_FAILURE_STORAGE_KEY\)/,
+  );
   assert.doesNotMatch(source, /useState|useEffect|localStorage|router|<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/);
 });

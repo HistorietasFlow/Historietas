@@ -168,3 +168,20 @@ resolução de `getUser()` ficam pendentes, e timers antigos verificam novamente
 identidade antes de aplicar resultados. Não voltar a decidir a recarga apenas
 pelo nome do evento Auth: em sessão ausente, o Supabase pode emitir
 `SIGNED_OUT(null)` sem que tenha ocorrido uma troca real de identidade.
+
+## Aceite dos termos com conta Auth sem profile
+
+### Sintoma
+
+`aceitar_termos_publicacao` respondia HTTP 500/SQLSTATE `P0002` quando uma conta
+confirmada existia em `auth.users`, mas a sincronização cliente não havia criado
+`public.profiles`.
+
+### Solução
+
+O núcleo privado `SECURITY DEFINER` preserva autenticação e versões, atualiza
+perfis existentes e, somente na ausência, insere atomicamente um perfil mínimo
+com `id = user_id = auth.uid()`, tipo `leitor` e nome sanitizado. `ON CONFLICT DO
+NOTHING` seguido de reconciliação torna chamadas concorrentes e retries
+idempotentes. O wrapper público, grants e RLS permanecem restritos, e metadata
+editável serve apenas como texto de exibição.

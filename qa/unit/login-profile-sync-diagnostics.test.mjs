@@ -7,6 +7,13 @@ const source = readFileSync(
   new URL("../../app/login/lib/login-profile-sync-diagnostics.ts", import.meta.url),
   "utf8",
 );
+const actionSource = readFileSync(
+  new URL(
+    "../../app/login/actions/sincronizar-profile-login.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const pageSource = readFileSync(
   new URL("../../app/login/page.tsx", import.meta.url),
   "utf8",
@@ -110,7 +117,7 @@ test("registrarFalhaSincronizacaoPerfil registra o diagnóstico sem bloquear SSR
   }
 });
 
-test("Login delega diagnóstico do profile e preserva os consumidores de salvarProfile", () => {
+test("action de login delega diagnóstico e a página preserva salvarProfile", () => {
   assert.match(source, /export const PROFILE_SYNC_FAILURE_STORAGE_KEY/);
   assert.match(source, /`código \$\{erroSupabase\.code\}`/);
   assert.match(source, /\.join\(" \| "\) \|\| "erro desconhecido"/);
@@ -122,15 +129,23 @@ test("Login delega diagnóstico do profile e preserva os consumidores de salvarP
     /from\s+["']react["']|useState|useEffect|localStorage|router|import\s+\{\s*supabase\s*\}|supabase\.(?:auth|from|rpc)/i,
   );
   assert.match(
-    pageSource,
-    /from "\.\/lib\/login-profile-sync-diagnostics";/,
+    actionSource,
+    /from "\.\.\/lib\/login-profile-sync-diagnostics";/,
   );
-  assert.doesNotMatch(pageSource, /const PROFILE_SYNC_FAILURE_STORAGE_KEY/);
-  assert.doesNotMatch(pageSource, /function obterDetalhesErroPerfil\(/);
-  assert.doesNotMatch(pageSource, /function registrarFalhaSincronizacaoPerfil\(/);
-  assert.match(pageSource, /sessionStorage\.removeItem\(PROFILE_SYNC_FAILURE_STORAGE_KEY\)/);
+  assert.doesNotMatch(actionSource, /const PROFILE_SYNC_FAILURE_STORAGE_KEY/);
+  assert.doesNotMatch(actionSource, /function obterDetalhesErroPerfil\(/);
+  assert.doesNotMatch(actionSource, /function registrarFalhaSincronizacaoPerfil\(/);
+  assert.match(
+    actionSource,
+    /sessionStorage\.removeItem\(PROFILE_SYNC_FAILURE_STORAGE_KEY\)/,
+  );
   assert.equal(
-    (pageSource.match(/registrarFalhaSincronizacaoPerfil\(/g) || []).length,
+    (actionSource.match(/registrarFalhaSincronizacaoPerfil\(/g) || []).length,
     2,
   );
+  assert.match(
+    pageSource,
+    /import \{ sincronizarProfileLogin \} from "\.\/actions\/sincronizar-profile-login"/,
+  );
+  assert.match(pageSource, /sincronizarProfileLogin\(/);
 });

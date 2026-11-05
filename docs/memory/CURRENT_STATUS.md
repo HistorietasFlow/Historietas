@@ -1,6 +1,6 @@
 # Estado atual
 
-Atualizado em: 2026-11-04
+Atualizado em: 2026-11-05
 
 ## Infraestrutura e ferramentas
 
@@ -109,6 +109,11 @@ tamanho e limpeza administrativa com service role.
 ### Supabase Auth
 
 Leaked Password Protection estava indisponível no plano Supabase observado durante a configuração. Reavaliar caso o plano/capacidade mude.
+
+A RPC de aceite dos termos recupera atomicamente o perfil mínimo da própria
+identidade autenticada quando uma conta confirmada ficou sem `public.profiles`.
+Perfis existentes continuam sendo apenas atualizados, sem sobrescrever dados
+legítimos; a recuperação não cria trigger em `auth.users`.
 
 ### Lighthouse baseline
 
