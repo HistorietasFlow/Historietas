@@ -60,7 +60,10 @@ async function cenario(opcoes, teste) {
       eventos.push(["setMetricas", valorMetricas]);
     },
     metricasCapituloVazias: vazias,
-    criarMetricasCapituloLocais(...args) { eventos.push(["locais", ...args]); return locais; },
+    criarMetricasCapituloLocais(...args) {
+      eventos.push(["locais", ...args]);
+      return { ...locais, totalComentarios: args[1] ?? 0 };
+    },
     carregarMetricasCapituloSupabase(...args) { eventos.push(["remotas", ...args]); return opcoes.metricasPromise || Promise.resolve(remotas); },
     atualizarCapitulo(dados) { eventos.push(["atualizar", dados]); },
     TABELA_COMENTARIOS_CAPITULOS_CURTIDAS: "comentarios_capitulos_curtidas",
@@ -82,6 +85,7 @@ test("identidade sem dados aplicados limpa estado de conta e não inicia consult
   }, async ({ efeitos, eventos, refComentarios }) => {
     efeitos[0].callback();
     efeitos[1].callback();
+    efeitos[2].callback();
 
     assert.equal(refComentarios.current, "");
     assert.ok(!eventos.some(([nome]) => nome === "carregarComentarios"));
@@ -107,10 +111,12 @@ test("efeitos, dependências e integração preservam a fronteira original", asy
   assert.doesNotMatch(pagina, /async function carregarComentariosCapitulo\(/);
   assert.doesNotMatch(pagina, /async function carregarMetricasCapituloAtual\(/);
   assert.match(fonte, /const atualizarCapituloPorMetricas = useEffectEvent\(/);
-  await cenario({}, async ({ efeitos }) => {
-    assert.equal(efeitos.length, 2);
+  await cenario({}, async ({ efeitos, parametros }) => {
+    assert.equal(efeitos.length, 3);
     assert.deepEqual(efeitos[0].deps.slice(0, 2), ["cap-1", "leitor"]);
-    assert.deepEqual(efeitos[1].deps.slice(0, 3), [capitulo, 2, "leitor"]);
+    assert.deepEqual(efeitos[1].deps.slice(0, 2), [capitulo, "leitor"]);
+    assert.equal(efeitos[1].deps.includes(2), false);
+    assert.deepEqual(efeitos[2].deps.slice(0, 2), ["cap-1", parametros.comentariosCapitulo]);
   });
 });
 
@@ -178,15 +184,15 @@ test("métricas respeitam ambas as guardas e resetam sem capítulo", async () =>
   });
 });
 
-test("métricas locais precedem remotas e preservam maior visualização", async () => {
+test("métricas locais precedem remotas e preservam maiores contadores já aplicados", async () => {
   const pedido = adiado();
   await cenario({ metricasPromise: pedido.promise }, async ({ efeitos, eventos, definirMetricas }) => {
     efeitos[1].callback();
-    assert.deepEqual(eventos.slice(0, 3), [["locais", capitulo, 2], ["setMetricas", locais], ["remotas", capitulo, 2]]);
-    definirMetricas({ ...locais, totalVisualizacoes: 25 });
+    assert.deepEqual(eventos.slice(0, 3), [["locais", capitulo, 0], ["setMetricas", { ...locais, totalComentarios: 0 }], ["remotas", capitulo, 0]]);
+    definirMetricas({ ...locais, totalVisualizacoes: 25, totalComentarios: 7 });
     pedido.resolver(remotas);
     await tick();
-    assert.deepEqual(eventos.slice(-2), [["setMetricas", { ...remotas, totalVisualizacoes: 25 }], ["atualizar", { curtiu: true, salvo: true }]]);
+    assert.deepEqual(eventos.slice(-2), [["setMetricas", { ...remotas, totalVisualizacoes: 25, totalComentarios: 7 }], ["atualizar", { curtiu: true, salvo: true }]]);
   });
 });
 
@@ -211,5 +217,45 @@ test("cancelamento impede métricas tardias e efeito usa callback mais recente",
     efeitos[1].callback();
     await tick();
     assert.ok(!eventos.some(([nome]) => nome === "atualizar"));
+  });
+});
+
+test("comentarios carregados atualizam somente o piso local sem repetir a RPC", async () => {
+  await cenario({
+    idCarregado: "cap-1",
+    comentarios: [{ id: "a" }, { id: "b" }, { id: "c" }],
+    metricas: { ...vazias, totalComentarios: 1, carregado: true },
+  }, async ({ efeitos, eventos }) => {
+    efeitos[2].callback();
+
+    assert.equal(eventos.filter(([nome]) => nome === "remotas").length, 0);
+    assert.equal(eventos.find(([nome]) => nome === "setMetricas")[1].totalComentarios, 3);
+  });
+
+  await cenario({
+    idCarregado: "cap-1",
+    comentarios: [{ id: "pagina-1" }, { id: "pagina-2" }],
+    metricas: { ...vazias, totalComentarios: 7, carregado: true },
+  }, async ({ efeitos, eventos }) => {
+    efeitos[2].callback();
+
+    assert.equal(eventos.filter(([nome]) => nome === "remotas").length, 0);
+    assert.equal(eventos.find(([nome]) => nome === "setMetricas")[1].totalComentarios, 7);
+  });
+});
+
+test("sincronizacao local ignora comentarios de outro capitulo ou identidade", async () => {
+  await cenario({ idCarregado: "cap-anterior" }, async ({ efeitos, eventos }) => {
+    efeitos[2].callback();
+    assert.equal(eventos.length, 0);
+  });
+
+  await cenario({
+    idCarregado: "cap-1",
+    identidadeDadosAplicada: { usuarioId: "usuario-a", versao: 1 },
+    identidadeAtual: { usuarioId: "usuario-b", versao: 2 },
+  }, async ({ efeitos, eventos }) => {
+    efeitos[2].callback();
+    assert.equal(eventos.length, 0);
   });
 });
