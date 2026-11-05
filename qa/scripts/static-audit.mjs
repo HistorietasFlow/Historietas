@@ -2,6 +2,7 @@ import "../env.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT_DIR, QA_DIR } from "../env.mjs";
+import { hasUseClientDirective } from "./static-audit-use-client-utils.mjs";
 
 const results = [];
 const pass = (name, details = "") =>
@@ -80,14 +81,6 @@ function collectSourceFiles() {
   }
 
   return files;
-}
-
-function hasUseClientDirective(content) {
-  const beginning = content.replace(/^\uFEFF/, "").slice(0, 2000);
-
-  return /^(?:\s|\/\/[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/)*["']use client["']\s*;/.test(
-    beginning
-  );
 }
 
 function extractEnvironmentNames(content) {
