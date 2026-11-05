@@ -48,6 +48,13 @@ type CarregarPostsComunidadeParams = {
   setErro: Dispatch<SetStateAction<string>>;
 };
 
+export function escaparFiltroObraRelacionadaLike(termo: string) {
+  return termo
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
+}
+
 export async function carregarPostsComunidade({
   mostrarCarregamento = false,
   pagina = 0,
@@ -86,7 +93,7 @@ export async function carregarPostsComunidade({
     const obraFiltroLimpa = obraFiltro.trim().slice(0, 90);
 
     if (obraFiltroLimpa) {
-      const obraFiltroLike = obraFiltroLimpa.replace(/[%_]/g, "\\$&");
+      const obraFiltroLike = escaparFiltroObraRelacionadaLike(obraFiltroLimpa);
 
       consultaPosts = consultaPosts.like(
         "obra_relacionada",
