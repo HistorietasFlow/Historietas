@@ -2667,6 +2667,7 @@ for (const script of [
   "test:session",
   "test:pagination:integration",
   "test:spam:integration",
+  "test:terms:integration",
   "test:e2e:prepare:local",
   "test:smoke",
   "test:e2e",
@@ -2714,6 +2715,7 @@ const ciContracts = [
       "npm run test:session",
       "npm run test:pagination:integration",
       "npm run test:spam:integration",
+      "npm run test:terms:integration",
       "npm --prefix qa test",
       "npm run build"
     ].every((command) => ciWorkflow.includes(command))
