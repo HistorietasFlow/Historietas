@@ -23,6 +23,7 @@ import { useObraCommentMutations } from "./hooks/use-obra-comment-mutations";
 import { useObraWorkInteractions } from "./hooks/use-obra-work-interactions";
 import { useObraRatingLifecycle } from "./hooks/use-obra-rating-lifecycle";
 import { useObraWorkMetricsLifecycle } from "./hooks/use-obra-work-metrics-lifecycle";
+import { useObraWorkMetricsRequest } from "./hooks/use-obra-work-metrics-request";
 import { useObraActionsSheet } from "./hooks/use-obra-actions-sheet";
 import { useObraClassificationPanel } from "./hooks/use-obra-classification-panel";
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
@@ -281,6 +282,7 @@ export default function ObraDinamicaPage() {
     arquivoObra: obra?.arquivoObra,
   });
   const obraIdComentarios = obterObraIdComentarios(obra);
+  const carregarMetricasObra = useObraWorkMetricsRequest(usuarioIdLogado);
   const { carregarMaisComentariosObra } = useObraCommentsLoadPagination({
     comentariosAbertos,
     obraIdComentarios,
@@ -307,6 +309,7 @@ export default function ObraDinamicaPage() {
     likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY,
     favoritesStorageKey: FAVORITES_STORAGE_KEY,
     completedStorageKey: COMPLETED_STORAGE_KEY,
+    carregarMetricasObra,
     setObraSeguida,
     setObraFavoritada,
     setObraConcluida,
@@ -384,6 +387,7 @@ export default function ObraDinamicaPage() {
     usuarioIdLogado,
     autorObraId,
     avaliacaoObra,
+    carregarMetricasObra,
     obterIdentidadeLogadaParaAcao,
     criarGuardIdentidadeAcao,
     setAvaliacaoObra,

@@ -16,10 +16,6 @@ const fonteMockada = fonte
     "const useEffect = (...args) => globalThis.__obraMetrics.useEffect(...args);",
   )
   .replace(
-    'import { carregarMetricasConteudos } from "../../../../lib/metricas";',
-    "const carregarMetricasConteudos = (...args) => globalThis.__obraMetrics.carregarMetricas(...args);",
-  )
-  .replace(
     'import { idObraSupabaseValido } from "../../../../lib/utils";',
     "const idObraSupabaseValido = (...args) => globalThis.__obraMetrics.idValido(...args);",
   )
@@ -166,6 +162,8 @@ function montarHook({ storage = {}, colecoes = {}, estadoInicial = {} } = {}) {
       likedWorksStorageKey: CHAVES.curtidas,
       favoritesStorageKey: CHAVES.favoritas,
       completedStorageKey: CHAVES.concluidas,
+      carregarMetricasObra: (...args) =>
+        globalThis.__obraMetrics.carregarMetricas(...args),
       ...setters,
     });
   }

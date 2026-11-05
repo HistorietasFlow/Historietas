@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { carregarMetricasConteudos } from "../../../../lib/metricas";
 import { idObraSupabaseValido } from "../../../../lib/utils";
 import type { ObraDinamica } from "../lib/obra-data-utils";
+import type { CarregarMetricasObra } from "../lib/obra-work-metrics-request-coordinator";
 import {
   obraEstaEmListaLocalObraPublica,
   salvarListaLocalObraPublica,
@@ -28,6 +28,7 @@ type UseObraWorkMetricsLifecycleParams = {
   likedWorksStorageKey: string;
   favoritesStorageKey: string;
   completedStorageKey: string;
+  carregarMetricasObra: CarregarMetricasObra;
   setObraSeguida: Dispatch<SetStateAction<boolean>>;
   setObraFavoritada: Dispatch<SetStateAction<boolean>>;
   setObraConcluida: Dispatch<SetStateAction<boolean>>;
@@ -46,6 +47,7 @@ export function useObraWorkMetricsLifecycle({
   likedWorksStorageKey,
   favoritesStorageKey,
   completedStorageKey,
+  carregarMetricasObra,
   setObraSeguida,
   setObraFavoritada,
   setObraConcluida,
@@ -161,9 +163,7 @@ export function useObraWorkMetricsLifecycle({
 
     async function carregarMetricasReaisObra() {
       try {
-        const contrato = await carregarMetricasConteudos({
-          obraIds: [obraId],
-        });
+        const contrato = await carregarMetricasObra(obraId);
         const metrica = contrato.obras.get(obraId);
 
         if (!contrato.carregado || !metrica) {
@@ -275,6 +275,7 @@ export function useObraWorkMetricsLifecycle({
     likedWorksStorageKey,
     favoritesStorageKey,
     completedStorageKey,
+    carregarMetricasObra,
     setObraSeguida,
     setObraFavoritada,
     setObraConcluida,

@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { idObraSupabaseValido } from "../../../../lib/utils";
 import type { IdentidadeAutenticadaObra } from "../lib/obra-auth-identity";
 import type { ObraDinamica } from "../lib/obra-data-utils";
+import type { CarregarMetricasObra } from "../lib/obra-work-metrics-request-coordinator";
 import {
   registrarAtividadeDiarioObra,
   removerAtividadeDiarioObra,
@@ -25,6 +26,7 @@ type UseObraRatingLifecycleParams = {
   usuarioIdLogado: string;
   autorObraId: string;
   avaliacaoObra: AvaliacaoObraPublica;
+  carregarMetricasObra: CarregarMetricasObra;
   obterIdentidadeLogadaParaAcao: (
     mensagem: string,
   ) => Promise<IdentidadeAutenticadaObra | null>;
@@ -41,6 +43,7 @@ export function useObraRatingLifecycle({
   usuarioIdLogado,
   autorObraId,
   avaliacaoObra,
+  carregarMetricasObra,
   obterIdentidadeLogadaParaAcao,
   criarGuardIdentidadeAcao,
   setAvaliacaoObra,
@@ -97,6 +100,7 @@ export function useObraRatingLifecycle({
         const snapshotRemoto = await carregarSnapshotRemotoAvaliacaoObra({
           obra: obraAtual,
           usuarioIdLogado,
+          carregarMetricasObra,
         });
 
         if (!snapshotRemoto) {
@@ -154,6 +158,7 @@ export function useObraRatingLifecycle({
     obra,
     obraNormalizada,
     usuarioIdLogado,
+    carregarMetricasObra,
     setAvaliacaoObra,
   ]);
 
