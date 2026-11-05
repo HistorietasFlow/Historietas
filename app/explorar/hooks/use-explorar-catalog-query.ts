@@ -5,6 +5,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { ConsultaCatalogo, CursorCatalogo } from "../../../lib/catalogo";
 import type { ObraLocal } from "../lib/explorar-work-normalizers";
 import type { OrdenacaoExplorar } from "../lib/explorar-derived-utils";
+import type { ErroCatalogoExplorar } from "./use-explorar-catalog-pagination-state";
 import {
   CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
   carregarObrasPublicadasSupabase,
@@ -22,6 +23,7 @@ type OpcoesConsultaCatalogoExplorar = {
   obrasLocais: ObraLocal[];
   proximoCursorCatalogo: CursorCatalogo | null;
   carregandoMaisCatalogo: boolean;
+  versaoRetryCatalogo: number;
   obrasCacheLocalRef: RefObject<ObraLocal[]>;
   usuarioIdExplorarRef: RefObject<string>;
   setObrasLocais: Dispatch<SetStateAction<ObraLocal[]>>;
@@ -29,6 +31,7 @@ type OpcoesConsultaCatalogoExplorar = {
   setCatalogoTemMais: Dispatch<SetStateAction<boolean>>;
   setCarregandoMaisCatalogo: Dispatch<SetStateAction<boolean>>;
   setObraIdsBuscaRemota: Dispatch<SetStateAction<string[] | null>>;
+  setErroCatalogoExplorar: Dispatch<SetStateAction<ErroCatalogoExplorar>>;
 };
 
 export function useExplorarCatalogQuery({
@@ -43,6 +46,7 @@ export function useExplorarCatalogQuery({
   obrasLocais,
   proximoCursorCatalogo,
   carregandoMaisCatalogo,
+  versaoRetryCatalogo,
   obrasCacheLocalRef,
   usuarioIdExplorarRef,
   setObrasLocais,
@@ -50,6 +54,7 @@ export function useExplorarCatalogQuery({
   setCatalogoTemMais,
   setCarregandoMaisCatalogo,
   setObraIdsBuscaRemota,
+  setErroCatalogoExplorar,
 }: OpcoesConsultaCatalogoExplorar) {
   // Os setters e refs da página são estáveis durante seu ciclo de vida.
   const dependenciasEstaveisRef = useRef({
@@ -60,9 +65,11 @@ export function useExplorarCatalogQuery({
     setCatalogoTemMais,
     setCarregandoMaisCatalogo,
     setObraIdsBuscaRemota,
+    setErroCatalogoExplorar,
   });
   const consultaCatalogoRef = useRef(0);
   const consultaPersonalizadaAtivaRef = useRef(false);
+  const versaoRetryCatalogoRef = useRef(versaoRetryCatalogo);
 
   const buscaCatalogo = busca.trim();
 
@@ -105,20 +112,29 @@ export function useExplorarCatalogQuery({
       setCatalogoTemMais,
       setCarregandoMaisCatalogo,
       setObraIdsBuscaRemota,
+      setErroCatalogoExplorar,
     } = dependenciasEstaveisRef.current;
 
     if (!dadosExplorarCarregados) {
       return;
     }
 
+    const retrySolicitado =
+      versaoRetryCatalogo !== versaoRetryCatalogoRef.current;
+
     if (
       !consultaCatalogoPersonalizada &&
-      !consultaPersonalizadaAtivaRef.current
+      !consultaPersonalizadaAtivaRef.current &&
+      !retrySolicitado
     ) {
       return;
     }
 
+    versaoRetryCatalogoRef.current = versaoRetryCatalogo;
     consultaPersonalizadaAtivaRef.current = consultaCatalogoPersonalizada;
+    setErroCatalogoExplorar((erroAtual) =>
+      erroAtual === "paginacao" ? "consulta" : erroAtual,
+    );
     setObraIdsBuscaRemota(null);
     const numeroConsulta = consultaCatalogoRef.current + 1;
     consultaCatalogoRef.current = numeroConsulta;
@@ -147,6 +163,13 @@ export function useExplorarCatalogQuery({
             resultado.pagina?.proximoCursor || null,
           );
           setCatalogoTemMais(Boolean(resultado.pagina?.temMais));
+          setErroCatalogoExplorar(
+            resultado.falhaTemporaria ? "consulta" : null,
+          );
+        }
+      } catch {
+        if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
+          setErroCatalogoExplorar("consulta");
         }
       } finally {
         if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
@@ -164,6 +187,7 @@ export function useExplorarCatalogQuery({
     consultaCatalogoPersonalizada,
     dadosExplorarCarregados,
     termoBusca,
+    versaoRetryCatalogo,
   ]);
 
   async function carregarMaisObrasCatalogo() {
@@ -174,6 +198,7 @@ export function useExplorarCatalogQuery({
       setCatalogoTemMais,
       setCarregandoMaisCatalogo,
       setObraIdsBuscaRemota,
+      setErroCatalogoExplorar,
     } = dependenciasEstaveisRef.current;
 
     if (
@@ -196,6 +221,11 @@ export function useExplorarCatalogQuery({
       );
 
       if (consultaCatalogoRef.current === numeroConsulta) {
+        if (resultado.falhaTemporaria) {
+          setErroCatalogoExplorar("paginacao");
+          return;
+        }
+
         setObrasLocais(resultado.obras);
         const pagina = resultado.pagina;
         if (termoBusca && pagina) {
@@ -210,6 +240,11 @@ export function useExplorarCatalogQuery({
         }
         setProximoCursorCatalogo(resultado.pagina?.proximoCursor || null);
         setCatalogoTemMais(Boolean(resultado.pagina?.temMais));
+        setErroCatalogoExplorar(null);
+      }
+    } catch {
+      if (consultaCatalogoRef.current === numeroConsulta) {
+        setErroCatalogoExplorar("paginacao");
       }
     } finally {
       if (consultaCatalogoRef.current === numeroConsulta) {

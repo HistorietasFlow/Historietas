@@ -275,6 +275,46 @@ test("Explorar busca no catálogo real e carrega a próxima página", async ({
   runtime.assertClean();
 });
 
+for (const dispositivo of [
+  { nome: "desktop", viewport: { width: 1440, height: 900 } },
+  { nome: "mobile", viewport: { width: 390, height: 844 } },
+]) {
+  test(`Explorar diferencia falha temporária de catálogo vazio e recupera no retry (${dispositivo.nome})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(dispositivo.viewport);
+    const interromperCatalogo = (route) => route.abort("failed");
+    await page.route(
+      "**/rest/v1/rpc/listar_obras_catalogo",
+      interromperCatalogo,
+    );
+
+    await page.goto("/explorar", { waitUntil: "domcontentloaded" });
+
+    const aviso = page.getByRole("alert");
+    await expect(aviso).toBeVisible();
+    await expect(
+      aviso.getByRole("button", { name: "Tentar novamente", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("PUBLIQUE SUA HISTÓRIA", { exact: true }),
+    ).toHaveCount(0);
+
+    await page.unroute(
+      "**/rest/v1/rpc/listar_obras_catalogo",
+      interromperCatalogo,
+    );
+    await aviso
+      .getByRole("button", { name: "Tentar novamente", exact: true })
+      .click();
+
+    await expect(aviso).toBeHidden();
+    await expect(
+      page.locator('a[href^="/obra/qa-paginacao-obra-"]').first(),
+    ).toBeVisible();
+  });
+}
+
 test("Home e Explorar não criam rolagem horizontal no celular", async ({
   page,
 }) => {

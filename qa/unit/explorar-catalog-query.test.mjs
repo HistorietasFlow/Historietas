@@ -32,7 +32,7 @@ const mesmas = (a, b) => a && b && a.length === b.length && a.every((v, i) => Ob
 function preparar(t, overrides = {}) {
   const anterior = globalThis.window;
   const chamadas = [];
-  const estado = {};
+  const estado = { ErroCatalogoExplorar: null };
   const timers = new Map();
   const slots = [];
   let indice = 0;
@@ -84,10 +84,11 @@ function preparar(t, overrides = {}) {
     filtroClassificacao: "todos", filtroCapitulos: "todos", ordenacao: "relevancia",
     dadosExplorarCarregados: true, obrasLocais: [{ id: "atual" }],
     proximoCursorCatalogo: null, carregandoMaisCatalogo: false,
+    versaoRetryCatalogo: 0,
     obrasCacheLocalRef: { current: [{ id: "cache" }] }, usuarioIdExplorarRef: { current: "usuario" },
     ...overrides,
   };
-  for (const nome of ["ObrasLocais", "ProximoCursorCatalogo", "CatalogoTemMais", "CarregandoMaisCatalogo", "ObraIdsBuscaRemota"]) {
+  for (const nome of ["ObrasLocais", "ProximoCursorCatalogo", "CatalogoTemMais", "CarregandoMaisCatalogo", "ObraIdsBuscaRemota", "ErroCatalogoExplorar"]) {
     props[`set${nome}`] = (valor) => {
       const valorResolvido = typeof valor === "function" ? valor(estado[nome]) : valor;
       chamadas.push([`set${nome}`, valorResolvido]);
@@ -119,7 +120,7 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "b270f65acd6cfc1c6dbe8f566652047433bacb4a79e218770202c4d1b4903214");
+    "569de7aa542089429539aca68a75c6521f236b6f58171f8f1a829a572f504419");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -150,11 +151,15 @@ test("consulta personalizada respeita debounce, filtros e ordem das atualizaçõ
   });
   assert.equal(c.render().consultaCatalogoPersonalizada, true);
   assert.equal([...c.timers.values()][0].ms, 350);
-  assert.deepEqual(c.chamadas, [["setObraIdsBuscaRemota", null]]);
+  assert.deepEqual(c.chamadas, [
+    ["setErroCatalogoExplorar", null],
+    ["setObraIdsBuscaRemota", null],
+  ]);
   const cursor = { valor: 3, data: "2024-01-01", id: "cursor" };
   c.respostas.push(Promise.resolve({ obras: [{ id: "remota" }], pagina: { obraIds: ["remota"], proximoCursor: cursor, temMais: true } }));
   await c.disparar();
   assert.deepEqual(c.chamadas, [
+    ["setErroCatalogoExplorar", null],
     ["setObraIdsBuscaRemota", null],
     ["setCarregandoMaisCatalogo", true],
     ["carregar", [{ id: "cache" }], "usuario", [{
@@ -163,8 +168,37 @@ test("consulta personalizada respeita debounce, filtros e ordem das atualizaçõ
     }]],
     ["setObrasLocais", [{ id: "remota" }]], ["setObraIdsBuscaRemota", ["remota"]],
     ["setProximoCursorCatalogo", cursor],
-    ["setCatalogoTemMais", true], ["setCarregandoMaisCatalogo", false],
+    ["setCatalogoTemMais", true], ["setErroCatalogoExplorar", null],
+    ["setCarregandoMaisCatalogo", false],
   ]);
+});
+
+test("retry repete somente a consulta atual e limpa o erro após recuperação", async (t) => {
+  const c = preparar(t);
+  c.render();
+  assert.equal(c.timers.size, 0);
+
+  c.respostas.push(Promise.resolve({
+    obras: [{ id: "fallback" }],
+    pagina: null,
+    falhaTemporaria: true,
+  }));
+  c.render({ versaoRetryCatalogo: 1 });
+  await c.disparar();
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "fallback" }]);
+  assert.equal(c.estado.ErroCatalogoExplorar, "consulta");
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, 1);
+
+  c.respostas.push(Promise.resolve({
+    obras: [],
+    pagina: null,
+    falhaTemporaria: false,
+  }));
+  c.render({ versaoRetryCatalogo: 2 });
+  await c.disparar();
+  assert.deepEqual(c.estado.ObrasLocais, []);
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, 2);
 });
 
 test("busca diferencia resposta remota vazia de fallback local", async (t) => {
@@ -247,11 +281,42 @@ test("resposta antiga e cleanup não aplicam dados nem encerram o loading da nov
   assert.equal(c.timers.size, 0);
 });
 
+test("resposta antiga de retry não sobrescreve a recuperação mais recente", async (t) => {
+  const c = preparar(t);
+  const antiga = adiar();
+  const nova = adiar();
+  c.respostas.push(antiga.promise, nova.promise);
+  c.render();
+  c.render({ versaoRetryCatalogo: 1 });
+  const aguardandoAntiga = c.disparar();
+  c.render({ versaoRetryCatalogo: 2 });
+  const aguardandoNova = c.disparar();
+
+  nova.resolve({
+    obras: [{ id: "atual" }],
+    pagina: null,
+    falhaTemporaria: false,
+  });
+  await aguardandoNova;
+  antiga.resolve({
+    obras: [{ id: "obsoleta" }],
+    pagina: null,
+    falhaTemporaria: true,
+  });
+  await aguardandoAntiga;
+
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "atual" }]);
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
+});
+
 test("carregar mais respeita guardas, cursor e atualizações na ordem original", async (t) => {
   const cursor = { valor: 1, data: "2024-01-01", id: "a" };
   const c = preparar(t, { termoBusca: "x", busca: "x" });
   let resultado = c.render();
-  assert.deepEqual(c.chamadas, [["setObraIdsBuscaRemota", null]]);
+  assert.deepEqual(c.chamadas, [
+    ["setErroCatalogoExplorar", null],
+    ["setObraIdsBuscaRemota", null],
+  ]);
   c.chamadas.length = 0;
   await resultado.carregarMaisObrasCatalogo();
   assert.equal(c.chamadas.length, 0);
@@ -270,21 +335,55 @@ test("carregar mais respeita guardas, cursor e atualizações na ordem original"
     }]],
     ["setObrasLocais", [{ id: "p2" }]], ["setObraIdsBuscaRemota", ["p1", "p2"]],
     ["setProximoCursorCatalogo", null],
-    ["setCatalogoTemMais", false], ["setCarregandoMaisCatalogo", false],
+    ["setCatalogoTemMais", false], ["setErroCatalogoExplorar", null],
+    ["setCarregandoMaisCatalogo", false],
   ]);
   const d = preparar(t, { proximoCursorCatalogo: cursor });
   await d.render().carregarMaisObrasCatalogo();
   assert.deepEqual(d.chamadas, []);
 });
 
-test("falha da paginação propaga erro e encerra loading da consulta ativa", async (t) => {
+test("falha e retry da paginação preservam a página atual", async (t) => {
+  const cursor = { valor: 1, data: "2024-01-01", id: "a" };
+  const c = preparar(t, {
+    busca: "x",
+    termoBusca: "x",
+    proximoCursorCatalogo: cursor,
+    obrasLocais: [{ id: "p1" }],
+  });
+  let resultado = c.render();
+  c.chamadas.length = 0;
+  c.respostas.push(Promise.resolve({
+    obras: [{ id: "fallback" }],
+    pagina: null,
+    falhaTemporaria: true,
+  }));
+  await resultado.carregarMaisObrasCatalogo();
+  assert.deepEqual(c.estado.ObrasLocais, undefined);
+  assert.equal(c.estado.ErroCatalogoExplorar, "paginacao");
+  assert.equal(c.props.proximoCursorCatalogo, cursor);
+
+  resultado = c.render({ carregandoMaisCatalogo: false });
+  c.respostas.push(Promise.resolve({
+    obras: [{ id: "p1" }, { id: "p2" }],
+    pagina: { obraIds: ["p2"], proximoCursor: null, temMais: false },
+    falhaTemporaria: false,
+  }));
+  await resultado.carregarMaisObrasCatalogo();
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "p1" }, { id: "p2" }]);
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, 2);
+});
+
+test("falha inesperada da paginação mantém dados e oferece retry", async (t) => {
   const cursor = { valor: 1, data: "2024-01-01", id: "a" };
   const c = preparar(t, { termoBusca: "x", proximoCursorCatalogo: cursor });
   const resultado = c.render();
   c.respostas.push(Promise.reject(new Error("catálogo")));
-  await assert.rejects(resultado.carregarMaisObrasCatalogo(), /catálogo/);
+  await resultado.carregarMaisObrasCatalogo();
   assert.equal(c.estado.CarregandoMaisCatalogo, false);
   assert.equal(c.estado.ObrasLocais, undefined);
+  assert.equal(c.estado.ErroCatalogoExplorar, "paginacao");
 });
 
 test("paginação ultrapassada não sobrescreve uma consulta mais recente", async (t) => {

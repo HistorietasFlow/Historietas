@@ -150,7 +150,7 @@ test("os quatro corpos dos loaders permanecem literalmente idênticos à base", 
     .replace(/^export async function /gm, "async function ");
   assert.equal(
     createHash("sha256").update(corpo).digest("hex"),
-    "dc7b516daf4e3671e775ea8b9a0631afc0aa588cc788bd34a51e979c25fe628e",
+    "acd66ec0a3cb0553b77c3f4ab18876a38553d1e8367883b984d0af1d55549b81",
   );
 });
 
@@ -231,7 +231,7 @@ test("catálogo vazio retorna locais com métricas e página original sem gravar
   c.selecao = { obraIds: [], paginas: [paginaCatalogo] };
   const locais = [obra("local")];
   assert.deepEqual(await modulo.carregarObrasPublicadasSupabase(locais, "u"), {
-    obras: locais, pagina: paginaCatalogo,
+    obras: locais, pagina: paginaCatalogo, falhaTemporaria: false,
   });
   assert.equal(c.chamadas.length, 1);
   assert.deepEqual(c.gravacoes, []);
@@ -263,6 +263,7 @@ test("catálogo aplica perfis, pagina capítulos por lotes e persiste resultado"
   assert.deepEqual(c.normalizacoes.map((item) => item.capitulos.length), [2, 1]);
   assert.equal(resultado.obras[0].autor, "Perfil remoto");
   assert.deepEqual(resultado.pagina, { cursor: "c" });
+  assert.equal(resultado.falhaTemporaria, false);
   const consultasCapitulos = c.chamadas.filter((item) => item.tabela === "capitulos");
   assert.equal(consultasCapitulos.length, 2);
   assert.deepEqual(consultasCapitulos[0].operacoes[0], [
@@ -288,6 +289,7 @@ test("fallback do catálogo usa amostra limitada e preserva avisos", async () =>
   try {
     const resultado = await modulo.carregarObrasPublicadasSupabase([], "u");
     assert.equal(resultado.obras.length, 1);
+    assert.equal(resultado.falhaTemporaria, true);
     const consulta = c.chamadas.find((item) => item.tabela === "obras");
     assert.deepEqual(consulta.operacoes.slice(-3), [
       ["order", "criada_em", { ascending: false }],
@@ -306,13 +308,18 @@ test("falha de obras retorna locais; falha de capítulos continua com arquivos",
   console.warn = (...args) => avisos.push(args);
   try {
     c.falhas.obras = new Error("obras");
-    assert.deepEqual(await modulo.carregarObrasPublicadasSupabase(locais, "u"), { obras: locais, pagina: null });
+    assert.deepEqual(await modulo.carregarObrasPublicadasSupabase(locais, "u"), {
+      obras: locais,
+      pagina: null,
+      falhaTemporaria: true,
+    });
     assert.equal(avisos[0][0], "Não consegui acessar o Supabase no Explorar:");
     delete c.falhas.obras;
     c.banco.obras = [{ id: "o1", user_id: "a", arquivoObra: { nome: "arquivo" } }];
     c.falhas.capitulos = new Error("capítulos");
     const resultado = await modulo.carregarObrasPublicadasSupabase([], "u");
     assert.equal(resultado.obras.length, 1);
+    assert.equal(resultado.falhaTemporaria, true);
     assert.equal(avisos[1][0], "Não consegui carregar capítulos do Supabase no Explorar:");
   } finally { console.warn = anterior; }
 });

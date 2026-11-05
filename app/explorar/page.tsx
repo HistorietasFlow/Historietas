@@ -16,6 +16,7 @@ import {
 import { ExplorarLoadingState } from "./components/explorar-loading-state";
 import { ExplorarLoadMoreButton } from "./components/explorar-load-more-button";
 import { ExplorarLoginNotice } from "./components/explorar-login-notice";
+import { ExplorarCatalogErrorNotice } from "./components/explorar-catalog-error-notice";
 import { ExplorarCategoriesBar } from "./components/explorar-categories-bar";
 import { ExplorarDesktopHeader } from "./components/explorar-desktop-header";
 import { ExplorarMobileHeader } from "./components/explorar-mobile-header";
@@ -120,6 +121,10 @@ export default function ExplorarPage() {
     setCarregandoMaisCatalogo,
     obraIdsBuscaRemota,
     setObraIdsBuscaRemota,
+    erroCatalogoExplorar,
+    setErroCatalogoExplorar,
+    versaoRetryCatalogo,
+    setVersaoRetryCatalogo,
   } = useExplorarCatalogPaginationState();
   const {
     obrasFavoritas,
@@ -192,6 +197,7 @@ export default function ExplorarPage() {
     setObrasConcluidas,
     setProximoCursorCatalogo,
     setCatalogoTemMais,
+    setErroCatalogoExplorar,
     setDadosExplorarCarregados,
     FAVORITES_STORAGE_KEY,
     COMPLETED_STORAGE_KEY,
@@ -224,6 +230,7 @@ export default function ExplorarPage() {
       obrasLocais,
       proximoCursorCatalogo,
       carregandoMaisCatalogo,
+      versaoRetryCatalogo,
       obrasCacheLocalRef,
       usuarioIdExplorarRef,
       setObrasLocais,
@@ -231,7 +238,17 @@ export default function ExplorarPage() {
       setCatalogoTemMais,
       setCarregandoMaisCatalogo,
       setObraIdsBuscaRemota,
+      setErroCatalogoExplorar,
     });
+
+  function tentarCarregarCatalogoNovamente() {
+    if (erroCatalogoExplorar === "paginacao") {
+      void carregarMaisObrasCatalogo();
+      return;
+    }
+
+    setVersaoRetryCatalogo((versaoAtual) => versaoAtual + 1);
+  }
 
   const obrasBaseFiltradas = useMemo(() => {
     return filtrarObrasBaseExplorar({
@@ -577,6 +594,14 @@ export default function ExplorarPage() {
 
         </section>
 
+        {erroCatalogoExplorar && (
+          <ExplorarCatalogErrorNotice
+            possuiDados={obrasLocais.length > 0}
+            carregando={carregandoMaisCatalogo}
+            onTentarNovamente={tentarCarregarCatalogoNovamente}
+          />
+        )}
+
         {mostrarFiltrosAvancados && (
           <Suspense fallback={null}>
             <ExplorarAdvancedFiltersComposition
@@ -695,7 +720,7 @@ export default function ExplorarPage() {
             />
           )}
 
-        {totalResultados === 0 && (
+        {totalResultados === 0 && !erroCatalogoExplorar && (
           <EstadoVazioExplorar
             possuiObrasPublicadas={possuiObrasPublicadas}
             modoConteudo={modoConteudo}
