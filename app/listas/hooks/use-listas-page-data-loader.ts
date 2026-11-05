@@ -141,6 +141,8 @@ export function useListasPageDataLoader<
 
         setUsuarioAtualId(usuarioLogadoId);
 
+        let perfilUsuarioAtualCarregado: PerfilListaLike | null = null;
+
         if (usuarioLogadoId) {
           try {
             const perfilUsuarioAtual = await carregarPerfil(
@@ -149,6 +151,7 @@ export function useListasPageDataLoader<
                 pegarTexto(authData.user?.email) ||
                 "Usuário",
             );
+            perfilUsuarioAtualCarregado = perfilUsuarioAtual;
 
             if (!cancelado) {
               setUsuarioAtualPerfil(perfilUsuarioAtual);
@@ -188,13 +191,16 @@ export function useListasPageDataLoader<
 
           const perfilInicialmenteProprio =
             perfilIdRecebido === usuarioLogadoId;
-          const perfilCarregado = await carregarPerfil(
-            perfilIdRecebido,
-            perfilInicialmenteProprio
-              ? pegarTexto(authData.user?.user_metadata?.nome) ||
-                  pegarTexto(authData.user?.email)
-              : "",
-          );
+          const perfilCarregado =
+            perfilInicialmenteProprio && perfilUsuarioAtualCarregado
+              ? perfilUsuarioAtualCarregado
+              : await carregarPerfil(
+                  perfilIdRecebido,
+                  perfilInicialmenteProprio
+                    ? pegarTexto(authData.user?.user_metadata?.nome) ||
+                        pegarTexto(authData.user?.email)
+                    : "",
+                );
           const perfilUserId =
             perfilCarregado.userId.trim() || perfilIdRecebido;
           const proprioPerfil =
