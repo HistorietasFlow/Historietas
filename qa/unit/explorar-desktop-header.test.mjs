@@ -34,6 +34,6 @@ test("Explorar mantém estado e callbacks desktop na página", () => {
   assert.match(pagina, /import \{ ExplorarDesktopHeader \} from "\.\/components\/explorar-desktop-header";/);
   assert.match(pagina, /\{isDesktop \? \(/);
   assert.match(pagina, /<ExplorarDesktopHeader/);
-  assert.match(pagina, /onBuscaChange=\{setBusca\}/);
+  assert.match(pagina, /onBuscaChange=\{atualizarBuscaExplorar\}/);
   assert.match(pagina, /onAbrirFiltros=\{\(\) => setMostrarFiltrosAvancados\(true\)\}/);
 });

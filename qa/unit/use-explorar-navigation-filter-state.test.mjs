@@ -59,7 +59,11 @@ test("Explorar delega os estados e preserva handlers, auth e consulta", () => {
   );
   assert.match(
     pagina,
-    /useExplorarInitialLoad\(\{[\s\S]*?setModoConteudo,[\s\S]*?setCategoriaSelecionada,/,
+    /useExplorarInitialLoad\(\{[\s\S]*?setModoConteudo,[\s\S]*?setCategoriaSelecionada,[\s\S]*?setBusca,[\s\S]*?setOrdenacao,/,
+  );
+  assert.match(
+    pagina,
+    /useExplorarRouteFilterSync\(\{[\s\S]*?setModoConteudo,[\s\S]*?setCategoriaSelecionada,[\s\S]*?setBusca,[\s\S]*?setOrdenacao,/,
   );
   assert.match(
     pagina,
@@ -68,9 +72,11 @@ test("Explorar delega os estados e preserva handlers, auth e consulta", () => {
   assert.match(pagina, /function selecionarModoConteudo\(modo: ModoConteudoExplorar\)/);
   assert.match(pagina, /function selecionarFiltroClassificacaoExplorar\(filtro: string\)/);
   assert.match(pagina, /function selecionarCategoria\(categoria: string\)/);
+  assert.match(pagina, /function atualizarBuscaExplorar\(valor: string\)/);
+  assert.match(pagina, /function selecionarOrdenacaoExplorar\(novaOrdenacao: typeof ordenacao\)/);
   assert.match(pagina, /function selecionarFiltroColecao\(filtro: FiltroColecaoExplorar\)/);
   assert.match(pagina, /function limparFiltros\(\)/);
-  assert.match(pagina, /window\.history\.pushState\(null, "", "\/explorar"\);/);
+  assert.doesNotMatch(pagina, /window\.history\.(?:pushState|replaceState)/);
   assert.match(authState, /setFiltroColecao\("todos"\);/);
   assert.match(catalogQuery, /const consultaCatalogoRef = useRef\(0\);/);
   assert.match(catalogQuery, /\}, 350\);/);

@@ -30,6 +30,6 @@ test("Explorar mantém condição, fechamento e regras do modal na composição 
   assert.match(pagina, /onFechar=\{\(\) => \{\s*setMostrarFiltrosAvancados\(false\);\s*setMostrarConfirmacaoConteudo18\(false\);\s*setConfirmouIdadeConteudo18\(false\);\s*\}\}/);
   assert.match(pagina, /ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO/);
   assert.match(composicao, /<ExplorarOrderingOptions/);
-  assert.match(pagina, /onSelecionarOrdenacao=\{setOrdenacao\}/);
+  assert.match(pagina, /onSelecionarOrdenacao=\{selecionarOrdenacaoExplorar\}/);
   assert.match(pagina, /onLimparFiltros=\{limparFiltros\}/);
 });

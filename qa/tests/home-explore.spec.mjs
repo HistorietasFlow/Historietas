@@ -112,6 +112,124 @@ test("Explorar aplica categoria, abre filtros e limpa estado", async ({
   runtime.assertClean();
 });
 
+test("Explorar restaura e preserva filtros públicos de uma URL compartilhada", async ({
+  page,
+}) => {
+  const consultasCatalogo = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/rpc/listar_obras_catalogo")) {
+      consultasCatalogo.push(request.postDataJSON());
+    }
+  });
+
+  const urlCompartilhada =
+    "/explorar?categoria=Fantasia&busca=QA%20Pagina%C3%A7%C3%A3o&ordenacao=mais-recentes";
+  await page.goto(urlCompartilhada, { waitUntil: "domcontentloaded" });
+
+  const search = page.getByPlaceholder("Buscar histórias...").first();
+  await expect(search).toBeVisible();
+  await expect(search).toHaveValue("QA Paginação");
+  await page
+    .getByRole("button", {
+      name: "Abrir funções do Explorar",
+      exact: true,
+    })
+    .click();
+  const modal = page.locator('section[aria-label="EXPLORAR"]');
+  await expect(
+    modal.getByRole("button", { name: /^Mais recentes/ }),
+  ).toContainText("✓");
+  await expect
+    .poll(
+      () =>
+        consultasCatalogo.filter(
+          (consulta) =>
+            consulta?.p_busca === "QA Paginação" &&
+            consulta?.p_genero === "Fantasia" &&
+            consulta?.p_ordenacao === "mais-recentes",
+        ).length,
+      { message: "a consulta compartilhada deve ser enviada uma única vez" },
+    )
+    .toBe(1);
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(search).toBeVisible();
+  await expect(search).toHaveValue("QA Paginação");
+  await expect(page).toHaveURL(/categoria=Fantasia/);
+  await expect(page).toHaveURL(/busca=QA%20Pagina%C3%A7%C3%A3o/);
+  await expect(page).toHaveURL(/ordenacao=mais-recentes/);
+});
+
+test("Explorar sincroniza estado e resultados ao voltar e avançar", async ({
+  page,
+}) => {
+  await page.goto("/explorar", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Explorar", exact: true }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Fantasia", exact: true })
+    .click();
+  const search = page.getByPlaceholder("Buscar histórias...").first();
+  await search.fill("QA Paginação");
+  await page
+    .getByRole("button", {
+      name: "Abrir funções do Explorar",
+      exact: true,
+    })
+    .click();
+  const modal = page.locator('section[aria-label="EXPLORAR"]');
+  const recentButton = modal.getByRole("button", { name: /^Mais recentes/ });
+  await recentButton.click();
+  await expect(page).toHaveURL(/ordenacao=mais-recentes/);
+
+  await page.goBack();
+  await expect(page).not.toHaveURL(/ordenacao=/);
+  await expect(search).toHaveValue("QA Paginação");
+  await expect(recentButton).not.toContainText("✓");
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/explorar$/);
+  await expect(search).toHaveValue("");
+
+  await page.goForward();
+  await expect(page).toHaveURL(/categoria=Fantasia/);
+  await expect(search).toHaveValue("QA Paginação");
+
+  await page.goForward();
+  await expect(page).toHaveURL(/ordenacao=mais-recentes/);
+  await expect(recentButton).toContainText("✓");
+});
+
+test("Explorar restaura busca e ordenação compartilhadas no mobile", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(
+    "/explorar?busca=QA%20Pagina%C3%A7%C3%A3o&ordenacao=mais-curtidas",
+    { waitUntil: "domcontentloaded" },
+  );
+
+  await page
+    .getByRole("button", { name: "Abrir busca", exact: true })
+    .click();
+  await expect(page.getByPlaceholder("Buscar histórias...")).toHaveValue(
+    "QA Paginação",
+  );
+  await page
+    .getByRole("button", {
+      name: "Abrir funções do Explorar",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page
+      .locator('section[aria-label="EXPLORAR"]')
+      .getByRole("button", { name: /^Mais curtidas/ }),
+  ).toContainText("✓");
+});
+
 test("Explorar busca no catálogo real e carrega a próxima página", async ({
   page,
 }) => {

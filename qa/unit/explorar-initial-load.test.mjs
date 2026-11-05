@@ -14,6 +14,7 @@ const dependencias = [
   "carregarListaIdsUsuarioExplorar", "salvarListaIdsUsuarioExplorar",
   "obterArquivoObraComBackup", "salvarBackupsArquivosObras", "normalizarObra",
   "carregarColecoesUsuarioExplorar", "carregarObrasPublicadasSupabase",
+  "lerFiltrosCompartilhaveisExplorar",
 ];
 const injecao = `
 const useRef = (valor) => ({ current: valor });
@@ -67,6 +68,17 @@ function preparar(t, opcoes = {}) {
       opcoes.colecoesPromise || Promise.resolve(opcoes.colecoes || { favoritas: [], concluidas: [] })),
     carregarObrasPublicadasSupabase: registrar("catalogo", () =>
       opcoes.catalogoPromise || Promise.resolve(opcoes.catalogo || { obras: [], pagina: null })),
+    lerFiltrosCompartilhaveisExplorar: registrar("lerFiltros", (search) => {
+      const params = new URLSearchParams(search);
+      return {
+        modoConteudo: params.get("tipo") === "autores" ? "autores" : "obras",
+        categoriaSelecionada: (params.get("categoria") || "").trim(),
+        busca: (params.get("busca") || "").trim(),
+        ordenacao: params.get("ordenacao") === "mais-recentes"
+          ? "mais-recentes"
+          : "relevancia",
+      };
+    }),
   };
   globalThis.__explorarInitialTest = deps;
   const props = {
@@ -75,7 +87,7 @@ function preparar(t, opcoes = {}) {
     COMPLETED_STORAGE_KEY: "concluidas",
   };
   for (const nome of [
-    "ModoConteudo", "CategoriaSelecionada", "UsuarioLogado", "ObrasLocais",
+    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "UsuarioLogado", "ObrasLocais",
     "ObrasFavoritas", "ObrasConcluidas", "ProximoCursorCatalogo",
     "CatalogoTemMais", "DadosExplorarCarregados",
   ]) {
@@ -97,7 +109,7 @@ test("corpo do efeito é literalmente equivalente à base e permanece isolado", 
     "",
   );
   assert.equal(createHash("sha256").update(efeito).digest("hex"),
-    "fce3ff57fa536c68e64667482caa1adbf8b298b986137a84a90c3902e67c220f");
+    "3f150b3e833e05acc69c6aca46b533520f164936d8b06b4c8ea1564720923bc2");
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.doesNotMatch(pagina, /async function carregarExplorar\(/);
   for (const nome of ["obrasCacheLocalRef", "usuarioIdExplorarRef", "setDadosExplorarCarregados",
@@ -112,11 +124,13 @@ test("corpo do efeito é literalmente equivalente à base e permanece isolado", 
 });
 
 test("visitante usa parâmetros da URL e não consulta coleções remotas", async (t) => {
-  const c = preparar(t, { query: "?tipo=autores&categoria=%20Fic%C3%A7%C3%A3o%20" });
+  const c = preparar(t, { query: "?tipo=autores&categoria=%20Fic%C3%A7%C3%A3o%20&busca=ana&ordenacao=mais-recentes" });
   await aguardar();
   assert.deepEqual(c.deps.deps, []);
   assert.equal(c.estado.ModoConteudo, "autores");
   assert.equal(c.estado.CategoriaSelecionada, "Ficção");
+  assert.equal(c.estado.Busca, "ana");
+  assert.equal(c.estado.Ordenacao, "mais-recentes");
   assert.equal(c.estado.UsuarioLogado, false);
   assert.deepEqual(c.estado.ObrasFavoritas, []);
   assert.deepEqual(c.estado.ObrasConcluidas, []);

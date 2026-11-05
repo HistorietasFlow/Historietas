@@ -39,7 +39,10 @@ import { possuiFiltrosAtivosExplorar } from "./lib/explorar-active-filters";
 import { categorias } from "./lib/explorar-categories";
 import { criarTextoBotaoFiltrosAvancadosExplorar } from "./lib/explorar-filter-button-label";
 import { criarLoginHrefExplorar } from "./lib/explorar-login-route-utils";
-import { atualizarUrlExplorar } from "./lib/explorar-page-route-utils";
+import {
+  atualizarUrlExplorar,
+  FILTROS_COMPARTILHAVEIS_EXPLORAR_PADRAO,
+} from "./lib/explorar-page-route-utils";
 import { possuiObrasPublicadasExplorar } from "./lib/explorar-published-state";
 import { calcularTotalResultadosExplorar } from "./lib/explorar-result-count";
 import {
@@ -57,6 +60,7 @@ import { useExplorarInitialLoad } from "./hooks/use-explorar-initial-load";
 import { useExplorarCatalogQuery } from "./hooks/use-explorar-catalog-query";
 import { useExplorarCatalogPaginationState } from "./hooks/use-explorar-catalog-pagination-state";
 import { useExplorarNavigationFilterState } from "./hooks/use-explorar-navigation-filter-state";
+import { useExplorarRouteFilterSync } from "./hooks/use-explorar-route-filter-sync";
 import { useExplorarAuthorDataState } from "./hooks/use-explorar-author-data-state";
 import { useExplorarPersonalCollectionsState } from "./hooks/use-explorar-personal-collections-state";
 import { useExplorarAuthLoginState } from "./hooks/use-explorar-auth-login-state";
@@ -178,6 +182,8 @@ export default function ExplorarPage() {
     usuarioIdExplorarRef,
     setModoConteudo,
     setCategoriaSelecionada,
+    setBusca,
+    setOrdenacao,
     setUsuarioLogado,
     setObrasLocais,
     setObrasFavoritas,
@@ -187,6 +193,13 @@ export default function ExplorarPage() {
     setDadosExplorarCarregados,
     FAVORITES_STORAGE_KEY,
     COMPLETED_STORAGE_KEY,
+  });
+
+  useExplorarRouteFilterSync({
+    setModoConteudo,
+    setCategoriaSelecionada,
+    setBusca,
+    setOrdenacao,
   });
 
   useExplorarAuthorData({
@@ -376,7 +389,12 @@ export default function ExplorarPage() {
     }
 
     setMostrarFiltrosAvancados(false);
-    atualizarUrlExplorar("", modo);
+    atualizarUrlExplorar({
+      modoConteudo: modo,
+      categoriaSelecionada: "",
+      busca,
+      ordenacao,
+    });
   }
 
   function selecionarFiltroClassificacaoExplorar(filtro: string) {
@@ -424,7 +442,35 @@ export default function ExplorarPage() {
 
   function selecionarCategoria(categoria: string) {
     setCategoriaSelecionada(categoria);
-    atualizarUrlExplorar(categoria, modoConteudo);
+    atualizarUrlExplorar({
+      modoConteudo,
+      categoriaSelecionada: categoria,
+      busca,
+      ordenacao,
+    });
+  }
+
+  function atualizarBuscaExplorar(valor: string) {
+    setBusca(valor);
+    atualizarUrlExplorar(
+      {
+        modoConteudo,
+        categoriaSelecionada,
+        busca: valor,
+        ordenacao,
+      },
+      "replace",
+    );
+  }
+
+  function selecionarOrdenacaoExplorar(novaOrdenacao: typeof ordenacao) {
+    setOrdenacao(novaOrdenacao);
+    atualizarUrlExplorar({
+      modoConteudo,
+      categoriaSelecionada,
+      busca,
+      ordenacao: novaOrdenacao,
+    });
   }
 
   function selecionarFiltroColecao(filtro: FiltroColecaoExplorar) {
@@ -458,7 +504,7 @@ export default function ExplorarPage() {
     setMostrarConfirmacaoConteudo18(false);
     setConfirmouIdadeConteudo18(false);
     setMostrarFiltrosAvancados(false);
-    window.history.pushState(null, "", "/explorar");
+    atualizarUrlExplorar(FILTROS_COMPARTILHAVEIS_EXPLORAR_PADRAO);
   }
 
   if (!dadosExplorarCarregados) {
@@ -487,7 +533,7 @@ export default function ExplorarPage() {
             busca={busca}
             modoConteudo={modoConteudo}
             language={language}
-            onBuscaChange={setBusca}
+            onBuscaChange={atualizarBuscaExplorar}
             onAbrirFiltros={() => setMostrarFiltrosAvancados(true)}
           />
         ) : (
@@ -497,10 +543,10 @@ export default function ExplorarPage() {
             modoConteudo={modoConteudo}
             textoBotaoFiltrosAvancados={textoBotaoFiltrosAvancados}
             language={language}
-            onBuscaChange={setBusca}
+            onBuscaChange={atualizarBuscaExplorar}
             onAbrirBusca={() => setBuscaMobileAberta(true)}
             onFecharBusca={() => {
-              setBusca("");
+              atualizarBuscaExplorar("");
               setBuscaMobileAberta(false);
             }}
             onAbrirFiltros={() => setMostrarFiltrosAvancados(true)}
@@ -552,7 +598,7 @@ export default function ExplorarPage() {
                 setConfirmouIdadeConteudo18(false);
               }}
               onConfirmarConteudo18={confirmarFiltroConteudo18Explorar}
-              onSelecionarOrdenacao={setOrdenacao}
+              onSelecionarOrdenacao={selecionarOrdenacaoExplorar}
               onLimparFiltros={limparFiltros}
             />
           </Suspense>

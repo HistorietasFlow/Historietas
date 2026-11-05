@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
+import typescript from "typescript";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(
@@ -9,79 +10,196 @@ const root = path.resolve(
   "../..",
 );
 const modulePath = path.join(root, "app/explorar/lib/explorar-page-route-utils.ts");
+const hookPath = path.join(root, "app/explorar/hooks/use-explorar-route-filter-sync.ts");
 const pagePath = path.join(root, "app/explorar/page.tsx");
+const categorias = [
+  "Ação",
+  "Aventura",
+  "Comédia",
+  "Drama",
+  "Fantasia",
+  "Ficção",
+  "Mistério",
+  "Romance",
+  "Suspense",
+  "Terror",
+  "Sobrenatural",
+  "Histórico",
+  "Biografia",
+];
 
-async function carregarAtualizarUrlExplorar() {
+async function carregarModuloRota() {
   const source = await readFile(modulePath, "utf8");
-  const executable = source
-    .replace(
-      'import type { ModoConteudoExplorar } from "../components/explorar-section-components";\n\n',
-      "",
-    )
-    .replace("export function atualizarUrlExplorar", "function atualizarUrlExplorar")
-    .replace(/: string/g, "")
-    .replace(/: ModoConteudoExplorar/g, "");
+  const javascript = typescript.transpileModule(source, {
+    compilerOptions: {
+      module: typescript.ModuleKind.CommonJS,
+      target: typescript.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  const modulo = { exports: {} };
 
-  return new Function(
-    `${executable}\nreturn atualizarUrlExplorar;`,
-  )();
+  new Function("module", "exports", "require", javascript)(
+    modulo,
+    modulo.exports,
+    (specifier) => {
+      if (specifier === "./explorar-categories") {
+        return { categorias };
+      }
+
+      throw new Error(`Import inesperado no helper de rota: ${specifier}`);
+    },
+  );
+
+  return modulo.exports;
 }
 
-function capturarUrl(atualizarUrlExplorar, categoria, modo) {
+function comWindow(t, urlInicial = "/explorar") {
   const windowAnterior = globalThis.window;
-  let args = null;
+  const listeners = new Map();
+  const chamadas = [];
+  const url = new URL(urlInicial, "https://historietas.local");
+  const location = { pathname: url.pathname, search: url.search };
+  const navegar = (metodo, estado, titulo, destino) => {
+    const proximaUrl = new URL(destino, "https://historietas.local");
+    location.pathname = proximaUrl.pathname;
+    location.search = proximaUrl.search;
+    chamadas.push([metodo, estado, titulo, destino]);
+  };
 
-  try {
-    globalThis.window = {
-      history: {
-        pushState(...novosArgs) {
-          args = novosArgs;
-        },
-      },
-    };
-    atualizarUrlExplorar(categoria, modo);
-    return args;
-  } finally {
-    globalThis.window = windowAnterior;
-  }
+  globalThis.window = {
+    location,
+    history: {
+      pushState: (...args) => navegar("pushState", ...args),
+      replaceState: (...args) => navegar("replaceState", ...args),
+    },
+    addEventListener(tipo, listener) {
+      listeners.set(tipo, listener);
+    },
+    removeEventListener(tipo, listener) {
+      if (listeners.get(tipo) === listener) {
+        listeners.delete(tipo);
+      }
+    },
+  };
+
+  t.after(() => {
+    if (windowAnterior === undefined) delete globalThis.window;
+    else globalThis.window = windowAnterior;
+  });
+
+  return { chamadas, listeners };
 }
 
-test("atualiza a URL de obras e autores preservando parâmetros e histórico", async () => {
-  const atualizarUrlExplorar = await carregarAtualizarUrlExplorar();
+test("lê filtros compartilháveis e normaliza links antigos e inválidos", async () => {
+  const { lerFiltrosCompartilhaveisExplorar } = await carregarModuloRota();
 
-  assert.deepEqual(capturarUrl(atualizarUrlExplorar, "", "obras"), [null, "", "/explorar"]);
-  assert.deepEqual(capturarUrl(atualizarUrlExplorar, "", "autores"), [null, "", "/explorar?tipo=autores"]);
-
-  const obrasComCategoria = capturarUrl(
-    atualizarUrlExplorar,
-    " Fantasia ",
-    "obras",
+  assert.deepEqual(
+    lerFiltrosCompartilhaveisExplorar(
+      "?tipo=autores&categoria=ficcao&busca=%20drag%C3%A3o%20&ordenacao=mais-recentes",
+    ),
+    {
+      modoConteudo: "autores",
+      categoriaSelecionada: "Ficção",
+      busca: "dragão",
+      ordenacao: "mais-recentes",
+    },
   );
-  assert.equal(obrasComCategoria[2], "/explorar?categoria=Fantasia");
-
-  const autoresComCategoria = capturarUrl(
-    atualizarUrlExplorar,
-    "Fantasia",
-    "autores",
+  assert.deepEqual(
+    lerFiltrosCompartilhaveisExplorar(
+      "?tipo=desconhecido&categoria=privada&ordenacao=mais-salvas&colecao=favoritas",
+    ),
+    {
+      modoConteudo: "obras",
+      categoriaSelecionada: "",
+      busca: "",
+      ordenacao: "relevancia",
+    },
   );
-  const parametros = new URL(autoresComCategoria[2], "https://historietas.local").searchParams;
-  assert.equal(parametros.get("tipo"), "autores");
-  assert.equal(parametros.get("categoria"), "Fantasia");
 });
 
-test("a página usa o helper nos dois call sites sem router", async () => {
-  const [source, page] = await Promise.all([
+test("serializa somente filtros públicos e limita a busca compartilhada", async () => {
+  const { criarUrlExplorar } = await carregarModuloRota();
+  const url = criarUrlExplorar({
+    modoConteudo: "autores",
+    categoriaSelecionada: " Fantasia ",
+    busca: `  ${"a".repeat(100)}  `,
+    ordenacao: "mais-curtidas",
+    filtroColecao: "favoritas",
+  });
+  const parametros = new URL(url, "https://historietas.local").searchParams;
+
+  assert.equal(parametros.get("tipo"), "autores");
+  assert.equal(parametros.get("categoria"), "Fantasia");
+  assert.equal(parametros.get("busca"), "a".repeat(90));
+  assert.equal(parametros.get("ordenacao"), "mais-curtidas");
+  assert.equal(parametros.has("colecao"), false);
+});
+
+test("usa push para filtros discretos, replace para busca e evita histórico redundante", async (t) => {
+  const { atualizarUrlExplorar } = await carregarModuloRota();
+  const ambiente = comWindow(t);
+  const filtros = {
+    modoConteudo: "obras",
+    categoriaSelecionada: "Fantasia",
+    busca: "",
+    ordenacao: "relevancia",
+  };
+
+  atualizarUrlExplorar(filtros);
+  atualizarUrlExplorar({ ...filtros, busca: "dragão" }, "replace");
+  atualizarUrlExplorar({ ...filtros, busca: "dragão" }, "replace");
+
+  assert.deepEqual(ambiente.chamadas, [
+    ["pushState", null, "", "/explorar?categoria=Fantasia"],
+    [
+      "replaceState",
+      null,
+      "",
+      "/explorar?categoria=Fantasia&busca=drag%C3%A3o",
+    ],
+  ]);
+});
+
+test("popstate reaplica a URL atual e cleanup remove exatamente o listener", async (t) => {
+  const { observarFiltrosCompartilhaveisExplorar } = await carregarModuloRota();
+  const ambiente = comWindow(
+    t,
+    "/explorar?tipo=autores&categoria=Romance&busca=ana&ordenacao=mais-recentes",
+  );
+  const aplicados = [];
+  const cleanup = observarFiltrosCompartilhaveisExplorar((filtros) => {
+    aplicados.push(filtros);
+  });
+
+  assert.equal(typeof ambiente.listeners.get("popstate"), "function");
+  ambiente.listeners.get("popstate")();
+  assert.deepEqual(aplicados, [
+    {
+      modoConteudo: "autores",
+      categoriaSelecionada: "Romance",
+      busca: "ana",
+      ordenacao: "mais-recentes",
+    },
+  ]);
+
+  cleanup();
+  assert.equal(ambiente.listeners.has("popstate"), false);
+});
+
+test("página e hook preservam debounce, paginação e filtro pessoal fora da URL", async () => {
+  const [source, hook, page] = await Promise.all([
     readFile(modulePath, "utf8"),
+    readFile(hookPath, "utf8"),
     readFile(pagePath, "utf8"),
   ]);
 
-  assert.match(source, /new URLSearchParams\(\)/);
-  assert.match(source, /modo === "autores"/);
-  assert.match(source, /categoria\.trim\(\)/);
-  assert.match(source, /window\.history\.pushState\(null, "",/);
-  assert.doesNotMatch(source, /router/);
-  assert.match(page, /import \{ atualizarUrlExplorar \} from "\.\/lib\/explorar-page-route-utils";/);
-  assert.doesNotMatch(page, /function atualizarUrl\(/);
-  assert.match(page, /atualizarUrlExplorar\("", modo\);/);
-  assert.match(page, /atualizarUrlExplorar\(categoria, modoConteudo\);/);
+  assert.match(source, /window\.addEventListener\("popstate"/);
+  assert.match(source, /window\.removeEventListener\("popstate"/);
+  assert.doesNotMatch(source, /filtroColecao|favoritas|concluidas/);
+  assert.match(hook, /observarFiltrosCompartilhaveisExplorar/);
+  assert.match(page, /useExplorarRouteFilterSync\(\{/);
+  assert.match(page, /atualizarBuscaExplorar/);
+  assert.match(page, /"replace"/);
+  assert.match(page, /selecionarOrdenacaoExplorar/);
+  assert.doesNotMatch(page, /window\.history\.pushState/);
 });
