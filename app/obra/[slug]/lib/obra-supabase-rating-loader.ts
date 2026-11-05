@@ -1,13 +1,17 @@
 import { carregarMetricasConteudos } from "../../../../lib/metricas";
 import { supabase } from "../../../../lib/supabase/client";
 import type { ObraDinamica } from "./obra-data-utils";
+import type { CarregarMetricasObra } from "./obra-work-metrics-request-coordinator";
 
 export async function carregarSnapshotRemotoAvaliacaoObra({
   obra,
   usuarioIdLogado,
+  carregarMetricasObra = (obraId) =>
+    carregarMetricasConteudos({ obraIds: [obraId] }),
 }: {
   obra: Pick<ObraDinamica, "id" | "autorId">;
   usuarioIdLogado: string;
+  carregarMetricasObra?: CarregarMetricasObra;
 }) {
   const { data: usuarioData } = await supabase.auth.getUser();
   const userId = usuarioData.user?.id || usuarioIdLogado || "";
@@ -17,9 +21,7 @@ export async function carregarSnapshotRemotoAvaliacaoObra({
       autorIdObraAtual &&
       userId === autorIdObraAtual,
   );
-  const contrato = await carregarMetricasConteudos({
-    obraIds: [obra.id],
-  });
+  const contrato = await carregarMetricasObra(obra.id);
   const metrica = contrato.obras.get(obra.id);
 
   if (!contrato.carregado || !metrica) {

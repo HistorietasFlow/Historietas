@@ -174,3 +174,31 @@ test("excecoes de sessao e metricas continuam sendo propagadas", async () => {
     (erro) => erro === erroMetricas,
   );
 });
+
+test("permite compartilhar a consulta de metricas sem alterar o contrato do snapshot", async () => {
+  prepararRespostas({ usuarios: [{ id: "usuario-a" }] });
+  const chamadas = [];
+  const contrato = criarContrato({
+    metrica: { avaliacao: { minhaNota: 3.5, media: 4.1, total: 7 } },
+  });
+
+  const snapshot = await carregarSnapshotRemotoAvaliacaoObra({
+    obra: { id: "obra-a", autorId: "autor-a" },
+    usuarioIdLogado: "usuario-fallback",
+    carregarMetricasObra: async (obraId) => {
+      chamadas.push(obraId);
+      return contrato;
+    },
+  });
+
+  assert.deepEqual(chamadas, ["obra-a"]);
+  assert.deepEqual(globalThis.chamadasLoaderAvaliacao, ["getUser"]);
+  assert.deepEqual(snapshot, {
+    userId: "usuario-a",
+    usuarioEhAutorDaObraAtual: false,
+    minhaNotaRemota: 3.5,
+    minhaNota: 3.5,
+    media: 4.1,
+    total: 7,
+  });
+});

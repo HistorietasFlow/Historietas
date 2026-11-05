@@ -12,7 +12,7 @@ const lifecycleAvaliacao = readFileSync(
     import.meta.url,
   ),
   "utf8",
-);
+).replace(/\r\n/g, "\n");
 
 test("cliente delega o lifecycle de avaliacao ao hook", () => {
   assert.match(
@@ -21,7 +21,7 @@ test("cliente delega o lifecycle de avaliacao ao hook", () => {
   );
   assert.match(
     paginaObra,
-    /const \{[\s\S]*?avaliarObra,[\s\S]*?invalidarAvaliacaoObra,[\s\S]*?\} = useObraRatingLifecycle\(\{[\s\S]*?obra,[\s\S]*?obraNormalizada,[\s\S]*?usuarioIdLogado,[\s\S]*?autorObraId,[\s\S]*?avaliacaoObra,[\s\S]*?obterIdentidadeLogadaParaAcao,[\s\S]*?criarGuardIdentidadeAcao,[\s\S]*?setAvaliacaoObra,[\s\S]*?setMensagemAcao,[\s\S]*?\}\);/,
+    /const \{[\s\S]*?avaliarObra,[\s\S]*?invalidarAvaliacaoObra,[\s\S]*?\} = useObraRatingLifecycle\(\{[\s\S]*?obra,[\s\S]*?obraNormalizada,[\s\S]*?usuarioIdLogado,[\s\S]*?autorObraId,[\s\S]*?avaliacaoObra,[\s\S]*?carregarMetricasObra,[\s\S]*?obterIdentidadeLogadaParaAcao,[\s\S]*?criarGuardIdentidadeAcao,[\s\S]*?setAvaliacaoObra,[\s\S]*?setMensagemAcao,[\s\S]*?\}\);/,
   );
   assert.match(
     paginaObra,
@@ -46,6 +46,7 @@ test("hook preserva fallback local, snapshot remoto e cancelamento versionado", 
     "const aplicarAvaliacaoLocalTimer = window.setTimeout(",
     "async function carregarAvaliacaoRealObra()",
     "await carregarSnapshotRemotoAvaliacaoObra({",
+    "carregarMetricasObra,",
     "cancelado ||",
     "avaliacaoVersaoRef.current !== versaoAoIniciar",
     "salvarAvaliacaoLocal(",

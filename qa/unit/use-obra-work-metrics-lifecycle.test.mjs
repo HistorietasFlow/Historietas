@@ -21,7 +21,7 @@ test("cliente delega o lifecycle de metricas ao hook", () => {
   );
   assert.match(
     paginaObra,
-    /useObraWorkMetricsLifecycle\(\{[\s\S]*?obra,[\s\S]*?obraNormalizada,[\s\S]*?usuarioIdLogado,[\s\S]*?followedWorksStorageKey: FOLLOWED_WORKS_STORAGE_KEY,[\s\S]*?likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY,[\s\S]*?favoritesStorageKey: FAVORITES_STORAGE_KEY,[\s\S]*?completedStorageKey: COMPLETED_STORAGE_KEY,[\s\S]*?setObraSeguida,[\s\S]*?setObraFavoritada,[\s\S]*?setObraConcluida,[\s\S]*?setMetricasObra,[\s\S]*?setMetricasComunidadeObra,[\s\S]*?setTotalComentariosObra,[\s\S]*?\}\);/,
+    /useObraWorkMetricsLifecycle\(\{[\s\S]*?obra,[\s\S]*?obraNormalizada,[\s\S]*?usuarioIdLogado,[\s\S]*?followedWorksStorageKey: FOLLOWED_WORKS_STORAGE_KEY,[\s\S]*?likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY,[\s\S]*?favoritesStorageKey: FAVORITES_STORAGE_KEY,[\s\S]*?completedStorageKey: COMPLETED_STORAGE_KEY,[\s\S]*?carregarMetricasObra,[\s\S]*?setObraSeguida,[\s\S]*?setObraFavoritada,[\s\S]*?setObraConcluida,[\s\S]*?setMetricasObra,[\s\S]*?setMetricasComunidadeObra,[\s\S]*?setTotalComentariosObra,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(paginaObra, /async function carregarMetricasReaisObra\(/);
   assert.doesNotMatch(paginaObra, /carregarMetricasConteudos/);
@@ -42,8 +42,7 @@ test("hook preserva fallback local, snapshot remoto e total de comentarios", () 
     "setObraConcluida(concluidaLocalAtiva);",
     "setTotalComentariosObra(metricasBase.comentarios);",
     "async function carregarMetricasReaisObra()",
-    "await carregarMetricasConteudos({",
-    "obraIds: [obraId]",
+    "await carregarMetricasObra(obraId)",
     "setTotalComentariosObra(metrica.interacoesDiretas.comentarios);",
     "setMetricasComunidadeObra({",
   ]) {

@@ -1089,22 +1089,57 @@ if (!metricsContractMigrationName) {
   }
 }
 
-const metricsConsumerFiles = [
-  "app/lib/home-supabase-works-loader.ts",
-  "app/em-alta/lib/em-alta-supabase-works-loader.ts",
-  "app/explorar/lib/explorar-remote-loader.ts",
-  "app/listas/lib/listas-published-works-loader.ts",
-  "app/seguindo/lib/seguindo-work-query-utils.ts",
-  "app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
-  "app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
-  "app/obra/[slug]/hooks/use-obra-work-metrics-lifecycle.ts",
-  "app/ler-capitulo/lib/ler-capitulo-metrics.ts"
+const metricsConsumerContracts = [
+  ...[
+    "app/lib/home-supabase-works-loader.ts",
+    "app/em-alta/lib/em-alta-supabase-works-loader.ts",
+    "app/explorar/lib/explorar-remote-loader.ts",
+    "app/listas/lib/listas-published-works-loader.ts",
+    "app/seguindo/lib/seguindo-work-query-utils.ts",
+    "app/perfil-autor/hooks/use-perfil-autor-rating-sync.ts",
+    "app/painel-autor/lib/painel-autor-supabase-data-loader.ts",
+    "app/ler-capitulo/lib/ler-capitulo-metrics.ts"
+  ].map((relative) => ({
+    relative,
+    required: ["carregarMetricasConteudos"]
+  })),
+  {
+    relative:
+      "app/obra/[slug]/lib/obra-work-metrics-request-coordinator.ts",
+    required: [
+      "carregarMetricasConteudos",
+      "type ContratoMetricas",
+      "Promise<ContratoMetricas>"
+    ]
+  },
+  {
+    relative: "app/obra/[slug]/hooks/use-obra-work-metrics-lifecycle.ts",
+    required: [
+      "type { CarregarMetricasObra }",
+      "carregarMetricasObra: CarregarMetricasObra",
+      "await carregarMetricasObra(obraId)"
+    ]
+  },
+  {
+    relative: "app/obra/[slug]/lib/obra-supabase-rating-loader.ts",
+    required: [
+      "type { CarregarMetricasObra }",
+      "carregarMetricasObra?: CarregarMetricasObra",
+      "await carregarMetricasObra(obra.id)"
+    ]
+  }
 ];
-const consumersOutsideMetricsContract = metricsConsumerFiles.filter(
-  (relative) => {
+const metricsConsumerFiles = metricsConsumerContracts.map(
+  ({ relative }) => relative
+);
+const consumersOutsideMetricsContract = metricsConsumerContracts.flatMap(
+  ({ relative, required }) => {
     const content = fs.readFileSync(path.join(ROOT_DIR, relative), "utf8");
+    const missing = required.filter((contract) => !content.includes(contract));
 
-    return !content.includes("carregarMetricasConteudos");
+    return missing.length
+      ? [`${relative} (ausente: ${missing.join(", ")})`]
+      : [];
   }
 );
 
