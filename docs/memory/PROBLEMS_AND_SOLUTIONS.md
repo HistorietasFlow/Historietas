@@ -154,3 +154,17 @@ Não alterar a lógica funcional do app para “corrigir” esse alerta. Manter 
 ## Diálogos interativos devem compartilhar o contrato completo de foco
 
 Sheets que se comportam como modal precisam expor `role="dialog"`, `aria-modal="true"` e nome acessível, além de foco inicial previsível, contenção de Tab/Shift+Tab, fechamento por Escape e restauração do foco ao acionador. O leitor reutiliza os helpers de foco já adotados pela página pública de obra; gestos, body lock e regras funcionais permanecem em seus lifecycles próprios.
+
+## Eventos Auth sem mudança de identidade não recarregam a Comunidade
+
+O lifecycle da Comunidade compara o identificador efetivo do usuário antes de
+resetar a conta e recarregar o feed. O evento `INITIAL_SESSION` estabelece a
+identidade inicial; `SIGNED_OUT` para um visitante que já está anônimo e
+`SIGNED_IN`/`TOKEN_REFRESHED` para a mesma conta não iniciam outra carga.
+
+Somente transições reais (visitante para conta, conta para logout ou troca entre
+contas) invalidam a versão atual e recarregam. Eventos recebidos antes da
+resolução de `getUser()` ficam pendentes, e timers antigos verificam novamente a
+identidade antes de aplicar resultados. Não voltar a decidir a recarga apenas
+pelo nome do evento Auth: em sessão ausente, o Supabase pode emitir
+`SIGNED_OUT(null)` sem que tenha ocorrido uma troca real de identidade.
