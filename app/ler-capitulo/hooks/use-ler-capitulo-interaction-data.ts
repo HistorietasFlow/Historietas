@@ -168,16 +168,13 @@ export function useLerCapituloInteractionData({
         return;
       }
 
-      const metricasLocais = criarMetricasCapituloLocais(
-        capituloAtual,
-        comentariosCapitulo.length
-      );
+      const metricasLocais = criarMetricasCapituloLocais(capituloAtual, 0);
 
       setMetricasCapitulo(metricasLocais);
 
       const metricasReais = await carregarMetricasCapituloSupabase(
         capituloAtual,
-        comentariosCapitulo.length
+        0,
       );
 
       if (!execucaoInteracaoEstaAtual()) {
@@ -188,7 +185,11 @@ export function useLerCapituloInteractionData({
         ...metricasReais,
         totalVisualizacoes: Math.max(
           metricasAtuais.totalVisualizacoes,
-          metricasReais.totalVisualizacoes
+          metricasReais.totalVisualizacoes,
+        ),
+        totalComentarios: Math.max(
+          metricasAtuais.totalComentarios,
+          metricasReais.totalComentarios,
         ),
       }));
 
@@ -212,9 +213,46 @@ export function useLerCapituloInteractionData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     capituloAtual,
-    comentariosCapitulo.length,
     usuarioIdLogado,
     identidadeDadosAplicada,
     identidadeAutenticadaLeitorRef,
+  ]);
+
+  useEffect(() => {
+    if (
+      !capituloAtual?.id ||
+      comentariosCapituloCarregadoIdRef.current !== capituloAtual.id ||
+      !identidadeDadosAplicada ||
+      !execucaoIdentidadeLeitorEstaAtual({
+        cancelada: false,
+        identidadeEsperada: identidadeDadosAplicada,
+        identidadeAtual: identidadeAutenticadaLeitorRef.current,
+      })
+    ) {
+      return;
+    }
+
+    setMetricasCapitulo((metricasAtuais) => {
+      const totalComentarios = Math.max(
+        metricasAtuais.totalComentarios,
+        comentariosCapitulo.length,
+      );
+
+      if (totalComentarios === metricasAtuais.totalComentarios) {
+        return metricasAtuais;
+      }
+
+      return {
+        ...metricasAtuais,
+        totalComentarios,
+      };
+    });
+  }, [
+    capituloAtual?.id,
+    comentariosCapitulo,
+    comentariosCapituloCarregadoIdRef,
+    identidadeDadosAplicada,
+    identidadeAutenticadaLeitorRef,
+    setMetricasCapitulo,
   ]);
 }
