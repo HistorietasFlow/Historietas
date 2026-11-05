@@ -226,17 +226,34 @@ test("recupera profile ausente ao aceitar termos no Supabase local", async (t) =
     assert.equal(status.error, null, status.error?.message);
     assert.equal(status.data, true);
 
-    const post = await cliente
+    const textoPost =
+      "Publicacao permitida depois da recuperacao do profile.";
+    const insercaoPost = await cliente
       .from("comunidade_posts")
       .insert({
         autor_id: USUARIOS.ausente,
         autor_nome: profiles[0].nome,
-        texto: "Publicacao permitida depois da recuperacao do profile.",
+        categoria: "Geral",
+        tipo_publicacao: "Discussão",
+        tem_spoiler: false,
+        texto: textoPost,
+        obra_relacionada: "",
         visibilidade: "publico",
-      })
+      });
+    assert.equal(insercaoPost.error, null, insercaoPost.error?.message);
+
+    // O fluxo real evita INSERT ... RETURNING porque o retorno também passa
+    // pela policy SELECT. A leitura do post acontece em uma consulta separada.
+    const post = await cliente
+      .from("comunidade_posts")
       .select("id")
-      .single();
+      .eq("autor_id", USUARIOS.ausente)
+      .eq("texto", textoPost)
+      .order("criado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     assert.equal(post.error, null, post.error?.message);
+    assert.ok(post.data?.id);
   });
 
   await t.test("profile existente preserva dados legitimos", async () => {
