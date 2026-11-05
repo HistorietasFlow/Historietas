@@ -19,12 +19,16 @@ import {
   carregarColecoesUsuarioExplorar,
   carregarObrasPublicadasSupabase,
 } from "../lib/explorar-remote-loader";
+import type { OrdenacaoExplorar } from "../lib/explorar-derived-utils";
+import { lerFiltrosCompartilhaveisExplorar } from "../lib/explorar-page-route-utils";
 
 type OpcoesCarregamentoInicialExplorar = {
   obrasCacheLocalRef: RefObject<ObraLocal[]>;
   usuarioIdExplorarRef: RefObject<string>;
   setModoConteudo: Dispatch<SetStateAction<"obras" | "autores">>;
   setCategoriaSelecionada: Dispatch<SetStateAction<string>>;
+  setBusca: Dispatch<SetStateAction<string>>;
+  setOrdenacao: Dispatch<SetStateAction<OrdenacaoExplorar>>;
   setUsuarioLogado: Dispatch<SetStateAction<boolean>>;
   setObrasLocais: Dispatch<SetStateAction<ObraLocal[]>>;
   setObrasFavoritas: Dispatch<SetStateAction<string[]>>;
@@ -46,6 +50,8 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       usuarioIdExplorarRef,
       setModoConteudo,
       setCategoriaSelecionada,
+      setBusca,
+      setOrdenacao,
       setUsuarioLogado,
       setObrasLocais,
       setObrasFavoritas,
@@ -60,12 +66,14 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
     let cancelado = false;
 
     async function carregarExplorar() {
-      const params = new URLSearchParams(window.location.search);
-      const categoriaParam = params.get("categoria") || "";
-      const tipoParam = params.get("tipo") === "autores" ? "autores" : "obras";
+      const filtrosCompartilhaveis = lerFiltrosCompartilhaveisExplorar(
+        window.location.search,
+      );
 
-      setModoConteudo(tipoParam);
-      setCategoriaSelecionada(categoriaParam.trim());
+      setModoConteudo(filtrosCompartilhaveis.modoConteudo);
+      setCategoriaSelecionada(filtrosCompartilhaveis.categoriaSelecionada);
+      setBusca(filtrosCompartilhaveis.busca);
+      setOrdenacao(filtrosCompartilhaveis.ordenacao);
 
       try {
         let userIdAtual = "";

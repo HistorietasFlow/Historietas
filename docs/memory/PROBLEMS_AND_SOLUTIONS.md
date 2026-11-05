@@ -185,3 +185,16 @@ com `id = user_id = auth.uid()`, tipo `leitor` e nome sanitizado. `ON CONFLICT D
 NOTHING` seguido de reconciliação torna chamadas concorrentes e retries
 idempotentes. O wrapper público, grants e RLS permanecem restritos, e metadata
 editável serve apenas como texto de exibição.
+
+## Explorar: filtros compartilháveis sincronizados com a URL
+
+Os filtros públicos `tipo`, `categoria`, `busca` e `ordenacao` são lidos na
+abertura e restaurados em `popstate`, mantendo URL, controles e consulta do
+catálogo alinhados em recarga, links compartilhados e Voltar/Avançar. Mudanças
+discretas criam uma entrada de histórico; a digitação da busca substitui a
+entrada atual para não gerar histórico excessivo.
+
+Filtros pessoais de coleção e a confirmação local de conteúdo adulto não devem
+ser serializados na URL. Parâmetros desconhecidos ou inválidos usam os valores
+padrão, e links antigos contendo somente `tipo` e `categoria` permanecem
+compatíveis.

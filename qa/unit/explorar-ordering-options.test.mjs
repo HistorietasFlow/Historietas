@@ -42,5 +42,5 @@ test("Explorar mantém a condição e o setter de ordenação na composição ad
   assert.match(composicao, /!mostrarConfirmacaoConteudo18 && \(/);
   assert.match(composicao, /traduzirTextoExplorar\("Ordenar", language\)/);
   assert.match(composicao, /<ExplorarOrderingOptions/);
-  assert.match(pagina, /onSelecionarOrdenacao=\{setOrdenacao\}/);
+  assert.match(pagina, /onSelecionarOrdenacao=\{selecionarOrdenacaoExplorar\}/);
 });

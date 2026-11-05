@@ -32,7 +32,8 @@ test("ExplorarMobileHeader preserva busca aberta e fechada", () => {
 test("Explorar mantém o reset da busca mobile e seus setters na página", () => {
   assert.match(pagina, /import \{ ExplorarMobileHeader \} from "\.\/components\/explorar-mobile-header";/);
   assert.match(pagina, /<ExplorarMobileHeader/);
-  assert.match(pagina, /onFecharBusca=\{\(\) => \{\s*setBusca\(""\);\s*setBuscaMobileAberta\(false\);\s*\}\}/);
+  assert.match(pagina, /onBuscaChange=\{atualizarBuscaExplorar\}/);
+  assert.match(pagina, /onFecharBusca=\{\(\) => \{\s*atualizarBuscaExplorar\(""\);\s*setBuscaMobileAberta\(false\);\s*\}\}/);
   assert.match(pagina, /onAbrirBusca=\{\(\) => setBuscaMobileAberta\(true\)\}/);
   assert.match(pagina, /onAbrirFiltros=\{\(\) => setMostrarFiltrosAvancados\(true\)\}/);
 });
