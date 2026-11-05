@@ -15,6 +15,75 @@ import { obterParametroObraComunidade } from "../components/community-url-parame
 
 type SetState<T> = Dispatch<SetStateAction<T>>;
 
+function criarControleIdentidadeComunidade() {
+  let identidadeAtual: string | null = null;
+  let identidadePendente = "";
+  let possuiIdentidadePendente = false;
+
+  function aplicarIdentidade(usuarioId: string) {
+    if (identidadeAtual === usuarioId) {
+      return null;
+    }
+
+    identidadeAtual = usuarioId;
+    return usuarioId;
+  }
+
+  function aplicarIdentidadePendente() {
+    if (!possuiIdentidadePendente) {
+      return null;
+    }
+
+    possuiIdentidadePendente = false;
+    return aplicarIdentidade(identidadePendente);
+  }
+
+  function obterIdentidadeAtual() {
+    return identidadeAtual;
+  }
+
+  function resolverIdentidadeInicial(usuarioId: string) {
+    let identidadeAlterada: string | null = null;
+
+    if (identidadeAtual === null) {
+      identidadeAtual = usuarioId;
+    } else {
+      identidadeAlterada = aplicarIdentidade(usuarioId);
+    }
+
+    return aplicarIdentidadePendente() ?? identidadeAlterada;
+  }
+
+  function registrarSessaoInicial(usuarioId: string) {
+    if (identidadeAtual !== null) {
+      return null;
+    }
+
+    identidadeAtual = usuarioId;
+    return aplicarIdentidadePendente();
+  }
+
+  function processarEvento(evento: string, usuarioId: string) {
+    if (evento === "INITIAL_SESSION") {
+      return registrarSessaoInicial(usuarioId);
+    }
+
+    if (identidadeAtual === null) {
+      identidadePendente = usuarioId;
+      possuiIdentidadePendente = true;
+      return null;
+    }
+
+    return aplicarIdentidade(usuarioId);
+  }
+
+  return {
+    obterIdentidadeAtual,
+    resolverIdentidadeInicial,
+    processarEvento,
+  };
+}
+
 type UseComunidadeAuthAccountLifecycleOptions = {
   autenticacaoComunidadeVersaoRef: RefObject<number>;
   reviewsDiarioSincronizadasRef: RefObject<Set<string>>;
@@ -94,6 +163,7 @@ export function useComunidadeAuthAccountLifecycle({
   useEffect(() => {
     let cancelado = false;
     const timersAutenticacao = new Set<number>();
+    const controleIdentidade = criarControleIdentidadeComunidade();
 
     function limparEstadoContaAnterior() {
       setUsuario(null);
@@ -130,6 +200,50 @@ export function useComunidadeAuthAccountLifecycle({
       }
     }
 
+    function agendarMudancaIdentidade(usuarioId: string) {
+      autenticacaoComunidadeVersaoRef.current += 1;
+      limparEstadoContaAnterior();
+      setCarregandoUsuario(true);
+      setPosts([]);
+      setCarregandoFeed(true);
+
+      timersAutenticacao.forEach((timer) => window.clearTimeout(timer));
+      timersAutenticacao.clear();
+
+      const timer = window.setTimeout(() => {
+        timersAutenticacao.delete(timer);
+
+        if (
+          cancelado ||
+          controleIdentidade.obterIdentidadeAtual() !== usuarioId
+        ) {
+          return;
+        }
+
+        void carregarUsuario();
+
+        const obraFiltroUrl = obterParametroObraComunidade(
+          new URLSearchParams(window.location.search),
+        );
+
+        void carregarPostsComunidadeNoEfeito(true, 0, obraFiltroUrl);
+      }, 0);
+
+      timersAutenticacao.add(timer);
+    }
+
+    function resolverIdentidadeInicial(usuarioId: string) {
+      const identidadeAlterada =
+        controleIdentidade.resolverIdentidadeInicial(usuarioId);
+
+      if (identidadeAlterada !== null) {
+        agendarMudancaIdentidade(identidadeAlterada);
+        return true;
+      }
+
+      return false;
+    }
+
     async function carregarUsuario() {
       const versaoCarregamento =
         autenticacaoComunidadeVersaoRef.current + 1;
@@ -155,12 +269,23 @@ export function useComunidadeAuthAccountLifecycle({
             );
           }
 
+          if (
+            erroEhSessaoAusenteComunidade(usuarioErro) &&
+            resolverIdentidadeInicial("")
+          ) {
+            return;
+          }
+
           setUsuario(null);
           setUsuarioEhAdmin(false);
           return;
         }
 
         const user = data.user || null;
+
+        if (resolverIdentidadeInicial(user?.id || "")) {
+          return;
+        }
 
         if (!user) {
           setUsuario(null);
@@ -205,6 +330,13 @@ export function useComunidadeAuthAccountLifecycle({
           !cancelado &&
           versaoCarregamento === autenticacaoComunidadeVersaoRef.current
         ) {
+          if (
+            erroEhSessaoAusenteComunidade(error) &&
+            resolverIdentidadeInicial("")
+          ) {
+            return;
+          }
+
           setUsuario(null);
           setUsuarioEhAdmin(false);
         }
@@ -222,34 +354,17 @@ export function useComunidadeAuthAccountLifecycle({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "INITIAL_SESSION") {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      const identidadeAlterada = controleIdentidade.processarEvento(
+        event,
+        session?.user?.id || "",
+      );
+
+      if (identidadeAlterada === null) {
         return;
       }
 
-      autenticacaoComunidadeVersaoRef.current += 1;
-      limparEstadoContaAnterior();
-      setCarregandoUsuario(true);
-      setPosts([]);
-      setCarregandoFeed(true);
-
-      const timer = window.setTimeout(() => {
-        timersAutenticacao.delete(timer);
-
-        if (cancelado) {
-          return;
-        }
-
-        void carregarUsuario();
-
-        const obraFiltroUrl = obterParametroObraComunidade(
-          new URLSearchParams(window.location.search),
-        );
-
-        void carregarPostsComunidadeNoEfeito(true, 0, obraFiltroUrl);
-      }, 0);
-
-      timersAutenticacao.add(timer);
+      agendarMudancaIdentidade(identidadeAlterada);
     });
 
     return () => {

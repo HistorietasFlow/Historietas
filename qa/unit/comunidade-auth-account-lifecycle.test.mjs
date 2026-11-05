@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import typescript from "typescript";
 
 const hook = readFileSync(
   new URL(
@@ -12,6 +13,18 @@ const hook = readFileSync(
 const pagina = readFileSync(
   new URL("../../app/comunidade/page.tsx", import.meta.url),
   "utf8",
+);
+const hookExecutavel = hook
+  .replace(/^import[\s\S]*?from "[^"]+";\r?\n/gm, "")
+  .concat("\nexport { criarControleIdentidadeComunidade };\n");
+const hookJavascript = typescript.transpileModule(hookExecutavel, {
+  compilerOptions: {
+    module: typescript.ModuleKind.ESNext,
+    target: typescript.ScriptTarget.ES2022,
+  },
+}).outputText;
+const { criarControleIdentidadeComunidade } = await import(
+  `data:text/javascript;base64,${Buffer.from(hookJavascript).toString("base64")}`
 );
 
 test("useComunidadeAuthAccountLifecycle preserva o carregamento autenticado e os guards de corrida", () => {
@@ -52,18 +65,18 @@ test("useComunidadeAuthAccountLifecycle preserva reset, recarga e cleanup na tro
     hook,
     /textoPostRef\.current\.value = "";[\s\S]*?obraRelacionadaRef\.current\.value = "";/,
   );
-  assert.match(hook, /supabase\.auth\.onAuthStateChange\(\(event\) => \{/);
+  assert.match(hook, /supabase\.auth\.onAuthStateChange\(\(event, session\) => \{/);
   assert.match(
     hook,
-    /if \(event === "INITIAL_SESSION"\) \{\s*return;\s*\}/,
+    /controleIdentidade\.processarEvento\(\s*event,\s*session\?\.user\?\.id \|\| "",\s*\);/,
   );
   assert.match(
     hook,
-    /autenticacaoComunidadeVersaoRef\.current \+= 1;[\s\S]*?limparEstadoContaAnterior\(\);[\s\S]*?setPosts\(\[\]\);[\s\S]*?setCarregandoFeed\(true\);/,
+    /function agendarMudancaIdentidade\(usuarioId: string\) \{[\s\S]*?autenticacaoComunidadeVersaoRef\.current \+= 1;[\s\S]*?limparEstadoContaAnterior\(\);[\s\S]*?setPosts\(\[\]\);[\s\S]*?setCarregandoFeed\(true\);/,
   );
   assert.match(
     hook,
-    /const timer = window\.setTimeout\(\(\) => \{[\s\S]*?void carregarUsuario\(\);[\s\S]*?void carregarPostsComunidadeNoEfeito\(true, 0, obraFiltroUrl\);[\s\S]*?\}, 0\);/,
+    /controleIdentidade\.obterIdentidadeAtual\(\) !== usuarioId[\s\S]*?void carregarUsuario\(\);[\s\S]*?void carregarPostsComunidadeNoEfeito\(true, 0, obraFiltroUrl\);/,
   );
   assert.match(
     hook,
@@ -91,24 +104,81 @@ test("Comunidade delega apenas o lifecycle de autenticação e troca de conta ao
   assert.doesNotMatch(pagina, /async function removerPost\(/);
 });
 
-test("INITIAL_SESSION não repete a carga inicial da Comunidade", () => {
-  const inicioCallback = hook.indexOf(
-    "supabase.auth.onAuthStateChange((event) => {",
+test("sessão inicial e eventos da mesma identidade não pedem recarga", () => {
+  const visitante = criarControleIdentidadeComunidade();
+  assert.equal(visitante.processarEvento("INITIAL_SESSION", ""), null);
+  assert.equal(visitante.processarEvento("SIGNED_OUT", ""), null);
+  assert.equal(visitante.obterIdentidadeAtual(), "");
+
+  const autenticado = criarControleIdentidadeComunidade();
+  assert.equal(
+    autenticado.processarEvento("INITIAL_SESSION", "usuario-a"),
+    null,
   );
-  const fimCallback = hook.indexOf("    return () => {", inicioCallback);
-  const callback = hook.slice(inicioCallback, fimCallback);
+  assert.equal(autenticado.processarEvento("SIGNED_IN", "usuario-a"), null);
+  assert.equal(
+    autenticado.processarEvento("TOKEN_REFRESHED", "usuario-a"),
+    null,
+  );
+  assert.equal(autenticado.obterIdentidadeAtual(), "usuario-a");
+});
 
-  const guardInicial = callback.indexOf('event === "INITIAL_SESSION"');
-  const resetConta = callback.indexOf("limparEstadoContaAnterior();");
-  const recargaFeed = callback.indexOf("carregarPostsComunidadeNoEfeito(");
+test("mudanças reais de identidade pedem uma recarga por transição", () => {
+  const controle = criarControleIdentidadeComunidade();
+  controle.processarEvento("INITIAL_SESSION", "");
 
-  assert.ok(inicioCallback >= 0);
-  assert.ok(fimCallback > inicioCallback);
-  assert.ok(guardInicial >= 0);
-  assert.ok(resetConta > guardInicial);
-  assert.ok(recargaFeed > guardInicial);
+  assert.equal(
+    controle.processarEvento("SIGNED_IN", "usuario-a"),
+    "usuario-a",
+  );
+  assert.equal(controle.processarEvento("TOKEN_REFRESHED", "usuario-a"), null);
+  assert.equal(controle.processarEvento("SIGNED_OUT", ""), "");
+  assert.equal(
+    controle.processarEvento("SIGNED_IN", "usuario-b"),
+    "usuario-b",
+  );
+  assert.equal(controle.obterIdentidadeAtual(), "usuario-b");
+});
+
+test("evento anterior à resolução inicial preserva a identidade mais recente", () => {
+  const visitante = criarControleIdentidadeComunidade();
+  assert.equal(visitante.processarEvento("SIGNED_OUT", ""), null);
+  assert.equal(visitante.resolverIdentidadeInicial(""), null);
+  assert.equal(visitante.obterIdentidadeAtual(), "");
+
+  const loginDuranteCarga = criarControleIdentidadeComunidade();
+  assert.equal(
+    loginDuranteCarga.processarEvento("SIGNED_IN", "usuario-b"),
+    null,
+  );
+  assert.equal(loginDuranteCarga.resolverIdentidadeInicial(""), "usuario-b");
+  assert.equal(loginDuranteCarga.obterIdentidadeAtual(), "usuario-b");
+
+  const sessaoJaResolvida = criarControleIdentidadeComunidade();
+  assert.equal(sessaoJaResolvida.resolverIdentidadeInicial("usuario-b"), null);
+  assert.equal(
+    sessaoJaResolvida.processarEvento("INITIAL_SESSION", "usuario-a"),
+    null,
+  );
+  assert.equal(sessaoJaResolvida.obterIdentidadeAtual(), "usuario-b");
+});
+
+test("troca rápida mantém somente a identidade mais recente", () => {
+  const controle = criarControleIdentidadeComunidade();
+  controle.processarEvento("INITIAL_SESSION", "usuario-a");
+
+  assert.equal(
+    controle.processarEvento("SIGNED_IN", "usuario-b"),
+    "usuario-b",
+  );
+  assert.equal(
+    controle.processarEvento("SIGNED_IN", "usuario-c"),
+    "usuario-c",
+  );
+  assert.equal(controle.processarEvento("TOKEN_REFRESHED", "usuario-c"), null);
+  assert.equal(controle.obterIdentidadeAtual(), "usuario-c");
   assert.match(
-    callback.slice(guardInicial, resetConta),
-    /event === "INITIAL_SESSION"\) \{\s*return;/,
+    hook,
+    /timersAutenticacao\.forEach\(\(timer\) => window\.clearTimeout\(timer\)\);\s*timersAutenticacao\.clear\(\);/,
   );
 });
