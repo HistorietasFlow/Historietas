@@ -45,7 +45,7 @@ function preparar(t, opcoes = {}) {
     delete globalThis.__explorarInitialTest;
   });
   const chamadas = [];
-  const estado = {};
+  const estado = { ErroCatalogoExplorar: null };
   const refs = { obrasCacheLocalRef: { current: [] }, usuarioIdExplorarRef: { current: "" } };
   const registrar = (nome, retorno) => (...args) => {
     chamadas.push([nome, ...args]);
@@ -67,7 +67,9 @@ function preparar(t, opcoes = {}) {
     carregarColecoesUsuarioExplorar: registrar("colecoes", () =>
       opcoes.colecoesPromise || Promise.resolve(opcoes.colecoes || { favoritas: [], concluidas: [] })),
     carregarObrasPublicadasSupabase: registrar("catalogo", () =>
-      opcoes.catalogoPromise || Promise.resolve(opcoes.catalogo || { obras: [], pagina: null })),
+      opcoes.catalogoPromise || Promise.resolve(opcoes.catalogo || {
+        obras: [], pagina: null, falhaTemporaria: false,
+      })),
     lerFiltrosCompartilhaveisExplorar: registrar("lerFiltros", (search) => {
       const params = new URLSearchParams(search);
       return {
@@ -89,7 +91,7 @@ function preparar(t, opcoes = {}) {
   for (const nome of [
     "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "UsuarioLogado", "ObrasLocais",
     "ObrasFavoritas", "ObrasConcluidas", "ProximoCursorCatalogo",
-    "CatalogoTemMais", "DadosExplorarCarregados",
+    "CatalogoTemMais", "ErroCatalogoExplorar", "DadosExplorarCarregados",
   ]) {
     props[`set${nome}`] = (valor) => {
       chamadas.push([`set${nome}`, valor]);
@@ -109,7 +111,7 @@ test("corpo do efeito é literalmente equivalente à base e permanece isolado", 
     "",
   );
   assert.equal(createHash("sha256").update(efeito).digest("hex"),
-    "3f150b3e833e05acc69c6aca46b533520f164936d8b06b4c8ea1564720923bc2");
+    "80d94eb53dc81460e541e91d3e164a4e679dad45b144f2ce7cb2309f7636daed");
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.doesNotMatch(pagina, /async function carregarExplorar\(/);
   for (const nome of ["obrasCacheLocalRef", "usuarioIdExplorarRef", "setDadosExplorarCarregados",
@@ -136,6 +138,7 @@ test("visitante usa parâmetros da URL e não consulta coleções remotas", asyn
   assert.deepEqual(c.estado.ObrasConcluidas, []);
   assert.equal(c.estado.ProximoCursorCatalogo, null);
   assert.equal(c.estado.CatalogoTemMais, false);
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
   assert.equal(c.estado.DadosExplorarCarregados, true);
   assert.equal(c.refs.usuarioIdExplorarRef.current, "");
   assert.ok(!c.chamadas.some(([nome]) => nome === "colecoes" || nome === "carregarLista"));
@@ -170,11 +173,16 @@ test("usuário combina coleções, persiste dados e atualiza estado antes do cat
   assert.deepEqual(c.chamadas.find(([nome]) => nome === "salvarObras"),
     ["salvarObras", "historietas-obras", "u1", normalizada]);
   const cursor = { id: "next" };
-  resolverCatalogo({ obras: [{ id: "remota" }], pagina: { proximoCursor: cursor, temMais: true } });
+  resolverCatalogo({
+    obras: [{ id: "remota" }],
+    pagina: { proximoCursor: cursor, temMais: true },
+    falhaTemporaria: false,
+  });
   await aguardar();
   assert.deepEqual(c.estado.ObrasLocais, [{ id: "remota" }]);
   assert.deepEqual(c.estado.ProximoCursorCatalogo, cursor);
   assert.equal(c.estado.CatalogoTemMais, true);
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
   assert.equal(c.estado.DadosExplorarCarregados, true);
 });
 
@@ -198,12 +206,27 @@ test("falha de autenticação segue como visitante quando o storage está vazio"
   assert.equal(c.estado.DadosExplorarCarregados, true);
 });
 
-test("falha remota preserva fallback geral e finalização", async (t) => {
-  const c = preparar(t, { userId: "u", catalogoPromise: Promise.reject(new Error("remoto")) });
+test("falha remota preserva cache disponível e finaliza com indisponibilidade", async (t) => {
+  const c = preparar(t, {
+    userId: "u",
+    storage: '[{"id":"local"}]',
+    catalogoPromise: Promise.reject(new Error("remoto")),
+  });
   await aguardar();
-  assert.deepEqual(c.estado.ObrasLocais, []);
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "local", index: 0, userId: "u" }]);
   assert.deepEqual(c.estado.ObrasFavoritas, []);
   assert.deepEqual(c.estado.ObrasConcluidas, []);
+  assert.equal(c.estado.ErroCatalogoExplorar, "consulta");
+  assert.equal(c.estado.DadosExplorarCarregados, true);
+});
+
+test("falha temporária sem cache não vira estado vazio normal", async (t) => {
+  const c = preparar(t, {
+    catalogo: { obras: [], pagina: null, falhaTemporaria: true },
+  });
+  await aguardar();
+  assert.deepEqual(c.estado.ObrasLocais, []);
+  assert.equal(c.estado.ErroCatalogoExplorar, "consulta");
   assert.equal(c.estado.DadosExplorarCarregados, true);
 });
 

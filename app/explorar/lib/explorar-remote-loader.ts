@@ -41,6 +41,12 @@ export const CONSULTAS_INICIAIS_CATALOGO_EXPLORAR = [
   { ordenacao: "capitulos", limite: 12 },
 ] as const satisfies readonly ConsultaCatalogo[];
 
+export type ResultadoCarregamentoCatalogoExplorar = {
+  obras: ObraLocal[];
+  pagina: PaginaCatalogo | null;
+  falhaTemporaria: boolean;
+};
+
 export async function carregarIdsColecaoUsuarioExplorar(
   tabela: "favoritos" | "concluidas",
   userId: string
@@ -196,11 +202,12 @@ export async function carregarObrasPublicadasSupabase(
   userId = "",
   consultasCatalogo: readonly ConsultaCatalogo[] =
     CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
-): Promise<{ obras: ObraLocal[]; pagina: PaginaCatalogo | null }> {
+): Promise<ResultadoCarregamentoCatalogoExplorar> {
   try {
     let obraIdsCatalogo: readonly string[] = [];
     let catalogoDisponivel = true;
     let paginaCatalogo: PaginaCatalogo | null = null;
+    let falhaTemporaria = false;
 
     try {
       const selecao = await listarSelecaoCatalogo(consultasCatalogo);
@@ -208,6 +215,7 @@ export async function carregarObrasPublicadasSupabase(
       paginaCatalogo = selecao.paginas.length === 1 ? selecao.paginas[0] : null;
     } catch (error) {
       catalogoDisponivel = false;
+      falhaTemporaria = true;
       console.warn(
         "O catálogo paginado do Explorar ainda não está disponível; usando uma amostra limitada:",
         error,
@@ -226,6 +234,7 @@ export async function carregarObrasPublicadasSupabase(
         return {
           obras: await aplicarMetricasExplorar(obrasLocais, userId),
           pagina: paginaCatalogo,
+          falhaTemporaria,
         };
       }
 
@@ -262,6 +271,7 @@ export async function carregarObrasPublicadasSupabase(
       return {
         obras: await aplicarMetricasExplorar(obrasLocaisComProfiles, userId),
         pagina: paginaCatalogo,
+        falhaTemporaria,
       };
     }
 
@@ -285,6 +295,7 @@ export async function carregarObrasPublicadasSupabase(
               .range(inicio, fim),
         });
     } catch (error) {
+      falhaTemporaria = true;
       console.warn(
         "Não consegui carregar capítulos do Supabase no Explorar:",
         error,
@@ -344,12 +355,14 @@ export async function carregarObrasPublicadasSupabase(
     return {
       obras: obrasComProgresso,
       pagina: paginaCatalogo,
+      falhaTemporaria,
     };
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Explorar:", error);
     return {
       obras: await aplicarMetricasExplorar(obrasLocais, userId),
       pagina: null,
+      falhaTemporaria: true,
     };
   }
 }

@@ -212,3 +212,16 @@ fica restrita ao fallback em que a consulta remota não produz uma página de
 catálogo. Resultado remoto vazio (`[]`) é diferente de fallback (`null`), e a
 paginação acumula somente IDs da consulta ativa para preservar os guards contra
 respostas antigas.
+
+## Explorar: falha temporária não é catálogo vazio
+
+O loader do catálogo pode preservar obras do cache local ou de uma amostra
+pública quando a RPC paginada fica temporariamente indisponível. Esse fallback
+deve carregar um sinal explícito de falha: uma lista vazia obtida com sucesso e
+uma lista vazia causada por erro de infraestrutura são estados diferentes.
+
+Enquanto houver falha, a interface identifica os dados preservados como
+fallback, não exibe o estado vazio normal e oferece retry da consulta atual sem
+recarregar a página. Falhas ao carregar mais preservam resultados e cursor já
+visíveis e repetem somente a paginação. A versão da consulta continua sendo a
+autoridade para impedir que respostas antigas sobrescrevam um retry mais novo.

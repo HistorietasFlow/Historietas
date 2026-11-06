@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { CursorCatalogo } from "../../../lib/catalogo";
 import type { ObraLocal } from "../lib/explorar-work-normalizers";
 
+export type ErroCatalogoExplorar = "consulta" | "paginacao" | null;
+
 export function useExplorarCatalogPaginationState() {
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [dadosExplorarCarregados, setDadosExplorarCarregados] = useState(false);
@@ -14,6 +16,9 @@ export function useExplorarCatalogPaginationState() {
   const [obraIdsBuscaRemota, setObraIdsBuscaRemota] = useState<
     string[] | null
   >(null);
+  const [erroCatalogoExplorar, setErroCatalogoExplorar] =
+    useState<ErroCatalogoExplorar>(null);
+  const [versaoRetryCatalogo, setVersaoRetryCatalogo] = useState(0);
 
   return {
     obrasLocais,
@@ -28,5 +33,9 @@ export function useExplorarCatalogPaginationState() {
     setCarregandoMaisCatalogo,
     obraIdsBuscaRemota,
     setObraIdsBuscaRemota,
+    erroCatalogoExplorar,
+    setErroCatalogoExplorar,
+    versaoRetryCatalogo,
+    setVersaoRetryCatalogo,
   };
 }

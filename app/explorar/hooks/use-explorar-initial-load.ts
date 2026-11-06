@@ -21,6 +21,7 @@ import {
 } from "../lib/explorar-remote-loader";
 import type { OrdenacaoExplorar } from "../lib/explorar-derived-utils";
 import { lerFiltrosCompartilhaveisExplorar } from "../lib/explorar-page-route-utils";
+import type { ErroCatalogoExplorar } from "./use-explorar-catalog-pagination-state";
 
 type OpcoesCarregamentoInicialExplorar = {
   obrasCacheLocalRef: RefObject<ObraLocal[]>;
@@ -35,6 +36,7 @@ type OpcoesCarregamentoInicialExplorar = {
   setObrasConcluidas: Dispatch<SetStateAction<string[]>>;
   setProximoCursorCatalogo: Dispatch<SetStateAction<CursorCatalogo | null>>;
   setCatalogoTemMais: Dispatch<SetStateAction<boolean>>;
+  setErroCatalogoExplorar: Dispatch<SetStateAction<ErroCatalogoExplorar>>;
   setDadosExplorarCarregados: Dispatch<SetStateAction<boolean>>;
   FAVORITES_STORAGE_KEY: string;
   COMPLETED_STORAGE_KEY: string;
@@ -58,6 +60,7 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       setObrasConcluidas,
       setProximoCursorCatalogo,
       setCatalogoTemMais,
+      setErroCatalogoExplorar,
       setDadosExplorarCarregados,
       FAVORITES_STORAGE_KEY,
       COMPLETED_STORAGE_KEY,
@@ -164,12 +167,16 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
           setObrasLocais(resultadoCatalogo.obras);
           setProximoCursorCatalogo(resultadoCatalogo.pagina?.proximoCursor || null);
           setCatalogoTemMais(Boolean(resultadoCatalogo.pagina?.temMais));
+          setErroCatalogoExplorar(
+            resultadoCatalogo.falhaTemporaria ? "consulta" : null,
+          );
         }
       } catch {
         if (!cancelado) {
-          setObrasLocais([]);
+          setObrasLocais(obrasCacheLocalRef.current);
           setObrasFavoritas([]);
           setObrasConcluidas([]);
+          setErroCatalogoExplorar("consulta");
         }
       } finally {
         if (!cancelado) {

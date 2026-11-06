@@ -22,6 +22,10 @@ test("HomeLocalWorkCard preserva a composição do MobileObraLocalCard", () => {
   assert.match(componente, /desktopPublishedCardCompactHeightStyle/);
   assert.match(componente, /publishedCardCompactHeightStyle/);
   assert.match(componente, /criarMobileCoverStyle\(obra\.capa\)/);
+  assert.match(
+    componente,
+    /aria-label=\{`Abrir página da obra \$\{obra\.titulo\}`\}/,
+  );
   assert.match(componente, /\{obra\.titulo\}/);
   assert.match(componente, /<Link href=\{perfilAutorHref\} style=\{authorLinkStyle\}>[\s\S]*?Por \{obra\.autor\}/);
   assert.match(componente, /traduzirFormatoHome\(obra\.formato, language\)/);

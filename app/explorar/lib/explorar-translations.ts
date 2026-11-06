@@ -9,6 +9,15 @@ type ExplorarTranslationEntry = {
 const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
   "Carregando": { en: "Loading", es: "Cargando" },
   "Carregar mais": { en: "Load more", es: "Cargar más" },
+  "Tentar novamente": { en: "Try again", es: "Intentar de nuevo" },
+  "Não foi possível atualizar o catálogo agora. Exibindo os dados disponíveis.": {
+    en: "The catalog could not be updated right now. Showing the available data.",
+    es: "No se pudo actualizar el catálogo ahora. Se muestran los datos disponibles.",
+  },
+  "O catálogo está temporariamente indisponível.": {
+    en: "The catalog is temporarily unavailable.",
+    es: "El catálogo no está disponible temporalmente.",
+  },
   "Carregando Explorar": { en: "Loading Explore", es: "Cargando Explorar" },
   "Explorar": { en: "Explore", es: "Explorar" },
   "Abrir funções do Explorar": {

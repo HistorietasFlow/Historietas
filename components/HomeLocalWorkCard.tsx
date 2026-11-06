@@ -127,7 +127,11 @@ export default function MobileObraLocalCard({
 
   return (
     <article style={cardStyle}>
-      <Link href={verObraHref} style={capaStyle} />
+      <Link
+        href={verObraHref}
+        style={capaStyle}
+        aria-label={`Abrir página da obra ${obra.titulo}`}
+      />
 
       <div style={publishedInfoStyle}>
         <div style={cardTopRowStyle}>

@@ -37,6 +37,12 @@ test("hook centraliza somente os estados de catálogo e paginação de Explorar"
     hook,
     /obraIdsBuscaRemota, setObraIdsBuscaRemota\] = useState<\s*string\[\] \| null\s*>\(null\)/,
   );
+  assert.match(hook, /export type ErroCatalogoExplorar = "consulta" \| "paginacao" \| null;/);
+  assert.match(
+    hook,
+    /erroCatalogoExplorar, setErroCatalogoExplorar\] =\s*useState<ErroCatalogoExplorar>\(null\)/,
+  );
+  assert.match(hook, /versaoRetryCatalogo, setVersaoRetryCatalogo\] = useState\(0\)/);
   assert.doesNotMatch(
     hook,
     /useEffect|useMemo|supabase|localStorage|setTimeout|return\s*\(\s*</,
@@ -57,17 +63,19 @@ test("Explorar delega os estados e preserva carregamento, consulta e autores", (
     "const [catalogoTemMais, setCatalogoTemMais]",
     "const [carregandoMaisCatalogo, setCarregandoMaisCatalogo]",
     "const [obraIdsBuscaRemota, setObraIdsBuscaRemota]",
+    "const [erroCatalogoExplorar, setErroCatalogoExplorar]",
+    "const [versaoRetryCatalogo, setVersaoRetryCatalogo]",
   ]) {
     assert.equal(pagina.includes(estadoLocal), false, estadoLocal);
   }
 
   assert.match(
     pagina,
-    /useExplorarInitialLoad\(\{[\s\S]*?setObrasLocais,[\s\S]*?setProximoCursorCatalogo,[\s\S]*?setCatalogoTemMais,[\s\S]*?setDadosExplorarCarregados,/,
+    /useExplorarInitialLoad\(\{[\s\S]*?setObrasLocais,[\s\S]*?setProximoCursorCatalogo,[\s\S]*?setCatalogoTemMais,[\s\S]*?setErroCatalogoExplorar,[\s\S]*?setDadosExplorarCarregados,/,
   );
   assert.match(
     pagina,
-    /useExplorarCatalogQuery\(\{[\s\S]*?dadosExplorarCarregados,[\s\S]*?obrasLocais,[\s\S]*?proximoCursorCatalogo,[\s\S]*?carregandoMaisCatalogo,[\s\S]*?setObrasLocais,[\s\S]*?setProximoCursorCatalogo,[\s\S]*?setCatalogoTemMais,[\s\S]*?setCarregandoMaisCatalogo,[\s\S]*?setObraIdsBuscaRemota,/,
+    /useExplorarCatalogQuery\(\{[\s\S]*?dadosExplorarCarregados,[\s\S]*?obrasLocais,[\s\S]*?proximoCursorCatalogo,[\s\S]*?carregandoMaisCatalogo,[\s\S]*?versaoRetryCatalogo,[\s\S]*?setObrasLocais,[\s\S]*?setProximoCursorCatalogo,[\s\S]*?setCatalogoTemMais,[\s\S]*?setCarregandoMaisCatalogo,[\s\S]*?setObraIdsBuscaRemota,[\s\S]*?setErroCatalogoExplorar,/,
   );
   assert.match(pagina, /useExplorarAuthorData\(\{\s*obrasLocais,/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
