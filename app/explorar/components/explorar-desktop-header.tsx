@@ -86,6 +86,7 @@ export function ExplorarDesktopHeader({
           type="button"
           onClick={onAbrirFiltros}
           style={desktopExplorarHeaderFilterButtonStyle}
+          aria-haspopup="dialog"
           aria-label={traduzirTextoExplorar(
             "Abrir funções do Explorar",
             language,

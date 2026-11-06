@@ -49,6 +49,7 @@ export function ExplorarAdultContentFilter({
           <button
             type="button"
             onClick={() => onSelecionarClassificacao("todos")}
+            aria-pressed={filtroClassificacao !== "18+"}
             style={criarExplorarModalOptionStyle(
               filtroClassificacao !== "18+",
             )}
@@ -68,6 +69,7 @@ export function ExplorarAdultContentFilter({
           <button
             type="button"
             onClick={() => onSelecionarClassificacao("18+")}
+            aria-pressed={filtroClassificacao === "18+"}
             style={criarExplorarModalOptionStyle(
               filtroClassificacao === "18+",
             )}

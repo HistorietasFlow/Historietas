@@ -28,6 +28,7 @@ export function ExplorarOrderingOptions({
       key={valor}
       type="button"
       onClick={() => onSelecionar(valor)}
+      aria-pressed={ordenacao === valor}
       style={criarExplorarModalOptionStyle(ordenacao === valor)}
     >
       <span>{traduzirTextoExplorar(rotulo, language)}</span>

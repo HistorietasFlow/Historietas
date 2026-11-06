@@ -39,6 +39,7 @@ export function ExplorarMobileHeader({
         type="button"
         onClick={onAbrirFiltros}
         style={explorarHeaderFilterButtonStyle}
+        aria-haspopup="dialog"
         aria-label={traduzirTextoExplorar(
           "Abrir funções do Explorar",
           language,
