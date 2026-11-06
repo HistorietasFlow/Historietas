@@ -75,3 +75,10 @@ Os deployments automáticos da integração Git são controlados pelo `vercel.js
 - `main` permanece habilitada como branch de deployment automático de produção;
 - o padrão globstar `**` fica desabilitado, impedindo Preview Deployments automáticos inclusive em branches com `/`;
 - os workflows do GitHub Actions continuam independentes dessa política.
+
+## Ambiente de testes local — novembro de 2026
+
+- Docker Desktop/WSL2 fornece Supabase local com CLI fixada em `2.116.0`; portas foram remapeadas devido às reservas de portas no Windows (API 54421, banco 54422, Studio 54423). Esses valores são **configuração da máquina**, não contrato de produção.
+- A inicialização local pode exigir a migration auxiliar de normalização ACL já usada na CI; não versionar esses ajustes locais sem fase específica.
+- Fixtures Playwright usam identidades descartáveis e Supabase de loopback. Preferir build de produção local (`next build`/`next start`) para testes E2E repetíveis.
+- O limite de storage do plano Hobby não afeta a execução de build/testes locais ou GitHub Actions, mas pode bloquear novas publicações na Vercel.

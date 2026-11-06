@@ -52,3 +52,11 @@
 - Dependabot roda semanalmente.
 - CodeQL permanece habilitado.
 - Atualizações de dependência não devem ser misturadas com refatorações sem necessidade explícita.
+
+## Operação e continuidade — 06/11/2026
+
+- Código, migrations, configurações e estado real do GitHub são fontes de verdade; o Memory Bank e assistentes de memória (incluindo Dot) são auxiliares, nunca backups infalíveis.
+- Ao concluir alteração duradoura, atualizar **no mesmo PR** os documentos pertinentes do Memory Bank; não é necessário modificar todos a cada PR. Confirmar lacunas antes de documentar.
+- Priorizar teste local (Docker/Supabase/Playwright) e redução de consumo da Vercel; merge de PR na `main` pode disparar deploy automático, enquanto a simples criação de PR não cria preview.
+- Antes de recomendar merge: revisar diff, mergeabilidade e CI/Gitleaks. Não fazer consultas repetidas enquanto os checks estiverem rodando. Seguir a regra do `AGENTS.md` de autorização explícita para merge e produção.
+- O assistente de planejamento deve responder de forma curta, sinalizar o próximo passo e não executar mudanças somente por receber um resumo.
