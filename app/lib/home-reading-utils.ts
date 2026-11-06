@@ -5,8 +5,10 @@ type CapituloLeituraHome = {
   lidoEm: string;
 };
 
-type ObraLeituraHome = {
-  capitulos: CapituloLeituraHome[];
+type ObraLeituraHome<
+  TCapitulo extends CapituloLeituraHome = CapituloLeituraHome,
+> = {
+  capitulos: TCapitulo[];
   criadaEm: string;
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
@@ -22,7 +24,9 @@ export function calcularProgressoLeitura(capitulos: CapituloLeituraHome[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
-export function encontrarCapituloParaContinuar(obra: ObraLeituraHome) {
+export function encontrarCapituloParaContinuar<
+  TCapitulo extends CapituloLeituraHome,
+>(obra: ObraLeituraHome<TCapitulo>) {
   const temCapituloLido = obra.capitulos.some((capitulo) => capitulo.lido);
 
   if (!temCapituloLido) {

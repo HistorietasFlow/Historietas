@@ -121,6 +121,24 @@ test("home-local-work-card-view-utils preserva métricas, conteúdo e continuida
   assert.equal(dados.cardComAlturaExtra, true);
 });
 
+test("home-local-work-card-view-utils usa a ordem canônica ao continuar uma obra com lacunas", () => {
+  const capitulos = [
+    criarCapitulo("capitulo-1", { lido: true, ordem: 1 }),
+    criarCapitulo("capitulo-4", { ordem: 4 }),
+  ];
+  const dados = criarDadosObraLocalCardHome(
+    criarObra({
+      capitulos,
+      ultimoCapituloLidoId: "capitulo-1",
+    }),
+    "continuar",
+  );
+
+  assert.equal(dados.numeroCapituloContinuar, 4);
+  assert.equal(dados.continuarLeituraHref, "/ler/obra-1/capitulo-4/4");
+  assert.equal(dados.actionSubLabel, "Leitura Cap. 04");
+});
+
 test("home-local-work-card-view-utils preserva o último capítulo, arquivo e ação nova", () => {
   const dados = criarDadosObraLocalCardHome(
     criarObra({

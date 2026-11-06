@@ -4,6 +4,7 @@ import { calcularProgressoLeitura } from "./home-reading-utils";
 
 type CapituloLocalHome = {
   id: string;
+  ordem?: number;
   titulo: string;
   texto: string;
   curtiu: boolean;
@@ -139,6 +140,12 @@ export function normalizarObraSupabaseHome(
 
     return {
       id: capitulo.id,
+      ordem:
+        typeof capitulo.ordem === "number" &&
+        Number.isInteger(capitulo.ordem) &&
+        capitulo.ordem > 0
+          ? capitulo.ordem
+          : capituloIndex + 1,
       titulo:
         capitulo.titulo?.trim() ||
         `Capítulo ${capituloIndex + 1}`,

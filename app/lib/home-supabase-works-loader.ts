@@ -10,6 +10,7 @@ import { normalizarObraSupabaseHome } from "./home-supabase-work-normalizers";
 
 type CapituloLocal = {
   id: string;
+  ordem?: number;
   titulo: string;
   texto: string;
   curtiu: boolean;

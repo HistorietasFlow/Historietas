@@ -15,7 +15,7 @@ const loaderInicial = readFileSync(
 
 const moduloExecutavel = modulo
   .replace(
-    'import { criarSlugBase } from "../../lib/utils";\n',
+    /import \{ criarSlugBase \} from "\.\.\/\.\.\/lib\/utils";\r?\n/,
     `const criarSlugBase = (valor) => String(valor)
   .normalize("NFD")
   .replace(/[\\u0300-\\u036f]/g, "")
@@ -25,7 +25,7 @@ const moduloExecutavel = modulo
 `,
   )
   .replace(
-    'import { normalizarNumeroHome } from "./home-format-utils";\n',
+    /import \{ normalizarNumeroHome \} from "\.\/home-format-utils";\r?\n/,
     `const normalizarNumeroHome = (valor, fallback = 0) => {
   if (typeof valor === "number" && Number.isFinite(valor)) return Math.max(0, Math.round(valor));
   if (typeof valor === "string" && valor.trim()) {
@@ -37,7 +37,7 @@ const moduloExecutavel = modulo
 `,
   )
   .replace(
-    'import { obraTemConteudoPublicoHome } from "./home-local-work-utils";\n',
+    /import \{ obraTemConteudoPublicoHome \} from "\.\/home-local-work-utils";\r?\n/,
     `const obraTemConteudoPublicoHome = (obra) => obra.capitulos.length > 0 || Boolean(
   obra.arquivoObra && typeof obra.arquivoObra === "object" && !Array.isArray(obra.arquivoObra) &&
   typeof obra.arquivoObra.nome === "string" && obra.arquivoObra.nome.trim() &&
@@ -46,7 +46,7 @@ const moduloExecutavel = modulo
 `,
   )
   .replace(
-    'import { calcularProgressoLeitura } from "./home-reading-utils";\n',
+    /import \{ calcularProgressoLeitura \} from "\.\/home-reading-utils";\r?\n/,
     `const calcularProgressoLeitura = (capitulos) => {
   if (capitulos.length === 0) return 0;
   return Math.round((capitulos.filter((capitulo) => capitulo.lido).length / capitulos.length) * 100);
@@ -70,6 +70,7 @@ const {
 
 const capitulo = (overrides = {}) => ({
   id: "cap-1",
+  ordem: 4,
   titulo: "Capítulo 1",
   texto: "Texto",
   curtiu: true,
@@ -111,6 +112,7 @@ test("home-local-work-normalizers preserva campos e fallbacks de capítulo", () 
   assert.deepEqual(normalizarCapituloHome(capitulo(), 0), capitulo());
   assert.deepEqual(normalizarCapituloHome({}, 2), {
     id: "capitulo-3",
+    ordem: 3,
     titulo: "Capítulo sem título",
     texto: "",
     curtiu: false,
@@ -122,6 +124,8 @@ test("home-local-work-normalizers preserva campos e fallbacks de capítulo", () 
     publicado: true,
   });
   assert.equal(normalizarCapituloHome(capitulo({ publicado: false }), 0).publicado, false);
+  assert.equal(normalizarCapituloHome(capitulo({ ordem: 0 }), 1).ordem, 2);
+  assert.equal(normalizarCapituloHome(capitulo({ ordem: 7 }), 0).ordem, 7);
 });
 
 test("home-local-work-normalizers preserva títulos, slugs, autor e fallbacks textuais", () => {
