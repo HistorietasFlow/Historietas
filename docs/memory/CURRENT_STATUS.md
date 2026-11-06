@@ -149,6 +149,7 @@ Antes de sugerir ou iniciar um novo passo de refatoração, verificar no GitHub 
 - PRs #2192–#2198: Explorar ganhou filtros compartilháveis na URL, busca full-text sem refiltro indevido, estados de erro/retry, coleções pessoais paginadas, foco acessível dos filtros e descoberta paginada de autores com nome público atual; gêneros de autores e obras seguem a mesma regra.
 - PRs #2199–#2200: Home, Biblioteca e Leitor usam a ordem persistida dos capítulos para continuar a leitura, com fallback para dados legados e capítulos com lacunas.
 - PR #2201: sincronização de progresso entre dispositivos usa RPC condicional e tombstones de desmarcação. Migration aplicada à produção com checagem de permissões e `SECURITY INVOKER`; PR integrada à main.
+- Gestão de comentários para autores: notificações de comentários e respostas em obras abrem diretamente o comments sheet da obra por `?comentarios=1`, preservando o mesmo fluxo acessível, paginação, respostas e RLS existentes.
 - A migration de autores da #2197 também foi aplicada em produção. Não deduzir que toda futura migration foi aplicada apenas pelo merge.
 
 ### Ambiente local e consumo de recursos

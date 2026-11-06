@@ -63,6 +63,25 @@ export function linkDiretoValido(link: string) {
   );
 }
 
+export function criarHrefComentariosObraNotificacao(link: string) {
+  const linkLimpo = link.trim();
+
+  if (!linkDiretoValido(linkLimpo)) {
+    return linkLimpo;
+  }
+
+  const url = new URL(linkLimpo, "https://historietas.local");
+  const segmentos = url.pathname.split("/").filter(Boolean);
+
+  if (segmentos.length !== 2 || segmentos[0] !== "obra") {
+    return linkLimpo;
+  }
+
+  url.searchParams.set("comentarios", "1");
+
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 export function criarPerfilHrefNotificacao(userId: string, nomeUsuario: string) {
   const params = new URLSearchParams();
   const userIdLimpo = userId.trim();
@@ -119,7 +138,9 @@ export function montarLinkNotificacao(
   const linkDireto = notificacao.link.trim();
 
   if (linkDireto && linkDiretoValido(linkDireto)) {
-    return linkDireto;
+    return notificacao.tipo === "comentario-obra"
+      ? criarHrefComentariosObraNotificacao(linkDireto)
+      : linkDireto;
   }
 
   if (
@@ -129,7 +150,12 @@ export function montarLinkNotificacao(
   ) {
     const slugObra = obra.slug?.trim() || criarSlugBase(obra.titulo);
 
-    return obra.link?.trim() || `/obra/${encodeURIComponent(slugObra)}`;
+    const linkObra =
+      obra.link?.trim() || `/obra/${encodeURIComponent(slugObra)}`;
+
+    return notificacao.tipo === "comentario-obra"
+      ? criarHrefComentariosObraNotificacao(linkObra)
+      : linkObra;
   }
 
   if (

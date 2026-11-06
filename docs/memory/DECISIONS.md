@@ -47,6 +47,12 @@
 - A correspondência textual por autor usa o nome público atual de `profiles_publicos`, enquanto o nome gravado na obra permanece apenas como dado histórico/fallback de apresentação.
 - A RPC continua `SECURITY INVOKER`: privacidade e visibilidade dos perfis permanecem sob os contratos públicos e RLS existentes.
 
+## Comentários para autores
+
+- A localização de comentários em obras reutiliza a central de Notificações e o comments sheet existente; não deve criar um segundo inbox nem duplicar consultas de comentários.
+- O parâmetro público `comentarios=1` abre apenas o sheet da rota canônica `/obra/[slug]`. Links de capítulo, Comunidade e outros destinos não recebem esse estado.
+- Respostas, moderação e permissões permanecem nos fluxos existentes e sob RLS; o deep link não concede novas capacidades.
+
 ## Dependências e segurança
 
 - Dependabot roda semanalmente.

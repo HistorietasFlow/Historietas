@@ -85,6 +85,7 @@ const navigationUtilsJavascript = typescript.transpileModule(
   },
 ).outputText;
 const {
+  criarHrefComentariosObraNotificacao,
   criarDiarioPerfilHrefNotificacao,
   criarHrefLeituraCapitulo,
   criarPerfilHrefNotificacao,
@@ -126,6 +127,25 @@ test("valida links diretos somente para caminhos internos seguros", () => {
   assert.equal(linkDiretoValido("//externo"), false);
   assert.equal(linkDiretoValido("comunidade"), false);
   assert.equal(linkDiretoValido("/comunidade\\externo"), false);
+});
+
+test("abre comentarios de obra por deep link sem alterar outros destinos", () => {
+  assert.equal(
+    criarHrefComentariosObraNotificacao("/obra/aventura"),
+    "/obra/aventura?comentarios=1",
+  );
+  assert.equal(
+    criarHrefComentariosObraNotificacao("/obra/aventura?origem=feed#comentarios"),
+    "/obra/aventura?origem=feed&comentarios=1#comentarios",
+  );
+  assert.equal(
+    criarHrefComentariosObraNotificacao("/obra/aventura/capitulo/1"),
+    "/obra/aventura/capitulo/1",
+  );
+  assert.equal(
+    criarHrefComentariosObraNotificacao("/comunidade?post=1"),
+    "/comunidade?post=1",
+  );
 });
 
 test("cria links de perfil preservando os parametros e fallbacks", () => {
@@ -219,18 +239,18 @@ test("monta links de notificacao na ordem de fallback contratada", () => {
     montarLinkNotificacao(
       criarNotificacao({
         tipo: "comentario-obra",
-        link: " /direto ",
+        link: " /obra/direta ",
       }),
       criarObra({ link: "/obra/ignorada" }),
     ),
-    "/direto",
+    "/obra/direta?comentarios=1",
   );
   assert.equal(
     montarLinkNotificacao(
       criarNotificacao({ tipo: "comentario-obra", link: "//externo" }),
       criarObra({ link: " /obra/aventura " }),
     ),
-    "/obra/aventura",
+    "/obra/aventura?comentarios=1",
   );
   assert.equal(
     montarLinkNotificacao(
@@ -298,6 +318,7 @@ test("fronteiras delegam somente os helpers de navegacao extraidos", () => {
     /import \{ criarLoginHrefNotificacoes \} from "\.\.\/lib\/notificacoes-navigation-utils";/,
   );
   for (const helper of [
+    "criarHrefComentariosObraNotificacao",
     "criarHrefLeituraCapitulo",
     "criarLoginHrefNotificacoes",
     "linkDiretoValido",
