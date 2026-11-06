@@ -52,6 +52,7 @@ type CapituloLocalWorkCard = {
   criadoEm: string;
   curtiu: boolean;
   id: string;
+  ordem?: number;
   lido: boolean;
   lidoEm: string;
   titulo: string;

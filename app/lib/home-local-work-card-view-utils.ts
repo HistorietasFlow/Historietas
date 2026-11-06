@@ -16,6 +16,7 @@ import {
 
 type CapituloObraLocalCardHome = {
   id: string;
+  ordem?: number;
   comentario: string;
   criadoEm: string;
   curtiu: boolean;
@@ -64,20 +65,10 @@ export function criarDadosObraLocalCardHome(
   const slugObra = obra.slug || criarSlugBase(obra.titulo);
   const verObraHref = obra.link?.trim() || `/obra/${slugObra}`;
   const numeroCapituloContinuar = capituloParaContinuar
-    ? Math.max(
-        1,
-        obra.capitulos.findIndex(
-          (capitulo) => capitulo.id === capituloParaContinuar.id,
-        ) + 1,
-      )
+    ? obterNumeroCapituloHome(obra.capitulos, capituloParaContinuar)
     : 0;
   const numeroUltimoCapitulo = ultimoCapituloPublicado
-    ? Math.max(
-        1,
-        obra.capitulos.findIndex(
-          (capitulo) => capitulo.id === ultimoCapituloPublicado.id,
-        ) + 1,
-      )
+    ? obterNumeroCapituloHome(obra.capitulos, ultimoCapituloPublicado)
     : 0;
   const continuarLeituraHref = capituloParaContinuar
     ? criarHrefLeituraCapituloHome(
@@ -138,4 +129,22 @@ export function criarDadosObraLocalCardHome(
     verObraHref,
     visualizacoesObra,
   };
+}
+
+function obterNumeroCapituloHome(
+  capitulos: CapituloObraLocalCardHome[],
+  capitulo: CapituloObraLocalCardHome,
+) {
+  if (
+    typeof capitulo.ordem === "number" &&
+    Number.isInteger(capitulo.ordem) &&
+    capitulo.ordem > 0
+  ) {
+    return capitulo.ordem;
+  }
+
+  return Math.max(
+    1,
+    capitulos.findIndex((item) => item.id === capitulo.id) + 1,
+  );
 }

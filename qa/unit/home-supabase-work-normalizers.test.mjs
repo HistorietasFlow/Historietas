@@ -19,7 +19,7 @@ const hookBuscaCatalogo = readFileSync(
 
 const moduloExecutavel = modulo
   .replace(
-    'import { criarSlugBase } from "../../lib/utils";\n',
+    /import \{ criarSlugBase \} from "\.\.\/\.\.\/lib\/utils";\r?\n/,
     `const criarSlugBase = (valor) => String(valor)
   .normalize("NFD")
   .replace(/[\\u0300-\\u036f]/g, "")
@@ -29,13 +29,13 @@ const moduloExecutavel = modulo
 `,
   )
   .replace(
-    'import { normalizarNumeroHome } from "./home-format-utils";\n',
+    /import \{ normalizarNumeroHome \} from "\.\/home-format-utils";\r?\n/,
     `const normalizarNumeroHome = (valor, fallback = 0) =>
   typeof valor === "number" && Number.isFinite(valor) ? Math.max(0, Math.round(valor)) : fallback;
 `,
   )
   .replace(
-    'import { calcularProgressoLeitura } from "./home-reading-utils";\n',
+    /import \{ calcularProgressoLeitura \} from "\.\/home-reading-utils";\r?\n/,
     `const calcularProgressoLeitura = (capitulos) => {
   if (capitulos.length === 0) return 0;
   return Math.round((capitulos.filter((capitulo) => capitulo.lido).length / capitulos.length) * 100);
@@ -110,13 +110,21 @@ test("home-supabase-work-normalizers ordena capítulos e preserva interação lo
   assert.deepEqual(normalizada.capitulos.map((item) => item.id), ["cap-2", "cap-1"]);
   assert.equal(normalizada.capitulos[0].titulo, "Capítulo 1");
   assert.deepEqual(normalizada.capitulos[1], {
-    id: "cap-1", titulo: "Capítulo 1", texto: "", curtiu: true, salvo: true,
+    id: "cap-1", ordem: 1, titulo: "Capítulo 1", texto: "", curtiu: true, salvo: true,
     comentario: "Comentário local", criadoEm: "2026-01-02", lido: true,
     lidoEm: "2026-01-03", publicado: true,
   });
   assert.equal(normalizada.progressoLeitura, 50);
   assert.equal(normalizada.totalCurtidas, 1);
   assert.equal(normalizada.totalComentarios, 1);
+
+  const comLacuna = normalizarObraSupabaseHome(
+    obra(),
+    [capitulo({ id: "cap-1", ordem: 1 }), capitulo({ id: "cap-4", ordem: 4 })],
+    undefined,
+    0,
+  );
+  assert.deepEqual(comLacuna.capitulos.map((item) => item.ordem), [1, 4]);
 });
 
 test("home-supabase-work-normalizers preserva fallbacks, tags, capa, métricas e link", () => {

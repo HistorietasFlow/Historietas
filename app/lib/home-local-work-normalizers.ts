@@ -5,6 +5,7 @@ import { calcularProgressoLeitura } from "./home-reading-utils";
 
 type CapituloLocalHome = {
   id: string;
+  ordem?: number;
   titulo: string;
   texto: string;
   curtiu: boolean;
@@ -51,6 +52,12 @@ export function normalizarCapituloHome(
       typeof capitulo.id === "string" && capitulo.id.trim()
         ? capitulo.id
         : `capitulo-${index + 1}`,
+    ordem:
+      typeof capitulo.ordem === "number" &&
+      Number.isInteger(capitulo.ordem) &&
+      capitulo.ordem > 0
+        ? capitulo.ordem
+        : index + 1,
     titulo:
       typeof capitulo.titulo === "string" && capitulo.titulo.trim()
         ? capitulo.titulo

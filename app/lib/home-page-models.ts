@@ -1,5 +1,6 @@
 export type CapituloLocal = {
   id: string;
+  ordem?: number;
   titulo: string;
   texto: string;
   curtiu: boolean;
