@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { monitorRuntime } from "./helpers.mjs";
+import {
+  destructiveEnabled,
+  hasVisitorCredentials,
+  loginAsVisitor,
+  monitorRuntime,
+  setVisitorFavoriteByWorkSlug,
+} from "./helpers.mjs";
 
 test("Home carrega navegação e busca funciona", async ({ page }) => {
   const runtime = monitorRuntime(page);
@@ -273,6 +279,45 @@ test("Explorar busca no catálogo real e carrega a próxima página", async ({
   ).toBeVisible();
 
   runtime.assertClean();
+});
+
+test("Explorar encontra coleção pessoal fora da primeira página no desktop e mobile", async ({
+  page,
+}) => {
+  test.skip(
+    !destructiveEnabled || !hasVisitorCredentials,
+    "A regressão autenticada exige as fixtures descartáveis do Supabase local.",
+  );
+
+  const slug = "qa-paginacao-obra-000600";
+  await setVisitorFavoriteByWorkSlug(slug, true);
+
+  try {
+    await loginAsVisitor(page);
+
+    for (const viewport of [
+      { width: 1440, height: 900 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto("/explorar", { waitUntil: "domcontentloaded" });
+      await page
+        .getByRole("button", {
+          name: "Abrir funções do Explorar",
+          exact: true,
+        })
+        .click();
+      const modal = page.locator('section[aria-label="EXPLORAR"]');
+      await modal.getByRole("button", { name: /^Na lista/ }).click();
+
+      await expect(
+        page.locator(`a[href="/obra/${slug}"]`).first(),
+      ).toBeAttached();
+      await expect(page).not.toHaveURL(/favoritas|colecao|obraId/);
+    }
+  } finally {
+    await setVisitorFavoriteByWorkSlug(slug, false);
+  }
 });
 
 for (const dispositivo of [

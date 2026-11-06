@@ -2,6 +2,7 @@ import { supabase } from "../../../lib/supabase/client";
 import { criarSlugBase } from "../../../lib/utils";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import {
+  listarPaginaCatalogo,
   listarSelecaoCatalogo,
   type ConsultaCatalogo,
   type PaginaCatalogo,
@@ -47,52 +48,156 @@ export type ResultadoCarregamentoCatalogoExplorar = {
   falhaTemporaria: boolean;
 };
 
-export async function carregarIdsColecaoUsuarioExplorar(
-  tabela: "favoritos" | "concluidas",
-  userId: string
-) {
+export type FiltroColecaoCatalogoExplorar = Readonly<{
+  tipo: "favoritas" | "concluidas" | "lendo" | "sem-leitura";
+  obraIds: readonly string[];
+}>;
+
+type ResultadoIdsColecaoExplorar = {
+  ids: string[];
+  falhaTemporaria: boolean;
+};
+
+async function carregarIdsColecaoUsuarioExplorarComStatus(
+  tabela: "favoritos" | "concluidas" | "progresso_leitura",
+  userId: string,
+): Promise<ResultadoIdsColecaoExplorar> {
   if (!userId.trim()) {
-    return [] as string[];
+    return { ids: [], falhaTemporaria: false };
   }
 
   try {
     const data = await carregarTodasPaginasSupabase<{ obra_id: string }>({
       nomeColecao: `${tabela} do Explorar`,
-      buscarPagina: async (inicio, fim) =>
-        supabase
-          .from(tabela)
-          .select("obra_id")
-          .eq("user_id", userId)
-          .order("obra_id", { ascending: true })
-          .range(inicio, fim),
+      buscarPagina: async (inicio, fim) => {
+        const consultas = {
+          favoritos: () =>
+            supabase
+              .from("favoritos")
+              .select("obra_id")
+              .eq("user_id", userId)
+              .order("obra_id", { ascending: true })
+              .range(inicio, fim),
+          concluidas: () =>
+            supabase
+              .from("concluidas")
+              .select("obra_id")
+              .eq("user_id", userId)
+              .order("obra_id", { ascending: true })
+              .range(inicio, fim),
+          progresso_leitura: () =>
+            supabase
+              .from("progresso_leitura")
+              .select("obra_id")
+              .eq("user_id", userId)
+              .eq("lido", true)
+              .order("obra_id", { ascending: true })
+              .range(inicio, fim),
+        };
+
+        return consultas[tabela]();
+      },
     });
 
-    return data
-      .map((registro) => {
-        if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-          return "";
-        }
+    return {
+      ids: Array.from(
+        new Set(
+          data
+            .map((registro) => {
+              if (
+                !registro ||
+                typeof registro !== "object" ||
+                Array.isArray(registro)
+              ) {
+                return "";
+              }
 
-        const obraId = (registro as Record<string, unknown>).obra_id;
+              const obraId = (registro as Record<string, unknown>).obra_id;
 
-        return typeof obraId === "string" ? obraId.trim() : "";
-      })
-      .filter(Boolean);
+              return typeof obraId === "string" ? obraId.trim() : "";
+            })
+            .filter(Boolean),
+        ),
+      ),
+      falhaTemporaria: false,
+    };
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} no Explorar:`, error);
-    return [] as string[];
+    return { ids: [], falhaTemporaria: true };
   }
 }
 
+export async function carregarIdsColecaoUsuarioExplorar(
+  tabela: "favoritos" | "concluidas",
+  userId: string
+) {
+  return (
+    await carregarIdsColecaoUsuarioExplorarComStatus(tabela, userId)
+  ).ids;
+}
+
 export async function carregarColecoesUsuarioExplorar(userId: string) {
-  const [favoritas, concluidas] = await Promise.all([
-    carregarIdsColecaoUsuarioExplorar("favoritos", userId),
-    carregarIdsColecaoUsuarioExplorar("concluidas", userId),
+  const [favoritas, concluidas, comLeitura] = await Promise.all([
+    carregarIdsColecaoUsuarioExplorarComStatus("favoritos", userId),
+    carregarIdsColecaoUsuarioExplorarComStatus("concluidas", userId),
+    carregarIdsColecaoUsuarioExplorarComStatus("progresso_leitura", userId),
   ]);
 
   return {
-    favoritas,
-    concluidas,
+    favoritas: favoritas.ids,
+    concluidas: concluidas.ids,
+    comLeitura: comLeitura.ids,
+    falhaTemporaria:
+      favoritas.falhaTemporaria ||
+      concluidas.falhaTemporaria ||
+      comLeitura.falhaTemporaria,
+  };
+}
+
+export async function listarPaginaCatalogoColecaoExplorar(
+  consulta: ConsultaCatalogo,
+  filtroColecao: FiltroColecaoCatalogoExplorar,
+): Promise<PaginaCatalogo> {
+  const obraIdsColecao = new Set(
+    filtroColecao.obraIds.map((id) => id.trim()).filter(Boolean),
+  );
+  const incluiColecao = filtroColecao.tipo !== "sem-leitura";
+  const limite = Math.min(50, Math.max(1, consulta.limite || 24));
+
+  if (incluiColecao && obraIdsColecao.size === 0) {
+    return { obraIds: [], proximoCursor: null, temMais: false };
+  }
+
+  const obraIdsEncontrados: string[] = [];
+  let cursor = consulta.cursor || null;
+  let proximoCursor: PaginaCatalogo["proximoCursor"] = null;
+
+  do {
+    const pagina = await listarPaginaCatalogo({
+      ...consulta,
+      limite,
+      cursor,
+    });
+
+    pagina.obraIds.forEach((obraId) => {
+      const pertenceColecao = obraIdsColecao.has(obraId);
+
+      if (
+        (incluiColecao && pertenceColecao) ||
+        (!incluiColecao && !pertenceColecao)
+      ) {
+        obraIdsEncontrados.push(obraId);
+      }
+    });
+
+    proximoCursor = pagina.proximoCursor;
+    cursor = pagina.proximoCursor;
+  } while (obraIdsEncontrados.length < limite && proximoCursor);
+
+  return {
+    obraIds: Array.from(new Set(obraIdsEncontrados)),
+    proximoCursor,
+    temMais: Boolean(proximoCursor),
   };
 }
 
@@ -202,6 +307,8 @@ export async function carregarObrasPublicadasSupabase(
   userId = "",
   consultasCatalogo: readonly ConsultaCatalogo[] =
     CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
+  filtroColecao: FiltroColecaoCatalogoExplorar | null = null,
+  acumularObrasLocais = false,
 ): Promise<ResultadoCarregamentoCatalogoExplorar> {
   try {
     let obraIdsCatalogo: readonly string[] = [];
@@ -210,10 +317,40 @@ export async function carregarObrasPublicadasSupabase(
     let falhaTemporaria = false;
 
     try {
-      const selecao = await listarSelecaoCatalogo(consultasCatalogo);
+      let selecao;
+
+      if (filtroColecao) {
+        const paginaColecao = await listarPaginaCatalogoColecaoExplorar(
+          consultasCatalogo[0] || {},
+          filtroColecao,
+        );
+        selecao = {
+          obraIds: paginaColecao.obraIds,
+          paginas: [paginaColecao],
+        };
+      } else {
+        selecao = await listarSelecaoCatalogo(consultasCatalogo);
+      }
       obraIdsCatalogo = selecao.obraIds;
       paginaCatalogo = selecao.paginas.length === 1 ? selecao.paginas[0] : null;
     } catch (error) {
+      if (filtroColecao) {
+        const obraIdsColecao = new Set(filtroColecao.obraIds);
+        const obrasFallback = acumularObrasLocais
+          ? obrasLocais
+          : obrasLocais.filter((obra) =>
+              filtroColecao.tipo === "sem-leitura"
+                ? !obraIdsColecao.has(obra.id)
+                : obraIdsColecao.has(obra.id),
+            );
+
+        return {
+          obras: await aplicarMetricasExplorar(obrasFallback, userId),
+          pagina: null,
+          falhaTemporaria: true,
+        };
+      }
+
       catalogoDisponivel = false;
       falhaTemporaria = true;
       console.warn(
@@ -232,7 +369,10 @@ export async function carregarObrasPublicadasSupabase(
     if (catalogoDisponivel) {
       if (obraIdsCatalogo.length === 0) {
         return {
-          obras: await aplicarMetricasExplorar(obrasLocais, userId),
+          obras: await aplicarMetricasExplorar(
+            filtroColecao ? [] : obrasLocais,
+            userId,
+          ),
           pagina: paginaCatalogo,
           falhaTemporaria,
         };
@@ -258,12 +398,15 @@ export async function carregarObrasPublicadasSupabase(
       (obra) => Boolean(obra.id)
     );
 
+    const obrasLocaisSelecionadas = filtroColecao && !acumularObrasLocais
+      ? obrasLocais.filter((obra) => obraIdsCatalogo.includes(obra.id))
+      : obrasLocais;
     const nomesProfiles = await carregarNomesProfilesExplorar([
-      ...obrasLocais.map((obra) => obra.autorId || ""),
+      ...obrasLocaisSelecionadas.map((obra) => obra.autorId || ""),
       ...obrasSupabase.map((obra) => obra.user_id || ""),
     ]);
     const obrasLocaisComProfiles = aplicarNomesProfilesEmObrasExplorar(
-      obrasLocais,
+      obrasLocaisSelecionadas,
       nomesProfiles
     );
 
@@ -315,7 +458,7 @@ export async function carregarObrasPublicadasSupabase(
     const obrasSupabaseNormalizadas = obrasSupabase
       .map((obraBanco, index) => {
         const slugBanco = obraBanco.slug?.trim() || "";
-        const obraLocal = obrasLocais.find((obraLocalAtual) => {
+        const obraLocal = obrasLocaisSelecionadas.find((obraLocalAtual) => {
           const slugLocal =
             obraLocalAtual.slug || criarSlugBase(obraLocalAtual.titulo);
 
@@ -349,8 +492,10 @@ export async function carregarObrasPublicadasSupabase(
       userId,
     );
 
-    salvarBackupsArquivosObras(obrasComProgresso, userId);
-    salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userId, obrasComProgresso);
+    if (!filtroColecao) {
+      salvarBackupsArquivosObras(obrasComProgresso, userId);
+      salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userId, obrasComProgresso);
+    }
 
     return {
       obras: obrasComProgresso,
@@ -359,8 +504,17 @@ export async function carregarObrasPublicadasSupabase(
     };
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Explorar:", error);
+    const obraIdsColecao = new Set(filtroColecao?.obraIds || []);
+    const obrasFallback = filtroColecao && !acumularObrasLocais
+      ? obrasLocais.filter((obra) =>
+          filtroColecao.tipo === "sem-leitura"
+            ? !obraIdsColecao.has(obra.id)
+            : obraIdsColecao.has(obra.id),
+        )
+      : obrasLocais;
+
     return {
-      obras: await aplicarMetricasExplorar(obrasLocais, userId),
+      obras: await aplicarMetricasExplorar(obrasFallback, userId),
       pagina: null,
       falhaTemporaria: true,
     };

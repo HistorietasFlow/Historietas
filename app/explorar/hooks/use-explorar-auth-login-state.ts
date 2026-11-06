@@ -3,8 +3,16 @@
 import { useState } from "react";
 
 export function useExplorarAuthLoginState() {
+  const [usuarioIdExplorar, setUsuarioIdExplorar] = useState("");
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [mensagemLogin, setMensagemLogin] = useState("");
 
-  return { usuarioLogado, setUsuarioLogado, mensagemLogin, setMensagemLogin };
+  return {
+    usuarioIdExplorar,
+    setUsuarioIdExplorar,
+    usuarioLogado,
+    setUsuarioLogado,
+    mensagemLogin,
+    setMensagemLogin,
+  };
 }

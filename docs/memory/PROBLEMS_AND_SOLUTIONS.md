@@ -225,3 +225,18 @@ fallback, não exibe o estado vazio normal e oferece retry da consulta atual sem
 recarregar a página. Falhas ao carregar mais preservam resultados e cursor já
 visíveis e repetem somente a paginação. A versão da consulta continua sendo a
 autoridade para impedir que respostas antigas sobrescrevam um retry mais novo.
+
+## Explorar: coleções pessoais não podem depender da amostra inicial
+
+Os filtros `Lendo agora`, `Na lista`, `Concluídas` e `Sem leitura` precisam usar
+os identificadores completos da identidade autenticada. Aplicar esses filtros
+somente sobre `obrasLocais` oculta obras que estão fora da primeira página do
+catálogo.
+
+O lifecycle das coleções combina o cache isolado por usuário com os registros
+remotos paginados e invalida respostas antigas em login, logout e troca de
+conta. A consulta do catálogo continua sendo a fronteira de visibilidade: ela
+percorre somente páginas de IDs com os filtros públicos atuais até reunir a
+página pessoal solicitada, sem baixar o catálogo inteiro e sem expor IDs
+privados na URL. Falhas preservam o cache disponível, exibem indisponibilidade e
+permitem retry somente das coleções da identidade atual.

@@ -11,30 +11,43 @@ import type {
 } from "../lib/explorar-derived-utils";
 
 type UseExplorarAuthStateParams = {
+  setUsuarioIdExplorar: Dispatch<SetStateAction<string>>;
   setUsuarioLogado: Dispatch<SetStateAction<boolean>>;
   setMensagemLogin: Dispatch<SetStateAction<string>>;
   setFiltroColecao: Dispatch<SetStateAction<FiltroColecaoExplorar>>;
 };
 
 export function useExplorarAuthState({
+  setUsuarioIdExplorar,
   setUsuarioLogado,
   setMensagemLogin,
   setFiltroColecao,
 }: UseExplorarAuthStateParams) {
   useEffect(() => {
     let componenteAtivo = true;
+    let versaoIdentidade = 0;
 
     async function verificarUsuarioLogado() {
+      const versaoConsulta = versaoIdentidade;
+
       try {
         const { data } = await supabase.auth.getUser();
 
-        if (componenteAtivo) {
+        if (
+          componenteAtivo &&
+          versaoIdentidade === versaoConsulta
+        ) {
           const userId = data.user?.id || "";
 
+          setUsuarioIdExplorar(userId);
           setUsuarioLogado(Boolean(userId));
         }
       } catch {
-        if (componenteAtivo) {
+        if (
+          componenteAtivo &&
+          versaoIdentidade === versaoConsulta
+        ) {
+          setUsuarioIdExplorar("");
           setUsuarioLogado(false);
         }
       }
@@ -45,8 +58,10 @@ export function useExplorarAuthState({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      versaoIdentidade += 1;
       const userId = session?.user?.id || "";
 
+      setUsuarioIdExplorar(userId);
       setUsuarioLogado(Boolean(userId));
 
       if (session?.user) {
@@ -62,6 +77,7 @@ export function useExplorarAuthState({
       subscription.unsubscribe();
     };
   }, [
+    setUsuarioIdExplorar,
     setUsuarioLogado,
     setMensagemLogin,
     setFiltroColecao,

@@ -99,7 +99,7 @@ test("Explorar delega somente o body lock e preserva o painel e fronteiras", () 
   );
   assert.match(
     pagina,
-    /import \{ lazy, Suspense, useMemo, useRef \} from "react";/,
+    /import \{ lazy, Suspense, useEffect, useMemo, useRef \} from "react";/,
   );
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.match(

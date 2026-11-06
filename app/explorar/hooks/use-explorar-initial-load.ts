@@ -9,14 +9,11 @@ import type { ObraLocal } from "../lib/explorar-work-normalizers";
 import {
   lerStorageUsuarioExplorar,
   salvarJsonStorageUsuarioExplorar,
-  carregarListaIdsUsuarioExplorar,
-  salvarListaIdsUsuarioExplorar,
   obterArquivoObraComBackup,
   salvarBackupsArquivosObras,
 } from "../lib/explorar-local-storage";
 import {
   STORAGE_KEY,
-  carregarColecoesUsuarioExplorar,
   carregarObrasPublicadasSupabase,
 } from "../lib/explorar-remote-loader";
 import type { OrdenacaoExplorar } from "../lib/explorar-derived-utils";
@@ -32,14 +29,10 @@ type OpcoesCarregamentoInicialExplorar = {
   setOrdenacao: Dispatch<SetStateAction<OrdenacaoExplorar>>;
   setUsuarioLogado: Dispatch<SetStateAction<boolean>>;
   setObrasLocais: Dispatch<SetStateAction<ObraLocal[]>>;
-  setObrasFavoritas: Dispatch<SetStateAction<string[]>>;
-  setObrasConcluidas: Dispatch<SetStateAction<string[]>>;
   setProximoCursorCatalogo: Dispatch<SetStateAction<CursorCatalogo | null>>;
   setCatalogoTemMais: Dispatch<SetStateAction<boolean>>;
   setErroCatalogoExplorar: Dispatch<SetStateAction<ErroCatalogoExplorar>>;
   setDadosExplorarCarregados: Dispatch<SetStateAction<boolean>>;
-  FAVORITES_STORAGE_KEY: string;
-  COMPLETED_STORAGE_KEY: string;
 };
 
 export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar) {
@@ -56,14 +49,10 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       setOrdenacao,
       setUsuarioLogado,
       setObrasLocais,
-      setObrasFavoritas,
-      setObrasConcluidas,
       setProximoCursorCatalogo,
       setCatalogoTemMais,
       setErroCatalogoExplorar,
       setDadosExplorarCarregados,
-      FAVORITES_STORAGE_KEY,
-      COMPLETED_STORAGE_KEY,
     } = opcoesIniciaisRef.current;
 
     let cancelado = false;
@@ -112,50 +101,8 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
         salvarBackupsArquivosObras(obrasNormalizadas, userIdAtual);
         salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userIdAtual, obrasNormalizadas);
 
-        const favoritasGlobais: string[] = [];
-        const favoritasDoUsuario = userIdAtual
-          ? carregarListaIdsUsuarioExplorar(FAVORITES_STORAGE_KEY, userIdAtual)
-          : [];
-
-        const concluidasGlobais: string[] = [];
-        const concluidasDoUsuario = userIdAtual
-          ? carregarListaIdsUsuarioExplorar(COMPLETED_STORAGE_KEY, userIdAtual)
-          : [];
-
-        const colecoesSupabase = userIdAtual
-          ? await carregarColecoesUsuarioExplorar(userIdAtual)
-          : { favoritas: [] as string[], concluidas: [] as string[] };
-
-        const obrasFavoritasNormalizadas = Array.from(
-          new Set([
-            ...favoritasGlobais,
-            ...favoritasDoUsuario,
-            ...colecoesSupabase.favoritas,
-          ])
-        );
-        const obrasConcluidasNormalizadas = Array.from(
-          new Set([
-            ...concluidasGlobais,
-            ...concluidasDoUsuario,
-            ...colecoesSupabase.concluidas,
-          ])
-        );
-
-        salvarListaIdsUsuarioExplorar(
-          FAVORITES_STORAGE_KEY,
-          userIdAtual,
-          obrasFavoritasNormalizadas
-        );
-        salvarListaIdsUsuarioExplorar(
-          COMPLETED_STORAGE_KEY,
-          userIdAtual,
-          obrasConcluidasNormalizadas
-        );
-
         if (!cancelado) {
           setObrasLocais(obrasNormalizadas);
-          setObrasFavoritas(obrasFavoritasNormalizadas);
-          setObrasConcluidas(obrasConcluidasNormalizadas);
         }
 
         const resultadoCatalogo = await carregarObrasPublicadasSupabase(
@@ -174,8 +121,6 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       } catch {
         if (!cancelado) {
           setObrasLocais(obrasCacheLocalRef.current);
-          setObrasFavoritas([]);
-          setObrasConcluidas([]);
           setErroCatalogoExplorar("consulta");
         }
       } finally {

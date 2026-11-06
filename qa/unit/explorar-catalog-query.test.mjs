@@ -82,6 +82,8 @@ function preparar(t, overrides = {}) {
   const props = {
     busca: "", termoBusca: "", categoriaSelecionada: "", filtroFormato: "todos",
     filtroClassificacao: "todos", filtroCapitulos: "todos", ordenacao: "relevancia",
+    filtroColecao: "todos", obrasFavoritas: [], obrasConcluidas: [],
+    obrasComLeitura: [], colecoesCarregadas: true,
     dadosExplorarCarregados: true, obrasLocais: [{ id: "atual" }],
     proximoCursorCatalogo: null, carregandoMaisCatalogo: false,
     versaoRetryCatalogo: 0,
@@ -120,7 +122,7 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "569de7aa542089429539aca68a75c6521f236b6f58171f8f1a829a572f504419");
+    "20a6a8ecf603eb84e528702537927576d6f9032099b074ffe3a0b59f0dc096e7");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -165,7 +167,7 @@ test("consulta personalizada respeita debounce, filtros e ordem das atualizaçõ
     ["carregar", [{ id: "cache" }], "usuario", [{
       busca: "Ação", genero: "Fantasia", formato: "Livro", classificacao: "18+",
       filtroCapitulos: "com-capitulos", ordenacao: "recentes", limite: 24,
-    }]],
+    }], null],
     ["setObrasLocais", [{ id: "remota" }]], ["setObraIdsBuscaRemota", ["remota"]],
     ["setProximoCursorCatalogo", cursor],
     ["setCatalogoTemMais", true], ["setErroCatalogoExplorar", null],
@@ -332,7 +334,7 @@ test("carregar mais respeita guardas, cursor e atualizações na ordem original"
     ["carregar", [{ id: "atual" }], "usuario", [{
       busca: "x", genero: "", formato: "", classificacao: "", filtroCapitulos: "todos",
       ordenacao: "relevancia", limite: 24, cursor,
-    }]],
+    }], null, false],
     ["setObrasLocais", [{ id: "p2" }]], ["setObraIdsBuscaRemota", ["p1", "p2"]],
     ["setProximoCursorCatalogo", null],
     ["setCatalogoTemMais", false], ["setErroCatalogoExplorar", null],
@@ -341,6 +343,65 @@ test("carregar mais respeita guardas, cursor e atualizações na ordem original"
   const d = preparar(t, { proximoCursorCatalogo: cursor });
   await d.render().carregarMaisObrasCatalogo();
   assert.deepEqual(d.chamadas, []);
+});
+
+test("filtro pessoal consulta a coleção completa e pagina sem expor IDs na URL", async (t) => {
+  const cursor = { valor: 2, data: "2024-01-02", id: "b" };
+  const c = preparar(t, {
+    filtroColecao: "favoritas",
+    obrasFavoritas: ["fora-da-primeira-pagina"],
+  });
+
+  assert.equal(c.render().consultaCatalogoPersonalizada, true);
+  c.respostas.push(Promise.resolve({
+    obras: [{ id: "fora-da-primeira-pagina" }],
+    pagina: {
+      obraIds: ["fora-da-primeira-pagina"],
+      proximoCursor: cursor,
+      temMais: true,
+    },
+    falhaTemporaria: false,
+  }));
+  await c.disparar();
+
+  const chamadaInicial = c.chamadas.find(([nome]) => nome === "carregar");
+  assert.deepEqual(chamadaInicial[4], {
+    tipo: "favoritas",
+    obraIds: ["fora-da-primeira-pagina"],
+  });
+  assert.equal(chamadaInicial[5], undefined);
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "fora-da-primeira-pagina" }]);
+
+  c.chamadas.length = 0;
+  const resultado = c.render({
+    obrasLocais: [{ id: "fora-da-primeira-pagina" }],
+    proximoCursorCatalogo: cursor,
+    carregandoMaisCatalogo: false,
+  });
+  c.respostas.push(Promise.resolve({
+    obras: [
+      { id: "fora-da-primeira-pagina" },
+      { id: "pagina-seguinte" },
+    ],
+    pagina: { obraIds: ["pagina-seguinte"], proximoCursor: null, temMais: false },
+    falhaTemporaria: false,
+  }));
+  await resultado.carregarMaisObrasCatalogo();
+  const chamadaPaginacao = c.chamadas.find(([nome]) => nome === "carregar");
+  assert.deepEqual(chamadaPaginacao[4], chamadaInicial[4]);
+  assert.equal(chamadaPaginacao[5], true);
+});
+
+test("filtro pessoal aguarda coleções da identidade atual", (t) => {
+  const c = preparar(t, {
+    filtroColecao: "lendo",
+    obrasComLeitura: ["obra-a"],
+    colecoesCarregadas: false,
+  });
+  assert.equal(c.render().consultaCatalogoPersonalizada, true);
+  assert.equal(c.timers.size, 0);
+  c.render({ colecoesCarregadas: true });
+  assert.equal(c.timers.size, 1);
 });
 
 test("falha e retry da paginação preservam a página atual", async (t) => {
