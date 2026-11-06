@@ -28,6 +28,7 @@ import { useObraActionsSheet } from "./hooks/use-obra-actions-sheet";
 import { useObraClassificationPanel } from "./hooks/use-obra-classification-panel";
 import { useObraCommentsSheetBodyLock } from "./hooks/use-obra-comments-sheet-body-lock";
 import { useObraCommentsSheetInteractions } from "./hooks/use-obra-comments-sheet-interactions";
+import { useObraCommentsDeepLink } from "./hooks/use-obra-comments-deep-link";
 import { useObraContent18Access } from "./hooks/use-obra-content-18-access";
 import { useObraDesktopMode } from "./hooks/use-obra-desktop-mode";
 import { useObraViewRegistration } from "./hooks/use-obra-view-registration";
@@ -152,6 +153,7 @@ export default function ObraDinamicaPage() {
     fecharMenuOrdenacaoComentarios,
     limparRespostaComentario: () => setRespostaComentario(null),
   });
+  useObraCommentsDeepLink({ abrirComentariosObra });
   const {
     acoesObraAbertas,
     setAcoesObraAbertas,

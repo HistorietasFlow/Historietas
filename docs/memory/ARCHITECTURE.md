@@ -19,6 +19,12 @@
 - Obras públicas renderizam JSON-LD `CreativeWork` e capítulos públicos renderizam `Chapter` no HTML inicial; o capítulo referencia a obra por `isPartOf`, sempre com URLs canônicas absolutas e conteúdo serializado com neutralização de caracteres capazes de encerrar o script.
 - `/ler-capitulo?obraId=...&capituloId=...` permanece disponível para fluxos internos, drafts e leituras por identificador.
 
+### Comentários de obras e notificações
+
+- Comentários e respostas em obras continuam sendo persistidos e autorizados pelos contratos existentes de Supabase/RLS.
+- Notificações do tipo `comentario-obra` apontam para a rota pública da obra com `comentarios=1`; o cliente abre o mesmo comments sheet acessível usado pelo acionador visual, sem duplicar carregamento ou mutations.
+- O deep link reage à navegação Back/Forward e não altera links de capítulos ou de outros tipos de notificação.
+
 ## Backend e dados
 
 Supabase é usado para autenticação, banco e fluxos de dados da aplicação.
