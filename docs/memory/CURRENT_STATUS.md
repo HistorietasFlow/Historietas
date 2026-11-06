@@ -1,6 +1,6 @@
 # Estado atual
 
-Atualizado em: 2026-11-05
+Atualizado em: 2026-11-06
 
 ## Infraestrutura e ferramentas
 
@@ -114,6 +114,14 @@ A RPC de aceite dos termos recupera atomicamente o perfil mínimo da própria
 identidade autenticada quando uma conta confirmada ficou sem `public.profiles`.
 Perfis existentes continuam sendo apenas atualizados, sem sobrescrever dados
 legítimos; a recuperação não cria trigger em `auth.users`.
+
+### Progresso de leitura entre dispositivos
+
+O Leitor persiste marcações e desmarcações por uma RPC condicional baseada no
+momento da ação. Respostas antigas não sobrescrevem eventos mais recentes,
+desmarcações deixam tombstones `lido=false` e o isolamento por conta continua
+sob RLS. A cobertura local valida concorrência, retries, troca de identidade e
+sincronização do Leitor com Home e Biblioteca em contextos desktop/mobile.
 
 ### Explorar — catálogo de autores
 

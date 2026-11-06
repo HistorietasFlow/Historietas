@@ -41,6 +41,7 @@ export async function salvarProgressoLeituraSupabase(
   capituloId: string,
   lido: boolean,
   userIdEsperado = "",
+  ocorridoEm = new Date().toISOString(),
 ) {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
@@ -51,46 +52,28 @@ export async function salvarProgressoLeituraSupabase(
       !userId ||
       (userIdEsperado && userId !== userIdEsperado) ||
       !idObraSupabaseValido(obra.id) ||
-      !capituloIdLimpo
+      !capituloIdLimpo ||
+      Number.isNaN(Date.parse(ocorridoEm))
     ) {
       return false;
     }
 
-    if (!lido) {
-      const { error: erroDelete } = await supabase
-        .from("progresso_leitura")
-        .delete()
-        .eq("user_id", userId)
-        .eq("obra_id", obra.id)
-        .eq("capitulo_id", capituloIdLimpo);
+    const { data: sincronizado, error: erroSincronizacao } = await supabase.rpc(
+      "salvar_progresso_leitura",
+      {
+        p_obra_id: obra.id,
+        p_capitulo_id: capituloIdLimpo,
+        p_lido: lido,
+        p_progresso: calcularProgressoLeitura(obra.capitulos),
+        p_ocorrido_em: ocorridoEm,
+      },
+    );
 
-      if (erroDelete) {
-        throw erroDelete;
-      }
-
-      return true;
+    if (erroSincronizacao) {
+      throw erroSincronizacao;
     }
 
-    const payload = {
-      user_id: userId,
-      obra_id: obra.id,
-      capitulo_id: capituloIdLimpo,
-      progresso: calcularProgressoLeitura(obra.capitulos),
-      lido: true,
-      atualizado_em: new Date().toISOString(),
-    };
-
-    const { error: erroUpsert } = await supabase
-      .from("progresso_leitura")
-      .upsert(payload, {
-        onConflict: "user_id,obra_id,capitulo_id",
-      });
-
-    if (erroUpsert) {
-      throw erroUpsert;
-    }
-
-    return true;
+    return sincronizado === true;
   } catch (error) {
     console.warn("Não consegui salvar progresso de leitura no Supabase:", error);
     return false;
