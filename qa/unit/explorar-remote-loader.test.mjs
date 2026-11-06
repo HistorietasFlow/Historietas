@@ -17,7 +17,7 @@ const codigoExecutavel = codigo.replace(
 const injecao = `
 const supabase = { from: (...args) => globalThis.__explorarRemoteLoaderTeste.supabase.from(...args) };
 ` + [
-  "criarSlugBase", "carregarMetricasConteudos", "listarSelecaoCatalogo",
+  "criarSlugBase", "carregarMetricasConteudos", "listarPaginaCatalogo", "listarSelecaoCatalogo",
   "carregarTodasPaginasPorLotesSupabase", "carregarTodasPaginasSupabase",
   "normalizarContadorExplorar", "calcularProgressoLeitura",
   "obraTemConteudoPublicadoExplorar", "normalizarObraSupabase", "mesclarObrasSemDuplicar",
@@ -50,7 +50,7 @@ function capitulo(id, extra = {}) {
 function preparar() {
   const chamadas = [];
   const gravacoes = [];
-  const banco = { obras: [], capitulos: [], favoritos: [], concluidas: [] };
+  const banco = { obras: [], capitulos: [], favoritos: [], concluidas: [], progresso_leitura: [] };
   const falhas = {};
   const configuracao = {
     chamadas, gravacoes, banco, falhas,
@@ -90,6 +90,15 @@ function preparar() {
       configuracao.consultas = consultas;
       if (falhas.catalogo) throw falhas.catalogo;
       return configuracao.selecao;
+    },
+    async listarPaginaCatalogo(consulta) {
+      configuracao.consultasPagina ??= [];
+      configuracao.consultasPagina.push(consulta);
+      return configuracao.paginasCatalogo?.shift() || {
+        obraIds: [],
+        proximoCursor: null,
+        temMais: false,
+      };
     },
     async carregarTodasPaginasSupabase({ nomeColecao, buscarPagina }) {
       configuracao.nomeColecao = nomeColecao;
@@ -150,7 +159,7 @@ test("os quatro corpos dos loaders permanecem literalmente idênticos à base", 
     .replace(/^export async function /gm, "async function ");
   assert.equal(
     createHash("sha256").update(corpo).digest("hex"),
-    "acd66ec0a3cb0553b77c3f4ab18876a38553d1e8367883b984d0af1d55549b81",
+    "93826ddd12f8db7be982924a0dd0513716cba3ea81bd649a3252551c85dda3be",
   );
 });
 
@@ -166,10 +175,19 @@ test("coleções preservam guardas, paginação, validação e userId original",
     ["order", "obra_id", { ascending: true }], ["range", 0, 999],
   ]);
   c.banco.concluidas = [{ obra_id: "c" }];
+  c.banco.progresso_leitura = [{ obra_id: "l" }, { obra_id: "l" }];
   assert.deepEqual(await modulo.carregarColecoesUsuarioExplorar("u"), {
-    favoritas: ["a", "b"], concluidas: ["c"],
+    favoritas: ["a", "b"], concluidas: ["c"], comLeitura: ["l"],
+    falhaTemporaria: false,
   });
-  assert.deepEqual(c.chamadas.slice(1).map((item) => item.tabela), ["favoritos", "concluidas"]);
+  assert.deepEqual(c.chamadas.slice(1).map((item) => item.tabela), [
+    "favoritos", "concluidas", "progresso_leitura",
+  ]);
+  assert.ok(
+    c.chamadas.at(-1).operacoes.some(
+      (operacao) => operacao[0] === "eq" && operacao[1] === "lido" && operacao[2] === true,
+    ),
+  );
 });
 
 test("falha de coleção retorna lista vazia com aviso original", async () => {
@@ -182,6 +200,61 @@ test("falha de coleção retorna lista vazia com aviso original", async () => {
     assert.deepEqual(await modulo.carregarIdsColecaoUsuarioExplorar("favoritos", "u"), []);
     assert.equal(avisos[0][0], "Não consegui acessar favoritos no Explorar:");
   } finally { console.warn = anterior; }
+});
+
+test("coleção encontra obra fora da primeira página sem carregar objetos do catálogo inteiro", async () => {
+  const c = preparar();
+  const cursor = { valor: 1, data: "2026-01-01", id: "cursor-1" };
+  c.paginasCatalogo = [
+    { obraIds: ["fora-1", "fora-2"], proximoCursor: cursor, temMais: true },
+    { obraIds: ["alvo"], proximoCursor: null, temMais: false },
+  ];
+
+  const pagina = await modulo.listarPaginaCatalogoColecaoExplorar(
+    { busca: "termo", limite: 24 },
+    { tipo: "favoritas", obraIds: ["alvo"] },
+  );
+
+  assert.deepEqual(pagina, {
+    obraIds: ["alvo"],
+    proximoCursor: null,
+    temMais: false,
+  });
+  assert.equal(c.consultasPagina.length, 2);
+  assert.equal(c.consultasPagina[0].limite, 24);
+  assert.equal(c.consultasPagina[1].cursor, cursor);
+});
+
+test("coleção grande preserva cursor e sem leitura exclui somente obras lidas", async () => {
+  const c = preparar();
+  const cursor = { valor: 2, data: "2026-01-02", id: "cursor-2" };
+  c.paginasCatalogo = [{
+    obraIds: Array.from({ length: 30 }, (_, indice) => `obra-${indice}`),
+    proximoCursor: cursor,
+    temMais: true,
+  }];
+  const pagina = await modulo.listarPaginaCatalogoColecaoExplorar(
+    { limite: 24 },
+    { tipo: "sem-leitura", obraIds: ["obra-0", "obra-5"] },
+  );
+  assert.equal(pagina.obraIds.length, 28);
+  assert.equal(pagina.obraIds.includes("obra-0"), false);
+  assert.equal(pagina.obraIds.includes("obra-5"), false);
+  assert.equal(pagina.proximoCursor, cursor);
+  assert.equal(pagina.temMais, true);
+  assert.equal(c.consultasPagina.length, 1);
+});
+
+test("coleção vazia de inclusão não consulta catálogo", async () => {
+  const c = preparar();
+  assert.deepEqual(
+    await modulo.listarPaginaCatalogoColecaoExplorar(
+      { limite: 24 },
+      { tipo: "lendo", obraIds: [] },
+    ),
+    { obraIds: [], proximoCursor: null, temMais: false },
+  );
+  assert.equal(c.consultasPagina, undefined);
 });
 
 test("métricas preservam progresso privado sem divulgá-lo como total público", async () => {
@@ -337,8 +410,8 @@ test("fronteira mantém queries, fallback e consumidores sem hooks ou autentica�
   assert.match(ler("../../app/explorar/hooks/use-explorar-catalog-query.ts"), /carregarObrasPublicadasSupabase\(/);
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.match(
-    ler("../../app/explorar/hooks/use-explorar-initial-load.ts"),
-    /carregarColecoesUsuarioExplorar\(userIdAtual\)/,
+    ler("../../app/explorar/hooks/use-explorar-personal-collections-sync.ts"),
+    /carregarColecoesUsuarioExplorar\(userId\)/,
   );
   assert.match(codigo, /\.eq\("publicado", true\)/);
   assert.match(codigo, /\.in\("id", \[\.\.\.obraIdsCatalogo\]\)/);

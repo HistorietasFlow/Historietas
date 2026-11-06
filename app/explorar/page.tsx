@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { lazy, Suspense, useMemo, useRef } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { normalizarTexto } from "../../lib/utils";
 import {
@@ -64,6 +64,7 @@ import { useExplorarNavigationFilterState } from "./hooks/use-explorar-navigatio
 import { useExplorarRouteFilterSync } from "./hooks/use-explorar-route-filter-sync";
 import { useExplorarAuthorDataState } from "./hooks/use-explorar-author-data-state";
 import { useExplorarPersonalCollectionsState } from "./hooks/use-explorar-personal-collections-state";
+import { useExplorarPersonalCollectionsSync } from "./hooks/use-explorar-personal-collections-sync";
 import { useExplorarAuthLoginState } from "./hooks/use-explorar-auth-login-state";
 import { useExplorarInterfaceControlsState } from "./hooks/use-explorar-interface-controls-state";
 import { themePageCss } from "./lib/explorar-page-css";
@@ -131,6 +132,14 @@ export default function ExplorarPage() {
     setObrasFavoritas,
     obrasConcluidas,
     setObrasConcluidas,
+    obrasComLeitura,
+    setObrasComLeitura,
+    colecoesCarregadas,
+    setColecoesCarregadas,
+    erroColecoesExplorar,
+    setErroColecoesExplorar,
+    versaoRetryColecoes,
+    setVersaoRetryColecoes,
   } = useExplorarPersonalCollectionsState();
   const {
     modoConteudo,
@@ -168,6 +177,8 @@ export default function ExplorarPage() {
   } = useExplorarInterfaceControlsState();
   const isDesktop = useExplorarDesktopMode();
   const {
+    usuarioIdExplorar,
+    setUsuarioIdExplorar,
     usuarioLogado,
     setUsuarioLogado,
     mensagemLogin,
@@ -177,10 +188,15 @@ export default function ExplorarPage() {
   const usuarioIdExplorarRef = useRef("");
 
   useExplorarAuthState({
+    setUsuarioIdExplorar,
     setUsuarioLogado,
     setMensagemLogin,
     setFiltroColecao,
   });
+
+  useEffect(() => {
+    usuarioIdExplorarRef.current = usuarioIdExplorar;
+  }, [usuarioIdExplorar]);
 
   useExplorarAdvancedFiltersBodyLock(mostrarFiltrosAvancados);
 
@@ -193,12 +209,21 @@ export default function ExplorarPage() {
     setOrdenacao,
     setUsuarioLogado,
     setObrasLocais,
-    setObrasFavoritas,
-    setObrasConcluidas,
     setProximoCursorCatalogo,
     setCatalogoTemMais,
     setErroCatalogoExplorar,
     setDadosExplorarCarregados,
+  });
+
+  useExplorarPersonalCollectionsSync({
+    usuarioIdExplorar,
+    versaoRetryColecoes,
+    obrasCacheLocalRef,
+    setObrasFavoritas,
+    setObrasConcluidas,
+    setObrasComLeitura,
+    setColecoesCarregadas,
+    setErroColecoesExplorar,
     FAVORITES_STORAGE_KEY,
     COMPLETED_STORAGE_KEY,
   });
@@ -226,6 +251,11 @@ export default function ExplorarPage() {
       filtroClassificacao,
       filtroCapitulos,
       ordenacao,
+      filtroColecao,
+      obrasFavoritas,
+      obrasConcluidas,
+      obrasComLeitura,
+      colecoesCarregadas,
       dadosExplorarCarregados,
       obrasLocais,
       proximoCursorCatalogo,
@@ -242,6 +272,11 @@ export default function ExplorarPage() {
     });
 
   function tentarCarregarCatalogoNovamente() {
+    if (erroColecoesExplorar && !erroCatalogoExplorar) {
+      setVersaoRetryColecoes((versaoAtual) => versaoAtual + 1);
+      return;
+    }
+
     if (erroCatalogoExplorar === "paginacao") {
       void carregarMaisObrasCatalogo();
       return;
@@ -249,6 +284,9 @@ export default function ExplorarPage() {
 
     setVersaoRetryCatalogo((versaoAtual) => versaoAtual + 1);
   }
+
+  const filtroColecaoAtivo =
+    usuarioLogado && filtroColecao !== "todos";
 
   const obrasBaseFiltradas = useMemo(() => {
     return filtrarObrasBaseExplorar({
@@ -594,10 +632,13 @@ export default function ExplorarPage() {
 
         </section>
 
-        {erroCatalogoExplorar && (
+        {(erroCatalogoExplorar || erroColecoesExplorar) && (
           <ExplorarCatalogErrorNotice
             possuiDados={obrasLocais.length > 0}
-            carregando={carregandoMaisCatalogo}
+            carregando={
+              carregandoMaisCatalogo ||
+              (filtroColecaoAtivo && !colecoesCarregadas)
+            }
             onTentarNovamente={tentarCarregarCatalogoNovamente}
           />
         )}
@@ -640,7 +681,8 @@ export default function ExplorarPage() {
 
         {modoConteudo === "obras" &&
           !categoriaSelecionada &&
-          !termoBusca && (
+          !termoBusca &&
+          !filtroColecaoAtivo && (
             <ExplorarCreativeWorkSections
               secoes={secoesCriativasObras}
               isDesktop={isDesktop}
@@ -650,7 +692,8 @@ export default function ExplorarPage() {
 
         {modoConteudo === "obras" &&
           !categoriaSelecionada &&
-          !termoBusca && (
+          !termoBusca &&
+          !filtroColecaoAtivo && (
             <ExplorarGenreWorkSections
               secoes={secoesObrasPorGenero}
               isDesktop={isDesktop}
@@ -660,7 +703,8 @@ export default function ExplorarPage() {
         {modoConteudo === "obras" &&
           (Boolean(categoriaSelecionada) ||
             Boolean(termoBusca) ||
-            filtroConteudo18Ativo) &&
+            filtroConteudo18Ativo ||
+            filtroColecaoAtivo) &&
           obrasLocaisFiltradas.length > 0 && (
             <ExplorarFilteredWorksSection
               obras={obrasLocaisFiltradas}
@@ -669,7 +713,15 @@ export default function ExplorarPage() {
                   ? `Publicações em ${categoriaSelecionada}`
                   : termoBusca
                     ? "Resultados da busca"
-                    : "Conteúdo 18+"
+                    : filtroColecao === "favoritas"
+                      ? "Na lista"
+                      : filtroColecao === "concluidas"
+                        ? "Concluídas"
+                        : filtroColecao === "lendo"
+                          ? "Lendo agora"
+                          : filtroColecao === "sem-leitura"
+                            ? "Sem leitura"
+                            : "Conteúdo 18+"
               }
               tema={temaPagina}
               isDesktop={isDesktop}
@@ -720,7 +772,10 @@ export default function ExplorarPage() {
             />
           )}
 
-        {totalResultados === 0 && !erroCatalogoExplorar && (
+        {totalResultados === 0 &&
+          !erroCatalogoExplorar &&
+          !erroColecoesExplorar &&
+          (!filtroColecaoAtivo || colecoesCarregadas) && (
           <EstadoVazioExplorar
             possuiObrasPublicadas={possuiObrasPublicadas}
             modoConteudo={modoConteudo}

@@ -10,6 +10,7 @@ const hook = ler(
 );
 const pagina = ler("../../app/explorar/page.tsx");
 const initialLoad = ler("../../app/explorar/hooks/use-explorar-initial-load.ts");
+const sync = ler("../../app/explorar/hooks/use-explorar-personal-collections-sync.ts");
 const derived = ler("../../app/explorar/lib/explorar-derived-utils.ts");
 
 test("hook centraliza somente as coleções pessoais de Explorar", () => {
@@ -24,6 +25,9 @@ test("hook centraliza somente as coleções pessoais de Explorar", () => {
     hook,
     /obrasConcluidas, setObrasConcluidas\] = useState<string\[\]>\(\[\]\)/,
   );
+  assert.match(hook, /obrasComLeitura, setObrasComLeitura\] = useState<string\[\]>\(\[\]\)/);
+  assert.match(hook, /colecoesCarregadas, setColecoesCarregadas\] = useState\(false\)/);
+  assert.match(hook, /erroColecoesExplorar, setErroColecoesExplorar\] = useState\(false\)/);
   assert.doesNotMatch(
     hook,
     /useEffect|useMemo|supabase|localStorage|normalizar|carregar|return\s*\(\s*</,
@@ -40,16 +44,16 @@ test("Explorar delega coleções e preserva carregamento e filtros pessoais", ()
   assert.doesNotMatch(pagina, /const \[obrasConcluidas, setObrasConcluidas\]/);
   assert.match(
     pagina,
-    /useExplorarInitialLoad\(\{[\s\S]*?setObrasFavoritas,[\s\S]*?setObrasConcluidas,/,
+    /useExplorarPersonalCollectionsSync\(\{[\s\S]*?usuarioIdExplorar,[\s\S]*?setObrasFavoritas,[\s\S]*?setObrasConcluidas,[\s\S]*?setObrasComLeitura,/,
   );
   assert.match(
     pagina,
     /filtrarObrasBaseExplorar\(\{[\s\S]*?filtroColecao,[\s\S]*?usuarioLogado,[\s\S]*?ordenacao,[\s\S]*?obrasFavoritas,[\s\S]*?obrasConcluidas,[\s\S]*?colecaoTemObraExplorar,/,
   );
-  assert.match(initialLoad, /setObrasFavoritas\(obrasFavoritasNormalizadas\);/);
-  assert.match(initialLoad, /setObrasConcluidas\(obrasConcluidasNormalizadas\);/);
-  assert.match(initialLoad, /setObrasFavoritas\(\[\]\);/);
-  assert.match(initialLoad, /setObrasConcluidas\(\[\]\);/);
+  assert.doesNotMatch(initialLoad, /carregarColecoesUsuarioExplorar|setObrasFavoritas|setObrasConcluidas/);
+  assert.match(sync, /carregarColecoesUsuarioExplorar\(userId\)/);
+  assert.match(sync, /versaoIdentidadeRef\.current !== numeroVersao/);
+  assert.match(sync, /setObrasComLeitura\(comLeitura\)/);
   assert.match(derived, /filtroColecao === "favoritas"/);
   assert.match(derived, /filtroColecao === "concluidas"/);
 });
