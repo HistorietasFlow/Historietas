@@ -65,6 +65,7 @@ test("item preserva nome texto e controles acessiveis", () => {
 });
 
 test("item preserva as regras de acoes e os argumentos dos callbacks", () => {
+  assert.match(componenteComentario, /usuarioPodeGerenciarComentario\(\s*usuarioIdLogado,\s*comentario\.userId,\s*obraAutorId/);
   assert.match(componenteComentario, /\{podeRemover \? \(/);
   assert.match(componenteComentario, /\{removendo \? "Removendo\.\.\." : "Remover"\}/);
   assert.match(componenteComentario, /\) : !comentario\.local \? \(/);
@@ -99,4 +100,5 @@ test("chave da thread fica na lista e handlers permanecem no cliente", () => {
   assert.match(paginaObra, /onRemover=\{removerComentarioObra\}/);
   assert.match(paginaObra, /onDenunciar=\{abrirDenunciaComentarioObra\}/);
   assert.match(paginaObra, /onCurtir=\{alternarCurtidaComentarioObra\}/);
+  assert.match(paginaObra, /obraAutorId=\{autorObraId\}/);
 });

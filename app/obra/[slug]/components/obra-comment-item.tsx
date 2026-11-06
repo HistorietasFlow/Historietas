@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usuarioPodeGerenciarComentario } from "../../../../lib/historietasCommentModeration";
 import {
   formatarTempoRelativoComentarioObra,
   type ComentarioObraPublico,
@@ -30,6 +31,7 @@ type ObraCommentItemProps = {
   comentarioRaizId: string;
   resposta?: boolean;
   usuarioIdLogado: string;
+  obraAutorId: string;
   comentarioRemovendoId: string;
   comentarioCurtindoId: string;
   agoraComentarios: number;
@@ -47,6 +49,7 @@ export default function ObraCommentItem({
   comentarioRaizId,
   resposta = false,
   usuarioIdLogado,
+  obraAutorId,
   comentarioRemovendoId,
   comentarioCurtindoId,
   agoraComentarios,
@@ -55,8 +58,10 @@ export default function ObraCommentItem({
   onDenunciar,
   onCurtir,
 }: ObraCommentItemProps) {
-  const podeRemover = Boolean(
-    usuarioIdLogado && comentario.userId === usuarioIdLogado,
+  const podeRemover = usuarioPodeGerenciarComentario(
+    usuarioIdLogado,
+    comentario.userId,
+    obraAutorId,
   );
   const removendo = comentarioRemovendoId === comentario.id;
   const curtindo = comentarioCurtindoId === comentario.id;

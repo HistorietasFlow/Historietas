@@ -16,6 +16,7 @@ type ObraCommentThreadProps = {
   respostas: ComentarioObraPublico[];
   quantidadeVisivelAtual: number;
   usuarioIdLogado: string;
+  obraAutorId: string;
   comentarioRemovendoId: string;
   comentarioCurtindoId: string;
   agoraComentarios: number;
@@ -39,6 +40,7 @@ export default function ObraCommentThread({
   respostas,
   quantidadeVisivelAtual,
   usuarioIdLogado,
+  obraAutorId,
   comentarioRemovendoId,
   comentarioCurtindoId,
   agoraComentarios,
@@ -67,6 +69,7 @@ export default function ObraCommentThread({
         comentario={comentario}
         comentarioRaizId={comentario.id}
         usuarioIdLogado={usuarioIdLogado}
+        obraAutorId={obraAutorId}
         comentarioRemovendoId={comentarioRemovendoId}
         comentarioCurtindoId={comentarioCurtindoId}
         agoraComentarios={agoraComentarios}
@@ -85,6 +88,7 @@ export default function ObraCommentThread({
               comentarioRaizId={comentario.id}
               resposta
               usuarioIdLogado={usuarioIdLogado}
+              obraAutorId={obraAutorId}
               comentarioRemovendoId={comentarioRemovendoId}
               comentarioCurtindoId={comentarioCurtindoId}
               agoraComentarios={agoraComentarios}

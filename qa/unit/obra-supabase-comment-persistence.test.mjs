@@ -44,7 +44,7 @@ const supabaseJavascript = [
   "          eq(campo, valor) {",
   "            globalThis.consultasPersistenciaComentarios.push([\"eq\", campo, valor]);",
   "            filtros += 1;",
-  "            return filtros === 3 ? globalThis.respostaPersistenciaComentarios : consulta;",
+  "            return filtros === 2 ? globalThis.respostaPersistenciaComentarios : consulta;",
   "          },",
   "        };",
   "        return consulta;",
@@ -120,7 +120,6 @@ test("remove comentário com tabela, delete e filtros na ordem atual", async () 
   const resultado = await removerComentarioObraSupabase(
     "comentario-1",
     "obra-1",
-    "usuario-1",
   );
 
   assert.equal(resultado, resposta);
@@ -129,7 +128,6 @@ test("remove comentário com tabela, delete e filtros na ordem atual", async () 
     ["delete"],
     ["eq", "id", "comentario-1"],
     ["eq", "obra_id", "obra-1"],
-    ["eq", "user_id", "usuario-1"],
   ]);
 });
 
@@ -141,7 +139,6 @@ test("retorna o erro bruto da remoção sem transformação", async () => {
   const resultado = await removerComentarioObraSupabase(
     "comentario-1",
     "obra-1",
-    "usuario-1",
   );
 
   assert.equal(resultado, resposta);

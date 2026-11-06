@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import { usuarioPodeGerenciarComentario } from "../../../lib/historietasCommentModeration";
 import type { ComentarioCapituloPublico } from "../components/ler-capitulo-comments-sheet";
 import type { PerfilComentarioLeitor } from "./ler-capitulo-comments-read-loader";
 import type { CapituloLocal, ObraLocal } from "./ler-capitulo-work-normalization";
@@ -258,8 +259,15 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
         (comentario) => comentario.id === comentarioId
       );
 
-      if (!comentarioAtual || comentarioAtual.userId !== userIdAtual) {
-        setComentarioStatus("Você só pode remover seus próprios comentários.");
+      if (
+        !comentarioAtual ||
+        !usuarioPodeGerenciarComentario(
+          userIdAtual,
+          comentarioAtual.userId,
+          obraAtual?.autorId || "",
+        )
+      ) {
+        setComentarioStatus("Você não pode remover este comentário.");
         return;
       }
 
@@ -271,7 +279,7 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
         .from("comentarios_capitulos")
         .delete()
         .eq("id", comentarioId)
-        .eq("user_id", userIdAtual);
+        .eq("capitulo_id", capituloId);
 
       if (!execucaoIdentidadeAcaoEstaAtual()) {
         return;

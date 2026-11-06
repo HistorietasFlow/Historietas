@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
   hasAuthorCredentials,
   hasVisitorCredentials,
+  destructiveEnabled,
   loginAsAuthor,
   loginAsVisitor,
   monitorRuntime,
@@ -171,5 +172,25 @@ test.describe("página da obra — cenários críticos", () => {
     await expect(
       actions.getByRole("button", { name: "Denunciar", exact: true }),
     ).toHaveCount(0);
+  });
+
+  test("autor remove comentário recebido na própria obra", async ({ page }) => {
+    test.skip(!hasAuthorCredentials, "Credenciais do autor E2E ausentes.");
+    test.skip(!destructiveEnabled, "Teste destrutivo permitido apenas no Supabase local.");
+    await loginAsAuthor(page);
+    await page.goto(workPath(), { waitUntil: "domcontentloaded" });
+
+    await page.getByRole("button", { name: /^Abrir comentários/i }).click();
+    const dialog = page.getByRole("dialog", {
+      name: /Comentários de Obra Pública E2E/i,
+    });
+    const comentario = dialog.locator("article").filter({
+      has: page.getByText("Comentário E2E 01", { exact: true }),
+    });
+
+    await expect(comentario.getByRole("button", { name: "Remover" })).toBeVisible();
+    await expect(comentario.getByRole("button", { name: "Denunciar" })).toHaveCount(0);
+    await comentario.getByRole("button", { name: "Remover" }).click();
+    await expect(dialog.getByText("Comentário E2E 01", { exact: true })).toHaveCount(0);
   });
 });

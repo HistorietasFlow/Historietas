@@ -579,6 +579,7 @@ export default function ObraDinamicaPage() {
                 comentariosCarregandoMais={comentariosCarregandoMais}
                 respostasVisiveisPorComentario={respostasVisiveisPorComentario}
                 usuarioIdLogado={usuarioIdLogado}
+                obraAutorId={autorObraId}
                 comentarioRemovendoId={comentarioRemovendoId}
                 comentarioCurtindoId={comentarioCurtindoId}
                 agoraComentarios={agoraComentarios}

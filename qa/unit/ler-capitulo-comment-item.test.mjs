@@ -37,6 +37,8 @@ test("item visual preserva avatar, perfil, ações e curtida do comentário", ()
   assert.match(item, /onCurtirComentario\(postId, comentario\.id\)/);
   assert.match(item, /onRemoverComentario\(postId, comentario\.id\)/);
   assert.match(item, /onDenunciarComentario\(comentario\.id\)/);
+  assert.match(item, /usuarioPodeGerenciarComentario\(\s*usuarioId,\s*comentario\.userId,\s*obraAutorId/);
+  assert.match(sheet, /obraAutorId=\{obraAutorId\}/);
   assert.doesNotMatch(item, /useState|useEffect|supabase|localStorage/);
 });
 

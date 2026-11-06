@@ -65,6 +65,7 @@ type ComentariosCapituloSheetProps = {
   post: ComentariosCapituloPost | null;
   podeComentar: boolean;
   usuarioId: string;
+  obraAutorId: string;
   usuarioNome: string;
   usuarioAvatar: string;
   erroInteracao: string;
@@ -85,6 +86,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
   post,
   podeComentar,
   usuarioId,
+  obraAutorId,
   usuarioNome,
   usuarioAvatar,
   erroInteracao,
@@ -333,6 +335,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
                     comentario={comentario}
                     comentarioRaizId={comentario.id}
                     usuarioId={usuarioId}
+                    obraAutorId={obraAutorId}
                     podeComentar={podeComentar}
                     postId={post?.id || ""}
                     agoraComentarios={agoraComentarios}
@@ -354,6 +357,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
                           comentarioRaizId={comentario.id}
                           resposta
                           usuarioId={usuarioId}
+                          obraAutorId={obraAutorId}
                           podeComentar={podeComentar}
                           postId={post?.id || ""}
                           agoraComentarios={agoraComentarios}
