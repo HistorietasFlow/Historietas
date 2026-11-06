@@ -9,6 +9,9 @@ const ler = (caminho) =>
 const pagina = ler("../../app/explorar/page.tsx");
 const botaoCarregarMais = ler("../../app/explorar/components/explorar-load-more-button.tsx");
 const codigo = ler("../../app/explorar/hooks/use-explorar-catalog-query.ts");
+const migrationBuscaAutores = ler(
+  "../../supabase/migrations/20261106175534_corrigir_busca_autores_catalogo.sql",
+);
 const codigoExecutavel = codigo.replace(/^import[\s\S]*?from "[^"]+";\n/gm, "");
 const injecao = `
 const useRef = (...args) => globalThis.__catalogQueryTest.useRef(...args);
@@ -28,6 +31,20 @@ const adiar = () => {
   return { promise, resolve, reject };
 };
 const mesmas = (a, b) => a && b && a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
+
+test("busca de autores usa o perfil publico atual sem ampliar os privilegios da RPC", () => {
+  assert.match(migrationBuscaAutores, /from public\.profiles_publicos as perfil_autor/);
+  assert.match(migrationBuscaAutores, /perfil_autor\.tipo = 'autor'/);
+  assert.match(migrationBuscaAutores, /strpos\(/);
+  assert.match(migrationBuscaAutores, /array_agg\(distinct perfil_autor\.user_id\)/);
+  assert.match(migrationBuscaAutores, /obra\.user_id = any\(v_autores_busca\)/);
+  assert.doesNotMatch(migrationBuscaAutores, /\bilike\b/i);
+  assert.match(migrationBuscaAutores, /prosecdef[\s\S]*?raise exception/);
+  assert.match(migrationBuscaAutores, /permissao\.grantee = 0/);
+  assert.match(migrationBuscaAutores, /permissao\.privilege_type = 'EXECUTE'/);
+  assert.match(migrationBuscaAutores, /has_function_privilege\('anon'/);
+  assert.match(migrationBuscaAutores, /has_function_privilege\('authenticated'/);
+});
 
 function preparar(t, overrides = {}) {
   const anterior = globalThis.window;
@@ -80,7 +97,7 @@ function preparar(t, overrides = {}) {
   };
   globalThis.__catalogQueryTest = deps;
   const props = {
-    busca: "", termoBusca: "", categoriaSelecionada: "", filtroFormato: "todos",
+    modoConteudo: "obras", busca: "", termoBusca: "", categoriaSelecionada: "", filtroFormato: "todos",
     filtroClassificacao: "todos", filtroCapitulos: "todos", ordenacao: "relevancia",
     filtroColecao: "todos", obrasFavoritas: [], obrasConcluidas: [],
     obrasComLeitura: [], colecoesCarregadas: true,
@@ -122,10 +139,11 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "20a6a8ecf603eb84e528702537927576d6f9032099b074ffe3a0b59f0dc096e7");
+    "d5e39846bfc422da82344d465f1e7d392b451ee7692018ba17ced1d02835a2c9");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
+  assert.match(pagina, /modoConteudo === "autores" && catalogoTemMais/);
   assert.match(pagina, /<ExplorarLoadMoreButton/);
   assert.match(pagina, /onCarregarMais=\{\(\) =>\n                    void carregarMaisObrasCatalogo\(\)\n                  \}/);
   assert.match(botaoCarregarMais, /onClick=\{onCarregarMais\}/);
@@ -237,6 +255,49 @@ test("cada filtro individual ativa consulta; capítulo desconhecido mantém fall
   c.render();
   await c.disparar();
   assert.equal(c.chamadas.find(([nome]) => nome === "carregar")[3][0].filtroCapitulos, "todos");
+});
+
+test("modo autores ativa paginação incremental mesmo sem outros filtros", async (t) => {
+  const cursor = { valor: 4, data: "2026-04-01", id: "autor-pagina-1" };
+  const c = preparar(t, { modoConteudo: "autores" });
+
+  let resultado = c.render();
+  assert.equal(resultado.consultaCatalogoPersonalizada, true);
+  assert.equal(c.timers.size, 1);
+  c.respostas.push(Promise.resolve({
+    obras: [{ id: "obra-autor-1", autorId: "autor-1" }],
+    pagina: { obraIds: ["obra-autor-1"], proximoCursor: cursor, temMais: true },
+    falhaTemporaria: false,
+  }));
+  await c.disparar();
+  assert.equal(c.estado.CatalogoTemMais, true);
+
+  c.chamadas.length = 0;
+  resultado = c.render({
+    obrasLocais: [{ id: "obra-autor-1", autorId: "autor-1" }],
+    proximoCursorCatalogo: cursor,
+    carregandoMaisCatalogo: false,
+  });
+  c.respostas.push(Promise.resolve({
+    obras: [
+      { id: "obra-autor-1", autorId: "autor-1" },
+      { id: "obra-autor-2", autorId: "autor-2" },
+    ],
+    pagina: { obraIds: ["obra-autor-2"], proximoCursor: null, temMais: false },
+    falhaTemporaria: false,
+  }));
+  await resultado.carregarMaisObrasCatalogo();
+
+  const chamada = c.chamadas.find(([nome]) => nome === "carregar");
+  assert.deepEqual(chamada[3], [{
+    busca: "", genero: "", formato: "", classificacao: "",
+    filtroCapitulos: "todos", ordenacao: "relevancia", limite: 24, cursor,
+  }]);
+  assert.deepEqual(
+    c.estado.ObrasLocais.map((obra) => obra.autorId),
+    ["autor-1", "autor-2"],
+  );
+  assert.equal(c.estado.CatalogoTemMais, false);
 });
 
 test("volta à consulta inicial após limpar filtros e cancela debounce anterior", async (t) => {

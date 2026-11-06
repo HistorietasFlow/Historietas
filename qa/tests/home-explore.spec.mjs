@@ -281,6 +281,60 @@ test("Explorar busca no catálogo real e carrega a próxima página", async ({
   runtime.assertClean();
 });
 
+for (const dispositivo of [
+  { nome: "desktop", viewport: { width: 1440, height: 900 } },
+  { nome: "mobile", viewport: { width: 390, height: 844 } },
+]) {
+  test(`Explorar pagina autores e busca pelo nome público atual (${dispositivo.nome})`, async ({
+    page,
+  }) => {
+    const runtime = monitorRuntime(page);
+    await page.setViewportSize(dispositivo.viewport);
+    await page.goto("/explorar?tipo=autores", { waitUntil: "domcontentloaded" });
+
+    const autoraRenomeada = page.getByRole("link", {
+      name: "Abrir perfil do autor Autora Renomeada Fora da Página",
+      exact: true,
+    });
+    const carregarMais = page.getByRole("button", {
+      name: "Carregar mais",
+      exact: true,
+    });
+
+    await expect(carregarMais).toBeVisible();
+    await expect(autoraRenomeada).toHaveCount(0);
+    await carregarMais.click();
+    await expect(autoraRenomeada.first()).toBeVisible();
+
+    const consultasDoNomeAtual = [];
+    page.on("request", (request) => {
+      if (!request.url().includes("/rpc/listar_obras_catalogo")) {
+        return;
+      }
+
+      const corpo = request.postDataJSON();
+      if (corpo?.p_busca === "Autora Renomeada Fora da Página") {
+        consultasDoNomeAtual.push(corpo);
+      }
+    });
+
+    await page.goto(
+      "/explorar?tipo=autores&busca=Autora%20Renomeada%20Fora%20da%20P%C3%A1gina",
+      { waitUntil: "domcontentloaded" },
+    );
+    await expect(autoraRenomeada.first()).toBeVisible();
+    await expect
+      .poll(() => consultasDoNomeAtual.length, {
+        message: "a busca pelo nome público atual deve consultar o catálogo uma vez",
+      })
+      .toBe(1);
+    await expect(page).toHaveURL(/tipo=autores/);
+    await expect(page).toHaveURL(/busca=Autora%20Renomeada/);
+
+    runtime.assertClean();
+  });
+}
+
 test("Explorar encontra coleção pessoal fora da primeira página no desktop e mobile", async ({
   page,
 }) => {

@@ -5,6 +5,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { ConsultaCatalogo, CursorCatalogo } from "../../../lib/catalogo";
 import type { ObraLocal } from "../lib/explorar-work-normalizers";
 import type { OrdenacaoExplorar } from "../lib/explorar-derived-utils";
+import type { ModoConteudoExplorar } from "../components/explorar-section-components";
 import type { ErroCatalogoExplorar } from "./use-explorar-catalog-pagination-state";
 import {
   CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
@@ -14,6 +15,7 @@ import type { FiltroColecaoCatalogoExplorar } from "../lib/explorar-remote-loade
 import type { FiltroColecaoExplorar } from "../lib/explorar-derived-utils";
 
 type OpcoesConsultaCatalogoExplorar = {
+  modoConteudo: ModoConteudoExplorar;
   busca: string;
   termoBusca: string;
   categoriaSelecionada: string;
@@ -42,6 +44,7 @@ type OpcoesConsultaCatalogoExplorar = {
 };
 
 export function useExplorarCatalogQuery({
+  modoConteudo,
   busca,
   termoBusca,
   categoriaSelecionada,
@@ -128,7 +131,8 @@ export function useExplorarCatalogQuery({
     ordenacao,
   ]);
   const consultaCatalogoPersonalizada = Boolean(
-    termoBusca ||
+    modoConteudo === "autores" ||
+      termoBusca ||
       categoriaSelecionada ||
       filtroFormato !== "todos" ||
       filtroClassificacao !== "todos" ||

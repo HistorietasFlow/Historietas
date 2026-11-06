@@ -310,6 +310,26 @@ test("pagina dados reais pela Data API de um Supabase local descartável", async
     assert.equal(chamadasCatalogo, 25);
   });
 
+  const buscaAutorRenomeado = exigirRespostaSemErro(
+    await supabase.rpc("listar_obras_catalogo", {
+      p_busca: "Autora Renomeada Fora da Página",
+      p_genero: "Teste",
+      p_formato: "Texto",
+      p_classificacao: "Livre",
+      p_filtro_capitulos: "com-capitulos",
+      p_ordenacao: "relevancia",
+      p_limite: 24,
+    }),
+    "busca pelo nome público atual do autor",
+  );
+
+  await t.test("busca usa o nome público atual mesmo quando a obra guarda nome antigo", () => {
+    assert.deepEqual(
+      buscaAutorRenomeado.map((registro) => registro.obra_id),
+      [uuidFixture("40000000", 1177)],
+    );
+  });
+
   const rankingLidas = exigirRespostaSemErro(
     await supabase.rpc("listar_obras_catalogo", {
       p_ordenacao: "lidas",

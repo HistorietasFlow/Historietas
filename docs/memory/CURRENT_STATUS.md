@@ -115,6 +115,13 @@ identidade autenticada quando uma conta confirmada ficou sem `public.profiles`.
 Perfis existentes continuam sendo apenas atualizados, sem sobrescrever dados
 legítimos; a recuperação não cria trigger em `auth.users`.
 
+### Explorar — catálogo de autores
+
+A aba Autores reutiliza a paginação por cursor do catálogo público e permite
+carregar páginas adicionais, sem limitar a descoberta à amostra inicial de
+obras. A busca da RPC `listar_obras_catalogo` também considera o nome atual em
+`profiles_publicos`, mantendo filtros, RLS e deduplicação por identidade.
+
 ### Lighthouse baseline
 
 Primeiro baseline observado:

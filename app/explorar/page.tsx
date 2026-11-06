@@ -244,6 +244,7 @@ export default function ExplorarPage() {
   const termoBusca = normalizarTexto(busca);
   const { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo } =
     useExplorarCatalogQuery({
+      modoConteudo,
       busca,
       termoBusca,
       categoriaSelecionada,
@@ -771,6 +772,14 @@ export default function ExplorarPage() {
               isDesktop={isDesktop}
             />
           )}
+
+        {modoConteudo === "autores" && catalogoTemMais && (
+          <ExplorarLoadMoreButton
+            carregando={carregandoMaisCatalogo}
+            language={language}
+            onCarregarMais={() => void carregarMaisObrasCatalogo()}
+          />
+        )}
 
         {totalResultados === 0 &&
           !erroCatalogoExplorar &&
