@@ -337,7 +337,7 @@ test("Home e Explorar não criam rolagem horizontal no celular", async ({
       route: "/explorar",
       getFinalMain: () =>
         page.locator("main").filter({
-          has: page.getByRole("heading", { name: "Explorar", exact: true }),
+          has: page.locator('section[aria-label="Categorias"]'),
         }),
     },
   ]) {

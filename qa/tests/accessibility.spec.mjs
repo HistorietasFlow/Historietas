@@ -14,7 +14,7 @@ const rotasPublicas = [
     rota: "/explorar",
     obterMainFinal: (page) =>
       page.locator("main").filter({
-        has: page.getByRole("heading", { name: "Explorar", exact: true }),
+        has: page.locator('section[aria-label="Categorias"]'),
       }),
   },
   {
