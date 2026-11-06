@@ -143,3 +143,26 @@ Usar esses números como ponto de partida, não como contrato permanente. Confir
 ## Próxima regra operacional
 
 Antes de sugerir ou iniciar um novo passo de refatoração, verificar no GitHub o estado real da PR/branch atual e não depender apenas deste arquivo.
+
+## Ciclo de melhorias funcionais — 06/11/2026
+
+- PRs #2192–#2198: Explorar ganhou filtros compartilháveis na URL, busca full-text sem refiltro indevido, estados de erro/retry, coleções pessoais paginadas, foco acessível dos filtros e descoberta paginada de autores com nome público atual; gêneros de autores e obras seguem a mesma regra.
+- PRs #2199–#2200: Home, Biblioteca e Leitor usam a ordem persistida dos capítulos para continuar a leitura, com fallback para dados legados e capítulos com lacunas.
+- PR #2201: sincronização de progresso entre dispositivos usa RPC condicional e tombstones de desmarcação. Migration aplicada à produção com checagem de permissões e `SECURITY INVOKER`; PR integrada à main.
+- A migration de autores da #2197 também foi aplicada em produção. Não deduzir que toda futura migration foi aplicada apenas pelo merge.
+
+### Ambiente local e consumo de recursos
+
+- Docker Desktop com Supabase CLI **2.116.0** e portas locais adaptadas para o Windows; a configuração `supabase/config.toml` e a migration auxiliar de normalização ACL são **locais, não versionadas**.
+- Testes de integração e Playwright devem usar Supabase local descartável. Para E2E, preferir `next build` + `next start`, com `--retries=0`; não atingir produção.
+- No Windows foram observadas falhas ambientais preexistentes em `test:static` (auditoria 196/197 pela migration auxiliar) e `test:session` (251/279 pela resolução de imports). A CI Linux é a referência para distinguir ambiente de regressão, sem ignorar falhas novas.
+- A conta Vercel foi alterada de **Pro para Hobby**. Snapshot informado em 06/11: **Deployment Storage 67,52 GB / 10 GB**; existe risco de bloqueio de novos deploys. A retenção foi configurada pelo responsável em **Canceled 7 dias / Errored 7 dias / Pre-Production 30 dias / Production 30 dias**. Não afirmar que a limpeza já reduziu o consumo sem nova medição.
+- Permanecem habilitados deployments automáticos somente na `main` e **Vercel Authentication: All Deployments**. Continuar trabalho e QA local sem exigir deploy para cada PR; não excluir deployments nem modificar a proteção de produção sem autorização.
+
+### Próximas prioridades propostas (não implementadas)
+
+1. Gestão de comentários para autores.
+2. Proteção contra spoilers.
+3. Histórico de moderação e validação final.
+
+São prioridades planejadas, sujeitas a auditoria do código antes de implementação.
