@@ -19,6 +19,7 @@ type DependenciasAcaoProgresso = {
     capituloId: string,
     lido: boolean,
     userIdEsperado?: string,
+    ocorridoEm?: string,
   ) => Promise<boolean>;
   marcarNotificacaoCapituloComoLidaSupabase: (
     userId: string,
@@ -79,7 +80,8 @@ export function criarAcaoProgressoLeituraCapitulo({
 
     const obrasAnteriores = obras;
     const novoStatusLido = !capituloAtual.lido;
-    const novaDataLeitura = novoStatusLido ? new Date().toISOString() : "";
+    const momentoAlteracao = new Date().toISOString();
+    const novaDataLeitura = novoStatusLido ? momentoAlteracao : "";
     let obraAtualizadaParaSupabase: ObraLocal | null = null;
 
     lidoCapituloSalvandoRef.current = true;
@@ -139,6 +141,7 @@ export function criarAcaoProgressoLeituraCapitulo({
         capituloAtual.id,
         novoStatusLido,
         userIdAtual,
+        momentoAlteracao,
       );
 
       if (!execucaoIdentidadeAcaoEstaAtual()) {

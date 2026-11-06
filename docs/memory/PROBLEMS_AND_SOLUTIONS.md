@@ -257,3 +257,24 @@ paginação por cursor já existente e acumula as páginas solicitadas, mantendo
 deduplicação por `autorId`. Assim, novos autores ficam alcançáveis sem carregar
 todo o catálogo e perfis bloqueados ou privados continuam sujeitos à view
 pública, RLS e filtros vigentes.
+
+## Progresso de leitura deve convergir entre dispositivos
+
+### Sintoma
+
+O leitor persistia `lido=true` com `upsert` e `lido=false` com `delete`
+incondicionais. Uma resposta atrasada de outro dispositivo podia, portanto,
+apagar uma leitura mais nova ou ressuscitar uma marcação depois de o usuário a
+ter removido.
+
+### Solução
+
+A ação gera um único timestamp no momento da interação e o envia à RPC
+`salvar_progresso_leitura`. A função, executada como `security invoker`, aplica
+o evento somente quando ele não é anterior ao estado armazenado. Desmarcações
+ficam como registros `lido=false` (tombstones), invisíveis para os consumidores
+de progresso, mas capazes de rejeitar marcações antigas que cheguem depois.
+
+Não voltar a usar `delete` ou `upsert` incondicional nesse fluxo. RLS continua
+isolando a identidade autenticada; Home, Biblioteca e Leitor consideram apenas
+registros `lido=true`, e retries idempotentes mantêm o estado mais recente.

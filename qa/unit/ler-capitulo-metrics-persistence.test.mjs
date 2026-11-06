@@ -15,7 +15,7 @@ const transpilar = (codigo) => typescript.transpileModule(codigo, {
 }).outputText;
 const importacao = (codigo) => import(`data:text/javascript;base64,${Buffer.from(transpilar(codigo)).toString("base64")}`);
 const persistenciaMock = persistencia
-  .replace('import { supabase } from "../../../lib/supabase/client";', 'const supabase = { auth: { getUser: (...args) => globalThis.__persistenciaLeitor.supabase.auth.getUser(...args) }, from: (...args) => globalThis.__persistenciaLeitor.supabase.from(...args) };')
+  .replace('import { supabase } from "../../../lib/supabase/client";', 'const supabase = { auth: { getUser: (...args) => globalThis.__persistenciaLeitor.supabase.auth.getUser(...args) }, from: (...args) => globalThis.__persistenciaLeitor.supabase.from(...args), rpc: (...args) => globalThis.__persistenciaLeitor.supabase.rpc(...args) };')
   .replace('import { idObraSupabaseValido, obterNumeroSeguro } from "../../../lib/utils";', 'const idObraSupabaseValido = (...args) => globalThis.__persistenciaLeitor.idValido(...args); const obterNumeroSeguro = (...args) => globalThis.__persistenciaLeitor.numero(...args);')
   .replace('import { calcularProgressoLeitura, type ObraLocal } from "./ler-capitulo-work-normalization";', 'const calcularProgressoLeitura = (...args) => globalThis.__persistenciaLeitor.progresso(...args);');
 const metricasMock = metricas
@@ -26,7 +26,7 @@ const obra = { id: "obra", capitulos: [capitulo] };
 test("os seis helpers preservam literalmente os corpos e a nova fronteira", () => {
   const contratos = {
     incrementarVisualizacaoCapituloSupabase: "28a08f1ce01c4d393fd89ae94ed741f32969674f1c5e11642926fc839fe64728",
-    salvarProgressoLeituraSupabase: "cdd8a9e0192f6e14828ba8aa71ca37f7b32b69aa22b1cb5340b2253579adac7f",
+    salvarProgressoLeituraSupabase: "6b85981af76b246cf86d20bc60e2b8206f03fff28a42d3e2ff7a25502c82eb32",
     salvarRegistroCapituloSupabase: "9d3f36d27ae5209d6531efb8790229cb11116d6835b4b4b72b194b16f66cbbd4",
     criarMetricasCapituloLocais: "530c4327e389c25dcb1a10f84e46f684d08beba3ee03dc0e2d0183530a5e670b",
     carregarMetricasCapituloSupabase: "14b55dd2ea91f612cd4fc840c69ddedab51e6ae13862a916ce265122d27ba536",
@@ -60,6 +60,13 @@ async function cenario(opcoes, teste) {
   const warnOriginal = console.warn;
   const supabase = {
     auth: { async getUser() { eventos.push(["auth"]); if (opcoes.authErro) throw new Error("auth"); return { data: { user: opcoes.user === "" ? null : { id: opcoes.user || "usuario" } } }; } },
+    async rpc(nome, args) {
+      eventos.push(["rpc", nome, args]);
+      return {
+        data: opcoes.resultadoRpc === undefined ? true : opcoes.resultadoRpc,
+        error: opcoes.erroRpc || null,
+      };
+    },
     from(tabela) {
       eventos.push(["from", tabela]);
       const builder = {
@@ -92,25 +99,34 @@ test("visualização preserva validação, endpoint, payload e fallbacks", async
   await cenario({ resposta: { ok: true, async json() { return { ok: true, total: -4 }; } } }, async ({ modulo }) => assert.equal(await modulo.incrementarVisualizacaoCapituloSupabase("capitulo"), 0));
 });
 
-test("progresso mantém autenticação, guards, upsert e delete com filtros", async () => {
+test("progresso mantém autenticação, guards e sincronização versionada", async () => {
   await cenario({}, async ({ modulo, eventos }) => {
-    assert.equal(await modulo.salvarProgressoLeituraSupabase(obra, " capitulo ", true), true);
-    assert.deepEqual(eventos.slice(0, 2), [["auth"], ["from", "progresso_leitura"]]);
-    const payload = eventos[2][1];
-    assert.deepEqual({ ...payload, atualizado_em: "data" }, { user_id: "usuario", obra_id: "obra", capitulo_id: "capitulo", progresso: 75, lido: true, atualizado_em: "data" });
-    assert.ok(!Number.isNaN(Date.parse(payload.atualizado_em)));
-    assert.deepEqual(eventos[2][2], { onConflict: "user_id,obra_id,capitulo_id" });
+    const ocorridoEm = "2026-11-06T20:00:00.000Z";
+    assert.equal(await modulo.salvarProgressoLeituraSupabase(obra, " capitulo ", true, "usuario", ocorridoEm), true);
+    assert.deepEqual(eventos, [["auth"], ["rpc", "salvar_progresso_leitura", {
+      p_obra_id: "obra",
+      p_capitulo_id: "capitulo",
+      p_lido: true,
+      p_progresso: 75,
+      p_ocorrido_em: ocorridoEm,
+    }]]);
   });
   await cenario({}, async ({ modulo, eventos }) => {
     assert.equal(await modulo.salvarProgressoLeituraSupabase(obra, " capitulo ", false), true);
-    assert.deepEqual(eventos, [["auth"], ["from", "progresso_leitura"], ["delete"], ["eq", "user_id", "usuario"], ["eq", "obra_id", "obra"], ["eq", "capitulo_id", "capitulo"]]);
+    assert.equal(eventos[1][0], "rpc");
+    assert.equal(eventos[1][2].p_lido, false);
+    assert.ok(!Number.isNaN(Date.parse(eventos[1][2].p_ocorrido_em)));
   });
-  for (const [opcoes, obraTeste, id] of [[{ user: "" }, obra, "capitulo"], [{}, { ...obra, id: "invalida" }, "capitulo"], [{}, obra, "   "]]) {
-    await cenario(opcoes, async ({ modulo, eventos }) => { assert.equal(await modulo.salvarProgressoLeituraSupabase(obraTeste, id, true), false); assert.deepEqual(eventos, [["auth"]]); });
+  for (const [opcoes, obraTeste, id, ocorridoEm] of [[{ user: "" }, obra, "capitulo", undefined], [{}, { ...obra, id: "invalida" }, "capitulo", undefined], [{}, obra, "   ", undefined], [{}, obra, "capitulo", "invalido"]]) {
+    await cenario(opcoes, async ({ modulo, eventos }) => { assert.equal(await modulo.salvarProgressoLeituraSupabase(obraTeste, id, true, "", ocorridoEm), false); assert.deepEqual(eventos, [["auth"]]); });
   }
-  for (const opcoes of [{ authErro: true }, { erroUpsert: new Error("upsert") }, { erroDelete: new Error("delete") }]) {
-    await cenario(opcoes, async ({ modulo, avisos }) => { assert.equal(await modulo.salvarProgressoLeituraSupabase(obra, "capitulo", !opcoes.erroDelete), false); assert.equal(avisos[0][0], "Não consegui salvar progresso de leitura no Supabase:"); });
+  for (const opcoes of [{ authErro: true }, { erroRpc: new Error("rpc") }]) {
+    await cenario(opcoes, async ({ modulo, avisos }) => { assert.equal(await modulo.salvarProgressoLeituraSupabase(obra, "capitulo", true), false); assert.equal(avisos[0][0], "Não consegui salvar progresso de leitura no Supabase:"); });
   }
+  await cenario({ resultadoRpc: false }, async ({ modulo, avisos }) => {
+    assert.equal(await modulo.salvarProgressoLeituraSupabase(obra, "capitulo", true), false);
+    assert.deepEqual(avisos, []);
+  });
 });
 
 test("curtidas e salvos removem antes de inserir, preservando id e erros", async () => {

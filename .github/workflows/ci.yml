@@ -153,6 +153,9 @@ jobs:
       - name: Preparar autenticação e conteúdo E2E locais
         run: npm run test:e2e:prepare:local -- --github-env "$GITHUB_ENV"
 
+      - name: Executar concorrência do progresso de leitura pela Data API
+        run: npm run test:reading-progress:integration
+
       - name: Gerar aplicação para os testes locais
         run: npm run build
 

@@ -2274,6 +2274,16 @@ export type Database = {
           visualizacoes: number
         }[]
       }
+      salvar_progresso_leitura: {
+        Args: {
+          p_capitulo_id: string
+          p_lido: boolean
+          p_obra_id: string
+          p_ocorrido_em: string
+          p_progresso: number
+        }
+        Returns: boolean
+      }
       obter_nome_usuario_notificacao: {
         Args: { p_user_id: string }
         Returns: string
