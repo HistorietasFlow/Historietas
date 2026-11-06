@@ -38,6 +38,44 @@ select
   timestamptz '2026-01-01 00:00:00+00'
 from generate_series(1, 101) as indice;
 
+insert into public.profiles (
+  id,
+  user_id,
+  nome,
+  avatar_url,
+  bio,
+  tipo,
+  criado_em,
+  atualizado_em,
+  sobre_bio,
+  username
+)
+values
+  (
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'a0000000-0000-0000-0000-000000000001'::uuid,
+    'QA Paginação',
+    '',
+    '',
+    'autor',
+    timestamptz '2026-01-01 00:00:00+00',
+    timestamptz '2026-01-01 00:00:00+00',
+    '',
+    'qa-paginacao'
+  ),
+  (
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'a0000000-0000-0000-0000-000000000002'::uuid,
+    'Autora Renomeada Fora da Página',
+    '',
+    '',
+    'autor',
+    timestamptz '2026-01-01 00:00:00+00',
+    timestamptz '2026-01-01 00:00:00+00',
+    '',
+    'autora-renomeada-fora-pagina'
+  );
+
 insert into public.comunidade_posts (
   id,
   autor_id,
@@ -125,9 +163,16 @@ select
     '40000000-0000-0000-0000-%s',
     lpad(indice::text, 12, '0')
   )::uuid,
-  'a0000000-0000-0000-0000-000000000001'::uuid,
+  case
+    when indice = 1177
+      then 'a0000000-0000-0000-0000-000000000002'::uuid
+    else 'a0000000-0000-0000-0000-000000000001'::uuid
+  end,
   format('QA Paginação Obra %s', lpad(indice::text, 6, '0')),
-  'QA Paginação',
+  case
+    when indice = 1177 then 'Nome Antigo da Autora'
+    else 'QA Paginação'
+  end,
   'Teste',
   'Texto',
   'Livre',
@@ -159,7 +204,11 @@ select
     '40000000-0000-0000-0000-%s',
     lpad(indice::text, 12, '0')
   )::uuid,
-  'a0000000-0000-0000-0000-000000000001'::uuid,
+  case
+    when indice = 1177
+      then 'a0000000-0000-0000-0000-000000000002'::uuid
+    else 'a0000000-0000-0000-0000-000000000001'::uuid
+  end,
   format('Capítulo QA %s', lpad(indice::text, 6, '0')),
   'Fixture local para validar o catálogo paginado.',
   1,

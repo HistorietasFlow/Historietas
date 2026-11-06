@@ -240,3 +240,20 @@ percorre somente páginas de IDs com os filtros públicos atuais até reunir a
 página pessoal solicitada, sem baixar o catálogo inteiro e sem expor IDs
 privados na URL. Falhas preservam o cache disponível, exibem indisponibilidade e
 permitem retry somente das coleções da identidade atual.
+
+## Explorar: autores não podem depender do nome ou da página inicial da obra
+
+### Sintoma
+
+A busca podia omitir um autor após a alteração do nome público, porque a RPC
+consultava somente o nome histórico salvo na obra. Além disso, a aba Autores
+derivava perfis apenas da amostra inicial de obras.
+
+### Solução
+
+`listar_obras_catalogo` preserva seu contrato e passa a comparar a busca com o
+nome atual exposto por `profiles_publicos`. No modo Autores, o cliente ativa a
+paginação por cursor já existente e acumula as páginas solicitadas, mantendo a
+deduplicação por `autorId`. Assim, novos autores ficam alcançáveis sem carregar
+todo o catálogo e perfis bloqueados ou privados continuam sujeitos à view
+pública, RLS e filtros vigentes.
