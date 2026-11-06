@@ -2,7 +2,29 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { hasAuthorCredentials, loginAsAuthor } from "./helpers.mjs";
 
-const rotasPublicas = ["/", "/explorar", "/login"];
+const rotasPublicas = [
+  {
+    rota: "/",
+    obterMainFinal: (page) =>
+      page.locator("main").filter({
+        has: page.locator('section[aria-label="Atalhos principais"]'),
+      }),
+  },
+  {
+    rota: "/explorar",
+    obterMainFinal: (page) =>
+      page.locator("main").filter({
+        has: page.getByRole("heading", { name: "Explorar", exact: true }),
+      }),
+  },
+  {
+    rota: "/login",
+    obterMainFinal: (page) =>
+      page.locator("main").filter({
+        has: page.locator("form"),
+      }),
+  },
+];
 const publicWorkSlug = (process.env.E2E_PUBLIC_WORK_SLUG || "").trim();
 const userId = (process.env.E2E_USER_ID || "").trim();
 const workId = (process.env.E2E_PUBLIC_WORK_ID || "").trim();
@@ -50,10 +72,11 @@ test("viewport global permite zoom do usuário", async ({ page }) => {
   }
 });
 
-for (const rota of rotasPublicas) {
+for (const { rota, obterMainFinal } of rotasPublicas) {
   test(`acessibilidade básica sem violações críticas em ${rota}`, async ({ page }) => {
     await page.goto(rota, { waitUntil: "domcontentloaded" });
-    await expect(page.locator("main")).toBeVisible();
+    await expect(obterMainFinal(page)).toBeVisible();
+    await expect(page.locator("main.historietas-loading-page")).toHaveCount(0);
     await esperarAxeSemViolacoesCriticas(page, rota);
   });
 }
@@ -168,12 +191,15 @@ test("home e explorar não criam rolagem horizontal em celular", async ({ page }
     height: 844,
   });
 
-  for (const rota of ["/", "/explorar"]) {
+  for (const { rota, obterMainFinal } of rotasPublicas.filter(
+    ({ rota }) => rota === "/" || rota === "/explorar",
+  )) {
     await page.goto(rota, {
       waitUntil: "domcontentloaded",
     });
 
-    await expect(page.locator("main")).toBeVisible();
+    await expect(obterMainFinal(page)).toBeVisible();
+    await expect(page.locator("main.historietas-loading-page")).toHaveCount(0);
 
     const dimensoes = await page.evaluate(() => ({
       viewport: window.innerWidth,

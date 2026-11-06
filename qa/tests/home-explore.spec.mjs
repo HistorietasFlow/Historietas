@@ -325,22 +325,28 @@ test("Home e Explorar não criam rolagem horizontal no celular", async ({
     height: 844,
   });
 
-  for (const { route, contentReady } of [
+  for (const { route, getFinalMain } of [
     {
       route: "/",
-      contentReady: () => page.getByLabel("Navegação principal"),
+      getFinalMain: () =>
+        page.locator("main").filter({
+          has: page.locator('section[aria-label="Atalhos principais"]'),
+        }),
     },
     {
       route: "/explorar",
-      contentReady: () =>
-        page.getByRole("heading", { name: "Explorar", exact: true }),
+      getFinalMain: () =>
+        page.locator("main").filter({
+          has: page.getByRole("heading", { name: "Explorar", exact: true }),
+        }),
     },
   ]) {
     await page.goto(route, {
       waitUntil: "domcontentloaded",
     });
 
-    await expect(contentReady()).toBeVisible();
+    await expect(getFinalMain()).toBeVisible();
+    await expect(page.locator("main.historietas-loading-page")).toHaveCount(0);
 
     const dimensions = await page.evaluate(
       () => ({
