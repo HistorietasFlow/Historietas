@@ -83,7 +83,7 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     return codigo.slice(corpo, fim);
   });
   assert.equal(createHash("sha256").update(corpos.join("\n---\n")).digest("hex"),
-    "c3b380f458ec08f17c5f1513e5468c76a865dc55cb3dfc0c3685a9f00ac64998");
+    "a071d9aed2c33e1542eca3e0cbe5ac4f6e891ca65a6307c352742c63a70a764f");
   for (const nome of funcoes) assert.match(pagina, new RegExp(`return ${nome}\\(\\{`));
   const nomesMemo = [
     "obrasBaseFiltradas", "obrasLocaisFiltradas", "autoresExplorar",
@@ -116,6 +116,68 @@ test("categorias preservam normalização e exceção Ficção / sci-fi", () => 
   assert.equal(categoriaCombinaComGenero("Ação", "Ação e aventura"), true);
   assert.equal(categoriaCombinaComGenero("", "Ação"), false);
   assert.equal(categoriaCombinaComGenero("Ação", "Romance"), false);
+});
+
+test("autores reutilizam a mesma combinação de gêneros das obras", () => {
+  const autores = [
+    {
+      chave: "sci-fi",
+      nome: "Autora Sci-Fi",
+      generos: ["SCI-FI espacial"],
+      totalObras: 1,
+      totalCurtidas: 0,
+      totalComentarios: 0,
+    },
+    {
+      chave: "acao",
+      nome: "Autor de Aventura",
+      generos: ["Ação e aventura"],
+      totalObras: 1,
+      totalCurtidas: 0,
+      totalComentarios: 0,
+    },
+    {
+      chave: "romance",
+      nome: "Autora de Romance",
+      generos: ["Romance"],
+      totalObras: 1,
+      totalCurtidas: 0,
+      totalComentarios: 0,
+    },
+  ];
+
+  assert.deepEqual(
+    filtrarAutoresExplorar({
+      autoresExplorar: autores,
+      categoriaSelecionada: "Ficção",
+      termoBusca: "",
+    }).map((autor) => autor.chave),
+    ["sci-fi"],
+  );
+  assert.deepEqual(
+    filtrarAutoresExplorar({
+      autoresExplorar: autores,
+      categoriaSelecionada: "Ação",
+      termoBusca: "",
+    }).map((autor) => autor.chave),
+    ["acao"],
+  );
+
+  const secoes = criarSecoesAutoresPorGeneroExplorar({
+    ...autoresSecoes(autores),
+    categorias: ["Ficção", "Ação"],
+  });
+  assert.deepEqual(
+    secoes.map((secao) => [
+      secao.genero,
+      secao.autores.map((autor) => autor.chave),
+    ]),
+    [
+      ["Ficção", ["sci-fi"]],
+      ["Ação", ["acao"]],
+      ["Outros", ["romance"]],
+    ],
+  );
 });
 
 test("ordenação preserva métricas, ordem de empate e não altera entrada", () => {

@@ -316,8 +316,7 @@ export function filtrarAutoresExplorar({
     return autoresExplorar.filter((autor) => {
       const passaCategoria = categoriaSelecionada
         ? autor.generos.some(
-            (genero) =>
-              normalizarTexto(genero) === normalizarTexto(categoriaSelecionada)
+            (genero) => categoriaCombinaComGenero(categoriaSelecionada, genero)
           )
         : true;
       const passaBusca = termoBusca
@@ -515,9 +514,8 @@ export function criarSecoesAutoresPorGeneroExplorar({
       .map((genero) => ({
         genero,
         autores: autoresExplorar.filter((autor) =>
-          autor.generos.some(
-            (generoAutor) =>
-              normalizarTexto(generoAutor) === normalizarTexto(genero)
+          autor.generos.some((generoAutor) =>
+            categoriaCombinaComGenero(genero, generoAutor)
           )
         ),
       }))
