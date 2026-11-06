@@ -187,13 +187,10 @@ export async function setVisitorFavoriteByWorkSlug(workSlug, ativo) {
   }
 
   const { error } = ativo
-    ? await supabase.from("favoritos").upsert(
-        {
-          user_id: authData.user.id,
-          obra_id: work.id,
-        },
-        { onConflict: "user_id,obra_id" },
-      )
+    ? await supabase.from("favoritos").insert({
+        user_id: authData.user.id,
+        obra_id: work.id,
+      })
     : await supabase
         .from("favoritos")
         .delete()
@@ -202,7 +199,7 @@ export async function setVisitorFavoriteByWorkSlug(workSlug, ativo) {
 
   await supabase.auth.signOut({ scope: "local" });
 
-  if (error) {
+  if (error && !(ativo && error.code === "23505")) {
     throw error;
   }
 }
