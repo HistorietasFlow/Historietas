@@ -118,6 +118,26 @@ test("monta a meta do menu da Biblioteca com tipo, capítulo e progresso", () =>
   );
 });
 
+test("usa a maior ordem canônica no total exibido quando há lacunas", () => {
+  const item = {
+    tipoDiario: "lendo",
+    capitulo: { id: "cap-4", ordem: 4 },
+    numeroCapitulo: 4,
+    obra: {
+      capitulos: [
+        { id: "cap-1", ordem: 1 },
+        { id: "cap-4", ordem: 4 },
+      ],
+      progressoLeitura: 50,
+    },
+  };
+
+  assert.equal(
+    obterMetaMenuBibliotecaPerfil(item),
+    "Lendo • Capítulo 4 de 4 • 50% concluído",
+  );
+});
+
 test("preserva rótulos, pluralização, fallback e limites de progresso", () => {
   const casos = [
     ["favorita", 1, 140, "Favorita • 1 capítulo • 100% concluído"],

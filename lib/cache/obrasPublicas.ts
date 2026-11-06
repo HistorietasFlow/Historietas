@@ -28,6 +28,7 @@ export type RotaCapituloPublico = {
 
 type CapituloLeituraPublica = {
   id: string;
+  ordem: number;
   titulo: string;
   texto: string;
   curtiu: boolean;
@@ -263,6 +264,12 @@ export const obterLeituraCapituloPublico = unstable_cache(
     const slugCanonico = obra.slug?.trim() || slug;
     const capitulosNormalizados = capitulos.map((capitulo, index) => ({
       id: capitulo.id,
+      ordem:
+        typeof capitulo.ordem === "number" &&
+        Number.isInteger(capitulo.ordem) &&
+        capitulo.ordem > 0
+          ? capitulo.ordem
+          : index + 1,
       titulo: capitulo.titulo?.trim() || `Capítulo ${index + 1}`,
       texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
       curtiu: false,

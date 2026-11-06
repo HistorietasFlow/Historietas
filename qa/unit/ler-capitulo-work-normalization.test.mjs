@@ -21,8 +21,8 @@ const executavel = js(modulo)
   .replace('"../../../lib/historietasAdultContent"', JSON.stringify(adultUrl));
 const { normalizarObra, calcularProgressoLeitura, mesclarObraSupabaseComLocal } = await import(dataUrl(executavel));
 
-test("normalização preserva fallbacks, tags, slug e progresso arredondado", () => {
-  const obra = normalizarObra({ titulo: "Uma História", autorId: " autor ", tags: [" ação ", " ", 4], capitulos: [{ lido: true }, { lido: false }, { lido: false }] }, 1);
+test("normalização preserva fallbacks, ordem canônica, tags, slug e progresso arredondado", () => {
+  const obra = normalizarObra({ titulo: "Uma História", autorId: " autor ", tags: [" ação ", " ", 4], capitulos: [{ lido: true, ordem: 1 }, { lido: false, ordem: 4 }, { lido: false }] }, 1);
   assert.equal(obra.id, "obra-2");
   assert.equal(obra.autor, "Autor não informado");
   assert.equal(obra.autorId, "autor");
@@ -32,6 +32,7 @@ test("normalização preserva fallbacks, tags, slug e progresso arredondado", ()
   assert.equal(obra.progressoLeitura, 33);
   assert.equal(obra.capitulos[0].id, "capitulo-1");
   assert.equal(obra.capitulos[0].titulo, "Capítulo 1");
+  assert.deepEqual(obra.capitulos.map((capitulo) => capitulo.ordem), [1, 4, 3]);
   assert.equal(calcularProgressoLeitura([]), 0);
   assert.deepEqual(normalizarObra({}, 0).tags, ["sem tags"]);
 });
@@ -54,7 +55,7 @@ test("avisos 18+ preservam classificação, deduplicação e fallback", () => {
 test("composição mantém interações locais, sequência remota e inclusão opcional dos capítulos locais", () => {
   const local = normalizarObra({ titulo: "Local", tags: ["local"], ultimoCapituloLidoId: "c1", ultimaLeituraEm: "2024-01-01", capitulos: [{ id: "c1", titulo: "Local 1", texto: "texto local", curtiu: true, salvo: true, comentario: "nota", lido: true, lidoEm: "data" }, { id: "somente-local", lido: false }] }, 0);
   const remoto = { id: "obra", user_id: "autor", titulo: " Remoto ", publicado: true, tags: [" remota "] };
-  const capitulos = [{ id: "c1", titulo: " Capítulo remoto ", texto: " ", publicado: true, visualizacoes: 8 }];
+  const capitulos = [{ id: "c1", titulo: " Capítulo remoto ", texto: " ", ordem: 4, publicado: true, visualizacoes: 8 }];
   const resultado = mesclarObraSupabaseComLocal(remoto, capitulos, local, true);
   assert.equal(resultado.titulo, "Remoto");
   assert.equal(resultado.autorId, "autor");
@@ -68,6 +69,7 @@ test("composição mantém interações locais, sequência remota e inclusão op
   assert.equal(resultado.capitulos[0].lido, true);
   assert.equal(resultado.capitulos[0].lidoEm, "data");
   assert.equal(resultado.capitulos[0].visualizacoes, 8);
+  assert.equal(resultado.capitulos[0].ordem, 4);
   assert.equal(resultado.ultimoCapituloLidoId, "c1");
   assert.equal(resultado.ultimaLeituraEm, "2024-01-01");
   assert.equal(resultado.progressoLeitura, 50);

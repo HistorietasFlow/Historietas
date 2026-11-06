@@ -12,6 +12,7 @@ import {
 import {
   colecaoTemObraPerfilBiblioteca,
   encontrarObraPorIdentificadorTopFivePerfil,
+  obterNumeroCapituloPerfilAutor,
 } from "./library-normalizers";
 import {
   compactarNumeroPerfilAutor,
@@ -365,9 +366,7 @@ export function obterAlvoLeituraMenuObraPerfilAutor(obra: ObraLocal) {
     obra.capitulos[obra.capitulos.length - 1] ||
     null;
   const numeroUltimoCapitulo = ultimoCapitulo
-    ? obra.capitulos.findIndex(
-        (capitulo) => capitulo.id === ultimoCapitulo.id,
-      ) + 1
+    ? obterNumeroCapituloPerfilAutor(obra, ultimoCapitulo)
     : 0;
 
   return {

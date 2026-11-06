@@ -125,6 +125,25 @@ function obterCapituloBibliotecaPerfil(obra: ObraLocal) {
   );
 }
 
+export function obterNumeroCapituloPerfilAutor(
+  obra: Pick<ObraLocal, "capitulos">,
+  capitulo: ObraLocal["capitulos"][number],
+) {
+  if (
+    typeof capitulo.ordem === "number" &&
+    Number.isInteger(capitulo.ordem) &&
+    capitulo.ordem > 0
+  ) {
+    return capitulo.ordem;
+  }
+
+  const indiceCapitulo = obra.capitulos.findIndex(
+    (capituloObra) => capituloObra.id === capitulo.id,
+  );
+
+  return indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
+}
+
 export function converterItensDiarioParaBiblioteca(
   itens: DiarioPerfilItem[],
   prefixo: string,
@@ -155,9 +174,7 @@ export function converterItensDiarioParaBiblioteca(
           ? encontrarCapituloParaContinuar(obra)
           : obterCapituloBibliotecaPerfil(obra);
       const numeroCapitulo = capitulo
-        ? obra.capitulos.findIndex(
-            (capituloObra) => capituloObra.id === capitulo.id,
-          ) + 1
+        ? obterNumeroCapituloPerfilAutor(obra, capitulo)
         : 0;
 
       itensPorObra.set(chaveObra, {
@@ -184,7 +201,7 @@ export function converterCapitulosSalvosParaBiblioteca(
   const itens: ItemBibliotecaPerfil[] = [];
 
   obrasDisponiveis.forEach((obra) => {
-    obra.capitulos.forEach((capitulo, capituloIndex) => {
+    obra.capitulos.forEach((capitulo) => {
       if (!capitulo.salvo) {
         return;
       }
@@ -193,7 +210,7 @@ export function converterCapitulosSalvosParaBiblioteca(
         chave: `salvo-${obra.id || obra.slug}-${capitulo.id}`,
         obra,
         capitulo,
-        numeroCapitulo: capituloIndex + 1,
+        numeroCapitulo: obterNumeroCapituloPerfilAutor(obra, capitulo),
         tempoAtividade:
           obterTimestampData(capitulo.lidoEm) ||
           obterTimestampData(capitulo.criadoEm) ||

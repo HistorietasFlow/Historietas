@@ -30,7 +30,18 @@ export function obterIndiceCapituloLeitor(
   );
 }
 
-export function obterNumeroCapituloLeitor(indiceCapitulo: number) {
+export function obterNumeroCapituloLeitor(
+  indiceCapitulo: number,
+  capituloAtual: CapituloLocal | null = null,
+) {
+  if (
+    typeof capituloAtual?.ordem === "number" &&
+    Number.isInteger(capituloAtual.ordem) &&
+    capituloAtual.ordem > 0
+  ) {
+    return capituloAtual.ordem;
+  }
+
   return indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
 }
 

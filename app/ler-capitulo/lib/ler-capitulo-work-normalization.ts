@@ -3,6 +3,7 @@ import { criarSlugBase, obterNumeroSeguro } from "../../../lib/utils";
 
 export type CapituloLocal = {
   id: string;
+  ordem?: number;
   titulo: string;
   texto: string;
   curtiu: boolean;
@@ -95,6 +96,12 @@ function normalizarCapitulo(
       typeof capitulo.id === "string" && capitulo.id.trim()
         ? capitulo.id
         : `capitulo-${index + 1}`,
+    ordem:
+      typeof capitulo.ordem === "number" &&
+      Number.isInteger(capitulo.ordem) &&
+      capitulo.ordem > 0
+        ? capitulo.ordem
+        : index + 1,
     titulo: capitulo.titulo || `Capítulo ${index + 1}`,
     texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
     curtiu: Boolean(capitulo.curtiu),
@@ -290,6 +297,16 @@ function mesclarCapituloSupabaseComLocal(
 ): CapituloLocal {
   return {
     id: capitulo.id,
+    ordem:
+      typeof capitulo.ordem === "number" &&
+      Number.isInteger(capitulo.ordem) &&
+      capitulo.ordem > 0
+        ? capitulo.ordem
+        : typeof capituloLocal?.ordem === "number" &&
+            Number.isInteger(capituloLocal.ordem) &&
+            capituloLocal.ordem > 0
+          ? capituloLocal.ordem
+          : index + 1,
     titulo:
       capitulo.titulo?.trim() ||
       capituloLocal?.titulo ||
