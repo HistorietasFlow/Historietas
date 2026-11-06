@@ -82,7 +82,19 @@ export function obterRotuloAcaoRemoverBibliotecaPerfil(
 export function obterMetaMenuBibliotecaPerfil(
   item: ItemBibliotecaPerfil,
 ) {
-  const totalCapitulos = item.obra.capitulos.length;
+  const totalCapitulos = item.obra.capitulos.reduce(
+    (maiorNumero, capitulo, indice) => {
+      const numeroCapitulo =
+        typeof capitulo.ordem === "number" &&
+        Number.isInteger(capitulo.ordem) &&
+        capitulo.ordem > 0
+          ? capitulo.ordem
+          : indice + 1;
+
+      return Math.max(maiorNumero, numeroCapitulo);
+    },
+    0,
+  );
   const progresso = Math.max(
     0,
     Math.min(100, Math.round(item.obra.progressoLeitura || 0)),

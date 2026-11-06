@@ -35,6 +35,12 @@ export function normalizarCapitulo(
       typeof capitulo.id === "string" && capitulo.id.trim()
         ? capitulo.id
         : `capitulo-${obraIndex + 1}-${capituloIndex + 1}`,
+    ordem:
+      typeof capitulo.ordem === "number" &&
+      Number.isInteger(capitulo.ordem) &&
+      capitulo.ordem > 0
+        ? capitulo.ordem
+        : capituloIndex + 1,
     titulo:
       typeof capitulo.titulo === "string" && capitulo.titulo.trim()
         ? capitulo.titulo

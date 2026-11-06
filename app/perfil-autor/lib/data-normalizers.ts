@@ -262,6 +262,12 @@ export function normalizarCapituloSupabase(
       row.id,
       `capitulo-supabase-${obraIndex + 1}-${capituloIndex + 1}`,
     ),
+    ordem:
+      typeof row.ordem === "number" &&
+      Number.isInteger(row.ordem) &&
+      row.ordem > 0
+        ? row.ordem
+        : capituloIndex + 1,
     titulo: pegarTexto(row.titulo, `Capítulo ${capituloIndex + 1}`),
     texto: "",
     curtiu: false,

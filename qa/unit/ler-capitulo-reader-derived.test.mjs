@@ -13,7 +13,7 @@ const {
   obterNumeroCapituloLeitor, obterCapituloAnteriorLeitor, obterProximoCapituloLeitor,
 } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`);
 
-const capitulos = [{ id: "c1" }, { id: "c2" }, { id: "c3" }];
+const capitulos = [{ id: "c1", ordem: 1 }, { id: "c2", ordem: 4 }, { id: "c3" }];
 const obra = { id: "obra", capitulos };
 
 test("deriva obra, capítulo, índice e número com os fallbacks atuais", () => {
@@ -26,6 +26,8 @@ test("deriva obra, capítulo, índice e número com os fallbacks atuais", () => 
   assert.equal(obterIndiceCapituloLeitor(null, capitulos[0]), -1);
   assert.equal(obterIndiceCapituloLeitor(obra, null), -1);
   assert.deepEqual([-1, 0, 1, 2].map(obterNumeroCapituloLeitor), [1, 1, 2, 3]);
+  assert.equal(obterNumeroCapituloLeitor(1, capitulos[1]), 4);
+  assert.equal(obterNumeroCapituloLeitor(2, capitulos[2]), 3);
 });
 
 test("deriva anterior e próximo preservando as guardas de índice", () => {
@@ -45,6 +47,9 @@ test("a página mantém os useMemo e dependências para cada derivação", () =>
   ]) {
     assert.match(pagina, new RegExp(`${helper}[\\s\\S]*?${dependencias.replace(/[\\[\\]]/g, "\\$&")}`));
   }
-  assert.match(pagina, /const numeroCapitulo = obterNumeroCapituloLeitor\(indiceCapitulo\);/);
+  assert.match(
+    pagina,
+    /const numeroCapitulo = obterNumeroCapituloLeitor\([\s\S]*?indiceCapitulo,[\s\S]*?capituloAtual,[\s\S]*?\);/,
+  );
   assert.match(pagina, /const totalPalavras = capituloAtual \? contarPalavras\(capituloAtual\.texto\) : 0;/);
 });

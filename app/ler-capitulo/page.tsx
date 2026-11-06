@@ -339,7 +339,10 @@ export function LerCapituloClient({
     [obraAtual, capituloAtual],
   );
 
-  const numeroCapitulo = obterNumeroCapituloLeitor(indiceCapitulo);
+  const numeroCapitulo = obterNumeroCapituloLeitor(
+    indiceCapitulo,
+    capituloAtual,
+  );
 
   const capituloAnterior = useMemo(
     () => obterCapituloAnteriorLeitor(obraAtual, indiceCapitulo),

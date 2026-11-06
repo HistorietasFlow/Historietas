@@ -13,7 +13,15 @@ export function criarHrefLeituraCapituloLeitor(
   const indiceCapitulo = obra.capitulos.findIndex(
     (capitulo) => capitulo.id === capituloId,
   );
-  const numeroCapitulo = indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
+  const capitulo = indiceCapitulo >= 0 ? obra.capitulos[indiceCapitulo] : null;
+  const numeroCapitulo =
+    typeof capitulo?.ordem === "number" &&
+    Number.isInteger(capitulo.ordem) &&
+    capitulo.ordem > 0
+      ? capitulo.ordem
+      : indiceCapitulo >= 0
+        ? indiceCapitulo + 1
+        : 1;
   const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
 
   if (

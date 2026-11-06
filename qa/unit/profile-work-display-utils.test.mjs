@@ -183,6 +183,11 @@ globalThis.__profileWorkDisplayDependencies = {
       ) || null
     );
   },
+  obterNumeroCapituloPerfilAutor(obra, capitulo) {
+    return Number.isInteger(capitulo.ordem) && capitulo.ordem > 0
+      ? capitulo.ordem
+      : Math.max(1, obra.capitulos.findIndex((item) => item.id === capitulo.id) + 1);
+  },
   compactarNumeroPerfilAutor(valor) {
     return `fmt:${Math.max(0, Math.round(Number(valor) || 0))}`;
   },
@@ -238,8 +243,8 @@ const javascript = typescript.transpileModule(
       ].join("\n"),
     )
     .replace(
-      /import \{[\s\S]*?colecaoTemObraPerfilBiblioteca,[\s\S]*?encontrarObraPorIdentificadorTopFivePerfil,[\s\S]*?\} from "\.\/library-normalizers";/,
-      "const { colecaoTemObraPerfilBiblioteca, encontrarObraPorIdentificadorTopFivePerfil } = globalThis.__profileWorkDisplayDependencies;",
+      /import \{[\s\S]*?colecaoTemObraPerfilBiblioteca,[\s\S]*?encontrarObraPorIdentificadorTopFivePerfil,[\s\S]*?obterNumeroCapituloPerfilAutor,[\s\S]*?\} from "\.\/library-normalizers";/,
+      "const { colecaoTemObraPerfilBiblioteca, encontrarObraPorIdentificadorTopFivePerfil, obterNumeroCapituloPerfilAutor } = globalThis.__profileWorkDisplayDependencies;",
     )
     .replace(
       /import \{[\s\S]*?compactarNumeroPerfilAutor,[\s\S]*?formatarFormatoPerfilAutor,[\s\S]*?criarHrefLeituraCapituloPerfilAutor,[\s\S]*?formatarGeneroPerfilAutor,[\s\S]*?obterTagPrincipalPerfilAutor,[\s\S]*?obterTimestampData,[\s\S]*?\} from "\.\/profile-formatters";/,
@@ -1103,16 +1108,16 @@ test("alvo de leitura do menu prioriza capítulo para continuar e preserva fallb
   const comContinuacao = obterAlvoLeituraMenuObraPerfilAutor({
     id: "obra-leitura",
     capitulos: [
-      { id: "c1" },
-      { id: "c2", continuar: true },
+      { id: "c1", ordem: 1 },
+      { id: "c2", ordem: 4, continuar: true },
       { id: "c3" },
     ],
   });
 
   assert.equal(comContinuacao.ultimoCapitulo.id, "c2");
   assert.equal(comContinuacao.temUltimoCapitulo, true);
-  assert.equal(comContinuacao.numeroUltimoCapitulo, 2);
-  assert.equal(comContinuacao.capituloHref, "/ler/obra-leitura/c2/2");
+  assert.equal(comContinuacao.numeroUltimoCapitulo, 4);
+  assert.equal(comContinuacao.capituloHref, "/ler/obra-leitura/c2/4");
 
   const fallbackFinal = obterAlvoLeituraMenuObraPerfilAutor({
     id: "obra-fallback",

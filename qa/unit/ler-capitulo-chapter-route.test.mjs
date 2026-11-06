@@ -18,19 +18,27 @@ const { criarHrefLeituraCapituloLeitor } = await import(
 );
 const obra = (sobrescritas = {}) => ({
   id: "obra-valida", slug: "slug-da-obra", titulo: "Título da obra", publicado: true,
-  capitulos: [{ id: "cap-1" }, { id: "cap-2" }], ...sobrescritas,
+  capitulos: [{ id: "cap-1", ordem: 1 }, { id: "cap-2", ordem: 4 }], ...sobrescritas,
 });
 
-test("criarHrefLeituraCapituloLeitor preserva rota pública, índice e fallbacks", () => {
-  assert.equal(criarHrefLeituraCapituloLeitor(obra(), "cap-2"), "/obra/slug-da-obra/capitulo/2");
+test("criarHrefLeituraCapituloLeitor preserva rota pública, ordem canônica e fallbacks", () => {
+  assert.equal(criarHrefLeituraCapituloLeitor(obra(), "cap-2"), "/obra/slug-da-obra/capitulo/4");
   assert.equal(criarHrefLeituraCapituloLeitor(obra({ slug: "" }), "cap-1"), "/obra/t%C3%ADtulo-da-obra/capitulo/1");
+  assert.equal(
+    criarHrefLeituraCapituloLeitor(
+      obra({ capitulos: [{ id: "cap-1" }, { id: "cap-2" }] }),
+      "cap-2",
+    ),
+    "/obra/slug-da-obra/capitulo/2",
+  );
   assert.equal(criarHrefLeituraCapituloLeitor(obra({ publicado: false, id: "obra /?" }), "cap ?&"), "/ler-capitulo?obraId=obra%20%2F%3F&capituloId=cap%20%3F%26");
   assert.equal(criarHrefLeituraCapituloLeitor(obra({ capitulos: [] }), "desconhecido"), "/obra/slug-da-obra/capitulo/1");
 });
 
 test("a rota preserva guardas e o factory de notificação usa o helper importado", () => {
   assert.match(fonte, /\.findIndex\(/);
-  assert.match(fonte, /indiceCapitulo >= 0 \? indiceCapitulo \+ 1 : 1/);
+  assert.match(fonte, /Number\.isInteger\(capitulo\.ordem\)/);
+  assert.match(fonte, /indiceCapitulo \+ 1/);
   assert.match(fonte, /criarSlugBase\(obra\.titulo\)/);
   assert.match(fonte, /obra\.publicado/);
   assert.match(fonte, /idObraSupabaseValido\(obra\.id\)/);

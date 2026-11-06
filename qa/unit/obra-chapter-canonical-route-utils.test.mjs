@@ -142,6 +142,8 @@ test("metadata e loader público preservam canonical, capítulo e conteúdo inic
     "ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO",
     "capitulos: capitulosNormalizados",
   ].forEach((contract) => assert.ok(publicCache.includes(contract), contract));
+
+  assert.match(publicCache, /ordem:\s*[\s\S]*?capitulo\.ordem/);
 });
 
 test("o leitor interno continua disponível e aceita dados públicos iniciais", () => {
