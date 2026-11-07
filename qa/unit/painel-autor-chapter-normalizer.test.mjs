@@ -149,6 +149,7 @@ test("normalizarObraPainel preserva capítulos, fallbacks, tags, arquivo e progr
       totalCurtidasPainel: -1.6,
       totalComentariosPainel: 2.5,
       totalSalvosPainel: Number.POSITIVE_INFINITY,
+      totalSeguidoresPainel: 3.6,
       totalLidosPainel: 1.4,
     },
     1,
@@ -176,6 +177,7 @@ test("normalizarObraPainel preserva capítulos, fallbacks, tags, arquivo e progr
   assert.equal(obra.totalCurtidasPainel, 0);
   assert.equal(obra.totalComentariosPainel, 3);
   assert.equal(obra.totalSalvosPainel, undefined);
+  assert.equal(obra.totalSeguidoresPainel, 4);
   assert.equal(obra.totalLidosPainel, 1);
 });
 

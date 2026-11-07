@@ -36,6 +36,7 @@ test("loader agregado preserva autenticação, perfil, carregamento e fallbacks"
     "totalCurtidasPainel: metrica?.audiencia.curtidoresUnicos || 0",
     "totalComentariosPainel: metrica?.audiencia.comentaristasUnicos || 0",
     "totalSalvosPainel: metrica?.audiencia.salvadoresUnicos || 0",
+    "totalSeguidoresPainel: metrica?.interacoesDiretas.seguidores || 0",
     "mesclarResultadoSupabasePainelAutor({",
     'console.warn("Não consegui acessar o Supabase no Painel do Autor:", error)',
     "favoritas: normalizarListaIds(obrasFavoritasLocais)",

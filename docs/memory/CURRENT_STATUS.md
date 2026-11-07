@@ -156,6 +156,13 @@ próprio comentarista, o autor da obra ou um administrador pode excluir o
 comentário. Localização por notificações, respostas, denúncia e moderação
 administrativa permanecem nos fluxos existentes.
 
+### Seguidores por obra no Painel do Autor
+
+Os cards do Painel do Autor exibem a contagem agregada de seguidores de cada obra
+permitida pela política de visibilidade, reutilizando
+`interacoesDiretas.seguidores` da RPC de métricas já consultada.
+Nenhuma consulta adicional ou identidade individual de seguidor é exposta.
+
 ### Explorar — catálogo de autores
 
 A aba Autores reutiliza a paginação por cursor do catálogo público e permite

@@ -85,8 +85,9 @@ test("página delega métricas e preserva a composição desktop", () => {
     /import \{ ObraPainelCard \} from "\.\/components\/painel-autor-work-card";/,
   );
   assert.doesNotMatch(page, /function ObraPainelCard\(/);
-  assert.equal((workCardSource.match(/style=\{sheetStatInlineStyle\}/g) || []).length, 5);
-  assert.equal((workCardSource.match(/style=\{sheetStatIconStyle\}/g) || []).length, 4);
+  assert.equal((workCardSource.match(/style=\{sheetStatInlineStyle\}/g) || []).length, 6);
+  assert.equal((workCardSource.match(/style=\{sheetStatIconStyle\}/g) || []).length, 5);
   assert.equal((workCardSource.match(/style=\{sheetStatHeartIconStyle\}/g) || []).length, 1);
-  assert.equal((workCardSource.match(/style=\{sheetStatValueStyle\}/g) || []).length, 5);
+  assert.equal((workCardSource.match(/style=\{sheetStatValueStyle\}/g) || []).length, 6);
+  assert.match(workCardSource, /aria-label=\{`Seguidores da obra: \$\{obra\.totalSeguidores\}`\}/);
 });
