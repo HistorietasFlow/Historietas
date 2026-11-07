@@ -50,6 +50,16 @@ test("loader do Diario preserva perfis, textos, leitura e ordenacao", () => {
   );
 });
 
+test("fallback do Diario nao transporta comentario ou resposta com spoiler", () => {
+  assert.match(
+    loader,
+    /import \{ criarMensagemComentarioDiarioSemSpoiler \} from "\.\/notificacoes-spoiler-safe-message-utils";/,
+  );
+  assert.match(loader, /criarMensagemComentarioDiarioSemSpoiler\(/);
+  assert.doesNotMatch(loader, /const comentario = pegarTexto\(registro\.texto\)/);
+  assert.doesNotMatch(loader, /comentario\.slice\(/);
+});
+
 test("hook inicial delega o loader do Diario sem manter a implementacao", () => {
   assert.match(
     hookInicial,

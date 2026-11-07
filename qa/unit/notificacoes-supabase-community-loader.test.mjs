@@ -73,6 +73,19 @@ test("loader da Comunidade preserva perfis, notificacoes e ordenacao", () => {
   assert.match(loader, /\.sort\(\s*\(a, b\) => dataNotificacao\(b\) - dataNotificacao\(a\)\s*\)/);
 });
 
+test("fallbacks sociais nao transportam comentarios ou reviews com spoiler", () => {
+  assert.match(
+    loader,
+    /from "\.\/notificacoes-spoiler-safe-message-utils";/,
+  );
+  assert.match(loader, /criarMensagemComentarioComunidadeSemSpoiler\(/);
+  assert.match(loader, /criarMensagemComentarioCapituloSemSpoiler\(/);
+  assert.match(loader, /criarMensagemReviewComunidadeSemSpoiler\(/);
+  assert.doesNotMatch(loader, /textoComentario/);
+  assert.doesNotMatch(loader, /textoReview/);
+  assert.doesNotMatch(loader, /trechoPost/);
+});
+
 test("hook inicial delega o loader da Comunidade sem manter a implementacao", () => {
   assert.match(
     hookInicial,

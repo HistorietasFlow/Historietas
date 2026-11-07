@@ -150,6 +150,7 @@ Antes de sugerir ou iniciar um novo passo de refatoração, verificar no GitHub 
 - PRs #2199–#2200: Home, Biblioteca e Leitor usam a ordem persistida dos capítulos para continuar a leitura, com fallback para dados legados e capítulos com lacunas.
 - PR #2201: sincronização de progresso entre dispositivos usa RPC condicional e tombstones de desmarcação. Migration aplicada à produção com checagem de permissões e `SECURITY INVOKER`; PR integrada à main.
 - Gestão de comentários para autores: notificações de comentários e respostas em obras abrem diretamente o comments sheet da obra por `?comentarios=1`, preservando o mesmo fluxo acessível, paginação, respostas e RLS existentes.
+- Proteção contra spoilers: fallbacks de notificações para comentários/respostas da Comunidade, capítulos e Diário, além de reviews, usam mensagens genéricas; o texto criado pelo usuário permanece no contexto de destino e não entra no estado nem na busca das Notificações.
 - A migration de autores da #2197 também foi aplicada em produção. Não deduzir que toda futura migration foi aplicada apenas pelo merge.
 
 ### Ambiente local e consumo de recursos
@@ -162,8 +163,6 @@ Antes de sugerir ou iniciar um novo passo de refatoração, verificar no GitHub 
 
 ### Próximas prioridades propostas (não implementadas)
 
-1. Gestão de comentários para autores.
-2. Proteção contra spoilers.
-3. Histórico de moderação e validação final.
+1. Histórico de moderação e validação final.
 
 São prioridades planejadas, sujeitas a auditoria do código antes de implementação.
