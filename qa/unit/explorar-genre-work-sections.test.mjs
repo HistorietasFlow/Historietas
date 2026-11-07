@@ -35,7 +35,7 @@ test("Explorar mantém a condição das seções por gênero na página", () => 
   assert.match(pagina, /import \{ ExplorarGenreWorkSections \} from "\.\/components\/explorar-genre-work-sections";/);
   assert.match(
     pagina,
-    /modoConteudo === "obras" &&\s*!categoriaSelecionada &&\s*!termoBusca &&\s*!filtroFormatoAtivo &&\s*!filtroTagAtivo &&\s*!ordenacaoPorCapitulosAtiva &&\s*!filtroColecaoAtivo && \(\s*<ExplorarGenreWorkSections/,
+    /modoConteudo === "obras" &&\s*!categoriaSelecionada &&\s*!termoBusca &&\s*!filtroFormatoAtivo &&\s*!filtroTagAtivo &&\s*!notaMinimaAtiva &&\s*!ordenacaoPorCapitulosAtiva &&\s*!filtroColecaoAtivo && \(\s*<ExplorarGenreWorkSections/,
   );
   assert.match(pagina, /secoes=\{secoesObrasPorGenero\}/);
   assert.doesNotMatch(pagina, /secoesObrasPorGenero\.map/);

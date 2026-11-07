@@ -5,6 +5,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { normalizarTexto } from "../../lib/utils";
 import { normalizarTagCatalogo } from "../../lib/catalogo-tag";
+import { normalizarNotaMinimaCatalogo } from "../../lib/catalogo-nota-minima";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -154,6 +155,8 @@ export default function ExplorarPage() {
     setFiltroFormato,
     filtroTag,
     setFiltroTag,
+    notaMinima,
+    setNotaMinima,
     filtroClassificacao,
     setFiltroClassificacao,
     filtroCapitulos,
@@ -213,6 +216,7 @@ export default function ExplorarPage() {
     setOrdenacao,
     setFiltroFormato,
     setFiltroTag,
+    setNotaMinima,
     setUsuarioLogado,
     setObrasLocais,
     setProximoCursorCatalogo,
@@ -241,6 +245,7 @@ export default function ExplorarPage() {
     setOrdenacao,
     setFiltroFormato,
     setFiltroTag,
+    setNotaMinima,
   });
 
   useExplorarAuthorData({
@@ -250,7 +255,7 @@ export default function ExplorarPage() {
   });
 
   const termoBusca = normalizarTexto(busca);
-  const { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo } =
+  const { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo, notaMinimaVerificada } =
     useExplorarCatalogQuery({
       modoConteudo,
       busca,
@@ -258,6 +263,8 @@ export default function ExplorarPage() {
       categoriaSelecionada,
       filtroFormato,
       filtroTag: normalizarTagCatalogo(filtroTag),
+      notaMinima,
+      usuarioIdExplorar,
       filtroClassificacao,
       filtroCapitulos,
       ordenacao,
@@ -299,6 +306,7 @@ export default function ExplorarPage() {
     usuarioLogado && filtroColecao !== "todos";
   const filtroFormatoAtivo = filtroFormato !== "todos";
   const filtroTagAtivo = Boolean(normalizarTagCatalogo(filtroTag));
+  const notaMinimaAtiva = notaMinima !== null;
   const ordenacaoPorCapitulosAtiva = ordenacao === "mais-capitulos";
 
   const obrasBaseFiltradas = useMemo(() => {
@@ -333,13 +341,16 @@ export default function ExplorarPage() {
       obrasBaseFiltradas,
       categoriaSelecionada,
       termoBusca,
-      obraIdsBuscaRemota,
+      obraIdsBuscaRemota: notaMinimaVerificada ? obraIdsBuscaRemota : null,
+      notaMinima,
     });
   }, [
     obrasBaseFiltradas,
     categoriaSelecionada,
     termoBusca,
     obraIdsBuscaRemota,
+    notaMinimaVerificada,
+    notaMinima,
   ]);
 
   const autoresExplorar = useMemo(() => {
@@ -433,6 +444,7 @@ export default function ExplorarPage() {
       termoBusca,
       filtroFormato,
       filtroTag: normalizarTagCatalogo(filtroTag),
+      notaMinima,
       filtroClassificacao,
       filtroCapitulos,
       usuarioLogado,
@@ -445,6 +457,7 @@ export default function ExplorarPage() {
     filtroColecao,
     filtroFormato,
     filtroTag: normalizarTagCatalogo(filtroTag),
+    notaMinima,
     filtroClassificacao,
     filtroCapitulos,
     ordenacao,
@@ -467,6 +480,7 @@ export default function ExplorarPage() {
 
     if (modo === "autores") {
       setFiltroClassificacao("todos");
+      setNotaMinima(null);
       if (ordenacaoPorCapitulosAtiva) {
         setOrdenacao("relevancia");
       }
@@ -480,6 +494,7 @@ export default function ExplorarPage() {
       ordenacao: modo === "autores" && ordenacaoPorCapitulosAtiva ? "relevancia" : ordenacao,
       filtroFormato,
       filtroTag,
+      notaMinima: modo === "autores" ? null : notaMinima,
     });
   }
 
@@ -535,6 +550,7 @@ export default function ExplorarPage() {
       ordenacao,
       filtroFormato,
       filtroTag,
+      notaMinima,
     });
   }
 
@@ -548,6 +564,7 @@ export default function ExplorarPage() {
         ordenacao,
         filtroFormato,
         filtroTag,
+        notaMinima,
       },
       "replace",
     );
@@ -562,6 +579,7 @@ export default function ExplorarPage() {
       ordenacao: novaOrdenacao,
       filtroFormato,
       filtroTag,
+      notaMinima,
     });
   }
 
@@ -574,6 +592,7 @@ export default function ExplorarPage() {
       ordenacao,
       filtroFormato: formato,
       filtroTag,
+      notaMinima,
     });
   }
 
@@ -582,7 +601,17 @@ export default function ExplorarPage() {
     atualizarUrlExplorar({
       modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
       filtroTag: tag,
+      notaMinima,
     }, "replace");
+  }
+
+  function selecionarNotaMinimaExplorar(valor: string) {
+    const nota = normalizarNotaMinimaCatalogo(valor);
+    setNotaMinima(nota);
+    atualizarUrlExplorar({
+      modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
+      filtroTag, notaMinima: nota,
+    });
   }
 
   function selecionarFiltroColecao(filtro: FiltroColecaoExplorar) {
@@ -609,6 +638,7 @@ export default function ExplorarPage() {
     setBusca("");
     setFiltroFormato("todos");
     setFiltroTag("");
+    setNotaMinima(null);
     setFiltroClassificacao("todos");
     setFiltroCapitulos("todos");
     setFiltroColecao("todos");
@@ -702,6 +732,8 @@ export default function ExplorarPage() {
               filtroFormato={filtroFormato}
               filtroTag={filtroTag}
               onSelecionarTag={selecionarTagExplorar}
+              notaMinima={notaMinima}
+              onSelecionarNotaMinima={selecionarNotaMinimaExplorar}
               filtroClassificacao={filtroClassificacao}
               mostrarConfirmacaoConteudo18={mostrarConfirmacaoConteudo18}
               confirmouIdadeConteudo18={confirmouIdadeConteudo18}
@@ -737,6 +769,7 @@ export default function ExplorarPage() {
           !termoBusca &&
           !filtroFormatoAtivo &&
           !filtroTagAtivo &&
+          !notaMinimaAtiva &&
           !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
             <ExplorarCreativeWorkSections
@@ -751,6 +784,7 @@ export default function ExplorarPage() {
           !termoBusca &&
           !filtroFormatoAtivo &&
           !filtroTagAtivo &&
+          !notaMinimaAtiva &&
           !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
             <ExplorarGenreWorkSections
@@ -765,6 +799,7 @@ export default function ExplorarPage() {
             filtroConteudo18Ativo ||
             filtroFormatoAtivo ||
             filtroTagAtivo ||
+            notaMinimaAtiva ||
             ordenacaoPorCapitulosAtiva ||
             filtroColecaoAtivo) &&
           obrasLocaisFiltradas.length > 0 && (
@@ -787,6 +822,8 @@ export default function ExplorarPage() {
                               ? traduzirFormatoExplorar(filtroFormato, language)
                               : filtroTagAtivo
                                 ? `${traduzirTextoExplorar("Tag da obra", language)}: ${normalizarTagCatalogo(filtroTag)}`
+                              : notaMinimaAtiva
+                                ? traduzirTextoExplorar("Avaliação mínima", language)
                               : ordenacaoPorCapitulosAtiva
                                 ? traduzirTextoExplorar("Mais capítulos", language)
                                 : "Conteúdo 18+"
@@ -848,7 +885,13 @@ export default function ExplorarPage() {
           />
         )}
 
+        {notaMinimaAtiva && (!notaMinimaVerificada || obraIdsBuscaRemota === null) &&
+          !erroCatalogoExplorar && !erroColecoesExplorar && (
+            <p role="status">{traduzirTextoExplorar("Consultando avaliações", language)}</p>
+        )}
+
         {totalResultados === 0 &&
+          !(notaMinimaAtiva && (!notaMinimaVerificada || obraIdsBuscaRemota === null)) &&
           !erroCatalogoExplorar &&
           !erroColecoesExplorar &&
           (!filtroColecaoAtivo || colecoesCarregadas) && (

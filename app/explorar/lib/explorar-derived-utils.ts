@@ -176,11 +176,13 @@ export function filtrarObrasExplorar({
   categoriaSelecionada,
   termoBusca,
   obraIdsBuscaRemota,
+  notaMinima = null,
 }: {
   obrasBaseFiltradas: ObraLocal[];
   categoriaSelecionada: string;
   termoBusca: string;
   obraIdsBuscaRemota?: readonly string[] | null;
+  notaMinima?: number | null;
 }) {
     return obrasBaseFiltradas.filter((obra) => {
       const passaCategoria = categoriaSelecionada
@@ -208,7 +210,8 @@ export function filtrarObrasExplorar({
           : textoBusca.includes(termoBusca)
         : true;
 
-      return passaCategoria && passaBusca;
+      const passaNota = notaMinima === null || Boolean(obraIdsBuscaRemota?.includes(obra.id));
+      return passaCategoria && passaBusca && passaNota;
     });
 }
 

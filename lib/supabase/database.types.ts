@@ -2196,6 +2196,7 @@ export type Database = {
       }
       listar_obras_catalogo: {
         Args: {
+          p_nota_minima?: number | null
           p_tag?: string
           p_busca?: string
           p_classificacao?: string

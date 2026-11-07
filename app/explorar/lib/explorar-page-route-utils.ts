@@ -3,6 +3,7 @@ import { categorias } from "./explorar-categories";
 import { OPCOES_FORMATO_OBRA } from "../../publicar/lib/publicar-static-options";
 import type { OrdenacaoExplorar } from "./explorar-derived-utils";
 import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
+import { normalizarNotaMinimaCatalogo } from "../../../lib/catalogo-nota-minima";
 
 const LIMITE_BUSCA_EXPLORAR = 90;
 const ORDENACOES_COMPARTILHAVEIS_EXPLORAR = new Set<OrdenacaoExplorar>([
@@ -19,6 +20,7 @@ export type FiltrosCompartilhaveisExplorar = Readonly<{
   ordenacao: OrdenacaoExplorar;
   filtroFormato: string;
   filtroTag?: string;
+  notaMinima?: number | null;
 }>;
 
 export const FILTROS_COMPARTILHAVEIS_EXPLORAR_PADRAO = {
@@ -74,6 +76,8 @@ export function lerFiltrosCompartilhaveisExplorar(
 ): FiltrosCompartilhaveisExplorar {
   const params = new URLSearchParams(search);
   const modoConteudo = params.get("tipo") === "autores" ? "autores" : "obras";
+  const notaMinima = modoConteudo === "obras"
+    ? normalizarNotaMinimaCatalogo(params.get("notaMinima")) : null;
 
   return {
     modoConteudo,
@@ -83,6 +87,7 @@ export function lerFiltrosCompartilhaveisExplorar(
     busca: normalizarBuscaExplorar(params.get("busca")),
     ordenacao: normalizarOrdenacaoExplorar(params.get("ordenacao"), modoConteudo),
     filtroFormato: normalizarFormatoExplorar(params.get("formato")),
+    ...(notaMinima !== null ? { notaMinima } : {}),
     ...(normalizarTagCatalogo(params.get("tag"))
       ? { filtroTag: normalizarTagCatalogo(params.get("tag")) }
       : {}),
@@ -122,6 +127,9 @@ export function criarUrlExplorar(
 
   const tag = normalizarTagCatalogo(filtros.filtroTag);
   if (tag) params.set("tag", tag);
+  const notaMinima = filtros.modoConteudo === "obras"
+    ? normalizarNotaMinimaCatalogo(filtros.notaMinima) : null;
+  if (notaMinima !== null) params.set("notaMinima", String(notaMinima));
   const queryComTag = params.toString();
   return queryComTag ? `/explorar?${queryComTag}` : "/explorar";
 }

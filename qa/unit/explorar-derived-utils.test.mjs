@@ -66,6 +66,14 @@ test("fallback filtra tag por igualdade, nunca por substring ou curinga", () => 
   assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { filtroTag: "acao epica" }))), ["literal"]);
   assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { filtroTag: "%" }))), []);
 });
+
+test("nota ativa exige IDs confirmados; cache sem métricas não comprova avaliação", () => {
+  const lista = [obra("aprovada"), obra("cache")];
+  const props = { obrasBaseFiltradas: lista, categoriaSelecionada: "", termoBusca: "", notaMinima: 4 };
+  assert.deepEqual(ids(filtrarObrasExplorar({ ...props, obraIdsBuscaRemota: null })), []);
+  assert.deepEqual(ids(filtrarObrasExplorar({ ...props, obraIdsBuscaRemota: ["aprovada"] })), ["aprovada"]);
+  assert.deepEqual(ids(filtrarObrasExplorar({ ...props, notaMinima: null })), ["aprovada", "cache"]);
+});
 const obrasSecoes = (obrasBaseFiltradas, extra = {}) => ({
   obrasBaseFiltradas, categoriaSelecionada: "", termoBusca: "",
   filtroConteudo18Ativo: false, ...extra,
@@ -90,7 +98,7 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     return codigo.slice(corpo, fim);
   });
   assert.equal(createHash("sha256").update(corpos.join("\n---\n")).digest("hex"),
-    "d3a1a9eef08cb58fd287b090e381a08fb4aeacd48db8571c5b94d3c2c28bb49c");
+    "bda836468d42b324aacad2439c07bd2154d6b44c5c2cef38a862ab738ff3d815");
   for (const nome of funcoes) assert.match(pagina, new RegExp(`return ${nome}\\(\\{`));
   const nomesMemo = [
     "obrasBaseFiltradas", "obrasLocaisFiltradas", "autoresExplorar",
@@ -107,10 +115,10 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
   });
   assert.match(dependencias[0], /filtroTag/);
   assert.equal(createHash("sha256").update(dependencias.join("\n---\n").replace(/    filtroTag,\n/, "")).digest("hex"),
-    "0c2f09881a17e0e8f0f0909afbad2bcd744b8e5950ee1f635f943c09acbf1889");
+    "849962dcc07c523f5ba59e0338c057fb6a7e16bcb55d2ebf3c30b694208317f6");
   assert.match(
     pagina,
-    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*\]/,
+    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*notaMinimaVerificada,\s*notaMinima,\s*\]/,
   );
   assert.match(pagina, /\[autoresExplorar, categoriaSelecionada, termoBusca\]/);
   assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroTag,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);

@@ -357,4 +357,21 @@ test("pagina dados reais pela Data API de um Supabase local descartável", async
     }), "variante do catálogo com tag literal");
     assert.deepEqual(resultado, []);
   });
+
+  await t.test("Data API preserva legados e resolve nota mínima combinada sem ambiguidade", async () => {
+    const parametros = { p_busca: "", p_genero: "Teste", p_formato: "Texto", p_classificacao: "Livre",
+      p_filtro_capitulos: "com-capitulos", p_ordenacao: "mais-recentes", p_limite: 24,
+      p_cursor_valor: null, p_cursor_data: null, p_cursor_id: null, p_tag: "" };
+    const legado = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", parametros), "contrato com tag vazio");
+    const desativado = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+      ...parametros, p_nota_minima: null,
+    }), "nota mínima desativada");
+    assert.deepEqual(desativado, legado);
+    const filtrado = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+      ...parametros, p_tag: "qa-tag-inexistente-%_\\,.()", p_nota_minima: 4.5,
+    }), "tag combinada com nota mínima");
+    assert.deepEqual(filtrado, []);
+    const invalido = await supabase.rpc("listar_obras_catalogo", { ...parametros, p_nota_minima: 4.1 });
+    assert.equal(invalido.error?.code, "22023");
+  });
 });

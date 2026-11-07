@@ -20,6 +20,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   filtroColecao: FiltroColecaoExplorar;
   filtroFormato: string;
   filtroTag: string;
+  notaMinima: number | null;
   filtroClassificacao: string;
   mostrarConfirmacaoConteudo18: boolean;
   confirmouIdadeConteudo18: boolean;
@@ -30,6 +31,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   onSelecionarColecao: (filtro: FiltroColecaoExplorar) => void;
   onSelecionarFormato: (formato: string) => void;
   onSelecionarTag: (tag: string) => void;
+  onSelecionarNotaMinima: (valor: string) => void;
   onSelecionarClassificacao: (filtro: string) => void;
   onConfirmouIdadeChange: (confirmou: boolean) => void;
   onVoltarConteudo18: () => void;
@@ -45,6 +47,7 @@ export default function ExplorarAdvancedFiltersComposition({
   filtroColecao,
   filtroFormato,
   filtroTag,
+  notaMinima,
   filtroClassificacao,
   mostrarConfirmacaoConteudo18,
   confirmouIdadeConteudo18,
@@ -55,6 +58,7 @@ export default function ExplorarAdvancedFiltersComposition({
   onSelecionarColecao,
   onSelecionarFormato,
   onSelecionarTag,
+  onSelecionarNotaMinima,
   onSelecionarClassificacao,
   onConfirmouIdadeChange,
   onVoltarConteudo18,
@@ -115,6 +119,24 @@ export default function ExplorarAdvancedFiltersComposition({
           <p id="explorar-tag-ajuda">
             {traduzirTextoExplorar("Informe uma tag completa. Deixe vazio para todas.", language)}
           </p>
+
+          {modoConteudo === "obras" && (
+            <label style={explorarModalSectionLabelStyle}>
+              {traduzirTextoExplorar("Avaliação mínima", language)}
+              <select
+                value={notaMinima ?? ""}
+                onChange={(event) => onSelecionarNotaMinima(event.target.value)}
+                style={{ display: "block", width: "100%", padding: 10, fontSize: 16 }}
+              >
+                <option value="">{traduzirTextoExplorar("Qualquer avaliação", language)}</option>
+                {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((nota) => (
+                  <option key={nota} value={nota}>
+                    {nota.toLocaleString(language === "pt-BR" ? "pt-BR" : language)} ★+
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <p style={explorarModalSectionLabelStyle}>
             {traduzirTextoExplorar("Ordenar", language)}

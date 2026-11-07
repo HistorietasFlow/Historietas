@@ -1,5 +1,6 @@
 import { supabase } from "./supabase/client";
 import { normalizarTagCatalogo } from "./catalogo-tag";
+import { normalizarNotaMinimaCatalogo } from "./catalogo-nota-minima";
 
 export type OrdenacaoCatalogo =
   | "relevancia"
@@ -32,6 +33,7 @@ export type ConsultaCatalogo = Readonly<{
   genero?: string;
   formato?: string;
   tag?: string;
+  notaMinima?: number | null;
   classificacao?: string;
   filtroCapitulos?: FiltroCapitulosCatalogo;
   ordenacao?: OrdenacaoCatalogo;
@@ -102,6 +104,7 @@ export async function listarPaginaCatalogo(
 ): Promise<PaginaCatalogo> {
   const cursor = consulta.cursor || null;
   const tag = normalizarTagCatalogo(consulta.tag);
+  const notaMinima = normalizarNotaMinimaCatalogo(consulta.notaMinima);
   const parametros = {
     p_busca: consulta.busca?.trim() || "",
     p_genero: consulta.genero?.trim() || "",
@@ -114,7 +117,12 @@ export async function listarPaginaCatalogo(
     p_cursor_data: cursor?.data,
     p_cursor_id: cursor?.id,
   };
-  const { data, error } = await supabase.rpc("listar_obras_catalogo", tag ? {
+  const { data, error } = await supabase.rpc("listar_obras_catalogo", notaMinima !== null ? {
+    ...parametros, p_tag: tag, p_nota_minima: notaMinima,
+    p_cursor_valor: cursor?.valor ?? null,
+    p_cursor_data: cursor?.data ?? null,
+    p_cursor_id: cursor?.id ?? null,
+  } : tag ? {
     ...parametros, p_tag: tag,
     p_cursor_valor: cursor?.valor ?? null,
     p_cursor_data: cursor?.data ?? null,
