@@ -2267,6 +2267,9 @@ const readerWorkLoaderPath = path.join(
 const readerWorkLoader = fs.existsSync(readerWorkLoaderPath)
   ? fs.readFileSync(readerWorkLoaderPath, "utf8")
   : "";
+const readerCommentsLoader = fs.readFileSync(
+  path.join(ROOT_DIR, "app/ler-capitulo/lib/ler-capitulo-comments-read-loader.ts"), "utf8"
+);
 const seguindoWorkQueryUtilsPath = path.join(
   ROOT_DIR,
   "app/seguindo/lib/seguindo-work-query-utils.ts"
@@ -2359,7 +2362,7 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
       : ""
   }${
     relativePath === "app/ler-capitulo/page.tsx"
-      ? `\n${readerWorkLoader}`
+      ? `\n${readerWorkLoader}\n${readerCommentsLoader}`
       : ""
   }${
     relativePath === "app/seguindo/page.tsx"

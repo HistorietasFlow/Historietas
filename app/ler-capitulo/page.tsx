@@ -73,6 +73,7 @@ import { useLerCapituloSessionPreferencesState } from "./hooks/use-ler-capitulo-
 import { useLerCapituloCommentsState } from "./hooks/use-ler-capitulo-comments-state";
 import { useLerCapituloFeedbackOverlaysState } from "./hooks/use-ler-capitulo-feedback-overlays-state";
 import { useLerCapituloInteractionData } from "./hooks/use-ler-capitulo-interaction-data";
+import { useLerCapituloCommentsSpoilerAccess } from "./hooks/use-ler-capitulo-comments-spoiler-access";
 import { useLerCapituloMetricsInteractionsState } from "./hooks/use-ler-capitulo-metrics-interactions-state";
 import { useLerCapituloViewRegistration, useLerCapituloEntryActivity } from "./hooks/use-ler-capitulo-entry-lifecycle";
 import { incrementarVisualizacaoCapituloSupabase, salvarProgressoLeituraSupabase, salvarRegistroCapituloSupabase } from "./lib/ler-capitulo-interaction-persistence";
@@ -192,8 +193,10 @@ export function LerCapituloClient({
   const salvoCapituloSalvandoRef = useRef(false);
   const lidoCapituloSalvandoRef = useRef(false);
   const acoesComentariosCapituloRef = useRef<Set<string>>(new Set<string>());
+  const [versaoContaComentarios, setVersaoContaComentarios] = useState(0);
 
   const limparEstadoContaAnterior = useCallback(() => {
+    setVersaoContaComentarios((versao) => versao + 1);
     setObras((obrasAtuais) => removerEstadoUsuarioObrasLeitor(obrasAtuais));
     setComentariosCapitulo([]);
     setComentariosCarregando(false);
@@ -315,7 +318,19 @@ export function LerCapituloClient({
     );
 
 
+  const { comentariosLiberados, revelarComentarios } = useLerCapituloCommentsSpoilerAccess({
+    obraId: obraAtual?.id || "",
+    capituloId: capituloAtual?.id || "",
+    aberto: mostrarComentario && statusAcesso18 === "permitido",
+    lidoCapituloSalvando,
+    dadosDaIdentidadeAtual: execucaoIdentidadeAcaoEstaAtual(),
+    versaoConta: versaoContaComentarios,
+    identidadeDadosAplicada,
+    identidadeAutenticadaLeitorRef,
+  });
+
   useLerCapituloInteractionData({
+    comentariosLiberados,
     capituloAtual,
     comentariosCapitulo,
     usuarioIdLogado,
@@ -358,7 +373,7 @@ export function LerCapituloClient({
   const postComentariosCapitulo: ComentariosCapituloPost | null = capituloAtual
     ? {
         id: capituloAtual.id,
-        comentarios: comentariosCapitulo,
+        comentarios: comentariosLiberados ? comentariosCapitulo : [],
       }
     : null;
 
@@ -705,6 +720,8 @@ export function LerCapituloClient({
       <ComentariosCapituloSheet
         key={mostrarComentario ? postComentariosCapitulo?.id || "comentarios-fechados" : "comentarios-fechados"}
         post={mostrarComentario ? postComentariosCapitulo : null}
+        comentariosLiberados={comentariosLiberados}
+        onRevelarComentarios={revelarComentarios}
         podeComentar={Boolean(usuarioIdDadosAplicados)}
         usuarioId={usuarioIdDadosAplicados}
         obraAutorId={obterAutorIdSeguro(obraAtual)}

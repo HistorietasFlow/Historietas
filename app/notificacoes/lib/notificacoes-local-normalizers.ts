@@ -133,6 +133,7 @@ export function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tip
   const tipoAlias = tipoOriginal.toLowerCase().replace(/[ _]+/g, "-");
 
   const aliases: Record<string, NotificacaoLocal["tipo"]> = {
+    "resposta-comentario-capitulo": "comentario-capitulo",
     "capitulo-novo": "novo-capitulo",
     "novo-capitulo-publicado": "novo-capitulo",
     "comunidade-curtida-post": "curtida-comunidade",
@@ -191,6 +192,10 @@ export function normalizarNotificacao(
 ): NotificacaoLocal {
   const notificacaoBruta = notificacao as Partial<NotificacaoLocal> &
     Record<string, unknown>;
+  const tipo = normalizarTipoNotificacao(notificacaoBruta.tipo);
+  // Sanitiza também registros legados/cache antes de busca, prévia e persistência.
+  const comentarioCapitulo = tipo === "comentario-capitulo" || tipo === "curtida-comentario-capitulo" ||
+    /^(?:(?:resposta-|curtida-)?comentario-capitulo:|capitulo-comentario-)/.test(notificacao.id || "");
 
   return {
     id:
@@ -204,15 +209,15 @@ export function normalizarNotificacao(
       typeof notificacao.link === "string" && notificacao.link.trim()
         ? notificacao.link.trim()
         : "",
-    titulo:
+    titulo: comentarioCapitulo ? "Interação nos comentários de capítulo" :
       typeof notificacao.titulo === "string" && notificacao.titulo.trim()
         ? limparTextoExibicao(notificacao.titulo)
         : "Nova notificação",
-    mensagem:
+    mensagem: comentarioCapitulo ? "Há uma nova interação nos comentários de um capítulo." :
       typeof notificacao.mensagem === "string" && notificacao.mensagem.trim()
         ? corrigirTextoQuebrado(notificacao.mensagem)
         : "Uma obra recebeu uma atualização.",
-    tipo: normalizarTipoNotificacao(notificacaoBruta.tipo),
+    tipo,
     lida: notificacaoBruta.lida === true,
     criadaEm:
       typeof notificacao.criadaEm === "string" && notificacao.criadaEm.trim()

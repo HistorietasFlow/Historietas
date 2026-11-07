@@ -12,9 +12,8 @@ export function criarMensagemComentarioComunidadeSemSpoiler({
 
 export function criarMensagemComentarioCapituloSemSpoiler({
   autorNome,
-  contextoTitulo,
 }: MensagemSocialSemSpoilerParametros) {
-  return `${autorNome} comentou em ${contextoTitulo || "seu capítulo"}.`;
+  return `${autorNome} comentou em um capítulo.`;
 }
 
 export function criarMensagemReviewComunidadeSemSpoiler({

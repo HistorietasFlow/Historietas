@@ -49,6 +49,11 @@ const NOTIFICACOES_UI_TRANSLATIONS: Record<string, TraducaoNotificacoes> = {
   "Capítulo": { en: "Chapter", es: "Capítulo" },
   "DATA:": { en: "DATE:", es: "FECHA:" },
   "Nova notificação": { en: "New notification", es: "Nueva notificación" },
+  "Interação nos comentários de capítulo": { en: "Chapter comment interaction", es: "Interacción en comentarios de capítulo" },
+  "Há uma nova interação nos comentários de um capítulo.": {
+    en: "There is a new interaction in a chapter's comments.",
+    es: "Hay una nueva interacción en los comentarios de un capítulo.",
+  },
   "Uma obra recebeu uma atualização.": { en: "A work received an update.", es: "Una obra recibió una actualización." },
   "Você recebeu uma nova notificação.": { en: "You received a new notification.", es: "Recibiste una nueva notificación." },
   "Novo capítulo publicado": { en: "New chapter published", es: "Nuevo capítulo publicado" },

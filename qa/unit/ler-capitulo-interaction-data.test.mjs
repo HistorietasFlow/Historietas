@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+import "./ler-capitulo-comments-spoiler-access.test.mjs";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-interaction-data.ts");
@@ -45,6 +46,7 @@ async function cenario(opcoes, teste) {
   globalThis.__interacaoLeitor = contexto;
   const { useLerCapituloInteractionData: executarInteracao } = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
   const parametros = {
+    comentariosLiberados: opcoes.comentariosLiberados ?? true,
     capituloAtual: opcoes.capitulo === undefined ? capitulo : opcoes.capitulo,
     comentariosCapitulo: opcoes.comentarios || [{ id: "a" }, { id: "b" }],
     usuarioIdLogado: opcoes.usuario === undefined ? "leitor" : opcoes.usuario,
@@ -93,6 +95,17 @@ test("identidade sem dados aplicados limpa estado de conta e não inicia consult
     assert.deepEqual(eventos.find(([nome]) => nome === "setComentarios"), ["setComentarios", []]);
     assert.equal(eventos.find(([nome]) => nome === "setMetricas")[1].curtiu, false);
     assert.equal(eventos.find(([nome]) => nome === "setMetricas")[1].salvo, false);
+  });
+});
+
+test("discussão protegida não consulta textos; métricas continuam independentes", async () => {
+  await cenario({ comentariosLiberados: false }, async ({ efeitos, eventos }) => {
+    efeitos[0].callback();
+    efeitos[1].callback();
+    await tick();
+    assert.ok(!eventos.some(([nome]) => nome === "carregarComentarios"));
+    assert.ok(eventos.some(([nome]) => nome === "remotas"));
+    assert.deepEqual(eventos.find(([nome]) => nome === "setComentarios"), ["setComentarios", []]);
   });
 });
 

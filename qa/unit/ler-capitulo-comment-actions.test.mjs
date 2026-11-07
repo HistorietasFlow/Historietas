@@ -140,7 +140,7 @@ test("envio preserva perfil, resposta, limite, estados e notificação", async (
   assert.equal(await longo.acoes.enviarComentarioCapitulo("post", texto), true);
   assert.equal(longo.estados.comentarios[0].texto.length, 420);
   assert.equal(longo.estados.digitado, texto);
-  assert.equal(longo.eventos.find((evento) => evento[0] === "notificacao")[1].mensagem, `Ana comentou em Capítulo: ${"a".repeat(120)}`);
+  assert.equal(longo.eventos.find((evento) => evento[0] === "notificacao")[1].mensagem, "Ana comentou em um capítulo.");
 });
 
 test("remoção e curtida exigem autenticação sem tocar no Supabase", async () => {

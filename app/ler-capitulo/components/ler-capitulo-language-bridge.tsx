@@ -61,6 +61,12 @@ const LER_CAPITULO_UI_TRANSLATIONS: Record<
   "Remover curtida do comentário": { en: "Remove comment like", es: "Quitar Me gusta del comentario" },
   "Curtir comentário": { en: "Like comment", es: "Dar Me gusta al comentario" },
   "Comentários": { en: "Comments", es: "Comentarios" },
+  "Comentários protegidos": { en: "Protected comments", es: "Comentarios protegidos" },
+  "Discussão do capítulo": { en: "Chapter discussion", es: "Discusión del capítulo" },
+  "Mostrar comentários — podem conter spoilers": {
+    en: "Show comments — may contain spoilers",
+    es: "Mostrar comentarios — pueden contener spoilers",
+  },
   "Fechar comentários": { en: "Close comments", es: "Cerrar comentarios" },
   "Recolher comentários": { en: "Collapse comments", es: "Contraer comentarios" },
   "Expandir comentários": { en: "Expand comments", es: "Expandir comentarios" },

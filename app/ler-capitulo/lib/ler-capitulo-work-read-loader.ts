@@ -1,7 +1,6 @@
 import { supabase } from "../../../lib/supabase/client";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import {
-  carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
 } from "../../../lib/supabase/paginacao.mjs";
 import {
@@ -10,11 +9,6 @@ import {
   type CapituloSupabaseRow,
   type ObraLocal,
 } from "./ler-capitulo-work-normalization";
-
-type RegistroComentarioCapitulo = {
-  capitulo_id?: unknown;
-  comentario?: unknown;
-};
 
 export async function carregarObraSupabase(
   obraId: string,
@@ -77,47 +71,20 @@ export async function carregarObraSupabase(
 
 export async function aplicarInteracoesCapitulosSupabase(
   obra: ObraLocal,
-  userId: string
+  _userId: string
 ): Promise<ObraLocal> {
+  // Mantém a assinatura existente; a identidade é validada pelo lifecycle chamador.
+  void _userId;
   const capituloIds = obra.capitulos.map((capitulo) => capitulo.id).filter(Boolean);
 
   if (capituloIds.length === 0) {
     return obra;
   }
 
-  const [metricas, comentariosResposta] = await Promise.all([
-    carregarMetricasConteudos({
-      obraIds: [obra.id],
-      capituloIds,
-    }),
-    carregarTodasPaginasPorLotesSupabase<RegistroComentarioCapitulo, string>({
-      nomeColecao: "comentários do leitor nos capítulos",
-      itens: capituloIds,
-      buscarPaginaLote: async (capituloIdsLote, inicio, fim) =>
-        supabase
-          .from("comentarios_capitulos")
-          .select("id,capitulo_id,comentario,atualizado_em")
-          .eq("user_id", userId)
-          .in("capitulo_id", capituloIdsLote)
-          .order("atualizado_em", { ascending: false })
-          .order("id", { ascending: false })
-          .range(inicio, fim),
-    }).catch(() => [] as RegistroComentarioCapitulo[]),
-  ]);
-  const comentarios = new Map<string, string>();
-
-  if (Array.isArray(comentariosResposta)) {
-    comentariosResposta.forEach((item: unknown) => {
-      const registro = item as RegistroComentarioCapitulo;
-
-      if (
-        typeof registro.capitulo_id === "string" &&
-        typeof registro.comentario === "string"
-      ) {
-        comentarios.set(registro.capitulo_id, registro.comentario);
-      }
-    });
-  }
+  const metricas = await carregarMetricasConteudos({
+    obraIds: [obra.id],
+    capituloIds,
+  });
 
   const progressoCarregado = metricas.carregado;
   let ultimoCapituloLidoId = "";
@@ -155,9 +122,8 @@ export async function aplicarInteracoesCapitulosSupabase(
       ...capitulo,
       curtiu: capitulo.curtiu || Boolean(metrica?.usuario.curtiu),
       salvo: capitulo.salvo || Boolean(metrica?.usuario.salvou),
-      comentario: comentarios.has(capitulo.id)
-        ? comentarios.get(capitulo.id) || ""
-        : capitulo.comentario,
+      // Textos são carregados somente após liberar a discussão do capítulo.
+      comentario: "",
       lido: lidoRemoto,
       lidoEm,
     };

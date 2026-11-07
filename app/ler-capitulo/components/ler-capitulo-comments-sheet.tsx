@@ -62,6 +62,8 @@ export type {
 } from "../lib/ler-capitulo-comment-types";
 
 type ComentariosCapituloSheetProps = {
+  comentariosLiberados: boolean;
+  onRevelarComentarios: () => void;
   post: ComentariosCapituloPost | null;
   podeComentar: boolean;
   usuarioId: string;
@@ -83,6 +85,8 @@ type ComentariosCapituloSheetProps = {
 };
 
 const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
+  comentariosLiberados,
+  onRevelarComentarios,
   post,
   podeComentar,
   usuarioId,
@@ -99,6 +103,14 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
   onDenunciarComentario,
 }: ComentariosCapituloSheetProps) {
   const comentarioRef = useRef<HTMLTextAreaElement | null>(null);
+  const discussaoRef = useRef<HTMLElement | null>(null);
+  const focoAposRevelarRef = useRef(false);
+  useEffect(() => {
+    if (comentariosLiberados && focoAposRevelarRef.current) {
+      discussaoRef.current?.focus();
+      focoAposRevelarRef.current = false;
+    }
+  }, [comentariosLiberados]);
   const [ordenacaoComentarios, setOrdenacaoComentarios] =
     useState<OrdenacaoComentariosCapitulo>("relevantes");
   const [menuOrdenacaoAberto, setMenuOrdenacaoAberto] = useState(false);
@@ -261,7 +273,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
           <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
 
           <strong id="ler-capitulo-comments-title" style={commentsSheetTitleStyle}>
-            {post.comentarios.length === 1
+            {!comentariosLiberados ? "Comentários protegidos" : post.comentarios.length === 1
               ? "1 comentário"
               : `${post.comentarios.length} comentários`}
           </strong>
@@ -318,8 +330,16 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
           </div>
         </header>
 
-        <section style={commentsSheetListStyle}>
-          {estruturaComentarios.comentariosRaiz.length > 0 ? (
+        <section ref={discussaoRef} tabIndex={-1} aria-label="Discussão do capítulo" style={commentsSheetListStyle}>
+          {!comentariosLiberados ? (
+            <button type="button" onClick={() => {
+              focoAposRevelarRef.current = true;
+              onRevelarComentarios();
+            }} aria-expanded={false}
+              style={{ ...commentRepliesToggleStyle, marginLeft: 0, maxWidth: "100%", padding: 16, fontSize: 14 }}>
+              Mostrar comentários — podem conter spoilers
+            </button>
+          ) : estruturaComentarios.comentariosRaiz.length > 0 ? (
             estruturaComentarios.comentariosRaiz.map((comentario) => {
               const respostas =
                 estruturaComentarios.respostasPorRaiz.get(comentario.id) || [];

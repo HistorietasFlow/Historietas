@@ -215,7 +215,7 @@ export function criarAcoesComentariosCapitulo<T extends MetricasComentarios>({
           capitulo: capituloAtual,
           comentarioId,
           titulo: "Novo comentário no capítulo",
-          mensagem: `${perfilAtual.nome || "Um leitor"} comentou em ${capituloAtual.titulo}: ${textoLimpo.slice(0, 120)}`,
+          mensagem: `${perfilAtual.nome || "Um leitor"} comentou em um capítulo.`,
           link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
           usuarioIdEsperado: userIdAtual,
         });
