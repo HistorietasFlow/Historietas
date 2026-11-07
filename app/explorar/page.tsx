@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { normalizarTexto } from "../../lib/utils";
+import { normalizarTagCatalogo } from "../../lib/catalogo-tag";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -151,6 +152,8 @@ export default function ExplorarPage() {
     setBusca,
     filtroFormato,
     setFiltroFormato,
+    filtroTag,
+    setFiltroTag,
     filtroClassificacao,
     setFiltroClassificacao,
     filtroCapitulos,
@@ -209,6 +212,7 @@ export default function ExplorarPage() {
     setBusca,
     setOrdenacao,
     setFiltroFormato,
+    setFiltroTag,
     setUsuarioLogado,
     setObrasLocais,
     setProximoCursorCatalogo,
@@ -236,6 +240,7 @@ export default function ExplorarPage() {
     setBusca,
     setOrdenacao,
     setFiltroFormato,
+    setFiltroTag,
   });
 
   useExplorarAuthorData({
@@ -252,6 +257,7 @@ export default function ExplorarPage() {
       termoBusca,
       categoriaSelecionada,
       filtroFormato,
+      filtroTag: normalizarTagCatalogo(filtroTag),
       filtroClassificacao,
       filtroCapitulos,
       ordenacao,
@@ -292,12 +298,14 @@ export default function ExplorarPage() {
   const filtroColecaoAtivo =
     usuarioLogado && filtroColecao !== "todos";
   const filtroFormatoAtivo = filtroFormato !== "todos";
+  const filtroTagAtivo = Boolean(normalizarTagCatalogo(filtroTag));
   const ordenacaoPorCapitulosAtiva = ordenacao === "mais-capitulos";
 
   const obrasBaseFiltradas = useMemo(() => {
     return filtrarObrasBaseExplorar({
       obrasLocais,
       filtroFormato,
+      filtroTag,
       filtroClassificacao,
       filtroCapitulos,
       filtroColecao,
@@ -310,6 +318,7 @@ export default function ExplorarPage() {
   }, [
     obrasLocais,
     filtroFormato,
+    filtroTag,
     filtroClassificacao,
     filtroCapitulos,
     filtroColecao,
@@ -423,6 +432,7 @@ export default function ExplorarPage() {
       categoriaSelecionada,
       termoBusca,
       filtroFormato,
+      filtroTag: normalizarTagCatalogo(filtroTag),
       filtroClassificacao,
       filtroCapitulos,
       usuarioLogado,
@@ -434,6 +444,7 @@ export default function ExplorarPage() {
     usuarioLogado,
     filtroColecao,
     filtroFormato,
+    filtroTag: normalizarTagCatalogo(filtroTag),
     filtroClassificacao,
     filtroCapitulos,
     ordenacao,
@@ -468,6 +479,7 @@ export default function ExplorarPage() {
       busca,
       ordenacao: modo === "autores" && ordenacaoPorCapitulosAtiva ? "relevancia" : ordenacao,
       filtroFormato,
+      filtroTag,
     });
   }
 
@@ -522,6 +534,7 @@ export default function ExplorarPage() {
       busca,
       ordenacao,
       filtroFormato,
+      filtroTag,
     });
   }
 
@@ -534,6 +547,7 @@ export default function ExplorarPage() {
         busca: valor,
         ordenacao,
         filtroFormato,
+        filtroTag,
       },
       "replace",
     );
@@ -547,6 +561,7 @@ export default function ExplorarPage() {
       busca,
       ordenacao: novaOrdenacao,
       filtroFormato,
+      filtroTag,
     });
   }
 
@@ -558,7 +573,16 @@ export default function ExplorarPage() {
       busca,
       ordenacao,
       filtroFormato: formato,
+      filtroTag,
     });
+  }
+
+  function selecionarTagExplorar(tag: string) {
+    setFiltroTag(tag);
+    atualizarUrlExplorar({
+      modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
+      filtroTag: tag,
+    }, "replace");
   }
 
   function selecionarFiltroColecao(filtro: FiltroColecaoExplorar) {
@@ -584,6 +608,7 @@ export default function ExplorarPage() {
     setCategoriaSelecionada("");
     setBusca("");
     setFiltroFormato("todos");
+    setFiltroTag("");
     setFiltroClassificacao("todos");
     setFiltroCapitulos("todos");
     setFiltroColecao("todos");
@@ -675,6 +700,8 @@ export default function ExplorarPage() {
               modoConteudo={modoConteudo}
               filtroColecao={filtroColecao}
               filtroFormato={filtroFormato}
+              filtroTag={filtroTag}
+              onSelecionarTag={selecionarTagExplorar}
               filtroClassificacao={filtroClassificacao}
               mostrarConfirmacaoConteudo18={mostrarConfirmacaoConteudo18}
               confirmouIdadeConteudo18={confirmouIdadeConteudo18}
@@ -709,6 +736,7 @@ export default function ExplorarPage() {
           !categoriaSelecionada &&
           !termoBusca &&
           !filtroFormatoAtivo &&
+          !filtroTagAtivo &&
           !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
             <ExplorarCreativeWorkSections
@@ -722,6 +750,7 @@ export default function ExplorarPage() {
           !categoriaSelecionada &&
           !termoBusca &&
           !filtroFormatoAtivo &&
+          !filtroTagAtivo &&
           !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
             <ExplorarGenreWorkSections
@@ -735,6 +764,7 @@ export default function ExplorarPage() {
             Boolean(termoBusca) ||
             filtroConteudo18Ativo ||
             filtroFormatoAtivo ||
+            filtroTagAtivo ||
             ordenacaoPorCapitulosAtiva ||
             filtroColecaoAtivo) &&
           obrasLocaisFiltradas.length > 0 && (
@@ -755,6 +785,8 @@ export default function ExplorarPage() {
                             ? "Sem leitura"
                             : filtroFormatoAtivo
                               ? traduzirFormatoExplorar(filtroFormato, language)
+                              : filtroTagAtivo
+                                ? `${traduzirTextoExplorar("Tag da obra", language)}: ${normalizarTagCatalogo(filtroTag)}`
                               : ordenacaoPorCapitulosAtiva
                                 ? traduzirTextoExplorar("Mais capítulos", language)
                                 : "Conteúdo 18+"

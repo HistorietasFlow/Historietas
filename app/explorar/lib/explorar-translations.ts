@@ -33,6 +33,8 @@ const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
   "Formato da obra": { en: "Work format", es: "Formato de la obra" },
   "Todos os formatos": { en: "All formats", es: "Todos los formatos" },
   "Mais capítulos": { en: "Most chapters", es: "Más capítulos" },
+  "Tag da obra": { en: "Work tag", es: "Etiqueta de la obra" },
+  "Informe uma tag completa. Deixe vazio para todas.": { en: "Enter a complete tag. Leave empty for all.", es: "Introduce una etiqueta completa. Deja vacío para todas." },
   "Tudo": { en: "All", es: "Todo" },
   "Autores": { en: "Authors", es: "Autores" },
   "EXPLORAR": { en: "EXPLORE", es: "EXPLORAR" },

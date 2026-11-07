@@ -20,6 +20,7 @@ type OpcoesConsultaCatalogoExplorar = {
   termoBusca: string;
   categoriaSelecionada: string;
   filtroFormato: string;
+  filtroTag?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
   ordenacao: OrdenacaoExplorar;
@@ -49,6 +50,7 @@ export function useExplorarCatalogQuery({
   termoBusca,
   categoriaSelecionada,
   filtroFormato,
+  filtroTag = "",
   filtroClassificacao,
   filtroCapitulos,
   ordenacao,
@@ -113,6 +115,7 @@ export function useExplorarCatalogQuery({
     busca: buscaCatalogo,
     genero: categoriaSelecionada,
     formato: filtroFormato === "todos" ? "" : filtroFormato,
+    ...(filtroTag ? { tag: filtroTag } : {}),
     classificacao:
       filtroClassificacao === "todos" ? "" : filtroClassificacao,
     filtroCapitulos:
@@ -128,6 +131,7 @@ export function useExplorarCatalogQuery({
     filtroCapitulos,
     filtroClassificacao,
     filtroFormato,
+    filtroTag,
     ordenacao,
   ]);
   const consultaCatalogoPersonalizada = Boolean(
@@ -135,6 +139,7 @@ export function useExplorarCatalogQuery({
       termoBusca ||
       categoriaSelecionada ||
       filtroFormato !== "todos" ||
+      filtroTag ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
       ordenacao !== "relevancia" ||

@@ -30,6 +30,7 @@ const traducoesUrl = urlModulo(
 );
 const modulo = await import(urlModulo(
   codigo
+    .replace("../../../lib/catalogo-tag", urlModulo(ler("../../lib/catalogo-tag.ts")))
     .replace("../../../lib/utils", utilUrl)
     .replace("../../../lib/historietasAdultContent", adultoUrl)
     .replace("./explorar-translations", traducoesUrl)
@@ -59,6 +60,12 @@ const base = (obrasLocais, extra = {}) => ({
   ...extra,
 });
 const ids = (obras) => obras.map((item) => item.id);
+
+test("fallback filtra tag por igualdade, nunca por substring ou curinga", () => {
+  const lista = [obra("literal", { tags: ["  AÇÃO   Épica "] }), obra("parcial", { tags: ["acao"] }), obra("outra", { tags: ["acao epicas"] })];
+  assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { filtroTag: "acao epica" }))), ["literal"]);
+  assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { filtroTag: "%" }))), []);
+});
 const obrasSecoes = (obrasBaseFiltradas, extra = {}) => ({
   obrasBaseFiltradas, categoriaSelecionada: "", termoBusca: "",
   filtroConteudo18Ativo: false, ...extra,
@@ -83,7 +90,7 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     return codigo.slice(corpo, fim);
   });
   assert.equal(createHash("sha256").update(corpos.join("\n---\n")).digest("hex"),
-    "a071d9aed2c33e1542eca3e0cbe5ac4f6e891ca65a6307c352742c63a70a764f");
+    "d3a1a9eef08cb58fd287b090e381a08fb4aeacd48db8571c5b94d3c2c28bb49c");
   for (const nome of funcoes) assert.match(pagina, new RegExp(`return ${nome}\\(\\{`));
   const nomesMemo = [
     "obrasBaseFiltradas", "obrasLocaisFiltradas", "autoresExplorar",
@@ -98,14 +105,15 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     assert.ok(abertura > inicio && fim > abertura, nome);
     return pagina.slice(abertura, fim + 1);
   });
-  assert.equal(createHash("sha256").update(dependencias.join("\n---\n")).digest("hex"),
+  assert.match(dependencias[0], /filtroTag/);
+  assert.equal(createHash("sha256").update(dependencias.join("\n---\n").replace(/    filtroTag,\n/, "")).digest("hex"),
     "0c2f09881a17e0e8f0f0909afbad2bcd744b8e5950ee1f635f943c09acbf1889");
   assert.match(
     pagina,
     /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*\]/,
   );
   assert.match(pagina, /\[autoresExplorar, categoriaSelecionada, termoBusca\]/);
-  assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);
+  assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroTag,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);
   assert.doesNotMatch(codigo, /\b(?:window|document|localStorage|supabase|useMemo|useEffect)\b/);
 });
 

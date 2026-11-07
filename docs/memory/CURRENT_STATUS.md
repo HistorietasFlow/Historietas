@@ -190,9 +190,19 @@ cursor da RPC existente, com grade única e carregamento incremental mesmo sem
 busca ou categoria. Ao entrar em Autores, essa ordenação volta para relevância.
 Não representa tamanho em palavras, páginas ou tempo de leitura.
 
-Tags já participam da busca full-text, mas a RPC não oferece filtro exclusivo de
-tag, faixa de tamanho ou nota mínima. Novos filtros desse tipo precisam de uma
-fase dedicada ao contrato do catálogo; não devem filtrar apenas a página local.
+### Explorar — filtro por tag
+
+O painel permite informar uma tag completa, compartilhável por `tag` na URL.
+A comparação é literal, ignora caixa, acentos portugueses e espaços ASCII
+repetidos; `%`, `_` e pontuação não são operadores. A variante da RPC com tag
+aplica o predicado antes do cursor/limite, preservando publicação e RLS.
+A assinatura antiga permanece intacta; o cliente só usa a variante quando há
+tag e envia todos os argumentos, inclusive cursores nulos na primeira página,
+evitando sobrecargas ambíguas. O deploy do app depende da aplicação prévia da
+migration correspondente pelo responsável; merge não implica aplicação.
+
+Busca full-text continua independente. Faixas de tamanho e nota mínima ainda
+não têm parâmetros na RPC; não devem ser implementadas sobre a amostra local.
 
 ### Lighthouse baseline
 

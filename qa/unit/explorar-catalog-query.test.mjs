@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+// Mantém o novo contrato RPC na lista de sessão já executada pela CI.
+import "./catalogo-tag.test.mjs";
 
 const ler = (caminho) =>
   readFileSync(new URL(caminho, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -139,7 +141,7 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "d5e39846bfc422da82344d465f1e7d392b451ee7692018ba17ced1d02835a2c9");
+    "cefc5e97eba0c9b30362ebd7bfc2a52c59d30c282dac3748cdb13211d4075464");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -298,6 +300,27 @@ test("modo autores ativa paginação incremental mesmo sem outros filtros", asyn
     ["autor-1", "autor-2"],
   );
   assert.equal(c.estado.CatalogoTemMais, false);
+});
+
+test("tag ativa consulta paginada, mantém cursor e descarta resultado antigo após troca", async (t) => {
+  const c = preparar(t, { filtroTag: "acao" });
+  const antiga = adiar();
+  c.respostas.push(antiga.promise);
+  assert.equal(c.render().consultaCatalogoPersonalizada, true);
+  const pendente = c.disparar();
+  const cursor = { valor: 3, data: "2026-01-01", id: "obra-a" };
+  c.respostas.push(Promise.resolve({ obras: [{ id: "nova" }], pagina: { obraIds: ["nova"], proximoCursor: cursor, temMais: true } }));
+  c.render({ filtroTag: "romance", filtroFormato: "HQ" });
+  await c.disparar();
+  antiga.resolve({ obras: [{ id: "antiga" }], pagina: null });
+  await pendente;
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "nova" }]);
+  c.respostas.push(Promise.resolve({ obras: [{ id: "p2" }], pagina: { obraIds: ["p2"], proximoCursor: null, temMais: false } }));
+  await c.render({ proximoCursorCatalogo: cursor }).carregarMaisObrasCatalogo();
+  const consulta = c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0];
+  assert.equal(consulta.tag, "romance");
+  assert.equal(consulta.formato, "HQ");
+  assert.deepEqual(consulta.cursor, cursor);
 });
 
 test("volta à consulta inicial após limpar filtros e cancela debounce anterior", async (t) => {

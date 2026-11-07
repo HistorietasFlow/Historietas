@@ -1,4 +1,5 @@
 import { supabase } from "./supabase/client";
+import { normalizarTagCatalogo } from "./catalogo-tag";
 
 export type OrdenacaoCatalogo =
   | "relevancia"
@@ -30,6 +31,7 @@ export type ConsultaCatalogo = Readonly<{
   busca?: string;
   genero?: string;
   formato?: string;
+  tag?: string;
   classificacao?: string;
   filtroCapitulos?: FiltroCapitulosCatalogo;
   ordenacao?: OrdenacaoCatalogo;
@@ -99,7 +101,8 @@ export async function listarPaginaCatalogo(
   consulta: ConsultaCatalogo = {},
 ): Promise<PaginaCatalogo> {
   const cursor = consulta.cursor || null;
-  const { data, error } = await supabase.rpc("listar_obras_catalogo", {
+  const tag = normalizarTagCatalogo(consulta.tag);
+  const parametros = {
     p_busca: consulta.busca?.trim() || "",
     p_genero: consulta.genero?.trim() || "",
     p_formato: consulta.formato?.trim() || "",
@@ -110,7 +113,13 @@ export async function listarPaginaCatalogo(
     p_cursor_valor: cursor?.valor,
     p_cursor_data: cursor?.data,
     p_cursor_id: cursor?.id,
-  });
+  };
+  const { data, error } = await supabase.rpc("listar_obras_catalogo", tag ? {
+    ...parametros, p_tag: tag,
+    p_cursor_valor: cursor?.valor ?? null,
+    p_cursor_data: cursor?.data ?? null,
+    p_cursor_id: cursor?.id ?? null,
+  } : parametros);
 
   if (error) {
     throw new Error(`Não foi possível consultar o catálogo: ${error.message}`);

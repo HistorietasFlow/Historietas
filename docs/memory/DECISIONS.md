@@ -50,6 +50,10 @@
 - A descoberta de autores pagina a mesma RPC pública de obras por cursor; não deve baixar o catálogo inteiro nem criar uma varredura paralela sem limites.
 - A correspondência textual por autor usa o nome público atual de `profiles_publicos`, enquanto o nome gravado na obra permanece apenas como dado histórico/fallback de apresentação.
 - A RPC continua `SECURITY INVOKER`: privacidade e visibilidade dos perfis permanecem sob os contratos públicos e RLS existentes.
+- O filtro literal de uma tag é aplicado no banco antes da paginação. A assinatura
+  legada de `listar_obras_catalogo` continua intacta; a variante com `p_tag` exige
+  os onze argumentos, sem defaults que tornem chamadas antigas ambíguas. Nenhuma
+  falha da variante deve ser ocultada como consulta ampla bem-sucedida.
 
 ## Comentários para autores
 

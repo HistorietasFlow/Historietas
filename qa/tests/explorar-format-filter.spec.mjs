@@ -2,15 +2,15 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 // Contrato HTTP simulado: testa UI/URL/paginação sem criar dados ou usar Supabase remoto.
-const ids = [1, 2, 3].map((numero) => `10000000-0000-4000-8000-${String(numero).padStart(12, "0")}`);
-const totaisCapitulos = [1, 3, 2];
+const ids = [1, 2, 3, 4].map((numero) => `10000000-0000-4000-8000-${String(numero).padStart(12, "0")}`);
+const totaisCapitulos = [1, 3, 2, 1];
 const obras = ids.map((id, indice) => ({
   id, user_id: "20000000-0000-4000-8000-000000000001",
   titulo: `História formato ${indice + 1}`, autor: "Autora QA", genero: "Fantasia",
-  formato: indice === 2 ? "Mangá" : "Webnovel", classificacao_indicativa: "Livre",
+  formato: indice === 3 ? "HQ" : indice === 2 ? "Mangá" : "Webnovel", classificacao_indicativa: "Livre",
   avisos_conteudo: [], publicado: true, slug: `qa-formato-${indice + 1}`,
   criada_em: "2026-01-01T00:00:00Z", atualizado_em: "2026-01-01T00:00:00Z",
-  sinopse: "História pública para testar formato.", tags: [], capa_url: "",
+  sinopse: "História pública para testar formato.", tags: indice === 0 || indice === 3 ? ["AÇÃO"] : [], capa_url: "",
 }));
 
 for (const [dispositivo, viewport] of [
@@ -30,8 +30,17 @@ for (const [dispositivo, viewport] of [
       if (endpoint === "listar_obras_catalogo") {
         const params = request.postDataJSON();
         consultas.push(params);
+        if (params.p_tag) {
+          const elegiveis = obras.filter((obra) => params.p_tag === "acao" && obra.tags.includes("AÇÃO")
+            && (!params.p_formato || obra.formato === params.p_formato));
+          const inicio = params.p_cursor_id ? elegiveis.findIndex((obra) => obra.id === params.p_cursor_id) + 1 : 0;
+          return route.fulfill({ json: elegiveis.slice(inicio, inicio + 1).map((obra) => ({
+            obra_id: obra.id, cursor_id: obra.id, cursor_valor: 0,
+            cursor_data: obra.criada_em, tem_mais: inicio + 1 < elegiveis.length,
+          })) });
+        }
         if (params.p_ordenacao === "mais-capitulos") {
-          const elegiveis = obras.filter((obra) => !params.p_formato || obra.formato === params.p_formato)
+          const elegiveis = obras.slice(0, 3).filter((obra) => !params.p_formato || obra.formato === params.p_formato)
             .sort((a, b) => totaisCapitulos[ids.indexOf(b.id)] - totaisCapitulos[ids.indexOf(a.id)]);
           const inicio = params.p_cursor_id ? elegiveis.findIndex((obra) => obra.id === params.p_cursor_id) + 1 : 0;
           return route.fulfill({ json: elegiveis.slice(inicio, inicio + 1).map((obra) => ({
@@ -43,7 +52,7 @@ for (const [dispositivo, viewport] of [
           ? [obras[2]]
           : params.p_formato === "Webnovel"
             ? [obras[params.p_cursor_id ? 1 : 0]]
-            : obras;
+            : obras.slice(0, 3);
         return route.fulfill({ json: selecionadas.map((obra) => ({
           obra_id: obra.id, cursor_id: obra.id, cursor_valor: 0,
           cursor_data: obra.criada_em,
@@ -162,5 +171,38 @@ for (const [dispositivo, viewport] of [
     await expect(page).not.toHaveURL(/ordenacao=mais-capitulos/);
     await acionador.click();
     await expect(dialogo.getByRole("button", { name: /^Mais capítulos/ })).toHaveCount(0);
+    await dialogo.getByRole("button", { name: /Limpar filtros/ }).click();
+    const foraDaAmostra = page.getByRole("link", { name: obras[3].titulo, exact: true });
+    await expect(foraDaAmostra).toHaveCount(0);
+    await acionador.click();
+    const tag = dialogo.getByRole("textbox", { name: "Tag da obra", exact: true });
+    await tag.fill(" AÇÃO ");
+    await expect(page).toHaveURL(/tag=acao/);
+    await page.keyboard.press("Escape");
+    await expect(card1).toBeVisible();
+    const consultasTag = () => consultas.filter((consulta) => consulta.p_tag === "acao");
+    await expect.poll(() => consultasTag().length).toBe(1);
+    await page.getByRole("button", { name: "Carregar mais", exact: true }).click();
+    await expect(foraDaAmostra).toBeVisible();
+    expect(consultasTag()).toHaveLength(2);
+    expect(consultasTag()[1].p_cursor_id).toBe(ids[0]);
+    await acionador.click();
+    await formatos.getByRole("button", { name: "HQ", exact: true }).click();
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/formato=HQ&tag=acao/);
+    await expect(card1).toHaveCount(0);
+    await expect(foraDaAmostra).toBeVisible();
+    await page.goBack();
+    await expect(page).not.toHaveURL(/formato=/);
+    await expect(card1).toBeVisible();
+    await page.goForward();
+    await expect(page).toHaveURL(/formato=HQ&tag=acao/);
+    await page.reload();
+    await expect(foraDaAmostra).toBeVisible();
+    await acionador.click();
+    await expect(tag).toHaveValue("acao");
+    const axeTag = await new AxeBuilder({ page }).include('section[role="dialog"]')
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    expect(axeTag.violations.filter((violacao) => ["critical", "serious"].includes(violacao.impact))).toEqual([]);
   });
 }
