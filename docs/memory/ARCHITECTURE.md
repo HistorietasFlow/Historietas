@@ -29,6 +29,35 @@
 
 ## Backend e dados
 
+### Capítulos ilustrados — contrato inicial, ainda inativo
+
+- A migration `20261107223400_infraestrutura_capitulos_ilustrados.sql` adiciona
+  `capitulos.tipo_conteudo` (padrão `texto`) e `versao_paginas`, sem converter
+  capítulos existentes. Clientes não podem ativar `imagens` nem alterar a versão.
+- `capitulo_paginas` contém um manifesto ordenado: UUID, capítulo, caminho privado
+  imutável, dimensões, bytes, MIME e descrição acessível. O contrato limita a dez
+  páginas de até 2 MiB, 2.048 × 4.096 px e oito milhões de pixels por imagem;
+  JPEG, PNG e WebP. As posições são únicas/contíguas no commit e mudanças avançam
+  a versão do capítulo. Publicação ilustrada exige manifesto não vazio.
+- A projeção pública exclui `storage_path`. RLS depende da visibilidade do
+  capítulo/obra, autoria real, publicação e bloqueio 18+ vigente. Não há DML
+  concedido a `anon`, `authenticated` ou `service_role` na tabela de páginas.
+- Reservas de uploads e outbox ficam em `historietas_privado`, com RLS e sem
+  permissões para clientes ou service role. Exclusões de páginas/reservas
+  preservam caminhos na outbox, inclusive em cascatas; não removem bytes.
+- **Não está pronta para uso:** não existem upload, validação binária, reserva
+  efetiva de quota, finalizador autorizado, assinatura em lote, executor de
+  limpeza ou renderização ilustrada. Os metadados dos testes são sintéticos.
+  As próximas fases precisam validar bytes/identidade, implementar finalização
+  atômica e cleanup idempotente antes de conceder qualquer escrita nova.
+- `arquivos-obras` permanece privado; policies dos anexos e quotas não mudam.
+  Policies restritivas adicionais bloqueiam INSERT/UPDATE/DELETE autenticados
+  somente no novo namespace `<usuario>/capitulos/`, até uma fase de upload seguro.
+  A migration aborta se esse namespace já contiver arquivos, evitando bloquear
+  silenciosamente anexos preexistentes.
+  Seu teto de 30 objetos por usuário é compartilhado por todas as obras e também
+  precisa comportar arquivos antigos, substituições e uploads pendentes.
+
 Supabase é usado para autenticação, banco e fluxos de dados da aplicação.
 
 Regras importantes:
