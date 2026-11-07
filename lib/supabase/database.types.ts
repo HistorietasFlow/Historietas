@@ -2196,11 +2196,12 @@ export type Database = {
       }
       listar_obras_catalogo: {
         Args: {
+          p_tag?: string
           p_busca?: string
           p_classificacao?: string
-          p_cursor_data?: string
-          p_cursor_id?: string
-          p_cursor_valor?: number
+          p_cursor_data?: string | null
+          p_cursor_id?: string | null
+          p_cursor_valor?: number | null
           p_filtro_capitulos?: string
           p_formato?: string
           p_genero?: string

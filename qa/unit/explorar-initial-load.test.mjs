@@ -71,6 +71,7 @@ function preparar(t, opcoes = {}) {
         categoriaSelecionada: (params.get("categoria") || "").trim(),
         busca: (params.get("busca") || "").trim(),
         filtroFormato: params.get("formato") || "todos",
+        filtroTag: params.get("tag") || "",
         ordenacao: params.get("ordenacao") === "mais-recentes"
           ? "mais-recentes"
           : "relevancia",
@@ -80,7 +81,7 @@ function preparar(t, opcoes = {}) {
   globalThis.__explorarInitialTest = deps;
   const props = { ...refs };
   for (const nome of [
-    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "UsuarioLogado", "ObrasLocais",
+    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "UsuarioLogado", "ObrasLocais",
     "ProximoCursorCatalogo",
     "CatalogoTemMais", "ErroCatalogoExplorar", "DadosExplorarCarregados",
   ]) {
@@ -102,7 +103,7 @@ test("corpo do efeito preserva o lifecycle com a restauração do formato", () =
     "",
   );
   assert.equal(createHash("sha256").update(efeito).digest("hex"),
-    "cd62f27dc44762c534fd55aadc3eaf35b74bf866ea3bcecaf8d3caa6e49e0521");
+    "8f6f97c5d18d402a975aa880685ba5a97d382d3b35f2d0d2c9bfbfd4bcf77bf1");
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.doesNotMatch(pagina, /async function carregarExplorar\(/);
   for (const nome of ["obrasCacheLocalRef", "usuarioIdExplorarRef", "setDadosExplorarCarregados",
@@ -117,7 +118,7 @@ test("corpo do efeito preserva o lifecycle com a restauração do formato", () =
 });
 
 test("visitante usa parâmetros da URL e não consulta coleções remotas", async (t) => {
-  const c = preparar(t, { query: "?tipo=autores&categoria=%20Fic%C3%A7%C3%A3o%20&busca=ana&ordenacao=mais-recentes&formato=HQ" });
+  const c = preparar(t, { query: "?tipo=autores&categoria=%20Fic%C3%A7%C3%A3o%20&busca=ana&ordenacao=mais-recentes&formato=HQ&tag=acao" });
   await aguardar();
   assert.deepEqual(c.deps.deps, []);
   assert.equal(c.estado.ModoConteudo, "autores");
@@ -125,6 +126,7 @@ test("visitante usa parâmetros da URL e não consulta coleções remotas", asyn
   assert.equal(c.estado.Busca, "ana");
   assert.equal(c.estado.Ordenacao, "mais-recentes");
   assert.equal(c.estado.FiltroFormato, "HQ");
+  assert.equal(c.estado.FiltroTag, "acao");
   assert.equal(c.estado.UsuarioLogado, false);
   assert.equal(c.estado.ProximoCursorCatalogo, null);
   assert.equal(c.estado.CatalogoTemMais, false);

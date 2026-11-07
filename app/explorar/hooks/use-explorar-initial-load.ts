@@ -28,6 +28,7 @@ type OpcoesCarregamentoInicialExplorar = {
   setBusca: Dispatch<SetStateAction<string>>;
   setOrdenacao: Dispatch<SetStateAction<OrdenacaoExplorar>>;
   setFiltroFormato: Dispatch<SetStateAction<string>>;
+  setFiltroTag: Dispatch<SetStateAction<string>>;
   setUsuarioLogado: Dispatch<SetStateAction<boolean>>;
   setObrasLocais: Dispatch<SetStateAction<ObraLocal[]>>;
   setProximoCursorCatalogo: Dispatch<SetStateAction<CursorCatalogo | null>>;
@@ -49,6 +50,7 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       setBusca,
       setOrdenacao,
       setFiltroFormato,
+      setFiltroTag,
       setUsuarioLogado,
       setObrasLocais,
       setProximoCursorCatalogo,
@@ -69,6 +71,7 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       setBusca(filtrosCompartilhaveis.busca);
       setOrdenacao(filtrosCompartilhaveis.ordenacao);
       setFiltroFormato(filtrosCompartilhaveis.filtroFormato);
+      setFiltroTag(filtrosCompartilhaveis.filtroTag || "");
 
       try {
         let userIdAtual = "";

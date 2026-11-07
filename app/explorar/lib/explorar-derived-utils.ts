@@ -1,4 +1,5 @@
 import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
+import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import type { HistorietasLanguage } from "../../../lib/i18n";
 import { obterLocaleExplorar } from "./explorar-translations";
@@ -101,6 +102,7 @@ export function ordenarObrasLocais(lista: ObraLocal[], ordenacao: OrdenacaoExplo
 export function filtrarObrasBaseExplorar({
   obrasLocais,
   filtroFormato,
+  filtroTag = "",
   filtroClassificacao,
   filtroCapitulos,
   filtroColecao,
@@ -112,6 +114,7 @@ export function filtrarObrasBaseExplorar({
 }: {
   obrasLocais: ObraLocal[];
   filtroFormato: string;
+  filtroTag?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
   filtroColecao: FiltroColecaoExplorar;
@@ -157,6 +160,7 @@ export function filtrarObrasBaseExplorar({
 
       return (
         passaFormato &&
+        (!normalizarTagCatalogo(filtroTag) || obra.tags.some((tag) => normalizarTagCatalogo(tag, false) === normalizarTagCatalogo(filtroTag))) &&
         passaClassificacao &&
         passaPublicacao &&
         passaCapitulos &&

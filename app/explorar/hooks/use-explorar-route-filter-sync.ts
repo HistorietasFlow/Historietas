@@ -12,6 +12,7 @@ type UseExplorarRouteFilterSyncParams = {
   setBusca: Dispatch<SetStateAction<string>>;
   setOrdenacao: Dispatch<SetStateAction<OrdenacaoExplorar>>;
   setFiltroFormato: Dispatch<SetStateAction<string>>;
+  setFiltroTag: Dispatch<SetStateAction<string>>;
 };
 
 export function useExplorarRouteFilterSync({
@@ -20,6 +21,7 @@ export function useExplorarRouteFilterSync({
   setBusca,
   setOrdenacao,
   setFiltroFormato,
+  setFiltroTag,
 }: UseExplorarRouteFilterSyncParams) {
   useEffect(() => {
     return observarFiltrosCompartilhaveisExplorar((filtros) => {
@@ -28,6 +30,7 @@ export function useExplorarRouteFilterSync({
       setBusca(filtros.busca);
       setOrdenacao(filtros.ordenacao);
       setFiltroFormato(filtros.filtroFormato);
+      setFiltroTag(filtros.filtroTag || "");
     });
   }, [
     setModoConteudo,
@@ -35,5 +38,6 @@ export function useExplorarRouteFilterSync({
     setBusca,
     setOrdenacao,
     setFiltroFormato,
+    setFiltroTag,
   ]);
 }

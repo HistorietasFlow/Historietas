@@ -2,6 +2,7 @@ import type { ModoConteudoExplorar } from "../components/explorar-section-compon
 import { categorias } from "./explorar-categories";
 import { OPCOES_FORMATO_OBRA } from "../../publicar/lib/publicar-static-options";
 import type { OrdenacaoExplorar } from "./explorar-derived-utils";
+import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
 
 const LIMITE_BUSCA_EXPLORAR = 90;
 const ORDENACOES_COMPARTILHAVEIS_EXPLORAR = new Set<OrdenacaoExplorar>([
@@ -17,6 +18,7 @@ export type FiltrosCompartilhaveisExplorar = Readonly<{
   busca: string;
   ordenacao: OrdenacaoExplorar;
   filtroFormato: string;
+  filtroTag?: string;
 }>;
 
 export const FILTROS_COMPARTILHAVEIS_EXPLORAR_PADRAO = {
@@ -81,6 +83,9 @@ export function lerFiltrosCompartilhaveisExplorar(
     busca: normalizarBuscaExplorar(params.get("busca")),
     ordenacao: normalizarOrdenacaoExplorar(params.get("ordenacao"), modoConteudo),
     filtroFormato: normalizarFormatoExplorar(params.get("formato")),
+    ...(normalizarTagCatalogo(params.get("tag"))
+      ? { filtroTag: normalizarTagCatalogo(params.get("tag")) }
+      : {}),
   };
 }
 
@@ -115,8 +120,10 @@ export function criarUrlExplorar(
     params.set("formato", formato);
   }
 
-  const query = params.toString();
-  return query ? `/explorar?${query}` : "/explorar";
+  const tag = normalizarTagCatalogo(filtros.filtroTag);
+  if (tag) params.set("tag", tag);
+  const queryComTag = params.toString();
+  return queryComTag ? `/explorar?${queryComTag}` : "/explorar";
 }
 
 export function atualizarUrlExplorar(

@@ -49,6 +49,7 @@ test("identifica exatamente os sete critérios de filtros ativos", async () => {
     { categoriaSelecionada: "Romance" },
     { termoBusca: "história" },
     { filtroFormato: "Romance" },
+    { filtroTag: "acao" },
     { filtroClassificacao: "16+" },
     { filtroCapitulos: "completas" },
     { usuarioLogado: true, filtroColecao: "favoritas" },

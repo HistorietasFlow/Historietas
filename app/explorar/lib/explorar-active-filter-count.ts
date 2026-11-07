@@ -7,6 +7,7 @@ export function contarFiltrosAvancadosAtivosExplorar({
   usuarioLogado,
   filtroColecao,
   filtroFormato,
+  filtroTag = "",
   filtroClassificacao,
   filtroCapitulos,
   ordenacao,
@@ -14,6 +15,7 @@ export function contarFiltrosAvancadosAtivosExplorar({
   usuarioLogado: boolean;
   filtroColecao: FiltroColecaoExplorar;
   filtroFormato: string;
+  filtroTag?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
   ordenacao: OrdenacaoExplorar;
@@ -21,6 +23,7 @@ export function contarFiltrosAvancadosAtivosExplorar({
   return [
     usuarioLogado && filtroColecao !== "todos",
     filtroFormato !== "todos",
+    Boolean(filtroTag),
     filtroClassificacao !== "todos",
     filtroCapitulos !== "todos",
     ordenacao !== "relevancia",

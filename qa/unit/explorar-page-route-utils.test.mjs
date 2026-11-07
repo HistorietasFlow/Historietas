@@ -27,6 +27,11 @@ const categorias = [
   "Histórico",
   "Biografia",
 ];
+const tagJavascript = typescript.transpileModule(await readFile(path.join(root, "lib/catalogo-tag.ts"), "utf8"), {
+  compilerOptions: { module: typescript.ModuleKind.CommonJS },
+}).outputText;
+const tagModulo = { exports: {} };
+new Function("module", "exports", tagJavascript)(tagModulo, tagModulo.exports);
 
 async function carregarModuloRota() {
   const source = await readFile(modulePath, "utf8");
@@ -42,6 +47,7 @@ async function carregarModuloRota() {
     modulo,
     modulo.exports,
     (specifier) => {
+      if (specifier === "../../../lib/catalogo-tag") return tagModulo.exports;
       if (specifier === "./explorar-categories") {
         return { categorias };
       }
@@ -149,6 +155,16 @@ test("mais capítulos é compartilhável em obras e usa fallback seguro em autor
   assert.equal(criarUrlExplorar(filtros), "/explorar?categoria=Fantasia&ordenacao=mais-capitulos&formato=HQ");
   assert.equal(lerFiltrosCompartilhaveisExplorar("?tipo=autores&ordenacao=mais-capitulos").ordenacao, "relevancia");
   assert.equal(criarUrlExplorar({ ...filtros, modoConteudo: "autores" }), "/explorar?tipo=autores&categoria=Fantasia&formato=HQ");
+});
+
+test("tag literal normalizada combina com busca, formato e ordenação na URL", async () => {
+  const { lerFiltrosCompartilhaveisExplorar, criarUrlExplorar } = await carregarModuloRota();
+  const filtros = lerFiltrosCompartilhaveisExplorar("?tag=%20A%C3%87%C3%83O%20%20ÉPICA%20&busca=dragao&formato=HQ&ordenacao=mais-capitulos");
+  assert.equal(filtros.filtroTag, "acao epica");
+  assert.equal(criarUrlExplorar(filtros), "/explorar?busca=dragao&ordenacao=mais-capitulos&formato=HQ&tag=acao+epica");
+  assert.equal(lerFiltrosCompartilhaveisExplorar("?tag=%20").filtroTag, undefined);
+  assert.equal(lerFiltrosCompartilhaveisExplorar(`?tag=${"a".repeat(100)}`).filtroTag.length, 90);
+  assert.equal(lerFiltrosCompartilhaveisExplorar("?tag=%25_%5C%2C.%28%29").filtroTag, "%_\\,.()");
 });
 
 test("usa push para filtros discretos, replace para busca e evita histórico redundante", async (t) => {

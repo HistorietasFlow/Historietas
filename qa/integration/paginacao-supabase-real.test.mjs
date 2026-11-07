@@ -347,4 +347,14 @@ test("pagina dados reais pela Data API de um Supabase local descartável", async
     );
     assert.equal(rankingLidas.at(-1)?.tem_mais, true);
   });
+
+  await t.test("Data API resolve variante com tag sem ambiguidade ou consulta ampla", async () => {
+    const resultado = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+      p_busca: "", p_genero: "Teste", p_formato: "Texto", p_classificacao: "Livre",
+      p_filtro_capitulos: "com-capitulos", p_ordenacao: "mais-recentes", p_limite: 24,
+      p_cursor_valor: null, p_cursor_data: null, p_cursor_id: null,
+      p_tag: "qa-tag-inexistente-%_\\,.()",
+    }), "variante do catálogo com tag literal");
+    assert.deepEqual(resultado, []);
+  });
 });

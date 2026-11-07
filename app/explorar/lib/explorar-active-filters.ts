@@ -7,6 +7,7 @@ export function possuiFiltrosAtivosExplorar({
   categoriaSelecionada,
   termoBusca,
   filtroFormato,
+  filtroTag = "",
   filtroClassificacao,
   filtroCapitulos,
   usuarioLogado,
@@ -16,6 +17,7 @@ export function possuiFiltrosAtivosExplorar({
   categoriaSelecionada: string;
   termoBusca: string;
   filtroFormato: string;
+  filtroTag?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
   usuarioLogado: boolean;
@@ -26,6 +28,7 @@ export function possuiFiltrosAtivosExplorar({
     categoriaSelecionada ||
       termoBusca ||
       filtroFormato !== "todos" ||
+      filtroTag ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
       (usuarioLogado && filtroColecao !== "todos") ||

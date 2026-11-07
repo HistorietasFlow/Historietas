@@ -19,6 +19,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   modoConteudo: ModoConteudoExplorar;
   filtroColecao: FiltroColecaoExplorar;
   filtroFormato: string;
+  filtroTag: string;
   filtroClassificacao: string;
   mostrarConfirmacaoConteudo18: boolean;
   confirmouIdadeConteudo18: boolean;
@@ -28,6 +29,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   onFechar: () => void;
   onSelecionarColecao: (filtro: FiltroColecaoExplorar) => void;
   onSelecionarFormato: (formato: string) => void;
+  onSelecionarTag: (tag: string) => void;
   onSelecionarClassificacao: (filtro: string) => void;
   onConfirmouIdadeChange: (confirmou: boolean) => void;
   onVoltarConteudo18: () => void;
@@ -42,6 +44,7 @@ export default function ExplorarAdvancedFiltersComposition({
   modoConteudo,
   filtroColecao,
   filtroFormato,
+  filtroTag,
   filtroClassificacao,
   mostrarConfirmacaoConteudo18,
   confirmouIdadeConteudo18,
@@ -51,6 +54,7 @@ export default function ExplorarAdvancedFiltersComposition({
   onFechar,
   onSelecionarColecao,
   onSelecionarFormato,
+  onSelecionarTag,
   onSelecionarClassificacao,
   onConfirmouIdadeChange,
   onVoltarConteudo18,
@@ -97,6 +101,21 @@ export default function ExplorarAdvancedFiltersComposition({
             language={language}
             onSelecionar={onSelecionarFormato}
           />
+          <label style={explorarModalSectionLabelStyle}>
+            {traduzirTextoExplorar("Tag da obra", language)}
+            <input
+              type="text"
+              value={filtroTag}
+              maxLength={90}
+              onChange={(event) => onSelecionarTag(event.target.value)}
+              aria-describedby="explorar-tag-ajuda"
+              style={{ display: "block", width: "100%", boxSizing: "border-box", padding: 10 }}
+            />
+          </label>
+          <p id="explorar-tag-ajuda">
+            {traduzirTextoExplorar("Informe uma tag completa. Deixe vazio para todas.", language)}
+          </p>
+
           <p style={explorarModalSectionLabelStyle}>
             {traduzirTextoExplorar("Ordenar", language)}
           </p>
