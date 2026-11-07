@@ -142,6 +142,15 @@ test("serializa somente filtros públicos e limita a busca compartilhada", async
   assert.equal(parametros.get("formato"), "HQ");
 });
 
+test("mais capítulos é compartilhável em obras e usa fallback seguro em autores", async () => {
+  const { lerFiltrosCompartilhaveisExplorar, criarUrlExplorar } = await carregarModuloRota();
+  const filtros = lerFiltrosCompartilhaveisExplorar("?ordenacao=mais-capitulos&formato=HQ&categoria=Fantasia");
+  assert.equal(filtros.ordenacao, "mais-capitulos");
+  assert.equal(criarUrlExplorar(filtros), "/explorar?categoria=Fantasia&ordenacao=mais-capitulos&formato=HQ");
+  assert.equal(lerFiltrosCompartilhaveisExplorar("?tipo=autores&ordenacao=mais-capitulos").ordenacao, "relevancia");
+  assert.equal(criarUrlExplorar({ ...filtros, modoConteudo: "autores" }), "/explorar?tipo=autores&categoria=Fantasia&formato=HQ");
+});
+
 test("usa push para filtros discretos, replace para busca e evita histórico redundante", async (t) => {
   const { atualizarUrlExplorar } = await carregarModuloRota();
   const ambiente = comWindow(t);

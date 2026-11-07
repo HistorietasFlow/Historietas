@@ -103,6 +103,7 @@ export default function ExplorarAdvancedFiltersComposition({
 
           <ExplorarOrderingOptions
             ordenacao={ordenacao}
+            modoConteudo={modoConteudo}
             language={language}
             onSelecionar={onSelecionarOrdenacao}
           />

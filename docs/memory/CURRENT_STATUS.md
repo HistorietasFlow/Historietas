@@ -182,6 +182,18 @@ Status editorial (em andamento, concluída ou pausada) ainda não é um dado
 persistido de obras. O booleano `publicado` não representa esse status, e a
 coleção pessoal `Concluídas` representa leitura do usuário, não conclusão da obra.
 
+### Explorar — descoberta por quantidade de capítulos
+
+A aba Obras oferece a ordenação `Mais capítulos`, compartilhável por
+`ordenacao=mais-capitulos`. Ela reutiliza a contagem de capítulos publicados e o
+cursor da RPC existente, com grade única e carregamento incremental mesmo sem
+busca ou categoria. Ao entrar em Autores, essa ordenação volta para relevância.
+Não representa tamanho em palavras, páginas ou tempo de leitura.
+
+Tags já participam da busca full-text, mas a RPC não oferece filtro exclusivo de
+tag, faixa de tamanho ou nota mínima. Novos filtros desse tipo precisam de uma
+fase dedicada ao contrato do catálogo; não devem filtrar apenas a página local.
+
 ### Lighthouse baseline
 
 Primeiro baseline observado:
