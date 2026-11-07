@@ -6,6 +6,8 @@
 - React: 19.2.4
 - TypeScript
 - Node.js 22 para CI e desenvolvimento suportado
+- Node.js `22.x` versionado em `package.json#engines`, inclusive para builds e
+  funções Node.js na Vercel
 - Instalação reproduzível com `npm ci`
 
 ### Leitura pública de capítulos
@@ -18,6 +20,12 @@
 - Falhas de infraestrutura nessa verificação não viram ausência: a requisição segue para o loader server-side, que preserva o tratamento de erro normal.
 - Obras públicas renderizam JSON-LD `CreativeWork` e capítulos públicos renderizam `Chapter` no HTML inicial; o capítulo referencia a obra por `isPartOf`, sempre com URLs canônicas absolutas e conteúdo serializado com neutralização de caracteres capazes de encerrar o script.
 - `/ler-capitulo?obraId=...&capituloId=...` permanece disponível para fluxos internos, drafts e leituras por identificador.
+
+### Comentários de obras e notificações
+
+- Comentários e respostas em obras continuam sendo persistidos e autorizados pelos contratos existentes de Supabase/RLS.
+- Notificações do tipo `comentario-obra` apontam para a rota pública da obra com `comentarios=1`; o cliente abre o mesmo comments sheet acessível usado pelo acionador visual, sem duplicar carregamento ou mutations.
+- O deep link reage à navegação Back/Forward e não altera links de capítulos ou de outros tipos de notificação.
 
 ## Backend e dados
 
@@ -75,3 +83,10 @@ Os deployments automáticos da integração Git são controlados pelo `vercel.js
 - `main` permanece habilitada como branch de deployment automático de produção;
 - o padrão globstar `**` fica desabilitado, impedindo Preview Deployments automáticos inclusive em branches com `/`;
 - os workflows do GitHub Actions continuam independentes dessa política.
+
+## Ambiente de testes local — novembro de 2026
+
+- Docker Desktop/WSL2 fornece Supabase local com CLI fixada em `2.116.0`; portas foram remapeadas devido às reservas de portas no Windows (API 54421, banco 54422, Studio 54423). Esses valores são **configuração da máquina**, não contrato de produção.
+- A inicialização local pode exigir a migration auxiliar de normalização ACL já usada na CI; não versionar esses ajustes locais sem fase específica.
+- Fixtures Playwright usam identidades descartáveis e Supabase de loopback. Preferir build de produção local (`next build`/`next start`) para testes E2E repetíveis.
+- O limite de storage do plano Hobby não afeta a execução de build/testes locais ou GitHub Actions, mas pode bloquear novas publicações na Vercel.

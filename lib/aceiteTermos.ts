@@ -49,7 +49,7 @@ export function obterRedirectToAceiteTermos(valor: string | null, fallback = "/"
   return normalizarRedirectTo(valor || "", fallback);
 }
 
-export async function verificarAceiteTermosPublicacao(): Promise<ResultadoAceiteTermos> {
+async function consultarAceiteTermosPublicacao(): Promise<ResultadoAceiteTermos> {
   try {
     const { data, error } = await supabase.rpc(
       "status_aceite_termos_publicacao",
@@ -75,6 +75,16 @@ export async function verificarAceiteTermosPublicacao(): Promise<ResultadoAceite
           : "Não foi possível verificar o aceite dos termos.",
     };
   }
+}
+
+export async function verificarAceiteTermosPublicacao(): Promise<ResultadoAceiteTermos> {
+  const primeiraConsulta = await consultarAceiteTermosPublicacao();
+
+  if (primeiraConsulta.aceito || !primeiraConsulta.erro) {
+    return primeiraConsulta;
+  }
+
+  return consultarAceiteTermosPublicacao();
 }
 
 export async function registrarAceiteTermosPublicacao(): Promise<ResultadoAceiteTermos> {

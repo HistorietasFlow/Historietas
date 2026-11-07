@@ -25,6 +25,9 @@
 - Estado escolhido em 2026-11-03: **Vercel Authentication → All Deployments**.
 - Desde 2026-11-04, deployments automáticos por Git ficam habilitados somente para `main`; todas as outras branches e PRs têm Preview Deployments automáticos desabilitados por `git.deploymentEnabled` em `vercel.json`.
 - A restrição de previews reduz consumo de Build CPU, Function Storage e Deployment Storage sem alterar o GitHub Actions ou a política de proteção dos deployments.
+- O runtime de build e das funções Vercel é fixado pelo repositório em Node.js
+  `22.x`, via `engines.node` no `package.json`, para permanecer idêntico ao
+  runtime validado pela CI. Não depender apenas do valor mutável do painel.
 
 ## Observabilidade e testes
 
@@ -48,8 +51,37 @@
 - A correspondência textual por autor usa o nome público atual de `profiles_publicos`, enquanto o nome gravado na obra permanece apenas como dado histórico/fallback de apresentação.
 - A RPC continua `SECURITY INVOKER`: privacidade e visibilidade dos perfis permanecem sob os contratos públicos e RLS existentes.
 
+## Comentários para autores
+
+- A localização de comentários em obras reutiliza a central de Notificações e o comments sheet existente; não deve criar um segundo inbox nem duplicar consultas de comentários.
+- O parâmetro público `comentarios=1` abre apenas o sheet da rota canônica `/obra/[slug]`. Links de capítulo, Comunidade e outros destinos não recebem esse estado.
+- Respostas, moderação e permissões permanecem nos fluxos existentes e sob RLS; o deep link não concede novas capacidades.
+
+## Proteção contra spoilers
+
+- Notificações fallback de comentários e reviews não carregam trechos do conteúdo criado pelo usuário. A mensagem identifica autor e contexto de destino de forma genérica, alinhada às notificações diretas do banco.
+- O texto potencialmente sensível a spoiler permanece no comments sheet ou na publicação de origem; busca e cache local de Notificações não devem reintroduzir esse conteúdo.
+
+## Histórico de moderação
+
+- `moderacao_historico` continua sendo a fonte de auditoria append-only para denúncias de conteúdo e perfil; decisões administrativas não devem depender apenas do estado final mutável da denúncia.
+- A interface administrativa lê o histórico sob demanda e de forma paginada, exibindo transições, responsável e observação interna. Não criar uma cópia cliente nem expor esses dados em rotas comuns.
+- `authenticated` conserva somente `SELECT` na tabela, condicionado pela RLS administrativa; escrita e exclusão de eventos permanecem fora do cliente. Usuários sem papel administrativo não podem consultar o histórico.
+
 ## Dependências e segurança
 
 - Dependabot roda semanalmente.
 - CodeQL permanece habilitado.
 - Atualizações de dependência não devem ser misturadas com refatorações sem necessidade explícita.
+- Advisories transitivos de produção devem ser removidos por atualização
+  compatível da dependência raiz quando houver correção estável; não usar
+  `npm audit fix --force` nem alterar majors apenas para zerar avisos de
+  ferramentas de desenvolvimento sem exposição de runtime.
+
+## Operação e continuidade — 06/11/2026
+
+- Código, migrations, configurações e estado real do GitHub são fontes de verdade; o Memory Bank e assistentes de memória (incluindo Dot) são auxiliares, nunca backups infalíveis.
+- Ao concluir alteração duradoura, atualizar **no mesmo PR** os documentos pertinentes do Memory Bank; não é necessário modificar todos a cada PR. Confirmar lacunas antes de documentar.
+- Priorizar teste local (Docker/Supabase/Playwright) e redução de consumo da Vercel; merge de PR na `main` pode disparar deploy automático, enquanto a simples criação de PR não cria preview.
+- Antes de recomendar merge: revisar diff, mergeabilidade e CI/Gitleaks. Não fazer consultas repetidas enquanto os checks estiverem rodando. Seguir a regra do `AGENTS.md` de autorização explícita para merge e produção.
+- O assistente de planejamento deve responder de forma curta, sinalizar o próximo passo e não executar mudanças somente por receber um resumo.

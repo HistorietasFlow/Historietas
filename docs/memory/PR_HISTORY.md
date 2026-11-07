@@ -27,3 +27,16 @@ Sequência verificada de PRs merged:
 ## Como manter este histórico
 
 Registrar somente marcos que ajudem um agente futuro a entender arquitetura, decisões ou estado de uma iniciativa. Não transformar este arquivo em cópia de todas as PRs.
+
+## Ciclo Explorar e leitura — novembro de 2026
+
+Marcos integrados à `main`:
+
+- #2191 — recuperação de perfil ao aceitar termos.
+- #2192–#2194 — filtros/URL, busca full-text e tratamento de falha/retry no Explorar.
+- #2195–#2196 — coleções pessoais paginadas e acessibilidade dos filtros avançados.
+- #2197–#2198 — paginação e busca de autores pelo nome atual, alinhamento dos gêneros.
+- #2199–#2200 — ordem canônica dos capítulos na retomada da Home, Biblioteca e Leitor.
+- #2201 — concorrência de progresso entre dispositivos (RPC, timestamps e tombstones).
+
+As migrations pertinentes de #2197 e #2201 foram aplicadas em produção separadamente do merge; verificar o banco antes de assumir o estado de qualquer outra migration.

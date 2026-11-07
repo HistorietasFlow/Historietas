@@ -8,6 +8,41 @@ import {
 } from "./helpers.mjs";
 
 test.describe.serial("fluxo completo do autor", () => {
+  test("falha transitória no status dos termos não desvia o autor do formulário", async ({
+    page,
+  }) => {
+    test.skip(!hasAuthorCredentials, "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD.");
+
+    await loginAsAuthor(page);
+
+    let chamadasStatus = 0;
+    await page.route(
+      "**/rest/v1/rpc/status_aceite_termos_publicacao",
+      async (route) => {
+        chamadasStatus += 1;
+
+        if (chamadasStatus === 1) {
+          await route.fulfill({
+            status: 503,
+            contentType: "application/json",
+            body: JSON.stringify({ message: "falha transitória simulada" }),
+          });
+          return;
+        }
+
+        await route.continue();
+      },
+    );
+
+    await page.goto("/publicar", { waitUntil: "domcontentloaded" });
+
+    await expect(page).toHaveURL(/\/publicar$/);
+    await expect(
+      page.locator("form").getByPlaceholder("Ex: Shadow Eclipse"),
+    ).toBeVisible();
+    expect(chamadasStatus).toBe(2);
+  });
+
   test("publicar, editar capítulo, excluir capítulo e excluir obra", async ({ page }) => {
     test.skip(!hasAuthorCredentials, "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD.");
     test.skip(!destructiveEnabled, "Defina E2E_ALLOW_DESTRUCTIVE=true usando uma conta exclusiva de teste.");

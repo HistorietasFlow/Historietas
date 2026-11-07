@@ -8,6 +8,11 @@ export const hasAuthorCredentials = Boolean(authorEmail && authorPassword);
 export const visitorEmail = (process.env.E2E_VISITOR_EMAIL || "").trim();
 export const visitorPassword = process.env.E2E_VISITOR_PASSWORD || "";
 export const hasVisitorCredentials = Boolean(visitorEmail && visitorPassword);
+export const moderatorEmail = (process.env.E2E_MODERATOR_EMAIL || "").trim();
+export const moderatorPassword = process.env.E2E_MODERATOR_PASSWORD || "";
+export const hasModeratorCredentials = Boolean(
+  moderatorEmail && moderatorPassword,
+);
 const supabasePublicoConfigurado = Boolean(
   (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim() &&
     (
@@ -78,6 +83,21 @@ export async function loginAsVisitor(page) {
   }
 
   await loginWithCredentials(page, visitorEmail, visitorPassword, "visitante");
+}
+
+export async function loginAsModerator(page) {
+  if (!hasModeratorCredentials) {
+    throw new Error(
+      "Defina E2E_MODERATOR_EMAIL e E2E_MODERATOR_PASSWORD em qa/.env.e2e.",
+    );
+  }
+
+  await loginWithCredentials(
+    page,
+    moderatorEmail,
+    moderatorPassword,
+    "moderador",
+  );
 }
 
 export async function resetVisitorWorkInteractions(workSlug) {

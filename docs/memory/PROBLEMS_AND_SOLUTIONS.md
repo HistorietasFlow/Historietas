@@ -49,7 +49,20 @@ Adicionar `eslint-plugin-react-hooks` explicitamente e registrar o plugin na con
 
 ## Windows e CRLF
 
-Alguns testes locais podem divergir do Ubuntu da CI por diferenças de final de linha CRLF/LF.
+Testes estruturais que transformam módulos TypeScript por texto falhavam no
+Windows quando o checkout convertia LF para CRLF. A substituição deixava imports
+relativos no módulo `data:`, e o Node respondia `ERR_UNSUPPORTED_RESOLVE_REQUEST`.
+
+Essas suítes carregam `qa/scripts/test-source-newlines.mjs`, que normaliza apenas
+retornos textuais de `readFileSync`; leituras em `Buffer` permanecem intactas.
+Listas muito longas usam `run-node-test-script.mjs` com `shell: false`, evitando
+o limite de linha do `cmd.exe` sem reduzir a cobertura.
+
+O Supabase CLI instalado via npm é um wrapper `.cmd`, que não pode ser aberto
+diretamente por `execFileSync` no Node 22 para Windows. O preparo local usa uma
+invocação fixa por `cmd.exe` somente nessa plataforma; Linux continua executando
+`supabase` diretamente. As fixtures geradas ficam em arquivo ignorado e são
+carregadas por último, evitando credenciais/IDs obsoletos em Playwright.
 
 Não assumir regressão funcional apenas por esse sintoma. Comparar com GitHub Actions e investigar o diff real antes de alterar código.
 
@@ -186,6 +199,15 @@ NOTHING` seguido de reconciliação torna chamadas concorrentes e retries
 idempotentes. O wrapper público, grants e RLS permanecem restritos, e metadata
 editável serve apenas como texto de exibição.
 
+## Gate de publicação: erro temporário não é aceite ausente
+
+A leitura de `status_aceite_termos_publicacao` diferencia uma resposta válida
+`false` de uma falha de transporte/Data API. Antes de decidir o gate, uma falha
+recebe uma única nova tentativa; sucesso ou `false` legítimo nunca geram uma
+segunda consulta. Isso evita enviar um autor com aceite atualizado para a tela
+de termos por uma indisponibilidade transitória, sem relaxar a RPC, RLS, grants
+ou as versões legais exigidas pelo banco.
+
 ## Explorar: filtros compartilháveis sincronizados com a URL
 
 Os filtros públicos `tipo`, `categoria`, `busca` e `ordenacao` são lidos na
@@ -212,6 +234,19 @@ fica restrita ao fallback em que a consulta remota não produz uma página de
 catálogo. Resultado remoto vazio (`[]`) é diferente de fallback (`null`), e a
 paginação acumula somente IDs da consulta ativa para preservar os guards contra
 respostas antigas.
+
+## Obra: snapshot inicial de métricas não pode desfazer interação posterior
+
+O carregamento de métricas da página pública pode permanecer em voo enquanto o
+usuário segue, curte, favorita ou conclui a obra. A resposta foi iniciada antes
+da ação e, portanto, não pode voltar a aplicar os campos de interação daquele
+snapshot sobre o estado otimista e o cache local mais novos.
+
+As interações mantêm versões independentes. O lifecycle ainda aproveita da
+resposta remota as métricas que não foram alteradas, mas preserva estado,
+contadores e storage dos campos cuja versão avançou durante a requisição. Os
+guards de identidade e o cancelamento por cleanup continuam sendo a autoridade
+para login, logout, troca de conta e navegação entre obras.
 
 ## Explorar: falha temporária não é catálogo vazio
 
@@ -278,3 +313,24 @@ de progresso, mas capazes de rejeitar marcações antigas que cheguem depois.
 Não voltar a usar `delete` ou `upsert` incondicional nesse fluxo. RLS continua
 isolando a identidade autenticada; Home, Biblioteca e Leitor consideram apenas
 registros `lido=true`, e retries idempotentes mantêm o estado mais recente.
+
+## Histórico persistido sem acesso no painel de moderação
+
+### Sintoma
+
+O banco registrava criação, mudanças de status, arquivamento, restauração e
+exclusão de denúncias em `moderacao_historico`, incluindo responsável e
+observação interna, mas o painel mostrava somente o estado final da denúncia.
+Decisões anteriores e denúncias já removidas do painel não eram auditáveis pela
+equipe na interface.
+
+### Solução
+
+O painel administrativo carrega o log apenas quando solicitado, em páginas de
+tamanho limitado, e resolve o nome público do moderador sem transferir a
+responsabilidade do controle de acesso para o cliente. RLS e grants continuam
+exigindo papel administrativo; a interface comum não recebe o histórico.
+
+Preservar a consulta sob demanda e paginada. Não duplicar o log em estado local
+persistente nem ampliar `SELECT`, `INSERT`, `UPDATE` ou `DELETE` para usuários
+comuns.

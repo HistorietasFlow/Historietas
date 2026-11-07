@@ -6,6 +6,8 @@ const localBase = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(baseU
 const webServerCommand = (
   process.env.E2E_WEB_SERVER_COMMAND || "npm --prefix .. run dev"
 ).trim();
+const servidorGerenciadoExternamente =
+  process.env.E2E_SERVER_EXTERNALLY_MANAGED === "true";
 
 export default defineConfig({
   testDir: "./tests",
@@ -14,8 +16,8 @@ export default defineConfig({
   expect: { timeout: 12_000 },
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 2 : 3,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 2 : 1,
   reporter: [
     ["list"],
     ["html", { outputFolder: "playwright-report", open: "never" }],
@@ -32,7 +34,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure"
   },
-  webServer: localBase
+  webServer: localBase && !servidorGerenciadoExternamente
     ? {
         command: webServerCommand,
         url: baseURL,

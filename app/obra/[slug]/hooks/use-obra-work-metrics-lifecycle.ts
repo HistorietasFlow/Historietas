@@ -1,11 +1,12 @@
 import { useEffect } from "react";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { idObraSupabaseValido } from "../../../../lib/utils";
 import type { ObraDinamica } from "../lib/obra-data-utils";
 import type { CarregarMetricasObra } from "../lib/obra-work-metrics-request-coordinator";
 import {
   obraEstaEmListaLocalObraPublica,
   salvarListaLocalObraPublica,
+  type VersoesInteracoesObraPublica,
 } from "../lib/obra-interaction-utils";
 import {
   criarMetricasBaseObra,
@@ -28,6 +29,7 @@ type UseObraWorkMetricsLifecycleParams = {
   likedWorksStorageKey: string;
   favoritesStorageKey: string;
   completedStorageKey: string;
+  versoesInteracoesRef: MutableRefObject<VersoesInteracoesObraPublica>;
   carregarMetricasObra: CarregarMetricasObra;
   setObraSeguida: Dispatch<SetStateAction<boolean>>;
   setObraFavoritada: Dispatch<SetStateAction<boolean>>;
@@ -47,6 +49,7 @@ export function useObraWorkMetricsLifecycle({
   likedWorksStorageKey,
   favoritesStorageKey,
   completedStorageKey,
+  versoesInteracoesRef,
   carregarMetricasObra,
   setObraSeguida,
   setObraFavoritada,
@@ -160,6 +163,7 @@ export function useObraWorkMetricsLifecycle({
     }
 
     let cancelado = false;
+    const versoesInteracoesAoIniciar = { ...versoesInteracoesRef.current };
 
     async function carregarMetricasReaisObra() {
       try {
@@ -174,76 +178,110 @@ export function useObraWorkMetricsLifecycle({
         const seguindoAtivo = metrica.usuario.seguiu;
         const favoritadaAtiva = metrica.usuario.favoritou;
         const concluidaAtiva = metrica.usuario.concluiu;
+        const seguimentoAlterado =
+          versoesInteracoesRef.current.seguimento !==
+          versoesInteracoesAoIniciar.seguimento;
+        const curtidaAlterada =
+          versoesInteracoesRef.current.curtida !==
+          versoesInteracoesAoIniciar.curtida;
+        const favoritoAlterado =
+          versoesInteracoesRef.current.favorito !==
+          versoesInteracoesAoIniciar.favorito;
+        const conclusaoAlterada =
+          versoesInteracoesRef.current.conclusao !==
+          versoesInteracoesAoIniciar.conclusao;
 
         if (cancelado) {
           return;
         }
 
         if (usuarioIdLogado) {
-          const obrasCurtidas = carregarListaLocalObraPublica(
-            likedWorksStorageKey,
-            usuarioIdLogado,
-          );
-          const novasObrasCurtidas = curtidaAtiva
-            ? Array.from(new Set([...obrasCurtidas, obraNormalizada]))
-            : obrasCurtidas.filter((titulo) => titulo !== obraNormalizada);
+          if (!curtidaAlterada) {
+            const obrasCurtidas = carregarListaLocalObraPublica(
+              likedWorksStorageKey,
+              usuarioIdLogado,
+            );
+            const novasObrasCurtidas = curtidaAtiva
+              ? Array.from(new Set([...obrasCurtidas, obraNormalizada]))
+              : obrasCurtidas.filter((titulo) => titulo !== obraNormalizada);
 
-          salvarStorageUsuarioObraPublica(
-            likedWorksStorageKey,
-            usuarioIdLogado,
-            novasObrasCurtidas,
-          );
+            salvarStorageUsuarioObraPublica(
+              likedWorksStorageKey,
+              usuarioIdLogado,
+              novasObrasCurtidas,
+            );
+          }
 
-          const obrasSeguidas = carregarListaLocalObraPublica(
-            followedWorksStorageKey,
-            usuarioIdLogado,
-          );
-          const chavesObraAtual = Array.from(
-            new Set(
-              [
-                obraNormalizada,
-                obraAtual.id || "",
-                obraAtual.slug || "",
-                obraAtual.link || "",
-              ].filter((chave) => Boolean(chave.trim())),
-            ),
-          );
-          const novasObrasSeguidas = seguindoAtivo
-            ? Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]))
-            : obrasSeguidas.filter(
-                (chave) => !chavesObraAtual.includes(chave),
-              );
+          if (!seguimentoAlterado) {
+            const obrasSeguidas = carregarListaLocalObraPublica(
+              followedWorksStorageKey,
+              usuarioIdLogado,
+            );
+            const chavesObraAtual = Array.from(
+              new Set(
+                [
+                  obraNormalizada,
+                  obraAtual.id || "",
+                  obraAtual.slug || "",
+                  obraAtual.link || "",
+                ].filter((chave) => Boolean(chave.trim())),
+              ),
+            );
+            const novasObrasSeguidas = seguindoAtivo
+              ? Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]))
+              : obrasSeguidas.filter(
+                  (chave) => !chavesObraAtual.includes(chave),
+                );
 
-          salvarStorageUsuarioObraPublica(
-            followedWorksStorageKey,
-            usuarioIdLogado,
-            novasObrasSeguidas,
-          );
-          salvarListaLocalObraPublica(
-            obraAtual,
-            favoritesStorageKey,
-            favoritadaAtiva,
-            usuarioIdLogado,
-          );
-          salvarListaLocalObraPublica(
-            obraAtual,
-            completedStorageKey,
-            concluidaAtiva,
-            usuarioIdLogado,
-          );
+            salvarStorageUsuarioObraPublica(
+              followedWorksStorageKey,
+              usuarioIdLogado,
+              novasObrasSeguidas,
+            );
+          }
+
+          if (!favoritoAlterado) {
+            salvarListaLocalObraPublica(
+              obraAtual,
+              favoritesStorageKey,
+              favoritadaAtiva,
+              usuarioIdLogado,
+            );
+          }
+
+          if (!conclusaoAlterada) {
+            salvarListaLocalObraPublica(
+              obraAtual,
+              completedStorageKey,
+              concluidaAtiva,
+              usuarioIdLogado,
+            );
+          }
         }
 
-        setObraSeguida(seguindoAtivo);
-        setObraFavoritada(favoritadaAtiva);
-        setObraConcluida(concluidaAtiva);
-        setMetricasObra({
+        if (!seguimentoAlterado) {
+          setObraSeguida(seguindoAtivo);
+        }
+        if (!favoritoAlterado) {
+          setObraFavoritada(favoritadaAtiva);
+        }
+        if (!conclusaoAlterada) {
+          setObraConcluida(concluidaAtiva);
+        }
+        setMetricasObra((metricasAtuais) => ({
           visualizacoes: metrica.visualizacoes,
-          curtidas: metrica.interacoesDiretas.curtidas,
+          curtidas: curtidaAlterada
+            ? metricasAtuais.curtidas
+            : metrica.interacoesDiretas.curtidas,
           comentarios: metrica.interacoesDiretas.comentarios,
-          seguidores: metrica.interacoesDiretas.seguidores,
-          curtidaAtiva,
+          seguidores: seguimentoAlterado
+            ? metricasAtuais.seguidores
+            : metrica.interacoesDiretas.seguidores,
+          curtidaAtiva: curtidaAlterada
+            ? metricasAtuais.curtidaAtiva
+            : curtidaAtiva,
           carregado: true,
-        });
+        }));
         setTotalComentariosObra(metrica.interacoesDiretas.comentarios);
         setMetricasComunidadeObra({
           teorias: metrica.comunidade.teorias,
@@ -275,6 +313,7 @@ export function useObraWorkMetricsLifecycle({
     likedWorksStorageKey,
     favoritesStorageKey,
     completedStorageKey,
+    versoesInteracoesRef,
     carregarMetricasObra,
     setObraSeguida,
     setObraFavoritada,

@@ -5,6 +5,8 @@ import fs from "node:fs";
 
 import { createClient } from "@supabase/supabase-js";
 
+import { criarInvocacaoStatusSupabase } from "./supabase-cli-invocation.mjs";
+
 const DEFAULTS = Object.freeze({
   userId: "e2e00000-0000-4000-8000-000000000001",
   email: "e2e-author@historietas.test",
@@ -14,6 +16,11 @@ const DEFAULTS = Object.freeze({
   visitorEmail: "e2e-visitor@historietas.test",
   visitorName: "Leitor E2E",
   visitorUsername: "leitor-e2e",
+  moderatorId: "e2e00000-0000-4000-8000-000000000006",
+  moderatorEmail: "e2e-moderator@historietas.test",
+  moderatorName: "Moderador E2E",
+  moderatorUsername: "moderador-e2e",
+  moderationReportId: "e2e00000-0000-4000-8000-000000000007",
   communityPostId: "e2e00000-0000-4000-8000-000000000002",
   communityCommentId: "e2e00000-0000-4000-8000-000000000003",
   communityCommentAuthorId: "a0000000-0000-0000-0000-000000000001",
@@ -24,6 +31,8 @@ const DEFAULTS = Object.freeze({
   publicWorkSlug: "obra-publica-e2e",
   publicChapterNumber: "1",
 });
+
+const ARQUIVO_AMBIENTE_LOCAL = new URL("../.env.e2e.generated", import.meta.url);
 
 function removerAspas(valor) {
   const texto = valor.trim();
@@ -39,7 +48,8 @@ function lerVariaveisStatusSupabase() {
   let saida;
 
   try {
-    saida = execFileSync("supabase", ["status", "-o", "env"], {
+    const invocacao = criarInvocacaoStatusSupabase();
+    saida = execFileSync(invocacao.comando, invocacao.argumentos, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -152,6 +162,31 @@ async function excluirVisitanteAnterior(admin) {
   }
 }
 
+async function excluirModeracaoAnterior(admin) {
+  const { error: denunciaError } = await admin
+    .from("comunidade_denuncias")
+    .delete()
+    .eq("id", DEFAULTS.moderationReportId);
+  exigirSemErro(denunciaError, "Não foi possível limpar a denúncia E2E local");
+
+  const { error: historicoError } = await admin
+    .from("moderacao_historico")
+    .delete()
+    .eq("denuncia_id", DEFAULTS.moderationReportId);
+  exigirSemErro(historicoError, "Não foi possível limpar o histórico E2E local");
+
+  const { error: usuarioError } = await admin.auth.admin.deleteUser(
+    DEFAULTS.moderatorId,
+  );
+
+  if (usuarioError && usuarioError.status !== 404) {
+    exigirSemErro(
+      usuarioError,
+      "Não foi possível recriar a conta moderadora E2E local",
+    );
+  }
+}
+
 function obterArquivoGithubEnv() {
   const indice = process.argv.indexOf("--github-env");
 
@@ -180,6 +215,25 @@ function salvarGithubEnv(destino, variaveis) {
   fs.appendFileSync(destino, `${linhas.join("\n")}\n`, "utf8");
 }
 
+function salvarAmbienteLocal(destinoGithub, variaveis) {
+  if (destinoGithub) {
+    salvarGithubEnv(destinoGithub, variaveis);
+    return;
+  }
+
+  const conteudo = Object.entries(variaveis)
+    .map(([nome, valor]) => {
+      assert.ok(
+        !/[\r\n]/.test(valor),
+        `A variável ${nome} contém quebra de linha e não pode ir para o ambiente E2E local.`,
+      );
+      return `${nome}=${JSON.stringify(valor)}`;
+    })
+    .join("\n");
+
+  fs.writeFileSync(ARQUIVO_AMBIENTE_LOCAL, `${conteudo}\n`, "utf8");
+}
+
 async function preparar() {
   const ambiente = lerAmbienteSupabaseLocal();
   exigirDestinoLocal(ambiente.url);
@@ -192,6 +246,11 @@ async function preparar() {
   ).trim();
   const visitorPassword =
     process.env.E2E_VISITOR_PASSWORD || randomBytes(24).toString("base64url");
+  const moderatorEmail = (
+    process.env.E2E_MODERATOR_EMAIL || DEFAULTS.moderatorEmail
+  ).trim();
+  const moderatorPassword =
+    process.env.E2E_MODERATOR_PASSWORD || randomBytes(24).toString("base64url");
   const publicWorkSlug = (
     process.env.E2E_PUBLIC_WORK_SLUG || DEFAULTS.publicWorkSlug
   ).trim();
@@ -204,10 +263,15 @@ async function preparar() {
     visitorEmail && visitorPassword.length >= 8,
     "A conta visitante E2E precisa de e-mail e senha forte.",
   );
+  assert.ok(
+    moderatorEmail && moderatorPassword.length >= 8,
+    "A conta moderadora E2E precisa de e-mail e senha forte.",
+  );
   assert.match(publicWorkSlug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
   assert.equal(publicChapterNumber, "1", "A fixture E2E usa o capítulo público 1.");
 
   const admin = criarCliente(ambiente.url, ambiente.secretKey);
+  await excluirModeracaoAnterior(admin);
   await excluirContaAnterior(admin);
   await excluirVisitanteAnterior(admin);
 
@@ -294,6 +358,41 @@ async function preparar() {
   exigirSemErro(
     visitorProfileError,
     "Não foi possível criar o perfil visitante E2E local",
+  );
+
+  const { data: moderatorCreated, error: moderatorCreateError } =
+    await admin.auth.admin.createUser({
+      id: DEFAULTS.moderatorId,
+      email: moderatorEmail,
+      password: moderatorPassword,
+      email_confirm: true,
+      app_metadata: { role: "moderador" },
+      user_metadata: {
+        name: DEFAULTS.moderatorName,
+        nome: DEFAULTS.moderatorName,
+      },
+    });
+  exigirSemErro(
+    moderatorCreateError,
+    "Não foi possível criar a conta moderadora E2E local",
+  );
+  assert.equal(moderatorCreated.user?.id, DEFAULTS.moderatorId);
+
+  const { error: moderatorProfileError } = await admin.from("profiles").insert({
+    id: DEFAULTS.moderatorId,
+    user_id: DEFAULTS.moderatorId,
+    nome: DEFAULTS.moderatorName,
+    avatar_url: "",
+    bio: "",
+    tipo: "leitor",
+    criado_em: now,
+    atualizado_em: now,
+    sobre_bio: "Conta moderadora descartável dos testes E2E locais.",
+    username: DEFAULTS.moderatorUsername,
+  });
+  exigirSemErro(
+    moderatorProfileError,
+    "Não foi possível criar o perfil moderador E2E local",
   );
 
   const { data: accepted, error: acceptanceError } = await authenticated.rpc(
@@ -429,6 +528,52 @@ async function preparar() {
   );
   assert.equal(communityComment?.id, DEFAULTS.communityCommentId);
 
+  const { data: moderationReport, error: moderationReportError } = await admin
+    .from("comunidade_denuncias")
+    .insert({
+      id: DEFAULTS.moderationReportId,
+      alvo_tipo: "comentario",
+      alvo_id: DEFAULTS.communityCommentId,
+      denunciante_id: DEFAULTS.visitorId,
+      motivo: "Conteúdo inadequado",
+      detalhe: "Denúncia descartável para validar o histórico de moderação.",
+    })
+    .select("id")
+    .single();
+  exigirSemErro(
+    moderationReportError,
+    "Não foi possível criar a denúncia E2E local",
+  );
+  assert.equal(moderationReport?.id, DEFAULTS.moderationReportId);
+
+  const moderatorAuthenticated = criarCliente(ambiente.url, ambiente.publicKey);
+  const { error: moderatorSignInError } =
+    await moderatorAuthenticated.auth.signInWithPassword({
+      email: moderatorEmail,
+      password: moderatorPassword,
+    });
+  exigirSemErro(
+    moderatorSignInError,
+    "A conta moderadora E2E local não conseguiu autenticar",
+  );
+
+  const { data: analyzedReport, error: analyzeReportError } =
+    await moderatorAuthenticated
+      .from("comunidade_denuncias")
+      .update({
+        status: "em_analise",
+        observacao_admin: "Análise E2E registrada internamente.",
+      })
+      .eq("id", DEFAULTS.moderationReportId)
+      .select("id, status")
+      .single();
+  exigirSemErro(
+    analyzeReportError,
+    "Não foi possível registrar a decisão de moderação E2E local",
+  );
+  assert.equal(analyzedReport?.status, "em_analise");
+  await moderatorAuthenticated.auth.signOut();
+
   const comentariosObra = Array.from({ length: 25 }, (_, index) => ({
     id: randomUUID(),
     obra_id: workId,
@@ -482,15 +627,23 @@ async function preparar() {
   );
   assert.equal(secondPublicChapter?.id, secondChapterId);
 
-  salvarGithubEnv(obterArquivoGithubEnv(), {
+  salvarAmbienteLocal(obterArquivoGithubEnv(), {
     NEXT_PUBLIC_SUPABASE_URL: ambiente.url,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ambiente.publicKey,
     SUPABASE_SERVICE_ROLE_KEY: ambiente.secretKey,
+    SUPABASE_TEST_URL: ambiente.url,
+    SUPABASE_TEST_ANON_KEY: ambiente.publicKey,
+    SUPABASE_TEST_PUBLIC_KEY: ambiente.publicKey,
+    SUPABASE_TEST_SECRET_KEY: ambiente.secretKey,
+    E2E_BASE_URL: "http://127.0.0.1:3000",
+    E2E_WEB_SERVER_COMMAND: "npm --prefix .. run start",
     E2E_USER_ID: userId,
     E2E_USER_EMAIL: email,
     E2E_USER_PASSWORD: password,
     E2E_VISITOR_EMAIL: visitorEmail,
     E2E_VISITOR_PASSWORD: visitorPassword,
+    E2E_MODERATOR_EMAIL: moderatorEmail,
+    E2E_MODERATOR_PASSWORD: moderatorPassword,
     E2E_ALLOW_DESTRUCTIVE: "true",
     E2E_PUBLIC_WORK_SLUG: publicWorkSlug,
     E2E_PUBLIC_WORK_ID: workId,

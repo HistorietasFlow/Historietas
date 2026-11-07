@@ -103,6 +103,29 @@ test.describe("página da obra — cenários críticos", () => {
     expect(requestsComentarios).toBeGreaterThan(0);
   });
 
+  for (const cenario of [
+    { nome: "desktop", viewport: { width: 1440, height: 900 } },
+    { nome: "mobile", viewport: { width: 390, height: 844 } },
+  ]) {
+    test(`deep link de comentario abre o sheet para localizar e responder no ${cenario.nome}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(cenario.viewport);
+      await page.goto(`${workPath()}?comentarios=1`, {
+        waitUntil: "domcontentloaded",
+      });
+
+      const dialog = page.getByRole("dialog", {
+        name: /Coment.*rios de Obra P.*blica E2E/i,
+      });
+      await expect(dialog).toBeVisible();
+      await expect(
+        dialog.getByText(/Coment.*rio E2E 01/, { exact: true }),
+      ).toBeVisible();
+      await expect(dialog.getByRole("textbox")).toBeVisible();
+    });
+  }
+
   test("Escape fecha comentários e devolve foco ao gatilho", async ({ page }) => {
     await page.goto(workPath(), { waitUntil: "domcontentloaded" });
 

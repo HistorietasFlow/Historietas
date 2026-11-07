@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { idObraSupabaseValido } from "../../../../lib/utils";
 import type { IdentidadeAutenticadaObra } from "../lib/obra-auth-identity";
 import type { ObraDinamica } from "../lib/obra-data-utils";
@@ -16,7 +16,10 @@ import {
   lerStorageUsuarioObraPublica,
   salvarStorageUsuarioObraPublica,
 } from "../lib/obra-user-storage";
-import { salvarListaLocalObraPublica } from "../lib/obra-interaction-utils";
+import {
+  salvarListaLocalObraPublica,
+  type VersoesInteracoesObraPublica,
+} from "../lib/obra-interaction-utils";
 import type { MetricasObraPublica } from "../lib/obra-metric-utils";
 
 type UseObraWorkInteractionsParams = {
@@ -30,6 +33,7 @@ type UseObraWorkInteractionsParams = {
   likedWorksStorageKey: string;
   favoritesStorageKey: string;
   completedStorageKey: string;
+  versoesInteracoesRef: MutableRefObject<VersoesInteracoesObraPublica>;
   obterIdentidadeLogadaParaAcao: (
     mensagem: string,
   ) => Promise<IdentidadeAutenticadaObra | null>;
@@ -54,6 +58,7 @@ export function useObraWorkInteractions({
   likedWorksStorageKey,
   favoritesStorageKey,
   completedStorageKey,
+  versoesInteracoesRef,
   obterIdentidadeLogadaParaAcao,
   criarGuardIdentidadeAcao,
   setObraSeguida,
@@ -123,6 +128,7 @@ export function useObraWorkInteractions({
         novasObrasSeguidas
       );
 
+      versoesInteracoesRef.current.seguimento += 1;
       setObraSeguida(seguindo);
       setMetricasObra((metricasAtuais) => ({
         ...metricasAtuais,
@@ -223,6 +229,7 @@ export function useObraWorkInteractions({
 
     const proximaCurtidaAtiva = !metricasObra.curtidaAtiva;
 
+    versoesInteracoesRef.current.curtida += 1;
     setMetricasObra((metricasAtuais) => ({
       ...metricasAtuais,
       curtidaAtiva: proximaCurtidaAtiva,
@@ -328,6 +335,7 @@ export function useObraWorkInteractions({
     const proximoFavorito = !obraFavoritada;
     const favoritoAnterior = obraFavoritada;
 
+    versoesInteracoesRef.current.favorito += 1;
     setObraFavoritada(proximoFavorito);
     salvarListaLocalObraPublica(
       obra,
@@ -417,6 +425,7 @@ export function useObraWorkInteractions({
     const proximaConcluida = !obraConcluida;
     const concluidaAnterior = obraConcluida;
 
+    versoesInteracoesRef.current.conclusao += 1;
     setObraConcluida(proximaConcluida);
     salvarListaLocalObraPublica(
       obra,

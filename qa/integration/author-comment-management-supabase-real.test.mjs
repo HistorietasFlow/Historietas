@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { criarInvocacaoStatusSupabase } from "../scripts/supabase-cli-invocation.mjs";
 import test from "node:test";
 
 import { createClient } from "@supabase/supabase-js";
@@ -29,7 +30,8 @@ function lerAmbienteSupabaseLocal() {
     return { url: urlExplicita, publicKey: chaveExplicita };
   }
 
-  const saida = execFileSync("supabase", ["status", "-o", "env"], {
+  const invocacao = criarInvocacaoStatusSupabase();
+  const saida = execFileSync(invocacao.comando, invocacao.argumentos, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   });

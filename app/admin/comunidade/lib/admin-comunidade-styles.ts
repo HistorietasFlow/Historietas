@@ -1022,3 +1022,100 @@ export const analysisMetaStyle: CSSProperties = {
   textAlign: "right",
   ...safeTextStyle,
 };
+
+export const historyCardStyle: CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  margin: "0 0 14px",
+  padding: "12px 0",
+  borderTop: "1px solid var(--historietas-border, rgba(161,161,170,0.22))",
+  borderBottom: "1px solid var(--historietas-border, rgba(161,161,170,0.22))",
+};
+
+export const historyButtonStyle: CSSProperties = {
+  width: "fit-content",
+  minHeight: "36px",
+  border: "1px solid var(--historietas-border, rgba(161,161,170,0.32))",
+  borderRadius: "999px",
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  padding: "7px 12px",
+  fontFamily: "inherit",
+  fontSize: "11px",
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+export const historyPanelStyle: CSSProperties = {
+  display: "grid",
+  gap: "12px",
+};
+
+export const historyActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  flexWrap: "wrap",
+};
+
+export const historyTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "13px",
+  fontWeight: 950,
+};
+
+export const historyListStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  margin: 0,
+  padding: 0,
+  listStyle: "none",
+};
+
+export const historyEventStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  background: "var(--historietas-surface-soft, rgba(39,39,42,0.72))",
+};
+
+export const historyEventHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  justifyContent: "space-between",
+  gap: "8px",
+  flexWrap: "wrap",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+};
+
+export const historyEventMetaStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10.5px",
+  lineHeight: 1.4,
+  fontWeight: 750,
+  ...safeTextStyle,
+};
+
+export const historyObservationStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  lineHeight: 1.45,
+  whiteSpace: "pre-wrap",
+  ...safeTextStyle,
+};
+
+export const historyReportIdStyle: CSSProperties = {
+  color: "var(--historietas-text-muted, #A1A1AA)",
+  fontSize: "9px",
+  overflowWrap: "anywhere",
+};
+
+export const historyErrorStyle: CSSProperties = {
+  ...historyEventMetaStyle,
+  color: "var(--historietas-danger, #FCA5A5)",
+};

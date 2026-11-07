@@ -14,6 +14,7 @@ import {
   criarDiarioPerfilHrefNotificacao,
 } from "./notificacoes-navigation-utils";
 import { obterPerfilNotificacao } from "./notificacoes-profile-utils";
+import { criarMensagemComentarioDiarioSemSpoiler } from "./notificacoes-spoiler-safe-message-utils";
 import { carregarPerfisNotificacoes } from "./notificacoes-supabase-profile-loader";
 import { obterRotuloTipoAnotacaoDiarioNotificacao } from "./notificacoes-status-text-utils";
 
@@ -291,7 +292,6 @@ export async function carregarNotificacoesDiarioSupabase(
     const perfilAutor = obterPerfilNotificacao(perfis, autorId, "Leitor");
     const obraId = pegarTexto(anotacao.obra_id);
     const obra = obrasPorId.get(obraId);
-    const comentario = pegarTexto(registro.texto);
     const tipoAnotacao = obterRotuloTipoAnotacaoDiarioNotificacao(
       pegarTexto(anotacao.tipo)
     );
@@ -303,9 +303,11 @@ export async function carregarNotificacoesDiarioSupabase(
       capituloId: "",
       link: linkDiarioProprio,
       titulo: "Novo comentário no Diário",
-      mensagem: `${perfilAutor.nome} comentou na sua ${tipoAnotacao}${
-        obra?.titulo ? ` sobre ${obra.titulo}` : ""
-      }${comentario ? `: ${comentario.slice(0, 120)}` : "."}`,
+      mensagem: criarMensagemComentarioDiarioSemSpoiler({
+        autorNome: perfilAutor.nome,
+        contextoTitulo: tipoAnotacao,
+        contextoSecundario: obra?.titulo,
+      }),
       tipo: "comentario-diario",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(
