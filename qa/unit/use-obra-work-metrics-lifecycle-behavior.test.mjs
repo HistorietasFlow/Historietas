@@ -20,7 +20,7 @@ const fonteMockada = fonte
     "const idObraSupabaseValido = (...args) => globalThis.__obraMetrics.idValido(...args);",
   )
   .replace(
-    /import \{\s*obraEstaEmListaLocalObraPublica,\s*salvarListaLocalObraPublica,\s*\} from "\.\.\/lib\/obra-interaction-utils";/,
+    /import \{[\s\S]*?\} from "\.\.\/lib\/obra-interaction-utils";/,
     "const obraEstaEmListaLocalObraPublica = (...args) => globalThis.__obraMetrics.estaNaLista(...args); const salvarListaLocalObraPublica = (...args) => globalThis.__obraMetrics.salvarLista(...args);",
   )
   .replace(
@@ -70,6 +70,14 @@ function montarHook({ storage = {}, colecoes = {}, estadoInicial = {} } = {}) {
   const leituras = [];
   const persistencias = [];
   const carregamentosRemotos = [];
+  const versoesInteracoesRef = {
+    current: {
+      seguimento: 0,
+      curtida: 0,
+      favorito: 0,
+      conclusao: 0,
+    },
+  };
   let indiceEfeito = 0;
   let proximoTimerId = 1;
   const estado = {
@@ -162,6 +170,7 @@ function montarHook({ storage = {}, colecoes = {}, estadoInicial = {} } = {}) {
       likedWorksStorageKey: CHAVES.curtidas,
       favoritesStorageKey: CHAVES.favoritas,
       completedStorageKey: CHAVES.concluidas,
+      versoesInteracoesRef,
       carregarMetricasObra: (...args) =>
         globalThis.__obraMetrics.carregarMetricas(...args),
       ...setters,
@@ -173,6 +182,7 @@ function montarHook({ storage = {}, colecoes = {}, estadoInicial = {} } = {}) {
     leituras,
     persistencias,
     carregamentosRemotos,
+    versoesInteracoesRef,
     useRenderHook,
     executarTimers() {
       for (const [id, callback] of [...timers]) {
@@ -296,6 +306,59 @@ test("snapshot remoto prevalece e sincroniza estados e storage da conta", async 
         ["colecao", "concluidas", true, "usuario-a"],
       ],
     );
+  } finally {
+    cenario.desmontar();
+  }
+});
+
+test("snapshot remoto iniciado antes das acoes nao sobrescreve as interacoes novas", async () => {
+  const cenario = montarHook();
+  try {
+    cenario.useRenderHook({ obra: { ...OBRA, origem: "local" } });
+    cenario.executarTimers();
+
+    cenario.estado.seguida = true;
+    cenario.estado.favoritada = true;
+    cenario.estado.concluida = true;
+    cenario.estado.metricas = {
+      ...cenario.estado.metricas,
+      curtidaAtiva: true,
+      curtidas: 1,
+      seguidores: 1,
+    };
+    cenario.versoesInteracoesRef.current.seguimento += 1;
+    cenario.versoesInteracoesRef.current.curtida += 1;
+    cenario.versoesInteracoesRef.current.favorito += 1;
+    cenario.versoesInteracoesRef.current.conclusao += 1;
+
+    cenario.carregamentosRemotos[0].resolver({
+      carregado: true,
+      obras: new Map([
+        [
+          OBRA.id,
+          {
+            visualizacoes: 10,
+            interacoesDiretas: { curtidas: 0, comentarios: 2, seguidores: 0 },
+            comunidade: { teorias: 0, reviews: 0, posts: 0 },
+            usuario: {
+              curtiu: false,
+              seguiu: false,
+              favoritou: false,
+              concluiu: false,
+            },
+          },
+        ],
+      ]),
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    assert.equal(cenario.estado.seguida, true);
+    assert.equal(cenario.estado.favoritada, true);
+    assert.equal(cenario.estado.concluida, true);
+    assert.equal(cenario.estado.metricas.curtidaAtiva, true);
+    assert.equal(cenario.estado.metricas.curtidas, 1);
+    assert.equal(cenario.estado.metricas.seguidores, 1);
   } finally {
     cenario.desmontar();
   }

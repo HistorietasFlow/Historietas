@@ -55,25 +55,37 @@ test("Supabase prevalece sobre cache local nas interacoes da obra", () => {
 test("cache local e sincronizado somente depois do guard da execucao atual", () => {
   const bloco = obterBlocoMetricasReais();
   const indiceGuard = bloco.indexOf("if (cancelado)");
+  const indiceGuardCurtidas = bloco.indexOf("if (!curtidaAlterada)");
   const indiceCacheCurtidas = bloco.indexOf(
-    "salvarStorageUsuarioObraPublica(\n            likedWorksStorageKey",
+    "salvarStorageUsuarioObraPublica(",
+    indiceGuardCurtidas,
   );
+  const indiceGuardSeguidas = bloco.indexOf("if (!seguimentoAlterado)");
   const indiceCacheSeguidas = bloco.indexOf(
-    "salvarStorageUsuarioObraPublica(\n            followedWorksStorageKey",
+    "salvarStorageUsuarioObraPublica(",
+    indiceGuardSeguidas,
   );
+  const indiceGuardFavoritos = bloco.indexOf("if (!favoritoAlterado)");
   const indiceCacheFavoritos = bloco.indexOf(
-    "salvarListaLocalObraPublica(\n            obraAtual,\n            favoritesStorageKey",
+    "salvarListaLocalObraPublica(",
+    indiceGuardFavoritos,
   );
+  const indiceGuardConcluidas = bloco.indexOf("if (!conclusaoAlterada)");
   const indiceCacheConcluidas = bloco.indexOf(
-    "salvarListaLocalObraPublica(\n            obraAtual,\n            completedStorageKey",
+    "salvarListaLocalObraPublica(",
+    indiceGuardConcluidas,
   );
   const indiceEstado = bloco.indexOf("setObraSeguida(seguindoAtivo);");
 
   assert.ok(indiceGuard >= 0);
-  assert.ok(indiceCacheCurtidas > indiceGuard);
-  assert.ok(indiceCacheSeguidas > indiceGuard);
-  assert.ok(indiceCacheFavoritos > indiceGuard);
-  assert.ok(indiceCacheConcluidas > indiceGuard);
+  assert.ok(indiceGuardCurtidas > indiceGuard);
+  assert.ok(indiceCacheCurtidas > indiceGuardCurtidas);
+  assert.ok(indiceGuardSeguidas > indiceCacheCurtidas);
+  assert.ok(indiceCacheSeguidas > indiceGuardSeguidas);
+  assert.ok(indiceGuardFavoritos > indiceCacheSeguidas);
+  assert.ok(indiceCacheFavoritos > indiceGuardFavoritos);
+  assert.ok(indiceGuardConcluidas > indiceCacheFavoritos);
+  assert.ok(indiceCacheConcluidas > indiceGuardConcluidas);
   assert.ok(indiceEstado > indiceCacheConcluidas);
 });
 
