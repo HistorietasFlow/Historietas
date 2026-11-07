@@ -14,6 +14,7 @@ type UseExplorarRouteFilterSyncParams = {
   setFiltroFormato: Dispatch<SetStateAction<string>>;
   setFiltroTag: Dispatch<SetStateAction<string>>;
   setTagExcluida: Dispatch<SetStateAction<string>>;
+  setGeneroExcluido: Dispatch<SetStateAction<string>>;
   setNotaMinima: Dispatch<SetStateAction<number | null>>;
 };
 
@@ -25,6 +26,7 @@ export function useExplorarRouteFilterSync({
   setFiltroFormato,
   setFiltroTag,
   setTagExcluida,
+  setGeneroExcluido,
   setNotaMinima,
 }: UseExplorarRouteFilterSyncParams) {
   useEffect(() => {
@@ -36,6 +38,7 @@ export function useExplorarRouteFilterSync({
       setFiltroFormato(filtros.filtroFormato);
       setFiltroTag(filtros.filtroTag || "");
       setTagExcluida(filtros.tagExcluida || "");
+      setGeneroExcluido(filtros.generoExcluido || "");
       setNotaMinima(filtros.notaMinima ?? null);
     });
   }, [
@@ -46,6 +49,7 @@ export function useExplorarRouteFilterSync({
     setFiltroFormato,
     setFiltroTag,
     setTagExcluida,
+    setGeneroExcluido,
     setNotaMinima,
   ]);
 }

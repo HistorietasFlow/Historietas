@@ -22,6 +22,7 @@ type OpcoesConsultaCatalogoExplorar = {
   filtroFormato: string;
   filtroTag?: string;
   tagExcluida?: string;
+  generoExcluido?: string;
   notaMinima?: number | null;
   usuarioIdExplorar?: string;
   filtroClassificacao: string;
@@ -55,6 +56,7 @@ export function useExplorarCatalogQuery({
   filtroFormato,
   filtroTag = "",
   tagExcluida = "",
+  generoExcluido = "",
   notaMinima = null,
   usuarioIdExplorar = "",
   filtroClassificacao,
@@ -96,8 +98,8 @@ export function useExplorarCatalogQuery({
   const [consultaFiltrosConfirmada, setConsultaFiltrosConfirmada] = useState<{
     consulta: ConsultaCatalogo; usuarioId: string;
   } | null>(null);
-  // Cache não comprova nota nem ausência de uma tag; confirme a consulta/identidade atuais.
-  const exigeConfirmacao = notaMinima !== null || (modoConteudo === "obras" && Boolean(tagExcluida));
+  // Cache não comprova nota nem ausência de tag/gênero; confirme a consulta/identidade atuais.
+  const exigeConfirmacao = notaMinima !== null || (modoConteudo === "obras" && Boolean(tagExcluida || generoExcluido));
   const identidadeConsultaFiltros = exigeConfirmacao ? usuarioIdExplorar : "";
 
   const buscaCatalogo = busca.trim();
@@ -129,6 +131,7 @@ export function useExplorarCatalogQuery({
     formato: filtroFormato === "todos" ? "" : filtroFormato,
     ...(filtroTag ? { tag: filtroTag } : {}),
     ...(modoConteudo === "obras" && tagExcluida ? { tagExcluida } : {}),
+    ...(modoConteudo === "obras" && generoExcluido ? { generoExcluido } : {}),
     ...(notaMinima !== null ? { notaMinima } : {}),
     classificacao:
       filtroClassificacao === "todos" ? "" : filtroClassificacao,
@@ -147,6 +150,7 @@ export function useExplorarCatalogQuery({
     filtroFormato,
     filtroTag,
     tagExcluida,
+    generoExcluido,
     modoConteudo,
     notaMinima,
     ordenacao,
@@ -157,7 +161,7 @@ export function useExplorarCatalogQuery({
       categoriaSelecionada ||
       filtroFormato !== "todos" ||
       filtroTag ||
-      (modoConteudo === "obras" && tagExcluida) ||
+      (modoConteudo === "obras" && (tagExcluida || generoExcluido)) ||
       notaMinima !== null ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
@@ -331,6 +335,10 @@ export function useExplorarCatalogQuery({
 
   return { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo,
     notaMinimaVerificada: notaMinima === null || (
+      consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
+      consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros
+    ),
+    generoExcluidoVerificado: !generoExcluido || modoConteudo !== "obras" || Boolean(
       consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
       consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros
     ),

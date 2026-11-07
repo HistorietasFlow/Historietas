@@ -13,6 +13,7 @@ function carregar(arquivo, deps = {}) {
   });
   return modulo.exports;
 }
+const genero = carregar("../../lib/catalogo-genero.ts");
 const tag = carregar("../../lib/catalogo-tag.ts");
 const notaMinima = carregar("../../lib/catalogo-nota-minima.ts");
 
@@ -29,6 +30,7 @@ test("normalização literal preserva pontuação e não aplica stemming", () =>
 test("sem tag preserva chamada legada; com tag envia contrato completo e cursores nulos", async () => {
   const chamadas = [];
   const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
+    "./catalogo-genero": genero,
     "./catalogo-tag": tag,
     "./catalogo-nota-minima": notaMinima,
     "./supabase/client": { supabase: { rpc: async (...args) => {
@@ -52,6 +54,7 @@ test("sem tag preserva chamada legada; com tag envia contrato completo e cursore
 test("falha da variante com tag é propagada, sem repetir consulta ampla", async () => {
   let chamadas = 0;
   const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
+    "./catalogo-genero": genero,
     "./catalogo-tag": tag,
     "./catalogo-nota-minima": notaMinima,
     "./supabase/client": { supabase: { rpc: async () => {
@@ -74,6 +77,7 @@ test("nota mínima valida limites, escala e parâmetros inválidos", () => {
 test("nota mínima usa variante completa com tag opcional, mantendo cursor e legados", async () => {
   const chamadas = [];
   const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
+    "./catalogo-genero": genero,
     "./catalogo-tag": tag,
     "./catalogo-nota-minima": notaMinima,
     "./supabase/client": { supabase: { rpc: async (...args) => {
@@ -99,6 +103,7 @@ test("exclusão usa 13 argumentos, combina filtros e não substitui a consulta e
   const chamadas = [];
   let falhar = false;
   const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
+    "./catalogo-genero": genero,
     "./catalogo-tag": tag, "./catalogo-nota-minima": notaMinima,
     "./supabase/client": { supabase: { rpc: async (...args) => {
       chamadas.push(args); return { data: [], error: falhar ? { message: "rede" } : null };
@@ -123,4 +128,58 @@ test("exclusão usa 13 argumentos, combina filtros e não substitui a consulta e
   falhar = true;
   await assert.rejects(listarPaginaCatalogo({ tagExcluida: "base" }), /rede/);
   assert.equal(chamadas.length, 4);
+});
+
+test("gênero excluído normaliza aliases e compara termos completos sem confundir tags", () => {
+  const { categorias } = carregar("../../app/explorar/lib/explorar-categories.ts");
+  for (const categoria of categorias) assert.ok(genero.normalizarGeneroExcluido(categoria), categoria);
+  for (const valor of [" FICÇÃO ", "sci-fi", "SCI  FI"]) {
+    assert.equal(genero.normalizarGeneroExcluido(valor), "ficcao");
+  }
+  for (const valor of ["", null, "%", "_", "\\", "drama|.*", "desconhecido", "a".repeat(1000)]) {
+    assert.equal(genero.normalizarGeneroExcluido(valor), "");
+  }
+  for (const [texto, filtro, esperado] of [
+    ["Melodrama", "Drama", false], ["Dramaturgia", "Drama", false], ["Investigação", "Ação", false],
+    ["Fantasia, Romance", "Romance", true], ["Ação e aventura", "Aventura", true],
+    ["  AÇÃO\t Épica ", "Ação", true], ["Romance histórico", "Histórico", true],
+    ["Ficção científica", "Ficção", true], ["SCI-FI espacial", "Ficção", true],
+    ["sci\t fi", "Ficção", true], ["Fantasia sombria", "Fantasia", true],
+    ["Cyberpunk", "Ficção", false], ["Romances", "Romance", false],
+    ["anti_romance", "Romance", false], ["pré-Romance", "Romance", true],
+    ["éromance", "Romance", false], ["Romance2", "Romance", false],
+    ["", "Drama", false],
+  ]) assert.equal(genero.generoCorrespondeExclusao(texto, filtro), esperado, texto);
+});
+
+test("gênero usa os 14 argumentos, combina filtros e preserva retry sem consulta ampla", async () => {
+  const chamadas = [];
+  let erro = true;
+  const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
+    "./catalogo-genero": genero, "./catalogo-tag": tag, "./catalogo-nota-minima": notaMinima,
+    "./supabase/client": { supabase: { rpc: async (...args) => {
+      chamadas.push(args); return { data: [], error: erro ? { message: "rede" } : null };
+    } } },
+  });
+  const consulta = { generoExcluido: "SCI-FI", genero: "Fantasia", tag: "base",
+    tagExcluida: "bloqueada", notaMinima: 4.5, formato: "HQ", ordenacao: "mais-capitulos" };
+  await assert.rejects(listarPaginaCatalogo(consulta), /rede/);
+  assert.equal(chamadas.length, 1);
+  erro = false;
+  await listarPaginaCatalogo(consulta);
+  assert.equal(chamadas.length, 2);
+  assert.deepEqual(chamadas[1], chamadas[0]);
+  const p = chamadas[0][1];
+  assert.equal(Object.keys(p).length, 14);
+  assert.equal(p.p_genero_excluido, "ficcao");
+  assert.equal(p.p_tag, "base");
+  assert.equal(p.p_tag_excluida, "bloqueada");
+  assert.equal(p.p_nota_minima, 4.5);
+  assert.equal(p.p_formato, "HQ");
+  assert.equal(p.p_ordenacao, "mais-capitulos");
+  assert.equal(p.p_cursor_id, null);
+  await listarPaginaCatalogo({ generoExcluido: "drama", cursor: { id: "seguinte", valor: 2, data: "2026-01-01" } });
+  assert.equal(chamadas[2][1].p_cursor_id, "seguinte");
+  await listarPaginaCatalogo({ generoExcluido: "desconhecido" });
+  assert.equal(Object.keys(chamadas[3][1]).length, 10);
 });

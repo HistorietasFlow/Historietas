@@ -30,6 +30,7 @@ type OpcoesCarregamentoInicialExplorar = {
   setFiltroFormato: Dispatch<SetStateAction<string>>;
   setFiltroTag: Dispatch<SetStateAction<string>>;
   setTagExcluida: Dispatch<SetStateAction<string>>;
+  setGeneroExcluido: Dispatch<SetStateAction<string>>;
   setNotaMinima: Dispatch<SetStateAction<number | null>>;
   setUsuarioLogado: Dispatch<SetStateAction<boolean>>;
   setObrasLocais: Dispatch<SetStateAction<ObraLocal[]>>;
@@ -54,6 +55,7 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       setFiltroFormato,
       setFiltroTag,
       setTagExcluida,
+      setGeneroExcluido,
       setNotaMinima,
       setUsuarioLogado,
       setObrasLocais,
@@ -77,6 +79,7 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       setFiltroFormato(filtrosCompartilhaveis.filtroFormato);
       setFiltroTag(filtrosCompartilhaveis.filtroTag || "");
       setTagExcluida(filtrosCompartilhaveis.tagExcluida || "");
+      setGeneroExcluido(filtrosCompartilhaveis.generoExcluido || "");
       setNotaMinima(filtrosCompartilhaveis.notaMinima ?? null);
 
       try {

@@ -51,6 +51,7 @@ test("identifica exatamente os sete critérios de filtros ativos", async () => {
     { filtroFormato: "Romance" },
     { filtroTag: "acao" },
     { tagExcluida: "acao" },
+    { generoExcluido: "romance" },
     { notaMinima: 4 },
     { filtroClassificacao: "16+" },
     { filtroCapitulos: "completas" },

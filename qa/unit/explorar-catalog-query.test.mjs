@@ -148,7 +148,7 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "1518bbff1c0b35f5ac6cf2599177aae011d78a0687248764870c847bd2e9dbb7");
+    "2dfa0ffb9411e7a2567e3e97a9914cd6cc58a91a678ae80f61e57e5c47d52b9c");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -674,4 +674,63 @@ test("paginação ultrapassada não sobrescreve uma consulta mais recente", asyn
   await c.disparar();
   assert.deepEqual(c.estado.ObrasLocais, []);
   assert.equal(c.estado.CarregandoMaisCatalogo, false);
+});
+
+test("exclusão de gênero reinicia cursor, preserva combinações e invalida respostas obsoletas/retry", async (t) => {
+  const c = preparar(t, { generoExcluido: "acao", filtroTag: "base", notaMinima: 4 });
+  const antiga = adiar();
+  c.respostas.push(antiga.promise);
+  assert.equal(c.render().consultaCatalogoPersonalizada, true);
+  const pendente = c.disparar();
+  c.render({ generoExcluido: "romance", filtroFormato: "HQ" });
+  const cursor = { valor: 0, data: "2026-01-01", id: "nova" };
+  c.respostas.push(Promise.resolve({ obras: [{ id: "nova" }], pagina: { obraIds: ["nova"], proximoCursor: cursor, temMais: true } }));
+  await c.disparar();
+  antiga.resolve({ obras: [{ id: "antiga" }], pagina: null });
+  await pendente;
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "nova" }]);
+  let consulta = c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0];
+  assert.equal(consulta.generoExcluido, "romance");
+  assert.equal(consulta.tag, "base");
+  assert.equal(consulta.notaMinima, 4);
+  assert.equal(consulta.cursor, undefined);
+  c.respostas.push(Promise.resolve({ obras: [{ id: "segunda" }], pagina: { obraIds: ["segunda"], proximoCursor: null, temMais: false } }));
+  await c.render({ proximoCursorCatalogo: cursor }).carregarMaisObrasCatalogo();
+  consulta = c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0];
+  assert.deepEqual(consulta.cursor, cursor);
+  assert.equal(consulta.generoExcluido, "romance");
+  c.render({ generoExcluido: "fantasia" });
+  c.respostas.push(Promise.resolve({ obras: [], pagina: null, falhaTemporaria: true }));
+  await c.disparar();
+  assert.equal(c.estado.ErroCatalogoExplorar, "consulta");
+  c.render({ versaoRetryCatalogo: 1 });
+  c.respostas.push(Promise.resolve({ obras: [], pagina: { obraIds: [], proximoCursor: null, temMais: false } }));
+  await c.disparar();
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0].generoExcluido, "fantasia");
+  c.render({ modoConteudo: "autores" });
+  await c.disparar();
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0].generoExcluido, undefined);
+});
+
+test("exclusão de gênero sozinha exige IDs atuais, não certifica cache em falha e invalida troca de conta", async (t) => {
+  const c = preparar(t, { generoExcluido: "acao", usuarioIdExplorar: "A" });
+  assert.equal(c.render().generoExcluidoVerificado, false);
+  c.respostas.push(Promise.resolve({ obras: [{ id: "cache-tags-antigas" }], pagina: null, falhaTemporaria: true }));
+  await c.disparar();
+  assert.equal(c.render().generoExcluidoVerificado, false);
+  assert.equal(c.estado.ObraIdsBuscaRemota, null);
+  const respostaA = adiar();
+  c.render({ versaoRetryCatalogo: 1 });
+  c.respostas.push(respostaA.promise);
+  const pendenteA = c.disparar();
+  c.render({ usuarioIdExplorar: "B" });
+  c.respostas.push(Promise.resolve({ obras: [{ id: "B" }], pagina: { obraIds: ["B"], proximoCursor: null, temMais: false } }));
+  await c.disparar();
+  respostaA.resolve({ obras: [{ id: "A" }], pagina: { obraIds: ["A"] } });
+  await pendenteA;
+  assert.equal(c.render().generoExcluidoVerificado, true);
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["B"]);
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "B" }]);
+  assert.equal(c.render({ usuarioIdExplorar: "" }).generoExcluidoVerificado, false);
 });

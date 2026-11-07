@@ -64,6 +64,13 @@
   pela consulta/identidade atuais, além da proteção local. Nenhuma variante
   antiga da RPC deve ser removida ou tornada ambígua.
 
+- Exclusão de gênero usa somente o vocabulário público do Explorar, com aliases
+  de Ficção e limites de termos, sem negar indiscriminadamente a substring da
+  inclusão. Aplica-se no banco antes da paginação e no cliente como proteção
+  adicional, exigindo confirmação remota atual para não certificar cache antigo.
+  A variante de 14 argumentos não altera as quatro assinaturas anteriores nem
+  a correspondência dos filtros inclusivos; tags não são inferidas como gênero.
+
 ## Comentários para autores
 
 - A localização de comentários em obras reutiliza a central de Notificações e o comments sheet existente; não deve criar um segundo inbox nem duplicar consultas de comentários.

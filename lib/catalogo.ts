@@ -1,5 +1,6 @@
 import { supabase } from "./supabase/client";
 import { normalizarTagCatalogo } from "./catalogo-tag";
+import { normalizarGeneroExcluido } from "./catalogo-genero";
 import { normalizarNotaMinimaCatalogo } from "./catalogo-nota-minima";
 
 export type OrdenacaoCatalogo =
@@ -34,6 +35,7 @@ export type ConsultaCatalogo = Readonly<{
   formato?: string;
   tag?: string;
   tagExcluida?: string;
+  generoExcluido?: string;
   notaMinima?: number | null;
   classificacao?: string;
   filtroCapitulos?: FiltroCapitulosCatalogo;
@@ -106,6 +108,7 @@ export async function listarPaginaCatalogo(
   const cursor = consulta.cursor || null;
   const tag = normalizarTagCatalogo(consulta.tag);
   const tagExcluida = normalizarTagCatalogo(consulta.tagExcluida);
+  const generoExcluido = normalizarGeneroExcluido(consulta.generoExcluido);
   const notaMinima = normalizarNotaMinimaCatalogo(consulta.notaMinima);
   const parametros = {
     p_busca: consulta.busca?.trim() || "",
@@ -119,7 +122,13 @@ export async function listarPaginaCatalogo(
     p_cursor_data: cursor?.data,
     p_cursor_id: cursor?.id,
   };
-  const { data, error } = await supabase.rpc("listar_obras_catalogo", tagExcluida ? {
+  const { data, error } = await supabase.rpc("listar_obras_catalogo", generoExcluido ? {
+    ...parametros, p_tag: tag, p_nota_minima: notaMinima, p_tag_excluida: tagExcluida,
+    p_genero_excluido: generoExcluido,
+    p_cursor_valor: cursor?.valor ?? null,
+    p_cursor_data: cursor?.data ?? null,
+    p_cursor_id: cursor?.id ?? null,
+  } : tagExcluida ? {
     ...parametros, p_tag: tag, p_nota_minima: notaMinima, p_tag_excluida: tagExcluida,
     p_cursor_valor: cursor?.valor ?? null,
     p_cursor_data: cursor?.data ?? null,

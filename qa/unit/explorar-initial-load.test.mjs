@@ -83,7 +83,7 @@ function preparar(t, opcoes = {}) {
   globalThis.__explorarInitialTest = deps;
   const props = { ...refs };
   for (const nome of [
-    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "TagExcluida", "NotaMinima", "UsuarioLogado", "ObrasLocais",
+    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "TagExcluida", "GeneroExcluido", "NotaMinima", "UsuarioLogado", "ObrasLocais",
     "ProximoCursorCatalogo",
     "CatalogoTemMais", "ErroCatalogoExplorar", "DadosExplorarCarregados",
   ]) {
@@ -105,7 +105,7 @@ test("corpo do efeito preserva o lifecycle com a restauração do formato", () =
     "",
   );
   assert.equal(createHash("sha256").update(efeito).digest("hex"),
-    "e2df7194c68d0f416d61e774df0a99b31cfc71255a360f3173bb0bb0061cdeee");
+    "11d05c2056c9daa84557457218f411def70409a865f621f18569a144c33b1b1b");
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.doesNotMatch(pagina, /async function carregarExplorar\(/);
   for (const nome of ["obrasCacheLocalRef", "usuarioIdExplorarRef", "setDadosExplorarCarregados",

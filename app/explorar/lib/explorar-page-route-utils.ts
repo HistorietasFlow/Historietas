@@ -2,6 +2,7 @@ import type { ModoConteudoExplorar } from "../components/explorar-section-compon
 import { categorias } from "./explorar-categories";
 import { OPCOES_FORMATO_OBRA } from "../../publicar/lib/publicar-static-options";
 import type { OrdenacaoExplorar } from "./explorar-derived-utils";
+import { normalizarGeneroExcluido } from "../../../lib/catalogo-genero";
 import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
 import { normalizarNotaMinimaCatalogo } from "../../../lib/catalogo-nota-minima";
 
@@ -21,6 +22,7 @@ export type FiltrosCompartilhaveisExplorar = Readonly<{
   filtroFormato: string;
   filtroTag?: string;
   tagExcluida?: string;
+  generoExcluido?: string;
   notaMinima?: number | null;
 }>;
 
@@ -91,6 +93,8 @@ export function lerFiltrosCompartilhaveisExplorar(
     ...(notaMinima !== null ? { notaMinima } : {}),
     ...(modoConteudo === "obras" && normalizarTagCatalogo(params.get("tagExcluida"))
       ? { tagExcluida: normalizarTagCatalogo(params.get("tagExcluida")) } : {}),
+    ...(modoConteudo === "obras" && normalizarGeneroExcluido(params.get("generoExcluido"))
+      ? { generoExcluido: normalizarGeneroExcluido(params.get("generoExcluido")) } : {}),
     ...(normalizarTagCatalogo(params.get("tag"))
       ? { filtroTag: normalizarTagCatalogo(params.get("tag")) }
       : {}),
@@ -133,6 +137,9 @@ export function criarUrlExplorar(
   const tagExcluida = filtros.modoConteudo === "obras"
     ? normalizarTagCatalogo(filtros.tagExcluida) : "";
   if (tagExcluida) params.set("tagExcluida", tagExcluida);
+  const generoExcluido = filtros.modoConteudo === "obras"
+    ? normalizarGeneroExcluido(filtros.generoExcluido) : "";
+  if (generoExcluido) params.set("generoExcluido", generoExcluido);
   const notaMinima = filtros.modoConteudo === "obras"
     ? normalizarNotaMinimaCatalogo(filtros.notaMinima) : null;
   if (notaMinima !== null) params.set("notaMinima", String(notaMinima));

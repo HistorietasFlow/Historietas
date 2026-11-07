@@ -1,4 +1,5 @@
 import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
+import { generoCorrespondeExclusao } from "../../../lib/catalogo-genero";
 import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
 import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 import type { HistorietasLanguage } from "../../../lib/i18n";
@@ -104,6 +105,7 @@ export function filtrarObrasBaseExplorar({
   filtroFormato,
   filtroTag = "",
   tagExcluida = "",
+  generoExcluido = "",
   filtroClassificacao,
   filtroCapitulos,
   filtroColecao,
@@ -117,6 +119,7 @@ export function filtrarObrasBaseExplorar({
   filtroFormato: string;
   filtroTag?: string;
   tagExcluida?: string;
+  generoExcluido?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
   filtroColecao: FiltroColecaoExplorar;
@@ -162,6 +165,7 @@ export function filtrarObrasBaseExplorar({
 
       return (
         passaFormato &&
+        !generoCorrespondeExclusao(obra.genero, generoExcluido) &&
         (!normalizarTagCatalogo(filtroTag) || obra.tags.some((tag) => normalizarTagCatalogo(tag, false) === normalizarTagCatalogo(filtroTag))) &&
         (!normalizarTagCatalogo(tagExcluida) || !obra.tags.some((tag) => normalizarTagCatalogo(tag, false) === normalizarTagCatalogo(tagExcluida))) &&
         passaClassificacao &&
@@ -181,6 +185,7 @@ export function filtrarObrasExplorar({
   obraIdsBuscaRemota,
   notaMinima = null,
   tagExcluida = "",
+  generoExcluido = "",
 }: {
   obrasBaseFiltradas: ObraLocal[];
   categoriaSelecionada: string;
@@ -188,6 +193,7 @@ export function filtrarObrasExplorar({
   obraIdsBuscaRemota?: readonly string[] | null;
   notaMinima?: number | null;
   tagExcluida?: string;
+  generoExcluido?: string;
 }) {
     return obrasBaseFiltradas.filter((obra) => {
       const passaCategoria = categoriaSelecionada
@@ -217,7 +223,8 @@ export function filtrarObrasExplorar({
 
       const passaNota = notaMinima === null || Boolean(obraIdsBuscaRemota?.includes(obra.id));
       const passaExclusao = !normalizarTagCatalogo(tagExcluida) || Boolean(obraIdsBuscaRemota?.includes(obra.id));
-      return passaCategoria && passaBusca && passaNota && passaExclusao;
+      return passaCategoria && passaBusca && passaNota && passaExclusao &&
+        (!generoExcluido || Boolean(obraIdsBuscaRemota?.includes(obra.id)));
     });
 }
 

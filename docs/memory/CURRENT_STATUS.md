@@ -235,6 +235,21 @@ como resultado atual. Incluir e excluir a mesma tag
 produz vazio legítimo. A migration deve ser aplicada pelo responsável antes
 do deploy; merge não implica aplicação em produção.
 
+### Explorar — exclusão de gênero
+
+Na aba Obras, o select `Excluir gênero` usa `generoExcluido` na URL e reconhece
+termos completos normalizados, inclusive gêneros compostos e os aliases de
+Ficção (`sci-fi`/`sci fi`). Drama não exclui Melodrama; Romance exclui
+`Fantasia, Romance`. Tags continuam independentes do campo de gênero.
+Incluir e excluir a mesma categoria produz vazio legítimo.
+A variante de 14 argumentos aplica o filtro antes das agregações, cursor e
+limite, preservando integralmente as variantes de 10–13 argumentos e RLS.
+O cliente exige IDs confirmados pela consulta/identidade atuais e também aplica
+a proteção local; cache antigo não comprova ausência de gênero. O filtro é
+removido em Autores e combina com os filtros anteriores. A migration
+`20261107190827_adicionar_exclusao_genero_catalogo.sql` deve ser aplicada pelo
+responsável antes do deploy; merge não implica aplicação em produção.
+
 ### Lighthouse baseline
 
 Primeiro baseline observado:

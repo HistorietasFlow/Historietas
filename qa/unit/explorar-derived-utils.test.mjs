@@ -30,6 +30,7 @@ const traducoesUrl = urlModulo(
 );
 const modulo = await import(urlModulo(
   codigo
+    .replace("../../../lib/catalogo-genero", urlModulo(ler("../../lib/catalogo-genero.ts")))
     .replace("../../../lib/catalogo-tag", urlModulo(ler("../../lib/catalogo-tag.ts")))
     .replace("../../../lib/utils", utilUrl)
     .replace("../../../lib/historietasAdultContent", adultoUrl)
@@ -116,7 +117,7 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     return codigo.slice(corpo, fim);
   });
   assert.equal(createHash("sha256").update(corpos.join("\n---\n")).digest("hex"),
-    "73ba1444d26f7233288754a21aba3e382fb55564f79cca38d3b87c21f2d6d80d");
+    "038db39c379c7d2caee83e4a9b739b34c279ba6cea28a46291b22675c7d4c7b4");
   for (const nome of funcoes) assert.match(pagina, new RegExp(`return ${nome}\\(\\{`));
   const nomesMemo = [
     "obrasBaseFiltradas", "obrasLocaisFiltradas", "autoresExplorar",
@@ -133,13 +134,13 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
   });
   assert.match(dependencias[0], /filtroTag/);
   assert.equal(createHash("sha256").update(dependencias.join("\n---\n").replace(/    filtroTag,\n/, "")).digest("hex"),
-    "8592043668f2f868347510cc1e5f98c7d1ec164b7ad330970fdb9f068c77a874");
+    "b4f054d43c5244450408a988be308dab0f9ccd2097e8cd205ddf57b8c0d0f4dc");
   assert.match(
     pagina,
-    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*notaMinimaVerificada,\s*notaMinima,\s*tagExcluidaVerificada,\s*tagExcluida,\s*modoConteudo,\s*\]/,
+    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*notaMinimaVerificada,\s*notaMinima,\s*tagExcluidaVerificada,\s*generoExcluidoVerificado,\s*tagExcluida,\s*generoExcluido,\s*modoConteudo,\s*\]/,
   );
   assert.match(pagina, /\[autoresExplorar, categoriaSelecionada, termoBusca\]/);
-  assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroTag,\s*tagExcluida,\s*modoConteudo,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);
+  assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroTag,\s*tagExcluida,\s*generoExcluido,\s*modoConteudo,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);
   assert.doesNotMatch(codigo, /\b(?:window|document|localStorage|supabase|useMemo|useEffect)\b/);
 });
 
@@ -391,4 +392,17 @@ test("seções de autores e gêneros preservam ranking, limite, outros e guardas
   const porGeneroObra = criarSecoesObrasPorGeneroExplorar({ ...obrasSecoes([obra("ficcao"), obra("outra", { genero: "Outra" })]), categorias: ["Ficção"] });
   assert.deepEqual(porGeneroObra.map((secao) => secao.genero), ["Ficção", "Outros"]);
   assert.deepEqual(criarSecoesObrasPorGeneroExplorar({ ...obrasSecoes([], { filtroConteudo18Ativo: true }), categorias: [] }), []);
+});
+
+test("exclusão de gênero protege dados locais e exige confirmação remota da consulta atual", () => {
+  const lista = [obra("melo", { genero: "Melodrama" }), obra("composta", { genero: "Fantasia, Romance" }),
+    obra("sci", { genero: "Sci-fi espacial" }), obra("personalizada", { genero: "Cyberpunk" })];
+  const base = filtrarObrasBaseExplorar({ obrasLocais: lista, filtroFormato: "todos", generoExcluido: "romance",
+    filtroClassificacao: "todos", filtroCapitulos: "todos", filtroColecao: "todos", usuarioLogado: false,
+    ordenacao: "relevancia", obrasFavoritas: [], obrasConcluidas: [], colecaoTemObraExplorar: () => false });
+  assert.deepEqual(base.map(o => o.id), ["melo", "sci", "personalizada"]);
+  assert.deepEqual(filtrarObrasExplorar({ obrasBaseFiltradas: base, categoriaSelecionada: "", termoBusca: "",
+    generoExcluido: "romance", obraIdsBuscaRemota: null }), []);
+  assert.deepEqual(filtrarObrasExplorar({ obrasBaseFiltradas: base, categoriaSelecionada: "", termoBusca: "",
+    generoExcluido: "romance", obraIdsBuscaRemota: ["melo"] }).map(o => o.id), ["melo"]);
 });
