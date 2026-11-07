@@ -201,8 +201,25 @@ tag e envia todos os argumentos, inclusive cursores nulos na primeira página,
 evitando sobrecargas ambíguas. O deploy do app depende da aplicação prévia da
 migration correspondente pelo responsável; merge não implica aplicação.
 
-Busca full-text continua independente. Faixas de tamanho e nota mínima ainda
-não têm parâmetros na RPC; não devem ser implementadas sobre a amostra local.
+Busca full-text continua independente. Faixas de tamanho ainda não têm
+parâmetros na RPC; não devem ser implementadas sobre a amostra local.
+
+### Explorar — avaliação mínima
+
+A aba Obras oferece `Avaliação mínima` (0,5 a 5 estrelas), opcional e
+compartilhável por `notaMinima`. A nova variante de 12 argumentos da RPC
+reutiliza a média real sem arredondamento, depois da agregação e antes do
+cursor/limite. Notas do próprio autor continuam desconsideradas. Obras sem
+avaliações só são excluídas com o filtro ativo; assinaturas de 10 e 11
+argumentos permanecem intactas, inclusive a variante com tag.
+
+O cliente só considera aprovados os IDs confirmados pela consulta e identidade
+atuais e invalida essa confirmação ao mudar filtros ou conta. Cache sem métricas verificadas
+não comprova nota mínima: em falha, permanece o aviso/retry, sem certificar
+uma amostra ampla. O filtro é desativado no modo Autores, pois representa
+notas de obras, não notas de perfis. Aplicar a migration correspondente é
+pré-requisito de deploy do app, mediante autorização do responsável; não
+deduzir aplicação pelo merge.
 
 ### Lighthouse baseline
 

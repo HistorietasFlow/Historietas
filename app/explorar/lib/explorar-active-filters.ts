@@ -8,6 +8,7 @@ export function possuiFiltrosAtivosExplorar({
   termoBusca,
   filtroFormato,
   filtroTag = "",
+  notaMinima = null,
   filtroClassificacao,
   filtroCapitulos,
   usuarioLogado,
@@ -18,6 +19,7 @@ export function possuiFiltrosAtivosExplorar({
   termoBusca: string;
   filtroFormato: string;
   filtroTag?: string;
+  notaMinima?: number | null;
   filtroClassificacao: string;
   filtroCapitulos: string;
   usuarioLogado: boolean;
@@ -29,6 +31,7 @@ export function possuiFiltrosAtivosExplorar({
       termoBusca ||
       filtroFormato !== "todos" ||
       filtroTag ||
+      notaMinima !== null ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
       (usuarioLogado && filtroColecao !== "todos") ||

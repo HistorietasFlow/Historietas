@@ -14,6 +14,7 @@ function carregar(arquivo, deps = {}) {
   return modulo.exports;
 }
 const tag = carregar("../../lib/catalogo-tag.ts");
+const notaMinima = carregar("../../lib/catalogo-nota-minima.ts");
 
 test("normalização literal preserva pontuação e não aplica stemming", () => {
   assert.equal(tag.normalizarTagCatalogo(" \tAÇÃO   Épica\n"), "acao epica");
@@ -29,6 +30,7 @@ test("sem tag preserva chamada legada; com tag envia contrato completo e cursore
   const chamadas = [];
   const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
     "./catalogo-tag": tag,
+    "./catalogo-nota-minima": notaMinima,
     "./supabase/client": { supabase: { rpc: async (...args) => {
       chamadas.push(args); return { data: [], error: null };
     } } },
@@ -51,10 +53,44 @@ test("falha da variante com tag é propagada, sem repetir consulta ampla", async
   let chamadas = 0;
   const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
     "./catalogo-tag": tag,
+    "./catalogo-nota-minima": notaMinima,
     "./supabase/client": { supabase: { rpc: async () => {
       chamadas++; return { data: null, error: { message: "indisponível" } };
     } } },
   });
   await assert.rejects(listarPaginaCatalogo({ tag: "acao" }), /indisponível/);
   assert.equal(chamadas, 1);
+});
+
+test("nota mínima valida limites, escala e parâmetros inválidos", () => {
+  for (const valor of [0.5, 1, 4, 4.5, 5, "4.5", "5.0"]) {
+    assert.equal(notaMinima.normalizarNotaMinimaCatalogo(valor), Number(valor));
+  }
+  for (const valor of [null, undefined, "", " ", 0, 5.5, -1, 4.1, NaN, Infinity, "NaN", "0x4", "4e0", "4,5", "4 OR 1=1", {}, true]) {
+    assert.equal(notaMinima.normalizarNotaMinimaCatalogo(valor), null);
+  }
+});
+
+test("nota mínima usa variante completa com tag opcional, mantendo cursor e legados", async () => {
+  const chamadas = [];
+  const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
+    "./catalogo-tag": tag,
+    "./catalogo-nota-minima": notaMinima,
+    "./supabase/client": { supabase: { rpc: async (...args) => {
+      chamadas.push(args); return { data: [], error: null };
+    } } },
+  });
+  await listarPaginaCatalogo({ notaMinima: 4 });
+  assert.equal(chamadas[0][1].p_nota_minima, 4);
+  assert.equal(chamadas[0][1].p_tag, "");
+  assert.equal(chamadas[0][1].p_cursor_id, null);
+  assert.equal(Object.keys(chamadas[0][1]).length, 12);
+  await listarPaginaCatalogo({ tag: "AÇÃO", notaMinima: 4.5,
+    formato: "HQ", ordenacao: "mais-capitulos", cursor: { id: "proxima", data: "2026-01-01", valor: 2 } });
+  assert.equal(chamadas[1][1].p_tag, "acao");
+  assert.equal(chamadas[1][1].p_cursor_id, "proxima");
+  assert.equal(chamadas[1][1].p_formato, "HQ");
+  assert.equal(chamadas[1][1].p_ordenacao, "mais-capitulos");
+  await listarPaginaCatalogo({ notaMinima: null });
+  assert.equal(Object.hasOwn(chamadas[2][1], "p_nota_minima"), false);
 });

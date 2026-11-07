@@ -54,6 +54,10 @@
   legada de `listar_obras_catalogo` continua intacta; a variante com `p_tag` exige
   os onze argumentos, sem defaults que tornem chamadas antigas ambíguas. Nenhuma
   falha da variante deve ser ocultada como consulta ampla bem-sucedida.
+- Avaliação mínima compara a média não arredondada de notas elegíveis antes
+  do cursor. É opcional e não modifica rankings nem exige quantidade mínima
+  adicional de avaliações. A variante de 12 argumentos preserva as duas
+  anteriores; cache sem confirmação da consulta atual não satisfaz o filtro.
 
 ## Comentários para autores
 

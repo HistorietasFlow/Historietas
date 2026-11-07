@@ -32,6 +32,11 @@ const tagJavascript = typescript.transpileModule(await readFile(path.join(root, 
 }).outputText;
 const tagModulo = { exports: {} };
 new Function("module", "exports", tagJavascript)(tagModulo, tagModulo.exports);
+const notaJavascript = typescript.transpileModule(await readFile(path.join(root, "lib/catalogo-nota-minima.ts"), "utf8"), {
+  compilerOptions: { module: typescript.ModuleKind.CommonJS },
+}).outputText;
+const notaModulo = { exports: {} };
+new Function("module", "exports", notaJavascript)(notaModulo, notaModulo.exports);
 
 async function carregarModuloRota() {
   const source = await readFile(modulePath, "utf8");
@@ -48,6 +53,7 @@ async function carregarModuloRota() {
     modulo.exports,
     (specifier) => {
       if (specifier === "../../../lib/catalogo-tag") return tagModulo.exports;
+      if (specifier === "../../../lib/catalogo-nota-minima") return notaModulo.exports;
       if (specifier === "./explorar-categories") {
         return { categorias };
       }
@@ -165,6 +171,18 @@ test("tag literal normalizada combina com busca, formato e ordenação na URL", 
   assert.equal(lerFiltrosCompartilhaveisExplorar("?tag=%20").filtroTag, undefined);
   assert.equal(lerFiltrosCompartilhaveisExplorar(`?tag=${"a".repeat(100)}`).filtroTag.length, 90);
   assert.equal(lerFiltrosCompartilhaveisExplorar("?tag=%25_%5C%2C.%28%29").filtroTag, "%_\\,.()");
+});
+
+test("nota mínima combina com tag e formato; inválidos e modo autores não a ativam", async () => {
+  const { lerFiltrosCompartilhaveisExplorar, criarUrlExplorar } = await carregarModuloRota();
+  const filtros = lerFiltrosCompartilhaveisExplorar("?tag=acao&formato=HQ&ordenacao=mais-capitulos&notaMinima=4.5");
+  assert.equal(filtros.notaMinima, 4.5);
+  assert.equal(criarUrlExplorar(filtros), "/explorar?ordenacao=mais-capitulos&formato=HQ&tag=acao&notaMinima=4.5");
+  for (const valor of ["", "0", "6", "4.1", "NaN", "1e0", "4,5"]) {
+    assert.equal(lerFiltrosCompartilhaveisExplorar(`?notaMinima=${encodeURIComponent(valor)}`).notaMinima, undefined);
+  }
+  assert.equal(lerFiltrosCompartilhaveisExplorar("?tipo=autores&notaMinima=4").notaMinima, undefined);
+  assert.doesNotMatch(criarUrlExplorar({ ...filtros, modoConteudo: "autores" }), /notaMinima=/);
 });
 
 test("usa push para filtros discretos, replace para busca e evita histórico redundante", async (t) => {

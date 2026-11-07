@@ -17,6 +17,7 @@ const migrationBuscaAutores = ler(
 const codigoExecutavel = codigo.replace(/^import[\s\S]*?from "[^"]+";\n/gm, "");
 const injecao = `
 const useRef = (...args) => globalThis.__catalogQueryTest.useRef(...args);
+const useState = (...args) => globalThis.__catalogQueryTest.useState(...args);
 const useMemo = (...args) => globalThis.__catalogQueryTest.useMemo(...args);
 const useEffect = (...args) => globalThis.__catalogQueryTest.useEffect(...args);
 const carregarObrasPublicadasSupabase = (...args) => globalThis.__catalogQueryTest.carregar(...args);
@@ -74,6 +75,11 @@ function preparar(t, overrides = {}) {
     delete globalThis.__catalogQueryTest;
   });
   const deps = {
+    useState(valor) {
+      const i = indice++;
+      if (!slots[i]) slots[i] = { value: valor };
+      return [slots[i].value, (novo) => { slots[i].value = novo; }];
+    },
     useRef(valor) {
       const i = indice++;
       if (!slots[i]) slots[i] = { current: valor };
@@ -106,6 +112,7 @@ function preparar(t, overrides = {}) {
     dadosExplorarCarregados: true, obrasLocais: [{ id: "atual" }],
     proximoCursorCatalogo: null, carregandoMaisCatalogo: false,
     versaoRetryCatalogo: 0,
+    usuarioIdExplorar: "usuario",
     obrasCacheLocalRef: { current: [{ id: "cache" }] }, usuarioIdExplorarRef: { current: "usuario" },
     ...overrides,
   };
@@ -141,7 +148,7 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "cefc5e97eba0c9b30362ebd7bfc2a52c59d30c282dac3748cdb13211d4075464");
+    "ef060da2de1c1d86833a6d4d82cb0a18d17e5a860b54bdb7d9a14fe1ec74337a");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -321,6 +328,68 @@ test("tag ativa consulta paginada, mantém cursor e descarta resultado antigo ap
   assert.equal(consulta.tag, "romance");
   assert.equal(consulta.formato, "HQ");
   assert.deepEqual(consulta.cursor, cursor);
+});
+
+test("nota mínima confirma a consulta exata, acumula IDs e invalida ao trocar filtros", async (t) => {
+  const c = preparar(t, { notaMinima: 4, filtroTag: "acao", filtroFormato: "HQ" });
+  const cursor = { valor: 5, data: "2026-01-01", id: "aprovada" };
+  assert.equal(c.render().notaMinimaVerificada, false);
+  c.respostas.push(Promise.resolve({ obras: [{ id: "aprovada" }], pagina: { obraIds: ["aprovada"], proximoCursor: cursor, temMais: true } }));
+  await c.disparar();
+  assert.equal(c.render().notaMinimaVerificada, true);
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["aprovada"]);
+  c.respostas.push(Promise.resolve({ obras: [{ id: "segunda" }], pagina: { obraIds: ["segunda"], proximoCursor: null, temMais: false } }));
+  await c.render({ proximoCursorCatalogo: cursor }).carregarMaisObrasCatalogo();
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["aprovada", "segunda"]);
+  const consulta = c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0];
+  assert.equal(consulta.notaMinima, 4);
+  assert.equal(consulta.tag, "acao");
+  assert.deepEqual(consulta.cursor, cursor);
+  assert.equal(c.render({ notaMinima: 4.5 }).notaMinimaVerificada, false);
+});
+
+test("falha com cache não certifica nota; retry e resposta obsoleta mantêm guards", async (t) => {
+  const c = preparar(t, { notaMinima: 4 });
+  c.render();
+  c.respostas.push(Promise.resolve({ obras: [{ id: "cache" }], pagina: null, falhaTemporaria: true }));
+  await c.disparar();
+  assert.equal(c.render().notaMinimaVerificada, false);
+  assert.equal(c.estado.ObraIdsBuscaRemota, null);
+  assert.equal(c.estado.ErroCatalogoExplorar, "consulta");
+  const antiga = adiar();
+  c.render({ versaoRetryCatalogo: 1 });
+  c.respostas.push(antiga.promise);
+  const pendente = c.disparar();
+  c.render({ versaoRetryCatalogo: 2 });
+  c.respostas.push(Promise.resolve({ obras: [{ id: "atual" }], pagina: { obraIds: ["atual"], proximoCursor: null, temMais: false } }));
+  await c.disparar();
+  antiga.resolve({ obras: [{ id: "obsoleta" }], pagina: { obraIds: ["obsoleta"] } });
+  await pendente;
+  assert.equal(c.render().notaMinimaVerificada, true);
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["atual"]);
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
+});
+
+test("troca de conta e logout invalidam certificação e ignoram a resposta da conta antiga", async (t) => {
+  const c = preparar(t, { notaMinima: 4, usuarioIdExplorar: "A", usuarioIdExplorarRef: { current: "A" } });
+  const antiga = adiar();
+  c.render();
+  c.respostas.push(antiga.promise);
+  const pendente = c.disparar();
+  c.props.usuarioIdExplorarRef.current = "B";
+  assert.equal(c.render({ usuarioIdExplorar: "B" }).notaMinimaVerificada, false);
+  c.respostas.push(Promise.resolve({ obras: [{ id: "B" }], pagina: { obraIds: ["B"], proximoCursor: null, temMais: false } }));
+  await c.disparar();
+  antiga.resolve({ obras: [{ id: "A" }], pagina: { obraIds: ["A"] } });
+  await pendente;
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["B"]);
+  assert.equal(c.render().notaMinimaVerificada, true);
+  c.props.usuarioIdExplorarRef.current = "";
+  assert.equal(c.render({ usuarioIdExplorar: "" }).notaMinimaVerificada, false);
+  c.respostas.push(Promise.resolve({ obras: [], pagina: { obraIds: [], proximoCursor: null, temMais: false } }));
+  await c.disparar();
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, []);
+  assert.equal(c.render().notaMinimaVerificada, true);
 });
 
 test("volta à consulta inicial após limpar filtros e cancela debounce anterior", async (t) => {

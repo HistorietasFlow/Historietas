@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { ConsultaCatalogo, CursorCatalogo } from "../../../lib/catalogo";
 import type { ObraLocal } from "../lib/explorar-work-normalizers";
@@ -21,6 +21,8 @@ type OpcoesConsultaCatalogoExplorar = {
   categoriaSelecionada: string;
   filtroFormato: string;
   filtroTag?: string;
+  notaMinima?: number | null;
+  usuarioIdExplorar?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
   ordenacao: OrdenacaoExplorar;
@@ -51,6 +53,8 @@ export function useExplorarCatalogQuery({
   categoriaSelecionada,
   filtroFormato,
   filtroTag = "",
+  notaMinima = null,
+  usuarioIdExplorar = "",
   filtroClassificacao,
   filtroCapitulos,
   ordenacao,
@@ -87,6 +91,11 @@ export function useExplorarCatalogQuery({
   const consultaCatalogoRef = useRef(0);
   const consultaPersonalizadaAtivaRef = useRef(false);
   const versaoRetryCatalogoRef = useRef(versaoRetryCatalogo);
+  const [consultaNotaConfirmada, setConsultaNotaConfirmada] = useState<{
+    consulta: ConsultaCatalogo; usuarioId: string;
+  } | null>(null);
+  // Uma média visível sob RLS não deve ser reutilizada por outra identidade.
+  const identidadeConsultaNota = notaMinima === null ? "" : usuarioIdExplorar;
 
   const buscaCatalogo = busca.trim();
   const filtroColecaoCatalogo = useMemo<FiltroColecaoCatalogoExplorar | null>(
@@ -116,6 +125,7 @@ export function useExplorarCatalogQuery({
     genero: categoriaSelecionada,
     formato: filtroFormato === "todos" ? "" : filtroFormato,
     ...(filtroTag ? { tag: filtroTag } : {}),
+    ...(notaMinima !== null ? { notaMinima } : {}),
     classificacao:
       filtroClassificacao === "todos" ? "" : filtroClassificacao,
     filtroCapitulos:
@@ -132,6 +142,7 @@ export function useExplorarCatalogQuery({
     filtroClassificacao,
     filtroFormato,
     filtroTag,
+    notaMinima,
     ordenacao,
   ]);
   const consultaCatalogoPersonalizada = Boolean(
@@ -140,6 +151,7 @@ export function useExplorarCatalogQuery({
       categoriaSelecionada ||
       filtroFormato !== "todos" ||
       filtroTag ||
+      notaMinima !== null ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
       ordenacao !== "relevancia" ||
@@ -201,9 +213,11 @@ export function useExplorarCatalogQuery({
         );
 
         if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
+          setConsultaNotaConfirmada(notaMinima !== null && resultado.pagina && !resultado.falhaTemporaria
+            ? { consulta: consultaCatalogoAtual, usuarioId: identidadeConsultaNota } : null);
           setObrasLocais(resultado.obras);
           setObraIdsBuscaRemota(
-            termoBusca && resultado.pagina
+            (termoBusca || notaMinima !== null) && resultado.pagina && (notaMinima === null || !resultado.falhaTemporaria)
               ? [...resultado.pagina.obraIds]
               : null,
           );
@@ -217,6 +231,7 @@ export function useExplorarCatalogQuery({
         }
       } catch {
         if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
+          setConsultaNotaConfirmada(null);
           setErroCatalogoExplorar("consulta");
         }
       } finally {
@@ -238,6 +253,8 @@ export function useExplorarCatalogQuery({
     versaoRetryCatalogo,
     filtroColecaoCatalogo,
     colecoesCarregadas,
+    identidadeConsultaNota,
+    notaMinima,
   ]);
 
   async function carregarMaisObrasCatalogo() {
@@ -280,7 +297,7 @@ export function useExplorarCatalogQuery({
 
         setObrasLocais(resultado.obras);
         const pagina = resultado.pagina;
-        if (termoBusca && pagina) {
+        if ((termoBusca || notaMinima !== null) && pagina) {
           setObraIdsBuscaRemota((obraIdsAtuais) =>
             Array.from(
               new Set([
@@ -305,5 +322,9 @@ export function useExplorarCatalogQuery({
     }
   }
 
-  return { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo };
+  return { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo,
+    notaMinimaVerificada: notaMinima === null || (
+      consultaNotaConfirmada?.consulta === consultaCatalogoAtual &&
+      consultaNotaConfirmada.usuarioId === identidadeConsultaNota
+    ) };
 }

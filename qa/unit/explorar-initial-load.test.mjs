@@ -72,6 +72,7 @@ function preparar(t, opcoes = {}) {
         busca: (params.get("busca") || "").trim(),
         filtroFormato: params.get("formato") || "todos",
         filtroTag: params.get("tag") || "",
+        notaMinima: params.has("notaMinima") ? Number(params.get("notaMinima")) : null,
         ordenacao: params.get("ordenacao") === "mais-recentes"
           ? "mais-recentes"
           : "relevancia",
@@ -81,7 +82,7 @@ function preparar(t, opcoes = {}) {
   globalThis.__explorarInitialTest = deps;
   const props = { ...refs };
   for (const nome of [
-    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "UsuarioLogado", "ObrasLocais",
+    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "NotaMinima", "UsuarioLogado", "ObrasLocais",
     "ProximoCursorCatalogo",
     "CatalogoTemMais", "ErroCatalogoExplorar", "DadosExplorarCarregados",
   ]) {
@@ -103,7 +104,7 @@ test("corpo do efeito preserva o lifecycle com a restauração do formato", () =
     "",
   );
   assert.equal(createHash("sha256").update(efeito).digest("hex"),
-    "8f6f97c5d18d402a975aa880685ba5a97d382d3b35f2d0d2c9bfbfd4bcf77bf1");
+    "e105342b1483d476d1148a206cccc7fd393efaf782aee985e6074c585474a813");
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.doesNotMatch(pagina, /async function carregarExplorar\(/);
   for (const nome of ["obrasCacheLocalRef", "usuarioIdExplorarRef", "setDadosExplorarCarregados",
