@@ -126,8 +126,12 @@ migration `20261107223400_infraestrutura_capitulos_ilustrados.sql`: novos campos
 de tipo/versão, manifesto com leitura sob RLS e contratos privados de reservas e
 limpeza. Não há escrita de páginas pela Data API, upload, assinatura ou leitor
 ilustrado habilitados. A outbox registra referências removidas, mas ainda não
-possui executor. Validar imagens, finalizar operações e limpar arquivos são
-pré-requisitos das próximas fases; as quotas atuais não foram ampliadas.
+possui executor. A fase 2A adiciona somente um validador binário server-only,
+com decode real, rejeição de animações, re-encode sem metadados, limites e hash.
+Ele não possui endpoint nem habilita upload: identidade/propriedade, reservas
+contabilizadas, finalização atômica e limpeza continuam pendentes. Sharp foi
+declarado direto na mesma versão 0.35.5 já travada, sem atualizar a árvore.
+Não há nova migration na fase 2A; as quotas e bloqueios da fase 1 permanecem.
 Merge da PR não implica aplicação da migration em produção.
 
 A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi

@@ -45,11 +45,9 @@
 - Reservas de uploads e outbox ficam em `historietas_privado`, com RLS e sem
   permissões para clientes ou service role. Exclusões de páginas/reservas
   preservam caminhos na outbox, inclusive em cascatas; não removem bytes.
-- **Não está pronta para uso:** não existem upload, validação binária, reserva
-  efetiva de quota, finalizador autorizado, assinatura em lote, executor de
-  limpeza ou renderização ilustrada. Os metadados dos testes são sintéticos.
-  As próximas fases precisam validar bytes/identidade, implementar finalização
-  atômica e cleanup idempotente antes de conceder qualquer escrita nova.
+- **Não está pronta para uso:** não existem upload, reserva efetiva de quota,
+  finalizador autorizado, assinatura em lote, executor de limpeza ou renderização
+  ilustrada. Nenhuma escrita nova deve ser concedida antes dessas garantias.
 - `arquivos-obras` permanece privado; policies dos anexos e quotas não mudam.
   Policies restritivas adicionais bloqueiam INSERT/UPDATE/DELETE autenticados
   somente no novo namespace `<usuario>/capitulos/`, até uma fase de upload seguro.
@@ -57,6 +55,35 @@
   silenciosamente anexos preexistentes.
   Seu teto de 30 objetos por usuário é compartilhado por todas as obras e também
   precisa comportar arquivos antigos, substituições e uploads pendentes.
+
+#### Fase 2A — validação binária isolada, sem ativação
+
+- `lib/server/capitulos-ilustrados/validar-imagem-pagina.ts` aceita somente bytes,
+  identifica JPEG/PNG/WebP pelo conteúdo e usa Sharp para decodificar/re-encodar
+  todos os pixels. Rejeita APNG, WebP animado e JPEG MPO; cabeçalhos/metadados do
+  navegador não comprovam formato, dimensões nem integridade.
+- Antes do decoder, PNG com metadados comprimidos possui orçamento agregado
+  de expansão de 1 MiB. O limite de pixels não protege contra bombas zTXt/iTXt/iCCP.
+- Verifica os limites da fase 1 antes e depois da codificação. Não redimensiona:
+  aplica orientação, remove metadados e mantém o formato. JPEG é re-encodado com
+  qualidade 100/4:4:4; isso não promete identidade pixel a pixel. A futura prévia
+  do autor precisa usar os bytes finais, não o original. Se a saída superar
+  2 MiB, a validação falha em vez de ampliar quotas ou reduzir a imagem sozinha.
+- Retorna hash SHA-256 e metadados dos bytes canônicos; somente cópias desses
+  bytes são acessíveis. Limita a duas validações simultâneas por instância do
+  módulo, sem fila ilimitada, com timeout nativo de processamento de cinco
+  segundos. Isso não substitui limite do corpo HTTP, rate limit ou autenticação.
+- Sharp 0.35.5 já estava travado como dependência do Next; foi declarado direto
+  na mesma versão para não depender de um pacote transitivo opcional. Nenhuma
+  versão foi atualizada. O módulo é server-only e não possui endpoint/consumidor
+  de produção nesta etapa. Os testes executam o decoder real com Node 22.
+- **Divisão da fase 2:** a próxima parte deve contabilizar reservas com os mesmos
+  locks/limites dos objetos legados, sem duplicar contagens quando o objeto surgir.
+  Upload via service role não pode simplesmente contornar as policies de quota.
+  Depois: fronteira autenticada com propriedade verificada, finalização atômica
+  por versão/idempotência, reordenação/substituição/remoção e executor de limpeza
+  com lease e revalidação de referências. Não abrir o namespace nem a interface
+  de publicação até completar e testar esse fluxo. A fase 2A não cria migrations.
 
 Supabase é usado para autenticação, banco e fluxos de dados da aplicação.
 
