@@ -88,6 +88,7 @@ const LER_CAPITULO_UI_TRANSLATIONS: Record<
   "Não foi possível enviar o comentário agora.": { en: "The comment could not be sent right now.", es: "No se pudo enviar el comentario ahora." },
   "Entre na sua conta para apagar seu comentário.": { en: "Sign in to delete your comment.", es: "Inicia sesión para eliminar tu comentario." },
   "Você só pode remover seus próprios comentários.": { en: "You can only remove your own comments.", es: "Solo puedes eliminar tus propios comentarios." },
+  "Você não pode remover este comentário.": { en: "You cannot remove this comment.", es: "No puedes eliminar este comentario." },
   "Não foi possível remover o comentário agora.": { en: "The comment could not be removed right now.", es: "No se pudo eliminar el comentario ahora." },
   "Entre na sua conta para curtir comentários.": { en: "Sign in to like comments.", es: "Inicia sesión para dar Me gusta a comentarios." },
   "Não foi possível atualizar a curtida do comentário agora.": { en: "The comment like could not be updated right now.", es: "No se pudo actualizar el Me gusta del comentario ahora." },

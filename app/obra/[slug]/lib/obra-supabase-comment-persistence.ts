@@ -16,12 +16,10 @@ export function inserirComentarioObraSupabase(payload: {
 export function removerComentarioObraSupabase(
   comentarioId: string,
   obraId: string,
-  userId: string,
 ) {
   return supabase
     .from("comentarios_obras")
     .delete()
     .eq("id", comentarioId)
-    .eq("obra_id", obraId)
-    .eq("user_id", userId);
+    .eq("obra_id", obraId);
 }

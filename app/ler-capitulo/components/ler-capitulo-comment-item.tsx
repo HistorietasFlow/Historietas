@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { usuarioPodeGerenciarComentario } from "../../../lib/historietasCommentModeration";
 import type { ComentarioCapituloPublico } from "../lib/ler-capitulo-comment-types";
 import {
   commentActionsRowStyle,
@@ -28,6 +29,7 @@ type LerCapituloCommentItemProps = {
   comentarioRaizId: string;
   resposta?: boolean;
   usuarioId: string;
+  obraAutorId: string;
   podeComentar: boolean;
   postId: string;
   agoraComentarios: number;
@@ -128,6 +130,7 @@ export function LerCapituloCommentItem({
   comentarioRaizId,
   resposta = false,
   usuarioId,
+  obraAutorId,
   podeComentar,
   postId,
   agoraComentarios,
@@ -142,11 +145,15 @@ export function LerCapituloCommentItem({
   const usuarioCurtiuComentario = Boolean(
     usuarioId && comentario.curtidas.includes(usuarioId),
   );
-  const podeRemoverComentario = Boolean(
-    usuarioId && comentario.userId === usuarioId,
+  const podeRemoverComentario = usuarioPodeGerenciarComentario(
+    usuarioId,
+    comentario.userId,
+    obraAutorId,
   );
   const podeDenunciarComentario = Boolean(
-    usuarioId && comentario.userId !== usuarioId,
+    usuarioId &&
+      comentario.userId !== usuarioId &&
+      !podeRemoverComentario,
   );
   const comentarioCurtindo = comentarioCurtindoId === comentario.id;
   const comentarioRemovendo = comentarioRemovendoId === comentario.id;

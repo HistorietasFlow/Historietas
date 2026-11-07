@@ -148,6 +148,14 @@ desmarcações deixam tombstones `lido=false` e o isolamento por conta continua
 sob RLS. A cobertura local valida concorrência, retries, troca de identidade e
 sincronização do Leitor com Home e Biblioteca em contextos desktop/mobile.
 
+### Gestão de comentários pelo autor
+
+O autor de uma obra pode remover comentários recebidos tanto na página da obra
+quanto nos capítulos. A autorização continua sendo validada pelo RLS: somente o
+próprio comentarista, o autor da obra ou um administrador pode excluir o
+comentário. Localização por notificações, respostas, denúncia e moderação
+administrativa permanecem nos fluxos existentes.
+
 ### Explorar — catálogo de autores
 
 A aba Autores reutiliza a paginação por cursor do catálogo público e permite

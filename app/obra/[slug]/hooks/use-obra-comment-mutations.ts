@@ -1,5 +1,6 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { idObraSupabaseValido } from "../../../../lib/utils";
+import { usuarioPodeGerenciarComentario } from "../../../../lib/historietasCommentModeration";
 import type { IdentidadeAutenticadaObra } from "../lib/obra-auth-identity";
 import {
   criarComentarioObraId,
@@ -230,7 +231,14 @@ export function useObraCommentMutations({
     const userId = identidadeAcao.usuarioId;
     const execucaoAcaoEstaAtual = criarGuardIdentidadeAcao(identidadeAcao);
 
-    if (!execucaoAcaoEstaAtual() || comentario.userId !== userId) {
+    if (
+      !execucaoAcaoEstaAtual() ||
+      !usuarioPodeGerenciarComentario(
+        userId,
+        comentario.userId,
+        obra.autorId || "",
+      )
+    ) {
       return;
     }
 
@@ -251,7 +259,6 @@ export function useObraCommentMutations({
         const { error } = await removerComentarioObraSupabase(
           comentario.id,
           obra.id,
-          userId,
         );
 
         if (!execucaoAcaoEstaAtual()) {

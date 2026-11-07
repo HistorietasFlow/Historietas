@@ -18,6 +18,7 @@ type ObraCommentsListProps = {
   comentariosCarregandoMais: boolean;
   respostasVisiveisPorComentario: Record<string, number>;
   usuarioIdLogado: string;
+  obraAutorId: string;
   comentarioRemovendoId: string;
   comentarioCurtindoId: string;
   agoraComentarios: number;
@@ -45,6 +46,7 @@ export default function ObraCommentsList({
   comentariosCarregandoMais,
   respostasVisiveisPorComentario,
   usuarioIdLogado,
+  obraAutorId,
   comentarioRemovendoId,
   comentarioCurtindoId,
   agoraComentarios,
@@ -77,6 +79,7 @@ export default function ObraCommentsList({
                   respostasVisiveisPorComentario[comentario.id] || 0
                 }
                 usuarioIdLogado={usuarioIdLogado}
+                obraAutorId={obraAutorId}
                 comentarioRemovendoId={comentarioRemovendoId}
                 comentarioCurtindoId={comentarioCurtindoId}
                 agoraComentarios={agoraComentarios}

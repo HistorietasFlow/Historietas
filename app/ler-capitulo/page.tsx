@@ -707,6 +707,7 @@ export function LerCapituloClient({
         post={mostrarComentario ? postComentariosCapitulo : null}
         podeComentar={Boolean(usuarioIdDadosAplicados)}
         usuarioId={usuarioIdDadosAplicados}
+        obraAutorId={obterAutorIdSeguro(obraAtual)}
         usuarioNome={perfilComentarioLeitor.nome}
         usuarioAvatar={perfilComentarioLeitor.avatar}
         erroInteracao={comentarioStatus}

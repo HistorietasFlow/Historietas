@@ -12,10 +12,13 @@ const controles = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-controls.
 const persistencia = ler("../../app/ler-capitulo/lib/ler-capitulo-comment-persistence.ts");
 const js = typescript.transpileModule(fonte, {
   compilerOptions: { module: typescript.ModuleKind.ESNext, target: typescript.ScriptTarget.ES2022 },
-}).outputText;
+}).outputText.replace(
+  'import { usuarioPodeGerenciarComentario } from "../../../lib/historietasCommentModeration";',
+  'const usuarioPodeGerenciarComentario = (usuarioId, comentarioAutorId, obraAutorId) => Boolean(usuarioId.trim() && (comentarioAutorId.trim() === usuarioId.trim() || obraAutorId.trim() === usuarioId.trim()));',
+);
 const { criarAcoesComentariosCapitulo } = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
 
-function cenario({ usuario = "u1", comentarios = [], bloqueado = false, falhaDelete = false, falhaInsert = false, salvo = { id: "novo", criado_em: "2026-01-01" } } = {}) {
+function cenario({ usuario = "u1", autorObra = "autor", comentarios = [], bloqueado = false, falhaDelete = false, falhaInsert = false, salvo = { id: "novo", criado_em: "2026-01-01" } } = {}) {
   const eventos = [];
   const estados = { status: "", mensagem: "", perfil: null, digitado: "", comentarios, metricas: { totalComentarios: comentarios.length, carregado: false }, mostrar: false };
   const setter = (campo) => (valor) => {
@@ -43,7 +46,7 @@ function cenario({ usuario = "u1", comentarios = [], bloqueado = false, falhaDel
       },
     },
     obraId: "obra", capituloId: "capitulo",
-    obraAtual: { id: "obra", titulo: "Obra" },
+    obraAtual: { id: "obra", titulo: "Obra", autorId: autorObra },
     capituloAtual: { id: "capitulo", titulo: "Capítulo" },
     comentariosCapitulo: comentarios,
     router: { push(href) { eventos.push(["push", href]); } },
@@ -150,11 +153,15 @@ test("remoção e curtida exigem autenticação sem tocar no Supabase", async ()
   assert.ok(!atual.eventos.some((evento) => evento[0] === "from" || evento[0] === "storage"));
 });
 
-test("remoção verifica autoria e remove respostas descendentes apenas após o delete", async () => {
+test("remoção aceita comentarista ou autor da obra e remove respostas apenas após o delete", async () => {
   let atual = cenario({ comentarios: [comentario("pai", "", "outro")] });
   await atual.acoes.removerComentarioCapitulo("post", "pai");
-  assert.equal(atual.estados.status, "Você só pode remover seus próprios comentários.");
+  assert.equal(atual.estados.status, "Você não pode remover este comentário.");
   assert.ok(!atual.eventos.some((evento) => evento[0] === "delete"));
+  atual = cenario({ usuario: "autor", autorObra: "autor", comentarios: [comentario("pai", "", "leitor")] });
+  await atual.acoes.removerComentarioCapitulo("post", "pai");
+  assert.deepEqual(atual.estados.comentarios, []);
+  assert.deepEqual(atual.eventos.filter((evento) => evento[0] === "eq"), [["eq", "id", "pai"], ["eq", "capitulo_id", "capitulo"]]);
   const comentarios = [comentario("pai"), comentario("filho", "pai"), comentario("neto", "filho"), comentario("outro")];
   atual = cenario({ comentarios, falhaDelete: true });
   await atual.acoes.removerComentarioCapitulo("post", "pai");
@@ -164,7 +171,7 @@ test("remoção verifica autoria e remove respostas descendentes apenas após o 
   await atual.acoes.removerComentarioCapitulo("post", "pai");
   assert.deepEqual(atual.estados.comentarios.map((item) => item.id), ["outro"]);
   assert.equal(atual.estados.metricas.totalComentarios, 1);
-  assert.deepEqual(atual.eventos.filter((evento) => evento[0] === "eq"), [["eq", "id", "pai"], ["eq", "user_id", "u1"]]);
+  assert.deepEqual(atual.eventos.filter((evento) => evento[0] === "eq"), [["eq", "id", "pai"], ["eq", "capitulo_id", "capitulo"]]);
   assert.deepEqual(atual.eventos.find((evento) => evento[0] === "capitulo"), ["capitulo", { comentario: "" }]);
   assert.equal(atual.eventos.at(-1)[0], "finalizar");
 });
