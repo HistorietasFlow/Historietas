@@ -47,6 +47,11 @@ Para reduzir esse consumo quando o projeto for retomado, os deployments automát
 
 Essa política não altera os workflows do GitHub Actions nem as configurações de Vercel Authentication e domínio.
 
+O runtime Node.js também é versionado no `package.json` como `22.x`. Esse
+contrato prevalece sobre o valor selecionado no painel da Vercel e mantém os
+builds/funções alinhados ao Node 22 usado no desenvolvimento e na CI, sem
+alterar a proteção **Vercel Authentication: All Deployments**.
+
 ## Pendências conhecidas
 
 ### Capítulos públicos canônicos
