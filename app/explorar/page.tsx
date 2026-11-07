@@ -292,6 +292,7 @@ export default function ExplorarPage() {
   const filtroColecaoAtivo =
     usuarioLogado && filtroColecao !== "todos";
   const filtroFormatoAtivo = filtroFormato !== "todos";
+  const ordenacaoPorCapitulosAtiva = ordenacao === "mais-capitulos";
 
   const obrasBaseFiltradas = useMemo(() => {
     return filtrarObrasBaseExplorar({
@@ -455,6 +456,9 @@ export default function ExplorarPage() {
 
     if (modo === "autores") {
       setFiltroClassificacao("todos");
+      if (ordenacaoPorCapitulosAtiva) {
+        setOrdenacao("relevancia");
+      }
     }
 
     setMostrarFiltrosAvancados(false);
@@ -462,7 +466,7 @@ export default function ExplorarPage() {
       modoConteudo: modo,
       categoriaSelecionada: "",
       busca,
-      ordenacao,
+      ordenacao: modo === "autores" && ordenacaoPorCapitulosAtiva ? "relevancia" : ordenacao,
       filtroFormato,
     });
   }
@@ -705,6 +709,7 @@ export default function ExplorarPage() {
           !categoriaSelecionada &&
           !termoBusca &&
           !filtroFormatoAtivo &&
+          !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
             <ExplorarCreativeWorkSections
               secoes={secoesCriativasObras}
@@ -717,6 +722,7 @@ export default function ExplorarPage() {
           !categoriaSelecionada &&
           !termoBusca &&
           !filtroFormatoAtivo &&
+          !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
             <ExplorarGenreWorkSections
               secoes={secoesObrasPorGenero}
@@ -729,6 +735,7 @@ export default function ExplorarPage() {
             Boolean(termoBusca) ||
             filtroConteudo18Ativo ||
             filtroFormatoAtivo ||
+            ordenacaoPorCapitulosAtiva ||
             filtroColecaoAtivo) &&
           obrasLocaisFiltradas.length > 0 && (
             <ExplorarFilteredWorksSection
@@ -748,7 +755,9 @@ export default function ExplorarPage() {
                             ? "Sem leitura"
                             : filtroFormatoAtivo
                               ? traduzirFormatoExplorar(filtroFormato, language)
-                              : "Conteúdo 18+"
+                              : ordenacaoPorCapitulosAtiva
+                                ? traduzirTextoExplorar("Mais capítulos", language)
+                                : "Conteúdo 18+"
               }
               tema={temaPagina}
               isDesktop={isDesktop}

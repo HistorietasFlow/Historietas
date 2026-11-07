@@ -8,6 +8,7 @@ const ORDENACOES_COMPARTILHAVEIS_EXPLORAR = new Set<OrdenacaoExplorar>([
   "relevancia",
   "mais-curtidas",
   "mais-recentes",
+  "mais-capitulos",
 ]);
 
 export type FiltrosCompartilhaveisExplorar = Readonly<{
@@ -41,8 +42,13 @@ function normalizarCategoriaExplorar(valor: string | null) {
 
 function normalizarOrdenacaoExplorar(
   valor: string | null,
+  modoConteudo: ModoConteudoExplorar,
 ): OrdenacaoExplorar {
   const ordenacao = valor?.trim() as OrdenacaoExplorar;
+
+  if (modoConteudo === "autores" && ordenacao === "mais-capitulos") {
+    return "relevancia";
+  }
 
   return ORDENACOES_COMPARTILHAVEIS_EXPLORAR.has(ordenacao)
     ? ordenacao
@@ -65,14 +71,15 @@ export function lerFiltrosCompartilhaveisExplorar(
   search: string,
 ): FiltrosCompartilhaveisExplorar {
   const params = new URLSearchParams(search);
+  const modoConteudo = params.get("tipo") === "autores" ? "autores" : "obras";
 
   return {
-    modoConteudo: params.get("tipo") === "autores" ? "autores" : "obras",
+    modoConteudo,
     categoriaSelecionada: normalizarCategoriaExplorar(
       params.get("categoria"),
     ),
     busca: normalizarBuscaExplorar(params.get("busca")),
-    ordenacao: normalizarOrdenacaoExplorar(params.get("ordenacao")),
+    ordenacao: normalizarOrdenacaoExplorar(params.get("ordenacao"), modoConteudo),
     filtroFormato: normalizarFormatoExplorar(params.get("formato")),
   };
 }
@@ -98,7 +105,7 @@ export function criarUrlExplorar(
     params.set("busca", busca);
   }
 
-  const ordenacao = normalizarOrdenacaoExplorar(filtros.ordenacao);
+  const ordenacao = normalizarOrdenacaoExplorar(filtros.ordenacao, filtros.modoConteudo);
   if (ordenacao !== "relevancia") {
     params.set("ordenacao", ordenacao);
   }

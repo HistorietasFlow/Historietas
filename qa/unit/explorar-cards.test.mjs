@@ -137,6 +137,29 @@ test("formato reutiliza opções de publicação, seleção acessível e traduç
   assert.match(html(ExplorarFormatFilterOptions, { ...props, language: "es" }), /Formato de la obra/);
 });
 
+test("ordenação por capítulos é acessível, traduzida e exclusiva de obras", () => {
+  const { ExplorarOrderingOptions } = compilar(
+    ler("../../app/explorar/components/explorar-ordering-options.tsx"),
+    {
+      "../lib/explorar-layout-styles": {
+        criarExplorarModalOptionStyle: () => ({}),
+        criarExplorarModalRadioStyle: () => ({}),
+      },
+      "../lib/explorar-translations": traducoes,
+    },
+  );
+  const selecionados = [];
+  const props = { ordenacao: "mais-capitulos", modoConteudo: "obras", language: "pt-BR", onSelecionar: (valor) => selecionados.push(valor) };
+  assert.match(html(ExplorarOrderingOptions, props), /aria-pressed="true"[^>]*><span>Mais capítulos<\/span>/);
+  const opcoes = ExplorarOrderingOptions(props);
+  assert.equal(opcoes.length, 4);
+  opcoes.find((opcao) => opcao.key === "mais-capitulos").props.onClick();
+  assert.deepEqual(selecionados, ["mais-capitulos"]);
+  assert.doesNotMatch(html(ExplorarOrderingOptions, { ...props, modoConteudo: "autores" }), /Mais capítulos/);
+  assert.match(html(ExplorarOrderingOptions, { ...props, language: "en" }), /Most chapters/);
+  assert.match(html(ExplorarOrderingOptions, { ...props, language: "es" }), /Más capítulos/);
+});
+
 test("corpos dos cards, rota e capa preservam literalmente a base", () => {
   const funcao = (codigo, inicio, fim) => {
     const posicao = codigo.indexOf(inicio);

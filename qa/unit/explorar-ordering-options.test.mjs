@@ -26,9 +26,11 @@ test("ExplorarOrderingOptions preserva as opções e a ordem de ordenação", ()
   assert.match(componente, /export function ExplorarOrderingOptions/);
   assert.match(
     componente,
-    /\["relevancia", "Relevância"\],\s*\["mais-curtidas", "Mais curtidas"\],\s*\["mais-recentes", "Mais recentes"\]/,
+    /\["relevancia", "Relevância"\],\s*\["mais-curtidas", "Mais curtidas"\],\s*\["mais-recentes", "Mais recentes"\],\s*\["mais-capitulos", "Mais capítulos"\]/,
   );
-  assert.match(componente, /opcoesOrdenacaoExplorar\.map/);
+  assert.match(componente, /opcoesOrdenacaoExplorar\s*\.filter/);
+  assert.match(componente, /modoConteudo === "obras" \|\| valor !== "mais-capitulos"/);
+  assert.match(componente, /\.map\(\(\[valor, rotulo\]\)/);
   assert.match(componente, /ordenacao === valor/);
   assert.match(componente, /onClick=\{\(\) => onSelecionar\(valor\)\}/);
   assert.match(componente, /criarExplorarModalOptionStyle\(ordenacao === valor\)/);
@@ -42,5 +44,6 @@ test("Explorar mantém a condição e o setter de ordenação na composição ad
   assert.match(composicao, /!mostrarConfirmacaoConteudo18 && \(/);
   assert.match(composicao, /traduzirTextoExplorar\("Ordenar", language\)/);
   assert.match(composicao, /<ExplorarOrderingOptions/);
+  assert.match(composicao, /modoConteudo=\{modoConteudo\}/);
   assert.match(pagina, /onSelecionarOrdenacao=\{selecionarOrdenacaoExplorar\}/);
 });
