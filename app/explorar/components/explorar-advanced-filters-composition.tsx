@@ -1,10 +1,12 @@
+import { categorias } from "../lib/explorar-categories";
+import { normalizarGeneroExcluido } from "../../../lib/catalogo-genero";
 import type { HistorietasLanguage } from "../../../lib/i18n";
 import type {
   FiltroColecaoExplorar,
   OrdenacaoExplorar,
 } from "../lib/explorar-derived-utils";
 import { explorarModalSectionLabelStyle } from "../lib/explorar-layout-styles";
-import { traduzirTextoExplorar } from "../lib/explorar-translations";
+import { traduzirGeneroExplorar, traduzirTextoExplorar } from "../lib/explorar-translations";
 import { ExplorarAdultContentFilter } from "./explorar-adult-content-filter";
 import { ExplorarAdvancedFiltersShell } from "./explorar-advanced-filters-shell";
 import { ExplorarClearFiltersAction } from "./explorar-clear-filters-action";
@@ -21,6 +23,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   filtroFormato: string;
   filtroTag: string;
   tagExcluida: string;
+  generoExcluido: string;
   notaMinima: number | null;
   filtroClassificacao: string;
   mostrarConfirmacaoConteudo18: boolean;
@@ -32,6 +35,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   onSelecionarColecao: (filtro: FiltroColecaoExplorar) => void;
   onSelecionarFormato: (formato: string) => void;
   onSelecionarTag: (tag: string) => void;
+  onSelecionarGeneroExcluido: (genero: string) => void;
   onSelecionarTagExcluida: (tag: string) => void;
   onSelecionarNotaMinima: (valor: string) => void;
   onSelecionarClassificacao: (filtro: string) => void;
@@ -50,6 +54,7 @@ export default function ExplorarAdvancedFiltersComposition({
   filtroFormato,
   filtroTag,
   tagExcluida,
+  generoExcluido,
   notaMinima,
   filtroClassificacao,
   mostrarConfirmacaoConteudo18,
@@ -62,6 +67,7 @@ export default function ExplorarAdvancedFiltersComposition({
   onSelecionarFormato,
   onSelecionarTag,
   onSelecionarTagExcluida,
+  onSelecionarGeneroExcluido,
   onSelecionarNotaMinima,
   onSelecionarClassificacao,
   onConfirmouIdadeChange,
@@ -141,6 +147,29 @@ export default function ExplorarAdvancedFiltersComposition({
                 {traduzirTextoExplorar("Oculta obras com esta tag completa. Deixe vazio para não excluir.", language)}
               </p>
             </>
+          )}
+
+          {modoConteudo === "obras" && (
+            <label style={explorarModalSectionLabelStyle}>
+              <span id="explorar-genero-excluido-titulo">{traduzirTextoExplorar("Excluir gênero", language)}</span>
+              <select
+                value={generoExcluido}
+                onChange={(event) => onSelecionarGeneroExcluido(event.target.value)}
+                aria-labelledby="explorar-genero-excluido-titulo"
+                aria-describedby="explorar-genero-excluido-ajuda"
+                style={{ display: "block", width: "100%", padding: 10, fontSize: 16 }}
+              >
+                <option value="">{traduzirTextoExplorar("Nenhum", language)}</option>
+                {categorias.map((genero) => (
+                  <option key={genero} value={normalizarGeneroExcluido(genero)}>
+                    {traduzirGeneroExplorar(genero, language)}
+                  </option>
+                ))}
+              </select>
+              <span id="explorar-genero-excluido-ajuda">
+                {traduzirTextoExplorar("Oculta obras que contenham este gênero, inclusive gêneros compostos.", language)}
+              </span>
+            </label>
           )}
 
           {modoConteudo === "obras" && (

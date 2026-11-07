@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { normalizarTexto } from "../../lib/utils";
+import { normalizarGeneroExcluido } from "../../lib/catalogo-genero";
 import { normalizarTagCatalogo } from "../../lib/catalogo-tag";
 import { normalizarNotaMinimaCatalogo } from "../../lib/catalogo-nota-minima";
 import {
@@ -81,6 +82,7 @@ import {
 } from "./lib/explorar-layout-styles";
 import {
   traduzirTextoExplorar,
+  traduzirGeneroExplorar,
   traduzirFormatoExplorar,
 } from "./lib/explorar-translations";
 import type { ObraLocal } from "./lib/explorar-work-normalizers";
@@ -156,7 +158,9 @@ export default function ExplorarPage() {
     filtroTag,
     setFiltroTag,
     tagExcluida,
+    generoExcluido,
     setTagExcluida,
+    setGeneroExcluido,
     notaMinima,
     setNotaMinima,
     filtroClassificacao,
@@ -219,6 +223,7 @@ export default function ExplorarPage() {
     setFiltroFormato,
     setFiltroTag,
     setTagExcluida,
+    setGeneroExcluido,
     setNotaMinima,
     setUsuarioLogado,
     setObrasLocais,
@@ -249,6 +254,7 @@ export default function ExplorarPage() {
     setFiltroFormato,
     setFiltroTag,
     setTagExcluida,
+    setGeneroExcluido,
     setNotaMinima,
   });
 
@@ -259,7 +265,7 @@ export default function ExplorarPage() {
   });
 
   const termoBusca = normalizarTexto(busca);
-  const { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo, notaMinimaVerificada, tagExcluidaVerificada } =
+  const { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo, notaMinimaVerificada, tagExcluidaVerificada, generoExcluidoVerificado } =
     useExplorarCatalogQuery({
       modoConteudo,
       busca,
@@ -268,6 +274,7 @@ export default function ExplorarPage() {
       filtroFormato,
       filtroTag: normalizarTagCatalogo(filtroTag),
       tagExcluida: modoConteudo === "obras" ? normalizarTagCatalogo(tagExcluida) : "",
+      generoExcluido: modoConteudo === "obras" ? normalizarGeneroExcluido(generoExcluido) : "",
       notaMinima,
       usuarioIdExplorar,
       filtroClassificacao,
@@ -312,6 +319,7 @@ export default function ExplorarPage() {
   const filtroFormatoAtivo = filtroFormato !== "todos";
   const filtroTagAtivo = Boolean(normalizarTagCatalogo(filtroTag));
   const tagExcluidaAtiva = modoConteudo === "obras" && Boolean(normalizarTagCatalogo(tagExcluida));
+  const generoExcluidoAtivo = modoConteudo === "obras" && Boolean(normalizarGeneroExcluido(generoExcluido));
   const notaMinimaAtiva = notaMinima !== null;
   const ordenacaoPorCapitulosAtiva = ordenacao === "mais-capitulos";
 
@@ -321,6 +329,7 @@ export default function ExplorarPage() {
       filtroFormato,
       filtroTag,
       tagExcluida: modoConteudo === "obras" ? tagExcluida : "",
+      generoExcluido: modoConteudo === "obras" ? generoExcluido : "",
       filtroClassificacao,
       filtroCapitulos,
       filtroColecao,
@@ -335,6 +344,7 @@ export default function ExplorarPage() {
     filtroFormato,
     filtroTag,
     tagExcluida,
+    generoExcluido,
     modoConteudo,
     filtroClassificacao,
     filtroCapitulos,
@@ -350,9 +360,10 @@ export default function ExplorarPage() {
       obrasBaseFiltradas,
       categoriaSelecionada,
       termoBusca,
-      obraIdsBuscaRemota: notaMinimaVerificada && tagExcluidaVerificada ? obraIdsBuscaRemota : null,
+      obraIdsBuscaRemota: notaMinimaVerificada && tagExcluidaVerificada && generoExcluidoVerificado ? obraIdsBuscaRemota : null,
       notaMinima,
       tagExcluida: modoConteudo === "obras" ? tagExcluida : "",
+      generoExcluido: modoConteudo === "obras" ? generoExcluido : "",
     });
   }, [
     obrasBaseFiltradas,
@@ -362,7 +373,9 @@ export default function ExplorarPage() {
     notaMinimaVerificada,
     notaMinima,
     tagExcluidaVerificada,
+    generoExcluidoVerificado,
     tagExcluida,
+    generoExcluido,
     modoConteudo,
   ]);
 
@@ -458,6 +471,7 @@ export default function ExplorarPage() {
       filtroFormato,
       filtroTag: normalizarTagCatalogo(filtroTag),
       tagExcluida: modoConteudo === "obras" ? normalizarTagCatalogo(tagExcluida) : "",
+      generoExcluido: modoConteudo === "obras" ? normalizarGeneroExcluido(generoExcluido) : "",
       notaMinima,
       filtroClassificacao,
       filtroCapitulos,
@@ -472,6 +486,7 @@ export default function ExplorarPage() {
     filtroFormato,
     filtroTag: normalizarTagCatalogo(filtroTag),
     tagExcluida: modoConteudo === "obras" ? normalizarTagCatalogo(tagExcluida) : "",
+    generoExcluido: modoConteudo === "obras" ? normalizarGeneroExcluido(generoExcluido) : "",
     notaMinima,
     filtroClassificacao,
     filtroCapitulos,
@@ -496,6 +511,7 @@ export default function ExplorarPage() {
     if (modo === "autores") {
       setFiltroClassificacao("todos");
       setTagExcluida("");
+      setGeneroExcluido("");
       setNotaMinima(null);
       if (ordenacaoPorCapitulosAtiva) {
         setOrdenacao("relevancia");
@@ -511,6 +527,7 @@ export default function ExplorarPage() {
       filtroFormato,
       filtroTag,
       tagExcluida: modo === "autores" ? "" : tagExcluida,
+      generoExcluido: modo === "autores" ? "" : generoExcluido,
       notaMinima: modo === "autores" ? null : notaMinima,
     });
   }
@@ -568,6 +585,7 @@ export default function ExplorarPage() {
       filtroFormato,
       filtroTag,
       tagExcluida,
+      generoExcluido,
       notaMinima,
     });
   }
@@ -583,6 +601,7 @@ export default function ExplorarPage() {
         filtroFormato,
         filtroTag,
         tagExcluida,
+        generoExcluido,
         notaMinima,
       },
       "replace",
@@ -599,6 +618,7 @@ export default function ExplorarPage() {
       filtroFormato,
       filtroTag,
       tagExcluida,
+      generoExcluido,
       notaMinima,
     });
   }
@@ -613,6 +633,7 @@ export default function ExplorarPage() {
       filtroFormato: formato,
       filtroTag,
       tagExcluida,
+      generoExcluido,
       notaMinima,
     });
   }
@@ -623,6 +644,7 @@ export default function ExplorarPage() {
       modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
       filtroTag: tag,
       tagExcluida,
+      generoExcluido,
       notaMinima,
     }, "replace");
   }
@@ -632,7 +654,16 @@ export default function ExplorarPage() {
     setNotaMinima(nota);
     atualizarUrlExplorar({
       modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
-      filtroTag, tagExcluida, notaMinima: nota,
+      filtroTag, tagExcluida, generoExcluido, notaMinima: nota,
+    });
+  }
+
+  function selecionarGeneroExcluidoExplorar(valor: string) {
+    const genero = normalizarGeneroExcluido(valor);
+    setGeneroExcluido(genero);
+    atualizarUrlExplorar({
+      modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
+      filtroTag, notaMinima, tagExcluida, generoExcluido: genero,
     });
   }
 
@@ -640,7 +671,7 @@ export default function ExplorarPage() {
     setTagExcluida(tag);
     atualizarUrlExplorar({
       modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
-      filtroTag, notaMinima, tagExcluida: tag,
+      filtroTag, notaMinima, generoExcluido, tagExcluida: tag,
     }, "replace");
   }
 
@@ -669,6 +700,7 @@ export default function ExplorarPage() {
     setFiltroFormato("todos");
     setFiltroTag("");
     setTagExcluida("");
+    setGeneroExcluido("");
     setNotaMinima(null);
     setFiltroClassificacao("todos");
     setFiltroCapitulos("todos");
@@ -764,7 +796,9 @@ export default function ExplorarPage() {
               filtroTag={filtroTag}
               onSelecionarTag={selecionarTagExplorar}
               tagExcluida={tagExcluida}
+              generoExcluido={generoExcluido}
               onSelecionarTagExcluida={selecionarTagExcluidaExplorar}
+              onSelecionarGeneroExcluido={selecionarGeneroExcluidoExplorar}
               notaMinima={notaMinima}
               onSelecionarNotaMinima={selecionarNotaMinimaExplorar}
               filtroClassificacao={filtroClassificacao}
@@ -803,6 +837,7 @@ export default function ExplorarPage() {
           !filtroFormatoAtivo &&
           !filtroTagAtivo &&
           !tagExcluidaAtiva &&
+          !generoExcluidoAtivo &&
           !notaMinimaAtiva &&
           !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
@@ -819,6 +854,7 @@ export default function ExplorarPage() {
           !filtroFormatoAtivo &&
           !filtroTagAtivo &&
           !tagExcluidaAtiva &&
+          !generoExcluidoAtivo &&
           !notaMinimaAtiva &&
           !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
@@ -835,6 +871,7 @@ export default function ExplorarPage() {
             filtroFormatoAtivo ||
             filtroTagAtivo ||
             tagExcluidaAtiva ||
+            generoExcluidoAtivo ||
             notaMinimaAtiva ||
             ordenacaoPorCapitulosAtiva ||
             filtroColecaoAtivo) &&
@@ -862,6 +899,8 @@ export default function ExplorarPage() {
                                 ? traduzirTextoExplorar("Avaliação mínima", language)
                               : tagExcluidaAtiva
                                 ? `${traduzirTextoExplorar("Excluir tag", language)}: ${normalizarTagCatalogo(tagExcluida)}`
+                              : generoExcluidoAtivo
+                                ? `${traduzirTextoExplorar("Excluir gênero", language)}: ${traduzirGeneroExplorar(categorias.find((genero) => normalizarGeneroExcluido(genero) === generoExcluido) || generoExcluido, language)}`
                               : ordenacaoPorCapitulosAtiva
                                 ? traduzirTextoExplorar("Mais capítulos", language)
                                 : "Conteúdo 18+"
@@ -923,13 +962,13 @@ export default function ExplorarPage() {
           />
         )}
 
-        {(notaMinimaAtiva || tagExcluidaAtiva) && (!notaMinimaVerificada || !tagExcluidaVerificada || obraIdsBuscaRemota === null) &&
+        {(notaMinimaAtiva || tagExcluidaAtiva || generoExcluidoAtivo) && (!notaMinimaVerificada || !tagExcluidaVerificada || !generoExcluidoVerificado || obraIdsBuscaRemota === null) &&
           !erroCatalogoExplorar && !erroColecoesExplorar && (
             <p role="status">{traduzirTextoExplorar(notaMinimaAtiva ? "Consultando avaliações" : "Carregando Explorar", language)}</p>
         )}
 
         {totalResultados === 0 &&
-          !((notaMinimaAtiva || tagExcluidaAtiva) && (!notaMinimaVerificada || !tagExcluidaVerificada || obraIdsBuscaRemota === null)) &&
+          !((notaMinimaAtiva || tagExcluidaAtiva || generoExcluidoAtivo) && (!notaMinimaVerificada || !tagExcluidaVerificada || !generoExcluidoVerificado || obraIdsBuscaRemota === null)) &&
           !erroCatalogoExplorar &&
           !erroColecoesExplorar &&
           (!filtroColecaoAtivo || colecoesCarregadas) && (

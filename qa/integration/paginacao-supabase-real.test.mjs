@@ -402,3 +402,34 @@ test("Data API resolve exclusão com os 13 argumentos e preserva variantes anter
   const invalido = await supabase.rpc("listar_obras_catalogo", { ...parametros, p_tag_excluida: "a".repeat(91) });
   assert.equal(invalido.error?.code, "22023");
 });
+
+test("Data API resolve gênero com 14 argumentos, cursor e combinações sem ambiguidade", async () => {
+  const ambiente = lerAmbienteSupabaseLocal();
+  exigirDestinoLocal(ambiente.url);
+  const supabase = createClient(ambiente.url, ambiente.anonKey, {
+    auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false },
+  });
+  const parametros = { p_busca: "", p_genero: "Teste", p_formato: "Texto", p_classificacao: "Livre",
+    p_filtro_capitulos: "com-capitulos", p_ordenacao: "mais-recentes", p_limite: 24,
+    p_cursor_valor: null, p_cursor_data: null, p_cursor_id: null, p_tag: "", p_nota_minima: null, p_tag_excluida: "" };
+  const legado = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", parametros), "variante de 13 argumentos");
+  assert.equal(legado.length, 24, "fixture deve fornecer página real cheia");
+  const excluido = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+    ...parametros, p_genero_excluido: "drama",
+  }), "gênero não relacionado não exclui a fixture");
+  assert.deepEqual(excluido, legado);
+  const ultima = excluido.at(-1);
+  const seguinte = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+    ...parametros, p_genero_excluido: "drama", p_cursor_valor: ultima.cursor_valor,
+    p_cursor_data: ultima.cursor_data, p_cursor_id: ultima.cursor_id,
+  }), "cursor na variante de 14 argumentos");
+  assert.equal(seguinte.length, 24);
+  assert.ok(seguinte.every(linha => !excluido.some(anterior => anterior.obra_id === linha.obra_id)));
+  const combinado = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+    ...parametros, p_genero_excluido: "ficcao", p_tag: "qa-inexistente", p_tag_excluida: "bloqueada",
+    p_nota_minima: 4.5, p_ordenacao: "mais-capitulos",
+  }), "gênero combinado com tag, exclusão, nota e ordenação");
+  assert.deepEqual(combinado, []);
+  const invalido = await supabase.rpc("listar_obras_catalogo", { ...parametros, p_genero_excluido: "drama|.*" });
+  assert.equal(invalido.error?.code, "22023");
+});

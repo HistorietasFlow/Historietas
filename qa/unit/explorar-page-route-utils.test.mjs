@@ -38,6 +38,12 @@ const notaJavascript = typescript.transpileModule(await readFile(path.join(root,
 const notaModulo = { exports: {} };
 new Function("module", "exports", notaJavascript)(notaModulo, notaModulo.exports);
 
+const generoCodigo = typescript.transpileModule(await readFile(path.join(root, "lib/catalogo-genero.ts"), "utf8"), {
+  compilerOptions: { module: typescript.ModuleKind.CommonJS },
+}).outputText;
+const generoModulo = { exports: {} };
+new Function("module", "exports", generoCodigo)(generoModulo, generoModulo.exports);
+
 async function carregarModuloRota() {
   const source = await readFile(modulePath, "utf8");
   const javascript = typescript.transpileModule(source, {
@@ -52,6 +58,7 @@ async function carregarModuloRota() {
     modulo,
     modulo.exports,
     (specifier) => {
+      if (specifier === "../../../lib/catalogo-genero") return generoModulo.exports;
       if (specifier === "../../../lib/catalogo-tag") return tagModulo.exports;
       if (specifier === "../../../lib/catalogo-nota-minima") return notaModulo.exports;
       if (specifier === "./explorar-categories") {
@@ -265,4 +272,14 @@ test("página e hook preservam debounce, paginação e filtro pessoal fora da UR
   assert.match(page, /"replace"/);
   assert.match(page, /selecionarOrdenacaoExplorar/);
   assert.doesNotMatch(page, /window\.history\.pushState/);
+});
+
+test("gênero excluído é compartilhável, normaliza aliases e não entra no modo Autores", async () => {
+  const { lerFiltrosCompartilhaveisExplorar: ler, criarUrlExplorar: url } = await carregarModuloRota();
+  const filtros = ler("?categoria=Fantasia&generoExcluido=SCI-FI&tag=base&tagExcluida=outra&notaMinima=4.5&formato=HQ&ordenacao=mais-capitulos&busca=magia");
+  assert.equal(filtros.generoExcluido, "ficcao");
+  assert.deepEqual(ler(url(filtros).split("?")[1]), filtros);
+  assert.equal(ler("?generoExcluido=desconhecido").generoExcluido, undefined);
+  assert.equal(ler("?tipo=autores&generoExcluido=Romance").generoExcluido, undefined);
+  assert.doesNotMatch(url({ ...filtros, modoConteudo: "autores" }), /generoExcluido/);
 });
