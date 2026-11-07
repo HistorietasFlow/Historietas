@@ -199,6 +199,15 @@ NOTHING` seguido de reconciliação torna chamadas concorrentes e retries
 idempotentes. O wrapper público, grants e RLS permanecem restritos, e metadata
 editável serve apenas como texto de exibição.
 
+## Gate de publicação: erro temporário não é aceite ausente
+
+A leitura de `status_aceite_termos_publicacao` diferencia uma resposta válida
+`false` de uma falha de transporte/Data API. Antes de decidir o gate, uma falha
+recebe uma única nova tentativa; sucesso ou `false` legítimo nunca geram uma
+segunda consulta. Isso evita enviar um autor com aceite atualizado para a tela
+de termos por uma indisponibilidade transitória, sem relaxar a RPC, RLS, grants
+ou as versões legais exigidas pelo banco.
+
 ## Explorar: filtros compartilháveis sincronizados com a URL
 
 Os filtros públicos `tipo`, `categoria`, `busca` e `ordenacao` são lidos na
