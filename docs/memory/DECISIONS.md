@@ -58,6 +58,11 @@
   do cursor. É opcional e não modifica rankings nem exige quantidade mínima
   adicional de avaliações. A variante de 12 argumentos preserva as duas
   anteriores; cache sem confirmação da consulta atual não satisfaz o filtro.
+- Exclusão de uma tag completa usa a mesma igualdade normalizada da inclusão,
+  com `NOT EXISTS` antes da paginação. Não substituir por filtragem da amostra
+  cliente; tags antigas do cache não comprovam ausência: exigir IDs confirmados
+  pela consulta/identidade atuais, além da proteção local. Nenhuma variante
+  antiga da RPC deve ser removida ou tornada ambígua.
 
 ## Comentários para autores
 

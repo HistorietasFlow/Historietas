@@ -173,6 +173,18 @@ test("tag literal normalizada combina com busca, formato e ordenação na URL", 
   assert.equal(lerFiltrosCompartilhaveisExplorar("?tag=%25_%5C%2C.%28%29").filtroTag, "%_\\,.()");
 });
 
+test("exclusão literal é compartilhável, combinável e ignorada em autores", async () => {
+  const { lerFiltrosCompartilhaveisExplorar, criarUrlExplorar } = await carregarModuloRota();
+  const filtros = lerFiltrosCompartilhaveisExplorar("?tag=base&tagExcluida=%20A%C3%87%C3%83O%20%20Épica%20&formato=HQ&notaMinima=4.5");
+  assert.equal(filtros.tagExcluida, "acao epica");
+  assert.equal(criarUrlExplorar(filtros), "/explorar?formato=HQ&tag=base&tagExcluida=acao+epica&notaMinima=4.5");
+  assert.equal(lerFiltrosCompartilhaveisExplorar("?tagExcluida=%20").tagExcluida, undefined);
+  assert.equal(lerFiltrosCompartilhaveisExplorar(`?tagExcluida=${"a".repeat(100)}`).tagExcluida.length, 90);
+  assert.equal(lerFiltrosCompartilhaveisExplorar("?tagExcluida=%25_%5C%2C.%28%29").tagExcluida, "%_\\,.()");
+  assert.equal(lerFiltrosCompartilhaveisExplorar("?tipo=autores&tagExcluida=base").tagExcluida, undefined);
+  assert.doesNotMatch(criarUrlExplorar({ ...filtros, modoConteudo: "autores" }), /tagExcluida=/);
+});
+
 test("nota mínima combina com tag e formato; inválidos e modo autores não a ativam", async () => {
   const { lerFiltrosCompartilhaveisExplorar, criarUrlExplorar } = await carregarModuloRota();
   const filtros = lerFiltrosCompartilhaveisExplorar("?tag=acao&formato=HQ&ordenacao=mais-capitulos&notaMinima=4.5");

@@ -20,6 +20,7 @@ export type FiltrosCompartilhaveisExplorar = Readonly<{
   ordenacao: OrdenacaoExplorar;
   filtroFormato: string;
   filtroTag?: string;
+  tagExcluida?: string;
   notaMinima?: number | null;
 }>;
 
@@ -88,6 +89,8 @@ export function lerFiltrosCompartilhaveisExplorar(
     ordenacao: normalizarOrdenacaoExplorar(params.get("ordenacao"), modoConteudo),
     filtroFormato: normalizarFormatoExplorar(params.get("formato")),
     ...(notaMinima !== null ? { notaMinima } : {}),
+    ...(modoConteudo === "obras" && normalizarTagCatalogo(params.get("tagExcluida"))
+      ? { tagExcluida: normalizarTagCatalogo(params.get("tagExcluida")) } : {}),
     ...(normalizarTagCatalogo(params.get("tag"))
       ? { filtroTag: normalizarTagCatalogo(params.get("tag")) }
       : {}),
@@ -127,6 +130,9 @@ export function criarUrlExplorar(
 
   const tag = normalizarTagCatalogo(filtros.filtroTag);
   if (tag) params.set("tag", tag);
+  const tagExcluida = filtros.modoConteudo === "obras"
+    ? normalizarTagCatalogo(filtros.tagExcluida) : "";
+  if (tagExcluida) params.set("tagExcluida", tagExcluida);
   const notaMinima = filtros.modoConteudo === "obras"
     ? normalizarNotaMinimaCatalogo(filtros.notaMinima) : null;
   if (notaMinima !== null) params.set("notaMinima", String(notaMinima));

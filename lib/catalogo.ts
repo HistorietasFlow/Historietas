@@ -33,6 +33,7 @@ export type ConsultaCatalogo = Readonly<{
   genero?: string;
   formato?: string;
   tag?: string;
+  tagExcluida?: string;
   notaMinima?: number | null;
   classificacao?: string;
   filtroCapitulos?: FiltroCapitulosCatalogo;
@@ -104,6 +105,7 @@ export async function listarPaginaCatalogo(
 ): Promise<PaginaCatalogo> {
   const cursor = consulta.cursor || null;
   const tag = normalizarTagCatalogo(consulta.tag);
+  const tagExcluida = normalizarTagCatalogo(consulta.tagExcluida);
   const notaMinima = normalizarNotaMinimaCatalogo(consulta.notaMinima);
   const parametros = {
     p_busca: consulta.busca?.trim() || "",
@@ -117,7 +119,12 @@ export async function listarPaginaCatalogo(
     p_cursor_data: cursor?.data,
     p_cursor_id: cursor?.id,
   };
-  const { data, error } = await supabase.rpc("listar_obras_catalogo", notaMinima !== null ? {
+  const { data, error } = await supabase.rpc("listar_obras_catalogo", tagExcluida ? {
+    ...parametros, p_tag: tag, p_nota_minima: notaMinima, p_tag_excluida: tagExcluida,
+    p_cursor_valor: cursor?.valor ?? null,
+    p_cursor_data: cursor?.data ?? null,
+    p_cursor_id: cursor?.id ?? null,
+  } : notaMinima !== null ? {
     ...parametros, p_tag: tag, p_nota_minima: notaMinima,
     p_cursor_valor: cursor?.valor ?? null,
     p_cursor_data: cursor?.data ?? null,

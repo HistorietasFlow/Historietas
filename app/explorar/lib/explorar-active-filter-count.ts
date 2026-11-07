@@ -8,6 +8,7 @@ export function contarFiltrosAvancadosAtivosExplorar({
   filtroColecao,
   filtroFormato,
   filtroTag = "",
+  tagExcluida = "",
   notaMinima = null,
   filtroClassificacao,
   filtroCapitulos,
@@ -17,6 +18,7 @@ export function contarFiltrosAvancadosAtivosExplorar({
   filtroColecao: FiltroColecaoExplorar;
   filtroFormato: string;
   filtroTag?: string;
+  tagExcluida?: string;
   notaMinima?: number | null;
   filtroClassificacao: string;
   filtroCapitulos: string;
@@ -26,6 +28,7 @@ export function contarFiltrosAvancadosAtivosExplorar({
     usuarioLogado && filtroColecao !== "todos",
     filtroFormato !== "todos",
     Boolean(filtroTag),
+    Boolean(tagExcluida),
     notaMinima !== null,
     filtroClassificacao !== "todos",
     filtroCapitulos !== "todos",

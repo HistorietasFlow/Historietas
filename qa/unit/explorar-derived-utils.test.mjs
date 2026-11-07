@@ -67,6 +67,24 @@ test("fallback filtra tag por igualdade, nunca por substring ou curinga", () => 
   assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { filtroTag: "%" }))), []);
 });
 
+test("exclusão também protege cache/fallback sem interpretar curingas e sem remover tags parciais", () => {
+  const lista = [obra("excluida", { tags: ["base", "  AÇÃO   Épica "] }),
+    obra("permitida", { tags: ["base", "acao epicas"] }),
+    obra("sem-tag"), obra("pontuacao", { tags: ["%_\\,.()"] })];
+  assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { tagExcluida: "acao epica" }))), ["permitida", "sem-tag", "pontuacao"]);
+  assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { filtroTag: "base", tagExcluida: "acao epica" }))), ["permitida"]);
+  assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { filtroTag: "base", tagExcluida: "base" }))), []);
+  assert.deepEqual(ids(filtrarObrasBaseExplorar(base(lista, { tagExcluida: "%_\\,.()" }))), ["excluida", "permitida", "sem-tag"]);
+});
+
+test("tags antigas do cache não ultrapassam os IDs confirmados pela RPC de exclusão", () => {
+  const props = { obrasBaseFiltradas: [obra("cache-antigo"), obra("permitida")],
+    categoriaSelecionada: "", termoBusca: "", tagExcluida: "acao" };
+  assert.deepEqual(ids(filtrarObrasExplorar({ ...props, obraIdsBuscaRemota: null })), []);
+  assert.deepEqual(ids(filtrarObrasExplorar({ ...props, obraIdsBuscaRemota: [] })), []);
+  assert.deepEqual(ids(filtrarObrasExplorar({ ...props, obraIdsBuscaRemota: ["permitida"] })), ["permitida"]);
+});
+
 test("nota ativa exige IDs confirmados; cache sem métricas não comprova avaliação", () => {
   const lista = [obra("aprovada"), obra("cache")];
   const props = { obrasBaseFiltradas: lista, categoriaSelecionada: "", termoBusca: "", notaMinima: 4 };
@@ -98,7 +116,7 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     return codigo.slice(corpo, fim);
   });
   assert.equal(createHash("sha256").update(corpos.join("\n---\n")).digest("hex"),
-    "bda836468d42b324aacad2439c07bd2154d6b44c5c2cef38a862ab738ff3d815");
+    "73ba1444d26f7233288754a21aba3e382fb55564f79cca38d3b87c21f2d6d80d");
   for (const nome of funcoes) assert.match(pagina, new RegExp(`return ${nome}\\(\\{`));
   const nomesMemo = [
     "obrasBaseFiltradas", "obrasLocaisFiltradas", "autoresExplorar",
@@ -115,13 +133,13 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
   });
   assert.match(dependencias[0], /filtroTag/);
   assert.equal(createHash("sha256").update(dependencias.join("\n---\n").replace(/    filtroTag,\n/, "")).digest("hex"),
-    "849962dcc07c523f5ba59e0338c057fb6a7e16bcb55d2ebf3c30b694208317f6");
+    "8592043668f2f868347510cc1e5f98c7d1ec164b7ad330970fdb9f068c77a874");
   assert.match(
     pagina,
-    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*notaMinimaVerificada,\s*notaMinima,\s*\]/,
+    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*notaMinimaVerificada,\s*notaMinima,\s*tagExcluidaVerificada,\s*tagExcluida,\s*modoConteudo,\s*\]/,
   );
   assert.match(pagina, /\[autoresExplorar, categoriaSelecionada, termoBusca\]/);
-  assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroTag,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);
+  assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroTag,\s*tagExcluida,\s*modoConteudo,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);
   assert.doesNotMatch(codigo, /\b(?:window|document|localStorage|supabase|useMemo|useEffect)\b/);
 });
 

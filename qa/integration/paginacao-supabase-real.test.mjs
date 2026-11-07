@@ -375,3 +375,30 @@ test("pagina dados reais pela Data API de um Supabase local descartável", async
     assert.equal(invalido.error?.code, "22023");
   });
 });
+
+test("Data API resolve exclusão com os 13 argumentos e preserva variantes anteriores", async () => {
+  const ambiente = lerAmbienteSupabaseLocal();
+  exigirDestinoLocal(ambiente.url);
+  const supabase = createClient(ambiente.url, ambiente.anonKey, {
+    auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false },
+  });
+  const parametros = { p_busca: "", p_genero: "Teste", p_formato: "Texto", p_classificacao: "Livre",
+    p_filtro_capitulos: "com-capitulos", p_ordenacao: "mais-recentes", p_limite: 24,
+    p_cursor_valor: null, p_cursor_data: null, p_cursor_id: null, p_tag: "", p_nota_minima: null };
+  const legado = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", parametros), "variante de 12 argumentos");
+  assert.equal(legado.length, 24, "fixture real deve fornecer uma página cheia");
+  const semExclusao = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+    ...parametros, p_tag_excluida: "",
+  }), "variante de exclusão desativada");
+  assert.deepEqual(semExclusao, legado);
+  const semCorrespondencia = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+    ...parametros, p_tag_excluida: "%_\\,.()",
+  }), "exclusão literal sem correspondência preserva página");
+  assert.deepEqual(semCorrespondencia, legado);
+  const combinado = exigirRespostaSemErro(await supabase.rpc("listar_obras_catalogo", {
+    ...parametros, p_tag: "qa-inexistente", p_nota_minima: 4.5, p_tag_excluida: "%_\\,.()",
+  }), "inclusão, exclusão e nota combinadas");
+  assert.deepEqual(combinado, []);
+  const invalido = await supabase.rpc("listar_obras_catalogo", { ...parametros, p_tag_excluida: "a".repeat(91) });
+  assert.equal(invalido.error?.code, "22023");
+});

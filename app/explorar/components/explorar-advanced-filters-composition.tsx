@@ -20,6 +20,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   filtroColecao: FiltroColecaoExplorar;
   filtroFormato: string;
   filtroTag: string;
+  tagExcluida: string;
   notaMinima: number | null;
   filtroClassificacao: string;
   mostrarConfirmacaoConteudo18: boolean;
@@ -31,6 +32,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   onSelecionarColecao: (filtro: FiltroColecaoExplorar) => void;
   onSelecionarFormato: (formato: string) => void;
   onSelecionarTag: (tag: string) => void;
+  onSelecionarTagExcluida: (tag: string) => void;
   onSelecionarNotaMinima: (valor: string) => void;
   onSelecionarClassificacao: (filtro: string) => void;
   onConfirmouIdadeChange: (confirmou: boolean) => void;
@@ -47,6 +49,7 @@ export default function ExplorarAdvancedFiltersComposition({
   filtroColecao,
   filtroFormato,
   filtroTag,
+  tagExcluida,
   notaMinima,
   filtroClassificacao,
   mostrarConfirmacaoConteudo18,
@@ -58,6 +61,7 @@ export default function ExplorarAdvancedFiltersComposition({
   onSelecionarColecao,
   onSelecionarFormato,
   onSelecionarTag,
+  onSelecionarTagExcluida,
   onSelecionarNotaMinima,
   onSelecionarClassificacao,
   onConfirmouIdadeChange,
@@ -119,6 +123,25 @@ export default function ExplorarAdvancedFiltersComposition({
           <p id="explorar-tag-ajuda">
             {traduzirTextoExplorar("Informe uma tag completa. Deixe vazio para todas.", language)}
           </p>
+
+          {modoConteudo === "obras" && (
+            <>
+              <label style={explorarModalSectionLabelStyle}>
+                {traduzirTextoExplorar("Excluir tag", language)}
+                <input
+                  type="text"
+                  value={tagExcluida}
+                  maxLength={90}
+                  onChange={(event) => onSelecionarTagExcluida(event.target.value)}
+                  aria-describedby="explorar-tag-excluida-ajuda"
+                  style={{ display: "block", width: "100%", boxSizing: "border-box", padding: 10 }}
+                />
+              </label>
+              <p id="explorar-tag-excluida-ajuda">
+                {traduzirTextoExplorar("Oculta obras com esta tag completa. Deixe vazio para não excluir.", language)}
+              </p>
+            </>
+          )}
 
           {modoConteudo === "obras" && (
             <label style={explorarModalSectionLabelStyle}>

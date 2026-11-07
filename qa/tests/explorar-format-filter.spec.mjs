@@ -164,8 +164,10 @@ for (const [dispositivo, viewport] of [
     await page.reload();
     await expect(page.locator("main h3").first()).toHaveText(obras[1].titulo);
     await acionador.click();
+    await expect(todas).toBeFocused();
     await expect(dialogo.getByRole("button", { name: /^Mais capítulos/ })).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("Escape");
+    await expect(dialogo).toBeHidden();
     await page.getByRole("button", { name: "Autores", exact: true }).click();
     await expect(page).toHaveURL(/tipo=autores/);
     await expect(page).not.toHaveURL(/ordenacao=mais-capitulos/);

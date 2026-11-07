@@ -14,6 +14,7 @@ export function useExplorarNavigationFilterState() {
   const [busca, setBusca] = useState("");
   const [filtroFormato, setFiltroFormato] = useState("todos");
   const [filtroTag, setFiltroTag] = useState("");
+  const [tagExcluida, setTagExcluida] = useState("");
   const [notaMinima, setNotaMinima] = useState<number | null>(null);
   const [filtroClassificacao, setFiltroClassificacao] = useState("todos");
   const [filtroCapitulos, setFiltroCapitulos] = useState("todos");
@@ -32,6 +33,8 @@ export function useExplorarNavigationFilterState() {
     setFiltroFormato,
     filtroTag,
     setFiltroTag,
+    tagExcluida,
+    setTagExcluida,
     notaMinima,
     setNotaMinima,
     filtroClassificacao,
