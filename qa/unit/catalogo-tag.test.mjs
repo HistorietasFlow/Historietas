@@ -94,3 +94,33 @@ test("nota mínima usa variante completa com tag opcional, mantendo cursor e leg
   await listarPaginaCatalogo({ notaMinima: null });
   assert.equal(Object.hasOwn(chamadas[2][1], "p_nota_minima"), false);
 });
+
+test("exclusão usa 13 argumentos, combina filtros e não substitui a consulta em falha", async () => {
+  const chamadas = [];
+  let falhar = false;
+  const { listarPaginaCatalogo } = carregar("../../lib/catalogo.ts", {
+    "./catalogo-tag": tag, "./catalogo-nota-minima": notaMinima,
+    "./supabase/client": { supabase: { rpc: async (...args) => {
+      chamadas.push(args); return { data: [], error: falhar ? { message: "rede" } : null };
+    } } },
+  });
+  await listarPaginaCatalogo({ tagExcluida: "  AÇÃO   Épica " });
+  assert.equal(Object.keys(chamadas[0][1]).length, 13);
+  assert.equal(chamadas[0][1].p_tag_excluida, "acao epica");
+  assert.equal(chamadas[0][1].p_tag, "");
+  assert.equal(chamadas[0][1].p_nota_minima, null);
+  assert.equal(chamadas[0][1].p_cursor_id, null);
+  await listarPaginaCatalogo({ tagExcluida: "%_\\,.()", tag: "base", notaMinima: 4.5,
+    formato: "HQ", genero: "Fantasia", busca: "dragão", ordenacao: "mais-capitulos",
+    cursor: { valor: 1, data: "2026-01-01", id: "proxima" } });
+  assert.equal(chamadas[1][1].p_tag_excluida, "%_\\,.()");
+  assert.equal(chamadas[1][1].p_tag, "base");
+  assert.equal(chamadas[1][1].p_nota_minima, 4.5);
+  assert.equal(chamadas[1][1].p_formato, "HQ");
+  assert.equal(chamadas[1][1].p_cursor_id, "proxima");
+  await listarPaginaCatalogo({ tagExcluida: " " });
+  assert.equal(Object.hasOwn(chamadas[2][1], "p_tag_excluida"), false);
+  falhar = true;
+  await assert.rejects(listarPaginaCatalogo({ tagExcluida: "base" }), /rede/);
+  assert.equal(chamadas.length, 4);
+});

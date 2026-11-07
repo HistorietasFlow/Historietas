@@ -34,7 +34,7 @@ test("Explorar mantém filtros, título e paginação na página", () => {
   assert.match(pagina, /import \{ ExplorarFilteredWorksSection \} from "\.\/components\/explorar-filtered-works-section";/);
   assert.match(
     pagina,
-    /modoConteudo === "obras" &&\s*\(Boolean\(categoriaSelecionada\) \|\|\s*Boolean\(termoBusca\) \|\|\s*filtroConteudo18Ativo \|\|\s*filtroFormatoAtivo \|\|\s*filtroTagAtivo \|\|\s*notaMinimaAtiva \|\|\s*ordenacaoPorCapitulosAtiva \|\|\s*filtroColecaoAtivo\) &&\s*obrasLocaisFiltradas\.length > 0 && \(/,
+    /modoConteudo === "obras" &&\s*\(Boolean\(categoriaSelecionada\) \|\|\s*Boolean\(termoBusca\) \|\|\s*filtroConteudo18Ativo \|\|\s*filtroFormatoAtivo \|\|\s*filtroTagAtivo \|\|\s*tagExcluidaAtiva \|\|\s*notaMinimaAtiva \|\|\s*ordenacaoPorCapitulosAtiva \|\|\s*filtroColecaoAtivo\) &&\s*obrasLocaisFiltradas\.length > 0 && \(/,
   );
   assert.match(pagina, /<ExplorarFilteredWorksSection/);
   assert.match(pagina, /obras=\{obrasLocaisFiltradas\}/);

@@ -148,7 +148,7 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "ef060da2de1c1d86833a6d4d82cb0a18d17e5a860b54bdb7d9a14fe1ec74337a");
+    "1518bbff1c0b35f5ac6cf2599177aae011d78a0687248764870c847bd2e9dbb7");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -346,6 +346,65 @@ test("nota mínima confirma a consulta exata, acumula IDs e invalida ao trocar f
   assert.equal(consulta.tag, "acao");
   assert.deepEqual(consulta.cursor, cursor);
   assert.equal(c.render({ notaMinima: 4.5 }).notaMinimaVerificada, false);
+});
+
+test("exclusão reinicia cursor, preserva combinações e invalida respostas obsoletas/retry", async (t) => {
+  const c = preparar(t, { tagExcluida: "acao", filtroTag: "base", notaMinima: 4 });
+  const antiga = adiar();
+  c.respostas.push(antiga.promise);
+  assert.equal(c.render().consultaCatalogoPersonalizada, true);
+  const pendente = c.disparar();
+  c.render({ tagExcluida: "romance", filtroFormato: "HQ" });
+  const cursor = { valor: 0, data: "2026-01-01", id: "nova" };
+  c.respostas.push(Promise.resolve({ obras: [{ id: "nova" }], pagina: { obraIds: ["nova"], proximoCursor: cursor, temMais: true } }));
+  await c.disparar();
+  antiga.resolve({ obras: [{ id: "antiga" }], pagina: null });
+  await pendente;
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "nova" }]);
+  let consulta = c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0];
+  assert.equal(consulta.tagExcluida, "romance");
+  assert.equal(consulta.tag, "base");
+  assert.equal(consulta.notaMinima, 4);
+  assert.equal(consulta.cursor, undefined);
+  c.respostas.push(Promise.resolve({ obras: [{ id: "segunda" }], pagina: { obraIds: ["segunda"], proximoCursor: null, temMais: false } }));
+  await c.render({ proximoCursorCatalogo: cursor }).carregarMaisObrasCatalogo();
+  consulta = c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0];
+  assert.deepEqual(consulta.cursor, cursor);
+  assert.equal(consulta.tagExcluida, "romance");
+  c.render({ tagExcluida: "outra" });
+  c.respostas.push(Promise.resolve({ obras: [], pagina: null, falhaTemporaria: true }));
+  await c.disparar();
+  assert.equal(c.estado.ErroCatalogoExplorar, "consulta");
+  c.render({ versaoRetryCatalogo: 1 });
+  c.respostas.push(Promise.resolve({ obras: [], pagina: { obraIds: [], proximoCursor: null, temMais: false } }));
+  await c.disparar();
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0].tagExcluida, "outra");
+  c.render({ modoConteudo: "autores" });
+  await c.disparar();
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[3][0].tagExcluida, undefined);
+});
+
+test("exclusão sozinha exige IDs atuais, não certifica cache em falha e invalida troca de conta", async (t) => {
+  const c = preparar(t, { tagExcluida: "acao", usuarioIdExplorar: "A" });
+  assert.equal(c.render().tagExcluidaVerificada, false);
+  c.respostas.push(Promise.resolve({ obras: [{ id: "cache-tags-antigas" }], pagina: null, falhaTemporaria: true }));
+  await c.disparar();
+  assert.equal(c.render().tagExcluidaVerificada, false);
+  assert.equal(c.estado.ObraIdsBuscaRemota, null);
+  const respostaA = adiar();
+  c.render({ versaoRetryCatalogo: 1 });
+  c.respostas.push(respostaA.promise);
+  const pendenteA = c.disparar();
+  c.render({ usuarioIdExplorar: "B" });
+  c.respostas.push(Promise.resolve({ obras: [{ id: "B" }], pagina: { obraIds: ["B"], proximoCursor: null, temMais: false } }));
+  await c.disparar();
+  respostaA.resolve({ obras: [{ id: "A" }], pagina: { obraIds: ["A"] } });
+  await pendenteA;
+  assert.equal(c.render().tagExcluidaVerificada, true);
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["B"]);
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "B" }]);
+  assert.equal(c.render({ usuarioIdExplorar: "" }).tagExcluidaVerificada, false);
 });
 
 test("falha com cache não certifica nota; retry e resposta obsoleta mantêm guards", async (t) => {

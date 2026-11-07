@@ -43,6 +43,7 @@ test("conta exatamente os cinco filtros avançados atuais", async () => {
 
   assert.equal(contarFiltrosAvancadosAtivosExplorar(filtrosPadrao), 0);
   assert.equal(contarFiltrosAvancadosAtivosExplorar({ ...filtrosPadrao, filtroTag: "acao" }), 1);
+  assert.equal(contarFiltrosAvancadosAtivosExplorar({ ...filtrosPadrao, tagExcluida: "acao" }), 1);
   assert.equal(contarFiltrosAvancadosAtivosExplorar({ ...filtrosPadrao, notaMinima: 4 }), 1);
   assert.equal(
     contarFiltrosAvancadosAtivosExplorar({

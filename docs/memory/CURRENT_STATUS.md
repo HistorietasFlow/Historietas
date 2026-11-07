@@ -221,6 +221,20 @@ notas de obras, não notas de perfis. Aplicar a migration correspondente é
 pré-requisito de deploy do app, mediante autorização do responsável; não
 deduzir aplicação pelo merge.
 
+### Explorar — exclusão de tag
+
+Na aba Obras, `Excluir tag` oculta uma tag completa, com a mesma normalização
+literal do filtro de inclusão. É compartilhável por `tagExcluida`, combina com
+tag, formato, nota mínima e ordenação e é removido ao entrar em Autores.
+A variante de 13 argumentos do catálogo aplica `NOT EXISTS` em `obras_filtradas`,
+antes das agregações, cursor e limite; preserva as variantes de 10, 11 e 12
+argumentos, RLS e bloqueio 18+. O pós-filtro local repete a exclusão e somente IDs
+confirmados pela consulta/identidade atuais são exibidos, pois tags antigas do
+cache não comprovam ausência da tag. Falhas preservam cache, mas não o certificam
+como resultado atual. Incluir e excluir a mesma tag
+produz vazio legítimo. A migration deve ser aplicada pelo responsável antes
+do deploy; merge não implica aplicação em produção.
+
 ### Lighthouse baseline
 
 Primeiro baseline observado:

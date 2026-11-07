@@ -21,6 +21,7 @@ type OpcoesConsultaCatalogoExplorar = {
   categoriaSelecionada: string;
   filtroFormato: string;
   filtroTag?: string;
+  tagExcluida?: string;
   notaMinima?: number | null;
   usuarioIdExplorar?: string;
   filtroClassificacao: string;
@@ -53,6 +54,7 @@ export function useExplorarCatalogQuery({
   categoriaSelecionada,
   filtroFormato,
   filtroTag = "",
+  tagExcluida = "",
   notaMinima = null,
   usuarioIdExplorar = "",
   filtroClassificacao,
@@ -91,11 +93,12 @@ export function useExplorarCatalogQuery({
   const consultaCatalogoRef = useRef(0);
   const consultaPersonalizadaAtivaRef = useRef(false);
   const versaoRetryCatalogoRef = useRef(versaoRetryCatalogo);
-  const [consultaNotaConfirmada, setConsultaNotaConfirmada] = useState<{
+  const [consultaFiltrosConfirmada, setConsultaFiltrosConfirmada] = useState<{
     consulta: ConsultaCatalogo; usuarioId: string;
   } | null>(null);
-  // Uma média visível sob RLS não deve ser reutilizada por outra identidade.
-  const identidadeConsultaNota = notaMinima === null ? "" : usuarioIdExplorar;
+  // Cache não comprova nota nem ausência de uma tag; confirme a consulta/identidade atuais.
+  const exigeConfirmacao = notaMinima !== null || (modoConteudo === "obras" && Boolean(tagExcluida));
+  const identidadeConsultaFiltros = exigeConfirmacao ? usuarioIdExplorar : "";
 
   const buscaCatalogo = busca.trim();
   const filtroColecaoCatalogo = useMemo<FiltroColecaoCatalogoExplorar | null>(
@@ -125,6 +128,7 @@ export function useExplorarCatalogQuery({
     genero: categoriaSelecionada,
     formato: filtroFormato === "todos" ? "" : filtroFormato,
     ...(filtroTag ? { tag: filtroTag } : {}),
+    ...(modoConteudo === "obras" && tagExcluida ? { tagExcluida } : {}),
     ...(notaMinima !== null ? { notaMinima } : {}),
     classificacao:
       filtroClassificacao === "todos" ? "" : filtroClassificacao,
@@ -142,6 +146,8 @@ export function useExplorarCatalogQuery({
     filtroClassificacao,
     filtroFormato,
     filtroTag,
+    tagExcluida,
+    modoConteudo,
     notaMinima,
     ordenacao,
   ]);
@@ -151,6 +157,7 @@ export function useExplorarCatalogQuery({
       categoriaSelecionada ||
       filtroFormato !== "todos" ||
       filtroTag ||
+      (modoConteudo === "obras" && tagExcluida) ||
       notaMinima !== null ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
@@ -213,11 +220,11 @@ export function useExplorarCatalogQuery({
         );
 
         if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
-          setConsultaNotaConfirmada(notaMinima !== null && resultado.pagina && !resultado.falhaTemporaria
-            ? { consulta: consultaCatalogoAtual, usuarioId: identidadeConsultaNota } : null);
+          setConsultaFiltrosConfirmada(exigeConfirmacao && resultado.pagina && !resultado.falhaTemporaria
+            ? { consulta: consultaCatalogoAtual, usuarioId: identidadeConsultaFiltros } : null);
           setObrasLocais(resultado.obras);
           setObraIdsBuscaRemota(
-            (termoBusca || notaMinima !== null) && resultado.pagina && (notaMinima === null || !resultado.falhaTemporaria)
+            (termoBusca || exigeConfirmacao) && resultado.pagina && (!exigeConfirmacao || !resultado.falhaTemporaria)
               ? [...resultado.pagina.obraIds]
               : null,
           );
@@ -231,7 +238,7 @@ export function useExplorarCatalogQuery({
         }
       } catch {
         if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
-          setConsultaNotaConfirmada(null);
+          setConsultaFiltrosConfirmada(null);
           setErroCatalogoExplorar("consulta");
         }
       } finally {
@@ -253,8 +260,8 @@ export function useExplorarCatalogQuery({
     versaoRetryCatalogo,
     filtroColecaoCatalogo,
     colecoesCarregadas,
-    identidadeConsultaNota,
-    notaMinima,
+    identidadeConsultaFiltros,
+    exigeConfirmacao,
   ]);
 
   async function carregarMaisObrasCatalogo() {
@@ -297,7 +304,7 @@ export function useExplorarCatalogQuery({
 
         setObrasLocais(resultado.obras);
         const pagina = resultado.pagina;
-        if ((termoBusca || notaMinima !== null) && pagina) {
+        if ((termoBusca || exigeConfirmacao) && pagina) {
           setObraIdsBuscaRemota((obraIdsAtuais) =>
             Array.from(
               new Set([
@@ -324,7 +331,11 @@ export function useExplorarCatalogQuery({
 
   return { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo,
     notaMinimaVerificada: notaMinima === null || (
-      consultaNotaConfirmada?.consulta === consultaCatalogoAtual &&
-      consultaNotaConfirmada.usuarioId === identidadeConsultaNota
+      consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
+      consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros
+    ),
+    tagExcluidaVerificada: !tagExcluida || modoConteudo !== "obras" || (
+      consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
+      consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros
     ) };
 }

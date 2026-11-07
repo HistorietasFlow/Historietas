@@ -103,6 +103,7 @@ export function filtrarObrasBaseExplorar({
   obrasLocais,
   filtroFormato,
   filtroTag = "",
+  tagExcluida = "",
   filtroClassificacao,
   filtroCapitulos,
   filtroColecao,
@@ -115,6 +116,7 @@ export function filtrarObrasBaseExplorar({
   obrasLocais: ObraLocal[];
   filtroFormato: string;
   filtroTag?: string;
+  tagExcluida?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
   filtroColecao: FiltroColecaoExplorar;
@@ -161,6 +163,7 @@ export function filtrarObrasBaseExplorar({
       return (
         passaFormato &&
         (!normalizarTagCatalogo(filtroTag) || obra.tags.some((tag) => normalizarTagCatalogo(tag, false) === normalizarTagCatalogo(filtroTag))) &&
+        (!normalizarTagCatalogo(tagExcluida) || !obra.tags.some((tag) => normalizarTagCatalogo(tag, false) === normalizarTagCatalogo(tagExcluida))) &&
         passaClassificacao &&
         passaPublicacao &&
         passaCapitulos &&
@@ -177,12 +180,14 @@ export function filtrarObrasExplorar({
   termoBusca,
   obraIdsBuscaRemota,
   notaMinima = null,
+  tagExcluida = "",
 }: {
   obrasBaseFiltradas: ObraLocal[];
   categoriaSelecionada: string;
   termoBusca: string;
   obraIdsBuscaRemota?: readonly string[] | null;
   notaMinima?: number | null;
+  tagExcluida?: string;
 }) {
     return obrasBaseFiltradas.filter((obra) => {
       const passaCategoria = categoriaSelecionada
@@ -211,7 +216,8 @@ export function filtrarObrasExplorar({
         : true;
 
       const passaNota = notaMinima === null || Boolean(obraIdsBuscaRemota?.includes(obra.id));
-      return passaCategoria && passaBusca && passaNota;
+      const passaExclusao = !normalizarTagCatalogo(tagExcluida) || Boolean(obraIdsBuscaRemota?.includes(obra.id));
+      return passaCategoria && passaBusca && passaNota && passaExclusao;
     });
 }
 

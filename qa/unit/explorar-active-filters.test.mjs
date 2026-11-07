@@ -50,6 +50,7 @@ test("identifica exatamente os sete critérios de filtros ativos", async () => {
     { termoBusca: "história" },
     { filtroFormato: "Romance" },
     { filtroTag: "acao" },
+    { tagExcluida: "acao" },
     { notaMinima: 4 },
     { filtroClassificacao: "16+" },
     { filtroCapitulos: "completas" },
