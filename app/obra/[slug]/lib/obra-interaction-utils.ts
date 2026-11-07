@@ -1,6 +1,13 @@
 import { criarSlugBase, normalizarTexto } from "../../../../lib/utils";
 import { carregarListaLocalObraPublica, salvarStorageUsuarioObraPublica } from "./obra-user-storage";
 
+export type VersoesInteracoesObraPublica = {
+  seguimento: number;
+  curtida: number;
+  favorito: number;
+  conclusao: number;
+};
+
 export function obterChavesInteracaoObraPublica(obra: {
   id: string;
   slug: string;

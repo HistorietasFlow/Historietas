@@ -34,6 +34,10 @@ test("pagina delega as interacoes da obra ao hook dedicado", () => {
   assert.match(paginaObra, /likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY/);
   assert.match(paginaObra, /favoritesStorageKey: FAVORITES_STORAGE_KEY/);
   assert.match(paginaObra, /completedStorageKey: COMPLETED_STORAGE_KEY/);
+  assert.equal(
+    (paginaObra.match(/versoesInteracoesRef,/g) || []).length,
+    2,
+  );
 
   for (const handler of [
     "alternarSeguirObra",
@@ -66,6 +70,35 @@ test("hook preserva persistencia, Diario, atualizacao otimista e rollback", () =
     "setObraConcluida(concluidaAnterior)",
   ]) {
     assert.ok(interacoesObra.includes(trecho), trecho);
+  }
+
+  for (const [handler, versao, estado] of [
+    [
+      obterBloco("async function alternarSeguirObra()", "async function alternarCurtidaObra()"),
+      "seguimento",
+      "setObraSeguida(seguindo)",
+    ],
+    [
+      obterBloco("async function alternarCurtidaObra()", "async function alternarFavoritoObra()"),
+      "curtida",
+      "setMetricasObra((metricasAtuais) =>",
+    ],
+    [
+      obterBloco("async function alternarFavoritoObra()", "async function alternarConcluirObra()"),
+      "favorito",
+      "setObraFavoritada(proximoFavorito)",
+    ],
+    [
+      obterBloco("async function alternarConcluirObra()", "return {"),
+      "conclusao",
+      "setObraConcluida(proximaConcluida)",
+    ],
+  ]) {
+    assert.ok(
+      handler.indexOf(`versoesInteracoesRef.current.${versao} += 1`) <
+        handler.indexOf(estado),
+      versao,
+    );
   }
 });
 

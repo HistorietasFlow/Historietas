@@ -45,6 +45,7 @@ import { obterAcaoLeituraPrincipalObra, obterCapitulosObraPublica, obterIndicado
 import { criarEstruturaComentariosObra, obterObraIdComentarios, type ComentarioObraPublico, type RespostaComentarioObra } from "./lib/obra-comment-utils";
 import { copiarLinkComFallback } from "./lib/obra-share-utils";
 import { obraPageCss } from "./lib/obra-page-css";
+import type { VersoesInteracoesObraPublica } from "./lib/obra-interaction-utils";
 import type { AlvoDenunciaObraDinamica } from "./lib/obra-report-utils";
 import { obterObraDinamicaPorSlug, type ObraLocal } from "./lib/obra-data-utils";
 import LoadingSpinner from "./ObraLoadingSpinner";
@@ -99,6 +100,12 @@ export default function ObraDinamicaPage() {
     useState<MetricasObraPublica>(metricasObraVazias);
   const [metricasComunidadeObra, setMetricasComunidadeObra] =
     useState<MetricasComunidadeObra>(metricasComunidadeObraVazias);
+  const versoesInteracoesRef = useRef<VersoesInteracoesObraPublica>({
+    seguimento: 0,
+    curtida: 0,
+    favorito: 0,
+    conclusao: 0,
+  });
   const [avaliacaoObra, setAvaliacaoObra] =
     useState<AvaliacaoObraPublica>(avaliacaoObraVazia);
   const [mensagemAcao, setMensagemAcao] = useState("");
@@ -311,6 +318,7 @@ export default function ObraDinamicaPage() {
     likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY,
     favoritesStorageKey: FAVORITES_STORAGE_KEY,
     completedStorageKey: COMPLETED_STORAGE_KEY,
+    versoesInteracoesRef,
     carregarMetricasObra,
     setObraSeguida,
     setObraFavoritada,
@@ -371,6 +379,7 @@ export default function ObraDinamicaPage() {
     likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY,
     favoritesStorageKey: FAVORITES_STORAGE_KEY,
     completedStorageKey: COMPLETED_STORAGE_KEY,
+    versoesInteracoesRef,
     obterIdentidadeLogadaParaAcao,
     criarGuardIdentidadeAcao,
     setObraSeguida,

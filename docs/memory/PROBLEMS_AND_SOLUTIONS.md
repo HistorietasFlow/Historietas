@@ -226,6 +226,19 @@ catálogo. Resultado remoto vazio (`[]`) é diferente de fallback (`null`), e a
 paginação acumula somente IDs da consulta ativa para preservar os guards contra
 respostas antigas.
 
+## Obra: snapshot inicial de métricas não pode desfazer interação posterior
+
+O carregamento de métricas da página pública pode permanecer em voo enquanto o
+usuário segue, curte, favorita ou conclui a obra. A resposta foi iniciada antes
+da ação e, portanto, não pode voltar a aplicar os campos de interação daquele
+snapshot sobre o estado otimista e o cache local mais novos.
+
+As interações mantêm versões independentes. O lifecycle ainda aproveita da
+resposta remota as métricas que não foram alteradas, mas preserva estado,
+contadores e storage dos campos cuja versão avançou durante a requisição. Os
+guards de identidade e o cancelamento por cleanup continuam sendo a autoridade
+para login, logout, troca de conta e navegação entre obras.
+
 ## Explorar: falha temporária não é catálogo vazio
 
 O loader do catálogo pode preservar obras do cache local ou de uma amostra
