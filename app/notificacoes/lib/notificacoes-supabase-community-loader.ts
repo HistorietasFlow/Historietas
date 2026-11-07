@@ -6,6 +6,11 @@ import {
   criarPerfilHrefNotificacao,
 } from "./notificacoes-navigation-utils";
 import { obterPerfilNotificacao } from "./notificacoes-profile-utils";
+import {
+  criarMensagemComentarioCapituloSemSpoiler,
+  criarMensagemComentarioComunidadeSemSpoiler,
+  criarMensagemReviewComunidadeSemSpoiler,
+} from "./notificacoes-spoiler-safe-message-utils";
 import { carregarDadosNotificacoesComunidadeSupabase } from "./notificacoes-supabase-community-data-loader";
 import { obterTextoStatusDenunciaComunidadeNotificacao } from "./notificacoes-status-text-utils";
 
@@ -16,7 +21,6 @@ export async function carregarNotificacoesComunidadeSupabase(
   const idsLidos = new Set(notificacoesLidasIds);
   const notificacoesSociais: NotificacaoLocal[] = [];
   const {
-    postsPorId,
     comentariosComunidade,
     denunciasComunidade,
     seguidoresPerfil,
@@ -42,21 +46,15 @@ export async function carregarNotificacoesComunidadeSupabase(
       pegarTexto(registro.autor_nome, "Alguém")
     );
     const id = `comunidade-comentario-${comentarioId}`;
-    const textoComentario = pegarTexto(registro.texto);
-    const post = postsPorId.get(postId);
-    const trechoPost = post?.texto
-      ? post.texto.slice(0, 90)
-      : "uma publicação sua";
-
     notificacoesSociais.push({
       id,
       obraId: "",
       capituloId: "",
       link: `/comunidade?post=${encodeURIComponent(postId)}`,
       titulo: "Novo comentário na Comunidade",
-      mensagem: `${perfilAutor.nome} comentou em "${trechoPost}${
-        trechoPost.length >= 90 ? "..." : ""
-      }"${textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."}`,
+      mensagem: criarMensagemComentarioComunidadeSemSpoiler({
+        autorNome: perfilAutor.nome,
+      }),
       tipo: "comentario-comunidade",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
@@ -141,8 +139,6 @@ export async function carregarNotificacoesComunidadeSupabase(
       pegarTexto(registro.id) ||
       `${capituloId}-${autorId}-${pegarTexto(registro.atualizado_em ?? registro.criado_em)}`;
     const id = `capitulo-comentario-${comentarioId}`;
-    const textoComentario = pegarTexto(registro.comentario ?? registro.texto);
-
     notificacoesSociais.push({
       id,
       obraId: capitulo.obraId,
@@ -158,9 +154,10 @@ export async function carregarNotificacoesComunidadeSupabase(
         capitulo.numero
       ),
       titulo: "Novo comentário no capítulo",
-      mensagem: `${perfilAutor.nome} comentou em ${capitulo.titulo}${
-        textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."
-      }`,
+      mensagem: criarMensagemComentarioCapituloSemSpoiler({
+        autorNome: perfilAutor.nome,
+        contextoTitulo: capitulo.titulo,
+      }),
       tipo: "comentario-capitulo",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(
@@ -191,7 +188,6 @@ export async function carregarNotificacoesComunidadeSupabase(
       registro.obra_titulo_validado,
       "sua obra"
     );
-    const textoReview = pegarTexto(registro.texto);
     const id = `comunidade-review-${postId}`;
 
     notificacoesSociais.push({
@@ -200,9 +196,10 @@ export async function carregarNotificacoesComunidadeSupabase(
       capituloId: "",
       link: `/comunidade?post=${encodeURIComponent(postId)}`,
       titulo: "Nova review publicada",
-      mensagem: `${perfilAutor.nome} publicou uma review sobre ${obraRelacionada}${
-        textoReview ? `: ${textoReview.slice(0, 90)}` : "."
-      }`,
+      mensagem: criarMensagemReviewComunidadeSemSpoiler({
+        autorNome: perfilAutor.nome,
+        contextoTitulo: obraRelacionada,
+      }),
       tipo: "review-comunidade",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
