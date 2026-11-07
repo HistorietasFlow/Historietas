@@ -41,7 +41,7 @@ test("mensagens fallback de comentarios nao reproduzem conteudo com spoiler", ()
   });
 
   assert.equal(comunidade, "Leitora comentou na sua publicação.");
-  assert.equal(capitulo, "Leitora comentou em Capítulo 12.");
+  assert.equal(capitulo, "Leitora comentou em um capítulo.");
   assert.doesNotMatch(`${comunidade} ${capitulo}`, new RegExp(spoiler, "i"));
 });
 
@@ -62,7 +62,7 @@ test("mensagem fallback de review preserva contexto sem reproduzir a review", ()
 test("mensagens seguras mantem fallbacks sem aceitar corpo de comentario", () => {
   assert.equal(
     criarMensagemComentarioCapituloSemSpoiler({ autorNome: "Leitor" }),
-    "Leitor comentou em seu capítulo.",
+    "Leitor comentou em um capítulo.",
   );
   assert.equal(
     criarMensagemReviewComunidadeSemSpoiler({ autorNome: "Leitora" }),

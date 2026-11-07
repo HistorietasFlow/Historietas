@@ -78,6 +78,28 @@ const {
   `data:text/javascript;base64,${Buffer.from(normalizadoresJavascript).toString("base64")}`,
 );
 
+test("notificações legadas de capítulo perdem textos e títulos sensíveis antes da busca/cache", () => {
+  for (const tipo of ["comentario-capitulo", "curtida-comentario-capitulo"]) {
+    const resultado = normalizarNotificacao({
+      id: "legado", tipo, titulo: "SEGREDO DO FINAL", mensagem: "O culpado é o narrador",
+      capituloId: "cap-2", link: "/ler-capitulo?capituloId=cap-2",
+    }, 0);
+    assert.equal(resultado.titulo, "Interação nos comentários de capítulo");
+    assert.equal(resultado.mensagem, "Há uma nova interação nos comentários de um capítulo.");
+    assert.doesNotMatch(JSON.stringify(resultado), /SEGREDO|culpado|narrador/);
+    assert.equal(resultado.capituloId, "cap-2");
+    assert.equal(resultado.link, "/ler-capitulo?capituloId=cap-2");
+  }
+  for (const caso of [
+    { tipo: "resposta-comentario-capitulo", id: "resposta" },
+    { id: "resposta-comentario-capitulo:legado" },
+    { id: "capitulo-comentario-legado" },
+  ]) {
+    const resultado = normalizarNotificacao({ ...caso, mensagem: "SEGREDO", titulo: "SEGREDO" }, 0);
+    assert.doesNotMatch(JSON.stringify(resultado), /SEGREDO/);
+  }
+});
+
 test("modelos preservam os contratos locais de obra, capitulo e notificacao", () => {
   for (const tipo of ["CapituloLocal", "ObraLocal", "NotificacaoLocal"]) {
     assert.match(modelos, new RegExp(`export type ${tipo} =`));

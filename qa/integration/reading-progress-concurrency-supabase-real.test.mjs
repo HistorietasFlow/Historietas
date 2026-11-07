@@ -161,6 +161,20 @@ test("preserva progresso mais recente entre dispositivos e contas", async (t) =>
     assert.equal((await obterEstado(dispositivoA, userId, obraId, capituloId))?.lido, true);
   });
 
+  await t.test("confirmação de leitura não expõe progresso para visitante nem outra conta", async () => {
+    for (const cliente of [anon, outraConta]) {
+      const resposta = await cliente.from("progresso_leitura").select("lido")
+        .eq("user_id", userId).eq("obra_id", obraId).eq("capitulo_id", capituloId);
+      if (cliente === anon) {
+        assert.equal(resposta.error?.code, "42501", "anon não tem GRANT de leitura do progresso");
+        assert.equal(resposta.data, null);
+      } else {
+        assert.equal(resposta.error, null, resposta.error?.message);
+        assert.deepEqual(resposta.data, []);
+      }
+    }
+  });
+
   await t.test("tombstone recente impede ressurreição e aceita retry", async () => {
     assert.equal(
       await sincronizar(dispositivoB, argumentos({ obraId, capituloId, lido: false, ocorridoEm: maisRecente, progresso: 0 })),

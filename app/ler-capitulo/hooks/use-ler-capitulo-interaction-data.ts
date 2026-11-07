@@ -20,6 +20,7 @@ export type MetricasCapituloLeitor = {
 };
 
 type DadosInteracaoCapitulo = {
+  comentariosLiberados: boolean;
   capituloAtual: CapituloLocal | null;
   comentariosCapitulo: ComentarioCapituloPublico[];
   usuarioIdLogado: string;
@@ -39,6 +40,7 @@ type DadosInteracaoCapitulo = {
 };
 
 export function useLerCapituloInteractionData({
+  comentariosLiberados,
   capituloAtual,
   comentariosCapitulo,
   usuarioIdLogado,
@@ -76,6 +78,12 @@ export function useLerCapituloInteractionData({
     }
 
     async function carregarComentariosCapitulo() {
+      if (!comentariosLiberados) {
+        comentariosCapituloCarregadoIdRef.current = "";
+        setComentariosCapitulo([]);
+        setComentariosCarregando(false);
+        return;
+      }
       if (!execucaoInteracaoEstaAtual()) {
         comentariosCapituloCarregadoIdRef.current = "";
         setComentariosCapitulo([]);
@@ -126,6 +134,7 @@ export function useLerCapituloInteractionData({
   }, [
     capituloAtual?.id,
     usuarioIdLogado,
+    comentariosLiberados,
     identidadeDadosAplicada,
     identidadeAutenticadaLeitorRef,
   ]);

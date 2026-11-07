@@ -21,7 +21,7 @@ async function abrirLeitorComIdentidadeCarregada(page) {
   );
   const interacoesCarregadas = page.waitForResponse(
     (response) =>
-      response.url().includes("/rest/v1/comentarios_capitulos") &&
+      response.url().includes("/rpc/obter_metricas_conteudos") &&
       response.status() === 200,
   );
 

@@ -156,6 +156,18 @@ próprio comentarista, o autor da obra ou um administrador pode excluir o
 comentário. Localização por notificações, respostas, denúncia e moderação
 administrativa permanecem nos fluxos existentes.
 
+### Comentários de capítulos protegidos pelo progresso
+
+O Leitor consulta a confirmação de leitura da identidade atual e a propriedade
+da obra ao abrir a discussão. Visitantes, capítulos não lidos e indisponibilidade
+da confirmação mantêm os textos protegidos, com revelação manual temporária.
+Comentários/respostas só são carregados após desbloqueio; o carregamento geral
+de interações não antecipa seus textos. Trocas de conta/capítulo invalidam o
+desbloqueio, e retorno à página revalida o progresso entre dispositivos sem
+polling. RLS, bloqueio 18+, métricas e comentários gerais da obra não mudam.
+Notificações legadas de comentários de capítulo são normalizadas para texto
+genérico antes de cache, busca e exibição.
+
 ### Seguidores por obra no Painel do Autor
 
 Os cards do Painel do Autor exibem a contagem agregada de seguidores de cada obra

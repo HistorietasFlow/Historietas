@@ -79,6 +79,17 @@
 
 ## Proteção contra spoilers
 
+- Comentários e respostas de capítulos ficam protegidos até leitura confirmada
+  no Supabase para a identidade atual, propriedade da obra verificada ou
+  revelação manual temporária. Capítulo aberto, porcentagem e cache local não
+  comprovam leitura. A confirmação é por ID, sem inferir capítulos anteriores.
+- Textos da discussão não são consultados antes do desbloqueio. Confirmações e
+  revelações são invalidadas em troca de conta/capítulo; abertura do sheet,
+  retorno à página e conclusão de marcação/desmarcação revalidam o estado, sem
+  polling. O mecanismo é proteção de UX, não nova autorização de acesso.
+- Notificações de comentários de capítulo, inclusive cache e registros legados,
+  recebem título/mensagem genéricos antes de busca e exibição. Comentários
+  gerais da obra não têm origem de capítulo inferida nem são alterados.
 - Notificações fallback de comentários e reviews não carregam trechos do conteúdo criado pelo usuário. A mensagem identifica autor e contexto de destino de forma genérica, alinhada às notificações diretas do banco.
 - O texto potencialmente sensível a spoiler permanece no comments sheet ou na publicação de origem; busca e cache local de Notificações não devem reintroduzir esse conteúdo.
 

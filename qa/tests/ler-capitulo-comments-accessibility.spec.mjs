@@ -26,7 +26,12 @@ test.describe("sheet de comentários do leitor", () => {
   test("mantém foco, teclado e semântica de diálogo acessíveis", async ({
     page,
   }) => {
+    const interacoes = page.waitForResponse((response) =>
+      response.url().includes("/rpc/obter_metricas_conteudos") && response.ok() &&
+      (response.request().postDataJSON()?.p_obra_ids || []).length === 0,
+    );
     await page.goto(chapterPath(), { waitUntil: "domcontentloaded" });
+    await interacoes;
 
     const trigger = page.getByRole("button", { name: /comentários$/i });
     await expect(trigger).toBeVisible();

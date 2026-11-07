@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
@@ -12,7 +11,7 @@ const fonteMockada = fonte
   .replace('import { supabase } from "../../../lib/supabase/client";', "const supabase = { from: (...args) => globalThis.__leitorWorkRead.supabase.from(...args) };")
   .replace('import { carregarMetricasConteudos } from "../../../lib/metricas";', "const carregarMetricasConteudos = (...args) => globalThis.__leitorWorkRead.metricas(...args);")
   .replace(
-    /import \{\s*carregarTodasPaginasPorLotesSupabase,\s*carregarTodasPaginasSupabase,\s*\} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/paginacao\.mjs";/,
+    /import \{\s*carregarTodasPaginasSupabase,\s*\} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/paginacao\.mjs";/,
     "const carregarTodasPaginasPorLotesSupabase = (...args) => globalThis.__leitorWorkRead.porLotes(...args);\nconst carregarTodasPaginasSupabase = (...args) => globalThis.__leitorWorkRead.paginado(...args);",
   )
   .replace(
@@ -80,10 +79,9 @@ function cenario({
   return { consultas, chamadas };
 }
 
-test("os dois helpers e seus contratos permanecem literalmente iguais", () => {
-  const corpo = fonte.slice(fonte.indexOf("export async function carregarObraSupabase("))
-    .replaceAll("export async function ", "async function ").trimEnd();
-  assert.equal(createHash("sha256").update(corpo).digest("hex"), "7109108ee2347a15a2805ea081d357b18a7a4a24a3a4881846b9d1e47fb57233");
+test("loaders preservam fronteiras e não antecipam textos de comentários", () => {
+  assert.doesNotMatch(fonte, /from\("comentarios_capitulos"\)/);
+  assert.match(fonte, /comentario: ""/);
   const inicializacao = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts");
   assert.match(inicializacao, /from "\.\.\/lib\/ler-capitulo-work-read-loader";/);
   assert.match(pagina, /useLerCapituloInitialLoad\(/);
@@ -142,7 +140,7 @@ test("falha de paginação é propagada para não simular capítulo ausente", as
   await assert.rejects(loader.carregarObraSupabase("obra"));
 });
 
-test("sem capítulos não há consulta; interações remotas preservam comentários e progresso", async () => {
+test("interações preservam progresso sem carregar textos antes do desbloqueio", async () => {
   let atual = cenario();
   const vazia = { id: "obra", capitulos: [] };
   assert.equal(await loader.aplicarInteracoesCapitulosSupabase(vazia, "u"), vazia);
@@ -159,15 +157,12 @@ test("sem capítulos não há consulta; interações remotas preservam comentár
     ]) },
   });
   const resultado = await loader.aplicarInteracoesCapitulosSupabase(obra, "u");
-  assert.deepEqual(resultado.capitulos[0], { ...obra.capitulos[0], salvo: true, comentario: "remoto", lido: false, lidoEm: "" });
-  assert.deepEqual(resultado.capitulos[1], { ...obra.capitulos[1], curtiu: true, lido: true, lidoEm: "2025-01-01" });
+  assert.deepEqual(resultado.capitulos[0], { ...obra.capitulos[0], salvo: true, comentario: "", lido: false, lidoEm: "" });
+  assert.deepEqual(resultado.capitulos[1], { ...obra.capitulos[1], curtiu: true, comentario: "", lido: true, lidoEm: "2025-01-01" });
   assert.equal(resultado.ultimoCapituloLidoId, "c2");
   assert.equal(resultado.ultimaLeituraEm, "2025-01-01");
   assert.equal(resultado.progressoLeitura, 50);
-  assert.deepEqual(atual.consultas[0], { tabela: "comentarios_capitulos", passos: [
-    ["select", "id,capitulo_id,comentario,atualizado_em"], ["eq", "user_id", "u"], ["in", "capitulo_id", ["c1", "c2"]],
-    ["order", "atualizado_em", { ascending: false }], ["order", "id", { ascending: false }], ["range", 0, 999],
-  ] });
+  assert.deepEqual(atual.consultas, []);
   assert.ok(atual.chamadas.some((chamada) => chamada[0] === "metricas" && JSON.stringify(chamada[1]) === JSON.stringify({ obraIds: ["obra"], capituloIds: ["c1", "c2"] })));
 });
 
@@ -177,7 +172,7 @@ test("falha dos comentários e métricas não carregadas preserva valores locais
     { id: "c1", curtiu: false, salvo: true, comentario: "local", lido: true, lidoEm: "inválida" },
   ] };
   const resultado = await loader.aplicarInteracoesCapitulosSupabase(obra, "u");
-  assert.deepEqual(resultado.capitulos, obra.capitulos);
+  assert.deepEqual(resultado.capitulos, obra.capitulos.map((capitulo) => ({ ...capitulo, comentario: "" })));
   assert.equal(resultado.ultimoCapituloLidoId, "c1");
   assert.equal(resultado.ultimaLeituraEm, "data original");
   assert.equal(resultado.progressoLeitura, 100);
