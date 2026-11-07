@@ -19,6 +19,13 @@ Concluídos:
 - OWASP ZAP (baseline passivo contra o app local da CI; sem scan ativo em produção)
 - k6 (baseline leve de carga/desempenho contra rotas públicas do app local da CI)
 
+Os testes locais no Windows usam Node 22, normalizam CRLF somente nas leituras
+textuais dos testes estruturais e executam listas extensas pelo `spawn` do Node,
+sem delegar a linha de comando ao `cmd.exe`. O preparo E2E grava credenciais
+descartáveis em `qa/.env.e2e.generated`, ignorado pelo Git, e o runner local
+gerencia `next start` diretamente. Fora da CI, Playwright usa um worker e zero
+retries; os parâmetros Linux da CI permanecem inalterados.
+
 ## Produção Vercel
 
 O deploy do commit que adicionou Speed Insights foi concluído com sucesso após o projeto ser retomado.

@@ -51,6 +51,7 @@ function loadEnvFile(filePath) {
 loadEnvFile(path.join(rootDir, ".env"));
 loadEnvFile(path.join(rootDir, ".env.local"));
 loadEnvFile(path.join(qaDir, ".env.e2e"));
+loadEnvFile(path.join(qaDir, ".env.e2e.generated"));
 
 export const QA_DIR = qaDir;
 export const ROOT_DIR = rootDir;

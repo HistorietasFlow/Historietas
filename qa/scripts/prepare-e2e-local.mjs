@@ -5,6 +5,8 @@ import fs from "node:fs";
 
 import { createClient } from "@supabase/supabase-js";
 
+import { criarInvocacaoStatusSupabase } from "./supabase-cli-invocation.mjs";
+
 const DEFAULTS = Object.freeze({
   userId: "e2e00000-0000-4000-8000-000000000001",
   email: "e2e-author@historietas.test",
@@ -30,6 +32,8 @@ const DEFAULTS = Object.freeze({
   publicChapterNumber: "1",
 });
 
+const ARQUIVO_AMBIENTE_LOCAL = new URL("../.env.e2e.generated", import.meta.url);
+
 function removerAspas(valor) {
   const texto = valor.trim();
 
@@ -44,7 +48,8 @@ function lerVariaveisStatusSupabase() {
   let saida;
 
   try {
-    saida = execFileSync("supabase", ["status", "-o", "env"], {
+    const invocacao = criarInvocacaoStatusSupabase();
+    saida = execFileSync(invocacao.comando, invocacao.argumentos, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -208,6 +213,25 @@ function salvarGithubEnv(destino, variaveis) {
   });
 
   fs.appendFileSync(destino, `${linhas.join("\n")}\n`, "utf8");
+}
+
+function salvarAmbienteLocal(destinoGithub, variaveis) {
+  if (destinoGithub) {
+    salvarGithubEnv(destinoGithub, variaveis);
+    return;
+  }
+
+  const conteudo = Object.entries(variaveis)
+    .map(([nome, valor]) => {
+      assert.ok(
+        !/[\r\n]/.test(valor),
+        `A variável ${nome} contém quebra de linha e não pode ir para o ambiente E2E local.`,
+      );
+      return `${nome}=${JSON.stringify(valor)}`;
+    })
+    .join("\n");
+
+  fs.writeFileSync(ARQUIVO_AMBIENTE_LOCAL, `${conteudo}\n`, "utf8");
 }
 
 async function preparar() {
@@ -603,10 +627,16 @@ async function preparar() {
   );
   assert.equal(secondPublicChapter?.id, secondChapterId);
 
-  salvarGithubEnv(obterArquivoGithubEnv(), {
+  salvarAmbienteLocal(obterArquivoGithubEnv(), {
     NEXT_PUBLIC_SUPABASE_URL: ambiente.url,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ambiente.publicKey,
     SUPABASE_SERVICE_ROLE_KEY: ambiente.secretKey,
+    SUPABASE_TEST_URL: ambiente.url,
+    SUPABASE_TEST_ANON_KEY: ambiente.publicKey,
+    SUPABASE_TEST_PUBLIC_KEY: ambiente.publicKey,
+    SUPABASE_TEST_SECRET_KEY: ambiente.secretKey,
+    E2E_BASE_URL: "http://127.0.0.1:3000",
+    E2E_WEB_SERVER_COMMAND: "npm --prefix .. run start",
     E2E_USER_ID: userId,
     E2E_USER_EMAIL: email,
     E2E_USER_PASSWORD: password,
