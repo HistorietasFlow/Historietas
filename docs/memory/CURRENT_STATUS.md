@@ -121,6 +121,15 @@ Não houve alteração funcional no app para esse alerta.
 
 ### Supabase Storage
 
+Capítulos ilustrados possuem apenas uma infraestrutura inicial versionada na
+migration `20261107223400_infraestrutura_capitulos_ilustrados.sql`: novos campos
+de tipo/versão, manifesto com leitura sob RLS e contratos privados de reservas e
+limpeza. Não há escrita de páginas pela Data API, upload, assinatura ou leitor
+ilustrado habilitados. A outbox registra referências removidas, mas ainda não
+possui executor. Validar imagens, finalizar operações e limpar arquivos são
+pré-requisitos das próximas fases; as quotas atuais não foram ampliadas.
+Merge da PR não implica aplicação da migration em produção.
+
 A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi
 restrita ao prefixo do usuário autenticado. URLs públicas conhecidas continuam
 acessíveis, mas usuários anônimos não enumeram os buckets e uma conta não lista
