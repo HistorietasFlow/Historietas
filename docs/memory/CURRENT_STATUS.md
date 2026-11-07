@@ -19,6 +19,19 @@ Concluídos:
 - OWASP ZAP (baseline passivo contra o app local da CI; sem scan ativo em produção)
 - k6 (baseline leve de carga/desempenho contra rotas públicas do app local da CI)
 
+### Triagem final de segurança — 07/11/2026
+
+- A árvore de produção foi atualizada para `@sentry/nextjs 11.11.0`, que resolve
+  `glob 14.0.4` e `minimatch 11.0.5`. Com isso, `npm audit --omit=dev` passou de
+  cinco vulnerabilidades moderadas transitivas para zero.
+- Os alertas CodeQL legados ainda abertos foram revisados: #1 é fluxo de dados
+  impreciso sobre um helper que persiste somente listas locais, sem senha, token
+  ou sessão; #2 e #4 apontam exclusivamente para assertions de QA com entradas
+  constantes. Não há exposição de runtime comprovada nesses três alertas.
+- O audit completo ainda inclui avisos de ferramentas de desenvolvimento
+  (`eslint-config-next`/`typescript-eslint`/`minimatch` e `zod`). Eles não entram
+  no bundle de produção e não justificam downgrade ou atualização major forçada.
+
 Os testes locais no Windows usam Node 22, normalizam CRLF somente nas leituras
 textuais dos testes estruturais e executam listas extensas pelo `spawn` do Node,
 sem delegar a linha de comando ao `cmd.exe`. O preparo E2E grava credenciais

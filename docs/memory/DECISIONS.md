@@ -72,6 +72,10 @@
 - Dependabot roda semanalmente.
 - CodeQL permanece habilitado.
 - Atualizações de dependência não devem ser misturadas com refatorações sem necessidade explícita.
+- Advisories transitivos de produção devem ser removidos por atualização
+  compatível da dependência raiz quando houver correção estável; não usar
+  `npm audit fix --force` nem alterar majors apenas para zerar avisos de
+  ferramentas de desenvolvimento sem exposição de runtime.
 
 ## Operação e continuidade — 06/11/2026
 
