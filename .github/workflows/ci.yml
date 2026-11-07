@@ -97,6 +97,9 @@ jobs:
       - name: Executar testes estáticos
         run: npm run test:static
 
+      - name: Validar imagens ilustradas com decoder real (sem habilitar uploads)
+        run: npm run test:illustrated-images
+
       - name: Validar GRANT/REVOKE explícito em novas tabelas public
         run: node qa/scripts/check-public-table-grants.mjs
 
