@@ -1,5 +1,5 @@
 begin;
-select plan(18);
+select plan(23);
 
 select ok(not prosecdef and pronargdefaults = 0 and proconfig = array['search_path=""'],
   'nota mínima preserva invoker, search_path e resolução não ambígua')
@@ -18,6 +18,11 @@ insert into public.profiles (id, user_id, nome, tipo)
 select id, id, 'QA nota ' || id, case when id = '73000000-0000-4000-8000-000000000001' then 'autor' else 'leitor' end
 from auth.users where id in ('73000000-0000-4000-8000-000000000001',
   '73000000-0000-4000-8000-000000000002', '73000000-0000-4000-8000-000000000003');
+-- A policy de avaliações exige também Biblioteca pública e a categoria visível.
+-- Sem preferências, o helper usa somente_eu/false e anon não lê as notas.
+insert into public.preferencias_privacidade (user_id, visibilidade_biblioteca, mostrar_avaliacoes)
+values ('73000000-0000-4000-8000-000000000002', 'publico', true),
+  ('73000000-0000-4000-8000-000000000003', 'publico', true);
 insert into public.obras (id, user_id, titulo, autor, genero, formato,
   classificacao_indicativa, avisos_conteudo, tags, arquivo_url, publicado, slug, criada_em)
 select ('74000000-0000-4000-8000-' || lpad(g::text,12,'0'))::uuid,
@@ -28,22 +33,44 @@ select ('74000000-0000-4000-8000-' || lpad(g::text,12,'0'))::uuid,
   array['qa-nota'], 'https://example.invalid/qa.txt', g <> 53, 'qa-nota-' || g,
   '2031-01-01'::timestamptz + g * interval '1 day'
 from generate_series(1,55) g;
-insert into public.obra_avaliacoes (obra_id, user_id, nota)
+insert into public.obra_avaliacoes (obra_id, user_id, nota, visibilidade)
 select ('74000000-0000-4000-8000-' || lpad(g::text,12,'0'))::uuid,
   ('73000000-0000-4000-8000-' || lpad(u::text,12,'0'))::uuid,
   case when g = 1 then case when u = 2 then 4 else 5 end
     when g = 3 then case when u = 2 then 4 else 4.5 end
-    when g = 8 then 0.5 else 5 end
+    when g = 8 then 0.5 else 5 end, 'publico'
 from unnest(array[1,2,3,8,53,54]) g cross join generate_series(2,3) u;
+-- Biblioteca pública não torna pública uma avaliação individual privada.
+insert into public.obra_avaliacoes (obra_id, user_id, nota, visibilidade)
+values ('74000000-0000-4000-8000-000000000055',
+  '73000000-0000-4000-8000-000000000002', 5, 'privado');
 
 select ok(strpos(pg_get_functiondef(
   'public.listar_obras_catalogo(text,text,text,text,text,text,integer,numeric,timestamptz,uuid,text,numeric)'::regprocedure),
   'where interacao.user_id <> obra.user_id') > 0, 'média ainda desconsidera notas do autor');
 select throws_ok($$ insert into public.obra_avaliacoes (obra_id,user_id,nota)
   values ('74000000-0000-4000-8000-000000000004','73000000-0000-4000-8000-000000000001',5) $$,
-  '42501', 'O autor não pode avaliar a própria obra.', 'trigger continua impedindo autoavaliação');
+  '42501', 'O autor nao pode avaliar a propria obra.', 'trigger continua impedindo autoavaliação');
 
 set local role anon;
+select is((select count(*)::integer from public.obras
+  where id::text like '74000000-0000-4000-8000-%'), 53,
+  'fixture sob anon: obras publicadas visíveis, draft e 18+ ocultos');
+select is((select count(*)::integer from public.obra_avaliacoes
+  where obra_id::text like '74000000-0000-4000-8000-%'), 12,
+  'fixture sob anon: notas públicas visíveis, nota privada oculta');
+select is((select avg(nota)::numeric from public.obra_avaliacoes
+  where obra_id = '74000000-0000-4000-8000-000000000003'), 4.25::numeric,
+  'fixture sob anon: média real de 4,25 disponível para agregação');
+select is((select count(*)::integer from public.listar_obras_catalogo(
+  '', '', '', '', 'todos', 'mais-recentes', 24, null, null, null, 'qa-nota')
+  where obra_id in ('74000000-0000-4000-8000-000000000001',
+    '74000000-0000-4000-8000-000000000002')), 0,
+  'fixture: obras elegíveis por nota estão além da primeira página sem filtro');
+select is((select count(*)::integer from public.listar_obras_catalogo(
+  '', '', '', '', 'todos', 'mais-recentes', 24, null, null, null, 'qa-nota', 5)
+  where obra_id = '74000000-0000-4000-8000-000000000055'), 0,
+  'nota privada não qualifica obra para o filtro público');
 select lives_ok($$ select * from public.listar_obras_catalogo('qa') $$, 'assinatura legada permanece válida');
 select lives_ok($$ select * from public.listar_obras_catalogo('', '', '', '', 'todos', 'mais-recentes', 24, null, null, null, 'qa-nota') $$,
   'assinatura com tag permanece válida');
