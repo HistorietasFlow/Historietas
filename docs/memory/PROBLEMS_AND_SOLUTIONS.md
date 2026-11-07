@@ -49,7 +49,20 @@ Adicionar `eslint-plugin-react-hooks` explicitamente e registrar o plugin na con
 
 ## Windows e CRLF
 
-Alguns testes locais podem divergir do Ubuntu da CI por diferenças de final de linha CRLF/LF.
+Testes estruturais que transformam módulos TypeScript por texto falhavam no
+Windows quando o checkout convertia LF para CRLF. A substituição deixava imports
+relativos no módulo `data:`, e o Node respondia `ERR_UNSUPPORTED_RESOLVE_REQUEST`.
+
+Essas suítes carregam `qa/scripts/test-source-newlines.mjs`, que normaliza apenas
+retornos textuais de `readFileSync`; leituras em `Buffer` permanecem intactas.
+Listas muito longas usam `run-node-test-script.mjs` com `shell: false`, evitando
+o limite de linha do `cmd.exe` sem reduzir a cobertura.
+
+O Supabase CLI instalado via npm é um wrapper `.cmd`, que não pode ser aberto
+diretamente por `execFileSync` no Node 22 para Windows. O preparo local usa uma
+invocação fixa por `cmd.exe` somente nessa plataforma; Linux continua executando
+`supabase` diretamente. As fixtures geradas ficam em arquivo ignorado e são
+carregadas por último, evitando credenciais/IDs obsoletos em Playwright.
 
 Não assumir regressão funcional apenas por esse sintoma. Comparar com GitHub Actions e investigar o diff real antes de alterar código.
 
