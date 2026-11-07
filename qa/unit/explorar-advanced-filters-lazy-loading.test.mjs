@@ -15,7 +15,7 @@ const composicao = readFileSync(
 );
 
 test("Explorar adia o chunk da composição dos filtros avançados", () => {
-  assert.match(pagina, /import \{ lazy, Suspense, useMemo, useRef \} from "react";/);
+  assert.match(pagina, /import \{ lazy, Suspense, useEffect, useMemo, useRef \} from "react";/);
   assert.match(
     pagina,
     /const ExplorarAdvancedFiltersComposition = lazy\(\s*\(\) => import\("\.\/components\/explorar-advanced-filters-composition"\),\s*\);/,
@@ -30,6 +30,7 @@ test("Explorar adia o chunk da composição dos filtros avançados", () => {
     "explorar-collection-filter-options",
     "explorar-adult-content-filter",
     "explorar-ordering-options",
+    "explorar-format-filter-options",
     "explorar-clear-filters-action",
   ]) {
     assert.doesNotMatch(

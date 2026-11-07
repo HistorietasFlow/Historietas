@@ -10,6 +10,7 @@ import { ExplorarAdvancedFiltersShell } from "./explorar-advanced-filters-shell"
 import { ExplorarClearFiltersAction } from "./explorar-clear-filters-action";
 import { ExplorarCollectionFilterOptions } from "./explorar-collection-filter-options";
 import { ExplorarOrderingOptions } from "./explorar-ordering-options";
+import { ExplorarFormatFilterOptions } from "./explorar-format-filter-options";
 import type { ModoConteudoExplorar } from "./explorar-section-components";
 
 type ExplorarAdvancedFiltersCompositionProps = {
@@ -17,6 +18,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   language: HistorietasLanguage;
   modoConteudo: ModoConteudoExplorar;
   filtroColecao: FiltroColecaoExplorar;
+  filtroFormato: string;
   filtroClassificacao: string;
   mostrarConfirmacaoConteudo18: boolean;
   confirmouIdadeConteudo18: boolean;
@@ -25,6 +27,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   filtrosAtivos: boolean;
   onFechar: () => void;
   onSelecionarColecao: (filtro: FiltroColecaoExplorar) => void;
+  onSelecionarFormato: (formato: string) => void;
   onSelecionarClassificacao: (filtro: string) => void;
   onConfirmouIdadeChange: (confirmou: boolean) => void;
   onVoltarConteudo18: () => void;
@@ -38,6 +41,7 @@ export default function ExplorarAdvancedFiltersComposition({
   language,
   modoConteudo,
   filtroColecao,
+  filtroFormato,
   filtroClassificacao,
   mostrarConfirmacaoConteudo18,
   confirmouIdadeConteudo18,
@@ -46,6 +50,7 @@ export default function ExplorarAdvancedFiltersComposition({
   filtrosAtivos,
   onFechar,
   onSelecionarColecao,
+  onSelecionarFormato,
   onSelecionarClassificacao,
   onConfirmouIdadeChange,
   onVoltarConteudo18,
@@ -87,6 +92,11 @@ export default function ExplorarAdvancedFiltersComposition({
 
       {!mostrarConfirmacaoConteudo18 && (
         <>
+          <ExplorarFormatFilterOptions
+            filtroFormato={filtroFormato}
+            language={language}
+            onSelecionar={onSelecionarFormato}
+          />
           <p style={explorarModalSectionLabelStyle}>
             {traduzirTextoExplorar("Ordenar", language)}
           </p>

@@ -33,7 +33,7 @@ test("Explorar mantém a condição das seções criativas na página", () => {
   assert.match(pagina, /import \{ ExplorarCreativeWorkSections \} from "\.\/components\/explorar-creative-work-sections";/);
   assert.match(
     pagina,
-    /modoConteudo === "obras" &&\s*!categoriaSelecionada &&\s*!termoBusca && \(\s*<ExplorarCreativeWorkSections/,
+    /modoConteudo === "obras" &&\s*!categoriaSelecionada &&\s*!termoBusca &&\s*!filtroFormatoAtivo &&\s*!filtroColecaoAtivo && \(\s*<ExplorarCreativeWorkSections/,
   );
   assert.match(pagina, /secoes=\{secoesCriativasObras\}/);
   assert.match(pagina, /tema=\{temaPagina\}/);

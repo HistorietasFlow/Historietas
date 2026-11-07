@@ -170,6 +170,18 @@ carregar páginas adicionais, sem limitar a descoberta à amostra inicial de
 obras. A busca da RPC `listar_obras_catalogo` também considera o nome atual em
 `profiles_publicos`, mantendo filtros, RLS e deduplicação por identidade.
 
+### Explorar — formato das obras
+
+O painel de filtros disponibiliza os formatos já usados na publicação. A seleção
+é compartilhável por `formato` na URL, restaurada em recarga e Voltar/Avançar e
+usa `p_formato` da RPC paginada existente, inclusive ao carregar mais resultados.
+Valores desconhecidos voltam para todos os formatos; formatos personalizados
+continuam aparecendo na opção geral. Não há mudança de schema ou RLS.
+
+Status editorial (em andamento, concluída ou pausada) ainda não é um dado
+persistido de obras. O booleano `publicado` não representa esse status, e a
+coleção pessoal `Concluídas` representa leitura do usuário, não conclusão da obra.
+
 ### Lighthouse baseline
 
 Primeiro baseline observado:
