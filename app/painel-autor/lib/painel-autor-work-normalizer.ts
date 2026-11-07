@@ -31,6 +31,7 @@ type ObraParaNormalizacaoPainel = {
   totalCurtidasPainel?: unknown;
   totalComentariosPainel?: unknown;
   totalSalvosPainel?: unknown;
+  totalSeguidoresPainel?: unknown;
   totalLidosPainel?: unknown;
 };
 
@@ -59,6 +60,7 @@ type ObraNormalizadaPainel = {
   totalCurtidasPainel: number | undefined;
   totalComentariosPainel: number | undefined;
   totalSalvosPainel: number | undefined;
+  totalSeguidoresPainel: number | undefined;
   totalLidosPainel: number | undefined;
 };
 
@@ -174,6 +176,11 @@ export function normalizarObraPainel(
       typeof obra.totalSalvosPainel === "number" &&
       Number.isFinite(obra.totalSalvosPainel)
         ? Math.max(0, Math.round(obra.totalSalvosPainel))
+        : undefined,
+    totalSeguidoresPainel:
+      typeof obra.totalSeguidoresPainel === "number" &&
+      Number.isFinite(obra.totalSeguidoresPainel)
+        ? Math.max(0, Math.round(obra.totalSeguidoresPainel))
         : undefined,
     totalLidosPainel:
       typeof obra.totalLidosPainel === "number" &&

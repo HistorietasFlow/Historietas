@@ -87,6 +87,7 @@ type ObraPainelCardBase = {
   totalCurtidas: number;
   totalComentarios: number;
   totalSalvos: number;
+  totalSeguidores: number;
 };
 
 export function ObraPainelCard<T extends ObraPainelCardBase>({
@@ -154,6 +155,12 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
               <span style={obraComStatusPublicado ? publishedStatusStyle : draftStatusStyle}>
                 {statusTexto}
               </span>
+              <span
+                style={publishedStatusStyle}
+                aria-label={`Seguidores da obra: ${obra.totalSeguidores}`}
+              >
+                👥 {obra.totalSeguidores}
+              </span>
 
             </div>
 
@@ -220,6 +227,10 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
             </div>
 
             <div style={isDesktop ? desktopSheetStatsRowStyle : sheetStatsRowStyle}>
+              <span aria-label={`Seguidores da obra: ${obra.totalSeguidores}`} style={sheetStatInlineStyle}>
+                <span style={sheetStatIconStyle} aria-hidden="true">👥</span>
+                <span style={sheetStatValueStyle}>{obra.totalSeguidores}</span>
+              </span>
               <span style={sheetStatInlineStyle}>
                 <span style={sheetStatIconStyle}>👁</span>
                 <span style={sheetStatValueStyle}>{visualizacoesPainel}</span>

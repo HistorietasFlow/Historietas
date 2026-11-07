@@ -32,7 +32,7 @@ test("tipos do Painel do Autor preservam os contratos locais", () => {
   assert.match(tipos, /export type ObraLocal = \{/);
   assert.match(
     tipos,
-    /autorId\?: string;[\s\S]*?arquivoObra\?:[\s\S]*?ArquivoObraLocal[\s\S]*?publicado: boolean;[\s\S]*?capitulos: CapituloLocal\[\];[\s\S]*?totalCurtidasPainel\?: number;[\s\S]*?totalComentariosPainel\?: number;[\s\S]*?totalSalvosPainel\?: number;[\s\S]*?totalLidosPainel\?: number;/,
+    /autorId\?: string;[\s\S]*?arquivoObra\?:[\s\S]*?ArquivoObraLocal[\s\S]*?publicado: boolean;[\s\S]*?capitulos: CapituloLocal\[\];[\s\S]*?totalCurtidasPainel\?: number;[\s\S]*?totalComentariosPainel\?: number;[\s\S]*?totalSalvosPainel\?: number;[\s\S]*?totalSeguidoresPainel\?: number;[\s\S]*?totalLidosPainel\?: number;/,
   );
   assert.match(
     tipos,

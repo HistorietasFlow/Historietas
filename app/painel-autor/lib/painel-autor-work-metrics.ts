@@ -26,6 +26,7 @@ type ObraParaMetricasPainel<
   totalCurtidasPainel?: number;
   totalComentariosPainel?: number;
   totalSalvosPainel?: number;
+  totalSeguidoresPainel?: number;
   totalLidosPainel?: number;
 };
 
@@ -35,6 +36,7 @@ export type ObraComMetricasPainel<
   totalCurtidas: number;
   totalComentarios: number;
   totalSalvos: number;
+  totalSeguidores: number;
   totalLidos: number;
   progressoLeitura: number;
   ultimoCapituloLido: TObra["capitulos"][number] | null;
@@ -63,6 +65,7 @@ export function obterObrasComMetricasPainel<
         typeof obra.totalLidosPainel === "number"
           ? obra.totalLidosPainel
           : 0;
+      const totalSeguidores = obra.totalSeguidoresPainel ?? 0;
       const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
       const ultimoCapituloLido = encontrarCapituloParaContinuar(obra);
 
@@ -71,6 +74,7 @@ export function obterObrasComMetricasPainel<
         totalCurtidas,
         totalComentarios,
         totalSalvos,
+        totalSeguidores,
         totalLidos,
         progressoLeitura,
         ultimoCapituloLido,

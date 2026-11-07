@@ -116,6 +116,7 @@ export async function carregarPainelAutorSupabase(
         totalCurtidasPainel: metrica?.audiencia.curtidoresUnicos || 0,
         totalComentariosPainel: metrica?.audiencia.comentaristasUnicos || 0,
         totalSalvosPainel: metrica?.audiencia.salvadoresUnicos || 0,
+        totalSeguidoresPainel: metrica?.interacoesDiretas.seguidores || 0,
       };
     });
 

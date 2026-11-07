@@ -174,6 +174,7 @@ test("métricas de obras preservam fallbacks, pontuação e ordenação", () => 
       totalCurtidasPainel: 7,
       totalComentariosPainel: 6,
       totalSalvosPainel: 5,
+      totalSeguidoresPainel: 9,
       totalLidosPainel: 4,
       capitulos: [
         {
@@ -206,6 +207,7 @@ test("métricas de obras preservam fallbacks, pontuação e ordenação", () => 
     totalCurtidasPainel: 7,
     totalComentariosPainel: 6,
     totalSalvosPainel: 5,
+    totalSeguidoresPainel: 9,
     totalLidosPainel: 4,
     capitulos: [
       {
@@ -228,6 +230,7 @@ test("métricas de obras preservam fallbacks, pontuação e ordenação", () => 
     totalCurtidas: 7,
     totalComentarios: 6,
     totalSalvos: 5,
+    totalSeguidores: 9,
     totalLidos: 4,
     progressoLeitura: 0,
     ultimoCapituloLido: null,
@@ -236,6 +239,7 @@ test("métricas de obras preservam fallbacks, pontuação e ordenação", () => 
   assert.equal(obrasComMetricas[1].totalCurtidas, 2);
   assert.equal(obrasComMetricas[1].totalComentarios, 1);
   assert.equal(obrasComMetricas[1].totalSalvos, 1);
+  assert.equal(obrasComMetricas[1].totalSeguidores, 0);
   assert.equal(obrasComMetricas[1].totalLidos, 0);
   assert.equal(obrasComMetricas[1].progressoLeitura, 100);
   assert.equal(obrasComMetricas[1].ultimoCapituloLido?.id, "capitulo-1");

@@ -55,6 +55,7 @@ export type ObraLocal = {
   totalCurtidasPainel?: number;
   totalComentariosPainel?: number;
   totalSalvosPainel?: number;
+  totalSeguidoresPainel?: number;
   totalLidosPainel?: number;
 };
 
