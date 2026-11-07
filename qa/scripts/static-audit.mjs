@@ -2778,8 +2778,10 @@ const ciContracts = [
       /process\.env\.E2E_WEB_SERVER_COMMAND/.test(playwrightConfig)
   },
   {
-    name: "CI usa Node.js 22 em todos os jobs",
-    valid: (ciWorkflow.match(/node-version:\s*22/g) || []).length === 6
+    name: "Runtime Node.js 22 está alinhado entre pacote e CI",
+    valid:
+      packageJson.engines?.node === "22.x" &&
+      (ciWorkflow.match(/node-version:\s*22/g) || []).length === 6
   },
   {
     name: "CI limita o token do GitHub a leitura",

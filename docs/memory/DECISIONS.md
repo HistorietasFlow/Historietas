@@ -24,6 +24,9 @@
 - Estado escolhido em 2026-11-03: **Vercel Authentication → All Deployments**.
 - Desde 2026-11-04, deployments automáticos por Git ficam habilitados somente para `main`; todas as outras branches e PRs têm Preview Deployments automáticos desabilitados por `git.deploymentEnabled` em `vercel.json`.
 - A restrição de previews reduz consumo de Build CPU, Function Storage e Deployment Storage sem alterar o GitHub Actions ou a política de proteção dos deployments.
+- O runtime de build e das funções Vercel é fixado pelo repositório em Node.js
+  `22.x`, via `engines.node` no `package.json`, para permanecer idêntico ao
+  runtime validado pela CI. Não depender apenas do valor mutável do painel.
 
 ## Observabilidade e testes
 

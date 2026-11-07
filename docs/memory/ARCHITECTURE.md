@@ -6,6 +6,8 @@
 - React: 19.2.4
 - TypeScript
 - Node.js 22 para CI e desenvolvimento suportado
+- Node.js `22.x` versionado em `package.json#engines`, inclusive para builds e
+  funções Node.js na Vercel
 - Instalação reproduzível com `npm ci`
 
 ### Leitura pública de capítulos
