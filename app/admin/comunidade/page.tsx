@@ -58,6 +58,7 @@ import { calcularTotaisModeracao } from "./lib/admin-comunidade-stats-utils";
 import { AdminComunidadeLanguageBridge } from "./components/admin-comunidade-language-bridge";
 import { AdminComunidadeProfileReportCard } from "./components/admin-comunidade-profile-report-card";
 import { AdminComunidadeContentReportCard } from "./components/admin-comunidade-content-report-card";
+import { AdminComunidadeModerationHistory } from "./components/admin-comunidade-moderation-history";
 import { useAdminComunidadeProfileReportActions } from "./hooks/use-admin-comunidade-profile-report-actions";
 import { useAdminComunidadeContentReportActions } from "./hooks/use-admin-comunidade-content-report-actions";
 import { useAdminComunidadeInitialData } from "./hooks/use-admin-comunidade-initial-data";
@@ -450,6 +451,8 @@ export default function AdminComunidadePage() {
             {sucesso && <span style={successStyle}>{sucesso}</span>}
           </section>
         )}
+
+        <AdminComunidadeModerationHistory />
 
         {denunciasPerfisFiltradas.length > 0 && (
           <section style={listStyle}>

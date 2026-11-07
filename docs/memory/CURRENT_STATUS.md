@@ -151,6 +151,7 @@ Antes de sugerir ou iniciar um novo passo de refatoração, verificar no GitHub 
 - PR #2201: sincronização de progresso entre dispositivos usa RPC condicional e tombstones de desmarcação. Migration aplicada à produção com checagem de permissões e `SECURITY INVOKER`; PR integrada à main.
 - Gestão de comentários para autores: notificações de comentários e respostas em obras abrem diretamente o comments sheet da obra por `?comentarios=1`, preservando o mesmo fluxo acessível, paginação, respostas e RLS existentes.
 - Proteção contra spoilers: fallbacks de notificações para comentários/respostas da Comunidade, capítulos e Diário, além de reviews, usam mensagens genéricas; o texto criado pelo usuário permanece no contexto de destino e não entra no estado nem na busca das Notificações.
+- Histórico de moderação: o painel administrativo consulta sob demanda o log imutável de denúncias de conteúdo e perfil, com paginação, decisão, transição de estado, responsável e observação interna. O acesso continua limitado a administradores/moderadores pela RLS; usuários comuns não veem o painel nem os eventos.
 - A migration de autores da #2197 também foi aplicada em produção. Não deduzir que toda futura migration foi aplicada apenas pelo merge.
 
 ### Ambiente local e consumo de recursos
@@ -161,8 +162,9 @@ Antes de sugerir ou iniciar um novo passo de refatoração, verificar no GitHub 
 - A conta Vercel foi alterada de **Pro para Hobby**. Snapshot informado em 06/11: **Deployment Storage 67,52 GB / 10 GB**; existe risco de bloqueio de novos deploys. A retenção foi configurada pelo responsável em **Canceled 7 dias / Errored 7 dias / Pre-Production 30 dias / Production 30 dias**. Não afirmar que a limpeza já reduziu o consumo sem nova medição.
 - Permanecem habilitados deployments automáticos somente na `main` e **Vercel Authentication: All Deployments**. Continuar trabalho e QA local sem exigir deploy para cada PR; não excluir deployments nem modificar a proteção de produção sem autorização.
 
-### Próximas prioridades propostas (não implementadas)
+### Estado do ciclo
 
-1. Histórico de moderação e validação final.
-
-São prioridades planejadas, sujeitas a auditoria do código antes de implementação.
+O ciclo funcional iniciado pelas melhorias de Explorar, continuidade de leitura,
+gestão de comentários para autores, proteção contra spoilers e histórico de
+moderação está concluído no código. Novas melhorias devem partir de uma nova
+priorização, sem reabrir essas frentes sem evidência de regressão.

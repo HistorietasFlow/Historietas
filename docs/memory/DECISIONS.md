@@ -58,6 +58,12 @@
 - Notificações fallback de comentários e reviews não carregam trechos do conteúdo criado pelo usuário. A mensagem identifica autor e contexto de destino de forma genérica, alinhada às notificações diretas do banco.
 - O texto potencialmente sensível a spoiler permanece no comments sheet ou na publicação de origem; busca e cache local de Notificações não devem reintroduzir esse conteúdo.
 
+## Histórico de moderação
+
+- `moderacao_historico` continua sendo a fonte de auditoria append-only para denúncias de conteúdo e perfil; decisões administrativas não devem depender apenas do estado final mutável da denúncia.
+- A interface administrativa lê o histórico sob demanda e de forma paginada, exibindo transições, responsável e observação interna. Não criar uma cópia cliente nem expor esses dados em rotas comuns.
+- `authenticated` conserva somente `SELECT` na tabela, condicionado pela RLS administrativa; escrita e exclusão de eventos permanecem fora do cliente. Usuários sem papel administrativo não podem consultar o histórico.
+
 ## Dependências e segurança
 
 - Dependabot roda semanalmente.
