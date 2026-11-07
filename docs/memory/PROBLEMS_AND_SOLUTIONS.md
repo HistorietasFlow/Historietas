@@ -278,3 +278,24 @@ de progresso, mas capazes de rejeitar marcações antigas que cheguem depois.
 Não voltar a usar `delete` ou `upsert` incondicional nesse fluxo. RLS continua
 isolando a identidade autenticada; Home, Biblioteca e Leitor consideram apenas
 registros `lido=true`, e retries idempotentes mantêm o estado mais recente.
+
+## Histórico persistido sem acesso no painel de moderação
+
+### Sintoma
+
+O banco registrava criação, mudanças de status, arquivamento, restauração e
+exclusão de denúncias em `moderacao_historico`, incluindo responsável e
+observação interna, mas o painel mostrava somente o estado final da denúncia.
+Decisões anteriores e denúncias já removidas do painel não eram auditáveis pela
+equipe na interface.
+
+### Solução
+
+O painel administrativo carrega o log apenas quando solicitado, em páginas de
+tamanho limitado, e resolve o nome público do moderador sem transferir a
+responsabilidade do controle de acesso para o cliente. RLS e grants continuam
+exigindo papel administrativo; a interface comum não recebe o histórico.
+
+Preservar a consulta sob demanda e paginada. Não duplicar o log em estado local
+persistente nem ampliar `SELECT`, `INSERT`, `UPDATE` ou `DELETE` para usuários
+comuns.
