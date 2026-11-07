@@ -372,10 +372,24 @@ export function criarSecoesCriativasObrasExplorar({
             dataUltimoCapituloObraExplorar(obraA)
       )
     );
+    const autoresRecentes = new Set<string>();
     const publicacoesRecentes = limitar(
       [...obrasBaseFiltradas]
         .filter((obra) => dataCriacaoObra(obra) > 0)
-        .sort((obraA, obraB) => dataCriacaoObra(obraB) - dataCriacaoObra(obraA))
+        .sort((obraA, obraB) =>
+          dataCriacaoObra(obraB) - dataCriacaoObra(obraA) ||
+          obraB.id.localeCompare(obraA.id)
+        )
+        .filter((obra) => {
+          const autorId = obra.autorId?.trim();
+
+          // Sem identidade, não inferir autoria pelo nome nem agrupar obras distintas.
+          if (!autorId) return true;
+          if (autoresRecentes.has(autorId)) return false;
+
+          autoresRecentes.add(autorId);
+          return true;
+        })
     );
     const novosCapitulos = limitar(
       [...obrasBaseFiltradas]

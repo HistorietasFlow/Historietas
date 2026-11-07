@@ -194,6 +194,16 @@ Status editorial (em andamento, concluída ou pausada) ainda não é um dado
 persistido de obras. O booleano `publicado` não representa esse status, e a
 coleção pessoal `Concluídas` representa leitura do usuário, não conclusão da obra.
 
+### Explorar — diversidade em publicações recentes
+
+A seção existente `Publicações recentes` seleciona no máximo uma obra por
+`autorId`, escolhendo a mais recente e desempatando por ID descendente. Mantém
+até 12 cards, sem repetir autores para preencher vagas. Obras sem identidade de
+autor permanecem independentes: nomes iguais não comprovam a mesma autoria.
+A seleção usa somente a base já filtrada, sem novas consultas, mudanças de RPC,
+cursores ou rankings das demais seções. A diversidade se limita à amostra
+carregada; não representa garantia de exposição para todo o catálogo.
+
 ### Explorar — descoberta por quantidade de capítulos
 
 A aba Obras oferece a ordenação `Mais capítulos`, compartilhável por

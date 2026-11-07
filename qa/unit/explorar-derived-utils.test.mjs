@@ -101,7 +101,7 @@ const autoresSecoes = (autoresExplorar, extra = {}) => ({
   autoresExplorar, categoriaSelecionada: "", termoBusca: "", ...extra,
 });
 
-test("os oito corpos dos useMemos foram movidos literalmente e as dependências permaneceram", () => {
+test("os oito corpos derivados preservam o contrato atualizado e as dependências dos useMemos", () => {
   const funcoes = [
     "filtrarObrasBaseExplorar", "filtrarObrasExplorar", "criarAutoresExplorar",
     "filtrarAutoresExplorar", "criarSecoesCriativasObrasExplorar",
@@ -117,7 +117,7 @@ test("os oito corpos dos useMemos foram movidos literalmente e as dependências 
     return codigo.slice(corpo, fim);
   });
   assert.equal(createHash("sha256").update(corpos.join("\n---\n")).digest("hex"),
-    "038db39c379c7d2caee83e4a9b739b34c279ba6cea28a46291b22675c7d4c7b4");
+    "a306f05bdc005fd16e9edd3a56360e6b20b8a25917bed2b69c638358885c6d21");
   for (const nome of funcoes) assert.match(pagina, new RegExp(`return ${nome}\\(\\{`));
   const nomesMemo = [
     "obrasBaseFiltradas", "obrasLocaisFiltradas", "autoresExplorar",
@@ -360,7 +360,7 @@ test("autores agregam obras únicas, métricas, perfil, avaliação, idioma e ca
 
 test("seções de obras preservam títulos, ordenações, desempate, limite e guardas", () => {
   const lista = Array.from({ length: 15 }, (_, index) =>
-    obra(String(index), { totalCurtidas: index, totalComentarios: index, criadaEm: `2024-01-${String(index + 1).padStart(2, "0")}` }),
+    obra(String(index), { autorId: `autor-${index}`, totalCurtidas: index, totalComentarios: index, criadaEm: `2024-01-${String(index + 1).padStart(2, "0")}` }),
   );
   const secoes = criarSecoesCriativasObrasExplorar(obrasSecoes(lista));
   assert.deepEqual(secoes.map((secao) => secao.titulo), ["Recomendações para você", "Publicações recentes", "Novos capítulos", "Mais curtidas", "Mais comentadas", "Para ler agora"]);
@@ -373,6 +373,74 @@ test("seções de obras preservam títulos, ordenações, desempate, limite e gu
   }
   const empatadas = [obra("antiga", { criadaEm: "2022-01-01", capitulos: [] }), obra("nova", { criadaEm: "2024-01-01", capitulos: [] })];
   assert.equal(criarSecoesCriativasObrasExplorar(obrasSecoes(empatadas))[0].obras[0].id, "nova");
+});
+
+const recentes = (lista) => criarSecoesCriativasObrasExplorar(obrasSecoes(lista))
+  .find((secao) => secao.titulo === "Publicações recentes")?.obras || [];
+
+test("publicações recentes escolhem a obra mais nova por identidade, não por nome", () => {
+  const lista = [
+    obra("antiga-a", { autorId: "a", criadaEm: "2026-01-01" }),
+    obra("nova-a", { autorId: " a ", autor: "Nome alterado", criadaEm: "2026-01-03" }),
+    obra("nova-b", { autorId: "b", criadaEm: "2026-01-02" }),
+  ];
+  assert.deepEqual(ids(recentes(lista)), ["nova-a", "nova-b"]);
+  assert.equal(recentes(lista)[0], lista[1]);
+});
+
+test("publicações recentes desempatam por ID descendente independentemente da entrada", () => {
+  const lista = [obra("a"), obra("c"), obra("b", { autorId: "outra" })];
+  assert.deepEqual(ids(recentes(lista)), ["c", "b"]);
+  assert.deepEqual(ids(recentes([...lista].reverse())), ["c", "b"]);
+});
+
+test("obras sem autorId não são agrupadas pelo nome, string vazia ou identidade de outra obra", () => {
+  const lista = [
+    obra("a", { autorId: undefined }), obra("b", { autorId: "" }),
+    obra("c", { autorId: "   " }), obra("d", { autorId: "a" }),
+    obra("invalida", { criadaEm: "invalida" }), obra("sem-data", { criadaEm: "" }),
+  ];
+  assert.deepEqual(ids(recentes(lista)), ["d", "c", "b", "a"]);
+  assert.deepEqual(recentes([]), []);
+});
+
+test("limita a doze depois da diversidade e não repete autores para preencher vagas", () => {
+  const repetidas = Array.from({ length: 15 }, (_, i) => obra(`a-${i}`, { criadaEm: "2026-01-01" }));
+  const diversas = Array.from({ length: 15 }, (_, i) => obra(`b-${i}`, { autorId: `b-${i}` }));
+  assert.equal(recentes(repetidas).length, 1);
+  const resultado = recentes([...repetidas, ...diversas]);
+  assert.equal(resultado.length, 12);
+  assert.equal(new Set(resultado.map((item) => item.autorId)).size, 12);
+  assert.deepEqual(ids(resultado), ids(recentes([...diversas, ...repetidas].reverse())));
+});
+
+test("diversidade não muda a entrada, objetos, outras seções nem seus rankings", () => {
+  const lista = Object.freeze(Array.from({ length: 15 }, (_, i) => Object.freeze(
+    obra(String(i), { totalCurtidas: i, totalComentarios: i, criadaEm: `2024-01-${String(i + 1).padStart(2, "0")}` }),
+  )));
+  const antes = structuredClone(lista);
+  const diversas = lista.map((item) => ({ ...item, autorId: item.id }));
+  const resultado = criarSecoesCriativasObrasExplorar(obrasSecoes(lista));
+  assert.deepEqual(lista, antes);
+  assert.equal(recentes(lista)[0], lista[14]);
+  for (const secao of resultado.filter((item) => item.titulo !== "Publicações recentes")) {
+    const referencia = criarSecoesCriativasObrasExplorar(obrasSecoes(diversas))
+      .find((item) => item.titulo === secao.titulo);
+    assert.deepEqual(ids(secao.obras), ids(referencia.obras));
+  }
+});
+
+test("diversidade usa apenas obras elegíveis pelos filtros existentes", () => {
+  const lista = [
+    obra("publica", { autorId: "a" }),
+    obra("rascunho", { autorId: "b", publicado: false }),
+    obra("adulto", { autorId: "c", classificacaoIndicativa: "18+" }),
+    obra("vazia", { autorId: "d", capitulos: [] }),
+    obra("outro-formato", { autorId: "e", formato: "HQ" }),
+    obra("outro-genero", { autorId: "f", genero: "Romance" }),
+  ];
+  const filtradas = filtrarObrasBaseExplorar(base(lista, { filtroFormato: "História", generoExcluido: "romance" }));
+  assert.deepEqual(ids(recentes(filtradas)), ["publica"]);
 });
 
 test("seções de autores e gêneros preservam ranking, limite, outros e guardas", () => {
