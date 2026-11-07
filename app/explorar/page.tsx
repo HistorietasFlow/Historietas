@@ -79,6 +79,7 @@ import {
 } from "./lib/explorar-layout-styles";
 import {
   traduzirTextoExplorar,
+  traduzirFormatoExplorar,
 } from "./lib/explorar-translations";
 import type { ObraLocal } from "./lib/explorar-work-normalizers";
 import {
@@ -207,6 +208,7 @@ export default function ExplorarPage() {
     setCategoriaSelecionada,
     setBusca,
     setOrdenacao,
+    setFiltroFormato,
     setUsuarioLogado,
     setObrasLocais,
     setProximoCursorCatalogo,
@@ -233,6 +235,7 @@ export default function ExplorarPage() {
     setCategoriaSelecionada,
     setBusca,
     setOrdenacao,
+    setFiltroFormato,
   });
 
   useExplorarAuthorData({
@@ -288,6 +291,7 @@ export default function ExplorarPage() {
 
   const filtroColecaoAtivo =
     usuarioLogado && filtroColecao !== "todos";
+  const filtroFormatoAtivo = filtroFormato !== "todos";
 
   const obrasBaseFiltradas = useMemo(() => {
     return filtrarObrasBaseExplorar({
@@ -459,6 +463,7 @@ export default function ExplorarPage() {
       categoriaSelecionada: "",
       busca,
       ordenacao,
+      filtroFormato,
     });
   }
 
@@ -512,6 +517,7 @@ export default function ExplorarPage() {
       categoriaSelecionada: categoria,
       busca,
       ordenacao,
+      filtroFormato,
     });
   }
 
@@ -523,6 +529,7 @@ export default function ExplorarPage() {
         categoriaSelecionada,
         busca: valor,
         ordenacao,
+        filtroFormato,
       },
       "replace",
     );
@@ -535,6 +542,18 @@ export default function ExplorarPage() {
       categoriaSelecionada,
       busca,
       ordenacao: novaOrdenacao,
+      filtroFormato,
+    });
+  }
+
+  function selecionarFormatoExplorar(formato: string) {
+    setFiltroFormato(formato);
+    atualizarUrlExplorar({
+      modoConteudo,
+      categoriaSelecionada,
+      busca,
+      ordenacao,
+      filtroFormato: formato,
     });
   }
 
@@ -651,6 +670,7 @@ export default function ExplorarPage() {
               language={language}
               modoConteudo={modoConteudo}
               filtroColecao={filtroColecao}
+              filtroFormato={filtroFormato}
               filtroClassificacao={filtroClassificacao}
               mostrarConfirmacaoConteudo18={mostrarConfirmacaoConteudo18}
               confirmouIdadeConteudo18={confirmouIdadeConteudo18}
@@ -665,6 +685,7 @@ export default function ExplorarPage() {
                 setConfirmouIdadeConteudo18(false);
               }}
               onSelecionarColecao={selecionarFiltroColecao}
+              onSelecionarFormato={selecionarFormatoExplorar}
               onSelecionarClassificacao={
                 selecionarFiltroClassificacaoExplorar
               }
@@ -683,6 +704,7 @@ export default function ExplorarPage() {
         {modoConteudo === "obras" &&
           !categoriaSelecionada &&
           !termoBusca &&
+          !filtroFormatoAtivo &&
           !filtroColecaoAtivo && (
             <ExplorarCreativeWorkSections
               secoes={secoesCriativasObras}
@@ -694,6 +716,7 @@ export default function ExplorarPage() {
         {modoConteudo === "obras" &&
           !categoriaSelecionada &&
           !termoBusca &&
+          !filtroFormatoAtivo &&
           !filtroColecaoAtivo && (
             <ExplorarGenreWorkSections
               secoes={secoesObrasPorGenero}
@@ -705,6 +728,7 @@ export default function ExplorarPage() {
           (Boolean(categoriaSelecionada) ||
             Boolean(termoBusca) ||
             filtroConteudo18Ativo ||
+            filtroFormatoAtivo ||
             filtroColecaoAtivo) &&
           obrasLocaisFiltradas.length > 0 && (
             <ExplorarFilteredWorksSection
@@ -722,7 +746,9 @@ export default function ExplorarPage() {
                           ? "Lendo agora"
                           : filtroColecao === "sem-leitura"
                             ? "Sem leitura"
-                            : "Conteúdo 18+"
+                            : filtroFormatoAtivo
+                              ? traduzirFormatoExplorar(filtroFormato, language)
+                              : "Conteúdo 18+"
               }
               tema={temaPagina}
               isDesktop={isDesktop}

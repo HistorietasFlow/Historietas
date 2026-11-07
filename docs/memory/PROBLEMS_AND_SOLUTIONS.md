@@ -210,7 +210,7 @@ ou as versões legais exigidas pelo banco.
 
 ## Explorar: filtros compartilháveis sincronizados com a URL
 
-Os filtros públicos `tipo`, `categoria`, `busca` e `ordenacao` são lidos na
+Os filtros públicos `tipo`, `categoria`, `busca`, `ordenacao` e `formato` são lidos na
 abertura e restaurados em `popstate`, mantendo URL, controles e consulta do
 catálogo alinhados em recarga, links compartilhados e Voltar/Avançar. Mudanças
 discretas criam uma entrada de histórico; a digitação da busca substitui a

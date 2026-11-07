@@ -105,6 +105,38 @@ const obra = {
 };
 const html = (Componente, props) => renderToStaticMarkup(React.createElement(Componente, props));
 
+const formatos = compilar(ler("../../app/publicar/lib/publicar-static-options.ts"), {
+  "../../../lib/storageUploads": { LIMITES_BYTES_STORAGE: {} },
+});
+const { ExplorarFormatFilterOptions } = compilar(
+  ler("../../app/explorar/components/explorar-format-filter-options.tsx"),
+  {
+    "../../publicar/lib/publicar-static-options": formatos,
+    "../lib/explorar-layout-styles": {
+      criarExplorarModalOptionStyle: () => ({}),
+      criarExplorarModalRadioStyle: () => ({}),
+      explorarModalSectionLabelStyle: {},
+    },
+    "../lib/explorar-translations": traducoes,
+  },
+);
+
+test("formato reutiliza opções de publicação, seleção acessível e tradução", () => {
+  const selecionados = [];
+  const props = { filtroFormato: "Mangá", language: "pt-BR", onSelecionar: (valor) => selecionados.push(valor) };
+  const markup = html(ExplorarFormatFilterOptions, props);
+  assert.match(markup, /role="group" aria-label="Formato da obra"/);
+  assert.match(markup, /aria-pressed="true"[^>]*><span>Mangá<\/span>/);
+  assert.equal((markup.match(/aria-pressed="true"/g) || []).length, 1);
+  const botoes = ExplorarFormatFilterOptions(props).props.children[1];
+  assert.equal(botoes.length, formatos.OPCOES_FORMATO_OBRA.length + 1);
+  botoes[0].props.onClick();
+  botoes.find((botao) => botao.key === "HQ").props.onClick();
+  assert.deepEqual(selecionados, ["todos", "HQ"]);
+  assert.match(html(ExplorarFormatFilterOptions, { ...props, language: "en" }), /All formats/);
+  assert.match(html(ExplorarFormatFilterOptions, { ...props, language: "es" }), /Formato de la obra/);
+});
+
 test("corpos dos cards, rota e capa preservam literalmente a base", () => {
   const funcao = (codigo, inicio, fim) => {
     const posicao = codigo.indexOf(inicio);

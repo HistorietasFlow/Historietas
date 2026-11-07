@@ -1,5 +1,6 @@
 import type { ModoConteudoExplorar } from "../components/explorar-section-components";
 import { categorias } from "./explorar-categories";
+import { OPCOES_FORMATO_OBRA } from "../../publicar/lib/publicar-static-options";
 import type { OrdenacaoExplorar } from "./explorar-derived-utils";
 
 const LIMITE_BUSCA_EXPLORAR = 90;
@@ -14,6 +15,7 @@ export type FiltrosCompartilhaveisExplorar = Readonly<{
   categoriaSelecionada: string;
   busca: string;
   ordenacao: OrdenacaoExplorar;
+  filtroFormato: string;
 }>;
 
 export const FILTROS_COMPARTILHAVEIS_EXPLORAR_PADRAO = {
@@ -21,6 +23,7 @@ export const FILTROS_COMPARTILHAVEIS_EXPLORAR_PADRAO = {
   categoriaSelecionada: "",
   busca: "",
   ordenacao: "relevancia",
+  filtroFormato: "todos",
 } as const satisfies FiltrosCompartilhaveisExplorar;
 
 function normalizarCategoriaExplorar(valor: string | null) {
@@ -50,6 +53,14 @@ function normalizarBuscaExplorar(valor: string | null) {
   return (valor || "").trim().slice(0, LIMITE_BUSCA_EXPLORAR);
 }
 
+function normalizarFormatoExplorar(valor: string | null | undefined) {
+  return OPCOES_FORMATO_OBRA.find(
+    (formato) => formato.localeCompare(valor?.trim() || "", "pt-BR", {
+      sensitivity: "base",
+    }) === 0,
+  ) || "todos";
+}
+
 export function lerFiltrosCompartilhaveisExplorar(
   search: string,
 ): FiltrosCompartilhaveisExplorar {
@@ -62,6 +73,7 @@ export function lerFiltrosCompartilhaveisExplorar(
     ),
     busca: normalizarBuscaExplorar(params.get("busca")),
     ordenacao: normalizarOrdenacaoExplorar(params.get("ordenacao")),
+    filtroFormato: normalizarFormatoExplorar(params.get("formato")),
   };
 }
 
@@ -89,6 +101,11 @@ export function criarUrlExplorar(
   const ordenacao = normalizarOrdenacaoExplorar(filtros.ordenacao);
   if (ordenacao !== "relevancia") {
     params.set("ordenacao", ordenacao);
+  }
+
+  const formato = normalizarFormatoExplorar(filtros.filtroFormato);
+  if (formato !== "todos") {
+    params.set("formato", formato);
   }
 
   const query = params.toString();

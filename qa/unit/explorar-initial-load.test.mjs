@@ -70,6 +70,7 @@ function preparar(t, opcoes = {}) {
         modoConteudo: params.get("tipo") === "autores" ? "autores" : "obras",
         categoriaSelecionada: (params.get("categoria") || "").trim(),
         busca: (params.get("busca") || "").trim(),
+        filtroFormato: params.get("formato") || "todos",
         ordenacao: params.get("ordenacao") === "mais-recentes"
           ? "mais-recentes"
           : "relevancia",
@@ -79,7 +80,7 @@ function preparar(t, opcoes = {}) {
   globalThis.__explorarInitialTest = deps;
   const props = { ...refs };
   for (const nome of [
-    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "UsuarioLogado", "ObrasLocais",
+    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "UsuarioLogado", "ObrasLocais",
     "ProximoCursorCatalogo",
     "CatalogoTemMais", "ErroCatalogoExplorar", "DadosExplorarCarregados",
   ]) {
@@ -93,7 +94,7 @@ function preparar(t, opcoes = {}) {
   return { chamadas, estado, refs, deps, cleanup };
 }
 
-test("corpo do efeito é literalmente equivalente à base e permanece isolado", () => {
+test("corpo do efeito preserva o lifecycle com a restauração do formato", () => {
   const inicio = codigo.indexOf("  useEffect(() => {\n");
   const fim = codigo.indexOf("\n  }, []);", inicio) + "\n  }, []);".length;
   const efeito = codigo.slice(inicio, fim).replace(
@@ -101,7 +102,7 @@ test("corpo do efeito é literalmente equivalente à base e permanece isolado", 
     "",
   );
   assert.equal(createHash("sha256").update(efeito).digest("hex"),
-    "82df451c30aaab3478f98edfbe33b086d937d9ebfa035d5fdedef54219d7a9a8");
+    "cd62f27dc44762c534fd55aadc3eaf35b74bf866ea3bcecaf8d3caa6e49e0521");
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.doesNotMatch(pagina, /async function carregarExplorar\(/);
   for (const nome of ["obrasCacheLocalRef", "usuarioIdExplorarRef", "setDadosExplorarCarregados",
@@ -116,13 +117,14 @@ test("corpo do efeito é literalmente equivalente à base e permanece isolado", 
 });
 
 test("visitante usa parâmetros da URL e não consulta coleções remotas", async (t) => {
-  const c = preparar(t, { query: "?tipo=autores&categoria=%20Fic%C3%A7%C3%A3o%20&busca=ana&ordenacao=mais-recentes" });
+  const c = preparar(t, { query: "?tipo=autores&categoria=%20Fic%C3%A7%C3%A3o%20&busca=ana&ordenacao=mais-recentes&formato=HQ" });
   await aguardar();
   assert.deepEqual(c.deps.deps, []);
   assert.equal(c.estado.ModoConteudo, "autores");
   assert.equal(c.estado.CategoriaSelecionada, "Ficção");
   assert.equal(c.estado.Busca, "ana");
   assert.equal(c.estado.Ordenacao, "mais-recentes");
+  assert.equal(c.estado.FiltroFormato, "HQ");
   assert.equal(c.estado.UsuarioLogado, false);
   assert.equal(c.estado.ProximoCursorCatalogo, null);
   assert.equal(c.estado.CatalogoTemMais, false);

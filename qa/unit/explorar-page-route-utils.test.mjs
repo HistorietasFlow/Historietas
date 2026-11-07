@@ -45,6 +45,9 @@ async function carregarModuloRota() {
       if (specifier === "./explorar-categories") {
         return { categorias };
       }
+      if (specifier === "../../publicar/lib/publicar-static-options") {
+        return { OPCOES_FORMATO_OBRA: ["Webnovel", "Light novel", "Romance", "Conto", "Poesia", "HQ", "Mangá", "Fanfic"] };
+      }
 
       throw new Error(`Import inesperado no helper de rota: ${specifier}`);
     },
@@ -95,24 +98,26 @@ test("lê filtros compartilháveis e normaliza links antigos e inválidos", asyn
 
   assert.deepEqual(
     lerFiltrosCompartilhaveisExplorar(
-      "?tipo=autores&categoria=ficcao&busca=%20drag%C3%A3o%20&ordenacao=mais-recentes",
+      "?tipo=autores&categoria=ficcao&busca=%20drag%C3%A3o%20&ordenacao=mais-recentes&formato=manga",
     ),
     {
       modoConteudo: "autores",
       categoriaSelecionada: "Ficção",
       busca: "dragão",
       ordenacao: "mais-recentes",
+      filtroFormato: "Mangá",
     },
   );
   assert.deepEqual(
     lerFiltrosCompartilhaveisExplorar(
-      "?tipo=desconhecido&categoria=privada&ordenacao=mais-salvas&colecao=favoritas",
+      "?tipo=desconhecido&categoria=privada&ordenacao=mais-salvas&colecao=favoritas&formato=privado",
     ),
     {
       modoConteudo: "obras",
       categoriaSelecionada: "",
       busca: "",
       ordenacao: "relevancia",
+      filtroFormato: "todos",
     },
   );
 });
@@ -125,6 +130,7 @@ test("serializa somente filtros públicos e limita a busca compartilhada", async
     busca: `  ${"a".repeat(100)}  `,
     ordenacao: "mais-curtidas",
     filtroColecao: "favoritas",
+    filtroFormato: "HQ",
   });
   const parametros = new URL(url, "https://historietas.local").searchParams;
 
@@ -133,6 +139,7 @@ test("serializa somente filtros públicos e limita a busca compartilhada", async
   assert.equal(parametros.get("busca"), "a".repeat(90));
   assert.equal(parametros.get("ordenacao"), "mais-curtidas");
   assert.equal(parametros.has("colecao"), false);
+  assert.equal(parametros.get("formato"), "HQ");
 });
 
 test("usa push para filtros discretos, replace para busca e evita histórico redundante", async (t) => {
@@ -164,7 +171,7 @@ test("popstate reaplica a URL atual e cleanup remove exatamente o listener", asy
   const { observarFiltrosCompartilhaveisExplorar } = await carregarModuloRota();
   const ambiente = comWindow(
     t,
-    "/explorar?tipo=autores&categoria=Romance&busca=ana&ordenacao=mais-recentes",
+    "/explorar?tipo=autores&categoria=Romance&busca=ana&ordenacao=mais-recentes&formato=HQ",
   );
   const aplicados = [];
   const cleanup = observarFiltrosCompartilhaveisExplorar((filtros) => {
@@ -179,6 +186,7 @@ test("popstate reaplica a URL atual e cleanup remove exatamente o listener", asy
       categoriaSelecionada: "Romance",
       busca: "ana",
       ordenacao: "mais-recentes",
+      filtroFormato: "HQ",
     },
   ]);
 

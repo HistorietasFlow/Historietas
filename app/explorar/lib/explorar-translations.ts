@@ -30,6 +30,8 @@ const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
   "Abrir busca": { en: "Open search", es: "Abrir búsqueda" },
   "Categorias": { en: "Categories", es: "Categorías" },
   "Filtros": { en: "Filters", es: "Filtros" },
+  "Formato da obra": { en: "Work format", es: "Formato de la obra" },
+  "Todos os formatos": { en: "All formats", es: "Todos los formatos" },
   "Tudo": { en: "All", es: "Todo" },
   "Autores": { en: "Authors", es: "Autores" },
   "EXPLORAR": { en: "EXPLORE", es: "EXPLORAR" },
