@@ -49,6 +49,22 @@
   resultado e efeitos idempotentes atomicamente. Nenhum estado ou resposta da
   fase 1 permite publicar. Uploads ilustrados e sua limpeza seguem suspensos.
 
+### Agendamento de capítulos — fase 2 (08/11/2026)
+
+- Executor é operação SQL administrativa privada/invoker, sem grant de API,
+  endpoint, consumidor ou Cron. Não depender de `auth.uid()` nulo: autor ativo,
+  propriedade, aceites, revisão e prazo são revalidados explicitamente sob locks.
+- Publicação e notificações precisam concluir com o recibo na mesma transação;
+  falha de notificação não pode ser silenciosamente tratada como sucesso. A
+  variante estrita interna preserva destinatários/IDs/links do contrato legado,
+  sem mudar a RPC best-effort existente. Retry não duplica esses efeitos.
+- Intenção em erro continua cancelável/invalidável. Retry manual conserva sua
+  revisão e aguarda um minuto; lote é limitado a dez capítulos. Não há execução
+  automática, promessa de pontualidade ou dependência de serviço adicional.
+- Não ampliar o CHECK do Diário nesta fase: `publicou_capitulo` usado pelo helper
+  legado não é aceito no schema atual. Diário, cache e ativação futura exigem
+  validação separada. Bloqueios ilustrados permanecem integralmente preservados.
+
 ## Vercel
 
 - Não usar pausa do projeto como mecanismo normal para esconder o site durante desenvolvimento, porque isso bloqueia deploys e pode causar 503.
