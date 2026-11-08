@@ -167,6 +167,9 @@ jobs:
       - name: Executar testes de banco com pgTAP
         run: supabase test db
 
+      - name: Validar contratos privados de agendamento pela Data API local
+        run: npm run test:chapter-scheduling:integration
+
       - name: Validar contrato de capitulos ilustrados pela Data API local
         run: npm run test:illustrated-chapters:integration
 

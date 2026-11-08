@@ -176,6 +176,13 @@ decoder e identidade/versão observadas, mas sempre nega terminalidade,
 publicação, limpeza e liberação de quota. Recuperação automática permanece
 bloqueada; ver `docs/capitulos-ilustrados-verificacao-recuperacao.md`.
 
+**Decisão após #2227 — 08/11/2026:** a ativação dos uploads ilustrados está
+suspensa por falta de garantia verificável de encerramento das transferências
+no Storage gerenciado. Toda a infraestrutura existente será preservada; upload,
+publicação e limpeza continuam bloqueados, sem liberação de quota por timeout,
+logout ou lease vencido. A retomada depende de garantias do backend e testes
+reproduzíveis, não de novas camadas de aplicação que presumam terminalidade.
+
 A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi
 restrita ao prefixo do usuário autenticado. URLs públicas conhecidas continuam
 acessíveis, mas usuários anônimos não enumeram os buckets e uma conta não lista
@@ -326,6 +333,26 @@ a proteção local; cache antigo não comprova ausência de gênero. O filtro é
 removido em Autores e combina com os filtros anteriores. A migration
 `20261107190827_adicionar_exclusao_genero_catalogo.sql` deve ser aplicada pelo
 responsável antes do deploy; merge não implica aplicação em produção.
+
+### Agendamento de capítulos — fase 1, sem executor
+
+A migration `20261108132533_infraestrutura_agendamento_capitulos.sql` cria um
+registro privado por capítulo e RPCs autenticadas para consultar, agendar,
+reagendar e cancelar. Aceita somente drafts de texto em obras publicadas, com
+sessão ativa, autoria real e termos vigentes. Não despublica capítulos existentes.
+O instante é absoluto (`timestamptz`), acompanhado do fuso IANA informado.
+
+Revisões monotônicas serializam alterações e permitem retry da última operação
+equivalente, sem reativar cancelamentos ou invalidações. Editar título/texto
+invalida o agendamento no banco; publicação direta de um registro pendente é
+bloqueada até cancelamento. O capítulo permanece não publicado, inclusive quando
+o horário vence. A tabela tem RLS e nenhum acesso direto de clientes/service role.
+
+**Ainda não é um recurso de publicação utilizável:** não há interface, executor,
+Cron, notificações agendadas ou publicação automática. Estados/resultados futuros
+não autorizam executar. A próxima fase precisa revalidar autoria/termos na mesma
+transação da publicação, tratar caches públicos e produzir efeitos idempotentes.
+Merge não aplica a migration em produção; uploads ilustrados continuam suspensos.
 
 ### Lighthouse baseline
 

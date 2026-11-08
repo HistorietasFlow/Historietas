@@ -18,6 +18,37 @@
 - O aceite dos termos é a fronteira transacional de recuperação para uma conta autenticada sem `public.profiles`: a função privada cria somente o perfil mínimo de `auth.uid()`, com tipo constante e nome de exibição sanitizado. Metadata editável nunca decide autorização. Não introduzir trigger em `auth.users` sem uma fase separada.
 - A remoção de comentários em obras e capítulos é autorizada para o próprio comentarista, o autor da obra e administradores. A interface pode antecipar essa decisão, mas o RLS permanece como autoridade e deve validar a propriedade da obra, inclusive por meio do capítulo.
 
+### Uploads ilustrados — suspensão após #2227 (08/11/2026)
+
+- Suspender a ativação dos uploads ilustrados: não foi comprovado um contrato
+  do Storage gerenciado que encerre todas as transferências já aceitas e impeça
+  gravações físicas posteriores. Timeout, logout, lease vencido, aborto do
+  cliente ou ausência momentânea do objeto não comprovam terminalidade.
+- Preservar integralmente as fases 1–2C2d, o diagnóstico local `392ee0f2`, o
+  bucket privado, ledger, recibos e retenção conservadora de capacidade. Upload,
+  publicação ilustrada, assinatura em lote e limpeza física seguem bloqueados.
+- Quarentena ou promoção por cópia não resolvem sozinhas a liberação de quotas
+  e a exclusão segura de contas. Não relaxar essas garantias, ampliar quotas ou
+  contratar serviços para contornar o bloqueador. Retomar somente com contrato
+  verificável do backend e testes de corrida/recuperação correspondentes.
+- A conferência de bytes da #2227 é somente observação; não é autorização para
+  finalizar, limpar ou liberar capacidade. Ver
+  `docs/capitulos-ilustrados-verificacao-recuperacao.md`.
+
+### Agendamento de capítulos — fase 1 (08/11/2026)
+
+- Agendamento é intenção privada, não autorização de publicação. Apenas drafts
+  de texto em obras já publicadas podem ser agendados por sessão ativa do autor,
+  com termos vigentes. Não retirar de circulação capítulos já publicados.
+- A revisão do registro é monotônica, inclusive ao cancelar ou invalidar.
+  Editar título/texto exige nova confirmação; o banco invalida a intenção antiga.
+  Não reutilizar `versao_paginas`, que pertence ao manifesto ilustrado.
+- Instantes são absolutos com fuso IANA separado; não guardar horário local sem
+  offset como contrato de publicação. Nenhum executor/Cron é ativado nesta fase.
+- O futuro executor precisa revalidar autorização e persistir publicação,
+  resultado e efeitos idempotentes atomicamente. Nenhum estado ou resposta da
+  fase 1 permite publicar. Uploads ilustrados e sua limpeza seguem suspensos.
+
 ## Vercel
 
 - Não usar pausa do projeto como mecanismo normal para esconder o site durante desenvolvimento, porque isso bloqueia deploys e pode causar 503.
