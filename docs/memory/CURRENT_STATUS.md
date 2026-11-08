@@ -128,10 +128,17 @@ limpeza. Não há escrita de páginas pela Data API, upload, assinatura ou leito
 ilustrado habilitados. A outbox registra referências removidas, mas ainda não
 possui executor. A fase 2A adiciona somente um validador binário server-only,
 com decode real, rejeição de animações, re-encode sem metadados, limites e hash.
-Ele não possui endpoint nem habilita upload: identidade/propriedade, reservas
-contabilizadas, finalização atômica e limpeza continuam pendentes. Sharp foi
+Ele não possui endpoint nem habilita upload. A fase 2B acrescenta reserva de
+capacidade por RPC autenticada, com propriedade/versão verificadas no banco,
+quota compartilhada com anexos legados e idempotência/expiração/liberação.
+Finalização atômica, upload e limpeza física continuam pendentes. Sharp foi
 declarado direto na mesma versão 0.35.5 já travada, sem atualizar a árvore.
 Não há nova migration na fase 2A; as quotas e bloqueios da fase 1 permanecem.
+A fase 2B usa `20261107235846_reservar_capacidade_capitulos_ilustrados.sql`:
+reserva 2 MiB/objeto por 15 minutos, sem duplicar arquivos já contabilizados,
+sob o mesmo lock das quotas existentes. Expiradas/liberadas não liberam bytes
+de arquivos físicos. O namespace permanece fechado mesmo após reservar;
+assinatura, renderização e publicação ilustrada continuam indisponíveis.
 Merge da PR não implica aplicação da migration em produção.
 
 A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi
