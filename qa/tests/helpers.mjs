@@ -52,7 +52,7 @@ export function monitorRuntime(page) {
   };
 }
 
-async function loginWithCredentials(page, email, password, descricao) {
+export async function loginWithCredentials(page, email, password, descricao) {
   if (!email || !password) {
     throw new Error(`Credenciais E2E ausentes para ${descricao}.`);
   }

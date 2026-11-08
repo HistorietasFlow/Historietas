@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
-import { authorEmail, authorPassword, visitorEmail, visitorPassword, loginAsVisitor, loginAsAuthor } from "./helpers.mjs";
+import { randomBytes, randomUUID } from "node:crypto";
+import { authorEmail, authorPassword, loginWithCredentials, loginAsAuthor } from "./helpers.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -11,7 +12,13 @@ const slug = process.env.E2E_PUBLIC_WORK_SLUG;
 const caminho = `/obra/${slug}/capitulo/1`;
 const texto = "Spoiler E2E: a identidade secreta do final";
 const resposta = "Resposta E2E: confirmação do segredo final";
-let autor, leitor, comentarioId, leitorId, seguimentoCriado = false;
+let admin, autor, leitor, comentarioId, leitorId, seguimentoCriado = false;
+const leitorEmail = `spoilers-${randomUUID()}@historietas.test`;
+const leitorSenha = randomBytes(24).toString("base64url");
+
+async function loginLeitor(page) {
+  await loginWithCredentials(page, leitorEmail, leitorSenha, "leitor isolado de spoilers");
+}
 
 function cliente() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
@@ -36,11 +43,22 @@ async function abrir(page, path = caminho) {
 test.beforeAll(async () => {
   // Escritas da fixture são recusadas fora do Supabase descartável de loopback.
   expect(["127.0.0.1", "localhost", "[::1]"]).toContain(new URL(url).hostname);
-  expect(obraId && capituloId && slug && authorEmail && visitorEmail).toBeTruthy();
+  expect(obraId && capituloId && slug && authorEmail && process.env.SUPABASE_SERVICE_ROLE_KEY).toBeTruthy();
+  // O teste entre dispositivos limpa o progresso do visitante compartilhado em outro worker.
+  // Esta identidade descartável pertence exclusivamente a esta suíte/retry.
+  admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  const criado = await admin.auth.admin.createUser({
+    email: leitorEmail, password: leitorSenha, email_confirm: true,
+  });
+  expect(criado.error).toBeNull(); leitorId = criado.data.user.id;
   autor = cliente(); leitor = cliente();
   expect((await autor.auth.signInWithPassword({ email: authorEmail, password: authorPassword })).error).toBeNull();
-  const login = await leitor.auth.signInWithPassword({ email: visitorEmail, password: visitorPassword });
-  expect(login.error).toBeNull(); leitorId = login.data.user.id;
+  const login = await leitor.auth.signInWithPassword({ email: leitorEmail, password: leitorSenha });
+  expect(login.error).toBeNull(); expect(login.data.user.id).toBe(leitorId);
+  expect((await leitor.from("profiles").insert({
+    id: leitorId, user_id: leitorId, nome: "Leitor de spoilers E2E", tipo: "leitor",
+  })).error).toBeNull();
   // Notificações locais de capítulos só são elegíveis para obras seguidas.
   const seguindo = await leitor.from("seguindo_obras").select("id")
     .eq("user_id", leitorId).eq("obra_id", obraId).maybeSingle();
@@ -57,10 +75,14 @@ test.beforeAll(async () => {
   expect(reply.error).toBeNull();
 });
 test.afterAll(async () => {
-  if (comentarioId) expect((await autor.from("comentarios_capitulos").delete().eq("id", comentarioId)).error).toBeNull();
-  if (leitorId) expect((await leitor.from("progresso_leitura").delete().eq("user_id", leitorId).eq("obra_id", obraId).eq("capitulo_id", capituloId)).error).toBeNull();
-  if (seguimentoCriado) expect((await leitor.from("seguindo_obras").delete().eq("user_id", leitorId).eq("obra_id", obraId)).error).toBeNull();
-  await autor?.auth.signOut({ scope: "local" }); await leitor?.auth.signOut({ scope: "local" });
+  try {
+    if (comentarioId) expect((await autor.from("comentarios_capitulos").delete().eq("id", comentarioId)).error).toBeNull();
+    if (leitorId && leitor) expect((await leitor.from("progresso_leitura").delete().eq("user_id", leitorId).eq("obra_id", obraId).eq("capitulo_id", capituloId)).error).toBeNull();
+    if (seguimentoCriado) expect((await leitor.from("seguindo_obras").delete().eq("user_id", leitorId).eq("obra_id", obraId)).error).toBeNull();
+    await autor?.auth.signOut({ scope: "local" }); await leitor?.auth.signOut({ scope: "local" });
+  } finally {
+    if (leitorId) expect((await admin.auth.admin.deleteUser(leitorId)).error).toBeNull();
+  }
 });
 
 for (const dispositivo of ["desktop", "mobile"]) {
@@ -94,13 +116,21 @@ for (const dispositivo of ["desktop", "mobile"]) {
 
     test("leitura confirmada em outro dispositivo libera; desmarcação e falha protegem", async ({ page }) => {
       await marcar(false);
-      await loginAsVisitor(page);
+      await loginLeitor(page);
+      const confirmacaoInicial = page.waitForResponse((r) => {
+        const destino = new URL(r.url());
+        return destino.pathname.endsWith("/rest/v1/progresso_leitura") &&
+          destino.searchParams.get("select") === "lido" &&
+          destino.searchParams.get("user_id") === `eq.${leitorId}` &&
+          destino.searchParams.get("capitulo_id") === `eq.${capituloId}`;
+      });
       const dialog = await abrir(page, `/ler-capitulo?obraId=${obraId}&capituloId=${capituloId}`);
       const revelar = dialog.getByRole("button", { name: "Mostrar comentários — podem conter spoilers" });
       await expect(revelar).toBeVisible();
-      // A consulta deve ter terminado antes de simular a próxima alteração remota.
-      await expect.poll(async () => (await leitor.from("progresso_leitura").select("lido").eq("user_id", leitorId)
-        .eq("obra_id", obraId).eq("capitulo_id", capituloId).single()).data?.lido).toBe(false);
+      // Aguarda a confirmação realmente consultada pelo navegador, não outra consulta Node.
+      const confirmacao = await confirmacaoInicial;
+      expect(confirmacao.status()).toBe(200);
+      expect(await confirmacao.json()).toEqual([{ lido: false }]);
       await marcar(true);
       await page.evaluate(() => window.dispatchEvent(new Event("focus")));
       await expect(dialog.getByText(texto, { exact: true })).toBeVisible();
@@ -121,7 +151,7 @@ for (const dispositivo of ["desktop", "mobile"]) {
     });
 
     test("notificação legada não revela nem indexa o spoiler", async ({ page }) => {
-      await loginAsVisitor(page);
+      await loginLeitor(page);
       await page.evaluate(({ leitorId, obraId, capituloId, caminho, texto }) => {
         localStorage.setItem(`historietas-notificacoes:${leitorId}`, JSON.stringify([{
           id: "spoiler-legado-e2e", obraId, capituloId, link: caminho,

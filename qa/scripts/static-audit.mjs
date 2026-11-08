@@ -2693,6 +2693,9 @@ const ciWorkflowPath = path.join(
 const ciWorkflow = fs.existsSync(ciWorkflowPath)
   ? fs.readFileSync(ciWorkflowPath, "utf8")
   : "";
+const gitleaksWorkflow = fs.readFileSync(
+  path.join(ROOT_DIR, ".github/workflows/gitleaks.yml"), "utf8"
+);
 const playwrightConfigPath = path.join(
   ROOT_DIR,
   "qa/playwright.config.mjs"
@@ -2702,6 +2705,22 @@ const playwrightConfig = fs.existsSync(playwrightConfigPath)
   : "";
 
 const ciContracts = [
+  {
+    name: "Downloads de k6 e Gitleaks repetem falhas transitórias sem dispensar checksum",
+    valid: [ciWorkflow, gitleaksWorkflow].every((workflow) => {
+      const downloads = workflow.split("\n").filter((line) =>
+        line.includes("curl --fail --location --silent --show-error")
+      );
+      const checksum = workflow.indexOf("sha256sum --check");
+      const extracao = workflow.indexOf("tar -xzf");
+      return downloads.length === 2 && downloads.every((line) =>
+        line.includes("--retry 3 --retry-max-time 60 --connect-timeout 15 --max-time 60") &&
+        !line.includes("||")
+      ) && workflow.includes("set -euo pipefail") &&
+        checksum > 0 && extracao > checksum &&
+        !workflow.includes("--insecure");
+    })
+  },
   {
     name: "CI valida pull requests e a main",
     valid:

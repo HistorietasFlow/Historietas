@@ -32,8 +32,8 @@ jobs:
           archive="gitleaks_${version}_linux_x64.tar.gz"
           base_url="https://github.com/gitleaks/gitleaks/releases/download/v${version}"
 
-          curl --fail --location --silent --show-error             --output "${archive}"             "${base_url}/${archive}"
-          curl --fail --location --silent --show-error             --output checksums.txt             "${base_url}/gitleaks_${version}_checksums.txt"
+          curl --fail --location --silent --show-error --retry 3 --retry-max-time 60 --connect-timeout 15 --max-time 60 --output "${archive}" "${base_url}/${archive}"
+          curl --fail --location --silent --show-error --retry 3 --retry-max-time 60 --connect-timeout 15 --max-time 60 --output checksums.txt "${base_url}/gitleaks_${version}_checksums.txt"
 
           grep "  ${archive}$" checksums.txt | sha256sum --check
           tar -xzf "${archive}" gitleaks

@@ -199,8 +199,8 @@ jobs:
           archive="k6-v${version}-linux-amd64.tar.gz"
           base_url="https://github.com/grafana/k6/releases/download/v${version}"
 
-          curl --fail --location --silent --show-error             --output "/tmp/${archive}"             "${base_url}/${archive}"
-          curl --fail --location --silent --show-error             --output /tmp/k6-checksums.txt             "${base_url}/k6-v${version}-checksums.txt"
+          curl --fail --location --silent --show-error --retry 3 --retry-max-time 60 --connect-timeout 15 --max-time 60 --output "/tmp/${archive}" "${base_url}/${archive}"
+          curl --fail --location --silent --show-error --retry 3 --retry-max-time 60 --connect-timeout 15 --max-time 60 --output /tmp/k6-checksums.txt "${base_url}/k6-v${version}-checksums.txt"
 
           (
             cd /tmp
