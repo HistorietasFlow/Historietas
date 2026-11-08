@@ -29,6 +29,30 @@
 
 ## Backend e dados
 
+### Agendamento de capítulos — infraestrutura inativa
+
+- `20261108132533_infraestrutura_agendamento_capitulos.sql` mantém um registro por
+  capítulo em `historietas_privado.capitulo_agendamentos`, com RLS sem acesso
+  direto, autor, instante absoluto, fuso IANA, revisão, estado e resultado fixo.
+- Wrappers públicos invoker chamam um núcleo privado definer com `search_path`
+  vazio e grants mínimos somente para authenticated. Sessão ativa e propriedade
+  são conferidas no banco. Agendar/reagendar exige draft de texto, obra publicada
+  e aceites atuais; consultar/cancelar continuam possíveis após despublicar a obra
+  ou revogar termos, mas nunca após perder sessão/propriedade.
+- Locks seguem sessão → obra → capítulo → agendamento. Revisão inicial zero;
+  cada transição avança a revisão. Retry com a revisão anterior só reconhece a
+  última operação equivalente. O registro não é apagado ao cancelar/invalidar;
+  exclusão real de capítulo/conta remove-o por FK, sem tarefa órfã.
+- O trigger de edição só bloqueia o registro após o capítulo: título/texto ou
+  vínculo alterados invalidam o pendente; mudar apenas timestamp não invalida.
+  Publicação direta de pendente é recusada, inclusive junto com edição. Não há
+  bypass por GUC nem alteração dos contratos de leitura/RLS/18+ existentes.
+- Nenhum executor foi instalado ou autorizado: estados futuros são somente um
+  contrato. O futuro worker deverá revalidar identidade/autoria/termos, revisão,
+  tipo e publicação da obra na mesma transação dos efeitos idempotentes. Não
+  presumir que `auth.uid()` nulo no trigger legado valida autorização. Cron,
+  notificações, invalidação de cache e UI dependem de fases próprias.
+
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 
 - A migration `20261107223400_infraestrutura_capitulos_ilustrados.sql` adiciona
