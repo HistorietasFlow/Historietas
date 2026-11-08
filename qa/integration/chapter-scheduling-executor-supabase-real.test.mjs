@@ -114,6 +114,7 @@ test("executor SQL privado e Data API local: concorrencia, cancelamento, edicao 
     check(await schedule(1));
     assert.equal((await execute(1)).estado, "futuro");
     assert.deepEqual(check(await anon.from("capitulos").select("id").eq("id", chapter(1))), []);
+    assert.deepEqual(check(await anon.from("diario_atividades").select("id").eq("capitulo_id", chapter(1))), []);
   });
   await t.test("dois executores e resposta perdida nao duplicam publicacao/notificacoes", async () => {
     await prepare(2);
@@ -124,6 +125,20 @@ test("executor SQL privado e Data API local: concorrencia, cancelamento, edicao 
     assert.equal(check(await follower.from("notificacoes").select("id").eq("capitulo_id", chapter(2))).length, 1);
     assert.equal(check(await anon.from("capitulos").select("id").eq("id", chapter(2))).length, 1);
     assert.equal(sql(env.container, `select count(*) from historietas_privado.capitulo_publicacao_eventos where capitulo_id='${chapter(2)}';`), "1");
+    const diary = check(await anon.from("diario_atividades").select("id,user_id,tipo,metadata,criado_em").eq("capitulo_id", chapter(2)));
+    assert.equal(diary.length, 1); assert.equal(diary[0].user_id, AUTHOR); assert.equal(diary[0].tipo, "publicou_capitulo");
+    assert.equal(diary[0].metadata.href, "/obra/qa-executor/capitulo/2");
+    assert.equal(sql(env.container, `select diario_atividade_id from historietas_privado.capitulo_publicacao_eventos where capitulo_id='${chapter(2)}';`), diary[0].id);
+    assert.equal((await follower.from("diario_atividades").insert({ user_id: FOLLOWER, tipo: "publicou_capitulo", obra_id: WORK, capitulo_id: chapter(2) })).error?.code, "42501");
+    assert.equal((await author.from("diario_atividades").insert({ user_id: AUTHOR, tipo: "publicou_capitulo", obra_id: WORK, capitulo_id: chapter(1) })).error?.code, "42501");
+    const legacy = check(await author.from("diario_atividades").insert({ user_id: AUTHOR, tipo: "publicou_capitulo", obra_id: WORK,
+      capitulo_id: chapter(2), texto: "", visibilidade: "publico", metadata: { obra_titulo: "Obra executor", capitulo_titulo: "Capitulo 2" } }).select("id").single());
+    check(await author.from("diario_atividades").delete().eq("id", legacy.id));
+    check(await author.from("preferencias_privacidade").upsert({ user_id: AUTHOR, mostrar_diario_perfil: false }));
+    assert.deepEqual(check(await follower.from("diario_atividades").select("id").eq("capitulo_id", chapter(2))), []);
+    assert.deepEqual(check(await anon.from("diario_atividades").select("id").eq("capitulo_id", chapter(2))), []);
+    assert.equal(check(await author.from("diario_atividades").select("id").eq("capitulo_id", chapter(2))).length, 1);
+    check(await author.from("preferencias_privacidade").update({ mostrar_diario_perfil: true }).eq("user_id", AUTHOR));
   });
   await t.test("cancelamento autenticado durante execucao impede publicacao", async () => {
     await prepare(3);
@@ -133,6 +148,7 @@ test("executor SQL privado e Data API local: concorrencia, cancelamento, edicao 
     });
     assert.equal(result.estado, "desatualizado");
     assert.deepEqual(check(await anon.from("capitulos").select("id").eq("id", chapter(3))), []);
+    assert.deepEqual(check(await anon.from("diario_atividades").select("id").eq("capitulo_id", chapter(3))), []);
   });
   await t.test("edicao autenticada durante execucao invalida a intencao", async () => {
     await prepare(4);
@@ -140,6 +156,7 @@ test("executor SQL privado e Data API local: concorrencia, cancelamento, edicao 
       check(await author.from("capitulos").update({ texto: "Texto editado enquanto o executor aguardava autorizacao." }).eq("id", chapter(4))));
     assert.equal(result.estado, "desatualizado");
     assert.equal(check(await author.rpc("consultar_agendamento_capitulo", { p_capitulo_id: chapter(4) })).estado, "invalidado");
+    assert.deepEqual(check(await author.from("diario_atividades").select("id").eq("capitulo_id", chapter(4))), []);
   });
   await t.test("reagendamento durante execucao preserva novo horario futuro", async () => {
     await prepare(5);
@@ -148,10 +165,17 @@ test("executor SQL privado e Data API local: concorrencia, cancelamento, edicao 
     const value = check(await author.rpc("consultar_agendamento_capitulo", { p_capitulo_id: chapter(5) }));
     assert.equal(value.revisao, 2); assert.equal(value.estado, "agendado");
     assert.deepEqual(check(await anon.from("capitulos").select("id").eq("id", chapter(5))), []);
+    assert.deepEqual(check(await author.from("diario_atividades").select("id").eq("capitulo_id", chapter(5))), []);
   });
   await t.test("logout nao impersona nem cancela intencao autorizada; execucao continua somente SQL", async () => {
+    check(await author.from("capitulos").update({ ordem: 1001 }).eq("id", chapter(6)));
     await prepare(6); check(await author.auth.signOut());
     assert.ok((await author.rpc("executar_lote_agendamentos_capitulos", { p_limite: 5 })).error);
     assert.equal((await execute(6)).estado, "publicado");
+    const page = check(await anon.from("capitulos").select("id,ordem").eq("obra_id", WORK).order("ordem").range(1, 1));
+    assert.deepEqual(page, [{ id: chapter(6), ordem: 1001 }]);
+    const diary = check(await anon.from("diario_atividades").select("metadata").eq("capitulo_id", chapter(6)));
+    assert.equal(diary.length, 1); assert.equal(diary[0].metadata.numero_capitulo, 1001);
+    assert.equal(diary[0].metadata.href, "/obra/qa-executor/capitulo/1001");
   });
 });

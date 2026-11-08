@@ -337,6 +337,20 @@ test("Perfil de Autor delega construção e resolução de itens ao carregador d
   assert.doesNotMatch(utilsSource, /supabase|useState|useEffect|localStorage/);
 });
 
+test("publicacao de capitulo preserva obra, privacidade e nao usa href arbitrario da metadata", () => {
+  const obra = criarObra();
+  const item = criarItemAtividadeDiarioPerfil({
+    id: "capitulo-publicado", tipo: "publicou_capitulo", obra_id: obra.id,
+    capitulo_id: "capitulo-1", visibilidade: "privado", data: "2026-11-08",
+    metadata: { href: "javascript:alert(1)", capitulo_titulo: "Texto da metadata" },
+  }, new Map([[obra.id, obra]]), new Map());
+  assert.equal(item.tipo, "atividade");
+  assert.equal(item.descricao, "Publicou um capítulo.");
+  assert.equal(item.titulo, obra.titulo);
+  assert.equal(item.href, "/obra/minha-obra");
+  assert.equal(item.visibilidade, "privado");
+});
+
 
 test("hrefs da página Listas preservam perfil, obra e encoding", () => {
   assert.equal(

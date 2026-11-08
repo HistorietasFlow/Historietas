@@ -64,9 +64,20 @@
   cooldown de um minuto; cancelar/editar também alcança estado `erro`. Transições
   concluídas avançam revisão. Timeout/deadlock externo pode abortar toda a chamada,
   sem publicação parcial. O lote não promete execução exata nem entrega contínua.
-- Cache público, UI e Diário continuam pendentes de contratos próprios. Não usar
-  o tipo `publicou_capitulo` sem resolver sua incompatibilidade com o CHECK atual
-  de `diario_atividades`; o recibo privado não é um item de Diário.
+- A fase 3 (`20261108164909_diario_publicacao_capitulos_agendados.sql`) habilita
+  apenas `publicou_capitulo` no CHECK e cria a atividade no AFTER INSERT do recibo,
+  na mesma subtransação da publicação/notificações. A referência privada usa FK
+  SET NULL se o autor remover a atividade; retry não a ressuscita. Sem backfill.
+- O novo tipo tem policies restritivas de autoria/publicação/18+ e usa predicado
+  privado definer para ler somente a decisão de privacidade. Não há SELECT de
+  preferências concedido a anon. A expressão legada fica em helper invoker não
+  inline, preservando a autorização anterior dos demais tipos.
+- Cache público e ativação continuam pendentes: SQL não chama o contexto Next de
+  revalidação. `null` também pode estar cacheado; 404 do proxy seguido de 200 não
+  comprova invalidação desse cache. Sitemap ISR permanece independente. Não
+  reduzir/esvaziar caches globalmente para contornar. A proposta separada exige
+  outbox privada, snapshot imutável e consumidor server-only pós-commit com ack;
+  ver `docs/agendamento-cache-publico.md`. Sem Cron/endpoint/consumidor nesta fase.
 
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 

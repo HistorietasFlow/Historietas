@@ -358,9 +358,19 @@ Falhas desfazem os efeitos e permitem retry manual após um minuto; edição e
 cancelamento também invalidam uma intenção em erro. Nenhum JWT é impersonado.
 
 **Ainda não é um recurso automático utilizável:** não há interface, endpoint,
-Cron, job ou consumidor do executor. Cache público e integração de Diário ficam
-para fases próprias; o tipo legado `publicou_capitulo` não é aceito pelo CHECK
-atual do Diário e não foi habilitado. Merge não aplica migrations em produção;
+Cron, job ou consumidor do executor. A fase 3 integra `publicou_capitulo` ao
+CHECK e ao recibo por trigger transacional/idempotente, com privacidade e bloqueio
+18+ no banco. Tipos antigos permanecem aceitos; recibos antigos não são preenchidos
+retroativamente. Retry não recria atividade removida voluntariamente.
+A expressão legada continua invoker: consultas anônimas mistas com tipos antigos
+podem falhar pela permissão anterior de preferências. Não é uma correção geral
+da leitura/privacidade do Diário; essa limitação independente está documentada.
+**Cache público continua pendente:** não há consumidor pós-commit que invalide
+entradas positivas/negativas de `unstable_cache` (60 s), metadata (300 s) ou sitemap
+ISR (3600 s). São TTLs nominais, não garantia de atualização imediata. Ver
+`docs/agendamento-cache-publico.md` para evidências, limites dos E2E e proposta
+separada de outbox/consumidor autorizado. Não habilitar execução automática.
+Merge não aplica migrations em produção;
 uploads ilustrados, publicação ilustrada e limpeza física continuam suspensos.
 
 ### Lighthouse baseline
