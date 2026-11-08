@@ -139,6 +139,16 @@ reserva 2 MiB/objeto por 15 minutos, sem duplicar arquivos já contabilizados,
 sob o mesmo lock das quotas existentes. Expiradas/liberadas não liberam bytes
 de arquivos físicos. O namespace permanece fechado mesmo após reservar;
 assinatura, renderização e publicação ilustrada continuam indisponíveis.
+A fase 2C foi dividida por segurança: a parte 2C1 adiciona somente recepção
+autenticada e pré-validação binária em `/api/capitulos-ilustrados/prevalidar-pagina`,
+com conferência de sessão ativa, propriedade, reserva, versão e validade antes
+e depois do decoder. Retorna `validado_sem_upload`; não grava nenhum arquivo.
+A migration `20261108004015_autorizar_prevalidacao_paginas_ilustradas.sql` cria
+uma RPC de conferência e adaptador autenticado do limitador existente, sem
+service role no endpoint e sem liberar Storage. Escrita segura depende
+de tentativa durável com capacidade retida durante IO, inclusive após expiração
+e cascatas, fence de autorização e recibo/limpeza idempotentes. Essa continuação
+permanece pendente; não apresentar o upload ilustrado como implementado.
 Merge da PR não implica aplicação da migration em produção.
 
 A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi

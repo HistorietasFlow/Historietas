@@ -201,6 +201,9 @@ test("reservas reais: identidade, Storage legado e concorrencia na ultima vaga",
       values ('${id}','${CHAPTER}','${AUTHOR}','${AUTHOR}/capitulos/${CHAPTER}/${id}.png',0,'${key}',
       now()-interval '2 hours',now()-interval '1 hour');`);
     assert.equal((await reserve(author, key)).error?.code, "55000");
+    assert.equal((await author.rpc("conferir_reserva_pagina_capitulo", {
+      p_reserva_id: id, p_capitulo_id: CHAPTER, p_versao_esperada: 0,
+    })).error?.code, "PT410");
     assert.equal(sql(env.container, `select count(*) from historietas_privado.objetos_storage_com_reservas() where name like '${AUTHOR}/%';`), "0");
     await release(id);
     await release(id);
@@ -214,5 +217,24 @@ test("reservas reais: identidade, Storage legado e concorrencia na ultima vaga",
     assert.equal((await reserve(other, key)).error?.code, "42501");
     assert.equal((await other.rpc("liberar_reserva_pagina_capitulo", { p_reserva_id: value.reservaId })).error?.code, "42501");
     await releaseAll();
+  });
+
+  await t.test("pre-validacao confere JWT real, nao grava e recusa token apos logout", async () => {
+    const value = track(await reserve(author));
+    const params = { p_reserva_id: value.reservaId, p_capitulo_id: CHAPTER, p_versao_esperada: 0 };
+    const before = sql(env.container, `select row_to_json(r)::text from historietas_privado.capitulo_uploads_pendentes r where id='${value.reservaId}';`);
+    for (let index = 0; index < 2; index++) {
+      const info = check(await author.rpc("conferir_reserva_pagina_capitulo", params));
+      assert.deepEqual(info, { usuarioId: AUTHOR, mimeType: "image/png", expiraEm: value.expiraEm, versaoEsperada: 0 });
+    }
+    assert.equal(sql(env.container, `select row_to_json(r)::text from historietas_privado.capitulo_uploads_pendentes r where id='${value.reservaId}';`), before);
+    assert.equal((await anon.rpc("conferir_reserva_pagina_capitulo", params)).error?.code, "42501");
+    assert.equal((await admin.rpc("conferir_reserva_pagina_capitulo", params)).error?.code, "42501");
+    const token = check(await author.auth.getSession()).session.access_token;
+    check(await author.auth.signOut());
+    const old = createClient(env.url, env.key, { global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false } });
+    assert.equal((await old.rpc("conferir_reserva_pagina_capitulo", params)).error?.code, "42501");
+    // A FK/cascata do cleanup remove a reserva; JWT/credenciais nunca vao ao log.
   });
 });

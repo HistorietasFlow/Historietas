@@ -1941,6 +1941,11 @@ export type Database = {
       }
     }
     Functions: {
+      conferir_reserva_pagina_capitulo: {
+        Args: { p_reserva_id: string; p_capitulo_id: string; p_versao_esperada: number }
+        Returns: Json
+      }
+      limitar_prevalidacao_pagina_capitulo: { Args: Record<PropertyKey, never>; Returns: Json }
       aceitar_termos_publicacao: {
         Args: {
           p_diretrizes_versao: string
