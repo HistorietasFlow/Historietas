@@ -45,9 +45,10 @@
 - Reservas de uploads e outbox ficam em `historietas_privado`, com RLS e sem
   permissões para clientes ou service role. Exclusões de páginas/reservas
   preservam caminhos na outbox, inclusive em cascatas; não removem bytes.
-- **Não está pronta para uso:** não existem upload, reserva efetiva de quota,
-  finalizador autorizado, assinatura em lote, executor de limpeza ou renderização
-  ilustrada. Nenhuma escrita nova deve ser concedida antes dessas garantias.
+- **Não está pronta para uso:** não existem upload, finalizador autorizado,
+  assinatura em lote, executor de limpeza ou renderização
+  ilustrada. Nenhuma escrita de páginas ou upload direto deve ser concedido
+  antes dessas garantias.
 - `arquivos-obras` permanece privado; policies dos anexos e quotas não mudam.
   Policies restritivas adicionais bloqueiam INSERT/UPDATE/DELETE autenticados
   somente no novo namespace `<usuario>/capitulos/`, até uma fase de upload seguro.
@@ -84,6 +85,45 @@
   por versão/idempotência, reordenação/substituição/remoção e executor de limpeza
   com lease e revalidação de referências. Não abrir o namespace nem a interface
   de publicação até completar e testar esse fluxo. A fase 2A não cria migrations.
+
+#### Fase 2B — reserva de capacidade, ainda sem upload
+
+- `20261107235846_reservar_capacidade_capitulos_ilustrados.sql` adiciona RPCs
+  autenticadas de reserva/liberação, com wrappers `SECURITY INVOKER` e núcleo
+  privado `SECURITY DEFINER`, `search_path` vazio e grants mínimos. Não recebe
+  identidade, caminho ou tamanho do navegador: verifica `auth.uid()`, autoria
+  real de obra e capítulo e versão do manifesto; gera UUID/caminho no banco.
+- Cada reserva compromete 2 MiB e um objeto por 15 minutos, sem renovar no retry.
+  Chave idempotente é isolada por usuário e vinculada a capítulo/versão/formato.
+  Liberação é idempotente; a chave encerrada não reativa. Há no máximo dez
+  pendências por capítulo e cem novas reservas por usuário em 24 horas para
+  limitar churn de registros. Tombstones não são excluídos nesta fase; uma futura
+  retenção deve manter a idempotência e as referências da outbox.
+- O ledger privado une reservas ativas e objetos dos três buckets nas quotas
+  legadas: 30 objetos por usuário em `arquivos-obras`, 100 objetos/100 MiB por
+  usuário e 5.000 objetos/700 MiB no projeto, sem ampliar limites por bucket.
+  Caminho com objeto e reserva conta uma vez, cobrando o maior tamanho; objetos
+  ainda sem metadata mantêm a reserva conservadora máxima do bucket. Expiração
+  ou liberação não elimina capacidade ocupada por objetos físicos.
+- Reserva e uploads legados usam o MESMO advisory lock transacional
+  `historietas:storage:cota:v1`; leituras posteriores ao lock usam snapshots
+  atuais. Obra é bloqueada antes do capítulo, e capítulo antes da reserva, para
+  preservar ordem com exclusões em cascata. Conflito de versão retorna `PT409`,
+  não `40001` (PostgREST pode repetir automaticamente falhas de serialização).
+- A reserva pode preparar um draft de texto sem convertê-lo. Texto publicado
+  não pode ser reservado; capítulos ilustrados próprios podem preparar futuras
+  substituições, contando arquivos antigos até a remoção real. Leitura/RLS/18+
+  não mudam. A resposta não contém caminho, URL ou token de upload.
+- Liberação guarda o caminho na outbox quando não referenciado pelo manifesto,
+  sem apagar bytes. Expiração é lógica, sem cron: o ledger ignora a capacidade
+  pendente vencida; os registros/caminhos continuam disponíveis para a futura
+  limpeza recuperável. O worker futuro deverá descobrir expiradas e revalidar
+  referências e leases antes de remover via Storage API.
+- **Ainda bloqueados:** upload de páginas (inclusive com reserva), ativação na
+  interface, finalização, assinatura e leitor ilustrado. A próxima fase deve
+  confirmar novamente sessão/propriedade/validade da reserva, validar bytes no
+  servidor e coordenar upload/finalização/limpeza sem bypass administrativo das
+  quotas. Não deduzir aplicação em produção pelo merge desta migration.
 
 Supabase é usado para autenticação, banco e fluxos de dados da aplicação.
 

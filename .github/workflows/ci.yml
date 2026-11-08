@@ -144,6 +144,9 @@ jobs:
       - name: Validar contrato de capitulos ilustrados pela Data API local
         run: npm run test:illustrated-chapters:integration
 
+      - name: Validar reservas e quotas ilustradas pela Data API e Storage locais
+        run: npm run test:illustrated-reservations:integration
+
       - name: Executar paginação real pela Data API
         run: npm run test:pagination:integration
 
