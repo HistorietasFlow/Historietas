@@ -334,7 +334,7 @@ removido em Autores e combina com os filtros anteriores. A migration
 `20261107190827_adicionar_exclusao_genero_catalogo.sql` deve ser aplicada pelo
 responsável antes do deploy; merge não implica aplicação em produção.
 
-### Agendamento de capítulos — fase 1, sem executor
+### Agendamento de capítulos — executor privado, sem ativação automática
 
 A migration `20261108132533_infraestrutura_agendamento_capitulos.sql` cria um
 registro privado por capítulo e RPCs autenticadas para consultar, agendar,
@@ -345,14 +345,23 @@ O instante é absoluto (`timestamptz`), acompanhado do fuso IANA informado.
 Revisões monotônicas serializam alterações e permitem retry da última operação
 equivalente, sem reativar cancelamentos ou invalidações. Editar título/texto
 invalida o agendamento no banco; publicação direta de um registro pendente é
-bloqueada até cancelamento. O capítulo permanece não publicado, inclusive quando
-o horário vence. A tabela tem RLS e nenhum acesso direto de clientes/service role.
+bloqueada até cancelamento. Sem chamada administrativa explícita, o capítulo
+permanece não publicado, inclusive quando o horário vence. A tabela tem RLS e
+nenhum acesso direto de clientes/service role.
 
-**Ainda não é um recurso de publicação utilizável:** não há interface, executor,
-Cron, notificações agendadas ou publicação automática. Estados/resultados futuros
-não autorizam executar. A próxima fase precisa revalidar autoria/termos na mesma
-transação da publicação, tratar caches públicos e produzir efeitos idempotentes.
-Merge não aplica a migration em produção; uploads ilustrados continuam suspensos.
+`20261108142104_executor_privado_agendamento_capitulos.sql` adiciona operações
+invoker exclusivamente em `historietas_privado`, sem grants para clientes ou
+service role. O lote administrativo aceita 1–10 capítulos. Revalida autor ativo,
+perfil/termos, propriedade, obra publicada, texto, revisão, cancelamento e prazo
+UTC sob locks; publicação, notificações idempotentes e recibo privado são atômicos.
+Falhas desfazem os efeitos e permitem retry manual após um minuto; edição e
+cancelamento também invalidam uma intenção em erro. Nenhum JWT é impersonado.
+
+**Ainda não é um recurso automático utilizável:** não há interface, endpoint,
+Cron, job ou consumidor do executor. Cache público e integração de Diário ficam
+para fases próprias; o tipo legado `publicou_capitulo` não é aceito pelo CHECK
+atual do Diário e não foi habilitado. Merge não aplica migrations em produção;
+uploads ilustrados, publicação ilustrada e limpeza física continuam suspensos.
 
 ### Lighthouse baseline
 

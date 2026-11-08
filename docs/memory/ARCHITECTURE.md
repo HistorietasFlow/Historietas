@@ -29,7 +29,7 @@
 
 ## Backend e dados
 
-### Agendamento de capítulos — infraestrutura inativa
+### Agendamento de capítulos — contratos e executor administrativo privado
 
 - `20261108132533_infraestrutura_agendamento_capitulos.sql` mantém um registro por
   capítulo em `historietas_privado.capitulo_agendamentos`, com RLS sem acesso
@@ -39,19 +39,34 @@
   são conferidas no banco. Agendar/reagendar exige draft de texto, obra publicada
   e aceites atuais; consultar/cancelar continuam possíveis após despublicar a obra
   ou revogar termos, mas nunca após perder sessão/propriedade.
-- Locks seguem sessão → obra → capítulo → agendamento. Revisão inicial zero;
-  cada transição avança a revisão. Retry com a revisão anterior só reconhece a
-  última operação equivalente. O registro não é apagado ao cancelar/invalidar;
+- Operações autenticadas seguem sessão → obra → capítulo → agendamento. Revisão
+  inicial zero; cada alteração da intenção avança a revisão. Retry com a revisão
+  anterior só reconhece a última operação equivalente. O registro não é apagado ao cancelar/invalidar;
   exclusão real de capítulo/conta remove-o por FK, sem tarefa órfã.
 - O trigger de edição só bloqueia o registro após o capítulo: título/texto ou
   vínculo alterados invalidam o pendente; mudar apenas timestamp não invalida.
   Publicação direta de pendente é recusada, inclusive junto com edição. Não há
   bypass por GUC nem alteração dos contratos de leitura/RLS/18+ existentes.
-- Nenhum executor foi instalado ou autorizado: estados futuros são somente um
-  contrato. O futuro worker deverá revalidar identidade/autoria/termos, revisão,
-  tipo e publicação da obra na mesma transação dos efeitos idempotentes. Não
-  presumir que `auth.uid()` nulo no trigger legado valida autorização. Cron,
-  notificações, invalidação de cache e UI dependem de fases próprias.
+- A fase 2 (`20261108142104_executor_privado_agendamento_capitulos.sql`) adiciona
+  executor e lote de 1–10 itens, invoker privados e sem EXECUTE para clientes ou
+  service role. Somente SQL administrativo confiável pode chamá-los; não existe
+  wrapper público, endpoint, Cron ou consumidor automático.
+- Try-locks por capítulo e da notificação legada precedem locks de autor/perfil,
+  obra, capítulo e intenção. Após os locks, o executor relê revisão/identidade e
+  revalida autor ativo, propriedade real, termos, texto, obra publicada e prazo
+  UTC. Cancelar/editar/reagendar serializa no capítulo, sem bypass por GUC/JWT.
+- Publicação, resultado, notificações e `capitulo_publicacao_eventos` são uma
+  transação. O recibo por capítulo/revisão reconhece resposta perdida. A variante
+  interna estrita reutiliza destinatários, IDs e links da notificação existente,
+  propaga falhas e usa o instante de publicação; a RPC legada permanece intacta.
+  RLS de notificações/18+ continua vigente. Nenhum texto/título vem do chamador.
+- Erro reverte os efeitos e mantém a revisão da intenção para retry manual com
+  cooldown de um minuto; cancelar/editar também alcança estado `erro`. Transições
+  concluídas avançam revisão. Timeout/deadlock externo pode abortar toda a chamada,
+  sem publicação parcial. O lote não promete execução exata nem entrega contínua.
+- Cache público, UI e Diário continuam pendentes de contratos próprios. Não usar
+  o tipo `publicou_capitulo` sem resolver sua incompatibilidade com o CHECK atual
+  de `diario_atividades`; o recibo privado não é um item de Diário.
 
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 
