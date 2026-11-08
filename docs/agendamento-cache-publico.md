@@ -1,5 +1,61 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
+## Fase 5A — revisão transacional, ainda sem barreira nos caches
+
+`20261108195558_revisao_transacional_projecao_publica.sql` mantém um ledger
+privado por UUID de obra, com geração e revisão bigint monotônica. Sem FK/cascata:
+exclusão conserva tombstone; recriar o mesmo UUID avança a revisão e troca a
+geração. Reutilizar um slug resolve a identidade atual, não a obra antiga.
+Não apagar esses registros nem restaurar contadores antigos isoladamente.
+
+Triggers comuns às escritas manuais e agendadas atualizam o ledger na mesma
+transação. Cobrem conteúdo/metadados da obra, slug, autoria, publicação,
+classificação e capítulos publicados (conteúdo, ordem, vínculos, exclusão e
+publicação/despublicação). Mudanças somente de métricas, timestamp automático
+ou documento de busca derivado não avançam revisão; edições de drafts de
+capítulos também não revelam atividade pelo contador. TRUNCATE administrativo
+avança conservadoramente os registros, sem apagar o histórico. Backfill e
+instalação dos triggers ocorrem sob locks que excluem escritas concorrentes.
+
+Escritas serializam no registro do ledger; não fazem UPDATE da obra para refletir
+alterações de capítulos. Rollback desfaz dados e revisão juntos. Como em outras
+transações com múltiplos registros, deadlocks/serialização podem exigir retry da
+transação inteira; nenhuma falha autoriza aplicar dados/revisão parcialmente.
+Não usar timestamps, MAX de IDs, revisão do agendamento ou versão ilustrada como
+substitutos deste contrato.
+
+`obter_projecao_publica_obra(slug, numero opcional)` é SQL STABLE/SECURITY INVOKER:
+uma única instrução/snapshot retorna identidade, geração, revisão decimal em
+string, dados públicos da obra e somente o capítulo solicitado. Não agrega todos
+os textos nem dados de conta, arquivos privados ou comentários. RLS existente
+continua aplicada, junto do predicado público explícito: obra/capítulo publicados,
+autoria consistente e classificações permitidas (18+ segue bloqueado inclusive
+para o autor nesta RPC). Ausência, draft, despublicação e bloqueio retornam a
+mesma indisponibilidade pública, sem vazar identidade ou revisão privadas.
+Capítulo ausente em obra pública retorna `capitulo_indisponivel`, com a identidade
+e revisão da obra; erros SQL/infraestrutura não são capturados como ausência.
+
+O ledger tem RLS e SELECT apenas de três colunas para anon/authenticated, somente
+quando a própria obra é publicamente legível sob RLS. Tombstones não são
+legíveis e não há grants de escrita; service role não recebe acesso. O schema privado
+continua fora da Data API. Os triggers definer internos têm search_path vazio,
+owner postgres e nenhum EXECUTE concedido a clientes.
+
+`lerProjecaoPublicaObra` é o adaptador server-only, com cliente público sem sessão,
+POST RPC e fetch `no-store`. Cada invocação faz uma leitura nova, sem memoizar
+barreiras. Bigint permanece string; falhas propagam. A leitura deve usar o
+primário (não uma réplica atrasada). O snapshot é consistente no instante da
+consulta, não bloqueia alterações posteriores nem apaga conteúdo já entregue.
+
+**Ainda não resolve a confirmação do cache:** nenhum loader/cache Next, sitemap,
+proxy, consumidor/outbox ou executor foi integrado a essa revisão nesta fase.
+Listas paginadas/sitemap precisam de contratos próprios de snapshot/geração;
+futura barreira deve conferir a revisão antes de servir o payload e evitar que
+CDN/Full Route/Router Cache a pulem. Mudanças de policies, código de projeção ou
+restore de banco também exigem nova versão/namespace de cache no rollout futuro.
+Não dar ack do flush, ativar Cron, UI ou publicação automática. Uploads ilustrados,
+publicação ilustrada e limpeza física permanecem suspensos.
+
 ## Fase 4 — entrega parcial e bloqueador de confirmação
 
 Migration `20261108182554_outbox_cache_capitulos_agendados.sql`:

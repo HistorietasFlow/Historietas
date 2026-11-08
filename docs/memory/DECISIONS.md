@@ -92,6 +92,17 @@
 - A ativacao exige contrato verificavel de conclusao e escopo por implantacao;
   ver `docs/agendamento-cache-publico.md`. Nenhum Cron/job/upload foi liberado.
 
+### Projeção pública — fase 5A (08/11/2026)
+
+- Revisão pública pertence à obra e avança transacionalmente por triggers,
+  independentemente da origem manual/agendada. Tombstones sem cascatas evitam
+  reiniciar contadores após exclusão/recriação; geração também muda ao recriar.
+- Leitura pública autoritativa usa um único snapshot invoker sob RLS, sem drafts
+  ou 18+ mesmo para o autor. Bigint é string e erros não viram ausência.
+- O adaptador server-only faz POST/no-store; ainda não altera caches/sitemap,
+  não confirma a outbox e não ativa agendamento. Barreiras e rollout ficam para
+  fase posterior. Preservar a suspensão integral dos uploads ilustrados.
+
 ## Vercel
 
 - Não usar pausa do projeto como mecanismo normal para esconder o site durante desenvolvimento, porque isso bloqueia deploys e pode causar 503.
