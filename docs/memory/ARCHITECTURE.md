@@ -241,6 +241,19 @@ Supabase é usado para autenticação, banco e fluxos de dados da aplicação.
   liberacao pos-IO ou limpeza fisica foi habilitado. Aplicar a migration antes
   do app e requisito para o executor administrativo; merge nao aplica producao.
 
+#### Fase 2C2d — conferência pontual de bytes, ainda sem terminalidade
+
+- `conferir-pagina-armazenada.ts` é server-only e somente leitura: compara o
+  SHA-256 dos bytes baixados, limites/decoder 2A e ID/versão/metadata antes e
+  depois. Recebe recibo PRIVADO e fonte interna confiável; não há endpoint,
+  credencial/grant novo, consumidor de produção ou migration nesta parte.
+- Mesmo com match, não autoriza publicação, limpeza, liberação de capacidade
+  ou encerramento. Não confundir observação física com autorização atual ou
+  terminalidade do backend. Recibos, ledger, locks e gate 2C2c não mudam.
+- Protocolo de recuperação, limites do Storage e testes estão em
+  `docs/capitulos-ilustrados-verificacao-recuperacao.md`. O diagnóstico local
+  392ee0f2 foi preservado. Upload real e limpeza/liberação pós-IO seguem bloqueados.
+
 Regras importantes:
 
 - RLS e GRANT são controles separados.

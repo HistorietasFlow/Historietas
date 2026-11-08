@@ -123,6 +123,9 @@ jobs:
       - name: Validar recepcao limitada de paginas ilustradas sem upload
         run: npm run test:illustrated-reception
 
+      - name: Conferir bytes ilustrados sem autorizar publicacao ou limpeza
+        run: npm run test:illustrated-observation
+
       - name: Validar GRANT/REVOKE explícito em novas tabelas public
         run: node qa/scripts/check-public-table-grants.mjs
 
@@ -169,6 +172,9 @@ jobs:
 
       - name: Validar reservas e quotas ilustradas pela Data API e Storage locais
         run: npm run test:illustrated-reservations:integration
+
+      - name: Conferir observacoes ilustradas pela Storage API local
+        run: npm run test:illustrated-observation:integration
 
       - name: Executar paginação real pela Data API
         run: npm run test:pagination:integration
