@@ -31,7 +31,7 @@ export const supabasePublicoConfigurado = Boolean(
   urlSupabaseValida(supabaseUrl) && supabasePublishableKey,
 );
 
-export function criarSupabasePublicClient(): SupabaseClient<Database> {
+export function criarSupabasePublicClient(opcoes?: { fetch?: typeof fetch }): SupabaseClient<Database> {
   if (!supabasePublicoConfigurado) {
     throw new Error(
       "Supabase público não configurado. Verifique NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.",
@@ -39,6 +39,7 @@ export function criarSupabasePublicClient(): SupabaseClient<Database> {
   }
 
   return createClient<Database>(supabaseUrl, supabasePublishableKey, {
+    ...(opcoes?.fetch ? { global: { fetch: opcoes.fetch } } : {}),
     auth: {
       autoRefreshToken: false,
       persistSession: false,

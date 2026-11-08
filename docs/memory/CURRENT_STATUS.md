@@ -374,6 +374,11 @@ automática da pendência. Retrys usam leases, sem repetir publicação ou efeit
 **Ativação ainda bloqueada** por falta de confirmação segura do flush e de
 contrato operacional por implantação. Ver `docs/agendamento-cache-publico.md`.
 TTL não é SLA; não usar `await` sobre `void` como prova de invalidação.
+**Fase 5A:** revisão pública por obra é atualizada por triggers transacionais,
+com tombstones/gerações que sobrevivem à exclusão e RPC invoker de snapshot
+público consistente. O adaptador server-only usa POST/no-store e propaga falhas.
+Ainda sem integração com caches Next, sitemap, outbox ou ativação automática;
+esse contrato sozinho não resolve o bloqueador de cache. Ver o documento acima.
 Merge não aplica migrations em produção;
 uploads ilustrados, publicação ilustrada e limpeza física continuam suspensos.
 

@@ -84,6 +84,21 @@
   automática. Conclusão recuperável/escopo por implantação ainda bloqueiam o
   recurso; diagnóstico e critérios em `docs/agendamento-cache-publico.md`.
 
+### Revisão da projeção pública — fase 5A, sem integração com cache
+
+- `20261108195558_revisao_transacional_projecao_publica.sql` mantém ledger privado
+  sem cascatas. Triggers de obras/capítulos avançam revisão na mesma transação,
+  inclusive publicação manual/agendada, despublicação, slug, ordem e exclusão.
+  Recriar UUID não reinicia contador; troca a geração. Métricas e edições de
+  drafts de capítulos não causam churn. Tombstones devem ser preservados.
+- RPC `obter_projecao_publica_obra` é invoker e retorna obra/capítulo solicitado
+  e revisão no mesmo snapshot SQL, somente sob visibilidade pública/RLS/18+.
+  Ledger permite apenas SELECT de identidade/geração/revisão de obras públicas;
+  não há DML para clientes. Adapter server-only usa POST/no-store sem sessão.
+- Ainda não há barreira nos caches, integração com outbox, geração de sitemap
+  ou ativação automática. Ver `docs/agendamento-cache-publico.md`. Não confundir
+  revisão transacional com ack do flush ou revogação de bytes já entregues.
+
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 
 - A migration `20261107223400_infraestrutura_capitulos_ilustrados.sql` adiciona
