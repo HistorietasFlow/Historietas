@@ -65,6 +65,20 @@
   legado não é aceito no schema atual. Diário, cache e ativação futura exigem
   validação separada. Bloqueios ilustrados permanecem integralmente preservados.
 
+### Agendamento — Diário e limite do cache (fase 3, 08/11/2026)
+
+- `publicou_capitulo` é habilitado sem remover tipos anteriores nem habilitar
+  `publicou_obra`. O Diário agendado é um efeito do recibo privado, atômico com
+  publicação/notificações, sem backfill ou recriação após exclusão voluntária.
+- A publicação no Diário não pode contornar autoria, preferências, publicação
+  atual ou bloqueio 18+. Predicados privados evitam expor a tabela de preferências;
+  a expressão legada permanece invoker e o novo tipo tem proteção restritiva.
+- Cache Next e transação SQL não compartilham commit. Não fazer HTTP sob locks,
+  invalidar antes de commit ou afirmar que TTL resolve cache negativo/sitemap.
+  A ponte pós-commit (outbox/consumidor restrito) exige implementação separada;
+  publicação automática e UI continuam desativadas. Ver
+  `docs/agendamento-cache-publico.md`. Bloqueios ilustrados não mudam.
+
 ## Vercel
 
 - Não usar pausa do projeto como mecanismo normal para esconder o site durante desenvolvimento, porque isso bloqueia deploys e pode causar 503.

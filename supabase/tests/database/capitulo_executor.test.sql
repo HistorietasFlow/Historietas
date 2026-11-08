@@ -56,36 +56,50 @@ select throws_ok($$select historietas_privado.executar_agendamento_capitulo(null
 
 select is(historietas_privado.executar_agendamento_capitulo(pg_temp.preparar(1,false),1)->>'estado','futuro','nao publica antes do instante');
 select is((select count(*)::integer from public.notificacoes where obra_id='ac200000-0000-4000-8000-000000000001'),0,'nao notifica antes');
+select is((select count(*)::integer from public.diario_atividades where obra_id='ac200000-0000-4000-8000-000000000001'),0,'nao cria Diario antecipado');
 select is(historietas_privado.executar_agendamento_capitulo(pg_temp.preparar(2),1)->>'estado','publicado','autor vigente com auth.uid nulo');
 select ok((select publicado from public.capitulos where ordem=2 and obra_id='ac200000-0000-4000-8000-000000000001'),'publicacao persistida');
 select is((select count(*)::integer from public.notificacoes where capitulo_id='ac300000-0000-4000-8000-000000000002'),2,'destinatarios legados deduplicados');
 select is((select count(*)::integer from historietas_privado.capitulo_publicacao_eventos),1,'evento atomico');
+select ok((select e.diario_atividade_id=d.id and d.user_id=e.autor_id and d.tipo='publicou_capitulo'
+ and d.criado_em=e.publicado_em and d.atualizado_em=e.publicado_em and d.texto=''
+ from historietas_privado.capitulo_publicacao_eventos e join public.diario_atividades d on d.id=e.diario_atividade_id),
+ 'Diario vinculado ao recibo, autor e instante reais');
+select ok((select metadata->>'numero_capitulo'='2' and metadata->>'href'='/obra/qa-executor/capitulo/2'
+ and not metadata ? 'texto' from public.diario_atividades
+ where capitulo_id='ac300000-0000-4000-8000-000000000002'), 'metadata real sem texto do capitulo');
 select ok((select bool_and(n.criada_em=e.publicado_em and n.created_at=e.publicado_em and n.updated_at=e.publicado_em)
  from public.notificacoes n join historietas_privado.capitulo_publicacao_eventos e using(capitulo_id)),'notificacoes usam publicacao efetiva, nao criacao do draft');
 select is((select criado_em from public.capitulos where id='ac300000-0000-4000-8000-000000000002'),'2020-01-01Z'::timestamptz,'data legada preservada');
 select is(historietas_privado.executar_agendamento_capitulo('ac300000-0000-4000-8000-000000000002',1)->>'repetido','true','resposta perdida retorna recibo');
 select is((select count(*)::integer from public.notificacoes where capitulo_id='ac300000-0000-4000-8000-000000000002'),2,'retry nao duplica notificacoes');
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000002'),1,'retry nao duplica Diario');
+insert into historietas_privado.capitulo_publicacao_eventos select * from historietas_privado.capitulo_publicacao_eventos
+ where capitulo_id='ac300000-0000-4000-8000-000000000002' on conflict do nothing;
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000002'),1,'recibo duplicado ignorado nao cria atividade orfa');
 select is(historietas_privado.executar_agendamento_capitulo('ac300000-0000-4000-8000-000000000002',99)->>'estado','desatualizado','revisao errada nao executa');
 
 -- Falha depois da insercao das notificacoes: tudo deve ser revertido, nao so o evento.
 create function pg_temp.falhar_evento() returns trigger language plpgsql as $$
 begin raise exception 'Falha local injetada depois das notificacoes.' using errcode='XX000'; end;
 $$;
-create trigger qa_falhar_evento before insert on historietas_privado.capitulo_publicacao_eventos
+create trigger zz_qa_falhar_evento after insert on historietas_privado.capitulo_publicacao_eventos
  for each row execute function pg_temp.falhar_evento();
 select is(historietas_privado.executar_agendamento_capitulo(pg_temp.preparar(3),1)->>'estado','erro','falha nao vira sucesso');
 select ok(not (select publicado from public.capitulos where id='ac300000-0000-4000-8000-000000000003'),'rollback da publicacao');
 select is((select count(*)::integer from public.notificacoes where capitulo_id='ac300000-0000-4000-8000-000000000003'),0,'rollback das notificacoes');
 select is((select count(*)::integer from historietas_privado.capitulo_publicacao_eventos where capitulo_id='ac300000-0000-4000-8000-000000000003'),0,'nenhum recibo falso');
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000003'),0,'rollback tambem do Diario ja criado');
 select throws_ok($$update public.capitulos set publicado=true where id='ac300000-0000-4000-8000-000000000003'$$,'PT409',null,'erro ainda bloqueia publicacao direta');
 select is(historietas_privado.executar_agendamento_capitulo('ac300000-0000-4000-8000-000000000003',1)->>'estado','aguardando_retry','sem loop de retry imediato');
 select is(historietas_privado.executar_agendamento_capitulo(pg_temp.preparar(4),1)->>'estado','erro','prepara erro editavel');
 select is(historietas_privado.executar_agendamento_capitulo(pg_temp.preparar(5),1)->>'estado','erro','prepara erro cancelavel');
-drop trigger qa_falhar_evento on historietas_privado.capitulo_publicacao_eventos;
+drop trigger zz_qa_falhar_evento on historietas_privado.capitulo_publicacao_eventos;
 update historietas_privado.capitulo_agendamentos set executado_em=now()-interval '2 minutes'
  where capitulo_id='ac300000-0000-4000-8000-000000000003';
 select is(historietas_privado.executar_agendamento_capitulo('ac300000-0000-4000-8000-000000000003',1)->>'estado','publicado','retry apos recuperacao');
 select is((select count(*)::integer from public.notificacoes where capitulo_id='ac300000-0000-4000-8000-000000000003'),2,'retry so cria uma cadeia');
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000003'),1,'retry apos falha cria uma unica atividade');
 update public.capitulos set texto='Edicao cancela tambem o retry de uma falha.' where id='ac300000-0000-4000-8000-000000000004';
 select is(historietas_privado.executar_agendamento_capitulo('ac300000-0000-4000-8000-000000000004',1)->>'estado','desatualizado','edicao impede retry antigo');
 select set_config('request.jwt.claim.sub','ac100000-0000-4000-8000-000000000001',true);
@@ -93,6 +107,8 @@ select set_config('request.jwt.claims','{"sub":"ac100000-0000-4000-8000-00000000
 select is(public.cancelar_agendamento_capitulo('ac300000-0000-4000-8000-000000000005',1)->>'estado','cancelado','autor cancela erro sem relaxar grants');
 select set_config('request.jwt.claim.sub','',true); select set_config('request.jwt.claims','{}',true);
 select is(historietas_privado.executar_agendamento_capitulo('ac300000-0000-4000-8000-000000000005',1)->>'estado','desatualizado','cancelamento impede retry antigo');
+select is((select count(*)::integer from public.diario_atividades where capitulo_id in
+ ('ac300000-0000-4000-8000-000000000004','ac300000-0000-4000-8000-000000000005')),0,'edicao/cancelamento nao geram atividades');
 
 select pg_temp.preparar(6);
 savepoint autorizacao;
@@ -147,12 +163,58 @@ select is(historietas_privado.executar_agendamento_capitulo('ac300000-0000-4000-
 select set_config('request.jwt.claim.sub','ac100000-0000-4000-8000-000000000002',true);
 set local role authenticated;
 select is((select count(*)::integer from public.notificacoes where capitulo_id='ac300000-0000-4000-8000-000000000008'),0,'18+ continua oculto nas notificacoes');
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000008'),0,'18+ oculto no Diario para terceiros');
 reset role;
 select set_config('request.jwt.claim.sub','',true);
 set local role anon;
 select is((select count(*)::integer from public.capitulos where id='ac300000-0000-4000-8000-000000000008'),0,'18+ continua oculto publicamente');
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000008'),0,'Diario nao vaza metadata 18+ ao anon');
 reset role;
 update public.obras set classificacao_indicativa='Livre',avisos_conteudo='{}' where id='ac200000-0000-4000-8000-000000000001';
+set local role anon;
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000002'),1,'publicacao publica visivel sob RLS existente');
+reset role;
+select ok(not has_table_privilege('anon','public.preferencias_privacidade','SELECT'),'anon nao recebe acesso a preferencias');
+insert into public.preferencias_privacidade(user_id,mostrar_diario_perfil,mostrar_atividades_leitura)
+ values ('ac100000-0000-4000-8000-000000000001',false,true)
+ on conflict(user_id) do update set mostrar_diario_perfil=false;
+select set_config('request.jwt.claim.sub','ac100000-0000-4000-8000-000000000002',true);
+set local role authenticated;
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000002'),0,'preferencia real oculta atividade para terceiro');
+reset role;
+select set_config('request.jwt.claim.sub','ac100000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000002'),1,'autor mantem Diario proprio privado');
+reset role;
+update public.preferencias_privacidade set mostrar_diario_perfil=true where user_id='ac100000-0000-4000-8000-000000000001';
+select set_config('request.jwt.claim.sub','ac100000-0000-4000-8000-000000000002',true);
+set local role authenticated;
+select throws_ok($$insert into public.diario_atividades(user_id,tipo,obra_id,capitulo_id) values
+ ('ac100000-0000-4000-8000-000000000002','publicou_capitulo','ac200000-0000-4000-8000-000000000001','ac300000-0000-4000-8000-000000000002')$$,
+ '42501',null,'terceiro nao forja autoria de publicacao');
+select lives_ok($$insert into public.diario_atividades(user_id,tipo) values
+ ('ac100000-0000-4000-8000-000000000002','criou_lista')$$,'tipo legado continua aceito');
+select lives_ok($$insert into public.diario_atividades(user_id,tipo)
+ select 'ac100000-0000-4000-8000-000000000002'::uuid,tipo from unnest(array[
+ 'comecou_ler','leu_capitulo','concluiu_obra','avaliou_obra','favoritou_obra','salvou_obra','publicou_review','criou_lista']) tipo$$,
+ 'os oito tipos legados continuam aceitos');
+select is((select count(*)::integer from public.diario_atividades where user_id='ac100000-0000-4000-8000-000000000002'),9,
+ 'leitura legada funciona com search_path vazio e permissao do invocador');
+reset role;
+select set_config('request.jwt.claim.sub','ac100000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+select throws_ok($$insert into public.diario_atividades(user_id,tipo,obra_id,capitulo_id) values
+ ('ac100000-0000-4000-8000-000000000001','publicou_capitulo','ac200000-0000-4000-8000-000000000001','ac300000-0000-4000-8000-000000000001')$$,
+ '42501',null,'autor nao anuncia draft nao publicado');
+select lives_ok($$delete from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000003'$$,'autor remove atividade propria');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+select is(historietas_privado.executar_agendamento_capitulo('ac300000-0000-4000-8000-000000000003',1)->>'repetido','true','retry reconhece recibo apos remocao da atividade');
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000003'),0,'retry nao ressuscita atividade removida');
+update public.capitulos set publicado=false where id='ac300000-0000-4000-8000-000000000002';
+set local role anon;
+select is((select count(*)::integer from public.diario_atividades where capitulo_id='ac300000-0000-4000-8000-000000000002'),0,'despublicacao oculta metadata historica');
+reset role;
 select pg_temp.preparar(9); select pg_temp.preparar(10);
 select is(jsonb_array_length(historietas_privado.executar_lote_agendamentos_capitulos(1)),1,'lote respeita limite');
 select pg_temp.preparar(11);

@@ -107,6 +107,8 @@ export function criarItemAtividadeDiarioPerfil(
       : "Publicou uma review.";
   } else if (tipoAtividade === "criou_lista") {
     descricao = "Criou uma lista de leitura.";
+  } else if (tipoAtividade === "publicou_capitulo") {
+    descricao = "Publicou um capítulo.";
   }
 
   return {
