@@ -100,13 +100,9 @@ test("ausência real usa 404 e erro de infraestrutura continua propagando", () =
   );
   [
     "capituloCanonicoPublicoInexistente(pathname)",
-    '.from("capitulos")',
-    '"id,obras!inner(slug,publicado,classificacao_indicativa)"',
-    '.eq("ordem", alvo.numero)',
-    '.eq("publicado", true)',
-    '.eq("obras.slug", alvo.slug)',
-    '.eq("obras.publicado", true)',
-    "ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO",
+    '.rpc("existe_capitulo_projecao_publica", { p_slug: alvo.slug, p_numero: alvo.numero })',
+    'cache: "no-store"',
+    "return data === false",
     'destino.pathname = "/_not-found"',
     "NextResponse.rewrite(destino, { status: 404 })",
   ].forEach((contract) => assert.ok(proxy.includes(contract), contract));
@@ -135,11 +131,11 @@ test("metadata e loader público preservam canonical, capítulo e conteúdo inic
   );
 
   [
-    "export const obterLeituraCapituloPublico = (slug: string, numeroCapitulo: number) => unstable_cache(",
-    '.eq("publicado", true)',
-    '.select("id,titulo,texto,ordem,publicado,visualizacoes,criado_em")',
+    'comProjecao(slug, "leitura", numeroCapitulo',
+    'supabase.rpc("listar_capitulos_projecao_publica"',
+    'p_revisao: projecao.revisao',
     'nomeColecao: "capítulos públicos da leitura canônica"',
-    "ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO",
+    "lerProjecaoPublicaObra(slug)",
     "capitulos: capitulosNormalizados",
   ].forEach((contract) => assert.ok(publicCache.includes(contract), contract));
 

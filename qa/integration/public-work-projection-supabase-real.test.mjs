@@ -36,6 +36,10 @@ test("projecao publica local: RLS, snapshots, duas escritas concorrentes e rollb
   const snapshot = async (client = anon, slug = "qa-projecao", num = 1) => check(await client.rpc("obter_projecao_publica_obra", { p_slug: slug, p_numero: num }));
   const initial = await snapshot();
   const revision = (r) => BigInt(r.revisao);
+  const pages = async (r, client = anon) => check(await client.rpc("listar_capitulos_projecao_publica", {
+    p_slug: r.slug, p_geracao: r.geracao, p_revisao: r.revisao, p_inicio: 0, p_limite: 500,
+  }));
+  const manifest = async () => check(await anon.rpc("listar_revisoes_sitemap_publico", { p_depois_id: null, p_limite: 500 }));
 
   // PSQL interativo cria barreiras reais, sem sleeps. Segunda sessao informa
   // seu PID antes de bloquear; pg_stat_activity prova espera no lock do ledger.
@@ -73,15 +77,28 @@ test("projecao publica local: RLS, snapshots, duas escritas concorrentes e rollb
     assert.equal((await snapshot()).capitulo.texto, "Texto pelo autor");
     assert.ok(revision(await snapshot()) > revision(initial));
     assert.ok((await anon.from("capitulos").update({ texto: "forjado" }).eq("id", CHAPTER)).error);
+    const current = await snapshot();
+    assert.deepEqual(await pages(current, author), await pages(current));
+    assert.equal((await pages(current)).capitulos.length, 1);
+    assert.equal((await pages(current)).capitulos[0].texto, current.capitulo.texto);
+    assert.equal(check(await anon.rpc("existe_capitulo_projecao_publica", { p_slug: current.slug, p_numero: 1 })), true);
+    assert.equal(check(await anon.rpc("existe_capitulo_projecao_publica", { p_slug: current.slug, p_numero: 2 })), false);
+    const rows = check(await anon.rpc("listar_revisoes_sitemap_publico", { p_depois_id: WORK.replace(/1$/, "0"), p_limite: 500 }));
+    assert.ok(rows.some((r) => r.id === WORK && r.revisao === current.revisao));
+    assert.ok(!rows.some((r) => r.id === OTHER));
   });
   await t.test("edicao nao commitada fica invisivel; dados e revisao aparecem juntos apos commit", async () => {
     const before = await snapshot(), writer = transaction();
     writer.write(`begin; select set_config('request.jwt.claim.sub','${USER}',true); update public.capitulos set texto='Snapshot novo' where id='${CHAPTER}';\n\\echo FIRST_READY\n`);
     await writer.until("FIRST_READY");
     assert.deepEqual(await snapshot(), before);
+    assert.equal((await pages(before)).capitulos[0].texto, before.capitulo.texto);
     writer.end("commit;\n"); await writer.exit;
     const after = await snapshot();
     assert.equal(after.capitulo.texto, "Snapshot novo"); assert.equal(revision(after), revision(before) + 1n);
+    assert.equal((await pages(before)).valida, false);
+    assert.deepEqual((await pages(before)).capitulos, []);
+    assert.equal((await pages(after)).capitulos[0].texto, after.capitulo.texto);
   });
   await t.test("duas edicoes independentes da mesma obra serializam sem perder incremento", async () => {
     const before = await snapshot(), first = transaction(), second = transaction();
@@ -102,6 +119,8 @@ test("projecao publica local: RLS, snapshots, duas escritas concorrentes e rollb
     assert.notEqual(intermediate.obra.sinopse, "Concorrente");
     second.end("commit;\n"); await second.exit;
     const after = await snapshot(); assert.equal(after.obra.sinopse, "Concorrente"); assert.equal(revision(after), revision(before)+2n);
+    assert.equal((await pages(before)).valida, false);
+    assert.ok(Array.isArray(await manifest()));
   });
   await t.test("rollback nao publica revisao e recriar mesmo UUID/slug nao reutiliza chave antiga", async () => {
     const before = await snapshot();
@@ -114,6 +133,9 @@ test("projecao publica local: RLS, snapshots, duas escritas concorrentes e rollb
       ('${WORK}','${USER}','Recriada','QA','Fantasia','Romance',true,'qa-projecao','Livre'); commit;`);
     const after = await snapshot(anon, "qa-projecao", null);
     assert.ok(revision(after)>revision(before)); assert.notEqual(after.geracao, before.geracao);
+    assert.equal((await pages(before)).valida, false);
+    assert.equal((await pages(after)).valida, true);
+    assert.deepEqual((await pages(after)).capitulos, []);
     check(await author.auth.signOut());
     assert.deepEqual(await snapshot(), { ...after, estado: "capitulo_indisponivel" });
   });

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import ObraDinamicaClient from "./ObraDinamicaClient";
-import { obterObraMetadataPublica } from "../../../lib/cache/obrasPublicas";
+import { obterObraMetadataPublica as carregarObraMetadataPublica } from "../../../lib/cache/obrasPublicas";
 import {
   DEFAULT_HISTORIETAS_LANGUAGE,
   type HistorietasLanguage,
@@ -20,11 +21,18 @@ import {
   resolverIdiomaMetadata,
 } from "./lib/obra-page-metadata-utils";
 
+// Sem Full Route Cache/HTML cacheado: cada requisicao precisa da barreira.
+export const revalidate = 0;
+
 type PageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
+
+// Metadata e HTML compartilham apenas o snapshot confirmado DESTA requisicao.
+// A barreira interna continua fazendo dois POSTs distintos, sem memoizacao.
+const obterObraMetadataPublica = cache(carregarObraMetadataPublica);
 
 async function obterSlug(params: PageProps["params"]) {
   const paramsResolvidos = await params;

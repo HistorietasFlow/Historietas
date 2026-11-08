@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { LerCapituloClient } from "../../../../ler-capitulo/page";
-import { obterLeituraCapituloPublico } from "../../../../../lib/cache/obrasPublicas";
+import { obterLeituraCapituloPublico as carregarLeituraCapituloPublico } from "../../../../../lib/cache/obrasPublicas";
 import {
   criarJsonLdCapituloPublico,
   serializarJsonLdSeguro,
@@ -18,6 +19,9 @@ import {
   criarHrefCanonicoCapitulo,
   criarMetadataCapituloPublico,
 } from "./lib/obra-chapter-metadata-utils";
+
+export const revalidate = 0;
+const obterLeituraCapituloPublico = cache(carregarLeituraCapituloPublico);
 
 type PageProps = {
   params: Promise<{

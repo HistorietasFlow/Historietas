@@ -18,7 +18,7 @@ function objeto(valor: Json | undefined): valor is ObjetoJson {
   return valor !== null && typeof valor === "object" && !Array.isArray(valor);
 }
 
-/** Contrato novo, ainda SEM integracao com loaders/cache/ativacao do executor. */
+/** Barreira primaria nova em cada invocacao; nao confirma flush nem ativa executor. */
 export async function lerProjecaoPublicaObra(
   slug: string, numero: number | null = null,
 ): Promise<ProjecaoPublicaObra> {

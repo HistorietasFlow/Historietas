@@ -1,10 +1,10 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
+import { lerProjecaoPublicaObra, type ProjecaoPublicaObra } from "../server/agendamento/ler-projecao-publica";
+import { lerComBarreiraPublica, ProjecaoPublicaAlterada } from "./barreira-projecao-publica";
 import { tagObraPublica } from "./obra-publica-cache-tag";
 import {
-  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
-  ehClassificacao18,
   normalizarAvisosConteudo18,
 } from "../historietasAdultContent";
 import { idObraSupabaseValido } from "../utils";
@@ -77,24 +77,6 @@ export type LeituraCapituloPublico = {
   };
 };
 
-type ObraLeituraPublicaRow = {
-  id: string;
-  user_id: string | null;
-  titulo: string | null;
-  autor: string | null;
-  genero: string | null;
-  formato: string | null;
-  classificacao_indicativa: string | null;
-  avisos_conteudo: string[] | null;
-  sinopse: string | null;
-  tags: string[] | null;
-  capa_url: string | null;
-  capa_nome: string | null;
-  slug: string | null;
-  link: string | null;
-  criada_em: string | null;
-};
-
 type CapituloLeituraPublicaRow = {
   id: string;
   titulo: string | null;
@@ -105,153 +87,71 @@ type CapituloLeituraPublicaRow = {
   criado_em: string | null;
 };
 
-export const obterObraMetadataPublica = (slug: string) => unstable_cache(
-  async (slug: string): Promise<ObraMetadataPublica | null> => {
+function chaveProjecao(projecao: ProjecaoPublicaObra) {
+  return projecao.estado === "obra_indisponivel" ? projecao.estado
+    : JSON.stringify([projecao.obraId, projecao.geracao, projecao.revisao, projecao.slug]);
+}
+
+function comProjecao<T>(slug: string, tipo: string, numero: number | null,
+  carregar: (projecao: Exclude<ProjecaoPublicaObra, { estado: "obra_indisponivel" }>) => Promise<T>) {
+  return lerComBarreiraPublica({
+    lerVersao: () => lerProjecaoPublicaObra(slug),
+    chave: chaveProjecao,
+    carregar: async (projecao) => {
+      // Slug desconhecido nao tem geracao: nunca persistir o null por slug.
+      if (projecao.estado === "obra_indisponivel") return null;
+      return unstable_cache(() => carregar(projecao),
+        ["historietas-projecao-publica-v1", tipo, chaveProjecao(projecao), String(numero)],
+        { revalidate: 60, tags: [tagObraPublica(slug)] })();
+    },
+  });
+}
+
+const texto = (valor: unknown) => typeof valor === "string" ? valor : null;
+
+export const obterObraMetadataPublica = (slug: string): Promise<ObraMetadataPublica | null> =>
+  comProjecao(slug, "metadata", null, async ({ obra, slug }) => ({
+    titulo: texto(obra.titulo), autor: texto(obra.autor), sinopse: texto(obra.sinopse),
+    capa_url: texto(obra.capa), slug,
+  }));
+
+export const obterRotaCapituloPublico = async (slug: string, numeroCapitulo: number): Promise<RotaCapituloPublico | null> => {
+  const leitura = await obterLeituraCapituloPublico(slug, numeroCapitulo);
+  return leitura ? { obraId: leitura.obraId, capituloId: leitura.capituloId } : null;
+};
+
+export const obterLeituraCapituloPublico = (slug: string, numeroCapitulo: number): Promise<LeituraCapituloPublico | null> =>
+  comProjecao(slug, "leitura", numeroCapitulo, async (projecao) => {
     if (!supabasePublicoConfigurado) {
       throw new Error("Supabase público não configurado.");
     }
 
-    const supabase = criarSupabasePublicClient();
-    const { data, error } = await supabase
-      .from("obras")
-      .select("titulo,autor,sinopse,capa_url,slug,classificacao_indicativa")
-      .eq("slug", slug)
-      .eq("publicado", true)
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
-    }
-
-    if (
-      !data ||
-      (ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
-        ehClassificacao18(data.classificacao_indicativa))
-    ) {
-      return null;
-    }
-
-    return {
-      titulo: data.titulo,
-      autor: data.autor,
-      sinopse: data.sinopse,
-      capa_url: data.capa_url,
-      slug: data.slug,
+    const supabase = criarSupabasePublicClient({ fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) });
+    const campos = projecao.obra;
+    const obra = {
+      id: projecao.obraId, slug: projecao.slug, titulo: texto(campos.titulo), autor: texto(campos.autor),
+      user_id: texto(campos.autorId), genero: texto(campos.genero), formato: texto(campos.formato),
+      classificacao_indicativa: texto(campos.classificacaoIndicativa),
+      avisos_conteudo: Array.isArray(campos.avisosConteudo) ? campos.avisosConteudo.filter((v): v is string => typeof v === "string") : [],
+      sinopse: texto(campos.sinopse), tags: Array.isArray(campos.tags) ? campos.tags.filter((v): v is string => typeof v === "string") : [],
+      capa_url: texto(campos.capa), capa_nome: texto(campos.capaNome), criada_em: texto(campos.criadaEm), link: null as string | null,
     };
-  },
-  ["historietas-obra-metadata-publica-v3"],
-  {
-    revalidate: 300,
-    tags: ["historietas-obras-publicas", tagObraPublica(slug)],
-  },
-)(slug);
-
-export const obterRotaCapituloPublico = (slug: string, numeroCapitulo: number) => unstable_cache(
-  async (
-    slug: string,
-    numeroCapitulo: number,
-  ): Promise<RotaCapituloPublico | null> => {
-    if (!supabasePublicoConfigurado) {
-      throw new Error("Supabase público não configurado.");
-    }
-
-    const supabase = criarSupabasePublicClient();
-
-    const { data: obra, error: obraError } = await supabase
-      .from("obras")
-      .select("id,classificacao_indicativa")
-      .eq("slug", slug)
-      .eq("publicado", true)
-      .limit(1)
-      .maybeSingle();
-
-    if (obraError) {
-      throw obraError;
-    }
-
-    if (
-      !obra ||
-      !idObraSupabaseValido(obra.id) ||
-      (ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
-        ehClassificacao18(obra.classificacao_indicativa))
-    ) {
-      return null;
-    }
-
-    const { data: capitulo, error: capituloError } = await supabase
-      .from("capitulos")
-      .select("id")
-      .eq("obra_id", obra.id)
-      .eq("ordem", numeroCapitulo)
-      .eq("publicado", true)
-      .limit(1)
-      .maybeSingle();
-
-    if (capituloError) {
-      throw capituloError;
-    }
-
-    if (!capitulo || !idObraSupabaseValido(capitulo.id)) {
-      return null;
-    }
-
-    return {
-      obraId: obra.id,
-      capituloId: capitulo.id,
-    };
-  },
-  ["historietas-rota-capitulo-publico-v3"],
-  {
-    revalidate: 60,
-    tags: ["historietas-obras-publicas", "historietas-capitulos-publicos", tagObraPublica(slug)],
-  },
-)(slug, numeroCapitulo);
-
-export const obterLeituraCapituloPublico = (slug: string, numeroCapitulo: number) => unstable_cache(
-  async (
-    slug: string,
-    numeroCapitulo: number,
-  ): Promise<LeituraCapituloPublico | null> => {
-    if (!supabasePublicoConfigurado) {
-      throw new Error("Supabase público não configurado.");
-    }
-
-    const supabase = criarSupabasePublicClient();
-    const { data: obra, error: obraError } = await supabase
-      .from("obras")
-      .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,slug,link,criada_em",
-      )
-      .eq("slug", slug)
-      .eq("publicado", true)
-      .limit(1)
-      .maybeSingle<ObraLeituraPublicaRow>();
-
-    if (obraError) {
-      throw obraError;
-    }
-
-    if (
-      !obra ||
-      !idObraSupabaseValido(obra.id) ||
-      (ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
-        ehClassificacao18(obra.classificacao_indicativa))
-    ) {
-      return null;
-    }
 
     const capitulos = await carregarTodasPaginasSupabase<CapituloLeituraPublicaRow>({
       nomeColecao: "capítulos públicos da leitura canônica",
-      buscarPagina: async (inicio, fim) =>
-        supabase
-          .from("capitulos")
-          .select("id,titulo,texto,ordem,publicado,visualizacoes,criado_em")
-          .eq("obra_id", obra.id)
-          .eq("publicado", true)
-          .order("ordem", { ascending: true })
-          .order("id", { ascending: true })
-          .range(inicio, fim),
+      buscarPagina: async (inicio, fim) => {
+        const { data, error } = await supabase.rpc("listar_capitulos_projecao_publica", {
+          p_slug: slug, p_geracao: projecao.geracao, p_revisao: projecao.revisao,
+          p_inicio: inicio, p_limite: fim - inicio + 1,
+        });
+        if (error) throw error;
+        if (!data || typeof data !== "object" || Array.isArray(data) || typeof data.valida !== "boolean" || !Array.isArray(data.capitulos)) {
+          throw new Error("Resposta de capítulos públicos inválida.");
+        }
+        if (!data.valida) throw new ProjecaoPublicaAlterada();
+        obra.link = texto(data.link);
+        return { data: data.capitulos as CapituloLeituraPublicaRow[], error: null };
+      },
     });
     const capituloSolicitado = capitulos.find(
       (capitulo) => capitulo.ordem === numeroCapitulo,
@@ -327,10 +227,4 @@ export const obterLeituraCapituloPublico = (slug: string, numeroCapitulo: number
         link: obra.link?.trim() || `/obra/${slugCanonico}`,
       },
     };
-  },
-  ["historietas-leitura-capitulo-publico-v2"],
-  {
-    revalidate: 60,
-    tags: ["historietas-obras-publicas", "historietas-capitulos-publicos", tagObraPublica(slug)],
-  },
-)(slug, numeroCapitulo);
+  });

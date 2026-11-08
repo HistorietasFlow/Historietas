@@ -42,21 +42,19 @@ test("consumidor somente solicita; repete sem ack/publicar e valida o lote antes
 });
 
 test("caches aquecidos positivos/negativos e listas usam tag isolada por slug, sem alterar RLS/18+", async () => {
-  const cache = new Map(), calls = new Map();
+  const cache = new Map();
   const works = new Map();
-  const client = { from(table) {
-    const filters = {};
-    const query = {
-      select() { return this; }, eq(k, v) { filters[k] = v; return this; }, limit() { return this; }, order() { return this; }, range() { return this; },
-      async maybeSingle() {
-        const slug = filters.slug; calls.set(slug, (calls.get(slug) || 0) + 1);
-        if (table === "obras") return { data: works.get(slug)?.publicado ? works.get(slug) : null, error: null };
-        return { data: [...works.values()].flatMap((w) => w.capitulos).find((c) => c.obra_id === filters.obra_id && c.ordem === filters.ordem && c.publicado) || null, error: null };
-      },
-      then(resolve, reject) { return Promise.resolve({ data: [...works.values()].flatMap((w) => w.capitulos).filter((c) => c.obra_id === filters.obra_id && c.publicado), error: null }).then(resolve, reject); },
-    }; return query;
-  } };
+  const client = { rpc: async (_name, args) => ({ data: { valida: true, link: null, capitulos: works.get(args.p_slug).capitulos.filter((c) => c.publicado) }, error: null }) };
+  const projection = async (slug) => {
+    const work = works.get(slug);
+    if (!work?.publicado || work.classificacao_indicativa === "18+") return { estado: "obra_indisponivel" };
+    return { estado: "obra_publica", obraId: work.id, geracao: id, revisao: JSON.stringify(work), slug,
+      obra: { titulo: work.titulo, autorId: work.user_id, classificacaoIndicativa: work.classificacao_indicativa } };
+  };
+  const barrier = load("../../lib/cache/barreira-projecao-publica.ts");
   const loaders = load("../../lib/cache/obrasPublicas.ts", {
+    "../server/agendamento/ler-projecao-publica": { lerProjecaoPublicaObra: projection },
+    "./barreira-projecao-publica": barrier,
     "next/cache": { unstable_cache(fn, keys, options) { return async (...args) => {
       const key = JSON.stringify([keys, args]);
       if (!cache.has(key)) cache.set(key, { data: await fn(...args), tags: options.tags });
@@ -65,7 +63,7 @@ test("caches aquecidos positivos/negativos e listas usam tag isolada por slug, s
     "./obra-publica-cache-tag": tags,
     "../historietasAdultContent": { ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO: true, ehClassificacao18: (c) => c === "18+", normalizarAvisosConteudo18: () => [] },
     "../utils": { idObraSupabaseValido: (s) => typeof s === "string" && s.length === 36 },
-    "../supabase/paginacao.mjs": { carregarTodasPaginasSupabase: async ({ buscarPagina }) => (await buscarPagina(0, 999)).data },
+    "../supabase/paginacao.mjs": { carregarTodasPaginasSupabase: async ({ buscarPagina }) => (await buscarPagina(0, 499)).data },
     "../supabase/public": { supabasePublicoConfigurado: true, criarSupabasePublicClient: () => client },
   });
   const expire = (slug) => { for (const [key, entry] of cache) if (entry.tags.includes(tags.tagObraPublica(slug))) cache.delete(key); };
@@ -74,20 +72,22 @@ test("caches aquecidos positivos/negativos e listas usam tag isolada por slug, s
   assert.equal(await loaders.obterRotaCapituloPublico("obra-a", 2), null);
   const work = { id, user_id: id, slug: "obra-a", titulo: "Obra A", publicado: true, classificacao_indicativa: "Livre", capitulos: [{ id, obra_id: id, titulo: "Um", texto: "Texto um", ordem: 1, publicado: true }] };
   works.set("obra-a", work);
-  assert.equal(await loaders.obterObraMetadataPublica("obra-a"), null);
-  expire("obra-a");
+  // Ausencia de slug nao e cacheada; publicar torna o resultado visivel sem flush.
   assert.equal((await loaders.obterObraMetadataPublica("obra-a")).titulo, "Obra A");
   assert.equal((await loaders.obterLeituraCapituloPublico("obra-a", 1)).obra.capitulos.length, 1);
   assert.equal(await loaders.obterLeituraCapituloPublico("obra-a", 2), null);
   assert.equal(await loaders.obterRotaCapituloPublico("obra-a", 2), null);
-  await loaders.obterObraMetadataPublica("obra-b"); const otherCalls = calls.get("obra-b");
+  works.set("obra-b", { ...work, id: id.replace(/1$/, "2"), slug: "obra-b", titulo: "Obra B" });
+  await loaders.obterObraMetadataPublica("obra-b");
+  const [otherKey, otherEntry] = [...cache.entries()].find(([, entry]) => entry.tags.includes(tags.tagObraPublica("obra-b")));
   work.capitulos.push({ ...work.capitulos[0], id: id.replace(/1$/, "2"), ordem: 2, titulo: "Dois" });
-  assert.equal((await loaders.obterLeituraCapituloPublico("obra-a", 1)).obra.capitulos.length, 1);
+  assert.equal((await loaders.obterLeituraCapituloPublico("obra-a", 1)).obra.capitulos.length, 2);
   expire("obra-a");
   assert.equal((await loaders.obterLeituraCapituloPublico("obra-a", 1)).obra.capitulos.length, 2);
   assert.equal((await loaders.obterLeituraCapituloPublico("obra-a", 2)).numeroCapitulo, 2);
   assert.equal((await loaders.obterRotaCapituloPublico("obra-a", 2)).capituloId, work.capitulos[1].id);
-  await loaders.obterObraMetadataPublica("obra-b"); assert.equal(calls.get("obra-b"), otherCalls);
+  assert.equal((await loaders.obterObraMetadataPublica("obra-b")).titulo, "Obra B");
+  assert.equal(cache.get(otherKey), otherEntry);
   work.classificacao_indicativa = "18+"; expire("obra-a");
   assert.equal(await loaders.obterLeituraCapituloPublico("obra-a", 1), null);
   assert.equal(await loaders.obterRotaCapituloPublico("obra-a", 1), null);

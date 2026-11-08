@@ -1,5 +1,122 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
+## Fase 5B — barreira no servidor, sem ativação automática
+
+`20261108205505_barreira_revisao_cache_publico.sql` adiciona somente leituras
+SQL STABLE/SECURITY INVOKER, com EXECUTE para anon/authenticated, sem novo DML
+ou privilégio de tabela. Deve preceder o app no rollout autorizado; não foi
+aplicada em produção. RLS e bloqueio 18+ continuam aplicados.
+
+### Obra e capítulo
+
+- Cada loader começa por `obter_projecao_publica_obra`, POST/no-store, cliente
+  público sem sessão. Non-GET usa o primário no roteador Supabase; não configurar
+  endpoint dedicado de réplica para esses loaders.
+- Data Cache: namespace de código + UUID da obra + geração + revisão decimal +
+  tipo do payload + número canônico. `revalidate: 60` rege revalidação, não
+  garante atualização nem exclusão física em 60 s. Chaves de revisões antigas
+  podem permanecer até a evicção da plataforma, mas não são reutilizadas pela
+  barreira. Tags por slug permanecem compatíveis com a outbox.
+- Metadata vem do snapshot da RPC. Cada página da lista do leitor exige a mesma
+  geração/revisão: dados e conferência na mesma instrução SQL. Mudança entre
+  páginas recusa a coleta. Normalização e contrato do leitor são preservados.
+- Antes de devolver inclusive um cache hit, OUTRO POST/no-store confere revisão.
+  Mudanças descartam o resultado: até três tentativas, sem loop ilimitado. Erros
+  propagam indisponibilidade, nunca cache antigo ou null/404. Escritor atrasado
+  só ocupa uma chave antiga; duas instâncias não precisam compartilhar memória.
+- Slug desconhecido não tem geração: não persistir seu null. Capítulo ausente
+  em obra pública só pode ter null cacheado sob a revisão dessa obra. Exclusão,
+  rename, despublicação, 18+ e recriação resolvem a identidade atual.
+- `React.cache` compartilha metadata/HTML somente na mesma requisição, com o
+  snapshot já confirmado. O adaptador autoritativo e suas duas leituras NÃO são
+  memoizados. Isso evita duplicar barreiras dentro do mesmo render.
+- `revalidate = 0` nas páginas impede Full Route/HTML/RSC Cache do servidor de
+  pular a barreira; respostas locais devem ter private/no-store. O proxy decide
+  existência por POST/no-store leve, sem texto ou GET de réplica; erros seguem
+  ao loader, não são classificados como ausência.
+
+### Sitemap
+
+O XML deixa de usar ISR 3600. `/sitemap.xml` passa a Route Handler explícito
+(`app/sitemap.xml/route.ts`), preservando URLs/campos/formato e escapando XML.
+O metadata route anterior, mesmo dinâmico, emitiu `public, max-age=0,
+must-revalidate` no teste real. O handler agora declara private/no-store também
+para CDN/Vercel-CDN, sem depender desse padrão de cache de resposta.
+A barreira é SHA-256 dos trios públicos ordenados
+`obraId:geracao:revisao`, calculado em um snapshot SQL. Não é MAX(revisão) ou
+timestamp: inclusão e exclusão também mudam a impressão do conjunto.
+
+Um hit faz duas pequenas RPCs, antes/depois do payload cacheado. No miss, o
+manifesto e os capítulos paginam por UUID (500 itens), sem textos nem N+1. O
+SHA do manifesto coletado deve coincidir com a barreira e cada capítulo com a
+geração/revisão de sua obra. Uma conferência antes de armazenar e outra antes
+de devolver recusam coletas mistas. Preservam-se rotas estáticas, ordem real,
+publicação, RLS, 18+ e lastModified. Erro não retorna XML parcial/antigo como
+sucesso. O cache agregado tem namespace/impressão próprios, sem limpar catálogo.
+
+A agregação custa O(número de obras públicas) por barreira no primário, embora
+transfira só 64 caracteres. O miss pagina os metadados públicos existentes. Não
+há lock global de escrita, tabela de epoch, serviço pago ou quota ampliada.
+Catálogos muito grandes exigem nova medição; o sitemap único conserva o limite
+arquitetural anterior, não é uma solução ilimitada de escala.
+Versionar chaves aumenta a quantidade de entradas durante edições/publicações.
+O volume/retenção real do Data Cache gerenciado não foi medido nem limitado por
+uma API nova. Revisar bytes, churn e política operacional antes de ativar:
+não confundir revalidação, flush solicitado ou TTL com limpeza física confirmada.
+
+### Limites e bloqueios
+
+Garantia de snapshot confirmado no servidor não revoga bytes já entregues.
+Router Cache do cliente, prefetch explícito anterior, Back/Forward e abas abertas
+podem reutilizar RSC/HTML SEM requisição. `revalidate = 0` não elimina esse
+comportamento. Não introduzir reload, polling, flag experimental ou alteração
+do histórico do leitor para mascará-lo. **Ativação automática segue bloqueada**
+até contrato/validação dessas navegações e rollout de todas as instâncias.
+Os lifecycles clientes existentes (`useObraPublicWorkLoad` e
+`useLerCapituloInitialLoad`) ainda recarregam conteúdo/interações após hidratação
+e possuem fallbacks locais. Eles não consomem esta revisão; a entrega desta fase
+não deve ser apresentada como barreira ponta a ponta desses caminhos ou como
+substituição das regras autenticadas/drafts do leitor interno. Integrá-los exige
+fase específica, sem remover guards de identidade ou misturar dados privados.
+Caches externos, restore ou mudança de policies exigem revisão de namespace e
+rollout; testes locais não são SLA multi-região nem revogação instantânea.
+
+A outbox fica intacta: `solicitada_em` não é ACK e nenhum evento é confirmado ou
+removido por esta barreira. Cron, UI e publicação automática seguem desativados.
+Uploads/publicação ilustrada/limpeza e retenção de quotas permanecem suspensos;
+o diagnóstico local `392ee0f2` é preservado.
+
+Referências verificadas: [renderização dinâmica](https://nextjs.org/docs/app/api-reference/functions/connection),
+[cache sem Cache Components](https://nextjs.org/docs/app/guides/caching-without-cache-components),
+[Router Cache/histórico](https://nextjs.org/docs/app/api-reference/config/next-config-js/staleTimes)
+e [primário/réplicas Supabase](https://supabase.com/docs/guides/platform/read-replicas).
+Também foram conferidos os documentos distribuídos com Next 16.4.5.
+
+### Medições locais da fase 5B
+
+Build de produção + Supabase descartável 54421, mesma fixture pública; tempos
+de resposta SSR completa (não LCP, nem latência Vercel). Antes: três amostras
+aquecidas. Depois: três coletas válidas, nove amostras aquecidas agregadas; a
+primeira resposta de cada coleta foi excluída. Não houve medição remota.
+
+| Resposta | Mediana antes | Mediana depois | Bytes do corpo antes/depois |
+| --- | --- | --- | --- |
+| Obra | 44 ms | 52 ms | 167.717 / 168.372 |
+| Capítulo | 71 ms | 73 ms | 183.627 / 184.282 |
+| Sitemap | 11 ms | 87 ms | 463.292 / 449.939 |
+
+Não inferir ganho do leitor por execuções isoladas: a variação é ambiental. O
+sitemap tem custo adicional comprovado ao abandonar a resposta ISR sem barreira.
+Contagem real sanitizada nos access logs locais, por resposta aquecida: obra
+faz duas RPCs de projeção; capítulo duas mais uma de existência no proxy; sitemap
+duas RPCs de impressão. No código anterior, hits de Data Cache/ISR podiam não
+consultar o banco (o proxy do capítulo fazia um GET); isso é análise de contrato,
+não uma contagem de rede retrospectiva medida. No miss, somam-se as páginas de
+dados e conferências descritas acima. Não há novas consultas de hidratação.
+O sitemap transfere menos XML por serialização compacta, sem remover URLs.
+Scripts temporários de medição foram removidos; logs locais ignorados não são
+artefatos públicos, prova de multi-região ou SLA de produção.
+
 ## Fase 5A — revisão transacional, ainda sem barreira nos caches
 
 `20261108195558_revisao_transacional_projecao_publica.sql` mantém um ledger
