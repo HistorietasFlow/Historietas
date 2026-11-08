@@ -149,6 +149,18 @@ service role no endpoint e sem liberar Storage. Escrita segura depende
 de tentativa durável com capacidade retida durante IO, inclusive após expiração
 e cascatas, fence de autorização e recibo/limpeza idempotentes. Essa continuação
 permanece pendente; não apresentar o upload ilustrado como implementado.
+A continuação 2C2a cria `capitulo_upload_tentativas` sem cascatas e contratos
+privados de preparação/início/falha. O ledger compartilhado mantém capacidade
+de tentativas pendentes/incertas mesmo após expiração, logout e exclusão, sem
+contagem dupla por caminho. Leases não renovam no retry e não liberam capacidade
+automaticamente. Somente cancelamento comprovadamente anterior ao início pode
+retirar esse compromisso; a reserva ativa continua contando. Migration:
+`20261108012821_registrar_tentativas_upload_ilustrado.sql`.
+**Upload real continua bloqueado:** nenhum consumidor, wrapper público ou grant
+ao cliente/service_role foi adicionado. Fencing no Storage real, recibo de
+sucesso, liberação pós-IO e recuperação/limpeza via API ainda precisam de fase
+própria antes da ativação. Testes com SQL/Storage administrativos são fixtures
+exclusivamente locais, não um caminho de upload em produção.
 Merge da PR não implica aplicação da migration em produção.
 
 A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi

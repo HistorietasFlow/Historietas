@@ -101,6 +101,7 @@ test("reservas reais: identidade, Storage legado e concorrencia na ultima vaga",
   const removed = () => admin.storage.from("arquivos-obras").remove(paths).then(check);
   await removed();
   const clean = () => sql(env.container, `begin;
+    delete from historietas_privado.capitulo_upload_tentativas where user_id='${AUTHOR}';
     delete from public.obras where id='${WORK}';
     delete from public.profiles where user_id in ('${AUTHOR}','${OTHER}');
     delete from auth.users where id in ('${AUTHOR}','${OTHER}');
@@ -217,6 +218,70 @@ test("reservas reais: identidade, Storage legado e concorrencia na ultima vaga",
     assert.equal((await reserve(other, key)).error?.code, "42501");
     assert.equal((await other.rpc("liberar_reserva_pagina_capitulo", { p_reserva_id: value.reservaId })).error?.code, "42501");
     await releaseAll();
+  });
+
+  await t.test("ledger duravel privado: concorrencia, timeout e quotas reais compartilhadas", async () => {
+    const value = track(await reserve(author));
+    const session = check(await author.auth.getSession()).session;
+    // Usa somente sub/session_id do JWT REAL em memoria, nunca imprime o token.
+    // SQL privilegiado e exclusivo da fixture local: nao existe RPC publica para
+    // preparar/iniciar tentativas nem permissao para service_role faze-lo.
+    const jwt = JSON.parse(Buffer.from(session.access_token.split(".")[1], "base64url"));
+    assert.equal(jwt.sub, AUTHOR);
+    assert.match(jwt.session_id, /^[a-f0-9-]{36}$/i);
+    const claims = `select set_config('request.jwt.claims','${JSON.stringify({ sub: AUTHOR, session_id: jwt.session_id })}',true);`;
+    const key = randomUUID();
+    const prepare = `select historietas_privado.preparar_tentativa_upload_pagina('${value.reservaId}','${CHAPTER}',0,'${key}');`;
+    const run = (source) => new Promise((resolve, reject) => {
+      const child = spawn("docker", ["exec", "-i", env.container, "psql", "-U", "postgres", "-d", "postgres", "-XqAt",
+        "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=sqlstate"], { windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
+      let out = "", err = "";
+      child.stdout.on("data", (data) => { out += data; });
+      child.stderr.on("data", (data) => { err += data; });
+      child.on("error", reject);
+      child.on("close", (code) => resolve({ code, out: out.trim().split(/\r?\n/).at(-1), err }));
+      child.stdin.end(`begin; ${claims} ${source} commit;`);
+    });
+    const cleanupAttempt = () => sql(env.container, `delete from historietas_privado.capitulo_upload_tentativas where reserva_id='${value.reservaId}';`);
+    const path = `${AUTHOR}/capitulos/${CHAPTER}/${value.reservaId}.png`;
+    try {
+      const prepared = await concurrentAtQuotaLock(env.container, [() => run(prepare), () => run(prepare)]);
+      assert.deepEqual(prepared.map((r) => r.code), [0, 0]);
+      assert.ok(prepared[0].out === prepared[1].out, "Retry nao renova lease (nao imprimir recibos internos).");
+      const attempt = JSON.parse(prepared[0].out);
+      assert.equal(attempt.escritaHabilitada, false);
+      const start = `select historietas_privado.iniciar_transferencia_pagina('${attempt.tentativaId}',
+        '${attempt.leaseToken}','${"a".repeat(64)}',${PNG.length},1,1,'image/png');`;
+      const starts = await concurrentAtQuotaLock(env.container, [() => run(start), () => run(start)]);
+      assert.equal(starts.filter((r) => r.code === 0).length, 1, "Somente um inicio autorizado pelo protocolo privado.");
+      assert.match(starts.find((r) => r.code !== 0).err, /PT409/);
+      for (const who of [anon, author, other, admin]) {
+        assert.ok((await who.schema("historietas_privado").from("capitulo_upload_tentativas").select("*")).error);
+        assert.ok((await who.rpc("preparar_tentativa_upload_pagina", { p_reserva_id: value.reservaId,
+          p_capitulo_id: CHAPTER, p_versao_esperada: 0, p_chave_requisicao: key })).error);
+      }
+      assert.equal(String((await author.storage.from("arquivos-obras").upload(path, PNG, { contentType: "image/png" })).error?.statusCode), "403");
+      assert.equal((await run(`select historietas_privado.encerrar_tentativa_upload_pagina('${attempt.tentativaId}','${attempt.leaseToken}','timeout');`)).code, 0);
+      await releaseAll();
+      for (const legacyPath of paths.slice(0, 29)) check(await author.storage.from("arquivos-obras").upload(legacyPath, PNG, { contentType: "image/png" }));
+      assert.ok((await author.storage.from("arquivos-obras").upload(paths[29], PNG, { contentType: "image/png" })).error,
+        "Timeout + reserva liberada ainda ocupam a ultima vaga.");
+      check(await author.storage.from("arquivos-obras").upload(paths[0], PNG, { contentType: "image/png", upsert: true }));
+      // Escrita ADMINISTRATIVA de fixture somente local, simulando resposta tardia.
+      // Nao e um escritor de producao nem habilita upload pelo endpoint.
+      check(await admin.storage.from("arquivos-obras").upload(path, PNG, { contentType: "image/png" }));
+      assert.equal(sql(env.container, `select count(*) from historietas_privado.objetos_storage_com_reservas() where name='${path}';`), "1");
+      assert.equal(sql(env.container, `select metadata->>'size' from historietas_privado.objetos_storage_com_reservas() where name='${path}';`), "2097152");
+      check(await admin.storage.from("arquivos-obras").remove([path]));
+      assert.equal(sql(env.container, `select count(*) from historietas_privado.objetos_storage_com_reservas() where name='${path}';`), "1",
+        "Ausencia atual do objeto nao libera tentativa ambigua automaticamente.");
+    } finally {
+      check(await admin.storage.from("arquivos-obras").remove([path]));
+      await removed();
+      // Exclusao apenas da fixture sem IO em andamento; nenhuma API libera o ledger.
+      cleanupAttempt();
+      await releaseAll();
+    }
   });
 
   await t.test("pre-validacao confere JWT real, nao grava e recusa token apos logout", async () => {
