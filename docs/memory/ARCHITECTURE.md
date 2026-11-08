@@ -127,6 +127,46 @@
 
 Supabase é usado para autenticação, banco e fluxos de dados da aplicação.
 
+#### Fase 2C1 — recepção autenticada e pré-validação, sem gravação
+
+- Entrega parcial deliberada: `POST /api/capitulos-ilustrados/prevalidar-pagina`
+  recebe bytes brutos (`application/octet-stream`) com Bearer JWT e headers
+  `x-reserva-id`, `x-capitulo-id`, `x-versao-esperada`. Não recebe caminhos,
+  identidade, dimensões ou MIME como autorização. Não há ativação na interface.
+- O endpoint verifica o usuário no Auth e chama a RPC somente leitura
+  `conferir_reserva_pagina_capitulo` antes da leitura e novamente após o decoder.
+  Ela exige sessão ainda presente em `auth.sessions`, autoria real de obra e
+  capítulo, reserva pertencente à identidade, versão atual, estado reservado e
+  prazo válido. Não expõe caminho nem capacidade de upload. Wrappers invoker e
+  núcleo definer privado com grants explícitos; service role não pode chamar.
+- Usa o validador binário da fase 2A; resposta contém apenas metadados/hash
+  canônicos e declara `estado=validado_sem_upload`, `uploadHabilitado=false`.
+  Não retorna bytes, não persiste originais/canônicos, não altera reserva e não
+  produz prova reutilizável para uma gravação futura. Repetir é só pré-validar.
+- Limite de 2 MiB verificado no stream, não apenas no Content-Length; até 4.096
+  chunks, prazo de recepção de dez segundos e duas recepções simultâneas por
+  instância sem fila. Reutiliza o núcleo privado do rate limit persistente com
+  30 por usuário/minuto, escopo e parâmetros fixos e identidade/sessão verificadas
+  no banco, sem modificar grants da RPC genérica. Não usa service role.
+  Nenhum token, imagem ou erro interno é registrado nas respostas/logs do código.
+- **Motivo da divisão:** na fase 2B a quota de uma reserva vence e sua linha
+  desaparece por FK/cascata; uma chamada de rede ao Storage pode chegar depois.
+  RLS de quota não restringe service role. Um simples check seguido de upload
+  administrativo permite capacidade liberada durante IO, escrita atrasada ou
+  órfãos sem registro. A conferência desta fase não resolve essa janela.
+- **Antes de escrever:** implementar tentativa durável independente das cascatas,
+  capacidade fixada durante IO e resultados ambíguos, fence de sessão/versão e
+  expiração, autorização Storage restrita ao servidor após validação, criação
+  imutável sem upsert, recibo idempotente e registro durável para limpeza via API.
+  Uma resposta perdida não comprova ausência do arquivo. Contabilizar caminho
+  somente uma vez, inclusive após expiração/liberação/exclusão da reserva.
+  Só então conectar gravação de bytes canônicos; nunca aceitar este hash vindo
+  do navegador como atestado de validação. Esses controles ainda não existem.
+- Migration `20261108004015_autorizar_prevalidacao_paginas_ilustradas.sql`
+  acrescenta conferência e adaptador restrito do limitador. Não altera quotas, policies do Storage,
+  manifesto, grants de tabelas ou bloqueios de upload/18+. Finalização,
+  reordenação, assinatura e leitor ilustrado continuam fora da fase.
+
 Regras importantes:
 
 - RLS e GRANT são controles separados.
