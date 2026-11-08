@@ -167,6 +167,50 @@ Supabase é usado para autenticação, banco e fluxos de dados da aplicação.
   manifesto, grants de tabelas ou bloqueios de upload/18+. Finalização,
   reordenação, assinatura e leitor ilustrado continuam fora da fase.
 
+#### Fase 2C2a — tentativa durável e retenção de capacidade, ainda sem escritor
+
+- `20261108012821_registrar_tentativas_upload_ilustrado.sql` cria o ledger privado
+  `capitulo_upload_tentativas`, **sem FKs** para reserva, capítulo, obra, sessão ou
+  conta. Guarda identidade, sessão, versão, caminho gerado pela reserva, chave
+  idempotente, lease imutável no protocolo e metadados canônicos esperados.
+- `preparar_tentativa_upload_pagina`, `iniciar_transferencia_pagina` e
+  `encerrar_tentativa_upload_pagina` são somente contratos internos invoker, sem
+  EXECUTE para anon/authenticated/service_role e sem wrappers públicos. Nenhum
+  endpoint os chama. Não aceitar hash/metadados do navegador como atestado.
+  O owner do banco nos testes não representa uma credencial disponível ao app.
+- Preparação e início usam o mesmo advisory lock transacional das quotas dos
+  anexos (`historietas:storage:cota:v1`), revalidam sessão ativa, propriedade,
+  capítulo, versão e reserva pela conferência da 2C1. Uma reserva aceita uma só
+  tentativa; retries da mesma sessão/chave retornam o mesmo lease sem renová-lo.
+  Outra sessão, chave ou identidade não assume a tentativa.
+- Estados: `preparada`, `transferindo`, `incerta`, `cancelada_sem_envio`.
+  Só preparada pode iniciar, uma única vez, com lease válido de dois minutos e
+  metadados dentro dos limites da 2A. Iniciar não concede permissão no Storage.
+  Somente cancelar **antes** do início retira o compromisso da tentativa;
+  a reserva original ainda conta enquanto ativa. Após início, qualquer falha
+  vira incerta, inclusive timeout, cancelamento ou resposta ambígua. Registrar
+  falha é possível após logout/cascata, pois apenas retira direitos e não libera
+  capacidade. Erros são códigos fixos, nunca mensagens/tokens arbitrários.
+- O ledger compartilhado agrega MAX por caminho entre reserva, tentativa e
+  objeto: um só objeto, cobrando o maior tamanho. Todas as tentativas não
+  canceladas mantêm 2 MiB/objeto **sem prazo automático de liberação**, mesmo
+  após lease/reserva expirados, logout, exclusão ou ausência atual do objeto.
+  Quotas, helper transacional e policies dos anexos legados permanecem iguais.
+- Tentativas transferindo/incertas (ou leases vencidos) são registros duráveis
+  de recuperação, não autorização de limpeza. A outbox antiga continua recebendo
+  cascatas, mas nenhum executor pode remover caminhos com tentativa possivelmente
+  em andamento nem tratar ausência momentânea como confirmação de quiescência.
+- **Entrega parcial, não pronta para uso:** não há grants de escrita Storage,
+  escritor HTTP, takeover de lease, recibo de sucesso, liberação pós-IO ou executor
+  de reconciliação/limpeza. Não há tentativa automática nem retenção automática de
+  tombstones. O custo conservador de manter capacidade indefinidamente só será
+  aceitável no fluxo real com recuperação operacional comprovada. A próxima PR
+  deve provar fencing no ponto real de escrita (não apenas antes de fetch),
+  impedir que writers atrasados sobrevivam à liberação, confirmar bytes/recibo e
+  reconciliar via Storage API sem excluir referências ativas. Só então conectar
+  o validador/endpoint e habilitar qualquer upload. `escritaHabilitada=false`
+  continua explícito; testes administrativos locais não equivalem a upload ativo.
+
 Regras importantes:
 
 - RLS e GRANT são controles separados.
