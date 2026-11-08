@@ -211,6 +211,36 @@ Supabase é usado para autenticação, banco e fluxos de dados da aplicação.
   o validador/endpoint e habilitar qualquer upload. `escritaHabilitada=false`
   continua explícito; testes administrativos locais não equivalem a upload ativo.
 
+#### Fase 2C2c — recibo de observacao e gate fechado, sem upload/publicacao
+
+- `20261108085709_recibos_privados_paginas_ilustradas.sql` adiciona recibos
+  privados sem FKs/cascatas, vinculados a tentativa, reserva, sessao, capitulo,
+  versao, caminho, objeto/versao Storage e metadados/hash canonicos esperados.
+  Registro interno idempotente confere igualdade com a tentativa e a metadata
+  observada. Isso NAO verifica os bytes no Storage nem ausencia de escritores:
+  a unica evidencia permitida e `observacao_sem_terminalidade`.
+- Registro e conferencia de finalizacao sao invoker, sem EXECUTE para
+  anon/authenticated/service_role, sem wrapper HTTP e sem consumidor. Podem
+  registrar observacao tardia apos logout/cascata sem restituir autorizacao.
+- A conferencia transacional reutiliza os locks de quota, sessao real,
+  propriedade, capitulo/reserva e versao; verifica lease, estado, recibo,
+  exclusao de conta e outbox. Retorna SEMPRE `publicacaoHabilitada=false` por
+  terminalidade nao comprovada. Nao escreve manifesto, nao muda tipo/versao,
+  nao libera capacidade e nao e uma permissao reutilizavel para outro commit.
+- O assinador legado rejeita `<usuario>/capitulos/`, inclusive referencias
+  codificadas, para impedir que `arquivo_url` contorne uma futura quarentena.
+- O executor de exclusao consulta uma RPC administrativa que retorna somente
+  booleano, antes da limpeza, nas renovacoes e antes da conclusao. Tentativas
+  nao canceladas antes do envio bloqueiam a limpeza mesmo sem objeto listado.
+  Uma operacao de exclusao ja registrada impede preparar/iniciar tentativas;
+  recibos e ledger sobrevivem a cascatas. Falha de consulta falha fechada.
+- **Entrega parcial:** o diagnostico local 2C2b demonstrou escrita apos revogacao
+  no Storage; RLS de admissao nao equivale a fencing fisico. Ainda faltam writer
+  restrito, verificacao efetiva dos bytes, prova de terminalidade, finalizador
+  com DML atomico e recuperacao/limpeza via API. Nenhum upload, pagina publicada,
+  liberacao pos-IO ou limpeza fisica foi habilitado. Aplicar a migration antes
+  do app e requisito para o executor administrativo; merge nao aplica producao.
+
 Regras importantes:
 
 - RLS e GRANT são controles separados.

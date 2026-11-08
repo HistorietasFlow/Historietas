@@ -2693,6 +2693,9 @@ const ciWorkflowPath = path.join(
 const ciWorkflow = fs.existsSync(ciWorkflowPath)
   ? fs.readFileSync(ciWorkflowPath, "utf8")
   : "";
+const gitleaksWorkflow = fs.readFileSync(
+  path.join(ROOT_DIR, ".github/workflows/gitleaks.yml"), "utf8"
+);
 const playwrightConfigPath = path.join(
   ROOT_DIR,
   "qa/playwright.config.mjs"
@@ -2702,6 +2705,33 @@ const playwrightConfig = fs.existsSync(playwrightConfigPath)
   : "";
 
 const ciContracts = [
+  {
+    name: "Instalação de k6 e Gitleaks verifica checksum inclusive no cache e mantém scans obrigatórios",
+    valid: (() => {
+      const installer = fs.readFileSync(path.join(ROOT_DIR, "qa/scripts/install-ci-tool.mjs"), "utf8");
+      return [[ciWorkflow, "k6"], [gitleaksWorkflow, "gitleaks"]].every(([workflow, tool]) => {
+        const install = workflow.split("\n").find((line) => line.includes(`run: node qa/scripts/install-ci-tool.mjs ${tool} `));
+        // Knip is an existing separate diagnostic job; security/load gates are not optional.
+        const mandatoryJob = tool === "k6"
+          ? workflow.slice(workflow.indexOf("  tests:"), workflow.indexOf("  knip:"))
+          : workflow;
+        return install && !install.includes("||") &&
+          workflow.includes("node --test qa/unit/install-ci-tool.test.mjs") &&
+          workflow.includes("actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25") &&
+          workflow.includes("actions/cache/save@caa296126883cff596d87d8935842f9db880ef25") &&
+          workflow.includes("hashFiles('qa/scripts/install-ci-tool.mjs')") &&
+          mandatoryJob.length > 0 && !mandatoryJob.includes("continue-on-error:") &&
+          !workflow.includes("--insecure");
+      }) && installer.includes('createHash("sha256")') &&
+        installer.includes("await verifyArchive(archive, tool)") &&
+        installer.includes("await verifyArchive(partial, tool)") &&
+        installer.indexOf("await ensureArchive(tool, directory)") < installer.indexOf('execFileSync("tar"') &&
+        ciWorkflow.indexOf("Instalar k6 2.3.0 com checksum") < ciWorkflow.indexOf("Executar testes estáticos") &&
+        ciWorkflow.includes("k6 run qa/load/k6-smoke.js") &&
+        ciWorkflow.includes("Executar OWASP ZAP baseline passivo") &&
+        gitleaksWorkflow.includes("run: gitleaks git --config=.gitleaks.toml --redact --verbose .");
+    })()
+  },
   {
     name: "CI valida pull requests e a main",
     valid:

@@ -89,6 +89,26 @@ jobs:
             package-lock.json
             qa/package-lock.json
 
+      - name: Validar instalador de ferramentas da CI
+        run: node --test qa/unit/install-ci-tool.test.mjs
+
+      - name: Restaurar arquivo oficial do k6
+        id: k6-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/ci-tools/k6
+          key: ${{ runner.os }}-X64-k6-${{ hashFiles('qa/scripts/install-ci-tool.mjs') }}
+
+      - name: Instalar k6 2.3.0 com checksum
+        run: node qa/scripts/install-ci-tool.mjs k6 "${{ runner.temp }}/ci-tools/k6"
+
+      - name: Guardar somente arquivo verificado do k6
+        if: steps.k6-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/ci-tools/k6
+          key: ${{ steps.k6-cache.outputs.cache-primary-key }}
+
       - name: Instalar dependências
         run: |
           npm ci
@@ -189,36 +209,6 @@ jobs:
 
       - name: Executar Lighthouse CI baseline
         run: lhci autorun
-
-      - name: Instalar k6 2.3.0 com checksum
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          version="2.3.0"
-          archive="k6-v${version}-linux-amd64.tar.gz"
-          base_url="https://github.com/grafana/k6/releases/download/v${version}"
-
-          curl --fail --location --silent --show-error             --output "/tmp/${archive}"             "${base_url}/${archive}"
-          curl --fail --location --silent --show-error             --output /tmp/k6-checksums.txt             "${base_url}/k6-v${version}-checksums.txt"
-
-          (
-            cd /tmp
-            grep "  ${archive}$" k6-checksums.txt | sha256sum --check
-          )
-
-          rm -rf /tmp/k6-install
-          mkdir -p /tmp/k6-install
-          tar -xzf "/tmp/${archive}" -C /tmp/k6-install
-
-          k6_binary="$(find /tmp/k6-install -type f -name k6 -print -quit)"
-          if [ -z "$k6_binary" ]; then
-            echo "Binário do k6 não encontrado no arquivo oficial."
-            exit 1
-          fi
-
-          sudo install -m 0755 "$k6_binary" /usr/local/bin/k6
-          k6 version
 
       - name: Executar k6 baseline leve no app local
         shell: bash

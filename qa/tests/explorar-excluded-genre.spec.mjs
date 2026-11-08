@@ -11,6 +11,14 @@ const obras = ["Fantasia, Romance", "Melodrama", "Fantasia sombria", "SCI-FI esp
   atualizado_em: "2026-01-01T00:00:00Z", sinopse: "Obra pública de teste", capa_url: "",
 }));
 
+async function abrirFiltros(page) {
+  await page.getByRole("button", { name: "Abrir funções do Explorar", exact: true }).click();
+  const dialogo = page.getByRole("dialog", { name: "EXPLORAR", exact: true });
+  // selectOption não move o foco: Escape só deve ser enviado após o foco inicial do sheet.
+  await expect(dialogo.locator('[data-dialog-initial-focus="true"]')).toBeFocused();
+  return dialogo;
+}
+
 async function prepararCatalogo(page, viewport) {
   await page.setViewportSize(viewport);
   const consultas = [];
@@ -46,17 +54,16 @@ async function prepararCatalogo(page, viewport) {
     return route.fulfill({ json: [] });
   });
   const card = n => page.getByRole("link", { name: obras[n - 1].titulo, exact: true });
-  const abrir = page.getByRole("button", { name: "Abrir funções do Explorar", exact: true });
   const dialogo = page.getByRole("dialog", { name: "EXPLORAR", exact: true });
   const excluir = dialogo.getByRole("combobox", { name: "Excluir gênero", exact: true });
-  return { card, abrir, dialogo, excluir, consultas, indisponivel: valor => { falhar = valor; } };
+  return { card, dialogo, excluir, consultas, indisponivel: valor => { falhar = valor; } };
 }
 
 for (const [dispositivo, viewport] of [
   ["desktop", { width: 1440, height: 900 }], ["mobile", { width: 390, height: 844 }],
 ]) {
   test(`excluir gênero preserva termos, cursor e histórico (${dispositivo})`, async ({ page }) => {
-    const { card, abrir, dialogo, excluir, consultas } = await prepararCatalogo(page, viewport);
+    const { card, dialogo, excluir, consultas } = await prepararCatalogo(page, viewport);
     await page.goto("/explorar?generoExcluido=romance");
     await expect(card(4)).toBeVisible(); // Fora da amostra inicial.
     await expect(card(1)).toHaveCount(0); // Obra composta não reaparece do cache.
@@ -64,10 +71,11 @@ for (const [dispositivo, viewport] of [
     await page.getByRole("button", { name: "Carregar mais", exact: true }).click();
     await expect(card(3)).toBeVisible();
     expect(consultas.filter(p => p.p_genero_excluido)[1].p_cursor_id).toBe(obras[3].id);
-    await abrir.click();
+    await abrirFiltros(page);
     await expect(excluir).toHaveValue("romance");
     await dialogo.getByRole("group", { name: "Formato da obra" }).getByRole("button", { name: "HQ", exact: true }).click();
     await page.keyboard.press("Escape");
+    await expect(dialogo).toHaveCount(0);
     await expect(card(3)).toBeVisible();
     await expect(card(4)).toHaveCount(0);
     await page.goBack();
@@ -76,19 +84,20 @@ for (const [dispositivo, viewport] of [
     await page.goForward();
     await expect(card(3)).toBeVisible();
     await expect(card(4)).toHaveCount(0);
-    await abrir.click();
+    await abrirFiltros(page);
     await excluir.selectOption("drama");
     await page.keyboard.press("Escape");
+    await expect(dialogo).toHaveCount(0);
     await expect(card(3)).toBeVisible();
     await page.getByRole("button", { name: "Carregar mais", exact: true }).click();
     await expect(card(2)).toBeVisible(); // Melodrama não é Drama.
   });
 
   test(`combinações, axe e retry de gênero (${dispositivo})`, async ({ page }) => {
-    const { card, abrir, dialogo, excluir, consultas, indisponivel } = await prepararCatalogo(page, viewport);
+    const { card, dialogo, excluir, consultas, indisponivel } = await prepararCatalogo(page, viewport);
     await page.goto("/explorar?formato=HQ&generoExcluido=romance");
     await expect(card(3)).toBeVisible();
-    await abrir.click();
+    await abrirFiltros(page);
     await dialogo.getByRole("textbox", { name: "Tag da obra", exact: true }).fill("base");
     await dialogo.getByRole("textbox", { name: "Excluir tag", exact: true }).fill("bloqueada");
     await dialogo.getByRole("combobox", { name: "Avaliação mínima", exact: true }).selectOption("4.5");
@@ -98,6 +107,7 @@ for (const [dispositivo, viewport] of [
     const graves = axe.violations.filter(v => ["critical", "serious"].includes(v.impact));
     expect(graves, graves.map(v => `${v.id}: ${v.nodes.length} ocorrência(s)`).join("\n")).toEqual([]);
     await page.keyboard.press("Escape");
+    await expect(dialogo).toHaveCount(0);
     await expect(card(3)).toBeVisible();
     const recargaFiltrada = page.waitForResponse(r => r.url().endsWith("/rpc/listar_obras_catalogo")
       && r.request().postDataJSON()?.p_genero_excluido === "romance");
@@ -107,9 +117,10 @@ for (const [dispositivo, viewport] of [
     expect(consultas.at(-1)).toMatchObject({ p_genero_excluido: "romance", p_tag: "base",
       p_tag_excluida: "bloqueada", p_nota_minima: 4.5, p_ordenacao: "mais-capitulos", p_formato: "HQ" });
     indisponivel(true);
-    await abrir.click();
+    await abrirFiltros(page);
     await excluir.selectOption("drama");
     await page.keyboard.press("Escape");
+    await expect(dialogo).toHaveCount(0);
     const aviso = page.getByRole("alert").filter({ hasText: /catálogo/i });
     await expect(aviso).toBeVisible();
     await expect(card(1)).toHaveCount(0);
@@ -119,7 +130,7 @@ for (const [dispositivo, viewport] of [
     await expect(card(3)).toBeVisible();
     await page.getByRole("button", { name: "Autores", exact: true }).click();
     await expect(page).not.toHaveURL(/generoExcluido=/);
-    await abrir.click();
+    await abrirFiltros(page);
     await expect(excluir).toHaveCount(0);
   });
 
@@ -134,11 +145,10 @@ for (const [dispositivo, viewport] of [
     await expect(page.getByRole("status", { name: "Carregando Explorar", exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Obra Pública E2E", exact: true })).toHaveCount(0);
     await expect(page.getByText("PUBLIQUE SUA HISTÓRIA", { exact: true })).toBeVisible();
-    const abrir = page.getByRole("button", { name: "Abrir funções do Explorar", exact: true });
-    await abrir.click();
-    await page.getByRole("dialog", { name: "EXPLORAR", exact: true })
-      .getByRole("combobox", { name: "Excluir gênero", exact: true }).selectOption("");
+    const dialogo = await abrirFiltros(page);
+    await dialogo.getByRole("combobox", { name: "Excluir gênero", exact: true }).selectOption("");
     await page.keyboard.press("Escape");
+    await expect(dialogo).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Obra Pública E2E", exact: true })).toBeVisible();
     await page.goBack();
     await expect(page.getByRole("link", { name: "Obra Pública E2E", exact: true })).toHaveCount(0);

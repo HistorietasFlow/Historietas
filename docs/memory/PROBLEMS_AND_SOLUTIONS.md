@@ -334,3 +334,31 @@ exigindo papel administrativo; a interface comum não recebe o histórico.
 Preservar a consulta sob demanda e paginada. Não duplicar o log em estado local
 persistente nem ampliar `SELECT`, `INSERT`, `UPDATE` ou `DELETE` para usuários
 comuns.
+
+## E2E: foco adiado e fixtures de progresso compartilhadas
+
+Na CI da #2226, `selectOption()` seguido imediatamente de Escape podia anteceder
+o foco inicial adiado do painel do Explorar. Os testes devem confirmar o foco
+real no diálogo e seu fechamento antes de interagir com os resultados atrás dele.
+Não resolver interceptação de clique com `force`, timeout maior ou retry.
+
+Testes que alteram/apagam progresso não podem compartilhar a mesma identidade,
+obra e capítulo entre workers. A suíte de spoilers usa um leitor exclusivo,
+criado e removido somente no Supabase local, e aguarda a resposta de confirmação
+do navegador; consultar o banco por outro cliente não sincroniza o lifecycle da UI.
+
+O baseline axe da Comunidade deve aguardar os controles do feed no `main` final: o shell
+de loading também é um `main`, e o rótulo da bottom nav pode estar oculto no
+desktop. Não usar esse rótulo nem o título exclusivo do desktop como prontidão.
+O estado vazio legítimo também é um feed carregado, não um skeleton.
+
+Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504/503, conexão interrompida
+e timeout antes de executar as ferramentas. O instalador compartilhado usa
+arquivos oficiais com versão, tamanho e SHA-256 fixos, cache separado por
+ferramenta e checksum revalidado em todo cache hit. No cache miss, tenta a API de
+assets do GitHub e, apenas em falha de transporte/HTTP, a URL oficial da release,
+com orçamento limitado por tentativa. Integridade inválida continua bloqueante.
+O cache contém somente arquivos verificados, nunca credenciais ou binários
+extraídos. Instalar k6 antes da suíte evita gastar toda a execução quando o
+download está indisponível. Scans/baselines continuam obrigatórios; falha na
+instalação nunca significa aprovação de k6, ZAP ou Gitleaks.
