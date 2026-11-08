@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 import { randomBytes, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { criarInvocacaoStatusSupabase } from "../scripts/supabase-cli-invocation.mjs";
@@ -42,11 +43,74 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  for (const id of works) check(await author.from("obras").delete().eq("id", id));
+  for (const id of works) {
+    check(await author.from("obras").delete().eq("id", id));
+    // Apenas a fixture local remove seu proprio snapshot duravel apos o teste.
+    sql(`delete from historietas_privado.capitulo_cache_outbox where obra_id='${id}';`);
+  }
   if (userId) check(await admin.auth.admin.deleteUser(userId));
 });
 
 for (const device of ["desktop", "mobile"]) {
+  test(`cache aquecido de metadata/lista/sitemap recebe invalidacao manual sem ack (${device})`, async ({ page, request, context, baseURL }, info) => {
+    await page.setViewportSize(device === "mobile" ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+    const workId = randomUUID(), one = randomUUID(), two = randomUUID(), slug = `qa-cache-${randomUUID()}`;
+    const title = `Obra cache ${workId}`, secondTitle = `Segundo capítulo ${two}`;
+    // A rota de obra chega ao loader: aquece null real de metadata no Next.
+    const missing = await request.get(`/obra/${slug}`);
+    expect(await missing.text()).not.toContain(title);
+    check(await author.from("obras").insert({ id: workId, user_id: userId, titulo: title, autor: "Autor agendamento E2E",
+      genero: "Fantasia", formato: "Romance", classificacao_indicativa: "Livre", publicado: true, slug }));
+    works.push(workId);
+    check(await author.from("capitulos").insert([
+      { id: one, obra_id: workId, user_id: userId, titulo: "Primeiro capítulo cache", texto: "Texto inicial público.", ordem: 1, publicado: true },
+      { id: two, obra_id: workId, user_id: userId, titulo: secondTitle, texto: "Texto agendado não antecipado.", ordem: 2, publicado: false },
+    ]));
+    expect(await (await request.get(`/obra/${slug}`)).text()).not.toContain(title);
+    const first = await request.get(`/obra/${slug}/capitulo/1`);
+    expect(first.status()).toBe(200); expect(await first.text()).not.toContain(secondTitle);
+    expect(await (await request.get("/sitemap.xml")).text()).not.toContain(`/obra/${slug}/capitulo/2`);
+    expect((await request.get(`/obra/${slug}/capitulo/2`)).status()).toBe(404);
+    const endpoint = "/api/admin/cache-capitulos", origin = new URL(baseURL).origin;
+    expect((await request.post(endpoint, { headers: { origin } })).status()).toBe(401);
+    // Usa sessao real descartavel. Cookies somente em memoria; nenhum segredo no relatorio.
+    const current = check(await author.auth.getSession()).session;
+    const cookies = [];
+    const serverAuth = createServerClient(url, key, { cookies: { getAll: () => [], setAll: (items) => cookies.push(...items) } });
+    check(await serverAuth.auth.setSession({ access_token: current.access_token, refresh_token: current.refresh_token }));
+    expect(cookies.length).toBeGreaterThan(0);
+    await context.addCookies(cookies.map(({ name, value }) => ({ name, value, url: origin })));
+    check(await admin.auth.admin.updateUserById(userId, { app_metadata: { role: "admin" } }));
+    check(await author.rpc("agendar_capitulo", { p_capitulo_id: two, p_revisao_esperada: 0, p_publicar_em: "2099-01-01Z", p_fuso_horario: "UTC" }));
+    sql(`update historietas_privado.capitulo_agendamentos set publicar_em=now()-interval '1 minute' where capitulo_id='${two}';
+      select historietas_privado.executar_agendamento_capitulo('${two}',1);`);
+    // Antes do consumidor, a lista aquecida do capitulo 1 ainda nao inclui o novo.
+    expect(await (await request.get(`/obra/${slug}/capitulo/1`)).text()).not.toContain(secondTitle);
+    // A fixture request e isolada; context.request compartilha os cookies reais.
+    expect((await context.request.post(endpoint, { headers: { origin: "https://outro.test" } })).status()).toBe(403);
+    const queued = await context.request.post(endpoint, { headers: { origin } });
+    expect(queued.status()).toBe(202); expect((await queued.json()).confirmadas).toBe(0);
+    // Verifica efeitos observaveis no servidor local; isso nao cria um ack duravel.
+    const work = await request.get(`/obra/${slug}`); expect(work.status()).toBe(200); expect(await work.text()).toContain(title);
+    expect(await (await request.get(`/obra/${slug}/capitulo/1`)).text()).toContain(secondTitle);
+    expect(await (await request.get("/sitemap.xml")).text()).toContain(`/obra/${slug}/capitulo/2`);
+    await page.goto(`/obra/${slug}/capitulo/2`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: secondTitle, exact: true })).toBeVisible();
+    expect(sql(`select count(*) from historietas_privado.capitulo_cache_outbox where capitulo_id='${two}' and solicitada_em is not null;`)).toBe("1");
+    expect(sql(`select count(*) from public.diario_atividades where capitulo_id='${two}';`)).toBe("1");
+    const retry = await context.request.post(endpoint, { headers: { origin } });
+    expect(retry.status()).toBe(202); expect((await retry.json()).confirmadas).toBe(0);
+    // Despublicacao antes de repetir invalidacao nao pode restituir visibilidade.
+    check(await author.from("capitulos").update({ publicado: false }).eq("id", two));
+    sql(`update historietas_privado.capitulo_cache_outbox set lease_ate=clock_timestamp()-interval '1 second' where obra_id='${workId}';`);
+    expect((await context.request.post(endpoint, { headers: { origin } })).status()).toBe(202);
+    expect((await request.get(`/obra/${slug}/capitulo/2`)).status()).toBe(404);
+    expect(await (await request.get("/sitemap.xml")).text()).not.toContain(`/obra/${slug}/capitulo/2`);
+    expect(await (await request.get(`/obra/${slug}/capitulo/1`)).text()).not.toContain(secondTitle);
+    check(await admin.auth.admin.updateUserById(userId, { app_metadata: { role: "autor" } }));
+    info.annotations.push({ type: "sem-ack", description: "API retorna solicitacao, nao conclusao; falha tardia do backend ainda impede confirmacao duravel/ativacao automatica." });
+  });
+
   test(`publicacao SQL registra Diario atomico e libera URL antes inexistente (${device})`, async ({ page, request }, info) => {
     await page.setViewportSize(device === "mobile" ? { width: 390, height: 844 } : { width: 1440, height: 900 });
     const workId = randomUUID(), chapterId = randomUUID(), slug = `qa-agendado-${randomUUID()}`;

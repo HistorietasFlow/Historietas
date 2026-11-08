@@ -72,12 +72,17 @@
   privado definer para ler somente a decisão de privacidade. Não há SELECT de
   preferências concedido a anon. A expressão legada fica em helper invoker não
   inline, preservando a autorização anterior dos demais tipos.
-- Cache público e ativação continuam pendentes: SQL não chama o contexto Next de
-  revalidação. `null` também pode estar cacheado; 404 do proxy seguido de 200 não
-  comprova invalidação desse cache. Sitemap ISR permanece independente. Não
-  reduzir/esvaziar caches globalmente para contornar. A proposta separada exige
-  outbox privada, snapshot imutável e consumidor server-only pós-commit com ack;
-  ver `docs/agendamento-cache-publico.md`. Sem Cron/endpoint/consumidor nesta fase.
+- Fase 4 parcial: `capitulo_cache_outbox` preserva o snapshot lógico do recibo
+  sem cascatas, com RLS, leases/SKIP LOCKED e sem acesso de clientes à tabela.
+  O consumidor manual `/api/admin/cache-capitulos` exige sessão ativa e papel
+  admin real no Auth; usa RPCs restritas ao servidor e não recebe destinos do
+  navegador. Etiquetas por hash do slug cobrem também null e listas; invalida
+  somente slugs original/atual, seus caminhos e sitemap. Não usa tags globais.
+- **Sem ack final:** revalidateTag/Path retornam void e só enfileiram operações
+  para o flush posterior do Next. Retorna 202/`solicitado_sem_confirmacao` e
+  mantém a fila durável. Sem internals do Next em produção, Cron, UI ou ativação
+  automática. Conclusão recuperável/escopo por implantação ainda bloqueiam o
+  recurso; diagnóstico e critérios em `docs/agendamento-cache-publico.md`.
 
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 

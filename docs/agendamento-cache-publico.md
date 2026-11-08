@@ -1,6 +1,105 @@
-# Agendamento: Diário atômico e cache ainda sem consumidor
+# Agendamento: Diário atômico e invalidação ainda sem confirmação
 
-## Garantias desta fase
+## Fase 4 — entrega parcial e bloqueador de confirmação
+
+Migration `20261108182554_outbox_cache_capitulos_agendados.sql`:
+
+- `capitulo_cache_outbox` é privada, com RLS e sem acesso de tabela para anon,
+  authenticated ou service role. AFTER INSERT do recibo cria o snapshot na mesma
+  subtransação da publicação/Diário/notificações. Sem HTTP ou backfill.
+  Recibos anteriores à fase 4 não recebem um snapshot histórico inventado.
+- Capítulo/revisão identificam logicamente o recibo; obra, slug, ordem e instante
+  são imutáveis. Não há FK com cascata: apagar capítulo, obra, Diário ou conta
+  não pode apagar uma invalidação ainda pendente. Não contém texto nem sessão.
+- Reivindicação exclusivamente server-side, lote de 1–5, SKIP LOCKED e lease de
+  dois minutos. Não é lease de Storage nem liberação de quota. Expiração permite
+  repetir a invalidação, nunca publicar novamente. Tentativas menos atendidas
+  têm prioridade, evitando que um lote antigo esconda indefinidamente os novos.
+- `solicitada_em` registra apenas que o consumidor chamou as APIs do Next.
+  **Não existe ack, estado processado ou exclusão automática.** Falha tardia,
+  resposta perdida ou lease vencido não eliminam a obrigação durável.
+
+Os três loaders públicos mantêm cliente anônimo, filtros, consultas e TTLs,
+mas recebem uma tag SHA-256 do slug conhecido ANTES de consultar o banco. Assim,
+ausências também são etiquetadas; a mesma tag cobre metadata, resolução da rota
+e todas as listas retornadas pelos capítulos da obra. As chaves foram versionadas
+para não reaproveitar entradas antigas sem essa tag. Tags globais preexistentes
+continuam declaradas, mas **não são invalidadas pelo consumidor**.
+O versionamento causa um aquecimento inicial único desses loaders após deploy;
+não é uma limpeza global disparada por cada publicação.
+
+`POST /api/admin/cache-capitulos` é manual, sem caller na interface, job ou Cron:
+
+1. Exige Origin com mesmo protocolo e Host real (sem confiar em forwarded-host), cookies de sessão válidos via
+   `getUser` e gate SQL que confere sessão ativa e papel **admin atual no Auth**.
+   Metadata editável, moderador, usuário comum, JWT de sessão removida ou papel
+   revogado não autorizam. Nenhuma nova senha ou chave de automação foi criada.
+2. Somente após autorização cria o cliente administrativo existente, que chama
+   wrappers restritos ao service role. Não recebe IDs, slugs ou tags do cliente.
+3. Solicita `revalidateTag(tagDoSlug, { expire: 0 })` para o slug imutável e o
+   atual (caso renomeado), caminhos canônicos seguros e `/sitemap.xml`. Não
+   invalida Home, Explorar, tags globais ou todo o catálogo. Sitemap é o único
+   agregado necessariamente global, sem alteração de suas regras públicas.
+4. Retorna HTTP **202**, `estado=solicitado_sem_confirmacao`, `confirmadas=0` e
+   `publicacaoAutomaticaHabilitada=false`. Não retorna snapshots ou tokens.
+   Exceções retornam erro genérico 503; a fila continua pendente.
+
+### Por que não confirmar depois da chamada
+
+No Next 16.4.5 instalado, `revalidateTag`/`revalidatePath` apenas acrescentam
+`pendingRevalidatedTags` ao work store e retornam `void`. O App Route chama
+`executeRevalidates` em `finalizeResponse`, **depois que o handler retornou**,
+guardando a Promise em `pendingWaitUntil`. Um ack SQL dentro do handler seria
+anterior à execução real e poderia perder uma invalidação que falha depois.
+
+Teste executável usa o Next real com um backend de cache deliberadamente
+falho: a chamada pública retorna normalmente sem executar o backend; o flush
+posterior rejeita. Os imports internos existem APENAS nesse diagnóstico de QA,
+nunca no consumidor de produção. `after()` também não fornece contrato público
+documentado de flush anterior ao callback; não foi usado como suposta barreira.
+
+**Bloqueador:** não há, nas APIs públicas auditadas do App Router atual, uma
+Promise/recibo de conclusão do flush que permita confirmar duravelmente a outbox
+sem depender de internals ou de uma suposição sobre o encerramento HTTP. Não
+inventar ack com `await` sobre `void`, timeout, resposta 202 ou processo vivo.
+Mesmo um ack de invalidação não garante atualização instantânea de abas já
+abertas/Router Cache nem terminalidade de leituras antigas em andamento.
+
+### Evidências e limites dos testes
+
+- Unitários com backend controlado aquecem null de rota/leitura/metadata e listas
+  positivas; verificam reconsulta, isolamento de outra obra, despublicação e 18+.
+  São testes de contrato, não medição do Data Cache gerenciado da Vercel.
+- pgTAP/Data API exercitam rollback após outbox, snapshot imutável, ausência de
+  acesso, concorrência real, invisibilidade antes do commit, leases, retry e
+  revogação. A fila sobrevive às exclusões e não duplica efeitos de publicação.
+- Playwright aquece null real da metadata da obra, leitura/lista e sitemap no
+  build de produção local e verifica os efeitos após acionamento manual em
+  desktop/mobile (quatro cenários focados aprovados, sem retries). A resposta continua sem ack mesmo quando os efeitos locais
+  são observáveis. O proxy impede aquecer null da leitura canônica por uma URL
+  inexistente; esse caso permanece no teste de contrato, não é apresentado como
+  invalidação negativa ponta a ponta de capítulo.
+
+### Próximo passo, sem ativação nesta fase
+
+Validar com o fornecedor um contrato público de conclusão/erro do backend de
+cache, ou aprovar separadamente um modelo de gerações/barreira de leitura que
+torne a confirmação verificável. Cache handler próprio, imports internos do Next
+e autoconfirmação por webhook não são workarounds aprovados. Depois testar falha
+entre flush e ack, resposta perdida, escritores de cache atrasados e ambientes
+múltiplos/regiões. A fila atual é de uma única implantação; não pode haver um ack
+global para caches independentes de desenvolvimento/preview/produção.
+O teste serial de despublicação não comprova ausência de leituras antigas em
+voo. Slugs original/atual são observados no claim; múltiplas renomeações
+concorrentes e aliases intermediários também exigem contrato próprio antes
+de prometer invalidação completa. Não apresentar os testes locais como SLA.
+
+Sem prova de conclusão, o consumidor não descarta pendências nem promete entrega
+automática. Retenção/crescimento e operação manual precisam de decisão antes de
+ativar o agendamento. Nenhuma alteração foi aplicada em produção; uploads
+ilustrados, publicação ilustrada e limpeza física continuam suspensos.
+
+## Fase 3 — garantias preservadas
 
 A migration `20261108164909_diario_publicacao_capitulos_agendados.sql` acrescenta
 `publicou_capitulo` ao CHECK sem retirar os oito tipos anteriores. Não habilita
@@ -33,7 +132,7 @@ legados, não apenas INSERT. Leitura anônima de tipos antigos continua sujeita 
 limitação de permissões anterior; uma consulta mista pode falhar. Essa pendência
 independente não foi contornada com grants nem apresentada como resolvida.
 
-## Cache: diagnóstico, não solução entregue
+## Fase 3 — diagnóstico original do cache
 
 O executor continua exclusivamente SQL administrativo, sem chamada Next.js,
 endpoint, consumidor ou Cron. Não existe `revalidateTag`/`revalidatePath` no fluxo.
@@ -62,7 +161,7 @@ sem duplicação, em desktop/mobile. Ele não comprova remoção de uma entrada
 negativa já persistida no Data Cache nem atualização imediata do sitemap.
 Não alegar que a visibilidade de todas essas fontes está sincronizada.
 
-## Proposta separada antes de ativar publicação automática
+## Fase 3 — proposta original, ainda sem confirmação final na fase 4
 
 1. Usar uma outbox privada transacional vinculada ao recibo, com snapshot imutável
    de obra, slug, capítulo, ordem e revisão. O vínculo ao Diário editável/removível

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
+import { tagObraPublica } from "./obra-publica-cache-tag";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   ehClassificacao18,
@@ -104,7 +105,7 @@ type CapituloLeituraPublicaRow = {
   criado_em: string | null;
 };
 
-export const obterObraMetadataPublica = unstable_cache(
+export const obterObraMetadataPublica = (slug: string) => unstable_cache(
   async (slug: string): Promise<ObraMetadataPublica | null> => {
     if (!supabasePublicoConfigurado) {
       throw new Error("Supabase público não configurado.");
@@ -139,14 +140,14 @@ export const obterObraMetadataPublica = unstable_cache(
       slug: data.slug,
     };
   },
-  ["historietas-obra-metadata-publica-v2"],
+  ["historietas-obra-metadata-publica-v3"],
   {
     revalidate: 300,
-    tags: ["historietas-obras-publicas"],
+    tags: ["historietas-obras-publicas", tagObraPublica(slug)],
   },
-);
+)(slug);
 
-export const obterRotaCapituloPublico = unstable_cache(
+export const obterRotaCapituloPublico = (slug: string, numeroCapitulo: number) => unstable_cache(
   async (
     slug: string,
     numeroCapitulo: number,
@@ -200,14 +201,14 @@ export const obterRotaCapituloPublico = unstable_cache(
       capituloId: capitulo.id,
     };
   },
-  ["historietas-rota-capitulo-publico-v2"],
+  ["historietas-rota-capitulo-publico-v3"],
   {
     revalidate: 60,
-    tags: ["historietas-obras-publicas", "historietas-capitulos-publicos"],
+    tags: ["historietas-obras-publicas", "historietas-capitulos-publicos", tagObraPublica(slug)],
   },
-);
+)(slug, numeroCapitulo);
 
-export const obterLeituraCapituloPublico = unstable_cache(
+export const obterLeituraCapituloPublico = (slug: string, numeroCapitulo: number) => unstable_cache(
   async (
     slug: string,
     numeroCapitulo: number,
@@ -327,9 +328,9 @@ export const obterLeituraCapituloPublico = unstable_cache(
       },
     };
   },
-  ["historietas-leitura-capitulo-publico-v1"],
+  ["historietas-leitura-capitulo-publico-v2"],
   {
     revalidate: 60,
-    tags: ["historietas-obras-publicas", "historietas-capitulos-publicos"],
+    tags: ["historietas-obras-publicas", "historietas-capitulos-publicos", tagObraPublica(slug)],
   },
-);
+)(slug, numeroCapitulo);

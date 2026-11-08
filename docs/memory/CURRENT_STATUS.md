@@ -1,6 +1,6 @@
 # Estado atual
 
-Atualizado em: 2026-11-06
+Atualizado em: 2026-11-08
 
 ## Infraestrutura e ferramentas
 
@@ -365,11 +365,15 @@ retroativamente. Retry não recria atividade removida voluntariamente.
 A expressão legada continua invoker: consultas anônimas mistas com tipos antigos
 podem falhar pela permissão anterior de preferências. Não é uma correção geral
 da leitura/privacidade do Diário; essa limitação independente está documentada.
-**Cache público continua pendente:** não há consumidor pós-commit que invalide
-entradas positivas/negativas de `unstable_cache` (60 s), metadata (300 s) ou sitemap
-ISR (3600 s). São TTLs nominais, não garantia de atualização imediata. Ver
-`docs/agendamento-cache-publico.md` para evidências, limites dos E2E e proposta
-separada de outbox/consumidor autorizado. Não habilitar execução automática.
+**Fase 4 parcial:** há outbox privada transacional com snapshots imutáveis e
+consumidor manual server-only, autorizado por sessão administrativa atual.
+Solicita invalidação por slug (inclui null/listas/metadata) e do sitemap, sem
+esvaziar o catálogo. Retorna 202/`solicitado_sem_confirmacao`: o Next enfileira
+as operações e não fornece recibo público de conclusão; não existe ack/remoção
+automática da pendência. Retrys usam leases, sem repetir publicação ou efeitos.
+**Ativação ainda bloqueada** por falta de confirmação segura do flush e de
+contrato operacional por implantação. Ver `docs/agendamento-cache-publico.md`.
+TTL não é SLA; não usar `await` sobre `void` como prova de invalidação.
 Merge não aplica migrations em produção;
 uploads ilustrados, publicação ilustrada e limpeza física continuam suspensos.
 
