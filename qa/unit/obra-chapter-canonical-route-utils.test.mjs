@@ -135,7 +135,7 @@ test("metadata e loader público preservam canonical, capítulo e conteúdo inic
   );
 
   [
-    "export const obterLeituraCapituloPublico = unstable_cache(",
+    "export const obterLeituraCapituloPublico = (slug: string, numeroCapitulo: number) => unstable_cache(",
     '.eq("publicado", true)',
     '.select("id,titulo,texto,ordem,publicado,visualizacoes,criado_em")',
     'nomeColecao: "capítulos públicos da leitura canônica"',

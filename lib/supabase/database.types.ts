@@ -1941,6 +1941,9 @@ export type Database = {
       }
     }
     Functions: {
+      autorizar_consumidor_cache_capitulos: { Args: Record<PropertyKey, never>; Returns: boolean }
+      reivindicar_cache_capitulos: { Args: { p_limite: number }; Returns: Json }
+      registrar_solicitacao_cache_capitulo: { Args: { p_id: string; p_lease_id: string }; Returns: boolean }
       conferir_reserva_pagina_capitulo: {
         Args: { p_reserva_id: string; p_capitulo_id: string; p_versao_esperada: number }
         Returns: Json

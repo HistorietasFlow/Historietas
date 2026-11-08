@@ -83,6 +83,7 @@ test("executor SQL privado e Data API local: concorrencia, cancelamento, edicao 
     { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
   const admin = client(true), author = client(), follower = client(), anon = client();
   const cleanup = () => sql(env.container, `begin;
+    delete from historietas_privado.capitulo_cache_outbox where obra_id='${WORK}';
     delete from public.obras where id='${WORK}';
     delete from public.profiles where user_id in ('${AUTHOR}','${FOLLOWER}','${OTHER}');
     delete from auth.users where id in ('${AUTHOR}','${FOLLOWER}','${OTHER}'); commit;`);

@@ -79,6 +79,19 @@
   publicação automática e UI continuam desativadas. Ver
   `docs/agendamento-cache-publico.md`. Bloqueios ilustrados não mudam.
 
+### Agendamento — outbox e confirmacao pendente (fase 4, 08/11/2026)
+
+- Snapshots privados do recibo sao imutaveis e sobrevivem a cascatas. O consumidor
+  e manual, autenticado por sessao ativa/papel admin atual, sem destinos vindos
+  do navegador. Invalidacao usa tags por slug, nao limpeza global do catalogo.
+- Nao confundir solicitacao com conclusao: o Next 16.4.5 retorna void e executa
+  o flush depois do handler. Sem API publica de conclusao, nao registrar ack,
+  apagar pendencias ou habilitar agendamento automatico. Leases permitem retry
+  conservador sem duplicar publicacao/Diario/notificacoes. Nao importar internals
+  do Next em producao nem assumir que after(), timeout ou 202 comprovam sucesso.
+- A ativacao exige contrato verificavel de conclusao e escopo por implantacao;
+  ver `docs/agendamento-cache-publico.md`. Nenhum Cron/job/upload foi liberado.
+
 ## Vercel
 
 - Não usar pausa do projeto como mecanismo normal para esconder o site durante desenvolvimento, porque isso bloqueia deploys e pode causar 503.
