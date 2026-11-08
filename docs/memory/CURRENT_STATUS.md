@@ -170,6 +170,12 @@ exclusao de conta. A migration `20261108085709_recibos_privados_paginas_ilustrad
 deve preceder o app. Upload, manifesto, verificacao dos bytes armazenados,
 recuperacao e limpeza fisica permanecem bloqueados; quotas continuam retidas.
 
+A fase 2C2d adiciona somente um motor interno de conferência de bytes pela
+Storage API, sem consumidor de produção ou migration. Confere hash real,
+decoder e identidade/versão observadas, mas sempre nega terminalidade,
+publicação, limpeza e liberação de quota. Recuperação automática permanece
+bloqueada; ver `docs/capitulos-ilustrados-verificacao-recuperacao.md`.
+
 A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi
 restrita ao prefixo do usuário autenticado. URLs públicas conhecidas continuam
 acessíveis, mas usuários anônimos não enumeram os buckets e uma conta não lista
