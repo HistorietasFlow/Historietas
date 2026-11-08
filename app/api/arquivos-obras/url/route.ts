@@ -213,6 +213,7 @@ function obterCaminhoArquivoObra(referencia: string, proprietarioId: string) {
         parte.includes("\\") ||
         /[\u0000-\u001f\u007f]/.test(parte),
     ) ||
+    partes[1]?.toLowerCase() === "capitulos" ||
     partes[0]?.toLowerCase() !== proprietarioId.trim().toLowerCase()
   ) {
     return "";

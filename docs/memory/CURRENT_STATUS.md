@@ -163,6 +163,13 @@ própria antes da ativação. Testes com SQL/Storage administrativos são fixtur
 exclusivamente locais, não um caminho de upload em produção.
 Merge da PR não implica aplicação da migration em produção.
 
+A fase 2C2c acrescenta somente recibos internos de observacao (sem prova de
+terminalidade), conferencia transacional que continua negando publicacao,
+bloqueio do namespace ilustrado no assinador legado e consulta do ledger pela
+exclusao de conta. A migration `20261108085709_recibos_privados_paginas_ilustradas.sql`
+deve preceder o app. Upload, manifesto, verificacao dos bytes armazenados,
+recuperacao e limpeza fisica permanecem bloqueados; quotas continuam retidas.
+
 A listagem de metadados dos buckets públicos `avatars` e `capas-obras` foi
 restrita ao prefixo do usuário autenticado. URLs públicas conhecidas continuam
 acessíveis, mas usuários anônimos não enumeram os buckets e uma conta não lista

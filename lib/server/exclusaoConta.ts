@@ -236,6 +236,19 @@ async function excluirUsuarioAuth(admin: SupabaseClient, userId: string) {
   if (erroExclusao && !erroUsuarioAuthNaoEncontrado(erroExclusao)) throw erroExclusao;
 }
 
+async function conferirUploadsIlustradosPendentes(admin: SupabaseClient, userId: string) {
+  const { data, error } = await admin.rpc("ha_uploads_ilustrados_pendentes_exclusao", {
+    p_user_id: userId,
+  });
+  if (error) throw error;
+  // Falha fechada: listagem vazia nao comprova ausencia de escritor atrasado.
+  if (data !== false) {
+    throw Object.assign(new Error("A exclusão aguarda reconciliação de uploads ilustrados."), {
+      code: "uploads_ilustrados_pendentes",
+    });
+  }
+}
+
 export async function processarOperacaoExclusaoConta({ admin, userId, lockToken }: {
   admin: SupabaseClient; userId: string; lockToken: string;
 }): Promise<ResultadoProcessamentoExclusao> {
@@ -245,8 +258,11 @@ export async function processarOperacaoExclusaoConta({ admin, userId, lockToken 
   try {
   const renovar = async () => {
     operacao = await reivindicarOperacao(admin, userId, lockToken);
+    await conferirUploadsIlustradosPendentes(admin, userId);
     return operacao;
   };
+
+  await conferirUploadsIlustradosPendentes(admin, userId);
 
   const precisaLimparStorage =
     operacao.status === "solicitada" ||
@@ -339,6 +355,7 @@ export async function processarOperacaoExclusaoConta({ admin, userId, lockToken 
       return { operacao: falha || operacao, authExcluido, storageFinalPendente: true };
     }
 
+    await conferirUploadsIlustradosPendentes(admin, userId);
     operacao = await atualizarOperacao(admin, operacao.id, lockToken, {
       status: "concluida",
       auth_excluido_em: operacao.auth_excluido_em || new Date().toISOString(),
