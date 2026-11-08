@@ -24,21 +24,30 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Configurar Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Validar instalador de ferramentas da CI
+        run: node --test qa/unit/install-ci-tool.test.mjs
+
+      - name: Restaurar arquivo oficial do Gitleaks
+        id: gitleaks-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/ci-tools/gitleaks
+          key: ${{ runner.os }}-X64-gitleaks-${{ hashFiles('qa/scripts/install-ci-tool.mjs') }}
+
       - name: Instalar Gitleaks 8.30.1 com checksum
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="8.30.1"
-          archive="gitleaks_${version}_linux_x64.tar.gz"
-          base_url="https://github.com/gitleaks/gitleaks/releases/download/v${version}"
+        run: node qa/scripts/install-ci-tool.mjs gitleaks "${{ runner.temp }}/ci-tools/gitleaks"
 
-          curl --fail --location --silent --show-error --retry 3 --retry-max-time 60 --connect-timeout 15 --max-time 60 --output "${archive}" "${base_url}/${archive}"
-          curl --fail --location --silent --show-error --retry 3 --retry-max-time 60 --connect-timeout 15 --max-time 60 --output checksums.txt "${base_url}/gitleaks_${version}_checksums.txt"
-
-          grep "  ${archive}$" checksums.txt | sha256sum --check
-          tar -xzf "${archive}" gitleaks
-          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
-          gitleaks version
+      - name: Guardar somente arquivo verificado do Gitleaks
+        if: steps.gitleaks-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/ci-tools/gitleaks
+          key: ${{ steps.gitleaks-cache.outputs.cache-primary-key }}
 
       - name: Analisar histórico Git por segredos
         run: gitleaks git --config=.gitleaks.toml --redact --verbose .

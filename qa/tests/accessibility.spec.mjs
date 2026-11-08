@@ -120,16 +120,22 @@ test("capítulo público canônico integra o baseline axe após hidratar o leito
   await esperarAxeSemViolacoesCriticas(page, rota);
 });
 
-test("Comunidade integra o baseline axe após carregar o feed público", async ({
-  page,
-}) => {
-  await page.goto("/comunidade", { waitUntil: "domcontentloaded" });
+for (const dispositivo of ["desktop", "mobile"]) {
+  test(`Comunidade integra o baseline axe após carregar o feed público (${dispositivo})`, async ({ page }) => {
+    await page.setViewportSize(dispositivo === "mobile"
+      ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+    await page.goto("/comunidade", { waitUntil: "domcontentloaded" });
 
-  const main = page.locator("main");
-  await expect(main).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText("Comunidade", { exact: true }).first()).toBeVisible();
-  await esperarAxeSemViolacoesCriticas(page, "/comunidade");
-});
+    // The loading shell is also a <main>; the desktop title is absent on mobile.
+    // These controls exist only in the final feed, including its legitimate empty state.
+    const abas = page.getByRole("tablist", { name: "Organizar publicações da Comunidade" });
+    const main = page.locator("main").filter({ has: abas });
+    await expect(main).toBeVisible({ timeout: 30_000 });
+    await expect(main.getByRole("tab", { name: "Para você", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("status", { name: "Carregando Comunidade", exact: true })).toHaveCount(0);
+    await esperarAxeSemViolacoesCriticas(page, `/comunidade (${dispositivo})`);
+  });
+}
 
 test("Diário autenticado integra o baseline axe após carregar a lista", async ({
   page,

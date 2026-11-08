@@ -2706,20 +2706,31 @@ const playwrightConfig = fs.existsSync(playwrightConfigPath)
 
 const ciContracts = [
   {
-    name: "Downloads de k6 e Gitleaks repetem falhas transitórias sem dispensar checksum",
-    valid: [ciWorkflow, gitleaksWorkflow].every((workflow) => {
-      const downloads = workflow.split("\n").filter((line) =>
-        line.includes("curl --fail --location --silent --show-error")
-      );
-      const checksum = workflow.indexOf("sha256sum --check");
-      const extracao = workflow.indexOf("tar -xzf");
-      return downloads.length === 2 && downloads.every((line) =>
-        line.includes("--retry 3 --retry-max-time 60 --connect-timeout 15 --max-time 60") &&
-        !line.includes("||")
-      ) && workflow.includes("set -euo pipefail") &&
-        checksum > 0 && extracao > checksum &&
-        !workflow.includes("--insecure");
-    })
+    name: "Instalação de k6 e Gitleaks verifica checksum inclusive no cache e mantém scans obrigatórios",
+    valid: (() => {
+      const installer = fs.readFileSync(path.join(ROOT_DIR, "qa/scripts/install-ci-tool.mjs"), "utf8");
+      return [[ciWorkflow, "k6"], [gitleaksWorkflow, "gitleaks"]].every(([workflow, tool]) => {
+        const install = workflow.split("\n").find((line) => line.includes(`run: node qa/scripts/install-ci-tool.mjs ${tool} `));
+        // Knip is an existing separate diagnostic job; security/load gates are not optional.
+        const mandatoryJob = tool === "k6"
+          ? workflow.slice(workflow.indexOf("  tests:"), workflow.indexOf("  knip:"))
+          : workflow;
+        return install && !install.includes("||") &&
+          workflow.includes("node --test qa/unit/install-ci-tool.test.mjs") &&
+          workflow.includes("actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25") &&
+          workflow.includes("actions/cache/save@caa296126883cff596d87d8935842f9db880ef25") &&
+          workflow.includes("hashFiles('qa/scripts/install-ci-tool.mjs')") &&
+          mandatoryJob.length > 0 && !mandatoryJob.includes("continue-on-error:") &&
+          !workflow.includes("--insecure");
+      }) && installer.includes('createHash("sha256")') &&
+        installer.includes("await verifyArchive(archive, tool)") &&
+        installer.includes("await verifyArchive(partial, tool)") &&
+        installer.indexOf("await ensureArchive(tool, directory)") < installer.indexOf('execFileSync("tar"') &&
+        ciWorkflow.indexOf("Instalar k6 2.3.0 com checksum") < ciWorkflow.indexOf("Executar testes estáticos") &&
+        ciWorkflow.includes("k6 run qa/load/k6-smoke.js") &&
+        ciWorkflow.includes("Executar OWASP ZAP baseline passivo") &&
+        gitleaksWorkflow.includes("run: gitleaks git --config=.gitleaks.toml --redact --verbose .");
+    })()
   },
   {
     name: "CI valida pull requests e a main",

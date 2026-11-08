@@ -347,7 +347,18 @@ obra e capítulo entre workers. A suíte de spoilers usa um leitor exclusivo,
 criado e removido somente no Supabase local, e aguarda a resposta de confirmação
 do navegador; consultar o banco por outro cliente não sincroniza o lifecycle da UI.
 
-Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504 antes de executar as
-ferramentas. Há retentativas limitadas somente no transporte; `curl --fail`,
-`set -euo pipefail` e checksum obrigatório antes da extração continuam vigentes.
-Falha no download não significa que o scan ou baseline foram aprovados.
+O baseline axe da Comunidade deve aguardar os controles do feed no `main` final: o shell
+de loading também é um `main`, e o rótulo da bottom nav pode estar oculto no
+desktop. Não usar esse rótulo nem o título exclusivo do desktop como prontidão.
+O estado vazio legítimo também é um feed carregado, não um skeleton.
+
+Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504/503, conexão interrompida
+e timeout antes de executar as ferramentas. O instalador compartilhado usa
+arquivos oficiais com versão, tamanho e SHA-256 fixos, cache separado por
+ferramenta e checksum revalidado em todo cache hit. No cache miss, tenta a API de
+assets do GitHub e, apenas em falha de transporte/HTTP, a URL oficial da release,
+com orçamento limitado por tentativa. Integridade inválida continua bloqueante.
+O cache contém somente arquivos verificados, nunca credenciais ou binários
+extraídos. Instalar k6 antes da suíte evita gastar toda a execução quando o
+download está indisponível. Scans/baselines continuam obrigatórios; falha na
+instalação nunca significa aprovação de k6, ZAP ou Gitleaks.
