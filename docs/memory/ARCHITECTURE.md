@@ -125,6 +125,17 @@
   Sem polling: abas continuamente abertas não detectam mudanças imediatamente.
   A página de Obra continua fora desta fase; ativação automática permanece suspensa.
 
+### Obra — snapshot público leve (fase 5C2A, inativo)
+
+- `obterSnapshotObraPublica` reutiliza a barreira e cache por geração/revisão.
+  A nova RPC invoker/STABLE pagina capítulos por `(ordem,id)`, sem textos, com
+  conferência de versão por página e RLS/18+ preservados. Hrefs usam ordem real.
+- O DTO não é `ObraLocal`: não pode substituir drafts nem estado pessoal.
+  Anexos trazem apenas metadados; acesso continua pelo assinador autorizado.
+- Página, metadata e carregamento cliente ainda não usam o snapshot. Sem novo
+  endpoint ou ativação parcial; integração/reconciliação fica para 5C2B.
+  Detalhes e limites em `docs/agendamento-cache-publico.md`.
+
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 
 - A migration `20261107223400_infraestrutura_capitulos_ilustrados.sql` adiciona

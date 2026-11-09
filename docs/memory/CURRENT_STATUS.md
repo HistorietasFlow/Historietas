@@ -2,6 +2,14 @@
 
 Atualizado em: 2026-11-09
 
+### Obra — snapshot público leve, fase 5C2A (em revisão)
+
+RPC aditiva e loader server-only com capítulos sem textos, ordem canônica real,
+revisão por página e barreira final. Anexos somente como metadados, sem caminhos
+ou URLs assinadas. Não foi conectado ao SSR/cliente: carregamento atual continua
+intacto; sincronização da página fica para 5C2B. Migration não aplicada em produção.
+Cron, publicação automática e uploads ilustrados permanecem suspensos.
+
 ### Leitor canônico — fase 5C1 (em revisão)
 
 Reconciliação cliente por geração/revisão na hidratação, navegação, Back/Forward,
