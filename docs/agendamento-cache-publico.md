@@ -98,9 +98,24 @@ de QA explicitamente identificados; abortos e resultados Cron nao sao simulados.
 Ao terminar, o harness remove a extensao/jobs e restaura NOLOGIN/gate false.
 Lint, Typecheck, Build, auditoria estatica, sessao, paginacao, Data API e
 anti-spam passaram. Audit de producao: zero vulnerabilidades.
-Playwright serial sem retries: 134/135; pendencia do baseline axe da Obra
-(seletor com dois roots; isoladamente, document-title serious). Nenhuma alteracao
-de frontend/teste de acessibilidade foi incluida para mascarar a falha.
+Playwright inicial serial sem retries: 134/135; baseline axe da Obra falhou
+com dois roots e, isoladamente, document-title serious. Investigacao posterior
+com MutationObserver comprovou transicao de streaming/hidratacao: um root
+visivel coexistiu com outro oculto e o titulo saiu do body antes de aparecer
+no head. Frontend/dependencias eram identicos a main `50cb0841`, sem relacao
+com o observador SQL. O teste passa a exigir raiz unica confirmada/interativa
+e titulo correto no head antes do axe integral, em desktop/mobile. Sem mudar
+timeouts, retries, regras axe ou codigo de producao. O smoke legado da Obra
+tem seletor main igualmente ambiguo (CI `42690781924`, passou no retry) e merece
+tratamento separado; CI verde nao equivale a ausencia de instabilidade.
+Revalidacao com fixtures locais novas e CLI fixado: acessibilidade 11/11,
+Obra critica 9/9 e agendamento/Diario 4/5, sem retries. Neste ultimo arquivo,
+linha 190 encontra dois spans do texto do Leitor no desktop; publicacao e HTTP
+200 ja haviam sido confirmados, e mobile passou. Seletor identico a main;
+pendencia separada, sem alterar executor, permissoes ou estender esta correcao.
+Lint/Typecheck/Build passaram. A rodada ampla anterior nao e uma suite limpa:
+127 passes, cinco falhas e quatro nao executados, com fixtures consumidas e
+CLI ausente no PATH antes desse preparo. Nenhuma aprovacao de merge ou ativacao.
 
 ## Fase 6B1 — entrada SQL restrita, sem ativacao
 

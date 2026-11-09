@@ -22,8 +22,27 @@ producao (zero vulnerabilidades) aprovados.
 Playwright completo serial sem retries: 134/135. Pendencia separada em
 `accessibility.spec.mjs:84`: dois roots da Obra no seletor durante verificacao;
 na unica execucao isolada, axe encontrou `document-title (serious)`.
-Nao corrigido nem classificado como mera instabilidade nesta fase; frontend
-e teste existentes nao foram alterados. Nao declarar suite integralmente verde.
+Investigacao posterior da #2249 (09/11): o frontend, dependencias e testes
+originais sao identicos aos da main `50cb0841`. MutationObserver no build local
+comprovou root visivel junto de root oculto em segmento de streaming (29 ms no
+mobile) e titulo temporariamente vazio entre metadata no body e hidratacao no
+head (327 ms no desktop). Nao e evidencia de fixture incompleta nem de titulo
+permanentemente ausente. O baseline agora exige raiz unica, confirmada/interativa
+e titulo correto no head antes do axe integral, em desktop/mobile, sem mudar
+timeouts, retries ou regras. Nenhuma alteracao de producao ou do runner.
+CI anterior `42690781924` verde, mas com um flaky independente no smoke da Obra
+(`smoke-routes.spec.mjs:106`, main de loading + main da obra); tratar esse seletor
+separadamente, sem confundir passe em retry com estabilidade comprovada.
+Revalidacao local apos o ajuste: baseline axe 11/11 (Obra desktop/mobile) e
+cenarios criticos da Obra 9/9, todos sem retries; Lint, Typecheck e Build aprovados.
+A rodada ampla teve 127 passes, cinco falhas e quatro nao executados: quatro
+falhas por reutilizar a fixture consumida (24 comentarios, E2E 01 ausente) e
+uma por CLI ausente no PATH do harness. Com fixtures recriadas e CLI 2.116.0,
+os tres arquivos revalidados ficaram 24/25. Pendencia independente restante:
+`scheduled-chapter-diary.spec.mjs:190` encontra dois spans do texto do Leitor
+no desktop (strict mode), apos confirmar publicacao/HTTP 200; mobile passou.
+Teste identico a main, sem alteracao nesta correcao. Investigar separadamente
+a sincronizacao desse seletor; nao declarar suite limpa nem merge aprovado.
 
 ### Agendamento — fase 6B1, entrada operacional sem ativacao
 
