@@ -2534,6 +2534,12 @@ const paginationContracts = [
       )
   },
   {
+    name: "ACL local preserva apenas o servidor nas RPCs de visualizacao",
+    valid:
+      /grant execute on function public\.registrar_visualizacao_obra\(uuid, text\),\s*public\.registrar_visualizacao_capitulo\(uuid, text\) to service_role;/.test(localAclMigration) &&
+      !/grant execute on function public\.registrar_visualizacao_(?:obra|capitulo)[^;]*\bto\s+(?:public|anon|authenticated)\b/i.test(localAclMigration)
+  },
+  {
     name: "ajuste de ACL do baseline fica restrito ao ambiente de testes",
     valid:
       /SOMENTE TESTES LOCAIS/.test(localAclMigration) &&

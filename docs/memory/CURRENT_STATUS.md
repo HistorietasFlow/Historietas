@@ -2,6 +2,28 @@
 
 Atualizado em: 2026-11-09
 
+### QA local — ACL das visualizações
+
+O helper `qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql`
+revogava também o EXECUTE de service_role nas duas RPCs de visualização, apesar
+do contrato server-only da migration `20260825204845`. A normalização passa a
+restaurar somente essas duas assinaturas para service_role. Clientes anon,
+authenticated e PUBLIC continuam sem execução; RPCs legadas continuam negadas.
+Não é migration de produção nem revisão de RLS. Bancos locais já preparados
+precisam receber somente esse delta ou ser recriados pelo procedimento de QA;
+não reaplicar o helper pré-baseline inteiro sobre um banco já migrado.
+
+Separadamente, o 503 de `/api/leitura-publica` observado na validação anterior
+permanece inconclusivo: a reprodução isolada e o arquivo completo passaram sem
+retries, mas isso não explica a falha original. Não confundir com o 42501 das
+visualizações. Numa nova ocorrência, correlacionar horário/ID de execução,
+endpoint sem query, status HTTP, papel anon/authenticated/service_role e código
+upstream SQLSTATE/PGRST ou de transporte por allowlist. Usar instrumentação
+temporária local no fetch do servidor e response no navegador; nunca registrar
+headers, cookies, tokens, corpos, URLs completas ou mensagens/detalhes livres.
+O log atual `erro remoto` não contém esse código; esta correção não modifica
+o endpoint público nem declara resolvido o 503 original.
+
 ### Obra — sincronização pública, fase 5C2B (em revisão)
 
 Snapshot leve compartilhado no SSR/metadata e confirmação por eventos via
