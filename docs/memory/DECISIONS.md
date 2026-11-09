@@ -129,6 +129,20 @@
   Ativação depende de acionador/alertas/recuperação e política sustentável de
   capacidade aprovada. Uploads ilustrados permanecem suspensos.
 
+### Entrada operacional do agendamento — fase 6B1 (09/11/2026)
+
+- Papel SQL dedicado nasce NOLOGIN, sem acesso direto a dados/executor. Somente
+  entrada privada definer fixa e session_user real; nao impersonar com JWT/SET
+  ROLE nem conceder privilegios a papeis da API. O gate continua false.
+- Defaults de timeout devem entrar antes da instrucao, por nova conexao. Teste
+  do Cron local certifica somente pg_cron 1.6.4 no modo de conexao; nenhuma
+  autenticacao trust local e requisito/alteracao autorizada em producao.
+- Constraint invoker diferido do manifesto deve executar dentro da entrada
+  autorizada, antes do retorno definer, sem grants de tabela ou desativacao.
+- Historico do Cron observa abortos que revertem os contadores SQL. Alertas,
+  pausa/retomada e observacao externa ainda nao estao implementados. Outbox sem
+  ACK permanece retida; nenhum job ou upload ilustrado e habilitado.
+
 ## Vercel
 
 - Não usar pausa do projeto como mecanismo normal para esconder o site durante desenvolvimento, porque isso bloqueia deploys e pode causar 503.

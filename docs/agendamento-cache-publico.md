@@ -1,5 +1,109 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
+## Fase 6B1 — entrada SQL restrita, sem ativacao
+
+Migration `20261109183045_entrada_sql_restrita_runner_capitulos.sql` cria o papel
+`historietas_capitulo_runner` com NOLOGIN, NOINHERIT e sem superuser, BYPASSRLS,
+CREATEROLE, CREATEDB ou replicacao. Nao cria senha, extensao, job ou endpoint.
+Somente USAGE do schema privado e EXECUTE de `acionar_runner_capitulos()` sao
+concedidos. O ADMIN automatico do criador no PostgreSQL 17 nao concede SET ou
+heranca. Authenticator, anon, authenticated e service_role nao recebem acesso.
+A instalacao exige gate false; nao liga nem desliga implicitamente um runner
+que ja esteja em operacao. Nome de papel preexistente causa falha, nao e adotado.
+
+A entrada e SECURITY DEFINER, owner postgres, search_path vazio e sem argumentos
+ou SQL dinamico. Confere session_user dedicado e recusa SET ROLE; a elevacao
+serve somente para chamar o runner existente com **3 itens/2.000 ms**. Nao
+concede leitura/escrita de tabelas, execucao do nucleo ou alteracao do gate ao
+papel operacional. O executor continua revalidando autoria, propriedade, termos,
+tipo texto, revisao e prazo; auth.uid() nulo nao e usado como autorizacao.
+
+O trigger invoker diferido `capitulos_manifesto_integro` mostrou uma dependencia
+real no commit: depois do retorno da funcao definer, o papel restrito nao pode
+ler capitulos para validar o manifesto. A entrada antecipa **somente esse
+constraint** para IMMEDIATE, antes do runner, mantendo sua validacao dentro da
+operacao autorizada. Nao o desativa, nao altera sua funcao e nao concede SELECT
+da tabela. O runner modifica somente capitulos de texto; nao edita manifestos.
+A mudanca de temporizacao e local a essa transacao operacional; nao combinar a
+entrada com outras mutacoes. Outros caminhos e constraints permanecem intactos.
+
+### Contrato dos timers e do futuro chamador
+
+Defaults exclusivos do papel: statement_timeout 10 s, lock_timeout 500 ms,
+idle_in_transaction_session_timeout 5 s. Eles sao carregados na nova conexao,
+antes do comando fixo `SELECT historietas_privado.acionar_runner_capitulos()`.
+A entrada recusa limites zero ou superiores, mas nao instala timers. Valores
+de GUC nao provam quando o timer foi armado: a credencial SQL futura e confiavel,
+jamais entregue a clientes ou usada para SQL arbitrario. SET dentro da mesma
+expressao, wrapper ou comando nao substitui o contrato da conexao.
+
+O teste utiliza pg_cron **1.6.4**, modo de conexao (`use_background_workers=off`),
+sem SET de timeout no comando do job. A conexao autentica como o papel dedicado
+e cada job executa uma instrucao/uma transacao, com commit automatico. O modo
+background worker nao foi habilitado nem e certificado por esta entrega.
+O timeout de ociosidade cobre sessao administrativa abandonada em transacao;
+nao limita CPU de um comando ativo (statement_timeout cumpre esse papel).
+
+Somente no Supabase descartavel, o harness instala/remove a extensao, concede
+temporariamente LOGIN/USAGE de cron e agenda jobs de teste. Usa a regra TCP
+loopback ja existente no container, sem editar pg_hba.conf, trust, senha ou
+configuracao global. Ao terminar, remove jobs/extensao e restaura NOLOGIN/gate
+false. Nenhum desses passos esta na migration de entrega. A autenticacao do
+papel e a disponibilidade/versao/modo no Supabase gerenciado continuam exigindo
+verificacao autorizada antes de rollout; nao extrapolar o trust local.
+
+### Abortos e recuperacao ainda pendentes
+
+O historico `cron.job_run_details` registra falha por statement_timeout mesmo
+quando publicacao, Diario, notificacoes, recibos, outbox e contadores do runner
+sofrem rollback. `succeeded` nesse historico e sucesso SQL, nao prova de que
+houve publicacao: um item pode retornar erro ou o gate estar fechado. Correlacionar
+job/run, horario, duracao, status e metricas privadas; nao exportar SQLERRM,
+contextos SQL, conteudo ou identificadores de usuarios para alertas publicos.
+Ausencia de execucao, registro sem termino e indisponibilidade do banco devem
+ser classificados como estado desconhecido, nunca como sucesso. Um futuro
+observador precisa confrontar o historico com a cadencia e o prazo esperados;
+esta fase nao implementa esse observador nem garante alertas durante uma queda.
+
+Uma resposta perdida depois do commit nao autoriza repetir efeitos: estado e
+recibo continuam autoritativos. Aborto global nao incrementa tentativas e pode
+repetir indefinidamente se um acionador ingenuo for instalado. Ainda faltam
+observador de abortos fora dessa transacao, politica de pausa/retomada, alertas,
+cadencia aprovada, recuperacao apos indisponibilidade e capacidade/retenção.
+Nada disso e declarado implementado por esta entrada; nenhum job fica instalado.
+
+A outbox permanece integralmente privada e retida, sem ACK, purge ou expiracao
+de pendencias. Chamar o runner nao aciona o consumidor Next nem confirma flush.
+Uploads/publicacao/limpeza ilustrados permanecem suspensos. O 503 publico
+historico continua inconclusivo, independente desta fase.
+
+### Validacao local e limites
+
+pgTAP confere papel, grants, gate e impersonacao. A integracao local exercita
+Data API negada, login real do job, gate fechado, commit/rollback, concorrencia,
+resposta funcional perdida, timeout real de 10 s, lock_timeout de 500 ms,
+backoff e encerramento de sessao ociosa com liberacao do lock. Falhas injetadas
+na fixture nao alteram triggers de producao. Os testes devem rodar em serie,
+sem retries, e nunca junto do pgTAP que inspeciona o estado inicial NOLOGIN.
+Foram aprovados 629 testes pgTAP (14 novos) e os oito testes do harness Cron,
+sem retries artificiais. O ensaio encontrou o problema do constraint diferido
+descrito acima e confirmou a correcao sem ampliar grants. O ambiente voltou a
+gate false, NOLOGIN e nenhuma extensao/job Cron instalado. A suite integrada
+de agendamento passou 45 testes; paginacao/anti-spam, 19; sessao, 2.002;
+paginacao unitaria, 22. npm ci, audit de producao (zero), auditoria estatica,
+Lint, Typecheck e build local passaram.
+
+Playwright completo serial, sem retries: 129 aprovados, duas falhas e quatro
+nao executados. O arquivo scheduled-chapter-diary falhou antes dos testes por
+CLI ausente no PATH do processo; corrigido apenas o ambiente, seus cinco
+cenarios passaram (desktop/mobile, duas instancias, cache, sitemap e Diario).
+Resta o smoke legado `smoke-routes.spec.mjs:106`: locator('main') encontra o
+loading e o root da Obra em verificacao simultaneamente. O snapshot ja contem
+a obra; esse seletor e a aplicacao nao foram alterados nesta fase. Nao declarar
+a suite completa verde nem corrigir esse fluxo dentro desta entrega SQL.
+O 503 historico nao foi reproduzido nem teve sua causa esclarecida aqui.
+As evidencias ficam na PR; este contrato nao e SLA de producao.
+
 ## Fase 6A — runner privado, operacionalmente desativado
 
 `20261109171652_runner_privado_agendamento_capitulos.sql` acrescenta somente

@@ -2,6 +2,26 @@
 
 Atualizado em: 2026-11-09
 
+### Agendamento — fase 6B1, entrada operacional sem ativacao
+
+Migration `20261109183045_entrada_sql_restrita_runner_capitulos.sql` prepara
+papel NOLOGIN e entrada SQL privada fixa (3 itens/2 s), sem grants para API,
+sem extensao ou job. Timeouts pertencem a nova conexao do papel. A entrada
+antecipa somente o constraint invoker do manifesto para validar sob autoridade
+durante a operacao; nao amplia SELECT nem altera RLS. Runner continua false.
+Testes de Cron usam exclusivamente ambiente local descartavel e restauram
+NOLOGIN/gate false, removendo os jobs e a extensao instalados pelo harness.
+Observacao de abortos globais, alertas, pausa/retomada, credenciais do ambiente
+gerenciado e politica sustentavel de outbox ainda impedem ativacao. Sem ACK,
+Cron de producao, publicacao automatica ou uploads ilustrados. Detalhes em
+`docs/agendamento-cache-publico.md`.
+
+Validacao local 6B1: pgTAP 629, integracao de agendamento 45, demais checks
+de codigo/build aprovados. Playwright completo nao ficou verde: smoke legado
+da Obra usa main ambiguo durante loading. Os cinco E2E de agendamento passaram
+apos corrigir somente o PATH do CLI. Pendencia de seletor fora deste escopo;
+nenhuma alteracao de aplicacao ou permissao para contorna-la.
+
 ### Agendamento — fase 6A, runner privado desativado
 
 Migration `20261109171652_runner_privado_agendamento_capitulos.sql`: runner
