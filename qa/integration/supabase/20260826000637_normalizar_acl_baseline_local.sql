@@ -127,6 +127,11 @@ begin
     end if;
   end loop;
 
+  -- A migration 20260825204845 ja restringiu estas RPCs ao endpoint do servidor.
+  -- A normalizacao acima nao pode apagar esse contrato exclusivo de service_role.
+  grant execute on function public.registrar_visualizacao_obra(uuid, text),
+    public.registrar_visualizacao_capitulo(uuid, text) to service_role;
+
   -- A migration seguinte espera as 41 funcoes ainda expostas. Esta e a
   -- unica entrada sem grant de API no inventario e sera removida por ela.
   grant execute on function public.rls_auto_enable() to public;
