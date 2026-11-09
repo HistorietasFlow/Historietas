@@ -21,8 +21,9 @@ test("cliente delega o lifecycle de avaliacao ao hook", () => {
   );
   assert.match(
     paginaObra,
-    /const \{[\s\S]*?avaliarObra,[\s\S]*?invalidarAvaliacaoObra,[\s\S]*?\} = useObraRatingLifecycle\(\{[\s\S]*?obra,[\s\S]*?obraNormalizada,[\s\S]*?usuarioIdLogado,[\s\S]*?autorObraId,[\s\S]*?avaliacaoObra,[\s\S]*?carregarMetricasObra,[\s\S]*?obterIdentidadeLogadaParaAcao,[\s\S]*?criarGuardIdentidadeAcao,[\s\S]*?setAvaliacaoObra,[\s\S]*?setMensagemAcao,[\s\S]*?\}\);/,
+    /const \{[\s\S]*?avaliarObra,[\s\S]*?invalidarAvaliacaoObra,[\s\S]*?\} = useObraRatingLifecycle\(\{[\s\S]*?obra: obraInteracoes,[\s\S]*?obraNormalizada,[\s\S]*?usuarioIdLogado,[\s\S]*?autorObraId,[\s\S]*?avaliacaoObra,[\s\S]*?carregarMetricasObra,[\s\S]*?obterIdentidadeLogadaParaAcao,[\s\S]*?criarGuardIdentidadeAcao,[\s\S]*?setAvaliacaoObra,[\s\S]*?setMensagemAcao,[\s\S]*?\}\);/,
   );
+  assert.match(paginaObra, /const obraInteracoes = snapshotInicial && !publica.pronta \? null : obra;/);
   assert.match(
     paginaObra,
     /useEffect\(\(\) => \{\s*invalidarAvaliacaoObraRef\.current = invalidarAvaliacaoObra;\s*\}, \[invalidarAvaliacaoObra\]\);/,

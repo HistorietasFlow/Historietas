@@ -1,6 +1,112 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
-## Fase 5C2A — snapshot leve da Obra, ainda sem ativação
+## Fase 5C2B — sincronização da página de Obra (em revisão)
+
+A página compartilha, somente no render atual, `obterSnapshotObraPublica` entre
+metadata/JSON-LD e SSR do componente existente. O DTO leve é a única fonte de
+sinopse, capa, tags e capítulos públicos; o loader GET/local anterior fica
+desativado nesse caminho. Não se escrevem snapshots públicos em drafts/backups.
+Listas vazias continuam obras válidas, e links/números usam a ordem persistida.
+
+`GET /api/obra-publica` não usa sessão nem service role: reutiliza o loader
+server-only e os POST/no-store ao primário antes/depois do Data Cache versionado.
+HTTP/CDN/Vercel-CDN são no-store. A revisão conhecida permite resposta leve
+`inalterada`, mas nunca dispensa as duas barreiras. Ausência confirmada remove
+o conteúdo; erro temporário o oculta e oferece retry sem reload/404 falso.
+
+Hidratação, rota, Back/Forward, foco, visibilidade e BFCache confirmam a projeção.
+Eventos no mesmo frame são agrupados; eventos posteriores invalidam leituras
+anteriores. O coordenador do Leitor é reutilizado, sem cache global de promessas.
+Versões menores, pedidos antigos e identidades/gerações anteriores são recusados.
+Revisão igual conserva a referência pública, sem repetir métricas/avaliações ou
+visualizações. Um novo objeto RSC de mesma versão não reinicia a confirmação.
+
+Progresso confirmado é lido separadamente, paginado sob a identidade/RLS atual;
+não torna conteúdo local autoritativo. Troca/logout de conta invalida progresso
+e operações pessoais, inclusive A→B→A. Métricas, avaliações e comentários mantêm
+seus hooks; alterações de obra/geração limpam estado anterior antes da pintura.
+Mutations atrasadas não podem aplicar estado à outra obra/geração/rota.
+Antes da primeira confirmação da identidade/snapshot, os guards também impedem
+ações otimistas locais; `obra=null` sozinho não era um bloqueio suficiente.
+O conteúdo SSR permanece pintado, mas o `main` fica busy/inert até confirmar
+identidade e leitura pessoal inicial. Assim, cliques não são consumidos antes
+de o lifecycle estar pronto nem retomam um capítulo antes da leitura do progresso.
+Métricas continuam paralelas ao progresso. Se esta leitura pessoal falhar,
+mantém-se apenas progresso já confirmado da mesma identidade/geração, ou o
+padrão sem leitura; eventos posteriores permitem nova consulta, sem loop.
+O perfil público do autor só participa da apresentação quando sua identidade
+corresponde à autoria do snapshot atual; a resposta anterior não determina
+nome, link ou propriedade da nova obra.
+
+O SSR aplica os mesmos estilos desktop/mobile existentes por media queries,
+sem esperar a detecção de viewport no cliente. A área da avaliação conserva
+sua geometria enquanto a autenticação inicial resolve, mas fica invisível,
+inert e fora da árvore acessível. Isso evita os deslocamentos reproduzidos
+ao entregar conteúdo antes da hidratação, sem novo layout ou consulta.
+Seletores responsivos usam `:where()` para não sobrepor regras importantes
+do tema, como a ausência de sombra no título.
+
+Anexos entram somente como metadados. O componente existente solicita acesso
+pelo assinador legado usando a obra, nunca um caminho/URL do snapshot. Sessão,
+visibilidade, namespace ilustrado e autorização permanecem no assinador. URLs
+temporárias ficam só no estado do componente e são descartadas ao trocar conta,
+obra, geração ou revisão; não entram no cache público.
+
+**Limites:** não há polling. Abas continuamente abertas sem novos eventos não
+detectam imediatamente mudanças remotas. Bytes já entregues em HTML/RSC,
+memória, histórico ou BFCache não podem ser revogados. A confirmação representa
+o snapshot da última leitura, não bloqueia edições posteriores. Metadata/JSON-LD
+já entregue só se renova com outra resposta SSR. Um 404 inicial não monta o
+lifecycle. Cron, publicação automática, ACK da outbox e uploads ilustrados
+continuam suspensos; merge não aplica migrations em produção.
+A ativação deste código exige que o responsável já tenha aplicado a migration
+da fase 5C2A (`20261109040303_snapshot_leve_publico_obra.sql`) no ambiente alvo.
+Esta fase não cria nem aplica migration remotamente.
+
+### Medição local da fase 5C2B
+
+Build de produção, Supabase descartável em `127.0.0.1:54421`, visitante e obra
+representativa E2E. Três contextos Chromium novos por viewport, servidor
+reutilizado, estabilização por ausência de requests e observação adicional de
+10 segundos. No build final, conteúdo útil exige um único main visível,
+confirmado e fora de busy/inert, não uma cópia transitória do Router Cache.
+Medianas (antes → depois); não representam latência de produção.
+
+| Viewport | Requests | Supabase no navegador | Transferência (CDP) | Conteúdo útil | Estabilização | LCP observado | CLS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Mobile 390 | 49 → 46 | 5 → 2 | 629.192 → 634.346 B | 446 → 447 ms | 2.334 → 1.326 ms | 456 → 264 ms | 0 → 0,000071 |
+| Desktop 1440 | 43 → 41 | 5 → 2 | 583.516 → 588.381 B | 442 → 442 ms | 1.337 → 1.324 ms | 384 → 280 ms | 0,000007 → 0,000005 |
+
+Saem os GETs cliente de obra/capítulos e a consulta combinada de métricas do
+loader antigo. Permanecem perfil público e métricas da obra, além de uma
+confirmação Next por hidratação. Não houve requests nos 10 segundos adicionais.
+Isso **não** significa redução equivalente de consultas totais ao banco: cada
+SSR/confirmação exige dois POSTs autoritativos; misses também leem páginas leves.
+Progresso autenticado é uma operação adicional, separada desses números.
+Não houve HTTP >= 400. Foram registradas interrupções de requests de
+RSC/prefetch durante o carregamento; o motivo não foi capturado, portanto não
+são classificados como falhas funcionais nem ignorados como sucesso de rede.
+
+Lighthouse existente, três execuções por dispositivo, mesmos URL/fixtures e
+presets. O baseline desktop teve `NO_LCP` em uma amostra: somente duas válidas,
+sem substituir erro por zero. Medianas descritivas:
+
+| Preset | Performance | LCP | TBT | CLS | Peso total |
+| --- | --- | --- | --- | --- | --- |
+| Mobile (3/3 → 3/3) | 41 → 48 | 6,27 → 6,48 s | 7,15 → 1,92 s | 0,000113 → 0,000113 | 706.610 → 711.914 B |
+| Desktop (2/3 → 3/3) | 59,5 → 98 | 1,69 → 0,94 s | 813 → 108 ms | 0,000008 → 0,000005 | 600.715 → 680.472 B |
+
+A variação local foi grande, inclusive entre contextos da mesma versão. A
+medição final foi serial, sem outras validações concorrentes; o baseline não
+ficou completamente isolado dessas cargas. Não se atribui causalmente a
+melhora de score/TBT ao código. Conteúdo útil ficou estável, transferência CDP
+subiu cerca de 0,8% e LCP Lighthouse mobile ficou cerca de 3% acima do baseline,
+dentro das faixas variáveis observadas. Os dados comprovam a redução de
+requests cliente e CLS próximo de zero, não uma aprovação de performance em
+produção. Manter a draft para revisão/CI e eventual comparação isolada de ambos
+os builds antes da ativação. Não foram adicionados prefetch, polling ou serviços.
+
+## Histórico da fase 5C2A — snapshot leve antes da integração 5C2B
 
 `obterSnapshotObraPublica` é uma entrada server-only preparada para a futura
 integração SSR. Reutiliza a barreira POST/no-store antes/depois e cache por

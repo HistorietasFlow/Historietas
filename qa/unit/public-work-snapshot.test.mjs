@@ -147,11 +147,12 @@ test("revisões obsoletas têm retry limitado; renomeação e despublicação n�
   assert.equal((await read("renomeada")).capitulos[0].href, "/obra/renomeada/capitulo/2");
 });
 
-test("capa assinada não entra no DTO; contratos SSR/cliente e assinador legados permanecem sem ativação parcial", async () => {
+test("capa assinada não entra no DTO; SSR usa snapshot e o loader legado fica desativado nesse caminho", async () => {
   const h = harness(); h.state.projection.obra.capa = "https://storage.test/storage/v1/object/sign/capas/capa.png?token=secreto";
   assert.equal((await h.instance()("obra")).obra.capa, "");
   const page = readFileSync(new URL("../../app/obra/[slug]/page.tsx", import.meta.url), "utf8");
-  assert.match(page, /<ObraDinamicaClient\s*\/>/); assert.doesNotMatch(page, /obterSnapshotObraPublica/);
+  assert.match(page, /<ObraDinamicaClient snapshotInicial=\{snapshot\}/); assert.match(page, /obterSnapshotObraPublica/);
   const client = readFileSync(new URL("../../app/obra/[slug]/ObraDinamicaClient.tsx", import.meta.url), "utf8");
-  assert.match(client, /useObraPublicWorkLoad\(/); assert.doesNotMatch(client, /obterSnapshotObraPublica/);
+  assert.match(client, /useObraPublicWorkLoad\(\{\s*habilitado: !snapshotInicial/);
+  assert.match(client, /useObraPublicSnapshot\(/);
 });

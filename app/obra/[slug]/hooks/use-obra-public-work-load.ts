@@ -9,6 +9,7 @@ import { carregarObrasLocaisComBackup } from "../lib/obra-local-works-utils";
 import { carregarObraSupabasePorSlug } from "../lib/obra-public-work-loader";
 
 type UseObraPublicWorkLoadParams = {
+  habilitado?: boolean;
   autenticacaoCarregada: boolean;
   slug: string;
   usuarioIdLogado: string;
@@ -21,6 +22,7 @@ type UseObraPublicWorkLoadParams = {
 };
 
 export function useObraPublicWorkLoad({
+  habilitado = true,
   autenticacaoCarregada,
   slug,
   usuarioIdLogado,
@@ -30,7 +32,7 @@ export function useObraPublicWorkLoad({
   setErroCarregamentoObra,
 }: UseObraPublicWorkLoadParams) {
   useEffect(() => {
-    if (!autenticacaoCarregada) {
+    if (!habilitado || !autenticacaoCarregada) {
       return;
     }
 
@@ -118,6 +120,7 @@ export function useObraPublicWorkLoad({
       cancelado = true;
     };
   }, [
+    habilitado,
     autenticacaoCarregada,
     slug,
     usuarioIdLogado,

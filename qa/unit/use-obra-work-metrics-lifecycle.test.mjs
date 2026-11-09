@@ -21,8 +21,9 @@ test("cliente delega o lifecycle de metricas ao hook", () => {
   );
   assert.match(
     paginaObra,
-    /useObraWorkMetricsLifecycle\(\{[\s\S]*?obra,[\s\S]*?obraNormalizada,[\s\S]*?usuarioIdLogado,[\s\S]*?followedWorksStorageKey: FOLLOWED_WORKS_STORAGE_KEY,[\s\S]*?likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY,[\s\S]*?favoritesStorageKey: FAVORITES_STORAGE_KEY,[\s\S]*?completedStorageKey: COMPLETED_STORAGE_KEY,[\s\S]*?carregarMetricasObra,[\s\S]*?setObraSeguida,[\s\S]*?setObraFavoritada,[\s\S]*?setObraConcluida,[\s\S]*?setMetricasObra,[\s\S]*?setMetricasComunidadeObra,[\s\S]*?setTotalComentariosObra,[\s\S]*?\}\);/,
+    /useObraWorkMetricsLifecycle\(\{[\s\S]*?obra: obraInteracoes,[\s\S]*?obraNormalizada,[\s\S]*?usuarioIdLogado,[\s\S]*?followedWorksStorageKey: FOLLOWED_WORKS_STORAGE_KEY,[\s\S]*?likedWorksStorageKey: LIKED_WORKS_STORAGE_KEY,[\s\S]*?favoritesStorageKey: FAVORITES_STORAGE_KEY,[\s\S]*?completedStorageKey: COMPLETED_STORAGE_KEY,[\s\S]*?carregarMetricasObra,[\s\S]*?setObraSeguida,[\s\S]*?setObraFavoritada,[\s\S]*?setObraConcluida,[\s\S]*?setMetricasObra,[\s\S]*?setMetricasComunidadeObra,[\s\S]*?setTotalComentariosObra,[\s\S]*?\}\);/,
   );
+  assert.match(paginaObra, /const obraInteracoes = snapshotInicial && !publica.pronta \? null : obra;/);
   assert.doesNotMatch(paginaObra, /async function carregarMetricasReaisObra\(/);
   assert.doesNotMatch(paginaObra, /carregarMetricasConteudos/);
   assert.doesNotMatch(paginaObra, /lerStorageUsuarioObraPublica/);

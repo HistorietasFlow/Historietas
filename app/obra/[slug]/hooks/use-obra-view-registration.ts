@@ -29,12 +29,13 @@ export function useObraViewRegistration(
     }
 
     visualizacaoObraRegistradaRef.current = obraIdAtual;
+    let cancelado = false;
 
     async function registrarVisualizacaoObraAtual() {
       const totalVisualizacoes =
         await incrementarVisualizacaoObraPublicaSupabase(obraIdAtual);
 
-      if (totalVisualizacoes === null) {
+      if (cancelado || totalVisualizacoes === null) {
         return;
       }
 
@@ -48,5 +49,6 @@ export function useObraViewRegistration(
     }
 
     void registrarVisualizacaoObraAtual();
+    return () => { cancelado = true; };
   }, [obra, statusAcesso18, setMetricasObra]);
 }

@@ -36,11 +36,12 @@ export default function ObraChaptersSection({
         <span style={chapterCountBadgeStyle}>{textoDisponibilidade}</span>
       </div>
 
-      <div style={isDesktop ? desktopChaptersListStyle : chaptersListStyle}>
+      <div style={isDesktop ? desktopChaptersListStyle : chaptersListStyle} data-obra-responsive="chapters">
         {capitulos.map((capitulo) => (
           <Link
             key={capitulo.id || capitulo.numero}
             href={capitulo.href}
+            data-obra-responsive="chapter"
             style={isDesktop ? desktopChapterCardStyle : chapterCardStyle}
             aria-label={`Abrir ${capitulo.titulo}`}
           >

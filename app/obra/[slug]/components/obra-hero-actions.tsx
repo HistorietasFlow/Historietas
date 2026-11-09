@@ -35,10 +35,11 @@ export default function ObraHeroActions({
   onAlternarAcoes,
 }: ObraHeroActionsProps) {
   return (
-    <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
+    <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle} data-obra-responsive="actions">
       {leituraHref ? (
         <Link
           href={leituraHref}
+          data-obra-responsive="reading"
           style={
             isDesktop
               ? desktopPrimaryReadingButtonStyle
@@ -53,6 +54,7 @@ export default function ObraHeroActions({
       <button
         type="button"
         onClick={onAlternarSeguir}
+        data-obra-responsive={seguindo ? "followed" : "follow"}
         style={
           isDesktop
             ? seguindo
@@ -69,6 +71,7 @@ export default function ObraHeroActions({
       <button
         type="button"
         onClick={onAlternarAcoes}
+        data-obra-responsive="more"
         style={isDesktop ? desktopObraAddButtonStyle : obraAddButtonStyle}
         aria-label="Abrir ações da obra"
         aria-expanded={acoesAbertas}

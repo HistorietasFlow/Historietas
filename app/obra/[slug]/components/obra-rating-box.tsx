@@ -34,6 +34,7 @@ export default function ObraRatingBox({
   return (
     <section
       style={isDesktop ? desktopWorkRatingBoxStyle : workRatingBoxStyle}
+      data-obra-responsive="rating"
     >
       <div style={workRatingHeaderStyle}>
         <span style={workRatingTitleStyle}>AVALIE ESTA OBRA</span>

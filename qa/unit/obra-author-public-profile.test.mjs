@@ -48,8 +48,9 @@ test("cliente delega somente o perfil do autor e preserva seus dados preparados"
   );
   assert.match(
     cliente,
-    /const perfilAutorObra = useObraAuthorPublicProfile\(\s*obra\?\.autorId,\s*obra\?\.autor \?\? "",\s*\);/,
+    /const perfilAutorCarregado = useObraAuthorPublicProfile\(\s*obra\?\.autorId,\s*obra\?\.autor \?\? "",\s*\);/,
   );
+  assert.match(cliente, /const perfilAutorObra = perfilDoAutorAtual\(perfilAutorCarregado, obra\?\.autorId\);/);
   assert.doesNotMatch(cliente, /setPerfilAutorObra/);
   assert.match(
     cliente,

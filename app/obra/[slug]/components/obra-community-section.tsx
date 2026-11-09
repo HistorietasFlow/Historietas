@@ -33,6 +33,7 @@ export default function ObraCommunitySection({
   return (
     <section
       style={isDesktop ? desktopCommunityBoxStyle : communityBoxStyle}
+      data-obra-responsive="community"
     >
       <div style={communityHeaderStyle}>
         <h2 style={communityTitleStyle}>COMUNIDADE</h2>
