@@ -117,6 +117,85 @@ export const obterObraMetadataPublica = (slug: string): Promise<ObraMetadataPubl
     capa_url: texto(obra.capa), slug,
   }));
 
+/** DTO publico independente de ObraLocal: nunca deve substituir drafts/cache pessoal.
+ * Preparado para SSR; a pagina e o lifecycle atuais ainda NAO o consomem. */
+export type SnapshotObraPublica = {
+  obraId: string;
+  geracao: string;
+  revisao: string;
+  slug: string;
+  obra: {
+    titulo: string; autor: string; autorId: string; genero: string; formato: string;
+    classificacaoIndicativa: string; avisosConteudo: string[]; sinopse: string;
+    tags: string[]; capa: string; capaNome: string; criadaEm: string;
+  };
+  anexo: { nome: string | null; tipo: string | null; tamanho: number | null; categoria: string | null } | null;
+  capitulos: { id: string; ordem: number; titulo: string; tipoConteudo: "texto" | "imagens";
+    criadoEm: string | null; atualizadoEm: string | null; href: string }[];
+};
+
+function capaSemAssinatura(valor: unknown) {
+  const capa = texto(valor) || "";
+  try {
+    const url = new URL(capa, "https://public.invalid");
+    if (!['http:', 'https:'].includes(url.protocol) ||
+      /\/(?:object|render\/image)\/sign\//i.test(url.pathname) ||
+      [...url.searchParams.keys()].some((chave) => /^(?:token|sig|signature|x-amz-.+|x-goog-.+)$/i.test(chave))) return "";
+    return capa;
+  } catch { return ""; }
+}
+
+export const obterSnapshotObraPublica = (slug: string): Promise<SnapshotObraPublica | null> =>
+  comProjecao(slug, "obra-leve-v1", null, async (projecao) => {
+    const supabase = criarSupabasePublicClient({ fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) });
+    let cursor: { ordem: number; id: string } | null = null;
+    let anexo: SnapshotObraPublica["anexo"] = null;
+    const capitulos = await carregarTodasPaginasSupabase<SnapshotObraPublica["capitulos"][number]>({
+      nomeColecao: "capítulos leves da obra pública",
+      // O helper limita a coleta; o banco pagina por cursor, não por OFFSET.
+      buscarPagina: async () => {
+        const { data, error } = await supabase.rpc("listar_capitulos_leves_projecao_publica", {
+          p_slug: projecao.slug, p_geracao: projecao.geracao, p_revisao: projecao.revisao,
+          p_depois_ordem: cursor?.ordem ?? null, p_depois_id: cursor?.id ?? null, p_limite: 500,
+        });
+        if (error) throw error;
+        if (!data || typeof data !== "object" || Array.isArray(data) || typeof data.valida !== "boolean" || !Array.isArray(data.capitulos)) {
+          throw new Error("Resposta de capítulos leves inválida.");
+        }
+        if (!data.valida) throw new ProjecaoPublicaAlterada();
+        if (data.obraId !== projecao.obraId || data.slug !== projecao.slug ||
+          data.geracao !== projecao.geracao || data.revisao !== projecao.revisao) throw new ProjecaoPublicaAlterada();
+        if (data.anexo === null) anexo = null;
+        else if (data.anexo && typeof data.anexo === "object" && !Array.isArray(data.anexo)) {
+          anexo = { nome: texto(data.anexo.nome), tipo: texto(data.anexo.tipo),
+            tamanho: typeof data.anexo.tamanho === "number" && Number.isSafeInteger(data.anexo.tamanho) && data.anexo.tamanho >= 0 ? data.anexo.tamanho : null,
+            categoria: texto(data.anexo.categoria) };
+        } else throw new Error("Metadados de anexo inválidos.");
+        const rows = data.capitulos.map((row) => {
+          if (!row || typeof row !== "object" || Array.isArray(row) ||
+            typeof row.id !== "string" || !idObraSupabaseValido(row.id) ||
+            typeof row.ordem !== "number" || !Number.isInteger(row.ordem) || row.ordem < 1 || row.ordem > 2147483647 ||
+            typeof row.titulo !== "string" || !["texto", "imagens"].includes(String(row.tipo_conteudo))) throw new Error("Capítulo leve inválido.");
+          if (cursor && (row.ordem < cursor.ordem || (row.ordem === cursor.ordem && row.id <= cursor.id))) throw new Error("Cursor de capítulos não avançou.");
+          cursor = { ordem: row.ordem, id: row.id };
+          return { id: row.id, ordem: row.ordem, titulo: row.titulo,
+            tipoConteudo: row.tipo_conteudo as "texto" | "imagens",
+            criadoEm: texto(row.criado_em), atualizadoEm: texto(row.atualizado_em),
+            href: `/obra/${encodeURIComponent(projecao.slug)}/capitulo/${row.ordem}` };
+        });
+        return { data: rows, error: null };
+      },
+    });
+    const campos = projecao.obra;
+    const lista = (valor: unknown): string[] => Array.isArray(valor) ? valor.filter((v): v is string => typeof v === "string") : [];
+    return { obraId: projecao.obraId, geracao: projecao.geracao, revisao: projecao.revisao, slug: projecao.slug,
+      obra: { titulo: texto(campos.titulo) || "Obra sem título", autor: texto(campos.autor) || "",
+        autorId: texto(campos.autorId) || "", genero: texto(campos.genero) || "", formato: texto(campos.formato) || "",
+        classificacaoIndicativa: texto(campos.classificacaoIndicativa) || "", avisosConteudo: lista(campos.avisosConteudo),
+        sinopse: texto(campos.sinopse) || "", tags: lista(campos.tags), capa: capaSemAssinatura(campos.capa),
+        capaNome: texto(campos.capaNome) || "", criadaEm: texto(campos.criadaEm) || "" }, anexo, capitulos };
+  });
+
 export const obterRotaCapituloPublico = async (slug: string, numeroCapitulo: number): Promise<RotaCapituloPublico | null> => {
   const leitura = await obterLeituraCapituloPublico(slug, numeroCapitulo);
   return leitura ? { obraId: leitura.obraId, capituloId: leitura.capituloId } : null;

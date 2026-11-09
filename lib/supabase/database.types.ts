@@ -1946,6 +1946,7 @@ export type Database = {
       existe_capitulo_projecao_publica: { Args: { p_slug: string; p_numero: number }; Returns: boolean }
       obter_revisao_sitemap_publico: { Args: Record<PropertyKey, never>; Returns: string }
       listar_capitulos_projecao_publica: { Args: { p_slug: string; p_geracao: string; p_revisao: string; p_inicio: number; p_limite: number }; Returns: Json }
+      listar_capitulos_leves_projecao_publica: { Args: { p_slug: string; p_geracao: string; p_revisao: string; p_depois_ordem: number | null; p_depois_id: string | null; p_limite: number }; Returns: Json }
       listar_revisoes_sitemap_publico: { Args: { p_depois_id: string | null; p_limite: number }; Returns: { id: string; slug: string; geracao: string; revisao: string; atualizado_em: string | null; classificacao_indicativa: string; publicado: boolean }[] }
       listar_capitulos_sitemap_publico: { Args: { p_depois_id: string | null; p_limite: number }; Returns: { id: string; obra_id: string; ordem: number; atualizado_em: string | null; publicado: boolean; geracao: string; revisao: string }[] }
       reivindicar_cache_capitulos: { Args: { p_limite: number }; Returns: Json }

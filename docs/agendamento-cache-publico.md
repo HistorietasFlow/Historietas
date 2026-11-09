@@ -1,5 +1,52 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
+## Fase 5C2A — snapshot leve da Obra, ainda sem ativação
+
+`obterSnapshotObraPublica` é uma entrada server-only preparada para a futura
+integração SSR. Reutiliza a barreira POST/no-store antes/depois e cache por
+obra/geração/revisão, com namespace próprio `obra-leve-v1`. Não é usado pela
+página, metadata nem pelo lifecycle cliente nesta fase: não substituir o loader
+atual até concluir a reconciliação da fase 5C2B.
+
+A migration `20261109040303_snapshot_leve_publico_obra.sql` adiciona somente
+`listar_capitulos_leves_projecao_publica`, STABLE/SECURITY INVOKER, com EXECUTE
+explícito para anon/authenticated e nenhum grant para service role. Cada página
+confere geração/revisão no mesmo snapshot SQL; cursor `(ordem,id)` e limite de
+500 reutilizam os índices existentes. Não muda assinaturas, policies ou grants
+de tabelas. Obra e capítulo precisam estar publicados, com autoria consistente;
+drafts e 18+ continuam indisponíveis, inclusive para o autor pela RPC pública.
+
+O DTO contém identidade, campos visuais públicos, capítulos leves e hrefs pela
+`ordem` real, não pela posição. Não contém textos, comentários, métricas pessoais,
+bytes, caminhos privados ou URLs assinadas. Capas com padrões de assinatura
+conhecidos são omitidas. Anexos legados aparecem apenas como nome, MIME, tamanho
+e categoria, nunca como autorização de acesso; o assinador existente continua
+responsável pela sessão/visibilidade e pelo bloqueio do namespace ilustrado.
+O renderer e os contratos de anexos existentes não foram substituídos.
+
+Lista vazia válida retorna snapshot com `capitulos: []`; ausência pública
+confirmada retorna `null` sem persistir negativo por slug desconhecido. Falha de
+rede, página inválida ou mudança contínua de revisão propaga erro, sem devolver
+lista parcial, fallback local ou 404 falso. As três tentativas limitadas da
+barreira são mantidas; hits também exigem confirmação final no primário.
+
+Não há endpoint novo, polling, listeners cliente, Cron ou publicação automática.
+Esta entrega não corrige ainda conteúdo antigo no Router Cache/abas abertas nem
+o mapeamento legado de capítulos da página de Obra. Abas continuamente abertas
+sem eventos não detectarão mudanças imediatamente mesmo na futura fase 5C2B.
+Uploads ilustrados e limpeza física continuam suspensos. A migration precisa
+ser aplicada pelo responsável antes da futura ativação, nunca inferida do merge.
+
+Comparação Data API local com 503 capítulos (duas páginas), bytes de JSON UTF-8
+sem headers/compressão: lista anterior da Obra ~149 KB, nova lista versionada
+~109 KB, RPC do Leitor com textos ~1.047 KB. Cada lista fez duas requisições;
+isso não inclui as barreiras nem mede latência/transferência de uma página Next.
+O loader faz duas barreiras por hit e, em miss, também as páginas necessárias.
+Nenhuma consulta nova é iniciada pela UI nesta fase, pois não há consumidor.
+Não alegar ganho de LCP/TBT nem comparar uma execução isolada como SLA. A fase
+5C2B precisará medir SSR, hidratação, payload RSC e capítulos numerosos no build
+real antes de ativar o contrato; o tamanho total do cache não é ilimitado.
+
 ## Fase 5C1 — reconciliação do leitor canônico por eventos
 
 A rota canônica entrega UUID público da obra/capítulo, geração e revisão decimal
