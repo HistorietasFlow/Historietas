@@ -10,6 +10,15 @@
 
 ## Supabase
 
+- Agendamento 6B2: observar abortos em transacao separada usando a fonte real
+  do Cron, nunca registros que o proprio timeout desfaz. Sucesso SQL nao prova
+  publicacao. Tres falhas consecutivas observadas pausam; somente retomada
+  administrativa por revisao remove a pausa, sem habilitar execucao. Fonte
+  ausente, silencio e historico incompleto sao incertezas, nao sucesso. Nao
+  declarar garantia de deteccao completa ou pausa antes do quarto disparo sem
+  acionamento/observacao independentes comprovados. Logs limitados preservam
+  incidentes e pausam na saturacao; outbox permanece integral, sem ACK/purga.
+
 - RLS deve continuar sendo tratado separadamente de GRANT.
 - Novas tabelas `public` precisam declarar permissões explicitamente nas migrations aplicáveis à Data API.
 - Testes destrutivos nunca devem apontar para Supabase remoto.

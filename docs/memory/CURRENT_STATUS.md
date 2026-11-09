@@ -2,6 +2,29 @@
 
 Atualizado em: 2026-11-09
 
+### Agendamento — fase 6B2, observador privado sem ativacao
+
+Migration `20261109194305_observabilidade_privada_runner_capitulos.sql` prepara
+observacao administrativa independente do historico real do Cron, pausa
+persistente apos tres falhas consecutivas observadas e retomada por revisao
+que NAO habilita gate/job. Saude agrega backlog, atraso, tentativas esgotadas e
+incidentes sem dados pessoais. Retencao limitada conserva falhas/incidentes;
+saturacao exige intervencao, nunca perda silenciosa de evidencia. Outbox intacta.
+Ainda sem job de observacao, alerta ou prova de completude durante indisponibilidade
+ou purga do historico. Nao garante pausa antes da quarta execucao. Ativacao segue
+bloqueada; ver limites e contrato em `docs/agendamento-cache-publico.md`.
+
+Validacao local: pgTAP 646/646; Cron real 9/9 (tres timeouts consecutivos,
+pausa/retomada, rollback, resposta perdida e retencao); outras integracoes de
+agendamento/projecao 37/37; paginacao Data API 14/14 e anti-spam 5/5. Lint,
+Typecheck, Build, auditoria estatica, sessao (2.002), paginacao e audit de
+producao (zero vulnerabilidades) aprovados.
+Playwright completo serial sem retries: 134/135. Pendencia separada em
+`accessibility.spec.mjs:84`: dois roots da Obra no seletor durante verificacao;
+na unica execucao isolada, axe encontrou `document-title (serious)`.
+Nao corrigido nem classificado como mera instabilidade nesta fase; frontend
+e teste existentes nao foram alterados. Nao declarar suite integralmente verde.
+
 ### Agendamento — fase 6B1, entrada operacional sem ativacao
 
 Migration `20261109183045_entrada_sql_restrita_runner_capitulos.sql` prepara

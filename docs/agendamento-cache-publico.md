@@ -1,5 +1,107 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
+## Fase 6B2 — observacao independente e pausa, sem acionamento
+
+Migration `20261109194305_observabilidade_privada_runner_capitulos.sql` prepara
+um observador administrativo **em outra transacao**. Nao instala extensao, job,
+credencial, endpoint ou alerta externo. Gate continua falso e papel NOLOGIN.
+Todas as novas funcoes sao INVOKER, search_path vazio, sem EXECUTE para PUBLIC,
+anon, authenticated, service_role ou o papel do runner. Tabelas privadas com
+RLS, sem grants para essas identidades. Nao copiar erros SQL livres, conteudo,
+usuarios ou tokens para logs operacionais.
+
+### Fonte e garantias delimitadas
+
+`configurar_monitor_capitulos(job_id, intervalo_segundos)` exige gate fechado,
+monitor ainda inexistente, job novo/inativo e sem historico. Certifica somente
+pg_cron **1.6.4 em modo de conexao**, log_run=on, banco/host/porta locais, papel
+dedicado e comando exato `select historietas_privado.acionar_runner_capitulos()`.
+Cadencia: 15–59 segundos ou um minuto (`* * * * *`). Identidade do job e OID da
+extensao ficam fixados; recriacao/mudanca da fonte exige investigacao, nao rebind
+automatico. Configurar NAO agenda nem autoriza ativacao.
+
+`observar_runner_capitulos(100)` usa o mesmo advisory lock transacional do
+runner. Se ocupado, nao disputa/avanca observacoes. Depois do rollback/commit
+do executor, importa ate 100 resultados reais de `cron.job_run_details`, em
+ordem de runid, parando no primeiro desfecho indeterminado. Cursor e evidencia
+sao confirmados juntos: rollback do observador permite reprocessar; resposta
+perdida nao duplica registros. `succeeded` significa somente sucesso do comando
+SQL, nunca prova de publicacao. Backlog, atraso, erros por item e cinco tentativas
+esgotadas continuam vindo das metricas da fase 6A, reunidas por
+`saude_runner_capitulos()`; falhas globais sao observadas separadamente.
+
+Tres `failed` consecutivos **observados** fecham o gate e abrem incidente
+duravel. Um sucesso SQL posterior nao remove a pausa. Fonte indisponivel,
+ancora ausente/alterada, saturacao e silencio superior a max(60 s, 3 cadencias)
+tambem pausam conservadoramente; silencio nao e classificado como aborto.
+Uma habilitacao isolada do gate e rejeitada enquanto a pausa estiver aberta.
+
+`retomar_monitor_capitulos(revisao, justificativa)` exige administracao SQL,
+gate fechado, job inativo, fonte consistente, nenhum resultado por observar e
+capacidade de logs. Registra a decisao, sem habilitar gate/job e sem zerar retries
+de capitulos. CAS por revisao evita liberar um incidente novo com uma resposta
+antiga; repetir uma retomada ja registrada nao modifica pausas posteriores.
+Justificativas sao enums (`configuracao_validada`/`causa_corrigida`), nao texto
+livre. Tentativas esgotadas precisam da revisao operacional/reagendamento ja
+previstos, nunca de retries ilimitados.
+
+### Retencao e recuperacao
+
+- Ate 1.000 observacoes: remover apenas sucessos com mais de uma hora, em lotes
+  de 100; conservar a ancora atual e todas as falhas. Saturacao pausa antes de
+  perder a proxima evidencia; o historico original do Cron nao e apagado.
+  Uma hora equivale a ate 240 sucessos na cadencia minima; o limite nao deve
+  saturar apenas pela retencao normal, se a observacao estiver funcionando.
+- Ate 100 incidentes/retomadas no fluxo normal: ao atingir esse limite, nao
+  permitir retomada. Nenhum incidente e eliminado. Arquivamento verificavel e
+  revisao administrativa sao uma etapa futura; nao prometer retencao infinita
+  com armazenamento limitado. As rotinas nao sao um substituto de backup.
+- A outbox permanece integral e intocada: sem ACK, TTL ou purga. Quotas e
+  suspensao dos uploads ilustrados nao mudam.
+
+**Limites que ainda bloqueiam ativacao:** nao ha acionador automatico do
+observador, alerta entregue ou garantia de pausa antes de uma quarta execucao.
+O lock impede observar enquanto o runner esta ativo; o pg_cron pode iniciar
+outro job antes da observacao. Nao existe prova de completude se o launcher
+nao registrou uma execucao, se log_run foi desligado temporariamente ou se
+alguem apagou resultados ainda nao observados. A ancora detecta sua propria
+remocao/alteracao, nao todas as lacunas anteriores. Nao purgar o historico Cron
+externamente. Reinicio pode produzir `failed` sem end_time: permanece incerto,
+nao se inventa horario. Banco/observador indisponivel ou timeout do proprio
+observador nao deixam evidencia transacional garantida. Uma consulta de saude
+antiga nao e confirmacao de funcionamento atual.
+
+Proxima etapa: certificar no ambiente gerenciado, mediante autorizacao separada,
+autenticacao/modo/versao e um caminho independente limitado de observacao e
+alerta. Definir o contrato de disponibilidade e acoplamento antes de cada novo
+disparo caso se exija interromper estritamente apos o terceiro aborto. Ate la,
+operacao automatica **NAO APTA**. Nao inferir garantias do trust TCP local.
+O Supabase local concede leitura do historico a postgres (BYPASSRLS), mas o
+dono da extensao e supabase_admin. O harness usa esse dono somente para
+ativar/inativar/alterar o job descartavel via `cron.alter_job`; nao concede
+esse poder ao runner. O procedimento administrativo equivalente no gerenciado
+tambem precisa ser certificado, nao se presume superuser para postgres.
+
+Referencias primarias: [Supabase Cron](https://supabase.com/docs/guides/cron),
+[pg_cron 1.6.4](https://github.com/citusdata/pg_cron/tree/v1.6.4). O launcher
+registra status fora da transacao do job; seu historico e mutavel e nao constitui
+um log completo/inviolavel de todos os abortos possiveis.
+
+### Validacao 6B2 local
+
+pgTAP 646/646, integracao Cron real 9/9 e demais integracoes de agendamento,
+outbox e projecoes 37/37. O cenario novo comprova tres statement_timeouts reais
+com rollback dos efeitos/metricas internos, persistencia externa das observacoes,
+lock compartilhado, pausa, retry antigo de retomada, falha da fonte, retencao,
+saturacao e recusa de historico incompleto. Saturacao usa registros sinteticos
+de QA explicitamente identificados; abortos e resultados Cron nao sao simulados.
+Ao terminar, o harness remove a extensao/jobs e restaura NOLOGIN/gate false.
+Lint, Typecheck, Build, auditoria estatica, sessao, paginacao, Data API e
+anti-spam passaram. Audit de producao: zero vulnerabilidades.
+Playwright serial sem retries: 134/135; pendencia do baseline axe da Obra
+(seletor com dois roots; isoladamente, document-title serious). Nenhuma alteracao
+de frontend/teste de acessibilidade foi incluida para mascarar a falha.
+
 ## Fase 6B1 — entrada SQL restrita, sem ativacao
 
 Migration `20261109183045_entrada_sql_restrita_runner_capitulos.sql` cria o papel
@@ -52,7 +154,11 @@ false. Nenhum desses passos esta na migration de entrega. A autenticacao do
 papel e a disponibilidade/versao/modo no Supabase gerenciado continuam exigindo
 verificacao autorizada antes de rollout; nao extrapolar o trust local.
 
-### Abortos e recuperacao ainda pendentes
+### Limites registrados na fase 6B1
+
+A fase 6B2 acima acrescenta observacao administrativa e pausa/retomada limitada.
+O texto abaixo registra o limite da entrada original; nao implica acionamento
+automatico do observador nem recuperacao garantida durante indisponibilidade.
 
 O historico `cron.job_run_details` registra falha por statement_timeout mesmo
 quando publicacao, Diario, notificacoes, recibos, outbox e contadores do runner
