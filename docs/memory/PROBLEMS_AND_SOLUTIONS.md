@@ -1,5 +1,41 @@
 # Problemas conhecidos e soluções
 
+## Storage: disputa de quota entre reserva e upload legado
+
+Na execução CI `42620166032` da #2245, o cenário de duas reservas passou,
+mas uma reserva e um upload legado concorrentes ocuparam a última vaga juntos.
+A reprodução local sem retries confirmou o mesmo resultado; antes deste ajuste
+de cleanup, teste e migrations envolvidos eram idênticos à `main` `62bbb0b3`.
+
+No Storage API v1.65.1 efetivamente instalado, `canUpload` usa `testPermission`
+em uma transação desfeita por rollback. O advisory lock de quota é liberado
+antes da transferência; `completeUpload` grava os metadados via `asSuperUser`.
+Logo, compartilhar o lock na admissão não garante a quota até o commit final
+do upload legado. É uma corrida real preexistente, não regressão da Obra nem
+prova de contaminação prévia da fixture. Não extrapolar a versão local à produção.
+
+Na versão que falhou, a primeira asserção interrompia o cleanup do cenário,
+deixando 30 objetos e uma reserva; disso decorriam a contagem 31 no teste de
+expiração e os erros `54000` posteriores. O cenário agora registra sua reserva
+antes da asserção e usa `t.after` com `finally` para remover os objetos mesmo
+se a liberação falhar. A asserção da última vaga permanece intacta.
+O teardown geral removeu as fixtures locais ao terminar a reprodução original.
+pgTAP direcionado (174 assertions) e recibos privados passaram, mas não provam
+a atomicidade entre admissão HTTP e gravação física.
+
+A execução local após o ajuste de cleanup passou 18/18, sem retries. Como o
+ajuste não altera a ordem de admissão/commit, esse passe não comprova correção
+da corrida; não tratar um resultado favorável isolado como garantia de quota.
+Uma injeção de falha na asserção, somente em memória, comprovou o teardown:
+expiração, isolamento de sessão, ledger/quotas e pré-validação passaram depois
+da falha intencional, sem alterar o teste versionado nem aplicar retries.
+
+Não afrouxar quotas, RLS, locks ou a asserção para aprovar a CI. A correção da
+garantia de quota no fluxo legado exige avaliação dedicada do backend/ponto de
+commit; não improvisar escrita em `storage.objects` ou upgrade de Storage.
+Uploads ilustrados e sua publicação/limpeza continuam suspensos. A garantia
+exigida pelo teste permanece uma pendência, independentemente de passes ocasionais.
+
 ## Vercel: Deployment was blocked
 
 ### Sintoma

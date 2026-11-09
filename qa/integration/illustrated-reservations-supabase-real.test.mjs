@@ -182,15 +182,19 @@ test("reservas reais: identidade, Storage legado e concorrencia na ultima vaga",
     assert.ok((await author.storage.from("arquivos-obras").upload(paths[29], PNG, { contentType: "image/png" })).error);
     await releaseAll();
   });
-  await t.test("reserva e upload legado disputam a ultima vaga no MESMO lock", async () => {
+  await t.test("reserva e upload legado disputam a ultima vaga no MESMO lock", async (t) => {
+    // A disputa pode revelar um defeito real. Mesmo nesse caso, nao deixar
+    // capacidade/objetos desta fixture contaminarem expiracao e quotas depois.
+    t.after(async () => {
+      try { await releaseAll(); }
+      finally { await removed(); }
+    });
     const [reservation, upload] = await concurrentAtQuotaLock(env.container, [
       () => reserve(author),
       () => author.storage.from("arquivos-obras").upload(paths[29], PNG, { contentType: "image/png" }),
     ]);
-    assert.equal([reservation, upload].filter((result) => !result.error).length, 1);
     if (!reservation.error) track(reservation);
-    await releaseAll();
-    await removed();
+    assert.equal([reservation, upload].filter((result) => !result.error).length, 1);
   });
   await t.test("expiracao libera so reserva, e retry antigo nunca renova", async () => {
     // Fixture antiga inserida pelo administrador SQL, sem esperar 15 minutos ou
