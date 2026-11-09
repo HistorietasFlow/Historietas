@@ -5,10 +5,6 @@ import {
   obterNumeroCapituloSeguro,
 } from "@/app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-canonical-route-utils";
 import {
-  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
-  ehClassificacao18,
-} from "@/lib/historietasAdultContent";
-import {
   criarSupabasePublicClient,
   supabasePublicoConfigurado,
 } from "@/lib/supabase/public";
@@ -137,32 +133,15 @@ async function capituloCanonicoPublicoInexistente(pathname: string) {
   }
 
   try {
-    const supabase = criarSupabasePublicClient();
+    const supabase = criarSupabasePublicClient({ fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) });
     const { data, error } = await supabase
-      .from("capitulos")
-      .select(
-        "id,obras!inner(slug,publicado,classificacao_indicativa)",
-      )
-      .eq("ordem", alvo.numero)
-      .eq("publicado", true)
-      .eq("obras.slug", alvo.slug)
-      .eq("obras.publicado", true)
-      .limit(1);
+      .rpc("existe_capitulo_projecao_publica", { p_slug: alvo.slug, p_numero: alvo.numero });
 
     if (error) {
       return false;
     }
 
-    const obra = data?.[0]?.obras;
-
-    if (!obra) {
-      return true;
-    }
-
-    return Boolean(
-      ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
-        ehClassificacao18(obra.classificacao_indicativa),
-    );
+    return data === false;
   } catch {
     return false;
   }

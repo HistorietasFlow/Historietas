@@ -116,5 +116,14 @@ test("capítulo público configurado abre sem erro", async ({ page }) => {
     { waitUntil: "domcontentloaded" }
   );
   expect(response?.status()).toBeLessThan(500);
-  await expect(page.locator("main")).toBeVisible();
+  const reader = page.locator('main[data-historietas-ler-capitulo-root="true"]');
+  await expect(reader).toBeVisible();
+  await expect(reader.getByRole("heading", { level: 1 })).toBeVisible();
+  if (process.env.E2E_ALLOW_DESTRUCTIVE === "true") {
+    await expect(reader.getByRole("heading", { name: "Capítulo 1", exact: true })).toBeVisible();
+    await expect(reader.getByText(
+      "Este capítulo existe somente no ambiente local descartável dos testes E2E.",
+      { exact: true },
+    )).toBeVisible();
+  }
 });

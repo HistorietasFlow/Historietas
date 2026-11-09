@@ -335,6 +335,17 @@ Preservar a consulta sob demanda e paginada. Não duplicar o log em estado local
 persistente nem ampliar `SELECT`, `INSERT`, `UPDATE` ou `DELETE` para usuários
 comuns.
 
+## E2E: revisão pública da seed e raiz final do leitor
+
+Na CI da #2233, a seed de paginação executada após as migrations mantinha
+`session_replication_role = replica` ao inserir obras/capítulos. Isso impedia os
+triggers da revisão pública: obras legíveis por `anon` não tinham ledger e eram
+corretamente excluídas da projeção/sitemap. A seed restaura `origin` antes dessas
+inserções; não preencher revisões manualmente nem afrouxar RLS ou a barreira.
+A regressão Data API percorre o manifesto e seus capítulos além de 1.000 obras.
+No smoke do leitor, usar a raiz identificada do leitor e validar título/texto,
+não um `main` genérico que também pode encontrar o loading transitório.
+
 ## E2E: foco adiado e fixtures de progresso compartilhadas
 
 Na CI da #2226, `selectOption()` seguido imediatamente de Escape podia anteceder

@@ -4,10 +4,10 @@
 
 begin;
 
--- As migrations de produção possuem triggers de negócio (termos, notificações
--- e sincronizações) que não fazem parte do escopo deste teste de leitura. Os
--- registros continuam respeitando constraints e chaves únicas; os usuários
--- referenciados também são criados no ambiente descartável.
+-- A carga em massa de Auth/Comunidade abaixo dispensa os triggers de negócio
+-- fora do escopo deste teste de leitura. Obras/capítulos voltam ao modo normal
+-- mais abaixo para preservar os contratos de integridade e revisão pública.
+-- Os usuários referenciados também são criados no ambiente descartável.
 set local session_replication_role = replica;
 
 insert into auth.users (
@@ -142,6 +142,12 @@ select
   )::uuid,
   timestamptz '2026-03-01 00:00:00+00' + indice * interval '1 second'
 from generate_series(1, 5001) as indice;
+
+-- Obras/capítulos precisam dos triggers normais, inclusive do ledger de revisão
+-- pública. A seed roda após as migrations: o backfill não cobre estas inserções.
+-- Sem JWT, os gates existentes permitem esta fixture administrativa local;
+-- autoria, integridade e revisão continuam sendo verificadas pelos triggers.
+set local session_replication_role = origin;
 
 insert into public.obras (
   id,

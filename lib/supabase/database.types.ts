@@ -1943,6 +1943,11 @@ export type Database = {
     Functions: {
       autorizar_consumidor_cache_capitulos: { Args: Record<PropertyKey, never>; Returns: boolean }
       obter_projecao_publica_obra: { Args: { p_slug: string; p_numero?: number | null }; Returns: Json }
+      existe_capitulo_projecao_publica: { Args: { p_slug: string; p_numero: number }; Returns: boolean }
+      obter_revisao_sitemap_publico: { Args: Record<PropertyKey, never>; Returns: string }
+      listar_capitulos_projecao_publica: { Args: { p_slug: string; p_geracao: string; p_revisao: string; p_inicio: number; p_limite: number }; Returns: Json }
+      listar_revisoes_sitemap_publico: { Args: { p_depois_id: string | null; p_limite: number }; Returns: { id: string; slug: string; geracao: string; revisao: string; atualizado_em: string | null; classificacao_indicativa: string; publicado: boolean }[] }
+      listar_capitulos_sitemap_publico: { Args: { p_depois_id: string | null; p_limite: number }; Returns: { id: string; obra_id: string; ordem: number; atualizado_em: string | null; publicado: boolean; geracao: string; revisao: string }[] }
       reivindicar_cache_capitulos: { Args: { p_limite: number }; Returns: Json }
       registrar_solicitacao_cache_capitulo: { Args: { p_id: string; p_lease_id: string }; Returns: boolean }
       conferir_reserva_pagina_capitulo: {

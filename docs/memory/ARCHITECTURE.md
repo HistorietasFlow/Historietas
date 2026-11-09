@@ -99,6 +99,19 @@
   ou ativação automática. Ver `docs/agendamento-cache-publico.md`. Não confundir
   revisão transacional com ack do flush ou revogação de bytes já entregues.
 
+### Barreira pública e sitemap — fase 5B
+
+- Loaders usam identidade/geração/revisão da RPC pública, cache versionado e
+  nova conferência POST/no-store antes de devolver. Listas do leitor exigem a
+  revisão em cada página SQL; metadata/HTML compartilham só o render atual.
+- Proxy consulta existência por POST leve. Páginas e sitemap são dinâmicos, com
+  resposta no-store; o Data Cache explícito continua identificado por versão.
+- Sitemap usa SHA-256 do manifesto público e pagina sem N+1, validando revisões
+  antes/depois. Erros propagam, sem 404 falso nem XML parcial/antigo.
+- Router Cache/histórico/abas já abertas e rollout ainda impedem afirmar barreira
+  em toda navegação: ativação automática suspensa. Outbox continua sem ACK; todos
+  os bloqueios ilustrados são preservados. Ver `docs/agendamento-cache-publico.md`.
+
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 
 - A migration `20261107223400_infraestrutura_capitulos_ilustrados.sql` adiciona

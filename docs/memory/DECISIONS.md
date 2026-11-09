@@ -103,6 +103,18 @@
   não confirma a outbox e não ativa agendamento. Barreiras e rollout ficam para
   fase posterior. Preservar a suspensão integral dos uploads ilustrados.
 
+### Barreira pública — fase 5B (08/11/2026)
+
+- Cache por geração/revisão exige POST/no-store do primário antes/depois. Não
+  memoizar a barreira em si nem servir dado antigo sem confirmar revisão; erro
+  não é ausência. Metadata/HTML compartilham só o snapshot da mesma requisição.
+- Páginas/sitemap não podem ter Full Route Cache/ISR que pule a conferência.
+  Sitemap usa SHA-256 do conjunto ordenado de identidades/gerações/revisões e
+  pagina dados vinculados à impressão, sem MAX(revisão), N+1 ou XML parcial em erro.
+- Barreira no servidor não revoga RSC/HTML já entregue ao cliente. Router Cache,
+  histórico e rollout seguem pendentes antes da ativação automática. Outbox sem
+  ACK e uploads ilustrados suspensos. Ver `docs/agendamento-cache-publico.md`.
+
 ## Vercel
 
 - Não usar pausa do projeto como mecanismo normal para esconder o site durante desenvolvimento, porque isso bloqueia deploys e pode causar 503.

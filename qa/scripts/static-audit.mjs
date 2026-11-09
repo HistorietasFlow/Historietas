@@ -34,7 +34,7 @@ const expectedRoutes = [
   "app/api/conta/solicitar-exclusao/route.ts",
   "app/api/visualizacoes/route.ts",
   "app/robots.ts",
-  "app/sitemap.ts",
+  "app/sitemap.xml/route.ts",
   "app/opengraph-image.tsx",
   "app/twitter-image.tsx",
   "app/error.tsx",
@@ -2855,10 +2855,12 @@ const seoHelperPath = path.join(ROOT_DIR, "lib/seo.ts");
 const seoHelper = fs.existsSync(seoHelperPath)
   ? fs.readFileSync(seoHelperPath, "utf8")
   : "";
-const sitemapPath = path.join(ROOT_DIR, "app/sitemap.ts");
+const sitemapPath = path.join(ROOT_DIR, "app/sitemap.xml/route.ts");
 const sitemapSource = fs.existsSync(sitemapPath)
   ? fs.readFileSync(sitemapPath, "utf8")
   : "";
+const sitemapProjection = fs.readFileSync(path.join(ROOT_DIR, "lib/cache/sitemap-projecao-publica.ts"), "utf8");
+const sitemapProjectionSql = fs.readFileSync(path.join(ROOT_DIR, "supabase/migrations/20261108205505_barreira_revisao_cache_publico.sql"), "utf8");
 const smokeRoutesPath = path.join(ROOT_DIR, "qa/tests/smoke-routes.spec.mjs");
 const smokeRoutesSource = fs.existsSync(smokeRoutesPath)
   ? fs.readFileSync(smokeRoutesPath, "utf8")
@@ -2912,39 +2914,38 @@ const seoContracts = [
   {
     name: "sitemap busca somente obras publicadas com cliente público",
     valid:
-      sitemapSource.includes("criarSupabasePublicClient") &&
-      sitemapSource.includes('.from("obras")') &&
-      /\.eq\("publicado",\s*true\)/.test(sitemapSource) &&
-      !sitemapSource.includes("criarSupabaseAdminClient") &&
-      !sitemapSource.includes("SUPABASE_SERVICE_ROLE_KEY")
+      sitemapSource.includes("obterConteudoSitemapPublico") &&
+      sitemapProjection.includes("criarSupabasePublicClient") &&
+      sitemapProjectionSql.includes("where o.publicado and o.classificacao_indicativa in") &&
+      sitemapProjectionSql.includes("stable security invoker") &&
+      !sitemapProjection.includes("criarSupabaseAdminClient") &&
+      !sitemapProjection.includes("SUPABASE_SERVICE_ROLE_KEY")
   },
   {
     name: "sitemap pagina todas as obras com ordem determinística",
     valid:
-      sitemapSource.includes("carregarTodasPaginasSupabase") &&
-      /\.order\("slug",\s*\{\s*ascending:\s*true\s*\}\)[\s\S]*?\.range\(inicio, fim\)/.test(
-        sitemapSource
-      ) &&
-      /export const revalidate\s*=\s*3600/.test(sitemapSource)
+      sitemapProjection.includes('supabase.rpc("listar_revisoes_sitemap_publico"') &&
+      sitemapProjection.includes("p_depois_id: cursor") &&
+      sitemapProjectionSql.includes("order by o.id limit") &&
+      sitemapProjection.includes("lerComBarreiraPublica") &&
+      /export const revalidate\s*=\s*0/.test(sitemapSource)
   },
   {
     name: "sitemap pagina capítulos publicados e preserva a ordem real",
     valid:
-      sitemapSource.includes('.from("capitulos")') &&
-      sitemapSource.includes(
-        '.select("obra_id,ordem,atualizado_em,publicado")'
-      ) &&
-      /\.eq\("publicado",\s*true\)/.test(sitemapSource) &&
-      /\.order\("obra_id",\s*\{\s*ascending:\s*true\s*\}\)[\s\S]*?\.order\("ordem",\s*\{\s*ascending:\s*true\s*\}\)[\s\S]*?\.range\(inicio, fim\)/.test(
-        sitemapSource
-      )
+      sitemapProjection.includes('supabase.rpc("listar_capitulos_sitemap_publico"') &&
+      sitemapProjectionSql.includes("select c.id,c.obra_id,c.ordem,c.atualizado_em") &&
+      sitemapProjectionSql.includes("where c.publicado and o.publicado") &&
+      sitemapProjectionSql.includes("order by c.id limit") &&
+      sitemapProjection.includes("obra.revisao !== capitulo.revisao")
   },
   {
-    name: "sitemap exclui conteúdo bloqueado e tolera indisponibilidade",
+    name: "sitemap exclui conteúdo bloqueado e falha sem servir versao antiga na indisponibilidade",
     valid:
       sitemapSource.includes("ehClassificacao18") &&
       sitemapSource.includes("ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO") &&
-      /catch \(error\)[\s\S]*?return ROTAS_ESTATICAS/.test(sitemapSource)
+      sitemapProjection.includes("if (error) throw error") &&
+      !sitemapSource.includes("catch")
   },
   {
     name: "E2E valida canonical e sitemap acima de mil obras",

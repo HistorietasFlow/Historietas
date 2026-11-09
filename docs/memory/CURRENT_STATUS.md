@@ -379,6 +379,14 @@ com tombstones/gerações que sobrevivem à exclusão e RPC invoker de snapshot
 público consistente. O adaptador server-only usa POST/no-store e propaga falhas.
 Ainda sem integração com caches Next, sitemap, outbox ou ativação automática;
 esse contrato sozinho não resolve o bloqueador de cache. Ver o documento acima.
+**Fase 5B:** loaders públicos selecionam cache por obra/geração/revisão/capítulo,
+com POST/no-store ao primário antes e depois. Páginas/sitemap não usam cache de
+resposta do servidor; sitemap usa impressão pública e coleta paginada consistente.
+Falhas não autorizam cache antigo ou 404. HTML/RSC já entregue ao Router Cache,
+Back/Forward e abas abertas não é revogado; esse limite e o rollout mantêm a
+ativação automática bloqueada. Outbox sem ACK e uploads ilustrados suspensos.
+Loaders clientes pós-hidratação/fallbacks ainda não consomem essa revisão;
+esta entrega protege o caminho servidor, não todos os estados já no navegador.
 Merge não aplica migrations em produção;
 uploads ilustrados, publicação ilustrada e limpeza física continuam suspensos.
 

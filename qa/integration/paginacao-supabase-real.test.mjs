@@ -263,6 +263,53 @@ test("pagina dados reais pela Data API de um Supabase local descartável", async
     exigirColecaoCompleta(obras, esperados, (registro) => registro.id);
   });
 
+  await t.test("seed pós-migrations mantém revisão e sitemap público além de 1.000 obras", async () => {
+    async function listarPorCursor(rpc) {
+      const registros = [];
+      let cursor = null;
+      for (let pagina = 0; pagina < 20; pagina += 1) {
+        const linhas = exigirRespostaSemErro(await supabase.rpc(rpc, {
+          p_depois_id: cursor, p_limite: REGISTROS_POR_PAGINA,
+        }), rpc);
+        assert.ok(linhas.length <= REGISTROS_POR_PAGINA);
+        for (const linha of linhas) {
+          assert.ok(cursor === null || linha.id > cursor, "cursor deve avançar sem duplicações");
+          cursor = linha.id;
+          registros.push(linha);
+        }
+        if (linhas.length < REGISTROS_POR_PAGINA) return registros;
+      }
+      assert.fail(`paginação de ${rpc} não encerrou`);
+    }
+
+    const manifesto = await listarPorCursor("listar_revisoes_sitemap_publico");
+    const obrasSeed = manifesto.filter((obra) => obra.slug.startsWith("qa-paginacao-obra-"));
+    exigirColecaoCompleta(obrasSeed, obras.map((obra) => obra.id), (obra) => obra.id);
+    for (const obra of obrasSeed) {
+      assert.match(obra.geracao, /^[0-9a-f-]{36}$/);
+      assert.ok(BigInt(obra.revisao) > 0n, "obra deve ter revisão pública válida");
+    }
+
+    const capitulos = (await listarPorCursor("listar_capitulos_sitemap_publico"))
+      .filter((capitulo) => capitulo.id.startsWith("50000000-"));
+    exigirColecaoCompleta(capitulos, Array.from({ length: QUANTIDADES.capitulos }, (_, indice) =>
+      uuidFixture("50000000", indice + 1)), (capitulo) => capitulo.id);
+    const porObra = new Map(obrasSeed.map((obra) => [obra.id, obra]));
+    for (const capitulo of capitulos) {
+      const obra = porObra.get(capitulo.obra_id);
+      assert.ok(obra);
+      assert.equal(capitulo.geracao, obra.geracao);
+      assert.equal(capitulo.revisao, obra.revisao);
+      assert.equal(capitulo.ordem, 1);
+    }
+    const projecao = exigirRespostaSemErro(await supabase.rpc("obter_projecao_publica_obra", {
+      p_slug: "qa-paginacao-obra-001201", p_numero: 1,
+    }), "projeção da última obra da seed");
+    assert.equal(projecao.estado, "capitulo_publico");
+    assert.equal(projecao.obraId, uuidFixture("40000000", QUANTIDADES.obras));
+    assert.equal(projecao.capitulo.id, uuidFixture("50000000", QUANTIDADES.capitulos));
+  });
+
   const obrasCatalogo = [];
   let cursorCatalogo = null;
   let chamadasCatalogo = 0;
