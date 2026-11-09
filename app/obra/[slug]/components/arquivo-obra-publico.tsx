@@ -33,17 +33,19 @@ export default function ArquivoObraPublico({
   arquivo,
   tituloObra,
   isDesktop,
+  somenteAssinador = false,
 }: {
   obraId: string;
   arquivo: ArquivoObraLocal;
   tituloObra: string;
   isDesktop: boolean;
+  somenteAssinador?: boolean;
 }) {
   const tamanhoArquivo = formatarTamanhoArquivo(arquivo.tamanho);
   const dataArquivo = formatarData(arquivo.criadoEm);
   const arquivoConteudo = arquivo.conteudo.trim();
   const caminhoStorageArquivo =
-    obterCaminhoStorageArquivoObra(arquivoConteudo);
+    somenteAssinador ? `obra:${obraId}` : obterCaminhoStorageArquivoObra(arquivoConteudo);
   const nomeArquivoDownload =
     arquivo.nome?.trim() || "arquivo-da-obra";
   const [arquivoAssinado, setArquivoAssinado] = useState({

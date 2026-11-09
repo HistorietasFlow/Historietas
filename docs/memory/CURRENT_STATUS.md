@@ -2,12 +2,25 @@
 
 Atualizado em: 2026-11-09
 
-### Obra — snapshot público leve, fase 5C2A (em revisão)
+### Obra — sincronização pública, fase 5C2B (em revisão)
+
+Snapshot leve compartilhado no SSR/metadata e confirmação por eventos via
+endpoint público server-only/no-store. Conteúdo não depende mais de fallback
+local; preserva referências por revisão, ordem real e anexos pelo assinador.
+Progresso/estado pessoal permanecem isolados por identidade e geração.
+Ausência remove conteúdo; falha oferece retry. Sem polling nem revogação de
+bytes já entregues. Publicação automática e uploads ilustrados seguem bloqueados.
+Medições finais: requests Supabase cliente 5→2, conteúdo útil estável e CLS
+próximo de zero. Lighthouse é descritivo (baseline não totalmente isolado,
+LCP mobile ~3% acima); não comprova ganho causal de performance. Comparação em
+`docs/agendamento-cache-publico.md`; manter a entrega em draft para revisão/CI.
+
+### Obra — snapshot público leve, fase 5C2A (infraestrutura na #2235)
 
 RPC aditiva e loader server-only com capítulos sem textos, ordem canônica real,
 revisão por página e barreira final. Anexos somente como metadados, sem caminhos
-ou URLs assinadas. Não foi conectado ao SSR/cliente: carregamento atual continua
-intacto; sincronização da página fica para 5C2B. Migration não aplicada em produção.
+ou URLs assinadas. A entrega 5C2A não conectava SSR/cliente; a integração está
+descrita na fase 5C2B acima. Migration não aplicada em produção por esta tarefa.
 Cron, publicação automática e uploads ilustrados permanecem suspensos.
 
 ### Leitor canônico — fase 5C1 (em revisão)

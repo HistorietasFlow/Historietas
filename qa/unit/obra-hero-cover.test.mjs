@@ -45,7 +45,7 @@ test("capa do hero preserva props, link, arte e acessibilidade", () => {
 
 test("cliente preserva decisao de leitura e prepara os valores da capa", () => {
   for (const trecho of [
-    "const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obra)",
+    "const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obraLeitura)",
     "const ariaLabelCapaObra = acaoLeituraPrincipal.capituloPrincipal",
     "? `${acaoLeituraPrincipal.rotulo}: ${obra.titulo}`",
     ": `Abrir ${obra.titulo}`",

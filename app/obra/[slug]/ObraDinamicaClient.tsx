@@ -1,6 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { SnapshotObraPublica } from "../../../lib/cache/obrasPublicas";
+import { useObraPublicSnapshot } from "./hooks/use-obra-public-snapshot";
+import { perfilDoAutorAtual } from "./lib/obra-public-snapshot";
+import { obraSsrResponsiveCss } from "./lib/obra-ssr-responsive-css";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { useParams, useRouter } from "next/navigation";
 import DenunciaModal from "../../../components/DenunciaModal";
@@ -75,7 +79,7 @@ const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-export default function ObraDinamicaPage() {
+export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?: SnapshotObraPublica } = {}) {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
   const params = useParams<{ slug?: string | string[] }>();
@@ -179,8 +183,13 @@ export default function ObraDinamicaPage() {
   const agoraComentarios = useObraCommentsNow(comentariosAbertos);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const invalidarAvaliacaoObraRef = useRef<() => void>(() => {});
+  const fecharInteracoesAnterioresRef = useRef<() => void>(() => {});
+  useLayoutEffect(() => {
+    fecharInteracoesAnterioresRef.current = () => { fecharComentariosObra(); fecharAcoesObra(); };
+  }, [fecharComentariosObra, fecharAcoesObra]);
 
   const limparEstadoContaAnterior = useCallback(() => {
+    fecharInteracoesAnterioresRef.current();
     setObrasLocais([]);
     setCarregandoObras(true);
     setObraSeguida(false);
@@ -219,6 +228,7 @@ export default function ObraDinamicaPage() {
     usuarioIdLogado,
     autenticacaoCarregada,
     identidadeAutenticadaObraRef,
+    versaoIdentidade,
   } = useObraAuthIdentityLifecycle({
     onIdentidadeMudou: limparEstadoContaAnterior,
   });
@@ -232,6 +242,7 @@ export default function ObraDinamicaPage() {
   );
   useObraDialogInitialFocus(comentariosAbertos, comentariosSheetRef);
   useObraPublicWorkLoad({
+    habilitado: !snapshotInicial,
     autenticacaoCarregada,
     slug,
     usuarioIdLogado,
@@ -241,10 +252,24 @@ export default function ObraDinamicaPage() {
     setErroCarregamentoObra,
   });
 
-  const obra = useMemo(
+  const obraLegada = useMemo(
     () => obterObraDinamicaPorSlug(obrasLocais, slug),
     [slug, obrasLocais]
   );
+  const publica = useObraPublicSnapshot({ inicial: snapshotInicial, autenticacaoCarregada,
+    usuarioIdLogado, identidadeRef: identidadeAutenticadaObraRef, versaoIdentidade,
+    onIndisponivel: () => { fecharComentariosObra(); fecharAcoesObra(); resetarPainelClassificacaoObra(); } });
+  const obra = snapshotInicial ? publica.obra : obraLegada;
+  const obraLeitura = snapshotInicial ? publica.leitura : obra;
+  // Estado privado não é inicializado com a identidade anônima do SSR.
+  const obraInteracoes = snapshotInicial && !publica.pronta ? null : obra;
+  const contextoAcaoRef = useRef("");
+  useLayoutEffect(() => {
+    if (contextoAcaoRef.current && contextoAcaoRef.current !== publica.contexto) {
+      limparEstadoContaAnterior();
+    }
+    contextoAcaoRef.current = publica.contexto;
+  }, [publica.contexto, limparEstadoContaAnterior]);
 
   useEffect(() => {
     const fecharPaineisTimer = window.setTimeout(() => {
@@ -260,12 +285,13 @@ export default function ObraDinamicaPage() {
   const { statusAcesso18, permitirAcesso18Atual } =
     useObraContent18Access(obra);
 
-  useObraViewRegistration(obra, statusAcesso18, setMetricasObra);
+  useObraViewRegistration(obraInteracoes, statusAcesso18, setMetricasObra);
 
-  const perfilAutorObra = useObraAuthorPublicProfile(
+  const perfilAutorCarregado = useObraAuthorPublicProfile(
     obra?.autorId,
     obra?.autor ?? "",
   );
+  const perfilAutorObra = perfilDoAutorAtual(perfilAutorCarregado, obra?.autorId);
 
   const obraNormalizada = obra ? normalizarTexto(obra.titulo) : "";
   const generoObraFormatado = obterGeneroObraExibido(obra);
@@ -279,8 +305,8 @@ export default function ObraDinamicaPage() {
   const textosPainelClassificacao = obterTextosPainelClassificacaoObra(language);
 
   const capitulosDaObra = useMemo<CapituloDinamico[]>(
-    () => obterCapitulosObraPublica(obra),
-    [obra]
+    () => obterCapitulosObraPublica(obraLeitura),
+    [obraLeitura]
   );
 
   const {
@@ -290,7 +316,7 @@ export default function ObraDinamicaPage() {
     capitulos: capitulosDaObra,
     arquivoObra: obra?.arquivoObra,
   });
-  const obraIdComentarios = obterObraIdComentarios(obra);
+  const obraIdComentarios = obterObraIdComentarios(obraInteracoes);
   const carregarMetricasObra = useObraWorkMetricsRequest(usuarioIdLogado);
   const { carregarMaisComentariosObra } = useObraCommentsLoadPagination({
     comentariosAbertos,
@@ -311,7 +337,7 @@ export default function ObraDinamicaPage() {
   });
 
   useObraWorkMetricsLifecycle({
-    obra,
+    obra: obraInteracoes,
     obraNormalizada,
     usuarioIdLogado,
     followedWorksStorageKey: FOLLOWED_WORKS_STORAGE_KEY,
@@ -330,12 +356,19 @@ export default function ObraDinamicaPage() {
 
   const {
     obterIdentidadeLogadaParaAcao,
-    criarGuardIdentidadeAcao,
+    criarGuardIdentidadeAcao: criarGuardIdentidadeOriginal,
   } = useObraActionAuthGuards({
     identidadeAutenticadaObraRef,
     setMensagemAcao,
     redirecionarParaLogin: (href) => router.push(href),
   });
+  function criarGuardIdentidadeAcao(identidade: Parameters<typeof criarGuardIdentidadeOriginal>[0]) {
+    const guard = criarGuardIdentidadeOriginal(identidade);
+    const preparada = !snapshotInicial || publica.interativa;
+    const contexto = publica.contexto;
+    const path = window.location.pathname;
+    return () => preparada && guard() && window.location.pathname === path && contextoAcaoRef.current === contexto;
+  }
 
   const {
     enviarComentarioObra,
@@ -369,7 +402,7 @@ export default function ObraDinamicaPage() {
     alternarFavoritoObra,
     alternarConcluirObra,
   } = useObraWorkInteractions({
-    obra,
+    obra: obraInteracoes,
     obraNormalizada,
     obraSeguida,
     obraFavoritada,
@@ -393,7 +426,7 @@ export default function ObraDinamicaPage() {
     avaliarObra,
     invalidarAvaliacaoObra,
   } = useObraRatingLifecycle({
-    obra,
+    obra: obraInteracoes,
     obraNormalizada,
     usuarioIdLogado,
     autorObraId,
@@ -496,7 +529,7 @@ export default function ObraDinamicaPage() {
     }
   }
 
-  const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obra);
+  const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obraLeitura);
 
   const resumoAvaliacaoCabecalho = (
     <ObraRatingSummary
@@ -637,7 +670,7 @@ export default function ObraDinamicaPage() {
         )
       : null;
 
-  if (carregandoObras && !obra) {
+  if ((snapshotInicial ? publica.carregando : carregandoObras) && !obra) {
     return (
       <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
@@ -651,7 +684,8 @@ export default function ObraDinamicaPage() {
 
   if (!obra) {
     return (
-      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy={snapshotInicial ? publica.validando : false}
+        data-public-work-state={snapshotInicial ? publica.erro ? "erro" : "ausente" : undefined}>
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
         <ObraDinamicaLanguageBridge />
@@ -666,10 +700,11 @@ export default function ObraDinamicaPage() {
               textAlign: "center",
             }}
           >
-            {erroCarregamentoObra
+            {(snapshotInicial ? publica.erro : erroCarregamentoObra)
               ? "Não foi possível carregar a obra agora."
               : "Obra não encontrada"}
           </p>
+          {snapshotInicial && publica.erro ? <button type="button" onClick={publica.tentarNovamente}>Tentar novamente</button> : null}
         </section>
       </main>
     );
@@ -716,15 +751,19 @@ export default function ObraDinamicaPage() {
 
   return (
     <>
-      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}
+        aria-busy={snapshotInicial ? publica.validando || !publica.interativa : undefined}
+        inert={Boolean(snapshotInicial && !publica.interativa)}
+        data-public-work-state={snapshotInicial ? publica.pronta ? "confirmada" : "verificando" : undefined}>
       <style>{`${historietasThemeCss}${obraPageCss}`}</style>
+      <style>{obraSsrResponsiveCss}</style>
 
         <ObraDinamicaLanguageBridge />
 
       <ObraActionToast mensagem={mensagemAcao} />
 
-      <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <section style={isDesktop ? desktopHeroStyle : heroStyle}>
+      <section style={isDesktop ? desktopContainerStyle : containerStyle} data-obra-responsive="container">
+        <section style={isDesktop ? desktopHeroStyle : heroStyle} data-obra-responsive="hero">
           <ObraHeroHeader
             isDesktop={isDesktop}
             classificacaoIndicativa={obra.classificacaoIndicativa}
@@ -738,7 +777,7 @@ export default function ObraDinamicaPage() {
 
           <div style={heroGlowStyle} />
 
-          <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
+          <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle} data-obra-responsive="hero-content">
             <ObraHeroCover
               isDesktop={isDesktop}
               href={acaoLeituraPrincipal.hrefPrincipal}
@@ -754,6 +793,7 @@ export default function ObraDinamicaPage() {
                   ? desktopHeroOverlayContentStyle
                   : heroOverlayContentStyle
               }
+              data-obra-responsive="overlay"
             >
               <ObraHeroDetails
                 isDesktop={isDesktop}
@@ -830,13 +870,15 @@ export default function ObraDinamicaPage() {
           />
         )}
 
-        {autenticacaoCarregada && !usuarioEhAutorDaObra ? (
+        {!autenticacaoCarregada || !usuarioEhAutorDaObra ? (
+          <div style={{ display: "contents", visibility: autenticacaoCarregada ? "visible" : "hidden" }} aria-hidden={!autenticacaoCarregada} inert={!autenticacaoCarregada}>
           <ObraRatingBox
             isDesktop={isDesktop}
             minhaNota={avaliacaoObra.minhaNota}
             salvando={avaliacaoObra.salvando}
             onAvaliar={avaliarObra}
           />
+          </div>
         ) : null}
 
         <ObraCommunitySection
@@ -880,6 +922,8 @@ export default function ObraDinamicaPage() {
 
         {obra.arquivoObra && (
           <ArquivoObraPublico
+            key={publica.chaveAnexo}
+            somenteAssinador={Boolean(snapshotInicial)}
             obraId={obra.id}
             arquivo={obra.arquivoObra}
             tituloObra={obra.titulo}

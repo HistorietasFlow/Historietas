@@ -75,7 +75,7 @@ test("acoes do hero preservam seguir, estilos na ordem atual e menu acessivel", 
 
 test("cliente preserva a decisao de leitura, hook e callbacks do hero", () => {
   for (const trecho of [
-    "const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obra)",
+    "const acaoLeituraPrincipal = obterAcaoLeituraPrincipalObra(obraLeitura)",
     "const [obraSeguida, setObraSeguida]",
     'import { useObraWorkInteractions } from "./hooks/use-obra-work-interactions"',
     "} = useObraWorkInteractions({",

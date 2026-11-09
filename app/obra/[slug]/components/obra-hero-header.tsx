@@ -34,6 +34,7 @@ export default function ObraHeroHeader({
   return (
     <header
       style={isDesktop ? desktopHeroTopOverlayStyle : heroTopOverlayStyle}
+      data-obra-responsive="header"
     >
       <button
         type="button"
@@ -59,13 +60,9 @@ export default function ObraHeroHeader({
         </span>
       </button>
 
-      {isDesktop ? (
-        <div style={desktopHeaderRightStyle}>
-          {resumoAvaliacao}
-        </div>
-      ) : (
-        resumoAvaliacao
-      )}
+      <div data-obra-responsive="header-right" style={isDesktop ? desktopHeaderRightStyle : { display: "contents" }}>
+        {resumoAvaliacao}
+      </div>
     </header>
   );
 }

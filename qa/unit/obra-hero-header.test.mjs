@@ -58,23 +58,9 @@ test("header do hero preserva classificacao, acessibilidade e estilos", () => {
 });
 
 test("header preserva o resumo no desktop e no mobile", () => {
-  const indiceDesktop = headerHero.indexOf("{isDesktop ? (");
-  const indiceWrapper = headerHero.indexOf(
-    "<div style={desktopHeaderRightStyle}>",
-    indiceDesktop,
-  );
-  const indiceResumoDesktop = headerHero.indexOf(
-    "{resumoAvaliacao}",
-    indiceWrapper,
-  );
-  const indiceResumoMobile = headerHero.indexOf(
-    "resumoAvaliacao\n      )}",
-  );
-
-  assert.ok(indiceDesktop >= 0);
-  assert.ok(indiceWrapper > indiceDesktop);
-  assert.ok(indiceResumoDesktop > indiceWrapper);
-  assert.ok(indiceResumoMobile > indiceResumoDesktop);
+  assert.equal((headerHero.match(/\{resumoAvaliacao\}/g) || []).length, 1);
+  assert.match(headerHero, /data-obra-responsive="header-right"/);
+  assert.match(headerHero, /isDesktop \? desktopHeaderRightStyle : \{ display: "contents" \}/);
 });
 
 test("cliente preserva calculos, foco e integracao do header", () => {

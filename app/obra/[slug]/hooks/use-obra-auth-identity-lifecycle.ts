@@ -15,6 +15,7 @@ export function useObraAuthIdentityLifecycle({
 }: UseObraAuthIdentityLifecycleParams) {
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
+  const [versaoIdentidade, setVersaoIdentidade] = useState(0);
   const identidadeAutenticadaObraRef =
     useRef<IdentidadeAutenticadaObra>({
       usuarioId: "",
@@ -33,6 +34,7 @@ export function useObraAuthIdentityLifecycle({
 
       if (resultado.mudou) {
         identidadeAutenticadaObraRef.current = resultado.identidade;
+        setVersaoIdentidade(resultado.identidade.versao);
         onIdentidadeMudou();
         setUsuarioIdLogado(resultado.identidade.usuarioId);
       }
@@ -91,6 +93,7 @@ export function useObraAuthIdentityLifecycle({
   return {
     usuarioIdLogado,
     autenticacaoCarregada,
+    versaoIdentidade,
     identidadeAutenticadaObraRef,
   };
 }

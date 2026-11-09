@@ -58,7 +58,10 @@ test("rating box preserva layout, calculos e estrelas acessiveis", () => {
 
 test("cliente delega a avaliacao protegida e preserva a condicao da UI", () => {
   for (const trecho of [
-    "autenticacaoCarregada && !usuarioEhAutorDaObra",
+    "!autenticacaoCarregada || !usuarioEhAutorDaObra",
+    "visibility: autenticacaoCarregada ? \"visible\" : \"hidden\"",
+    "aria-hidden={!autenticacaoCarregada}",
+    "inert={!autenticacaoCarregada}",
     "avaliacaoObra",
     'import { useObraRatingLifecycle } from "./hooks/use-obra-rating-lifecycle";',
     "} = useObraRatingLifecycle({",

@@ -129,6 +129,9 @@ test.describe("página da obra — cenários críticos", () => {
   test("Escape fecha comentários e devolve foco ao gatilho", async ({ page }) => {
     await page.goto(workPath(), { waitUntil: "domcontentloaded" });
 
+    // O SSR já contém o gatilho, mas focus() não aguarda o fim de busy/inert.
+    await expect(page.locator('main[data-historietas-obra-dinamica-root="true"][aria-busy="false"]:not([inert]):visible')).toHaveCount(1);
+
     const trigger = page.getByRole("button", { name: /^Abrir comentários/i });
     await trigger.focus();
     await expect(trigger).toBeFocused();

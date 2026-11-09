@@ -125,16 +125,20 @@
   Sem polling: abas continuamente abertas não detectam mudanças imediatamente.
   A página de Obra continua fora desta fase; ativação automática permanece suspensa.
 
-### Obra — snapshot público leve (fase 5C2A, inativo)
+### Obra — snapshot público leve e reconciliação (fases 5C2A/5C2B)
 
 - `obterSnapshotObraPublica` reutiliza a barreira e cache por geração/revisão.
   A nova RPC invoker/STABLE pagina capítulos por `(ordem,id)`, sem textos, com
   conferência de versão por página e RLS/18+ preservados. Hrefs usam ordem real.
 - O DTO não é `ObraLocal`: não pode substituir drafts nem estado pessoal.
   Anexos trazem apenas metadados; acesso continua pelo assinador autorizado.
-- Página, metadata e carregamento cliente ainda não usam o snapshot. Sem novo
-  endpoint ou ativação parcial; integração/reconciliação fica para 5C2B.
-  Detalhes e limites em `docs/agendamento-cache-publico.md`.
+- Página/metadata compartilham snapshot confirmado por requisição; SSR usa o
+  componente existente. Cliente confirma por `/api/obra-publica` no-store em
+  hidratação/navegação/retorno, reutilizando o coordenador do Leitor. Conteúdo
+  público não é mesclado com backups pessoais. Progresso, métricas, comentários
+  e avaliações continuam separados; anexos usam o assinador existente.
+- Sem polling/revogação dos bytes já entregues. Ativação automática e uploads
+  continuam suspensos. Detalhes/limites em `docs/agendamento-cache-publico.md`.
 
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 

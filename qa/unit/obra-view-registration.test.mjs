@@ -34,7 +34,8 @@ test("hook preserva guards, ref string unica e ordem do registro", () => {
 
   assert.ok(marcarRef >= 0);
   assert.ok(chamadaAssincrona > marcarRef);
-  assert.match(hook, /if \(totalVisualizacoes === null\) \{\s*return;/);
+  assert.match(hook, /if \(cancelado \|\| totalVisualizacoes === null\) \{\s*return;/);
+  assert.match(hook, /return \(\) => \{ cancelado = true; \};/);
   assert.doesNotMatch(
     hook,
     /visualizacaoObraRegistradaRef\.current = ""/,
@@ -60,7 +61,7 @@ test("cliente delega somente o registro de visualizacao", () => {
   );
   assert.match(
     cliente,
-    /useObraViewRegistration\(obra, statusAcesso18, setMetricasObra\);/,
+    /useObraViewRegistration\(obraInteracoes, statusAcesso18, setMetricasObra\);/,
   );
   assert.doesNotMatch(cliente, /visualizacaoObraRegistradaRef/);
   assert.doesNotMatch(cliente, /incrementarVisualizacaoObraPublicaSupabase/);

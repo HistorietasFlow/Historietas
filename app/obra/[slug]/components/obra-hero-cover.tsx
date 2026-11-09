@@ -30,10 +30,12 @@ export default function ObraHeroCover({
     <Link
       href={href}
       style={isDesktop ? desktopHeroCoverLinkStyle : heroCoverLinkStyle}
+      data-obra-responsive="cover-link"
       aria-label={ariaLabel}
     >
       <div
         style={isDesktop ? desktopCoverArtStyle : coverArtStyle}
+        data-obra-responsive="cover"
         aria-hidden="true"
       >
         {capa ? (

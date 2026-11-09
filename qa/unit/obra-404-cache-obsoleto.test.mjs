@@ -111,7 +111,8 @@ test("rota da obra usa 404 real apenas para slug invalido ou obra ausente", () =
     bloco,
     /const obra = await obterObraMetadataPublica\(slug\);/,
   );
-  assert.match(bloco, /if \(!obra\) \{\s*notFound\(\);\s*\}/);
+  assert.match(bloco, /const snapshot = await obterSnapshotObraPublica\(slug\);/);
+  assert.match(bloco, /if \(!obra \|\| !snapshot\) \{\s*notFound\(\);\s*\}/);
   assert.doesNotMatch(bloco, /\.catch\(/);
   assert.doesNotMatch(bloco, /catch\s*\(/);
 });
@@ -259,8 +260,9 @@ test("cliente preserva o useMemo e delega somente a resolucao da obra por slug",
   );
   assert.match(
     paginaCliente,
-    /const obra = useMemo\(\s*\(\) => obterObraDinamicaPorSlug\(obrasLocais, slug\),\s*\[slug, obrasLocais\]\s*\);/,
+    /const obraLegada = useMemo\(\s*\(\) => obterObraDinamicaPorSlug\(obrasLocais, slug\),\s*\[slug, obrasLocais\]\s*\);/,
   );
+  assert.match(paginaCliente, /const obra = snapshotInicial \? publica.obra : obraLegada;/);
   assert.doesNotMatch(paginaCliente, /criarSlugBase\(item\.titulo\)/);
   assert.doesNotMatch(paginaCliente, /converterObraLocalParaDinamica\(obraLocal\)/);
 });

@@ -33,14 +33,15 @@ export default function ObraHeroMetaBar({
 }: ObraHeroMetaBarProps) {
   return (
     <div
+      data-obra-responsive="meta"
       style={
         isDesktop
           ? desktopHeroBottomMetaBarStyle
           : heroBottomMetaBarStyle
       }
     >
-      {!isDesktop ? (
         <Link
+          data-obra-mobile-author="true"
           href={autorHref}
           style={heroBottomAuthorLinkStyle}
           aria-label={`Abrir perfil do autor ${autorNome}`}
@@ -51,9 +52,9 @@ export default function ObraHeroMetaBar({
             {autorNome}
           </span>
         </Link>
-      ) : null}
 
       <div
+        data-obra-responsive="metrics"
         style={
           isDesktop
             ? desktopHeroStatsStyle

@@ -3,7 +3,7 @@ import { cache } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import ObraDinamicaClient from "./ObraDinamicaClient";
-import { obterObraMetadataPublica as carregarObraMetadataPublica } from "../../../lib/cache/obrasPublicas";
+import { obterSnapshotObraPublica as carregarSnapshotObraPublica } from "../../../lib/cache/obrasPublicas";
 import {
   DEFAULT_HISTORIETAS_LANGUAGE,
   type HistorietasLanguage,
@@ -32,7 +32,12 @@ type PageProps = {
 
 // Metadata e HTML compartilham apenas o snapshot confirmado DESTA requisicao.
 // A barreira interna continua fazendo dois POSTs distintos, sem memoizacao.
-const obterObraMetadataPublica = cache(carregarObraMetadataPublica);
+const obterSnapshotObraPublica = cache(carregarSnapshotObraPublica);
+async function obterObraMetadataPublica(slug: string) {
+  const snapshot = await obterSnapshotObraPublica(slug);
+  return snapshot ? { titulo: snapshot.obra.titulo, autor: snapshot.obra.autor,
+    sinopse: snapshot.obra.sinopse, capa_url: snapshot.obra.capa, slug: snapshot.slug } : null;
+}
 
 async function obterSlug(params: PageProps["params"]) {
   const paramsResolvidos = await params;
@@ -86,9 +91,10 @@ export default async function ObraPage({ params }: PageProps) {
     notFound();
   }
 
+  const snapshot = await obterSnapshotObraPublica(slug);
   const obra = await obterObraMetadataPublica(slug);
 
-  if (!obra) {
+  if (!obra || !snapshot) {
     notFound();
   }
 
@@ -110,7 +116,7 @@ export default async function ObraPage({ params }: PageProps) {
           __html: serializarJsonLdSeguro(dadosEstruturados),
         }}
       />
-      <ObraDinamicaClient />
+      <ObraDinamicaClient snapshotInicial={snapshot} />
     </>
   );
 }

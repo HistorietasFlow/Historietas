@@ -31,7 +31,7 @@ export default function ObraStatsGrid({
   onAlternarSinopse,
 }: ObraStatsGridProps) {
   return (
-    <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
+    <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle} data-obra-responsive="stats">
       <MetricCard numero={seguidores} rotulo="seguidores" />
       <MetricCard
         numero={curtidas}
