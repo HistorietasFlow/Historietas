@@ -111,11 +111,23 @@ tratamento separado; CI verde nao equivale a ausencia de instabilidade.
 Revalidacao com fixtures locais novas e CLI fixado: acessibilidade 11/11,
 Obra critica 9/9 e agendamento/Diario 4/5, sem retries. Neste ultimo arquivo,
 linha 190 encontra dois spans do texto do Leitor no desktop; publicacao e HTTP
-200 ja haviam sido confirmados, e mobile passou. Seletor identico a main;
-pendencia separada, sem alterar executor, permissoes ou estender esta correcao.
+200 ja haviam sido confirmados, e mobile passou. Seletor identico a main.
+Na investigacao seguinte, instrumentar operacoes DOM comprovou um span visivel
+coexistindo por cerca de 50 ms com uma copia oculta em `div#S:1`; apos hidratacao,
+restou uma unica ocorrencia. A correcao e somente QA: aguardar a resposta da
+barreira publica e uma unica raiz do Leitor, verificar titulo e texto exatos
+dentro dela e exigir uma unica ocorrencia do texto. Mantem as verificacoes de
+HTTP/SSR, Diario e retry idempotente do executor. Sem first(), timeout maior,
+retries ou alteracao de producao. Instrumentacao removida; arquivo 5/5 aprovado
+em condicoes normais, desktop/mobile, serial e sem retries.
 Lint/Typecheck/Build passaram. A rodada ampla anterior nao e uma suite limpa:
 127 passes, cinco falhas e quatro nao executados, com fixtures consumidas e
-CLI ausente no PATH antes desse preparo. Nenhuma aprovacao de merge ou ativacao.
+CLI ausente no PATH antes desse preparo. Essas rodadas historicas nao comprovam
+suite integralmente verde; a ativacao automatica permanece bloqueada.
+Validacao relacionada final apos a correcao: 31/31, incluindo 5/5 de
+agendamento/Diario, 6 da rota canonica, 9 de reconciliacao/progresso e 11 de
+acessibilidade. Fixtures novas, build local, workers=1, retries=0; Lint,
+Typecheck, Build e diff --check passaram. Runner false e sem pg_cron local.
 
 ## Fase 6B1 — entrada SQL restrita, sem ativacao
 

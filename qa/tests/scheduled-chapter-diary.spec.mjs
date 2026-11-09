@@ -185,9 +185,18 @@ for (const device of ["desktop", "mobile"]) {
     const after = await request.get(path, { maxRedirects: 0 });
     expect(after.status()).toBe(200);
     const html = await after.text(); expect(html).toContain(title); expect(html).toContain(text);
+    // O streaming pode manter uma cópia oculta do Leitor durante a hidratação.
+    // Confirme a barreira pública e a raiz única antes de verificar o conteúdo final.
+    const hydration = page.waitForResponse(response => new URL(response.url()).pathname === "/api/leitura-publica");
     await page.goto(path, { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
-    await expect(page.getByText(text, { exact: true })).toBeVisible();
+    expect((await hydration).status()).toBe(200);
+    const reader = page.locator('main[data-historietas-ler-capitulo-root="true"]');
+    await expect(reader).toHaveCount(1);
+    await expect(reader).toBeVisible();
+    await expect(reader.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    const chapterText = reader.getByText(text, { exact: true });
+    await expect(chapterText).toHaveCount(1);
+    await expect(chapterText).toBeVisible();
     const diary = check(await anon.from("diario_atividades").select("id,metadata,user_id").eq("capitulo_id", chapterId));
     expect(diary).toHaveLength(1); expect(diary[0].user_id).toBe(userId); expect(diary[0].metadata.href).toBe(path);
     expect(diary[0].metadata.numero_capitulo).toBe(1234);

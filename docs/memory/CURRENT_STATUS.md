@@ -38,11 +38,23 @@ cenarios criticos da Obra 9/9, todos sem retries; Lint, Typecheck e Build aprova
 A rodada ampla teve 127 passes, cinco falhas e quatro nao executados: quatro
 falhas por reutilizar a fixture consumida (24 comentarios, E2E 01 ausente) e
 uma por CLI ausente no PATH do harness. Com fixtures recriadas e CLI 2.116.0,
-os tres arquivos revalidados ficaram 24/25. Pendencia independente restante:
+os tres arquivos revalidados ficaram 24/25. A falha restante dessa rodada:
 `scheduled-chapter-diary.spec.mjs:190` encontra dois spans do texto do Leitor
 no desktop (strict mode), apos confirmar publicacao/HTTP 200; mobile passou.
-Teste identico a main, sem alteracao nesta correcao. Investigar separadamente
-a sincronizacao desse seletor; nao declarar suite limpa nem merge aprovado.
+Investigacao seguinte na #2249 comprovou o problema do seletor: em reproducao
+instrumentada, entre 410 e 460 ms coexistiram um span visivel e uma copia oculta
+sob `div#S:1`. Depois da hidratacao restou uma unica ocorrencia; teste e frontend
+originais identicos a main `50cb0841`. Nao e duplicacao persistente do conteudo.
+O teste agora aguarda a resposta da barreira publica, uma unica raiz do Leitor
+e verifica titulo/texto exatos dentro dela, incluindo contagem unica do texto.
+Sem first(), alteracao de timeout/retry, nova consulta ou codigo de producao.
+Instrumentacao removida; agendamento/Diario passou 5/5 desktop/mobile no build
+local, serial e sem retries. As rodadas amplas historicas acima nao sao uma
+suite integralmente verde nem autorizacao para ativar agendamento.
+Validacao relacionada final: 31/31 (agendamento/Diario 5, rota canonica 6,
+reconciliacao/progresso entre dispositivos 9, acessibilidade 11), com fixtures
+novas, build de producao local, workers=1 e retries=0. Lint, Typecheck, Build
+e diff --check aprovados. Runner false e pg_cron ausente no banco local.
 
 ### Agendamento — fase 6B1, entrada operacional sem ativacao
 
