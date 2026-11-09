@@ -2,6 +2,60 @@
 
 Atualizado em: 2026-11-09
 
+### Agendamento — fase 6B2, observador privado sem ativacao
+
+Migration `20261109194305_observabilidade_privada_runner_capitulos.sql` prepara
+observacao administrativa independente do historico real do Cron, pausa
+persistente apos tres falhas consecutivas observadas e retomada por revisao
+que NAO habilita gate/job. Saude agrega backlog, atraso, tentativas esgotadas e
+incidentes sem dados pessoais. Retencao limitada conserva falhas/incidentes;
+saturacao exige intervencao, nunca perda silenciosa de evidencia. Outbox intacta.
+Ainda sem job de observacao, alerta ou prova de completude durante indisponibilidade
+ou purga do historico. Nao garante pausa antes da quarta execucao. Ativacao segue
+bloqueada; ver limites e contrato em `docs/agendamento-cache-publico.md`.
+
+Validacao local: pgTAP 646/646; Cron real 9/9 (tres timeouts consecutivos,
+pausa/retomada, rollback, resposta perdida e retencao); outras integracoes de
+agendamento/projecao 37/37; paginacao Data API 14/14 e anti-spam 5/5. Lint,
+Typecheck, Build, auditoria estatica, sessao (2.002), paginacao e audit de
+producao (zero vulnerabilidades) aprovados.
+Playwright completo serial sem retries: 134/135. Pendencia separada em
+`accessibility.spec.mjs:84`: dois roots da Obra no seletor durante verificacao;
+na unica execucao isolada, axe encontrou `document-title (serious)`.
+Investigacao posterior da #2249 (09/11): o frontend, dependencias e testes
+originais sao identicos aos da main `50cb0841`. MutationObserver no build local
+comprovou root visivel junto de root oculto em segmento de streaming (29 ms no
+mobile) e titulo temporariamente vazio entre metadata no body e hidratacao no
+head (327 ms no desktop). Nao e evidencia de fixture incompleta nem de titulo
+permanentemente ausente. O baseline agora exige raiz unica, confirmada/interativa
+e titulo correto no head antes do axe integral, em desktop/mobile, sem mudar
+timeouts, retries ou regras. Nenhuma alteracao de producao ou do runner.
+CI anterior `42690781924` verde, mas com um flaky independente no smoke da Obra
+(`smoke-routes.spec.mjs:106`, main de loading + main da obra); tratar esse seletor
+separadamente, sem confundir passe em retry com estabilidade comprovada.
+Revalidacao local apos o ajuste: baseline axe 11/11 (Obra desktop/mobile) e
+cenarios criticos da Obra 9/9, todos sem retries; Lint, Typecheck e Build aprovados.
+A rodada ampla teve 127 passes, cinco falhas e quatro nao executados: quatro
+falhas por reutilizar a fixture consumida (24 comentarios, E2E 01 ausente) e
+uma por CLI ausente no PATH do harness. Com fixtures recriadas e CLI 2.116.0,
+os tres arquivos revalidados ficaram 24/25. A falha restante dessa rodada:
+`scheduled-chapter-diary.spec.mjs:190` encontra dois spans do texto do Leitor
+no desktop (strict mode), apos confirmar publicacao/HTTP 200; mobile passou.
+Investigacao seguinte na #2249 comprovou o problema do seletor: em reproducao
+instrumentada, entre 410 e 460 ms coexistiram um span visivel e uma copia oculta
+sob `div#S:1`. Depois da hidratacao restou uma unica ocorrencia; teste e frontend
+originais identicos a main `50cb0841`. Nao e duplicacao persistente do conteudo.
+O teste agora aguarda a resposta da barreira publica, uma unica raiz do Leitor
+e verifica titulo/texto exatos dentro dela, incluindo contagem unica do texto.
+Sem first(), alteracao de timeout/retry, nova consulta ou codigo de producao.
+Instrumentacao removida; agendamento/Diario passou 5/5 desktop/mobile no build
+local, serial e sem retries. As rodadas amplas historicas acima nao sao uma
+suite integralmente verde nem autorizacao para ativar agendamento.
+Validacao relacionada final: 31/31 (agendamento/Diario 5, rota canonica 6,
+reconciliacao/progresso entre dispositivos 9, acessibilidade 11), com fixtures
+novas, build de producao local, workers=1 e retries=0. Lint, Typecheck, Build
+e diff --check aprovados. Runner false e pg_cron ausente no banco local.
+
 ### Agendamento — fase 6B1, entrada operacional sem ativacao
 
 Migration `20261109183045_entrada_sql_restrita_runner_capitulos.sql` prepara

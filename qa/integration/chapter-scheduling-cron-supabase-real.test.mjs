@@ -47,6 +47,10 @@ test("Cron real local: identidade, timers previos, atomicidade e gate", async (t
     "Exige ambiente descartavel sem Cron instalado; nao alterar jobs preexistentes.");
   assert.equal(sql("select current_setting('cron.use_background_workers');"), "off");
   assert.equal(sql(`select rolcanlogin from pg_roles where rolname='${ROLE}';`), "f");
+  assert.equal(sql(`select (select count(*) from historietas_privado.capitulo_runner_monitor)
+    +(select count(*) from historietas_privado.capitulo_runner_observacoes)
+    +(select count(*) from historietas_privado.capitulo_runner_incidentes);`), "0",
+    "Nao alterar monitor ou evidencias preexistentes.");
   const jobs = new Set();
   let installed = false;
   const waitUntil = async (predicate, label, timeout = 35_000) => {
@@ -64,6 +68,9 @@ test("Cron real local: identidade, timers previos, atomicidade e gate", async (t
     }
     removeDelay();
     sql(`begin; alter role ${ROLE} nologin;
+      delete from historietas_privado.capitulo_runner_observacoes;
+      delete from historietas_privado.capitulo_runner_incidentes;
+      delete from historietas_privado.capitulo_runner_monitor;
       delete from historietas_privado.capitulo_cache_outbox where obra_id='${WORK}';
       delete from public.obras where id='${WORK}';
       delete from public.profiles where user_id='${AUTHOR}'; delete from auth.users where id='${AUTHOR}';
@@ -210,5 +217,122 @@ test("Cron real local: identidade, timers previos, atomicidade e gate", async (t
       assert.equal(sql(`select pg_try_advisory_xact_lock(${lock});`), "t");
     } finally { conn.stdin.end("rollback;\n"); await exited; }
     assert.match(error, /idle-in-transaction timeout/);
+  });
+
+  await t.test("observador independente: tres abortos reais, pausa duravel e retomada explicita", async () => {
+    sql("update historietas_privado.capitulo_runner_controle set habilitado=false;");
+    // O item 5 pertence ao cenario anterior de lock_timeout, nao a esta disputa.
+    sql(`update historietas_privado.capitulo_agendamentos set publicar_em='2099-01-01Z' where capitulo_id='${chapter(5)}';`);
+    const id = Number(operational(`select cron.schedule('qa-monitor-6b2','15 seconds',${literal(ENTRY)});`));
+    jobs.add(id);
+    // Dono da extensao somente para controlar o job descartavel. Observacao e
+    // retomada continuam como postgres; nao ampliar grants do runner/Cron.
+    const manageJob = (source) => sql(source, "supabase_admin");
+    manageJob(`select cron.alter_job(${id},active:=false);`);
+    sql(`select historietas_privado.configurar_monitor_capitulos(${id},15);`);
+    const observe = () => JSON.parse(sql("select historietas_privado.observar_runner_capitulos();"));
+    const resume = (revision) => JSON.parse(sql(`select historietas_privado.retomar_monitor_capitulos(${revision},'causa_corrigida');`));
+    const state = () => JSON.parse(sql("select row_to_json(m) from historietas_privado.capitulo_runner_monitor m;"));
+    const records = () => Number(sql("select count(*) from historietas_privado.capitulo_runner_observacoes;"));
+    const oneRun = async (during) => {
+      const previous = Number(sql(`select coalesce(max(runid),0) from cron.job_run_details where jobid=${id};`));
+      manageJob(`select cron.alter_job(${id},active:=true);`);
+      try {
+        if (during) await during();
+        let row;
+        await waitUntil(() => {
+          const raw = sql(`select row_to_json(d) from (select runid,status,return_message from cron.job_run_details
+            where jobid=${id} and runid>${previous} and end_time is not null order by runid limit 1) d;`);
+          if (raw) row = JSON.parse(raw);
+          return Boolean(row);
+        }, "resultado independente do monitor");
+        assert.equal(sql(`select count(*) from cron.job_run_details where jobid=${id} and runid>${previous};`), "1");
+        return row;
+      } finally { manageJob(`select cron.alter_job(${id},active:=false);`); }
+    };
+    assert.equal(resume(1).estado, "retomada_registrada");
+    assert.equal(sql("select habilitado from historietas_privado.capitulo_runner_controle;"), "f");
+    assert.equal(resume(1).estado, "ja_registrado");
+    for (const who of [anon, author, admin]) {
+      for (const name of ["observar_runner_capitulos", "retomar_monitor_capitulos", "saude_runner_capitulos"]) {
+        assert.ok((await who.rpc(name)).error);
+        assert.ok((await who.schema("historietas_privado").rpc(name)).error);
+      }
+    }
+    assert.throws(() => operational("select historietas_privado.observar_runner_capitulos()"), /permission denied/);
+    await prepare(6); delay(6, 12);
+    sql("update historietas_privado.capitulo_runner_controle set habilitado=true;");
+    const before = sql("select row_to_json(c) from historietas_privado.capitulo_runner_controle c;");
+    const outbox = count("capitulo_cache_outbox"), events = count("capitulo_publicacao_eventos");
+    try {
+      for (let i = 1; i <= 3; i += 1) {
+        const row = await oneRun(async () => {
+          await waitUntil(() => sql(`select count(*) from pg_stat_activity where usename='${ROLE}' and wait_event='PgSleep';`) === "1", "runner aguardando timeout");
+          assert.equal(observe().estado, "ocupado", "Observador nao disputa dados durante transacao do runner.");
+        });
+        assert.equal(row.status, "failed"); assert.match(row.return_message, /statement timeout/);
+        assert.equal(published(6), "f");
+        if (i === 1) {
+          sql("begin; select historietas_privado.observar_runner_capitulos(); rollback;");
+          assert.equal(records(), 0, "Rollback do observador nao avanca cursor.");
+        }
+        assert.equal(observe().observados, 1);
+        assert.equal(observe().observados, 0, "Retry apos resposta perdida nao duplica observacao.");
+        assert.equal(state().falhas_consecutivas, i);
+        assert.equal(state().pausado, i === 3);
+        if (i < 3) assert.equal(sql("select row_to_json(c) from historietas_privado.capitulo_runner_controle c;"), before,
+          "Abortos desfazem metricas internas; observacoes externas persistem.");
+      }
+    } finally { removeDelay(); }
+    assert.equal(count("capitulo_cache_outbox"), outbox); assert.equal(count("capitulo_publicacao_eventos"), events);
+    assert.equal(sql("select habilitado from historietas_privado.capitulo_runner_controle;"), "f");
+    assert.throws(() => sql("update historietas_privado.capitulo_runner_controle set habilitado=true;"), /Retomada administrativa/);
+    assert.equal((await oneRun()).status, "succeeded", "Gate fechado retorna sucesso SQL sem publicar.");
+    observe(); assert.equal(state().pausado, true); assert.equal(published(6), "f");
+    assert.equal(resume(1).estado, "ja_registrado"); assert.equal(state().pausado, true, "Retry antigo nao retoma incidente novo.");
+    assert.equal(resume(2).estado, "retomada_registrada");
+    assert.equal(sql("select habilitado from historietas_privado.capitulo_runner_controle;"), "f", "Retomar NAO habilita.");
+    sql("update historietas_privado.capitulo_runner_controle set habilitado=true;");
+    assert.equal((await oneRun()).status, "succeeded"); observe();
+    assert.equal(published(6), "t");
+    assert.equal(count("capitulo_cache_outbox"), outbox + 1); assert.equal(count("capitulo_publicacao_eventos"), events + 1);
+
+    // Falha da fonte e sucesso posterior nao limpam automaticamente a pausa.
+    manageJob(`select cron.alter_job(${id},command:='select 1');`);
+    assert.equal(observe().estado, "fonte_indisponivel");
+    manageJob(`select cron.alter_job(${id},command:=${literal(ENTRY)});`);
+    observe(); assert.equal(state().pausado, true); resume(3);
+    // Concorrencia entre observadores usa o mesmo lock, sem perder cursor.
+    const lock = spawn("docker", args(), { windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
+    const ended = new Promise((resolve) => lock.once("exit", resolve));
+    let locked = false;
+    lock.stdout.on("data", (data) => { if (data.toString().includes("MONITOR_LOCK")) locked = true; });
+    lock.stdin.write("begin; select historietas_privado.observar_runner_capitulos();\n\\echo MONITOR_LOCK\n");
+    try { await waitUntil(() => locked, "observador em transacao"); assert.equal(observe().estado, "ocupado"); }
+    finally { lock.stdin.end("rollback;\n"); assert.equal(await ended, 0); }
+    const anchor = state().ultimo_run;
+    sql(`update historietas_privado.capitulo_runner_observacoes set observado_em=now()-interval '8 days';`);
+    observe();
+    assert.equal(records(), 4, "Retencao conserva tres falhas e ancora, elimina somente sucesso antigo.");
+    assert.equal(Number(sql("select count(*) from historietas_privado.capitulo_runner_incidentes;")), 3);
+    // Cenario sintetico explicitamente limitado ao teste de saturacao/retencao.
+    sql(`insert into historietas_privado.capitulo_runner_observacoes(run_id,estado,fim)
+      select -n,'failed',now() from generate_series(1,996) n;`);
+    await oneRun();
+    assert.equal(observe().estado, "capacidade"); assert.equal(records(), 1000);
+    assert.throws(() => resume(4), /capacidade/);
+    sql("delete from historietas_privado.capitulo_runner_observacoes where run_id<0;");
+    observe(); resume(4);
+    // Remover ancora apenas na fixture comprova falha fechada, nunca falso ACK.
+    const currentAnchor = state().ultimo_run;
+    assert.ok(currentAnchor > anchor);
+    sql(`delete from cron.job_run_details where jobid=${id} and runid=${currentAnchor};`);
+    assert.equal(observe().estado, "historico_incompleto");
+    assert.throws(() => resume(5), /inconclusiva/);
+    assert.equal(state().pausado, true);
+    const health = JSON.parse(sql("select historietas_privado.saude_runner_capitulos();"));
+    assert.ok(health.incidentesAbertos > 0); assert.equal(health.habilitado, false);
+    assert.ok(!JSON.stringify(health).includes(AUTHOR));
+    assert.equal(count("capitulo_cache_outbox"), outbox + 1, "Monitor jamais confirma/apaga a outbox.");
   });
 });

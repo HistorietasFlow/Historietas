@@ -81,22 +81,36 @@ for (const { rota, obterMainFinal } of rotasPublicas) {
   });
 }
 
-test("obra pública integra o baseline axe após renderizar o conteúdo", async ({
-  page,
-}) => {
-  test.skip(
-    !publicWorkSlug,
-    "Prepare a obra pública no Supabase local descartável.",
-  );
+for (const dispositivo of ["desktop", "mobile"]) {
+  test(`obra pública integra o baseline axe após renderizar o conteúdo (${dispositivo})`, async ({ page }) => {
+    test.skip(
+      !publicWorkSlug,
+      "Prepare a obra pública no Supabase local descartável.",
+    );
 
-  const rota = `/obra/${encodeURIComponent(publicWorkSlug)}`;
-  await page.goto(rota, { waitUntil: "domcontentloaded" });
+    await page.setViewportSize(dispositivo === "mobile"
+      ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+    const rota = `/obra/${encodeURIComponent(publicWorkSlug)}`;
+    await page.goto(rota, { waitUntil: "domcontentloaded" });
 
-  const main = page.locator('[data-historietas-obra-dinamica-root="true"]');
-  await expect(page.getByRole("heading", { name: publicWorkTitle })).toBeVisible();
-  await expect(main).not.toHaveAttribute("aria-busy", "true");
-  await esperarAxeSemViolacoesCriticas(page, rota);
-});
+    const main = page.locator('[data-historietas-obra-dinamica-root="true"]');
+    // Streaming can briefly retain a hidden root alongside the visible one.
+    // Audit the confirmed, interactive page, not that transitional DOM.
+    await expect(page.locator(
+      '[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"][aria-busy="false"]:not([inert])',
+    )).toHaveCount(1);
+    await expect(main).toHaveCount(1);
+    await expect(main).toBeVisible();
+    await expect(main.getByRole("heading", { name: publicWorkTitle })).toBeVisible();
+    // The body title can disappear before React hoists metadata into head.
+    // A missing/wrong final title must still fail, before the full-page axe scan.
+    await expect(page.locator("head > title")).toHaveJSProperty(
+      "textContent", `${publicWorkTitle} | Historietas`,
+    );
+    await expect(page).toHaveTitle(`${publicWorkTitle} | Historietas`);
+    await esperarAxeSemViolacoesCriticas(page, `${rota} (${dispositivo})`);
+  });
+}
 
 test("capítulo público canônico integra o baseline axe após hidratar o leitor", async ({
   page,
