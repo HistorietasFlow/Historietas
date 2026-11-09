@@ -1,5 +1,7 @@
 begin;
 select no_plan();
+create temp table qa_runner_estado_inicial as
+ select sucessos from historietas_privado.capitulo_runner_controle where singleton;
 -- BEGIN RUNNER FIXTURE (exclusivamente banco descartavel)
 insert into auth.users(id) values ('b6100000-0000-4000-8000-000000000001') on conflict do nothing;
 insert into public.profiles(id,user_id,nome,tipo) values
@@ -62,7 +64,8 @@ savepoint lote;
 select is((historietas_privado.executar_runner_capitulos()->>'sucessos')::integer,1,'publica dentro da transacao');
 rollback to lote;
 select ok(not (select publicado from public.capitulos where ordem=4 and obra_id='b6200000-0000-4000-8000-000000000001'),'rollback reverte publicacao');
-select is((historietas_privado.metricas_runner_capitulos()->>'sucessos')::integer,3,'rollback reverte telemetria');
+select is((historietas_privado.metricas_runner_capitulos()->>'sucessos')::bigint,
+ (select sucessos+3 from qa_runner_estado_inicial),'rollback reverte telemetria sem apagar estado anterior');
 select is((historietas_privado.executar_runner_capitulos()->>'sucessos')::integer,1,'nova transacao pode recuperar');
 
 create function pg_temp.falhar_runner() returns trigger language plpgsql as $$

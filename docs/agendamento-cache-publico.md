@@ -1,5 +1,108 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
+## Fase 6B3 — capacidade limitada, sem autorizacao de ativacao
+
+Migration `20261109215507_protecao_capacidade_outbox_capitulos.sql` adiciona
+controle privado e incidentes de capacidade. Nenhuma extensao/job e instalado;
+o runner permanece `habilitado=false`. API, service_role e papel operacional
+nao recebem acesso as novas tabelas/funcoes. Sao INVOKER, search_path vazio,
+com RLS e REVOKE explicitos. A entrada SQL restrita continua usando o contrato
+anterior, sem novos privilegios para o papel NOLOGIN.
+
+### Orcamento conservador proposto para revisao
+
+| Recurso | Freio | Alerta consultavel |
+| --- | --- | --- |
+| Eventos pendentes, inclusive `solicitada_em` preenchido | 10.000 | 70% |
+| Outbox, incluindo indices/TOAST | 16 MiB | 70% |
+| Notificacoes, incluindo indices/TOAST | 64 MiB | 70% |
+| Banco compartilhado | 400 MiB | 70% |
+| Incidentes de capacidade preservados | 100, sem retomada na saturacao | pausa |
+
+Estes valores sao limites iniciais de revisao, nao uma capacidade aprovada para
+ativacao nem ampliacao de quotas do Storage. Podem ser reduzidos com gate fechado;
+constraints impedem ultrapassar os tetos desta migration. Alteracao de orcamento
+usa os locks do runner/capacidade. O plano identificado e Free, mas o consumo do
+banco gerenciado NAO foi medido: a consulta remota agregada foi bloqueada pela
+revisao automatica de seguranca. Nao extrapolar a medicao descartavel para producao.
+
+### Garantias e limites
+
+- Todo INSERT efetivo da outbox disputa um advisory lock transacional, atualiza
+  uma barreira e verifica o limite antes de gravar. Commit/rollback incluem
+  publicacao, recibo, Diario e notificacoes. Concorrente ocupado recebe `55P03`;
+  snapshot REPEATABLE READ antigo recebe `40001`, sem exceder a ultima vaga.
+  Conflitos idempotentes continuam sujeitos a unicidade/imutabilidade originais.
+- O runner mede antes do lote e de cada item. Limite atingido ou medicao
+  indisponivel fecha o gate, persiste pausa/revisao e incidente numerico, sem
+  consumir a tentativa do proximo capitulo. Indisponibilidade que aborta a propria
+  transacao continua dependendo da observacao independente da fase 6B2.
+- `retomar_capacidade_runner_capitulos(revisao, justificativa)` exige headroom
+  medido e gate fechado; registra decisao por CAS, sem habilitar nada. Retry de
+  uma retomada antiga nao remove pausa nova. Nao ha retry infinito ou purga de logs.
+- **Somente o limite de quantidade de eventos e transacionalmente estrito.**
+  Medidas de bytes sao instantaneas, nao reservas de disco/WAL. Outros escritores,
+  atualizacoes de leases e uma unica publicacao com muitos destinatarios podem
+  crescer depois da medicao. Fan-out de notificacoes nao tem limite por capitulo.
+  Portanto estes freios NAO comprovam suspensao antes de todo excesso fisico.
+- Outbox integral: sem ACK, TTL, exclusao de pendencias ou interpretacao de
+  `solicitada_em` como flush confirmado. Ao esgotar capacidade, parar e revisar;
+  nao existe politica aprovada de eliminacao de eventos. Preservar uploads bloqueados.
+
+### Medicao reproduzivel local (09/11/2026)
+
+`node qa/scripts/measure-scheduling-capacity-local.mjs` exige CLI/Docker local;
+usa clones TEMP com os mesmos campos/indices, rollback, sem modificar a outbox.
+PostgreSQL 17.6, CLI 2.116.0. Valores sao amostras, nao limites superiores.
+
+| Amostra | Tabela (bytes) | Indices (bytes) | Total |
+| --- | --- | --- | --- |
+| Outbox real inicial, 0 eventos (inclui espaco de QA anterior) | 24.576 | 49.152 | 72 KiB |
+| Clone, 1.000 eventos | 196.608 | 196.608 | 384 KiB |
+| Clone, 10.000 eventos | 1.613.824 | 1.474.560 | 2,95 MiB |
+| Mesmos 10.000, cinco atualizacoes de lease na transacao | 10.715.136 | 5.324.800 | 15,30 MiB |
+| Clone, 1.000 notificacoes | 663.552 | 991.232 | 1,58 MiB |
+| Clone, 10.000 notificacoes | 6.340.608 | 8.118.272 | 13,79 MiB |
+
+Notificador transacional usa a uniao deduplicada de seguidores da obra, favoritos
+e seguidores do autor, excluindo o autor. A amostra custou cerca de 1,45 KB por
+destinatario com mensagem de 300 caracteres; 1.000 destinatarios representam
+aproximadamente 1,38 MiB pela media de 10.000 linhas. Exclui WAL, pior caso de
+textos, outros escritores e efeitos de vacuum. Atualizacoes de lease podem
+multiplicar o espaco mesmo sem novos eventos. Banco local inicial: 43.887.763 bytes;
+notificacoes reais: 417.792 bytes. Nao medir somente tamanho logico das linhas.
+
+Fontes: [medidas PostgreSQL](https://www.postgresql.org/docs/17/functions-admin.html#FUNCTIONS-ADMIN-DBSIZE),
+[tamanho do banco Supabase](https://supabase.com/docs/guides/platform/database-size).
+Quota de banco do plano e protecao fisica/read-only por disco sao contratos
+distintos; nenhum deles substitui admissao transacional da aplicacao.
+
+### Validacao e bloqueadores
+
+pgTAP focado: 225/225 (34 novos); integracao nova: 9/9, com ultima vaga real,
+snapshot antigo, timeout/rollback, resposta perdida, backlog, pausa/retomada,
+falha de medicao e negativa da Data API para anon/authenticated/service_role.
+Paginacao Data API 14/14 e anti-spam 5/5. O harness conserva todos os eventos e
+incidentes sinteticos: 14 pendencias locais ao fim das duas rodadas investigativas,
+sem apagar evidencia nem alterar eventos anteriores. Tres testes pgTAP legados
+foram isolados pela propria fixture/contador inicial, sem presumir banco vazio.
+O pgTAP completo inicial revelou essas suposicoes; a repeticao completa foi
+bloqueada pela revisao automatica devido a TRUNCATE CASCADE em arquivos legados.
+Os seis arquivos focados, com rollback e sem essa operacao, passaram. A rodada
+completa em ambiente limpo continua pendente, nao declarada aprovada.
+Build, Lint, Typecheck, audit de producao (zero vulnerabilidades), auditoria
+estatica (199/199, mais 528 unitarios), sessao (2.002) e paginacao (37) passaram.
+Playwright pertinente contra build local: 22/22, serial e sem retries, incluindo
+Obra/Leitor desktop/mobile, axe, Back/Forward, BFCache e progresso autenticado
+entre dispositivos. Fixtures E2E locais existentes reutilizadas; nao foi rodada
+a suite inteira nem refeito o harness Cron. Nenhuma execucao remota manual de CI.
+
+**Ativacao automatica continua NAO APTA:** falta certificar uso/headroom no
+gerenciado, limitar/reservar fan-out fisico e crescimento compartilhado, aprovar
+capacidade/retencao sustentavel sem perder eventos e concluir acionamento
+independente/entrega de alertas da fase 6B2. Alerta consultavel nao e alerta
+entregue. Nao ativar Cron/publicacao para testar esses bloqueadores em producao.
+
 ## Fase 6B2 — observacao independente e pausa, sem acionamento
 
 Migration `20261109194305_observabilidade_privada_runner_capitulos.sql` prepara

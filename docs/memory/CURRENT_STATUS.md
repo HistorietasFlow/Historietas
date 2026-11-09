@@ -2,6 +2,35 @@
 
 Atualizado em: 2026-11-09
 
+### Agendamento — fase 6B3, freios privados sem ativacao
+
+Migration `20261109215507_protecao_capacidade_outbox_capitulos.sql`: limite
+transacional de 10.000 eventos e freios instantaneos de 16 MiB outbox, 64 MiB
+notificacoes e 400 MiB banco, com alerta consultavel em 70%. Orcamentos iniciais
+para revisao, nao aprovacao de capacidade gerenciada. Medir antes de cada item;
+pausa duravel e retomada administrativa por revisao, sem habilitar runner. Ate
+100 incidentes preservados, sem purga. Outbox permanece integral, sem ACK/TTL.
+
+Local: pgTAP focado 225/225 (34 novos); integracao de capacidade 9/9; Data API
+paginacao 14/14 e anti-spam 5/5. Ultima vaga concorrente e snapshot antigo
+comprovados sem excesso; timeout/rollback, backlog e retries cobertos. Harness
+conserva pendencias sinteticas e eventos anteriores. Ajustadas tres assercoes
+legadas que presumiam tabelas/contadores vazios. Repeticao pgTAP completa bloqueada
+pela revisao automatica por TRUNCATE CASCADE em outros testes; rodada limpa pendente.
+Build, Lint, Typecheck, auditoria estatica, sessao (2.002), paginacao (37) e audit
+de producao (zero vulnerabilidades) passaram. Playwright pertinente 22/22 em build
+local, serial e sem retries, com desktop/mobile, axe e progresso entre dispositivos.
+Suite E2E inteira e nova execucao Cron nao realizadas nesta fase.
+
+Medicao TEMP com mesmos indices: 10.000 eventos 2,95 MiB; apos cinco atualizacoes
+de lease, 15,30 MiB. 10.000 notificacoes 13,79 MiB (~1,45 KB/destinatario), sem
+medir WAL. Plano Free identificado, uso remoto nao medido (consulta bloqueada).
+**NAO APTO para ativacao:** freios de bytes NAO reservam disco; fan-out ilimitado,
+outros escritores, leases e WAL podem exceder o espaco restante. Faltam ainda
+capacidade/retencao aprovadas, observacao independente e alertas entregues.
+Ver medidas/contrato em `docs/agendamento-cache-publico.md`. Runner falso,
+Cron ausente e uploads ilustrados suspensos; nenhuma mudanca em producao.
+
 ### Agendamento — fase 6B2, observador privado sem ativacao
 
 Migration `20261109194305_observabilidade_privada_runner_capitulos.sql` prepara
