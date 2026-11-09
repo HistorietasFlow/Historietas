@@ -1,5 +1,87 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
+## Fase 6A — runner privado, operacionalmente desativado
+
+`20261109171652_runner_privado_agendamento_capitulos.sql` acrescenta somente
+`historietas_privado.executar_runner_capitulos(limite, orcamento_ms)` e métricas
+administrativas. Não altera o executor transacional, seus gates, o consumidor
+Next ou a outbox. Nenhum endpoint, Cron, extensão, job ou serviço foi criado.
+O singleton `capitulo_runner_controle.habilitado` nasce **false**; nem usuário,
+admin via Data API nem service role podem ler/escrever o controle ou executar
+o runner. É invoker, search_path vazio, sem grants de API. Ativação exige outra
+autorização explícita, rollout e implementação do acionador; merge não ativa.
+
+### Orçamento e exclusão mútua
+
+- Lote de 1–5 (padrão 3); orçamento cooperativo de 10–5.000 ms (padrão 2.000).
+  Verifica o relógio antes de cada item e não inicia outro após o prazo.
+  Um item já iniciado pode ultrapassar esse orçamento cooperativo.
+- O chamador administrativo precisa configurar `statement_timeout` não zero
+  de até 10 s e `lock_timeout` não zero de até 1 s, menor que o primeiro,
+  **antes da instrução SELECT**, em transação curta. Sem isso o runner recusa.
+  Configurar statement_timeout dentro da função não cria um timer novo.
+  O guard confere valores, não consegue atestar quando o timer foi armado:
+  wrappers que mudem o GUC dentro da instrução não satisfazem o contrato.
+  O futuro acionador precisa comprovar a sequência e o cancelamento efetivo.
+  [Contrato PostgreSQL](https://www.postgresql.org/docs/17/runtime-config-client.html#GUC-STATEMENT-TIMEOUT).
+  O timeout global/cancelamento aborta o lote inteiro, inclusive contadores,
+  publicação, Diário, notificações, recibos e outbox; não há commit parcial.
+- Um try-advisory-lock **transacional global** impede dois runners simultâneos
+  até COMMIT/ROLLBACK. Não há lease/takeover por tempo. Cada item reutiliza os
+  locks e a revalidação do executor, inclusive contra execuções manuais.
+  Não inverter a ordem pai/filho bloqueando a fila antecipadamente.
+- Falhas de um item, incluindo lock_timeout, revertem sua subtransação e
+  registram apenas código fixo `erro`; query_canceled propaga para abortar tudo.
+  Não há HTTP nem espera externa sob locks. Um futuro chamador deve usar
+  conexão dedicada, uma chamada por transação, commit imediato e timeout de
+  sessão ociosa em transação; uma sessão abandonada conectada pode reter locks.
+
+### Backlog, recuperação e observabilidade
+
+Seleciona intenções vencidas em `agendado`/`erro`, respeitando o cooldown de um
+minuto já existente. Menos recentemente atendidas têm prioridade, com desempate
+por instante UTC e UUID. Não baixa todo o catálogo: consulta a fila privada e
+limita resultados, embora o sort/join possa custar proporcionalmente ao backlog.
+Não promete SLA sob indisponibilidade ou fluxo ilimitado de novas intenções.
+
+Uma linha privada por capítulo/revisão atual registra tentativa, resultado e
+próxima elegibilidade. São no máximo cinco tentativas, com backoff 60, 120, 240,
+480 e 960 s, sem loop interno nem retry imediato. Esgotadas ficam pendentes para
+diagnóstico humano e, quando apropriado, novo reagendamento autenticado/revisão;
+não apagar a intenção nem rearmar automaticamente. Revisão nova não herda os
+erros antigos. Cancelamento/edição continuam prevalecendo no executor. Erros
+permanentes de autorização tornam a intenção bloqueada, sem publicar.
+
+`metricas_runner_capitulos()` retorna apenas contagens privadas: pendências,
+atrasados, maior atraso em segundos, retries esgotados, lotes, tentativas,
+sucessos, erros, última execução e outbox sem confirmação. Não retorna UUID,
+autor, sessão, título, conteúdo ou SQLERRM. Contadores abrangem apenas commits;
+abortos, desconexões e indisponibilidade precisam ser registrados/alertados pelo
+futuro acionador. Uma resposta perdida após commit não repete a publicação:
+o estado/recibo do executor é autoritativo, não a resposta do cliente.
+Agregações de métricas são separadas do runner e podem ser O(pendências/outbox);
+não chamar por item nem criar coleta contínua nesta fase.
+
+### Retenção conservadora e limites de ativação
+
+- Outbox e snapshots imutáveis não são alterados pelo runner. `solicitada_em`
+  não é ACK; lease vencido, timeout, idade e HTTP 202 não autorizam descarte.
+- Reter **todas** as entradas sem confirmação verificável, inclusive após
+  exclusão de conta/obra/capítulo. Nenhuma retenção por prazo, purge, cascata,
+  compactação destrutiva ou tarefa de limpeza foi adicionada. Retenção é por
+  tempo indeterminado até aprovação de contrato verificável por implantação.
+- Revisões/barreiras garantem seleção de conteúdo público atual; não provam
+  flush físico nem encerram a obrigação da outbox. Medir volume/idade antes
+  da ativação e pausar a futura automação se o crescimento não for sustentável;
+  não apagar pendências para caber no plano. Não ampliar quotas nesta fase.
+- Ainda faltam acionador autorizado, cadência/recuperação, observação externa
+  de abortos e política de alertas/capacidade aprovada. Não existe atraso máximo
+  garantido durante indisponibilidade. O runner permanece desativado.
+- Abas sem eventos não se atualizam imediatamente e bytes já entregues não
+  são revogáveis. O 503 público anterior continua inconclusivo, separado desta
+  fase. A corrida conhecida Storage/reservas é independente: uploads,
+  publicação e limpeza ilustrados continuam integralmente suspensos.
+
 ## Fase 5C2B — sincronização da página de Obra (em revisão)
 
 A página compartilha, somente no render atual, `obterSnapshotObraPublica` entre

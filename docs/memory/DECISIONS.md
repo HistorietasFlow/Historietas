@@ -115,6 +115,20 @@
   histórico e rollout seguem pendentes antes da ativação automática. Outbox sem
   ACK e uploads ilustrados suspensos. Ver `docs/agendamento-cache-publico.md`.
 
+### Operação do agendamento — fase 6A (09/11/2026)
+
+- Runner SQL privado reutiliza o executor, sem conceder EXECUTE a papéis da
+  API e com gate operacional false. Não criar Cron nem ativar execução nesta
+  fase. Lotes/orçamento cooperativo não substituem o statement_timeout prévio;
+  cancelamento global reverte todos os efeitos e métricas da transação.
+- Exclusão mútua usa advisory lock transacional, nunca lease que permita
+  takeover enquanto a transação anterior ainda pode publicar. Cinco tentativas
+  por revisão com backoff; esgotamento exige intervenção, não descarte.
+- Outbox sem confirmação verificável tem retenção indefinida e não recebe ACK,
+  purge por idade ou cascata. Barreira pública não é prova do flush físico.
+  Ativação depende de acionador/alertas/recuperação e política sustentável de
+  capacidade aprovada. Uploads ilustrados permanecem suspensos.
+
 ## Vercel
 
 - Não usar pausa do projeto como mecanismo normal para esconder o site durante desenvolvimento, porque isso bloqueia deploys e pode causar 503.
