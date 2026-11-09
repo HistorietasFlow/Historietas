@@ -12,6 +12,8 @@ const works = [];
 const check = (response) => { expect(response.error).toBeNull(); return response.data; };
 const reader = (page) => page.locator('main[data-historietas-ler-capitulo-root="true"]');
 const apiResponse = (page) => page.waitForResponse(r => new URL(r.url()).pathname === "/api/leitura-publica");
+// Exercita também no Windows a animação nativa observada no Chromium da CI Linux.
+test.use({ launchOptions: { args: ["--enable-smooth-scrolling"] } });
 
 test.beforeAll(async () => {
   // Este arquivo cria/altera/remove SOMENTE fixtures descartáveis locais.
@@ -148,6 +150,10 @@ for (const device of ["desktop", "mobile"]) {
     });
 
     test("revalidação pendente mantém geometria; erro/retry restaura rolagem sem recarregar", async ({ page }) => {
+      let documentos = 0;
+      page.on("request", request => {
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documentos++;
+      });
       const f = await fixture();
       const longo = "Texto longo para preservar a geometria do leitor.\n".repeat(180);
       check(await author.from("capitulos").update({ texto: longo, publicado: true }).in("id", [f.one, f.two]));
@@ -164,6 +170,10 @@ for (const device of ["desktop", "mobile"]) {
       } finally { release(); }
       await expect(reader(page)).not.toHaveAttribute("aria-busy", "true");
       await page.unroute("**/api/leitura-publica?**");
+      // A confirmação do conteúdo não conclui o scroll suave de trocarCapitulo.
+      // Só iniciar a leitura de teste quando essa navegação tiver chegado ao topo.
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+      expect(await page.evaluate(() => document.scrollingElement.scrollHeight - window.innerHeight)).toBeGreaterThan(600);
       await page.evaluate(() => window.scrollTo({ top: 600, behavior: "instant" }));
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(600);
       await page.route("**/api/leitura-publica?**", route => route.fulfill({ status: 503, json: { erro: "Rede" } }));
@@ -173,6 +183,7 @@ for (const device of ["desktop", "mobile"]) {
       await reader(page).getByRole("button", { name: "Tentar novamente" }).click();
       await expect(reader(page).getByRole("heading", { name: "Segundo capítulo revisão" })).toBeVisible();
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(600);
+      expect(documentos).toBe(1);
     });
   });
 }

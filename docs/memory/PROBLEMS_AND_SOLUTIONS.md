@@ -140,6 +140,18 @@ timer do carregamento inicial: isso poderia desfazer uma seleção de capítulo
 feita antes da conclusão da carga. O leitor interno por query mantém sua
 inicialização adiada e os guards de identidade/cancelamento existentes.
 
+### E2E de rolagem após navegação do leitor
+
+Confirmar conteúdo/`aria-busy` não confirma o fim do scroll suave iniciado por
+`trocarCapitulo`. Na #2234, o teste posicionava `window` em 600 px durante essa
+animação: o trace registrou 600 → 454 px, apesar de o documento ter altura
+suficiente. A animação também podia alterar a posição salva antes do retry.
+O teste agora aguarda o topo da navegação, verifica o alcance de 600 px e só
+então provoca a falha/retry, exigindo restauração exata e nenhum reload. O
+arquivo exercita scroll suave nativo explicitamente, inclusive no Windows.
+Não aumentar timeouts, remover a animação de produção ou trocar o contêiner
+de scroll para contornar essa corrida de sincronização do teste.
+
 
 ## OWASP ZAP: `Potential XSS` em `/login?redirectTo=/publicar`
 
