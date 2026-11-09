@@ -185,7 +185,7 @@ test("sitemap explicito preserva XML e nao permite cache de resposta pular barre
     const response = await route.GET();
     assert.equal(response.status, 200);
     for (const header of ["cache-control", "cdn-cache-control", "vercel-cdn-cache-control"]) assert.ok(response.headers.get(header).includes("no-store"));
-    assert.ok((await response.text()).includes("https://site.test/explorar"));
+    assert.match(await response.text(), /<loc>https:\/\/site\.test\/explorar<\/loc>/);
   }
   assert.equal(calls, 2);
   fail = true; await assert.rejects(route.GET(), /banco/);
