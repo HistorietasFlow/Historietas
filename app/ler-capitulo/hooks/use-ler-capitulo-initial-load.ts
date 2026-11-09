@@ -18,6 +18,7 @@ import {
 import type { ObraLocal } from "../lib/ler-capitulo-work-normalization";
 
 type InicializacaoLeitor = {
+  habilitado?: boolean;
   autenticacaoCarregada: boolean;
   usuarioIdLogado: string;
   identidadeAutenticadaLeitorRef: MutableRefObject<IdentidadeAutenticadaLeitor>;
@@ -32,6 +33,7 @@ type InicializacaoLeitor = {
 };
 
 export function useLerCapituloInitialLoad({
+  habilitado = true,
   autenticacaoCarregada,
   usuarioIdLogado,
   identidadeAutenticadaLeitorRef,
@@ -49,7 +51,7 @@ export function useLerCapituloInitialLoad({
   const versaoExecucaoCarregamentoRef = useRef(0);
 
   useEffect(() => {
-    if (!autenticacaoCarregada) {
+    if (!habilitado || !autenticacaoCarregada) {
       return;
     }
 
@@ -211,6 +213,7 @@ export function useLerCapituloInitialLoad({
       cancelado = true;
     };
   }, [
+    habilitado,
     autenticacaoCarregada,
     usuarioIdLogado,
     identidadeAutenticadaLeitorRef,

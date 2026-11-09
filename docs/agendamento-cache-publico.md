@@ -1,5 +1,68 @@
 # Agendamento: Diário atômico e invalidação ainda sem confirmação
 
+## Fase 5C1 — reconciliação do leitor canônico por eventos
+
+A rota canônica entrega UUID público da obra/capítulo, geração e revisão decimal
+do mesmo snapshot confirmado no servidor. O cliente não reaproveita o loader
+GET/local de `/ler-capitulo` para confirmar conteúdo público. O leitor interno
+conserva seus contratos de drafts, autorização e fallback.
+O opt-in é a projeção SSR: apenas gerar um href canônico por `pushState` em uma
+instância iniciada por `/ler-capitulo` não a converte para o novo lifecycle.
+Sem nova projeção SSR essa transição continua legada e permanece pendente.
+
+`GET /api/leitura-publica` é somente leitura pública, sem sessão ou credenciais
+privilegiadas. Reutiliza `obterLeituraCapituloPublico`: POST/no-store no primário,
+cache identificado pela geração/revisão e conferência final da barreira. Resposta
+HTTP, CDN e Vercel-CDN são no-store. A revisão conhecida apenas permite omitir
+textos na resposta inalterada; nunca dispensa a consulta autoritativa.
+O fetch mantém credenciais same-origin para não remover cookies de Deployment
+Protection da Vercel. O handler não interpreta nem encaminha cookies/Auth para
+o Supabase: seu cliente continua anônimo e o payload não é personalizado.
+
+O lifecycle canônico confirma hidratação, troca de capítulo, Back/Forward,
+retorno da aba (foco/visibilidade) e `pageshow.persisted`. Agrupa operações em
+andamento da mesma rota/epoch de autenticação; retry explícito pode substituir
+uma operação antiga. Cleanup, mudança de conta/rota e sequência invalidam
+respostas atrasadas. Revisão menor da mesma geração é recusada, não aplicada.
+IDs da query nunca substituem slug/número da URL canônica.
+Retorno/BFCache e popstate invalidam pedidos anteriores, inclusive na mesma URL:
+não reutilizar uma leitura iniciada antes do evento como sua confirmação fresca.
+
+Somente conteúdo/metadados públicos são reconciliados. Estado pessoal é mantido
+por capítulo/identidade; interações privadas carregam uma vez por conta/geração.
+Revisão inalterada conserva referências dos objetos, evitando recarregar métricas
+ou repetir efeitos de entrada. Ausência confirmada remove o conteúdo; falha
+temporária oculta o conteúdo não confirmado e oferece retry, sem 404 falso ou
+fallback público local apresentado como atual. Retry não recarrega a página.
+O retorno de mutations/rollback aplica apenas o delta pessoal aos capítulos ainda
+presentes: um snapshot anterior da ação não pode restaurar texto ou capítulos
+removidos pela reconciliação. Novo objeto RSC com a mesma identidade/versão não
+reinicia a hidratação; versão diferente exige nova confirmação autoritativa.
+
+**Limites:** bytes já entregues (HTML, RSC, BFCache) não são revogados. Abas
+continuamente abertas, sem novo evento, **não detectam mudanças remotas de forma
+imediata**. Não há polling, Realtime, job ou serviço adicional. Confirmação é no
+snapshot da última consulta, não um lock que impeça edições posteriores à leitura.
+Metadata/JSON-LD do documento já entregue não são regenerados por essa troca de
+estado cliente; nova resposta SSR conserva a barreira existente. A página de Obra
+e seus lifecycles clientes ainda exigem fase própria. Agendamento automático,
+Cron, UI, ACK da outbox e uploads/publicação/limpeza ilustrados seguem bloqueados.
+Uma rota que já abriu no 404 global não monta este lifecycle do leitor; nova
+navegação/requisição continua necessária nesse caso. Não há observador global de 404.
+
+Conteúdo já conhecido mantém a geometria durante validação de navegação, com
+`aria-busy` e ações pessoais aguardando confirmação. Em erro o conteúdo é ocultado;
+o retry bem-sucedido restaura a rolagem da mesma rota. Persistência canônica altera
+somente campos pessoais de obras locais existentes: nunca substitui drafts ou
+edições do autor pelo snapshot público. Respostas completas do endpoint usam stream
+JSON; a resposta inalterada não transfere novamente os textos. Permanece o contrato
+anterior de carregar os textos públicos da obra, não uma otimização de obras ilimitadas.
+
+O custo é uma chamada Next e duas RPCs pequenas por evento consolidado/cache hit;
+no miss somam-se as páginas de dados versionadas. Não há cache global de promessas
+no navegador, consultas por intervalo ou infraestrutura paga nova. Medições
+locais e suas limitações serão registradas na PR; não constituem SLA Vercel.
+
 ## Fase 5B — barreira no servidor, sem ativação automática
 
 `20261108205505_barreira_revisao_cache_publico.sql` adiciona somente leituras
@@ -116,6 +179,30 @@ dados e conferências descritas acima. Não há novas consultas de hidratação.
 O sitemap transfere menos XML por serialização compacta, sem remover URLs.
 Scripts temporários de medição foram removidos; logs locais ignorados não são
 artefatos públicos, prova de multi-região ou SLA de produção.
+
+### Medições locais da fase 5C1
+
+Três contextos Chromium frios por viewport, antes/depois, mesmo build de produção
+local/fixture anônima e dez segundos de observação. Servidor aquecido após a
+primeira resposta; sem emulação de CPU/rede de aparelho real ou medição remota.
+Medianas (ms); long tasks observadas não equivalem ao TBT do Lighthouse.
+
+| Viewport | Requests antes/depois | Supabase no navegador | Confirmação Next | Conteúdo útil | Estável | LCP | CLS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 390 px | 31 / 30 | 3 / 1 | 0 / 1 | 304 / 310 | 926 / 1102 | 304 / 352 | 0,164 / 0 |
+| 1440 px | 31 / 30 | 3 / 1 | 0 / 1 | 246 / 250 | 855 / 899 | 244 / 288 | 0,022 / 0,022 |
+
+Não há repetição da confirmação durante a observação. O endpoint novo substitui
+os dois GETs de conteúdo do navegador, mas faz duas RPCs no servidor por hit:
+**não é redução comprovada do total de consultas ao banco**. Contagem da tabela
+é do navegador, não dos logs Supabase/SSR. Nenhuma mudança no prefetch global.
+Recursos mensuráveis por ResourceTiming: ~454.767 → ~457.533 bytes (+0,6%);
+exclui documento HTML e origens sem Timing-Allow-Origin. Bloqueio observado por
+long tasks >50 ms foi zero nas duas versões. Não foi coletado TBT Lighthouse
+comparável. LCP aumentou 48 ms no mobile e 44 ms no desktop; estabilização mobile
+aumentou 176 ms. São custos observados da confirmação nesta amostra, não ganho
+de performance nem prova de regressão em produção. Não interpretar os demais
+deltas como ganho estatístico ou SLA da Vercel.
 
 ## Fase 5A — revisão transacional, ainda sem barreira nos caches
 

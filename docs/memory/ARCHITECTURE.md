@@ -112,6 +112,19 @@
   em toda navegação: ativação automática suspensa. Outbox continua sem ACK; todos
   os bloqueios ilustrados são preservados. Ver `docs/agendamento-cache-publico.md`.
 
+### Leitor canônico — fase 5C1
+
+- Recebe geração/revisão junto dos IDs públicos. Revalida por endpoint público
+  server-only/no-store que reutiliza a barreira; não consulta conteúdo via loader
+  GET/local legado. `/ler-capitulo` mantém o fluxo autenticado/drafts existente.
+- Hidratação, navegação, histórico, retorno da aba e BFCache reconciliam conteúdo
+  explicitamente. Promessas simultâneas são agrupadas por rota/identidade, sem
+  cache global; respostas antigas são descartadas. Estado pessoal não integra o
+  payload público e não é reinicializado por revisão/foco.
+- Ausência confirmada remove conteúdo, erro temporário oferece retry sem 404.
+  Sem polling: abas continuamente abertas não detectam mudanças imediatamente.
+  A página de Obra continua fora desta fase; ativação automática permanece suspensa.
+
 ### Capítulos ilustrados — contrato inicial, ainda inativo
 
 - A migration `20261107223400_infraestrutura_capitulos_ilustrados.sql` adiciona
