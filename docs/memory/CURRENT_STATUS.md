@@ -2,6 +2,22 @@
 
 Atualizado em: 2026-11-09
 
+### Agendamento — fase 6A, runner privado desativado
+
+Migration `20261109171652_runner_privado_agendamento_capitulos.sql`: runner
+SQL invoker sem grants de API, gate privado false na instalação, lote até cinco,
+orçamento cooperativo e timeouts prévios obrigatórios. Reutiliza o executor
+transacional; try-lock global dura até commit/rollback. Backoff limitado por
+revisão e métricas agregadas privadas preparam recuperação, não ativação.
+Timeout global reverte todo o lote; abortos não ficam nos contadores SQL e
+exigem observação pelo futuro acionador. Nenhum Cron/job/endpoint foi criado.
+Outbox permanece sem ACK e retida indefinidamente enquanto não houver contrato
+verificável de conclusão; nenhum purge ou exclusão de pendências por idade.
+Acionador, cadência, alertas e capacidade/retenção ainda exigem autorização e
+validação antes de habilitar. Detalhes em `docs/agendamento-cache-publico.md`.
+Uploads ilustrados e sua limpeza/publicação continuam suspensos. Nenhuma
+migration foi aplicada remotamente e o gate deve permanecer false.
+
 ### QA local — ACL das visualizações
 
 O helper `qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql`
