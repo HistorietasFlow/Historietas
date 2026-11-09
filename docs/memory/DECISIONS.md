@@ -10,6 +10,16 @@
 
 ## Supabase
 
+- Agendamento 6B3: limitar admissao no INSERT transacional da outbox, incluindo
+  barreira de escrita contra snapshots antigos. Medir bytes/indices/banco antes
+  dos itens e pausar conservadoramente, mas nao chamar a medida de reserva fisica.
+  Fan-out ilimitado de notificacoes, outros escritores e WAL impedem aprovar
+  capacidade apenas com contagem de eventos. Limites iniciais privados exigem
+  revisao antes de ativar. Retomada CAS nao habilita runner; saturacao de incidentes
+  pausa sem apagar evidencia. Outbox integral, sem ACK artificial/TTL/purga.
+  Manter automatizacao suspensa ate capacidade, retencao, observacao e alertas
+  possuirem contratos comprovados. Medicoes locais nao certificam o gerenciado.
+
 - Agendamento 6B2: observar abortos em transacao separada usando a fonte real
   do Cron, nunca registros que o proprio timeout desfaz. Sucesso SQL nao prova
   publicacao. Tres falhas consecutivas observadas pausam; somente retomada

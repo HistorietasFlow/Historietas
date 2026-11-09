@@ -60,10 +60,12 @@ select is((select count(*)::integer from public.diario_atividades where obra_id=
 select is(historietas_privado.executar_agendamento_capitulo(pg_temp.preparar(2),1)->>'estado','publicado','autor vigente com auth.uid nulo');
 select ok((select publicado from public.capitulos where ordem=2 and obra_id='ac200000-0000-4000-8000-000000000001'),'publicacao persistida');
 select is((select count(*)::integer from public.notificacoes where capitulo_id='ac300000-0000-4000-8000-000000000002'),2,'destinatarios legados deduplicados');
-select is((select count(*)::integer from historietas_privado.capitulo_publicacao_eventos),1,'evento atomico');
+select is((select count(*)::integer from historietas_privado.capitulo_publicacao_eventos
+ where obra_id='ac200000-0000-4000-8000-000000000001'),1,'evento atomico da fixture');
 select ok((select e.diario_atividade_id=d.id and d.user_id=e.autor_id and d.tipo='publicou_capitulo'
  and d.criado_em=e.publicado_em and d.atualizado_em=e.publicado_em and d.texto=''
- from historietas_privado.capitulo_publicacao_eventos e join public.diario_atividades d on d.id=e.diario_atividade_id),
+ from historietas_privado.capitulo_publicacao_eventos e join public.diario_atividades d on d.id=e.diario_atividade_id
+ where e.obra_id='ac200000-0000-4000-8000-000000000001'),
  'Diario vinculado ao recibo, autor e instante reais');
 select ok((select metadata->>'numero_capitulo'='2' and metadata->>'href'='/obra/qa-executor/capitulo/2'
  and not metadata ? 'texto' from public.diario_atividades

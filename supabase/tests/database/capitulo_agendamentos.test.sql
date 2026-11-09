@@ -71,7 +71,9 @@ select is(public.agendar_capitulo('ab300000-0000-4000-8000-000000000001',7,'2099
 select is(public.agendar_capitulo('ab300000-0000-4000-8000-000000000004',0,'2099-01-01Z','UTC')->>'estado','agendado','autor pode preparar seu draft 18+ sem publica-lo');
 reset role;
 select is((select publicar_em from historietas_privado.capitulo_agendamentos where capitulo_id='ab300000-0000-4000-8000-000000000001'),'2099-01-05Z'::timestamptz,'instante absoluto persistido');
-select is((select count(*)::integer from historietas_privado.capitulo_agendamentos),2,'um registro por capitulo');
+select is((select count(*)::integer from historietas_privado.capitulo_agendamentos
+ where capitulo_id in (select id from public.capitulos where obra_id in
+ ('ab200000-0000-4000-8000-000000000001','ab200000-0000-4000-8000-000000000002','ab200000-0000-4000-8000-000000000003'))),2,'um registro por capitulo da fixture');
 select ok(not (select publicado from public.capitulos where id='ab300000-0000-4000-8000-000000000001'),'draft continua privado');
 select throws_ok($$update historietas_privado.capitulo_agendamentos set estado='publicado',resultado=null where capitulo_id='ab300000-0000-4000-8000-000000000001'$$,'23514',null,'contrato exige resultado consistente');
 
