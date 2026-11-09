@@ -44,6 +44,8 @@ type CapituloLeituraPublica = {
 
 export type LeituraCapituloPublico = {
   obraId: string;
+  geracao: string;
+  revisao: string;
   capituloId: string;
   numeroCapitulo: number;
   dadosEstruturados: {
@@ -121,7 +123,7 @@ export const obterRotaCapituloPublico = async (slug: string, numeroCapitulo: num
 };
 
 export const obterLeituraCapituloPublico = (slug: string, numeroCapitulo: number): Promise<LeituraCapituloPublico | null> =>
-  comProjecao(slug, "leitura", numeroCapitulo, async (projecao) => {
+  comProjecao(slug, "leitura-versionada", numeroCapitulo, async (projecao) => {
     if (!supabasePublicoConfigurado) {
       throw new Error("Supabase público não configurado.");
     }
@@ -185,6 +187,8 @@ export const obterLeituraCapituloPublico = (slug: string, numeroCapitulo: number
 
     return {
       obraId: obra.id,
+      geracao: projecao.geracao,
+      revisao: projecao.revisao,
       capituloId: capituloSolicitado.id,
       numeroCapitulo,
       dadosEstruturados: {

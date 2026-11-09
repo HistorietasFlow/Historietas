@@ -1,6 +1,17 @@
 # Estado atual
 
-Atualizado em: 2026-11-08
+Atualizado em: 2026-11-09
+
+### Leitor canônico — fase 5C1 (em revisão)
+
+Reconciliação cliente por geração/revisão na hidratação, navegação, Back/Forward,
+retorno da aba e BFCache, usando a barreira pública server-only/no-store existente.
+Conteúdo confirmado ausente é removido; falhas temporárias permitem retry sem
+404 ou fallback local apresentado como atualizado. Interações privadas e leitor
+interno continuam separados. Sem polling: abas continuamente abertas não detectam
+mudanças remotas imediatamente sem eventos. Obra, Cron, agendamento automático,
+ACK da outbox e uploads ilustrados continuam pendentes/bloqueados. Detalhes e
+limites em `docs/agendamento-cache-publico.md`; validações na PR desta fase.
 
 ## Infraestrutura e ferramentas
 

@@ -18,6 +18,7 @@ type CriarAcoesObraLocalLeitorProps = {
   capituloAtual: CapituloLocal | null;
   usuarioIdLogado: string;
   execucaoIdentidadeAcaoEstaAtual: () => boolean;
+  persistirObras?: (obras: ObraLocal[], usuarioId: string) => void;
 
   setObras:
     (obras: ObraLocal[]) => void;
@@ -29,6 +30,7 @@ export function criarAcoesObraLocalLeitor({
   capituloAtual,
   usuarioIdLogado,
   execucaoIdentidadeAcaoEstaAtual,
+  persistirObras,
   setObras,
 }: CriarAcoesObraLocalLeitorProps) {
   function salvarObras(
@@ -43,10 +45,14 @@ export function criarAcoesObraLocalLeitor({
         novasObras,
       );
 
-    salvarObrasPreservandoContas(
-      obrasNormalizadas,
-      usuarioIdLogado,
-    );
+    if (persistirObras) {
+      persistirObras(obrasNormalizadas, usuarioIdLogado);
+    } else {
+      salvarObrasPreservandoContas(
+        obrasNormalizadas,
+        usuarioIdLogado,
+      );
+    }
 
     if (!execucaoIdentidadeAcaoEstaAtual()) {
       return;

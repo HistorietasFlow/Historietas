@@ -120,6 +120,13 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
           obraId: leitura.obraId,
           capituloId: leitura.capituloId,
           obras: [leitura.obra],
+          projecaoPublica: {
+            obraId: leitura.obraId,
+            geracao: leitura.geracao,
+            revisao: leitura.revisao,
+            slug: slugCanonico,
+            numeroCapitulo: leitura.numeroCapitulo,
+          },
         }}
       />
     </>

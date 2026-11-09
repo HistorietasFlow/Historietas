@@ -109,8 +109,9 @@ async function cenario({
 const obra = (id, autorId, publicado = true) => ({ id, autorId, publicado, capitulos: [{ id: "publicado", publicado: true }, { id: "rascunho", publicado: false }] });
 
 test("carregamento espera autenticação e delega identidade aplicada", async () => {
-  assert.match(pagina, /const \{ identidadeDadosAplicada \} = useLerCapituloInitialLoad\(\{/);
-  assert.match(fonte, /if \(!autenticacaoCarregada\) \{\s*return;/);
+  assert.match(pagina, /const dadosInternos = useLerCapituloInitialLoad\(\{\s*habilitado: !dadosIniciais\?\.projecaoPublica/);
+  assert.match(pagina, /dadosPublicos\.identidadeDadosAplicada : dadosInternos\.identidadeDadosAplicada/);
+  assert.match(fonte, /if \(!habilitado \|\| !autenticacaoCarregada\) \{\s*return;/);
   assert.match(fonte, /execucaoIdentidadeLeitorEstaAtual/);
   assert.match(fonte, /setIdentidadeDadosAplicada\(identidadeEsperada\)/);
   await cenario({ autenticacaoCarregada: false }, async ({ efeitos }) => {
@@ -124,7 +125,7 @@ test("estado de carregamento oferece retry e a pagina separa erro de not found",
   assert.match(erroCarregamento, /role="alert"/);
   assert.match(erroCarregamento, /Tentar novamente/);
   assert.ok(
-    pagina.indexOf("if (erroCarregamentoInicial && (!obraAtual || !capituloAtual))") <
+    pagina.indexOf("if (erroCarregamentoInicial && (dadosIniciais?.projecaoPublica || !obraAtual || !capituloAtual))") <
       pagina.indexOf("if (!obraAtual || !capituloAtual)"),
   );
 });
@@ -254,7 +255,7 @@ test("falha remota preserva estado util e expoe erro com retry", async () => {
     assert.deepEqual(atualizacaoObras([existente]), [existente]);
     assert.ok(eventos.some(([nome, valor]) => nome === "setErroCarregamento" && valor === true));
     assert.ok(!eventos.some(([nome, valor]) => nome === "setIdentidadeDados" && valor?.usuarioId === ""));
-    assert.match(pagina, /erroCarregamentoInicial && \(!obraAtual \|\| !capituloAtual\)/);
+    assert.match(pagina, /erroCarregamentoInicial && \(dadosIniciais\?\.projecaoPublica \|\| !obraAtual \|\| !capituloAtual\)/);
     assert.match(pagina, /onTentarNovamente=\{tentarCarregamentoInicialNovamente\}/);
   });
 });

@@ -65,6 +65,9 @@ import {
   type ObraLocal,
 } from "./lib/ler-capitulo-work-normalization";
 import { useLerCapituloInitialLoad } from "./hooks/use-ler-capitulo-initial-load";
+import { useLerCapituloPublicLoad } from "./hooks/use-ler-capitulo-public-load";
+import { reconciliarMutacaoPessoalLeitor, type ContextoLeituraPublica } from "./lib/ler-capitulo-public-snapshot";
+import { persistirEstadoPessoalLeituraPublica } from "./lib/ler-capitulo-public-personal-storage";
 import { useLerCapituloAuthIdentityLifecycle } from "./hooks/use-ler-capitulo-auth-identity-lifecycle";
 import { useLerCapituloRouteIdentityState } from "./hooks/use-ler-capitulo-route-identity-state";
 import { useLerCapituloLoadedDataState } from "./hooks/use-ler-capitulo-loaded-data-state";
@@ -117,6 +120,7 @@ export type DadosIniciaisLerCapitulo = {
   obraId: string;
   capituloId: string;
   obras: ObraLocal[];
+  projecaoPublica?: ContextoLeituraPublica;
 };
 
 export function LerCapituloClient({
@@ -252,7 +256,8 @@ export function LerCapituloClient({
     setIdentidadePreferenciasAplicada,
   });
 
-  const { identidadeDadosAplicada } = useLerCapituloInitialLoad({
+  const dadosInternos = useLerCapituloInitialLoad({
+    habilitado: !dadosIniciais?.projecaoPublica,
     autenticacaoCarregada,
     usuarioIdLogado,
     identidadeAutenticadaLeitorRef,
@@ -265,6 +270,14 @@ export function LerCapituloClient({
     obraIdInicial: dadosIniciais?.obraId,
     capituloIdInicial: dadosIniciais?.capituloId,
   });
+  const dadosPublicos = useLerCapituloPublicLoad({
+    projecao: dadosIniciais?.projecaoPublica, obras, obraId, capituloId,
+    autenticacaoCarregada, usuarioIdLogado, identidadeAutenticadaLeitorRef,
+    versaoCarregamento, setObras, setObraId, setCapituloId,
+    setCarregando, setErroCarregamento,
+  });
+  const identidadeDadosAplicada = dadosIniciais?.projecaoPublica
+    ? dadosPublicos.identidadeDadosAplicada : dadosInternos.identidadeDadosAplicada;
 
   const {
     obterUsuarioLogadoIdAtual,
@@ -306,7 +319,10 @@ export function LerCapituloClient({
       capituloAtual,
       usuarioIdLogado: usuarioIdDadosAplicados,
       execucaoIdentidadeAcaoEstaAtual,
-      setObras,
+      persistirObras: dadosIniciais?.projecaoPublica ? persistirEstadoPessoalLeituraPublica : undefined,
+      setObras: dadosIniciais?.projecaoPublica
+        ? (novasObras) => setObras((atuais) => reconciliarMutacaoPessoalLeitor(atuais, obras, novasObras))
+        : setObras,
     });
 
   const {
@@ -378,7 +394,8 @@ export function LerCapituloClient({
     : null;
 
   useLerCapituloViewRegistration({
-    capituloAtual,
+    capituloAtual: dadosIniciais?.projecaoPublica && (!execucaoIdentidadeAcaoEstaAtual() || dadosPublicos.aguardandoRota)
+      ? null : capituloAtual,
     statusAcesso18,
     visualizacaoCapituloRegistradaRef,
     setMetricasCapitulo,
@@ -567,7 +584,7 @@ export function LerCapituloClient({
       setCapituloId,
     });
 
-  if (carregando && !erroAutenticacao) {
+  if ((carregando || (dadosPublicos.aguardandoRota && (!obraAtual || !capituloAtual))) && !erroCarregamentoInicial) {
     return (
       <main data-historietas-ler-capitulo-root="true" style={focusPageStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
@@ -577,7 +594,7 @@ export function LerCapituloClient({
     );
   }
 
-  if (erroCarregamentoInicial && (!obraAtual || !capituloAtual)) {
+  if (erroCarregamentoInicial && (dadosIniciais?.projecaoPublica || !obraAtual || !capituloAtual)) {
     return (
       <main data-historietas-ler-capitulo-root="true" style={focusPageStyle}>
         <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
@@ -658,7 +675,7 @@ export function LerCapituloClient({
     );
 
   return (
-    <main data-historietas-ler-capitulo-root="true" style={focusPageStyle}>
+    <main data-historietas-ler-capitulo-root="true" style={focusPageStyle} aria-busy={dadosPublicos.aguardandoRota || undefined}>
       {mostrarLinhaProgresso && (
         <div style={fixedReadingProgressOuterStyle}>
           <div

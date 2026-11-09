@@ -22,7 +22,9 @@ async function abrirLeitorComIdentidadeCarregada(page) {
   const interacoesCarregadas = page.waitForResponse(
     (response) =>
       response.url().includes("/rpc/obter_metricas_conteudos") &&
-      response.status() === 200,
+      response.status() === 200 &&
+      (response.request().postDataJSON()?.p_obra_ids || []).length === 0 &&
+      (response.request().postDataJSON()?.p_capitulo_ids || []).includes(chapterId),
   );
 
   await Promise.all([
