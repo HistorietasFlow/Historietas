@@ -11,12 +11,17 @@ para revisao, nao aprovacao de capacidade gerenciada. Medir antes de cada item;
 pausa duravel e retomada administrativa por revisao, sem habilitar runner. Ate
 100 incidentes preservados, sem purga. Outbox permanece integral, sem ACK/TTL.
 
-Local: pgTAP focado 225/225 (34 novos); integracao de capacidade 9/9; Data API
+Local inicial: pgTAP focado 225/225 (34 novos); integracao de capacidade 9/9; Data API
 paginacao 14/14 e anti-spam 5/5. Ultima vaga concorrente e snapshot antigo
 comprovados sem excesso; timeout/rollback, backlog e retries cobertos. Harness
 conserva pendencias sinteticas e eventos anteriores. Ajustadas tres assercoes
-legadas que presumiam tabelas/contadores vazios. Repeticao pgTAP completa bloqueada
-pela revisao automatica por TRUNCATE CASCADE em outros testes; rodada limpa pendente.
+legadas que presumiam tabelas/contadores vazios. A repeticao inicialmente bloqueada
+foi autorizada e concluida na PR #2250: **pgTAP completo 681/681 em 24 arquivos**,
+Supabase Docker novo/isolado, sem omitir TRUNCATE CASCADE. Encontrado e corrigido
+defeito CRLF/LF na instalacao: normalizar somente a definicao do runner antes
+dos mesmos guards estruturais. Nova regressao eleva capacidade a 35 assercoes.
+Runner final falso, Cron ausente e outbox nova vazia apos rollback. Ambiente
+temporario removido; Supabase anterior e seus 14 eventos preservados.
 Build, Lint, Typecheck, auditoria estatica, sessao (2.002), paginacao (37) e audit
 de producao (zero vulnerabilidades) passaram. Playwright pertinente 22/22 em build
 local, serial e sem retries, com desktop/mobile, axe e progresso entre dispositivos.
@@ -24,7 +29,9 @@ Suite E2E inteira e nova execucao Cron nao realizadas nesta fase.
 
 Medicao TEMP com mesmos indices: 10.000 eventos 2,95 MiB; apos cinco atualizacoes
 de lease, 15,30 MiB. 10.000 notificacoes 13,79 MiB (~1,45 KB/destinatario), sem
-medir WAL. Plano Free identificado, uso remoto nao medido (consulta bloqueada).
+medir WAL. Plano Free identificado. Medicao agregada de producao fornecida pelo
+responsavel: banco 21,79 MiB; outbox 0,03 MiB; notificacoes 0,20 MiB. Sem nova
+consulta/escrita remota nesta validacao; nao sao garantia de capacidade futura.
 **NAO APTO para ativacao:** freios de bytes NAO reservam disco; fan-out ilimitado,
 outros escritores, leases e WAL podem exceder o espaco restante. Faltam ainda
 capacidade/retencao aprovadas, observacao independente e alertas entregues.

@@ -192,7 +192,9 @@ create trigger capitulo_capacidade_orcamento before update of limite_eventos,lim
 do $migration$
 declare d text;
 begin
-  d := pg_get_functiondef('historietas_privado.executar_runner_capitulos(integer,integer)'::regprocedure);
+  -- pg_proc preserva CRLF do checkout Windows dentro do corpo. Normalizar
+  -- somente quebras antes das verificacoes; divergencias reais ainda abortam.
+  d := replace(pg_get_functiondef('historietas_privado.executar_runner_capitulos(integer,integer)'::regprocedure),chr(13)||chr(10),chr(10));
   if strpos(d,'  v_inicio timestamptz := clock_timestamp();')=0
     or strpos(d,'  -- Sem lock antecipado nos filhos:')=0
     or strpos(d,'  loop'||chr(10)||'    if clock_timestamp()')=0

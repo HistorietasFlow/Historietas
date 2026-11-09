@@ -22,9 +22,11 @@ anterior, sem novos privilegios para o papel NOLOGIN.
 Estes valores sao limites iniciais de revisao, nao uma capacidade aprovada para
 ativacao nem ampliacao de quotas do Storage. Podem ser reduzidos com gate fechado;
 constraints impedem ultrapassar os tetos desta migration. Alteracao de orcamento
-usa os locks do runner/capacidade. O plano identificado e Free, mas o consumo do
-banco gerenciado NAO foi medido: a consulta remota agregada foi bloqueada pela
-revisao automatica de seguranca. Nao extrapolar a medicao descartavel para producao.
+usa os locks do runner/capacidade. O plano identificado e Free. A consulta remota
+inicial foi bloqueada pela revisao automatica; posteriormente o responsavel
+forneceu a medicao agregada ja obtida: banco **21,79 MiB**, outbox **0,03 MiB**,
+notificacoes **0,20 MiB**. Estes valores nao foram consultados novamente nesta
+validacao e nao aprovam crescimento futuro. Nao extrapolar amostras locais.
 
 ### Garantias e limites
 
@@ -88,14 +90,40 @@ sem apagar evidencia nem alterar eventos anteriores. Tres testes pgTAP legados
 foram isolados pela propria fixture/contador inicial, sem presumir banco vazio.
 O pgTAP completo inicial revelou essas suposicoes; a repeticao completa foi
 bloqueada pela revisao automatica devido a TRUNCATE CASCADE em arquivos legados.
-Os seis arquivos focados, com rollback e sem essa operacao, passaram. A rodada
-completa em ambiente limpo continua pendente, nao declarada aprovada.
+Os seis arquivos focados, com rollback e sem essa operacao, passaram. A pendencia
+de pgTAP completo foi encerrada na validacao abaixo, em outro banco novo.
 Build, Lint, Typecheck, audit de producao (zero vulnerabilidades), auditoria
 estatica (199/199, mais 528 unitarios), sessao (2.002) e paginacao (37) passaram.
 Playwright pertinente contra build local: 22/22, serial e sem retries, incluindo
 Obra/Leitor desktop/mobile, axe, Back/Forward, BFCache e progresso autenticado
 entre dispositivos. Fixtures E2E locais existentes reutilizadas; nao foi rodada
 a suite inteira nem refeito o harness Cron. Nenhuma execucao remota manual de CI.
+
+### Validacao final da PR #2250 (09/11/2026)
+
+Criado checkout limpo e projeto Docker independente `2250-clean` (API 54521,
+PostgreSQL 54522), CLI 2.116.0 e PostgreSQL 17.6.1.121. Mesmas migrations da PR
+e helper ACL local versionado de QA, como na CI. Sem copiar dados, credenciais
+ou configuracao do Supabase anterior/producao. Nenhum teste omitido:
+
+`supabase test db --local --workdir <checkout-descartavel>`: **24 arquivos,
+681/681 testes aprovados**, incluindo TRUNCATE CASCADE apenas no banco novo.
+Todos os efeitos dos testes foram revertidos; estado final runner=false,
+outbox=0 e pg_cron ausente. O projeto temporario/volumes foram removidos depois
+da verificacao; banco anterior permanece com seus 14 eventos e runner=false.
+
+A primeira inicializacao limpa revelou defeito de portabilidade na migration:
+o corpo do runner armazenado por PostgreSQL preserva CRLF do checkout Windows,
+mas a verificacao estrutural procurava `loop` seguido de LF. A migration agora
+normaliza CRLF para LF em pg_get_functiondef ANTES das mesmas verificacoes e
+substituicoes. Nao remove guard, altera locks, quotas, ACL ou comportamento do
+runner. A inicializacao real com as migrations legadas CRLF passou apos a
+correcao; acrescentada assercao pgTAP (35 testes de capacidade ao todo).
+
+Os resultados originais da CI, Gitleaks e CodeQL no commit a3e16009 foram verdes.
+O commit final de correcao/evidencias precisa ter seus checks confirmados na PR;
+nao inferir sucesso final apenas do commit anterior. Nenhum workflow manual,
+Cron, runner automatico ou upload ilustrado foi ativado nesta validacao.
 
 **Ativacao automatica continua NAO APTA:** falta certificar uso/headroom no
 gerenciado, limitar/reservar fan-out fisico e crescimento compartilhado, aprovar

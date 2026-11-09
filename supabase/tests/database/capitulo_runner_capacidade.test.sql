@@ -1,6 +1,8 @@
 begin;
 select no_plan();
 select ok(not (select habilitado from historietas_privado.capitulo_runner_controle),'runner segue desativado');
+select ok(strpos(pg_get_functiondef('historietas_privado.executar_runner_capitulos(integer,integer)'::regprocedure),chr(13))=0,
+ 'migration aceita corpo legado CRLF sem perder verificacoes de contrato');
 select is((select limite_eventos from historietas_privado.capitulo_runner_capacidade),10000,'orcamento limitado de eventos');
 select ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace,
   unnest(array['anon','authenticated','service_role','historietas_capitulo_runner']) r
