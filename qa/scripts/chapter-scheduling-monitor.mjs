@@ -4,6 +4,11 @@ import { pathToFileURL } from 'node:url';
 
 const execute = promisify(execFile);
 const marker = '<!-- historietas-agendamento-monitor:v1 -->';
+const streamMarker = channel => {
+  if (channel==='monitor') return marker;
+  if (channel==='watchdog') return '<!-- historietas-agendamento-watchdog:v1 -->';
+  throw Error('invalid alert channel');
+};
 const repository = 'HistorietasFlow/Historietas';
 const sql = 'begin isolation level repeatable read read only; select historietas_privado.snapshot_monitor_capitulos(); rollback;';
 const codes = new Set(['BANCO_INDISPONIVEL','CONTRATO_INVALIDO','RELOGIO_DIVERGENTE',
@@ -18,7 +23,9 @@ const codes = new Set(['BANCO_INDISPONIVEL','CONTRATO_INVALIDO','RELOGIO_DIVERGE
   'DISCO_MEDICAO_INDISPONIVEL','RECURSOS_CONTRATO_INVALIDO','FALHA_OBSERVACAO_RECURSOS',
   'CACHE_OBSERVACAO_INDISPONIVEL','CACHE_OBSERVACAO_OBSOLETA','CACHE_CONTRATO_INVALIDO',
   'CACHE_OPERACAO_SEM_RECIBO','CACHE_ADMISSAO_BLOQUEADA','CACHE_INTEGRIDADE_DIVERGENTE',
-  'CACHE_SALDO_INDISPONIVEL','CACHE_SALDO_BLOQUEADO','CACHE_SALDO_ESGOTADO','CACHE_RETENCAO_SEM_ORCAMENTO']);
+  'CACHE_SALDO_INDISPONIVEL','CACHE_SALDO_BLOQUEADO','CACHE_SALDO_ESGOTADO','CACHE_RETENCAO_SEM_ORCAMENTO',
+  'VERIFICADOR_DESATIVADO','VERIFICACAO_AUSENTE','VERIFICACAO_ATRASADA',
+  'VERIFICACAO_FALHOU','VERIFICACAO_NAO_COMPROVADA','OBSERVACAO_GITHUB_INDISPONIVEL']);
 
 const number = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 const date = (value) => typeof value === 'string' && Number.isFinite(Date.parse(value));
@@ -155,13 +162,14 @@ function parseReport(value) {
   return {versao:1,observadoEm:value.observadoEm,codigos:[...new Set(value.codigos)].sort()};
 }
 
-export function alertBody(value) {
+export function alertBody(value, {channel='monitor'}={}) {
   const report=parseReport(value);
-  return `${marker}\n${JSON.stringify(report)}\n\n${report.codigos.length ? 'Alerta operacional' : 'Recuperacao observada'} do agendamento. Somente diagnostico: nao autoriza ativacao ou retomada.\n`;
+  return `${streamMarker(channel)}\n${JSON.stringify(report)}\n\n${report.codigos.length ? 'Alerta operacional' : 'Recuperacao observada'} do agendamento. Somente diagnostico: nao autoriza ativacao ou retomada.\n`;
 }
 
-export async function deliverAlert(value, {token,issue,fetchImpl=fetch,actor='github-actions[bot]'}) {
+export async function deliverAlert(value, {token,issue,fetchImpl=fetch,actor='github-actions[bot]',channel='monitor'}) {
   const report=parseReport(value);
+  const stream=streamMarker(channel);
   if (!token || !Number.isSafeInteger(issue) || issue<=0) throw Error('alert configuration unavailable');
   const base=`https://api.github.com/repos/${repository}/issues/${issue}`;
   const headers={Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
@@ -182,7 +190,7 @@ export async function deliverAlert(value, {token,issue,fetchImpl=fetch,actor='gi
     page=await request(last);
   }
   if (!Array.isArray(page.data)) throw Error('invalid comments response');
-  const previous=page.data.slice().reverse().find(c=>c.user?.login===actor && c.body?.startsWith(marker));
+  const previous=page.data.slice().reverse().find(c=>c.user?.login===actor && c.body?.startsWith(stream));
   if (previous) {
     let old;
     try { old=parseReport(JSON.parse(previous.body.split('\n')[1])); } catch { throw Error('invalid previous alert'); }
@@ -190,7 +198,7 @@ export async function deliverAlert(value, {token,issue,fetchImpl=fetch,actor='gi
     if (JSON.stringify(old.codigos)===JSON.stringify(report.codigos)) return 'unchanged';
   } else if (target.comments>100) throw Error('alert history unavailable');
   // No automatic POST retry. A lost response is reconciled by reading history on the next check.
-  await request(`${base}/comments`,'POST',{body:alertBody(report)});
+  await request(`${base}/comments`,'POST',{body:alertBody(report,{channel})});
   return 'delivered';
 }
 

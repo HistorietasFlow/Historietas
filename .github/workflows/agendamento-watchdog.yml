@@ -1,0 +1,33 @@
+name: Watchdog privado do monitor (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+concurrency:
+  group: agendamento-watchdog-alerta
+  cancel-in-progress: false
+
+jobs:
+  verificar-monitor:
+    if: vars.AGENDAMENTO_WATCHDOG_AUTORIZADO == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Verificar conclusao real sem conectar ao banco
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
+          AGENDAMENTO_MONITOR_ESPERADO_DESDE: ${{ vars.AGENDAMENTO_MONITOR_ESPERADO_DESDE }}
+          AGENDAMENTO_MONITOR_MAX_INTERVALO_MS: ${{ vars.AGENDAMENTO_MONITOR_MAX_INTERVALO_MS }}
+        run: node qa/scripts/chapter-scheduling-watchdog.mjs

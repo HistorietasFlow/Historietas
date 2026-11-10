@@ -210,3 +210,11 @@ as evidencias de QA e homologacao gerenciada, definir o contrato de atraso e
 aprovar horizonte/orcamento finitos com os termos fisicos conhecidos. Se nao
 for possivel limitar outros escritores/retencao, manter capacidade fisica NAO
 APTA ou revisar explicitamente o requisito operacional; nao fabricar garantia.
+
+## Preparacao operacional posterior, sem ativacao
+
+Ver [desbloqueio operacional](DESBLOQUEIO_OPERACIONAL_AGENDAMENTO.md): watchdog
+separado e manual, prova de conclusao real (nao teste de e-mail), patch periodico
+inerte, folha de aprovacao dos orcamentos e inventario Cron somente leitura.
+Mantem pendentes a testemunha fora do GitHub, as evidencias do SU-546160 e a
+certificacao fisica. Nenhum schedule, runner, controle SQL ou upload ativado.

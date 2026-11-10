@@ -1,0 +1,19 @@
+# INERTE: nao aplicar antes da aprovacao operacional documentada.
+# Substituir AMBOS os placeholders por cadencias UTC explicitamente aprovadas.
+# Mesmo em workflows separados, falha conjunta do Actions exige testemunha externa.
+diff --git a/.github/workflows/agendamento-monitor.yml b/.github/workflows/agendamento-monitor.yml
+--- a/.github/workflows/agendamento-monitor.yml
++++ b/.github/workflows/agendamento-monitor.yml
+@@ -3,2 +3,4 @@
+ on:
++  schedule:
++    - cron: '__CADENCIA_MONITOR_UTC_APROVADA__'
+   workflow_dispatch:
+diff --git a/.github/workflows/agendamento-watchdog.yml b/.github/workflows/agendamento-watchdog.yml
+--- a/.github/workflows/agendamento-watchdog.yml
++++ b/.github/workflows/agendamento-watchdog.yml
+@@ -3,2 +3,4 @@
+ on:
++  schedule:
++    - cron: '__CADENCIA_WATCHDOG_UTC_APROVADA__'
+   workflow_dispatch:
