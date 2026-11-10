@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { randomUUID } from "node:crypto";
 import { authorEmail, authorPassword, visitorEmail, visitorPassword } from "./helpers.mjs";
+import { observarObraPublica, anexarDiagnosticosObra } from "./work-public-diagnostics.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -127,11 +128,11 @@ for (const device of ["desktop", "mobile"]) test.describe(device, () => {
   });
 });
 
-test("progresso autenticado entre dispositivos é separado do snapshot e não aparece ao visitante", async ({ browser, baseURL }) => {
+test("progresso autenticado entre dispositivos é separado do snapshot e não aparece ao visitante", async ({ browser, baseURL }, info) => {
   const f = await fixture();
   const visitor = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
   const session = check(await visitor.auth.signInWithPassword({ email: visitorEmail, password: visitorPassword })).session;
-  const cookies = new Map(), contexts = [];
+  const cookies = new Map(), contexts = [], diagnostics = [];
   const serverAuth = createServerClient(url, key, { cookies: { getAll: () => [], setAll: values => { for (const c of values) cookies.set(c.name, c); } } });
   check(await serverAuth.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token }));
   check(await visitor.rpc("salvar_progresso_leitura", { p_obra_id: f.id, p_capitulo_id: f.two, p_lido: true, p_progresso: 50, p_ocorrido_em: new Date().toISOString() }));
@@ -144,12 +145,19 @@ test("progresso autenticado entre dispositivos é separado do snapshot e não ap
           sinopse: "SINOPSE_LOCAL_NAO_RESTAURAR", capa: "/capa-antiga.png", tags: ["TAG_LOCAL_NAO_RESTAURAR"],
           capitulos: [{ id: "removido", titulo: "CAPITULO_LOCAL_NAO_RESTAURAR", texto: "privado" }] }]));
       }, { id: f.id, slug: f.slug, user: session.user.id });
-      const page = await context.newPage(); await open(page, f);
+      const page = await context.newPage();
+      diagnostics.push(await observarObraPublica(page, width === 390 ? "mobile" : "desktop"));
+      await open(page, f);
       await expect(root(page).getByRole("link", { name: "Continuar leitura: Obra snapshot público", exact: true }).filter({ hasText: "Continuar leitura" })).toHaveAttribute("href", `${f.path}/capitulo/7`);
       await expect(root(page).getByText(/LOCAL_NAO_RESTAURAR/)).toHaveCount(0);
       expect(await page.evaluate(user => JSON.parse(localStorage.getItem(`historietas-obras:${user}`))[0].titulo, session.user.id)).toBe("Rascunho local intacto");
     }
-    const context = await browser.newContext(); contexts.push(context); const anonymous = await context.newPage(); await open(anonymous, f);
+    const context = await browser.newContext(); contexts.push(context); const anonymous = await context.newPage();
+    diagnostics.push(await observarObraPublica(anonymous, "anonimo"));
+    await open(anonymous, f);
     await expect(root(anonymous).getByRole("link", { name: "Começar a ler: Obra snapshot público", exact: true }).filter({ hasText: "Começar a ler" })).toHaveAttribute("href", `${f.path}/capitulo/2`);
-  } finally { for (const c of contexts) await c.close(); await visitor.auth.signOut({ scope: "local" }); }
+  } catch (error) {
+    await anexarDiagnosticosObra(info, diagnostics);
+    throw error;
+  } finally { for (const d of diagnostics) d.dispose(); for (const c of contexts) await c.close(); await visitor.auth.signOut({ scope: "local" }); }
 });

@@ -1,8 +1,55 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { EventEmitter } from "node:events";
+import { observarObraPublica, anexarDiagnosticosObra } from "../tests/work-public-diagnostics.mjs";
 import ts from "typescript";
 import * as pagination from "../../lib/supabase/paginacao.mjs";
+
+function diagnosticPage() {
+  const page = new EventEmitter();
+  page.addInitScript = async script => { assert.equal(typeof script, "function"); };
+  return page;
+}
+test("diagnostico QA preserva cronologia e descarta URL, identidade, corpo e erros livres", async () => {
+  const page = diagnosticPage(); let time = 10;
+  const d = await observarObraPublica(page, "desktop", () => time++);
+  page.emit("request", { url: () => "http://localhost/api/obra-publica?slug=privado&token=SEGREDO" });
+  page.emit("response", { url: () => "http://localhost/auth/v1/user?token=SEGREDO", status: () => 200 });
+  page.emit("response", { url: () => "http://localhost/_next/chunk-SEGREDO.js", status: () => 503 });
+  page.emit("requestfailed", { url: () => "http://localhost/obra/privada", resourceType: () => "fetch", failure: () => ({ errorText: "net::ERR_ABORTED" }) });
+  page.emit("pageerror", { name: "SEGREDO", message: "SEGREDO", stack: "SEGREDO" });
+  const s = d.snapshot(); assert.equal(s.events.length, 5);
+  assert.deepEqual(s.events.map(e => e.at), [1, 2, 3, 4, 5]);
+  assert.deepEqual(s.events.map(e => e.path), ["barreira", "auth-user", "next-asset", "documento", undefined]);
+  assert.doesNotMatch(JSON.stringify(s), /SEGREDO|token|privad|localhost|stack|message/);
+  d.dispose(); assert.equal(page.eventNames().length, 0);
+});
+test("diagnostico QA limita memoria, sanitiza console e nao expoe campos inesperados", async () => {
+  const page = diagnosticPage(), d = await observarObraPublica(page, "mobile");
+  page.emit("console", { text: () => "HISTORIETAS_QA_WORK nao-json-SEGREDO" });
+  page.emit("console", { text: () => 'HISTORIETAS_QA_WORK {"state":"SEGREDO","ready":"SEGREDO","longTasks":-1,"totalLong":4,"maxLong":2,"token":"SEGREDO"}' });
+  assert.equal(d.snapshot().events[0].state, "desconhecido");
+  assert.equal(d.snapshot().events[0].longTasks, null);
+  assert.doesNotMatch(JSON.stringify(d.snapshot()), /SEGREDO|token/);
+  page.emit("requestfailed", { url: () => "URL-SEGREDO", resourceType: () => "SEGREDO", failure: () => ({ errorText: "SEGREDO" }) });
+  assert.deepEqual({ ...d.snapshot().events[1], at: 0 }, { at: 0, event: "requestfailed", path: "outro", resource: "outro", code: "sanitized" });
+  for (let i = 0; i < 130; i++) page.emit("load");
+  assert.equal(d.snapshot().events.length, 120); assert.equal(d.snapshot().discarded, 12);
+  assert.doesNotMatch(JSON.stringify(d.snapshot()), /SEGREDO|token/);
+  const copy = d.snapshot(); copy.events[0].event = "alterado";
+  assert.notEqual(d.snapshot().events[0].event, "alterado"); d.dispose();
+  await assert.rejects(observarObraPublica(page, "SEGREDO"), /Contexto QA invalido/);
+});
+test("anexo QA e JSON sanitizado e falha do transporte nao substitui erro funcional", async () => {
+  const page = diagnosticPage(), d = await observarObraPublica(page, "anonimo");
+  let attachment;
+  assert.equal(await anexarDiagnosticosObra({ attach: async (name, value) => { attachment = { name, ...value }; } }, [d]), true);
+  assert.equal(attachment.contentType, "application/json");
+  assert.equal(JSON.parse(attachment.body)[0].context, "anonimo");
+  assert.equal(await anexarDiagnosticosObra({ attach: async () => { throw Error("SEGREDO"); } }, [d]), false);
+  d.dispose();
+});
 
 function load(path, mocks = {}) {
   const js = ts.transpileModule(readFileSync(new URL(path, import.meta.url), "utf8"), {
