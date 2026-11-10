@@ -10,11 +10,58 @@ const codes = new Set(['BANCO_INDISPONIVEL','CONTRATO_INVALIDO','RELOGIO_DIVERGE
   'RUNNER_DESATIVADO','MONITOR_NAO_CONFIGURADO','FONTE_INVALIDA','MONITOR_ATRASADO',
   'EXECUCAO_AUSENTE','EXECUCAO_ATRASADA','EXECUCAO_INCERTA','FALHA_CRON',
   'PAUSA_ATIVA','FALHAS_OBSERVADAS','INCIDENTES_ABERTOS','RETRIES_ESGOTADOS',
-  'BACKLOG_ATRASADO','CAPACIDADE_ALERTA','CAPACIDADE_BLOQUEADA','TESTE_ENTREGA']);
+  'BACKLOG_ATRASADO','CAPACIDADE_ALERTA','CAPACIDADE_BLOQUEADA','TESTE_ENTREGA',
+  'CAPACIDADE_MEDICAO_INDISPONIVEL','CAPACIDADE_MEDICAO_OBSOLETA',
+  'ORCAMENTO_NOTIFICACOES_INDISPONIVEL','ORCAMENTO_NOTIFICACOES_OBSOLETO',
+  'ORCAMENTO_NOTIFICACOES_ALERTA','ORCAMENTO_NOTIFICACOES_ESGOTADO',
+  'WAL_MEDICAO_INDISPONIVEL','WAL_MEDICAO_OBSOLETA','WAL_ORCAMENTO_NAO_DEFINIDO',
+  'DISCO_MEDICAO_INDISPONIVEL','RECURSOS_CONTRATO_INVALIDO','FALHA_OBSERVACAO_RECURSOS']);
 
 const number = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 const date = (value) => typeof value === 'string' && Number.isFinite(Date.parse(value));
 const result = (items, now) => ({ versao:1, observadoEm:new Date(now).toISOString(), codigos:[...new Set(items)].sort() });
+
+// Idade da amostra, nao SLA nem reserva. Relatorio externo so contem codigos.
+function classifyCapacity(snapshot, server) {
+  const found=[], c=snapshot.capacidade, r=snapshot.recursos;
+  const integer=value=>Number.isSafeInteger(value)&&value>=0;
+  const fresh=value=>date(value)&&server-Date.parse(value)<=60000&&Date.parse(value)<=server+1000;
+  const capacityFields=['eventos','limiteEventos','outboxBytes','limiteOutboxBytes',
+    'notificacoesBytes','limiteNotificacoesBytes','bancoBytes','limiteBancoBytes'];
+  if (!capacityFields.every(k=>integer(c[k])) || capacityFields.filter(k=>k.startsWith('limite')).some(k=>c[k]===0) || !date(c.medidoEm))
+    found.push('CAPACIDADE_MEDICAO_INDISPONIVEL');
+  else if (!fresh(c.medidoEm)) found.push('CAPACIDADE_MEDICAO_OBSOLETA');
+  else if (c.eventos>=c.limiteEventos || c.outboxBytes>=c.limiteOutboxBytes ||
+      c.notificacoesBytes>=c.limiteNotificacoesBytes || c.bancoBytes>=c.limiteBancoBytes)
+    found.push('CAPACIDADE_BLOQUEADA');
+  if (!r || r.versao!==1) return [...found,'RECURSOS_CONTRATO_INVALIDO'];
+  const saldo=r.orcamentoNotificacoes, wal=r.wal;
+  if ([saldo,wal].some(m=>m?.estado==='falha')) found.push('FALHA_OBSERVACAO_RECURSOS');
+  if (saldo?.estado!=='observado' || saldo.fonte!=='saldo_6d4' ||
+      !['linhasAdmitidas','limiteLinhas','payloadAdmitidoBytes','limitePayloadBytes'].every(k=>integer(saldo[k])) ||
+      !saldo.limiteLinhas || !saldo.limitePayloadBytes || !date(saldo.medidoEm))
+    found.push('ORCAMENTO_NOTIFICACOES_INDISPONIVEL');
+  else if (!fresh(saldo.medidoEm)) found.push('ORCAMENTO_NOTIFICACOES_OBSOLETO');
+  else if (saldo.linhasAdmitidas>=saldo.limiteLinhas || saldo.payloadAdmitidoBytes>=saldo.limitePayloadBytes)
+    found.push('ORCAMENTO_NOTIFICACOES_ESGOTADO');
+  else if (saldo.linhasAdmitidas*100>=saldo.limiteLinhas*70 || saldo.payloadAdmitidoBytes*100>=saldo.limitePayloadBytes*70)
+    found.push('ORCAMENTO_NOTIFICACOES_ALERTA');
+  if (wal?.estado!=='observado' || wal.fonte!=='pg_ls_waldir_pg_stat_wal' ||
+      !integer(wal.arquivosBytes) || wal.arquivosBytes===0 || !integer(wal.geradoAcumuladoBytes) ||
+      !date(wal.estatisticasReiniciadasEm) || !date(wal.medidoEm) ||
+      Date.parse(wal.estatisticasReiniciadasEm)>Date.parse(wal.medidoEm)+1000) found.push('WAL_MEDICAO_INDISPONIVEL');
+  else if (!fresh(wal.medidoEm)) found.push('WAL_MEDICAO_OBSOLETA');
+  // Nao tratar max_wal_size como teto fisico nem aceitar limite injetado.
+  if (wal?.estado==='observado' && wal.limiteAprovadoBytes!==null) found.push('RECURSOS_CONTRATO_INVALIDO');
+  found.push('WAL_ORCAMENTO_NAO_DEFINIDO');
+  // Nao existe fonte suportada de disco livre nesta fase. Nem mesmo um valor
+  // numerico adicionado ao JSON pode ser interpretado como capacidade aprovada.
+  if (r.disco?.estado!=='indisponivel' || r.disco?.fonte!=='sem_fonte_suportada' ||
+      r.disco?.livreBytes!==null || r.disco?.totalBytes!==null || r.disco?.medidoEm!==null)
+    found.push('RECURSOS_CONTRATO_INVALIDO');
+  found.push('DISCO_MEDICAO_INDISPONIVEL');
+  return found;
+}
 
 export function classifySnapshot(snapshot, now = Date.now()) {
   const invalid = () => result(['CONTRATO_INVALIDO'],now);
@@ -40,6 +87,7 @@ export function classifySnapshot(snapshot, now = Date.now()) {
   if (s.atrasados>0 && s.atrasoMaximoSegundos>=300) found.push('BACKLOG_ATRASADO');
   if (c.alerta) found.push('CAPACIDADE_ALERTA');
   if (c.bloqueio!==null) found.push('CAPACIDADE_BLOQUEADA');
+  found.push(...classifyCapacity(snapshot,server));
   const run = snapshot.ultimaExecucaoCron;
   if (run===null) found.push('EXECUCAO_AUSENTE');
   else {
