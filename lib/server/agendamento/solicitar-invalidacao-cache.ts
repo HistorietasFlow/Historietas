@@ -27,7 +27,12 @@ export async function solicitarInvalidacaoCacheCapitulos({ reivindicar, invalida
   invalidar: (evento: EventoCacheCapitulo) => void;
   registrar: (evento: EventoCacheCapitulo) => Promise<void>;
 }) {
-  const eventos = lerEventosCache(await reivindicar());
+  const lote = await reivindicar();
+  if (lote && typeof lote === "object" && !Array.isArray(lote) && Object.keys(lote).length === 1
+    && (lote.estado === "orcamento_esgotado" || lote.estado === "orcamento_pausado" || lote.estado === "orcamento_nao_configurado")) {
+    return { solicitadas: 0, confirmadas: 0, estado: lote.estado, publicacaoAutomaticaHabilitada: false };
+  }
+  const eventos = lerEventosCache(lote);
   for (const evento of eventos) {
     invalidar(evento);
     await registrar(evento);

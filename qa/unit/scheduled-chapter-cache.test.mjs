@@ -156,13 +156,27 @@ test("caches aquecidos positivos/negativos e listas usam tag isolada por slug, s
   assert.equal(await loaders.obterLeituraCapituloPublico("obra-a", 1), null);
 });
 
+test("orcamento bloqueado nao e fila vazia e nao provoca efeitos; contrato desconhecido falha", async () => {
+  for (const estado of ["orcamento_esgotado", "orcamento_pausado", "orcamento_nao_configurado"]) {
+    const effects = [];
+    assert.deepEqual(await consumer.solicitarInvalidacaoCacheCapitulos({
+      reivindicar: async () => ({ estado }), invalidar: () => effects.push("invalidar"), registrar: async () => effects.push("registrar"),
+    }), { solicitadas: 0, confirmadas: 0, estado, publicacaoAutomaticaHabilitada: false });
+    assert.deepEqual(effects, []);
+  }
+  for (const data of [{ estado: "desconhecido" }, { estado: "orcamento_esgotado", eventos: [event] }]) {
+    await assert.rejects(consumer.solicitarInvalidacaoCacheCapitulos({ reivindicar: async () => data,
+      invalidar: () => assert.fail("sem efeitos"), registrar: async () => assert.fail("sem efeitos") }), /Outbox invalida/);
+  }
+});
+
 test("route exige origem, usuario e autorizacao atual; invalida somente slugs e sitemap sem ack", async () => {
-  let user = false, auth = false, queued = [], rpc = [];
+  let user = false, auth = false, queued = [], rpc = [], claim = [event];
   const route = load("../../app/api/admin/cache-capitulos/route.ts", {
     "next/server": { NextResponse: { json: (data, opts) => Response.json(data, opts) } },
     "next/cache": { revalidateTag: (...a) => queued.push(["tag", ...a]), revalidatePath: (...a) => queued.push(["path", ...a]) },
     "@/lib/supabase/server": { supabaseServerConfigurado: true, criarSupabaseServerClient: async () => ({ auth: { getUser: async () => ({ data: { user: user ? { id } : null } }) }, rpc: async () => ({ data: auth }) }) },
-    "@/lib/supabase/admin": { supabaseAdminConfigurado: true, criarSupabaseAdminClient: () => ({ rpc: async (name) => { rpc.push(name); return { data: name === "reivindicar_cache_capitulos" ? [event] : true }; } }) },
+    "@/lib/supabase/admin": { supabaseAdminConfigurado: true, criarSupabaseAdminClient: () => ({ rpc: async (name) => { rpc.push(name); return { data: name === "reivindicar_cache_capitulos" ? claim : true }; } }) },
     "@/lib/cache/obra-publica-cache-tag": tags,
     "@/lib/server/agendamento/solicitar-invalidacao-cache": consumer,
   });
@@ -176,6 +190,13 @@ test("route exige origem, usuario e autorizacao atual; invalida somente slugs e 
   const result = await route.POST(req()); assert.equal(result.status, 202); assert.equal((await result.json()).confirmadas, 0);
   assert.deepEqual(queued, [["tag", tags.tagObraPublica("obra-a"), { expire: 0 }], ["path", "/obra/obra-a"], ["path", "/obra/obra-a/capitulo/2"], ["path", "/sitemap.xml"]]);
   assert.deepEqual(rpc, ["reivindicar_cache_capitulos", "registrar_solicitacao_cache_capitulo"]);
+  for (const estado of ["orcamento_esgotado", "orcamento_pausado", "orcamento_nao_configurado"]) {
+    claim = { estado }; queued = []; rpc = [];
+    const blocked = await route.POST(req());
+    assert.equal(blocked.status, 503); assert.equal((await blocked.json()).estado, estado);
+    assert.equal(blocked.headers.get("Cache-Control"), "no-store");
+    assert.deepEqual(queued, []); assert.deepEqual(rpc, ["reivindicar_cache_capitulos"]);
+  }
 });
 
 test("Next real retorna antes de executar invalidacao; falha posterior nao e ack", async () => {
