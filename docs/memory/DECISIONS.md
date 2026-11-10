@@ -10,6 +10,14 @@
 
 ## Supabase
 
+- Agendamento 6D5: estender somente a observacao privada da 6D2. Saldo 6D4 e
+  outbox usam limites reais; WAL ocupado e cumulativo sao medidas distintas.
+  Ausencia/falha/obsolescencia gera alerta sanitizado no canal existente, nunca
+  zero ou recuperacao. Disco livre e orcamento fisico WAL continuam desconhecidos,
+  sem conceder leitura generica de arquivos ao monitor ou inferir margem de
+  pg_database_size. Observacao nao admite escrita, confirma outbox, abre gates
+  nem certifica capacidade. Ver `AGENDAMENTO_MONITOR_CAPACIDADE_6D5.md`.
+
 - Agendamento 6D4: planejar a audiencia uma vez, do banco, antes de publicar e
   inserir exatamente esse plano na mesma subtransacao. Admitir sob o lock global
   do runner e lock/escrita da linha privada de saldo; snapshot antigo nao reutiliza
