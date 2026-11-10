@@ -10,6 +10,16 @@
 
 ## Supabase
 
+- Agendamento 6D12: contratos SQL privados de intencao/recibo por UUID, sem
+  endpoint/grants novos ou ativacao. Admissao exige commit previo e fecha gate;
+  reivindicacao, lease, recibo e debito confirmam juntos. Reconciliacao serializada
+  encerra intencoes/UUIDs ausentes e impede execucao/admissao tardias. Retomada
+  somente administrativa/CAS, inclusive entre operacoes bem-sucedidas; nao
+  reembolsa nem renova leases. Protocolo iniciado nao volta ao legado ao ser
+  desabilitado. Recibo nao e ACK; integracao operacional, observacao independente,
+  tentativas/retencao e capacidade fisica continuam pendentes. Ver
+  `AGENDAMENTO_RECUPERACAO_OUTBOX_6D12.md`.
+
 - Agendamento 6D10: preparar saldo privado acumulado de reivindicacoes
   confirmadas, instalado desativado e sem limite numerico aprovado. Debitar
   somente linhas reivindicadas, atomicamente com leases; saturacao explicita,
