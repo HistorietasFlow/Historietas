@@ -7,6 +7,7 @@ import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import { criarInvocacaoStatusSupabase } from "../scripts/supabase-cli-invocation.mjs";
 import { solicitarEventoCacheEmLotes } from "./scheduled-chapter-cache-batches.mjs";
+import "./cache-consumer-operation-cases.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";

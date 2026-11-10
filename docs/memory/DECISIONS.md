@@ -10,6 +10,14 @@
 
 ## Supabase
 
+- Agendamento 6D13: consumidor server-only usa UUID estavel e adaptador restrito
+  que deriva identidade/sessao do JWT validado e revalida Auth real. Nenhum
+  grant direto aos contratos/tabelas 6D12. Commit separado, recibo sem novo
+  debito, reconciliacao explicita/tombstone e pausa/CAS preservados; nao gerar
+  outra chave nem repetir intencao admitida apos resposta ambigua. Legado apenas
+  antes de iniciar protocolo. Sem ativacao ou ACK. Ver
+  `AGENDAMENTO_CONSUMIDOR_OUTBOX_6D13.md` para contrato e limites.
+
 - Agendamento 6D12: contratos SQL privados de intencao/recibo por UUID, sem
   endpoint/grants novos ou ativacao. Admissao exige commit previo e fecha gate;
   reivindicacao, lease, recibo e debito confirmam juntos. Reconciliacao serializada
