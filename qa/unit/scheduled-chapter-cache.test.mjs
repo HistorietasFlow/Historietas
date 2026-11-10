@@ -80,6 +80,9 @@ function load(path, mocks = {}) {
 }
 const tags = load("../../lib/cache/obra-publica-cache-tag.ts");
 const consumer = load("../../lib/server/agendamento/solicitar-invalidacao-cache.ts");
+const operations = load("../../lib/server/agendamento/consumir-operacao-cache.ts", {
+  "./solicitar-invalidacao-cache": consumer,
+});
 const id = "bc300000-0000-4000-8000-000000000001";
 const event = { id, leaseId: id, obraId: id, capituloId: id, revisao: 1, slug: "obra-a", slugAtual: "obra-a", numero: 2 };
 
@@ -175,10 +178,11 @@ test("route exige origem, usuario e autorizacao atual; invalida somente slugs e 
   const route = load("../../app/api/admin/cache-capitulos/route.ts", {
     "next/server": { NextResponse: { json: (data, opts) => Response.json(data, opts) } },
     "next/cache": { revalidateTag: (...a) => queued.push(["tag", ...a]), revalidatePath: (...a) => queued.push(["path", ...a]) },
-    "@/lib/supabase/server": { supabaseServerConfigurado: true, criarSupabaseServerClient: async () => ({ auth: { getUser: async () => ({ data: { user: user ? { id } : null } }) }, rpc: async () => ({ data: auth }) }) },
+    "@/lib/supabase/server": { supabaseServerConfigurado: true, criarSupabaseServerClient: async () => ({ auth: { getUser: async () => ({ data: { user: user ? { id } : null } }) }, rpc: async (name) => ({ data: name === "operar_cache_capitulos" ? { estado: "legado" } : auth }) }) },
     "@/lib/supabase/admin": { supabaseAdminConfigurado: true, criarSupabaseAdminClient: () => ({ rpc: async (name) => { rpc.push(name); return { data: name === "reivindicar_cache_capitulos" ? claim : true }; } }) },
     "@/lib/cache/obra-publica-cache-tag": tags,
     "@/lib/server/agendamento/solicitar-invalidacao-cache": consumer,
+    "@/lib/server/agendamento/consumir-operacao-cache": operations,
   });
   const req = (origin = "http://localhost") => ({ headers: new Headers({ origin, host: "localhost" }), nextUrl: new URL("http://localhost/api/admin/cache-capitulos") });
   assert.equal((await route.POST(req("https://hostil.test"))).status, 403);
@@ -213,4 +217,102 @@ test("Next real retorna antes de executar invalidacao; falha posterior nao e ack
   });
   await assert.rejects(executeRevalidates(store), /cache indisponivel apos retorno/);
   assert.equal(calls, 1);
+});
+
+const receipt = (op = id) => ({ estado: "confirmada", operacaoId: op, leasesValidos: true,
+  recibo: { operacao_id: op, resultado: [event], debito: 1 } });
+function protocolDeps(chamar) {
+  const steps = [];
+  return { steps, deps: { operacaoId: id, reconciliar: false,
+    chamar: async (acao, op) => { assert.equal(op, id); steps.push(acao); return chamar(acao); },
+    legado: async () => assert.fail("Nao usar legado"),
+    consumir: async (eventos) => { assert.deepEqual(eventos, [event]); steps.push("efeitos"); return solicitacaoSemAck(1); },
+  } };
+}
+test("protocolo separa admissao/execucao, valida recibo e nunca confirma flush", async () => {
+  const { steps, deps } = protocolDeps(acao => acao === "preparar" ? { estado: "admitida", operacaoId: id, nova: true } : receipt());
+  assert.deepEqual(await operations.consumirOperacaoCache(deps), { ...solicitacaoSemAck(1), operacaoId: id });
+  assert.deepEqual(steps, ["preparar", "executar", "efeitos"]);
+});
+test("intencao existente/timeout/resposta perdida exigem reconciliacao, sem retry ou novo ID", async () => {
+  for (const etapa of ["preparar", "executar"]) {
+    const { steps, deps } = protocolDeps(acao => {
+      if (acao === etapa) throw Error("resposta perdida apos commit");
+      return { estado: "admitida", operacaoId: id, nova: true };
+    });
+    assert.equal((await operations.consumirOperacaoCache(deps)).estado, "reconciliacao_necessaria");
+    assert.deepEqual(steps, etapa === "preparar" ? ["preparar"] : ["preparar", "executar"]);
+  }
+  const { steps, deps } = protocolDeps(() => ({ estado: "admitida", operacaoId: id, nova: false }));
+  assert.equal((await operations.consumirOperacaoCache(deps)).estado, "reconciliacao_necessaria");
+  assert.deepEqual(steps, ["preparar"]);
+});
+test("replay confirmado e reconciliacao usam recibo sem nova admissao ou reivindicacao", async () => {
+  for (const reconciliar of [false, true]) {
+    const { steps, deps } = protocolDeps(() => receipt());
+    await operations.consumirOperacaoCache({ ...deps, reconciliar });
+    assert.deepEqual(steps, reconciliar ? ["reconciliar", "efeitos"] : ["preparar", "executar", "efeitos"]);
+  }
+});
+test("reconciliacao encerrada, gate/saldo bloqueados e lease vencido nao executam efeitos", async () => {
+  for (const r of [{ estado: "encerrada_sem_claim", operacaoId: id }, { estado: "orcamento_bloqueado", operacaoId: id },
+    { estado: "admissao_bloqueada" }, { estado: "identificador_obrigatorio" }, { ...receipt(), leasesValidos: false }]) {
+    const { steps, deps } = protocolDeps(() => r);
+    await operations.consumirOperacaoCache({ ...deps, reconciliar: true });
+    assert.deepEqual(steps, ["reconciliar"]);
+  }
+});
+test("recibos malformados/divergentes nunca chegam ao Next nem ao registro", async () => {
+  for (const r of [null, {}, { ...receipt(), operacaoId: "outro" },
+    { ...receipt(), recibo: { ...receipt().recibo, debito: 2 } },
+    { ...receipt(), recibo: { ...receipt().recibo, operacao_id: "outro" } },
+    { ...receipt(), recibo: { ...receipt().recibo, resultado: [event, { ...event, revisao: -1 }] } }]) {
+    const { steps, deps } = protocolDeps(() => r);
+    assert.equal((await operations.consumirOperacaoCache({ ...deps, reconciliar: true })).estado, "reconciliacao_necessaria");
+    assert.deepEqual(steps, ["reconciliar"]);
+  }
+});
+test("falha apos recibo nao refaz RPC; modo legado preserva erros e estados anteriores", async () => {
+  const { steps, deps } = protocolDeps(() => receipt());
+  const r = await operations.consumirOperacaoCache({ ...deps, reconciliar: true, consumir: async () => { throw Error("Next indisponivel"); } });
+  assert.equal(r.estado, "reconciliacao_necessaria"); assert.deepEqual(steps, ["reconciliar"]);
+  await assert.rejects(operations.consumirOperacaoCache({ ...deps, chamar: async () => ({ estado: "legado" }),
+    legado: async () => { throw Error("falha legada"); } }), /falha legada/);
+});
+
+test("route UUID usa sessao autenticada, nao service role; valida chave/acao e falha fechada", async () => {
+  const calls = [];
+  let lost = false;
+  const route = load("../../app/api/admin/cache-capitulos/route.ts", {
+    "next/server": { NextResponse: { json: (data, opts) => Response.json(data, opts) } },
+    "next/cache": { revalidateTag: () => calls.push("tag"), revalidatePath: () => calls.push("path") },
+    "@/lib/supabase/server": { supabaseServerConfigurado: true, criarSupabaseServerClient: async () => ({
+      auth: { getUser: async () => ({ data: { user: { id } } }) },
+      rpc: async (name, args) => {
+        calls.push(["sessao", name, args]);
+        if (name === "autorizar_consumidor_cache_capitulos") return { data: true };
+        assert.deepEqual(Object.keys(args).sort(), ["p_acao", "p_id"]);
+        assert.equal(args.p_id, id);
+        if (lost) return { error: { code: "timeout" } };
+        return { data: args.p_acao === "preparar" ? { estado: "admitida", operacaoId: id, nova: true } : receipt() };
+      },
+    }) },
+    "@/lib/supabase/admin": { supabaseAdminConfigurado: true, criarSupabaseAdminClient: () => ({ rpc: async (name) => {
+      assert.equal(name, "registrar_solicitacao_cache_capitulo"); calls.push("registro"); return { data: true };
+    } }) },
+    "@/lib/cache/obra-publica-cache-tag": tags,
+    "@/lib/server/agendamento/solicitar-invalidacao-cache": consumer,
+    "@/lib/server/agendamento/consumir-operacao-cache": operations,
+  });
+  const req = (key = id, action) => ({ headers: new Headers({ origin: "http://localhost", host: "localhost",
+    "Idempotency-Key": key, ...action ? { "X-Cache-Operation": action } : {} }), nextUrl: new URL("http://localhost/api/admin/cache-capitulos") });
+  assert.equal((await route.POST(req("invalido"))).status, 400);
+  assert.equal((await route.POST(req(id, "retomar"))).status, 400);
+  const response = await route.POST(req(id.toUpperCase()));
+  assert.equal(response.status, 202); assert.equal((await response.json()).operacaoId, id);
+  assert.equal(calls.filter(c => c === "registro").length, 1);
+  lost = true; calls.length = 0;
+  const failed = await route.POST(req());
+  assert.equal(failed.status, 503); assert.equal((await failed.json()).estado, "reconciliacao_necessaria");
+  assert.equal(calls.filter(Array.isArray).length, 2); assert.ok(!calls.includes("tag"));
 });

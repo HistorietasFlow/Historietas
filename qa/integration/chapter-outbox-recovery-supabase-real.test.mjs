@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {execFileSync,execFile,spawn} from 'node:child_process';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,randomBytes} from 'node:crypto';
 import test from 'node:test';
 import {createClient} from '@supabase/supabase-js';
 import {criarInvocacaoStatusSupabase} from '../scripts/supabase-cli-invocation.mjs';
@@ -236,5 +236,71 @@ test('operacoes privadas locais: intencao, recibo atomico, concorrencia e reconc
     const rev=gate().revisao;resumes.add(rev);
     assert.equal(JSON.parse(sql(`select historietas_privado.retomar_operacoes_cache(${rev},'causa_corrigida');`)).habilitado,false);
     assert.deepEqual(budget(),before);assert.equal(sql('select habilitado from historietas_privado.capitulo_runner_controle;'),'f');
+  });
+  await t.test('6D13 Data API: JWT real, recibo, retry, logout e isolamento de sessao',async t=>{
+    const options={auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}};
+    const admin=createClient(env.API_URL,env.SERVICE_ROLE_KEY,options),actor=createClient(env.API_URL,env.ANON_KEY,options);
+    const other=createClient(env.API_URL,env.ANON_KEY,options),anon=createClient(env.API_URL,env.ANON_KEY,options);
+    const email=`qa-6d13-${randomUUID()}@historietas.test`,password=randomBytes(24).toString('base64url');
+    const check=r=>{assert.equal(r.error,null,r.error?.message);return r.data;};
+    const uid=check(await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{role:'admin'}})).user.id;
+    t.after(async()=>{check(await admin.auth.admin.deleteUser(uid));});
+    check(await actor.auth.signInWithPassword({email,password}));
+    const rpc=(client,p_id,p_acao)=>client.rpc('operar_cache_capitulos',{p_id,p_acao});
+    await t.test('anon/service_role negados e metadata editavel nao autoriza',async()=>{
+      for(const c of [anon,admin,actor])assert.equal((await rpc(c,null,'preparar')).error?.code,'42501');
+      check(await admin.auth.admin.updateUserById(uid,{app_metadata:{role:'admin'}}));
+      // Autorizacao fresca do banco, sem confiar no app_metadata antigo do JWT.
+      sql('update historietas_privado.capitulo_cache_operacoes_controle set habilitado=false,iniciado=false,pausado=true;');
+      assert.equal(check(await rpc(actor,null,'preparar')).estado,'legado');
+      assert.equal(check(await rpc(actor,null,'executar')).estado,'protocolo_desativado');
+      sql('update historietas_privado.capitulo_cache_operacoes_controle set habilitado=true,iniciado=true;');
+    });
+    let operation,r;
+    await t.test('admissoes concorrentes compartilham UUID e apenas uma resposta e nova',async()=>{
+      sql(resume());operation=newId();
+      const out=(await Promise.all([rpc(actor,operation,'preparar'),rpc(actor,operation,'preparar')])).map(check);
+      assert.deepEqual(out.map(r=>r.nova).sort(),[false,true]);assert.equal(gate().pendente,operation);
+      assert.equal(check(await rpc(actor,newId(),'preparar')).estado,'admissao_bloqueada');
+      assert.equal(check(await rpc(actor,null,'preparar')).estado,'identificador_obrigatorio');
+    });
+    await t.test('execucoes concorrentes e resposta descartada: mesmo recibo, lease e debito',async()=>{
+      const before=budget().consumidas;
+      const out=(await Promise.all([rpc(actor,operation,'executar'),rpc(actor,operation,'executar')])).map(check);
+      r=out[0];assert.equal(r.estado,'confirmada');assert.deepEqual(out[1].recibo,r.recibo);
+      assert.equal(budget().consumidas-before,r.recibo.debito);assert.equal(r.recibo.debito,1);
+      const after=budget();assert.deepEqual(check(await rpc(actor,operation,'executar')).recibo,r.recibo);
+      assert.deepEqual(check(await rpc(actor,operation,'reconciliar')).recibo,r.recibo);assert.deepEqual(budget(),after);
+    });
+    await t.test('outra sessao, revogacao e lease vencido nao autorizam usar recibo antigo',async()=>{
+      check(await other.auth.signInWithPassword({email,password}));
+      assert.equal((await rpc(other,operation,'executar')).error?.code,'42501');
+      sql(`update historietas_privado.capitulo_cache_outbox set lease_ate=clock_timestamp()-interval '1 second' where id='${r.recibo.resultado[0].id}';`);
+      const before=budget();assert.equal(check(await rpc(actor,operation,'executar')).leasesValidos,false);assert.deepEqual(budget(),before);
+      check(await admin.auth.admin.updateUserById(uid,{app_metadata:{role:'autor'}}));
+      assert.equal((await rpc(actor,operation,'executar')).error?.code,'42501');
+      check(await admin.auth.admin.updateUserById(uid,{app_metadata:{role:'admin'}}));
+    });
+    await t.test('falha depois do claim faz rollback; reconciliacao sela e impede execucao tardia',async()=>{
+      sql(resume());const id=newId();check(await rpc(actor,id,'preparar'));const before=budget();
+      sql(`create function historietas_privado.qa_6d13_falha() returns trigger language plpgsql as $$begin raise exception 'Falha sintetica antes do commit.' using errcode='XX000';end$$;
+        create trigger qa_6d13_falha before insert on historietas_privado.capitulo_cache_operacoes_recibos for each row execute function historietas_privado.qa_6d13_falha();`);
+      try{assert.equal((await rpc(actor,id,'executar')).error?.code,'XX000');}
+      finally{sql('drop trigger qa_6d13_falha on historietas_privado.capitulo_cache_operacoes_recibos;drop function historietas_privado.qa_6d13_falha();');}
+      assert.deepEqual(budget(),before);assert.equal(gate().pendente,id);
+      assert.equal(check(await rpc(actor,id,'preparar')).nova,false);
+      assert.equal(check(await rpc(actor,id,'reconciliar')).estado,'encerrada_sem_claim');
+      assert.equal(check(await rpc(actor,id,'executar')).estado,'encerrada_sem_claim');assert.deepEqual(budget(),before);
+    });
+    await t.test('resposta de admissao perdida/UUID ausente e logout: recuperar sem nova reivindicacao',async()=>{
+      const unknown=newId();assert.equal(check(await rpc(actor,unknown,'reconciliar')).estado,'encerrada_sem_claim');
+      assert.equal(check(await rpc(actor,unknown,'preparar')).estado,'encerrada_sem_claim');
+      sql(resume());const id=newId();check(await rpc(actor,id,'preparar'));const before=budget();
+      check(await actor.auth.signOut({scope:'local'}));
+      assert.equal((await rpc(actor,id,'executar')).error?.code,'42501');assert.deepEqual(budget(),before);
+      assert.equal(gate().pendente,id); // Sem sessao original: somente recuperacao SQL restrita.
+      sql(`select historietas_privado.reconciliar_operacao_cache('${id}',usuario_id,sessao_id,limite) from historietas_privado.capitulo_cache_operacoes where id='${id}';`);
+      assert.equal(gate().pendente,null);assert.equal(gate().pausado,true);
+    });
   });
 });

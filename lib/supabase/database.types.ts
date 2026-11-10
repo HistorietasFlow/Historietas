@@ -1942,6 +1942,7 @@ export type Database = {
     }
     Functions: {
       autorizar_consumidor_cache_capitulos: { Args: Record<PropertyKey, never>; Returns: boolean }
+      operar_cache_capitulos: { Args: { p_id: string | null; p_acao: string }; Returns: Json }
       obter_projecao_publica_obra: { Args: { p_slug: string; p_numero?: number | null }; Returns: Json }
       existe_capitulo_projecao_publica: { Args: { p_slug: string; p_numero: number }; Returns: boolean }
       obter_revisao_sitemap_publico: { Args: Record<PropertyKey, never>; Returns: string }
