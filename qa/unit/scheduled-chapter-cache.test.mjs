@@ -4,6 +4,66 @@ import { createRequire } from "node:module";
 import { AsyncLocalStorage } from "node:async_hooks";
 import test from "node:test";
 import ts from "typescript";
+import { solicitarEventoCacheEmLotes } from "../tests/scheduled-chapter-cache-batches.mjs";
+
+const solicitacaoSemAck = (solicitadas) => ({ solicitadas, confirmadas: 0,
+  estado: "solicitado_sem_confirmacao", publicacaoAutomaticaHabilitada: false });
+
+for (const anteriores of [0, 7, 12]) {
+  test(`QA percorre lotes com ${anteriores} pendencias anteriores sem remove-las ou inventar ACK`, async () => {
+    const fila = Array.from({ length: anteriores + 1 }, (_, id) => ({ id, solicitada: false }));
+    const idsAntes = fila.map(({ id }) => id);
+    let chamadas = 0;
+    const lotes = await solicitarEventoCacheEmLotes({
+      eventosElegiveis: fila.length,
+      solicitarLote: async () => {
+        chamadas++;
+        const lote = fila.filter((evento) => !evento.solicitada).slice(0, 5);
+        for (const evento of lote) evento.solicitada = true;
+        return solicitacaoSemAck(lote.length);
+      },
+      eventoSolicitado: () => fila.at(-1).solicitada,
+    });
+    assert.equal(lotes, Math.ceil(fila.length / 5));
+    assert.equal(chamadas, lotes);
+    assert.deepEqual(fila.map(({ id }) => id), idsAntes);
+    assert.ok(fila.every(({ solicitada }) => solicitada));
+  });
+}
+
+test("QA limita chamadas e nao aceita 202/solicitadas como prova do evento alvo", async () => {
+  let chamadas = 0;
+  await assert.rejects(solicitarEventoCacheEmLotes({ eventosElegiveis: 8,
+    solicitarLote: async () => { chamadas++; return solicitacaoSemAck(5); },
+    eventoSolicitado: () => false,
+  }), /nao registrada apos 2 lotes/);
+  assert.equal(chamadas, 2);
+});
+
+test("QA nao repete falhas, lotes vazios nem contratos que inventam confirmacao", async () => {
+  for (const resultado of [solicitacaoSemAck(0), solicitacaoSemAck(6),
+    { ...solicitacaoSemAck(1), confirmadas: 1 }]) {
+    let chamadas = 0;
+    await assert.rejects(solicitarEventoCacheEmLotes({ eventosElegiveis: 8,
+      solicitarLote: async () => { chamadas++; return resultado; }, eventoSolicitado: () => true,
+    }));
+    assert.equal(chamadas, 1);
+  }
+  let chamadas = 0;
+  await assert.rejects(solicitarEventoCacheEmLotes({ eventosElegiveis: 8,
+    solicitarLote: async () => { chamadas++; throw new Error("HTTP 503"); },
+    eventoSolicitado: () => false,
+  }), /HTTP 503/);
+  assert.equal(chamadas, 1);
+});
+
+test("QA recusa tamanho de fila invalido antes de chamar o consumidor", async () => {
+  for (const eventosElegiveis of [0, -1, 1.5, Infinity, NaN]) {
+    await assert.rejects(solicitarEventoCacheEmLotes({ eventosElegiveis,
+      solicitarLote: () => assert.fail("Nao deve solicitar lote"), eventoSolicitado: () => false,
+    }), /evento elegivel/);
+  }
+});
 
 const nativeRequire = createRequire(import.meta.url);
 function load(path, mocks = {}) {
