@@ -401,9 +401,39 @@ export async function carregarObrasPublicadasSupabase(
     const obrasLocaisSelecionadas = filtroColecao && !acumularObrasLocais
       ? obrasLocais.filter((obra) => obraIdsCatalogo.includes(obra.id))
       : obrasLocais;
-    const nomesProfiles = await carregarNomesProfilesExplorar([
-      ...obrasLocaisSelecionadas.map((obra) => obra.autorId || ""),
-      ...obrasSupabase.map((obra) => obra.user_id || ""),
+    const idsObras = obrasSupabase.map((obra) => obra.id);
+    // As mesmas leituras públicas, sem serializar perfis antes dos capítulos.
+    const [nomesProfiles, capitulosBanco] = await Promise.all([
+      carregarNomesProfilesExplorar([
+        ...obrasLocaisSelecionadas.map((obra) => obra.autorId || ""),
+        ...obrasSupabase.map((obra) => obra.user_id || ""),
+      ]),
+      (async () => {
+        let capitulosBanco: SupabaseCapituloRow[] = [];
+        if (idsObras.length === 0) return capitulosBanco;
+
+        try {
+          capitulosBanco =
+            await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
+              nomeColecao: "capítulos publicados do Explorar",
+              itens: idsObras,
+              buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
+                supabase
+                  .from("capitulos")
+                  .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
+                  .in("obra_id", obraIdsLote)
+                  .eq("publicado", true)
+                  .order("obra_id", { ascending: true })
+                  .order("ordem", { ascending: true })
+                  .order("id", { ascending: true })
+                  .range(inicio, fim),
+            });
+        } catch (error) {
+          falhaTemporaria = true;
+          console.warn("Não consegui carregar capítulos do Supabase no Explorar:", error);
+        }
+        return capitulosBanco;
+      })(),
     ]);
     const obrasLocaisComProfiles = aplicarNomesProfilesEmObrasExplorar(
       obrasLocaisSelecionadas,
@@ -416,33 +446,6 @@ export async function carregarObrasPublicadasSupabase(
         pagina: paginaCatalogo,
         falhaTemporaria,
       };
-    }
-
-    const idsObras = obrasSupabase.map((obra) => obra.id);
-    let capitulosBanco: SupabaseCapituloRow[] = [];
-
-    try {
-      capitulosBanco =
-        await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
-          nomeColecao: "capítulos publicados do Explorar",
-          itens: idsObras,
-          buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
-            supabase
-              .from("capitulos")
-              .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
-              .in("obra_id", obraIdsLote)
-              .eq("publicado", true)
-              .order("obra_id", { ascending: true })
-              .order("ordem", { ascending: true })
-              .order("id", { ascending: true })
-              .range(inicio, fim),
-        });
-    } catch (error) {
-      falhaTemporaria = true;
-      console.warn(
-        "Não consegui carregar capítulos do Supabase no Explorar:",
-        error,
-      );
     }
 
     const capitulosPorObra = new Map<string, SupabaseCapituloRow[]>();
