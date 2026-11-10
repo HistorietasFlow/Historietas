@@ -105,3 +105,65 @@ Artefatos sanitizados da medição ficam somente em `qa/reports/`; scripts
 temporários e cópias de configuração são removidos após a validação. A PR
 deve permanecer draft, sem recomendação de merge enquanto as pendências de
 regressão não forem esclarecidas.
+
+## Reavaliação do bloqueio local da PR #2264
+
+O commit `afb7604e` passou na CI descartável: Tests (incluindo pgTAP,
+Data API, anti-spam, Playwright, Lighthouse, k6 e ZAP), Build, Typecheck,
+Lint e Gitleaks. No Playwright da CI, os cenários afetados de
+`home-explore.spec.mjs` e os quatro novos de
+`catalog-parallel-loading.spec.mjs` passaram sem retry. A suíte terminou com
+141 aprovações e um retry em `smoke-routes.spec.mjs` (robots/sitemap), fora
+do escopo de entrada da Home/Explorar.
+
+Comparação adicional, sem alterações de código, usou builds de produção da
+`main` (`e18c6295`) e da PR, as mesmas fixtures, o mesmo Supabase local e
+visitas anônimas alternadas. Na ocorrência degradada, Home desktop demorou
+22,4 s na `main` e 15,3 s na PR; aos 12 s havia seis RPCs de catálogo
+pendentes na `main` e a RPC de métricas pendente na PR, com respostas HTTP 500
+em ambas. No Explorar desktop, houve 8,2 s e 10,3 s com HTTP 200; no mobile,
+ambas as versões tinham leituras pendentes no marco de 12 s e uma RPC de
+catálogo HTTP 500. O PostgREST local registrou SQLSTATE `57014`
+durante essas visitas, inclusive na carga do schema cache. A rota
+`/rest/v1/` chegou a responder 503 e, depois de recuperar o cache, levou
+3,4 s mesmo sem consulta de catálogo. Havia cerca de 400 MiB de RAM física
+livre durante o build; o Typecheck da `main` levou 4,6 min sob contenção,
+contra 26 s no build da PR após pausar serviços locais opcionais.
+
+Após reduzir somente serviços locais não necessários às páginas, uma nova
+comparação pontual, sem HTTP 500, mediu conteúdo final em segundos:
+
+| Página | Desktop main → PR | Mobile main → PR |
+| --- | --- | --- |
+| Home | 13,1 → 12,3 | 5,8 → 4,0 |
+| Explorar | 4,8 → 5,9 | 2,8 → 1,7 |
+
+Esses pares diagnósticos não substituem as cinco medições A/B anteriores nem
+estimam ganho estável: o banco/host variou entre visitas. Demonstram, porém,
+que a espera superior a 12 s também ocorre na `main` e acompanha atrasos e
+timeouts do Supabase local, não uma falha exclusiva do paralelismo da PR.
+Os mesmos 11/12 requests Supabase da Home e 13 do Explorar foram observados
+por versão; as seis RPCs de catálogo continuaram distintas. Em amostra sem
+erro, perfis e capítulos do Explorar iniciaram juntos na PR, após a consulta
+de obras; na `main`, capítulos começaram após perfis.
+
+Na regressão local focada, com um worker e zero retries, 4/8 testes passaram.
+Os outros quatro falharam por loading acima de 12 s ou timeout de axe sob
+contenção; os snapshots mostraram o loading real, e o PostgREST registrou
+novos `57014` na mesma execução. Não houve aumento de timeout, retry nem
+relaxamento de asserção. Os 24 unitários de loaders Home/Explorar passaram.
+
+O erro anti-spam do descartável reutilizado é independente: o teste usa um
+UUID fixo para o usuário e o bucket privado de rate limit persiste após a
+exclusão dessa conta, por janela de até 86.400 s; a CI com banco novo aprovou
+o teste sem mudar quota ou fixture. Os `57014` locais são falhas reais do
+PostgREST sob contenção, não devem ser ocultados ou tratados como resultado
+válido do catálogo. Reutilizar esse banco para homologar latência ou rate
+limit sem limpeza/isolamento apropriado não produz evidência confiável.
+
+**Parecer de merge do escopo:** o bloqueio de 12 s não é regressão comprovada
+da #2264. A mudança de produção permanece pequena, com testes focados e CI
+descartável aprovados; tecnicamente pode seguir para revisão e merge humano,
+sem alterar os testes nem a aplicação. A falha local de recursos e o retry
+isolado de sitemap na CI ficam registrados separadamente, não como causa da
+PR. Isto não autoriza merge automático nem ativação de agendamento ou uploads.
