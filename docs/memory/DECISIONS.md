@@ -10,6 +10,13 @@
 
 ## Supabase
 
+- Agendamento 6D8 parcial: registrar solicitacao da outbox deve validar/serializar
+  o lease atual mesmo no retry, mas nao reescrever solicitada_em ja preenchida.
+  Preservar true idempotente e erro 55000 para lease invalido; solicitacao nunca
+  e ACK. Locks/reivindicacoes/abortos ainda geram WAL. Nao impor teto arbitrario
+  de retries que bloqueie recuperacao, nem declarar capacidade fisica aprovada.
+  Ver `AGENDAMENTO_OUTBOX_ESCRITAS_6D8.md`.
+
 - Agendamento 6D5: estender somente a observacao privada da 6D2. Saldo 6D4 e
   outbox usam limites reais; WAL ocupado e cumulativo sao medidas distintas.
   Ausencia/falha/obsolescencia gera alerta sanitizado no canal existente, nunca
