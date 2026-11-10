@@ -15,11 +15,41 @@ const codes = new Set(['BANCO_INDISPONIVEL','CONTRATO_INVALIDO','RELOGIO_DIVERGE
   'ORCAMENTO_NOTIFICACOES_INDISPONIVEL','ORCAMENTO_NOTIFICACOES_OBSOLETO',
   'ORCAMENTO_NOTIFICACOES_ALERTA','ORCAMENTO_NOTIFICACOES_ESGOTADO',
   'WAL_MEDICAO_INDISPONIVEL','WAL_MEDICAO_OBSOLETA','WAL_ORCAMENTO_NAO_DEFINIDO',
-  'DISCO_MEDICAO_INDISPONIVEL','RECURSOS_CONTRATO_INVALIDO','FALHA_OBSERVACAO_RECURSOS']);
+  'DISCO_MEDICAO_INDISPONIVEL','RECURSOS_CONTRATO_INVALIDO','FALHA_OBSERVACAO_RECURSOS',
+  'CACHE_OBSERVACAO_INDISPONIVEL','CACHE_OBSERVACAO_OBSOLETA','CACHE_CONTRATO_INVALIDO',
+  'CACHE_OPERACAO_SEM_RECIBO','CACHE_ADMISSAO_BLOQUEADA','CACHE_INTEGRIDADE_DIVERGENTE',
+  'CACHE_SALDO_INDISPONIVEL','CACHE_SALDO_BLOQUEADO','CACHE_SALDO_ESGOTADO','CACHE_RETENCAO_SEM_ORCAMENTO']);
 
 const number = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 const date = (value) => typeof value === 'string' && Number.isFinite(Date.parse(value));
 const result = (items, now) => ({ versao:1, observadoEm:new Date(now).toISOString(), codigos:[...new Set(items)].sort() });
+
+function classifyCache(s, server) {
+  const integer=v=>Number.isSafeInteger(v)&&v>=0;
+  const boolean=v=>typeof v==='boolean';
+  if (s?.versao!==1 || s.estado!=='observado') return ['CACHE_OBSERVACAO_INDISPONIVEL'];
+  const g=s.protocolo,c=s.contagens,i=s.integridade,b=s.saldo,r=s.retencao;
+  if (s.fonte!=='ledger_6d12_saldo_6d10' || !date(s.medidoEm) || !g || !c || !i || !b || !r ||
+    !['habilitado','iniciado','pausado','pendencia'].every(k=>boolean(g[k])) ||
+    !['admitidas','confirmadas','encerradas','recibos'].every(k=>integer(c[k])) ||
+    !integer(i.divergencias) || !boolean(i.gateConsistente) || !boolean(b.habilitado) || !boolean(b.pausado) ||
+    !integer(b.consumidas) || !(b.limite===null || integer(b.limite)) ||
+    r.politica!=='integral_sem_purga' || !integer(r.relacoesBytes) || r.limiteAprovadoBytes!==null)
+    return ['CACHE_CONTRATO_INVALIDO'];
+  if (server-Date.parse(s.medidoEm)>60000 || Date.parse(s.medidoEm)>server+1000) return ['CACHE_OBSERVACAO_OBSOLETA'];
+  const found=[];
+  if (c.admitidas>0) found.push('CACHE_OPERACAO_SEM_RECIBO');
+  if ((g.habilitado||g.iniciado) && (g.pausado||g.pendencia)) found.push('CACHE_ADMISSAO_BLOQUEADA');
+  if (i.divergencias>0 || !i.gateConsistente || c.admitidas>1 || c.confirmadas!==c.recibos ||
+    g.pendencia!==(c.admitidas===1) || (c.admitidas>0 && (!g.pausado||!g.iniciado))) found.push('CACHE_INTEGRIDADE_DIVERGENTE');
+  if (g.habilitado||g.iniciado) {
+    if (!b.habilitado || b.limite===null) found.push('CACHE_SALDO_INDISPONIVEL');
+    else if (b.consumidas>=b.limite) found.push('CACHE_SALDO_ESGOTADO');
+    else if (b.pausado) found.push('CACHE_SALDO_BLOQUEADO');
+  }
+  if (g.iniciado || c.admitidas+c.confirmadas+c.encerradas>0) found.push('CACHE_RETENCAO_SEM_ORCAMENTO');
+  return found;
+}
 
 // Idade da amostra, nao SLA nem reserva. Relatorio externo so contem codigos.
 function classifyCapacity(snapshot, server) {
@@ -88,6 +118,7 @@ export function classifySnapshot(snapshot, now = Date.now()) {
   if (c.alerta) found.push('CAPACIDADE_ALERTA');
   if (c.bloqueio!==null) found.push('CAPACIDADE_BLOQUEADA');
   found.push(...classifyCapacity(snapshot,server));
+  found.push(...classifyCache(snapshot.operacoesCache,server));
   const run = snapshot.ultimaExecucaoCron;
   if (run===null) found.push('EXECUCAO_AUSENTE');
   else {

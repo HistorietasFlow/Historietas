@@ -10,6 +10,15 @@
 
 ## Supabase
 
+- Ciclo operacional apos #2260: monitor independente deve observar somente
+  agregados commitados de intencao/recibo/saldo e alertar incerteza, sem inferir
+  causa de aborto ou entrega HTTP/flush. Reutilizar snapshot/ACL/transporte,
+  sem escritor novo nem rearmamento por alerta. Gate duravel/CAS existentes
+  permanecem; conservar tombstones/outbox integralmente. Saldo de claims NAO
+  limita todos os abortos, intencoes vazias, WAL ou bytes. Sem orcamento aprovado
+  e protocolo verificavel de descarte, manter ativacao suspensa. Ver
+  `CICLO_SEGURANCA_OPERACIONAL_OUTBOX.md`.
+
 - Agendamento 6D13: consumidor server-only usa UUID estavel e adaptador restrito
   que deriva identidade/sessao do JWT validado e revalida Auth real. Nenhum
   grant direto aos contratos/tabelas 6D12. Commit separado, recibo sem novo

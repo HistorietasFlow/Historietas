@@ -4,6 +4,7 @@ import {randomUUID,randomBytes} from 'node:crypto';
 import test from 'node:test';
 import {createClient} from '@supabase/supabase-js';
 import {criarInvocacaoStatusSupabase} from '../scripts/supabase-cli-invocation.mjs';
+import {classifySnapshot} from '../scripts/chapter-scheduling-monitor.mjs';
 
 test('operacoes privadas locais: intencao, recibo atomico, concorrencia e reconciliacao',async t=>{
   const inv=criarInvocacaoStatusSupabase();
@@ -34,6 +35,10 @@ test('operacoes privadas locais: intencao, recibo atomico, concorrencia e reconc
   const call=(name,id)=>`select historietas_privado.${name}(${params(id)});`;
   const result=(name,id)=>JSON.parse(sql(call(name,id)));
   const newId=()=>{const id=randomUUID();operations.push(id);return id;};
+  // Outra conexao, sem caller Next/execucao e sem esperar locks de escrita.
+  const observe=()=>JSON.parse(sql(`begin isolation level repeatable read read only;
+    set local statement_timeout='5s';set local lock_timeout='500ms';
+    select historietas_privado.snapshot_monitor_capitulos();rollback;`));
   const resume=()=>{const rev=gate().revisao;resumes.add(rev);return `select historietas_privado.retomar_operacoes_cache(${rev},'causa_corrigida');`;};
   const admit=()=>{sql(resume());const id=newId();assert.equal(result('admitir_operacao_cache',id).estado,'admitida');return id;};
   async function hold(source){
@@ -302,5 +307,37 @@ test('operacoes privadas locais: intencao, recibo atomico, concorrencia e reconc
       sql(`select historietas_privado.reconciliar_operacao_cache('${id}',usuario_id,sessao_id,limite) from historietas_privado.capitulo_cache_operacoes where id='${id}';`);
       assert.equal(gate().pendente,null);assert.equal(gate().pausado,true);
     });
+  });
+  await t.test('observacao independente ve intencao confirmada, nao o claim ainda sem commit',async()=>{
+    const initial=observe().operacoesCache, id=admit(),before=budget();
+    const p=await hold(`begin;${call('executar_operacao_cache',id)}`);
+    try{
+      const s=observe(),o=s.operacoesCache,r=classifySnapshot(s);
+      assert.equal(o.contagens.admitidas,1);assert.equal(o.contagens.recibos,initial.contagens.recibos);
+      assert.equal(o.saldo.consumidas,before.consumidas);assert.equal(o.integridade.gateConsistente,true);
+      assert.ok(r.codigos.includes('CACHE_OPERACAO_SEM_RECIBO'));assert.ok(r.codigos.includes('CACHE_ADMISSAO_BLOQUEADA'));
+    }finally{assert.equal((await p.finish('rollback;')).code,0);}
+    assert.deepEqual(budget(),before);assert.equal(observe().operacoesCache.contagens.admitidas,1);
+    assert.equal(result('admitir_operacao_cache',newId()).estado,'admissao_bloqueada');
+    result('reconciliar_operacao_cache',id);
+    assert.equal(observe().operacoesCache.contagens.admitidas,0);
+  });
+  await t.test('resposta perdida apos commit e observacao repetida nao renovam lease ou debito',async()=>{
+    const id=admit();result('executar_operacao_cache',id); // Descartar a resposta.
+    const before=budget(),events=rows(),s=observe(),o=s.operacoesCache;
+    assert.equal(o.contagens.admitidas,0);assert.equal(o.contagens.confirmadas,o.contagens.recibos);
+    assert.ok(!classifySnapshot(s).codigos.includes('CACHE_OPERACAO_SEM_RECIBO'));
+    assert.ok(classifySnapshot(s).codigos.includes('CACHE_RETENCAO_SEM_ORCAMENTO'));
+    observe();result('executar_operacao_cache',id);assert.deepEqual(budget(),before);assert.deepEqual(rows(),events);
+    assert.equal(gate().pausado,true);
+  });
+  await t.test('reconciliacao ainda sem commit continua incerta; depois sela sem apagar evidencia',async()=>{
+    const id=admit(),before=budget(),p=await hold(`begin;${call('reconciliar_operacao_cache',id)}`);
+    try{assert.equal(observe().operacoesCache.contagens.admitidas,1);}
+    finally{assert.equal((await p.finish('commit;')).code,0);}
+    const o=observe().operacoesCache;
+    assert.equal(o.contagens.admitidas,0);assert.equal(o.integridade.gateConsistente,true);
+    assert.equal(o.protocolo.pausado,true);assert.equal(result('executar_operacao_cache',id).estado,'encerrada_sem_claim');
+    assert.deepEqual(budget(),before);
   });
 });
