@@ -10,6 +10,17 @@
 
 ## Supabase
 
+- Agendamento 6D4: planejar a audiencia uma vez, do banco, antes de publicar e
+  inserir exatamente esse plano na mesma subtransacao. Admitir sob o lock global
+  do runner e lock/escrita da linha privada de saldo; snapshot antigo nao reutiliza
+  capacidade. Limites iniciais de revisao: 100 destinatarios/linhas por capitulo,
+  8 KiB estimados por linha, 256 KiB por capitulo, saldo acumulado de 1.000 linhas
+  e 2 MiB. Sem renovacao automatica, reembolso por exclusao ou API de reset.
+  Insuficiencia nao publica parcialmente nem consome retry tecnico; o runner
+  fecha o gate. Outros produtores permanecem intactos. Este e um limite logico,
+  nao reserva fisica de disco/WAL nem autorizacao de ativacao. Ver
+  `AGENDAMENTO_NOTIFICACOES_6D4.md`.
+
 - Agendamento 6B3: limitar admissao no INSERT transacional da outbox, incluindo
   barreira de escrita contra snapshots antigos. Medir bytes/indices/banco antes
   dos itens e pausar conservadoramente, mas nao chamar a medida de reserva fisica.
