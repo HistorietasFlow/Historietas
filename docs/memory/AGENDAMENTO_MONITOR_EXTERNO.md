@@ -2,8 +2,27 @@
 
 Base: main `8976a7d3` (#2251), em 09/11/2026. **NÃO APTO para monitoramento
 operacional automático.** Esta preparação não resolve a certificação gerenciada
-6D1, a observação independente contínua, a entrega ao responsável nem a
+6D1, a observação independente contínua nem a
 capacidade física. Não habilita Cron, runner, publicação ou uploads ilustrados.
+
+## Atualização 10/11/2026 — entrega pontual 6D2 concluída
+
+- [Execução manual 42746976242](https://github.com/HistorietasFlow/Historietas/actions/runs/42746976242)
+  confirmada no GitHub como `workflow_dispatch`, concluída com sucesso na main
+  `58c73686`. Não houve novo disparo nesta auditoria.
+- [Comentário 6757784994](https://github.com/HistorietasFlow/Historietas/issues/2252#issuecomment-6757784994)
+  confirmado como publicado por `github-actions[bot]`, com `TESTE_ENTREGA`.
+- Recebimento no Gmail comprovado pelo responsável, conforme sua confirmação;
+  não foi acessada sua caixa de e-mail.
+- `AGENDAMENTO_MONITOR_AUTORIZADO=false` após o teste, conforme confirmação do
+  responsável. Nenhuma variável, credencial ou configuração foi alterada aqui.
+
+**Canal de e-mail validado para esse teste pontual.** O modo TESTE_ENTREGA não
+consulta o banco: não certifica SQL/TLS do monitor, detecção periódica de falhas,
+latência máxima, ausência do próprio verificador ou recuperação contínua.
+Permanece NÃO APTO para monitoramento automático. O bloqueio inicial do conector
+abaixo é histórico, não uma pendência atual de entrega pontual. Capacidade e
+critérios seguintes em [Fase 6D3](AGENDAMENTO_CAPACIDADE_6D3.md).
 
 ## Reaproveitamento e implementação
 
@@ -64,7 +83,7 @@ uma checagem posterior encontre o comentário. O workflow serializa escritores;
 execuções externas simultâneas não possuem CAS na API do GitHub e NÃO estão
 certificadas. Manter um único escritor autorizado.
 
-**Entrega real ainda incompleta:** a leitura local restrita produziu o relatório
+**Histórico da preparação (superado pelo teste pontual acima):** a leitura local restrita produziu o relatório
 com gate fechado e preservou a outbox. O mesmo adaptador foi acionado com
 transporte pelos conectores GitHub, mas o conector de comentário aceita apenas
 destino de PR. A revisão de segurança bloqueou usá-lo para a issue #2252.
@@ -73,18 +92,18 @@ issue foi real; NÃO comprova entrega do alerta gerado, credencial do bot ou
 notificação recebida pelo responsável. Não existe GITHUB_TOKEN disponível
 localmente e não foram extraídas credenciais de outros meios.
 
-Para concluir: realizar teste explícito com o GITHUB_TOKEN do workflow manual,
-após autorização/configuração do canal de homologação, ou disponibilizar um
-conector de comentários de issues apropriado. Não solicitar tokens em texto.
-Confirmar recebimento pelo responsável/assinante na interface GitHub; sucesso
-HTTP/API não garante e-mail, push ou leitura humana. Não usar dados privados em
-uma issue pública, mesmo após o teste.
+O teste posterior com o GITHUB_TOKEN do workflow manual e o recebimento no Gmail
+concluíram a entrega pontual. Seguem pendentes a leitura SQL homologada e a
+operação periódica. Não solicitar tokens em texto. Sucesso HTTP/API isolado não
+garante e-mail, push ou leitura humana. Não usar dados privados em uma issue
+pública, mesmo após o teste.
 
 ## Acionamento, alternativas e custo
 
 `.github/workflows/agendamento-monitor.yml` é somente workflow_dispatch,
 sem schedule/push/pull_request. O job ainda exige variável
-`AGENDAMENTO_MONITOR_AUTORIZADO=true`; ela NÃO foi configurada nesta fase.
+`AGENDAMENTO_MONITOR_AUTORIZADO=true`; esteve autorizada para o teste posterior
+e voltou a false, conforme confirmação do responsável.
 O padrão é teste de transporte sem conexão ao banco. Leitura real exige escolha
 explícita, credenciais exclusivas e conexão homologada. Não executado Actions
 manualmente nem alterados secrets/variáveis do repositório nesta fase.
@@ -135,7 +154,7 @@ Alternativas avaliadas:
    responsável e Supabase.
 
 Ativação depende de: leitura restrita/TLS e timeouts certificados no destino;
-teste real de alerta e recebimento; responsável e canal inscritos; cadência e
+manutenção do canal/responsável com entrega pontual já validada; cadência e
 atraso best-effort explicitamente aceitos; acionamento independente do observador
 e recuperação/ausência do próprio verificador tratados; capacidade e demais
 bloqueadores 6C resolvidos. Nada nesta PR autoriza ativação automática.
