@@ -19,7 +19,7 @@ concurrency:
 jobs:
   verificar:
     # Nao habilitar implicitamente ao integrar esta preparacao.
-    if: vars.AGENDAMENTO_MONITOR_AUTORIZADO == 'true'
+    if: vars.AGENDAMENTO_MONITOR_AUTORIZADO == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -29,9 +29,17 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
-      - name: Verificar sem publicar ou retomar
+      - name: Testar somente transporte
+        if: inputs.teste_entrega
         env:
-          AGENDAMENTO_MONITOR_TESTE: ${{ inputs.teste_entrega }}
+          AGENDAMENTO_MONITOR_TESTE: 'true'
+          AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node qa/scripts/chapter-scheduling-monitor.mjs
+      - name: Observar banco e entregar alerta
+        if: ${{ !inputs.teste_entrega }}
+        env:
+          AGENDAMENTO_MONITOR_TESTE: 'false'
           AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
           GITHUB_TOKEN: ${{ github.token }}
           PGHOST: ${{ secrets.AGENDAMENTO_MONITOR_PGHOST }}
