@@ -7,6 +7,11 @@ const now=Date.parse('2026-11-10T01:00:00Z');
 const capacityWarnings=['DISCO_MEDICAO_INDISPONIVEL','WAL_ORCAMENTO_NAO_DEFINIDO'];
 const expected=items=>[...capacityWarnings,...items].sort();
 const snapshot=()=>({versao:1,agora:new Date(now).toISOString(),fonteValida:true,
+  operacoesCache:{versao:1,estado:'observado',fonte:'ledger_6d12_saldo_6d10',medidoEm:new Date(now).toISOString(),
+    protocolo:{habilitado:false,iniciado:false,pausado:true,pendencia:false},
+    contagens:{admitidas:0,confirmadas:0,encerradas:0,recibos:0},integridade:{divergencias:0,gateConsistente:true},
+    saldo:{habilitado:false,pausado:true,limite:null,consumidas:0},
+    retencao:{politica:'integral_sem_purga',relacoesBytes:32768,limiteAprovadoBytes:null}},
   saude:{habilitado:true,monitorConfigurado:true,pausado:false,falhasConsecutivas:0,incidentesAbertos:0,
     retriesEsgotados:0,atrasados:0,atrasoMaximoSegundos:0,ultimaObservacao:new Date(now-20000).toISOString()},
   capacidade:{pausado:false,alerta:false,bloqueio:null,medidoEm:new Date(now).toISOString(),
@@ -78,7 +83,7 @@ test('leitura completa usa SQL fixo e preserva a classificacao da resposta',asyn
   const s=snapshot(), time=Date.now();
   s.agora=new Date(time).toISOString();s.saude.ultimaObservacao=new Date(time-1000).toISOString();
   s.ultimaExecucaoCron.inicio=new Date(time-2000).toISOString();s.ultimaExecucaoCron.fim=new Date(time-1000).toISOString();
-  s.capacidade.medidoEm=s.agora;s.recursos.orcamentoNotificacoes.medidoEm=s.agora;s.recursos.wal.medidoEm=s.agora;
+  s.capacidade.medidoEm=s.agora;s.recursos.orcamentoNotificacoes.medidoEm=s.agora;s.recursos.wal.medidoEm=s.agora;s.operacoesCache.medidoEm=s.agora;
   const r=await checkDatabase(env,async(_cmd,args,options)=>{
     assert.equal(args.at(-2),'-c');assert.equal(options.shell,false);assert.equal(options.maxBuffer,65536);
     assert.ok(!args.join(' ').includes('fixture.invalid'));
@@ -191,4 +196,63 @@ test('workflow permanece manual, gated e sem ativar banco ou runner',()=>{
   assert.match(workflow,/timeout-minutes: 2/);assert.match(workflow,/cancel-in-progress: false/);
   assert.match(workflow,/PGUSER: historietas_agendamento_monitor/);assert.match(workflow,/PGSSLMODE: verify-full/);
   assert.doesNotMatch(workflow,/pg_cron|executar_runner|acionar_runner|service_role|supabase db push/);
+});
+
+test('intencao sem recibo sinaliza incerteza e gate fechado, nunca motivo de aborto inferido',()=>{
+  const s=snapshot(),o=s.operacoesCache;
+  Object.assign(o.protocolo,{habilitado:true,iniciado:true,pendencia:true});o.contagens.admitidas=1;
+  Object.assign(o.saldo,{habilitado:true,pausado:false,limite:1});
+  const r=classifySnapshot(s,now);
+  assert.deepEqual(r.codigos,expected(['CACHE_OPERACAO_SEM_RECIBO','CACHE_ADMISSAO_BLOQUEADA','CACHE_RETENCAO_SEM_ORCAMENTO']));
+  assert.doesNotMatch(JSON.stringify(r),/usuario|sessao|aborto_confirmado|timeout_confirmado|operacaoId/);
+});
+test('recibo confirmado nao e entrega HTTP ou ACK e preserva alerta de retencao',()=>{
+  const s=snapshot(),o=s.operacoesCache;
+  o.contagens.confirmadas=o.contagens.recibos=1;o.protocolo.iniciado=true;
+  Object.assign(o.saldo,{habilitado:true,pausado:false,limite:1});
+  assert.deepEqual(classifySnapshot(s,now).codigos,expected(['CACHE_ADMISSAO_BLOQUEADA','CACHE_RETENCAO_SEM_ORCAMENTO']));
+  o.contagens.confirmadas=o.contagens.recibos=0;o.contagens.encerradas=1;
+  assert.deepEqual(classifySnapshot(s,now).codigos,expected(['CACHE_ADMISSAO_BLOQUEADA','CACHE_RETENCAO_SEM_ORCAMENTO']));
+});
+test('gate, ponteiro e recibos divergentes nao sao declarados saudaveis',()=>{
+  for(const mutate of [o=>o.protocolo.pendencia=true,o=>o.contagens.admitidas=2,
+    o=>o.contagens.confirmadas=1,o=>o.integridade.gateConsistente=false,o=>o.integridade.divergencias=1]){
+    const s=snapshot();mutate(s.operacoesCache);
+    assert.ok(classifySnapshot(s,now).codigos.includes('CACHE_INTEGRIDADE_DIVERGENTE'));
+  }
+});
+test('fonte ausente, erro e snapshot anterior nao escondem operacoes do consumidor',()=>{
+  for(const o of [undefined,null,{versao:1,estado:'falha'},{versao:1,estado:'indisponivel'}]){
+    const s=snapshot();s.operacoesCache=o;
+    assert.deepEqual(classifySnapshot(s,now).codigos,expected(['CACHE_OBSERVACAO_INDISPONIVEL']));
+  }
+});
+test('fonte obsoleta/futura e limites fisicos inventados sao rejeitados',()=>{
+  for(const age of [-60001,1001]){
+    const s=snapshot();s.operacoesCache.medidoEm=new Date(now+age).toISOString();
+    assert.deepEqual(classifySnapshot(s,now).codigos,expected(['CACHE_OBSERVACAO_OBSOLETA']));
+  }
+  for(const mutate of [o=>o.retencao.limiteAprovadoBytes=1,o=>o.saldo.consumidas=-1,
+    o=>o.contagens.recibos=Number.MAX_SAFE_INTEGER+1,o=>o.retencao.politica='purgar',o=>o.fonte='estimativa']){
+    const s=snapshot();mutate(s.operacoesCache);
+    assert.deepEqual(classifySnapshot(s,now).codigos,expected(['CACHE_CONTRATO_INVALIDO']));
+  }
+});
+test('saldo nao configurado, pausado ou esgotado nao significa fila vazia',()=>{
+  const s=snapshot(),o=s.operacoesCache;o.protocolo.habilitado=true;o.protocolo.pausado=false;
+  assert.deepEqual(classifySnapshot(s,now).codigos,expected(['CACHE_SALDO_INDISPONIVEL']));
+  Object.assign(o.saldo,{habilitado:true,limite:2});
+  assert.deepEqual(classifySnapshot(s,now).codigos,expected(['CACHE_SALDO_BLOQUEADO']));
+  o.saldo.consumidas=2;
+  assert.deepEqual(classifySnapshot(s,now).codigos,expected(['CACHE_SALDO_ESGOTADO']));
+});
+test('alerta independente de cache deduplica e recupera, sem IDs ou medidas externas',async()=>{
+  const api=github(),s=snapshot(),o=s.operacoesCache;
+  Object.assign(o.protocolo,{habilitado:true,iniciado:true,pendencia:true});o.contagens.admitidas=1;
+  const r=classifySnapshot(s,now);
+  assert.equal(await deliverAlert(r,config(api)),'delivered');
+  assert.equal(await deliverAlert(r,config(api)),'unchanged');
+  assert.equal(await deliverAlert(classifySnapshot(snapshot(),now),config(api)),'delivered');
+  assert.equal(api.requests.filter(r=>r.init.method==='POST').length,2);
+  assert.doesNotMatch(api.comments.map(c=>c.body).join(' '),/relacoesBytes|admitidas|session_id|usuario_id|32768/);
 });
