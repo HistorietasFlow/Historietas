@@ -1,5 +1,34 @@
 # QA — agendamento/Diário e lotes da outbox
 
+## PR #2255 — integração Data API com backlog global (10/11/2026)
+
+`chapter-cache-outbox-supabase-real.test.mjs:79` exigia dois eventos de uma
+reivindicação GLOBAL de até cinco. Com pendências anteriores, cinco era uma
+resposta válida. A premissa de que os dois consumidores receberiam somente
+eventos da fixture também foi removida, sem perder a validação de concorrência.
+
+- Identidades, capítulos, slug e sessão da fixture agora são exclusivos por
+  execução; nenhum snapshot antigo precisa ser excluído para reutilizar IDs.
+- As duas chamadas simultâneas continuam exigindo dois eventos e leases
+  distintos. Depois, o teste localiza os dois IDs reais da fixture entre lotes,
+  com limite de ceil(eventos elegíveis / 5), sem espera ou retry de falha.
+- Cada lote precisa progredir, conter até cinco e não repetir IDs com lease
+  ativo. Ausência de um alvo, lote vazio ou falha interrompe o teste. A seleção
+  final exige exatamente os dois eventos e os dois capítulos corretos.
+- A expiração controlada continua limitada aos leases da própria fixture.
+  Lease antigo retorna 55000; os dois IDs voltam com leases novos. Solicitação
+  persistida não significa ACK. Recibos, Diário e outbox continuam únicos.
+- Cleanup remove somente obra/conta sintéticas, NÃO a outbox. Compara todos os
+  IDs/snapshots antes/depois e confirma que nenhuma pendência anterior mudou de
+  identidade ou foi apagada. Leases podem mudar pelas reivindicações legítimas.
+
+Validação no descartável existente, CLI 2.116.0 e Node 22.23.4:
+focado **6/6**, com **24 eventos anteriores** preservados e dois lotes adicionais
+para localizar a fixture, inclusive após expiração; integrações completas de
+agendamento/orçamento/cache/projeção **52/52**, serial e sem retries; testes
+relacionados de cache **10/10**. Consumidor, executor, orçamento, migrations,
+RLS, permissões e demais arquivos de produção não foram alterados.
+
 ## Causa comprovada
 
 Na main `ebcd7d5d`, `scheduled-chapter-diary.spec.mjs` presumiu que o primeiro

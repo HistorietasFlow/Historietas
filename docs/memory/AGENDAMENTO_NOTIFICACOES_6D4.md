@@ -5,6 +5,15 @@ ativação. Migration `20261110041125_orcamento_transacional_notificacoes_agenda
 Este contrato limita a amplificação lógica do executor; **NÃO certifica capacidade
 física nem autoriza publicação automática**.
 
+Atualização QA na própria #2255 (10/11): corrigida exclusivamente a premissa da
+integração da outbox sobre a fila global. Focado **6/6** com 24 pendências
+preservadas; rodada completa posterior **52/52**, sem retries e um processo de
+teste por vez; relacionados **10/10**. Fixture com identidades exclusivas,
+seleção pelos IDs reais entre lotes limitados e cleanup sem exclusão de eventos.
+Detalhes em [QA da outbox](QA_AGENDAMENTO_OUTBOX.md). Os resultados históricos
+50/52 abaixo permanecem registrados, mas essa pendência de seletor foi resolvida.
+Nenhuma mudança adicional no executor, consumidor ou orçamento transacional.
+
 ## Auditoria e escopo
 
 O notificador agendado deriva do contrato real de
