@@ -10,6 +10,14 @@
 
 ## Supabase
 
+- Agendamento 6D10: preparar saldo privado acumulado de reivindicacoes
+  confirmadas, instalado desativado e sem limite numerico aprovado. Debitar
+  somente linhas reivindicadas, atomicamente com leases; saturacao explicita,
+  retomada SQL administrativa por revisao/CAS sem reset nem habilitacao.
+  Registro idempotente da #2257 continua permitido durante pausa. Aborto,
+  resultado ambiguo e capacidade fisica seguem contratos separados. Ver
+  `AGENDAMENTO_ORCAMENTO_OUTBOX_6D10.md`.
+
 - Agendamento 6D8 parcial: registrar solicitacao da outbox deve validar/serializar
   o lease atual mesmo no retry, mas nao reescrever solicitada_em ja preenchida.
   Preservar true idempotente e erro 55000 para lease invalido; solicitacao nunca

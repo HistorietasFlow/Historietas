@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       },
     });
     // Next aplica a fila ao encerrar a requisicao, DEPOIS deste retorno. Nao ack.
-    return resposta(202, resultado);
+    return resposta(resultado.estado === "solicitado_sem_confirmacao" ? 202 : 503, resultado);
   } catch {
     return resposta(503, { codigo: "invalidacao_pendente", confirmadas: 0 });
   }
