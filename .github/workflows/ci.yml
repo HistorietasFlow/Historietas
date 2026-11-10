@@ -117,6 +117,9 @@ jobs:
       - name: Executar testes estáticos
         run: npm run test:static
 
+      - name: Testar verificador externo do agendamento sem ativacao
+        run: node --test qa/unit/chapter-scheduling-monitor.test.mjs
+
       - name: Validar imagens ilustradas com decoder real (sem habilitar uploads)
         run: npm run test:illustrated-images
 

@@ -1,0 +1,44 @@
+name: Monitor privado do agendamento (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      teste_entrega:
+        description: 'Somente alerta de teste, sem conectar ao banco'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: agendamento-monitor-alerta
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    # Nao habilitar implicitamente ao integrar esta preparacao.
+    if: vars.AGENDAMENTO_MONITOR_AUTORIZADO == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Verificar sem publicar ou retomar
+        env:
+          AGENDAMENTO_MONITOR_TESTE: ${{ inputs.teste_entrega }}
+          AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PGHOST: ${{ secrets.AGENDAMENTO_MONITOR_PGHOST }}
+          PGPORT: ${{ secrets.AGENDAMENTO_MONITOR_PGPORT }}
+          PGDATABASE: postgres
+          PGUSER: historietas_agendamento_monitor
+          PGPASSWORD: ${{ secrets.AGENDAMENTO_MONITOR_PGPASSWORD }}
+          PGSSLMODE: verify-full
+          PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
+        run: node qa/scripts/chapter-scheduling-monitor.mjs
