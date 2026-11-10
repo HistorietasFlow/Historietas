@@ -6,6 +6,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import { criarInvocacaoStatusSupabase } from "../scripts/supabase-cli-invocation.mjs";
+import { solicitarEventoCacheEmLotes } from "./scheduled-chapter-cache-batches.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -135,8 +136,25 @@ for (const device of ["desktop", "mobile"]) {
     expect(await (await request.get("/sitemap.xml")).text()).toContain(`/obra/${slug}/capitulo/2`);
     // A fixture request e isolada; context.request compartilha os cookies reais.
     expect((await context.request.post(endpoint, { headers: { origin: "https://outro.test" } })).status()).toBe(403);
-    const queued = await context.request.post(endpoint, { headers: { origin } });
-    expect(queued.status()).toBe(202); expect((await queued.json()).confirmadas).toBe(0);
+    const filaAntes = JSON.parse(sql(`select jsonb_build_object(
+      'ids',coalesce(jsonb_agg(id order by id),'[]'::jsonb),
+      'elegiveis',count(*) filter (where lease_ate is null or lease_ate <= clock_timestamp()))
+      from historietas_privado.capitulo_cache_outbox;`));
+    // Pendencias anteriores tambem disputam o lote. Nunca apagar/reordenar a fila
+    // para atingir esta fixture, nem tratar o 202 como conclusao da invalidacao.
+    const lotes = await solicitarEventoCacheEmLotes({
+      eventosElegiveis: filaAntes.elegiveis,
+      solicitarLote: async () => {
+        const queued = await context.request.post(endpoint, { headers: { origin } });
+        expect(queued.status()).toBe(202);
+        return queued.json();
+      },
+      eventoSolicitado: () => sql(`select count(*) from historietas_privado.capitulo_cache_outbox
+        where capitulo_id='${two}' and solicitada_em is not null;`) === "1",
+    });
+    expect(JSON.parse(sql(`select coalesce(jsonb_agg(id order by id),'[]'::jsonb)
+      from historietas_privado.capitulo_cache_outbox;`))).toEqual(filaAntes.ids);
+    info.annotations.push({ type: "lotes-outbox", description: `${lotes} lote(s), sem ACK nem exclusao de pendencias.` });
     // Verifica efeitos observaveis no servidor local; isso nao cria um ack duravel.
     const work = await request.get(`/obra/${slug}`); expect(work.status()).toBe(200); expect(await work.text()).toContain(title);
     expect(await (await request.get(`/obra/${slug}/capitulo/1`)).text()).toContain(secondTitle);

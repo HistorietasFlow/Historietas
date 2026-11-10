@@ -30,6 +30,10 @@ Atualize o Memory Bank quando uma mudança alterar de forma duradoura:
 
 Não registre segredos, tokens, senhas, chaves privadas, dados pessoais ou valores que não precisem fazer parte da engenharia do projeto.
 
+## Notas específicas de QA
+
+- [Agendamento/Diário e lotes da outbox](QA_AGENDAMENTO_OUTBOX.md): validar o evento alvo sem presumir fila vazia, sem apagar pendências e sem interpretar HTTP 202 como ACK.
+
 ## Fontes de verdade
 
 O código, migrations, configurações e estado atual do GitHub têm prioridade sobre este Memory Bank quando houver divergência. Em caso de conflito, verifique o repositório e corrija a documentação.
