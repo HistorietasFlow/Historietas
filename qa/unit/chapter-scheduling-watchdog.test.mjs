@@ -164,7 +164,9 @@ test('workflows sem schedule, com gates distintos e main; watchdog nunca recebe 
     assert.match(w,/github.ref == 'refs\/heads\/main'/);assert.match(w,/cancel-in-progress: false/);
   }
   assert.match(monitor,/AGENDAMENTO_MONITOR_AUTORIZADO/);assert.match(watchdog,/AGENDAMENTO_WATCHDOG_AUTORIZADO/);
-  assert.match(watchdog,/actions: read/);assert.doesNotMatch(watchdog,/PGHOST|PGPASSWORD|service_role|secrets\./);
+  assert.match(watchdog,/actions: read/);assert.doesNotMatch(watchdog,/PGHOST|PGPASSWORD|service_role/);
+  assert.deepEqual([...watchdog.matchAll(/secrets\.([A-Z_]+)/g)].map(match=>match[1]).sort(),
+    ['AGENDAMENTO_SENTRY_CHECKIN_URL','AGENDAMENTO_SENTRY_DSN']);
   assert.match(monitor,/if: inputs.teste_entrega/);assert.match(monitor,/if: \$\{\{ !inputs.teste_entrega \}\}/);
   const template=read('../../docs/operacao/agendamento-periodico.patch.example');
   assert.match(template,/__CADENCIA_MONITOR_UTC_APROVADA__/);assert.match(template,/__CADENCIA_WATCHDOG_UTC_APROVADA__/);

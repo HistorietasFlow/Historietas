@@ -65,22 +65,59 @@ O watchdog nao procura uma execucao antiga verde para ocultar a ultima falha.
 Uma execucao manual posterior pode exigir nova verificacao real antes de ficar
 saudavel: preferimos incerteza explicita a tratar teste de e-mail como sucesso.
 
+### Integracao Sentry Cron Monitor preparada (sem ativacao)
+
+O mesmo workflow do watchdog agora chama
+`chapter-scheduling-sentry-checkin.mjs`: **somente** `schedule` da `main` no
+repositorio esperado emite `in_progress`, seguido de `ok` se a verificacao real
+e a entrega GitHub terminarem com codigo 0; resultados 1/2 ou excecoes emitem
+`error`. `workflow_dispatch`, teste de e-mail e execucao simulada nao renovam o
+Sentry. Falha no envio inicial/final deixa o job com erro; falha na abertura nao
+impede a tentativa de alerta GitHub. Resposta perdida nao recebe retry cego.
+Se o GitHub nao iniciar o workflow, nao ha check-in e o proprio Sentry deve
+classificar a execucao como ausente; se parar apos o inicio, como timeout.
+
+Continuam **inativos** o `schedule`, o Cron SQL, o runner e a publicacao
+automatica. Nao foi criado monitor no Sentry, configurado alerta ou realizada
+chamada de check-in real. Antes de ativar, o responsavel deve aprovar cadencia,
+janela de atraso, custo/limite do plano e destino de e-mail; criar manualmente
+um Cron Monitor no projeto Sentry correto e configurar alerta para `missed`,
+`failed` e `timed_out`, com teste controlado de falta de execucao e recebimento.
+O monitor deve ser preconfigurado, sem auto-criacao por payload.
+
+Proposta a aprovar (nao e configuracao aplicada): watchdog a cada 15 minutos,
+Sentry no mesmo cron UTC, margem de check-in 10 minutos, runtime maximo 3
+minutos (workflow limita o job a 2), limiares de falha/recuperacao 1. GitHub
+Actions pode atrasar/descartar schedules; a margem reduz falsos alertas, mas
+nao constitui SLA. A cadencia pressupoe aproximadamente 2.880 execucoes do
+watchdog em 30 dias, alem das do monitor SQL; confirmar minutos GitHub e quota
+Sentry antes de aprovar. O plano Developer listado publicamente pelo Sentry
+inclui um Cron Monitor, mas a disponibilidade do slot nesta conta nao foi
+verificada e excedentes podem gerar custo: nao criar sem essa verificacao.
+
+Configurar como **GitHub Actions secrets** `AGENDAMENTO_SENTRY_CHECKIN_URL`
+(endpoint HTTPS de check-ins do monitor na regiao correta, sem query/token) e
+`AGENDAMENTO_SENTRY_DSN` (DSN do projeto correto). O script aceita apenas
+dominios Sentry e caminho de check-ins, rejeita redirects, limita cada request
+a 8 segundos e nunca registra URL, resposta ou credencial. O workflow manual
+nao envia check-ins mesmo que os secrets ja existam. Falha conjunta GitHub +
+Sentry ou alerta Sentry nao entregue ao responsavel continua sendo risco a
+homologar; o GitHub nao e tratado como testemunha de si mesmo.
+
 ### Limite externo que o codigo nao pode remover
 
 Workflow separado detecta falha **do outro workflow**, nao queda conjunta do
 GitHub/Actions/canal. O observador privado SQL compartilha a falha do banco.
-Para detectar ausencia do proprio watchdog, falta uma testemunha em dominio
-de falha independente e um canal observavel quando GitHub falhar. O binario
-one-shot ja pode ser chamado nesse host, mas host/canal/periodicidade/credencial
-nao foram certificados nem provisionados. Saida 2 local nao e alerta entregue.
-Nao adicionar um terceiro workflow no mesmo Actions como falsa independencia.
+O Sentry preparado oferece uma testemunha externa da ausencia do watchdog,
+mas monitor, alerta, agenda, canal e recebimento ainda nao foram certificados
+nem provisionados. Saida 2 local nao e alerta entregue. Nao adicionar um
+terceiro workflow no mesmo Actions como falsa independencia.
 
 GitHub documenta schedule best-effort: pode atrasar/descartar execucoes e ser
 desativado por inatividade. Se for exigido prazo maximo rigido, esta alternativa
 nao satisfaz sozinha. Se aceitar best-effort, registrar atraso aceito, responsavel,
-janela de observacao e teste de uma verificacao deliberadamente omitida. Reusar
-Sentry so se plano/quota de heartbeat e canal forem comprovados; nao presumir
-recurso gratuito/instalar outro servico. Transporte GitHub/Gmail pontual 6D2 ja
+janela de observacao e teste de uma verificacao deliberadamente omitida. Nao
+presumir recurso gratuito/instalar outro servico. Transporte GitHub/Gmail pontual 6D2 ja
 validado e reaproveitado, sem nova escrita remota nesta fase.
 
 Custos futuros devem ser calculados, nao ativados: com cadencia `P` minutos,
