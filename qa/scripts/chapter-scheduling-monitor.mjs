@@ -10,7 +10,22 @@ const streamMarker = channel => {
   throw Error('invalid alert channel');
 };
 const repository = 'HistorietasFlow/Historietas';
-const sql = 'begin isolation level repeatable read read only; select historietas_privado.snapshot_monitor_capitulos(); rollback;';
+export const monitorSql = `begin isolation level repeatable read read only;
+set local statement_timeout='5s';
+set local lock_timeout='500ms';
+set local idle_in_transaction_session_timeout='5s';
+set local role historietas_agendamento_monitor;
+select jsonb_build_object('conexao',jsonb_build_object(
+  'sessao',session_user,'papel',current_user,
+  'somenteLeitura',current_setting('transaction_read_only'),
+  'isolamento',current_setting('transaction_isolation'),
+  'statementTimeout',current_setting('statement_timeout'),
+  'lockTimeout',current_setting('lock_timeout'),
+  'idleTimeout',current_setting('idle_in_transaction_session_timeout')),
+  'snapshot',case when session_user='historietas_agendamento_monitor_login'
+    and current_user='historietas_agendamento_monitor'
+    then historietas_privado.snapshot_monitor_capitulos() end);
+rollback;`;
 const codes = new Set(['BANCO_INDISPONIVEL','CONTRATO_INVALIDO','RELOGIO_DIVERGENTE',
   'RUNNER_DESATIVADO','MONITOR_NAO_CONFIGURADO','FONTE_INVALIDA','MONITOR_ATRASADO',
   'EXECUCAO_AUSENTE','EXECUCAO_ATRASADA','EXECUCAO_INCERTA','FALHA_CRON',
@@ -141,15 +156,26 @@ export function classifySnapshot(snapshot, now = Date.now()) {
 
 export async function checkDatabase(env = process.env, run = execute) {
   try {
-    if (env.PGUSER!=='historietas_agendamento_monitor' || !env.PGHOST || !env.PGDATABASE ||
-        env.PGSSLMODE!=='verify-full' || !env.PGSSLROOTCERT) throw Error('configuration');
-    const {stdout} = await run('psql',['-XqAt','-w','-v','ON_ERROR_STOP=1','-c',sql],{
-      env:{...env,PGCONNECT_TIMEOUT:'5',PGOPTIONS:'-c statement_timeout=5000 -c lock_timeout=500 -c idle_in_transaction_session_timeout=5000 -c default_transaction_read_only=on'},
+    // Somente Supavisor SESSION: o sufixo identifica o projeto, nao o papel SQL.
+    // Nao aceitar URI/libpq options, outro usuario, host alternativo ou downgrade TLS.
+    const ref=env.AGENDAMENTO_MONITOR_PROJECT_REF;
+    if (!/^[a-z]{20}$/.test(ref??'') ||
+        env.PGUSER!==`historietas_agendamento_monitor_login.${ref}` ||
+        !/^aws-\d+-[a-z0-9-]+\.pooler\.supabase\.com$/.test(env.PGHOST??'') ||
+        env.PGPORT!=='5432' || env.PGDATABASE!=='postgres' || !env.PGPASSWORD ||
+        env.PGSSLMODE!=='verify-full' || !env.PGSSLROOTCERT ||
+        ['PGHOSTADDR','PGSERVICE','PGSERVICEFILE','PGPASSFILE'].some(k=>env[k])) throw Error('configuration');
+    const {stdout} = await run('psql',['-XqAt','-w','-v','ON_ERROR_STOP=1','-c',monitorSql],{
+      env:{...env,PGCONNECT_TIMEOUT:'5',PGGSSENCMODE:'disable',PGOPTIONS:'-c statement_timeout=5000 -c lock_timeout=500 -c idle_in_transaction_session_timeout=5000 -c default_transaction_read_only=on'},
       timeout:12000,maxBuffer:65536,windowsHide:true,
       // Static SQL only: no credentials in arguments, output or dynamic SQL.
       shell:false,
     });
-    return classifySnapshot(JSON.parse(stdout));
+    const value=JSON.parse(stdout), c=value?.conexao;
+    if (c?.sessao!=='historietas_agendamento_monitor_login' || c.papel!=='historietas_agendamento_monitor' ||
+        c.somenteLeitura!=='on' || c.isolamento!=='repeatable read' ||
+        c.statementTimeout!=='5s' || c.lockTimeout!=='500ms' || c.idleTimeout!=='5s') throw Error('connection contract');
+    return classifySnapshot(value.snapshot);
   } catch {
     // Never expose psql stderr, connection strings, hosts, SQL errors or secrets.
     return result(['BANCO_INDISPONIVEL'],Date.now());

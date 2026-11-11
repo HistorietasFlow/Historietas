@@ -169,6 +169,18 @@ jobs:
       - name: Iniciar ambiente Supabase local descartável
         run: |
           supabase init
+          # A identidade do monitor precisa ser testada tambem no Supavisor SESSION local.
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const path='supabase/config.toml',text=readFileSync(path,'utf8');
+          const section=text.match(/\[db\.pooler\][\s\S]*?(?=\n\[|$)/)?.[0];
+          assert.ok(section,'Secao db.pooler ausente');
+          const session=section.replace(/^enabled = false$/m,'enabled = true')
+            .replace(/^pool_mode = "transaction"$/m,'pool_mode = "session"');
+          assert.match(session,/^enabled = true$/m);assert.match(session,/^pool_mode = "session"$/m);
+          writeFileSync(path,text.replace(section,session));
+          NODE
           cp \
             qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
             supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql

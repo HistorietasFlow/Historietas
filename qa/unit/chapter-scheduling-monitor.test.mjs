@@ -43,9 +43,14 @@ function github(comments=[],options={}) {
 }
 const config=(api)=>({token:'secret-not-for-logs',issue:123,fetchImpl:api.fetchImpl});
 
-const proofEnv={PGUSER:'historietas_agendamento_monitor',PGHOST:'fixture.invalid',PGDATABASE:'postgres',
+const proofEnv={PGUSER:'historietas_agendamento_monitor_login.abcdefghijklmnopqrst',
+  AGENDAMENTO_MONITOR_PROJECT_REF:'abcdefghijklmnopqrst',PGHOST:'aws-0-sa-east-1.pooler.supabase.com',
+  PGPORT:'5432',PGPASSWORD:'synthetic-only',PGDATABASE:'postgres',
   PGSSLMODE:'verify-full',PGSSLROOTCERT:'fixture.crt',GITHUB_TOKEN:'synthetic',AGENDAMENTO_ALERT_ISSUE:'123',
   AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO:'true',AGENDAMENTO_MONITOR_TESTE:'false'};
+const databaseOutput=s=>({conexao:{sessao:'historietas_agendamento_monitor_login',
+  papel:'historietas_agendamento_monitor',somenteLeitura:'on',isolamento:'repeatable read',
+  statementTimeout:'5s',lockTimeout:'500ms',idleTimeout:'5s'},snapshot:s});
 function freshSnapshot() {
   const s=snapshot(), stamp=new Date().toISOString();
   s.agora=stamp;s.saude.ultimaObservacao=stamp;s.saude.habilitado=false;
@@ -59,8 +64,9 @@ test('prova v2 separa execucao de saude sem remover alerta; modo legado continua
   const run=async(cmd,args,options)=>{
     reads++;assert.equal(cmd,'psql');assert.equal(options.shell,false);
     assert.match(args.at(-1),/^begin isolation level repeatable read read only;/);
-    assert.match(args.at(-1),/snapshot_monitor_capitulos\(\); rollback;$/);
-    return {stdout:JSON.stringify(freshSnapshot())};
+    assert.match(args.at(-1),/set local role historietas_agendamento_monitor;/);
+    assert.match(args.at(-1),/snapshot_monitor_capitulos\(\) end\);\s+rollback;$/);
+    return {stdout:JSON.stringify(databaseOutput(freshSnapshot()))};
   };
   assert.equal(await main(proofEnv,{run,fetchImpl:api.fetchImpl}),0);
   assert.equal(reads,1);
@@ -77,7 +83,7 @@ test('SQL falho, timeout, JSON invalido, contrato incompleto e evidencia obsolet
     async()=>({stdout:'JSON invalido'}),
     ...[s=>delete s.recursos,s=>s.saude.habilitado='true',s=>s.agora='2000-01-01T00:00:00Z',
       s=>s.operacoesCache.medidoEm='2000-01-01T00:00:00Z',s=>s.recursos.wal.limiteAprovadoBytes=123]
-      .map(mutate=>async()=>{const s=freshSnapshot();mutate(s);return {stdout:JSON.stringify(s)};})]) {
+      .map(mutate=>async()=>{const s=freshSnapshot();mutate(s);return {stdout:JSON.stringify(databaseOutput(s))};})]) {
     const api=github();assert.equal(await main(proofEnv,{run,fetchImpl:api.fetchImpl}),1);
     assert.equal(api.comments.length,1);assert.doesNotMatch(api.comments[0].body,/senha|JSON invalido/);
   }
@@ -95,7 +101,7 @@ test('teste de e-mail nunca prova execucao mesmo quando entrega tem sucesso',asy
 
 test('entrega falha ou resposta perdida nao confirma; nova leitura reconcilia e recupera sem duplicar alerta',async()=>{
   let reads=0;
-  const run=async()=>{reads++;return {stdout:JSON.stringify(freshSnapshot())};};
+  const run=async()=>{reads++;return {stdout:JSON.stringify(databaseOutput(freshSnapshot()))};};
   assert.equal(await main(proofEnv,{run,fetchImpl:async()=>{throw Error('rede');}}),2);
   const api=github([],{lost:true});
   assert.equal(await main(proofEnv,{run,fetchImpl:api.fetchImpl}),2);
@@ -109,7 +115,7 @@ test('observacao concorrente obsoleta nao recebe prova de entrega nem apaga aler
   const pending=main(proofEnv,{run:()=>new Promise(resolve=>{unblock=resolve;}),fetchImpl:api.fetchImpl});
   const newer={versao:1,observadoEm:new Date(Date.now()+10000).toISOString(),codigos:['PAUSA_ATIVA']};
   assert.equal(await deliverAlert(newer,config(api)),'delivered');
-  unblock({stdout:JSON.stringify(freshSnapshot())});
+  unblock({stdout:JSON.stringify(databaseOutput(freshSnapshot()))});
   assert.equal(await pending,2);
   assert.equal(api.comments.length,1);assert.match(api.comments[0].body,/PAUSA_ATIVA/);
 });
@@ -119,7 +125,7 @@ test('cadeia SQL/entrega -> job v2 -> watchdog -> Sentry distingue saude ruim de
     const api=github(), clock=Date.now()+1000, stamp=new Date(clock).toISOString();
     const exit=await main(proofEnv,{fetchImpl:api.fetchImpl,run:async()=>{
       if (sqlFailure) throw Error('conexao interrompida');
-      return {stdout:JSON.stringify(freshSnapshot())};
+      return {stdout:JSON.stringify(databaseOutput(freshSnapshot()))};
     }});
     const conclusion=exit===0?'success':'failure';
     const fetchImpl=async(url,options)=>{
@@ -182,28 +188,55 @@ test('execucao sem desfecho nao e tratada como sucesso nem aborto comprovado',()
   assert.deepEqual(classifySnapshot(s,now).codigos,expected(['EXECUCAO_INCERTA','FALHA_CRON']));
 });
 test('banco inacessivel ou resposta invalida produzem alerta sanitizado',async()=>{
-  const env={PGUSER:'historietas_agendamento_monitor',PGHOST:'fixture.invalid',PGDATABASE:'postgres',PGSSLMODE:'verify-full',PGSSLROOTCERT:'fixture.crt'};
+  const env=proofEnv;
   let called=0;
   const r=await checkDatabase(env,async(cmd,args,opts)=>{
     called++; assert.equal(cmd,'psql');assert.ok(args.at(-1).startsWith('begin isolation level repeatable read read only;'));
     assert.equal(opts.timeout,12000);assert.equal(opts.env.PGCONNECT_TIMEOUT,'5');assert.ok(opts.env.PGOPTIONS.includes('statement_timeout=5000'));
+    assert.equal(opts.env.PGGSSENCMODE,'disable');
     throw Error('credential password SQL');
   });
   assert.equal(called,1);assert.deepEqual(r.codigos,['BANCO_INDISPONIVEL']);assert.ok(!JSON.stringify(r).includes('credential'));
   await checkDatabase({...env,PGUSER:'postgres'},async()=>assert.fail('Privileged connection forbidden'));
 });
 test('leitura completa usa SQL fixo e preserva a classificacao da resposta',async()=>{
-  const env={PGUSER:'historietas_agendamento_monitor',PGHOST:'fixture.invalid',PGDATABASE:'postgres',PGSSLMODE:'verify-full',PGSSLROOTCERT:'fixture.crt'};
+  const env=proofEnv;
   const s=snapshot(), time=Date.now();
   s.agora=new Date(time).toISOString();s.saude.ultimaObservacao=new Date(time-1000).toISOString();
   s.ultimaExecucaoCron.inicio=new Date(time-2000).toISOString();s.ultimaExecucaoCron.fim=new Date(time-1000).toISOString();
   s.capacidade.medidoEm=s.agora;s.recursos.orcamentoNotificacoes.medidoEm=s.agora;s.recursos.wal.medidoEm=s.agora;s.operacoesCache.medidoEm=s.agora;
   const r=await checkDatabase(env,async(_cmd,args,options)=>{
     assert.equal(args.at(-2),'-c');assert.equal(options.shell,false);assert.equal(options.maxBuffer,65536);
-    assert.ok(!args.join(' ').includes('fixture.invalid'));
-    return {stdout:JSON.stringify(s)+'\n'};
+    assert.ok(!args.join(' ').includes(env.PGHOST));
+    assert.ok(!args.join(' ').includes(env.PGPASSWORD));
+    return {stdout:JSON.stringify(databaseOutput(s))+'\n'};
   });
   assert.deepEqual(r.codigos,capacityWarnings);
+});
+
+test('configuracao so permite identidade dedicada no pooler SESSION e TLS verify-full',async()=>{
+  for (const patch of [{PGUSER:'historietas_agendamento_monitor'}, {PGUSER:'postgres.abcdefghijklmnopqrst'},
+    {PGUSER:'service_role'}, {PGUSER:'historietas_agendamento_monitor_login.outroprojeto'},
+    {AGENDAMENTO_MONITOR_PROJECT_REF:''}, {PGHOST:'db.abcdefghijklmnopqrst.supabase.co'},
+    {PGHOST:'aws-0-sa-east-1.pooler.supabase.com.invalid'}, {PGPORT:'6543'},
+    {PGDATABASE:'postgres options=-crole=postgres'}, {PGPASSWORD:''},
+    {PGSSLMODE:'require'}, {PGSSLMODE:'disable'}, {PGSSLROOTCERT:''},
+    {PGHOSTADDR:'127.0.0.1'}, {PGSERVICE:'outro'}, {PGSERVICEFILE:'outro'}, {PGPASSFILE:'outro'}]) {
+    const r=await checkDatabase({...proofEnv,...patch},async()=>assert.fail('Configuracao deve falhar antes de conectar'));
+    assert.deepEqual(r.codigos,['BANCO_INDISPONIVEL']);
+  }
+});
+
+test('identidade, transacao e timeouts sao comprovados pela sessao real, nunca por env ou snapshot isolado',async()=>{
+  for (const patch of [{sessao:'postgres'}, {sessao:'historietas_agendamento_monitor_login.outro'},
+    {papel:'historietas_agendamento_monitor_login'}, {somenteLeitura:'off'},
+    {isolamento:'read committed'}, {statementTimeout:'0'}, {lockTimeout:'0'}, {idleTimeout:'0'}]) {
+    const value=databaseOutput(freshSnapshot());Object.assign(value.conexao,patch);
+    assert.deepEqual((await checkDatabase(proofEnv,async()=>({stdout:JSON.stringify(value)}))).codigos,
+      ['BANCO_INDISPONIVEL']);
+  }
+  assert.deepEqual((await checkDatabase(proofEnv,async()=>({stdout:JSON.stringify(freshSnapshot())}))).codigos,
+    ['BANCO_INDISPONIVEL']);
 });
 
 test('saldo 6D4 alerta em 70% e esgota por linhas OU payload, sem mudar limites',()=>{
@@ -308,7 +341,8 @@ test('workflow permanece manual, gated e sem ativar banco ou runner',()=>{
   assert.match(workflow,/workflow_dispatch:/);assert.doesNotMatch(workflow,/^\s+schedule:/m);
   assert.match(workflow,/if: vars\.AGENDAMENTO_MONITOR_AUTORIZADO == 'true'/);
   assert.match(workflow,/timeout-minutes: 2/);assert.match(workflow,/cancel-in-progress: false/);
-  assert.match(workflow,/PGUSER: historietas_agendamento_monitor/);assert.match(workflow,/PGSSLMODE: verify-full/);
+  assert.match(workflow,/PGUSER: historietas_agendamento_monitor_login\.\$\{\{ vars\.AGENDAMENTO_MONITOR_PROJECT_REF \}\}/);
+  assert.match(workflow,/PGPORT: '5432'/);assert.match(workflow,/PGSSLMODE: verify-full/);
   assert.doesNotMatch(workflow,/pg_cron|executar_runner|acionar_runner|service_role|supabase db push/);
 });
 

@@ -10,6 +10,19 @@
 
 ## Supabase
 
+- Monitor SQL: separar autenticacao (LOGIN sem senha na migration) do grupo
+  NOLOGIN do snapshot. Sem heranca/admin, somente SET explicito; nenhum grant
+  de tabela. Falhar diante de ACL efetiva incompatível, sem revogar PUBLIC
+  globalmente. Usar Supavisor Session/verify-full, validar session_user e
+  current_user alem do snapshot. Prova local nao certifica pooler gerenciado;
+  provisionar credencial/gates somente em etapa autorizada. Ver
+  `docs/operacao/monitor-sql-login.md`.
+- Ao introduzir o LOGIN, qualificar catalogos usados no caminho do snapshot:
+  search_path vazio nao impede sombreamento de relacoes por TEMP. Preservar
+  assinatura/owner/ACL; nao revogar PUBLIC globalmente. Senha alterada/removida
+  nao comprova invalidacao do cache/sessoes do pooler; fixture reinicia apenas
+  o descartavel, sem tornar esse procedimento autorizacao para o gerenciado.
+
 - Ciclo operacional apos #2260: monitor independente deve observar somente
   agregados commitados de intencao/recibo/saldo e alertar incerteza, sem inferir
   causa de aborto ou entrega HTTP/flush. Reutilizar snapshot/ACL/transporte,
