@@ -96,10 +96,14 @@ Sentry antes de aprovar. O plano Developer listado publicamente pelo Sentry
 inclui um Cron Monitor, mas a disponibilidade do slot nesta conta nao foi
 verificada e excedentes podem gerar custo: nao criar sem essa verificacao.
 
-Configurar como **GitHub Actions secrets** `AGENDAMENTO_SENTRY_CHECKIN_URL`
-(endpoint HTTPS de check-ins do monitor na regiao correta, sem query/token) e
-`AGENDAMENTO_SENTRY_DSN` (DSN do projeto correto). O script aceita apenas
-dominios Sentry e caminho de check-ins, rejeita redirects, limita cada request
+Configurar como **GitHub Actions secret** `AGENDAMENTO_SENTRY_CHECKIN_URL`: URL
+de ingestao HTTP/Relay do Cron Monitor, copiada do Sentry para o projeto e
+regiao corretos, com slug real no lugar do placeholder. O caminho e
+`/api/<projeto>/cron(s)/<slug>/<chave_publica>/`; a chave embutida na URL
+deve ser tratada como segredo. A API legada de organizacoes e o secret DSN
+separado nao sao usados. O inicio e o fim enviam o mesmo `check_in_id`
+gerado localmente via HTTPS, com `status=in_progress` e depois `ok` ou `error`.
+O script restringe host/caminho, rejeita redirects, limita cada request
 a 8 segundos e nunca registra URL, resposta ou credencial. O workflow manual
 nao envia check-ins mesmo que os secrets ja existam. Falha conjunta GitHub +
 Sentry ou alerta Sentry nao entregue ao responsavel continua sendo risco a

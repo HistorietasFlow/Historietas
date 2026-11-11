@@ -4,23 +4,23 @@ import {readFileSync} from 'node:fs';
 import {isRealWatchdogRun,main} from '../scripts/chapter-scheduling-sentry-checkin.mjs';
 import {main as runWatchdog} from '../scripts/chapter-scheduling-watchdog.mjs';
 
-const id='11111111-2222-4333-8444-555555555555';
 const scheduled={GITHUB_ACTIONS:'true',GITHUB_EVENT_NAME:'schedule',GITHUB_REF:'refs/heads/main',
   GITHUB_REPOSITORY:'HistorietasFlow/Historietas',
   GITHUB_WORKFLOW_REF:'HistorietasFlow/Historietas/.github/workflows/agendamento-watchdog.yml@refs/heads/main',
-  AGENDAMENTO_SENTRY_CHECKIN_URL:'https://sentry.io/api/0/organizations/historietas/monitors/watchdog/checkins/',
-  AGENDAMENTO_SENTRY_DSN:'dsn-sintetico'};
+  AGENDAMENTO_SENTRY_CHECKIN_URL:'https://o123.ingest.us.sentry.io/api/456/crons/watchdog/11111111111111111111111111111111/'};
 
 function transport({failStart=false,failEnd=false,loseStart=false}={}) {
   const calls=[];
   const fetchImpl=async(url,options)=>{
-    calls.push({url,method:options.method,status:JSON.parse(options.body).status,
-      auth:options.headers.Authorization,redirect:options.redirect});
-    if (options.method==='POST') {
-      if (loseStart) throw Error('dsn-sintetico resposta perdida');
-      return failStart ? new Response('dsn-sintetico',{status:503}) : Response.json({id},{status:201});
+    const parsed=new URL(url);
+    const status=parsed.searchParams.get('status');
+    calls.push({url,method:options.method,status,id:parsed.searchParams.get('check_in_id'),
+      redirect:options.redirect,headers:options.headers,body:options.body});
+    if (status==='in_progress') {
+      if (loseStart) throw Error('resposta perdida');
+      return failStart ? new Response(null,{status:503}) : new Response(null,{status:200});
     }
-    return failEnd ? new Response('dsn-sintetico',{status:503}) : new Response(null,{status:204});
+    return failEnd ? new Response(null,{status:503}) : new Response(null,{status:200});
   };
   return {fetchImpl,calls};
 }
@@ -38,13 +38,15 @@ test('execucao manual, teste de e-mail, branch ou repo diferente nunca renovam o
   }
 });
 
-test('inicio e fim usam mesmo ID: sucesso so depois de verificacao real concluida',async()=>{
+test('Relay recebe mesmo ID gerado localmente: sucesso so depois de verificacao real concluida',async()=>{
   const t=transport();let runs=0;
   assert.equal(await main(scheduled,{fetchImpl:t.fetchImpl,watchdogMain:async()=>{runs++;return 0;}}),0);
   assert.equal(runs,1);
-  assert.deepEqual(t.calls.map(c=>[c.method,c.status]),[['POST','in_progress'],['PUT','ok']]);
-  assert.equal(t.calls[1].url,`${scheduled.AGENDAMENTO_SENTRY_CHECKIN_URL}${id}/`);
-  assert.ok(t.calls.every(c=>c.redirect==='error' && c.auth==='DSN dsn-sintetico'));
+  assert.deepEqual(t.calls.map(c=>[c.method,c.status]),[['GET','in_progress'],['GET','ok']]);
+  assert.match(t.calls[0].id,/^[0-9a-f]{32}$/);
+  assert.equal(t.calls[1].id,t.calls[0].id);
+  assert.ok(t.calls.every(c=>c.redirect==='error' && c.headers===undefined && c.body===undefined &&
+    c.url.startsWith(scheduled.AGENDAMENTO_SENTRY_CHECKIN_URL)));
 });
 
 test('falha, verificacao ausente e excecao do watchdog terminam em error, nunca ok',async()=>{
@@ -85,13 +87,30 @@ test('falha no check-in final nao confirma sucesso; proxima execucao recupera co
 });
 
 test('configuracao ausente ou URL insegura nao envia segredos nem cria falso sucesso',async()=>{
-  for (const change of [{AGENDAMENTO_SENTRY_DSN:undefined},
-    {AGENDAMENTO_SENTRY_CHECKIN_URL:'http://sentry.io/api/0/organizations/org/monitors/watchdog/checkins/'},
+  for (const change of [{AGENDAMENTO_SENTRY_CHECKIN_URL:undefined},
+    {AGENDAMENTO_SENTRY_CHECKIN_URL:'https://sentry.io/api/0/organizations/org/monitors/watchdog/checkins/'},
+    {AGENDAMENTO_SENTRY_CHECKIN_URL:'http://o123.ingest.us.sentry.io/api/456/crons/watchdog/11111111111111111111111111111111/'},
     {AGENDAMENTO_SENTRY_CHECKIN_URL:'https://evil.example/checkins/'},
+    {AGENDAMENTO_SENTRY_CHECKIN_URL:'https://o123.ingest.us.sentry.io.evil.example/api/456/crons/watchdog/11111111111111111111111111111111/'},
     {AGENDAMENTO_SENTRY_CHECKIN_URL:`${scheduled.AGENDAMENTO_SENTRY_CHECKIN_URL}?token=segredo`}]) {
     const t=transport();let runs=0;
     assert.equal(await main({...scheduled,...change},{fetchImpl:t.fetchImpl,watchdogMain:async()=>{runs++;return 0;}}),2);
     assert.equal(runs,1);assert.equal(t.calls.length,0);
+  }
+});
+
+test('aceita a variante singular do Relay e rejeita slug ou chave ausentes',async()=>{
+  const t=transport();
+  const singular=scheduled.AGENDAMENTO_SENTRY_CHECKIN_URL.replace('/crons/','/cron/');
+  assert.equal(await main({...scheduled,AGENDAMENTO_SENTRY_CHECKIN_URL:singular},
+    {fetchImpl:t.fetchImpl,watchdogMain:async()=>0}),0);
+  assert.equal(t.calls.length,2);
+  for (const url of [singular.replace('/watchdog/','/___MONITOR_SLUG___/'),
+    singular.replace(/\/[a-f0-9]{32}\/$/,'/')]) {
+    const invalid=transport();
+    assert.equal(await main({...scheduled,AGENDAMENTO_SENTRY_CHECKIN_URL:url},
+      {fetchImpl:invalid.fetchImpl,watchdogMain:async()=>0}),2);
+    assert.equal(invalid.calls.length,0);
   }
 });
 
@@ -102,6 +121,6 @@ test('workflow permanece manual e secrets sao exclusivos do check-in',()=>{
   assert.doesNotMatch(workflow,/^\s+schedule:/m);
   assert.match(workflow,/run: node qa\/scripts\/chapter-scheduling-sentry-checkin\.mjs/);
   assert.match(workflow,/AGENDAMENTO_SENTRY_CHECKIN_URL: \$\{\{ secrets\.AGENDAMENTO_SENTRY_CHECKIN_URL \}\}/);
-  assert.match(workflow,/AGENDAMENTO_SENTRY_DSN: \$\{\{ secrets\.AGENDAMENTO_SENTRY_DSN \}\}/);
+  assert.doesNotMatch(workflow,/AGENDAMENTO_SENTRY_DSN/);
   assert.match(ci,/node --test qa\/unit\/chapter-scheduling-monitor\.test\.mjs qa\/unit\/chapter-scheduling-watchdog\.test\.mjs qa\/unit\/chapter-scheduling-sentry-checkin\.test\.mjs/);
 });
