@@ -1,5 +1,19 @@
 # Problemas conhecidos e soluções
 
+## TLS do monitor SQL: raiz privada Supabase nao confiada pelo sistema
+
+Em 11/11/2026, negociacao sem credenciais no Session Pooler falhou com
+SELF_SIGNED_CERT_IN_CHAIN (Node) e UntrustedRoot (Windows). A cadeia apresentada
+NAO foi usada como trust anchor. A CA foi obtida por HTTPS da URL publicada
+no codigo oficial do painel e comparada ao arquivo baixado pelo responsavel.
+Fonte/pin/validade em `qa/certificates/README.md`. Workflow fixa PGSSLROOTCERT
+nesse arquivo e verifica sua integridade antes do psql; preserva verify-full,
+hostname e falha fechada. Nao modificar o trust store global nem usar require.
+Rotacao exige nova revisao da fonte e do pin, sem download automatico.
+TLS no pooler real passou com a CA oficial; CA ausente/invalida e hostname
+incorreto falharam antes de autenticacao. Isso NAO certifica senha, identidade
+SQL, leitura do snapshot, entrega GitHub/Sentry ou a perna interna do pooler.
+
 ## CI #2267: DNS do mirror Azure antes do Playwright
 
 As tentativas 1 e 2 de `43034526557` falharam no APT com

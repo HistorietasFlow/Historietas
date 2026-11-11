@@ -2,6 +2,32 @@
 
 Atualizado em: 2026-11-11
 
+### TLS do monitor SQL — CA oficial explicita, 11/11/2026
+
+Base `0554750b`. O pooler real apresentou cadeia Supabase Root 2021 CA, ausente
+dos trust stores padrao testados (SELF_SIGNED_CERT_IN_CHAIN/UntrustedRoot).
+Versionada a CA publica obtida por HTTPS da URL publicada no codigo oficial
+do painel, tambem conferida com o download fornecido pelo responsavel.
+Workflow usa arquivo exclusivo, pin SHA-256 DER, assinatura e validade no
+preflight; TLS verify-full, hostname e LOGIN dedicado permanecem obrigatorios.
+Sem download em runtime, trust global, novo secret, senha ou ativacao.
+Ver `qa/certificates/README.md` e `docs/operacao/monitor-sql-login.md`.
+Validacao focada: 61/61 (CA, monitor, watchdog e Sentry), incluindo TLS real
+loopback com PKI sintetica apenas de teste. Pooler real: CA oficial aceita
+(TLS 1.3); CA invalida/ausente e hostname errado rejeitados. Psql Linux 17.6
+com verify-full repetiu os quatro casos: CA correta chegou apenas a exigencia
+de senha (`no password supplied`); demais casos falharam na CA/hostname.
+Nenhuma senha, autenticacao bem-sucedida, SQL remoto ou check-in foi enviado.
+Node 22.23.4/npm ci reproduzivel: Lint, Typecheck, Build, YAML, auditoria estatica
+199/199, paginacao/sessao e audit de producao (zero) aprovados. O primeiro Lint
+foi iniciado antes de terminar npm ci e encontrou modulo ainda incompleto;
+apos a instalacao terminar, o mesmo Lint passou sem alteracao de dependencias.
+O npm ci apontou advisories de desenvolvimento no lockfile existente; nao
+executado audit fix. Sem mudanca de app/SQL, pgTAP, Data API e Playwright amplos
+nao foram repetidos localmente nesta correcao TLS; checks da nova PR sao separados.
+Autenticacao SQL/entrega real v2 e homologacao Sentry continuam pendentes;
+um handshake sem credenciais nao comprova esses contratos.
+
 ### Monitor SQL — identidade de conexao dedicada, 11/11/2026
 
 Base `main` `50dcd318`. Inventario remoto autorizado anterior confirmou que o

@@ -122,7 +122,7 @@ test('workflow permanece manual e secrets sao exclusivos do check-in',()=>{
   assert.match(workflow,/run: node qa\/scripts\/chapter-scheduling-sentry-checkin\.mjs/);
   assert.match(workflow,/AGENDAMENTO_SENTRY_CHECKIN_URL: \$\{\{ secrets\.AGENDAMENTO_SENTRY_CHECKIN_URL \}\}/);
   assert.doesNotMatch(workflow,/AGENDAMENTO_SENTRY_DSN/);
-  assert.match(ci,/node --test qa\/unit\/chapter-scheduling-monitor\.test\.mjs qa\/unit\/chapter-scheduling-watchdog\.test\.mjs qa\/unit\/chapter-scheduling-sentry-checkin\.test\.mjs/);
+  assert.match(ci,/node --test qa\/unit\/chapter-monitor-ca\.test\.mjs qa\/unit\/chapter-scheduling-monitor\.test\.mjs qa\/unit\/chapter-scheduling-watchdog\.test\.mjs qa\/unit\/chapter-scheduling-sentry-checkin\.test\.mjs/);
 });
 
 test('watchdog real integrado ao wrapper: teste de transporte verde nao vira ok; SQL falho e recuperacao distinguem-se',async()=>{
