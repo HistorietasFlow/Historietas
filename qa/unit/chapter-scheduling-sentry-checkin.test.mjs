@@ -135,6 +135,11 @@ test('watchdog real integrado ao wrapper: teste de transporte verde nao vira ok;
     {step:'Observar banco e entregar alerta',conclusion:'success',code:1,status:'error',reason:'VERIFICACAO_NAO_COMPROVADA'},
     {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'failure',code:1,status:'error',reason:'VERIFICACAO_FALHOU'},
     {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'success',code:0,status:'ok'},
+    {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'success',stale:true,
+      code:1,status:'error',reason:'VERIFICACAO_ATRASADA'},
+    {missing:true,code:1,status:'error',reason:'VERIFICACAO_AUSENTE'},
+    {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'success',deliveryRejected:true,code:2,status:'error'},
+    {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'success',lostDelivery:true,code:2,status:'error'},
   ]) {
     const t=transport(),comments=[];
     const fetchImpl=async(url,options={})=>{
@@ -142,13 +147,17 @@ test('watchdog real integrado ao wrapper: teste de transporte verde nao vira ok;
       if (url.includes('/attempts/')) return Response.json({total_count:1,jobs:[{
         name:'verificar',run_id:7,run_attempt:1,status:'completed',conclusion:scenario.conclusion,
         steps:[{name:scenario.step,status:'completed',conclusion:scenario.conclusion,
-          started_at:'2026-11-11T11:58:30Z',completed_at:'2026-11-11T11:59:00Z'}]}]});
-      if (url.includes('/runs?')) return Response.json({total_count:1,workflow_runs:[{
+          started_at:scenario.stale?'2026-11-11T11:48:30Z':'2026-11-11T11:58:30Z',
+          completed_at:scenario.stale?'2026-11-11T11:49:00Z':'2026-11-11T11:59:00Z'}]}]});
+      if (url.includes('/runs?')) return Response.json({total_count:scenario.missing?0:1,workflow_runs:scenario.missing?[]:[{
         id:7,run_attempt:1,head_branch:'main',event:'workflow_dispatch',status:'completed',
-        conclusion:scenario.conclusion,created_at:'2026-11-11T11:58:00Z',updated_at:'2026-11-11T11:59:01Z'}]});
+        conclusion:scenario.conclusion,created_at:scenario.stale?'2026-11-11T11:48:00Z':'2026-11-11T11:58:00Z',
+        updated_at:'2026-11-11T11:59:01Z'}]});
       if (url.includes('/workflows/')) return Response.json({state:'active',path:'.github/workflows/agendamento-monitor.yml'});
       if (options.method==='POST') {
         comments.push(JSON.parse(options.body).body);
+        if (scenario.lostDelivery) throw new DOMException('timeout sintetico da entrega','TimeoutError');
+        if (scenario.deliveryRejected) return new Response(null,{status:503});
         return Response.json({id:1},{status:201});
       }
       if (url.includes('/comments')) return Response.json([]);

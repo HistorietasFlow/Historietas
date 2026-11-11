@@ -73,6 +73,30 @@ test('atraso usa fim da etapa, nao update recente ou nova tentativa queued',()=>
   f.jobs[0].steps[0].conclusion='failure';
   assert.deepEqual(classify(f),['VERIFICACAO_ATRASADA','VERIFICACAO_FALHOU']);
 });
+
+test('janela proposta de 30 min usa conclusao SQL: limite inclusivo e obsolescencia no milissegundo seguinte',()=>{
+  // Candidato de homologacao, nao default nem aprovacao operacional.
+  const policy=watchdogPolicy({...env,AGENDAMENTO_MONITOR_MAX_INTERVALO_MS:'1800000'},now);
+  const f=fixture(),end=Date.parse(f.jobs[0].steps[0].completed_at);
+  assert.deepEqual(classifyVerification(f,policy,end+1800000).codigos,[]);
+  assert.deepEqual(classifyVerification(f,policy,end+1800001).codigos,['VERIFICACAO_ATRASADA']);
+  // Atualizacao recente do run nao renova a conclusao SQL antiga.
+  f.run.updated_at=new Date(end+1800001).toISOString();
+  assert.deepEqual(classifyVerification(f,policy,end+1800001).codigos,['VERIFICACAO_ATRASADA']);
+});
+
+test('cadencia proposta tolera um ciclo SQL perdido, mas nao dois nem falha concluida recente',()=>{
+  const policy=watchdogPolicy({...env,AGENDAMENTO_MONITOR_MAX_INTERVALO_MS:'1800000'},now);
+  const f=fixture();
+  f.run.created_at='2026-11-10T11:24:00Z';
+  f.run.updated_at='2026-11-10T11:25:02Z';
+  Object.assign(f.jobs[0].steps[0],{started_at:'2026-11-10T11:25:00Z',completed_at:'2026-11-10T11:25:01Z'});
+  assert.deepEqual(classifyVerification(f,policy,Date.parse('2026-11-10T11:45:00Z')).codigos,[]);
+  assert.deepEqual(classifyVerification(f,policy,now).codigos,['VERIFICACAO_ATRASADA']);
+  f.jobs[0].steps[0].conclusion='failure';
+  f.jobs[0].conclusion=f.run.conclusion='failure';
+  assert.deepEqual(classifyVerification(f,policy,Date.parse('2026-11-10T11:30:00Z')).codigos,['VERIFICACAO_FALHOU']);
+});
 test('API usa workflow/branch/attempt fixos, GETs limitados e rejeita redirect sem vazar erros',async()=>{
   const a=api();assert.deepEqual((await checkVerification(env,{now,fetchImpl:a.fetchImpl})).codigos,[]);
   assert.equal(a.calls.length,3);
@@ -183,7 +207,11 @@ test('workflows sem schedule, com gates distintos e main; watchdog nunca recebe 
   assert.match(monitor,/AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO: 'true'/);
   assert.doesNotMatch(monitor,/continue-on-error|\|\| true/);
   const template=read('../../docs/operacao/agendamento-periodico.patch.example');
-  assert.match(template,/__CADENCIA_MONITOR_UTC_APROVADA__/);
+  assert.match(template,/# INERTE:/);
+  const monitorPatch=template.split('diff --git a/.github/workflows/agendamento-monitor.yml')[1]
+    .split('diff --git a/.github/workflows/agendamento-watchdog.yml')[0];
+  assert.equal((monitorPatch.match(/^\+    - cron:/gm)??[]).length,1);
+  assert.match(monitorPatch,/^\+    - cron: '10,25,40,55 \* \* \* \*'$/m);
   const watchdogPatch=template.split('diff --git a/.github/workflows/agendamento-watchdog.yml')[1];
   assert.equal((watchdogPatch.match(/^\+    - cron:/gm)??[]).length,1);
   assert.match(watchdogPatch,/^\+    - cron: '\*\/15 \* \* \* \*'$/m);

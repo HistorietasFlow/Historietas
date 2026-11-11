@@ -2,6 +2,28 @@
 
 Atualizado em: 2026-11-11
 
+### Homologacao final Sentry/GitHub — preparacao, sem ativacao
+
+Base `aaf693fc`. Run real #43089501994, attempt 1: preflight/etapa v2 success,
+transporte de teste skipped. Job 19:41:17Z–19:41:27Z, SQL/entrega 19:41:21Z–24Z.
+Autenticacao SQL gerenciada aprovada; nao repetir auditoria de senha/ACL.
+Responsavel confirmou gate do monitor false. Sem novo SQL remoto/check-in.
+Proposta no patch INERTE: SQL 10/25/40/55 UTC, watchdog */15 (cadencia aprovada),
+janela SQL 30 min e ensaio 72 h sujeitos a aprovacao. Workflows reais manuais.
+Run manual nao mede fila periodica: GitHub pode atrasar/descartar; nao ha SLA.
+Plano unico, matriz de sucesso/falha/ausencia/timeout/recuperacao/e-mail e acoes
+administrativas em `docs/operacao/sentry-watchdog-homologacao.md`.
+Sentry ok significa SQL real fresco + entrega, nao saude/capacidade/WAL/runner.
+Periodicidade e recebimento reais seguem PENDENTES. Cron/runner/publicacao e
+uploads continuam bloqueados; nenhuma configuracao/secrets alterados.
+
+Validacao local Node 22.23.4/npm ci: 63/63 testes focados (CA/TLS loopback,
+monitor, watchdog e Sentry), auditoria estatica 199/199, paginacao/sessao,
+Lint, Typecheck, Build e audit de producao (zero vulnerabilidades) aprovados.
+git apply --check confirma o patch sem aplica-lo. Sem mudanca em app, SQL ou
+workflows ativos; pgTAP/Data API/Playwright amplos nao foram repetidos nesta
+preparacao de documentacao/QA. Testes locais nao certificam entrega remota.
+
 ### TLS do monitor SQL — CA oficial explicita, 11/11/2026
 
 Base `0554750b`. O pooler real apresentou cadeia Supabase Root 2021 CA, ausente

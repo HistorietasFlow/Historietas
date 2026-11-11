@@ -45,8 +45,10 @@ O workflow novo e **somente manual** e exige
 Monitor mantem seu gate separado. Nenhum `schedule` ativo foi adicionado.
 O patch **inerte** `docs/operacao/agendamento-periodico.patch.example` prepara
 as duas agendas. Em 11/11, a cadencia do watchdog foi aprovada para preparacao:
-`*/15 * * * *` UTC; a cadencia SQL continua placeholder. Nao aplicar o patch
-inteiro. A aprovacao da cadencia NAO autoriza ativacao.
+`*/15 * * * *` UTC. Apos a prova SQL real #43089501994, o patch passa a propor
+SQL `10,25,40,55 * * * *`, janela 30 min e ensaio 72 h; ainda exigem aprovacao.
+O plano completo esta em `docs/operacao/sentry-watchdog-homologacao.md`.
+A aprovacao da cadencia NAO autoriza aplicar o patch nem ativar gates.
 Nao copiar para `.github/workflows` nem aplicar antes de revisao/autorizacao.
 Eventos schedule usariam leitura real (`inputs.teste_entrega` ausente/false);
 workflow_dispatch continua com teste de transporte=true por padrao.
