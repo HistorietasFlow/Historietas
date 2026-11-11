@@ -114,11 +114,12 @@ test('aceita a variante singular do Relay e rejeita slug ou chave ausentes',asyn
   }
 });
 
-test('workflow permanece manual e secrets sao exclusivos do check-in',()=>{
+test('workflow permite schedule e manual com secret exclusivo do check-in',()=>{
   const workflow=readFileSync(new URL('../../.github/workflows/agendamento-watchdog.yml',import.meta.url),'utf8');
   const ci=readFileSync(new URL('../../.github/workflows/ci.yml',import.meta.url),'utf8');
   assert.match(workflow,/workflow_dispatch:/);
-  assert.doesNotMatch(workflow,/^\s+schedule:/m);
+  assert.equal((workflow.match(/^\s+schedule:/gm)??[]).length,1);
+  assert.match(workflow,/^\s+- cron: '\*\/15 \* \* \* \*'$/m);
   assert.match(workflow,/run: node qa\/scripts\/chapter-scheduling-sentry-checkin\.mjs/);
   assert.match(workflow,/AGENDAMENTO_SENTRY_CHECKIN_URL: \$\{\{ secrets\.AGENDAMENTO_SENTRY_CHECKIN_URL \}\}/);
   assert.doesNotMatch(workflow,/AGENDAMENTO_SENTRY_DSN/);

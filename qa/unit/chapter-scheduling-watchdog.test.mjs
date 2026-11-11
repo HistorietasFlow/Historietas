@@ -191,13 +191,15 @@ test('transporte HTTP local real: resposta POST perdida preserva comentario e re
     assert.doesNotMatch(JSON.stringify(comments),/token-sintetico-local|Authorization/);
   } finally { server.closeAllConnections();await new Promise(resolve=>server.close(resolve)); }
 });
-test('workflows sem schedule, com gates distintos e main; watchdog nunca recebe SQL/secrets do banco',()=>{
+test('schedules coordenados, com gates distintos e main; watchdog nunca recebe SQL/secrets do banco',()=>{
   const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
   const monitor=read('../../.github/workflows/agendamento-monitor.yml'),watchdog=read('../../.github/workflows/agendamento-watchdog.yml');
   for (const w of [monitor,watchdog]) {
-    assert.doesNotMatch(w,/^\s+schedule:/m);assert.match(w,/workflow_dispatch:/);
+    assert.equal((w.match(/^\s+schedule:/gm)??[]).length,1);assert.match(w,/workflow_dispatch:/);
     assert.match(w,/github.ref == 'refs\/heads\/main'/);assert.match(w,/cancel-in-progress: false/);
   }
+  assert.match(monitor,/^\s+- cron: '10,25,40,55 \* \* \* \*'$/m);
+  assert.match(watchdog,/^\s+- cron: '\*\/15 \* \* \* \*'$/m);
   assert.match(monitor,/AGENDAMENTO_MONITOR_AUTORIZADO/);assert.match(watchdog,/AGENDAMENTO_WATCHDOG_AUTORIZADO/);
   assert.match(watchdog,/actions: read/);assert.doesNotMatch(watchdog,/PGHOST|PGPASSWORD|service_role/);
   assert.deepEqual([...watchdog.matchAll(/secrets\.([A-Z_]+)/g)].map(match=>match[1]).sort(),

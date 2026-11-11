@@ -1,4 +1,4 @@
-# Homologacao do watchdog Sentry — preparacao, sem ativacao
+# Homologacao do watchdog Sentry — PR de agenda em draft, sem ativacao
 
 Base atual: `main` `aaf693fc`, 11/11/2026. O responsavel informou que criou o
 monitor/alerta Sentry e cadastrou o secret. A execucao real
@@ -12,25 +12,35 @@ Nao reabrir a auditoria de credenciais; nao ler secrets ou repetir SQL remoto.
 Periodicidade, check-ins reais, incidentes Sentry e recebimento de e-mail ainda
 nao foram homologados. Nenhum check-in foi enviado nesta preparacao.
 
+Conferencia visual do responsavel em 11/11: monitor Sentry `*/15` UTC, margem
+10 min, runtime 3 min, limiares de falha/recuperacao 1/1; regra de alerta ativa
+com destinatarios sugeridos e fallback para membros do projeto, sem entrega
+real de e-mail comprovada. Billing: plano Developer gratuito com teste Business
+(5 dias restantes), 1/300 Cron Monitors (299 gifted), gasto extra US$ 0,00 e
+nenhum metodo de pagamento. O plano Developer permite somente 1 Cron Monitor
+apos o teste e o existente ocupa esse unico slot; nao criar segundo monitor nem
+presumir limite de 300 permanente. Fontes do fornecedor:
+https://www.sentry.help/en/articles/13963931-how-do-i-can-i-get-more-crons-on-a-developer-plan
+https://www.sentry.help/en/articles/13965075-what-happens-when-my-trial-expires
+
 ## Cadencia preparada
 
 Watchdog: **`*/15 * * * *`, UTC**, aprovado para preparacao. Monitor SQL:
 **proposta `10,25,40,55 * * * *`, UTC**, nominalmente cinco minutos antes de cada
 watchdog. Reutiliza os dois workflows existentes e seus locks/gates separados.
-O patch `agendamento-periodico.patch.example` continua INERTE, agora com os
-dois crons concretos. Ambos os workflows reais continuam somente manuais.
-Nem o merge deste documento nem o patch autorizam ativacao.
+O patch `agendamento-periodico.patch.example` e referencia INERTE, incorporada
+nesta PR de ativacao EM DRAFT. Na `main`, ambos os workflows seguem manuais ate
+um merge especificamente autorizado. O merge dos workflows adiciona eventos
+`schedule` (mesmo com jobs pulados); por isso, antes do merge, conferir os dois
+gates `AGENDAMENTO_MONITOR_AUTORIZADO=false` e
+`AGENDAMENTO_WATCHDOG_AUTORIZADO=false`. Sem essas verificacoes, nao mesclar.
 
-Validacao local, sem modificar workflows:
-
-```powershell
-git apply --check docs/operacao/agendamento-periodico.patch.example
-```
-
-Depois de autorizacao explicita, uma revisao separada devera incluir os dois
-hunks coordenados. Nao remover `--check` nesta fase. O SQL usa a etapa v2 real
-no evento schedule (input de teste ausente/falso); dispatch continua com teste
-de transporte por default. Isso deve ser conferido na revisao de ativacao.
+Na PR, revisar o diff dos dois workflows e executar os testes focados de
+monitor/watchdog/Sentry, Lint, Typecheck e CI/Gitleaks. O patch historico nao
+deve ser reaplicado depois do merge. O SQL usa a etapa v2 real no evento
+`schedule` (input de teste ausente/falso); `workflow_dispatch` continua com
+`teste_entrega=true` por padrao. A branch draft nao dispara cron; GitHub agenda
+somente na branch default apos merge autorizado.
 Sentry precisa usar o mesmo cron UTC. Margem de 10 min, runtime de 3 min e
 limiares de falha/recuperacao de 1 continuam propostas, a conferir/aprovar no
 painel; somente a cadencia de 15 min foi aprovada aqui. O job limita-se a 2 min.
@@ -44,7 +54,7 @@ best-effort e podem atrasar ou ser descartados, especialmente no inicio da hora.
 Nao ha SLA de deteccao de 15 min. Se o deslocamento do cron for desejado,
 alinhar tambem o Sentry em revisao explicita, nao alterar so um dos lados.
 
-### Janela de observacao proposta, ainda nao aprovada
+### Janela de observacao aprovada PARA ENSAIO, ainda nao ativada
 
 `AGENDAMENTO_MONITOR_MAX_INTERVALO_MS=1800000` (30 min), sem adicionar default
 ao codigo; `AGENDAMENTO_MONITOR_ESPERADO_DESDE` deve ser o inicio UTC da janela
