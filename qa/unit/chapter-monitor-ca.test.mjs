@@ -29,11 +29,14 @@ test('CA ausente, invalida ou acrescida de outro material falha fechada',()=>{
   } finally {rmSync(dir,{recursive:true,force:true});}
 });
 
-test('workflow fixa a CA especifica sem download, downgrade, novo secret ou ativacao',()=>{
+test('workflow fixa CA e schedule aprovado sem download, downgrade ou novo secret',()=>{
   const workflow=readFileSync(new URL('../../.github/workflows/agendamento-monitor.yml',import.meta.url),'utf8');
   assert.match(workflow,/node qa\/scripts\/chapter-monitor-ca\.mjs/);
   assert.match(workflow,/PGSSLROOTCERT: \$\{\{ github\.workspace \}\}\/qa\/certificates\/supabase-prod-ca-2021\.crt/);
-  assert.doesNotMatch(workflow,/ca-certificates\.crt|curl |wget |^\s+schedule:|rejectUnauthorized|NODE_TLS_REJECT_UNAUTHORIZED/m);
+  assert.doesNotMatch(workflow,/ca-certificates\.crt|curl |wget |rejectUnauthorized|NODE_TLS_REJECT_UNAUTHORIZED/m);
+  assert.equal((workflow.match(/^\s+schedule:/gm)??[]).length,1);
+  assert.match(workflow,/^\s+- cron: '10,25,40,55 \* \* \* \*'$/m);
+  assert.match(workflow,/if: vars\.AGENDAMENTO_MONITOR_AUTORIZADO == 'true'/);
   assert.match(workflow,/PGSSLMODE: verify-full/);
   assert.match(workflow,/PGUSER: historietas_agendamento_monitor_login\./);
   assert.match(workflow,/if: \$\{\{ !inputs\.teste_entrega \}\}/);
