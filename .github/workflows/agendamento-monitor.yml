@@ -2,7 +2,7 @@ name: Monitor privado do agendamento (manual)
 
 on:
   schedule:
-    - cron: '10,25,40,55 * * * *'
+    - cron: '10/15 * * * *'
   workflow_dispatch:
     inputs:
       teste_entrega:

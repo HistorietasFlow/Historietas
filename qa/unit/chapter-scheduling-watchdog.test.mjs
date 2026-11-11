@@ -198,7 +198,8 @@ test('schedules coordenados, com gates distintos e main; watchdog nunca recebe S
     assert.equal((w.match(/^\s+schedule:/gm)??[]).length,1);assert.match(w,/workflow_dispatch:/);
     assert.match(w,/github.ref == 'refs\/heads\/main'/);assert.match(w,/cancel-in-progress: false/);
   }
-  assert.match(monitor,/^\s+- cron: '10,25,40,55 \* \* \* \*'$/m);
+  assert.match(monitor,/^\s+- cron: '10\/15 \* \* \* \*'$/m);
+  assert.deepEqual(Array.from({length:60},(_,min)=>min).filter(min=>min>=10&&(min-10)%15===0),[10,25,40,55]);
   assert.match(watchdog,/^\s+- cron: '\*\/15 \* \* \* \*'$/m);
   assert.match(monitor,/AGENDAMENTO_MONITOR_AUTORIZADO/);assert.match(watchdog,/AGENDAMENTO_WATCHDOG_AUTORIZADO/);
   assert.match(watchdog,/actions: read/);assert.doesNotMatch(watchdog,/PGHOST|PGPASSWORD|service_role/);
