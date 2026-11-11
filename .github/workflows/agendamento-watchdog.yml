@@ -30,4 +30,6 @@ jobs:
           AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
           AGENDAMENTO_MONITOR_ESPERADO_DESDE: ${{ vars.AGENDAMENTO_MONITOR_ESPERADO_DESDE }}
           AGENDAMENTO_MONITOR_MAX_INTERVALO_MS: ${{ vars.AGENDAMENTO_MONITOR_MAX_INTERVALO_MS }}
-        run: node qa/scripts/chapter-scheduling-watchdog.mjs
+          AGENDAMENTO_SENTRY_CHECKIN_URL: ${{ secrets.AGENDAMENTO_SENTRY_CHECKIN_URL }}
+          AGENDAMENTO_SENTRY_DSN: ${{ secrets.AGENDAMENTO_SENTRY_DSN }}
+        run: node qa/scripts/chapter-scheduling-sentry-checkin.mjs
