@@ -36,9 +36,14 @@ Usar **Shared pooler / Session mode** do painel Connect: IPv4, porta **5432**,
 usuario `historietas_agendamento_monitor_login.PROJECT_REF`. O host deve ser
 copiado do painel, nao derivado da regiao. Transaction mode (6543), usuario
 administrativo, URI/opcoes injetadas, host alternativo e TLS inferior a
-verify-full sao recusados. A CA publica do pooler e validada pelo bundle de CAs
-do runner; certificado/hostname incorretos falham sem downgrade. O workflow
-confere psql e o bundle antes da etapa v2.
+verify-full sao recusados. O pooler apresenta cadeia da Supabase Root 2021 CA,
+que nao e confiada automaticamente pelos bundles padrao testados. O workflow
+usa exclusivamente `qa/certificates/supabase-prod-ca-2021.crt`, obtida por HTTPS
+da fonte do painel oficial, com pin DER/validade conferidos antes da etapa v2.
+Ver [proveniencia, fingerprint e rotacao](../../qa/certificates/README.md).
+Nao baixar a CA do handshake SQL, modificar o trust store global, fazer download
+a cada execucao ou reduzir TLS para `require`. CA ausente/invalida e hostname
+incorreto falham fechados. Nao e necessario cadastrar um novo secret de CA.
 
 ### Limites que permanecem explicitos
 
@@ -82,7 +87,7 @@ Extensoes/novos grants exigem nova auditoria antes de conceder a credencial.
 | Variable | AGENDAMENTO_MONITOR_PROJECT_REF | Ref real do projeto, 20 letras minusculas, sem ponto/sufixo |
 
 O workflow fixa banco postgres, porta 5432, usuario composto, TLS verify-full
-e CA do sistema. `AGENDAMENTO_MONITOR_PGPORT` deixa de ser utilizado. Nao
+e CA oficial versionada. `AGENDAMENTO_MONITOR_PGPORT` deixa de ser utilizado. Nao
 reutilizar senha de postgres, service role ou credencial de outro fluxo.
 `AGENDAMENTO_ALERT_ISSUE`, os gates e as janelas do watchdog continuam com os
 contratos existentes; o secret Sentry nao depende desta credencial SQL.
@@ -121,8 +126,13 @@ descartavel para invalidar cache/sessoes antes e depois, com verificacao de
 readiness; nao faz retry de autenticacao. Esse reinicio nao e um procedimento
 aprovado para o ambiente gerenciado.
 
-Permanecem pendentes: provisionamento autorizado, autenticacao/TLS no Supavisor
-gerenciado, disponibilidade de psql/CA no runner efetivo, execucao real v2,
+A cadeia/hostname do pooler gerenciado foi validada sem senha por Node e psql
+Linux: CA correta aceita; CA ausente/invalida e hostname errado rejeitados.
+O psql parou em `no password supplied`, sem executar SQL remoto. Isso nao
+certifica autenticacao nem a perna interna pooler/Postgres.
+
+Permanecem pendentes: provisionamento autorizado, autenticacao do LOGIN no
+Supavisor gerenciado, execucao psql no runner efetivo, execucao real v2,
 entrega de alerta/check-in e homologacao de ausencia/falha/recuperacao. Nenhum
 teste sintetico ou local e apresentado como essa homologacao operacional.
 
