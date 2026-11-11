@@ -2,6 +2,21 @@
 
 Atualizado em: 2026-11-11
 
+### Ensaio monitor SQL e Sentry — PR draft de cron, SEM MERGE
+
+Conferencia visual em 11/11: Sentry Developer gratuito, teste Business 5 dias,
+1/300 Cron Monitors (299 temporarios), gasto adicional US$ 0 e sem meio de
+pagamento. Developer inclui 1 monitor permanente; reutilizar o existente.
+Monitor `*/15` UTC, margem 10 min, runtime 3 min, limiares 1/1; alerta ativo,
+mas primeiro check-in/e-mail ainda nao comprovados.
+Branch draft prepara os crons SQL 10/25/40/55 e watchdog */15 em arquivos de
+workflow, sem tocar `main` nem gates remotos. Cron GitHub sera disparado apos
+merge, por isso ambos os gates devem ser conferidos false ANTES de autorizacao
+de merge; a PR NAO e autorizacao de ativacao. SQL v2, TLS, permissao read-only,
+alertas de capacidade e WAL preservados. Ensaio autorizado nos parametros:
+janela SQL 30 min e duracao 72 horas, execucao condicionada a preparacao
+administrativa e autorizacao separada. Nao habilitar runner, pg_cron ou publicacao.
+
 ### Homologacao final Sentry/GitHub — preparacao, sem ativacao
 
 Base `aaf693fc`. Run real #43089501994, attempt 1: preflight/etapa v2 success,

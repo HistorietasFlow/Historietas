@@ -1,4 +1,4 @@
-# INERTE: nao aplicar antes da aprovacao operacional documentada.
+# INERTE: referencia historica incorporada na PR draft; nao reaplicar apos merge.
 # Watchdog: cadencia aprovada de 15 minutos UTC; ativacao AINDA NAO autorizada.
 # Monitor SQL: proposta de 15 min, cinco minutos antes; depende de aprovacao.
 # Janela SQL proposta: 30 min, sem default no codigo. Nao aplicar nesta fase.
