@@ -61,8 +61,8 @@ Configuracoes obrigatorias SEM defaults novos:
 | AGENDAMENTO_ALERT_ISSUE | Issue aberta com marcador de aprovacao existente; sem novo destino implicito |
 
 Antes da primeira prova real, o watchdog informa nao comprovada/ausente, nunca
-recuperacao falsa. Alertas de negocio fazem o monitor sair com erro mesmo se
-o transporte funcionar; VERIFICACAO_FALHOU inclui esse caso, nao prova crash.
+recuperacao falsa. O modo legado continua saindo com erro para alertas de saude;
+a etapa v2 separa execucao/entrega desses alertas, conforme a continuacao abaixo.
 O watchdog nao procura uma execucao antiga verde para ocultar a ultima falha.
 Uma execucao manual posterior pode exigir nova verificacao real antes de ficar
 saudavel: preferimos incerteza explicita a tratar teste de e-mail como sucesso.
@@ -135,24 +135,33 @@ minutos cobrados dependem de duracao/arredondamento/plano. Watchdog usa ate tres
 GETs de observacao mais transporte limitado existente. Na preparacao atual:
 zero novas execucoes periodicas/servicos/dependencias/custos recorrentes criados.
 
-### Dependencia de homologacao identificada em 11/11/2026
+### Dependencia identificada e corrigida na continuacao da #2267
 
 O snapshot SQL usa papel dedicado NOLOGIN, TLS e leitura restrita; conexao
 gerenciada e gates requerem provisionamento/autorizacao separados. O monitor
-retorna falha para alertas de saude: mesmo snapshot valido inclui
+retornava falha para alertas de saude: mesmo snapshot valido inclui
 `WAL_ORCAMENTO_NAO_DEFINIDO` e `DISCO_MEDICAO_INDISPONIVEL`; runner false inclui
-`RUNNER_DESATIVADO`. Logo, o contrato atual nao permite comprovar recuperacao
-verde real do Sentry. Nao habilitar runner nem suprimir alertas para obter `ok`.
-Decidir separadamente se o Sentry testemunha execucao/entrega ou saude; eventual
-separacao exige prova de observacao real e preservacao dos alertas existentes.
+`RUNNER_DESATIVADO`. O usuario autorizou separar execucao/entrega de saude.
+Etapa `Comprovar observacao SQL e entrega (v2)` usa opcao explicita do monitor:
+somente SQL concluido, snapshot valido e entrega confirmada permitem codigo 0.
+Allowlist de diagnosticos operacionais permite runner desligado/capacidade sem
+suprimir os alertas. SQL/JSON/contrato/tempo invalidos, telemetria incompleta,
+codigos desconhecidos ou teste de transporte nunca comprovam a execucao.
+Modo legado mantem seus exit codes. Nenhuma mudanca SQL, permissao ou gate.
+
+Watchdog aceita somente a etapa versionada e a tentativa recente/exata;
+execucoes antigas nao servem de prova. Entrega `obsolete` agora falha no monitor
+v2 e watchdog. Resposta perdida exige nova leitura/reconciliacao, sem POST cego.
+`ok` Sentry prova execucao/entrega, nao saude, capacidade fisica ou recebimento
+humano. Homologacao externa continua pendente, sem agendas/check-ins reais.
 
 Preparacao e checklist de falha/ausencia/recuperacao em
 [`sentry-watchdog-homologacao.md`](../operacao/sentry-watchdog-homologacao.md).
-Testes integrados do wrapper/watchdog com API sintetica distinguem transporte
-verde, SQL falho e SQL valido; dispatch manual nunca envia check-in. Nenhuma
-migration, workflow ativo, secret, gate ou codigo de producao foi alterado.
+Testes integrados desde a leitura SQL simulada ate wrapper/watchdog distinguem
+saude ruim de falha de verificacao e mantem os alertas de saude. Dispatch manual
+nunca envia check-in. Workflow permanece somente manual; nenhum secret/gate alterado.
 
-Validacao desta preparacao: 48/48 testes focados (monitor, watchdog e Sentry),
+Validacao anterior da preparacao: 48/48 testes focados (monitor, watchdog e Sentry),
 Lint, Typecheck, Build, test:static (inclui auditoria 199/199), test:pagination,
 test:session e audit de producao (zero vulnerabilidades) aprovados. YAML dos
 dois workflows e git apply --check do hunk do watchdog validados sem aplica-lo;
@@ -161,6 +170,15 @@ Build sem credenciais Sentry/URL Supabase de producao. Nao repetidos pgTAP,
 Data API mutante ou Playwright: somente docs/template inerte/testes mudaram.
 Nenhum teste de entrega remota ou check-in real; CI do novo commit e homologacao
 operacional permanecem verificacoes distintas dos testes locais.
+
+Continuacao de correcao na mesma PR: **55/55 testes focados** aprovados, incluindo
+cadeia monitor SQL/entrega -> etapa v2 -> watchdog -> Sentry com transportes
+simulados, timeout/JSON invalido, resposta perdida, recuperacao, entrega obsoleta
+concorrente, isolamento manual e rejeicao de etapas antigas. Lint completo e
+focado, YAML, Typecheck, Build, test:static, test:pagination, test:session e audit
+de producao aprovados. Resultados de CI do commit final ficam na PR; nao reutilizar
+CI verde do commit anterior como prova desta correcao. Sem nova validacao remota
+do banco/Sentry, pgTAP ou Playwright local; SQL, RLS e aplicacao inalterados.
 
 ## 2. Orcamento: decisao preenchivel, nao novos numeros arbitrarios
 

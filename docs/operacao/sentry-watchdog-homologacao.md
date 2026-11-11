@@ -38,7 +38,7 @@ alinhar tambem o Sentry em revisao explicita, nao alterar so um dos lados.
 | --- | --- |
 | Watchdog | `AGENDAMENTO_WATCHDOG_AUTORIZADO=true` e branch `main`; `GITHUB_TOKEN` efemero com contents/read, actions/read, issues/write. Nenhuma credencial SQL ou service role. |
 | Check-in | Secret existente `AGENDAMENTO_SENTRY_CHECKIN_URL`, endpoint Relay HTTPS validado; URL nunca em logs. Somente evento `schedule` no repositorio/workflow/main exatos envia. |
-| Evidencia SQL | Ultima execucao concluida do workflow `agendamento-monitor.yml`, job `verificar`, etapa `Observar banco e entregar alerta`, tentativa exata, recente e bem-sucedida. Nao usa um run verde antigo para esconder falha mais recente. |
+| Evidencia SQL | Ultima execucao concluida do workflow `agendamento-monitor.yml`, job `verificar`, etapa `Comprovar observacao SQL e entrega (v2)`, tentativa exata, recente e bem-sucedida. Nao aceita a etapa antiga nem um run verde antigo para esconder falha mais recente. |
 | Janela | `AGENDAMENTO_MONITOR_ESPERADO_DESDE` (instante UTC) e `AGENDAMENTO_MONITOR_MAX_INTERVALO_MS` (intervalo positivo aprovado entre conclusoes SQL). Sem defaults; 15 min do watchdog nao define o intervalo SQL. |
 | Destino GitHub | `AGENDAMENTO_ALERT_ISSUE`: issue aberta aprovada com marcador `<!-- historietas-agendamento-monitor:v1 -->`; token pode comentar, nao precisa PAT extra. |
 | Monitor SQL | Gate independente `AGENDAMENTO_MONITOR_AUTORIZADO=true`, `main`, `psql` disponivel; secrets `AGENDAMENTO_MONITOR_PGHOST`, `AGENDAMENTO_MONITOR_PGPORT`, `AGENDAMENTO_MONITOR_PGPASSWORD`. Banco postgres, usuario fixo `historietas_agendamento_monitor`; TLS `verify-full` e CA confiavel no runner. |
@@ -51,24 +51,33 @@ sem modificar grants nesta preparacao. Os gates/variaveis/secrets remotos nao
 foram consultados nem alterados. Nao supor autorizacao a partir da existencia
 do secret Sentry. Cron SQL, runner e uploads continuam bloqueados.
 
-## Bloqueador real para sucesso e recuperacao
+## Contrato v2: execucao/entrega separadas da saude
 
-O monitor SQL atual nao separa heartbeat de saude operacional: codigos de alerta
-fazem a etapa sair com erro. `classifySnapshot` acrescenta
-`WAL_ORCAMENTO_NAO_DEFINIDO` e `DISCO_MEDICAO_INDISPONIVEL` mesmo em um snapshot
-valido; runner desativado acrescenta `RUNNER_DESATIVADO`. Assim, **o caminho SQL
-atual nao produz uma prova verde real**, nem basta habilitar o runner (proibido).
-O watchdog traduz essa conclusao em `VERIFICACAO_FALHOU` e o Sentry em `error`.
+A etapa v2 configura `AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO=true`. Codigo 0
+exige execucao da consulta SQL fixa, validacao do snapshot e entrega `delivered`
+ou `unchanged` (alerta do bot lido e com os mesmos codigos). Nenhum relatorio
+externo ou variavel de sucesso substitui a consulta. `obsolete`, resposta
+perdida ou entrega falha nao confirmam a observacao. Proxima tentativa faz
+nova leitura SQL e reconcilia o alerta existente, sem retry cego do POST.
 
-Nao filtrar esses codigos, alterar exit code, mockar uma consulta remota ou
-enviar `ok` manual para demonstrar recuperacao. Sucesso de teste de e-mail
-tambem nao prova observacao SQL. A recuperacao fim a fim permanece pendente.
-Menor proxima decisao: definir explicitamente se este monitor Sentry testemunha
-**execucao/entrega** ou **saude do agendamento**. Se testemunhar execucao,
-sera necessaria uma mudanca separada e testada que comprove leitura/validacao
-SQL e entrega real, conservando todos os alertas e bloqueios de saude; nao
-converter genericamente qualquer erro em sucesso. Se testemunhar saude,
-aguardar a resolucao dos bloqueadores atuais. Nenhuma mudanca semantica aqui.
+Uma allowlist explicita admite diagnosticos operacionais conhecidos, incluindo
+runner desligado, falta de orcamento WAL e fonte de disco indisponivel. Esses
+codigos continuam integralmente no alerta GitHub; os gates SQL nao mudam.
+`FONTE_INVALIDA` refere-se ao Cron observado, nao a origem da consulta fixa.
+Erro SQL/timeout, JSON/contrato invalido, evidencia temporal invalida/obsoleta,
+telemetria incompleta e codigos desconhecidos falham fechados. O modo legado
+sem a opcao continua retornando erro por problemas de saude.
+
+Sentry agora testemunha **execucao/entrega**, nao prontidao para publicacao.
+Um `ok` nao apaga o alerta de saude nem habilita o runner. O watchdog exige o
+nome versionado da etapa, conclusao recente e mesma tentativa/job: resultados
+anteriores a esta mudanca nao certificam o novo contrato. Teste de transporte
+na etapa v2 retorna erro mesmo com e-mail entregue; dispatch do watchdog nunca
+envia check-in. Concurrency separado por fluxo permanece; nao executar outro
+chamador concorrente fora desse contrato. Entrega obsoleta falha tambem no watchdog.
+
+O bloqueador de contrato foi corrigido; a homologacao remota de recebimento,
+periodicidade e recuperacao ainda exige autorizacao e os pre-requisitos acima.
 
 ## Procedimento futuro de homologacao — requer autorizacao propria
 
@@ -77,7 +86,7 @@ aguardar a resolucao dos bloqueadores atuais. Nenhuma mudanca semantica aqui.
    Se ele ja estiver habilitado no Sentry sem produtor ativo, `missed` pode ser
    esperado; nao enviaremos sinais artificiais para silencia-lo. Coordenar
    essa manutencao com o responsavel, sem mudar o painel nesta fase.
-2. Resolver o contrato acima e os pre-requisitos SQL. Realizar leitura autentica
+2. Confirmar a versao v2 na main e os pre-requisitos SQL. Realizar leitura autentica
    com `workflow_dispatch` do monitor, `teste_entrega=false`, somente apos
    autorizacao para acesso/alerta. Registrar run/attempt/horarios/codigos, nunca
    stdout SQL, host, senha, token ou URL de check-in. Teste de transporte
@@ -101,7 +110,9 @@ aguardar a resolucao dos bloqueadores atuais. Nenhuma mudanca semantica aqui.
 6. Recuperacao: restaurar exclusivamente as configuracoes autorizadas de
    monitoramento; exigir nova leitura SQL valida/entrega e proximo `schedule`
    real. Confirmar recuperacao no Sentry segundo seu limiar, sem reduzir gates
-   de saude. Enquanto o bloqueador acima existir, marcar este item PENDENTE.
+   de saude. Alertas operacionais podem permanecer ativos durante essa
+   recuperacao do transporte; nao os declarar resolvidos. Sem prova real,
+   marcar a homologacao PENDENTE.
 7. Encerrar o ensaio com estado de agendas/gates registrado e conforme a
    autorizacao, mantendo runner/Cron SQL/publicacao/uploads desativados. Nao
    apagar incidentes, eventos ou recibos. Se a homologacao falhar, suspender

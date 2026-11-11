@@ -132,8 +132,9 @@ test('watchdog real integrado ao wrapper: teste de transporte verde nao vira ok;
     AGENDAMENTO_MONITOR_MAX_INTERVALO_MS:'600000'}; // Janela sintetica, nao aprovacao.
   for (const scenario of [
     {step:'Testar somente transporte',conclusion:'success',code:1,status:'error',reason:'VERIFICACAO_NAO_COMPROVADA'},
-    {step:'Observar banco e entregar alerta',conclusion:'failure',code:1,status:'error',reason:'VERIFICACAO_FALHOU'},
-    {step:'Observar banco e entregar alerta',conclusion:'success',code:0,status:'ok'},
+    {step:'Observar banco e entregar alerta',conclusion:'success',code:1,status:'error',reason:'VERIFICACAO_NAO_COMPROVADA'},
+    {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'failure',code:1,status:'error',reason:'VERIFICACAO_FALHOU'},
+    {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'success',code:0,status:'ok'},
   ]) {
     const t=transport(),comments=[];
     const fetchImpl=async(url,options={})=>{

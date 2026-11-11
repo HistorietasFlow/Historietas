@@ -12,7 +12,7 @@ const env={GITHUB_TOKEN:'SEGREDO',AGENDAMENTO_ALERT_ISSUE:'123',
 const fixture=()=>({state:'active',run:{id:7,run_attempt:2,head_branch:'main',event:'workflow_dispatch',
   status:'completed',conclusion:'success',created_at:'2026-11-10T11:58:00Z',updated_at:'2026-11-10T11:59:01Z'},
   jobs:[{name:'verificar',run_id:7,run_attempt:2,status:'completed',conclusion:'success',
-    steps:[{name:'Observar banco e entregar alerta',status:'completed',conclusion:'success',
+    steps:[{name:'Comprovar observacao SQL e entrega (v2)',status:'completed',conclusion:'success',
       started_at:'2026-11-10T11:58:30Z',completed_at:'2026-11-10T11:59:00Z'}]}]});
 const classify=f=>classifyVerification(f,watchdogPolicy(env,now),now).codigos;
 function api(f=fixture(),failure) {
@@ -51,6 +51,7 @@ test('conclusao SQL recente e unica comprova verificacao; inicio ou teste de e-m
   assert.deepEqual(classify(fixture()),[]);
   for (const mutate of [f=>f.run.status='in_progress',f=>f.run.head_branch='outra',
     f=>f.run.event='pull_request',f=>f.jobs[0].steps[0].name='Testar somente transporte',
+    f=>f.jobs[0].steps[0].name='Observar banco e entregar alerta',
     f=>f.jobs[0].steps[0].conclusion='skipped',f=>f.jobs.push(f.jobs[0]),
     f=>f.jobs[0].run_attempt=1,f=>f.jobs[0].run_id=9,
     f=>f.jobs[0].steps[0].completed_at='2026-11-10T13:00:00Z']) {
@@ -128,6 +129,16 @@ test('fluxos concorrentes isolam alertas e recuperacao, preservando o legado',as
   assert.equal(await deliverAlert({...r,codigos:[]},{...params,channel:'watchdog'}),'delivered');
   assert.equal(await deliverAlert(r,params),'unchanged');
 });
+
+test('watchdog nao comprova entrega quando observacao concorrente mais nova torna a sua obsoleta',async()=>{
+  const a=api();
+  a.comments.push({user:{login:'github-actions[bot]'},body:
+    '<!-- historietas-agendamento-watchdog:v1 -->\n'+JSON.stringify({versao:1,
+      observadoEm:new Date(now+1000).toISOString(),codigos:['VERIFICACAO_FALHOU']})});
+  assert.equal(await main(env,{now,fetchImpl:a.fetchImpl}),2);
+  assert.equal(a.comments.length,1);
+  assert.equal(a.calls.filter(c=>c.options.method==='POST').length,0);
+});
 test('transporte HTTP local real: resposta POST perdida preserva comentario e retry nao duplica',async()=>{
   const comments=[];let posts=0,lose=true;
   const server=createServer(async(req,res)=>{
@@ -168,6 +179,9 @@ test('workflows sem schedule, com gates distintos e main; watchdog nunca recebe 
   assert.deepEqual([...watchdog.matchAll(/secrets\.([A-Z_]+)/g)].map(match=>match[1]).sort(),
     ['AGENDAMENTO_SENTRY_CHECKIN_URL']);
   assert.match(monitor,/if: inputs.teste_entrega/);assert.match(monitor,/if: \$\{\{ !inputs.teste_entrega \}\}/);
+  assert.match(monitor,/name: Comprovar observacao SQL e entrega \(v2\)/);
+  assert.match(monitor,/AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO: 'true'/);
+  assert.doesNotMatch(monitor,/continue-on-error|\|\| true/);
   const template=read('../../docs/operacao/agendamento-periodico.patch.example');
   assert.match(template,/__CADENCIA_MONITOR_UTC_APROVADA__/);
   const watchdogPatch=template.split('diff --git a/.github/workflows/agendamento-watchdog.yml')[1];

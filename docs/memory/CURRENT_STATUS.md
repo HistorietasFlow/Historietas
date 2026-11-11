@@ -8,9 +8,11 @@ Base `cda7e996`. Responsavel confirmou criacao de monitor/alerta Sentry e secret
 GitHub; nao inspecionados nem usados nesta etapa. Cadencia aprovada de 15 min UTC
 registrada somente no patch inerte; workflows reais continuam manuais.
 Monitor SQL depende de papel NOLOGIN provisionado separadamente, TLS, gates e
-janela de observacao aprovada. Alertas de capacidade e runner desativado fazem
-a etapa SQL falhar: recuperacao `ok` real continua bloqueada pelo contrato atual,
-nao deve ser simulada nem obtida habilitando publicacao. Ver
+janela de observacao aprovada. Na continuacao da #2267, a etapa v2 separa prova
+de leitura SQL valida/entrega confirmada da saude. Alertas de capacidade/WAL e
+runner desligado permanecem; `ok` do Sentry nao significa saude nem ativa gates.
+Erros SQL, evidencia invalida/obsoleta e entrega incerta continuam negando prova.
+Dispatch/teste de e-mail nao produz check-in falso. Homologacao remota pendente. Ver
 `docs/operacao/sentry-watchdog-homologacao.md` e
 `DESBLOQUEIO_OPERACIONAL_AGENDAMENTO.md`. Nenhum check-in, schedule ou gate ativado.
 
