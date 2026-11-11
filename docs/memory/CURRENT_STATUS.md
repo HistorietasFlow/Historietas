@@ -1,6 +1,50 @@
 # Estado atual
 
-Atualizado em: 2026-11-09
+Atualizado em: 2026-11-11
+
+### Monitor SQL — identidade de conexao dedicada, 11/11/2026
+
+Base `main` `50dcd318`. Inventario remoto autorizado anterior confirmou que o
+papel usado pelo workflow era NOLOGIN. Preparado LOGIN separado, sem senha,
+sem heranca de privilegios e somente SET ROLE para o grupo do snapshot, que
+permanece NOLOGIN. Guard de ACL efetiva considera PUBLIC sem revogacoes globais.
+Workflow manual usa Shared Session pooler, usuario com project ref e TLS
+verify-full; consulta fixa comprova identidade, READ ONLY e timeouts.
+Provisionamento/segredos/rotacao e homologacao gerenciada exigem etapa propria;
+ver `docs/operacao/monitor-sql-login.md`. Resultados locais registrados na PR.
+Nenhuma credencial real, migration remota, schedule, runner, Cron ou upload ativado.
+
+Validacao local Node 22.23.4/CLI 2.116.0: pgTAP completo 936/936 (22 novos),
+unidades monitor/watchdog/Sentry 57/57, integracao LOGIN/TLS/Supavisor 9/9,
+snapshot/concorrencia 4/4 e anti-spam Data API 5/5. Lint, Typecheck, Build,
+test:static (199/199), paginacao/sessao unitarias e audit de producao (zero)
+aprovados. A primeira consulta do snapshot atingiu o timeout sob execucoes
+locais concorrentes; falhou fechada. Medicao isolada 2,70 s e integracao serial
+posterior aprovada, sem elevar os limites. Data API de paginacao teve timeout
+na pagina 6 de comentarios na primeira rodada; apos instalar a migration final
+em novo descartavel, os gates seriais passaram 14/14 + 5/5, sem alterar consultas
+ou timeouts. A rodada final usou core DB/Auth/Data API/pooler: Storage API teve
+healthcheck indisponivel na primeira inicializacao e nao e usado pelo ensaio SQL.
+Playwright amplo: 134 aprovados, duas falhas e seis nao executados, zero retries;
+timeout do conteudo final da Home e CLI ausente no PATH do runner local. Nenhuma
+mudanca de aplicacao/seletor/timeout foi feita para ocultar essas ocorrencias.
+Complemento com PATH correto, mesmo Build/configuracao publica e migration final:
+21/23, zero retries, nenhum skipped; os cenarios de agendamento/Diario e consumidor
+passaram. Persistiram timeouts de acessibilidade em Home (45 s) e Explorar
+(indicador final em 12 s), sem diagnostico de violacao axe nesses erros. App,
+loaders e testes dessas paginas estao identicos a main; a suite ampla nao e
+declarada integralmente aprovada nem os timeouts declarados corrigidos nesta PR.
+`db lint` apontou cinco referencias dinamicas a tabelas Cron ausentes em
+funcoes preexistentes/guardadas. O snapshot real funciona sem a extensao;
+nao instalar Cron para silenciar o verificador estatico. Homologacao do
+pooler gerenciado e dos alertas permanece separada das provas locais.
+
+Seguranca: canario TEMP reproduziu HSC01 antes do endurecimento. A migration
+qualifica pg_catalog.pg_extension no snapshot e no verificador da fonte,
+preservando assinatura/owner/ACL. O canario nao e executado apos a correcao.
+Supavisor local reteve autenticacao da senha anterior; a fixture agora reinicia
+somente seu pooler antes/depois, sem retry de login. Rotacao/revogacao no
+gerenciado continua exigindo procedimento autorizado e prova de invalidacao.
 
 ### CI #2267 — instalacao do Chromium, 11/11/2026
 

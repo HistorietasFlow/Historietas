@@ -36,6 +36,11 @@ jobs:
           AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node qa/scripts/chapter-scheduling-monitor.mjs
+      - name: Conferir cliente SQL e autoridades TLS
+        if: ${{ !inputs.teste_entrega }}
+        run: |
+          psql --version
+          test -r /etc/ssl/certs/ca-certificates.crt
       # v2 comprova leitura SQL valida + entrega; saude permanece nos alertas.
       - name: Comprovar observacao SQL e entrega (v2)
         if: ${{ !inputs.teste_entrega }}
@@ -45,9 +50,11 @@ jobs:
           AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
           GITHUB_TOKEN: ${{ github.token }}
           PGHOST: ${{ secrets.AGENDAMENTO_MONITOR_PGHOST }}
-          PGPORT: ${{ secrets.AGENDAMENTO_MONITOR_PGPORT }}
+          # Supavisor compartilhado, modo SESSION (IPv4). Copiar host do painel.
+          PGPORT: '5432'
           PGDATABASE: postgres
-          PGUSER: historietas_agendamento_monitor
+          AGENDAMENTO_MONITOR_PROJECT_REF: ${{ vars.AGENDAMENTO_MONITOR_PROJECT_REF }}
+          PGUSER: historietas_agendamento_monitor_login.${{ vars.AGENDAMENTO_MONITOR_PROJECT_REF }}
           PGPASSWORD: ${{ secrets.AGENDAMENTO_MONITOR_PGPASSWORD }}
           PGSSLMODE: verify-full
           PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
