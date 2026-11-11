@@ -114,6 +114,24 @@ jobs:
           npm ci
           npm --prefix qa ci
 
+      - name: Validar preparo seguro do Chromium
+        run: node --test qa/unit/prepare-playwright-apt.test.mjs
+
+      - name: Preparar mirrors oficiais para dependências do Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = "Linux"
+          test "$ImageOS" = "ubuntu24"
+          grep -Fq 'mirror+file:/etc/apt/apt-mirrors.txt' /etc/apt/sources.list.d/ubuntu.sources
+          node qa/scripts/prepare-playwright-apt.mjs \
+            /etc/apt/apt-mirrors.txt "$RUNNER_TEMP/playwright-apt-mirrors.txt"
+          sudo install -m 0644 "$RUNNER_TEMP/playwright-apt-mirrors.txt" /etc/apt/apt-mirrors.txt
+
+      - name: Instalar Chromium
+        working-directory: qa
+        run: npm exec -- playwright install --with-deps chromium
+
       - name: Executar testes estáticos
         run: npm run test:static
 
@@ -205,10 +223,6 @@ jobs:
 
       - name: Gerar aplicação para os testes locais
         run: npm run build
-
-      - name: Instalar Chromium
-        working-directory: qa
-        run: npm exec -- playwright install --with-deps chromium
 
       - name: Executar testes públicos e autenticados no código do PR
         env:

@@ -2,6 +2,15 @@
 
 Atualizado em: 2026-11-09
 
+### CI #2267 — instalacao do Chromium, 11/11/2026
+
+Duas falhas de DNS no mirror Azure ocorreram antes do Playwright. O workflow
+preserva `--with-deps` e os gates, mas prepara a lista efemera do runner para
+usar somente os dois mirrors HTTPS oficiais ja existentes, com validacao
+estrita e sem alterar a confianca do APT. Instalacao movida para antes do banco.
+Testes focados 76/76; instalacao Linux/E2E dependem da CI do novo commit.
+Ver `PROBLEMS_AND_SOLUTIONS.md`. Nenhum controle Sentry/SQL foi alterado.
+
 ### Sentry/watchdog — preparacao de homologacao, 11/11/2026
 
 Base `cda7e996`. Responsavel confirmou criacao de monitor/alerta Sentry e secret

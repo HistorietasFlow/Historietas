@@ -1,5 +1,33 @@
 # Problemas conhecidos e soluções
 
+## CI #2267: DNS do mirror Azure antes do Playwright
+
+As tentativas 1 e 2 de `43034526557` falharam no APT com
+`Temporary failure resolving 'azure.archive.ubuntu.com'` e codigo 100,
+antes de executar Playwright. Faltavam nove pacotes de fontes/X fonts; as
+bibliotecas do Chromium ja estavam instaladas, mas remover `--with-deps`
+omitiria dependencias e poderia mudar a renderizacao dos testes.
+
+O [runner Ubuntu 24.04](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh)
+configura Azure com prioridade 1 e os arquivos oficiais HTTPS Ubuntu/security
+com prioridades 2/3. O preparo da CI remove somente a entrada Azure conhecida
+da lista efemera, validando ambos os mirrors oficiais e rejeitando fontes ou
+formatos inesperados. Nao altera chaves, Signed-By, suites, TLS, resolucao DNS
+global ou validacao de assinatura/hash do APT. A instalacao completa continua
+com `playwright install --with-deps chromium` e a versao do lockfile.
+
+Instalacao antecipada para antes dos testes de banco; nenhum retry, timeout,
+assertion, gate ou scan foi removido/relaxado. A imagem Docker oficial do
+Playwright foi considerada, mas exigiria alinhar sua versao e mudar a rede/
+execucao dos testes que usam Supabase no host; nao e necessaria para este erro.
+Downloads ainda dependem da disponibilidade dos arquivos oficiais e do CDN
+Playwright: falhas reais continuam bloqueando, nunca sao convertidas em sucesso.
+
+Validacao local: nove testes do preparo/mirrors e 67 regressões de instalador/
+monitor/Sentry aprovados. Docker Engine indisponivel nesta sessao Windows;
+a instalacao Linux e o E2E completo devem ser comprovados na CI do commit novo,
+sem reutilizar checks anteriores. Evidencias finais ficam na propria PR #2267.
+
 ## Storage: disputa de quota entre reserva e upload legado
 
 Na execução CI `42620166032` da #2245, o cenário de duas reservas passou,
