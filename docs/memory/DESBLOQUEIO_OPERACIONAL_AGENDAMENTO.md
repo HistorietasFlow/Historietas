@@ -69,7 +69,8 @@ saudavel: preferimos incerteza explicita a tratar teste de e-mail como sucesso.
 
 O mesmo workflow do watchdog agora chama
 `chapter-scheduling-sentry-checkin.mjs`: **somente** `schedule` da `main` no
-repositorio esperado emite `in_progress`, seguido de `ok` se a verificacao real
+workflow e repositorio esperados emite `in_progress`, seguido de `ok` se a
+verificacao real
 e a entrega GitHub terminarem com codigo 0; resultados 1/2 ou excecoes emitem
 `error`. `workflow_dispatch`, teste de e-mail e execucao simulada nao renovam o
 Sentry. Falha no envio inicial/final deixa o job com erro; falha na abertura nao

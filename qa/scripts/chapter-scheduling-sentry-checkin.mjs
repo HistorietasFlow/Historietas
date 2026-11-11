@@ -3,8 +3,10 @@ import {main as runWatchdog} from './chapter-scheduling-watchdog.mjs';
 
 // Apenas execucoes agendadas do workflow real podem renovar o monitor externo.
 export function isRealWatchdogRun(env) {
-  return env.GITHUB_EVENT_NAME==='schedule' && env.GITHUB_REF==='refs/heads/main' &&
-    env.GITHUB_REPOSITORY==='HistorietasFlow/Historietas';
+  return env.GITHUB_ACTIONS==='true' && env.GITHUB_EVENT_NAME==='schedule' &&
+    env.GITHUB_REF==='refs/heads/main' && env.GITHUB_REPOSITORY==='HistorietasFlow/Historietas' &&
+    env.GITHUB_WORKFLOW_REF===
+      'HistorietasFlow/Historietas/.github/workflows/agendamento-watchdog.yml@refs/heads/main';
 }
 
 function checkinEndpoint(env) {

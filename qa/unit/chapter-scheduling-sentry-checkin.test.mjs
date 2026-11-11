@@ -5,8 +5,9 @@ import {isRealWatchdogRun,main} from '../scripts/chapter-scheduling-sentry-check
 import {main as runWatchdog} from '../scripts/chapter-scheduling-watchdog.mjs';
 
 const id='11111111-2222-4333-8444-555555555555';
-const scheduled={GITHUB_EVENT_NAME:'schedule',GITHUB_REF:'refs/heads/main',
+const scheduled={GITHUB_ACTIONS:'true',GITHUB_EVENT_NAME:'schedule',GITHUB_REF:'refs/heads/main',
   GITHUB_REPOSITORY:'HistorietasFlow/Historietas',
+  GITHUB_WORKFLOW_REF:'HistorietasFlow/Historietas/.github/workflows/agendamento-watchdog.yml@refs/heads/main',
   AGENDAMENTO_SENTRY_CHECKIN_URL:'https://sentry.io/api/0/organizations/historietas/monitors/watchdog/checkins/',
   AGENDAMENTO_SENTRY_DSN:'dsn-sintetico'};
 
@@ -27,7 +28,8 @@ function transport({failStart=false,failEnd=false,loseStart=false}={}) {
 test('execucao manual, teste de e-mail, branch ou repo diferente nunca renovam o Sentry',async()=>{
   for (const change of [{GITHUB_EVENT_NAME:'workflow_dispatch'},
     {GITHUB_EVENT_NAME:'pull_request'},{GITHUB_REF:'refs/heads/outra'},
-    {GITHUB_REPOSITORY:'outro/projeto'}]) {
+    {GITHUB_REPOSITORY:'outro/projeto'},{GITHUB_ACTIONS:undefined},
+    {GITHUB_WORKFLOW_REF:'HistorietasFlow/Historietas/.github/workflows/outro.yml@refs/heads/main'}]) {
     const t=transport();let runs=0;
     const env={...scheduled,...change};
     assert.equal(isRealWatchdogRun(env),false);
