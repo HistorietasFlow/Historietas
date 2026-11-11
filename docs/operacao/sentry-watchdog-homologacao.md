@@ -23,6 +23,23 @@ presumir limite de 300 permanente. Fontes do fornecedor:
 https://www.sentry.help/en/articles/13963931-how-do-i-can-i-get-more-crons-on-a-developer-plan
 https://www.sentry.help/en/articles/13965075-what-happens-when-my-trial-expires
 
+## Ressincronizacao do agendamento SQL — PR draft
+
+No dia 11/11, apos o merge #2271 na `main` (`1942f3e9`), o workflow SQL
+estava ativo na interface do GitHub e o gate de leitura estava `true`, mas
+nenhum run com evento `schedule` apareceu nos horarios observados. A causa
+interna nao foi comprovada: o GitHub admite atrasos/descarte de agendamentos.
+Esta PR altera **somente a sintaxe** do cron SQL de
+`10,25,40,55 * * * *` para `10/15 * * * *`. Os minutos seguem
+**10, 25, 40, 55 UTC**. A mudanca de cron em `main` pode ressincronizar o
+registro/ator do scheduler; nao garante correcao do servico GitHub.
+A agenda do watchdog/Sentry (`*/15`), gates, SQL v2, credenciais, TLS,
+alertas e publicacao automatica nao mudam. Nenhuma nova execucao agendada
+pode ser certificada por testes locais ou uma rodada de CI. A PR fica em
+draft, sem merge nem alteracoes de variaveis ou producao. Nao aceitar
+`workflow_dispatch` como prova do scheduler. O patch de exemplo anterior
+e historico e nao deve ser reaplicado.
+
 ## Cadencia preparada
 
 Watchdog: **`*/15 * * * *`, UTC**, aprovado para preparacao. Monitor SQL:

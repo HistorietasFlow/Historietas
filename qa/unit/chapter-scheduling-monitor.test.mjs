@@ -340,7 +340,7 @@ test('monitor agendado e manual conserva gate e nao ativa banco ou runner',()=>{
   const workflow=readFileSync(new URL('../../.github/workflows/agendamento-monitor.yml',import.meta.url),'utf8');
   assert.match(workflow,/workflow_dispatch:/);
   assert.equal((workflow.match(/^\s+schedule:/gm)??[]).length,1);
-  assert.match(workflow,/^\s+- cron: '10,25,40,55 \* \* \* \*'$/m);
+  assert.match(workflow,/^\s+- cron: '10\/15 \* \* \* \*'$/m);
   assert.match(workflow,/if: vars\.AGENDAMENTO_MONITOR_AUTORIZADO == 'true'/);
   assert.match(workflow,/timeout-minutes: 2/);assert.match(workflow,/cancel-in-progress: false/);
   assert.match(workflow,/PGUSER: historietas_agendamento_monitor_login\.\$\{\{ vars\.AGENDAMENTO_MONITOR_PROJECT_REF \}\}/);

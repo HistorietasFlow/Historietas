@@ -35,7 +35,7 @@ test('workflow fixa CA e schedule aprovado sem download, downgrade ou novo secre
   assert.match(workflow,/PGSSLROOTCERT: \$\{\{ github\.workspace \}\}\/qa\/certificates\/supabase-prod-ca-2021\.crt/);
   assert.doesNotMatch(workflow,/ca-certificates\.crt|curl |wget |rejectUnauthorized|NODE_TLS_REJECT_UNAUTHORIZED/m);
   assert.equal((workflow.match(/^\s+schedule:/gm)??[]).length,1);
-  assert.match(workflow,/^\s+- cron: '10,25,40,55 \* \* \* \*'$/m);
+  assert.match(workflow,/^\s+- cron: '10\/15 \* \* \* \*'$/m);
   assert.match(workflow,/if: vars\.AGENDAMENTO_MONITOR_AUTORIZADO == 'true'/);
   assert.match(workflow,/PGSSLMODE: verify-full/);
   assert.match(workflow,/PGUSER: historietas_agendamento_monitor_login\./);

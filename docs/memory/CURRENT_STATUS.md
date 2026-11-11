@@ -2,6 +2,16 @@
 
 Atualizado em: 2026-11-11
 
+### Ressincronizacao SQL proposta, sem merge
+
+Apos #2271 na `main`, o cron SQL apareceu habilitado no GitHub, mas sem runs
+`schedule` nos horarios verificados. Preparada PR draft para trocar sintaxe
+`10,25,40,55 * * * *` por `10/15 * * * *`, com os mesmos quatro minutos UTC,
+para tentar ressincronizar o scheduler. Causa externa nao comprovada; nao
+prometer que mudanca corrige atraso. Watchdog permanece desautorizado
+(`false` informado pelo responsavel); cron watchdog e SQL v2 preservados.
+Sem merge autorizado nesta etapa, sem publicacao/runner/pg_cron.
+
 ### Ensaio monitor SQL e Sentry — PR draft de cron, SEM MERGE
 
 Conferencia visual em 11/11: Sentry Developer gratuito, teste Business 5 dias,
