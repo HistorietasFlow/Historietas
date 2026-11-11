@@ -4,11 +4,12 @@ Atualizado em: 2026-11-09
 
 ### CI #2267 — instalacao do Chromium, 11/11/2026
 
-Duas falhas de DNS no mirror Azure ocorreram antes do Playwright. O workflow
-preserva `--with-deps` e os gates, mas prepara a lista efemera do runner para
-usar somente os dois mirrors HTTPS oficiais ja existentes, com validacao
-estrita e sem alterar a confianca do APT. Instalacao movida para antes do banco.
-Testes focados 76/76; instalacao Linux/E2E dependem da CI do novo commit.
+Duas falhas de DNS no mirror Azure e outra no archive Ubuntu impediram o APT.
+Usar mirrors alternativos nao resolveu e o ajuste foi retirado. O navegador
+passa a usar a imagem oficial Playwright 1.62.1/Noble por digest, com todas as
+dependencias, servidor restrito a loopback e smoke obrigatorio antes do banco.
+Testes/app/Supabase continuam no host; nenhum gate ou scan removido.
+Testes focados 74/74; instalacao Linux/E2E dependem da CI do novo commit.
 Ver `PROBLEMS_AND_SOLUTIONS.md`. Nenhum controle Sentry/SQL foi alterado.
 
 ### Sentry/watchdog — preparacao de homologacao, 11/11/2026

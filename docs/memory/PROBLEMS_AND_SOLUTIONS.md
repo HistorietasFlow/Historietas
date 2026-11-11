@@ -8,25 +8,34 @@ antes de executar Playwright. Faltavam nove pacotes de fontes/X fonts; as
 bibliotecas do Chromium ja estavam instaladas, mas remover `--with-deps`
 omitiria dependencias e poderia mudar a renderizacao dos testes.
 
-O [runner Ubuntu 24.04](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh)
-configura Azure com prioridade 1 e os arquivos oficiais HTTPS Ubuntu/security
-com prioridades 2/3. O preparo da CI remove somente a entrada Azure conhecida
-da lista efemera, validando ambos os mirrors oficiais e rejeitando fontes ou
-formatos inesperados. Nao altera chaves, Signed-By, suites, TLS, resolucao DNS
-global ou validacao de assinatura/hash do APT. A instalacao completa continua
-com `playwright install --with-deps chromium` e a versao do lockfile.
+Remover somente Azure da lista de mirrors oficiais tambem falhou: a execucao
+`43043680245` comprovou DNS indisponivel para `archive.ubuntu.com`. Essa
+tentativa foi retirada, sem manter alteracoes de APT ou de DNS do runner.
 
-Instalacao antecipada para antes dos testes de banco; nenhum retry, timeout,
-assertion, gate ou scan foi removido/relaxado. A imagem Docker oficial do
-Playwright foi considerada, mas exigiria alinhar sua versao e mudar a rede/
-execucao dos testes que usam Supabase no host; nao e necessaria para este erro.
-Downloads ainda dependem da disponibilidade dos arquivos oficiais e do CDN
-Playwright: falhas reais continuam bloqueando, nunca sao convertidas em sucesso.
+Solucao: [Playwright Server em Docker](https://playwright.dev/docs/docker#remote-connection),
+com Chromium/fontes/bibliotecas ja incluidos na imagem oficial MCR Noble
+1.62.1, correspondente ao lockfile e fixada por digest SHA-256. Apenas o
+navegador usa o container; Node 22, app, fixtures, CLI/Docker e Supabase continuam
+no host. Compartilhar rede permite manter localhost e URLs dos testes; servidor
+ouve somente 127.0.0.1:3001. O container nao recebe secrets, socket Docker ou
+repositorio: somente node_modules QA read-only. Usuario pwuser, cap-drop=ALL e
+no-new-privileges, sem --privileged. Cleanup sempre remove somente seu container.
 
-Validacao local: nove testes do preparo/mirrors e 67 regressões de instalador/
-monitor/Sentry aprovados. Docker Engine indisponivel nesta sessao Windows;
+Smoke obrigatorio antes do banco comprova launch, texto pt-BR, screenshot e
+transferencia de video remoto; testes usam a variavel publica documentada
+PW_TEST_CONNECT_WS_ENDPOINT. Configuracao dos testes, assercoes, retries,
+timeouts e scans permanecem iguais. A espera limitada e somente por startup,
+nao repete teste ou falha de navegador. Drift de versao/digest falha fechado.
+Lighthouse continua no Chrome preinstalado do host, sem mudar seu contrato.
+
+Validacao local: sete testes do contrato/startup e 67 regressoes de instalador/
+monitor/Sentry aprovados. Smoke real cliente/servidor no Windows aprovado,
+incluindo screenshot e video, com Chromium 151.0.7922.34; servidor encerrado.
+Docker Engine indisponivel nesta sessao Windows;
 a instalacao Linux e o E2E completo devem ser comprovados na CI do commit novo,
 sem reutilizar checks anteriores. Evidencias finais ficam na propria PR #2267.
+Ainda depende da disponibilidade do MCR; falha de download bloqueia, nao ha
+fallback para navegador arbitrario nem omissao de dependencias/gates.
 
 ## Storage: disputa de quota entre reserva e upload legado
 

@@ -74,6 +74,8 @@ jobs:
       E2E_ALLOW_DESTRUCTIVE: "true"
       E2E_PUBLIC_WORK_SLUG: obra-publica-e2e
       E2E_PUBLIC_CHAPTER_NUMBER: "1"
+      # Official image: same Playwright version as qa/package-lock.json, immutable digest.
+      PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
     steps:
       - name: Baixar o código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -115,22 +117,22 @@ jobs:
           npm --prefix qa ci
 
       - name: Validar preparo seguro do Chromium
-        run: node --test qa/unit/prepare-playwright-apt.test.mjs
+        run: node --test qa/unit/playwright-container.test.mjs
 
-      - name: Preparar mirrors oficiais para dependências do Chromium
+      - name: Preparar Chromium e dependências oficiais
+        id: playwright-server
         shell: bash
         run: |
           set -euo pipefail
-          test "$RUNNER_OS" = "Linux"
-          test "$ImageOS" = "ubuntu24"
-          grep -Fq 'mirror+file:/etc/apt/apt-mirrors.txt' /etc/apt/sources.list.d/ubuntu.sources
-          node qa/scripts/prepare-playwright-apt.mjs \
-            /etc/apt/apt-mirrors.txt "$RUNNER_TEMP/playwright-apt-mirrors.txt"
-          sudo install -m 0644 "$RUNNER_TEMP/playwright-apt-mirrors.txt" /etc/apt/apt-mirrors.txt
-
-      - name: Instalar Chromium
-        working-directory: qa
-        run: npm exec -- playwright install --with-deps chromium
+          docker pull "$PLAYWRIGHT_IMAGE"
+          docker run --detach --interactive --init \
+            --name "historietas-playwright-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            --network host --ipc=host --user pwuser \
+            --cap-drop=ALL --security-opt=no-new-privileges \
+            --mount "type=bind,src=$PWD/qa/node_modules,dst=/opt/qa/node_modules,readonly" \
+            "$PLAYWRIGHT_IMAGE" \
+            node /opt/qa/node_modules/playwright/cli.js run-server --host 127.0.0.1 --port 3001
+          node qa/scripts/check-playwright-server.mjs
 
       - name: Executar testes estáticos
         run: npm run test:static
@@ -228,6 +230,7 @@ jobs:
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
           E2E_WEB_SERVER_COMMAND: npm --prefix .. run start
+          PW_TEST_CONNECT_WS_ENDPOINT: ws://127.0.0.1:3001/
         run: npm --prefix qa test
 
       - name: Instalar Lighthouse CI
@@ -311,6 +314,17 @@ jobs:
           fi
 
           docker run --rm             --network host             -v "$PWD/qa/reports/zap:/zap/wrk:rw"             ghcr.io/zaproxy/zaproxy:stable             zap-baseline.py               -t http://127.0.0.1:3000               -m 1               -I               -s               -r zap-report.html               -J zap-report.json
+
+      - name: Remover servidor Chromium
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser_container="historietas-playwright-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          containers=$(docker ps -a --format '{{.Names}}')
+          if grep -Fxq "$browser_container" <<< "$containers"; then
+            docker rm --force "$browser_container"
+          fi
 
       - name: Remover ambiente Supabase local
         if: ${{ always() }}
