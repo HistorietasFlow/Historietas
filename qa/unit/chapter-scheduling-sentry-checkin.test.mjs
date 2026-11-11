@@ -124,3 +124,46 @@ test('workflow permanece manual e secrets sao exclusivos do check-in',()=>{
   assert.doesNotMatch(workflow,/AGENDAMENTO_SENTRY_DSN/);
   assert.match(ci,/node --test qa\/unit\/chapter-scheduling-monitor\.test\.mjs qa\/unit\/chapter-scheduling-watchdog\.test\.mjs qa\/unit\/chapter-scheduling-sentry-checkin\.test\.mjs/);
 });
+
+test('watchdog real integrado ao wrapper: teste de transporte verde nao vira ok; SQL falho e recuperacao distinguem-se',async()=>{
+  const now=Date.parse('2026-11-11T12:00:00Z');
+  const env={...scheduled,GITHUB_TOKEN:'token-sintetico',AGENDAMENTO_ALERT_ISSUE:'123',
+    AGENDAMENTO_MONITOR_ESPERADO_DESDE:'2026-11-11T11:00:00Z',
+    AGENDAMENTO_MONITOR_MAX_INTERVALO_MS:'600000'}; // Janela sintetica, nao aprovacao.
+  for (const scenario of [
+    {step:'Testar somente transporte',conclusion:'success',code:1,status:'error',reason:'VERIFICACAO_NAO_COMPROVADA'},
+    {step:'Observar banco e entregar alerta',conclusion:'success',code:1,status:'error',reason:'VERIFICACAO_NAO_COMPROVADA'},
+    {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'failure',code:1,status:'error',reason:'VERIFICACAO_FALHOU'},
+    {step:'Comprovar observacao SQL e entrega (v2)',conclusion:'success',code:0,status:'ok'},
+  ]) {
+    const t=transport(),comments=[];
+    const fetchImpl=async(url,options={})=>{
+      assert.equal(new URL(url).origin,'https://api.github.com');
+      if (url.includes('/attempts/')) return Response.json({total_count:1,jobs:[{
+        name:'verificar',run_id:7,run_attempt:1,status:'completed',conclusion:scenario.conclusion,
+        steps:[{name:scenario.step,status:'completed',conclusion:scenario.conclusion,
+          started_at:'2026-11-11T11:58:30Z',completed_at:'2026-11-11T11:59:00Z'}]}]});
+      if (url.includes('/runs?')) return Response.json({total_count:1,workflow_runs:[{
+        id:7,run_attempt:1,head_branch:'main',event:'workflow_dispatch',status:'completed',
+        conclusion:scenario.conclusion,created_at:'2026-11-11T11:58:00Z',updated_at:'2026-11-11T11:59:01Z'}]});
+      if (url.includes('/workflows/')) return Response.json({state:'active',path:'.github/workflows/agendamento-monitor.yml'});
+      if (options.method==='POST') {
+        comments.push(JSON.parse(options.body).body);
+        return Response.json({id:1},{status:201});
+      }
+      if (url.includes('/comments')) return Response.json([]);
+      return Response.json({state:'open',body:'<!-- historietas-agendamento-monitor:v1 -->',comments:0});
+    };
+    const watchdogMain=value=>runWatchdog(value,{fetchImpl,now});
+    assert.equal(await main(env,{fetchImpl:t.fetchImpl,watchdogMain}),scenario.code);
+    assert.deepEqual(t.calls.map(c=>c.status),['in_progress',scenario.status]);
+    assert.equal(t.calls[0].id,t.calls[1].id);
+    assert.equal(comments.length,1);
+    assert.deepEqual(JSON.parse(comments[0].split('\n')[1]).codigos,scenario.reason?[scenario.reason]:[]);
+    // Mesmo uma observacao SQL valida nao permite que o dispatch manual renove o Sentry.
+    const manual=transport();
+    assert.equal(await main({...env,GITHUB_EVENT_NAME:'workflow_dispatch'},
+      {fetchImpl:manual.fetchImpl,watchdogMain}),scenario.code);
+    assert.equal(manual.calls.length,0);
+  }
+});

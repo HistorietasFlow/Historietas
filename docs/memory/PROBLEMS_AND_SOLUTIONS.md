@@ -1,5 +1,42 @@
 # Problemas conhecidos e soluções
 
+## CI #2267: DNS do mirror Azure antes do Playwright
+
+As tentativas 1 e 2 de `43034526557` falharam no APT com
+`Temporary failure resolving 'azure.archive.ubuntu.com'` e codigo 100,
+antes de executar Playwright. Faltavam nove pacotes de fontes/X fonts; as
+bibliotecas do Chromium ja estavam instaladas, mas remover `--with-deps`
+omitiria dependencias e poderia mudar a renderizacao dos testes.
+
+Remover somente Azure da lista de mirrors oficiais tambem falhou: a execucao
+`43043680245` comprovou DNS indisponivel para `archive.ubuntu.com`. Essa
+tentativa foi retirada, sem manter alteracoes de APT ou de DNS do runner.
+
+Solucao: [Playwright Server em Docker](https://playwright.dev/docs/docker#remote-connection),
+com Chromium/fontes/bibliotecas ja incluidos na imagem oficial MCR Noble
+1.62.1, correspondente ao lockfile e fixada por digest SHA-256. Apenas o
+navegador usa o container; Node 22, app, fixtures, CLI/Docker e Supabase continuam
+no host. Compartilhar rede permite manter localhost e URLs dos testes; servidor
+ouve somente 127.0.0.1:3001. O container nao recebe secrets, socket Docker ou
+repositorio: somente node_modules QA read-only. Usuario pwuser, cap-drop=ALL e
+no-new-privileges, sem --privileged. Cleanup sempre remove somente seu container.
+
+Smoke obrigatorio antes do banco comprova launch, texto pt-BR, screenshot e
+transferencia de video remoto; testes usam a variavel publica documentada
+PW_TEST_CONNECT_WS_ENDPOINT. Configuracao dos testes, assercoes, retries,
+timeouts e scans permanecem iguais. A espera limitada e somente por startup,
+nao repete teste ou falha de navegador. Drift de versao/digest falha fechado.
+Lighthouse continua no Chrome preinstalado do host, sem mudar seu contrato.
+
+Validacao local: sete testes do contrato/startup e 67 regressoes de instalador/
+monitor/Sentry aprovados. Smoke real cliente/servidor no Windows aprovado,
+incluindo screenshot e video, com Chromium 151.0.7922.34; servidor encerrado.
+Docker Engine indisponivel nesta sessao Windows;
+a instalacao Linux e o E2E completo devem ser comprovados na CI do commit novo,
+sem reutilizar checks anteriores. Evidencias finais ficam na propria PR #2267.
+Ainda depende da disponibilidade do MCR; falha de download bloqueia, nao ha
+fallback para navegador arbitrario nem omissao de dependencias/gates.
+
 ## Storage: disputa de quota entre reserva e upload legado
 
 Na execução CI `42620166032` da #2245, o cenário de duas reservas passou,

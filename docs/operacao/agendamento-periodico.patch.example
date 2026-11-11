@@ -1,5 +1,7 @@
 # INERTE: nao aplicar antes da aprovacao operacional documentada.
-# Substituir AMBOS os placeholders por cadencias UTC explicitamente aprovadas.
+# Watchdog: cadencia aprovada de 15 minutos UTC; ativacao AINDA NAO autorizada.
+# Monitor SQL: cadencia pendente. Nao aplicar este patch inteiro.
+# Ver sentry-watchdog-homologacao.md para pre-requisitos e selecao do watchdog.
 # Mesmo em workflows separados, falha conjunta do Actions exige testemunha externa.
 diff --git a/.github/workflows/agendamento-monitor.yml b/.github/workflows/agendamento-monitor.yml
 --- a/.github/workflows/agendamento-monitor.yml
@@ -15,5 +17,5 @@ diff --git a/.github/workflows/agendamento-watchdog.yml b/.github/workflows/agen
 @@ -3,2 +3,4 @@
  on:
 +  schedule:
-+    - cron: '__CADENCIA_WATCHDOG_UTC_APROVADA__'
++    - cron: '*/15 * * * *'
    workflow_dispatch:

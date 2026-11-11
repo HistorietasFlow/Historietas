@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFileSync} from 'node:fs';
-import { alertBody, checkDatabase, classifySnapshot, deliverAlert } from '../scripts/chapter-scheduling-monitor.mjs';
+import { alertBody, checkDatabase, classifySnapshot, deliverAlert, main } from '../scripts/chapter-scheduling-monitor.mjs';
+import {main as runWatchdog} from '../scripts/chapter-scheduling-watchdog.mjs';
+import {main as runSentry} from '../scripts/chapter-scheduling-sentry-checkin.mjs';
 
 const now=Date.parse('2026-11-10T01:00:00Z');
 const capacityWarnings=['DISCO_MEDICAO_INDISPONIVEL','WAL_ORCAMENTO_NAO_DEFINIDO'];
@@ -41,10 +43,122 @@ function github(comments=[],options={}) {
 }
 const config=(api)=>({token:'secret-not-for-logs',issue:123,fetchImpl:api.fetchImpl});
 
+const proofEnv={PGUSER:'historietas_agendamento_monitor',PGHOST:'fixture.invalid',PGDATABASE:'postgres',
+  PGSSLMODE:'verify-full',PGSSLROOTCERT:'fixture.crt',GITHUB_TOKEN:'synthetic',AGENDAMENTO_ALERT_ISSUE:'123',
+  AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO:'true',AGENDAMENTO_MONITOR_TESTE:'false'};
+function freshSnapshot() {
+  const s=snapshot(), stamp=new Date().toISOString();
+  s.agora=stamp;s.saude.ultimaObservacao=stamp;s.saude.habilitado=false;
+  s.capacidade.medidoEm=stamp;s.recursos.orcamentoNotificacoes.medidoEm=stamp;
+  s.recursos.wal.medidoEm=stamp;s.operacoesCache.medidoEm=stamp;
+  return s;
+}
+
+test('prova v2 separa execucao de saude sem remover alerta; modo legado continua falhando',async()=>{
+  const api=github();let reads=0;
+  const run=async(cmd,args,options)=>{
+    reads++;assert.equal(cmd,'psql');assert.equal(options.shell,false);
+    assert.match(args.at(-1),/^begin isolation level repeatable read read only;/);
+    assert.match(args.at(-1),/snapshot_monitor_capitulos\(\); rollback;$/);
+    return {stdout:JSON.stringify(freshSnapshot())};
+  };
+  assert.equal(await main(proofEnv,{run,fetchImpl:api.fetchImpl}),0);
+  assert.equal(reads,1);
+  const codes=JSON.parse(api.comments[0].body.split('\n')[1]).codigos;
+  for (const code of [...capacityWarnings,'RUNNER_DESATIVADO']) assert.ok(codes.includes(code));
+  assert.match(api.comments[0].body,/Alerta operacional/);
+  assert.equal(await main({...proofEnv,AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO:'false'},
+    {run,fetchImpl:api.fetchImpl}),1);
+  assert.equal(api.comments.length,1); // Nao emite falsa recuperacao da saude.
+});
+
+test('SQL falho, timeout, JSON invalido, contrato incompleto e evidencia obsoleta nunca comprovam execucao',async()=>{
+  for (const run of [async()=>{throw Error('timeout senha');},async()=>({stdout:'{}'}),
+    async()=>({stdout:'JSON invalido'}),
+    ...[s=>delete s.recursos,s=>s.saude.habilitado='true',s=>s.agora='2000-01-01T00:00:00Z',
+      s=>s.operacoesCache.medidoEm='2000-01-01T00:00:00Z',s=>s.recursos.wal.limiteAprovadoBytes=123]
+      .map(mutate=>async()=>{const s=freshSnapshot();mutate(s);return {stdout:JSON.stringify(s)};})]) {
+    const api=github();assert.equal(await main(proofEnv,{run,fetchImpl:api.fetchImpl}),1);
+    assert.equal(api.comments.length,1);assert.doesNotMatch(api.comments[0].body,/senha|JSON invalido/);
+  }
+  const api=github();
+  assert.equal(await main({...proofEnv,PGUSER:'postgres'},
+    {run:async()=>assert.fail('Nao conectar com privilegio maior'),fetchImpl:api.fetchImpl}),1);
+});
+
+test('teste de e-mail nunca prova execucao mesmo quando entrega tem sucesso',async()=>{
+  const api=github();
+  assert.equal(await main({...proofEnv,AGENDAMENTO_MONITOR_TESTE:'true'},
+    {run:async()=>assert.fail('Teste nao consulta SQL'),fetchImpl:api.fetchImpl}),1);
+  assert.match(api.comments[0].body,/TESTE_ENTREGA/);
+});
+
+test('entrega falha ou resposta perdida nao confirma; nova leitura reconcilia e recupera sem duplicar alerta',async()=>{
+  let reads=0;
+  const run=async()=>{reads++;return {stdout:JSON.stringify(freshSnapshot())};};
+  assert.equal(await main(proofEnv,{run,fetchImpl:async()=>{throw Error('rede');}}),2);
+  const api=github([],{lost:true});
+  assert.equal(await main(proofEnv,{run,fetchImpl:api.fetchImpl}),2);
+  assert.equal(api.comments.length,1);
+  assert.equal(await main(proofEnv,{run,fetchImpl:api.fetchImpl}),0);
+  assert.equal(reads,3);assert.equal(api.requests.filter(r=>r.init.method==='POST').length,1);
+});
+
+test('observacao concorrente obsoleta nao recebe prova de entrega nem apaga alerta mais novo',async()=>{
+  const api=github();let unblock;
+  const pending=main(proofEnv,{run:()=>new Promise(resolve=>{unblock=resolve;}),fetchImpl:api.fetchImpl});
+  const newer={versao:1,observadoEm:new Date(Date.now()+10000).toISOString(),codigos:['PAUSA_ATIVA']};
+  assert.equal(await deliverAlert(newer,config(api)),'delivered');
+  unblock({stdout:JSON.stringify(freshSnapshot())});
+  assert.equal(await pending,2);
+  assert.equal(api.comments.length,1);assert.match(api.comments[0].body,/PAUSA_ATIVA/);
+});
+
+test('cadeia SQL/entrega -> job v2 -> watchdog -> Sentry distingue saude ruim de falha de verificacao',async()=>{
+  for (const sqlFailure of [true,false]) {
+    const api=github(), clock=Date.now()+1000, stamp=new Date(clock).toISOString();
+    const exit=await main(proofEnv,{fetchImpl:api.fetchImpl,run:async()=>{
+      if (sqlFailure) throw Error('conexao interrompida');
+      return {stdout:JSON.stringify(freshSnapshot())};
+    }});
+    const conclusion=exit===0?'success':'failure';
+    const fetchImpl=async(url,options)=>{
+      if(url.includes('/attempts/')) return Response.json({total_count:1,jobs:[{
+        name:'verificar',run_id:7,run_attempt:1,status:'completed',conclusion,
+        steps:[{name:'Comprovar observacao SQL e entrega (v2)',status:'completed',conclusion,
+          started_at:stamp,completed_at:stamp}]}]});
+      if(url.includes('/runs?')) return Response.json({total_count:1,workflow_runs:[{
+        id:7,run_attempt:1,head_branch:'main',event:'workflow_dispatch',status:'completed',
+        conclusion,created_at:stamp,updated_at:stamp}]});
+      if(url.includes('/workflows/')) return Response.json({state:'active',path:'.github/workflows/agendamento-monitor.yml'});
+      return api.fetchImpl(url,options);
+    };
+    const sent=[];
+    const env={...proofEnv,GITHUB_ACTIONS:'true',GITHUB_EVENT_NAME:'schedule',GITHUB_REF:'refs/heads/main',
+      GITHUB_REPOSITORY:'HistorietasFlow/Historietas',
+      GITHUB_WORKFLOW_REF:'HistorietasFlow/Historietas/.github/workflows/agendamento-watchdog.yml@refs/heads/main',
+      AGENDAMENTO_MONITOR_ESPERADO_DESDE:new Date(clock-10000).toISOString(),AGENDAMENTO_MONITOR_MAX_INTERVALO_MS:'600000',
+      AGENDAMENTO_SENTRY_CHECKIN_URL:'https://o123.ingest.us.sentry.io/api/456/crons/watchdog/11111111111111111111111111111111/'};
+    assert.equal(await runSentry(env,{watchdogMain:value=>runWatchdog(value,{now:clock,fetchImpl}),
+      fetchImpl:async url=>{sent.push(new URL(url).searchParams.get('status'));return new Response(null,{status:200});}}),sqlFailure?1:0);
+    assert.deepEqual(sent,['in_progress',sqlFailure?'error':'ok']);
+    assert.match(api.comments[0].body,/Alerta operacional/);
+    assert.match(api.comments[0].body,sqlFailure?/BANCO_INDISPONIVEL/:/RUNNER_DESATIVADO/);
+    assert.equal(api.comments.filter(c=>c.body.startsWith('<!-- historietas-agendamento-monitor:v1 -->')).length,1);
+  }
+});
+
 test('saude valida, sem inferir sucesso de uma resposta vazia',()=>{
   assert.deepEqual(classifySnapshot(snapshot(),now).codigos,capacityWarnings);
   for(const value of [null,{}, {...snapshot(),saude:{}}, {...snapshot(),ultimaExecucaoCron:{estado:'inventado'}}])
     assert.deepEqual(classifySnapshot(value,now).codigos,['CONTRATO_INVALIDO']);
+});
+
+test('runner desativado e capacidade nao certificada preservam os alertas mesmo com snapshot valido',()=>{
+  const value=snapshot();value.saude.habilitado=false;
+  assert.deepEqual(classifySnapshot(value,now).codigos,expected(['RUNNER_DESATIVADO']));
+  value.saude.habilitado=true;
+  assert.deepEqual(classifySnapshot(value,now).codigos,capacityWarnings);
 });
 test('relogio divergente e evidencia antiga nao confirmam funcionamento',()=>{
   assert.deepEqual(classifySnapshot(snapshot(),now+61000).codigos,['RELOGIO_DIVERGENTE']);

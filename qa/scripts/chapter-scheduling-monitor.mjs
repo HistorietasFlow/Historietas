@@ -202,13 +202,36 @@ export async function deliverAlert(value, {token,issue,fetchImpl=fetch,actor='gi
   return 'delivered';
 }
 
-export async function main(env = process.env) {
+// Somente diagnosticos operacionais conhecidos podem coexistir com prova de
+// execucao. Erro SQL, contrato/tempo invalido e codigos novos falham fechados.
+// FONTE_INVALIDA refere-se ao Cron observado, nao a origem da consulta SQL fixa.
+const operationalCodes = new Set([
+  'RUNNER_DESATIVADO','MONITOR_NAO_CONFIGURADO','FONTE_INVALIDA','MONITOR_ATRASADO',
+  'EXECUCAO_AUSENTE','EXECUCAO_ATRASADA','EXECUCAO_INCERTA','FALHA_CRON',
+  'PAUSA_ATIVA','FALHAS_OBSERVADAS','INCIDENTES_ABERTOS','RETRIES_ESGOTADOS',
+  'BACKLOG_ATRASADO','CAPACIDADE_ALERTA','CAPACIDADE_BLOQUEADA',
+  'ORCAMENTO_NOTIFICACOES_ALERTA','ORCAMENTO_NOTIFICACOES_ESGOTADO',
+  'WAL_ORCAMENTO_NAO_DEFINIDO','DISCO_MEDICAO_INDISPONIVEL',
+  'CACHE_OPERACAO_SEM_RECIBO','CACHE_ADMISSAO_BLOQUEADA','CACHE_INTEGRIDADE_DIVERGENTE',
+  'CACHE_SALDO_INDISPONIVEL','CACHE_SALDO_BLOQUEADO','CACHE_SALDO_ESGOTADO','CACHE_RETENCAO_SEM_ORCAMENTO',
+]);
+
+export async function main(env = process.env, {run=execute,fetchImpl=fetch}={}) {
   // Test mode exercises transport only; it never connects to any database.
-  const report=env.AGENDAMENTO_MONITOR_TESTE==='true'
-    ? result(['TESTE_ENTREGA'],Date.now()) : await checkDatabase(env);
+  const testOnly=env.AGENDAMENTO_MONITOR_TESTE==='true';
+  const executionProof=env.AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO==='true';
+  const report=testOnly
+    ? result(['TESTE_ENTREGA'],Date.now()) : await checkDatabase(env,run);
   try {
-    const delivery=await deliverAlert(report,{token:env.GITHUB_TOKEN,issue:Number(env.AGENDAMENTO_ALERT_ISSUE)});
+    const delivery=await deliverAlert(report,{token:env.GITHUB_TOKEN,issue:Number(env.AGENDAMENTO_ALERT_ISSUE),fetchImpl});
     console.log(JSON.stringify({codigos:report.codigos,entrega:delivery}));
+    if (executionProof) {
+      // unchanged exige leitura de alerta existente do bot com os mesmos codigos.
+      // obsolete nao comprova entrega desta observacao. Nunca publicar recuperacao
+      // de saude apenas porque a consulta/entrega terminaram corretamente.
+      if (!['delivered','unchanged'].includes(delivery)) return 2;
+      return !testOnly && report.codigos.every(c=>operationalCodes.has(c)) ? 0 : 1;
+    }
     return report.codigos.length && !report.codigos.includes('TESTE_ENTREGA') ? 1 : 0;
   } catch {
     console.error('Alerta nao confirmado. Verificar canal e configuracao; nenhuma retomada foi executada.');

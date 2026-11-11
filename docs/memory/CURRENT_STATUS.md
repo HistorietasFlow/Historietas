@@ -2,6 +2,30 @@
 
 Atualizado em: 2026-11-09
 
+### CI #2267 — instalacao do Chromium, 11/11/2026
+
+Duas falhas de DNS no mirror Azure e outra no archive Ubuntu impediram o APT.
+Usar mirrors alternativos nao resolveu e o ajuste foi retirado. O navegador
+passa a usar a imagem oficial Playwright 1.62.1/Noble por digest, com todas as
+dependencias, servidor restrito a loopback e smoke obrigatorio antes do banco.
+Testes/app/Supabase continuam no host; nenhum gate ou scan removido.
+Testes focados 74/74; instalacao Linux/E2E dependem da CI do novo commit.
+Ver `PROBLEMS_AND_SOLUTIONS.md`. Nenhum controle Sentry/SQL foi alterado.
+
+### Sentry/watchdog — preparacao de homologacao, 11/11/2026
+
+Base `cda7e996`. Responsavel confirmou criacao de monitor/alerta Sentry e secret
+GitHub; nao inspecionados nem usados nesta etapa. Cadencia aprovada de 15 min UTC
+registrada somente no patch inerte; workflows reais continuam manuais.
+Monitor SQL depende de papel NOLOGIN provisionado separadamente, TLS, gates e
+janela de observacao aprovada. Na continuacao da #2267, a etapa v2 separa prova
+de leitura SQL valida/entrega confirmada da saude. Alertas de capacidade/WAL e
+runner desligado permanecem; `ok` do Sentry nao significa saude nem ativa gates.
+Erros SQL, evidencia invalida/obsoleta e entrega incerta continuam negando prova.
+Dispatch/teste de e-mail nao produz check-in falso. Homologacao remota pendente. Ver
+`docs/operacao/sentry-watchdog-homologacao.md` e
+`DESBLOQUEIO_OPERACIONAL_AGENDAMENTO.md`. Nenhum check-in, schedule ou gate ativado.
+
 ### Agendamento — fase 6B3, freios privados sem ativacao
 
 Migration `20261109215507_protecao_capacidade_outbox_capitulos.sql`: limite

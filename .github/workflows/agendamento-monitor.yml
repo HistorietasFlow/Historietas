@@ -36,10 +36,12 @@ jobs:
           AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node qa/scripts/chapter-scheduling-monitor.mjs
-      - name: Observar banco e entregar alerta
+      # v2 comprova leitura SQL valida + entrega; saude permanece nos alertas.
+      - name: Comprovar observacao SQL e entrega (v2)
         if: ${{ !inputs.teste_entrega }}
         env:
           AGENDAMENTO_MONITOR_TESTE: 'false'
+          AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO: 'true'
           AGENDAMENTO_ALERT_ISSUE: ${{ vars.AGENDAMENTO_ALERT_ISSUE }}
           GITHUB_TOKEN: ${{ github.token }}
           PGHOST: ${{ secrets.AGENDAMENTO_MONITOR_PGHOST }}
